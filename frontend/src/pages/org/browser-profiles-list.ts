@@ -263,14 +263,14 @@ export class BrowserProfilesList extends BtrixElement {
         <btrix-table-cell>
           <div class="truncate">${data.origins[0]}</div>
           ${data.origins.length > 1
-            ? html`<sl-tooltip class="invert-tooltip">
-                <span slot="content" class=" break-words"
+            ? html`<btrix-popover placement="top">
+                <span slot="content" class="break-words"
                   >${data.origins.slice(1).join(", ")}</span
                 >
                 <btrix-badge class="ml-2">
                   ${msg(str`+${data.origins.length - 1}`)}
                 </btrix-badge>
-              </sl-tooltip>`
+              </btrix-popover>`
             : nothing}
         </btrix-table-cell>
         <btrix-table-cell class="whitespace-nowrap tabular-nums">
@@ -398,7 +398,6 @@ export class BrowserProfilesList extends BtrixElement {
               >. Please remove browser profile from Workflow to continue.`,
           ),
           variant: "warning",
-          icon: "exclamation-triangle",
           duration: 15000,
         });
       } else {

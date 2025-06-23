@@ -75,6 +75,7 @@ class CrawlSpec(BaseModel):
     oid: UUID
     org: Organization
     scale: int = 1
+    browser_windows: int = 1
     storage: StorageRef
     started: str
     crawler_channel: str
@@ -85,6 +86,7 @@ class CrawlSpec(BaseModel):
     max_crawl_size: int = 0
     qa_source_crawl_id: Optional[str] = ""
     proxy_id: Optional[str] = None
+    is_single_page: bool = False
 
     @property
     def db_crawl_id(self) -> str:
@@ -142,6 +144,8 @@ class PodInfo(BaseModel):
     signalAtMem: Optional[int] = None
 
     evicted: Optional[bool] = False
+
+    lastWorkers: Optional[int] = 0
 
     def dict(self, *a, **kw):
         res = super().dict(*a, **kw)
@@ -205,7 +209,12 @@ class CrawlStatus(BaseModel):
     size: int = 0
     # human readable size string
     sizeHuman: str = ""
-    scale: int = 1
+
+    # actual observed scale (number of pods active)
+    scale: int = 0
+    # desired scale as computed by crawl state (number of pods that should be active)
+    desiredScale: int = 0
+
     filesAdded: int = 0
     filesAddedSize: int = 0
     finished: Optional[str] = None

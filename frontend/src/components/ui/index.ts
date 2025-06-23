@@ -30,6 +30,7 @@ import("./numbered-list");
 import("./overflow-dropdown");
 import("./overflow-scroll");
 import("./pagination");
+import("./popover");
 import("./pw-strength-alert");
 import("./relative-duration");
 import("./search-combobox");

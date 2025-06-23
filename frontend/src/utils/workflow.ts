@@ -1,7 +1,7 @@
 import { msg, str } from "@lit/localize";
 import { z } from "zod";
 
-import { getAppSettings } from "./app";
+import { getAppSettings, type AppSettings } from "./app";
 
 import type { Tags } from "@/components/ui/tag-input";
 import type { UserGuideEventMap } from "@/index";
@@ -67,7 +67,7 @@ export function makeUserGuideEvent(
     "btrix-user-guide-show",
     {
       detail: {
-        path: `user-guide/workflow-setup/#${userGuideHash}`,
+        path: `workflow-setup/#${userGuideHash}`,
       },
       bubbles: true,
       composed: true,
@@ -107,7 +107,7 @@ export type FormState = {
     | (typeof NewWorkflowOnlyScopeType)[keyof typeof NewWorkflowOnlyScopeType];
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
-  scale: WorkflowParams["scale"];
+  browserWindows: WorkflowParams["browserWindows"];
   blockAds: WorkflowParams["config"]["blockAds"];
   lang: WorkflowParams["config"]["lang"];
   scheduleType: "date" | "cron" | "none";
@@ -140,11 +140,11 @@ export type WorkflowDefaults = {
   behaviorTimeoutSeconds?: number;
   pageLoadTimeoutSeconds?: number;
   maxPagesPerCrawl?: number;
-  maxScale: number;
+  maxBrowserWindows: number;
 };
 
 export const appDefaults: WorkflowDefaults = {
-  maxScale: DEFAULT_MAX_SCALE,
+  maxBrowserWindows: DEFAULT_MAX_SCALE,
 };
 
 export const getDefaultFormState = (): FormState => ({
@@ -164,7 +164,7 @@ export const getDefaultFormState = (): FormState => ({
   scopeType: ScopeType.Page,
   exclusions: [],
   pageLimit: null,
-  scale: 1,
+  browserWindows: 2,
   blockAds: true,
   lang: getDefaultLang(),
   scheduleType: "none",
@@ -306,7 +306,7 @@ export function getInitialFormState(params: {
     postLoadDelaySeconds:
       seedsConfig.postLoadDelay ?? defaultFormState.postLoadDelaySeconds,
     maxScopeDepth: primarySeedConfig.depth ?? defaultFormState.maxScopeDepth,
-    scale: params.initialWorkflow.scale,
+    browserWindows: params.initialWorkflow.browserWindows,
     blockAds: params.initialWorkflow.config.blockAds,
     lang: params.initialWorkflow.config.lang ?? defaultFormState.lang,
     scheduleType: defaultFormState.scheduleType,
@@ -365,8 +365,8 @@ export async function getServerDefaults(): Promise<WorkflowDefaults> {
     if (data.maxPagesPerCrawl > 0) {
       defaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
     }
-    if (data.maxScale) {
-      defaults.maxScale = data.maxScale;
+    if (data.maxBrowserWindows) {
+      defaults.maxBrowserWindows = data.maxBrowserWindows;
     }
 
     return defaults;
@@ -375,4 +375,27 @@ export async function getServerDefaults(): Promise<WorkflowDefaults> {
   }
 
   return defaults;
+}
+
+export function* rangeBrowserWindows(
+  settings: AppSettings | null,
+): Iterable<number> {
+  if (!settings) {
+    yield 1;
+    return;
+  }
+
+  const { numBrowsersPerInstance, maxBrowserWindows } = settings;
+
+  for (let i = 1; i < numBrowsersPerInstance; i++) {
+    yield i;
+  }
+
+  for (
+    let i = numBrowsersPerInstance;
+    i <= maxBrowserWindows;
+    i += numBrowsersPerInstance
+  ) {
+    yield i;
+  }
 }

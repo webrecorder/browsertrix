@@ -25,6 +25,8 @@ from .utils import (
     parse_jsonl_log_messages,
     stream_dict_list_as_csv,
     validate_regexes,
+    scale_from_browser_windows,
+    browser_windows_from_scale,
 )
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
@@ -368,7 +370,8 @@ class CrawlOps(BaseCrawlOps):
             oid=crawlconfig.oid,
             cid=crawlconfig.id,
             cid_rev=crawlconfig.rev,
-            scale=crawlconfig.scale,
+            scale=scale_from_browser_windows(crawlconfig.browserWindows),
+            browserWindows=crawlconfig.browserWindows,
             jobType=crawlconfig.jobType,
             config=crawlconfig.config,
             profileid=crawlconfig.profileid,
@@ -392,16 +395,27 @@ class CrawlOps(BaseCrawlOps):
             pass
 
     async def update_crawl_scale(
-        self, crawl_id: str, org: Organization, crawl_scale: CrawlScale, user: User
+        self,
+        crawl_id: str,
+        org: Organization,
+        scale: int,
+        browser_windows: int,
+        user: User,
     ) -> bool:
         """Update crawl scale in the db"""
         crawl = await self.get_crawl(crawl_id, org)
-        update = UpdateCrawlConfig(scale=crawl_scale.scale)
+
+        update = UpdateCrawlConfig(browserWindows=browser_windows)
         await self.crawl_configs.update_crawl_config(crawl.cid, org, user, update)
 
         result = await self.crawls.find_one_and_update(
             {"_id": crawl_id, "type": "crawl", "oid": org.id},
-            {"$set": {"scale": crawl_scale.scale}},
+            {
+                "$set": {
+                    "scale": scale,
+                    "browserWindows": browser_windows,
+                }
+            },
             return_document=pymongo.ReturnDocument.AFTER,
         )
 
@@ -529,7 +543,7 @@ class CrawlOps(BaseCrawlOps):
 
         cid = crawl.cid
 
-        scale = crawl.scale or 1
+        browser_windows = crawl.browserWindows or 2
 
         async with self.get_redis(crawl_id) as redis:
             query = {
@@ -538,6 +552,7 @@ class CrawlOps(BaseCrawlOps):
             }
             query_str = json.dumps(query)
 
+            scale = scale_from_browser_windows(browser_windows)
             for i in range(0, scale):
                 await redis.rpush(f"crawl-{crawl_id}-{i}:msg", query_str)
 
@@ -1524,20 +1539,31 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         response_model=CrawlScaleResponse,
     )
     async def scale_crawl(
-        scale: CrawlScale,
+        crawl_scale: CrawlScale,
         crawl_id,
         user: User = Depends(user_dep),
         org: Organization = Depends(org_crawl_dep),
     ):
-        await ops.update_crawl_scale(crawl_id, org, scale, user)
+        if crawl_scale.browserWindows:
+            browser_windows = crawl_scale.browserWindows
+            scale = scale_from_browser_windows(browser_windows)
+        elif crawl_scale.scale:
+            scale = crawl_scale.scale
+            browser_windows = browser_windows_from_scale(scale)
+        else:
+            raise HTTPException(
+                status_code=400, detail="browser_windows_or_scale_required"
+            )
 
-        result = await ops.crawl_manager.scale_crawl(crawl_id, scale.scale)
+        await ops.update_crawl_scale(crawl_id, org, scale, browser_windows, user)
+
+        result = await ops.crawl_manager.scale_crawl(crawl_id, scale, browser_windows)
         if not result or not result.get("success"):
             raise HTTPException(
                 status_code=400, detail=result.get("error") or "unknown"
             )
 
-        return {"scaled": scale.scale}
+        return {"scaled": True, "browserWindows": browser_windows}
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/access",

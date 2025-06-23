@@ -138,7 +138,7 @@ export class QaPage extends TailwindElement {
           tabindex="0"
           aria-selected=${this.selected}
         >
-          <sl-tooltip class="invert-tooltip" placement="left" hoist>
+          <btrix-popover placement="left">
             <div slot="content" class="max-w-60 text-xs">
               ${pageDetails(page)}
             </div>
@@ -174,7 +174,7 @@ export class QaPage extends TailwindElement {
                 class="text-blue-600"
               ></sl-icon>`}
             </div>
-          </sl-tooltip>
+          </btrix-popover>
           <h5 class="truncate text-sm font-semibold text-black">
             ${page.title ||
             html`<span class="opacity-50">${msg("No page title")}</span>`}

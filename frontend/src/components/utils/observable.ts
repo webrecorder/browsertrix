@@ -20,10 +20,15 @@ export class Observable extends LitElement {
   @property({ type: Object })
   options?: IntersectionObserverInit;
 
-  private readonly observable = new ObservableController(this);
+  private observable?: ObservableController;
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.observable = new ObservableController(this, this.options);
+  }
 
   firstUpdated() {
-    this.observable.observe(this);
+    this.observable?.observe(this);
   }
 
   render() {

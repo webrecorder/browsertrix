@@ -9,7 +9,8 @@ btrix-table-cell .rowClickTarget {
   max-width: 100%;
 }
 
-btrix-table-cell sl-tooltip > * {
+btrix-table-cell sl-tooltip > *,
+btrix-table-cell btrix-popover > * {
   /* Place above .rowClickTarget::after overlay */
   z-index: 1;
 }

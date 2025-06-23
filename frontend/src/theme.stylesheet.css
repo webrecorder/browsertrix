@@ -158,6 +158,12 @@
     font-size: var(--sl-input-help-text-font-size-medium);
   }
 
+  /* TODO Move to custom button */
+  sl-button[size="small"].micro::part(base) {
+    --sl-input-height-small: 1.5rem;
+    font-size: var(--sl-font-size-x-small);
+  }
+
   /* Update button colors */
   sl-button[variant="primary"]:not([outline])::part(base) {
     background-color: theme(colors.primary.400);
@@ -255,18 +261,6 @@
   sl-radio-group:not([size="small"]) sl-radio-button {
     width: 100%;
     min-width: min-content;
-  }
-
-  /* Style tooltip with white background */
-  sl-tooltip.invert-tooltip {
-    --sl-tooltip-arrow-size: 0;
-    --sl-tooltip-background-color: var(--sl-color-neutral-50);
-    --sl-tooltip-color: var(--sl-color-neutral-700);
-  }
-
-  sl-tooltip.invert-tooltip::part(body) {
-    outline: 1px solid var(--sl-panel-border-color);
-    box-shadow: var(--sl-shadow-large);
   }
 
   sl-tab-group {

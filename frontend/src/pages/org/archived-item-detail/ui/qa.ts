@@ -797,12 +797,12 @@ export class ArchivedItemDetailQA extends BtrixElement {
                 <btrix-table-cell>
                   ${page.notes?.length
                     ? html`
-                        <sl-tooltip class="invert-tooltip">
+                        <btrix-popover>
                           <div slot="content">
-                            <div class="text-xs text-neutral-400">
+                            <div class="mb-1 text-xs text-neutral-400">
                               ${msg("Newest comment:")}
                             </div>
-                            <div class="leading04 max-w-60 text-xs">
+                            <div class="max-w-60 text-xs leading-4">
                               ${page.notes[page.notes.length - 1].text}
                             </div>
                           </div>
@@ -813,7 +813,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                             ></sl-icon>`,
                             `${this.localize.number(page.notes.length)} ${pluralOf("comments", page.notes.length)}`,
                           )}
-                        </sl-tooltip>
+                        </btrix-popover>
                       `
                     : html`<span class="text-neutral-400">
                         ${msg("None")}

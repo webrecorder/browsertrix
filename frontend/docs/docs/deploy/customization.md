@@ -92,12 +92,33 @@ Since the local Minio service is not used, `minio_local: false` can be set to sa
 
 ### Custom Access Endpoint URL
 
-It may be useful to provide a custom access endpoint for accessing WACZ files and other data. if the `access_endpoint_url` is provided,
-it should be in 'virtual host' form (the bucket is not added to the path, but is assumed to be the in the host).
+It may be useful to provide a custom access endpoint for accessing WACZ files and other data. If the `access_endpoint_url` is provided, it can be in either the 'virtual host' or 'path' form, while the `endpoint_url` should always be in path-prefix form.
 
-The host portion of the URL is then replaced with the `access_endpoint_url`. For example, given `endpoint_url: https://s3provider.example.com/bucket/path/` and `access_endpoint_url: https://my-custom-domain.example.com/path/`, a URL to a WACZ files in 'virtual host' form may be `https://bucket.s3provider.example.com/path/to/files/crawl.wacz?signature...`.
+Here are two example of the addressing modes:
 
-The `https://bucket.s3provider.example.com/path/` is then replaced with the `https://my-custom-domain.example.com/path/`, and the final URL becomes `https://my-custom-domain.example.com/path/to/files/crawl.wacz?signature...`.
+#### Virtual Host vs Path Addressing for Access Endpoints
+
+Virtual host addressing:
+```
+endpoint_url: https://s3provider.example.com/bucket/path/
+access_endpoint_url: https://my-custom-domain.example.com/path/
+access_addressing_style: virtual
+
+# Files loaded from: https://my-custom-domain.example.com/path/to/files/crawl.wacz?signature...
+```
+
+Path addressing:
+```
+...
+endpoint_url: https://s3provider.example.com/bucket/path/
+access_endpoint_url: https://my-custom-domain.example.com/bucket/path/
+access_addressing_style: path
+
+# Files loaded from: https://my-custom-domain.example.com/bucket/path/to/files/crawl.wacz?signature...
+```
+
+Note that when using the local Minio for storage, path-style addressing is used automatically as the
+data is accessed via `/data/path/to/files`. Otherwise, virtual-style addressing is assumed as the default.
 
 
 ### Storage Replicas
@@ -117,6 +138,8 @@ storages:
 
     endpoint_url: "http://local-minio.default:9000/"
     is_default_primary: true
+    # default for local minio is path
+    access_addressing_style: path
 
   - name: "replica-0"
     type: "s3"
@@ -126,6 +149,7 @@ storages:
 
     endpoint_url: "http://local-minio.default:9000/"
     is_default_replica: true
+    access_addressing_style: path
 
   - name: "replica-1"
     type: "s3"
@@ -134,10 +158,13 @@ storages:
     bucket_name: "replica-1"
 
     endpoint_url: "https://s3provider.example.com/bucket/path/"
-    access_endpoint_url: "https://my-custom-domain.example.com/path/"
+    access_endpoint_url: "https://bucket.my-custom-domain.example.com/path/"
+    access_addressing_style: virtual
 ```
 
 When replica locations are set, the default behavior when a crawl, upload, or browser profile is deleted is that the replica files are deleted at the same time as the file in primary storage. To delay deletion of replicas, set `replica_deletion_delay_days` in the Helm chart to the number of days by which to delay replica file deletion. This feature gives Browsertrix administrators time in the event of files being deleted accidentally or maliciously to recover copies from configured replica locations.
+
+??? info "If you are specifying a custom Minio deployment running in the same Kubernetes cluster, be sure to update the [network policy to allow access to your custom resource](#local-network-access-policy-and-custom-services)"
 
 ## Horizontal Autoscaling
 
@@ -250,3 +277,36 @@ type btrixEvent = (
 ```
 
 Tracking is optional and will never expose personally identifiable information.
+
+## Local Network Access Policy and Custom Services
+
+By default, Browsertrix configures the crawlers with a network policy that restricts access to internal Kubernetes resources, to prevent the crawler from snooping around the internal network. This should be fine for crawling
+public websites with the default configuration.
+
+However, you may want to provide access to an internal IP (for example, if crawling a site deployed on a local server) or another Kubernetes service (such as a custom Minio deployment)
+
+To provide access, you can extend the existing network policy 'egress' with the `crawler_network_policy_additional_egress` setting:
+
+For example, to allow the crawler to access the `10.0.0.1/32` IP block on port 80,
+and to pods that have a label `my-custom-minio` only on port 9000, add:
+
+```yaml
+crawler_network_policy_additional_egress:
+  - to:
+    - ipBlock:
+        cidr: 10.0.0.1/32
+    ports:
+      - port: 80
+        protocol: TCP
+
+  - to:
+    - podSelector:
+        matchLabels:
+          app: my-custom-minio
+
+    ports:
+      - port: 9000
+        protocol: TCP
+```
+
+Refer to the [default networkpolicies.yaml](https://github.com/webrecorder/browsertrix/blob/main/chart/templates/networkpolicies.yaml) for additional examples and the [official Kubernetes documentation for Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)

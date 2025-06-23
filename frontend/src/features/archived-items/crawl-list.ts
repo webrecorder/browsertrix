@@ -26,6 +26,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import type { Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
+import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
 /**
  * @slot menu
@@ -130,6 +131,7 @@ export class CrawlListItem extends BtrixElement {
             (crawl: Crawl) => html`
               <btrix-crawl-status
                 state=${crawl.state}
+                ?stopping=${crawl.stopping}
                 ?shouldPause=${crawl.shouldPause}
                 hideLabel
                 hoist
@@ -185,6 +187,11 @@ export class CrawlListItem extends BtrixElement {
           )}
         </btrix-table-cell>
         <btrix-table-cell>
+          ${this.safeRender((crawl) =>
+            humanizeExecutionSeconds(crawl.crawlExecSeconds),
+          )}
+        </btrix-table-cell>
+        <btrix-table-cell>
           ${this.safeRender((crawl) => {
             const pagesFound = +(crawl.stats?.found || 0);
             if (crawl.finished) {
@@ -197,9 +204,14 @@ export class CrawlListItem extends BtrixElement {
           })}
         </btrix-table-cell>
         <btrix-table-cell>
-          ${this.localize.bytes(this.crawl.fileSize || 0, {
-            unitDisplay: "narrow",
-          })}
+          ${this.safeRender((crawl) =>
+            this.localize.bytes(
+              crawl.finished ? crawl.fileSize || 0 : +(crawl.stats?.size || 0),
+              {
+                unitDisplay: "narrow",
+              },
+            ),
+          )}
         </btrix-table-cell>
         <btrix-table-cell>
           <div class="max-w-sm truncate">
@@ -279,8 +291,8 @@ export class CrawlList extends TailwindElement {
     return html` <style>
         btrix-table {
           --btrix-table-grid-template-columns: min-content [clickable-start]
-            ${this.workflowId ? "" : `auto `}auto auto auto auto auto auto
-            [clickable-end] min-content;
+            ${this.workflowId ? "" : `auto `}repeat(7, auto) [clickable-end]
+            min-content;
         }
       </style>
       <btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
@@ -303,12 +315,15 @@ export class CrawlList extends TailwindElement {
               ${msg("Finished")}
             </btrix-table-header-cell>
             <btrix-table-header-cell
-              >${msg("Duration")}</btrix-table-header-cell
+              >${msg("Run Duration")}</btrix-table-header-cell
+            >
+            <btrix-table-header-cell
+              >${msg("Execution Time")}</btrix-table-header-cell
             >
             <btrix-table-header-cell>${msg("Pages")}</btrix-table-header-cell>
             <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
             <btrix-table-header-cell>
-              ${msg("Created By")}
+              ${msg("Run By")}
             </btrix-table-header-cell>
             <btrix-table-header-cell class="pl-1 pr-1">
               <span class="sr-only">${msg("Row actions")}</span>

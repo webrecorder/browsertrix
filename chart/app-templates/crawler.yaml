@@ -1,3 +1,4 @@
+{% if not no_pvc %}
 # -------
 # PVC
 # -------
@@ -23,7 +24,7 @@ spec:
   storageClassName: {{ volume_storage_class }}
   {% endif %}
 
-
+{% endif %}
 
 # -------
 # CRAWLER
@@ -55,8 +56,6 @@ spec:
     runAsUser: {{ crawler_uid }}
     runAsGroup: {{ crawler_gid }}
     fsGroup: {{ crawler_fsgroup }}
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
 
   terminationGracePeriodSeconds: {{ termination_grace_secs }}
   volumes:
@@ -69,8 +68,12 @@ spec:
         name: qa-replay-{{ qa_source_crawl_id }}
     {% endif %}
     - name: crawl-data
+    {% if not no_pvc %}
       persistentVolumeClaim:
         claimName: {{ name }}
+    {% else %}
+      emptyDir: {}
+    {% endif %}
     {% if proxy_id %}
     - name: proxies
       secret:
@@ -185,6 +188,11 @@ spec:
        {% endif %}
         - name: crawl-data
           mountPath: /crawls
+
+        - name: crawl-data
+          mountPath: /tmp
+          subPath: tmp
+
       envFrom:
         - configMapRef:
             name: shared-crawler-config
@@ -237,5 +245,9 @@ spec:
         periodSeconds: 120
         failureThreshold: 3
       {% endif %}
+
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
 
 {% endif %}

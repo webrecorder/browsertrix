@@ -196,12 +196,14 @@ export class CrawlLogs extends BtrixElement {
         this.filter && logs.total,
         () => html`
           <btrix-crawl-log-table
+            class="mr-1.5 block"
             .logs=${logs.items}
             offset=${(logs.page - 1) * logs.pageSize}
           ></btrix-crawl-log-table>
 
           <footer class="my-4 flex justify-center">
             <btrix-pagination
+              name="logsPage"
               page=${logs.page}
               totalCount=${logs.total}
               size=${logs.pageSize}

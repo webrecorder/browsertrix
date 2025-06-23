@@ -45,6 +45,7 @@ from .models import (
     CrawlerProxy,
     CrawlerProxies,
     ValidateCustomBehavior,
+    RawCrawlConfig,
 )
 from .utils import (
     dt_now,
@@ -52,6 +53,7 @@ from .utils import (
     validate_regexes,
     validate_language_code,
     is_url,
+    browser_windows_from_scale,
 )
 
 if TYPE_CHECKING:
@@ -226,6 +228,15 @@ class CrawlConfigOps:
         if not self.get_channel_crawler_image(config_in.crawlerChannel):
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
+        # Overrides scale if set
+        if config_in.browserWindows is None:
+            config_in.browserWindows = browser_windows_from_scale(
+                cast(int, config_in.scale)
+            )
+
+        if self.is_single_page(config_in.config):
+            config_in.browserWindows = 1
+
         profileid = None
         if isinstance(config_in.profileid, UUID):
             profileid = config_in.profileid
@@ -272,7 +283,7 @@ class CrawlConfigOps:
             jobType=config_in.jobType,
             crawlTimeout=config_in.crawlTimeout,
             maxCrawlSize=config_in.maxCrawlSize,
-            scale=config_in.scale,
+            browserWindows=config_in.browserWindows,
             autoAddCollections=config_in.autoAddCollections,
             profileid=profileid,
             crawlerChannel=config_in.crawlerChannel,
@@ -313,6 +324,19 @@ class CrawlConfigOps:
             storageQuotaReached=storage_quota_reached,
             execMinutesQuotaReached=exec_mins_quota_reached,
         )
+
+    def is_single_page(self, config: RawCrawlConfig):
+        """return true if this config represents a single page crawl"""
+        if not config.seeds or len(config.seeds) != 1:
+            return False
+
+        if config.limit == 1:
+            return True
+
+        extra_hops = config.seeds[0].extraHops or config.extraHops
+        scope_type = config.seeds[0].scopeType or config.scopeType
+
+        return extra_hops == 0 and scope_type == "page"
 
     def _validate_link_selectors(self, link_selectors: List[str]):
         """Validate link selectors
@@ -408,6 +432,10 @@ class CrawlConfigOps:
 
         orig_crawl_config = await self.get_crawl_config(cid, org.id)
 
+        if update.scale:
+            update.browserWindows = browser_windows_from_scale(cast(int, update.scale))
+            update.scale = None
+
         if update.config and update.config.exclude:
             exclude = update.config.exclude
             if isinstance(exclude, str):
@@ -423,6 +451,10 @@ class CrawlConfigOps:
 
         if update.config and update.config.lang:
             validate_language_code(update.config.lang)
+
+        if update.config or update.browserWindows:
+            if self.is_single_page(update.config or orig_crawl_config.config):
+                update.browserWindows = 1
 
         # indicates if any k8s crawl config settings changed
         changed = False
@@ -441,7 +473,9 @@ class CrawlConfigOps:
         changed = changed or (
             self.check_attr_changed(orig_crawl_config, update, "crawlFilenameTemplate")
         )
-        changed = changed or self.check_attr_changed(orig_crawl_config, update, "scale")
+        changed = changed or self.check_attr_changed(
+            orig_crawl_config, update, "browserWindows"
+        )
 
         schedule_changed = self.check_attr_changed(
             orig_crawl_config, update, "schedule"
@@ -1012,6 +1046,7 @@ class CrawlConfigOps:
                 warc_prefix=self.get_warc_prefix(org, crawlconfig),
                 storage_filename=storage_filename,
                 profile_filename=profile_filename or "",
+                is_single_page=self.is_single_page(crawlconfig.config),
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user, org, manual=True)
             return crawl_id

@@ -103,7 +103,7 @@ export class App extends BtrixElement {
   private viewState!: ViewState;
 
   @state()
-  private fullDocsUrl = "/docs/";
+  private userGuidePath = "";
 
   @state()
   private globalDialogContent: DialogContent = {};
@@ -199,7 +199,7 @@ export class App extends BtrixElement {
       "btrix-user-guide-show",
       (e: UserGuideEventMap["btrix-user-guide-show"]) => {
         e.stopPropagation();
-        this.showUserGuide(e.detail.path);
+        void this.showUserGuide(e.detail.path);
       },
     );
   }
@@ -385,6 +385,16 @@ export class App extends BtrixElement {
         >${this.globalDialogContent.body}</sl-dialog
       >
 
+      ${this.renderUserGuide()}
+    `;
+  }
+
+  private renderUserGuide() {
+    if (!this.docsUrl) return;
+
+    const url = `${this.docsUrl}user-guide/${this.userGuidePath}`;
+
+    return html`
       <sl-drawer
         id="userGuideDrawer"
         label=${msg("User Guide")}
@@ -400,22 +410,26 @@ export class App extends BtrixElement {
           if (!iframe) return;
 
           const src = iframe.src;
-          iframe.src = src.slice(0, src.indexOf("#"));
+          const hashIdx = src.indexOf("#");
+
+          if (hashIdx > -1) {
+            iframe.src = src.slice(0, src.indexOf("#"));
+          }
         }}
       >
         <span slot="label" class="flex items-center gap-3">
-          <sl-icon name="book" class=""></sl-icon>
+          <sl-icon name="book"></sl-icon>
           <span>${msg("User Guide")}</span>
         </span>
         <iframe
           class="size-full text-xs transition-opacity duration-slow"
-          src="${this.docsUrl}user-guide/workflow-setup/"
+          src="${url}"
         ></iframe>
         <sl-button
           size="small"
           slot="footer"
           variant="text"
-          href="${this.fullDocsUrl}"
+          href="${url}"
           target="_blank"
         >
           <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
@@ -521,7 +535,6 @@ export class App extends BtrixElement {
                       >
                     `
                   : nothing}
-                <div role="separator" class="mx-2.5 h-7 w-0 border-l"></div>
                 ${this.renderOrgs()}
               `,
             )}
@@ -536,7 +549,7 @@ export class App extends BtrixElement {
                     ? html`
                         <button
                           class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
-                          @click=${() => this.showUserGuide()}
+                          @click=${() => void this.showUserGuide()}
                         >
                           <sl-icon
                             name="book"
@@ -639,12 +652,12 @@ export class App extends BtrixElement {
 
     const selectedOption = this.orgSlugInPath
       ? orgs.find(({ slug }) => slug === this.orgSlugInPath)
-      : { slug: "", name: msg("All Organizations") };
+      : {
+          slug: "",
+          name: msg("All Organizations"),
+        };
+
     if (!selectedOption) {
-      console.debug(
-        `Couldn't find organization with slug ${this.orgSlugInPath}`,
-        orgs,
-      );
       return;
     }
 
@@ -652,6 +665,7 @@ export class App extends BtrixElement {
     const orgNameLength = 50;
 
     return html`
+      <div role="separator" class="mx-2.5 h-7 w-0 border-l"></div>
       <div class="max-w-32 truncate sm:max-w-52 md:max-w-none">
         ${selectedOption.slug
           ? html`
@@ -869,6 +883,10 @@ export class App extends BtrixElement {
         return html`<btrix-orgs class="w-full md:bg-neutral-50"></btrix-orgs>`;
 
       case "org": {
+        if (!this.isUserInCurrentOrg) {
+          return this.renderNotFoundPage();
+        }
+
         const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
         const pathname = this.getLocationPathname();
@@ -881,7 +899,8 @@ export class App extends BtrixElement {
           class="w-full"
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
-          .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
+          .maxBrowserWindows=${this.appState.settings?.maxBrowserWindows ||
+          DEFAULT_MAX_SCALE}
           orgPath=${orgPath.split(slug)[1]}
           orgTab=${orgTab}
         ></btrix-org>`;
@@ -978,16 +997,16 @@ export class App extends BtrixElement {
     ></btrix-not-found>`;
   }
 
-  private showUserGuide(pathName?: string) {
+  private async showUserGuide(pathName = "") {
     const iframe = this.userGuideDrawer.querySelector("iframe");
 
     if (iframe) {
-      if (pathName) {
-        this.fullDocsUrl = this.docsUrl + pathName;
-        iframe.src = this.fullDocsUrl;
-      } else {
-        this.fullDocsUrl = this.docsUrl;
-        iframe.src = this.fullDocsUrl;
+      const url = `${this.docsUrl}user-guide/${pathName}`;
+
+      if (url !== iframe.src) {
+        this.userGuidePath = pathName;
+
+        await this.updateComplete;
       }
 
       if (!this.appState.userGuideOpen) {

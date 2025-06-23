@@ -40,8 +40,7 @@ const mockAppSettings: AppSettings = {
   defaultBehaviorTimeSeconds: 300,
   defaultPageLoadTimeSeconds: 120,
   maxPagesPerCrawl: 50000,
-  numBrowsers: 2,
-  maxScale: 3,
+  maxBrowserWindows: 4,
   billingEnabled: false,
   signUpUrl: "",
   salesEmail: "",
@@ -85,7 +84,7 @@ describe("browsertrix-app", () => {
     expect(el.shadowRoot?.childElementCount).to.not.equal(0);
   });
 
-  it("renders org when authenticated", async () => {
+  it("renders 404 when not in org", async () => {
     stub(AuthService, "initSessionStorage").returns(
       Promise.resolve({
         headers: { Authorization: "_fake_headers_" },
@@ -95,7 +94,46 @@ describe("browsertrix-app", () => {
     );
     // @ts-expect-error checkFreshness is private
     stub(AuthService.prototype, "checkFreshness");
-    AppStateService.updateOrgSlug("fake-org");
+
+    AppStateService.updateUser(
+      formatAPIUser({
+        ...mockAPIUser,
+      }),
+    );
+    AppStateService.updateOrgSlug("nonexistent-org");
+    const el = await fixture<App>(
+      html` <browsertrix-app .settings=${mockAppSettings}></browsertrix-app>`,
+    );
+    await el.updateComplete;
+    expect(el.shadowRoot?.querySelector("btrix-not-found")).to.exist;
+  });
+
+  it("renders org when in org", async () => {
+    const id = self.crypto.randomUUID();
+    const mockOrg = {
+      id: id,
+      name: "test org 2",
+      slug: "test-org-2",
+      role: 10,
+    };
+
+    stub(AuthService, "initSessionStorage").returns(
+      Promise.resolve({
+        headers: { Authorization: "_fake_headers_" },
+        tokenExpiresAt: 0,
+        username: "test-auth@example.com",
+      }),
+    );
+    // @ts-expect-error checkFreshness is private
+    stub(AuthService.prototype, "checkFreshness");
+
+    AppStateService.updateUser(
+      formatAPIUser({
+        ...mockAPIUser,
+        orgs: [...mockAPIUser.orgs, mockOrg],
+      }),
+    );
+    AppStateService.updateOrgSlug("test-org-2");
     const el = await fixture<App>(
       html` <browsertrix-app .settings=${mockAppSettings}></browsertrix-app>`,
     );

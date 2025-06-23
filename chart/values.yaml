@@ -50,8 +50,8 @@ default_crawl_filename_template: "@ts-@hostsuffix.wacz"
 crawler_extra_args: ""
 
 
-# max allowed crawl scale per crawl
-max_crawl_scale: 3
+# max allowed browser windows per crawl
+max_browser_windows: 8
 
 
 # Cluster Settings
@@ -106,7 +106,7 @@ replica_deletion_delay_days: 0
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.16.2"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.17.1"
 backend_pull_policy: "IfNotPresent"
 
 backend_password_secret: "PASSWORD!"
@@ -164,7 +164,7 @@ backend_avg_memory_threshold: 95
 
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.16.2"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.17.1"
 frontend_pull_policy: "IfNotPresent"
 
 frontend_cpu: "10m"
@@ -277,12 +277,12 @@ crawler_memory_base: 1024Mi
 # number of browser workers per crawler instances
 crawler_browser_instances: 2
 
-# number of browser workers per crawler instances for QA runs
+# number of browser workers per QA pod to run for QA runs
 # defaults to 'crawler_browser_instances' if not set
-# qa_browser_instances: 2
+qa_browser_instances: 1
 
-# fixed scale (number of crawler pods) for QA runs
-qa_scale: 1
+# number of browser windows to run for QA (with 'qa_browser_instances' per pod)
+qa_num_browser_windows: 2
 
 # this value is added to crawler_cpu_base, for each additional browser
 # crawler_cpu = crawler_cpu_base + crawler_pu_per_extra_browser * (crawler_browser_instances - 1)
@@ -373,12 +373,15 @@ btrix-proxies:
 # crawler_fsgroup: 201407
 
 
-# optional: enable/disable crawler network policy
+# optional: enable/disable crawler network policy, prevents crawler pods from accessing internal services
 crawler_enable_network_policy: true
 
-# optional: replace the default crawler egress policy with your own
+# optional: add additional egress rules to the default crawler network policy (See chart/templates/networkpolicies.yaml for an example)
+# crawler_network_policy_additional_egress: []
+
+# optional: replace the default crawler egress policy with your own egress rules (See chart/templates/networkpolicies.yaml for an example)
 # see chart/templates/networkpolicies.yaml for an example
-# crawler_network_policy_egress: {}
+# crawler_network_policy_egress: []
 
 # time to wait for graceful stop
 grace_period: 1000
@@ -421,6 +424,14 @@ storages:
 
     endpoint_url: "http://local-minio:9000/"
     access_endpoint_url: *minio_access_path
+
+    #access_addressing_style: 'path' or 'virtual'
+    # determine if bucket should be accessed as:
+    #  - virtual - https://<bucket>.<host>/<key>
+    #  - path - https://<host>/<bucket>/<key>
+    #
+    # if not specified, defaults to 'path' for local minio or
+    # 'virtual' for all other storages
 
 
 # optional: duration in minutes for WACZ download links to be valid

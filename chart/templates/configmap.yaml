@@ -50,6 +50,7 @@ data:
   FAST_RETRY_SECS: "{{ .Values.operator_fast_resync_secs | default 3 }}"
 
   MAX_CRAWL_SCALE: "{{ .Values.max_crawl_scale | default 3 }}"
+  MAX_BROWSER_WINDOWS: "{{ .Values.max_browser_windows | default 8 }}"
 
   LOG_FAILED_CRAWL_LINES: "{{ .Values.log_failed_crawl_lines | default 0 }}"
 
@@ -173,7 +174,7 @@ data:
 
     profile_browser_workdir_size: "{{ .Values.profile_browser_workdir_size | default "4Gi" }}"
 
-    qa_scale: "{{ .Values.qa_scale | default 1 }}"
+    qa_num_browser_windows: "{{ .Values.qa_num_browser_windows | default (.Values.qa_scale | default 1) }}"
 
     crawler_node_type: "{{ .Values.crawler_node_type }}"
     redis_node_type: "{{ .Values.redis_node_type }}"

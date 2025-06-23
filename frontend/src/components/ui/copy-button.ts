@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { ClipboardController } from "@/controllers/clipboard";
+import { tw } from "@/utils/tailwind";
 
 /**
  * Copy text to clipboard on click
@@ -69,7 +70,7 @@ export class CopyButton extends TailwindElement {
                 ? this.name
                 : "copy"}
             label=${msg("Copy to clipboard")}
-            class="size-3.5"
+            class=${this.size === "medium" ? tw`size-4` : tw`size-3.5`}
           ></sl-icon>
         </btrix-button>
       </sl-tooltip>

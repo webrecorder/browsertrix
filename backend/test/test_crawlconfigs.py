@@ -6,6 +6,7 @@ from .conftest import API_PREFIX
 
 
 cid = None
+cid_single_page = None
 UPDATED_NAME = "Updated name"
 UPDATED_DESCRIPTION = "Updated description"
 UPDATED_TAGS = ["tag3", "tag4"]
@@ -51,6 +52,95 @@ def test_add_crawl_config(crawler_auth_headers, default_org_id, sample_crawl_dat
     data = r.json()
     global cid
     cid = data["id"]
+
+
+def test_verify_default_browser_windows(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data.get("scale") is None
+    assert data["browserWindows"] == 2
+
+
+def test_add_crawl_config_single_page(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    # Create crawl config
+    sample_crawl_data["config"]["limit"] = 1
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    global cid_single_page
+    cid_single_page = data["id"]
+
+
+def test_verify_default_browser_windows_single_page(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid_single_page}/",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data.get("scale") is None
+    assert data["browserWindows"] == 1
+
+
+def test_custom_browser_windows(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    sample_crawl_data["browserWindows"] = 4
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 200
+    workflow_id = r.json()["id"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{workflow_id}/",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data.get("scale") is None
+    assert data["browserWindows"] == 4
+
+
+def test_custom_scale(crawler_auth_headers, default_org_id, sample_crawl_data):
+    sample_crawl_data["scale"] = 3
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 200
+    workflow_id = r.json()["id"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{workflow_id}/",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data.get("scale") is None
+    assert data["browserWindows"] == 6
 
 
 def test_update_name_only(crawler_auth_headers, default_org_id):
@@ -326,6 +416,44 @@ def test_update_max_crawl_size(crawler_auth_headers, default_org_id, sample_craw
     assert data["maxCrawlSize"] == 4096
 
 
+def test_update_browser_windows(crawler_auth_headers, default_org_id):
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={"browserWindows": 1},
+    )
+    assert r.status_code == 200
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data.get("scale") is None
+    assert data["browserWindows"] == 1
+
+
+def test_update_scale(crawler_auth_headers, default_org_id):
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={"scale": 1},
+    )
+    assert r.status_code == 200
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data.get("scale") is None
+    assert data["browserWindows"] == 2
+
+
 def test_verify_delete_tags(crawler_auth_headers, default_org_id):
     # Verify that deleting tags and name works as well
     r = requests.patch(
@@ -354,9 +482,9 @@ def test_verify_revs_history(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
 
     data = r.json()
-    assert data["total"] == 3
+    assert data["total"] == 5
     items = data["items"]
-    assert len(items) == 3
+    assert len(items) == 5
     sorted_data = sorted(items, key=lambda revision: revision["rev"])
     assert sorted_data[0]["config"]["scopeType"] == "prefix"
 

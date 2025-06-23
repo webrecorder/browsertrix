@@ -19,6 +19,7 @@ spec:
   cid: "{{ cid }}"
   oid: "{{ oid }}"
   scale: {{ scale }}
+  browserWindows: {{ browser_windows }}
 
   profile_filename: "{{ profile_filename }}"
   storage_filename: "{{ storage_filename }}"
@@ -37,4 +38,6 @@ spec:
   proxyId: "{{ proxy_id }}"
 
   pausedAt: "{{ pausedAt }}"
+
+  isSinglePage: "{{ is_single_page }}"
 

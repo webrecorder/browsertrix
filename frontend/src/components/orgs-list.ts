@@ -33,6 +33,7 @@ enum OrgFilter {
   Inactive = "inactive",
   Trialing = "trialing",
   ScheduledCancel = "scheduled-cancel",
+  BadStates = "bad-states",
 }
 
 const none = html`
@@ -90,8 +91,16 @@ export class OrgsList extends BtrixElement {
       "id",
       "name",
       "slug",
-      "users.name",
-      "users.email",
+      {
+        name: "users.name",
+        getFn: (org) =>
+          org.users ? Object.values(org.users).map((user) => user.name) : [],
+      },
+      {
+        name: "users.email",
+        getFn: (org) =>
+          org.users ? Object.values(org.users).map((user) => user.email) : [],
+      },
       "subscription.subId",
       "subscription.planId",
     ],
@@ -180,6 +189,11 @@ export class OrgsList extends BtrixElement {
               icon: "calendar2-x",
               filter: OrgFilter.ScheduledCancel,
             },
+            {
+              label: msg("Unexpected States"),
+              icon: "exclamation-triangle",
+              filter: OrgFilter.BadStates,
+            },
           ].map((options) => this.renderFilterButton(searchResults, options))}
         </sl-radio-group>
       </btrix-overflow-scroll>
@@ -257,22 +271,54 @@ export class OrgsList extends BtrixElement {
           !!org.subscription &&
           !(
             org.subscription.status === SubscriptionStatus.Active ||
-            org.subscription.status === SubscriptionStatus.Trialing
+            org.subscription.status === SubscriptionStatus.Trialing ||
+            org.subscription.status === SubscriptionStatus.TrialingCanceled
           )
         );
       case OrgFilter.Trialing:
         return (
           !!org.subscription &&
-          org.subscription.status === SubscriptionStatus.Trialing
+          (org.subscription.status === SubscriptionStatus.Trialing ||
+            org.subscription.status === SubscriptionStatus.TrialingCanceled)
         );
       case OrgFilter.ScheduledCancel:
         return (
           !!org.subscription &&
-          org.subscription.status === SubscriptionStatus.Active &&
-          !!org.subscription.futureCancelDate
+          ((org.subscription.status === SubscriptionStatus.Active &&
+            !!org.subscription.futureCancelDate) ||
+            org.subscription.status === SubscriptionStatus.TrialingCanceled)
         );
       case OrgFilter.All:
         return true;
+      case OrgFilter.BadStates:
+        // Check if org should be disabled but isn't
+        if (
+          !org.readOnly &&
+          org.subscription &&
+          [
+            SubscriptionStatus.Cancelled,
+            SubscriptionStatus.PausedPaymentFailed,
+          ].includes(org.subscription.status)
+        ) {
+          return true;
+        }
+
+        // Check if org is scheduled to cancel in the past
+        if (
+          org.subscription?.futureCancelDate &&
+          new Date(org.subscription.futureCancelDate).getTime() -
+            new Date().getTime() <
+            0
+        ) {
+          return true;
+        }
+
+        // Check if org has empty subscription id
+        if (org.subscription && !org.subscription.subId) {
+          return true;
+        }
+
+        return false;
     }
   }
 
@@ -740,9 +786,10 @@ export class OrgsList extends BtrixElement {
     if (org.storageQuotaReached || org.execMinutesQuotaReached) {
       status = {
         icon: html`<sl-icon
+          tabindex="0"
           class="text-base text-danger"
-          name="exclamation-triangle-fill"
-          label=${msg("Issue")}
+          name="x-octagon-fill"
+          label=${msg("Active with issue")}
         >
         </sl-icon>`,
         description: org.storageQuotaReached
@@ -754,9 +801,10 @@ export class OrgsList extends BtrixElement {
     if (org.readOnly) {
       status = {
         icon: html`<sl-icon
+          tabindex="0"
           class="text-base text-neutral-400"
           name="ban"
-          label=${msg("disabled")}
+          label=${msg("Disabled")}
         >
         </sl-icon>`,
         description: org.readOnlyReason
@@ -768,6 +816,7 @@ export class OrgsList extends BtrixElement {
     let subscription: {
       icon: TemplateResult<1>;
       description: string | TemplateResult<1>;
+      unexpectedState?: true;
     } = {
       icon: none,
       description: msg("No Subscription"),
@@ -784,16 +833,21 @@ export class OrgsList extends BtrixElement {
           ) {
             subscription = {
               icon: html`<sl-icon
+                tabindex="0"
                 class="text-base text-warning"
                 name="calendar2-x"
                 label=${msg("Subscription Cancellation Scheduled")}
               ></sl-icon>`,
-              description: html`${msg("Subscription Cancellation Scheduled")}
+              description: html`<h3 class="font-bold">
+                  ${msg("Subscription Cancellation Scheduled")}
+                </h3>
+                <hr class="my-2" />
                 <div class="mt-2 text-xs">
-                  ${msg("Subscription will be cancelled in")}
+                  ${msg("Cancels in")}
                   ${this.localize.humanizeDuration(
                     new Date(org.subscription.futureCancelDate).getTime() -
                       new Date().getTime(),
+                    { compact: true, verbose: true },
                   )}
                   (${this.localize.date(org.subscription.futureCancelDate, {
                     timeStyle: "medium",
@@ -808,7 +862,8 @@ export class OrgsList extends BtrixElement {
               0
           ) {
             subscription = {
-              icon: html`<sl-icon
+              icon: html` <div tabindex="0" class="flex flex-row gap-1">
+                <sl-icon
                   class="text-base text-warning"
                   name="calendar2-x"
                   label=${msg("Subscription Cancellation Scheduled")}
@@ -816,21 +871,24 @@ export class OrgsList extends BtrixElement {
                 <sl-icon
                   class="text-base text-danger"
                   name="x-octagon-fill"
-                  label=${msg("Subscription Cancellation Scheduled")}
-                ></sl-icon>`,
-              description: html`${msg(
-                  "Subscription Cancellation Scheduled in the Past",
-                )}
-                <div class="mt-2 text-xs">
-                  ${msg("Subscription was scheduled for cancellation at")}
+                  label=${msg("Issue")}
+                ></sl-icon>
+              </div>`,
+              description: html`<h3 class="font-bold">
+                  ${msg("Subscription Cancellation Scheduled in the Past")}
+                </h3>
+                <div class="mt-2">
+                  ${msg("Subscription was scheduled for cancellation at")}${" "}
                   ${this.localize.date(org.subscription.futureCancelDate, {
                     timeStyle: "medium",
                     dateStyle: "medium",
                   })}
+                  ${" "}${msg("but is still active.")}
                 </div>
-                <div class="my-2 font-bold text-danger-300">
+                <div class="mt-2 font-bold text-danger">
                   ${msg("This indicates something has gone wrong.")}
                 </div>`,
+              unexpectedState: true,
             };
           } else {
             subscription = {
@@ -854,20 +912,88 @@ export class OrgsList extends BtrixElement {
           };
           break;
         case SubscriptionStatus.TrialingCanceled:
-          subscription = {
-            icon: html`<sl-icon
-              class="text-base text-neutral-400"
-              name="x-square-fill"
-              label=${msg("Trial Cancelled")}
-            ></sl-icon>`,
-            description: msg("Trial Canceled"),
-          };
+          if (
+            org.subscription.futureCancelDate &&
+            new Date(org.subscription.futureCancelDate).getTime() -
+              new Date().getTime() >=
+              0
+          ) {
+            subscription = {
+              icon: html`<sl-icon
+                tabindex="1"
+                class="text-base text-neutral-400"
+                name="x-square-fill"
+                label=${msg("Trial Cancelled")}
+              ></sl-icon>`,
+              description: html`<h3 class="font-bold">
+                  ${msg("Trial Cancellation Scheduled")}
+                </h3>
+                <hr class="my-2" />
+                <div class="mt-2 text-xs">
+                  ${msg("Cancels in")}
+                  ${this.localize.humanizeDuration(
+                    new Date(org.subscription.futureCancelDate).getTime() -
+                      new Date().getTime(),
+                    { compact: true, verbose: true },
+                  )}
+                  (${this.localize.date(org.subscription.futureCancelDate, {
+                    timeStyle: "medium",
+                    dateStyle: "medium",
+                  })})
+                </div>`,
+            };
+          } else if (
+            org.subscription.futureCancelDate &&
+            new Date(org.subscription.futureCancelDate).getTime() -
+              new Date().getTime() <
+              0
+          ) {
+            subscription = {
+              icon: html`<div tabindex="0" class="flex flex-row gap-1">
+                <sl-icon
+                  class="text-base text-neutral-400"
+                  name="x-square-fill"
+                  label=${msg("Trial Cancelled")}
+                ></sl-icon>
+                <sl-icon
+                  class="text-base text-danger"
+                  name="x-octagon-fill"
+                  label=${msg("Issue")}
+                ></sl-icon>
+              </div>`,
+              description: html`<h3 class="font-bold">
+                  ${msg("Trial Cancellation Scheduled in the Past")}
+                </h3>
+                <div class="mt-2 text-xs">
+                  ${msg("Trial was scheduled for cancellation at")}
+                  ${this.localize.date(org.subscription.futureCancelDate, {
+                    timeStyle: "medium",
+                    dateStyle: "medium",
+                  })}
+                  ${msg("but is still active.")}
+                </div>
+                <div class="mt-2 font-bold text-danger">
+                  ${msg("This indicates something has gone wrong.")}
+                </div>`,
+              unexpectedState: true,
+            };
+          } else {
+            subscription = {
+              icon: html`<sl-icon
+                class="text-base text-neutral-400"
+                name="x-square-fill"
+                label=${msg("Trial Cancelled")}
+              ></sl-icon>`,
+              description: msg("Trial Cancelled"),
+            };
+          }
+
           break;
         case SubscriptionStatus.PausedPaymentFailed:
           subscription = {
             icon: html`<sl-icon
               class="text-base text-danger"
-              name="exclamation-triangle-fill"
+              name="x-octagon-fill"
               label=${msg("Payment Failed")}
             ></sl-icon>`,
             description: msg("Payment Failed"),
@@ -899,6 +1025,7 @@ export class OrgsList extends BtrixElement {
           break;
       }
     }
+    const useTooltip = typeof subscription.description === "string";
 
     return html`
       <btrix-table-row
@@ -910,10 +1037,14 @@ export class OrgsList extends BtrixElement {
           <sl-tooltip content=${status.description} hoist>
             ${status.icon}
           </sl-tooltip>
-          <sl-tooltip hoist>
-            <span slot="content">${subscription.description}</span>
-            ${subscription.icon}
-          </sl-tooltip>
+          ${useTooltip
+            ? html`<sl-tooltip hoist content=${subscription.description}>
+                ${subscription.icon}
+              </sl-tooltip>`
+            : html`<btrix-popover placement="top" hoist>
+                <span slot="content">${subscription.description}</span>
+                ${subscription.icon}
+              </btrix-popover>`}
         </btrix-table-cell>
         <btrix-table-cell class="p-2" rowClickTarget="a">
           <a
