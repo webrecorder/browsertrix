@@ -257,7 +257,7 @@ export class Dashboard extends BtrixElement {
                     class: this.colors.crawls,
                   },
                   button: {
-                    url: `/orgs/${this.navigate.orgBasePath}/items/crawl`,
+                    url: "/items/crawl",
                   },
                 })}
                 ${this.renderStat({
@@ -269,7 +269,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Uploads"),
                   iconProps: { name: "upload", class: this.colors.uploads },
                   button: {
-                    url: `/orgs/${this.navigate.orgBasePath}/items/upload`,
+                    url: "/items/upload",
                   },
                 })}
                 ${this.renderStat({
@@ -284,7 +284,7 @@ export class Dashboard extends BtrixElement {
                     class: this.colors.browserProfiles,
                   },
                   button: {
-                    url: `/orgs/${this.navigate.orgBasePath}/browser-profiles`,
+                    url: "/browser-profiles",
                   },
                 })}
                 <sl-divider
@@ -299,7 +299,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Archived Items"),
                   iconProps: { name: "file-zip-fill" },
                   button: {
-                    url: `/orgs/${this.navigate.orgBasePath}/items`,
+                    url: "/items",
                   },
                 })}
               </dl>
@@ -325,7 +325,7 @@ export class Dashboard extends BtrixElement {
                       : tw`text-neutral-600`,
                   },
                   button: {
-                    url: `/orgs/${this.navigate.orgBasePath}/workflows?isCrawlRunning=true`,
+                    url: "/workflows?isCrawlRunning=true",
                   },
                 })}
                 ${this.renderStat({
@@ -377,7 +377,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Collections Total"),
                   iconProps: { name: "collection-fill" },
                   button: {
-                    url: `/orgs/${this.navigate.orgBasePath}/collections`,
+                    url: "/collections",
                   },
                 })}
                 ${this.renderStat({
@@ -968,7 +968,7 @@ export class Dashboard extends BtrixElement {
         ${when(
           stat.button,
           (button) =>
-            html`<btrix-button size="x-small" href=${button.url} @click=${this.navigate.link}
+            html`<btrix-button size="x-small" href=${`${this.navigate.orgBasePath}${button.url}`} @click=${this.navigate.link}
               >${
                 button.label ??
                 html`<sl-tooltip content=${msg("View All")} placement="right"
