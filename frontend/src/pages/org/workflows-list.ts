@@ -207,10 +207,20 @@ export class WorkflowsList extends BtrixElement {
 
   constructor() {
     super();
+    this.updateFiltersFromSearchParams();
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    // Apply filterByCurrentUser from session storage, and transparently update url without pushing to history stack
+    // This needs to happen here instead of in the constructor because this only occurs once after the element is connected to the DOM,
+    // and so it overrides the filter state set in `updateFiltersFromSearchParams` but only on first render, not on subsequent navigation.
     this.filterByCurrentUser =
       window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
       "true";
-    this.updateFiltersFromSearchParams();
+    if (this.filterByCurrentUser) {
+      this.searchParams.set("mine", "true", { replace: true });
+    }
   }
 
   protected async willUpdate(
