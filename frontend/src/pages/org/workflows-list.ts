@@ -167,6 +167,7 @@ export class WorkflowsList extends BtrixElement {
     }
     // add filters present in search params
     for (const [key, value] of params) {
+      // Filter by current user
       if (key === "mine") {
         this.filterByCurrentUser = value === "true";
       }
@@ -189,10 +190,11 @@ export class WorkflowsList extends BtrixElement {
           this.orderBy = { ...this.orderBy, direction: value as SortDirection };
         }
       }
-      // ignored params
-      if (["page", "mine", "sortBy", "sortDir"].includes(key)) return;
 
-      // convert string bools to filter values
+      // Ignored params
+      if (["page", "mine", "sortBy", "sortDir"].includes(key)) continue;
+
+      // Convert string bools to filter values
       if (value === "true") {
         filterBy[key as keyof typeof filterBy] = true;
       } else if (value === "false") {
@@ -259,11 +261,12 @@ export class WorkflowsList extends BtrixElement {
       changedProperties.has("orderBy")
     ) {
       this.searchParams.update((params) => {
-        // Page is handled by <btrix-pagination> component
+        // Reset page
         params.delete("page");
-        for (const [filter, value] of [
+
+        const newParams = [
           // Known filters
-          ...USED_FILTERS.map((f) => [f, undefined]),
+          ...USED_FILTERS.map<[string, undefined]>((f) => [f, undefined]),
 
           // Existing filters
           ...Object.entries(this.filterBy),
@@ -285,7 +288,9 @@ export class WorkflowsList extends BtrixElement {
               ? this.orderBy.direction
               : undefined,
           ],
-        ] as [string, boolean | undefined][]) {
+        ] satisfies [string, boolean | string | undefined][];
+
+        for (const [filter, value] of newParams) {
           if (value !== undefined) {
             params.set(filter, value.toString());
           } else {
