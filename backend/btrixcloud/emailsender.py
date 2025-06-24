@@ -53,7 +53,7 @@ class EmailSender:
     def _send_encrypted(self, receiver: str, name: str, **kwargs) -> None:
         """Send Encrypted SMTP Message using given template name"""
 
-        full = self.templates.env.get_template(name).render(kwargs)
+        full = self.templates.env.get_template(name + ".jinja").render(kwargs)
         parts = full.split("~~~")
         if len(parts) == 3:
             subject, html, text = parts
