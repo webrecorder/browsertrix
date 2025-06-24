@@ -38,14 +38,7 @@ import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
 type SearchFields = "name" | "firstSeed";
-const SORT_FIELDS = [
-  "lastRun",
-  "name",
-  "firstSeed",
-  "created",
-  "modified",
-] as const;
-type SortField = (typeof SORT_FIELDS)[number];
+type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
 const SORT_DIRECTIONS = ["asc", "desc"] as const;
 type SortDirection = (typeof SORT_DIRECTIONS)[number];
 type Sort = {
