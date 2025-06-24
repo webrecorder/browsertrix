@@ -165,6 +165,12 @@ export class WorkflowsList extends BtrixElement {
         filterBy[key as keyof typeof filterBy] = undefined;
       }
     }
+
+    // remove current user filter if not present in search params
+    if (!params.has("mine")) {
+      this.filterByCurrentUser = false;
+    }
+
     // add filters present in search params
     for (const [key, value] of params) {
       // Filter by current user
