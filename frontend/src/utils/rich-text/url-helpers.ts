@@ -12,6 +12,11 @@ export function isValidDomain(str: string): boolean {
   });
 }
 
+/**
+ * Shortens a URL for use in rich text, etc. Remove protocol, trims "www." from the beginning of hosts, and trims pathname to a max length (configurable)
+ * @param url URL to shorten
+ * @param maxLength Max pathname length. Set to null to disable.
+ */
 export function toShortUrl(url: string, maxLength: number | null = 15): string {
   try {
     const urlp = new URL(url);
@@ -22,6 +27,9 @@ export function toShortUrl(url: string, maxLength: number | null = 15): string {
       (urlp.pathname === "/" ? "" : urlp.pathname) + urlp.search + urlp.hash;
     if (maxLength && path.length > maxLength) {
       return urlp.host + path.slice(0, maxLength - 2) + "...";
+    }
+    if (urlp.host.startsWith("www.")) {
+      return urlp.host.slice(4) + path;
     }
     return urlp.host + path;
   } catch (e) {
