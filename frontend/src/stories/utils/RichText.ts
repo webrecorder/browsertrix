@@ -18,8 +18,7 @@ export const renderComponent = ({
   return html`${richText(content, {
     linkClass,
     shortenOnly,
-    // Hack: Storybook seems to convert null to undefined, so instead I'm using the string "null" and converting it back to null here
-    // -ESG
+    // Hack: convert "null" back to null (see note in RichText.stories.ts)
     maxLength: (maxLength as unknown as string) === "null" ? null : maxLength,
   })}`;
 };

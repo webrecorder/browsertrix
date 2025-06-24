@@ -8,7 +8,12 @@ const meta = {
   title: "Utils/Rich Text",
   render: renderComponent,
   argTypes: {
+    options: {
+      name: "options",
+      description: "Optional options object, see below for details",
+    },
     linkClass: {
+      name: "options.linkClass",
       control: "text",
       description: "CSS class to apply to links",
       table: {
@@ -20,9 +25,12 @@ const meta = {
       },
     },
     maxLength: {
+      name: "options.maxLength",
       control: {
         type: "select",
       },
+      // Hack: Storybook seems to convert null to undefined, so instead I'm using the string "null" and converting it back to null wherever it's used. See other places where this comment appears.
+      // -ESG
       options: ["null", 5, 10, 15, 20],
       description: "Maximum length of path portion of URLs",
       table: {
@@ -33,6 +41,7 @@ const meta = {
       },
     },
     shortenOnly: {
+      name: "options.shortenOnly",
       control: {
         type: "boolean",
       },
@@ -68,7 +77,7 @@ richText(content${
             linkClass || maxLength || shortenOnly
               ? `, { ${[
                   linkClass && `linkClass: ${JSON.stringify(linkClass)}`,
-                  // Hack: Storybook seems to convert null to undefined, so instead I'm using the string "null" and displaying it as null here
+                  // Hack: convert "null" back to null (see above)
                   // -ESG
                   (typeof maxLength === "number" ||
                     (maxLength as unknown as string) === "null") &&
@@ -88,7 +97,15 @@ richText(content${
       },
     },
   },
-} satisfies Meta<RenderProps>;
+} satisfies Meta<
+  RenderProps & {
+    options?: {
+      linkClass?: string;
+      maxLength?: number | null;
+      shortenOnly?: boolean;
+    };
+  }
+>;
 
 export default meta;
 type Story = StoryObj<RenderProps>;
@@ -105,7 +122,8 @@ export const ShortenOnly: Story = {
 
 export const MaxLength: Story = {
   args: {
-    maxLength: null,
+    // Hack: use "null" instead of null (see above)
+    maxLength: "null" as unknown as null,
   },
 };
 
