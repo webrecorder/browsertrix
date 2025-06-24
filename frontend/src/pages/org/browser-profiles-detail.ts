@@ -17,7 +17,7 @@ import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
-import { richText } from "@/utils/rich-text/rich-text";
+import { richText } from "@/utils/rich-text";
 
 const DESCRIPTION_MAXLENGTH = 500;
 

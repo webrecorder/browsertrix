@@ -38,7 +38,7 @@ import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
-import { richText } from "@/utils/rich-text/rich-text";
+import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
 
 const ABORT_REASON_THROTTLE = "throttled";

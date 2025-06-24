@@ -30,7 +30,7 @@ import {
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
-import { richText } from "@/utils/rich-text/rich-text";
+import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
 
 import "./ui/qa";

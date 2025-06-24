@@ -1,6 +1,6 @@
 import { html } from "lit";
 
-import { richText } from "@/utils/rich-text/rich-text";
+import { richText } from "@/utils/rich-text";
 
 export type RenderProps = { content: string; linkClass?: string };
 

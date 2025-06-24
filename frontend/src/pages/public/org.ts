@@ -11,8 +11,8 @@ import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import type { OrgData, PublicOrgCollections } from "@/types/org";
 import { SortDirection } from "@/types/utils";
-import { richText } from "@/utils/rich-text/rich-text";
-import { toShortUrl } from "@/utils/rich-text/url-helpers";
+import { richText } from "@/utils/rich-text";
+import { toShortUrl } from "@/utils/url-helpers";
 
 @localized()
 @customElement("btrix-public-org")

@@ -27,7 +27,7 @@ const meta = {
       source: {
         language: "typescript",
         transform: (code: string, storyContext: StoryContext<RenderProps>) =>
-          `import { richText } from "@/utils/rich-text/rich-text";
+          `import { richText } from "@/utils/rich-text";
 
 const content = ${JSON.stringify(storyContext.args.content)};
 

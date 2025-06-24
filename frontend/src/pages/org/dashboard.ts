@@ -24,10 +24,10 @@ import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import { SortDirection } from "@/types/utils";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { richText } from "@/utils/rich-text/rich-text";
-import { toShortUrl } from "@/utils/rich-text/url-helpers";
+import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
 import { timeoutCache } from "@/utils/timeoutCache";
+import { toShortUrl } from "@/utils/url-helpers";
 import { cached } from "@/utils/weakCache";
 
 type Metrics = {
