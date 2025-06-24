@@ -55,6 +55,7 @@ export default {
     }),
     esbuildPlugin({
       ts: true,
+      json: true,
       tsconfig: fileURLToPath(new URL("./tsconfig.json", import.meta.url)),
       target: "esnext",
       define: defineConfig,
