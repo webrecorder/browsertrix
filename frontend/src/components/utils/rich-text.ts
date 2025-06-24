@@ -2,8 +2,11 @@ import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { detectLinks } from "@/utils/rich-text/detect-links";
-import { definitelyUrl, toShortUrl } from "@/utils/rich-text/url-helpers";
+import {
+  definitelyUrl,
+  detectLinks,
+  toShortUrl,
+} from "@/utils/rich-text/url-helpers";
 
 /**
  * This is a rich text renderer that converts links in plain text into real links, in a similar way to the way social media posts often do.
