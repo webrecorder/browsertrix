@@ -30,6 +30,7 @@ import {
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
+import { richText } from "@/utils/rich-text/rich-text";
 import { tw } from "@/utils/tailwind";
 
 import "./ui/qa";
@@ -895,9 +896,9 @@ export class ArchivedItemDetail extends BtrixElement {
                 this.item!.description?.length,
                 () =>
                   html`<pre class="whitespace-pre-line font-sans">
-                      <btrix-rich-text .content=${this.item
-                    ?.description}></btrix-rich-text>
-                </pre>`,
+                      ${richText(this.item?.description ?? "")}
+                </pre
+                  >`,
                 () => noneText,
               ),
             () => html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`,

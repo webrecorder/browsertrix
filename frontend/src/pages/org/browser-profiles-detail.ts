@@ -17,6 +17,7 @@ import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
+import { richText } from "@/utils/rich-text/rich-text";
 
 const DESCRIPTION_MAXLENGTH = 500;
 
@@ -252,9 +253,7 @@ export class BrowserProfilesDetail extends BtrixElement {
           class="leading whitespace-pre-line rounded border p-5 leading-relaxed first-line:leading-[0]"
           >${this.profile
             ? this.profile.description
-              ? html`<btrix-rich-text
-                  .content=${this.profile.description}
-                ></btrix-rich-text>`
+              ? richText(this.profile.description)
               : html`
                   <div class="text-center text-neutral-400">
                     &nbsp;${msg("No description added.")}

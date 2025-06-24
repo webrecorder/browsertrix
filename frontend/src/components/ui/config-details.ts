@@ -24,6 +24,7 @@ import { isApiError } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { pluralOf } from "@/utils/pluralize";
+import { richText } from "@/utils/rich-text/rich-text";
 import { getServerDefaults } from "@/utils/workflow";
 
 /**
@@ -312,9 +313,7 @@ export class ConfigDetails extends BtrixElement {
               crawlConfig?.description
                 ? html`
                     <p class="max-w-prose font-sans">
-                      <btrix-rich-text
-                        .content=${crawlConfig.description}
-                      ></btrix-rich-text>
+                      ${richText(crawlConfig.description)}
                     </p>
                   `
                 : undefined,

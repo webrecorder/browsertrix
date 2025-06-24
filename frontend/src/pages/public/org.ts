@@ -11,6 +11,7 @@ import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import type { OrgData, PublicOrgCollections } from "@/types/org";
 import { SortDirection } from "@/types/utils";
+import { richText } from "@/utils/rich-text/rich-text";
 import { toShortUrl } from "@/utils/rich-text/url-helpers";
 
 @localized()
@@ -154,7 +155,7 @@ export class PublicOrg extends BtrixElement {
               org.description,
               (description) => html`
                 <div class="text-pretty text-stone-600">
-                  <btrix-rich-text .content=${description}></btrix-rich-text>
+                  ${richText(description)}
                 </div>
               `,
             )}
