@@ -312,7 +312,9 @@ export class ConfigDetails extends BtrixElement {
               crawlConfig?.description
                 ? html`
                     <p class="max-w-prose font-sans">
-                      ${crawlConfig.description}
+                      <btrix-rich-text
+                        .content=${crawlConfig.description}
+                      ></btrix-rich-text>
                     </p>
                   `
                 : undefined,

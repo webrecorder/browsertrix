@@ -251,12 +251,15 @@ export class BrowserProfilesDetail extends BtrixElement {
         <div
           class="leading whitespace-pre-line rounded border p-5 leading-relaxed first-line:leading-[0]"
           >${this.profile
-            ? this.profile.description ||
-              html`
-                <div class="text-center text-neutral-400">
-                  &nbsp;${msg("No description added.")}
-                </div>
-              `
+            ? this.profile.description
+              ? html`<btrix-rich-text
+                  .content=${this.profile.description}
+                ></btrix-rich-text>`
+              : html`
+                  <div class="text-center text-neutral-400">
+                    &nbsp;${msg("No description added.")}
+                  </div>
+                `
             : nothing}</div
         >
       </section>

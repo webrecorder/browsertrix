@@ -203,7 +203,9 @@ export class CollectionDetail extends BtrixElement {
           ${this.collection
             ? this.collection.caption
               ? html`<div class="text-pretty text-neutral-600">
-                  ${this.collection.caption}
+                  <btrix-rich-text
+                    .content=${this.collection.caption}
+                  ></btrix-rich-text>
                 </div>`
               : html`<div
                   class="addSummary text-pretty rounded-md px-1 font-light text-neutral-500"

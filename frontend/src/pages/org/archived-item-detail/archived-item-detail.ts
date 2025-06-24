@@ -895,9 +895,9 @@ export class ArchivedItemDetail extends BtrixElement {
                 this.item!.description?.length,
                 () =>
                   html`<pre class="whitespace-pre-line font-sans">
-${this.item?.description}
-                </pre
-                  >`,
+                      <btrix-rich-text .content=${this.item
+                    ?.description}></btrix-rich-text>
+                </pre>`,
                 () => noneText,
               ),
             () => html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`,

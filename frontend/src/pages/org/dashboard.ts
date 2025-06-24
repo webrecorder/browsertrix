@@ -24,6 +24,7 @@ import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import { SortDirection } from "@/types/utils";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import { toShortUrl } from "@/utils/rich-text/url-helpers";
 import { tw } from "@/utils/tailwind";
 import { timeoutCache } from "@/utils/timeoutCache";
 import { cached } from "@/utils/weakCache";
@@ -137,7 +138,11 @@ export class Dashboard extends BtrixElement {
           ${when(
             this.org?.publicDescription,
             (publicDescription) => html`
-              <div class="text-pretty text-stone-600">${publicDescription}</div>
+              <div class="text-pretty text-stone-600">
+                <btrix-rich-text
+                  .content=${publicDescription}
+                ></btrix-rich-text>
+              </div>
             `,
           )}
           ${when(this.org?.publicUrl, (urlStr) => {
@@ -158,12 +163,12 @@ export class Dashboard extends BtrixElement {
                   label=${msg("Website")}
                 ></sl-icon>
                 <a
-                  class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
+                  class="truncate font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
                   href="${url.href}"
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                 >
-                  ${url.href.split("//")[1].replace(/\/$/, "")}
+                  ${toShortUrl(url.href, null)}
                 </a>
               </div>
             `;
