@@ -107,6 +107,7 @@ import { makeCurrentTargetHandler, stopProp } from "@/utils/events";
 import { formValidator, maxLengthValidator } from "@/utils/form";
 import localize from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { pluralOf } from "@/utils/pluralize";
 import { AppStateService } from "@/utils/state";
 import { regexEscape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
@@ -114,15 +115,18 @@ import {
   appDefaults,
   BYTES_PER_GB,
   DEFAULT_AUTOCLICK_SELECTOR,
+  DEFAULT_SEED_LIST_FILE_NAME,
   DEFAULT_SELECT_LINKS,
   defaultLabel,
   getDefaultFormState,
   getInitialFormState,
   getServerDefaults,
   makeUserGuideEvent,
-  MAX_SEED_FILE_BYTES,
+  MAX_SEED_LIST_FILE_BYTES,
+  MAX_SEED_LIST_STRING_BYTES,
   rangeBrowserWindows,
   SECTIONS,
+  SEED_LIST_FILE_EXT,
   SeedListFormat,
   workflowTabToGuideHash,
   type FormState,
@@ -986,8 +990,8 @@ export class WorkflowEditor extends BtrixElement {
     `;
   }
 
-  private readonly renderSeedListTextbox = () =>
-    html`<sl-textarea
+  private readonly renderSeedListTextbox = () => {
+    return html`<sl-textarea
       id="seedUrlList"
       name="urlList"
       placeholder=${`https://webrecorder.net/resources
@@ -999,10 +1003,34 @@ https://replayweb.page/docs`}
       value=${this.formState.urlList}
       required
       help-text=${msg("Enter one URL per line.")}
+      @paste=${(e: ClipboardEvent) => {
+        const text = e.clipboardData
+          ?.getData("text")
+          // Remove zero-width characters
+          .replace(/[\u200B-\u200D\uFEFF]/g, "")
+          .trim();
+
+        if (text) {
+          const textBlob = new Blob([text]);
+          if (textBlob.size > MAX_SEED_LIST_STRING_BYTES) {
+            const file = new File([textBlob], DEFAULT_SEED_LIST_FILE_NAME, {
+              type: "text/plain",
+            });
+
+            this.updateFormState(
+              {
+                seedListFormat: SeedListFormat.File,
+                seedFile: file,
+              },
+              true,
+            );
+          }
+        }
+      }}
       @keyup=${async (e: KeyboardEvent) => {
         if (e.key === "Enter") {
           await (e.target as SlInput).updateComplete;
-          this.doValidateTextArea(e.target);
+          this.doValidateUrlList(e);
         }
       }}
       @sl-input=${(e: CustomEvent) => {
@@ -1010,22 +1038,20 @@ https://replayweb.page/docs`}
         const value = inputEl.value;
 
         if (value) {
-          const { isValid } = this.validateUrlList(inputEl.value);
+          if (!this.stickyFooter) {
+            const { isValid } = this.validateUrlList(inputEl.value);
 
-          if (isValid) {
-            this.animateStickyFooter();
+            if (isValid) {
+              this.animateStickyFooter();
+            }
           }
         } else {
           inputEl.helpText = msg("At least 1 URL is required.");
         }
       }}
-      @sl-change=${async (e: CustomEvent) => {
-        this.doValidateTextArea(e.target);
-      }}
-      @sl-blur=${async (e: CustomEvent) => {
-        this.doValidateTextArea(e.target);
-      }}
+      @sl-change=${this.doValidateUrlList}
     ></sl-textarea>`;
+  };
 
   private readonly renderSeedListFileUpload = () => {
     const browseFilesButton = html`<button
@@ -1033,9 +1059,14 @@ https://replayweb.page/docs`}
     >
       ${msg("browse files")}
     </button>`;
-    const maxByteSize = this.localize.bytes(MAX_SEED_FILE_BYTES);
+    const maxByteSize = this.localize.bytes(MAX_SEED_LIST_FILE_BYTES);
 
-    return html`<btrix-file-input id="seedUrlList" drop accept=".txt">
+    return html`<btrix-file-input
+      id="seedUrlList"
+      drop
+      accept=".${SEED_LIST_FILE_EXT}"
+      .files=${this.formState.seedFile ? [this.formState.seedFile] : null}
+    >
       <sl-icon
         name="file-earmark-arrow-up"
         class="text-xl text-neutral-400"
@@ -1295,7 +1326,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 @keyup=${async (e: KeyboardEvent) => {
                   if (e.key === "Enter") {
                     await (e.target as SlInput).updateComplete;
-                    this.doValidateTextArea(e.target);
+                    this.doValidateUrlList(e);
                   }
                 }}
                 @sl-input=${(e: CustomEvent) => {
@@ -1304,12 +1335,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
                     inputEl.helpText = msg("At least 1 URL is required.");
                   }
                 }}
-                @sl-change=${async (e: CustomEvent) => {
-                  this.doValidateTextArea(e.target);
-                }}
-                @sl-blur=${async (e: CustomEvent) => {
-                  this.doValidateTextArea(e.target);
-                }}
+                @sl-change=${this.doValidateUrlList}
+                @sl-blur=${this.doValidateUrlList}
               ></sl-textarea>
             `)}
             ${this.renderHelpTextCol(
@@ -1324,20 +1351,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   };
 
-  private doValidateTextArea(target: EventTarget | null) {
-    const inputEl = target as SlInput;
+  private readonly doValidateUrlList = (e: Event) => {
+    const inputEl = e.target as SlInput;
     if (!inputEl.value) return;
-    const { isValid, helpText } = this.validateUrlList(
-      inputEl.value,
-      URL_LIST_MAX_URLS,
-    );
+    const { isValid, helpText } = this.validateUrlList(inputEl.value);
     inputEl.helpText = helpText;
     if (isValid) {
       inputEl.setCustomValidity("");
     } else {
       inputEl.setCustomValidity(helpText);
     }
-  }
+  };
 
   private renderLinkSelectors() {
     const selectors = this.formState.selectLinks;
@@ -2622,17 +2646,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
     value: string,
     max = URL_LIST_MAX_URLS,
   ): { isValid: boolean; helpText: string } {
+    const maxUrls = this.localize.number(max);
     const urlList = urlListToArray(value);
     let isValid = true;
-    let helpText =
-      urlList.length === 1
-        ? msg(str`${this.localize.number(urlList.length)} URL entered`)
-        : msg(str`${this.localize.number(urlList.length)} URLs entered`);
+    let helpText = `${this.localize.number(urlList.length)} ${pluralOf("URLs", urlList.length)} ${msg("entered")}`;
     if (urlList.length > max) {
       isValid = false;
-      helpText = msg(
-        str`Please shorten list to ${this.localize.number(max)} or fewer URLs.`,
-      );
+      helpText = `${msg("This list is too large.")} ${msg(
+        str`Please shorten list to ${maxUrls} or fewer URLs or upload the list as a file.`,
+      )}`;
     } else {
       const invalidUrl = urlList.find((url) => !validURL(url));
       if (invalidUrl) {
@@ -2718,6 +2740,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,
+      seedFile: null,
     };
 
     return config;
