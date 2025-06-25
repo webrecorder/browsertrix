@@ -1062,6 +1062,7 @@ https://replayweb.page/docs`}
       .files=${this.formState.seedFile ? [this.formState.seedFile] : null}
       drop
       openFile
+      required
     >
       <sl-icon
         name="file-earmark-arrow-up"

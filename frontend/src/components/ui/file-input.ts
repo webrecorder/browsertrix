@@ -13,6 +13,7 @@ import type {
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { FormControl } from "@/mixins/FormControl";
+import { validationMessageFor } from "@/strings/validation";
 import { tw } from "@/utils/tailwind";
 
 import "@/components/ui/file-list";
@@ -70,6 +71,9 @@ export class FileInput extends FormControl(TailwindElement) {
   @property({ type: Boolean })
   openFile = false;
 
+  @property({ type: Boolean })
+  required = false;
+
   @query("#dropzone")
   private readonly dropzone?: HTMLElement | null;
 
@@ -105,6 +109,12 @@ export class FileInput extends FormControl(TailwindElement) {
     }
   }
 
+  protected updated(changedProperties: PropertyValues): void {
+    if (changedProperties.has("files") || changedProperties.has("required")) {
+      this.validateFiles();
+    }
+  }
+
   private setObjectUrls(files: File[]) {
     files.forEach((file) => {
       if (this.fileToObjectUrl.get(file)) return;
@@ -127,6 +137,20 @@ export class FileInput extends FormControl(TailwindElement) {
     });
 
     this.setFormValue(formData);
+  }
+
+  private validateFiles() {
+    let validity: ValidityStateFlags = {};
+    let message: string | undefined = undefined;
+
+    if (this.required && !this.files?.length) {
+      validity = { valueMissing: true };
+      message = validationMessageFor.valueMissing;
+    } else if (this.files) {
+      // TODO Check min/max size
+    }
+
+    this.setValidity(validity, message);
   }
 
   render() {
