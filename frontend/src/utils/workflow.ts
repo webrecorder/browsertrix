@@ -26,6 +26,7 @@ import localize, { getDefaultLang } from "@/utils/localize";
 export const BYTES_PER_GB = 1e9;
 export const DEFAULT_SELECT_LINKS = ["a[href]->href" as const];
 export const DEFAULT_AUTOCLICK_SELECTOR = "a";
+export const MAX_SEED_FILE_BYTES = 25 * 1e6;
 
 export const SECTIONS = [
   "scope",
@@ -45,6 +46,11 @@ export enum GuideHash {
   BrowserSettings = "browser-settings",
   Scheduling = "scheduling",
   Metadata = "metadata",
+}
+
+export enum SeedUrlList {
+  Text = "text",
+  File = "file",
 }
 
 export const workflowTabToGuideHash: Record<SectionsEnum, GuideHash> = {
@@ -91,6 +97,7 @@ export function defaultLabel(value: unknown): string {
 export type FormState = {
   primarySeedUrl: string;
   urlList: string;
+  seedUrlListType: SeedUrlList;
   includeLinkedPages: boolean;
   useSitemap: boolean;
   failOnFailedSeed: boolean;
@@ -150,6 +157,7 @@ export const appDefaults: WorkflowDefaults = {
 export const getDefaultFormState = (): FormState => ({
   primarySeedUrl: "",
   urlList: "",
+  seedUrlListType: SeedUrlList.File,
   includeLinkedPages: false,
   useSitemap: false,
   failOnFailedSeed: false,
@@ -238,6 +246,9 @@ export function getInitialFormState(params: {
       }
 
       formState.urlList = mapSeedToUrl(params.initialSeeds).join("\n");
+
+      // TODO Check if file
+      // formState.seedUrlListType = SeedUrlList.File
     }
 
     formState.failOnFailedSeed = seedsConfig.failOnFailedSeed;
