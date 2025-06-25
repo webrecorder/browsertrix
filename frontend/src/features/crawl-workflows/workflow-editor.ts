@@ -1058,9 +1058,9 @@ https://replayweb.page/docs`}
 
     return html`<btrix-file-input
       id="seedUrlList"
-      drop
       accept=".${SEED_LIST_FILE_EXT}"
       .files=${this.formState.seedFile ? [this.formState.seedFile] : null}
+      drop
     >
       <sl-icon
         name="file-earmark-arrow-up"

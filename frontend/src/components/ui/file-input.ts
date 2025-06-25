@@ -163,7 +163,15 @@ export class FileInput extends FormControl(TailwindElement) {
     return html`
       <btrix-file-list
         @btrix-remove=${(e: BtrixFileRemoveEvent) => {
-          this.files = without([e.detail.item])(this.files);
+          if (!this.files) return;
+
+          const { item } = e.detail;
+
+          if (item instanceof File) {
+            this.files = without([item])(this.files);
+          } else {
+            this.files = this.files.filter((file) => file.name !== item.name);
+          }
         }}
       >
         ${repeat(
