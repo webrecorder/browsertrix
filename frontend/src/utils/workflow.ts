@@ -48,8 +48,8 @@ export enum GuideHash {
   Metadata = "metadata",
 }
 
-export enum SeedUrlList {
-  Text = "text",
+export enum SeedListFormat {
+  JSON = "json",
   File = "file",
 }
 
@@ -97,7 +97,7 @@ export function defaultLabel(value: unknown): string {
 export type FormState = {
   primarySeedUrl: string;
   urlList: string;
-  seedUrlListType: SeedUrlList;
+  seedListFormat: SeedListFormat;
   includeLinkedPages: boolean;
   useSitemap: boolean;
   failOnFailedSeed: boolean;
@@ -157,7 +157,7 @@ export const appDefaults: WorkflowDefaults = {
 export const getDefaultFormState = (): FormState => ({
   primarySeedUrl: "",
   urlList: "",
-  seedUrlListType: SeedUrlList.File,
+  seedListFormat: SeedListFormat.JSON,
   includeLinkedPages: false,
   useSitemap: false,
   failOnFailedSeed: false,
