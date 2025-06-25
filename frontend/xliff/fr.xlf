@@ -69,7 +69,8 @@
       <trans-unit id="h05165b87bf66fe02" xml:space="preserve">
         <source>Are you sure you want to delete
             <x id="0" equiv-text="&lt;strong&gt;${this.collection?.name}&lt;/strong&gt;"/>?</source>
-        <target state="translated">Êtes-vous certain de vouloir supprimer <x id="0" equiv-text="&lt;strong&gt;${this.collection?.name}&lt;/strong&gt;"/> ?</target>
+        <target state="translated">Êtes-vous certain de vouloir supprimer
+             <x id="0" equiv-text="&lt;strong&gt;${this.collection?.name}&lt;/strong&gt;"/> ?</target>
       </trans-unit>
       <trans-unit id="s2ceb11be2290bb1b" xml:space="preserve">
         <source>Cancel</source>
@@ -1616,7 +1617,8 @@
                       Non-HTML files captured as <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, fileCount)}&#10;                    "/></source>
         <target state="translated">
                       <x id="0" equiv-text="&lt;span class=&quot;text-neutral-600&quot;&gt;${fileCount}&lt;/span&gt;"/>
-                      Non-HTML files captured as <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, fileCount)}&#10;                    "/></target>
+
+                      Fichiers non-HTML capturés comme <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, fileCount)}&#10;                    "/></target>
       </trans-unit>
       <trans-unit id="ha312818a16d5146b" xml:space="preserve">
         <source>
@@ -2038,7 +2040,7 @@
       </trans-unit>
       <trans-unit id="s96668830629e0dfc" xml:space="preserve">
         <source>Upload</source>
-        <target state="translated">Chargé</target>
+        <target state="translated">Charger</target>
       </trans-unit>
       <trans-unit id="sa783d9004df13b20" xml:space="preserve">
         <source>Crawl</source>
@@ -5315,44 +5317,57 @@
         <source>This org URL is invalid. Please use alphanumeric characters and dashes (-) only.</source>
         <target state="translated">L'URL de cet organisme n'est pas valide. Veuillez utiliser uniquement des caractères alphanumériques et des tirets (-).</target>
       </trans-unit>
-      <trans-unit id="h33ab0b911e13ad09">
+      <trans-unit id="h33ab0b911e13ad09" xml:space="preserve">
         <source>Name &amp; Collection Period</source>
+        <target state="translated">Nom &amp; période de la collection</target>
       </trans-unit>
-      <trans-unit id="sd1aa96c20f885a8f">
+      <trans-unit id="sd1aa96c20f885a8f" xml:space="preserve">
         <source>This is a private preview of the public collections gallery</source>
+        <target state="translated">Ceci est un aperçu privé de la galerie des collections publiques</target>
       </trans-unit>
-      <trans-unit id="s949a92849e4dadd0">
+      <trans-unit id="s949a92849e4dadd0" xml:space="preserve">
         <source>Update your org's public collections gallery settings to make this page visible to anyone on the internet.</source>
+        <target state="translated">Mettez à jour les paramètres de la galerie des collections publiques de votre organisation pour que cette page soit visible par tout le monde sur l'internet.</target>
       </trans-unit>
-      <trans-unit id="s378e60a37da39c87">
+      <trans-unit id="s378e60a37da39c87" xml:space="preserve">
         <source>Autoscroll Behavior</source>
+        <target state="translated">Comportement du défilement automatique</target>
       </trans-unit>
-      <trans-unit id="s7411baab8649ad44">
+      <trans-unit id="s7411baab8649ad44" xml:space="preserve">
         <source>Autoclick Behavior</source>
+        <target state="translated">Comportement d'autoclic</target>
       </trans-unit>
-      <trans-unit id="s965c503c3e42fdfe">
+      <trans-unit id="s965c503c3e42fdfe" xml:space="preserve">
         <source>Enabled</source>
+        <target state="translated">Activé</target>
       </trans-unit>
-      <trans-unit id="s534f3a25ad3b4ba5">
+      <trans-unit id="s534f3a25ad3b4ba5" xml:space="preserve">
         <source>Disabled (default)</source>
+        <target state="translated">Désactivé (par défaut)</target>
       </trans-unit>
-      <trans-unit id="s0f451bba9522bdac">
+      <trans-unit id="s0f451bba9522bdac" xml:space="preserve">
         <source>Edit Collection Settings</source>
+        <target state="translated">Modifier les paramètres de la collection</target>
       </trans-unit>
-      <trans-unit id="s104a01d043d1c2ec">
+      <trans-unit id="s104a01d043d1c2ec" xml:space="preserve">
         <source>Enter a Page URL to preview it.</source>
+        <target state="translated">Saisissez l'URL d'une page pour la prévisualiser.</target>
       </trans-unit>
-      <trans-unit id="s096c1b61ea986d13">
+      <trans-unit id="s096c1b61ea986d13" xml:space="preserve">
         <source>This page doesn’t have a preview. Try another URL or timestamp.</source>
+        <target state="translated">Cette page n'a pas d'aperçu. Essayez une autre URL ou un autre horodatage.</target>
       </trans-unit>
-      <trans-unit id="s04ef8441ea7dbb8d">
+      <trans-unit id="s04ef8441ea7dbb8d" xml:space="preserve">
         <source>Updated collection “<x id="0" equiv-text="${this.name || this.collection.name}"/>”</source>
+        <target state="translated">Collection mise à jour « <x id="0" equiv-text="${this.name || this.collection.name}"/> »</target>
       </trans-unit>
-      <trans-unit id="sbfd09e27f1cd27f5">
+      <trans-unit id="sbfd09e27f1cd27f5" xml:space="preserve">
         <source>Please review issues with your changes.</source>
+        <target state="translated">Veuillez revoir les problèmes avec vos changements.</target>
       </trans-unit>
-      <trans-unit id="s6a05ad3f740ad8d8">
+      <trans-unit id="s6a05ad3f740ad8d8" xml:space="preserve">
         <source>Write a short description that summarizes this collection. If the collection is public, this description will be visible next to the collection name.</source>
+        <target state="translated">Rédigez une courte description qui résume cette collection. Si la collection est publique, cette description sera visible à côté du nom de la collection.</target>
       </trans-unit>
       <trans-unit id="s39eb292469e3d38d" xml:space="preserve">
         <source>This page doesn’t have a thumbnail and can’t be used</source>
@@ -5693,8 +5708,9 @@
         <source>Copy Crawl ID</source>
         <target state="translated">Copier l'identifiant de la collecte</target>
       </trans-unit>
-      <trans-unit id="s60736d4d708a24c6">
+      <trans-unit id="s60736d4d708a24c6" xml:space="preserve">
         <source>Copy Run ID</source>
+        <target state="translated">Copier l'identifiant d'exécution</target>
       </trans-unit>
       <trans-unit id="sfa656dc4be663ad8" xml:space="preserve">
         <source>Crawl Order</source>
