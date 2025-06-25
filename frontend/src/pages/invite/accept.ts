@@ -65,6 +65,8 @@ export class AcceptInvite extends BtrixElement {
       this.notify.toast({
         message: msg("Please log in to accept this invite."),
         variant: "warning",
+        icon: "exclamation-triangle",
+        id: "invite-status",
       });
 
       this.navigate.to(
@@ -244,6 +246,7 @@ export class AcceptInvite extends BtrixElement {
           ),
           variant: "success",
           icon: "check2-circle",
+          id: "invite-status",
         });
 
         this.navigate.to(
@@ -268,6 +271,7 @@ export class AcceptInvite extends BtrixElement {
       ),
       variant: "info",
       icon: "info-circle",
+      id: "invite-status",
     });
 
     this.navigate.to(this.navigate.orgBasePath);
