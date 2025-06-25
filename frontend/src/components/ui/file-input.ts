@@ -1,7 +1,7 @@
 import { localized } from "@lit/localize";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { without } from "lodash/fp";
@@ -41,6 +41,12 @@ export class FileInput extends FormControl(TailwindElement) {
   label?: string;
 
   /**
+   * Selected files.
+   */
+  @property({ type: Array })
+  files?: File[] | null = null;
+
+  /**
    * Specify which file types are allowed
    */
   @property({ type: String })
@@ -57,9 +63,6 @@ export class FileInput extends FormControl(TailwindElement) {
    */
   @property({ type: Boolean })
   drop = false;
-
-  @state()
-  private files: File[] = [];
 
   @query("#dropzone")
   private readonly dropzone?: HTMLElement | null;
@@ -90,7 +93,7 @@ export class FileInput extends FormControl(TailwindElement) {
     // construct `FormData` instead
     const formData = new FormData();
 
-    this.files.forEach((file) => {
+    this.files?.forEach((file) => {
       formData.append(formControlName, file);
     });
 
@@ -102,7 +105,7 @@ export class FileInput extends FormControl(TailwindElement) {
       ${this.label
         ? html`<label for="fileInput" class="form-label">${this.label}</label>`
         : nothing}
-      ${this.files.length ? this.renderFiles() : this.renderInput()}
+      ${this.files?.length ? this.renderFiles() : this.renderInput()}
     `;
   }
 
@@ -155,6 +158,8 @@ export class FileInput extends FormControl(TailwindElement) {
   };
 
   private readonly renderFiles = () => {
+    if (!this.files) return;
+
     return html`
       <btrix-file-list
         @btrix-remove=${(e: BtrixFileRemoveEvent) => {
