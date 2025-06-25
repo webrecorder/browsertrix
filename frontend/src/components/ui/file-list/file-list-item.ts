@@ -99,8 +99,6 @@ export class FileListItem extends TailwindElement {
 
     if (!item) return;
 
-    console.log(this.href);
-
     return html`<div class="item">
       <div class="file">
         <div class="details">
