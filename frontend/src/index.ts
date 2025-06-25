@@ -19,6 +19,7 @@ import "./components";
 import "./features";
 import "./pages";
 
+import { docsUrlContext } from "./context/docs-url";
 import { viewStateContext } from "./context/view-state";
 import { OrgTab, RouteNamespace } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
@@ -78,6 +79,7 @@ export class App extends BtrixElement {
   /**
    * Base URL for user guide documentation
    */
+  @provide({ context: docsUrlContext })
   @property({ type: String })
   docsUrl = "/docs/";
 
