@@ -59,6 +59,7 @@ export type WorkflowParams = {
   browserWindows: number;
   profileid: string | null;
   config: SeedConfig;
+  seedFile: string | null;
   tags: string[];
   crawlTimeout: number | null;
   maxCrawlSize: number | null;
