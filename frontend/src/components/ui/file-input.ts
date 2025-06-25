@@ -64,11 +64,28 @@ export class FileInput extends FormControl(TailwindElement) {
   @property({ type: Boolean })
   drop = false;
 
+  /**
+   * Enable opening files in a new window
+   */
+  @property({ type: Boolean })
+  openFile = false;
+
   @query("#dropzone")
   private readonly dropzone?: HTMLElement | null;
 
   @query("input[type='file']")
   private readonly input?: HTMLInputElement | null;
+
+  // Object URLs are used to view files
+  private readonly fileToObjectUrl = new Map<File, string>();
+
+  disconnectedCallback(): void {
+    for (const url of this.fileToObjectUrl.values()) {
+      URL.revokeObjectURL(url);
+    }
+
+    super.disconnectedCallback();
+  }
 
   formResetCallback() {
     this.files = [];
@@ -80,8 +97,20 @@ export class FileInput extends FormControl(TailwindElement) {
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("files")) {
+      if (this.files && this.openFile) {
+        this.setObjectUrls(this.files);
+      }
+
       this.syncFormValue();
     }
+  }
+
+  private setObjectUrls(files: File[]) {
+    files.forEach((file) => {
+      if (this.fileToObjectUrl.get(file)) return;
+
+      this.fileToObjectUrl.set(file, URL.createObjectURL(file));
+    });
   }
 
   private syncFormValue() {
@@ -178,7 +207,12 @@ export class FileInput extends FormControl(TailwindElement) {
           this.files,
           (file) => file.name,
           (file) => html`
-            <btrix-file-list-item .file=${file}></btrix-file-list-item>
+            <btrix-file-list-item
+              .file=${file}
+              href=${ifDefined(
+                this.openFile ? this.fileToObjectUrl.get(file) : undefined,
+              )}
+            ></btrix-file-list-item>
           `,
         )}
       </btrix-file-list>
@@ -238,8 +272,6 @@ export class FileInput extends FormControl(TailwindElement) {
       if (accept.startsWith(".")) {
         return file.name.endsWith(accept.trim());
       }
-
-      console.log("accept:", accept, file.type);
 
       return new RegExp(accept.trim().replace("*", ".*")).test(file.type);
     });
