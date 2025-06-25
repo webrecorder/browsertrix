@@ -1061,6 +1061,7 @@ https://replayweb.page/docs`}
       accept=".${SEED_LIST_FILE_EXT}"
       .files=${this.formState.seedFile ? [this.formState.seedFile] : null}
       drop
+      openFile
     >
       <sl-icon
         name="file-earmark-arrow-up"
