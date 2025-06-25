@@ -130,7 +130,6 @@ export class FileInput extends FormControl(TailwindElement) {
       >
         <input
           id="fileInput"
-          class="sr-only"
           type="file"
           accept=${ifDefined(this.accept)}
           ?multiple=${this.multiple}
@@ -143,7 +142,13 @@ export class FileInput extends FormControl(TailwindElement) {
           }}
         />
         <div class="relative z-10">
-          <slot></slot>
+          <slot
+            @slotchange=${{
+              // Hide input visually
+              handleEvent: () => this.input?.classList.add(tw`sr-only`),
+              once: true,
+            }}
+          ></slot>
         </div>
       </div>
     `;
@@ -220,6 +225,8 @@ export class FileInput extends FormControl(TailwindElement) {
       if (accept.startsWith(".")) {
         return file.name.endsWith(accept.trim());
       }
+
+      console.log("accept:", accept, file.type);
 
       return new RegExp(accept.trim().replace("*", ".*")).test(file.type);
     });
