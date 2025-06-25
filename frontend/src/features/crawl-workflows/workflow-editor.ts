@@ -123,7 +123,7 @@ import {
   MAX_SEED_FILE_BYTES,
   rangeBrowserWindows,
   SECTIONS,
-  SeedUrlList,
+  SeedListFormat,
   workflowTabToGuideHash,
   type FormState,
   type WorkflowDefaults,
@@ -951,47 +951,54 @@ export class WorkflowEditor extends BtrixElement {
         <sl-radio-group
           class="mb-2.5 part-[form-control-label]:sr-only"
           label="Select how to specify URL list"
-          value=${this.formState.seedUrlListType}
-          name="seedUrlListType"
+          value=${this.formState.seedListFormat}
+          name="seedListFormat"
           size="small"
         >
-          <sl-radio-button value="text">${msg("Enter URLs")}</sl-radio-button>
-          <sl-radio-button value="file"
-            >${msg("Upload a File")}</sl-radio-button
+          <sl-radio-button value=${SeedListFormat.JSON}
+            >${msg("Enter URLs")}</sl-radio-button
+          >
+          <sl-radio-button value=${SeedListFormat.File}
+            >${msg("Upload URL List")}</sl-radio-button
           >
         </sl-radio-group>
 
-        ${choose(this.formState.seedUrlListType, [
-          [SeedUrlList.Text, () => this.renderSeedUrlTextInput()],
-          [SeedUrlList.File, () => this.renderSeedUrlFileInput()],
+        ${choose(this.formState.seedListFormat, [
+          [SeedListFormat.JSON, () => this.renderSeedListTextbox()],
+          [SeedListFormat.File, () => this.renderSeedListFileUpload()],
         ])}
       `)}
       ${this.renderHelpTextCol(
-        this.formState.seedUrlListType === SeedUrlList.File
+        this.formState.seedListFormat === SeedListFormat.File
           ? html`${msg(
               "The crawler will visit and record each URL listed in the file.",
             )}
             ${this.renderUserGuideLink({
               hash: "page-urls",
-              content: msg("Read more about file uploads"),
-            })}`
-          : msg("The crawler will visit and record each URL listed here."),
+              content: msg("Read more about URL list files"),
+            })}.`
+          : html`${infoTextFor["urlList"]} ${msg("For very large lists")},
+            ${this.renderUserGuideLink({
+              hash: "page-urls",
+              content: msg("upload a URL list file"),
+            })}.`,
       )}
     `;
   }
 
-  private readonly renderSeedUrlTextInput = () =>
+  private readonly renderSeedListTextbox = () =>
     html`<sl-textarea
       id="seedUrlList"
       name="urlList"
-      placeholder=${`https://webrecorder.net/blog
-https://archiveweb.page/guide`}
-      rows="3"
+      placeholder=${`https://webrecorder.net/resources
+https://archiveweb.page/guide
+https://replayweb.page/docs`}
+      rows="4"
       autocomplete="off"
       inputmode="url"
       value=${this.formState.urlList}
       required
-      help-text=${msg("Enter 1 URL per line")}
+      help-text=${msg("Enter one URL per line.")}
       @keyup=${async (e: KeyboardEvent) => {
         if (e.key === "Enter") {
           await (e.target as SlInput).updateComplete;
@@ -1020,7 +1027,7 @@ https://archiveweb.page/guide`}
       }}
     ></sl-textarea>`;
 
-  private readonly renderSeedUrlFileInput = () => {
+  private readonly renderSeedListFileUpload = () => {
     const browseFilesButton = html`<button
       class="text-primary-500 transition-colors hover:text-primary-600"
     >
@@ -1031,15 +1038,15 @@ https://archiveweb.page/guide`}
     return html`<btrix-file-input id="seedUrlList" drop accept=".txt">
       <sl-icon
         name="file-earmark-arrow-up"
-        class="text-lg text-neutral-400"
+        class="text-xl text-neutral-400"
       ></sl-icon>
-      <p class="text-pretty text-center">
+      <p class="mt-1 text-pretty text-center">
         ${msg(html`Drag file here or ${browseFilesButton}`)}
       </p>
       <div class="form-help-text text-center leading-none">
         ${msg("TXT format")},
         ${msg(str`${maxByteSize} max`, {
-          desc: "Example: '25 MB max'. Shorthand for 'maximum'",
+          desc: "`maxByteSize` example: '25 MB'. 'max' is shorthand for 'maximum'",
         })}
       </div>
     </btrix-file-input>`;
@@ -1117,6 +1124,7 @@ https://archiveweb.page/guide`}
     }
 
     const additionalUrlList = urlListToArray(this.formState.urlList);
+    const maxUrls = this.localize.number(URL_LIST_MAX_URLS);
 
     return html`
       ${inputCol(html`
@@ -1305,9 +1313,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
               ></sl-textarea>
             `)}
             ${this.renderHelpTextCol(
-              msg(
-                str`The crawler will visit and record each URL listed here. You can enter up to ${this.localize.number(URL_LIST_MAX_URLS)} URLs.`,
-              ),
+              html`${infoTextFor["urlList"]}
+              ${msg(str`You can enter up to ${maxUrls} URLs.`, {
+                desc: "`maxUrls` example: '1,000'",
+              })}`,
             )}
           </div>
         </btrix-details>
