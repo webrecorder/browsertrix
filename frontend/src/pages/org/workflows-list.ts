@@ -580,7 +580,7 @@ export class WorkflowsList extends BtrixElement {
       </div>
       <div class="flex flex-wrap items-center justify-end gap-4">
         <label class="flex flex-wrap items-center" for="schedule-filter">
-          <span class="text-0-500 mr-2 whitespace-nowrap text-sm">
+          <span class="mr-2 whitespace-nowrap text-xs text-neutral-500">
             ${msg("Schedule:")}
           </span>
           <sl-radio-group
