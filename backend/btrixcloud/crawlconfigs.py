@@ -1092,7 +1092,7 @@ class CrawlConfigOps:
             crawlconfig.crawlFilenameTemplate or self.default_filename_template
         )
 
-        seed_file_url = None
+        seed_file_url = ""
         if crawlconfig.config.seedFileId:
             seed_file_out = await self.file_ops.get_file_out(
                 crawlconfig.config.seedFileId, org
