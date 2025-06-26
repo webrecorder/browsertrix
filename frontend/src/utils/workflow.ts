@@ -26,6 +26,10 @@ import { regexUnescape } from "@/utils/string";
 export const BYTES_PER_GB = 1e9;
 export const DEFAULT_SELECT_LINKS = ["a[href]->href" as const];
 export const DEFAULT_AUTOCLICK_SELECTOR = "a";
+export const SEED_LIST_FILE_EXT = "txt";
+export const DEFAULT_SEED_LIST_FILE_NAME = `url-list.${SEED_LIST_FILE_EXT}`;
+export const MAX_SEED_LIST_STRING_BYTES = 500 * 1000;
+export const MAX_SEED_LIST_FILE_BYTES = 25 * 1e6;
 
 export const SECTIONS = [
   "scope",
@@ -45,6 +49,11 @@ export enum GuideHash {
   BrowserSettings = "browser-settings",
   Scheduling = "scheduling",
   Metadata = "metadata",
+}
+
+export enum SeedListFormat {
+  JSON = "json",
+  File = "file",
 }
 
 export const workflowTabToGuideHash: Record<SectionsEnum, GuideHash> = {
@@ -91,6 +100,8 @@ export function defaultLabel(value: unknown): string {
 export type FormState = {
   primarySeedUrl: string;
   urlList: string;
+  seedListFormat: SeedListFormat;
+  seedFile: File | null;
   includeLinkedPages: boolean;
   useSitemap: boolean;
   failOnFailedSeed: boolean;
@@ -150,6 +161,8 @@ export const appDefaults: WorkflowDefaults = {
 export const getDefaultFormState = (): FormState => ({
   primarySeedUrl: "",
   urlList: "",
+  seedListFormat: SeedListFormat.JSON,
+  seedFile: null,
   includeLinkedPages: false,
   useSitemap: false,
   failOnFailedSeed: false,
@@ -238,6 +251,10 @@ export function getInitialFormState(params: {
       }
 
       formState.urlList = mapSeedToUrl(params.initialSeeds).join("\n");
+    } else if (params.initialWorkflow.seedFile) {
+      // TODO Convert file
+      // formState.seedFile = params.initialWorkflow.seedFile
+      formState.seedListFormat = SeedListFormat.File;
     }
 
     formState.failOnFailedSeed = seedsConfig.failOnFailedSeed;

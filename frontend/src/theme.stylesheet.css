@@ -143,6 +143,11 @@
     display: inline-block;
     margin-bottom: var(--sl-spacing-3x-small);
   }
+  .form-control-label--required::after {
+    content: var(--sl-input-required-content);
+    margin-inline-start: var(--sl-input-required-content-offset);
+    color: var(--sl-input-required-content-color);
+  }
   .form-help-text,
   btrix-tag-input::part(form-control-help-text),
   sl-input::part(form-control-help-text),
