@@ -1428,6 +1428,7 @@ def init_crawl_config_api(
     """Init /crawlconfigs api routes"""
     # pylint: disable=invalid-name
 
+    # pylint: disable=duplicate-code
     ops = CrawlConfigOps(
         dbclient,
         mdb,
