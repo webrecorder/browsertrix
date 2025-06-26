@@ -197,34 +197,32 @@ export class WorkflowDetail extends BtrixElement {
         void this.workflowTask.run();
         const currWorkflow = await this.workflowTask.taskComplete;
 
-        // Refresh all tabs when crawl ends
         const crawlChanged =
-          workflow.isCrawlRunning !== currWorkflow.isCrawlRunning ||
+          workflow.lastCrawlState !== currWorkflow.lastCrawlState ||
           // Handle edge case where workflow may have finished and started
           // within the same poll interval:
-          workflow.id !== currWorkflow.id;
+          workflow.lastCrawlId !== currWorkflow.lastCrawlId;
 
-        if (crawlChanged) {
+        // Retrieve additional data based on current tab
+        if (this.isRunning) {
+          switch (this.groupedWorkflowTab) {
+            case WorkflowTab.LatestCrawl: {
+              void this.latestCrawlTask.run();
+              void this.logTotalsTask.run();
+              break;
+            }
+            case WorkflowTab.Crawls: {
+              void this.crawlsTask.run();
+              break;
+            }
+            default:
+              break;
+          }
+        } else if (crawlChanged) {
+          // Refresh all data
           void this.latestCrawlTask.run();
           void this.logTotalsTask.run();
           void this.crawlsTask.run();
-        } else {
-          // Retrieve additional data based on current tab
-          if (this.isRunning) {
-            switch (this.groupedWorkflowTab) {
-              case WorkflowTab.LatestCrawl: {
-                void this.latestCrawlTask.run();
-                void this.logTotalsTask.run();
-                break;
-              }
-              case WorkflowTab.Crawls: {
-                void this.crawlsTask.run();
-                break;
-              }
-              default:
-                break;
-            }
-          }
         }
       }, POLL_INTERVAL_SECONDS * 1000);
     },
