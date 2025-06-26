@@ -102,6 +102,8 @@ class FileUploadOps:
         upload_type: str = "seedFile",
     ) -> Dict[str, Union[bool, UUID]]:
         """Upload file stream and return its id"""
+        self.org_ops.can_write_data(org, include_time=False)
+
         _, extension = os.path.splitext(filename)
 
         # Validate extension
