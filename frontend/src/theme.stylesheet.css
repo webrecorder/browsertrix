@@ -174,18 +174,15 @@
   }
 
   sl-radio-button[checked]::part(button) {
-    background-color: theme(colors.primary.50);
-    border-color: theme(colors.primary.300);
-    color: theme(colors.primary.700);
+    @apply border-primary-300 bg-primary-50 text-primary-600;
   }
 
   sl-radio-button:not([checked]):not(disabled)::part(button):not(:hover) {
-    background-color: theme(colors.white);
-    color: theme(colors.neutral.700);
+    @apply bg-white text-neutral-600;
   }
 
   sl-radio-button:not([checked]):not(disabled):hover::part(button) {
-    background-color: theme(colors.primary.400);
+    @apply bg-primary-400;
   }
 
   sl-radio-button::part(label) {
