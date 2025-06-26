@@ -615,10 +615,14 @@ export class WorkflowsList extends BtrixElement {
                 ? "scheduled"
                 : "unscheduled"}
           >
-            <sl-radio-button value="all-schedules" pill>
-              <sl-icon name="asterisk" slot="prefix"></sl-icon>
-              ${msg("All Schedule States")}
-            </sl-radio-button>
+            <sl-tooltip content=${msg("All Schedule States")}>
+              <sl-radio-button value="all-schedules" pill>
+                <sl-icon
+                  name="asterisk"
+                  label=${msg("All Schedule States")}
+                ></sl-icon>
+              </sl-radio-button>
+            </sl-tooltip>
             <sl-radio-button value="scheduled" pill>
               <sl-icon name="calendar2-check" slot="prefix"></sl-icon>
               ${msg("Scheduled")}
