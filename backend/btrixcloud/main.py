@@ -231,6 +231,7 @@ def main() -> None:
         crawl_manager,
         profiles,
         file_ops,
+        storage_ops,
     )
 
     coll_ops = init_collections_api(
