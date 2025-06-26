@@ -28,12 +28,13 @@ import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import { FAILED_STATES, type CrawlState } from "@/types/crawlState";
+import { type CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
 import {
   DEFAULT_MAX_SCALE,
   inactiveCrawlStates,
   isActive,
+  isSkipped,
   isSuccessfullyFinished,
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
@@ -328,10 +329,12 @@ export class WorkflowDetail extends BtrixElement {
     return this.workflow?.isCrawlRunning && !this.isPaused;
   }
 
-  // Workflow is for a crawl that has failed or canceled
-  private get isUnsuccessfullyFinished() {
-    return (FAILED_STATES as readonly string[]).includes(
-      this.workflow?.lastCrawlState || "",
+  private get isSkippedOrCanceled() {
+    if (!this.workflow?.lastCrawlState) return null;
+
+    return (
+      this.workflow.lastCrawlState === "canceled" ||
+      isSkipped({ state: this.workflow.lastCrawlState })
     );
   }
 
@@ -678,6 +681,10 @@ export class WorkflowDetail extends BtrixElement {
       const logTotals = this.logTotalsTask.value;
       const authToken = this.authState?.headers.Authorization.split(" ")[1];
       const disableDownload = this.isRunning;
+      const disableReplay = !latestCrawl.fileSize;
+      const disableLogs = !(logTotals?.errors || logTotals?.behaviors);
+      const replayHref = `/api/orgs/${this.orgId}/all-crawls/${latestCrawlId}/download?auth_bearer=${authToken}`;
+      const replayFilename = `browsertrix-${latestCrawlId}.wacz`;
 
       return html`
         <btrix-copy-button
@@ -698,13 +705,13 @@ export class WorkflowDetail extends BtrixElement {
               content="${msg("Download Item as WACZ")} (${this.localize.bytes(
                 latestCrawl.fileSize || 0,
               )})"
-              ?disabled=${!latestCrawl.fileSize}
+              ?disabled=${disableReplay}
             >
               <sl-button
                 size="small"
-                href=${`/api/orgs/${this.orgId}/all-crawls/${latestCrawlId}/download?auth_bearer=${authToken}`}
-                download=${`browsertrix-${latestCrawlId}.wacz`}
-                ?disabled=${disableDownload || !latestCrawl.fileSize}
+                href=${replayHref}
+                download=${replayFilename}
+                ?disabled=${disableDownload || disableReplay}
               >
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                 ${msg("Download")}
@@ -715,7 +722,7 @@ export class WorkflowDetail extends BtrixElement {
                 slot="trigger"
                 size="small"
                 caret
-                ?disabled=${disableDownload}
+                ?disabled=${disableReplay && disableLogs}
               >
                 <sl-visually-hidden
                   >${msg("Download options")}</sl-visually-hidden
@@ -723,9 +730,9 @@ export class WorkflowDetail extends BtrixElement {
               </sl-button>
               <sl-menu>
                 <btrix-menu-item-link
-                  href=${`/api/orgs/${this.orgId}/all-crawls/${this.lastCrawlId}/download?auth_bearer=${authToken}`}
-                  ?disabled=${!latestCrawl.fileSize}
-                  download
+                  href=${replayHref}
+                  ?disabled=${disableDownload || disableReplay}
+                  download=${replayFilename}
                 >
                   <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                   ${msg("Item")}
@@ -741,7 +748,7 @@ export class WorkflowDetail extends BtrixElement {
                 </btrix-menu-item-link>
                 <btrix-menu-item-link
                   href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
-                  ?disabled=${!(logTotals?.errors || logTotals?.behaviors)}
+                  ?disabled=${disableLogs}
                   download
                 >
                   <sl-icon
@@ -1427,7 +1434,7 @@ export class WorkflowDetail extends BtrixElement {
   };
 
   private readonly renderLatestCrawl = () => {
-    if (!this.lastCrawlId || this.isUnsuccessfullyFinished) {
+    if (!this.lastCrawlId || this.isSkippedOrCanceled) {
       return this.renderInactiveCrawlMessage();
     }
 
@@ -1722,6 +1729,10 @@ export class WorkflowDetail extends BtrixElement {
         </span>`;
       }
 
+      if (!isSuccessfullyFinished({ state: workflow.lastCrawlState })) {
+        return notApplicable;
+      }
+
       return html`<div class="inline-flex items-center gap-2">
         ${latestCrawl.reviewStatus || !this.isCrawler
           ? html`<btrix-qa-review-status
@@ -1861,12 +1872,46 @@ export class WorkflowDetail extends BtrixElement {
     let message = msg("This workflow hasn’t been run yet.");
 
     if (this.lastCrawlId) {
-      if (this.workflow.lastCrawlState === "canceled") {
-        message = msg("This crawl can’t be replayed since it was canceled.");
-      } else {
-        message = msg("Replay is not available for this crawl.");
+      switch (this.workflow.lastCrawlState) {
+        case "canceled":
+          message = msg("This crawl can’t be replayed since it was canceled.");
+          break;
+        case "failed":
+          message = msg("This crawl can’t be replayed because it failed.");
+          break;
+        default:
+          message = msg("Replay is not available for this crawl.");
+          break;
       }
     }
+
+    const actionButton = (workflow: Workflow) => {
+      if (!workflow.lastCrawlId) return;
+
+      if (workflow.lastCrawlState === "failed") {
+        return html`<div class="mt-4">
+          <sl-button
+            size="small"
+            href="${this.basePath}/logs"
+            @click=${this.navigate.link}
+          >
+            ${msg("View Error Logs")}
+            <sl-icon slot="prefix" name="terminal-fill"></sl-icon>
+          </sl-button>
+        </div>`;
+      }
+
+      return html`<div class="mt-4">
+        <sl-button
+          size="small"
+          href="${this.basePath}/crawls/${workflow.lastCrawlId}"
+          @click=${this.navigate.link}
+        >
+          ${msg("View Crawl Details")}
+          <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+        </sl-button>
+      </div>`;
+    };
 
     return html`
       <section
@@ -1878,20 +1923,7 @@ export class WorkflowDetail extends BtrixElement {
           this.isCrawler && !this.lastCrawlId,
           () => html`<div class="mt-4">${this.renderRunNowButton()}</div>`,
         )}
-        ${when(
-          this.lastCrawlId,
-          (id) =>
-            html`<div class="mt-4">
-              <sl-button
-                size="small"
-                href="${this.basePath}/crawls/${id}"
-                @click=${this.navigate.link}
-              >
-                ${msg("View Crawl Details")}
-                <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-              </sl-button>
-            </div>`,
-        )}
+        ${when(this.workflow, actionButton)}
       </section>
     `;
   }
