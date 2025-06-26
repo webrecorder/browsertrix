@@ -69,6 +69,7 @@ def init_ops() -> Tuple[
         mdb, org_ops, crawl_manager, storage_ops, background_job_ops
     )
 
+    # pylint: disable=duplicate-code
     crawl_config_ops = CrawlConfigOps(
         dbclient,
         mdb,
