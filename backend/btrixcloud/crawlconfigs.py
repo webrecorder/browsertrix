@@ -63,8 +63,11 @@ if TYPE_CHECKING:
     from .profiles import ProfileOps
     from .crawls import CrawlOps
     from .colls import CollectionOps
+    from .file_uploads import FileUploadOps
 else:
-    OrgOps = CrawlManager = UserManager = ProfileOps = CrawlOps = CollectionOps = object
+    OrgOps = CrawlManager = UserManager = ProfileOps = CrawlOps = CollectionOps = (
+        FileUploadOps
+    ) = object
 
 
 ALLOWED_SORT_KEYS = (
@@ -92,6 +95,7 @@ class CrawlConfigOps:
     profiles: ProfileOps
     crawl_ops: CrawlOps
     coll_ops: CollectionOps
+    file_ops: FileUploadOps
 
     crawler_channels: CrawlerChannels
     crawler_images_map: dict[str, str]
@@ -107,6 +111,7 @@ class CrawlConfigOps:
         org_ops,
         crawl_manager,
         profiles,
+        file_ops,
     ):
         self.dbclient = dbclient
         self.crawls = mdb["crawls"]
@@ -119,6 +124,7 @@ class CrawlConfigOps:
         self.profiles.set_crawlconfigs(self)
         self.crawl_ops = cast(CrawlOps, None)
         self.coll_ops = cast(CollectionOps, None)
+        self.file_ops = cast(FileUploadOps, None)
 
         self.default_filename_template = os.environ["DEFAULT_CRAWL_FILENAME_TEMPLATE"]
         self.default_crawler_image_pull_policy = os.environ.get(
@@ -1355,11 +1361,14 @@ def init_crawl_config_api(
     org_ops,
     crawl_manager,
     profiles,
+    file_ops,
 ):
     """Init /crawlconfigs api routes"""
     # pylint: disable=invalid-name
 
-    ops = CrawlConfigOps(dbclient, mdb, user_manager, org_ops, crawl_manager, profiles)
+    ops = CrawlConfigOps(
+        dbclient, mdb, user_manager, org_ops, crawl_manager, profiles, file_ops
+    )
 
     router = ops.router
 
