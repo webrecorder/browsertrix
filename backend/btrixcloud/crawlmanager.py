@@ -221,7 +221,7 @@ class CrawlManager(K8sAPI):
         storage_filename: str,
         profile_filename: str,
         is_single_page: bool,
-        seed_file_url: Optional[str] = None,
+        seed_file_url: str,
     ) -> str:
         """create new crawl job from config"""
         cid = str(crawlconfig.id)
