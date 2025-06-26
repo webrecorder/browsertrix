@@ -1275,6 +1275,12 @@ class UserUploadFile(BaseMongoModel):
 
 
 # ============================================================================
+class UserUploadFileOut(UserUploadFile):
+
+    type: str
+
+
+# ============================================================================
 class SeedFile(UserUploadFile):
     """Seed file for crawl workflows"""
 
