@@ -66,10 +66,11 @@ if TYPE_CHECKING:
     from .crawls import CrawlOps
     from .colls import CollectionOps
     from .file_uploads import FileUploadOps
+    from .storages import StorageOps
 else:
     OrgOps = CrawlManager = UserManager = ProfileOps = CrawlOps = CollectionOps = (
         FileUploadOps
-    ) = object
+    ) = StorageOps = object
 
 
 ALLOWED_SORT_KEYS = (
@@ -98,6 +99,7 @@ class CrawlConfigOps:
     crawl_ops: CrawlOps
     coll_ops: CollectionOps
     file_ops: FileUploadOps
+    storage_ops: StorageOps
 
     crawler_channels: CrawlerChannels
     crawler_images_map: dict[str, str]
@@ -114,6 +116,7 @@ class CrawlConfigOps:
         crawl_manager,
         profiles,
         file_ops,
+        storage_ops,
     ):
         self.dbclient = dbclient
         self.crawls = mdb["crawls"]
@@ -124,6 +127,7 @@ class CrawlConfigOps:
         self.crawl_manager = crawl_manager
         self.profiles = profiles
         self.file_ops = file_ops
+        self.storage_ops = storage_ops
         self.profiles.set_crawlconfigs(self)
         self.crawl_ops = cast(CrawlOps, None)
         self.coll_ops = cast(CollectionOps, None)
@@ -1097,7 +1101,9 @@ class CrawlConfigOps:
             seed_file_out = await self.file_ops.get_file_out(
                 crawlconfig.config.seedFileId, org
             )
-            seed_file_url = seed_file_out.path
+            seed_file_url = self.storage_ops.resolve_internal_access_path(
+                seed_file_out.path
+            )
 
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
@@ -1415,12 +1421,20 @@ def init_crawl_config_api(
     crawl_manager,
     profiles,
     file_ops,
+    storage_ops,
 ):
     """Init /crawlconfigs api routes"""
     # pylint: disable=invalid-name
 
     ops = CrawlConfigOps(
-        dbclient, mdb, user_manager, org_ops, crawl_manager, profiles, file_ops
+        dbclient,
+        mdb,
+        user_manager,
+        org_ops,
+        crawl_manager,
+        profiles,
+        file_ops,
+        storage_ops,
     )
 
     router = ops.router

@@ -77,6 +77,7 @@ def init_ops() -> Tuple[
         crawl_manager,
         profile_ops,
         file_ops,
+        storage_ops,
     )
 
     coll_ops = CollectionOps(mdb, storage_ops, org_ops, event_webhook_ops)
