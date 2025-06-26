@@ -12,6 +12,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     cast,
+    Union,
 )
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
@@ -55,6 +56,7 @@ from .models import (
     PresignedUrl,
     SuccessResponse,
     User,
+    UserUploadFileOut,
 )
 
 from .utils import slug_from_name, dt_now
@@ -619,7 +621,9 @@ class StorageOps:
 
         return urls, now + self.signed_duration_delta
 
-    async def delete_file_object(self, org: Organization, crawlfile: BaseFile) -> bool:
+    async def delete_file_object(
+        self, org: Organization, crawlfile: Union[BaseFile, UserUploadFileOut]
+    ) -> bool:
         """delete crawl file from storage."""
         return await self._delete_file(org, crawlfile.filename, crawlfile.storage)
 

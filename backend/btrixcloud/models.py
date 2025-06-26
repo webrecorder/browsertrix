@@ -1253,6 +1253,15 @@ class ImageFilePreparer(FilePreparer):
 
 
 # ============================================================================
+class UserUploadFileOut(ImageFileOut):
+    """Output model for user-uploaded files"""
+
+    id: UUID
+    oid: UUID
+    type: str
+
+
+# ============================================================================
 class UserUploadFile(BaseMongoModel):
     """User-uploaded file saved in files mongo collection"""
 
@@ -1272,11 +1281,26 @@ class UserUploadFile(BaseMongoModel):
     userName: str
     created: datetime
 
-
-# ============================================================================
-class UserUploadFileOut(UserUploadFile):
-
     type: str
+
+    async def get_file_out(self, org, storage_ops) -> UserUploadFileOut:
+        """Get ImageFileOut with new presigned url"""
+        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
+
+        return UserUploadFileOut(
+            name=self.filename,
+            path=presigned_url or "",
+            hash=self.hash,
+            size=self.size,
+            originalFilename=self.originalFilename,
+            mime=self.mime,
+            userid=self.userid,
+            userName=self.userName,
+            created=self.created,
+            id=self.id,
+            oid=self.oid,
+            type=self.type,
+        )
 
 
 # ============================================================================
