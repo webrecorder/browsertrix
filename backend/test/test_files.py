@@ -10,7 +10,6 @@ _seed_file_id = None
 
 
 def test_seed_file_upload(crawler_auth_headers, default_org_id):
-    # https://dev.browsertrix.com/api/orgs/c69247f4-415e-4abc-b449-e85d2f26c626/collections/b764fbe1-baab-4dc5-8dca-2db6f82c250b/data?filename=page-data_47fe599e-ed62-4edd-b078-93d4bf281e0f.jpeg&sourceUrl=https%3A%2F%2Fspecs.webrecorder.net%2F&sourceTs=2024-08-16T08%3A00%3A21.601000Z&sourcePageId=47fe599e-ed62-4edd-b078-93d4bf281e0f
     with open(os.path.join(curr_dir, "data", "seedfile.txt"), "rb") as fh:
         r = requests.put(
             f"{API_PREFIX}/orgs/{default_org_id}/files/seedfile?filename=seedfile.txt",

@@ -6,6 +6,8 @@ import time
 from typing import Dict
 from uuid import UUID
 
+from .utils import read_in_chunks
+
 
 HOST_PREFIX = "http://127.0.0.1:30870"
 API_PREFIX = HOST_PREFIX + "/api"
@@ -818,3 +820,34 @@ def profile_2_id(admin_auth_headers, default_org_id, profile_browser_2_id):
             if time.monotonic() - start_time > time_limit:
                 raise
             time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def seed_file_id(crawler_auth_headers, default_org_id):
+    with open(os.path.join(curr_dir, "data", "seedfile.txt"), "rb") as fh:
+        r = requests.put(
+            f"{API_PREFIX}/orgs/{default_org_id}/files/seedfile?filename=seedfile.txt",
+            headers=crawler_auth_headers,
+            data=read_in_chunks(fh),
+        )
+        assert r.status_code == 200
+        return r.json()["id"]
+
+
+@pytest.fixture(scope="session")
+def seed_file_config_id(crawler_auth_headers, default_org_id, seed_file_id):
+    crawl_data = {
+        "runNow": False,
+        "name": "Seed File Workflow",
+        "config": {
+            "scopeType": "page",
+            "seedFileId": seed_file_id,
+            "limit": 2,
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=crawl_data,
+    )
+    return r.json()["id"]

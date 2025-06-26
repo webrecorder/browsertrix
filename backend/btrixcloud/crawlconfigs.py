@@ -1092,6 +1092,13 @@ class CrawlConfigOps:
             crawlconfig.crawlFilenameTemplate or self.default_filename_template
         )
 
+        seed_file_url = None
+        if crawlconfig.config.seedFileId:
+            seed_file_out = await self.file_ops.get_file_out(
+                crawlconfig.config.seedFileId, org
+            )
+            seed_file_url = seed_file_out.path
+
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
                 crawlconfig,
@@ -1101,6 +1108,7 @@ class CrawlConfigOps:
                 storage_filename=storage_filename,
                 profile_filename=profile_filename or "",
                 is_single_page=self.is_single_page(crawlconfig.config),
+                seed_file_url=seed_file_url,
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user, org, manual=True)
             return crawl_id
