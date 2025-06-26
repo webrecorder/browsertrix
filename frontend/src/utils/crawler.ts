@@ -33,11 +33,15 @@ export function isActive({ state }: Partial<Crawl | QARun>) {
   return (activeCrawlStates as readonly (typeof state)[]).includes(state);
 }
 
-export function isSuccessfullyFinished({ state }: { state: string }) {
+export function isSuccessfullyFinished({ state }: { state: string | null }) {
   return state && (SUCCESSFUL_STATES as readonly string[]).includes(state);
 }
 
-export function isNotFailed({ state }: { state: string }) {
+export function isSkipped({ state }: { state: string | null }) {
+  return state?.startsWith("skipped");
+}
+
+export function isNotFailed({ state }: { state: string | null }) {
   return (
     state && !(FAILED_STATES as readonly string[]).some((str) => str === state)
   );
