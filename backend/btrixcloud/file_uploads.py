@@ -82,15 +82,25 @@ class FileUploadOps:
 
         return res
 
-    async def get_file_by_id(
+    async def get_file(
+        self,
+        file_id: UUID,
+        org: Optional[Organization] = None,
+        type_: Optional[str] = None,
+    ) -> UserUploadFile:
+        """Get file by UUID"""
+        file_raw = await self.get_file_raw(file_id, org, type_)
+        return UserUploadFile.from_dict(file_raw)
+
+    async def get_file_out(
         self,
         file_id: UUID,
         org: Optional[Organization] = None,
         type_: Optional[str] = None,
     ) -> UserUploadFileOut:
-        """Get file by UUID"""
-        file_raw = await self.get_file_raw(file_id, org, type_)
-        return UserUploadFileOut.from_dict(file_raw)
+        """Get file output model by UUID"""
+        user_file = await self.get_file(file_id, org, type_)
+        return await user_file.get_file_out(org, self.storage_ops)
 
     # pylint: disable=duplicate-code
     async def upload_user_file_stream(
@@ -154,7 +164,7 @@ class FileUploadOps:
                 f"{upload_type} stream upload failed: max size (25 MB) exceeded",
                 flush=True,
             )
-            await self.storage_ops.delete_file_obj(org, file_obj)
+            await self.storage_ops.delete_file_object(org, file_obj)
             raise HTTPException(
                 status_code=400,
                 detail="max_size_25_mb_exceeded",
@@ -164,14 +174,14 @@ class FileUploadOps:
         file_to_insert = SeedFile(
             id=file_id,
             oid=org.id,
-            filename=file_obj.upload_name,
-            hash=file_obj.upload_hasher.hexdigest(),
-            size=file_obj.upload_size,
+            filename=file_obj.filename,
+            hash=file_obj.hash,
+            size=file_obj.size,
             storage=file_obj.storage,
-            originalFilename=file_obj.original_filename,
+            originalFilename=file_obj.originalFilename,
             mime=file_obj.mime,
             userid=file_obj.userid,
-            userName=file_obj.user_name,
+            userName=file_obj.userName,
             created=file_obj.created,
         )
 
@@ -183,9 +193,9 @@ class FileUploadOps:
         self, file_id: UUID, org: Organization
     ) -> Dict[str, bool]:
         """Delete user-uploaded file from storage and db"""
-        file = await self.get_file_by_id(file_id, org)
-        await self.storage_ops.delete_file_obj(org, file)
-        await self.files.delete_one(file)
+        file = await self.get_file(file_id, org)
+        await self.storage_ops.delete_file_object(org, file)
+        await self.files.delete_one({"_id": file_id, "oid": org.id})
 
         return {"success": True}
 
@@ -210,7 +220,6 @@ def init_file_uploads_api(
     async def upload_seedfile_stream(
         request: Request,
         filename: str,
-        upload_type: str,
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
@@ -220,7 +229,7 @@ def init_file_uploads_api(
 
     @router.get("/{file_id}", response_model=UserUploadFileOut)
     async def get_user_file(file_id: UUID, org: Organization = Depends(org_viewer_dep)):
-        return await ops.get_file_by_id(file_id, org)
+        return await ops.get_file_out(file_id, org)
 
     @router.delete("/{file_id}", response_model=SuccessResponse)
     async def delete_user_file(
