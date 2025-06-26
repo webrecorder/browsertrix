@@ -2,6 +2,7 @@ import os
 import requests
 
 from .conftest import API_PREFIX
+from .utils import read_in_chunks
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
