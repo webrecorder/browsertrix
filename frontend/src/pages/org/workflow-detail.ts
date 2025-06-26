@@ -176,7 +176,7 @@ export class WorkflowDetail extends BtrixElement {
 
       return await this.getCrawls(workflowId, crawlsParams, signal);
     },
-    args: () => [this.workflowId, this.crawlsParams] as const,
+    args: () => [this.workflowId, this.crawlsParams, this.lastCrawlId] as const,
   });
 
   private readonly pollTask = new Task(this, {
