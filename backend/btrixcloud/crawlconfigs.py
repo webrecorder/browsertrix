@@ -47,6 +47,7 @@ from .models import (
     ValidateCustomBehavior,
     RawCrawlConfig,
     ListFilterType,
+    ScopeType,
 )
 from .utils import (
     dt_now,
@@ -112,7 +113,6 @@ class CrawlConfigOps:
         org_ops,
         crawl_manager,
         profiles,
-        # pylint: disable=unused-argument
         file_ops,
     ):
         self.dbclient = dbclient
@@ -123,10 +123,10 @@ class CrawlConfigOps:
         self.org_ops = org_ops
         self.crawl_manager = crawl_manager
         self.profiles = profiles
+        self.file_ops = file_ops
         self.profiles.set_crawlconfigs(self)
         self.crawl_ops = cast(CrawlOps, None)
         self.coll_ops = cast(CollectionOps, None)
-        self.file_ops = cast(FileUploadOps, None)
 
         self.default_filename_template = os.environ["DEFAULT_CRAWL_FILENAME_TEMPLATE"]
         self.default_crawler_image_pull_policy = os.environ.get(
@@ -223,7 +223,7 @@ class CrawlConfigOps:
 
         return profile_filename
 
-    # pylint: disable=invalid-name, too-many-branches
+    # pylint: disable=invalid-name, too-many-branches, too-many-statements
     async def add_crawl_config(
         self,
         config_in: CrawlConfigIn,
@@ -272,6 +272,19 @@ class CrawlConfigOps:
         if config_in.config.customBehaviors:
             for url in config_in.config.customBehaviors:
                 self._validate_custom_behavior_url_syntax(url)
+
+        if config_in.config.seedFileId:
+            # Validate file with that id exists
+            _ = await self.file_ops.get_file(config_in.config.seedFileId, org)
+
+            # Validate seeds not set
+            if config_in.config.seeds:
+                raise HTTPException(
+                    status_code=400, detail="use_one_of_seeds_or_seedfile"
+                )
+
+            # Ensure scopeType is set to page
+            config_in.config.scopeType = ScopeType.PAGE
 
         now = dt_now()
         crawlconfig = CrawlConfig(
@@ -463,6 +476,32 @@ class CrawlConfigOps:
         if update.config or update.browserWindows:
             if self.is_single_page(update.config or orig_crawl_config.config):
                 update.browserWindows = 1
+
+        if update.config and update.config.seedFileId:
+            # Validate file with that id exists
+            _ = await self.file_ops.get_file(update.config.seedFileId, org)
+
+            # Validate seeds not set
+            if update.config.seeds or (
+                orig_crawl_config.config.seeds and update.config.seeds not in ([], None)
+            ):
+                raise HTTPException(
+                    status_code=400, detail="use_one_of_seeds_or_seedfile"
+                )
+
+            # Ensure scopeType is set to page
+            update.config.scopeType = ScopeType.PAGE
+
+        # Delete old seed file if it's been unset
+        if (
+            orig_crawl_config.config
+            and orig_crawl_config.config.seedFileId
+            and update.config
+            and update.config.seedFileId is None
+        ):
+            await self.file_ops.delete_user_file(
+                orig_crawl_config.config.seedFileId, org
+            )
 
         # indicates if any k8s crawl config settings changed
         changed = False
@@ -898,8 +937,7 @@ class CrawlConfigOps:
         return revisions, total
 
     async def make_inactive_or_delete(
-        self,
-        crawlconfig: CrawlConfig,
+        self, crawlconfig: CrawlConfig, org: Organization
     ):
         """Make config inactive if crawls exist, otherwise move to inactive list"""
 
@@ -915,6 +953,9 @@ class CrawlConfigOps:
 
         # if no crawls have been run, actually delete
         if not crawlconfig.crawlAttemptCount:
+            if crawlconfig.config and crawlconfig.config.seedFileId:
+                await self.file_ops.delete_user_file(crawlconfig.config.seedFileId, org)
+
             result = await self.crawl_configs.delete_one(
                 {"_id": crawlconfig.id, "oid": crawlconfig.oid}
             )
@@ -938,12 +979,12 @@ class CrawlConfigOps:
 
         return status
 
-    async def do_make_inactive(self, crawlconfig: CrawlConfig):
+    async def do_make_inactive(self, crawlconfig: CrawlConfig, org: Organization):
         """perform make_inactive in a transaction"""
 
         async with await self.dbclient.start_session() as sesh:
             async with sesh.start_transaction():
-                status = await self.make_inactive_or_delete(crawlconfig)
+                status = await self.make_inactive_or_delete(crawlconfig, org)
 
         return {"success": True, "status": status}
 
@@ -1557,7 +1598,7 @@ def init_crawl_config_api(
     async def make_inactive(cid: UUID, org: Organization = Depends(org_crawl_dep)):
         crawlconfig = await ops.get_crawl_config(cid, org.id)
 
-        return await ops.do_make_inactive(crawlconfig)
+        return await ops.do_make_inactive(crawlconfig, org)
 
     @app.post("/orgs/all/crawlconfigs/reAddCronjobs", response_model=SuccessResponse)
     async def re_add_all_scheduled_cron_jobs(

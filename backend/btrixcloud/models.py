@@ -321,6 +321,8 @@ class RawCrawlConfig(BaseModel):
 
     seeds: Optional[List[Seed]] = []
 
+    seedFileId: Optional[UUID] = None
+
     scopeType: Optional[ScopeType] = ScopeType.PREFIX
 
     include: Union[str, List[str], None] = None
