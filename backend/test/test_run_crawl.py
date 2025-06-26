@@ -1413,6 +1413,6 @@ def test_seed_file_crawl(
     assert data["total"] == 2
     for page in data["items"]:
         assert page["url"] in (
-            "https://specs.webrecorder.net",
-            "https://webrecorder.net",
+            "https://specs.webrecorder.net/",
+            "https://webrecorder.net/",
         )
