@@ -30,7 +30,7 @@ async def main():
         )
         return 1
 
-    (org_ops, _, _, _, _, page_ops, coll_ops, _, _, _, _, user_manager, _, _, _) = (
+    (org_ops, _, _, _, _, page_ops, coll_ops, _, _, _, _, user_manager, _, _, _, _) = (
         init_ops()
     )
 

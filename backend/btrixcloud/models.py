@@ -1253,6 +1253,34 @@ class ImageFilePreparer(FilePreparer):
 
 
 # ============================================================================
+class UserUploadFile(BaseMongoModel):
+    """User-uploaded file saved in files mongo collection"""
+
+    id: UUID
+    oid: UUID
+
+    filename: str
+    hash: str
+    size: int
+    storage: StorageRef
+
+    replicas: Optional[List[StorageRef]] = []
+
+    originalFilename: str
+    mime: str
+    userid: UUID
+    userName: str
+    created: datetime
+
+
+# ============================================================================
+class SeedFile(UserUploadFile):
+    """Seed file for crawl workflows"""
+
+    type: Literal["seedFile"] = "seedFile"
+
+
+# ============================================================================
 
 ### PAGES ###
 

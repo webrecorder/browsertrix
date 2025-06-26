@@ -26,10 +26,11 @@ if TYPE_CHECKING:
     from .storages import StorageOps
     from .pages import PageOps
     from .background_jobs import BackgroundJobOps
+    from .file_uploads import FileUploadOps
 else:
     UserManager = OrgOps = CrawlConfigOps = CrawlOps = CollectionOps = InviteOps = (
         StorageOps
-    ) = PageOps = BackgroundJobOps = object
+    ) = PageOps = BackgroundJobOps = FileUploadOps = object
 
 
 CURR_DB_VERSION = "0047"
@@ -98,6 +99,7 @@ async def update_and_prepare_db(
     storage_ops: StorageOps,
     page_ops: PageOps,
     background_job_ops: BackgroundJobOps,
+    file_ops: FileUploadOps,
 ) -> None:
     """Prepare database for application.
 
@@ -123,6 +125,7 @@ async def update_and_prepare_db(
         user_manager,
         page_ops,
         storage_ops,
+        file_ops,
     )
     await user_manager.create_super_user()
     await org_ops.create_default_org()
@@ -233,6 +236,7 @@ async def create_indexes(
     user_manager,
     page_ops,
     storage_ops,
+    file_ops,
 ):
     """Create database indexes."""
     print("Creating database indexes", flush=True)
@@ -244,6 +248,7 @@ async def create_indexes(
     await user_manager.init_index()
     await page_ops.init_index()
     await storage_ops.init_index()
+    await file_ops.init_index()
 
 
 # ============================================================================
