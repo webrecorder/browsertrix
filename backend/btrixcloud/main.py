@@ -36,6 +36,7 @@ from .webhooks import init_event_webhooks_api
 from .background_jobs import init_background_jobs_api
 from .pages import init_pages_api
 from .subs import init_subs_api
+from .file_uploads import init_file_uploads_api
 
 from .crawlmanager import CrawlManager
 from .utils import register_exit_handler, is_bool
@@ -67,6 +68,7 @@ tags = [
     "jobs",
     "invites",
     "subscriptions",
+    "userfiles",
 ]
 
 
@@ -197,6 +199,8 @@ def main() -> None:
         org_ops, crawl_manager, app, mdb, current_active_user
     )
 
+    file_ops = init_file_uploads_api(mdb, org_ops, storage_ops, current_active_user)
+
     background_job_ops = init_background_jobs_api(
         app,
         mdb,
@@ -226,6 +230,7 @@ def main() -> None:
         org_ops,
         crawl_manager,
         profiles,
+        file_ops,
     )
 
     coll_ops = init_collections_api(
