@@ -1059,8 +1059,10 @@ class CrawlConfigOps:
 
         first_seeds = set()
         async for config in self.crawl_configs.find({"oid": org.id}):
-            first_seed = config["config"]["seeds"][0]["url"]
-            first_seeds.add(first_seed)
+            seeds = config["config"].get("seeds")
+            if seeds:
+                first_seed = seeds[0]["url"]
+                first_seeds.add(first_seed)
 
         return {
             "names": names,
