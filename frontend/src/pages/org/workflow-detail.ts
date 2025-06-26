@@ -1872,12 +1872,46 @@ export class WorkflowDetail extends BtrixElement {
     let message = msg("This workflow hasn’t been run yet.");
 
     if (this.lastCrawlId) {
-      if (this.workflow.lastCrawlState === "canceled") {
-        message = msg("This crawl can’t be replayed since it was canceled.");
-      } else {
-        message = msg("Replay is not available for this crawl.");
+      switch (this.workflow.lastCrawlState) {
+        case "canceled":
+          message = msg("This crawl can’t be replayed since it was canceled.");
+          break;
+        case "failed":
+          message = msg("This crawl can’t be replayed because it failed.");
+          break;
+        default:
+          message = msg("Replay is not available for this crawl.");
+          break;
       }
     }
+
+    const actionButton = (workflow: Workflow) => {
+      if (!workflow.lastCrawlId) return;
+
+      if (workflow.lastCrawlState === "failed") {
+        return html`<div class="mt-4">
+          <sl-button
+            size="small"
+            href="${this.basePath}/logs"
+            @click=${this.navigate.link}
+          >
+            ${msg("View Error Logs")}
+            <sl-icon slot="prefix" name="terminal-fill"></sl-icon>
+          </sl-button>
+        </div>`;
+      }
+
+      return html`<div class="mt-4">
+        <sl-button
+          size="small"
+          href="${this.basePath}/crawls/${workflow.lastCrawlId}"
+          @click=${this.navigate.link}
+        >
+          ${msg("View Crawl Details")}
+          <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+        </sl-button>
+      </div>`;
+    };
 
     return html`
       <section
@@ -1889,20 +1923,7 @@ export class WorkflowDetail extends BtrixElement {
           this.isCrawler && !this.lastCrawlId,
           () => html`<div class="mt-4">${this.renderRunNowButton()}</div>`,
         )}
-        ${when(
-          this.lastCrawlId,
-          (id) =>
-            html`<div class="mt-4">
-              <sl-button
-                size="small"
-                href="${this.basePath}/crawls/${id}"
-                @click=${this.navigate.link}
-              >
-                ${msg("View Crawl Details")}
-                <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-              </sl-button>
-            </div>`,
-        )}
+        ${when(this.workflow, actionButton)}
       </section>
     `;
   }
