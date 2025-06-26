@@ -56,7 +56,7 @@ from .models import (
     PresignedUrl,
     SuccessResponse,
     User,
-    UserUploadFileOut,
+    UserUploadFile,
 )
 
 from .utils import slug_from_name, dt_now
@@ -622,7 +622,7 @@ class StorageOps:
         return urls, now + self.signed_duration_delta
 
     async def delete_file_object(
-        self, org: Organization, crawlfile: Union[BaseFile, UserUploadFileOut]
+        self, org: Organization, crawlfile: Union[BaseFile, UserUploadFile]
     ) -> bool:
         """delete crawl file from storage."""
         return await self._delete_file(org, crawlfile.filename, crawlfile.storage)
