@@ -109,7 +109,7 @@ class FileUploadOps:
         filename: str,
         org: Organization,
         user: User,
-        upload_type: str = "seedFile",
+        upload_type: str = "seedfile",
     ) -> Dict[str, Union[bool, UUID]]:
         """Upload file stream and return its id"""
         self.org_ops.can_write_data(org, include_time=False)
