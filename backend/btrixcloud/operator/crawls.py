@@ -182,7 +182,7 @@ class CrawlOperator(BaseOperator):
             scheduled=spec.get("manual") != "1",
             qa_source_crawl_id=spec.get("qaSourceCrawlId"),
             is_single_page=spec.get("isSinglePage") == "1",
-            seed_file_url=spec.get("seedFileUrl"),
+            seed_file_url=spec.get("seedFileUrl", ""),
         )
 
         # if finalizing, crawl is being deleted
