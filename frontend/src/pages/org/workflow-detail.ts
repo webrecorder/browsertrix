@@ -197,23 +197,33 @@ export class WorkflowDetail extends BtrixElement {
         void this.workflowTask.run();
         const currWorkflow = await this.workflowTask.taskComplete;
 
-        // Retrieve additional data based on current tab
-        if (
-          this.isRunning ||
-          workflow.isCrawlRunning !== currWorkflow.isCrawlRunning
-        ) {
-          switch (this.groupedWorkflowTab) {
-            case WorkflowTab.LatestCrawl: {
-              void this.latestCrawlTask.run();
-              void this.logTotalsTask.run();
-              break;
+        // Refresh all tabs when crawl ends
+        const crawlChanged =
+          workflow.isCrawlRunning !== currWorkflow.isCrawlRunning ||
+          // Handle edge case where workflow may have finished and started
+          // within the same poll interval:
+          workflow.id !== currWorkflow.id;
+
+        if (crawlChanged) {
+          void this.latestCrawlTask.run();
+          void this.logTotalsTask.run();
+          void this.crawlsTask.run();
+        } else {
+          // Retrieve additional data based on current tab
+          if (this.isRunning) {
+            switch (this.groupedWorkflowTab) {
+              case WorkflowTab.LatestCrawl: {
+                void this.latestCrawlTask.run();
+                void this.logTotalsTask.run();
+                break;
+              }
+              case WorkflowTab.Crawls: {
+                void this.crawlsTask.run();
+                break;
+              }
+              default:
+                break;
             }
-            case WorkflowTab.Crawls: {
-              void this.crawlsTask.run();
-              break;
-            }
-            default:
-              break;
           }
         }
       }, POLL_INTERVAL_SECONDS * 1000);
@@ -1121,9 +1131,12 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private renderDetails() {
-    const relativeDate = (dateStr: string) => {
+    const relativeDate = (
+      dateStr: string,
+      { prefix }: { prefix?: string } = {},
+    ) => {
       const date = new Date(dateStr);
-      const diff = new Date().valueOf() - date.valueOf();
+      const diff = new Date().getTime() - date.getTime();
       const seconds = diff / 1000;
       const minutes = seconds / 60;
       const hours = minutes / 60;
@@ -1141,15 +1154,24 @@ export class WorkflowDetail extends BtrixElement {
           hoist
           placement="bottom"
         >
-          ${hours > 24
-            ? this.localize.date(date, {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })
-            : seconds > 60
-              ? html`<sl-relative-time sync date=${dateStr}></sl-relative-time>`
-              : msg("Now")}
+          <span>
+            ${prefix}
+            ${hours > 24
+              ? this.localize.date(date, {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })
+              : seconds > 60
+                ? html`<sl-relative-time
+                    sync
+                    format="narrow"
+                    date=${dateStr}
+                  ></sl-relative-time>`
+                : seconds > POLL_INTERVAL_SECONDS
+                  ? `<${this.localize.relativeTime(-1, "minute")}`
+                  : msg("Now")}
+          </span>
         </sl-tooltip>
       `;
     };
@@ -1169,7 +1191,12 @@ export class WorkflowDetail extends BtrixElement {
         ${this.renderDetailItem(msg("Last Run"), (workflow) =>
           workflow.lastRun
             ? // TODO Use `lastStartedByName` when it's updated to be null for scheduled runs
-              relativeDate(workflow.lastRun)
+              relativeDate(workflow.lastRun, {
+                prefix:
+                  workflow.lastRun === workflow.lastCrawlStartTime
+                    ? msg("Started")
+                    : msg("Finished"),
+              })
             : html`<span class="text-neutral-400">${msg("Never")}</span>`,
         )}
         ${this.renderDetailItem(msg("Schedule"), (workflow) =>
