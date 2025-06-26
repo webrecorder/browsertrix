@@ -14,6 +14,7 @@ import { textSeparator } from "@/layouts/separator";
 import { RouteNamespace } from "@/routes";
 import { CollectionAccess, type PublicCollection } from "@/types/collection";
 import { pluralOf } from "@/utils/pluralize";
+import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
 
 /**
@@ -149,7 +150,7 @@ export class CollectionsGrid extends BtrixElement {
                     <p
                       class="mt-1.5 text-pretty leading-relaxed text-stone-500"
                     >
-                      ${collection.caption}
+                      ${richText(collection.caption, { shortenOnly: true })}
                     </p>
                   `}
                 </div>

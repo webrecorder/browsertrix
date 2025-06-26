@@ -11,6 +11,7 @@ import { page } from "@/layouts/page";
 import { RouteNamespace } from "@/routes";
 import type { PublicCollection } from "@/types/collection";
 import { formatRwpTimestamp } from "@/utils/replay";
+import { richText } from "@/utils/rich-text";
 
 enum Tab {
   Replay = "replay",
@@ -116,7 +117,9 @@ export class Collection extends BtrixElement {
 
     if (collection.caption) {
       header.secondary = html`
-        <div class="text-pretty text-stone-500">${collection.caption}</div>
+        <div class="text-pretty text-stone-500">
+          ${richText(collection.caption)}
+        </div>
       `;
     }
 
