@@ -176,7 +176,7 @@ export class WorkflowDetail extends BtrixElement {
 
       return await this.getCrawls(workflowId, crawlsParams, signal);
     },
-    args: () => [this.workflowId, this.crawlsParams] as const,
+    args: () => [this.workflowId, this.crawlsParams, this.lastCrawlId] as const,
   });
 
   private readonly pollTask = new Task(this, {
@@ -195,7 +195,13 @@ export class WorkflowDetail extends BtrixElement {
 
       return window.setTimeout(async () => {
         void this.workflowTask.run();
-        await this.workflowTask.taskComplete;
+        const currWorkflow = await this.workflowTask.taskComplete;
+
+        const crawlChanged =
+          workflow.lastCrawlState !== currWorkflow.lastCrawlState ||
+          // Handle edge case where workflow may have finished and started
+          // within the same poll interval:
+          workflow.lastCrawlId !== currWorkflow.lastCrawlId;
 
         // Retrieve additional data based on current tab
         if (this.isRunning) {
@@ -212,6 +218,11 @@ export class WorkflowDetail extends BtrixElement {
             default:
               break;
           }
+        } else if (crawlChanged) {
+          // Refresh all data
+          void this.latestCrawlTask.run();
+          void this.logTotalsTask.run();
+          void this.crawlsTask.run();
         }
       }, POLL_INTERVAL_SECONDS * 1000);
     },
@@ -1118,9 +1129,12 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private renderDetails() {
-    const relativeDate = (dateStr: string) => {
+    const relativeDate = (
+      dateStr: string,
+      { prefix }: { prefix?: string } = {},
+    ) => {
       const date = new Date(dateStr);
-      const diff = new Date().valueOf() - date.valueOf();
+      const diff = new Date().getTime() - date.getTime();
       const seconds = diff / 1000;
       const minutes = seconds / 60;
       const hours = minutes / 60;
@@ -1138,15 +1152,21 @@ export class WorkflowDetail extends BtrixElement {
           hoist
           placement="bottom"
         >
-          ${hours > 24
-            ? this.localize.date(date, {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })
-            : seconds > 60
-              ? html`<sl-relative-time sync date=${dateStr}></sl-relative-time>`
-              : msg("Now")}
+          <span>
+            ${prefix}
+            ${hours > 24
+              ? this.localize.date(date, {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })
+              : seconds > 60
+                ? html`<sl-relative-time
+                    sync
+                    date=${dateStr}
+                  ></sl-relative-time>`
+                : `<${this.localize.relativeTime(-1, "minute", { style: "narrow" })}`}
+          </span>
         </sl-tooltip>
       `;
     };
@@ -1166,7 +1186,12 @@ export class WorkflowDetail extends BtrixElement {
         ${this.renderDetailItem(msg("Last Run"), (workflow) =>
           workflow.lastRun
             ? // TODO Use `lastStartedByName` when it's updated to be null for scheduled runs
-              relativeDate(workflow.lastRun)
+              relativeDate(workflow.lastRun, {
+                prefix:
+                  workflow.lastRun === workflow.lastCrawlStartTime
+                    ? msg("Started")
+                    : msg("Finished"),
+              })
             : html`<span class="text-neutral-400">${msg("Never")}</span>`,
         )}
         ${this.renderDetailItem(msg("Schedule"), (workflow) =>
