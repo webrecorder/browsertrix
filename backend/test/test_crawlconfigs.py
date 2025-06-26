@@ -959,4 +959,4 @@ def test_add_crawl_config_with_seed_file(
     assert data["id"] == seed_file_config_id
     assert data["name"] == "Seed File Workflow"
     assert data["config"]["seedFileId"] == seed_file_id
-    assert data["config"]["seeds"] == []
+    assert data["config"]["seeds"] is None
