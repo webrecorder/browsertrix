@@ -1,13 +1,8 @@
-import os
 import time
 
 import requests
 
 from .conftest import API_PREFIX
-from .utils import read_in_chunks
-
-
-curr_dir = os.path.dirname(os.path.realpath(__file__))
 
 cid = None
 cid_single_page = None
