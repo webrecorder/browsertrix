@@ -195,10 +195,13 @@ export class WorkflowDetail extends BtrixElement {
 
       return window.setTimeout(async () => {
         void this.workflowTask.run();
-        await this.workflowTask.taskComplete;
+        const currWorkflow = await this.workflowTask.taskComplete;
 
         // Retrieve additional data based on current tab
-        if (this.isRunning) {
+        if (
+          this.isRunning ||
+          workflow.isCrawlRunning !== currWorkflow.isCrawlRunning
+        ) {
           switch (this.groupedWorkflowTab) {
             case WorkflowTab.LatestCrawl: {
               void this.latestCrawlTask.run();
