@@ -1165,12 +1165,9 @@ export class WorkflowDetail extends BtrixElement {
               : seconds > 60
                 ? html`<sl-relative-time
                     sync
-                    format="narrow"
                     date=${dateStr}
                   ></sl-relative-time>`
-                : seconds > POLL_INTERVAL_SECONDS
-                  ? `<${this.localize.relativeTime(-1, "minute")}`
-                  : msg("Now")}
+                : `<${this.localize.relativeTime(-1, "minute", { style: "narrow" })}`}
           </span>
         </sl-tooltip>
       `;
