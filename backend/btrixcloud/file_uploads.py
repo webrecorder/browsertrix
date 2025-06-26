@@ -10,6 +10,7 @@ import pymongo
 
 from .models import (
     UserUploadFile,
+    UserUploadFileOut,
     SeedFile,
     ImageFilePreparer,
     Organization,
@@ -86,15 +87,10 @@ class FileUploadOps:
         file_id: UUID,
         org: Optional[Organization] = None,
         type_: Optional[str] = None,
-    ) -> UserUploadFile:
+    ) -> UserUploadFileOut:
         """Get file by UUID"""
         file_raw = await self.get_file_raw(file_id, org, type_)
-
-        cls = UserUploadFile
-        if type_ == "seedFile":
-            cls = SeedFile
-
-        return cls.from_dict(file_raw)
+        return UserUploadFileOut.from_dict(file_raw)
 
     # pylint: disable=duplicate-code
     async def upload_user_file_stream(
@@ -206,22 +202,23 @@ def init_file_uploads_api(
     router = ops.router
 
     org_crawl_dep = org_ops.org_crawl_dep
-    # org_viewer_dep = org_ops.org_viewer_dep
+    org_viewer_dep = org_ops.org_viewer_dep
 
-    @router.put("", response_model=AddedResponseId)
-    async def upload_user_file(
+    @router.put("/seedfile", response_model=AddedResponseId)
+    async def upload_seedfile_stream(
         request: Request,
         filename: str,
         upload_type: str,
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        if upload_type not in ALLOWED_UPLOAD_TYPES:
-            raise HTTPException(status_code=400, detail="invalid_upload_type")
-
         return await ops.upload_user_file_stream(
-            request.stream(), filename, org, user, upload_type
+            request.stream(), filename, org, user, upload_type="seedFile"
         )
+
+    @router.get("/{file_id}", response_model=UserUploadFileOut)
+    async def get_user_file(file_id: UUID, org: Organization = Depends(org_viewer_dep)):
+        return await ops.get_file_by_id(file_id, org)
 
     @router.delete("/{file_id}", response_model=SuccessResponse)
     async def delete_user_file(
