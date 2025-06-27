@@ -523,8 +523,8 @@ export class WorkflowsList extends BtrixElement {
 
   private renderControls() {
     return html`
-      <div class="mb-2 flex flex-wrap items-center gap-2 md:gap-4">
-        <div class="grow">${this.renderSearch()}</div>
+      <div class="mb-2 flex flex-wrap items-center justify-end gap-2 md:gap-4">
+        <div class=" grow basis-96">${this.renderSearch()}</div>
 
         <label class="flex flex-wrap items-center" for="schedule-filter">
           <span class="mr-2 whitespace-nowrap text-sm text-neutral-500">
@@ -585,7 +585,7 @@ export class WorkflowsList extends BtrixElement {
           </sl-radio-group>
         </label>
 
-        <div class="flex w-full items-center md:w-fit">
+        <div class="flex items-center">
           <label
             class="mr-2 whitespace-nowrap text-sm text-neutral-500"
             for="sort-select"
@@ -636,33 +636,33 @@ export class WorkflowsList extends BtrixElement {
             ></sl-icon-button>
           </sl-tooltip>
         </div>
-      </div>
-      <div class="flex flex-wrap items-center justify-end gap-4">
-        <label>
-          <span class="mr-1 text-xs text-neutral-500"
-            >${msg("Show Only Running")}</span
-          >
-          <sl-switch
-            @sl-change=${(e: CustomEvent) => {
-              this.filterBy = {
-                ...this.filterBy,
-                isCrawlRunning: (e.target as SlCheckbox).checked || undefined,
-              };
-            }}
-            ?checked=${this.filterBy.isCrawlRunning === true}
-          ></sl-switch>
-        </label>
+        <div class="flex flex-wrap gap-2">
+          <label>
+            <span class="mr-1 text-xs text-neutral-500"
+              >${msg("Show Only Running")}</span
+            >
+            <sl-switch
+              @sl-change=${(e: CustomEvent) => {
+                this.filterBy = {
+                  ...this.filterBy,
+                  isCrawlRunning: (e.target as SlCheckbox).checked || undefined,
+                };
+              }}
+              ?checked=${this.filterBy.isCrawlRunning === true}
+            ></sl-switch>
+          </label>
 
-        <label>
-          <span class="mr-1 text-xs text-neutral-500"
-            >${msg("Show Only Mine")}</span
-          >
-          <sl-switch
-            @sl-change=${(e: CustomEvent) =>
-              (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
-            ?checked=${this.filterByCurrentUser}
-          ></sl-switch>
-        </label>
+          <label>
+            <span class="mr-1 text-xs text-neutral-500"
+              >${msg("Show Only Mine")}</span
+            >
+            <sl-switch
+              @sl-change=${(e: CustomEvent) =>
+                (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
+              ?checked=${this.filterByCurrentUser}
+            ></sl-switch>
+          </label>
+        </div>
       </div>
     `;
   }
