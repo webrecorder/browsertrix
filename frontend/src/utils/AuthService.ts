@@ -1,6 +1,7 @@
 import { APIError } from "./api";
 import { urlForName } from "./router";
 import appState, { AppStateService } from "./state";
+import TabSyncService from "./TabSyncService";
 
 import type { APIUser } from "@/index";
 import type { Auth } from "@/types/auth";
@@ -64,7 +65,10 @@ export default class AuthService {
   static logOutEvent: keyof AuthEventMap = "btrix-log-out";
   static needLoginEvent: keyof AuthEventMap = "btrix-need-login";
 
-  static broadcastChannel = new BroadcastChannel(AuthService.storageKey);
+  static tabSync = new TabSyncService(AuthService.storageKey);
+  static get broadcastChannel() {
+    return AuthService.tabSync.channel;
+  }
   static storage = {
     getItem() {
       return window.sessionStorage.getItem(AuthService.storageKey);
@@ -245,12 +249,17 @@ export default class AuthService {
       };
       AuthService.broadcastChannel.addEventListener("message", cb);
     });
+
     // Ensure that `getSharedSessionAuth` is resolved within a reasonable
     // timeframe, even if another window/tab doesn't respond:
     const timeoutPromise = new Promise<null>((resolve) => {
+      if (!this.tabSync.tabCount || this.tabSync.tabCount === 1) {
+        resolve(null);
+        return;
+      }
       window.setTimeout(() => {
         resolve(null);
-      }, 10);
+      }, 500);
     });
 
     return Promise.race([broadcastPromise, timeoutPromise]).then(
