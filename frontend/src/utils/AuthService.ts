@@ -201,11 +201,15 @@ export default class AuthService {
       "message",
       ({ data }: MessageEvent<AuthEventDetail>) => {
         if (data.name === "requesting_auth") {
-          // A new tab/window opened and is requesting shared auth
-          AuthService.broadcastChannel.postMessage({
-            name: "responding_auth",
-            auth: AuthService.getCurrentTabAuth(),
-          } as AuthResponseEventDetail);
+          const auth = AuthService.getCurrentTabAuth();
+
+          if (auth) {
+            // A new tab/window opened and is requesting shared auth
+            AuthService.broadcastChannel.postMessage({
+              name: "responding_auth",
+              auth: AuthService.getCurrentTabAuth(),
+            } as AuthResponseEventDetail);
+          }
         }
       },
     );
