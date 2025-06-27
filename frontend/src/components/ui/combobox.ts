@@ -26,7 +26,7 @@ export class Combobox extends LitElement {
     css`
       :host {
         position: relative;
-        z-index: 2;
+        z-index: 3;
       }
     `,
   ];

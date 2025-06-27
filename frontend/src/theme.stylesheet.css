@@ -174,7 +174,19 @@
   }
 
   sl-radio-button[checked]::part(button) {
-    background-color: theme(colors.primary.500);
+    @apply border-primary-300 bg-primary-50 text-primary-600;
+  }
+
+  sl-radio-button:not([checked]):not(disabled)::part(button):not(:hover) {
+    @apply bg-white text-neutral-600;
+  }
+
+  sl-radio-button:not([checked]):not(disabled):hover::part(button) {
+    @apply bg-primary-400;
+  }
+
+  sl-radio-button::part(label) {
+    @apply font-medium;
   }
 
   /* Elevate select and buttons */
