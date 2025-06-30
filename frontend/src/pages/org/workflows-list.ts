@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import type { SlDialog, SlSelectEvent } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, type PropertyValues, type TemplateResult } from "lit";
@@ -122,6 +123,9 @@ export class WorkflowsList extends BtrixElement {
   @state()
   private filterByCurrentUser = false;
 
+  @state()
+  private readonly tagFilterMap = new Map<string, boolean>();
+
   @query("#deleteDialog")
   private readonly deleteDialog?: SlDialog | null;
 
@@ -140,6 +144,15 @@ export class WorkflowsList extends BtrixElement {
 
   searchParams = new SearchParamsController(this, (params) => {
     this.updateFiltersFromSearchParams(params);
+  });
+
+  private readonly tagsTask = new Task(this, {
+    task: async () => {
+      return await this.api.fetch<string[]>(
+        `/orgs/${this.orgId}/crawlconfigs/tags`,
+      );
+    },
+    args: () => [] as const,
   });
 
   private updateFiltersFromSearchParams(
@@ -583,8 +596,8 @@ export class WorkflowsList extends BtrixElement {
         ${msg("Filter by:")}
       </span>
 
-      <sl-dropdown distance="4" placement="bottom">
-        ${this.renderRadioButton({
+      <sl-dropdown distance="4" placement="bottom" hoist>
+        ${this.renderCheckboxButton({
           checked: this.filterBy.schedule !== undefined,
           label: html`${msg("Schedule Type")}${this.filterBy.schedule ===
           undefined
@@ -626,7 +639,46 @@ export class WorkflowsList extends BtrixElement {
         </sl-menu>
       </sl-dropdown>
 
-      ${this.renderRadioButton({
+      <sl-dropdown distance="4" placement="bottom" hoist>
+        ${this.renderCheckboxButton({
+          checked: Boolean(this.tagFilterMap.size),
+          label: html`${msg("Tags")}${this.tagFilterMap.size
+            ? html`:
+                <strong class="font-semibold"
+                  >${Array.from(this.tagFilterMap.values()).join(", ")}</strong
+                >`
+            : ""}`,
+          dropdown: true,
+        })}
+
+        <sl-menu
+          @sl-select=${(e: SlSelectEvent) => {
+            const { item } = e.detail;
+
+            this.filterBy = {
+              ...this.filterBy,
+              schedule: item.checked
+                ? item.dataset.value === "true"
+                : undefined,
+            };
+          }}
+        >
+          <sl-menu-label>${msg("Tags")}</sl-menu-label>
+          <div class="mx-5 mb-2 flex flex-wrap gap-2">
+            ${this.tagsTask.render({
+              complete: (tags) =>
+                tags.map((tag) =>
+                  this.renderCheckboxButton({
+                    checked: Boolean(this.tagFilterMap.size),
+                    label: tag,
+                  }),
+                ),
+            })}
+          </div>
+        </sl-menu>
+      </sl-dropdown>
+
+      ${this.renderCheckboxButton({
         checked: this.filterBy.isCrawlRunning === true,
         label: msg("Running"),
         onClick: () => {
@@ -636,7 +688,7 @@ export class WorkflowsList extends BtrixElement {
           };
         },
       })}
-      ${this.renderRadioButton({
+      ${this.renderCheckboxButton({
         checked: this.filterByCurrentUser,
         label: msg("Mine"),
         onClick: () => {
@@ -699,7 +751,7 @@ export class WorkflowsList extends BtrixElement {
     `;
   }
 
-  private readonly renderRadioButton = (opts: {
+  private readonly renderCheckboxButton = (opts: {
     checked: boolean;
     label: string | TemplateResult;
     onClick?: () => void;
