@@ -218,6 +218,15 @@ export class Pagination extends LitElement {
       this.onPageChange(constrainedPage, { dispatch: false });
     }
 
+    // if page is out of bounds, clamp it & dispatch an event to re-fetch data
+    if (
+      changedProperties.has("page") &&
+      (this.page > this.pages || this.page < 1)
+    ) {
+      const constrainedPage = Math.max(1, Math.min(this.pages, this.page));
+      this.onPageChange(constrainedPage, { dispatch: true });
+    }
+
     if (changedProperties.get("page") && this._page) {
       this.inputValue = `${this._page}`;
     }
