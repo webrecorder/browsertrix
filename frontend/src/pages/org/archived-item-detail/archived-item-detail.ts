@@ -545,27 +545,33 @@ export class ArchivedItemDetail extends BtrixElement {
           iconLibrary: "default",
           icon: "info-circle-fill",
         })}
-        ${when(
-          this.itemType === "crawl" && this.isCrawler,
-          () => html`
-            ${renderNavItem({
-              section: "qa",
-              iconLibrary: "default",
-              icon: "clipboard2-data-fill",
-              detail: html`<btrix-beta-icon></btrix-beta-icon>`,
-            })}
-          `,
+        ${when(this.item, (item) =>
+          isSuccessfullyFinished(item)
+            ? html`
+                ${when(
+                  this.itemType === "crawl" && this.isCrawler,
+                  () => html`
+                    ${renderNavItem({
+                      section: "qa",
+                      iconLibrary: "default",
+                      icon: "clipboard2-data-fill",
+                      detail: html`<btrix-beta-icon></btrix-beta-icon>`,
+                    })}
+                  `,
+                )}
+                ${renderNavItem({
+                  section: "replay",
+                  iconLibrary: "app",
+                  icon: "replaywebpage",
+                })}
+                ${renderNavItem({
+                  section: "files",
+                  iconLibrary: "default",
+                  icon: "folder-fill",
+                })}
+              `
+            : nothing,
         )}
-        ${renderNavItem({
-          section: "replay",
-          iconLibrary: "app",
-          icon: "replaywebpage",
-        })}
-        ${renderNavItem({
-          section: "files",
-          iconLibrary: "default",
-          icon: "folder-fill",
-        })}
         ${when(
           this.itemType === "crawl",
           () => html`
