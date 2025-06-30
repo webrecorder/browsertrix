@@ -2742,7 +2742,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,
-      seedFile: null,
+      seedFileId: null,
     };
 
     return config;
