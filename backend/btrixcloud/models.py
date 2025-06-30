@@ -441,6 +441,9 @@ class CrawlConfigCore(BaseMongoModel):
     crawlerChannel: Optional[str] = None
     proxyId: Optional[str] = None
 
+    firstSeed: str = ""
+    seedCount: int = 0
+
 
 # ============================================================================
 class CrawlConfigAdditional(BaseModel):
@@ -508,8 +511,6 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     lastCrawlPausedAt: Optional[datetime] = None
     lastCrawlPausedExpiry: Optional[datetime] = None
     profileName: Optional[str] = None
-    firstSeed: Optional[str] = None
-    seedCount: int = 0
 
     createdByName: Optional[str] = None
     modifiedByName: Optional[str] = None
