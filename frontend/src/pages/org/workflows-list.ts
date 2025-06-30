@@ -1,13 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
-import type {
-  SlChangeEvent,
-  SlCheckbox,
-  SlDialog,
-  SlRadioGroup,
-  SlSelectEvent,
-} from "@shoelace-style/shoelace";
+import type { SlDialog, SlSelectEvent } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import { html, type PropertyValues } from "lit";
+import { html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -523,67 +517,8 @@ export class WorkflowsList extends BtrixElement {
 
   private renderControls() {
     return html`
-      <div class="mb-2 flex flex-wrap items-center justify-end gap-2 md:gap-4">
-        <div class=" grow basis-96">${this.renderSearch()}</div>
-
-        <label class="flex flex-wrap items-center" for="schedule-filter">
-          <span class="mr-2 whitespace-nowrap text-sm text-neutral-500">
-            ${msg("Schedule:")}
-          </span>
-          <sl-radio-group
-            size="small"
-            id="schedule-filter"
-            @sl-change=${(e: SlChangeEvent) => {
-              const filter = (e.target as SlRadioGroup).value;
-              switch (filter) {
-                case "all-schedules":
-                  this.filterBy = {
-                    ...this.filterBy,
-                    schedule: undefined,
-                  };
-                  break;
-                case "scheduled":
-                  this.filterBy = {
-                    ...this.filterBy,
-                    schedule: true,
-                  };
-                  break;
-                case "unscheduled":
-                  this.filterBy = {
-                    ...this.filterBy,
-                    schedule: false,
-                  };
-                  break;
-              }
-            }}
-            value=${this.filterBy.schedule === undefined
-              ? "all-schedules"
-              : this.filterBy.schedule
-                ? "scheduled"
-                : "unscheduled"}
-          >
-            <sl-tooltip content=${msg("All Schedule States")}>
-              <sl-radio-button value="all-schedules" pill>
-                <sl-icon
-                  name="asterisk"
-                  label=${msg("All Schedule States")}
-                ></sl-icon>
-              </sl-radio-button>
-            </sl-tooltip>
-            <sl-radio-button value="unscheduled" pill>
-              <sl-icon
-                name="calendar2-x"
-                slot="prefix"
-                label=${msg("No Schedule")}
-              ></sl-icon>
-              ${msg("None")}
-            </sl-radio-button>
-            <sl-radio-button value="scheduled" pill>
-              <sl-icon name="calendar2-check" slot="prefix"></sl-icon>
-              ${msg("Scheduled")}
-            </sl-radio-button>
-          </sl-radio-group>
-        </label>
+      <div class="flex flex-wrap items-center gap-2 md:gap-4">
+        <div class="grow basis-1/2">${this.renderSearch()}</div>
 
         <div class="flex items-center">
           <label
@@ -636,35 +571,79 @@ export class WorkflowsList extends BtrixElement {
             ></sl-icon-button>
           </sl-tooltip>
         </div>
-        <div class="flex flex-wrap gap-2">
-          <label>
-            <span class="mr-1 text-xs text-neutral-500"
-              >${msg("Show Only Running")}</span
-            >
-            <sl-switch
-              @sl-change=${(e: CustomEvent) => {
-                this.filterBy = {
-                  ...this.filterBy,
-                  isCrawlRunning: (e.target as SlCheckbox).checked || undefined,
-                };
-              }}
-              ?checked=${this.filterBy.isCrawlRunning === true}
-            ></sl-switch>
-          </label>
 
-          <label>
-            <span class="mr-1 text-xs text-neutral-500"
-              >${msg("Show Only Mine")}</span
-            >
-            <sl-switch
-              @sl-change=${(e: CustomEvent) =>
-                (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
-              ?checked=${this.filterByCurrentUser}
-            ></sl-switch>
-          </label>
-        </div>
+        ${this.renderFilters()}
       </div>
     `;
+  }
+
+  private renderFilters() {
+    return html`<div class="flex flex-wrap items-center gap-2">
+      <span class="whitespace-nowrap text-sm text-neutral-500">
+        ${msg("Filter by:")}
+      </span>
+
+      <sl-dropdown distance="4" placement="bottom">
+        ${this.renderRadioButton({
+          checked: this.filterBy.schedule !== undefined,
+          label: html`${msg("Schedule Type")}${this.filterBy.schedule ===
+          undefined
+            ? ""
+            : html`:
+                <strong class="font-semibold"
+                  >${this.filterBy.schedule
+                    ? msg("Scheduled")
+                    : msg("No Schedule")}</strong
+                >`}`,
+          dropdown: true,
+        })}
+        <sl-menu
+          @sl-select=${(e: SlSelectEvent) => {
+            const { item } = e.detail;
+
+            this.filterBy = {
+              ...this.filterBy,
+              schedule: item.checked
+                ? item.dataset.value === "true"
+                : undefined,
+            };
+          }}
+        >
+          <sl-menu-item
+            type="checkbox"
+            data-value="true"
+            ?checked=${this.filterBy.schedule === true}
+          >
+            ${msg("Scheduled")}
+          </sl-menu-item>
+          <sl-menu-item
+            type="checkbox"
+            data-value="false"
+            ?checked=${this.filterBy.schedule === false}
+          >
+            ${msg("No Schedule")}
+          </sl-menu-item>
+        </sl-menu>
+      </sl-dropdown>
+
+      ${this.renderRadioButton({
+        checked: this.filterBy.isCrawlRunning === true,
+        label: msg("Running"),
+        onClick: () => {
+          this.filterBy = {
+            ...this.filterBy,
+            isCrawlRunning: !this.filterBy.isCrawlRunning,
+          };
+        },
+      })}
+      ${this.renderRadioButton({
+        checked: this.filterByCurrentUser,
+        label: msg("Mine"),
+        onClick: () => {
+          this.filterByCurrentUser = !this.filterByCurrentUser;
+        },
+      })}
+    </div>`;
   }
 
   private renderSearch() {
@@ -694,6 +673,35 @@ export class WorkflowsList extends BtrixElement {
       </btrix-search-combobox>
     `;
   }
+
+  private readonly renderRadioButton = (opts: {
+    checked: boolean;
+    label: string | TemplateResult;
+    onClick?: () => void;
+    dropdown?: boolean;
+  }) => html`
+    <sl-button
+      slot=${ifDefined(opts.dropdown ? "trigger" : undefined)}
+      role="checkbox"
+      aria-checked=${opts.checked ? "true" : "false"}
+      size="small"
+      ?caret=${opts.dropdown}
+      @click=${opts.onClick}
+      pill
+    >
+      ${when(
+        !opts.dropdown,
+        () => html`
+          <sl-icon
+            class="size-4 text-base"
+            slot="prefix"
+            name=${opts.checked ? "check2-circle" : "plus-circle-dotted"}
+          ></sl-icon>
+        `,
+      )}
+      ${opts.label}
+    </sl-button>
+  `;
 
   private renderWorkflowList() {
     if (!this.workflows) return;

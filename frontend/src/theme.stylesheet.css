@@ -173,18 +173,26 @@
     background-color: theme(colors.primary.500);
   }
 
+  sl-button[role="checkbox"][aria-checked="true"]::part(base),
   sl-radio-button[checked]::part(button) {
     @apply border-primary-300 bg-primary-50 text-primary-600;
   }
 
+  sl-button[role="checkbox"][aria-checked="false"]:not(disabled)::part(
+      base
+    ):not(:hover),
   sl-radio-button:not([checked]):not(disabled)::part(button):not(:hover) {
     @apply bg-white text-neutral-600;
   }
 
+  sl-button[role="checkbox"][aria-checked="false"]:not(disabled):hover::part(
+      base
+    ),
   sl-radio-button:not([checked]):not(disabled):hover::part(button) {
-    @apply bg-primary-400;
+    @apply border-primary-300 bg-primary-100 text-primary-700;
   }
 
+  sl-button[role="checkbox"]::part(label),
   sl-radio-button::part(label) {
     @apply font-medium;
   }
