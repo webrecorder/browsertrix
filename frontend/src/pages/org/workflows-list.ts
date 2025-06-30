@@ -643,6 +643,31 @@ export class WorkflowsList extends BtrixElement {
           this.filterByCurrentUser = !this.filterByCurrentUser;
         },
       })}
+      ${when(
+        [
+          this.filterBy.schedule,
+          this.filterBy.isCrawlRunning,
+          this.filterByCurrentUser || undefined,
+        ].filter((v) => v !== undefined).length > 1,
+        () => html`
+          <sl-button
+            class="[--sl-color-primary-600:var(--sl-color-neutral-500)]"
+            size="small"
+            variant="text"
+            @click=${() => {
+              this.filterBy = {
+                ...this.filterBy,
+                schedule: undefined,
+                isCrawlRunning: undefined,
+              };
+              this.filterByCurrentUser = false;
+            }}
+          >
+            <sl-icon slot="prefix" name="x-lg"></sl-icon>
+            ${msg("Clear All")}
+          </sl-button>
+        `,
+      )}
     </div>`;
   }
 
@@ -903,6 +928,7 @@ export class WorkflowsList extends BtrixElement {
               class="font-medium text-neutral-500 underline hover:no-underline"
               @click=${() => {
                 this.filterBy = {};
+                this.filterByCurrentUser = false;
               }}
             >
               ${msg("Clear search and filters")}
