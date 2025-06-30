@@ -1,10 +1,12 @@
 """user-uploaded files"""
 
-from typing import TYPE_CHECKING, Union, Any, Optional, Dict
+from typing import TYPE_CHECKING, Union, Any, Optional, Dict, Tuple
 
 import os
+import tempfile
 from uuid import UUID, uuid4
 
+import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Request
 import pymongo
 
@@ -12,6 +14,7 @@ from .models import (
     UserUploadFile,
     UserUploadFileOut,
     SeedFile,
+    ImageFile,
     ImageFilePreparer,
     Organization,
     User,
@@ -170,6 +173,8 @@ class FileUploadOps:
                 detail="max_size_25_mb_exceeded",
             )
 
+        first_seed, seed_count = await self._parse_seed_info_from_file(file_obj, org)
+
         # Save file to database
         file_to_insert = SeedFile(
             id=file_id,
@@ -183,11 +188,39 @@ class FileUploadOps:
             userid=file_obj.userid,
             userName=file_obj.userName,
             created=file_obj.created,
+            firstSeed=first_seed,
+            seedCount=seed_count,
         )
 
         await self.files.insert_one(file_to_insert.to_dict())
 
         return {"added": True, "id": file_id}
+
+    async def _parse_seed_info_from_file(
+        self, file_obj: ImageFile, org: Organization
+    ) -> Tuple[str, int]:
+        first_seed = ""
+        seed_count = 0
+
+        image_file_out = await file_obj.get_image_file_out(org, self.storage_ops)
+
+        with tempfile.TemporaryFile() as fp:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(image_file_out.path) as resp:
+                    async for chunk in resp.content.iter_chunked(4096):
+                        fp.write(chunk)
+
+            fp.seek(0)
+
+            for line in fp:
+                if not line:
+                    continue
+
+                if not first_seed:
+                    first_seed = line.decode("utf-8").strip()
+                seed_count += 1
+
+        return first_seed, seed_count
 
     async def delete_user_file(
         self, file_id: UUID, org: Organization

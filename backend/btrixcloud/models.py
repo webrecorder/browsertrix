@@ -601,7 +601,7 @@ class CrawlConfigSearchValues(BaseModel):
 
     names: List[str]
     descriptions: List[str]
-    firstSeeds: List[AnyHttpUrl]
+    firstSeeds: List[str]
     workflowIds: List[UUID]
 
 
@@ -955,7 +955,7 @@ class CrawlSearchValuesResponse(BaseModel):
 
     names: List[str]
     descriptions: List[str]
-    firstSeeds: List[AnyHttpUrl]
+    firstSeeds: List[str]
 
 
 # ============================================================================
@@ -1189,6 +1189,7 @@ class ImageFile(BaseFile):
     async def get_image_file_out(self, org, storage_ops) -> ImageFileOut:
         """Get ImageFileOut with new presigned url"""
         presigned_url, _ = await storage_ops.get_presigned_url(org, self)
+        presigned_url = storage_ops.resolve_internal_access_path(presigned_url)
 
         return ImageFileOut(
             name=self.filename,
@@ -1205,6 +1206,7 @@ class ImageFile(BaseFile):
     async def get_public_image_file_out(self, org, storage_ops) -> PublicImageFileOut:
         """Get PublicImageFileOut with new presigned url"""
         presigned_url, _ = await storage_ops.get_presigned_url(org, self)
+        presigned_url = storage_ops.resolve_internal_access_path(presigned_url)
 
         return PublicImageFileOut(
             name=self.filename,
@@ -1257,11 +1259,14 @@ class ImageFilePreparer(FilePreparer):
 
 # ============================================================================
 class UserUploadFileOut(ImageFileOut):
-    """Output model for user-uploaded files"""
+    """Output model for all user-uploaded files"""
 
     id: UUID
     oid: UUID
     type: str
+
+    firstSeed: Optional[str] = None
+    seedCount: Optional[int] = None
 
 
 # ============================================================================
@@ -1286,9 +1291,13 @@ class UserUploadFile(BaseMongoModel):
 
     type: str
 
+    firstSeed: Optional[str] = None
+    seedCount: Optional[int] = None
+
     async def get_file_out(self, org, storage_ops) -> UserUploadFileOut:
         """Get ImageFileOut with new presigned url"""
         presigned_url, _ = await storage_ops.get_presigned_url(org, self)
+        presigned_url = storage_ops.resolve_internal_access_path(presigned_url)
 
         return UserUploadFileOut(
             name=self.filename,
@@ -1303,6 +1312,8 @@ class UserUploadFile(BaseMongoModel):
             id=self.id,
             oid=self.oid,
             type=self.type,
+            firstSeed=self.firstSeed,
+            seedCount=self.seedCount,
         )
 
 
