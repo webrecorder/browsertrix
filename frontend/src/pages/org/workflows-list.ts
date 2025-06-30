@@ -1,7 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
 import type {
+  SlChangeEvent,
   SlCheckbox,
   SlDialog,
+  SlRadioGroup,
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
@@ -23,6 +25,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
+import { SearchParamsController } from "@/controllers/searchParams";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { pageHeader } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
@@ -36,7 +39,12 @@ import { tw } from "@/utils/tailwind";
 
 type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
-type SortDirection = "asc" | "desc";
+const SORT_DIRECTIONS = ["asc", "desc"] as const;
+type SortDirection = (typeof SORT_DIRECTIONS)[number];
+type Sort = {
+  field: SortField;
+  direction: SortDirection;
+};
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.crawlConfigs";
@@ -72,6 +80,16 @@ const sortableFields: Record<
   },
 };
 
+const DEFAULT_SORT = {
+  field: "lastRun",
+  direction: sortableFields["lastRun"].defaultDirection!,
+} as const;
+
+const USED_FILTERS = [
+  "schedule",
+  "isCrawlRunning",
+] as const satisfies (keyof ListWorkflow)[];
+
 /**
  * Usage:
  * ```ts
@@ -102,13 +120,7 @@ export class WorkflowsList extends BtrixElement {
   private workflowToDelete?: ListWorkflow;
 
   @state()
-  private orderBy: {
-    field: SortField;
-    direction: SortDirection;
-  } = {
-    field: "lastRun",
-    direction: sortableFields["lastRun"].defaultDirection!,
-  };
+  private orderBy: Sort = DEFAULT_SORT;
 
   @state()
   private filterBy: Partial<{ [k in keyof ListWorkflow]: boolean }> = {};
@@ -132,11 +144,83 @@ export class WorkflowsList extends BtrixElement {
     );
   }
 
+  searchParams = new SearchParamsController(this, (params) => {
+    this.updateFiltersFromSearchParams(params);
+  });
+
+  private updateFiltersFromSearchParams(
+    params = this.searchParams.searchParams,
+  ) {
+    const filterBy = { ...this.filterBy };
+    // remove filters no longer present in search params
+    for (const key of Object.keys(filterBy)) {
+      if (!params.has(key)) {
+        filterBy[key as keyof typeof filterBy] = undefined;
+      }
+    }
+
+    // remove current user filter if not present in search params
+    if (!params.has("mine")) {
+      this.filterByCurrentUser = false;
+    }
+
+    // add filters present in search params
+    for (const [key, value] of params) {
+      // Filter by current user
+      if (key === "mine") {
+        this.filterByCurrentUser = value === "true";
+      }
+
+      // Sorting field
+      if (key === "sortBy") {
+        if (value in sortableFields) {
+          this.orderBy = {
+            field: value as SortField,
+            direction:
+              // Use default direction for field if available, otherwise use current direction
+              sortableFields[value as SortField].defaultDirection ||
+              this.orderBy.direction,
+          };
+        }
+      }
+      if (key === "sortDir") {
+        if (SORT_DIRECTIONS.includes(value as SortDirection)) {
+          // Overrides sort direction if specified
+          this.orderBy = { ...this.orderBy, direction: value as SortDirection };
+        }
+      }
+
+      // Ignored params
+      if (["page", "mine", "sortBy", "sortDir"].includes(key)) continue;
+
+      // Convert string bools to filter values
+      if (value === "true") {
+        filterBy[key as keyof typeof filterBy] = true;
+      } else if (value === "false") {
+        filterBy[key as keyof typeof filterBy] = false;
+      } else {
+        filterBy[key as keyof typeof filterBy] = undefined;
+      }
+    }
+    this.filterBy = { ...filterBy };
+  }
+
   constructor() {
     super();
+    this.updateFiltersFromSearchParams();
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    // Apply filterByCurrentUser from session storage, and transparently update url without pushing to history stack
+    // This needs to happen here instead of in the constructor because this only occurs once after the element is connected to the DOM,
+    // and so it overrides the filter state set in `updateFiltersFromSearchParams` but only on first render, not on subsequent navigation.
     this.filterByCurrentUser =
       window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
       "true";
+    if (this.filterByCurrentUser) {
+      this.searchParams.set("mine", "true", { replace: true });
+    }
   }
 
   protected async willUpdate(
@@ -175,6 +259,56 @@ export class WorkflowsList extends BtrixElement {
 
   protected firstUpdated() {
     void this.fetchConfigSearchValues();
+  }
+
+  protected updated(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
+    if (
+      changedProperties.has("filterBy") ||
+      changedProperties.has("filterByCurrentUser") ||
+      changedProperties.has("orderBy")
+    ) {
+      this.searchParams.update((params) => {
+        // Reset page
+        params.delete("page");
+
+        const newParams = [
+          // Known filters
+          ...USED_FILTERS.map<[string, undefined]>((f) => [f, undefined]),
+
+          // Existing filters
+          ...Object.entries(this.filterBy),
+
+          // Filter by current user
+          ["mine", this.filterByCurrentUser || undefined],
+
+          // Sorting fields
+          [
+            "sortBy",
+            this.orderBy.field !== DEFAULT_SORT.field
+              ? this.orderBy.field
+              : undefined,
+          ],
+          [
+            "sortDir",
+            this.orderBy.direction !==
+            sortableFields[this.orderBy.field].defaultDirection
+              ? this.orderBy.direction
+              : undefined,
+          ],
+        ] satisfies [string, boolean | string | undefined][];
+
+        for (const [filter, value] of newParams) {
+          if (value !== undefined) {
+            params.set(filter, value.toString());
+          } else {
+            params.delete(filter);
+          }
+        }
+        return params;
+      });
+    }
   }
 
   disconnectedCallback(): void {
@@ -389,14 +523,77 @@ export class WorkflowsList extends BtrixElement {
 
   private renderControls() {
     return html`
-      <div class="mb-2 flex flex-wrap items-center gap-2 md:gap-4">
-        <div class="grow">${this.renderSearch()}</div>
+      <div class="mb-2 flex flex-wrap items-center justify-end gap-2 md:gap-4">
+        <div class=" grow basis-96">${this.renderSearch()}</div>
 
-        <div class="flex w-full items-center md:w-fit">
-          <div class="text-0-500 mr-2 whitespace-nowrap text-sm">
+        <label class="flex flex-wrap items-center" for="schedule-filter">
+          <span class="mr-2 whitespace-nowrap text-sm text-neutral-500">
+            ${msg("Schedule:")}
+          </span>
+          <sl-radio-group
+            size="small"
+            id="schedule-filter"
+            @sl-change=${(e: SlChangeEvent) => {
+              const filter = (e.target as SlRadioGroup).value;
+              switch (filter) {
+                case "all-schedules":
+                  this.filterBy = {
+                    ...this.filterBy,
+                    schedule: undefined,
+                  };
+                  break;
+                case "scheduled":
+                  this.filterBy = {
+                    ...this.filterBy,
+                    schedule: true,
+                  };
+                  break;
+                case "unscheduled":
+                  this.filterBy = {
+                    ...this.filterBy,
+                    schedule: false,
+                  };
+                  break;
+              }
+            }}
+            value=${this.filterBy.schedule === undefined
+              ? "all-schedules"
+              : this.filterBy.schedule
+                ? "scheduled"
+                : "unscheduled"}
+          >
+            <sl-tooltip content=${msg("All Schedule States")}>
+              <sl-radio-button value="all-schedules" pill>
+                <sl-icon
+                  name="asterisk"
+                  label=${msg("All Schedule States")}
+                ></sl-icon>
+              </sl-radio-button>
+            </sl-tooltip>
+            <sl-radio-button value="unscheduled" pill>
+              <sl-icon
+                name="calendar2-x"
+                slot="prefix"
+                label=${msg("No Schedule")}
+              ></sl-icon>
+              ${msg("None")}
+            </sl-radio-button>
+            <sl-radio-button value="scheduled" pill>
+              <sl-icon name="calendar2-check" slot="prefix"></sl-icon>
+              ${msg("Scheduled")}
+            </sl-radio-button>
+          </sl-radio-group>
+        </label>
+
+        <div class="flex items-center">
+          <label
+            class="mr-2 whitespace-nowrap text-sm text-neutral-500"
+            for="sort-select"
+          >
             ${msg("Sort by:")}
-          </div>
+          </label>
           <sl-select
+            id="sort-select"
             class="flex-1 md:min-w-[9.2rem]"
             size="small"
             pill
@@ -417,62 +614,44 @@ export class WorkflowsList extends BtrixElement {
               `,
             )}
           </sl-select>
-          <sl-icon-button
-            name="arrow-down-up"
-            label=${msg("Reverse sort")}
-            @click=${() => {
-              this.orderBy = {
-                ...this.orderBy,
-                direction: this.orderBy.direction === "asc" ? "desc" : "asc",
-              };
-            }}
-          ></sl-icon-button>
+          <sl-tooltip
+            content=${this.orderBy.direction === "asc"
+              ? msg("Sort in descending order")
+              : msg("Sort in ascending order")}
+          >
+            <sl-icon-button
+              name=${this.orderBy.direction === "asc"
+                ? "sort-up-alt"
+                : "sort-down"}
+              class="text-base"
+              label=${this.orderBy.direction === "asc"
+                ? msg("Sort Descending")
+                : msg("Sort Ascending")}
+              @click=${() => {
+                this.orderBy = {
+                  ...this.orderBy,
+                  direction: this.orderBy.direction === "asc" ? "desc" : "asc",
+                };
+              }}
+            ></sl-icon-button>
+          </sl-tooltip>
         </div>
-      </div>
+        <div class="flex flex-wrap gap-2">
+          <label>
+            <span class="mr-1 text-xs text-neutral-500"
+              >${msg("Show Only Running")}</span
+            >
+            <sl-switch
+              @sl-change=${(e: CustomEvent) => {
+                this.filterBy = {
+                  ...this.filterBy,
+                  isCrawlRunning: (e.target as SlCheckbox).checked || undefined,
+                };
+              }}
+              ?checked=${this.filterBy.isCrawlRunning === true}
+            ></sl-switch>
+          </label>
 
-      <div class="flex flex-wrap items-center justify-between">
-        <div class="text-sm">
-          <button
-            class="${this.filterBy.schedule === undefined
-              ? "border-b-current text-primary"
-              : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
-            aria-selected=${this.filterBy.schedule === undefined}
-            @click=${() =>
-              (this.filterBy = {
-                ...this.filterBy,
-                schedule: undefined,
-              })}
-          >
-            ${msg("All")}
-          </button>
-          <button
-            class="${this.filterBy.schedule === true
-              ? "border-b-current text-primary"
-              : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
-            aria-selected=${this.filterBy.schedule === true}
-            @click=${() =>
-              (this.filterBy = {
-                ...this.filterBy,
-                schedule: true,
-              })}
-          >
-            ${msg("Scheduled")}
-          </button>
-          <button
-            class="${this.filterBy.schedule === false
-              ? "border-b-current text-primary"
-              : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
-            aria-selected=${this.filterBy.schedule === false}
-            @click=${() =>
-              (this.filterBy = {
-                ...this.filterBy,
-                schedule: false,
-              })}
-          >
-            ${msg("No schedule")}
-          </button>
-        </div>
-        <div class="flex items-center justify-end">
           <label>
             <span class="mr-1 text-xs text-neutral-500"
               >${msg("Show Only Mine")}</span
