@@ -19,7 +19,6 @@ from btrixcloud.models import (
     TYPE_NON_RUNNING_STATES,
     TYPE_RUNNING_STATES,
     TYPE_ALL_CRAWL_STATES,
-    NON_RUNNING_STATES,
     RUNNING_STATES,
     WAITING_STATES,
     RUNNING_AND_STARTING_ONLY,
@@ -757,28 +756,22 @@ class CrawlOperator(BaseOperator):
         if not max_crawls:
             return True
 
+        name = data.parent.get("metadata", {}).get("name")
+
         active_crawls = 0
-        for crawl_job in data.related[CJS].values():
-            crawl_state = crawl_job.get("status", {}).get("state", "")
+
+        for crawl_sorted in data.related[CJS].values():
+            crawl_state = crawl_sorted.get("status", {}).get("state", "")
+
+            # don't count ourselves
+            if crawl_sorted.get("metadata", {}).get("name") == name:
+                continue
+
             if crawl_state in RUNNING_AND_WAITING_STATES:
                 active_crawls += 1
 
         if active_crawls <= max_crawls:
             return True
-
-        name = data.parent.get("metadata", {}).get("name")
-
-        i = 0
-        for crawl_sorted in data.related[CJS].values():
-            if crawl_sorted.get("status", {}).get("state") in NON_RUNNING_STATES:
-                continue
-
-            if crawl_sorted.get("metadata").get("name") == name:
-                if i < max_crawls:
-                    return True
-
-                break
-            i += 1
 
         await self.set_state(
             "waiting_org_limit", status, crawl, allowed_from=["starting"]
