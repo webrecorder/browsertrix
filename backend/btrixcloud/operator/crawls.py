@@ -757,7 +757,13 @@ class CrawlOperator(BaseOperator):
         if not max_crawls:
             return True
 
-        if len(data.related[CJS]) <= max_crawls:
+        active_crawls = 0
+        for crawl_job in data.related[CJS].values():
+            crawl_state = crawl_job.get("status", {}).get("state", "")
+            if crawl_state in RUNNING_AND_WAITING_STATES:
+                active_crawls += 1
+
+        if active_crawls <= max_crawls:
             return True
 
         name = data.parent.get("metadata", {}).get("name")
