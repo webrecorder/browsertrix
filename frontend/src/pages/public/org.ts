@@ -11,6 +11,8 @@ import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import type { OrgData, PublicOrgCollections } from "@/types/org";
 import { SortDirection } from "@/types/utils";
+import { richText } from "@/utils/rich-text";
+import { toShortUrl } from "@/utils/url-helpers";
 
 @localized()
 @customElement("btrix-public-org")
@@ -152,7 +154,9 @@ export class PublicOrg extends BtrixElement {
             ${when(
               org.description,
               (description) => html`
-                <div class="text-pretty text-stone-600">${description}</div>
+                <div class="text-pretty text-stone-600">
+                  ${richText(description)}
+                </div>
               `,
             )}
             ${when(org.url, (urlStr) => {
@@ -173,12 +177,12 @@ export class PublicOrg extends BtrixElement {
                     label=${msg("Website")}
                   ></sl-icon>
                   <a
-                    class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
+                    class="truncate font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
                     href="${url.href}"
                     target="_blank"
                     rel="noopener noreferrer nofollow"
                   >
-                    ${url.href.split("//")[1].replace(/\/$/, "")}
+                    ${toShortUrl(url.href, null)}
                   </a>
                 </div>
               `;

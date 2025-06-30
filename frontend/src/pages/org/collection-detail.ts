@@ -38,6 +38,7 @@ import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
+import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
 
 const ABORT_REASON_THROTTLE = "throttled";
@@ -203,7 +204,7 @@ export class CollectionDetail extends BtrixElement {
           ${this.collection
             ? this.collection.caption
               ? html`<div class="text-pretty text-neutral-600">
-                  ${this.collection.caption}
+                  ${richText(this.collection.caption)}
                 </div>`
               : html`<div
                   class="addSummary text-pretty rounded-md px-1 font-light text-neutral-500"
