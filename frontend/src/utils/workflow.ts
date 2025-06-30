@@ -251,7 +251,7 @@ export function getInitialFormState(params: {
       }
 
       formState.urlList = mapSeedToUrl(params.initialSeeds).join("\n");
-    } else if (params.initialWorkflow.seedFile) {
+    } else if (params.initialWorkflow.seedFileId) {
       // TODO Convert file
       // formState.seedFile = params.initialWorkflow.seedFile
       formState.seedListFormat = SeedListFormat.File;
