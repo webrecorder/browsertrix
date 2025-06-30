@@ -46,6 +46,8 @@ def test_seed_file_upload(crawler_auth_headers, default_org_id):
     assert data["created"]
 
     assert data["type"] == "seedFile"
+    assert data["firstSeed"] == "https://specs.webrecorder.net"
+    assert data["seedCount"] == 2
 
 
 def test_delete_seed_file(crawler_auth_headers, default_org_id):
