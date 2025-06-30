@@ -33,7 +33,7 @@ else:
     ) = PageOps = BackgroundJobOps = FileUploadOps = object
 
 
-CURR_DB_VERSION = "0047"
+CURR_DB_VERSION = "0048"
 
 
 # ============================================================================

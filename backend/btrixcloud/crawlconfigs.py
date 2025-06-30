@@ -48,6 +48,7 @@ from .models import (
     RawCrawlConfig,
     ListFilterType,
     ScopeType,
+    Seed,
 )
 from .utils import (
     dt_now,
@@ -227,7 +228,7 @@ class CrawlConfigOps:
 
         return profile_filename
 
-    # pylint: disable=invalid-name, too-many-branches, too-many-statements
+    # pylint: disable=invalid-name, too-many-branches, too-many-statements, too-many-locals
     async def add_crawl_config(
         self,
         config_in: CrawlConfigIn,
@@ -279,7 +280,7 @@ class CrawlConfigOps:
 
         if config_in.config.seedFileId:
             # Validate file with that id exists
-            _ = await self.file_ops.get_file(config_in.config.seedFileId, org)
+            seed_file = await self.file_ops.get_file(config_in.config.seedFileId, org)
 
             # Validate seeds not set
             if config_in.config.seeds:
@@ -289,6 +290,19 @@ class CrawlConfigOps:
 
             # Ensure scopeType is set to page
             config_in.config.scopeType = ScopeType.PAGE
+
+            first_seed = seed_file.firstSeed
+            seed_count = seed_file.seedCount
+        else:
+            if not config_in.config.seeds:
+                raise HTTPException(
+                    status_code=400, detail="use_one_of_seeds_or_seedfile"
+                )
+
+            seeds = cast(List[Seed], config_in.config.seeds)
+            seed_count = len(seeds)
+
+            first_seed = seeds[0].url
 
         now = dt_now()
         crawlconfig = CrawlConfig(
@@ -314,6 +328,8 @@ class CrawlConfigOps:
             crawlerChannel=config_in.crawlerChannel,
             crawlFilenameTemplate=config_in.crawlFilenameTemplate,
             proxyId=config_in.proxyId,
+            firstSeed=first_seed,
+            seedCount=seed_count,
         )
 
         if config_in.runNow:
@@ -483,7 +499,7 @@ class CrawlConfigOps:
 
         if update.config and update.config.seedFileId:
             # Validate file with that id exists
-            _ = await self.file_ops.get_file(update.config.seedFileId, org)
+            seed_file = await self.file_ops.get_file(update.config.seedFileId, org)
 
             # Validate seeds not set
             if update.config.seeds or (
@@ -492,9 +508,6 @@ class CrawlConfigOps:
                 raise HTTPException(
                     status_code=400, detail="use_one_of_seeds_or_seedfile"
                 )
-
-            # Ensure scopeType is set to page
-            update.config.scopeType = ScopeType.PAGE
 
         # Delete old seed file if it's been unset
         if (
@@ -506,6 +519,12 @@ class CrawlConfigOps:
             await self.file_ops.delete_user_file(
                 orig_crawl_config.config.seedFileId, org
             )
+
+        if update.config and update.config.seeds:
+            if update.config.seedFileId:
+                raise HTTPException(
+                    status_code=400, detail="use_one_of_seeds_or_seedfile"
+                )
 
         # indicates if any k8s crawl config settings changed
         changed = False
@@ -586,6 +605,17 @@ class CrawlConfigOps:
 
         if update.config is not None:
             query["config"] = update.config.dict()
+
+        if update.config and update.config.seedFileId:
+            query["firstSeed"] = seed_file.firstSeed
+            query["seedCount"] = seed_file.seedCount
+            query["config"]["scopeType"] = ScopeType.PAGE
+            query["seeds"] = None
+
+        if update.config and update.config.seeds:
+            query["firstSeed"] = update.config.seeds[0].url
+            query["seedCount"] = len(update.config.seeds)
+            query["seedFileId"] = None
 
         # update in db
         result = await self.crawl_configs.find_one_and_update(
@@ -696,14 +726,7 @@ class CrawlConfigOps:
             match_query["isCrawlRunning"] = is_crawl_running
 
         # pylint: disable=duplicate-code
-        aggregate = [
-            {"$match": match_query},
-            {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
-            {"$set": {"seedCount": {"$size": "$config.seeds"}}},
-            # Set firstSeed
-            {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            {"$unset": ["firstSeedObject", "config"]},
-        ]
+        aggregate: List[Dict[str, Union[object, str, int]]] = [{"$match": match_query}]
 
         if first_seed:
             aggregate.extend([{"$match": {"firstSeed": first_seed}}])
@@ -878,29 +901,9 @@ class CrawlConfigOps:
                 crawlconfig.profileid, org
             )
 
-        if crawlconfig.config and crawlconfig.config.seeds:
-            crawlconfig.firstSeed = crawlconfig.config.seeds[0].url
-
-        crawlconfig.seedCount = await self.get_crawl_config_seed_count(cid, org)
-
         crawlconfig.config.seeds = None
 
         return crawlconfig
-
-    async def get_crawl_config_seed_count(self, cid: UUID, org: Organization):
-        """Return count of seeds in crawl config"""
-        cursor = self.crawl_configs.aggregate(
-            [
-                {"$match": {"_id": cid, "oid": org.id}},
-                {"$project": {"seedCount": {"$size": "$config.seeds"}}},
-            ]
-        )
-        results = await cursor.to_list(length=1)
-        result = results[0]
-        seed_count = result["seedCount"]
-        if seed_count:
-            return int(seed_count)
-        return 0
 
     async def get_crawl_config(
         self,
@@ -1052,22 +1055,17 @@ class CrawlConfigOps:
         names = await self.crawl_configs.distinct("name", {"oid": org.id})
         descriptions = await self.crawl_configs.distinct("description", {"oid": org.id})
         workflow_ids = await self.crawl_configs.distinct("_id", {"oid": org.id})
+        first_seeds = await self.crawl_configs.distinct("firstSeed", {"oid": org.id})
 
         # Remove empty strings
         names = [name for name in names if name]
         descriptions = [description for description in descriptions if description]
-
-        first_seeds = set()
-        async for config in self.crawl_configs.find({"oid": org.id}):
-            seeds = config["config"].get("seeds")
-            if seeds:
-                first_seed = seeds[0]["url"]
-                first_seeds.add(first_seed)
+        first_seeds = [first_seed for first_seed in first_seeds if first_seed]
 
         return {
             "names": names,
             "descriptions": descriptions,
-            "firstSeeds": list(first_seeds),
+            "firstSeeds": first_seeds,
             "workflowIds": workflow_ids,
         }
 
