@@ -110,7 +110,9 @@ def init_ops() -> Tuple[
 
     background_job_ops.set_ops(crawl_ops, profile_ops)
 
-    org_ops.set_ops(base_crawl_ops, profile_ops, coll_ops, background_job_ops, page_ops)
+    org_ops.set_ops(
+        base_crawl_ops, profile_ops, coll_ops, background_job_ops, page_ops, file_ops
+    )
 
     user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
 
