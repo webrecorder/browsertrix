@@ -644,8 +644,9 @@ export class WorkflowsList extends BtrixElement {
             };
           }}
         >
-          <sl-menu-label>${msg("Filter by schedule type")}</sl-menu-label>
-          <sl-divider></sl-divider>
+          <sl-menu-label class="part-[base]:px-4"
+            >${msg("Filter by schedule type")}</sl-menu-label
+          >
           <sl-menu-item
             type="checkbox"
             data-value="true"
