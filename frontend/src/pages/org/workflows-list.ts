@@ -123,6 +123,9 @@ export class WorkflowsList extends BtrixElement {
   @state()
   private filterByCurrentUser = false;
 
+  @state()
+  private filterByTags?: string[];
+
   @query("#deleteDialog")
   private readonly deleteDialog?: SlDialog | null;
 
@@ -168,6 +171,12 @@ export class WorkflowsList extends BtrixElement {
       this.filterByCurrentUser = false;
     }
 
+    if (params.has("tags")) {
+      this.filterByTags = params.getAll("tags");
+    } else {
+      this.filterByTags = undefined;
+    }
+
     // add filters present in search params
     for (const [key, value] of params) {
       // Filter by current user
@@ -195,7 +204,7 @@ export class WorkflowsList extends BtrixElement {
       }
 
       // Ignored params
-      if (["page", "mine", "sortBy", "sortDir"].includes(key)) continue;
+      if (["page", "mine", "tags", "sortBy", "sortDir"].includes(key)) continue;
 
       // Convert string bools to filter values
       if (value === "true") {
@@ -233,6 +242,7 @@ export class WorkflowsList extends BtrixElement {
     // Props that reset the page to 1 when changed
     const resetToFirstPageProps = [
       "filterByCurrentUser",
+      "filterByTags",
       "filterByScheduled",
       "filterBy",
       "orderBy",
@@ -271,11 +281,15 @@ export class WorkflowsList extends BtrixElement {
     if (
       changedProperties.has("filterBy") ||
       changedProperties.has("filterByCurrentUser") ||
+      changedProperties.has("filterByTags") ||
       changedProperties.has("orderBy")
     ) {
       this.searchParams.update((params) => {
         // Reset page
         params.delete("page");
+
+        // Existing tags
+        const tags = params.getAll("tags");
 
         const newParams = [
           // Known filters
@@ -286,6 +300,8 @@ export class WorkflowsList extends BtrixElement {
 
           // Filter by current user
           ["mine", this.filterByCurrentUser || undefined],
+
+          ["tags", this.filterByTags],
 
           // Sorting fields
           [
@@ -301,11 +317,19 @@ export class WorkflowsList extends BtrixElement {
               ? this.orderBy.direction
               : undefined,
           ],
-        ] satisfies [string, boolean | string | undefined][];
+        ] satisfies [string, boolean | string | string[] | undefined][];
 
         for (const [filter, value] of newParams) {
           if (value !== undefined) {
-            params.set(filter, value.toString());
+            if (Array.isArray(value)) {
+              value.forEach((v) => {
+                if (!tags.includes(v)) {
+                  params.append(filter, v);
+                }
+              });
+            } else {
+              params.set(filter, value.toString());
+            }
           } else {
             params.delete(filter);
           }
@@ -634,18 +658,31 @@ export class WorkflowsList extends BtrixElement {
           >
             ${msg("No Schedule")}
           </sl-menu-item>
-
-          ${when(
-            this.filterBy.schedule !== undefined,
-            () => html`
-              <sl-divider></sl-divider>
-              <sl-menu-item>${msg("Remove Filter")}</sl-menu-item>
-            `,
-          )}
         </sl-menu>
       </sl-dropdown>
 
-      <btrix-workflow-tag-filter></btrix-workflow-tag-filter>
+      <btrix-workflow-tag-filter
+        .tags=${this.filterByTags}
+        @sl-select=${(e: SlSelectEvent) => {
+          const { item } = e.detail;
+          const tag = item.dataset.value;
+
+          if (!tag) {
+            this.filterByTags = undefined;
+            return;
+          }
+
+          if (item.checked) {
+            this.filterByTags = this.filterByTags
+              ? [...this.filterByTags, tag]
+              : [tag];
+          } else {
+            this.filterByTags = (this.filterByTags || []).filter(
+              (v) => v !== tag,
+            );
+          }
+        }}
+      ></btrix-workflow-tag-filter>
 
       <btrix-workflow-filter
         ?checked=${this.filterBy.isCrawlRunning === true}
@@ -673,6 +710,7 @@ export class WorkflowsList extends BtrixElement {
           this.filterBy.schedule,
           this.filterBy.isCrawlRunning,
           this.filterByCurrentUser || undefined,
+          this.filterByTags,
         ].filter((v) => v !== undefined).length > 1,
         () => html`
           <sl-button
@@ -686,6 +724,7 @@ export class WorkflowsList extends BtrixElement {
                 isCrawlRunning: undefined,
               };
               this.filterByCurrentUser = false;
+              this.filterByTags = undefined;
             }}
           >
             <sl-icon slot="prefix" name="x-lg"></sl-icon>
@@ -913,7 +952,11 @@ export class WorkflowsList extends BtrixElement {
   }
 
   private renderEmptyState() {
-    if (Object.keys(this.filterBy).length) {
+    if (
+      Object.keys(this.filterBy).length ||
+      this.filterByCurrentUser ||
+      this.filterByTags
+    ) {
       return html`
         <div class="rounded-lg border bg-neutral-50 p-4">
           <p class="text-center">
@@ -925,6 +968,7 @@ export class WorkflowsList extends BtrixElement {
               @click=${() => {
                 this.filterBy = {};
                 this.filterByCurrentUser = false;
+                this.filterByTags = undefined;
               }}
             >
               ${msg("Clear search and filters")}
@@ -981,6 +1025,7 @@ export class WorkflowsList extends BtrixElement {
           this.workflows?.pageSize ||
           INITIAL_PAGE_SIZE,
         userid: this.filterByCurrentUser ? this.userInfo?.id : undefined,
+        tag: this.filterByTags || undefined,
         sortBy: this.orderBy.field,
         sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
       },
