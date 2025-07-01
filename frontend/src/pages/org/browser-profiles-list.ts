@@ -389,27 +389,14 @@ export class BrowserProfilesList extends BtrixElement {
         },
       );
 
-      if (data.error && data.crawlconfigs) {
-        this.notify.toast({
-          message: msg(
-            html`Could not delete <strong>${profile.name}</strong>, in use by
-              <strong
-                >${data.crawlconfigs.map(({ name }) => name).join(", ")}</strong
-              >. Please remove browser profile from Workflow to continue.`,
-          ),
-          variant: "warning",
-          duration: 15000,
-        });
-      } else {
-        this.notify.toast({
-          message: msg(html`Deleted <strong>${profile.name}</strong>.`),
-          variant: "success",
-          icon: "check2-circle",
-          id: "browser-profile-deleted-status",
-        });
+      this.notify.toast({
+        message: msg(html`Deleted <strong>${profile.name}</strong>.`),
+        variant: "success",
+        icon: "check2-circle",
+        id: "browser-profile-deleted-status",
+      });
 
-        void this.fetchBrowserProfiles();
-      }
+      void this.fetchBrowserProfiles();
     } catch (e) {
       this.notify.toast({
         message: msg("Sorry, couldn't delete browser profile at this time."),
