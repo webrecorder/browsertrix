@@ -1,0 +1,76 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "{{ id }}"
+  labels:
+    role: "cron-background-job"
+    job_type: {{ job_type }}
+
+spec:
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 2
+
+  schedule: "{{ schedule }}"
+
+  jobTemplate:
+    metadata:
+      labels:
+        role: "background-job"
+        job_type: {{ job_type }}
+        job_id: {{ id }}
+
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          priorityClassName: bg-job
+          podFailurePolicy:
+            rules:
+            - action: FailJob
+              onExitCodes:
+                containerName: btrixbgjob
+                operator: NotIn
+                values: [0]
+          
+          volumes:
+            - name: ops-configs
+              secret:
+                secretName: ops-configs
+
+          containers:
+            - name: btrixbgjob
+              image: {{ backend_image }}
+              imagePullPolicy: {{ pull_policy }}
+              env:
+              - name: BG_JOB_TYPE
+                value: {{ job_type }}
+
+              envFrom:
+                - configMapRef:
+                    name: backend-env-config
+                - secretRef:
+                    name: mongo-auth
+
+              volumeMounts:
+                - name: ops-configs
+                  mountPath: /ops-configs/
+
+              command: ["python3", "-m", "btrixcloud.main_bg"]
+
+              resources:
+{% if larger_resources %}
+                limits:
+                  memory: "1200Mi"
+
+                requests:
+                  memory: "500Mi"
+                  cpu: "200m"
+{% else %}
+                limits:
+                  memory: "200Mi"
+
+                requests:
+                  memory: "200Mi"
+                  cpu: "50m"
+{% endif %}

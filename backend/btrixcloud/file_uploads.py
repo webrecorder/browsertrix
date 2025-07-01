@@ -2,6 +2,7 @@
 
 from typing import TYPE_CHECKING, Union, Any, Optional, Dict, Tuple
 
+from datetime import timedelta
 import os
 import tempfile
 from uuid import UUID, uuid4
@@ -27,7 +28,6 @@ from .utils import dt_now
 if TYPE_CHECKING:
     from .orgs import OrgOps
     from .storages import StorageOps
-
 else:
     OrgOps = StorageOps = object
 
@@ -50,6 +50,7 @@ class FileUploadOps:
 
     def __init__(self, mdb, org_ops, storage_ops):
         self.files = mdb["file_uploads"]
+        self.crawl_configs = mdb["crawl_configs"]
 
         self.org_ops = org_ops
         self.storage_ops = storage_ops
@@ -112,7 +113,7 @@ class FileUploadOps:
         filename: str,
         org: Organization,
         user: User,
-        upload_type: str = "seedfile",
+        upload_type: str = "seedFile",
     ) -> Dict[str, Union[bool, UUID]]:
         """Upload file stream and return its id"""
         self.org_ops.can_write_data(org, include_time=False)
@@ -250,6 +251,28 @@ class FileUploadOps:
 
         return total_size
 
+    async def cleanup_unused_seed_files(self):
+        """Delete older seed files (at least one day old) not used in workflows"""
+        one_day_ago = dt_now() - timedelta(days=1)
+        match_query = {"type": "seedFile", "created": {"$lt": one_day_ago}}
+
+        async for file_dict in self.files.find(match_query):
+            file_id = file_dict["_id"]
+
+            first_matching_workflow = await self.crawl_configs.find_one(
+                {"config.seedFileId": file_id}
+            )
+            if first_matching_workflow:
+                continue
+
+            try:
+                org = await self.org_ops.get_org_by_id(file_dict["oid"])
+                await self.delete_user_file(file_id, org)
+                print(f"Deleted unused seed file {file_id}", flush=True)
+            # pylint: disable=broad-exception-caught
+            except Exception as err:
+                print(f"Error deleting unused seed file {file_id}: {err}", flush=True)
+
 
 # ============================================================================
 def init_file_uploads_api(
@@ -267,7 +290,7 @@ def init_file_uploads_api(
     org_crawl_dep = org_ops.org_crawl_dep
     org_viewer_dep = org_ops.org_viewer_dep
 
-    @router.put("/seedfile", response_model=AddedResponseId)
+    @router.put("/seedFile", response_model=AddedResponseId)
     async def upload_seedfile_stream(
         request: Request,
         filename: str,

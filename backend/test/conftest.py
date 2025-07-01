@@ -637,7 +637,7 @@ def echo_server():
 def seed_file_id(crawler_auth_headers, default_org_id):
     with open(os.path.join(curr_dir, "data", "seedfile.txt"), "rb") as fh:
         r = requests.put(
-            f"{API_PREFIX}/orgs/{default_org_id}/files/seedfile?filename=seedfile.txt",
+            f"{API_PREFIX}/orgs/{default_org_id}/files/seedFile?filename=seedfile.txt",
             headers=crawler_auth_headers,
             data=read_in_chunks(fh),
         )
