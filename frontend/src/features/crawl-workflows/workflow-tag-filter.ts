@@ -1,15 +1,27 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
-import type { SlInput } from "@shoelace-style/shoelace";
+import type {
+  SlChangeEvent,
+  SlCheckbox,
+  SlInput,
+  SlInputEvent,
+} from "@shoelace-style/shoelace";
+import Fuse from "fuse.js";
 import { html, nothing, type PropertyValues } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
+import { repeat } from "lit/directives/repeat.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { BtrixChangeEvent } from "@/events/btrix-change";
 
 const MAX_TAGS_IN_LABEL = 5;
 
+export type BtrixChangeWorkflowTagFilterEvent = BtrixChangeEvent<string[]>;
+
 /**
  * @TODO Refactor into more generic component
+ *
+ * @fires btrix-change
  */
 @customElement("btrix-workflow-tag-filter")
 @localized()
@@ -17,8 +29,13 @@ export class WorkflowTagFilter extends BtrixElement {
   @property({ type: Array })
   tags?: string[];
 
+  @state()
+  private searchString = "";
+
   @query("sl-input")
   private readonly input?: SlInput | null;
+
+  private readonly fuse = new Fuse<string>([]);
 
   private selected = new Map<string, boolean>();
 
@@ -34,40 +51,56 @@ export class WorkflowTagFilter extends BtrixElement {
 
   private readonly orgTagsTask = new Task(this, {
     task: async () => {
-      return await this.api.fetch<string[]>(
+      const tags = await this.api.fetch<string[]>(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
       );
+
+      this.fuse.setCollection(tags);
+
+      // Match fuse shape
+      return tags.map((item) => ({ item }));
     },
     args: () => [] as const,
   });
 
   render() {
     return html`
-      <sl-dropdown
-        distance="12"
-        hoist
-        stay-open-on-select
-        open
+      <btrix-workflow-filter
+        slot="trigger"
+        ?checked=${!!this.tags?.length}
+        multiple
+        @sl-hide=${() => {
+          const selectedTags = [];
+
+          for (const [tag, value] of this.selected) {
+            if (value) {
+              selectedTags.push(tag);
+            }
+          }
+
+          this.dispatchEvent(
+            new CustomEvent<BtrixChangeEvent["detail"]>("btrix-change", {
+              detail: { value: selectedTags },
+            }),
+          );
+        }}
         @sl-after-show=${() => {
           if (this.input && !this.input.disabled) {
             this.input.focus();
           }
         }}
+        @sl-after-hide=${() => (this.searchString = "")}
       >
-        <btrix-workflow-filter
-          slot="trigger"
-          ?checked=${!!this.tags?.length}
-          caret
-        >
-          ${msg("Tags")}${this.tags?.length
-            ? html`: ${this.renderTagsInLabel(this.tags)}`
-            : nothing}
-        </btrix-workflow-filter>
+        ${msg("Tags")}${this.tags?.length
+          ? html`: ${this.renderTagsInLabel(this.tags)}`
+          : nothing}
+
         <div
-          class="max-h-[var(--auto-size-available-height)] max-w-[var(--auto-size-available-width)] overflow-y-auto overflow-x-hidden rounded border bg-white"
+          slot="dropdown"
+          class="flex max-h-[var(--auto-size-available-height)] max-w-[var(--auto-size-available-width)] flex-col overflow-hidden rounded border bg-white"
         >
           <header
-            class="sticky top-0 z-10 overflow-hidden rounded-t border-b bg-white pb-3 pt-2"
+            class="flex-shrink-0 flex-grow-0 overflow-hidden rounded-t border-b bg-white pb-3 pt-2"
           >
             <sl-menu-label class="part-[base]:px-4" id="tag-list-label">
               ${msg("Filter by tags")}
@@ -75,15 +108,26 @@ export class WorkflowTagFilter extends BtrixElement {
             <div class="px-3">${this.renderSearch()}</div>
           </header>
           ${this.orgTagsTask.render({
-            complete: (tags) =>
-              tags.length
-                ? html` ${this.renderTagList(tags)} `
-                : html`<div class="p-3 text-neutral-500">
-                    ${msg("No tags found.")}
-                  </div>`,
+            complete: (tags) => {
+              let options = tags;
+
+              if (tags.length && this.searchString) {
+                options = this.fuse.search(this.searchString);
+              }
+
+              if (options.length) {
+                return this.renderList(options);
+              }
+
+              return html`<div class="p-3 text-neutral-500">
+                ${this.searchString
+                  ? msg("No matching tags found.")
+                  : msg("No tags found.")}
+              </div>`;
+            },
           })}
         </div>
-      </sl-dropdown>
+      </btrix-workflow-filter>
     `;
   }
 
@@ -110,16 +154,19 @@ export class WorkflowTagFilter extends BtrixElement {
     return html`
       <label for="tag-search" class="sr-only">${msg("Filter tags")}</label>
       <sl-input
-        class="min-w-[20ch]"
+        class="min-w-[30ch]"
         id="tag-search"
         role="combobox"
         aria-autocomplete="list"
         aria-expanded="true"
         aria-controls="tag-listbox"
         aria-activedescendant="tag-selected-option"
+        value=${this.searchString}
         placeholder=${msg("Filter tags")}
         size="small"
         ?disabled=${!this.orgTagsTask.value?.length}
+        @sl-input=${(e: SlInputEvent) =>
+          (this.searchString = (e.target as SlInput).value)}
       >
         ${this.orgTagsTask.render({
           pending: () => html`<sl-spinner slot="prefix"></sl-spinner>`,
@@ -129,7 +176,7 @@ export class WorkflowTagFilter extends BtrixElement {
     `;
   }
 
-  private renderTagList(tags: string[]) {
+  private renderList(opts: { item: string }[]) {
     const tag = (tag: string) => {
       const checked = this.selected.get(tag) === true;
 
@@ -144,16 +191,27 @@ export class WorkflowTagFilter extends BtrixElement {
         </li>
       `;
     };
+
     return html`
       <ul
         id="tag-listbox"
-        class="p-1"
+        class="flex-1 overflow-auto p-1"
         role="listbox"
         tabindex="0"
         aria-labelledby="tag-list-label"
         aria-multiselectable="true"
+        @sl-change=${async (e: SlChangeEvent) => {
+          e.stopPropagation();
+          const { checked, value } = e.target as SlCheckbox;
+
+          this.selected.set(value, checked);
+        }}
       >
-        ${tags.map(tag)}
+        ${repeat(
+          opts,
+          ({ item }) => item,
+          ({ item }) => tag(item),
+        )}
       </ul>
     `;
   }

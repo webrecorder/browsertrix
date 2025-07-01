@@ -22,6 +22,7 @@ import { type SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsController } from "@/controllers/searchParams";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import type { BtrixChangeWorkflowTagFilterEvent } from "@/features/crawl-workflows/workflow-tag-filter";
 import { pageHeader } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
@@ -668,24 +669,8 @@ export class WorkflowsList extends BtrixElement {
 
       <btrix-workflow-tag-filter
         .tags=${this.filterByTags}
-        @sl-select=${(e: SlSelectEvent) => {
-          const { item } = e.detail;
-          const tag = item.dataset.value;
-
-          if (!tag) {
-            this.filterByTags = undefined;
-            return;
-          }
-
-          if (item.checked) {
-            this.filterByTags = this.filterByTags
-              ? [...this.filterByTags, tag]
-              : [tag];
-          } else {
-            this.filterByTags = (this.filterByTags || []).filter(
-              (v) => v !== tag,
-            );
-          }
+        @btrix-change=${(e: BtrixChangeWorkflowTagFilterEvent) => {
+          this.filterByTags = e.detail.value;
         }}
       ></btrix-workflow-tag-filter>
 
