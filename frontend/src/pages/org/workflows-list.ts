@@ -1,5 +1,4 @@
 import { localized, msg, str } from "@lit/localize";
-import { Task } from "@lit/task";
 import type { SlDialog, SlSelectEvent } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
@@ -146,15 +145,6 @@ export class WorkflowsList extends BtrixElement {
 
   searchParams = new SearchParamsController(this, (params) => {
     this.updateFiltersFromSearchParams(params);
-  });
-
-  private readonly tagsTask = new Task(this, {
-    task: async () => {
-      return await this.api.fetch<string[]>(
-        `/orgs/${this.orgId}/crawlconfigs/tags`,
-      );
-    },
-    args: () => [] as const,
   });
 
   private updateFiltersFromSearchParams(
@@ -666,7 +656,7 @@ export class WorkflowsList extends BtrixElement {
         ].filter((v) => v !== undefined).length > 1,
         () => html`
           <sl-button
-            class="[--sl-color-primary-600:var(--sl-color-neutral-500)]"
+            class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
             size="small"
             variant="text"
             @click=${() => {

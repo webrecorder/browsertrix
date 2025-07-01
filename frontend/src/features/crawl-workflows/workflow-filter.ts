@@ -1,6 +1,7 @@
 import { localized } from "@lit/localize";
+import type { SlDropdown } from "@shoelace-style/shoelace";
 import { html } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -17,19 +18,34 @@ export class WorkflowFilter extends TailwindElement {
   checked?: boolean;
 
   @property({ type: Boolean })
-  multiple?: boolean;
+  select?: boolean;
+
+  @property({ type: Boolean })
+  stayOpenOnChange?: boolean;
+
+  @query("sl-dropdown")
+  private readonly dropdown?: SlDropdown | null;
 
   render() {
-    if (this.multiple) {
+    if (this.select) {
       return html`
-        <sl-dropdown distance="4" hoist stay-open-on-select>
+        <sl-dropdown
+          distance="4"
+          hoist
+          ?stayOpenOnSelect=${this.stayOpenOnChange}
+          @sl-change=${() => {
+            if (!this.stayOpenOnChange) {
+              void this.dropdown?.hide();
+            }
+          }}
+        >
           ${this.renderButton()}
 
           <div
             class="flex max-h-[var(--auto-size-available-height)] max-w-[var(--auto-size-available-width)] flex-col overflow-hidden rounded border bg-white"
           >
             <header
-              class="flex-shrink-0 flex-grow-0 overflow-hidden rounded-t border-b bg-white py-2"
+              class="flex-shrink-0 flex-grow-0 overflow-hidden rounded-t bg-white"
             >
               <slot name="dropdown-header"></slot>
             </header>
@@ -45,11 +61,11 @@ export class WorkflowFilter extends TailwindElement {
   private renderButton() {
     return html`
       <sl-button
-        slot=${ifDefined(this.multiple ? "trigger" : undefined)}
+        slot=${ifDefined(this.select ? "trigger" : undefined)}
         role="checkbox"
         aria-checked=${this.checked ? "true" : "false"}
         size="small"
-        ?caret=${this.multiple}
+        ?caret=${this.select}
         outline
         pill
       >

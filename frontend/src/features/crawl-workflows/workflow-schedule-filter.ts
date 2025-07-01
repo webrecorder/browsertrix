@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import type { SlChangeEvent, SlRadioGroup } from "@shoelace-style/shoelace";
-import { html, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -44,10 +44,9 @@ export class WorkflowScheduleFilter extends BtrixElement {
 
     return html`
       <btrix-workflow-filter
-        slot="trigger"
         ?checked=${this.schedule !== undefined}
-        multiple
-        @sl-hide=${() => {
+        select
+        @sl-after-hide=${() => {
           if (this.#schedule !== this.schedule) {
             this.dispatchEvent(
               new CustomEvent<BtrixChangeWorkflowScheduleFilterEvent["detail"]>(
@@ -61,17 +60,38 @@ export class WorkflowScheduleFilter extends BtrixElement {
         }}
       >
         ${this.schedule === undefined
-          ? msg("Schedule type")
+          ? msg("Schedule")
           : html`<strong class="font-semibold"
               >${this.schedule ? msg("Scheduled") : msg("No Schedule")}</strong
             >`}
-        <sl-menu-label
+
+        <div
           slot="dropdown-header"
-          class="part-[base]:px-4"
-          id="schedule-list-label"
+          class="flex items-center justify-between py-1"
         >
-          ${msg("Filter by Schedule Type")}
-        </sl-menu-label>
+          <sl-menu-label class="part-[base]:px-4" id="schedule-list-label">
+            ${msg("Filter by Schedule Type")}
+          </sl-menu-label>
+          ${this.schedule !== undefined
+            ? html`<sl-button
+                variant="text"
+                size="small"
+                @click=${() => {
+                  this.dispatchEvent(
+                    new CustomEvent<BtrixChangeEvent["detail"]>(
+                      "btrix-change",
+                      {
+                        detail: {
+                          value: undefined,
+                        },
+                      },
+                    ),
+                  );
+                }}
+                >${msg("Clear Filter")}</sl-button
+              >`
+            : nothing}
+        </div>
 
         <div slot="dropdown-content" class="p-1">
           <sl-radio-group
@@ -98,7 +118,6 @@ export class WorkflowScheduleFilter extends BtrixElement {
           >
             ${radio(msg("Scheduled"), ScheduleType.Scheduled)}
             ${radio(msg("No Schedule"), ScheduleType.None)}
-            ${radio(msg("Any"), ScheduleType.Any)}
           </sl-radio-group>
         </div>
       </btrix-workflow-filter>
