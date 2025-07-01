@@ -288,6 +288,8 @@ def main() -> None:
     # await db init, migrations should have already completed in init containers
     asyncio.create_task(await_db_and_migrations(mdb, db_inited))
 
+    asyncio.create_task(background_job_ops.ensure_cron_cleanup_jobs_exist())
+
     app.include_router(org_ops.router)
 
     @app.get("/settings", tags=["settings"], response_model=SettingsResponse)

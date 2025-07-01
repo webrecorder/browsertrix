@@ -2697,6 +2697,7 @@ class BgJobType(str, Enum):
     RECALCULATE_ORG_STATS = "recalculate-org-stats"
     READD_ORG_PAGES = "readd-org-pages"
     OPTIMIZE_PAGES = "optimize-pages"
+    CLEANUP_SEED_FILES = "cleanup-seed-files"
 
 
 # ============================================================================
@@ -2767,6 +2768,13 @@ class OptimizePagesJob(BackgroundJob):
 
 
 # ============================================================================
+class CleanupSeedFilesJob(BackgroundJob):
+    """Model for tracking jobs to cleanup unused seed files"""
+
+    type: Literal[BgJobType.CLEANUP_SEED_FILES] = BgJobType.CLEANUP_SEED_FILES
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
@@ -2778,6 +2786,7 @@ AnyJob = RootModel[
         RecalculateOrgStatsJob,
         ReAddOrgPagesJob,
         OptimizePagesJob,
+        CleanupSeedFilesJob,
     ]
 ]
 
