@@ -382,7 +382,7 @@ export class BrowserProfilesList extends BtrixElement {
 
   private async deleteProfile(profile: Profile) {
     try {
-      const data = await this.api.fetch<Profile & { error?: boolean }>(
+      await this.api.fetch<Profile & { error?: boolean }>(
         `/orgs/${this.orgId}/profiles/${profile.id}`,
         {
           method: "DELETE",
