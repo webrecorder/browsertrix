@@ -16,7 +16,6 @@ import { pageNav } from "@/layouts/pageHeader";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import { isArchivingDisabled } from "@/utils/orgs";
-import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
 
 const DESCRIPTION_MAXLENGTH = 500;
@@ -555,7 +554,7 @@ export class BrowserProfilesDetail extends BtrixElement {
     const profileName = this.profile!.name;
 
     try {
-      const data = await this.api.fetch<Profile & { error: boolean }>(
+      await this.api.fetch<Profile & { error: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profile!.id}`,
         {
           method: "DELETE",
