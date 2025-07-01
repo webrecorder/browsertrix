@@ -113,13 +113,6 @@ export type ProfileReplica = {
   custom?: boolean;
 };
 
-export type ProfileWorkflow = {
-  id: string;
-  name: string;
-  firstSeed: string;
-  seedCount: number;
-};
-
 export type Profile = {
   id: string;
   name: string;
@@ -132,7 +125,6 @@ export type Profile = {
   profileId: string;
   baseProfileName: string;
   oid: string;
-  crawlconfigs?: ProfileWorkflow[];
   resource?: {
     name: string;
     path: string;

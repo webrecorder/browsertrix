@@ -6,7 +6,7 @@ import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 import queryString from "query-string";
 
-import type { Profile, ProfileWorkflow } from "./types";
+import type { Profile } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
@@ -263,17 +263,6 @@ export class BrowserProfilesDetail extends BtrixElement {
         >
       </section>
 
-      <section class="mb-7">
-        <h2 class="mb-2 text-lg font-medium leading-none">
-          ${msg("Crawl Workflows")}${this.profile?.crawlconfigs?.length
-            ? html`<span class="font-normal text-neutral-500">
-                (${this.localize.number(this.profile.crawlconfigs.length)})
-              </span>`
-            : nothing}
-        </h2>
-        ${this.renderCrawlWorkflows()}
-      </section>
-
       <btrix-dialog id="discardChangesDialog" .label=${msg("Cancel Editing?")}>
         ${msg(
           "Are you sure you want to discard changes to this browser profile?",
@@ -321,52 +310,6 @@ export class BrowserProfilesDetail extends BtrixElement {
     ];
 
     return pageNav(breadcrumbs);
-  }
-
-  private renderCrawlWorkflows() {
-    if (this.profile?.crawlconfigs?.length) {
-      return html`<ul>
-        ${this.profile.crawlconfigs.map(
-          (workflow) => html`
-            <li
-              class="border-x border-b first:rounded-t first:border-t last:rounded-b"
-            >
-              <a
-                class="block p-2 transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50"
-                href=${`${this.navigate.orgBasePath}/workflows/${workflow.id}`}
-                @click=${this.navigate.link}
-              >
-                ${this.renderWorkflowName(workflow)}
-              </a>
-            </li>
-          `,
-        )}
-      </ul>`;
-    }
-
-    return html`<div class="rounded border p-5 text-center text-neutral-400">
-      ${msg("Not used in any crawl workflows.")}
-    </div>`;
-  }
-
-  private renderWorkflowName(workflow: ProfileWorkflow) {
-    if (workflow.name)
-      return html`<span class="truncate">${workflow.name}</span>`;
-    if (!workflow.firstSeed)
-      return html`<span class="truncate font-mono">${workflow.id}</span>
-        <span class="text-neutral-400">${msg("(no name)")}</span>`;
-    const remainder = workflow.seedCount - 1;
-    let nameSuffix: string | TemplateResult<1> = "";
-    if (remainder) {
-      nameSuffix = html`<span class="ml-2 text-neutral-500"
-        >+${this.localize.number(remainder, { notation: "compact" })}
-        ${pluralOf("URLs", remainder)}</span
-      >`;
-    }
-    return html`
-      <span class="primaryUrl truncate">${workflow.firstSeed}</span
-      >${nameSuffix}
-    `;
   }
 
   private readonly renderVisitedSites = () => {
@@ -619,26 +562,13 @@ export class BrowserProfilesDetail extends BtrixElement {
         },
       );
 
-      if (data.error && data.crawlconfigs) {
-        this.notify.toast({
-          message: msg(
-            html`Could not delete <strong>${profileName}</strong>, in use by
-              <strong
-                >${data.crawlconfigs.map(({ name }) => name).join(", ")}</strong
-              >. Please remove browser profile from Workflow to continue.`,
-          ),
-          variant: "warning",
-          duration: 15000,
-        });
-      } else {
-        this.navigate.to(`${this.navigate.orgBasePath}/browser-profiles`);
+      this.navigate.to(`${this.navigate.orgBasePath}/browser-profiles`);
 
-        this.notify.toast({
-          message: msg(html`Deleted <strong>${profileName}</strong>.`),
-          variant: "success",
-          icon: "check2-circle",
-        });
-      }
+      this.notify.toast({
+        message: msg(html`Deleted <strong>${profileName}</strong>.`),
+        variant: "success",
+        icon: "check2-circle",
+      });
     } catch (e) {
       this.notify.toast({
         message: msg("Sorry, couldn't delete browser profile at this time."),
