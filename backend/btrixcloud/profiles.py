@@ -588,12 +588,12 @@ def init_profiles_api(
 
         return {"updated": True}
 
-    @router.get("/{profileid}", response_model=ProfileWithCrawlConfigs)
+    @router.get("/{profileid}", response_model=Profile)
     async def get_profile(
         profileid: UUID,
         org: Organization = Depends(org_crawl_dep),
     ):
-        return await ops.get_profile_with_configs(profileid, org)
+        return await ops.get_profile(profileid, org)
 
     @router.delete("/{profileid}", response_model=SuccessResponseStorageQuota)
     async def delete_profile(

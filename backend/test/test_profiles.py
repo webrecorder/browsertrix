@@ -108,64 +108,6 @@ def profile_id(admin_auth_headers, default_org_id, profile_browser_id):
 
 
 @pytest.fixture(scope="module")
-def profile_config_id(admin_auth_headers, default_org_id, profile_id):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["id"] == profile_id
-    assert data["name"] == PROFILE_NAME
-    assert data["description"] == PROFILE_DESC
-    assert data["userid"]
-    assert data["oid"] == default_org_id
-    assert data.get("origins") or data.get("origins") == []
-    assert data["createdBy"]
-    assert data["createdByName"] == "admin"
-    assert data["modifiedBy"]
-    assert data["modifiedByName"] == "admin"
-    assert not data["baseid"]
-
-    created = data["created"]
-    assert created
-    assert created.endswith("Z")
-
-    modified = data["modified"]
-    assert modified
-    assert modified.endswith("Z")
-
-    resource = data["resource"]
-    assert resource
-    assert resource["filename"]
-    assert resource["hash"]
-    assert resource["size"]
-    assert resource["storage"]
-    assert resource["storage"]["name"]
-    assert resource.get("replicas") or resource.get("replicas") == []
-
-    assert data.get("crawlconfigs") == []
-
-    # Use profile in a workflow
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
-        headers=admin_auth_headers,
-        json={
-            "runNow": False,
-            "name": "Profile Test Crawl",
-            "description": "Crawl using browser profile",
-            "config": {
-                "seeds": [{"url": "https://webrecorder.net/"}],
-                "exclude": "community",
-            },
-            "profileid": profile_id,
-        },
-    )
-    data = r.json()
-    return data["id"]
-
-
-@pytest.fixture(scope="module")
 def profile_2_id(admin_auth_headers, default_org_id, profile_browser_2_id):
     prepare_browser_for_profile_commit(
         profile_browser_2_id, admin_auth_headers, default_org_id
@@ -204,10 +146,9 @@ def test_commit_browser_to_new_profile(admin_auth_headers, default_org_id, profi
     assert profile_id
 
 
-def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_config_id):
+def test_get_profile(admin_auth_headers, default_org_id, profile_id):
     start_time = time.monotonic()
     time_limit = 10
-    # Check get endpoint again and check that crawlconfigs is updated
     while True:
         try:
             r = requests.get(
@@ -239,13 +180,7 @@ def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_con
             assert resource["storage"]["name"]
             assert resource.get("replicas") or resource.get("replicas") == []
 
-            crawl_configs = data.get("crawlconfigs")
-            assert crawl_configs
-            assert len(crawl_configs) == 1
-            assert crawl_configs[0]["id"] == profile_config_id
-            assert crawl_configs[0]["name"] == "Profile Test Crawl"
-            assert crawl_configs[0]["firstSeed"] == "https://webrecorder.net/"
-            assert crawl_configs[0]["seedCount"] == 1
+            assert "crawlconfigs" not in data
             break
         except:
             if time.monotonic() - start_time > time_limit:
@@ -260,7 +195,6 @@ def test_commit_second_profile(profile_2_id):
 def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2_id):
     start_time = time.monotonic()
     time_limit = 10
-    # Check get endpoint again and check that crawlconfigs is updated
     while True:
         try:
             r = requests.get(
