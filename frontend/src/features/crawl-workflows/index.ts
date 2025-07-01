@@ -6,4 +6,6 @@ import("./new-workflow-dialog");
 import("./queue-exclusion-form");
 import("./queue-exclusion-table");
 import("./workflow-editor");
+import("./workflow-filter");
 import("./workflow-list");
+import("./workflow-tag-filter");

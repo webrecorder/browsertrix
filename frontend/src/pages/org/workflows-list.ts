@@ -2,7 +2,7 @@ import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlDialog, SlSelectEvent } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import { html, type PropertyValues, type TemplateResult } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -122,9 +122,6 @@ export class WorkflowsList extends BtrixElement {
 
   @state()
   private filterByCurrentUser = false;
-
-  @state()
-  private readonly tagFilterMap = new Map<string, boolean>();
 
   @query("#deleteDialog")
   private readonly deleteDialog?: SlDialog | null;
@@ -596,20 +593,21 @@ export class WorkflowsList extends BtrixElement {
         ${msg("Filter by:")}
       </span>
 
-      <sl-dropdown distance="4" placement="bottom" hoist>
-        ${this.renderCheckboxButton({
-          checked: this.filterBy.schedule !== undefined,
-          label: html`${msg("Schedule Type")}${this.filterBy.schedule ===
-          undefined
+      <sl-dropdown distance="12" hoist>
+        <btrix-workflow-filter
+          slot="trigger"
+          ?checked=${this.filterBy.schedule !== undefined}
+          caret
+        >
+          ${msg("Schedule Type")}${this.filterBy.schedule === undefined
             ? ""
             : html`:
                 <strong class="font-semibold"
                   >${this.filterBy.schedule
                     ? msg("Scheduled")
                     : msg("No Schedule")}</strong
-                >`}`,
-          dropdown: true,
-        })}
+                >`}
+        </btrix-workflow-filter>
         <sl-menu
           @sl-select=${(e: SlSelectEvent) => {
             const { item } = e.detail;
@@ -636,65 +634,40 @@ export class WorkflowsList extends BtrixElement {
           >
             ${msg("No Schedule")}
           </sl-menu-item>
+
+          ${when(
+            this.filterBy.schedule !== undefined,
+            () => html`
+              <sl-divider></sl-divider>
+              <sl-menu-item>${msg("Remove Filter")}</sl-menu-item>
+            `,
+          )}
         </sl-menu>
       </sl-dropdown>
 
-      <sl-dropdown distance="4" placement="bottom" hoist>
-        ${this.renderCheckboxButton({
-          checked: Boolean(this.tagFilterMap.size),
-          label: html`${msg("Tags")}${this.tagFilterMap.size
-            ? html`:
-                <strong class="font-semibold"
-                  >${Array.from(this.tagFilterMap.values()).join(", ")}</strong
-                >`
-            : ""}`,
-          dropdown: true,
-        })}
+      <btrix-workflow-tag-filter></btrix-workflow-tag-filter>
 
-        <sl-menu
-          @sl-select=${(e: SlSelectEvent) => {
-            const { item } = e.detail;
-
-            this.filterBy = {
-              ...this.filterBy,
-              schedule: item.checked
-                ? item.dataset.value === "true"
-                : undefined,
-            };
-          }}
-        >
-          <sl-menu-label>${msg("Tags")}</sl-menu-label>
-          <div class="mx-5 mb-2 flex flex-wrap gap-2">
-            ${this.tagsTask.render({
-              complete: (tags) =>
-                tags.map((tag) =>
-                  this.renderCheckboxButton({
-                    checked: Boolean(this.tagFilterMap.size),
-                    label: tag,
-                  }),
-                ),
-            })}
-          </div>
-        </sl-menu>
-      </sl-dropdown>
-
-      ${this.renderCheckboxButton({
-        checked: this.filterBy.isCrawlRunning === true,
-        label: msg("Running"),
-        onClick: () => {
+      <btrix-workflow-filter
+        ?checked=${this.filterBy.isCrawlRunning === true}
+        @click=${() => {
           this.filterBy = {
             ...this.filterBy,
             isCrawlRunning: !this.filterBy.isCrawlRunning,
           };
-        },
-      })}
-      ${this.renderCheckboxButton({
-        checked: this.filterByCurrentUser,
-        label: msg("Mine"),
-        onClick: () => {
+        }}
+      >
+        ${msg("Running")}
+      </btrix-workflow-filter>
+
+      <btrix-workflow-filter
+        ?checked=${this.filterByCurrentUser}
+        @click=${() => {
           this.filterByCurrentUser = !this.filterByCurrentUser;
-        },
-      })}
+        }}
+      >
+        ${msg("Mine")}
+      </btrix-workflow-filter>
+
       ${when(
         [
           this.filterBy.schedule,
@@ -750,35 +723,6 @@ export class WorkflowsList extends BtrixElement {
       </btrix-search-combobox>
     `;
   }
-
-  private readonly renderCheckboxButton = (opts: {
-    checked: boolean;
-    label: string | TemplateResult;
-    onClick?: () => void;
-    dropdown?: boolean;
-  }) => html`
-    <sl-button
-      slot=${ifDefined(opts.dropdown ? "trigger" : undefined)}
-      role="checkbox"
-      aria-checked=${opts.checked ? "true" : "false"}
-      size="small"
-      ?caret=${opts.dropdown}
-      @click=${opts.onClick}
-      pill
-    >
-      ${when(
-        !opts.dropdown,
-        () => html`
-          <sl-icon
-            class="size-4 text-base"
-            slot="prefix"
-            name=${opts.checked ? "check2-circle" : "plus-circle-dotted"}
-          ></sl-icon>
-        `,
-      )}
-      ${opts.label}
-    </sl-button>
-  `;
 
   private renderWorkflowList() {
     if (!this.workflows) return;
