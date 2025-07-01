@@ -256,6 +256,9 @@ class FileUploadOps:
         one_day_ago = dt_now() - timedelta(days=1)
         match_query = {"type": "seedFile", "created": {"$lt": one_day_ago}}
 
+        errored = False
+        error_msg = ""
+
         async for file_dict in self.files.find(match_query):
             file_id = file_dict["_id"]
 
@@ -272,6 +275,13 @@ class FileUploadOps:
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(f"Error deleting unused seed file {file_id}: {err}", flush=True)
+                # Raise exception later so that job fails but only after attempting
+                # to clean up all files first
+                errored = True
+                error_msg = str(err)
+
+        if errored:
+            raise RuntimeError(f"Error deleting unused seed files: {error_msg}")
 
 
 # ============================================================================
