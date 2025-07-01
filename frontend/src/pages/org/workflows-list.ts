@@ -22,6 +22,7 @@ import { type SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsController } from "@/controllers/searchParams";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import type { BtrixChangeWorkflowScheduleFilterEvent } from "@/features/crawl-workflows/workflow-schedule-filter";
 import type { BtrixChangeWorkflowTagFilterEvent } from "@/features/crawl-workflows/workflow-tag-filter";
 import { pageHeader } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
@@ -618,54 +619,15 @@ export class WorkflowsList extends BtrixElement {
         ${msg("Filter by:")}
       </span>
 
-      <sl-dropdown distance="12" hoist>
-        <btrix-workflow-filter
-          slot="trigger"
-          ?checked=${this.filterBy.schedule !== undefined}
-          caret
-        >
-          ${msg("Schedule Type")}${this.filterBy.schedule === undefined
-            ? ""
-            : html`:
-                <strong class="font-semibold"
-                  >${this.filterBy.schedule
-                    ? msg("Scheduled")
-                    : msg("No Schedule")}</strong
-                >`}
-        </btrix-workflow-filter>
-        <sl-menu
-          @sl-select=${(e: SlSelectEvent) => {
-            const { item } = e.detail;
-
-            this.filterBy = {
-              ...this.filterBy,
-              schedule: item.checked
-                ? item.dataset.value === "true"
-                : undefined,
-            };
-          }}
-        >
-          <sl-menu-label class="part-[base]:px-4"
-            >${msg("Filter by schedule type")}</sl-menu-label
-          >
-          <sl-menu-item
-            type="checkbox"
-            data-value="true"
-            ?checked=${this.filterBy.schedule === true}
-          >
-            <sl-icon slot="prefix" name="calendar2-check"></sl-icon>
-            ${msg("Scheduled")}
-          </sl-menu-item>
-          <sl-menu-item
-            type="checkbox"
-            data-value="false"
-            ?checked=${this.filterBy.schedule === false}
-          >
-            <sl-icon slot="prefix" name="calendar2-x"></sl-icon>
-            ${msg("No Schedule")}
-          </sl-menu-item>
-        </sl-menu>
-      </sl-dropdown>
+      <btrix-workflow-schedule-filter
+        .schedule=${this.filterBy.schedule}
+        @btrix-change=${(e: BtrixChangeWorkflowScheduleFilterEvent) => {
+          this.filterBy = {
+            ...this.filterBy,
+            schedule: e.detail.value,
+          };
+        }}
+      ></btrix-workflow-schedule-filter>
 
       <btrix-workflow-tag-filter
         .tags=${this.filterByTags}

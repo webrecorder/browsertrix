@@ -16,11 +16,11 @@ import type { BtrixChangeEvent } from "@/events/btrix-change";
 
 const MAX_TAGS_IN_LABEL = 5;
 
-export type BtrixChangeWorkflowTagFilterEvent = BtrixChangeEvent<string[]>;
+export type BtrixChangeWorkflowTagFilterEvent = BtrixChangeEvent<
+  string[] | undefined
+>;
 
 /**
- * @TODO Refactor into more generic component
- *
  * @fires btrix-change
  */
 @customElement("btrix-workflow-tag-filter")
@@ -80,7 +80,7 @@ export class WorkflowTagFilter extends BtrixElement {
 
           this.dispatchEvent(
             new CustomEvent<BtrixChangeEvent["detail"]>("btrix-change", {
-              detail: { value: selectedTags },
+              detail: { value: selectedTags.length ? selectedTags : undefined },
             }),
           );
         }}
@@ -91,22 +91,19 @@ export class WorkflowTagFilter extends BtrixElement {
         }}
         @sl-after-hide=${() => (this.searchString = "")}
       >
-        ${msg("Tags")}${this.tags?.length
-          ? html`: ${this.renderTagsInLabel(this.tags)}`
-          : nothing}
+        ${this.tags?.length
+          ? html`<span class="text-primary-500">${msg("tagged")}</span>
+              ${this.renderTagsInLabel(this.tags)}`
+          : msg("Tags")}
 
-        <div
-          slot="dropdown"
-          class="flex max-h-[var(--auto-size-available-height)] max-w-[var(--auto-size-available-width)] flex-col overflow-hidden rounded border bg-white"
-        >
-          <header
-            class="flex-shrink-0 flex-grow-0 overflow-hidden rounded-t border-b bg-white pb-3 pt-2"
-          >
-            <sl-menu-label class="part-[base]:px-4" id="tag-list-label">
-              ${msg("Filter by tags")}
-            </sl-menu-label>
-            <div class="px-3">${this.renderSearch()}</div>
-          </header>
+        <div slot="dropdown-header">
+          <sl-menu-label class="part-[base]:px-4" id="tag-list-label">
+            ${msg("Filter by tags")}
+          </sl-menu-label>
+          <div class="mb-1 px-3">${this.renderSearch()}</div>
+        </div>
+
+        <div slot="dropdown-content" class="contents">
           ${this.orgTagsTask.render({
             complete: (tags) => {
               let options = tags;
@@ -135,7 +132,7 @@ export class WorkflowTagFilter extends BtrixElement {
     const more = () => {
       const remainder = this.localize.number(tags.length - MAX_TAGS_IN_LABEL);
 
-      return html`<span class="ml-2 text-xs">
+      return html`<span class="ml-2 text-xs text-primary-500">
         ${msg(str`+ ${remainder} more`)}
       </span>`;
     };
@@ -183,7 +180,7 @@ export class WorkflowTagFilter extends BtrixElement {
       return html`
         <li tabindex="-1" role="option" aria-checked=${checked}>
           <sl-checkbox
-            class="w-full part-[base]:w-full part-[base]:rounded part-[base]:p-2  part-[base]:hover:bg-primary-50"
+            class="w-full part-[base]:w-full part-[base]:rounded part-[base]:p-2 part-[base]:hover:bg-primary-50"
             value=${tag}
             ?checked=${checked}
             >${tag}
