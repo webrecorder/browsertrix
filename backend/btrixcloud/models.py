@@ -2059,6 +2059,8 @@ class OrgOut(BaseMongoModel):
     bytesStoredCrawls: int
     bytesStoredUploads: int
     bytesStoredProfiles: int
+    bytesStoredSeedFiles: int = 0
+    bytesStoredThumbnails: int = 0
     origin: Optional[AnyHttpUrl] = None
 
     storageQuotaReached: Optional[bool] = False
@@ -2122,6 +2124,8 @@ class Organization(BaseMongoModel):
     bytesStoredCrawls: int = 0
     bytesStoredUploads: int = 0
     bytesStoredProfiles: int = 0
+    bytesStoredSeedFiles: int = 0
+    bytesStoredThumbnails: int = 0
 
     # total usage + exec time
     usage: Dict[str, int] = {}
@@ -2269,6 +2273,8 @@ class OrgMetrics(BaseModel):
     storageUsedCrawls: int
     storageUsedUploads: int
     storageUsedProfiles: int
+    storageUsedSeedFiles: int
+    storageUsedThumbnails: int
     storageQuotaBytes: int
     archivedItemCount: int
     crawlCount: int

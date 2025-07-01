@@ -194,6 +194,10 @@ class FileUploadOps:
 
         await self.files.insert_one(file_to_insert.to_dict())
 
+        await self.org_ops.inc_org_bytes_stored_field(
+            org.id, "bytesStoredSeedFiles", file_obj.size
+        )
+
         return {"added": True, "id": file_id}
 
     async def _parse_seed_info_from_file(
@@ -229,8 +233,22 @@ class FileUploadOps:
         file = await self.get_file(file_id, org)
         await self.storage_ops.delete_file_object(org, file)
         await self.files.delete_one({"_id": file_id, "oid": org.id})
+        if file.type == "seedFile":
+            await self.org_ops.inc_org_bytes_stored_field(
+                org.id, "bytesStoredSeedFiles", -file.size
+            )
 
         return {"success": True}
+
+    async def calculate_seed_file_storage(self, oid: UUID) -> int:
+        """Calculate total storage of seed files in org"""
+        total_size = 0
+
+        cursor = self.files.find({"oid": oid, "type": "seedFile"})
+        async for file_dict in cursor:
+            total_size += file_dict.get("size", 0)
+
+        return total_size
 
 
 # ============================================================================

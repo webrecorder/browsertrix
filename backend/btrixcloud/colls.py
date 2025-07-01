@@ -623,6 +623,10 @@ class CollectionOps:
         """Delete collection and remove from associated crawls."""
         await self.crawl_ops.remove_collection_from_all_crawls(coll_id, org)
 
+        coll = await self.get_collection(coll_id, org.id)
+        if coll.thumbnail:
+            await self.delete_thumbnail(coll_id, org)
+
         result = await self.collections.delete_one({"_id": coll_id, "oid": org.id})
         if result.deleted_count < 1:
             raise HTTPException(status_code=404, detail="collection_not_found")
@@ -937,6 +941,10 @@ class CollectionOps:
             {"$set": coll.to_dict()},
         )
 
+        await self.orgs.inc_org_bytes_stored_field(
+            org.id, "bytesStoredThumbnails", thumbnail_file.size
+        )
+
         return {"added": True}
 
     async def delete_thumbnail(self, coll_id: UUID, org: Organization):
@@ -956,7 +964,23 @@ class CollectionOps:
             {"$set": {"thumbnail": None}},
         )
 
+        await self.orgs.inc_org_bytes_stored_field(
+            org.id, "bytesStoredThumbnails", -coll.thumbnail.size
+        )
+
         return {"deleted": True}
+
+    async def calculate_thumbnail_storage(self, oid: UUID) -> int:
+        """Calculate storage for thumbnails in org"""
+        total_size = 0
+
+        cursor = self.collections.find({"oid": oid})
+        async for coll_dict in cursor:
+            file_ = coll_dict.get("thumbnail")
+            if file_:
+                total_size += file_.get("size", 0)
+
+        return total_size
 
 
 # ============================================================================
