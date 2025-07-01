@@ -92,13 +92,13 @@ export class WorkflowTagFilter extends BtrixElement {
         @sl-after-hide=${() => (this.searchString = "")}
       >
         ${this.tags?.length
-          ? html`<span class="text-primary-500">${msg("tagged")}</span>
+          ? html`<span class="text-primary-500">${msg("Tagged")}</span>
               ${this.renderTagsInLabel(this.tags)}`
           : msg("Tags")}
 
         <div slot="dropdown-header">
           <sl-menu-label class="part-[base]:px-4" id="tag-list-label">
-            ${msg("Filter by tags")}
+            ${msg("Filter by Tags")}
           </sl-menu-label>
           <div class="mb-1 px-3">${this.renderSearch()}</div>
         </div>
@@ -159,7 +159,7 @@ export class WorkflowTagFilter extends BtrixElement {
         aria-controls="tag-listbox"
         aria-activedescendant="tag-selected-option"
         value=${this.searchString}
-        placeholder=${msg("Filter tags")}
+        placeholder=${msg("Search for tag")}
         size="small"
         ?disabled=${!this.orgTagsTask.value?.length}
         @sl-input=${(e: SlInputEvent) =>

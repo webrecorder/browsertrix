@@ -70,7 +70,7 @@ export class WorkflowScheduleFilter extends BtrixElement {
           class="part-[base]:px-4"
           id="schedule-list-label"
         >
-          ${msg("Filter by schedule type")}
+          ${msg("Filter by Schedule Type")}
         </sl-menu-label>
 
         <div slot="dropdown-content" class="p-1">
@@ -98,6 +98,7 @@ export class WorkflowScheduleFilter extends BtrixElement {
           >
             ${radio(msg("Scheduled"), ScheduleType.Scheduled)}
             ${radio(msg("No Schedule"), ScheduleType.None)}
+            ${radio(msg("Any"), ScheduleType.Any)}
           </sl-radio-group>
         </div>
       </btrix-workflow-filter>

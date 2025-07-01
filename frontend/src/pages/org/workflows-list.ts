@@ -982,7 +982,7 @@ export class WorkflowsList extends BtrixElement {
         sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
       },
       {
-        arrayFormat: "comma",
+        arrayFormat: "none", // For tags
       },
     );
 
