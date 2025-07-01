@@ -644,11 +644,14 @@ export class WorkflowsList extends BtrixElement {
             };
           }}
         >
+          <sl-menu-label>${msg("Filter by schedule type")}</sl-menu-label>
+          <sl-divider></sl-divider>
           <sl-menu-item
             type="checkbox"
             data-value="true"
             ?checked=${this.filterBy.schedule === true}
           >
+            <sl-icon slot="prefix" name="calendar2-check"></sl-icon>
             ${msg("Scheduled")}
           </sl-menu-item>
           <sl-menu-item
@@ -656,6 +659,7 @@ export class WorkflowsList extends BtrixElement {
             data-value="false"
             ?checked=${this.filterBy.schedule === false}
           >
+            <sl-icon slot="prefix" name="calendar2-x"></sl-icon>
             ${msg("No Schedule")}
           </sl-menu-item>
         </sl-menu>

@@ -47,17 +47,25 @@ export class WorkflowTagFilter extends BtrixElement {
             : nothing}
         </btrix-workflow-filter>
         <sl-menu>
+          <sl-menu-label>${msg("Filter by tags")}</sl-menu-label>
           ${this.orgTagsTask.render({
+            initial: () => html`
+              <sl-divider></sl-divider>
+              <sl-menu-item loading>${msg("Loading tags")}</sl-menu-item>
+            `,
             complete: (tags) =>
-              tags.map(
-                (tag) =>
-                  html`<sl-menu-item
-                    type="checkbox"
-                    ?checked=${this.selected.get(tag)}
-                    data-value=${tag}
-                    >${tag}</sl-menu-item
-                  >`,
-              ),
+              tags.length
+                ? html`
+                    <sl-input placeholder=${msg("Filter tags")} size="small">
+                      <sl-icon slot="prefix" name="search"></sl-icon>
+                    </sl-input>
+                    <sl-divider></sl-divider>
+                    ${this.renderTagList(tags)}
+                  `
+                : html`<sl-divider></sl-divider>
+                    <sl-menu-label class="part-[base]:font-normal">
+                      ${msg("No tags found.")}
+                    </sl-menu-label>`,
           })}
         </sl-menu>
       </sl-dropdown>
@@ -81,5 +89,17 @@ export class WorkflowTagFilter extends BtrixElement {
               >${tag}</strong
             >`,
       )}${tags.length > MAX_TAGS_IN_LABEL ? more() : nothing}`;
+  }
+
+  private renderTagList(tags: string[]) {
+    return tags.map(
+      (tag) =>
+        html`<sl-menu-item
+          type="checkbox"
+          ?checked=${this.selected.get(tag)}
+          data-value=${tag}
+          >${tag}</sl-menu-item
+        >`,
+    );
   }
 }

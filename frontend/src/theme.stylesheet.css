@@ -178,9 +178,9 @@
     @apply border-primary-300 bg-primary-50 text-primary-600;
   }
 
-  sl-button[role="checkbox"][aria-checked="false"]:not(disabled)::part(
-      base
-    ):not(:hover),
+  sl-button[role="checkbox"][aria-checked="false"]:not(disabled):not(
+      [outline]
+    )::part(base):not(:hover),
   sl-radio-button:not([checked]):not(disabled)::part(button):not(:hover) {
     @apply bg-white text-neutral-600;
   }

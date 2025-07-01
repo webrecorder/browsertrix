@@ -20,6 +20,7 @@ export class WorkflowFilter extends TailwindElement {
         aria-checked=${this.checked ? "true" : "false"}
         size="small"
         ?caret=${this.caret}
+        outline
         pill
       >
         ${this.caret && this.checked
