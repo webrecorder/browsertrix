@@ -449,7 +449,7 @@ export class App extends BtrixElement {
   }
 
   private renderNavBar() {
-    const isSuperAdmin = this.userInfo?.isSuperAdmin;
+    const isSuperAdmin = this.authState && this.userInfo?.isSuperAdmin;
 
     const showFullLogo =
       this.viewState.route === "login" || !this.authService.authState;

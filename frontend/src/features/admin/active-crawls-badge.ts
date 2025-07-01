@@ -2,7 +2,6 @@ import { localized } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html } from "lit";
 import { customElement } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -22,8 +21,8 @@ export class ActiveCrawlsBadge extends BtrixElement {
   });
 
   private readonly pollTask = new Task(this, {
-    task: async ([crawls]) => {
-      if (!crawls) return;
+    task: async () => {
+      window.clearTimeout(this.pollTask.value);
 
       return window.setTimeout(() => {
         void this.activeCrawlsTotalTask.run();
@@ -39,14 +38,12 @@ export class ActiveCrawlsBadge extends BtrixElement {
   }
 
   render() {
-    return html`${when(
-      this.activeCrawlsTotalTask.value,
-      ({ total }) => html`
-        <btrix-badge variant=${total > 0 ? "primary" : "blue"}>
-          ${this.localize.number(total)}
-        </btrix-badge>
-      `,
-    )}`;
+    if (this.activeCrawlsTotalTask.value) {
+      const { total } = this.activeCrawlsTotalTask.value;
+      return html`<btrix-badge variant=${total > 0 ? "primary" : "blue"}>
+        ${this.localize.number(total)}
+      </btrix-badge>`;
+    }
   }
 
   private async getActiveCrawlsTotal() {
