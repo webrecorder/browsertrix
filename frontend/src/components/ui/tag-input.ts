@@ -80,7 +80,7 @@ export class TagInput extends LitElement {
       }
 
       sl-popup::part(popup) {
-        z-index: 3;
+        z-index: 5;
       }
 
       .shake {
@@ -224,6 +224,7 @@ export class TagInput extends LitElement {
               @paste=${this.onPaste}
               ?required=${this.required && !this.tags.length}
               placeholder=${placeholder}
+              autocomplete="off"
               role="combobox"
               aria-controls="dropdown"
               aria-expanded="${this.dropdownIsOpen === true}"
