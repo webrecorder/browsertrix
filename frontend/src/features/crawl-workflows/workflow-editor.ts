@@ -88,7 +88,11 @@ import {
   type WorkflowParams,
 } from "@/types/crawler";
 import type { UnderlyingFunction } from "@/types/utils";
-import { NewWorkflowOnlyScopeType } from "@/types/workflow";
+import {
+  NewWorkflowOnlyScopeType,
+  type WorkflowTag,
+  type WorkflowTags,
+} from "@/types/workflow";
 import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
@@ -293,7 +297,8 @@ export class WorkflowEditor extends BtrixElement {
   });
 
   // For fuzzy search:
-  private readonly fuse = new Fuse<string>([], {
+  private readonly fuse = new Fuse<WorkflowTag>([], {
+    keys: ["tag"],
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
@@ -2526,13 +2531,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private readonly onTagInput = (e: TagInputEvent) => {
     const { value } = e.detail;
     if (!value) return;
-    this.tagOptions = this.fuse.search(value).map(({ item }) => item);
+    this.tagOptions = this.fuse.search(value).map(({ item }) => item.tag);
   };
 
   private async fetchTags() {
     this.tagOptions = [];
     try {
-      const tags = await this.api.fetch<string[]>(
+      const tags = await this.api.fetch<WorkflowTags>(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
       );
 

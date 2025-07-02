@@ -10,6 +10,7 @@ import type {
 } from "@/components/ui/tag-input";
 import { type CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type { ArchivedItem } from "@/types/crawler";
+import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
 import { maxLengthValidator } from "@/utils/form";
 import LiteElement, { html } from "@/utils/LiteElement";
 
@@ -55,7 +56,8 @@ export class CrawlMetadataEditor extends LiteElement {
   private collectionsToSave: string[] = [];
 
   // For fuzzy search:
-  private readonly fuse = new Fuse<string>([], {
+  private readonly fuse = new Fuse<WorkflowTag>([], {
+    keys: ["tag"],
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
@@ -158,13 +160,13 @@ export class CrawlMetadataEditor extends LiteElement {
   private readonly onTagInput = (e: TagInputEvent) => {
     const { value } = e.detail;
     if (!value) return;
-    this.tagOptions = this.fuse.search(value).map(({ item }) => item);
+    this.tagOptions = this.fuse.search(value).map(({ item }) => item.tag);
   };
 
   private async fetchTags() {
     if (!this.crawl) return;
     try {
-      const tags = await this.apiFetch<string[]>(
+      const tags = await this.apiFetch<WorkflowTags>(
         `/orgs/${this.crawl.oid}/crawlconfigs/tags`,
       );
 
