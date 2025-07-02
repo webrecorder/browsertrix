@@ -180,11 +180,11 @@ There should be 4 pods listed: backend, frontend, minio, and mongodb. If any one
 
 To get more details about why a pod has not started, run `#!sh kubectl describe <podname>` and see the latest status at the bottom.
 
-Often, the error may be obvious, such as failed to pull an image.
+Often, the error may be obvious, such as "failed to pull an image."
 
-If the pod is running, or previously ran, you can also get the logs from the container by running `#!sh kubectl logs <podname>`
+If the pod is running, or previously ran, you can also get the logs from the container by running `#!sh kubectl logs <podname>`.
 
-The outputs of these commands are helpful when reporting an issue [on GitHub](https://github.com/webrecorder/browsertrix/issues)
+The outputs of these commands are helpful when reporting an issue [on GitHub](https://github.com/webrecorder/browsertrix/issues).
 
 ## Updating the Cluster
 
