@@ -404,7 +404,7 @@ export class BrowserProfilesList extends BtrixElement {
       );
 
       if (isApiError(e)) {
-        if (e.details === "profile_in_use") {
+        if (e.message === "profile_in_use") {
           message = msg(
             html`Could not delete <strong>${profile.name}</strong>, currently in
               use. Please remove browser profile from all crawl workflows to
