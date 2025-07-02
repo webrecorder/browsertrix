@@ -26,6 +26,7 @@ from .models import (
     CrawlConfig,
     CrawlConfigOut,
     CrawlConfigProfileOut,
+    CrawlConfigTagCount,
     CrawlOut,
     UpdateCrawlConfig,
     Organization,
@@ -986,8 +987,16 @@ class CrawlConfigOps:
 
     async def get_crawl_config_tags(self, org):
         """get distinct tags from all crawl configs for this org"""
-        tags = await self.crawl_configs.distinct("tags", {"oid": org.id})
-        return list(tags)
+        tags = await self.crawl_configs.aggregate(
+            [
+                {"$match": {"oid": org.id}},
+                {"$unwind": "$tags"},
+                {"$group": {"_id": "$tags", "count": {"$sum": 1}}},
+                {"$project": { "tag": "$_id", "count": "$count", "_id":0}},
+                {"$sort": {"count": -1}}
+            ]
+        ).to_list()
+        return tags
 
     async def get_crawl_config_search_values(self, org):
         """List unique names, first seeds, and descriptions from all workflows in org"""
@@ -1407,7 +1416,7 @@ def init_crawl_config_api(
         )
         return paginated_format(crawl_configs, total, page, pageSize)
 
-    @router.get("/tags", response_model=List[str])
+    @router.get("/tags", response_model=List[CrawlConfigTagCount])
     async def get_crawl_config_tags(org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_config_tags(org)
 
