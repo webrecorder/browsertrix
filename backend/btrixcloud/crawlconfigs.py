@@ -25,7 +25,6 @@ from .models import (
     ConfigRevision,
     CrawlConfig,
     CrawlConfigOut,
-    CrawlConfigProfileOut,
     CrawlOut,
     UpdateCrawlConfig,
     Organization,
@@ -597,6 +596,7 @@ class CrawlConfigOps:
         page: int = 1,
         created_by: Optional[UUID] = None,
         modified_by: Optional[UUID] = None,
+        profileid: Optional[UUID] = None,
         first_seed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -607,7 +607,7 @@ class CrawlConfigOps:
         sort_direction: int = -1,
     ) -> tuple[list[CrawlConfigOut], int]:
         """Get all crawl configs for an organization is a member of"""
-        # pylint: disable=too-many-locals,too-many-branches
+        # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         # Zero-index page for query
         page = page - 1
         skip = page * page_size
@@ -622,6 +622,9 @@ class CrawlConfigOps:
 
         if modified_by:
             match_query["modifiedBy"] = modified_by
+
+        if profileid:
+            match_query["profileid"] = profileid
 
         if name:
             match_query["name"] = name
@@ -708,25 +711,12 @@ class CrawlConfigOps:
 
         return configs, total
 
-    async def get_crawl_config_info_for_profile(
-        self, profileid: UUID, org: Organization
-    ) -> list[CrawlConfigProfileOut]:
-        """Return all crawl configs that are associated with a given profileid"""
-        query = {"profileid": profileid, "inactive": {"$ne": True}}
-        if org:
-            query["oid"] = org.id
-
-        results = []
-
-        cursor = self.crawl_configs.find(query, projection=["_id"])
-        workflows = await cursor.to_list(length=1000)
-        for workflow_dict in workflows:
-            workflow_out = await self.get_crawl_config_out(
-                workflow_dict.get("_id"), org
-            )
-            results.append(CrawlConfigProfileOut.from_dict(workflow_out.to_dict()))
-
-        return results
+    async def is_profile_in_use(self, profileid: UUID, org: Organization) -> bool:
+        """return true/false if any active workflows exist with given profile"""
+        res = await self.crawl_configs.find_one(
+            {"profileid": profileid, "inactive": {"$ne": True}, "oid": org.id}
+        )
+        return res is not None
 
     async def get_running_crawl(self, cid: UUID) -> Optional[CrawlOut]:
         """Return the id of currently running crawl for this config, if any"""
@@ -1371,6 +1361,7 @@ def init_crawl_config_api(
         # createdBy, kept as userid for API compatibility
         userid: Optional[UUID] = None,
         modifiedBy: Optional[UUID] = None,
+        profileid: Optional[UUID] = None,
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -1394,6 +1385,7 @@ def init_crawl_config_api(
             org,
             created_by=userid,
             modified_by=modifiedBy,
+            profileid=profileid,
             first_seed=firstSeed,
             name=name,
             description=description,

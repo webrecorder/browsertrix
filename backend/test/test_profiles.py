@@ -144,8 +144,6 @@ def profile_config_id(admin_auth_headers, default_org_id, profile_id):
     assert resource["storage"]["name"]
     assert resource.get("replicas") or resource.get("replicas") == []
 
-    assert data.get("crawlconfigs") == []
-
     # Use profile in a workflow
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
@@ -207,7 +205,7 @@ def test_commit_browser_to_new_profile(admin_auth_headers, default_org_id, profi
 def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_config_id):
     start_time = time.monotonic()
     time_limit = 10
-    # Check get endpoint again and check that crawlconfigs is updated
+    # Check get endpoint again and check that inUse is updated
     while True:
         try:
             r = requests.get(
@@ -239,13 +237,8 @@ def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_con
             assert resource["storage"]["name"]
             assert resource.get("replicas") or resource.get("replicas") == []
 
-            crawl_configs = data.get("crawlconfigs")
-            assert crawl_configs
-            assert len(crawl_configs) == 1
-            assert crawl_configs[0]["id"] == profile_config_id
-            assert crawl_configs[0]["name"] == "Profile Test Crawl"
-            assert crawl_configs[0]["firstSeed"] == "https://webrecorder.net/"
-            assert crawl_configs[0]["seedCount"] == 1
+            assert "crawlconfigs" not in data
+            assert data["inUse"] == True
             break
         except:
             if time.monotonic() - start_time > time_limit:
@@ -260,7 +253,6 @@ def test_commit_second_profile(profile_2_id):
 def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2_id):
     start_time = time.monotonic()
     time_limit = 10
-    # Check get endpoint again and check that crawlconfigs is updated
     while True:
         try:
             r = requests.get(
