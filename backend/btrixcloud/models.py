@@ -515,15 +515,6 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
 
 
 # ============================================================================
-class CrawlConfigProfileOut(BaseMongoModel):
-    """Crawl Config basic info for profiles"""
-
-    name: str
-    firstSeed: str
-    seedCount: int
-
-
-# ============================================================================
 class UpdateCrawlConfig(BaseModel):
     """Update crawl config name, crawl schedule, or tags"""
 
@@ -2319,12 +2310,7 @@ class Profile(BaseMongoModel):
     crawlerChannel: Optional[str] = None
     proxyId: Optional[str] = None
 
-
-# ============================================================================
-class ProfileWithCrawlConfigs(Profile):
-    """Profile with list of crawlconfigs using this profile"""
-
-    crawlconfigs: List[CrawlConfigProfileOut] = []
+    inUse: bool = False
 
 
 # ============================================================================

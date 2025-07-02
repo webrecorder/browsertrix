@@ -125,6 +125,7 @@ export type Profile = {
   profileId: string;
   baseProfileName: string;
   oid: string;
+  inUse: boolean;
   resource?: {
     name: string;
     path: string;

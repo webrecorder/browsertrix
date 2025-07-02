@@ -13,7 +13,6 @@ import aiohttp
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
     Profile,
-    ProfileWithCrawlConfigs,
     ProfileFile,
     UrlIn,
     ProfileLaunchBrowserIn,
@@ -31,7 +30,6 @@ from .models import (
     SuccessResponseStorageQuota,
     ProfilePingResponse,
     ProfileBrowserGetUrlResponse,
-    CrawlConfigProfileOut,
 )
 from .utils import dt_now
 
@@ -353,33 +351,20 @@ class ProfileOps:
         profiles = [Profile.from_dict(res) for res in items]
         return profiles, total
 
-    async def get_profile(
-        self, profileid: UUID, org: Optional[Organization] = None
-    ) -> Profile:
+    async def get_profile(self, profileid: UUID, org: Organization) -> Profile:
         """get profile by id and org"""
-        query: dict[str, object] = {"_id": profileid}
-        if org:
-            query["oid"] = org.id
+        query: dict[str, object] = {"_id": profileid, "oid": org.id}
 
         res = await self.profiles.find_one(query)
         if not res:
             raise HTTPException(status_code=404, detail="profile_not_found")
 
-        return Profile.from_dict(res)
-
-    async def get_profile_with_configs(
-        self, profileid: UUID, org: Organization
-    ) -> ProfileWithCrawlConfigs:
-        """get profile for api output, with crawlconfigs"""
-
-        profile = await self.get_profile(profileid, org)
-
-        crawlconfigs = await self.get_crawl_configs_for_profile(profileid, org)
-
-        return ProfileWithCrawlConfigs(crawlconfigs=crawlconfigs, **profile.dict())
+        profile = Profile.from_dict(res)
+        profile.inUse = await self.crawlconfigs.is_profile_in_use(profileid, org)
+        return profile
 
     async def get_profile_storage_path_and_proxy(
-        self, profileid: UUID, org: Optional[Organization] = None
+        self, profileid: UUID, org: Organization
     ) -> tuple[str, str]:
         """return profile path filename (relative path) for given profile id and org"""
         try:
@@ -392,9 +377,7 @@ class ProfileOps:
 
         return "", ""
 
-    async def get_profile_name(
-        self, profileid: UUID, org: Optional[Organization] = None
-    ) -> str:
+    async def get_profile_name(self, profileid: UUID, org: Organization) -> str:
         """return profile for given profile id and org"""
         try:
             profile = await self.get_profile(profileid, org)
@@ -405,25 +388,14 @@ class ProfileOps:
 
         return ""
 
-    async def get_crawl_configs_for_profile(
-        self, profileid: UUID, org: Organization
-    ) -> list[CrawlConfigProfileOut]:
-        """Get list of crawl configs with basic info for that use a particular profile"""
-
-        crawlconfig_info = await self.crawlconfigs.get_crawl_config_info_for_profile(
-            profileid, org
-        )
-
-        return crawlconfig_info
-
     async def delete_profile(
         self, profileid: UUID, org: Organization
     ) -> dict[str, Any]:
         """delete profile, if not used in active crawlconfig"""
-        profile = await self.get_profile_with_configs(profileid, org)
+        profile = await self.get_profile(profileid, org)
 
-        if len(profile.crawlconfigs) > 0:
-            return {"error": "in_use", "crawlconfigs": profile.crawlconfigs}
+        if profile.inUse:
+            return {"error": "in_use"}
 
         query: dict[str, object] = {"_id": profileid}
         if org:
@@ -571,7 +543,7 @@ def init_profiles_api(
 
         else:
             metadata = await browser_get_metadata(browser_commit.browserid, org)
-            profile = await ops.get_profile(profileid)
+            profile = await ops.get_profile(profileid, org)
             await ops.commit_to_profile(
                 browser_commit=ProfileCreate(
                     browserid=browser_commit.browserid,
