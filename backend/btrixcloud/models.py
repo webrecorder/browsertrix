@@ -576,12 +576,12 @@ class CrawlConfigAddedResponse(BaseModel):
     storageQuotaReached: bool
     execMinutesQuotaReached: bool
 
-
 # ============================================================================
-class CrawlConfigTags(BaseModel):
-    """Response model for crawlconfig tags"""
+class CrawlConfigTagCount(BaseModel):
+    """Response model for crawlconfig tag count"""
 
-    tags: List[str]
+    tag: str
+    count: int
 
 
 # ============================================================================
