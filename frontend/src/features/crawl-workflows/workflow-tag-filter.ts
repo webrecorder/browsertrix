@@ -249,7 +249,7 @@ export class WorkflowTagFilter extends BtrixElement {
             value=${tag.tag}
             ?checked=${checked}
             >${tag.tag}
-            <btrix-badge variant="high-contrast">${tag.count}</btrix-badge>
+            <btrix-badge pill variant="cyan">${tag.count}</btrix-badge>
           </sl-checkbox>
         </li>
       `;

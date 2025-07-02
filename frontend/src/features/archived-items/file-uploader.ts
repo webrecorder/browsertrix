@@ -71,7 +71,7 @@ export class FileUploader extends BtrixElement {
   private collectionIds: string[] = [];
 
   @state()
-  private tagOptions: Tags = [];
+  private tagOptions: WorkflowTags = [];
 
   @state()
   private tagsToSave: Tags = [];
@@ -358,7 +358,7 @@ export class FileUploader extends BtrixElement {
   private readonly onTagInput = (e: TagInputEvent) => {
     const { value } = e.detail;
     if (!value) return;
-    this.tagOptions = this.fuse.search(value).map(({ item }) => item.tag);
+    this.tagOptions = this.fuse.search(value).map(({ item }) => item);
   };
 
   private async fetchTags() {
