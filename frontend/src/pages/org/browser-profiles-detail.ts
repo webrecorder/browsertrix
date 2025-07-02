@@ -554,35 +554,36 @@ export class BrowserProfilesDetail extends BtrixElement {
     const profileName = this.profile!.name;
 
     try {
-      const data = await this.api.fetch<Profile & { error: boolean }>(
+      await this.api.fetch<Profile>(
         `/orgs/${this.orgId}/profiles/${this.profile!.id}`,
         {
           method: "DELETE",
         },
       );
 
-      if (data.error && data.inUse) {
-        this.notify.toast({
-          message: msg(
-            html`Could not delete <strong>${profileName}</strong>, currently in
-              use. Please remove browser profile from all Crawl Workflows to
-              continue.`,
-          ),
-          variant: "warning",
-          duration: 15000,
-        });
-      } else {
-        this.navigate.to(`${this.navigate.orgBasePath}/browser-profiles`);
+      this.navigate.to(`${this.navigate.orgBasePath}/browser-profiles`);
 
-        this.notify.toast({
-          message: msg(html`Deleted <strong>${profileName}</strong>.`),
-          variant: "success",
-          icon: "check2-circle",
-        });
-      }
-    } catch (e) {
       this.notify.toast({
-        message: msg("Sorry, couldn't delete browser profile at this time."),
+        message: msg(html`Deleted <strong>${profileName}</strong>.`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e) {
+      let message = msg(
+        html`Sorry, couldn't delete browser profile at this time.`,
+      );
+
+      if (isApiError(e)) {
+        if (e.details === "profile_in_use") {
+          message = msg(
+            html`Could not delete <strong>${profileName}</strong>, currently in
+              use. Please remove browser profile from all crawl workflows to
+              continue.`,
+          );
+        }
+      }
+      this.notify.toast({
+        message: message,
         variant: "danger",
         icon: "exclamation-octagon",
         id: "browser-profile-error",

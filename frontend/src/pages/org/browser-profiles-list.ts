@@ -23,6 +23,7 @@ import type {
   APISortQuery,
 } from "@/types/api";
 import type { Browser } from "@/types/browser";
+import { isApiError } from "@/utils/api";
 import { html } from "@/utils/LiteElement";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
@@ -382,39 +383,40 @@ export class BrowserProfilesList extends BtrixElement {
 
   private async deleteProfile(profile: Profile) {
     try {
-      const data = await this.api.fetch<Profile & { error?: boolean }>(
+      await this.api.fetch<{ error?: boolean }>(
         `/orgs/${this.orgId}/profiles/${profile.id}`,
         {
           method: "DELETE",
         },
       );
 
-      if (data.error && data.inUse) {
-        this.notify.toast({
-          message: msg(
-            html`Could not delete <strong>${profile.name}</strong>, currently in
-              use. Please remove browser profile from all Crawl Workflows to
-              continue.`,
-          ),
-          variant: "warning",
-          duration: 15000,
-        });
-      } else {
-        this.notify.toast({
-          message: msg(html`Deleted <strong>${profile.name}</strong>.`),
-          variant: "success",
-          icon: "check2-circle",
-          id: "browser-profile-deleted-status",
-        });
-
-        void this.fetchBrowserProfiles();
-      }
-    } catch (e) {
       this.notify.toast({
-        message: msg("Sorry, couldn't delete browser profile at this time."),
+        message: msg(html`Deleted <strong>${profile.name}</strong>.`),
+        variant: "success",
+        icon: "check2-circle",
+        id: "browser-profile-deleted-status",
+      });
+
+      void this.fetchBrowserProfiles();
+    } catch (e) {
+      let message = msg(
+        html`Sorry, couldn't delete browser profile at this time.`,
+      );
+
+      if (isApiError(e)) {
+        if (e.details === "profile_in_use") {
+          message = msg(
+            html`Could not delete <strong>${profile.name}</strong>, currently in
+              use. Please remove browser profile from all crawl workflows to
+              continue.`,
+          );
+        }
+      }
+      this.notify.toast({
+        message: message,
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "browser-profile-deleted-status",
+        id: "browser-profile-error",
       });
     }
   }

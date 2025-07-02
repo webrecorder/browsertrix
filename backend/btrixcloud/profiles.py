@@ -395,7 +395,7 @@ class ProfileOps:
         profile = await self.get_profile(profileid, org)
 
         if profile.inUse:
-            return {"error": "in_use"}
+            raise HTTPException(status_code=400, detail="profile_in_use")
 
         query: dict[str, object] = {"_id": profileid}
         if org:
