@@ -186,6 +186,9 @@ If the pod is running, or previously ran, you can also get the logs from the con
 
 The outputs of these commands are helpful when reporting an issue [on GitHub](https://github.com/webrecorder/browsertrix/issues).
 
+On Red Hat Enterprise Linux and derivatives, communication between pods might be blocked by firewalld.
+There are short guides in the [k3s](https://docs.k3s.io/installation/requirements?&os=rhel#operating-systems) and [Microk8s](https://microk8s.io/docs/troubleshooting#:~:text=Pod%20communication%20problems%20when%20using%20firewall-cmd) documentation showing how to configure the firewall for kubernetes.
+
 ## Updating the Cluster
 
 To update the cluster, for example to update to new version `NEWVERSION`, re-run the same command again, which will pull the latest images. In this way, you can upgrade to the latest release of Browsertrix. The upgrade will preserve the database and current archives.
