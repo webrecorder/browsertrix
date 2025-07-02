@@ -382,21 +382,33 @@ export class BrowserProfilesList extends BtrixElement {
 
   private async deleteProfile(profile: Profile) {
     try {
-      await this.api.fetch<Profile & { error?: boolean }>(
+      const data = await this.api.fetch<Profile & { error?: boolean }>(
         `/orgs/${this.orgId}/profiles/${profile.id}`,
         {
           method: "DELETE",
         },
       );
 
-      this.notify.toast({
-        message: msg(html`Deleted <strong>${profile.name}</strong>.`),
-        variant: "success",
-        icon: "check2-circle",
-        id: "browser-profile-deleted-status",
-      });
+      if (data.error && data.inUse) {
+        this.notify.toast({
+          message: msg(
+            html`Could not delete <strong>${profile.name}</strong>, currently in
+              use. Please remove browser profile from all Crawl Workflows to
+              continue.`,
+          ),
+          variant: "warning",
+          duration: 15000,
+        });
+      } else {
+        this.notify.toast({
+          message: msg(html`Deleted <strong>${profile.name}</strong>.`),
+          variant: "success",
+          icon: "check2-circle",
+          id: "browser-profile-deleted-status",
+        });
 
-      void this.fetchBrowserProfiles();
+        void this.fetchBrowserProfiles();
+      }
     } catch (e) {
       this.notify.toast({
         message: msg("Sorry, couldn't delete browser profile at this time."),
