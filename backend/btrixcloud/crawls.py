@@ -186,9 +186,7 @@ class CrawlOps(BaseCrawlOps):
         # pylint: disable=duplicate-code
         aggregate = [
             {"$match": query},
-            {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
-            {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            {"$unset": ["firstSeedObject", "errors", "behaviorLogs", "config"]},
+            {"$unset": ["errors", "behaviorLogs", "config"]},
             {"$set": {"activeQAStats": "$qa.stats"}},
             {
                 "$set": {
@@ -314,9 +312,7 @@ class CrawlOps(BaseCrawlOps):
         for result in items:
             crawl = cls.from_dict(result)
             files = result.get("files") if resources else None
-            crawl = await self._resolve_crawl_refs(
-                crawl, org, files=files, add_first_seed=False
-            )
+            crawl = await self._resolve_crawl_refs(crawl, org, files=files)
             crawls.append(crawl)
 
         return crawls, total
@@ -386,6 +382,8 @@ class CrawlOps(BaseCrawlOps):
             proxyId=crawlconfig.proxyId,
             image=image,
             version=2,
+            firstSeed=crawlconfig.firstSeed,
+            seedCount=crawlconfig.seedCount,
         )
 
         try:

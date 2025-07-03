@@ -45,6 +45,8 @@ from .models import (
     CrawlerProxies,
     ValidateCustomBehavior,
     RawCrawlConfig,
+    ScopeType,
+    Seed,
 )
 from .utils import (
     dt_now,
@@ -62,8 +64,12 @@ if TYPE_CHECKING:
     from .profiles import ProfileOps
     from .crawls import CrawlOps
     from .colls import CollectionOps
+    from .file_uploads import FileUploadOps
+    from .storages import StorageOps
 else:
-    OrgOps = CrawlManager = UserManager = ProfileOps = CrawlOps = CollectionOps = object
+    OrgOps = CrawlManager = UserManager = ProfileOps = CrawlOps = CollectionOps = (
+        FileUploadOps
+    ) = StorageOps = object
 
 
 ALLOWED_SORT_KEYS = (
@@ -91,6 +97,8 @@ class CrawlConfigOps:
     profiles: ProfileOps
     crawl_ops: CrawlOps
     coll_ops: CollectionOps
+    file_ops: FileUploadOps
+    storage_ops: StorageOps
 
     crawler_channels: CrawlerChannels
     crawler_images_map: dict[str, str]
@@ -106,6 +114,8 @@ class CrawlConfigOps:
         org_ops,
         crawl_manager,
         profiles,
+        file_ops,
+        storage_ops,
     ):
         self.dbclient = dbclient
         self.crawls = mdb["crawls"]
@@ -115,6 +125,8 @@ class CrawlConfigOps:
         self.org_ops = org_ops
         self.crawl_manager = crawl_manager
         self.profiles = profiles
+        self.file_ops = file_ops
+        self.storage_ops = storage_ops
         self.profiles.set_crawlconfigs(self)
         self.crawl_ops = cast(CrawlOps, None)
         self.coll_ops = cast(CollectionOps, None)
@@ -214,7 +226,7 @@ class CrawlConfigOps:
 
         return profile_filename
 
-    # pylint: disable=invalid-name, too-many-branches
+    # pylint: disable=invalid-name, too-many-branches, too-many-statements, too-many-locals
     async def add_crawl_config(
         self,
         config_in: CrawlConfigIn,
@@ -264,6 +276,32 @@ class CrawlConfigOps:
             for url in config_in.config.customBehaviors:
                 self._validate_custom_behavior_url_syntax(url)
 
+        if config_in.config.seedFileId:
+            # Validate file with that id exists
+            seed_file = await self.file_ops.get_file(config_in.config.seedFileId, org)
+
+            # Validate seeds not set
+            if config_in.config.seeds:
+                raise HTTPException(
+                    status_code=400, detail="use_one_of_seeds_or_seedfile"
+                )
+
+            # Ensure scopeType is set to page
+            config_in.config.scopeType = ScopeType.PAGE
+
+            first_seed = seed_file.firstSeed
+            seed_count = seed_file.seedCount
+        else:
+            if not config_in.config.seeds:
+                raise HTTPException(
+                    status_code=400, detail="use_one_of_seeds_or_seedfile"
+                )
+
+            seeds = cast(List[Seed], config_in.config.seeds)
+            seed_count = len(seeds)
+
+            first_seed = seeds[0].url
+
         now = dt_now()
         crawlconfig = CrawlConfig(
             id=uuid4(),
@@ -288,6 +326,8 @@ class CrawlConfigOps:
             crawlerChannel=config_in.crawlerChannel,
             crawlFilenameTemplate=config_in.crawlFilenameTemplate,
             proxyId=config_in.proxyId,
+            firstSeed=first_seed,
+            seedCount=seed_count,
         )
 
         if config_in.runNow:
@@ -455,6 +495,38 @@ class CrawlConfigOps:
             if self.is_single_page(update.config or orig_crawl_config.config):
                 update.browserWindows = 1
 
+        if update.config and update.config.seedFileId:
+            # Validate file with that id exists
+            seed_file = await self.file_ops.get_file(update.config.seedFileId, org)
+
+            # Validate seeds not set
+            if update.config.seeds or (
+                orig_crawl_config.config.seeds and update.config.seeds not in ([], None)
+            ):
+                raise HTTPException(
+                    status_code=400, detail="use_one_of_seeds_or_seedfile"
+                )
+
+        # Delete old seed file if it's been unset
+        if (
+            orig_crawl_config.config
+            and orig_crawl_config.config.seedFileId
+            and update.config
+            and update.config.seedFileId is None
+        ):
+            await self.file_ops.delete_user_file(
+                orig_crawl_config.config.seedFileId, org
+            )
+
+        if update.config and update.config.seeds:
+            if update.config.seedFileId or (
+                orig_crawl_config.config.seedFileId
+                and update.config.seedFileId is not None
+            ):
+                raise HTTPException(
+                    status_code=400, detail="use_one_of_seeds_or_seedfile"
+                )
+
         # indicates if any k8s crawl config settings changed
         changed = False
         changed = changed or (
@@ -534,6 +606,17 @@ class CrawlConfigOps:
 
         if update.config is not None:
             query["config"] = update.config.dict()
+
+        if update.config and update.config.seedFileId:
+            query["firstSeed"] = seed_file.firstSeed
+            query["seedCount"] = seed_file.seedCount
+            query["config"]["scopeType"] = ScopeType.PAGE
+            query["seeds"] = None
+
+        if update.config and update.config.seeds:
+            query["firstSeed"] = update.config.seeds[0].url
+            query["seedCount"] = len(update.config.seeds)
+            query["seedFileId"] = None
 
         # update in db
         result = await self.crawl_configs.find_one_and_update(
@@ -642,14 +725,7 @@ class CrawlConfigOps:
             match_query["isCrawlRunning"] = isCrawlRunning
 
         # pylint: disable=duplicate-code
-        aggregate = [
-            {"$match": match_query},
-            {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
-            {"$set": {"seedCount": {"$size": "$config.seeds"}}},
-            # Set firstSeed
-            {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            {"$unset": ["firstSeedObject", "config"]},
-        ]
+        aggregate: List[Dict[str, Union[object, str, int]]] = [{"$match": match_query}]
 
         if first_seed:
             aggregate.extend([{"$match": {"firstSeed": first_seed}}])
@@ -824,29 +900,9 @@ class CrawlConfigOps:
                 crawlconfig.profileid, org
             )
 
-        if crawlconfig.config and crawlconfig.config.seeds:
-            crawlconfig.firstSeed = crawlconfig.config.seeds[0].url
-
-        crawlconfig.seedCount = await self.get_crawl_config_seed_count(cid, org)
-
         crawlconfig.config.seeds = None
 
         return crawlconfig
-
-    async def get_crawl_config_seed_count(self, cid: UUID, org: Organization):
-        """Return count of seeds in crawl config"""
-        cursor = self.crawl_configs.aggregate(
-            [
-                {"$match": {"_id": cid, "oid": org.id}},
-                {"$project": {"seedCount": {"$size": "$config.seeds"}}},
-            ]
-        )
-        results = await cursor.to_list(length=1)
-        result = results[0]
-        seed_count = result["seedCount"]
-        if seed_count:
-            return int(seed_count)
-        return 0
 
     async def get_crawl_config(
         self,
@@ -887,8 +943,7 @@ class CrawlConfigOps:
         return revisions, total
 
     async def make_inactive_or_delete(
-        self,
-        crawlconfig: CrawlConfig,
+        self, crawlconfig: CrawlConfig, org: Organization
     ):
         """Make config inactive if crawls exist, otherwise move to inactive list"""
 
@@ -904,6 +959,9 @@ class CrawlConfigOps:
 
         # if no crawls have been run, actually delete
         if not crawlconfig.crawlAttemptCount:
+            if crawlconfig.config and crawlconfig.config.seedFileId:
+                await self.file_ops.delete_user_file(crawlconfig.config.seedFileId, org)
+
             result = await self.crawl_configs.delete_one(
                 {"_id": crawlconfig.id, "oid": crawlconfig.oid}
             )
@@ -927,12 +985,12 @@ class CrawlConfigOps:
 
         return status
 
-    async def do_make_inactive(self, crawlconfig: CrawlConfig):
+    async def do_make_inactive(self, crawlconfig: CrawlConfig, org: Organization):
         """perform make_inactive in a transaction"""
 
         async with await self.dbclient.start_session() as sesh:
             async with sesh.start_transaction():
-                status = await self.make_inactive_or_delete(crawlconfig)
+                status = await self.make_inactive_or_delete(crawlconfig, org)
 
         return {"success": True, "status": status}
 
@@ -984,20 +1042,17 @@ class CrawlConfigOps:
         names = await self.crawl_configs.distinct("name", {"oid": org.id})
         descriptions = await self.crawl_configs.distinct("description", {"oid": org.id})
         workflow_ids = await self.crawl_configs.distinct("_id", {"oid": org.id})
+        first_seeds = await self.crawl_configs.distinct("firstSeed", {"oid": org.id})
 
         # Remove empty strings
         names = [name for name in names if name]
         descriptions = [description for description in descriptions if description]
-
-        first_seeds = set()
-        async for config in self.crawl_configs.find({"oid": org.id}):
-            first_seed = config["config"]["seeds"][0]["url"]
-            first_seeds.add(first_seed)
+        first_seeds = [first_seed for first_seed in first_seeds if first_seed]
 
         return {
             "names": names,
             "descriptions": descriptions,
-            "firstSeeds": list(first_seeds),
+            "firstSeeds": first_seeds,
             "workflowIds": workflow_ids,
         }
 
@@ -1028,6 +1083,15 @@ class CrawlConfigOps:
             crawlconfig.crawlFilenameTemplate or self.default_filename_template
         )
 
+        seed_file_url = ""
+        if crawlconfig.config.seedFileId:
+            seed_file_out = await self.file_ops.get_file_out(
+                crawlconfig.config.seedFileId, org
+            )
+            seed_file_url = self.storage_ops.resolve_internal_access_path(
+                seed_file_out.path
+            )
+
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
                 crawlconfig,
@@ -1037,6 +1101,7 @@ class CrawlConfigOps:
                 storage_filename=storage_filename,
                 profile_filename=profile_filename or "",
                 is_single_page=self.is_single_page(crawlconfig.config),
+                seed_file_url=seed_file_url,
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user, org, manual=True)
             return crawl_id
@@ -1342,11 +1407,23 @@ def init_crawl_config_api(
     org_ops,
     crawl_manager,
     profiles,
+    file_ops,
+    storage_ops,
 ):
     """Init /crawlconfigs api routes"""
     # pylint: disable=invalid-name
 
-    ops = CrawlConfigOps(dbclient, mdb, user_manager, org_ops, crawl_manager, profiles)
+    # pylint: disable=duplicate-code
+    ops = CrawlConfigOps(
+        dbclient,
+        mdb,
+        user_manager,
+        org_ops,
+        crawl_manager,
+        profiles,
+        file_ops,
+        storage_ops,
+    )
 
     router = ops.router
 
@@ -1501,7 +1578,7 @@ def init_crawl_config_api(
     async def make_inactive(cid: UUID, org: Organization = Depends(org_crawl_dep)):
         crawlconfig = await ops.get_crawl_config(cid, org.id)
 
-        return await ops.do_make_inactive(crawlconfig)
+        return await ops.do_make_inactive(crawlconfig, org)
 
     @app.post("/orgs/all/crawlconfigs/reAddCronjobs", response_model=SuccessResponse)
     async def re_add_all_scheduled_cron_jobs(

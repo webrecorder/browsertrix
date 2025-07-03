@@ -321,6 +321,8 @@ class RawCrawlConfig(BaseModel):
 
     seeds: Optional[List[Seed]] = []
 
+    seedFileId: Optional[UUID] = None
+
     scopeType: Optional[ScopeType] = ScopeType.PREFIX
 
     include: Union[str, List[str], None] = None
@@ -439,6 +441,9 @@ class CrawlConfigCore(BaseMongoModel):
     crawlerChannel: Optional[str] = None
     proxyId: Optional[str] = None
 
+    firstSeed: str = ""
+    seedCount: int = 0
+
 
 # ============================================================================
 class CrawlConfigAdditional(BaseModel):
@@ -506,8 +511,6 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     lastCrawlPausedAt: Optional[datetime] = None
     lastCrawlPausedExpiry: Optional[datetime] = None
     profileName: Optional[str] = None
-    firstSeed: Optional[str] = None
-    seedCount: int = 0
 
     createdByName: Optional[str] = None
     modifiedByName: Optional[str] = None
@@ -590,7 +593,7 @@ class CrawlConfigSearchValues(BaseModel):
 
     names: List[str]
     descriptions: List[str]
-    firstSeeds: List[AnyHttpUrl]
+    firstSeeds: List[str]
     workflowIds: List[UUID]
 
 
@@ -944,7 +947,7 @@ class CrawlSearchValuesResponse(BaseModel):
 
     names: List[str]
     descriptions: List[str]
-    firstSeeds: List[AnyHttpUrl]
+    firstSeeds: List[str]
 
 
 # ============================================================================
@@ -1178,6 +1181,7 @@ class ImageFile(BaseFile):
     async def get_image_file_out(self, org, storage_ops) -> ImageFileOut:
         """Get ImageFileOut with new presigned url"""
         presigned_url, _ = await storage_ops.get_presigned_url(org, self)
+        presigned_url = storage_ops.resolve_internal_access_path(presigned_url)
 
         return ImageFileOut(
             name=self.filename,
@@ -1194,6 +1198,7 @@ class ImageFile(BaseFile):
     async def get_public_image_file_out(self, org, storage_ops) -> PublicImageFileOut:
         """Get PublicImageFileOut with new presigned url"""
         presigned_url, _ = await storage_ops.get_presigned_url(org, self)
+        presigned_url = storage_ops.resolve_internal_access_path(presigned_url)
 
         return PublicImageFileOut(
             name=self.filename,
@@ -1242,6 +1247,73 @@ class ImageFilePreparer(FilePreparer):
             userName=self.user_name,
             created=self.created,
         )
+
+
+# ============================================================================
+class UserUploadFileOut(ImageFileOut):
+    """Output model for all user-uploaded files"""
+
+    id: UUID
+    oid: UUID
+    type: str
+
+    firstSeed: Optional[str] = None
+    seedCount: Optional[int] = None
+
+
+# ============================================================================
+class UserUploadFile(BaseMongoModel):
+    """User-uploaded file saved in files mongo collection"""
+
+    id: UUID
+    oid: UUID
+
+    filename: str
+    hash: str
+    size: int
+    storage: StorageRef
+
+    replicas: Optional[List[StorageRef]] = []
+
+    originalFilename: str
+    mime: str
+    userid: UUID
+    userName: str
+    created: datetime
+
+    type: str
+
+    firstSeed: Optional[str] = None
+    seedCount: Optional[int] = None
+
+    async def get_file_out(self, org, storage_ops) -> UserUploadFileOut:
+        """Get UserUploadFileOut with new presigned url"""
+        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
+        presigned_url = storage_ops.resolve_internal_access_path(presigned_url)
+
+        return UserUploadFileOut(
+            name=self.filename,
+            path=presigned_url or "",
+            hash=self.hash,
+            size=self.size,
+            originalFilename=self.originalFilename,
+            mime=self.mime,
+            userid=self.userid,
+            userName=self.userName,
+            created=self.created,
+            id=self.id,
+            oid=self.oid,
+            type=self.type,
+            firstSeed=self.firstSeed,
+            seedCount=self.seedCount,
+        )
+
+
+# ============================================================================
+class SeedFile(UserUploadFile):
+    """Seed file for crawl workflows"""
+
+    type: Literal["seedFile"] = "seedFile"
 
 
 # ============================================================================
@@ -1978,6 +2050,8 @@ class OrgOut(BaseMongoModel):
     bytesStoredCrawls: int
     bytesStoredUploads: int
     bytesStoredProfiles: int
+    bytesStoredSeedFiles: int = 0
+    bytesStoredThumbnails: int = 0
     origin: Optional[AnyHttpUrl] = None
 
     storageQuotaReached: Optional[bool] = False
@@ -2041,6 +2115,8 @@ class Organization(BaseMongoModel):
     bytesStoredCrawls: int = 0
     bytesStoredUploads: int = 0
     bytesStoredProfiles: int = 0
+    bytesStoredSeedFiles: int = 0
+    bytesStoredThumbnails: int = 0
 
     # total usage + exec time
     usage: Dict[str, int] = {}
@@ -2188,6 +2264,8 @@ class OrgMetrics(BaseModel):
     storageUsedCrawls: int
     storageUsedUploads: int
     storageUsedProfiles: int
+    storageUsedSeedFiles: int
+    storageUsedThumbnails: int
     storageQuotaBytes: int
     archivedItemCount: int
     crawlCount: int
@@ -2611,6 +2689,7 @@ class BgJobType(str, Enum):
     RECALCULATE_ORG_STATS = "recalculate-org-stats"
     READD_ORG_PAGES = "readd-org-pages"
     OPTIMIZE_PAGES = "optimize-pages"
+    CLEANUP_SEED_FILES = "cleanup-seed-files"
 
 
 # ============================================================================
@@ -2681,6 +2760,13 @@ class OptimizePagesJob(BackgroundJob):
 
 
 # ============================================================================
+class CleanupSeedFilesJob(BackgroundJob):
+    """Model for tracking jobs to cleanup unused seed files"""
+
+    type: Literal[BgJobType.CLEANUP_SEED_FILES] = BgJobType.CLEANUP_SEED_FILES
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
@@ -2692,6 +2778,7 @@ AnyJob = RootModel[
         RecalculateOrgStatsJob,
         ReAddOrgPagesJob,
         OptimizePagesJob,
+        CleanupSeedFilesJob,
     ]
 ]
 

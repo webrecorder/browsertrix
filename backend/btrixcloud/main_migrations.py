@@ -35,6 +35,7 @@ async def main() -> int:
         _,
         user_manager,
         invite_ops,
+        file_ops,
         _,
         mdb,
     ) = init_ops()
@@ -50,6 +51,7 @@ async def main() -> int:
         storage_ops,
         page_ops,
         background_job_ops,
+        file_ops,
     )
 
     return 0

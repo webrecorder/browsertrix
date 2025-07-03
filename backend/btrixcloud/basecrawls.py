@@ -432,26 +432,13 @@ class BaseCrawlOps:
         crawl: Union[CrawlOut, CrawlOutWithResources],
         org: Optional[Organization],
         files: Optional[list[dict]],
-        add_first_seed: bool = True,
     ):
         """Resolve running crawl data"""
         # pylint: disable=too-many-branches
-        config = None
-        if crawl.cid:
-            config = await self.crawl_configs.get_crawl_config(
-                crawl.cid, org.id if org else None, active_only=False
-            )
-
         if not org:
             org = await self.orgs.get_org_by_id(crawl.oid)
             if not org:
                 raise HTTPException(status_code=400, detail="missing_org")
-
-        if config and config.config.seeds:
-            if add_first_seed:
-                first_seed = config.config.seeds[0]
-                crawl.firstSeed = first_seed.url
-            crawl.seedCount = len(config.config.seeds)
 
         if hasattr(crawl, "profileid") and crawl.profileid:
             crawl.profileName = await self.crawl_configs.profiles.get_profile_name(
@@ -685,9 +672,7 @@ class BaseCrawlOps:
 
         aggregate = [
             {"$match": query},
-            {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
-            {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            {"$unset": ["firstSeedObject", "errors", "behaviorLogs", "config"]},
+            {"$unset": ["errors", "behaviorLogs", "config"]},
             {"$set": {"activeQAStats": "$qa.stats"}},
             {
                 "$set": {
