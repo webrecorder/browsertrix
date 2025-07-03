@@ -521,7 +521,10 @@ class CrawlConfigOps:
             )
 
         if update.config and update.config.seeds:
-            if update.config.seedFileId:
+            if update.config.seedFileId or (
+                orig_crawl_config.config.seedFileId
+                and update.config.seedFileId is not None
+            ):
                 raise HTTPException(
                     status_code=400, detail="use_one_of_seeds_or_seedfile"
                 )
