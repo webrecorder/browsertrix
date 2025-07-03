@@ -158,7 +158,8 @@ jobs:
           cat .env
 
       - name: Build frontend
-        run: yarn workspace browsertrix-frontend build
+        working-directory: frontend
+        run: yarn build
         id: build-frontend
 
       - name: Run Playwright tests

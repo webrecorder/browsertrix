@@ -54,8 +54,8 @@ COPY --link --from=build_deps /app/frontend/dist /usr/share/nginx/html
 
 COPY --link --from=build_docs /docs/site /usr/share/nginx/html/docs
 
-#COPY ./nginx.conf /etc/nginx/nginx.conf
-COPY --link ./frontend.conf.template /etc/nginx/templates/
-COPY --link ./minio.conf /etc/nginx/includes/
+#COPY ./frontend/nginx.conf /etc/nginx/nginx.conf
+COPY --link ./frontend/frontend.conf.template /etc/nginx/templates/
+COPY --link ./frontend/minio.conf /etc/nginx/includes/
 
-ADD --link ./00-browsertrix-nginx-init.sh ./docker-entrypoint.d/
+ADD --link ./frontend/00-browsertrix-nginx-init.sh ./docker-entrypoint.d/
