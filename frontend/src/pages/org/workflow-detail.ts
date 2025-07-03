@@ -433,19 +433,35 @@ export class WorkflowDetail extends BtrixElement {
 
         <div>
           <header class="col-span-1 mb-3 flex flex-wrap gap-2">
-            <btrix-detail-page-title
-              .item=${this.workflow}
-            ></btrix-detail-page-title>
-            ${when(
-              this.workflow?.inactive,
-              () => html`
-                <btrix-badge class="inline-block align-middle" variant="warning"
-                  >${msg("Inactive")}</btrix-badge
-                >
-              `,
-            )}
+            <div class="flex max-w-full flex-wrap gap-x-2 gap-y-1.5">
+              <btrix-detail-page-title
+                .item=${this.workflow}
+              ></btrix-detail-page-title>
+              ${when(
+                this.workflow?.inactive,
+                () => html`
+                  <btrix-badge
+                    class="inline-block align-middle"
+                    variant="warning"
+                    >${msg("Inactive")}</btrix-badge
+                  >
+                `,
+              )}
+              ${when(this.workflow?.tags, (tags) =>
+                tags.length
+                  ? html`<div class="flex grow basis-full flex-wrap gap-1.5">
+                      ${tags.map(
+                        (tag) =>
+                          html`<btrix-tag size="small">${tag}</btrix-tag>`,
+                      )}
+                    </div>`
+                  : nothing,
+              )}
+            </div>
 
-            <div class="flex-0 ml-auto flex flex-wrap justify-end gap-2">
+            <div
+              class="flex-0 order-first ml-auto flex flex-wrap justify-end gap-2 lg:order-last"
+            >
               ${when(
                 this.isCrawler && this.workflow && !this.workflow.inactive,
                 this.renderActions,
