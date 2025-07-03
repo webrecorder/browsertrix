@@ -58,10 +58,10 @@ def test_get_config_by_tag_counts_1(admin_auth_headers, default_org_id):
     data = r.json()
     assert data == {
         "tags": [
+            {"tag": "wr-test-2", "count": 2},
             {"tag": "tag-1", "count": 1},
             {"tag": "tag-2", "count": 1},
             {"tag": "wr-test-1", "count": 1},
-            {"tag": "wr-test-2", "count": 1},
         ]
     }
 
@@ -108,12 +108,12 @@ def test_get_config_by_tag_counts_2(admin_auth_headers, default_org_id):
     data = r.json()
     assert data == {
         "tags": [
+            {"tag": "wr-test-2", "count": 2},
             {"tag": "tag-0", "count": 1},
             {"tag": "tag-1", "count": 1},
             {"tag": "tag-2", "count": 1},
             {"tag": "tag-3", "count": 1},
             {"tag": "wr-test-1", "count": 1},
-            {"tag": "wr-test-2", "count": 1},
         ]
     }
 
