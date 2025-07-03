@@ -1,3 +1,5 @@
+# Must be run from the root of the repository, e.g. docker build -f frontend/Dockerfile -t frontend
+
 # syntax=docker/dockerfile:1.4
 FROM --platform=$BUILDPLATFORM docker.io/library/node:22 as build_deps
 

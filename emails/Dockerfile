@@ -1,3 +1,5 @@
+# Must be run from the root of the repository, e.g. docker build -f emails/Dockerfile -t emails
+
 FROM node:22-alpine AS builder
 
 WORKDIR /app
