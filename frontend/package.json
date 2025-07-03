@@ -3,6 +3,7 @@
   "version": "1.17.2",
   "main": "index.ts",
   "license": "AGPL-3.0-or-later",
+  "private": true,
   "dependencies": {
     "@cheap-glitch/mi-cron": "^1.0.1",
     "@formatjs/intl-durationformat": "^0.6.4",
