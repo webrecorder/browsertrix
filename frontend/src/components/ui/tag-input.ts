@@ -17,6 +17,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import debounce from "lodash/fp/debounce";
 
 import type { UnderlyingFunction } from "@/types/utils";
+import { type WorkflowTag } from "@/types/workflow";
 import { dropdown } from "@/utils/css";
 
 export type Tags = string[];
@@ -80,7 +81,7 @@ export class TagInput extends LitElement {
       }
 
       sl-popup::part(popup) {
-        z-index: 3;
+        z-index: 5;
       }
 
       .shake {
@@ -116,7 +117,7 @@ export class TagInput extends LitElement {
   initialTags?: Tags;
 
   @property({ type: Array })
-  tagOptions: Tags = [];
+  tagOptions: WorkflowTag[] = [];
 
   @property({ type: Boolean })
   disabled = false;
@@ -224,6 +225,7 @@ export class TagInput extends LitElement {
               @paste=${this.onPaste}
               ?required=${this.required && !this.tags.length}
               placeholder=${placeholder}
+              autocomplete="off"
               role="combobox"
               aria-controls="dropdown"
               aria-expanded="${this.dropdownIsOpen === true}"
@@ -258,10 +260,14 @@ export class TagInput extends LitElement {
               >
                 ${this.tagOptions
                   .slice(0, 3)
+                  .filter(({ tag }) => !this.tags.includes(tag))
                   .map(
-                    (tag) => html`
+                    ({ tag, count }) => html`
                       <sl-menu-item role="option" value=${tag}
-                        >${tag}</sl-menu-item
+                        >${tag}
+                        <btrix-badge pill variant="cyan" slot="suffix"
+                          >${count}</btrix-badge
+                        ></sl-menu-item
                       >
                     `,
                   )}
