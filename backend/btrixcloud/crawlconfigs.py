@@ -983,8 +983,8 @@ class CrawlConfigOps:
                 {"$match": {"oid": org.id}},
                 {"$unwind": "$tags"},
                 {"$group": {"_id": "$tags", "count": {"$sum": 1}}},
-                {"$project": { "tag": "$_id", "count": "$count", "_id":0}},
-                {"$sort": {"count": -1, "tag": 1} }
+                {"$project": {"tag": "$_id", "count": "$count", "_id": 0}},
+                {"$sort": {"count": -1, "tag": 1}},
             ]
         ).to_list()
         return tags
