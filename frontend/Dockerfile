@@ -9,7 +9,7 @@ COPY frontend/package.json ./frontend/
 # Uses a cache mount for the Yarn cache so that it's not included in subsequent steps
 RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn --production --frozen-lockfile --ignore-optional --network-timeout 1000000
 
-COPY --link frontend/config ./config/
+COPY --link frontend/config ./frontend/config/
 COPY --link frontend/lit-localize.json \
     frontend/postcss.config.js \
     frontend/tailwind.config.js \
@@ -19,10 +19,10 @@ COPY --link frontend/lit-localize.json \
     frontend/.eslintrc.js \
     frontend/tsconfig.eslint.json \
     frontend/index.d.ts \
-    ./
+    ./frontend/
 
-COPY --link frontend/lib ./lib/
-COPY --link frontend/src ./src/
+COPY --link frontend/lib ./frontend/lib/
+COPY --link frontend/src ./frontend/src/
 
 # Build variables used to show current app version
 # in the UI. Note that this will invalidate all
@@ -35,9 +35,10 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
     GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
     VERSION=${VERSION}
 
+RUN yarn workspace browsertrix-frontend build
+
 # Prevent Docker image including node_modules to save space
-RUN yarn workspace browsertrix-frontend build && \
-    rm -rf ./node_modules
+RUN rm -rf ./node_modules
 
 FROM --platform=$BUILDPLATFORM docker.io/library/python:3.12-slim as build_docs
 
