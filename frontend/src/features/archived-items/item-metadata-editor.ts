@@ -47,7 +47,7 @@ export class CrawlMetadataEditor extends LiteElement {
   private includeName = false;
 
   @state()
-  private tagOptions: WorkflowTags = [];
+  private tagOptions: WorkflowTag[] = [];
 
   @state()
   private tagsToSave: Tags = [];
@@ -166,8 +166,8 @@ export class CrawlMetadataEditor extends LiteElement {
   private async fetchTags() {
     if (!this.crawl) return;
     try {
-      const tags = await this.apiFetch<WorkflowTags>(
-        `/orgs/${this.crawl.oid}/crawlconfigs/tags`,
+      const { tags } = await this.apiFetch<WorkflowTags>(
+        `/orgs/${this.crawl.oid}/crawlconfigs/tagCounts`,
       );
 
       // Update search/filter collection

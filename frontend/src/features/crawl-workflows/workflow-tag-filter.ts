@@ -56,8 +56,8 @@ export class WorkflowTagFilter extends BtrixElement {
 
   private readonly orgTagsTask = new Task(this, {
     task: async () => {
-      const tags = await this.api.fetch<WorkflowTags>(
-        `/orgs/${this.orgId}/crawlconfigs/tags`,
+      const { tags } = await this.api.fetch<WorkflowTags>(
+        `/orgs/${this.orgId}/crawlconfigs/tagCounts`,
       );
 
       this.fuse.setCollection(tags);

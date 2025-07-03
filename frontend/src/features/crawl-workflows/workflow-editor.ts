@@ -262,7 +262,7 @@ export class WorkflowEditor extends BtrixElement {
   private showCrawlerChannels = false;
 
   @state()
-  private tagOptions: WorkflowTags = [];
+  private tagOptions: WorkflowTag[] = [];
 
   @state()
   private isSubmitting = false;
@@ -2537,8 +2537,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async fetchTags() {
     this.tagOptions = [];
     try {
-      const tags = await this.api.fetch<WorkflowTags>(
-        `/orgs/${this.orgId}/crawlconfigs/tags`,
+      const { tags } = await this.api.fetch<WorkflowTags>(
+        `/orgs/${this.orgId}/crawlconfigs/tagCounts`,
       );
 
       // Update search/filter collection

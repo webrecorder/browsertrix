@@ -17,7 +17,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import debounce from "lodash/fp/debounce";
 
 import type { UnderlyingFunction } from "@/types/utils";
-import { type WorkflowTags } from "@/types/workflow";
+import { type WorkflowTag } from "@/types/workflow";
 import { dropdown } from "@/utils/css";
 
 export type Tags = string[];
@@ -117,7 +117,7 @@ export class TagInput extends LitElement {
   initialTags?: Tags;
 
   @property({ type: Array })
-  tagOptions: WorkflowTags = [];
+  tagOptions: WorkflowTag[] = [];
 
   @property({ type: Boolean })
   disabled = false;
