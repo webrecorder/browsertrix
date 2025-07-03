@@ -3,22 +3,24 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY package.json yarn.lock ./
+COPY emails/package.json ./emails/
 
 RUN yarn install --frozen-lockfile
 
-COPY . .
+COPY emails/ ./emails/
 
-RUN yarn build:api
+RUN yarn workspace browsertrix-emails build:api
 
 FROM node:22-alpine AS runtime
 
 WORKDIR /app
 
 COPY package.json yarn.lock ./
+COPY emails/package.json ./emails/
 
 RUN yarn install --frozen-lockfile --production && yarn cache clean
 
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/emails/dist ./dist
 
 EXPOSE 3000
 
