@@ -1,6 +1,5 @@
 name: Frontend
-on:
-  pull_request
+on: pull_request
 
 # Cancel in progress workflows on pull_requests.
 # https://docs.github.com/en/actions/using-jobs/using-concurrency#example-using-a-fallback-value
@@ -19,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # important, to fetch previous commit
+          fetch-depth: 2 # important, to fetch previous commit
 
       # workaround for https://github.com/dorny/paths-filter/issues/240
       - id: previous-sha
@@ -57,8 +56,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: 'yarn'
-          cache-dependency-path: frontend/yarn.lock
+          cache: "yarn"
+          cache-dependency-path: yarn.lock
 
       - name: Get installed Playwright version
         working-directory: frontend
@@ -122,8 +121,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: 'yarn'
-          cache-dependency-path: frontend/yarn.lock
+          cache: "yarn"
+          cache-dependency-path: yarn.lock
 
       - name: Get installed Playwright version
         working-directory: frontend
@@ -201,8 +200,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: 'yarn'
-          cache-dependency-path: frontend/yarn.lock
+          cache: "yarn"
+          cache-dependency-path: yarn.lock
 
       - name: Install dependencies
         working-directory: frontend
@@ -234,8 +233,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: 'yarn'
-          cache-dependency-path: frontend/yarn.lock
+          cache: "yarn"
+          cache-dependency-path: yarn.lock
 
       - name: Install dependencies
         working-directory: frontend
@@ -267,8 +266,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: 'yarn'
-          cache-dependency-path: frontend/yarn.lock
+          cache: "yarn"
+          cache-dependency-path: yarn.lock
 
       - name: Restore cache
         uses: actions/cache@v4
