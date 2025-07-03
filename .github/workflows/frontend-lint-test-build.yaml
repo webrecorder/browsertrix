@@ -277,7 +277,7 @@ jobs:
       - name: Build Frontend
         uses: docker/build-push-action@v3
         with:
-          context: frontend
+          file: frontend/Dockerfile
           load: true
           tags: webrecorder/browsertrix-frontend:latest
           cache-from: type=gha,scope=frontend
