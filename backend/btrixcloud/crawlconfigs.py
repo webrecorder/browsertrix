@@ -1415,9 +1415,9 @@ def init_crawl_config_api(
 
     @router.get("/tags", response_model=List[str], deprecated=True)
     async def get_crawl_config_tags(org: Organization = Depends(org_viewer_dep)):
-        '''
+        """
         Deprecated - prefer /api/orgs/{oid}/crawlconfigs/tagCounts instead.
-        '''
+        """
         return await ops.get_crawl_config_tags(org)
 
     @router.get("/tagCounts", response_model=CrawlConfigTags)
