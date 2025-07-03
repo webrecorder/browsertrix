@@ -11,4 +11,6 @@ export type WorkflowTag = {
   count: number;
 };
 
-export type WorkflowTags = WorkflowTag[];
+export type WorkflowTags = {
+  tags: WorkflowTag[];
+};

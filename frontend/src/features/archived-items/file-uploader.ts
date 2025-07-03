@@ -71,7 +71,7 @@ export class FileUploader extends BtrixElement {
   private collectionIds: string[] = [];
 
   @state()
-  private tagOptions: WorkflowTags = [];
+  private tagOptions: WorkflowTag[] = [];
 
   @state()
   private tagsToSave: Tags = [];
@@ -363,8 +363,8 @@ export class FileUploader extends BtrixElement {
 
   private async fetchTags() {
     try {
-      const tags = await this.api.fetch<WorkflowTags>(
-        `/orgs/${this.orgId}/crawlconfigs/tags`,
+      const { tags } = await this.api.fetch<WorkflowTags>(
+        `/orgs/${this.orgId}/crawlconfigs/tagCounts`,
       );
 
       // Update search/filter collection

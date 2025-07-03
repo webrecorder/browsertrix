@@ -26,7 +26,7 @@ from .models import (
     CrawlConfig,
     CrawlConfigOut,
     CrawlConfigProfileOut,
-    CrawlConfigTagCount,
+    CrawlConfigTags,
     CrawlOut,
     UpdateCrawlConfig,
     Organization,
@@ -978,6 +978,10 @@ class CrawlConfigOps:
 
     async def get_crawl_config_tags(self, org):
         """get distinct tags from all crawl configs for this org"""
+        return await self.crawl_configs.distinct("tags", {"oid": org.id})
+
+    async def get_crawl_config_tag_counts(self, org):
+        """get distinct tags from all crawl configs for this org"""
         tags = await self.crawl_configs.aggregate(
             [
                 {"$match": {"oid": org.id}},
@@ -1409,9 +1413,16 @@ def init_crawl_config_api(
         )
         return paginated_format(crawl_configs, total, page, pageSize)
 
-    @router.get("/tags", response_model=List[CrawlConfigTagCount])
+    @router.get("/tags", response_model=List[str], deprecated=True)
     async def get_crawl_config_tags(org: Organization = Depends(org_viewer_dep)):
+        '''
+        Deprecated - prefer /api/orgs/{oid}/crawlconfigs/tagCounts instead.
+        '''
         return await ops.get_crawl_config_tags(org)
+
+    @router.get("/tagCounts", response_model=CrawlConfigTags)
+    async def get_crawl_config_tag_counts(org: Organization = Depends(org_viewer_dep)):
+        return {"tags": await ops.get_crawl_config_tag_counts(org)}
 
     @router.get("/search-values", response_model=CrawlConfigSearchValues)
     async def get_crawl_config_search_values(
