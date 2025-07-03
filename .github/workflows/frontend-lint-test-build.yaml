@@ -75,29 +75,25 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
 
       - name: Install dependencies
-        working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn install --frozen-lockfile
+        run: yarn workspace browsertrix-frontend install --frozen-lockfile
 
       - name: Install Playwright Browsers
-        working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn playwright install --with-deps
+        run: yarn workspace browsertrix-frontend playwright install --with-deps
         if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       - name: Install Playwright Deps
-        working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn playwright install-deps
+        run: yarn workspace browsertrix-frontend playwright install-deps
         if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       # Test:
       - name: Unit tests
-        working-directory: frontend
-        run: yarn test
+        run: yarn workspace browsertrix-frontend test
 
   integration-tests:
     name: Integration Tests
@@ -112,7 +108,6 @@ jobs:
       E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
       E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
       API_BASE_URL: ${{ secrets.API_BASE_URL }}
-      working-directory: ./frontend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -140,21 +135,18 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
 
       - name: Install dependencies
-        working-directory: frontend
-        run: yarn install --frozen-lockfile
+        run: yarn workspace browsertrix-frontend install --frozen-lockfile
 
       - name: Install Playwright Browsers
-        working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn playwright install --with-deps
+        run: yarn workspace browsertrix-frontend playwright install --with-deps
         if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       - name: Install Playwright Deps
-        working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn playwright install-deps
+        run: yarn workspace browsertrix-frontend playwright install-deps
         if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       - name: Create env file
@@ -166,13 +158,11 @@ jobs:
           cat .env
 
       - name: Build frontend
-        working-directory: frontend
-        run: yarn build
+        run: yarn workspace browsertrix-frontend build
         id: build-frontend
 
       - name: Run Playwright tests
-        working-directory: frontend
-        run: yarn playwright test
+        run: yarn workspace browsertrix-frontend playwright test
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -204,15 +194,13 @@ jobs:
           cache-dependency-path: yarn.lock
 
       - name: Install dependencies
-        working-directory: frontend
         env:
           HUSKY: 0
         run: yarn install --frozen-lockfile
 
       # Lint:
       - name: Lint
-        working-directory: frontend
-        run: yarn lint:check
+        run: yarn workspace browsertrix-frontend lint:check
 
   localize:
     name: Localize
@@ -237,15 +225,13 @@ jobs:
           cache-dependency-path: yarn.lock
 
       - name: Install dependencies
-        working-directory: frontend
         env:
           HUSKY: 0
         run: yarn install --frozen-lockfile
 
       # Localize:
       - name: Localization build dry run
-        working-directory: frontend
-        run: yarn localize:build
+        run: yarn workspace browsertrix-frontend localize:build
 
   build:
     name: Build
@@ -278,7 +264,6 @@ jobs:
             ${{ runner.os }}-btrix-frontend-build-
 
       - name: Install dependencies
-        working-directory: frontend
         env:
           HUSKY: 0
         run: yarn install --frozen-lockfile
