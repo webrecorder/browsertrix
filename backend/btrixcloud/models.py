@@ -1295,7 +1295,7 @@ class UserUploadFile(BaseMongoModel):
     seedCount: Optional[int] = None
 
     async def get_file_out(self, org, storage_ops) -> UserUploadFileOut:
-        """Get ImageFileOut with new presigned url"""
+        """Get UserUploadFileOut with new presigned url"""
         presigned_url, _ = await storage_ops.get_presigned_url(org, self)
         presigned_url = storage_ops.resolve_internal_access_path(presigned_url)
 
