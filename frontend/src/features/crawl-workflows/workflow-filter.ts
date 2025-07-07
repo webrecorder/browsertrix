@@ -33,6 +33,7 @@ export class WorkflowFilter extends TailwindElement {
           distance="4"
           hoist
           ?stayOpenOnSelect=${this.stayOpenOnChange}
+          class="group/dropdown"
           @sl-change=${() => {
             if (!this.stayOpenOnChange) {
               void this.dropdown?.hide();
@@ -68,6 +69,7 @@ export class WorkflowFilter extends TailwindElement {
         ?caret=${this.select}
         outline
         pill
+        class="group-open/dropdown:part-[base]:border-primary-300 group-open/dropdown:part-[base]:text-primary-700"
       >
         <sl-icon
           class="size-4 text-base"
