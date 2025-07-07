@@ -631,7 +631,7 @@ export class WorkflowsList extends BtrixElement {
         @click=${() => {
           this.filterBy = {
             ...this.filterBy,
-            isCrawlRunning: !this.filterBy.isCrawlRunning,
+            isCrawlRunning: this.filterBy.isCrawlRunning ? undefined : true,
           };
         }}
       >
