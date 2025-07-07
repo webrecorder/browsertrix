@@ -61,8 +61,8 @@ export class WorkflowScheduleFilter extends BtrixElement {
       >
         ${this.schedule === undefined
           ? msg("Schedule")
-          : html`<strong class="font-semibold"
-              >${this.schedule ? msg("Scheduled") : msg("No Schedule")}</strong
+          : html`<span
+              >${this.schedule ? msg("Scheduled") : msg("No Schedule")}</span
             >`}
 
         <div

@@ -95,7 +95,7 @@ export class WorkflowTagFilter extends BtrixElement {
         }}
       >
         ${this.tags?.length
-          ? html`<span class="text-primary-500">${msg("Tagged")}</span>
+          ? html`<span class="opacity-75">${msg("Tagged")}</span>
               ${this.renderTagsInLabel(this.tags)}`
           : msg("Tags")}
 
@@ -157,28 +157,24 @@ export class WorkflowTagFilter extends BtrixElement {
   }
 
   private renderTagsInLabel(tags: string[]) {
-    const formatter = new Intl.ListFormat(localize.activeLocales, {
-      style: "long",
-      type: "conjunction",
-    });
-    return formatter
-      .formatToParts(
-        tags.length > MAX_TAGS_IN_LABEL
-          ? [
-              ...tags.slice(0, MAX_TAGS_IN_LABEL),
-              msg(
-                str`${this.localize.number(tags.length - MAX_TAGS_IN_LABEL)} more`,
-              ),
-            ]
-          : tags,
-      )
-      .map((part, index, array) =>
-        part.type === "literal"
-          ? html`<span class="opacity-50">${part.value}</span>`
-          : tags.length > MAX_TAGS_IN_LABEL && index === array.length - 1
-            ? html`<span class="text-primary-500"> ${part.value} </span>`
-            : html`<strong class="font-semibold">${part.value}</strong>`,
-      );
+    const formatter2 = this.localize.list(
+      tags.length > MAX_TAGS_IN_LABEL
+        ? [
+            ...tags.slice(0, MAX_TAGS_IN_LABEL),
+            msg(
+              str`${this.localize.number(tags.length - MAX_TAGS_IN_LABEL)} more`,
+            ),
+          ]
+        : tags,
+    );
+
+    return formatter2.map((part, index, array) =>
+      part.type === "literal"
+        ? html`<span class="opacity-75">${part.value}</span>`
+        : tags.length > MAX_TAGS_IN_LABEL && index === array.length - 1
+          ? html`<span class="text-primary-500"> ${part.value} </span>`
+          : html`<span>${part.value}</span>`,
+    );
   }
 
   private renderSearch() {

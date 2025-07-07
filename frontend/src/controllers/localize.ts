@@ -34,4 +34,6 @@ export class LocalizeController extends SlLocalizeController {
   };
 
   readonly bytes = localize.bytes;
+
+  readonly list = localize.list;
 }
