@@ -69,10 +69,10 @@ export class WorkflowFilter extends TailwindElement {
         ?caret=${this.select}
         outline
         pill
-        class="group-open/dropdown:part-[base]:border-primary-300 group-open/dropdown:part-[base]:text-primary-700"
+        class="group-open/dropdown:part-[base]:border-primary-300 group-open/dropdown:part-[caret]:text-primary-600 group-open/dropdown:part-[label]:text-primary-600"
       >
         <sl-icon
-          class="size-4 text-base"
+          class="size-4 text-base group-open/dropdown:text-primary-600"
           slot="prefix"
           name=${this.checked ? "check2-circle" : "plus-circle-dotted"}
         ></sl-icon>
