@@ -207,6 +207,10 @@ export class WorkflowTagFilter extends BtrixElement {
         ?disabled=${!this.orgTagsTask.value?.length}
         @sl-input=${(e: SlInputEvent) =>
           (this.searchString = (e.target as SlInput).value)}
+        @keydown=${(e: KeyboardEvent) => {
+          // Prevent moving to next tabbable element since dropdown should close
+          if (e.key === "Tab") e.preventDefault();
+        }}
       >
         ${this.orgTagsTask.render({
           pending: () => html`<sl-spinner slot="prefix"></sl-spinner>`,
@@ -221,11 +225,12 @@ export class WorkflowTagFilter extends BtrixElement {
       const checked = this.selected.get(tag) === true;
 
       return html`
-        <li tabindex="-1" role="option" aria-checked=${checked}>
+        <li role="option" aria-checked=${checked}>
           <sl-checkbox
-            class="w-full part-[base]:w-full part-[base]:rounded part-[base]:p-2 part-[base]:hover:bg-primary-50"
+            class="w-full part-[base]:w-full part-[base]:rounded part-[base]:p-2 part-[base]:hover:bg-primary-50 part-[base]:focus:bg-primary-50"
             value=${tag}
             ?checked=${checked}
+            tabindex="0"
             >${tag}
           </sl-checkbox>
         </li>
@@ -237,7 +242,6 @@ export class WorkflowTagFilter extends BtrixElement {
         id="tag-listbox"
         class="flex-1 overflow-auto p-1"
         role="listbox"
-        tabindex="0"
         aria-labelledby="tag-list-label"
         aria-multiselectable="true"
         @sl-change=${async (e: SlChangeEvent) => {

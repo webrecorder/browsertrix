@@ -2,8 +2,14 @@ import { localized } from "@lit/localize";
 import type { SlDropdown } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  query,
+  queryAssignedElements,
+} from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { focusable } from "tabbable";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
@@ -41,6 +47,9 @@ export class FilterChip extends TailwindElement {
   @query("sl-dropdown")
   private readonly dropdown?: SlDropdown | null;
 
+  @queryAssignedElements({ slot: "dropdown-content" })
+  private readonly dropdownContent!: HTMLElement[];
+
   render() {
     if (this.selectFromDropdown) {
       return html`
@@ -55,6 +64,7 @@ export class FilterChip extends TailwindElement {
             }
           }}
           ?open=${this.open}
+          @keydown=${{ handleEvent: this.onKeyDown, capture: true }}
         >
           ${this.renderButton()}
 
@@ -92,7 +102,6 @@ export class FilterChip extends TailwindElement {
           tw`group-open/dropdown:part-[base]:border-primary-300 group-open/dropdown:part-[caret]:text-primary-600 group-open/dropdown:part-[label]:text-primary-600`,
         ])}
         @click=${this.onClick}
-        @keydown=${this.onKeyDown}
       >
         <sl-icon
           class="size-4 text-base group-open/dropdown:text-primary-600"
@@ -111,9 +120,35 @@ export class FilterChip extends TailwindElement {
   };
 
   private readonly onKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Enter") {
-      if (!this.selectFromDropdown) {
-        this.toggleChecked();
+    if (
+      this.selectFromDropdown &&
+      this.dropdown?.open &&
+      this.dropdownContent.length
+    ) {
+      // Enable basic focus trapping
+      const options = focusable(this.dropdownContent[0]);
+
+      if (!options.length) return;
+
+      const focused = options.findIndex((opt) => opt.matches(":focus"));
+
+      switch (e.key) {
+        case "ArrowDown": {
+          e.preventDefault();
+          options[
+            focused === -1 || focused === options.length - 1 ? 0 : focused + 1
+          ].focus();
+          break;
+        }
+        case "ArrowUp": {
+          e.preventDefault();
+          options[
+            focused === -1 || focused === 0 ? options.length - 1 : focused - 1
+          ].focus();
+          break;
+        }
+        default:
+          break;
       }
     }
   };

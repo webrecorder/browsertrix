@@ -36,7 +36,7 @@ export class WorkflowScheduleFilter extends BtrixElement {
   render() {
     const radio = (label: string, value: string) => html`
       <sl-radio
-        class="!mt-0 w-full part-[base]:w-full part-[base]:rounded part-[base]:p-2 part-[base]:hover:bg-primary-50"
+        class="!mt-0 w-full part-[base]:w-full part-[base]:rounded part-[base]:p-2 part-[base]:hover:bg-primary-50 part-[base]:focus:bg-primary-50"
         value=${value}
         >${label}</sl-radio
       >
