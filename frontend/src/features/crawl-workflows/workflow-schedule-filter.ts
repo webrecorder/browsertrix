@@ -1,5 +1,5 @@
 import { localized, msg } from "@lit/localize";
-import type { SlChangeEvent, SlRadioGroup } from "@shoelace-style/shoelace";
+import type { SlSelectEvent } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
@@ -34,12 +34,8 @@ export class WorkflowScheduleFilter extends BtrixElement {
   }
 
   render() {
-    const radio = (label: string, value: string) => html`
-      <sl-radio
-        class="!mt-0 w-full part-[base]:w-full part-[base]:rounded part-[base]:p-2 part-[base]:hover:bg-primary-50 part-[base]:focus:bg-primary-50"
-        value=${value}
-        >${label}</sl-radio
-      >
+    const option = (label: string, value: string) => html`
+      <sl-menu-item value=${value}>${label}</sl-menu-item>
     `;
 
     return html`
@@ -65,61 +61,59 @@ export class WorkflowScheduleFilter extends BtrixElement {
               >${this.schedule ? msg("Scheduled") : msg("No Schedule")}</span
             >`}
 
-        <div
-          slot="dropdown-header"
-          class="flex items-center justify-between py-1"
+        <sl-menu
+          slot="dropdown-content"
+          class="pt-0"
+          @sl-select=${(e: SlSelectEvent) => {
+            const { item } = e.detail;
+
+            switch (item.value as ScheduleType) {
+              case ScheduleType.Scheduled:
+                this.#schedule = true;
+                break;
+              case ScheduleType.None:
+                this.#schedule = false;
+                break;
+              default:
+                this.#schedule = undefined;
+                break;
+            }
+          }}
         >
-          <sl-menu-label class="part-[base]:px-4" id="schedule-list-label">
-            ${msg("Filter by Schedule Type")}
-          </sl-menu-label>
-          ${this.schedule !== undefined
-            ? html`<sl-button
-                variant="text"
-                size="small"
-                @click=${() => {
-                  this.dispatchEvent(
-                    new CustomEvent<BtrixChangeEvent["detail"]>(
-                      "btrix-change",
-                      {
-                        detail: {
-                          value: undefined,
-                        },
-                      },
-                    ),
-                  );
-                }}
-                >${msg("Clear Filter")}</sl-button
-              >`
-            : nothing}
-        </div>
-
-        <div slot="dropdown-content" class="p-1">
-          <sl-radio-group
-            @sl-change=${(e: SlChangeEvent) => {
-              const { value } = e.target as SlRadioGroup;
-
-              switch (value as ScheduleType) {
-                case ScheduleType.Scheduled:
-                  this.#schedule = true;
-                  break;
-                case ScheduleType.None:
-                  this.#schedule = false;
-                  break;
-                default:
-                  this.#schedule = undefined;
-                  break;
-              }
-            }}
-            value=${this.schedule === undefined
-              ? ScheduleType.Any
-              : this.schedule
-                ? ScheduleType.Scheduled
-                : ScheduleType.None}
+          <sl-menu-label
+            class="part-[base]:flex part-[base]:items-center part-[base]:justify-between part-[base]:gap-4 part-[base]:px-3"
           >
-            ${radio(msg("Scheduled"), ScheduleType.Scheduled)}
-            ${radio(msg("No Schedule"), ScheduleType.None)}
-          </sl-radio-group>
-        </div>
+            <div
+              id="schedule-list-label"
+              class="leading-[var(--sl-input-height-small)]"
+            >
+              ${msg("Filter by Schedule Type")}
+            </div>
+            ${this.schedule !== undefined
+              ? html`<sl-button
+                  variant="text"
+                  size="small"
+                  class="part-[label]:px-0"
+                  @click=${() => {
+                    this.dispatchEvent(
+                      new CustomEvent<BtrixChangeEvent["detail"]>(
+                        "btrix-change",
+                        {
+                          detail: {
+                            value: undefined,
+                          },
+                        },
+                      ),
+                    );
+                  }}
+                  >${msg("Clear")}</sl-button
+                >`
+              : nothing}
+          </sl-menu-label>
+
+          ${option(msg("Scheduled"), ScheduleType.Scheduled)}
+          ${option(msg("No Schedule"), ScheduleType.None)}
+        </sl-menu>
       </btrix-filter-chip>
     `;
   }

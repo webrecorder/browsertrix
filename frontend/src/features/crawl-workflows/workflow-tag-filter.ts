@@ -17,6 +17,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import { isFocusable } from "tabbable";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
@@ -109,42 +110,53 @@ export class WorkflowTagFilter extends BtrixElement {
           : msg("Tags")}
 
         <div
-          slot="dropdown-header"
-          class=${clsx(this.orgTagsTask.value && tw`border-b`, tw`pb-3`)}
+          slot="dropdown-content"
+          class="flex max-h-[var(--auto-size-available-height)] max-w-[var(--auto-size-available-width)] flex-col overflow-hidden rounded border bg-white text-left"
         >
-          <div class="flex items-center justify-between py-1">
-            <sl-menu-label class="part-[base]:px-4" id="tag-list-label">
-              ${msg("Filter by Tags")}
-            </sl-menu-label>
-            ${this.tags?.length
-              ? html`<sl-button
-                  variant="text"
-                  size="small"
-                  @click=${() => {
-                    this.checkboxes.forEach((checkbox) => {
-                      checkbox.checked = false;
-                    });
+          <header
+            class=${clsx(
+              this.orgTagsTask.value && tw`border-b`,
+              tw`flex-shrink-0 flex-grow-0 overflow-hidden rounded-t bg-white pb-3`,
+            )}
+          >
+            <sl-menu-label
+              class="min-h-[var(--sl-input-height-small)] part-[base]:flex part-[base]:items-center part-[base]:justify-between part-[base]:gap-4 part-[base]:px-3"
+            >
+              <div
+                id="tag-list-label"
+                class="leading-[var(--sl-input-height-small)]"
+              >
+                ${msg("Filter by Tags")}
+              </div>
+              ${this.tags?.length
+                ? html`<sl-button
+                    variant="text"
+                    size="small"
+                    class="part-[label]:px-0"
+                    @click=${() => {
+                      this.checkboxes.forEach((checkbox) => {
+                        checkbox.checked = false;
+                      });
 
-                    this.dispatchEvent(
-                      new CustomEvent<BtrixChangeEvent["detail"]>(
-                        "btrix-change",
-                        {
-                          detail: {
-                            value: undefined,
+                      this.dispatchEvent(
+                        new CustomEvent<BtrixChangeEvent["detail"]>(
+                          "btrix-change",
+                          {
+                            detail: {
+                              value: undefined,
+                            },
                           },
-                        },
-                      ),
-                    );
-                  }}
-                  >${msg("Clear Filter")}</sl-button
-                >`
-              : nothing}
-          </div>
+                        ),
+                      );
+                    }}
+                    >${msg("Clear")}</sl-button
+                  >`
+                : nothing}
+            </sl-menu-label>
 
-          <div class="px-3">${this.renderSearch()}</div>
-        </div>
+            <div class="px-3">${this.renderSearch()}</div>
+          </header>
 
-        <div slot="dropdown-content" class="contents">
           ${this.orgTagsTask.render({
             complete: (tags) => {
               let options = tags;
@@ -210,6 +222,9 @@ export class WorkflowTagFilter extends BtrixElement {
         @keydown=${(e: KeyboardEvent) => {
           // Prevent moving to next tabbable element since dropdown should close
           if (e.key === "Tab") e.preventDefault();
+          if (e.key === "ArrowDown" && isFocusable(this.checkboxes[0])) {
+            this.checkboxes[0].focus();
+          }
         }}
       >
         ${this.orgTagsTask.render({
@@ -248,6 +263,36 @@ export class WorkflowTagFilter extends BtrixElement {
           const { checked, value } = e.target as SlCheckbox;
 
           this.selected.set(value, checked);
+        }}
+        @keydown=${(e: KeyboardEvent) => {
+          if (!this.checkboxes.length) return;
+
+          // Enable focus trapping
+          const options = Array.from(this.checkboxes);
+          const focused = options.findIndex((opt) => opt.matches(":focus"));
+
+          switch (e.key) {
+            case "ArrowDown": {
+              e.preventDefault();
+              options[
+                focused === -1 || focused === options.length - 1
+                  ? 0
+                  : focused + 1
+              ].focus();
+              break;
+            }
+            case "ArrowUp": {
+              e.preventDefault();
+              options[
+                focused === -1 || focused === 0
+                  ? options.length - 1
+                  : focused - 1
+              ].focus();
+              break;
+            }
+            default:
+              break;
+          }
         }}
       >
         ${repeat(

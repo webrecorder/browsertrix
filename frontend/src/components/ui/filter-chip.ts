@@ -2,14 +2,8 @@ import { localized } from "@lit/localize";
 import type { SlDropdown } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html } from "lit";
-import {
-  customElement,
-  property,
-  query,
-  queryAssignedElements,
-} from "lit/decorators.js";
+import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { focusable } from "tabbable";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
@@ -24,7 +18,6 @@ export type BtrixFilterChipChangeEvent = BtrixChangeEvent;
  * Filter chips are meant to be shown as multiple filter options, hence the plus (`+`) icon to indicate adding a filter.
  *
  * @slot
- * @slot dropdown-header
  * @slot dropdown-content
  *
  * @fires btrix-change
@@ -47,8 +40,13 @@ export class FilterChip extends TailwindElement {
   @query("sl-dropdown")
   private readonly dropdown?: SlDropdown | null;
 
-  @queryAssignedElements({ slot: "dropdown-content" })
-  private readonly dropdownContent!: HTMLElement[];
+  public hideDropdown() {
+    void this.dropdown?.hide();
+  }
+
+  public showDropdown() {
+    void this.dropdown?.show();
+  }
 
   render() {
     if (this.selectFromDropdown) {
@@ -58,26 +56,11 @@ export class FilterChip extends TailwindElement {
           hoist
           ?stayOpenOnSelect=${this.stayOpenOnChange}
           class="group/dropdown"
-          @sl-change=${() => {
-            if (!this.stayOpenOnChange) {
-              void this.dropdown?.hide();
-            }
-          }}
           ?open=${this.open}
-          @keydown=${{ handleEvent: this.onKeyDown, capture: true }}
         >
           ${this.renderButton()}
 
-          <div
-            class="flex max-h-[var(--auto-size-available-height)] max-w-[var(--auto-size-available-width)] flex-col overflow-hidden rounded border bg-white text-left"
-          >
-            <header
-              class="flex-shrink-0 flex-grow-0 overflow-hidden rounded-t bg-white"
-            >
-              <slot name="dropdown-header"></slot>
-            </header>
-            <slot name="dropdown-content"></slot>
-          </div>
+          <slot name="dropdown-content"></slot>
         </sl-dropdown>
       `;
     }
@@ -116,40 +99,6 @@ export class FilterChip extends TailwindElement {
   private readonly onClick = () => {
     if (!this.selectFromDropdown) {
       this.toggleChecked();
-    }
-  };
-
-  private readonly onKeyDown = (e: KeyboardEvent) => {
-    if (
-      this.selectFromDropdown &&
-      this.dropdown?.open &&
-      this.dropdownContent.length
-    ) {
-      // Enable basic focus trapping
-      const options = focusable(this.dropdownContent[0]);
-
-      if (!options.length) return;
-
-      const focused = options.findIndex((opt) => opt.matches(":focus"));
-
-      switch (e.key) {
-        case "ArrowDown": {
-          e.preventDefault();
-          options[
-            focused === -1 || focused === options.length - 1 ? 0 : focused + 1
-          ].focus();
-          break;
-        }
-        case "ArrowUp": {
-          e.preventDefault();
-          options[
-            focused === -1 || focused === 0 ? options.length - 1 : focused - 1
-          ].focus();
-          break;
-        }
-        default:
-          break;
-      }
     }
   };
 
