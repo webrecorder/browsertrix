@@ -16,6 +16,10 @@ import {
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type {
+  BtrixFilterChipChangeEvent,
+  FilterChip,
+} from "@/components/ui/filter-chip";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
@@ -626,26 +630,30 @@ export class WorkflowsList extends BtrixElement {
         }}
       ></btrix-workflow-tag-filter>
 
-      <btrix-workflow-filter
+      <btrix-filter-chip
         ?checked=${this.filterBy.isCrawlRunning === true}
-        @click=${() => {
+        @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
+          const { checked } = e.target as FilterChip;
+
           this.filterBy = {
             ...this.filterBy,
-            isCrawlRunning: this.filterBy.isCrawlRunning ? undefined : true,
+            isCrawlRunning: checked ? true : undefined,
           };
         }}
       >
         ${msg("Running")}
-      </btrix-workflow-filter>
+      </btrix-filter-chip>
 
-      <btrix-workflow-filter
+      <btrix-filter-chip
         ?checked=${this.filterByCurrentUser}
-        @click=${() => {
-          this.filterByCurrentUser = !this.filterByCurrentUser;
+        @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
+          const { checked } = e.target as FilterChip;
+
+          this.filterByCurrentUser = Boolean(checked);
         }}
       >
         ${msg("Mine")}
-      </btrix-workflow-filter>
+      </btrix-filter-chip>
 
       ${when(
         [

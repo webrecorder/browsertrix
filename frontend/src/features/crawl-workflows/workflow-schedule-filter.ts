@@ -43,9 +43,9 @@ export class WorkflowScheduleFilter extends BtrixElement {
     `;
 
     return html`
-      <btrix-workflow-filter
+      <btrix-filter-chip
         ?checked=${this.schedule !== undefined}
-        select
+        selectFromDropdown
         @sl-after-hide=${() => {
           if (this.#schedule !== this.schedule) {
             this.dispatchEvent(
@@ -120,7 +120,7 @@ export class WorkflowScheduleFilter extends BtrixElement {
             ${radio(msg("No Schedule"), ScheduleType.None)}
           </sl-radio-group>
         </div>
-      </btrix-workflow-filter>
+      </btrix-filter-chip>
     `;
   }
 }

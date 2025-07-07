@@ -67,9 +67,9 @@ export class WorkflowTagFilter extends BtrixElement {
 
   render() {
     return html`
-      <btrix-workflow-filter
+      <btrix-filter-chip
         ?checked=${!!this.tags?.length}
-        select
+        selectFromDropdown
         stayOpenOnChange
         @sl-after-show=${() => {
           if (this.input && !this.input.disabled) {
@@ -152,7 +152,7 @@ export class WorkflowTagFilter extends BtrixElement {
             },
           })}
         </div>
-      </btrix-workflow-filter>
+      </btrix-filter-chip>
     `;
   }
 
