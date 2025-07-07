@@ -9,7 +9,13 @@ import type {
 import clsx from "clsx";
 import Fuse from "fuse.js";
 import { html, nothing, type PropertyValues } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  query,
+  queryAll,
+  state,
+} from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -36,6 +42,9 @@ export class WorkflowTagFilter extends BtrixElement {
 
   @query("sl-input")
   private readonly input?: SlInput | null;
+
+  @queryAll("sl-checkbox")
+  private readonly checkboxes!: NodeListOf<SlCheckbox>;
 
   private readonly fuse = new Fuse<string>([]);
 
@@ -112,6 +121,10 @@ export class WorkflowTagFilter extends BtrixElement {
                   variant="text"
                   size="small"
                   @click=${() => {
+                    this.checkboxes.forEach((checkbox) => {
+                      checkbox.checked = false;
+                    });
+
                     this.dispatchEvent(
                       new CustomEvent<BtrixChangeEvent["detail"]>(
                         "btrix-change",
