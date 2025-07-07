@@ -20,6 +20,7 @@ import("./data-grid");
 import("./details");
 import("./file-input");
 import("./file-list");
+import("./filter-chip");
 import("./format-date");
 import("./inline-input");
 import("./language-select");
