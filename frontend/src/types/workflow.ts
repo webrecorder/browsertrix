@@ -5,3 +5,12 @@ export enum NewWorkflowOnlyScopeType {
 }
 
 export const WorkflowScopeType = { ...ScopeType, ...NewWorkflowOnlyScopeType };
+
+export type WorkflowTag = {
+  tag: string;
+  count: number;
+};
+
+export type WorkflowTags = {
+  tags: WorkflowTag[];
+};

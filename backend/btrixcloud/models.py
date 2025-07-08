@@ -578,10 +578,18 @@ class CrawlConfigAddedResponse(BaseModel):
 
 
 # ============================================================================
+class CrawlConfigTagCount(BaseModel):
+    """Response model for crawlconfig tag count"""
+
+    tag: str
+    count: int
+
+
+# ============================================================================
 class CrawlConfigTags(BaseModel):
     """Response model for crawlconfig tags"""
 
-    tags: List[str]
+    tags: List[CrawlConfigTagCount]
 
 
 # ============================================================================
