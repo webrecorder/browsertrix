@@ -598,7 +598,6 @@ class CrawlConfigOps:
         created_by: Optional[UUID] = None,
         modified_by: Optional[UUID] = None,
         profile_ids: Optional[List[UUID]] = None,
-        profile_id_match: Optional[ListFilterType] = ListFilterType.OR,
         # deprecated - use profile_ids instead
         profileid: Optional[UUID] = None,
         first_seed: Optional[str] = None,
@@ -633,8 +632,7 @@ class CrawlConfigOps:
             profile_ids = [profileid]
 
         if profile_ids:
-            query_type = "$all" if profile_id_match == ListFilterType.AND else "$in"
-            match_query["profileid"] = {query_type: profile_ids}
+            match_query["profileid"] = {"$in": profile_ids}
 
         if name:
             match_query["name"] = name
@@ -1380,14 +1378,6 @@ def init_crawl_config_api(
         profile_id: Annotated[
             Optional[List[UUID]], Query(alias="profileId", title="Profile IDs")
         ] = None,
-        profile_id_match: Annotated[
-            Optional[ListFilterType],
-            Query(
-                alias="profileIdMatch",
-                title="Profile ID Match Type",
-                description='Defaults to `"or"` if omitted',
-            ),
-        ] = ListFilterType.OR,
         old_profile_id: Annotated[
             Optional[UUID],
             Query(
@@ -1434,7 +1424,6 @@ def init_crawl_config_api(
             created_by=user_id,
             modified_by=modified_by,
             profile_ids=profile_id,
-            profile_id_match=profile_id_match,
             profileid=old_profile_id,
             first_seed=first_seed,
             name=name,
