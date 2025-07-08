@@ -1,8 +1,9 @@
 import { localized, msg } from "@lit/localize";
 import type { SlTooltip } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import { html, nothing, type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import {
   iconFor,
@@ -11,15 +12,23 @@ import {
   severityFromMatch,
   textColorFromSeverity,
 } from "../helpers";
-import { approvalFromPage } from "../helpers/approval";
+import {
+  approvalFromPage,
+  labelFor,
+  type ReviewStatus,
+} from "../helpers/approval";
 import { isQaPage, type Page } from "../helpers/page";
 
 import { animateTo, shimKeyframesHeightAuto } from "./animate";
-import { formatPercentage, pageDetails } from "./page-details";
+import {
+  formatPercentage,
+  pageDetailDivider,
+  pageDetails,
+  pageNotes,
+} from "./page-details";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import type { ArchivedItemQAPage } from "@/types/qa";
-import { tw } from "@/utils/tailwind";
+import { type ArchivedItemQAPage } from "@/types/qa";
 
 @customElement("btrix-qa-page")
 @localized()
@@ -122,18 +131,40 @@ export class QaPage extends TailwindElement {
 
     const qaPage = isQaPage(page);
 
+    const reviewStatus = approvalFromPage(page);
+    const details = qaPage ? pageDetails(page) : pageNotes(page);
+
     return html`
       <div class="py-1.5 text-sm text-gray-600">
         <div
-          class=${clsx(
-            qaPage ? tw`ml-4 pl-6` : tw`ml-2`,
-            tw`relative z-20 block flex-auto cursor-pointer select-none overflow-visible rounded border border-solid border-gray-300 bg-white px-4 py-2  shadow-none outline-none transition-shadow  aria-selected:border-blue-500 aria-selected:bg-blue-50 aria-selected:shadow aria-selected:shadow-blue-800/20 aria-selected:transition-none`,
-          )}
+          class="relative z-20 ml-4 block flex-auto cursor-pointer select-none overflow-visible rounded border border-solid border-gray-300 bg-white px-4 py-2 pl-6 shadow-none outline-none transition-shadow  aria-selected:border-blue-500 aria-selected:bg-blue-50 aria-selected:shadow aria-selected:shadow-blue-800/20 aria-selected:transition-none"
           @click=${this.select}
           tabindex="0"
           aria-selected=${this.selected}
         >
-          ${qaPage ? this.renderPopover(page) : nothing}
+          <btrix-popover placement="left">
+            <div slot="content" class="max-w-60 text-xs">
+              ${qaPage
+                ? details
+                : html`${reviewStatus
+                    ? labelFor(reviewStatus)
+                    : msg("No Review")}
+                  ${when(page.notes?.length, pageDetailDivider)}
+                  ${pageNotes(page)}`}
+            </div>
+            <div
+              class="absolute -left-4 top-[50%] flex w-8 translate-y-[-50%] flex-col place-items-center gap-1 rounded-full border border-gray-300 bg-neutral-0 p-2 leading-[14px] shadow transition-transform hover:scale-110"
+            >
+              ${qaPage
+                ? this.renderQaStatus(page, reviewStatus)
+                : iconFor(reviewStatus)}
+              ${page.notes?.[0] &&
+              html`<sl-icon
+                name="chat-square-text-fill"
+                class="text-blue-600"
+              ></sl-icon>`}
+            </div>
+          </btrix-popover>
           <h5 class="truncate text-sm font-semibold text-black">
             ${page.title ||
             html`<span class="opacity-50">${msg("No page title")}</span>`}
@@ -142,70 +173,59 @@ export class QaPage extends TailwindElement {
             ${page.url}
           </div>
         </div>
-        <div
-          class="contentContainer ${this.selected
-            ? "h-auto"
-            : "h-0"} overflow-hidden contain-content content-auto"
-        >
-          ${qaPage
-            ? html`<div
-                class="z-10 -mt-2 ml-6 mr-2 rounded-b-lg border border-solid border-gray-200 bg-neutral-0 px-4 pb-1 pt-4"
+        ${when(
+          details,
+          (details) =>
+            html`<div
+              class="contentContainer ${this.selected
+                ? "h-auto"
+                : "h-0"} overflow-hidden contain-content content-auto"
+            >
+              <div
+                class="z-10 -mt-2 ml-6 mr-2 rounded-b-lg border border-solid border-gray-200 bg-neutral-0 px-4 pb-2 pt-4"
               >
-                ${pageDetails(page)}
-              </div>`
-            : nothing}
-        </div>
+                ${details}
+              </div>
+            </div>`,
+        )}
       </div>
     `;
   }
 
-  private renderPopover(page: ArchivedItemQAPage) {
-    let { severe, moderate } = issueCounts(page);
-
+  private renderQaStatus(page: ArchivedItemQAPage, reviewStatus: ReviewStatus) {
     const statusIcon =
-      approvalFromPage(page) ??
+      reviewStatus ??
       {
         screenshotMatch: severityFromMatch(page.qa.screenshotMatch),
         textMatch: severityFromMatch(page.qa.textMatch),
-        approved: approvalFromPage(page) ?? maxSeverity(page),
+        approved: maxSeverity(page),
       }[this.statusField];
+
+    let { severe, moderate } = issueCounts(page);
 
     if (statusIcon === "severe") severe--;
     if (statusIcon === "moderate") moderate--;
 
-    return html`
-      <btrix-popover placement="left">
-        <div slot="content" class="max-w-60 text-xs">${pageDetails(page)}</div>
-        <div
-          class="absolute -left-4 top-[50%] flex w-8 translate-y-[-50%] flex-col place-items-center gap-1 rounded-full border border-gray-300 bg-neutral-0 p-2 leading-[14px] shadow transition-transform hover:scale-110"
-        >
-          ${iconFor(statusIcon)}
-          ${this.statusField === "screenshotMatch" ||
-          this.statusField === "textMatch"
-            ? html`<span
-                class="${clsx(
-                  "text-[10px] font-semibold tracking-tighter tabular-nums",
-                  textColorFromSeverity(
-                    severityFromMatch(page.qa[this.statusField]),
-                  ),
-                )}"
-                >${formatPercentage(page.qa[this.statusField] ?? 0, 0)}%</span
-              >`
-            : html`<span
-                class="${clsx(
-                  "text-[10px] font-semibold",
-                  textColorFromSeverity(severe > 0 ? "severe" : "moderate"),
-                  severe === 0 && moderate === 0 && "hidden",
-                )}"
-                >+${severe || moderate}</span
-              >`}
-          ${page.notes?.[0] &&
-          html`<sl-icon
-            name="chat-square-text-fill"
-            class="text-blue-600"
-          ></sl-icon>`}
-        </div>
-      </btrix-popover>
-    `;
+    if (
+      this.statusField === "screenshotMatch" ||
+      this.statusField === "textMatch"
+    ) {
+      return html`<span
+        class="${clsx(
+          "text-[10px] font-semibold tracking-tighter tabular-nums",
+          textColorFromSeverity(severityFromMatch(page.qa[this.statusField])),
+        )}"
+        >${formatPercentage(page.qa[this.statusField] ?? 0, 0)}%</span
+      >`;
+    }
+
+    return html`<span
+      class="${clsx(
+        "text-[10px] font-semibold",
+        textColorFromSeverity(severe > 0 ? "severe" : "moderate"),
+        severe === 0 && moderate === 0 && "hidden",
+      )}"
+      >+${severe || moderate}</span
+    >`;
   }
 }
