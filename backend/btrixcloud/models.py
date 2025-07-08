@@ -2956,3 +2956,12 @@ class PageUrlCountResponse(BaseModel):
     """Response model for page count by url"""
 
     items: List[PageUrlCount]
+
+
+# FILTER UTILITIES
+
+
+# ============================================================================
+class ListFilterType(str, Enum):
+    OR = "or"
+    AND = "and"
