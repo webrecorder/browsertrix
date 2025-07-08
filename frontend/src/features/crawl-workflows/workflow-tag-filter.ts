@@ -267,36 +267,6 @@ export class WorkflowTagFilter extends BtrixElement {
 
           this.selected.set(value, checked);
         }}
-        @keydown=${(e: KeyboardEvent) => {
-          if (!this.checkboxes.length) return;
-
-          // Enable focus trapping
-          const options = Array.from(this.checkboxes);
-          const focused = options.findIndex((opt) => opt.matches(":focus"));
-
-          switch (e.key) {
-            case "ArrowDown": {
-              e.preventDefault();
-              options[
-                focused === -1 || focused === options.length - 1
-                  ? 0
-                  : focused + 1
-              ].focus();
-              break;
-            }
-            case "ArrowUp": {
-              e.preventDefault();
-              options[
-                focused === -1 || focused === 0
-                  ? options.length - 1
-                  : focused - 1
-              ].focus();
-              break;
-            }
-            default:
-              break;
-          }
-        }}
       >
         ${repeat(
           opts,
