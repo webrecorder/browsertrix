@@ -141,3 +141,19 @@ def test_deprecated_profileid_param(admin_auth_headers, default_org_id, profile_
         # All returned configs should have the requested profile ID
         assert config["profileid"] == profile_id
     assert found_config
+
+def test_clean_up_test_crawls(admin_auth_headers, default_org_id):
+    # Clean up test crawls
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{new_cid_1}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
+
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{new_cid_2}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
