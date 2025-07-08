@@ -634,7 +634,7 @@ class CrawlConfigOps:
 
         if profile_ids:
             query_type = "$all" if profile_id_match == ListFilterType.AND else "$in"
-            match_query["profileIds"] = {query_type: profile_ids}
+            match_query["profileid"] = {query_type: profile_ids}
 
         if name:
             match_query["name"] = name
