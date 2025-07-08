@@ -81,7 +81,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private qaRunId?: string;
 
   @state()
-  private isQAActive = false;
+  private isRunActive = false;
 
   @state()
   qaRuns?: QARun[];
@@ -1034,16 +1034,11 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private readonly renderQAHeader = (qaRuns: QARun[]) => {
-    const qaIsRunning = this.isQAActive;
-    const qaIsAvailable = !!this.mostRecentNonFailedQARun;
-
-    const reviewLink =
-      qaIsAvailable && this.qaRunId
-        ? `${new URL(window.location.href).pathname}/review/screenshots?qaRunId=${this.qaRunId}`
-        : undefined;
+    const analyzing = this.isRunActive;
+    const reviewLink = `${new URL(window.location.href).pathname}/review/screenshots?qaRunId=${this.qaRunId || ""}`;
 
     return html`
-      ${qaIsRunning
+      ${analyzing
         ? html`
             <sl-button-group>
               <sl-button
@@ -1074,31 +1069,22 @@ export class ArchivedItemDetail extends BtrixElement {
                 qaRuns.length === 0 ? "primary" : "default"
               }"
               @click=${() => void this.startQARun()}
-              ?disabled=${isArchivingDisabled(this.org, true) || qaIsRunning}
+              ?disabled=${isArchivingDisabled(this.org, true) || analyzing}
             >
               <sl-icon slot="prefix" name="microscope" library="app"></sl-icon>
               ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
             </sl-button>
           `}
-      ${qaRuns.length
-        ? html`
-            <sl-tooltip
-              ?disabled=${qaIsAvailable}
-              content=${msg("No completed analysis runs are available.")}
-            >
-              <sl-button
-                variant="primary"
-                size="small"
-                href="${ifDefined(reviewLink)}"
-                @click=${this.navigate.link}
-                ?disabled=${!qaIsAvailable}
-              >
-                <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
-                ${msg("Review Crawl")}
-              </sl-button>
-            </sl-tooltip>
-          `
-        : nothing}
+
+      <sl-button
+        size="small"
+        variant=${qaRuns.length === 0 ? "default" : "primary"}
+        href=${reviewLink}
+        @click=${this.navigate.link}
+      >
+        <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
+        ${msg("Review Crawl")}
+      </sl-button>
 
       <btrix-dialog id="stopQARunDialog" .label=${msg("Stop QA Analysis?")}>
         ${msg(
@@ -1442,9 +1428,9 @@ export class ArchivedItemDetail extends BtrixElement {
       });
     }
 
-    this.isQAActive = Boolean(this.qaRuns?.[0] && isActive(this.qaRuns[0]));
+    this.isRunActive = Boolean(this.qaRuns?.[0] && isActive(this.qaRuns[0]));
 
-    if (this.isQAActive) {
+    if (this.isRunActive) {
       // Clear current timer, if it exists
       if (this.timerId != null) {
         this.stopPoll();
