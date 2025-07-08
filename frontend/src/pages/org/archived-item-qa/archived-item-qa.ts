@@ -21,6 +21,7 @@ import { renderText } from "./ui/text";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import { isQaPage } from "@/features/qa/page-list/helpers/page";
 import {
   type QaFilterChangeDetail,
   type QaPaginationChangeDetail,
@@ -115,10 +116,10 @@ export class ArchivedItemQA extends BtrixElement {
     | undefined = [];
 
   @state()
-  private pages?: APIPaginatedList<ArchivedItemQAPage>;
+  private pages?: APIPaginatedList<QATypes.Page>;
 
   @property({ type: Object })
-  page?: ArchivedItemQAPage;
+  page?: QATypes.Page;
 
   @state()
   private crawlData: QATypes.ReplayData = null;
@@ -306,12 +307,10 @@ export class ArchivedItemQA extends BtrixElement {
 
     const searchParams = new URLSearchParams(window.location.search);
 
-    if (this.qaRunId) {
-      if (this.itemPageId) {
-        void this.fetchPages({ page: 1 });
-      } else {
-        await this.fetchPages({ page: 1 });
-      }
+    if (this.itemPageId) {
+      void this.fetchPages({ page: 1 });
+    } else {
+      await this.fetchPages({ page: 1 });
     }
 
     const firstQARun = this.finishedQARuns?.[0];
@@ -338,9 +337,9 @@ export class ArchivedItemQA extends BtrixElement {
   private getPageListSliceByCurrent(
     pageId = this.itemPageId,
   ): [
-    ArchivedItemQAPage | undefined,
-    ArchivedItemQAPage | undefined,
-    ArchivedItemQAPage | undefined,
+    QATypes.Page | undefined,
+    QATypes.Page | undefined,
+    QATypes.Page | undefined,
   ] {
     if (!pageId || !this.pages) {
       return [undefined, undefined, undefined];
@@ -369,7 +368,7 @@ export class ArchivedItemQA extends BtrixElement {
     const currentQARun = this.finishedQARuns?.find(
       ({ id }) => id === this.qaRunId,
     );
-    const disableReview = !currentQARun || isActive(currentQARun);
+    const disableReview = currentQARun && isActive(currentQARun);
 
     return html`
       ${this.renderHidden()}
@@ -501,9 +500,7 @@ export class ArchivedItemQA extends BtrixElement {
             >
               <sl-icon name="images"></sl-icon>
               ${msg("Screenshots")}
-              ${when(this.page?.qa || currentPage?.qa, (qa) =>
-                renderSeverityBadge(qa.screenshotMatch),
-              )}
+              ${when(this.page || currentPage, (page) => (isQaPage(page) ? renderSeverityBadge(page.qa.screenshotMatch) : nothing))}
             </btrix-navigation-button>
             <btrix-navigation-button
               id="text-tab"
@@ -513,9 +510,7 @@ export class ArchivedItemQA extends BtrixElement {
             >
               <sl-icon name="file-text-fill"></sl-icon>
               ${msg("Text")}
-              ${when(this.page?.qa || currentPage?.qa, (qa) =>
-                renderSeverityBadge(qa.textMatch),
-              )}
+              ${when(this.page || currentPage, (page) => (isQaPage(page) ? renderSeverityBadge(page.qa.textMatch) : nothing))}
             </btrix-navigation-button>
             <btrix-navigation-button
               id="text-tab"
@@ -1073,7 +1068,7 @@ export class ArchivedItemQA extends BtrixElement {
 
     if (!this.page || this.page.id !== updated.id) return;
 
-    this.page = merge<ArchivedItemQAPage>(this.page, updated);
+    this.page = merge<QATypes.Page>(this.page, updated);
 
     const reviewStatusChanged = this.page.approved !== updated.approved;
     if (reviewStatusChanged) {
@@ -1142,7 +1137,9 @@ export class ArchivedItemQA extends BtrixElement {
       }
 
       const comments = [...this.page!.notes!, data];
-      this.page = merge<ArchivedItemQAPage>(this.page!, { notes: comments });
+      this.page = merge<QATypes.Page>(this.page!, {
+        notes: comments,
+      });
 
       void this.fetchPages();
     } catch (e: unknown) {
@@ -1175,7 +1172,9 @@ export class ArchivedItemQA extends BtrixElement {
       );
 
       const comments = this.page!.notes!.filter(({ id }) => id !== commentId);
-      this.page = merge<ArchivedItemQAPage>(this.page!, { notes: comments });
+      this.page = merge<QATypes.Page>(this.page!, {
+        notes: comments,
+      });
 
       void this.fetchPages();
     } catch {
@@ -1464,18 +1463,24 @@ export class ArchivedItemQA extends BtrixElement {
 
   private async getPages(
     params?: APIPaginationQuery & APISortQuery & { reviewed?: boolean },
-  ): Promise<APIPaginatedList<ArchivedItemQAPage>> {
+  ) {
     const query = queryString.stringify(
-      {
-        ...this.filterPagesBy,
-        ...params,
-      },
+      this.qaRunId
+        ? {
+            ...this.filterPagesBy,
+            ...params,
+          }
+        : {
+            page: params?.page,
+            pageSize: params?.pageSize,
+          },
       {
         arrayFormat: "comma",
       },
     );
-    return this.api.fetch<APIPaginatedList<ArchivedItemQAPage>>(
-      `/orgs/${this.orgId}/crawls/${this.itemId ?? ""}/qa/${this.qaRunId ?? ""}/pages?${query}`,
+
+    return this.api.fetch<APIPaginatedList<QATypes.Page>>(
+      `/orgs/${this.orgId}/crawls/${this.itemId ?? ""}${this.qaRunId ? `/qa/${this.qaRunId}` : ""}/pages?${query}`,
     );
   }
 
