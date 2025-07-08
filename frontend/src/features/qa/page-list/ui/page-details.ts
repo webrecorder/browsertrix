@@ -3,6 +3,7 @@ import { html, nothing } from "lit";
 
 import { crawlCounts } from "../helpers/crawlCounts";
 import { iconFor } from "../helpers/iconFor";
+import type { Page } from "../helpers/page";
 import {
   severityFromMatch,
   severityFromResourceCounts,
@@ -17,6 +18,25 @@ export function formatPercentage(n: number, fractionDigits = 2) {
   }
   return (n * 100).toFixed(fractionDigits).replace(/[.,]00$/, "");
 }
+
+export const pageDetailDivider = () =>
+  html`<sl-divider
+    class="[--color:theme(colors.gray.200)] [--spacing:theme(spacing.3)]"
+  ></sl-divider>`;
+
+export const pageNotes = ({ notes }: Page) =>
+  notes?.length
+    ? html` <div class="mb-2 text-xs text-neutral-400">
+          ${msg("Newest comment:")}
+        </div>
+        <div class="flex text-xs leading-4">
+          <sl-icon
+            name="chat-square-text-fill"
+            class="mr-2 size-4 flex-none text-blue-600"
+          ></sl-icon>
+          ${notes[notes.length - 1].text}
+        </div>`
+    : undefined;
 
 export const pageDetails = (page: ArchivedItemQAPage) =>
   html`<ul class="leading-4">
@@ -87,17 +107,5 @@ export const pageDetails = (page: ArchivedItemQAPage) =>
       </li>
     </ul>
     ${page.notes?.length
-      ? html` <sl-divider
-            class="[--color:theme(colors.gray.200)] [--spacing:theme(spacing.3)]"
-          ></sl-divider>
-          <div class="my-2 text-xs text-neutral-400">
-            ${msg("Newest comment:")}
-          </div>
-          <div class="flex text-xs leading-4">
-            <sl-icon
-              name="chat-square-text-fill"
-              class="mr-2 size-4 flex-none text-blue-600"
-            ></sl-icon>
-            ${page.notes[page.notes.length - 1].text}
-          </div>`
+      ? html`${pageDetailDivider()} ${pageNotes(page)}`
       : nothing}`;
