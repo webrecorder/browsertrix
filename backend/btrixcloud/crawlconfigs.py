@@ -4,7 +4,7 @@ Crawl Config API handling
 
 # pylint: disable=too-many-lines
 
-from typing import List, Union, Optional, TYPE_CHECKING, cast, Dict, Tuple, Annotated
+from typing import List, Optional, TYPE_CHECKING, cast, Dict, Tuple, Annotated
 
 import asyncio
 import json

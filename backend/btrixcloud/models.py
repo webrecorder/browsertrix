@@ -2963,5 +2963,7 @@ class PageUrlCountResponse(BaseModel):
 
 # ============================================================================
 class ListFilterType(str, Enum):
+    """Combination type for query filters that accept lists"""
+
     OR = "or"
     AND = "and"
