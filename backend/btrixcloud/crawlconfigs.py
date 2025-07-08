@@ -25,7 +25,6 @@ from .models import (
     ConfigRevision,
     CrawlConfig,
     CrawlConfigOut,
-    CrawlConfigProfileOut,
     CrawlConfigTags,
     CrawlOut,
     UpdateCrawlConfig,
