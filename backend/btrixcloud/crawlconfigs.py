@@ -615,7 +615,7 @@ class CrawlConfigOps:
         match_query = {"oid": org.id, "inactive": {"$ne": True}}
 
         if tags:
-            match_query["tags"] = {"$all": tags}
+            match_query["tags"] = {"$in": tags}
 
         if created_by:
             match_query["createdBy"] = created_by
