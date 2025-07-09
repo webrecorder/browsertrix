@@ -148,7 +148,7 @@ export class QaPage extends TailwindElement {
                 ? details
                 : html`${reviewStatus
                     ? labelFor(reviewStatus)
-                    : msg("No Review")}
+                    : msg("No Approval")}
                   ${when(page.notes?.length, pageDetailDivider)}
                   ${pageNotes(page)}`}
             </div>

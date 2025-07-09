@@ -1465,15 +1465,15 @@ export class ArchivedItemQA extends BtrixElement {
     params?: APIPaginationQuery & APISortQuery & { reviewed?: boolean },
   ) {
     const query = queryString.stringify(
-      this.qaRunId
-        ? {
-            ...this.filterPagesBy,
-            ...params,
-          }
-        : {
-            page: params?.page,
-            pageSize: params?.pageSize,
-          },
+      {
+        ...this.filterPagesBy,
+        ...(this.qaRunId
+          ? params
+          : {
+              page: params?.page,
+              pageSize: params?.pageSize,
+            }),
+      },
       {
         arrayFormat: "comma",
       },

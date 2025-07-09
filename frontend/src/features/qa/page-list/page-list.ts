@@ -123,7 +123,8 @@ export class PageList extends BtrixElement {
       <div
         class="z-40 mb-1 flex flex-wrap items-center gap-2 rounded-lg border bg-neutral-50 p-2"
       >
-        ${this.renderSortControl()} ${this.renderFilterControl()}
+        ${when(this.qaRunId, () => this.renderSortControl())}
+        ${this.renderFilterControl()}
       </div>
       <div
         class="scrollContainer relative -mx-2 overflow-y-auto overscroll-contain px-2"
