@@ -1105,9 +1105,10 @@ export class ArchivedItemQA extends BtrixElement {
 
     if (!this.page || this.page.id !== updated.id) return;
 
+    const reviewStatusChanged = this.page.approved !== updated.approved;
+
     this.page = merge<QATypes.Page>(this.page, updated);
 
-    const reviewStatusChanged = this.page.approved !== updated.approved;
     if (reviewStatusChanged) {
       void this.fetchPages();
     }
