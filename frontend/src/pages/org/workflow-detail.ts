@@ -1759,7 +1759,7 @@ export class WorkflowDetail extends BtrixElement {
               size="small"
               variant="text"
               href="${this.basePath}/crawls/${this
-                .lastCrawlId}/review/screenshots"
+                .lastCrawlId}/review/screenshots?from=workflow"
               @click=${this.navigate.link}
             >
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>
