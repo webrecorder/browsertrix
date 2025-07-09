@@ -221,15 +221,20 @@ class CrawlManager(K8sAPI):
         weekly_schedule = "0 0 * * 0"
 
         # Don't create a duplicate cron job if already exists
-        cron_job = await self.batch_api.read_namespaced_cron_job(
-            name=job_id,
-            namespace=self.namespace,
-        )
-        if cron_job:
-            print(
-                "Weekly cron job to clean up used seed files already exists", flush=True
+        try:
+            cron_job = await self.batch_api.read_namespaced_cron_job(
+                name=job_id,
+                namespace=self.namespace,
             )
-            return
+            if cron_job:
+                print(
+                    "Weekly cron job to clean up used seed files already exists",
+                    flush=True,
+                )
+                return
+        # pylint: disable=broad-exception-caught
+        except Exception as err:
+            print(f"Exception trying to find seed file clean up job: {err}", flush=True)
 
         print("Creating weekly cron job to clean up used seed files", flush=True)
 
