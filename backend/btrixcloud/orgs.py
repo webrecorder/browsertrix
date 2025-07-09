@@ -1462,7 +1462,9 @@ class OrgOps:
     async def inc_org_bytes_stored_field(self, oid: UUID, field: str, size: int):
         """Increment specific org bytesStored* field"""
         try:
-            await self.orgs.find_one_and_update({"_id": oid}, {"$inc": {field: size}})
+            await self.orgs.find_one_and_update(
+                {"_id": oid}, {"$inc": {field: size, "bytesStored": size}}
+            )
         # pylint: disable=broad-exception-caught
         except Exception as err:
             print(f"Error updating field {field} on org {oid}: {err}", flush=True)
