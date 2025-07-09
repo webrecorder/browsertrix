@@ -360,8 +360,23 @@ export class ArchivedItemQA extends BtrixElement {
     );
   }
 
+  private get fromWorkflow() {
+    const searchParams = new URLSearchParams(window.location.search);
+
+    return searchParams.get("from") === "workflow";
+  }
+
+  private get backUrl() {
+    if (this.fromWorkflow) {
+      return `${this.navigate.orgBasePath}/workflows/${this.workflowId}`;
+    }
+
+    return `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}#qa`;
+  }
+
   render() {
     const crawlBaseUrl = `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}`;
+
     const searchParams = new URLSearchParams(window.location.search);
     const itemName = this.item ? renderName(this.item) : nothing;
     const [prevPage, currentPage, nextPage] = this.getPageListSliceByCurrent();
@@ -410,7 +425,7 @@ export class ArchivedItemQA extends BtrixElement {
             <sl-button
               size="small"
               variant="text"
-              href=${`${crawlBaseUrl}#qa`}
+              href=${this.backUrl}
               @click=${this.navigate.link}
               >${msg("Exit Review")}</sl-button
             >
@@ -631,8 +646,8 @@ export class ArchivedItemQA extends BtrixElement {
 
   private renderBackLink() {
     return pageBack({
-      href: `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}#qa`,
-      content: msg("Crawl"),
+      href: this.backUrl,
+      content: this.fromWorkflow ? msg("Workflow") : msg("Crawl"),
     });
   }
 
@@ -1550,9 +1565,7 @@ export class ArchivedItemQA extends BtrixElement {
 
       void this.reviewDialog?.hide();
 
-      this.navigate.to(
-        `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}#qa`,
-      );
+      this.navigate.to(this.backUrl);
       this.notify.toast({
         message: msg("Saved QA review."),
         variant: "success",
