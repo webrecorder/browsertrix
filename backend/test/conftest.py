@@ -838,7 +838,7 @@ def seed_file_id(crawler_auth_headers, default_org_id):
 def seed_file_config_id(crawler_auth_headers, default_org_id, seed_file_id):
     crawl_data = {
         "runNow": False,
-        "name": "Seed File Workflow",
+        "name": "Seed File Test Crawl",
         "config": {
             "scopeType": "page",
             "seedFileId": seed_file_id,
