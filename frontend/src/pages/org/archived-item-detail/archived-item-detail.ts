@@ -136,6 +136,10 @@ export class ArchivedItemDetail extends BtrixElement {
     return `${this.navigate.orgBasePath}/${path}`;
   }
 
+  private get reviewUrl(): string {
+    return `${new URL(window.location.href).pathname}/review/screenshots?qaRunId=${this.qaRunId || ""}`;
+  }
+
   private timerId?: number;
 
   private get hasFiles(): boolean | null {
@@ -637,6 +641,15 @@ export class ArchivedItemDetail extends BtrixElement {
           ${when(
             isSuccessfullyFinished(this.item),
             () => html`
+              ${when(
+                this.itemType === "crawl",
+                () => html`
+                  <btrix-menu-item-link href=${this.reviewUrl}>
+                    <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
+                    ${msg("Review Crawl")}
+                  </btrix-menu-item-link>
+                `,
+              )}
               <btrix-menu-item-link
                 href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
                 download
@@ -677,20 +690,20 @@ export class ArchivedItemDetail extends BtrixElement {
           )}
           <sl-menu-item
             @click=${() =>
-              ClipboardController.copyToClipboard(this.item!.tags.join(", "))}
-            ?disabled=${!this.item.tags.length}
-          >
-            <sl-icon name="tags" slot="prefix"></sl-icon>
-            ${msg("Copy Tags")}
-          </sl-menu-item>
-          <sl-menu-item
-            @click=${() =>
               ClipboardController.copyToClipboard(
                 this.item?.id ?? this.itemId ?? "",
               )}
           >
             <sl-icon name="copy" slot="prefix"></sl-icon>
             ${msg("Copy Item ID")}
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${() =>
+              ClipboardController.copyToClipboard(this.item!.tags.join(", "))}
+            ?disabled=${!this.item.tags.length}
+          >
+            <sl-icon name="tags" slot="prefix"></sl-icon>
+            ${msg("Copy Tags")}
           </sl-menu-item>
           ${when(
             this.isCrawler,
@@ -1035,7 +1048,6 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private readonly renderQAHeader = (qaRuns: QARun[]) => {
     const analyzing = this.isRunActive;
-    const reviewLink = `${new URL(window.location.href).pathname}/review/screenshots?qaRunId=${this.qaRunId || ""}`;
 
     return html`
       ${analyzing
@@ -1079,7 +1091,7 @@ export class ArchivedItemDetail extends BtrixElement {
       <sl-button
         size="small"
         variant=${qaRuns.length === 0 ? "default" : "primary"}
-        href=${reviewLink}
+        href=${this.reviewUrl}
         @click=${this.navigate.link}
       >
         <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
