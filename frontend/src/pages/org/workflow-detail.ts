@@ -1758,7 +1758,8 @@ export class WorkflowDetail extends BtrixElement {
               class="micro -ml-2"
               size="small"
               variant="text"
-              href="${this.basePath}/crawls/${this.lastCrawlId}#qa"
+              href="${this.basePath}/crawls/${this
+                .lastCrawlId}/review/screenshots"
               @click=${this.navigate.link}
             >
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>
