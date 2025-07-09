@@ -605,8 +605,8 @@ export class ArchivedItemQA extends BtrixElement {
 
   private renderBackLink() {
     return pageBack({
-      href: `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}?workflowId=${this.item?.cid}#qa`,
-      content: this.item ? renderName(this.item) : undefined,
+      href: `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}#qa`,
+      content: msg("Crawl"),
     });
   }
 
