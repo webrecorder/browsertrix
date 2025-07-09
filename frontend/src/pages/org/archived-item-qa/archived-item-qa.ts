@@ -15,7 +15,7 @@ import queryString from "query-string";
 import stylesheet from "./archived-item-qa.stylesheet.css";
 import type * as QATypes from "./types";
 import { renderResources } from "./ui/resources";
-import { renderScreenshots } from "./ui/screenshots";
+import { renderImage, renderScreenshots } from "./ui/screenshots";
 import { renderSeverityBadge } from "./ui/severityBadge";
 import { renderText } from "./ui/text";
 
@@ -490,7 +490,7 @@ export class ArchivedItemQA extends BtrixElement {
         <div class="grid--tabGroup flex min-w-0 flex-col">
           <nav
             aria-label="${msg("Page heuristics")}"
-            class="-mx-3 my-0 flex gap-2 overflow-x-auto px-3 py-2 lg:mx-0 lg:px-0"
+            class="-mx-3 my-0 flex gap-2 items-center overflow-x-auto px-3 py-2 lg:mx-0 lg:px-0"
           >
             <btrix-navigation-button
               id="screenshot-tab"
@@ -499,28 +499,37 @@ export class ArchivedItemQA extends BtrixElement {
               @click=${this.onTabNavClick}
             >
               <sl-icon name="images"></sl-icon>
-              ${msg("Screenshots")}
+              ${msg("Screenshot")}
               ${when(this.page || currentPage, (page) => (isQaPage(page) ? renderSeverityBadge(page.qa.screenshotMatch) : nothing))}
             </btrix-navigation-button>
-            <btrix-navigation-button
-              id="text-tab"
-              href=${`${crawlBaseUrl}/review/text?${searchParams.toString()}`}
-              ?active=${this.tab === "text"}
-              @click=${this.onTabNavClick}
-            >
-              <sl-icon name="file-text-fill"></sl-icon>
-              ${msg("Text")}
-              ${when(this.page || currentPage, (page) => (isQaPage(page) ? renderSeverityBadge(page.qa.textMatch) : nothing))}
-            </btrix-navigation-button>
-            <btrix-navigation-button
-              id="text-tab"
-              href=${`${crawlBaseUrl}/review/resources?${searchParams.toString()}`}
-              ?active=${this.tab === "resources"}
-              @click=${this.onTabNavClick}
-            >
-              <sl-icon name="puzzle-fill"></sl-icon>
-              ${msg("Resources")}
-            </btrix-navigation-button>
+            ${when(
+              this.qaRunId,
+              () => html`
+                <btrix-navigation-button
+                  id="text-tab"
+                  href=${`${crawlBaseUrl}/review/text?${searchParams.toString()}`}
+                  ?active=${this.tab === "text"}
+                  @click=${this.onTabNavClick}
+                >
+                  <sl-icon name="file-text-fill"></sl-icon>
+                  ${msg("Text")}
+                  ${when(this.page || currentPage, (page) =>
+                    isQaPage(page)
+                      ? renderSeverityBadge(page.qa.textMatch)
+                      : nothing,
+                  )}
+                </btrix-navigation-button>
+                <btrix-navigation-button
+                  id="text-tab"
+                  href=${`${crawlBaseUrl}/review/resources?${searchParams.toString()}`}
+                  ?active=${this.tab === "resources"}
+                  @click=${this.onTabNavClick}
+                >
+                  <sl-icon name="puzzle-fill"></sl-icon>
+                  ${msg("Resources")}
+                </btrix-navigation-button>
+              `,
+            )}
             <btrix-navigation-button
               id="replay-tab"
               href=${`${crawlBaseUrl}/review/replay?${searchParams.toString()}`}
@@ -530,6 +539,23 @@ export class ArchivedItemQA extends BtrixElement {
               <sl-icon name="replaywebpage" library="app"></sl-icon>
               ${msg("Replay")}
             </btrix-navigation-button>
+            ${when(
+              this.finishedQARuns && !this.finishedQARuns.length,
+              () => html`
+                <btrix-popover
+                  content=${msg(
+                    "Screenshot, text, and resource comparison views are only available for analyzed crawls. Run QA analysis from the crawl detail page to enable comparisons.",
+                  )}
+                >
+                  <div
+                    class="ml-auto flex items-center gap-1.5 text-xs text-neutral-500"
+                  >
+                    ${msg("Comparison views unavailable")}
+                    <sl-icon class="text-sm" name="info-circle"></sl-icon>
+                  </div>
+                </btrix-popover>
+              `,
+            )}
           </nav>
           ${this.renderPanelToolbar()} ${this.renderPanel()}
         </div>
@@ -855,25 +881,28 @@ export class ArchivedItemQA extends BtrixElement {
         ],
         [
           "screenshots",
-          () => html`
-            <div class="flex">
-              <sl-tooltip
-                content=${msg("Toggle screenshot wipe view")}
-                placement="bottom-start"
-              >
-                <btrix-button
-                  raised
-                  ?filled=${!this.splitView}
-                  size="small"
-                  @click="${() => (this.splitView = !this.splitView)}"
-                  class="m-0.5"
-                  aria-pressed=${!this.splitView}
-                >
-                  <sl-icon name="vr"></sl-icon>
-                </btrix-button>
-              </sl-tooltip>
-            </div>
-          `,
+          () =>
+            this.qaRunId
+              ? html`
+                  <div class="flex">
+                    <sl-tooltip
+                      content=${msg("Toggle screenshot wipe view")}
+                      placement="bottom-start"
+                    >
+                      <btrix-button
+                        raised
+                        ?filled=${!this.splitView}
+                        size="small"
+                        @click="${() => (this.splitView = !this.splitView)}"
+                        class="m-0.5"
+                        aria-pressed=${!this.splitView}
+                      >
+                        <sl-icon name="vr"></sl-icon>
+                      </btrix-button>
+                    </sl-tooltip>
+                  </div>
+                `
+              : undefined,
         ],
       ])}
     `;
@@ -911,11 +940,19 @@ export class ArchivedItemQA extends BtrixElement {
   }
 
   private renderPanel() {
+    const hasFinishedQaRun = this.finishedQARuns?.length;
+
     // cache DOM for faster switching between tabs
     const choosePanel = () => {
       switch (this.tab) {
         case "screenshots":
-          return renderScreenshots(this.crawlData, this.qaData, this.splitView);
+          return hasFinishedQaRun
+            ? renderScreenshots(this.crawlData, this.qaData, this.splitView)
+            : html`<div
+                class="aspect-video flex-1 overflow-hidden rounded-lg border bg-slate-50"
+              >
+                ${renderImage(this.crawlData)}
+              </div>`;
         case "text":
           return renderText(this.crawlData, this.qaData);
         case "resources":
