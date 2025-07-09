@@ -138,6 +138,8 @@ class CrawlConfigOps:
             "DEFAULT_CRAWLER_IMAGE_PULL_POLICY", "IfNotPresent"
         )
 
+        self.min_seed_file_crawler_image = os.environ.get("MIN_SEED_FILE_CRAWLER_IMAGE")
+
         self.paused_expiry_delta = timedelta(
             minutes=int(os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", "10080"))
         )
@@ -342,6 +344,7 @@ class CrawlConfigOps:
         await self.crawl_manager.update_scheduled_job(crawlconfig, str(user.id))
 
         crawl_id = None
+        error_detail = None
         storage_quota_reached = False
         exec_mins_quota_reached = False
 
@@ -354,6 +357,7 @@ class CrawlConfigOps:
                 elif e.detail == "exec_minutes_quota_reached":
                     exec_mins_quota_reached = True
                 print(f"Can't run crawl now: {e.detail}", flush=True)
+                error_detail = e.detail
         else:
             storage_quota_reached = self.org_ops.storage_quota_reached(org)
             exec_mins_quota_reached = self.org_ops.exec_mins_quota_reached(org)
@@ -364,6 +368,7 @@ class CrawlConfigOps:
             run_now_job=crawl_id,
             storageQuotaReached=storage_quota_reached,
             execMinutesQuotaReached=exec_mins_quota_reached,
+            errorDetail=error_detail,
         )
 
     def is_single_page(self, config: RawCrawlConfig):
@@ -1101,6 +1106,16 @@ class CrawlConfigOps:
 
         seed_file_url = ""
         if crawlconfig.config.seedFileId:
+            crawler_image = self.get_channel_crawler_image(crawlconfig.crawlerChannel)
+            if (
+                self.min_seed_file_crawler_image
+                and crawler_image
+                and crawler_image < self.min_seed_file_crawler_image
+            ):
+                raise HTTPException(
+                    status_code=400, detail="seed_file_not_supported_by_crawler"
+                )
+
             seed_file_out = await self.file_ops.get_file_out(
                 crawlconfig.config.seedFileId, org
             )
