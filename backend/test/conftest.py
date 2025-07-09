@@ -844,6 +844,7 @@ def seed_file_config_id(crawler_auth_headers, default_org_id, seed_file_id):
             "seedFileId": seed_file_id,
             "limit": 2,
         },
+        "crawlerChannel": "test",
     }
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
