@@ -5,11 +5,12 @@ import { customElement, property, query } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 
+import type { Page } from "./helpers/page";
+
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type PageChangeEvent } from "@/components/ui/pagination";
 import { renderSpinner } from "@/pages/org/archived-item-qa/ui/spinner";
 import type { APIPaginatedList, APISortQuery } from "@/types/api";
-import type { ArchivedItemQAPage } from "@/types/qa";
 import { pluralOf } from "@/utils/pluralize";
 
 export type SortDirection = "asc" | "desc";
@@ -86,7 +87,7 @@ export class PageList extends BtrixElement {
   itemPageId?: string;
 
   @property({ type: Object })
-  pages?: APIPaginatedList<ArchivedItemQAPage>;
+  pages?: APIPaginatedList<Page>;
 
   @property({ type: Number })
   totalPages = 0;
@@ -150,7 +151,7 @@ export class PageList extends BtrixElement {
                   ${repeat(
                     items,
                     ({ id }) => id,
-                    (page: ArchivedItemQAPage) => html`
+                    (page) => html`
                       <btrix-qa-page
                         class="is-leaf -my-4 scroll-my-8 py-4 first-of-type:mt-0 last-of-type:mb-0"
                         .page=${page}
