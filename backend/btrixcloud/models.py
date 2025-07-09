@@ -578,6 +578,7 @@ class CrawlConfigAddedResponse(BaseModel):
     run_now_job: Optional[str] = None
     storageQuotaReached: bool
     execMinutesQuotaReached: bool
+    errorDetail: Optional[str] = None
 
 
 # ============================================================================
