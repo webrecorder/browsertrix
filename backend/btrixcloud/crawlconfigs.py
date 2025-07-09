@@ -734,7 +734,10 @@ class CrawlConfigOps:
             match_query["isCrawlRunning"] = is_crawl_running
 
         # pylint: disable=duplicate-code
-        aggregate: List[Dict[str, Union[object, str, int]]] = [{"$match": match_query}]
+        aggregate: List[Dict[str, Union[object, str, int]]] = [
+            {"$match": match_query},
+            {"$unset": ["config"]},
+        ]
 
         if first_seed:
             aggregate.extend([{"$match": {"firstSeed": first_seed}}])
