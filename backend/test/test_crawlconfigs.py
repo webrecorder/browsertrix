@@ -957,6 +957,6 @@ def test_add_crawl_config_with_seed_file(
 
     data = r.json()
     assert data["id"] == seed_file_config_id
-    assert data["name"] == "Seed File Workflow"
+    assert data["name"] == "Seed File Test Crawl"
     assert data["config"]["seedFileId"] == seed_file_id
     assert data["config"]["seeds"] is None
