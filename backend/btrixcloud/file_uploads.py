@@ -1,6 +1,6 @@
 """user-uploaded files"""
 
-from typing import TYPE_CHECKING, Union, Any, Optional, Dict, Tuple
+from typing import TYPE_CHECKING, Union, Any, Optional, Dict, Tuple, List
 
 from datetime import timedelta
 import os
@@ -22,7 +22,9 @@ from .models import (
     AddedResponseId,
     SuccessResponse,
     MIN_UPLOAD_PART_SIZE,
+    PaginatedUserFileResponse,
 )
+from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now
 
 if TYPE_CHECKING:
@@ -105,6 +107,73 @@ class FileUploadOps:
         """Get file output model by UUID"""
         user_file = await self.get_file(file_id, org, type_)
         return await user_file.get_file_out(org, self.storage_ops)
+
+    async def list_user_files(
+        self,
+        org: Organization,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sort_by: str = "created",
+        sort_direction: int = -1,
+    ) -> Tuple[list[UserUploadFileOut], int]:
+        """list all user-uploaded files"""
+        # pylint: disable=too-many-locals
+
+        # Zero-index page for query
+        page = page - 1
+        skip = page_size * page
+
+        match_query = {"oid": org.id}
+
+        aggregate: List[Dict[str, Any]] = [{"$match": match_query}]
+
+        if sort_by:
+            if sort_by not in (
+                "created",
+                "size",
+                "mime",
+                "userName",
+                "type",
+                "firstSeed",
+                "seedCount",
+            ):
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+
+        aggregate.extend(
+            [
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
+            ]
+        )
+
+        cursor = self.files.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
+
+        user_files = []
+        for res in items:
+            file_ = UserUploadFile.from_dict(res)
+            file_out = await file_.get_file_out(org, self.storage_ops)
+            user_files.append(file_out)
+
+        return user_files, total
 
     # pylint: disable=duplicate-code
     async def upload_user_file_stream(
@@ -310,6 +379,24 @@ def init_file_uploads_api(
         return await ops.upload_user_file_stream(
             request.stream(), filename, org, user, upload_type="seedFile"
         )
+
+    @router.get("", response_model=PaginatedUserFileResponse)
+    async def list_user_files(
+        org: Organization = Depends(org_viewer_dep),
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sortBy: str = "modified",
+        sortDirection: int = -1,
+    ):
+        # pylint: disable=duplicate-code
+        user_files, total = await ops.list_user_files(
+            org,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+        )
+        return paginated_format(user_files, total, page, pageSize)
 
     @router.get("/{file_id}", response_model=UserUploadFileOut)
     async def get_user_file(file_id: UUID, org: Organization = Depends(org_viewer_dep)):

@@ -3048,6 +3048,13 @@ class PaginatedUserOutResponse(PaginatedResponse):
 
 
 # ============================================================================
+class PaginatedUserFileResponse(PaginatedResponse):
+    """Response model for user-uploaded files (e.g. seed files)"""
+
+    items: List[UserUploadFileOut]
+
+
+# ============================================================================
 class PageUrlCountResponse(BaseModel):
     """Response model for page count by url"""
 

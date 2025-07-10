@@ -50,6 +50,40 @@ def test_seed_file_upload(crawler_auth_headers, default_org_id):
     assert data["seedCount"] == 2
 
 
+def test_list_user_files(crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/files",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    items = data["items"]
+    total = data["total"]
+
+    assert total >= 0
+    assert total == len(items)
+
+    for data in items:
+        assert data["id"]
+        assert data["oid"] == default_org_id
+
+        assert data["name"]
+        assert data["path"]
+        assert data["hash"]
+        assert data["size"] > 0
+
+        assert data["originalFilename"]
+        assert data["mime"]
+        assert data["userid"]
+        assert data["userName"]
+        assert data["created"]
+
+        assert data["type"] == "seedFile"
+        assert data["firstSeed"]
+        assert data["seedCount"]
+
+
 def test_delete_seed_file(crawler_auth_headers, default_org_id):
     r = requests.delete(
         f"{API_PREFIX}/orgs/{default_org_id}/files/{_seed_file_id}",

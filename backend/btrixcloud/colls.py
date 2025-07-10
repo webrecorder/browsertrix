@@ -1022,6 +1022,7 @@ def init_collections_api(
         namePrefix: Optional[str] = None,
         access: Optional[str] = None,
     ):
+        # pylint: disable=duplicate-code
         collections, total = await colls.list_collections(
             org,
             page_size=pageSize,
