@@ -385,7 +385,7 @@ def init_file_uploads_api(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sortBy: str = "modified",
+        sortBy: str = "created",
         sortDirection: int = -1,
     ):
         # pylint: disable=duplicate-code
