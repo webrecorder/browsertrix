@@ -2640,12 +2640,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       : [];
     const primarySeed: Seed = {
       url: primarySeedUrl,
-      // the 'custom' scope here indicates we have extra URLs, actually set to 'prefix'
-      // scope on backend to ensure seed URL is also added as part of standard prefix scope
-      scopeType:
-        this.formState.scopeType === ScopeType.Custom
-          ? ScopeType.Prefix
-          : (this.formState.scopeType as ScopeType),
+      scopeType: this.formState.scopeType as ScopeType,
       include:
         this.formState.scopeType === ScopeType.Custom
           ? [...includeUrlList.map((url) => regexEscape(url))]
