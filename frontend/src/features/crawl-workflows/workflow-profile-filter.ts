@@ -24,6 +24,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
 import { type APIPaginatedList } from "@/types/api";
 import { type Profile } from "@/types/crawler";
+import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
 
@@ -122,7 +123,11 @@ export class WorkflowProfileFilter extends BtrixElement {
         }}
       >
         ${this.profiles?.length
-          ? html`<span class="opacity-75">${msg("Profiles")}</span>
+          ? html`<span class="opacity-75"
+                >${msg(
+                  str`Using ${pluralOf("profiles", this.profiles.length)}`,
+                )}</span
+              >
               ${this.renderProfilesInLabel(this.profiles)}`
           : msg("Browser Profile")}
 
