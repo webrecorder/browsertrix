@@ -2,7 +2,6 @@ import requests
 import pytest
 
 from .conftest import API_PREFIX
-from .test_profiles import profile_id, profile_2_id
 
 new_cid_1 = None
 new_cid_2 = None
