@@ -21,6 +21,7 @@ import { isFocusable } from "tabbable";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
+import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
 import { tw } from "@/utils/tailwind";
 
 const MAX_TAGS_IN_LABEL = 5;
@@ -47,7 +48,9 @@ export class WorkflowTagFilter extends BtrixElement {
   @queryAll("sl-checkbox")
   private readonly checkboxes!: NodeListOf<SlCheckbox>;
 
-  private readonly fuse = new Fuse<string>([]);
+  private readonly fuse = new Fuse<WorkflowTag>([], {
+    keys: ["tag"],
+  });
 
   private selected = new Map<string, boolean>();
 
@@ -63,8 +66,8 @@ export class WorkflowTagFilter extends BtrixElement {
 
   private readonly orgTagsTask = new Task(this, {
     task: async () => {
-      const tags = await this.api.fetch<string[]>(
-        `/orgs/${this.orgId}/crawlconfigs/tags`,
+      const { tags } = await this.api.fetch<WorkflowTags>(
+        `/orgs/${this.orgId}/crawlconfigs/tagCounts`,
       );
 
       this.fuse.setCollection(tags);
@@ -235,18 +238,18 @@ export class WorkflowTagFilter extends BtrixElement {
     `;
   }
 
-  private renderList(opts: { item: string }[]) {
-    const tag = (tag: string) => {
-      const checked = this.selected.get(tag) === true;
+  private renderList(opts: { item: WorkflowTag }[]) {
+    const tag = (tag: WorkflowTag) => {
+      const checked = this.selected.get(tag.tag) === true;
 
       return html`
         <li role="option" aria-checked=${checked}>
           <sl-checkbox
-            class="w-full part-[base]:w-full part-[base]:rounded part-[base]:p-2 part-[base]:hover:bg-primary-50 part-[base]:focus:bg-primary-50"
-            value=${tag}
+            class="w-full part-[label]:flex part-[base]:w-full part-[label]:w-full part-[label]:items-center part-[label]:justify-between part-[base]:rounded part-[base]:p-2 part-[base]:hover:bg-primary-50"
+            value=${tag.tag}
             ?checked=${checked}
-            tabindex="0"
-            >${tag}
+            >${tag.tag}
+            <btrix-badge pill variant="cyan">${tag.count}</btrix-badge>
           </sl-checkbox>
         </li>
       `;
@@ -263,36 +266,6 @@ export class WorkflowTagFilter extends BtrixElement {
           const { checked, value } = e.target as SlCheckbox;
 
           this.selected.set(value, checked);
-        }}
-        @keydown=${(e: KeyboardEvent) => {
-          if (!this.checkboxes.length) return;
-
-          // Enable focus trapping
-          const options = Array.from(this.checkboxes);
-          const focused = options.findIndex((opt) => opt.matches(":focus"));
-
-          switch (e.key) {
-            case "ArrowDown": {
-              e.preventDefault();
-              options[
-                focused === -1 || focused === options.length - 1
-                  ? 0
-                  : focused + 1
-              ].focus();
-              break;
-            }
-            case "ArrowUp": {
-              e.preventDefault();
-              options[
-                focused === -1 || focused === 0
-                  ? options.length - 1
-                  : focused - 1
-              ].focus();
-              break;
-            }
-            default:
-              break;
-          }
         }}
       >
         ${repeat(

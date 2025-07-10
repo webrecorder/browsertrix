@@ -96,6 +96,22 @@ def test_get_config_by_tag_1(admin_auth_headers, default_org_id):
     assert sorted(data) == ["tag-1", "tag-2", "wr-test-1", "wr-test-2"]
 
 
+def test_get_config_by_tag_counts_1(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/tagCounts",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    assert data == {
+        "tags": [
+            {"tag": "wr-test-2", "count": 2},
+            {"tag": "tag-1", "count": 1},
+            {"tag": "tag-2", "count": 1},
+            {"tag": "wr-test-1", "count": 1},
+        ]
+    }
+
+
 def test_create_new_config_2(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
@@ -128,6 +144,24 @@ def test_get_config_by_tag_2(admin_auth_headers, default_org_id):
         "wr-test-1",
         "wr-test-2",
     ]
+
+
+def test_get_config_by_tag_counts_2(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/tagCounts",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    assert data == {
+        "tags": [
+            {"tag": "wr-test-2", "count": 2},
+            {"tag": "tag-0", "count": 1},
+            {"tag": "tag-1", "count": 1},
+            {"tag": "tag-2", "count": 1},
+            {"tag": "tag-3", "count": 1},
+            {"tag": "wr-test-1", "count": 1},
+        ]
+    }
 
 
 def test_get_config_2(admin_auth_headers, default_org_id):

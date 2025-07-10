@@ -74,6 +74,8 @@ spec:
     {% else %}
       emptyDir: {}
     {% endif %}
+    - name: tmpdir
+      emptyDir: {}
     {% if proxy_id %}
     - name: proxies
       secret:
@@ -189,9 +191,8 @@ spec:
         - name: crawl-data
           mountPath: /crawls
 
-        - name: crawl-data
+        - name: tmpdir
           mountPath: /tmp
-          subPath: tmp
 
       envFrom:
         - configMapRef:

@@ -88,7 +88,11 @@ import {
   type WorkflowParams,
 } from "@/types/crawler";
 import type { UnderlyingFunction } from "@/types/utils";
-import { NewWorkflowOnlyScopeType } from "@/types/workflow";
+import {
+  NewWorkflowOnlyScopeType,
+  type WorkflowTag,
+  type WorkflowTags,
+} from "@/types/workflow";
 import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
@@ -258,7 +262,7 @@ export class WorkflowEditor extends BtrixElement {
   private showCrawlerChannels = false;
 
   @state()
-  private tagOptions: string[] = [];
+  private tagOptions: WorkflowTag[] = [];
 
   @state()
   private isSubmitting = false;
@@ -293,7 +297,8 @@ export class WorkflowEditor extends BtrixElement {
   });
 
   // For fuzzy search:
-  private readonly fuse = new Fuse<string>([], {
+  private readonly fuse = new Fuse<WorkflowTag>([], {
+    keys: ["tag"],
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
@@ -2532,8 +2537,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async fetchTags() {
     this.tagOptions = [];
     try {
-      const tags = await this.api.fetch<string[]>(
-        `/orgs/${this.orgId}/crawlconfigs/tags`,
+      const { tags } = await this.api.fetch<WorkflowTags>(
+        `/orgs/${this.orgId}/crawlconfigs/tagCounts`,
       );
 
       // Update search/filter collection
@@ -2635,12 +2640,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       : [];
     const primarySeed: Seed = {
       url: primarySeedUrl,
-      // the 'custom' scope here indicates we have extra URLs, actually set to 'prefix'
-      // scope on backend to ensure seed URL is also added as part of standard prefix scope
-      scopeType:
-        this.formState.scopeType === ScopeType.Custom
-          ? ScopeType.Prefix
-          : (this.formState.scopeType as ScopeType),
+      scopeType: this.formState.scopeType as ScopeType,
       include:
         this.formState.scopeType === ScopeType.Custom
           ? [...includeUrlList.map((url) => regexEscape(url))]
