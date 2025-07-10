@@ -6,7 +6,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 
 data:
-  APP_ORIGIN: {{ .Values.ingress.tls | ternary "https" "http" }}://{{ or .Values.ingress.host ( print "localhost:" ( .Values.local_service_port | default 9870 )) }}
+  APP_ORIGIN: {{ .Values.backend_alias | default (printf "%s://%s:%d" (.Values.ingress.tls | ternary "https" "http") (.Values.ingress.host | default "localhost") ( .Values.local_service_port | default 9870 ) ) }}
 
   CRAWLER_NAMESPACE: {{ .Values.crawler_namespace }}
 
