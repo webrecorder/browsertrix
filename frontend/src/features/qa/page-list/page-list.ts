@@ -10,6 +10,7 @@ import { type PageChangeEvent } from "@/components/ui/pagination";
 import { renderSpinner } from "@/pages/org/archived-item-qa/ui/spinner";
 import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import type { ArchivedItemQAPage } from "@/types/qa";
+import { pluralOf } from "@/utils/pluralize";
 
 export type SortDirection = "asc" | "desc";
 export type SortableFieldNames =
@@ -139,10 +140,10 @@ export class PageList extends BtrixElement {
                     >
                       ${total === this.totalPages
                         ? msg(
-                            str`Showing all ${this.localize.number(this.totalPages)} pages`,
+                            str`Showing all ${this.localize.number(this.totalPages)} ${pluralOf("pages", this.totalPages)}`,
                           )
                         : msg(
-                            str`Showing ${this.localize.number(total)} of ${this.localize.number(this.totalPages)} pages`,
+                            str`Showing ${this.localize.number(total)} of ${this.localize.number(this.totalPages)} ${pluralOf("pages", this.totalPages)}`,
                           )}
                     </div>
                   </div>
