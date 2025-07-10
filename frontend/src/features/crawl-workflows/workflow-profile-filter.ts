@@ -24,9 +24,10 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
 import { type APIPaginatedList } from "@/types/api";
 import { type Profile } from "@/types/crawler";
+import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
 
-const MAX_PROFILES_IN_LABEL = 5;
+const MAX_PROFILES_IN_LABEL = 3;
 
 export type BtrixChangeWorkflowProfileFilterEvent = BtrixChangeEvent<
   string[] | undefined
@@ -51,7 +52,7 @@ export class WorkflowProfileFilter extends BtrixElement {
   private readonly checkboxes!: NodeListOf<SlCheckbox>;
 
   private readonly fuse = new Fuse<Profile>([], {
-    keys: ["id", "name", "origins"],
+    keys: ["id", "name", "description", "origins"],
   });
 
   private selected = new Map<string, boolean>();
@@ -207,6 +208,7 @@ export class WorkflowProfileFilter extends BtrixElement {
             ),
           ]
         : profiles,
+      { type: "disjunction" },
     );
 
     return formatter2.map((part, index, array) =>
@@ -214,7 +216,11 @@ export class WorkflowProfileFilter extends BtrixElement {
         ? html`<span class="opacity-75">${part.value}</span>`
         : profiles.length > MAX_PROFILES_IN_LABEL && index === array.length - 1
           ? html`<span class="text-primary-500"> ${part.value} </span>`
-          : html`<span>${part.value}</span>`,
+          : html`<span class="inline-block max-w-48 truncate"
+              >${this.profilesTask.value?.find(
+                ({ item }) => item.id === part.value,
+              )?.item.name}</span
+            >`,
     );
   }
 
@@ -260,14 +266,70 @@ export class WorkflowProfileFilter extends BtrixElement {
       return html`
         <li role="option" aria-checked=${checked}>
           <sl-checkbox
-            class="w-full part-[label]:flex part-[base]:w-full part-[label]:w-full part-[label]:items-center part-[label]:justify-between part-[base]:rounded part-[base]:p-2 part-[base]:hover:bg-primary-50"
+            class="w-full part-[label]:grid part-[base]:w-full part-[label]:w-full part-[label]:items-center part-[label]:justify-between part-[label]:gap-2 part-[base]:rounded part-[base]:p-2 part-[base]:hover:bg-primary-50"
             value=${profile.id}
             ?checked=${checked}
-            >${profile.name}
+            ?disabled=${!profile.inUse}
+          >
+            <span class="inline-block min-w-0 max-w-72 truncate"
+              >${profile.name}</span
+            >
+            <btrix-format-date
+              class="col-start-2 ml-auto text-xs text-stone-600"
+              date=${profile.created}
+            ></btrix-format-date>
+            ${profile.inUse
+              ? profile.description
+                ? html`<div
+                    class="col-span-2 max-w-full truncate text-xs text-stone-600 contain-inline-size"
+                  >
+                    ${profile.description}
+                  </div>`
+                : html`<div
+                    class="col-span-2 min-w-0 max-w-full text-xs text-stone-400"
+                  >
+                    ${this.localize
+                      .list(
+                        profile.origins.length > MAX_PROFILES_IN_LABEL
+                          ? [
+                              ...profile.origins.slice(
+                                0,
+                                MAX_PROFILES_IN_LABEL,
+                              ),
+                              msg(
+                                str`${this.localize.number(profile.origins.length - MAX_PROFILES_IN_LABEL)} more`,
+                              ),
+                            ]
+                          : profile.origins,
+                      )
+                      .map((part) =>
+                        part.type === "literal"
+                          ? part.value
+                          : richText(part.value, {
+                              shortenOnly: true,
+                              linkClass:
+                                "text-stone-600 font-medium truncate inline-block max-w-full",
+                            }),
+                      )}
+                  </div>`
+              : html`<div class="col-span-2 text-xs">
+                  ${msg("Not in use")}
+                </div>`}
           </sl-checkbox>
         </li>
       `;
     };
+
+    // TODO for if/when we correctly handle `inUse` in the profile list endpoint
+
+    // const sortedProfiles = opts.sort(({ item: a }, { item: b }) =>
+    //   b.inUse === a.inUse ? 0 : b.inUse ? -1 : 1,
+    // );
+
+    // For now, we just hardcode `inUse` to be true
+    const sortedProfiles = opts.map(({ item }) => ({
+      item: { ...item, inUse: true },
+    }));
 
     return html`
       <ul
@@ -283,7 +345,7 @@ export class WorkflowProfileFilter extends BtrixElement {
         }}
       >
         ${repeat(
-          opts,
+          sortedProfiles,
           ({ item }) => item,
           ({ item }) => profile(item),
         )}
