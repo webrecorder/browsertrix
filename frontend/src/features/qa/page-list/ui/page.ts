@@ -137,7 +137,7 @@ export class QaPage extends TailwindElement {
     return html`
       <div class="py-1.5 text-sm text-gray-600">
         <div
-          class="relative z-20 ml-4 block flex-auto cursor-pointer select-none overflow-visible rounded border border-solid border-gray-300 bg-white px-4 py-2 pl-6 shadow-none outline-none transition-shadow  aria-selected:border-blue-500 aria-selected:bg-blue-50 aria-selected:shadow aria-selected:shadow-blue-800/20 aria-selected:transition-none"
+          class="relative z-20 ml-4 block flex-auto cursor-pointer select-none overflow-visible rounded border border-solid border-gray-300 bg-white px-4 py-2 pl-6 shadow-none outline-none transition-shadow  aria-selected:border-cyan-500 aria-selected:bg-cyan-50 aria-selected:shadow aria-selected:shadow-cyan-800/20 aria-selected:transition-none"
           @click=${this.select}
           tabindex="0"
           aria-selected=${this.selected}
@@ -161,7 +161,7 @@ export class QaPage extends TailwindElement {
               ${page.notes?.[0] &&
               html`<sl-icon
                 name="chat-square-text-fill"
-                class="text-blue-600"
+                class="text-cyan-600"
               ></sl-icon>`}
             </div>
           </btrix-popover>
@@ -169,7 +169,7 @@ export class QaPage extends TailwindElement {
             ${page.title ||
             html`<span class="opacity-50">${msg("No page title")}</span>`}
           </h5>
-          <div class="truncate text-xs leading-4 text-blue-600">
+          <div class="truncate text-xs leading-4 text-cyan-600">
             ${page.url}
           </div>
         </div>
