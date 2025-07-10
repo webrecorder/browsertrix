@@ -665,7 +665,7 @@ class CrawlOperator(BaseOperator):
         the following state transitions are supported:
 
         from starting to org concurrent crawl limit and back:
-         - starting -> waiting_org_capacity -> starting
+         - starting -> waiting_org_limit -> starting
 
         from starting to running:
          - starting -> running
