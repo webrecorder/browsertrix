@@ -84,6 +84,9 @@ export class PageList extends BtrixElement {
   @property({ type: String })
   qaRunId?: string;
 
+  @property({ type: Boolean })
+  analyzed?: boolean;
+
   @property({ type: String })
   itemPageId?: string;
 
@@ -131,7 +134,7 @@ export class PageList extends BtrixElement {
       <div
         class="z-40 mb-1 flex flex-wrap items-center gap-2 rounded-lg border bg-neutral-50 p-2"
       >
-        ${when(this.qaRunId, () => this.renderSortControl())}
+        ${when(this.qaRunId && this.analyzed, () => this.renderSortControl())}
         ${this.renderFilterControl()}
       </div>
       <div
