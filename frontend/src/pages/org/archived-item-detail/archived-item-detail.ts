@@ -104,6 +104,9 @@ export class ArchivedItemDetail extends BtrixElement {
   @state()
   mostRecentNonFailedQARun?: QARun;
 
+  @state()
+  private mostRecentSuccessQARun?: QARun;
+
   @query("#stopQARunDialog")
   private readonly stopQARunDialog?: Dialog | null;
 
@@ -137,7 +140,7 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private get reviewUrl(): string {
-    return `${new URL(window.location.href).pathname}/review/screenshots?qaRunId=${this.qaRunId || ""}`;
+    return `${new URL(window.location.href).pathname}/review/screenshots${this.mostRecentSuccessQARun ? `?qaRunId=${this.mostRecentSuccessQARun.id}` : ""}`;
   }
 
   private timerId?: number;
@@ -186,15 +189,19 @@ export class ArchivedItemDetail extends BtrixElement {
       this.mostRecentNonFailedQARun = this.qaRuns?.find((run) =>
         isNotFailed(run),
       );
+      this.mostRecentSuccessQARun = this.qaRuns?.find((run) =>
+        isSuccessfullyFinished(run),
+      );
     }
     if (
       (changedProperties.has("qaRuns") ||
         changedProperties.has("mostRecentNonFailedQARun")) &&
-      this.qaRuns &&
-      this.mostRecentNonFailedQARun?.id
+      this.qaRuns
     ) {
       if (!this.qaRunId) {
-        this.qaRunId = this.mostRecentNonFailedQARun.id;
+        this.qaRunId = this.qaRuns.find((run) =>
+          isSuccessfullyFinished(run),
+        )?.id;
       }
     }
 
@@ -304,6 +311,7 @@ export class ArchivedItemDetail extends BtrixElement {
               .qaRuns=${this.qaRuns}
               .qaRunId=${this.qaRunId}
               .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
+              .mostRecentSuccessQARun=${this.mostRecentSuccessQARun}
               @btrix-qa-runs-update=${() => void this.fetchQARuns()}
             ></btrix-archived-item-detail-qa>
           `,

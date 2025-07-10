@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import type { SlRequestCloseEvent, SlTextarea } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { merge } from "immutable";
@@ -47,9 +48,11 @@ import {
   type finishedCrawlStates,
 } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
+import { isArchivingDisabled } from "@/utils/orgs";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { tw } from "@/utils/tailwind";
 
+const POLL_INTERVAL_SECONDS = 10;
 const DEFAULT_PAGE_SIZE = 100;
 
 const styles = unsafeCSS(stylesheet);
@@ -111,9 +114,9 @@ export class ArchivedItemQA extends BtrixElement {
   private item?: ArchivedItem;
 
   @state()
-  finishedQARuns:
-    | (QARun & { state: (typeof finishedCrawlStates)[number] })[]
-    | undefined = [];
+  notFailedQaRuns?: (QARun & {
+    state: (typeof finishedCrawlStates)[number];
+  })[];
 
   @state()
   private pages?: APIPaginatedList<QATypes.Page>;
@@ -180,6 +183,38 @@ export class ArchivedItemQA extends BtrixElement {
   @query('sl-textarea[name="pageComment"]')
   private readonly commentTextarea?: SlTextarea | null;
 
+  private get noRuns() {
+    return this.notFailedQaRuns && !this.notFailedQaRuns.length;
+  }
+
+  private get selectedRun() {
+    if (!this.qaRunId) return;
+
+    return this.notFailedQaRuns?.find(({ id }) => id === this.qaRunId);
+  }
+
+  private get analyzed() {
+    return this.selectedRun && !isActive(this.selectedRun);
+  }
+
+  private readonly pollTask = new Task(this, {
+    task: async ([qaRuns]) => {
+      if (!qaRuns) return;
+
+      const anyActive = qaRuns.some(isActive);
+
+      if (!anyActive) {
+        window.clearTimeout(this.pollTask.value);
+        return;
+      }
+
+      return window.setTimeout(() => {
+        void this.fetchQARuns();
+      }, POLL_INTERVAL_SECONDS * 1000);
+    },
+    args: () => [this.notFailedQaRuns] as const,
+  });
+
   connectedCallback(): void {
     super.connectedCallback();
 
@@ -197,6 +232,8 @@ export class ArchivedItemQA extends BtrixElement {
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
+
+    window.clearTimeout(this.pollTask.value);
 
     if (this.crawlData?.blobUrl) URL.revokeObjectURL(this.crawlData.blobUrl);
     if (this.qaData?.blobUrl) URL.revokeObjectURL(this.qaData.blobUrl);
@@ -313,7 +350,7 @@ export class ArchivedItemQA extends BtrixElement {
       await this.fetchPages({ page: 1 });
     }
 
-    const firstQARun = this.finishedQARuns?.[0];
+    const firstQARun = this.notFailedQaRuns?.[0];
     const firstPage = this.pages?.items[0];
 
     if (!this.qaRunId && firstQARun) {
@@ -380,71 +417,39 @@ export class ArchivedItemQA extends BtrixElement {
     const searchParams = new URLSearchParams(window.location.search);
     const itemName = this.item ? renderName(this.item) : nothing;
     const [prevPage, currentPage, nextPage] = this.getPageListSliceByCurrent();
-    const currentQARun = this.finishedQARuns?.find(
-      ({ id }) => id === this.qaRunId,
-    );
-    const disableReview = currentQARun && isActive(currentQARun);
 
     return html`
       ${this.renderHidden()}
 
-      <div class="flex items-center">
-        ${this.renderBackLink()}
-      </div>
+      <div class="flex items-center">${this.renderBackLink()}</div>
 
-      <article class="qa-grid min-h-screen grid gap-x-6 gap-y-0 lg:snap-start">
+      <article class="qa-grid grid min-h-screen gap-x-6 gap-y-0 lg:snap-start">
         <header
           class="grid--header flex flex-wrap items-center justify-between gap-1 border-b py-2"
         >
           <div class="flex items-center gap-2 overflow-hidden">
             <h1
-              class="flex gap-1 flex-1 flex-shrink-0 min-w-32 truncate text-base font-semibold leading-tight"
+              class="flex min-w-32 flex-1 flex-shrink-0 gap-1 truncate text-base font-semibold leading-tight"
             >
               ${msg("Review")} ${itemName}
             </h1>
-            ${when(
-              this.finishedQARuns,
-              (qaRuns) => html`
-                <sl-tooltip content=${msg("Select Analysis Run")}>
-                  <btrix-qa-run-dropdown
-                    .items=${qaRuns}
-                    selectedId=${this.qaRunId || ""}
-                    @btrix-select=${(e: CustomEvent<SelectDetail>) => {
-                      const params = new URLSearchParams(searchParams);
-                      params.set("qaRunId", e.detail.item.id);
-                      this.navigate.to(
-                        `${window.location.pathname}?${params.toString()}`,
-                      );
-                    }}
-                  ></btrix-qa-run-dropdown>
-                </sl-tooltip>
-              `,
-            )}
           </div>
           <div class="ml-auto flex">
             <sl-button
               size="small"
               variant="text"
-              href=${this.backUrl}
+              href="${crawlBaseUrl}#qa"
               @click=${this.navigate.link}
               >${msg("Exit Review")}</sl-button
             >
-            <sl-tooltip
-              content=${msg(
-                "Reviews are temporarily disabled during analysis runs.",
-              )}
-              ?disabled=${!disableReview}
+            <sl-button
+              variant="success"
+              size="small"
+              @click=${() => void this.reviewDialog?.show()}
             >
-              <sl-button
-                variant="success"
-                size="small"
-                @click=${() => void this.reviewDialog?.show()}
-                ?disabled=${disableReview}
-              >
-                <sl-icon slot="prefix" name="patch-check"> </sl-icon>
-                ${msg("Finish Review")}
-              </sl-button>
-            </sl-tooltip>
+              <sl-icon slot="prefix" name="patch-check"> </sl-icon>
+              ${msg("Finish Review")}
+            </sl-button>
           </div>
         </header>
 
@@ -452,13 +457,11 @@ export class ArchivedItemQA extends BtrixElement {
           class="grid--pageToolbar flex flex-wrap items-center justify-stretch gap-2 overflow-hidden border-b py-2 @container"
         >
           <h3
-            class="flex-auto flex-shrink-0 flex-grow basis-32 truncate text-base font-semibold text-neutral-700"
+            class="flex-auto flex-shrink-0 flex-grow basis-32 truncate font-semibold text-neutral-700"
             title="${this.page?.title ?? ""}"
           >
-          ${
-            this.page?.title ||
-            html`<span class="opacity-50">${msg("No page title")}</span>`
-          }
+            ${this.page?.title ||
+            html`<span class="opacity-50">${msg("No page title")}</span>`}
           </h3>
           <div
             class="ml-auto flex flex-grow basis-auto flex-wrap justify-between gap-2 @lg:flex-grow-0"
@@ -472,27 +475,18 @@ export class ArchivedItemQA extends BtrixElement {
               <sl-icon slot="prefix" name="arrow-left"></sl-icon>
               ${msg("Previous Page")}
             </sl-button>
-            <sl-tooltip
-              content=${msg(
-                "Approvals are temporarily disabled during analysis runs.",
-              )}
-              ?disabled=${!disableReview}
-              class="order-3 mx-auto flex w-full justify-center @lg:order-2 @lg:mx-0 @lg:w-auto"
-            >
-              <btrix-page-qa-approval
-                .itemId=${this.itemId}
-                .pageId=${this.itemPageId}
-                .page=${this.page}
-                ?disabled=${disableReview}
-                @btrix-show-comments=${() => void this.commentDialog?.show()}
-                @btrix-update-page-approval=${this.onUpdatePageApproval}
-              ></btrix-page-qa-approval>
-            </sl-tooltip>
+            <btrix-page-qa-approval
+              class="order-3 mx-auto @lg:order-2 @lg:mx-0 @lg:w-auto"
+              .itemId=${this.itemId}
+              .pageId=${this.itemPageId}
+              .page=${this.page}
+              @btrix-show-comments=${() => void this.commentDialog?.show()}
+              @btrix-update-page-approval=${this.onUpdatePageApproval}
+            ></btrix-page-qa-approval>
             <sl-button
-              variant="primary"
+              variant=${nextPage && !this.noRuns ? "primary" : "default"}
               size="small"
               ?disabled=${!nextPage}
-              outline
               @click=${this.navNextPage}
               class="order-2 @lg:order-3"
             >
@@ -505,7 +499,7 @@ export class ArchivedItemQA extends BtrixElement {
         <div class="grid--tabGroup flex min-w-0 flex-col">
           <nav
             aria-label="${msg("Page heuristics")}"
-            class="-mx-3 my-0 flex gap-2 items-center overflow-x-auto px-3 py-2 lg:mx-0 lg:px-0"
+            class="-mx-3 my-0 flex items-center gap-2 overflow-x-auto px-3 py-2 lg:mx-0 lg:px-0"
           >
             <btrix-navigation-button
               id="screenshot-tab"
@@ -515,10 +509,14 @@ export class ArchivedItemQA extends BtrixElement {
             >
               <sl-icon name="images"></sl-icon>
               ${msg("Screenshot")}
-              ${when(this.page || currentPage, (page) => (isQaPage(page) ? renderSeverityBadge(page.qa.screenshotMatch) : nothing))}
+              ${when(this.page || currentPage, (page) =>
+                isQaPage(page)
+                  ? renderSeverityBadge(page.qa.screenshotMatch)
+                  : nothing,
+              )}
             </btrix-navigation-button>
             ${when(
-              this.qaRunId,
+              this.analyzed,
               () => html`
                 <btrix-navigation-button
                   id="text-tab"
@@ -555,21 +553,44 @@ export class ArchivedItemQA extends BtrixElement {
               ${msg("Replay")}
             </btrix-navigation-button>
             ${when(
-              this.finishedQARuns && !this.finishedQARuns.length,
+              this.noRuns,
               () => html`
-                <btrix-popover
-                  content=${msg(
-                    "Screenshot, text, and resource comparison views are only available for analyzed crawls. Run QA analysis from the crawl detail page to enable comparisons.",
-                  )}
+                <sl-button
+                  class="ml-auto"
+                  size="small"
+                  variant="primary"
+                  @click=${() => void this.startQARun()}
+                  ?disabled=${isArchivingDisabled(this.org, true)}
                 >
-                  <div
-                    class="ml-auto flex items-center gap-1.5 text-xs text-neutral-500"
-                  >
-                    ${msg("Comparison views unavailable")}
-                    <sl-icon class="text-sm" name="info-circle"></sl-icon>
-                  </div>
-                </btrix-popover>
+                  <sl-icon
+                    slot="prefix"
+                    name="microscope"
+                    library="app"
+                  ></sl-icon>
+                  ${msg("Run Analysis")}
+                </sl-button>
               `,
+              () =>
+                when(
+                  this.notFailedQaRuns,
+                  (qaRuns) => html`
+                    <btrix-qa-run-dropdown
+                      class="ml-auto"
+                      .items=${qaRuns}
+                      crawlId=${this.itemId || ""}
+                      selectedId=${this.qaRunId || ""}
+                      @btrix-select=${(e: CustomEvent<SelectDetail>) => {
+                        const params = new URLSearchParams(searchParams);
+                        params.set("qaRunId", e.detail.item.id);
+                        this.navigate.to(
+                          `${window.location.pathname}?${params.toString()}`,
+                          undefined,
+                          false,
+                        );
+                      }}
+                    ></btrix-qa-run-dropdown>
+                  `,
+                ),
             )}
           </nav>
           ${this.renderPanelToolbar()} ${this.renderPanel()}
@@ -586,6 +607,7 @@ export class ArchivedItemQA extends BtrixElement {
           <btrix-qa-page-list
             class="flex flex-col lg:contain-size"
             .qaRunId=${this.qaRunId}
+            ?analyzed=${this.analyzed}
             .itemPageId=${this.itemPageId}
             .pages=${this.pages}
             .orderBy=${{
@@ -624,12 +646,9 @@ export class ArchivedItemQA extends BtrixElement {
         </section>
       </article>
 
-      <btrix-dialog
-        class="commentDialog"
-        label=${msg("Page Comments")}
-      >
+      <btrix-dialog class="commentDialog" label=${msg("Page Comments")}>
         ${this.renderComments()}
-        </p>
+
         <sl-button
           slot="footer"
           size="small"
@@ -955,13 +974,11 @@ export class ArchivedItemQA extends BtrixElement {
   }
 
   private renderPanel() {
-    const hasFinishedQaRun = this.finishedQARuns?.length;
-
     // cache DOM for faster switching between tabs
     const choosePanel = () => {
       switch (this.tab) {
         case "screenshots":
-          return hasFinishedQaRun
+          return this.analyzed
             ? renderScreenshots(this.crawlData, this.qaData, this.splitView)
             : html`<div
                 class="aspect-video flex-1 overflow-hidden rounded-lg border bg-slate-50"
@@ -1242,9 +1259,15 @@ export class ArchivedItemQA extends BtrixElement {
 
   private async fetchQARuns(): Promise<void> {
     try {
-      this.finishedQARuns = (await this.getQARuns()).filter((qaRun) =>
-        isSuccessfullyFinished(qaRun),
-      ) as ArchivedItemQA["finishedQARuns"];
+      this.notFailedQaRuns = (await this.getQARuns()).filter(
+        (qaRun) => isSuccessfullyFinished(qaRun) || isActive(qaRun),
+      ) as ArchivedItemQA["notFailedQaRuns"];
+
+      const latestRun = this.notFailedQaRuns?.[0];
+
+      if (latestRun && !this.qaRunId && !isActive(latestRun)) {
+        this.qaRunId = latestRun.id;
+      }
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve analysis runs at this time."),
@@ -1257,7 +1280,7 @@ export class ArchivedItemQA extends BtrixElement {
 
   private async getQARuns(): Promise<QARun[]> {
     return this.api.fetch<QARun[]>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}/qa?skipFailed=true`,
+      `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
     );
   }
 
@@ -1491,7 +1514,7 @@ export class ArchivedItemQA extends BtrixElement {
 
   private async getPage(pageId: string): Promise<ArchivedItemQAPage> {
     return this.api.fetch<ArchivedItemQAPage>(
-      this.qaRunId
+      this.analyzed
         ? `/orgs/${this.orgId}/crawls/${this.itemId}/qa/${this.qaRunId}/pages/${pageId}`
         : `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
     );
@@ -1502,7 +1525,10 @@ export class ArchivedItemQA extends BtrixElement {
       this.pages = await this.getPages({
         page: params?.page ?? this.pages?.page ?? 1,
         pageSize: params?.pageSize ?? this.pages?.pageSize ?? DEFAULT_PAGE_SIZE,
-        ...this.sortPagesBy,
+        ...(this.analyzed
+          ? this.sortPagesBy
+          : // The non-QA /pages endpoint doesn't support sorting
+            {}),
       });
     } catch {
       this.notify.toast({
@@ -1520,12 +1546,7 @@ export class ArchivedItemQA extends BtrixElement {
     const query = queryString.stringify(
       {
         ...this.filterPagesBy,
-        ...(this.qaRunId
-          ? params
-          : {
-              page: params?.page,
-              pageSize: params?.pageSize,
-            }),
+        ...params,
       },
       {
         arrayFormat: "comma",
@@ -1533,7 +1554,7 @@ export class ArchivedItemQA extends BtrixElement {
     );
 
     return this.api.fetch<APIPaginatedList<QATypes.Page>>(
-      `/orgs/${this.orgId}/crawls/${this.itemId ?? ""}${this.qaRunId ? `/qa/${this.qaRunId}` : ""}/pages?${query}`,
+      `/orgs/${this.orgId}/crawls/${this.itemId ?? ""}${this.qaRunId && this.analyzed ? `/qa/${this.qaRunId}` : ""}/pages?${query}`,
     );
   }
 
@@ -1578,6 +1599,41 @@ export class ArchivedItemQA extends BtrixElement {
         variant: "danger",
         icon: "exclamation-octagon",
         id: "qa-review-status",
+      });
+    }
+  }
+
+  private async startQARun() {
+    try {
+      await this.api.fetch<{ started: string }>(
+        `/orgs/${this.orgId}/crawls/${this.itemId}/qa/start`,
+        {
+          method: "POST",
+        },
+      );
+
+      void this.fetchQARuns();
+
+      this.notify.toast({
+        message: msg("Starting QA analysis..."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "qa-start-status",
+      });
+    } catch (e: unknown) {
+      let message = msg("Sorry, couldn't start QA run at this time.");
+      if (e instanceof Error && e.message === "qa_not_supported_for_crawl") {
+        message = msg(
+          "Sorry, QA analysis is not supported for this crawl as it was run with an older crawler version. Please run a new crawl with the latest crawler and QA should be available.",
+        );
+      }
+      console.debug(e);
+
+      this.notify.toast({
+        message,
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "qa-start-status",
       });
     }
   }
