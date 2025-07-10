@@ -36,7 +36,7 @@ const config: StorybookConfig = {
               path.resolve(__dirname, "../src"),
               path.resolve(
                 __dirname,
-                "../node_modules/@shoelace-style/shoelace",
+                "../../node_modules/@shoelace-style/shoelace",
               ),
             ],
             exclude: /\.stylesheet\.css$/,

@@ -3,6 +3,7 @@
   "version": "1.17.2",
   "main": "index.ts",
   "license": "AGPL-3.0-or-later",
+  "private": true,
   "dependencies": {
     "@cheap-glitch/mi-cron": "^1.0.1",
     "@formatjs/intl-durationformat": "^0.6.4",
@@ -98,7 +99,7 @@
   },
   "scripts": {
     "prepare": "cd .. && husky install frontend/.husky",
-    "postinstall": "del-cli ./node_modules/.cache/webpack",
+    "postinstall": "del-cli ../node_modules/.cache/webpack",
     "test": "web-test-runner \"src/**/*.test.{ts,js}\"",
     "prebuild": "del-cli ./dist",
     "build": "webpack --config webpack.prod.js",

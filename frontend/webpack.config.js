@@ -61,8 +61,8 @@ const commitHash =
   execCommand("git rev-parse --short HEAD", "unknown");
 
 const shoelaceAssetsSrcPath = path.resolve(
-  __dirname,
-  "node_modules/@shoelace-style/shoelace/dist/assets",
+__dirname,
+  "../node_modules/@shoelace-style/shoelace/dist/assets",
 );
 const shoelaceAssetsPublicPath = "shoelace/assets";
 
@@ -152,7 +152,7 @@ const main = {
         test: /\.css$/,
         include: [
           path.resolve(__dirname, "src"),
-          path.resolve(__dirname, "node_modules/@shoelace-style/shoelace"),
+          path.resolve(__dirname, "../node_modules/@shoelace-style/shoelace"),
         ],
         exclude: /\.stylesheet\.css$/,
         use: [
@@ -278,7 +278,7 @@ const main = {
 
 /** @type {import('webpack').Configuration} */
 const vnc = {
-  entry: "./node_modules/@novnc/novnc/core/rfb.js",
+  entry: "../node_modules/@novnc/novnc/core/rfb.js",
   experiments: { outputModule: true },
   output: {
     filename: "js/novnc.js",
