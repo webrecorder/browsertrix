@@ -162,6 +162,10 @@ backend_avg_cpu_threshold: 80
 # scale up if avg memory utilization exceeds
 backend_avg_memory_threshold: 95
 
+# if not using the builtin ingress, set this to the hostname that
+# the backend will be available at
+# backend_alias: "http://browsertrix-cloud-backend"
+
 # Nginx Image
 # =========================================
 frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.17.2"
