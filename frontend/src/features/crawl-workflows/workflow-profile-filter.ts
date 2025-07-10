@@ -17,27 +17,29 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import queryString from "query-string";
 import { isFocusable } from "tabbable";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
-import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
+import { type APIPaginatedList } from "@/types/api";
+import { type Profile } from "@/types/crawler";
 import { tw } from "@/utils/tailwind";
 
-const MAX_TAGS_IN_LABEL = 5;
+const MAX_PROFILES_IN_LABEL = 5;
 
-export type BtrixChangeWorkflowTagFilterEvent = BtrixChangeEvent<
+export type BtrixChangeWorkflowProfileFilterEvent = BtrixChangeEvent<
   string[] | undefined
 >;
 
 /**
  * @fires btrix-change
  */
-@customElement("btrix-workflow-tag-filter")
+@customElement("btrix-workflow-profile-filter")
 @localized()
-export class WorkflowTagFilter extends BtrixElement {
+export class WorkflowProfileFilter extends BtrixElement {
   @property({ type: Array })
-  tags?: string[];
+  profiles?: string[];
 
   @state()
   private searchString = "";
@@ -48,32 +50,41 @@ export class WorkflowTagFilter extends BtrixElement {
   @queryAll("sl-checkbox")
   private readonly checkboxes!: NodeListOf<SlCheckbox>;
 
-  private readonly fuse = new Fuse<WorkflowTag>([], {
-    keys: ["tag"],
+  private readonly fuse = new Fuse<Profile>([], {
+    keys: ["id", "name", "origins"],
   });
 
   private selected = new Map<string, boolean>();
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("tags")) {
-      if (this.tags) {
-        this.selected = new Map(this.tags.map((tag) => [tag, true]));
-      } else if (changedProperties.get("tags")) {
+    if (changedProperties.has("profiles")) {
+      if (this.profiles) {
+        this.selected = new Map(this.profiles.map((tag) => [tag, true]));
+      } else if (changedProperties.get("profiles")) {
         this.selected = new Map();
       }
     }
   }
 
-  private readonly orgTagsTask = new Task(this, {
+  private readonly profilesTask = new Task(this, {
     task: async () => {
-      const { tags } = await this.api.fetch<WorkflowTags>(
-        `/orgs/${this.orgId}/crawlconfigs/tagCounts`,
+      const query = queryString.stringify(
+        {
+          pageSize: 1000,
+          page: 1,
+        },
+        {
+          arrayFormat: "comma",
+        },
+      );
+      const { items } = await this.api.fetch<APIPaginatedList<Profile>>(
+        `/orgs/${this.orgId}/profiles?${query}`,
       );
 
-      this.fuse.setCollection(tags);
+      this.fuse.setCollection(items);
 
       // Match fuse shape
-      return tags.map((item) => ({ item }));
+      return items.map((item) => ({ item }));
     },
     args: () => [] as const,
   });
@@ -81,7 +92,7 @@ export class WorkflowTagFilter extends BtrixElement {
   render() {
     return html`
       <btrix-filter-chip
-        ?checked=${!!this.tags?.length}
+        ?checked=${!!this.profiles?.length}
         selectFromDropdown
         stayOpenOnChange
         @sl-after-show=${() => {
@@ -92,25 +103,27 @@ export class WorkflowTagFilter extends BtrixElement {
         @sl-after-hide=${() => {
           this.searchString = "";
 
-          const selectedTags = [];
+          const selectedProfiles = [];
 
-          for (const [tag, value] of this.selected) {
+          for (const [profile, value] of this.selected) {
             if (value) {
-              selectedTags.push(tag);
+              selectedProfiles.push(profile);
             }
           }
 
           this.dispatchEvent(
             new CustomEvent<BtrixChangeEvent["detail"]>("btrix-change", {
-              detail: { value: selectedTags.length ? selectedTags : undefined },
+              detail: {
+                value: selectedProfiles.length ? selectedProfiles : undefined,
+              },
             }),
           );
         }}
       >
-        ${this.tags?.length
-          ? html`<span class="opacity-75">${msg("Tagged")}</span>
-              ${this.renderTagsInLabel(this.tags)}`
-          : msg("Tags")}
+        ${this.profiles?.length
+          ? html`<span class="opacity-75">${msg("Profiles")}</span>
+              ${this.renderProfilesInLabel(this.profiles)}`
+          : msg("Browser Profile")}
 
         <div
           slot="dropdown-content"
@@ -118,7 +131,7 @@ export class WorkflowTagFilter extends BtrixElement {
         >
           <header
             class=${clsx(
-              this.orgTagsTask.value && tw`border-b`,
+              this.profilesTask.value && tw`border-b`,
               tw`flex-shrink-0 flex-grow-0 overflow-hidden rounded-t bg-white pb-3`,
             )}
           >
@@ -126,12 +139,12 @@ export class WorkflowTagFilter extends BtrixElement {
               class="min-h-[var(--sl-input-height-small)] part-[base]:flex part-[base]:items-center part-[base]:justify-between part-[base]:gap-4 part-[base]:px-3"
             >
               <div
-                id="tag-list-label"
+                id="profile-list-label"
                 class="leading-[var(--sl-input-height-small)]"
               >
-                ${msg("Filter by Tags")}
+                ${msg("Filter by Browser Profile")}
               </div>
-              ${this.tags?.length
+              ${this.profiles?.length
                 ? html`<sl-button
                     variant="text"
                     size="small"
@@ -160,11 +173,11 @@ export class WorkflowTagFilter extends BtrixElement {
             <div class="px-3">${this.renderSearch()}</div>
           </header>
 
-          ${this.orgTagsTask.render({
-            complete: (tags) => {
-              let options = tags;
+          ${this.profilesTask.render({
+            complete: (profiles) => {
+              let options = profiles;
 
-              if (tags.length && this.searchString) {
+              if (profiles.length && this.searchString) {
                 options = this.fuse.search(this.searchString);
               }
 
@@ -174,8 +187,8 @@ export class WorkflowTagFilter extends BtrixElement {
 
               return html`<div class="p-3 text-neutral-500">
                 ${this.searchString
-                  ? msg("No matching tags found.")
-                  : msg("No tags found.")}
+                  ? msg("No matching profiles found.")
+                  : msg("No profiles found.")}
               </div>`;
             },
           })}
@@ -184,22 +197,22 @@ export class WorkflowTagFilter extends BtrixElement {
     `;
   }
 
-  private renderTagsInLabel(tags: string[]) {
+  private renderProfilesInLabel(profiles: string[]) {
     const formatter2 = this.localize.list(
-      tags.length > MAX_TAGS_IN_LABEL
+      profiles.length > MAX_PROFILES_IN_LABEL
         ? [
-            ...tags.slice(0, MAX_TAGS_IN_LABEL),
+            ...profiles.slice(0, MAX_PROFILES_IN_LABEL),
             msg(
-              str`${this.localize.number(tags.length - MAX_TAGS_IN_LABEL)} more`,
+              str`${this.localize.number(profiles.length - MAX_PROFILES_IN_LABEL)} more`,
             ),
           ]
-        : tags,
+        : profiles,
     );
 
     return formatter2.map((part, index, array) =>
       part.type === "literal"
         ? html`<span class="opacity-75">${part.value}</span>`
-        : tags.length > MAX_TAGS_IN_LABEL && index === array.length - 1
+        : profiles.length > MAX_PROFILES_IN_LABEL && index === array.length - 1
           ? html`<span class="text-primary-500"> ${part.value} </span>`
           : html`<span>${part.value}</span>`,
     );
@@ -207,19 +220,21 @@ export class WorkflowTagFilter extends BtrixElement {
 
   private renderSearch() {
     return html`
-      <label for="tag-search" class="sr-only">${msg("Filter tags")}</label>
+      <label for="profile-search" class="sr-only"
+        >${msg("Filter profiles")}</label
+      >
       <sl-input
         class="min-w-[30ch]"
-        id="tag-search"
+        id="profile-search"
         role="combobox"
         aria-autocomplete="list"
         aria-expanded="true"
-        aria-controls="tag-listbox"
-        aria-activedescendant="tag-selected-option"
+        aria-controls="profile-listbox"
+        aria-activedescendant="profile-selected-option"
         value=${this.searchString}
-        placeholder=${msg("Search for tag")}
+        placeholder=${msg("Search for profile")}
         size="small"
-        ?disabled=${!this.orgTagsTask.value?.length}
+        ?disabled=${!this.profilesTask.value?.length}
         @sl-input=${(e: SlInputEvent) =>
           (this.searchString = (e.target as SlInput).value)}
         @keydown=${(e: KeyboardEvent) => {
@@ -230,7 +245,7 @@ export class WorkflowTagFilter extends BtrixElement {
           }
         }}
       >
-        ${this.orgTagsTask.render({
+        ${this.profilesTask.render({
           pending: () => html`<sl-spinner slot="prefix"></sl-spinner>`,
           complete: () => html`<sl-icon slot="prefix" name="search"></sl-icon>`,
         })}
@@ -238,18 +253,17 @@ export class WorkflowTagFilter extends BtrixElement {
     `;
   }
 
-  private renderList(opts: { item: WorkflowTag }[]) {
-    const tag = (tag: WorkflowTag) => {
-      const checked = this.selected.get(tag.tag) === true;
+  private renderList(opts: { item: Profile }[]) {
+    const profile = (profile: Profile) => {
+      const checked = this.selected.get(profile.id) === true;
 
       return html`
         <li role="option" aria-checked=${checked}>
           <sl-checkbox
             class="w-full part-[label]:flex part-[base]:w-full part-[label]:w-full part-[label]:items-center part-[label]:justify-between part-[base]:rounded part-[base]:p-2 part-[base]:hover:bg-primary-50"
-            value=${tag.tag}
+            value=${profile.id}
             ?checked=${checked}
-            >${tag.tag}
-            <btrix-badge pill variant="cyan">${tag.count}</btrix-badge>
+            >${profile.name}
           </sl-checkbox>
         </li>
       `;
@@ -257,10 +271,10 @@ export class WorkflowTagFilter extends BtrixElement {
 
     return html`
       <ul
-        id="tag-listbox"
+        id="profile-listbox"
         class="flex-1 overflow-auto p-1"
         role="listbox"
-        aria-labelledby="tag-list-label"
+        aria-labelledby="profile-list-label"
         aria-multiselectable="true"
         @sl-change=${async (e: SlChangeEvent) => {
           const { checked, value } = e.target as SlCheckbox;
@@ -271,7 +285,7 @@ export class WorkflowTagFilter extends BtrixElement {
         ${repeat(
           opts,
           ({ item }) => item,
-          ({ item }) => tag(item),
+          ({ item }) => profile(item),
         )}
       </ul>
     `;
