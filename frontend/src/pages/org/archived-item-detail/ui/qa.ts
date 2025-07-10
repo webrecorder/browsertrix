@@ -101,6 +101,9 @@ export class ArchivedItemDetailQA extends BtrixElement {
   @property({ attribute: false })
   mostRecentNonFailedQARun?: QARun;
 
+  @property({ attribute: false })
+  mostRecentSuccessQARun?: QARun;
+
   @state()
   private pages?: APIPaginatedList<ArchivedItemPage>;
 
@@ -643,7 +646,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
     const remainingPageCount = pageCount - analyzedPageCount;
     const remainderBarLabel = qaIsRunning ? msg("Pending") : msg("Incomplete");
 
-    console.log({ pageCount, barData, analyzedPageCount });
     return html`
       <btrix-meter class="flex-1" value=${analyzedPageCount} max=${pageCount}>
         ${barData.map((bar) => {
@@ -782,7 +784,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                   rowClickTarget="a"
                 >
                   <a
-                    href=${`${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.crawlId}/review/screenshots?qaRunId=${this.qaRunId || ""}&itemPageId=${page.id}`}
+                    href=${`${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.crawlId}/review/screenshots?qaRunId=${this.mostRecentSuccessQARun?.id || ""}&itemPageId=${page.id}`}
                     title=${msg(str`Review "${page.title ?? page.url}"`)}
                     @click=${this.navigate.link}
                   >
