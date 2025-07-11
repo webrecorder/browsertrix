@@ -15,54 +15,9 @@ def get_sample_crawl_data(tags):
     }
 
 
-def test_get_configs_filter_single_tag(admin_auth_headers, default_org_id):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
-        headers=admin_auth_headers,
-        params={"tag": "tag-1"},
-    )
-    assert r.status_code == 200
-    data = r.json()
-
-    # Should find at least one config with this tag
-    assert data["total"] >= 1
-    found_config = False
-    for config in data["items"]:
-        assert "tag-1" in config["tags"]
-        found_config = True
-    assert found_config
-    assert data["items"][0]["id"] == new_cid_1
-
-
-def test_get_configs_filter_multiple_tags_or(admin_auth_headers, default_org_id):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
-        headers=admin_auth_headers,
-        params={"tag": ["tag-1", "tag-3"], "tagMatch": "or"},
-    )
-    assert r.status_code == 200
-    data = r.json()
-
-    assert len(data["items"]) == 2
-    assert {item["id"] for item in data["items"]} == {new_cid_1, new_cid_2}
-
-
-def test_get_configs_filter_multiple_tags_and(admin_auth_headers, default_org_id):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
-        headers=admin_auth_headers,
-        params={"tag": ["tag-1", "tag-2"], "tagMatch": "and"},
-    )
-    assert r.status_code == 200
-    data = r.json()
-
-    assert len(data["items"]) == 1
-    assert data["items"][0]["id"] == new_cid_1
-
-
 def test_create_new_config_1(admin_auth_headers, default_org_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
         json=get_sample_crawl_data(["tag-1", "tag-2"]),
     )
@@ -113,7 +68,7 @@ def test_get_config_by_tag_counts_1(admin_auth_headers, default_org_id):
 
 def test_create_new_config_2(admin_auth_headers, default_org_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
         json=get_sample_crawl_data(["tag-3", "tag-0"]),
     )
@@ -169,3 +124,48 @@ def test_get_config_2(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
     )
     assert r.json()["tags"] == ["tag-3", "tag-0"]
+
+
+def test_get_configs_filter_single_tag(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
+        headers=admin_auth_headers,
+        params={"tag": "tag-1"},
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    # Should find at least one config with this tag
+    assert data["total"] >= 1
+    found_config = False
+    for config in data["items"]:
+        assert "tag-1" in config["tags"]
+        found_config = True
+    assert found_config
+    assert data["items"][0]["id"] == new_cid_1
+
+
+def test_get_configs_filter_multiple_tags_or(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
+        headers=admin_auth_headers,
+        params={"tag": ["tag-1", "tag-3"], "tagMatch": "or"},
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert len(data["items"]) == 2
+    assert {item["id"] for item in data["items"]} == {new_cid_1, new_cid_2}
+
+
+def test_get_configs_filter_multiple_tags_and(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
+        headers=admin_auth_headers,
+        params={"tag": ["tag-1", "tag-2"], "tagMatch": "and"},
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert len(data["items"]) == 1
+    assert data["items"][0]["id"] == new_cid_1
