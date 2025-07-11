@@ -21,7 +21,7 @@ def get_sample_crawl_data(profile_id=None):
 
 def test_create_new_config_with_profile_1(admin_auth_headers, default_org_id, profile_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
         json=get_sample_crawl_data(profile_id),
     )
@@ -39,7 +39,7 @@ def test_create_new_config_with_profile_1(admin_auth_headers, default_org_id, pr
 
 def test_create_new_config_with_profile_2(admin_auth_headers, default_org_id, profile_2_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
         json=get_sample_crawl_data(profile_2_id),
     )
@@ -58,7 +58,7 @@ def test_create_new_config_with_profile_2(admin_auth_headers, default_org_id, pr
 def test_filter_configs_by_single_profile_id(admin_auth_headers, default_org_id, profile_id):
     # Test filtering by a single profile ID
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
         params={"profileId": profile_id},
     )
@@ -80,7 +80,7 @@ def test_filter_configs_by_single_profile_id(admin_auth_headers, default_org_id,
 def test_filter_configs_by_multiple_profile_ids(admin_auth_headers, default_org_id, profile_id, profile_2_id):
     # Test filtering by multiple profile IDs with OR logic (default)
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
         params={"profileId": [profile_id, profile_2_id]},
     )
@@ -108,7 +108,7 @@ def test_filter_configs_by_nonexistent_profile_id(admin_auth_headers, default_or
     import uuid
     nonexistent_profile_id = str(uuid.uuid4())
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
         params={"profileId": nonexistent_profile_id},
     )
@@ -123,7 +123,7 @@ def test_filter_configs_by_nonexistent_profile_id(admin_auth_headers, default_or
 def test_deprecated_profileid_param(admin_auth_headers, default_org_id, profile_id):
     # Test the deprecated profileid parameter still works
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
         params={"profileid": profile_id},
     )

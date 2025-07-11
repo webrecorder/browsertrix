@@ -63,7 +63,7 @@ def test_get_configs_filter_multiple_tags_and(admin_auth_headers, default_org_id
 
 def test_create_new_config_1(admin_auth_headers, default_org_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
         json=get_sample_crawl_data(["tag-1", "tag-2"]),
     )
@@ -114,7 +114,7 @@ def test_get_config_by_tag_counts_1(admin_auth_headers, default_org_id):
 
 def test_create_new_config_2(admin_auth_headers, default_org_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
         json=get_sample_crawl_data(["tag-3", "tag-0"]),
     )
