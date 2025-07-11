@@ -10,6 +10,7 @@ metadata:
     {{- if .Values.ingress.useOldClassAnnotation }}
     kubernetes.io/ingress.class: {{ .Values.ingress_class | default "nginx" }}
     {{- end }}
+    {{- if eq ( .Values.ingress_class | default "nginx" ) "nginx" }}
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
     nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
     # for larger uploads to not timeout
@@ -21,6 +22,10 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     {{- else }}
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    {{- end }}
+    {{- end }}
+    {{- range $key, $value := .Values.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
     {{- end }}
 
 spec:
