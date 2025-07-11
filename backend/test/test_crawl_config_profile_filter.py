@@ -16,7 +16,7 @@ def get_sample_crawl_data(profile_id=None):
 @pytest.fixture(scope="module")
 def config_1_id(admin_auth_headers, default_org_id, profile_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
         json=get_sample_crawl_data(profile_id),
     )
@@ -40,7 +40,7 @@ def config_1_id(admin_auth_headers, default_org_id, profile_id):
 @pytest.fixture(scope="module")
 def config_2_id(admin_auth_headers, default_org_id, profile_2_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
         json=get_sample_crawl_data(profile_2_id),
     )
