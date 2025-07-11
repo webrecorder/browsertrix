@@ -296,9 +296,6 @@ export class WorkflowsList extends BtrixElement {
         // Reset page
         params.delete("page");
 
-        // Existing tags
-        const tags = params.getAll("tags");
-
         const newParams = [
           // Known filters
           ...USED_FILTERS.map<[string, undefined]>((f) => [f, undefined]),
@@ -333,7 +330,8 @@ export class WorkflowsList extends BtrixElement {
           if (value !== undefined) {
             if (Array.isArray(value)) {
               value.forEach((v) => {
-                if (!tags.includes(v)) {
+                // Only add new array values to URL
+                if (!params.getAll(filter).includes(v)) {
                   params.append(filter, v);
                 }
               });
