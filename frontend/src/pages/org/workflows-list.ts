@@ -995,6 +995,7 @@ export class WorkflowsList extends BtrixElement {
           INITIAL_PAGE_SIZE,
         userid: this.filterByCurrentUser ? this.userInfo?.id : undefined,
         tag: this.filterByTags || undefined,
+        profileIds: this.filterByProfiles || undefined,
         sortBy: this.orderBy.field,
         sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
       },
