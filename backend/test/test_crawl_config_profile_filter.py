@@ -3,11 +3,6 @@ import pytest
 
 from .conftest import API_PREFIX
 
-new_cid_1 = None
-new_cid_2 = None
-new_cid_3 = None
-
-
 def get_sample_crawl_data(profile_id=None):
     data = {
         "runNow": False,
@@ -18,8 +13,8 @@ def get_sample_crawl_data(profile_id=None):
         data["profileid"] = profile_id
     return data
 
-
-def test_create_new_config_with_profile_1(admin_auth_headers, default_org_id, profile_id):
+@pytest.fixture(scope="module")
+def config_1_id(admin_auth_headers, default_org_id, profile_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
@@ -33,11 +28,17 @@ def test_create_new_config_with_profile_1(admin_auth_headers, default_org_id, pr
     assert data["id"]
     assert data["run_now_job"] == None
 
-    global new_cid_1
-    new_cid_1 = data["id"]
+    yield data["id"]
 
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{data['id']}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
 
-def test_create_new_config_with_profile_2(admin_auth_headers, default_org_id, profile_2_id):
+@pytest.fixture(scope="module")
+def config_2_id(admin_auth_headers, default_org_id, profile_2_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
@@ -51,11 +52,17 @@ def test_create_new_config_with_profile_2(admin_auth_headers, default_org_id, pr
     assert data["id"]
     assert data["run_now_job"] == None
 
-    global new_cid_2
-    new_cid_2 = data["id"]
+    yield data["id"]
+
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{data['id']}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
 
 
-def test_filter_configs_by_single_profile_id(admin_auth_headers, default_org_id, profile_id):
+def test_filter_configs_by_single_profile_id(admin_auth_headers, default_org_id, profile_id, config_1_id):
     # Test filtering by a single profile ID
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
@@ -69,7 +76,7 @@ def test_filter_configs_by_single_profile_id(admin_auth_headers, default_org_id,
     assert data["total"] >= 1
     found_config = False
     for config in data["items"]:
-        if config["id"] == new_cid_1:
+        if config["id"] == config_1_id:
             assert config["profileid"] == profile_id
             found_config = True
         # All returned configs should have the requested profile ID
@@ -77,7 +84,7 @@ def test_filter_configs_by_single_profile_id(admin_auth_headers, default_org_id,
     assert found_config
 
 
-def test_filter_configs_by_multiple_profile_ids(admin_auth_headers, default_org_id, profile_id, profile_2_id):
+def test_filter_configs_by_multiple_profile_ids(admin_auth_headers, default_org_id, profile_id, profile_2_id, config_2_id):
     # Test filtering by multiple profile IDs with OR logic (default)
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
@@ -91,10 +98,10 @@ def test_filter_configs_by_multiple_profile_ids(admin_auth_headers, default_org_
     assert data["total"] >= 2
     found_configs = {"config1": False, "config2": False}
     for config in data["items"]:
-        if config["id"] == new_cid_1:
+        if config["id"] == config_1_id:
             assert config["profileid"] == profile_id
             found_configs["config1"] = True
-        elif config["id"] == new_cid_2:
+        elif config["id"] == config_2_id:
             assert config["profileid"] == profile_2_id
             found_configs["config2"] = True
         # All returned configs should have one of the requested profile IDs
@@ -120,7 +127,7 @@ def test_filter_configs_by_nonexistent_profile_id(admin_auth_headers, default_or
     assert data["items"] == []
 
 
-def test_deprecated_profileid_param(admin_auth_headers, default_org_id, profile_id):
+def test_deprecated_profileid_param(admin_auth_headers, default_org_id, profile_id, config_1_id):
     # Test the deprecated profileid parameter still works
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
@@ -134,25 +141,9 @@ def test_deprecated_profileid_param(admin_auth_headers, default_org_id, profile_
     assert data["total"] >= 1
     found_config = False
     for config in data["items"]:
-        if config["id"] == new_cid_1:
+        if config["id"] == config_1_id:
             assert config["profileid"] == profile_id
             found_config = True
         # All returned configs should have the requested profile ID
         assert config["profileid"] == profile_id
     assert found_config
-
-def test_clean_up_test_crawls(admin_auth_headers, default_org_id):
-    # Clean up test crawls
-    r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{new_cid_1}",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    assert r.json()["success"]
-
-    r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{new_cid_2}",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    assert r.json()["success"]
