@@ -37,6 +37,7 @@ class CrawlManager(K8sAPI):
         baseprofile: str = "",
         profile_filename: str = "",
         proxy_id: str = "",
+        profileid: str = ""
     ) -> str:
         """run browser for profile creation"""
 
@@ -60,6 +61,7 @@ class CrawlManager(K8sAPI):
             "crawler_image": crawler_image,
             "image_pull_policy": image_pull_policy,
             "proxy_id": proxy_id or DEFAULT_PROXY_ID,
+            "profileid": profileid,
         }
 
         data = self.templates.env.get_template("profile_job.yaml").render(params)
@@ -365,14 +367,23 @@ class CrawlManager(K8sAPI):
         except:
             return {}
 
-        return browser["metadata"]["labels"]
+        metadata = browser["metadata"]["labels"]
 
-    async def ping_profile_browser(self, browserid: str) -> None:
-        """return ping profile browser"""
+        metadata["committing"] = browser.get("spec", {}).get("committing")
+
+        return metadata
+
+    async def keep_alive_profile_browser(
+        self, browserid: str, mark_committing = ""
+    ) -> None:
+        """update profile browser to not expire"""
         expire_at = dt_now() + timedelta(seconds=30)
-        await self._patch_job(
-            browserid, {"expireTime": date_to_str(expire_at)}, "profilejobs"
-        )
+
+        update = {"expireTime": date_to_str(expire_at)}
+        if mark_committing:
+            update["committing"] = mark_committing
+
+        await self._patch_job(browserid, update, "profilejobs")
 
     async def rollover_restart_crawl(self, crawl_id: str) -> dict:
         """Rolling restart of crawl by updating restartTime field"""

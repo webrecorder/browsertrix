@@ -11,6 +11,7 @@ metadata:
     btrix.baseprofile: "{{ base_profile }}"
     {%- endif %}
     btrix.storage: "{{ storage_name }}"
+    profileid: {{ profileid }}
 
 spec:
   selector:
