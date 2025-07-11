@@ -182,6 +182,7 @@ class CrawlOperator(BaseOperator):
             scheduled=spec.get("manual") != "1",
             qa_source_crawl_id=spec.get("qaSourceCrawlId"),
             is_single_page=spec.get("isSinglePage") == "1",
+            seed_file_url=spec.get("seedFileUrl", ""),
         )
 
         # if finalizing, crawl is being deleted
@@ -469,6 +470,10 @@ class CrawlOperator(BaseOperator):
         raw_config["behaviors"] = self._filter_autoclick_behavior(
             raw_config["behaviors"], params["crawler_image"]
         )
+
+        if crawl.seed_file_url:
+            raw_config["seedFile"] = crawl.seed_file_url
+        raw_config.pop("seedFileId", None)
 
         params["config"] = json.dumps(raw_config)
 

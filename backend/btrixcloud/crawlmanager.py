@@ -212,6 +212,46 @@ class CrawlManager(K8sAPI):
 
         return job_id
 
+    async def ensure_cleanup_seed_file_cron_job_exists(self):
+        """ensure cron background job to clean up unused seed files weekly exists"""
+
+        job_id = "cleanup-seed-files-cron"
+
+        # Midnight every Sunday
+        weekly_schedule = "0 0 * * 0"
+
+        # Don't create a duplicate cron job if already exists
+        try:
+            cron_job = await self.batch_api.read_namespaced_cron_job(
+                name=job_id,
+                namespace=self.namespace,
+            )
+            if cron_job:
+                print(
+                    "Weekly cron job to clean up used seed files already exists",
+                    flush=True,
+                )
+                return
+        # pylint: disable=broad-exception-caught
+        except Exception as err:
+            print(f"Exception trying to find seed file clean up job: {err}", flush=True)
+
+        print("Creating weekly cron job to clean up used seed files", flush=True)
+
+        params = {
+            "id": job_id,
+            "job_type": BgJobType.CLEANUP_SEED_FILES.value,
+            "backend_image": os.environ.get("BACKEND_IMAGE", ""),
+            "pull_policy": os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
+            "schedule": weekly_schedule,
+        }
+
+        data = self.templates.env.get_template("background_cron_job.yaml").render(
+            params
+        )
+
+        await self.create_from_yaml(data, namespace=self.namespace)
+
     async def create_crawl_job(
         self,
         crawlconfig: CrawlConfig,
@@ -221,6 +261,7 @@ class CrawlManager(K8sAPI):
         storage_filename: str,
         profile_filename: str,
         is_single_page: bool,
+        seed_file_url: str,
     ) -> str:
         """create new crawl job from config"""
         cid = str(crawlconfig.id)
@@ -246,6 +287,7 @@ class CrawlManager(K8sAPI):
             profile_filename=profile_filename,
             proxy_id=crawlconfig.proxyId or DEFAULT_PROXY_ID,
             is_single_page=is_single_page,
+            seed_file_url=seed_file_url,
         )
 
     async def reload_running_crawl_config(self, crawl_id: str):
