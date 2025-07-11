@@ -31,6 +31,7 @@ import {
   queryAsync,
   state,
 } from "lit/decorators.js";
+import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { map } from "lit/directives/map.js";
 import { when } from "lit/directives/when.js";
@@ -56,6 +57,7 @@ import type { TabListTab } from "@/components/ui/tab-list";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { validURL } from "@/components/ui/url-input";
+import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { proxiesContext, type ProxiesContext } from "@/context/org";
 import {
   ObservableController,
@@ -105,6 +107,7 @@ import { makeCurrentTargetHandler, stopProp } from "@/utils/events";
 import { formValidator, maxLengthValidator } from "@/utils/form";
 import localize from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { pluralOf } from "@/utils/pluralize";
 import { AppStateService } from "@/utils/state";
 import { regexEscape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
@@ -112,14 +115,19 @@ import {
   appDefaults,
   BYTES_PER_GB,
   DEFAULT_AUTOCLICK_SELECTOR,
+  DEFAULT_SEED_LIST_FILE_NAME,
   DEFAULT_SELECT_LINKS,
   defaultLabel,
   getDefaultFormState,
   getInitialFormState,
   getServerDefaults,
   makeUserGuideEvent,
+  MAX_SEED_LIST_FILE_BYTES,
+  MAX_SEED_LIST_STRING_BYTES,
   rangeBrowserWindows,
   SECTIONS,
+  SEED_LIST_FILE_EXT,
+  SeedListFormat,
   workflowTabToGuideHash,
   type FormState,
   type WorkflowDefaults,
@@ -243,6 +251,9 @@ export class WorkflowEditor extends BtrixElement {
 
   @consume({ context: proxiesContext, subscribe: true })
   private readonly proxies?: ProxiesContext;
+
+  @consume({ context: docsUrlContext })
+  private readonly docsUrl?: DocsUrlContext;
 
   @property({ type: String })
   configId?: string;
@@ -912,52 +923,7 @@ export class WorkflowEditor extends BtrixElement {
             `)}
             ${this.renderHelpTextCol(msg(str`The URL of the page to crawl.`))}
           `
-        : html`
-            ${inputCol(html`
-              <sl-textarea
-                name="urlList"
-                label=${msg("Page URLs")}
-                placeholder=${`https://webrecorder.net/blog
-https://archiveweb.page/guide`}
-                rows="3"
-                autocomplete="off"
-                inputmode="url"
-                value=${this.formState.urlList}
-                required
-                @keyup=${async (e: KeyboardEvent) => {
-                  if (e.key === "Enter") {
-                    await (e.target as SlInput).updateComplete;
-                    this.doValidateTextArea(e.target);
-                  }
-                }}
-                @sl-input=${(e: CustomEvent) => {
-                  const inputEl = e.target as SlInput;
-                  const value = inputEl.value;
-
-                  if (value) {
-                    const { isValid } = this.validateUrlList(inputEl.value);
-
-                    if (isValid) {
-                      this.animateStickyFooter();
-                    }
-                  } else {
-                    inputEl.helpText = msg("At least 1 URL is required.");
-                  }
-                }}
-                @sl-change=${async (e: CustomEvent) => {
-                  this.doValidateTextArea(e.target);
-                }}
-                @sl-blur=${async (e: CustomEvent) => {
-                  this.doValidateTextArea(e.target);
-                }}
-              ></sl-textarea>
-            `)}
-            ${this.renderHelpTextCol(
-              msg(
-                str`The crawler will visit and record each URL listed here. You can enter up to ${this.localize.number(URL_LIST_MAX_URLS)} URLs.`,
-              ),
-            )}
-          `}
+        : this.renderUrlList()}
       ${inputCol(html`
         <sl-checkbox
           name="includeLinkedPages"
@@ -974,6 +940,149 @@ https://archiveweb.page/guide`}
         this.renderLinkSelectors(),
       )}
     `;
+  };
+
+  private renderUrlList() {
+    return html`
+      ${inputCol(html`
+        <label
+          class="form-label form-control-label--required"
+          for="seedUrlList"
+        >
+          ${msg("Page URLs")}
+        </label>
+
+        <sl-radio-group
+          class="mb-2.5 part-[form-control-label]:sr-only"
+          label="Select how to specify URL list"
+          value=${this.formState.seedListFormat}
+          name="seedListFormat"
+          size="small"
+        >
+          <sl-radio-button value=${SeedListFormat.JSON}
+            >${msg("Enter URLs")}</sl-radio-button
+          >
+          <sl-radio-button value=${SeedListFormat.File}
+            >${msg("Upload URL List")}</sl-radio-button
+          >
+        </sl-radio-group>
+
+        ${choose(this.formState.seedListFormat, [
+          [SeedListFormat.JSON, () => this.renderSeedListTextbox()],
+          [SeedListFormat.File, () => this.renderSeedListFileUpload()],
+        ])}
+      `)}
+      ${this.renderHelpTextCol(
+        this.formState.seedListFormat === SeedListFormat.File
+          ? html`${msg(
+              "The crawler will visit and record each URL listed in the file.",
+            )}
+            ${this.renderUserGuideLink({
+              hash: "page-urls",
+              content: msg("Read more about URL list files"),
+            })}.`
+          : html`${infoTextFor["urlList"]} ${msg("For very large lists")},
+            ${this.renderUserGuideLink({
+              hash: "page-urls",
+              content: msg("upload a URL list file"),
+            })}.`,
+      )}
+    `;
+  }
+
+  private readonly renderSeedListTextbox = () => {
+    return html`<sl-textarea
+      id="seedUrlList"
+      name="urlList"
+      placeholder=${`https://webrecorder.net/resources
+https://archiveweb.page/guide
+https://replayweb.page/docs`}
+      rows="4"
+      autocomplete="off"
+      inputmode="url"
+      value=${this.formState.urlList}
+      required
+      help-text=${msg("Enter one URL per line.")}
+      @paste=${(e: ClipboardEvent) => {
+        const text = e.clipboardData
+          ?.getData("text")
+          // Remove zero-width characters
+          .replace(/[\u200B-\u200D\uFEFF]/g, "")
+          .trim();
+
+        if (text) {
+          const textBlob = new Blob([text]);
+          if (textBlob.size > MAX_SEED_LIST_STRING_BYTES) {
+            const file = new File([textBlob], DEFAULT_SEED_LIST_FILE_NAME, {
+              type: "text/plain",
+            });
+
+            this.updateFormState(
+              {
+                seedListFormat: SeedListFormat.File,
+                seedFile: file,
+              },
+              true,
+            );
+          }
+        }
+      }}
+      @keyup=${async (e: KeyboardEvent) => {
+        if (e.key === "Enter") {
+          await (e.target as SlInput).updateComplete;
+          this.doValidateUrlList(e);
+        }
+      }}
+      @sl-input=${(e: CustomEvent) => {
+        const inputEl = e.target as SlInput;
+        const value = inputEl.value;
+
+        if (value) {
+          if (!this.stickyFooter) {
+            const { isValid } = this.validateUrlList(inputEl.value);
+
+            if (isValid) {
+              this.animateStickyFooter();
+            }
+          }
+        } else {
+          inputEl.helpText = msg("At least 1 URL is required.");
+        }
+      }}
+      @sl-change=${this.doValidateUrlList}
+    ></sl-textarea>`;
+  };
+
+  private readonly renderSeedListFileUpload = () => {
+    const browseFilesButton = html`<button
+      class="text-primary-500 transition-colors hover:text-primary-600"
+    >
+      ${msg("browse files")}
+    </button>`;
+    const maxByteSize = this.localize.bytes(MAX_SEED_LIST_FILE_BYTES);
+
+    return html`<btrix-file-input
+      id="seedUrlList"
+      accept=".${SEED_LIST_FILE_EXT}"
+      .files=${this.formState.seedFile ? [this.formState.seedFile] : null}
+      drop
+      openFile
+      required
+    >
+      <sl-icon
+        name="file-earmark-arrow-up"
+        class="text-xl text-neutral-400"
+      ></sl-icon>
+      <p class="mt-1 text-pretty text-center">
+        ${msg(html`Drag file here or ${browseFilesButton}`)}
+      </p>
+      <div class="form-help-text text-center leading-none">
+        ${msg("TXT format")},
+        ${msg(str`${maxByteSize} max`, {
+          desc: "`maxByteSize` example: '25 MB'. 'max' is shorthand for 'maximum'",
+        })}
+      </div>
+    </btrix-file-input>`;
   };
 
   private readonly renderSiteScope = () => {
@@ -1048,6 +1157,7 @@ https://archiveweb.page/guide`}
     }
 
     const additionalUrlList = urlListToArray(this.formState.urlList);
+    const maxUrls = this.localize.number(URL_LIST_MAX_URLS);
 
     return html`
       ${inputCol(html`
@@ -1195,7 +1305,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 @keyup=${async (e: KeyboardEvent) => {
                   if (e.key === "Enter") {
                     await (e.target as SlInput).updateComplete;
-                    this.doValidateTextArea(e.target);
+                    this.doValidateUrlList(e);
                   }
                 }}
                 @sl-input=${(e: CustomEvent) => {
@@ -1204,18 +1314,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
                     inputEl.helpText = msg("At least 1 URL is required.");
                   }
                 }}
-                @sl-change=${async (e: CustomEvent) => {
-                  this.doValidateTextArea(e.target);
-                }}
-                @sl-blur=${async (e: CustomEvent) => {
-                  this.doValidateTextArea(e.target);
-                }}
+                @sl-change=${this.doValidateUrlList}
+                @sl-blur=${this.doValidateUrlList}
               ></sl-textarea>
             `)}
             ${this.renderHelpTextCol(
-              msg(
-                str`The crawler will visit and record each URL listed here. You can enter up to ${this.localize.number(URL_LIST_MAX_URLS)} URLs.`,
-              ),
+              html`${infoTextFor["urlList"]}
+              ${msg(str`You can enter up to ${maxUrls} URLs.`, {
+                desc: "`maxUrls` example: '1,000'",
+              })}`,
             )}
           </div>
         </btrix-details>
@@ -1223,20 +1330,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   };
 
-  private doValidateTextArea(target: EventTarget | null) {
-    const inputEl = target as SlInput;
+  private readonly doValidateUrlList = (e: Event) => {
+    const inputEl = e.target as SlInput;
     if (!inputEl.value) return;
-    const { isValid, helpText } = this.validateUrlList(
-      inputEl.value,
-      URL_LIST_MAX_URLS,
-    );
+    const { isValid, helpText } = this.validateUrlList(inputEl.value);
     inputEl.helpText = helpText;
     if (isValid) {
       inputEl.setCustomValidity("");
     } else {
       inputEl.setCustomValidity(helpText);
     }
-  }
+  };
 
   private renderLinkSelectors() {
     const selectors = this.formState.selectLinks;
@@ -1603,14 +1707,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         html`${msg(
-            `Increase the number of open browser windows during a crawl. This will speed up your crawl by effectively running more crawlers at the same time.`,
-          )}
-          <a
-            href="/docs/user-guide/workflow-setup/#browser-windows"
-            class="text-blue-600 hover:text-blue-500"
-            target="_blank"
-            >${msg("See caveats")}</a
-          >.`,
+          `Increase the number of open browser windows during a crawl. This will speed up your crawl by effectively running more crawlers at the same time.`,
+        )}
+        ${this.renderUserGuideLink({
+          hash: "browser-windows",
+          content: msg("See caveats"),
+        })}.`,
       )}
       ${inputCol(html`
         <btrix-select-crawler
@@ -1879,6 +1981,37 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private renderErrorAlert(errorMessage: string | TemplateResult) {
     return html` <div class="px-2 text-danger">${errorMessage}</div> `;
+  }
+
+  private renderUserGuideLink({
+    hash,
+    content,
+  }: {
+    hash: string;
+    content: string;
+  }) {
+    const path = `workflow-setup#${hash}`;
+
+    return html`<a
+      href="${this.docsUrl}user-guide/${path}"
+      class="text-blue-600 hover:text-blue-500"
+      target="_blank"
+      @click=${(e: MouseEvent) => {
+        e.preventDefault();
+
+        this.dispatchEvent(
+          new CustomEvent<UserGuideEventMap["btrix-user-guide-show"]["detail"]>(
+            "btrix-user-guide-show",
+            {
+              detail: { path },
+              bubbles: true,
+              composed: true,
+            },
+          ),
+        );
+      }}
+      >${content}</a
+    >`;
   }
 
   private readonly formSections: {
@@ -2197,7 +2330,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private updateFormStateOnChange(e: Event) {
-    const elem = e.target as SlTextarea | SlInput | SlCheckbox;
+    const elem = e.target as SlTextarea | SlInput | SlCheckbox | SlRadioGroup;
     const name = elem.name;
     if (!Object.prototype.hasOwnProperty.call(this.formState, name)) {
       return;
@@ -2209,6 +2342,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         value = (elem as SlCheckbox).checked;
         break;
       case "sl-textarea":
+      case "sl-radio-group":
         value = elem.value;
         break;
       case "sl-input": {
@@ -2491,17 +2625,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
     value: string,
     max = URL_LIST_MAX_URLS,
   ): { isValid: boolean; helpText: string } {
+    const maxUrls = this.localize.number(max);
     const urlList = urlListToArray(value);
     let isValid = true;
-    let helpText =
-      urlList.length === 1
-        ? msg(str`${this.localize.number(urlList.length)} URL entered`)
-        : msg(str`${this.localize.number(urlList.length)} URLs entered`);
+    let helpText = `${this.localize.number(urlList.length)} ${pluralOf("URLs", urlList.length)} ${msg("entered")}`;
     if (urlList.length > max) {
       isValid = false;
-      helpText = msg(
-        str`Please shorten list to ${this.localize.number(max)} or fewer URLs.`,
-      );
+      helpText = `${msg("This list is too large.")} ${msg(
+        str`Please shorten list to ${maxUrls} or fewer URLs or upload the list as a file.`,
+      )}`;
     } else {
       const invalidUrl = urlList.find((url) => !validURL(url));
       if (invalidUrl) {
@@ -2587,6 +2719,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,
+      seedFileId: null,
     };
 
     return config;
