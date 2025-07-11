@@ -271,27 +271,27 @@ export class WorkflowProfileFilter extends BtrixElement {
       return html`
         <li role="option" aria-checked=${checked}>
           <sl-checkbox
-            class="w-full part-[label]:grid part-[base]:w-full part-[label]:w-full part-[label]:items-center part-[label]:justify-between part-[label]:gap-2 part-[base]:rounded part-[base]:p-2 part-[base]:hover:bg-primary-50"
+            class="w-full part-[label]:grid part-[base]:w-full part-[label]:w-full part-[label]:items-center part-[label]:justify-between part-[label]:gap-x-2 part-[label]:gap-y-1 part-[base]:rounded part-[base]:p-2 part-[base]:hover:bg-primary-50"
             value=${profile.id}
             ?checked=${checked}
             ?disabled=${!profile.inUse}
           >
-            <span class="inline-block min-w-0 max-w-72 truncate"
+            <span class="mb-1 inline-block min-w-0 max-w-96 truncate"
               >${profile.name}</span
             >
             <btrix-format-date
               class="col-start-2 ml-auto text-xs text-stone-600"
-              date=${profile.created}
+              date=${profile.modified ?? profile.created}
             ></btrix-format-date>
             ${profile.inUse
-              ? profile.description
-                ? html`<div
-                    class="col-span-2 max-w-full truncate text-xs text-stone-600 contain-inline-size"
+              ? html`${profile.description &&
+                  html`<div
+                    class="col-span-2 min-w-0 truncate text-xs text-stone-600 contain-inline-size"
                   >
                     ${profile.description}
-                  </div>`
-                : html`<div
-                    class="col-span-2 min-w-0 max-w-full text-xs text-stone-400"
+                  </div>`}
+                  <div
+                    class="col-span-2 min-w-0 max-w-full text-xs text-stone-400 contain-inline-size"
                   >
                     ${this.localize
                       .list(
@@ -312,11 +312,10 @@ export class WorkflowProfileFilter extends BtrixElement {
                           ? part.value
                           : richText(part.value, {
                               shortenOnly: true,
-                              linkClass:
-                                "text-stone-600 font-medium truncate inline-block max-w-full",
+                              linkClass: tw`inline-block max-w-[min(theme(spacing.72),100%)] truncate font-medium text-stone-600`,
                             }),
                       )}
-                  </div>`
+                  </div> `
               : html`<div class="col-span-2 text-xs">
                   ${msg("Not in use")}
                 </div>`}
