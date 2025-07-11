@@ -135,7 +135,7 @@ class ProfileOps:
             baseprofile=prev_profile_id,
             profile_filename=prev_profile_path,
             proxy_id=proxy_id,
-            profileid=str(uuid4())
+            profileid=str(uuid4()),
         )
 
         if not browserid:

@@ -37,7 +37,7 @@ class CrawlManager(K8sAPI):
         baseprofile: str = "",
         profile_filename: str = "",
         proxy_id: str = "",
-        profileid: str = ""
+        profileid: str = "",
     ) -> str:
         """run browser for profile creation"""
 
@@ -374,7 +374,7 @@ class CrawlManager(K8sAPI):
         return metadata
 
     async def keep_alive_profile_browser(
-        self, browserid: str, mark_committing = ""
+        self, browserid: str, mark_committing=""
     ) -> None:
         """update profile browser to not expire"""
         expire_at = dt_now() + timedelta(seconds=30)
