@@ -640,6 +640,7 @@ PROFILE_DESC_UPDATED = "Updated profile used for backend tests"
 PROFILE_2_NAME = "Second test profile"
 PROFILE_2_DESC = "Second profile used to test list endpoint"
 
+
 def prepare_browser_for_profile_commit(
     browser_id: str, headers: Dict[str, str], oid: UUID
 ) -> None:

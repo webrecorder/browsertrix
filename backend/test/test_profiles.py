@@ -5,7 +5,16 @@ from uuid import UUID
 import requests
 import pytest
 
-from .conftest import API_PREFIX, PROFILE_NAME, PROFILE_DESC, PROFILE_NAME_UPDATED, PROFILE_DESC_UPDATED, PROFILE_2_NAME, PROFILE_2_DESC, prepare_browser_for_profile_commit
+from .conftest import (
+    API_PREFIX,
+    PROFILE_NAME,
+    PROFILE_DESC,
+    PROFILE_NAME_UPDATED,
+    PROFILE_DESC_UPDATED,
+    PROFILE_2_NAME,
+    PROFILE_2_DESC,
+    prepare_browser_for_profile_commit,
+)
 
 
 def test_commit_browser_to_new_profile(admin_auth_headers, default_org_id, profile_id):
