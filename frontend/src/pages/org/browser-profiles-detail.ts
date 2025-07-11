@@ -160,6 +160,9 @@ export class BrowserProfilesDetail extends BtrixElement {
       <div class="mb-7 flex flex-col gap-5 lg:flex-row">
         <section class="flex-1">
           <header class="flex items-center gap-2">
+            <h2 class="text-lg font-medium leading-none">
+              ${msg("Browser Profile")}
+            </h2>
             <sl-tooltip
               content=${isBackedUp ? msg("Backed Up") : msg("Not Backed Up")}
               ?disabled=${!this.profile}
@@ -167,7 +170,7 @@ export class BrowserProfilesDetail extends BtrixElement {
               <sl-icon
                 class="${isBackedUp
                   ? "text-success"
-                  : "text-neutral-500"} text-base"
+                  : "text-neutral-500"} ml-auto text-base"
                 name=${this.profile
                   ? isBackedUp
                     ? "clouds-fill"
@@ -175,9 +178,36 @@ export class BrowserProfilesDetail extends BtrixElement {
                   : "clouds"}
               ></sl-icon>
             </sl-tooltip>
-            <h2 class="text-lg font-medium leading-none">
-              ${msg("Browser Profile")}
-            </h2>
+
+            ${this.profile?.inUse
+              ? html`
+                  <sl-tooltip
+                    content=${msg(
+                      "View Crawl Workflows using this Browser Profile",
+                    )}
+                  >
+                    <a
+                      href=${`${this.navigate.orgBasePath}/workflows?profiles=${this.profile.id}`}
+                      @click=${this.navigate.link}
+                      class="ml-2 flex items-center gap-2 text-sm font-medium text-primary-500 transition-colors hover:text-primary-600"
+                    >
+                      ${msg("In Use")}
+                      <sl-icon
+                        class="text-base"
+                        name="arrow-right-circle"
+                      ></sl-icon>
+                    </a>
+                  </sl-tooltip>
+                `
+              : html`<sl-tooltip
+                  content=${msg("Not In Use")}
+                  ?disabled=${!this.profile}
+                >
+                  <sl-icon
+                    class="text-base text-neutral-500"
+                    name=${this.profile ? "slash-circle" : "clouds"}
+                  ></sl-icon>
+                </sl-tooltip>`}
           </header>
 
           ${when(this.isCrawler, () =>
