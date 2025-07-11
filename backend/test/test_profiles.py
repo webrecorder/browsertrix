@@ -72,7 +72,7 @@ def prepare_browser_for_profile_commit(
         attempts += 1
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def profile_id(admin_auth_headers, default_org_id, profile_browser_id):
     prepare_browser_for_profile_commit(
         profile_browser_id, admin_auth_headers, default_org_id
@@ -107,7 +107,7 @@ def profile_id(admin_auth_headers, default_org_id, profile_browser_id):
             time.sleep(5)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def profile_config_id(admin_auth_headers, default_org_id, profile_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
@@ -163,7 +163,7 @@ def profile_config_id(admin_auth_headers, default_org_id, profile_id):
     return data["id"]
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def profile_2_id(admin_auth_headers, default_org_id, profile_browser_2_id):
     prepare_browser_for_profile_commit(
         profile_browser_2_id, admin_auth_headers, default_org_id
