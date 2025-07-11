@@ -679,13 +679,26 @@ export class BrowserProfilesDetail extends BtrixElement {
     };
 
     try {
-      const data = await this.api.fetch<{ updated: boolean }>(
-        `/orgs/${this.orgId}/profiles/${this.profileId}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify(params),
-        },
-      );
+      let data;
+
+      // eslint-disable-next-line no-constant-condition, @typescript-eslint/no-unnecessary-condition
+      while (true) {
+        data = await this.api.fetch<{ updated?: boolean; detail?: string }>(
+          `/orgs/${this.orgId}/profiles/${this.profileId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(params),
+          },
+        );
+        if (data.updated !== undefined) {
+          break;
+        }
+        if (data.detail === "waiting_for_browser") {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        } else {
+          throw new Error("unknown response");
+        }
+      }
 
       if (data.updated) {
         this.notify.toast({

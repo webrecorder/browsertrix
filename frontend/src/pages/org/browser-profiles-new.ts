@@ -313,13 +313,26 @@ export class BrowserProfilesNew extends BtrixElement {
     };
 
     try {
-      const data = await this.api.fetch<{ id: string }>(
-        `/orgs/${this.orgId}/profiles`,
-        {
-          method: "POST",
-          body: JSON.stringify(params),
-        },
-      );
+      let data;
+
+      // eslint-disable-next-line no-constant-condition, @typescript-eslint/no-unnecessary-condition
+      while (true) {
+        data = await this.api.fetch<{ id?: string; detail?: string }>(
+          `/orgs/${this.orgId}/profiles`,
+          {
+            method: "POST",
+            body: JSON.stringify(params),
+          },
+        );
+        if (data.id) {
+          break;
+        }
+        if (data.detail === "waiting_for_browser") {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        } else {
+          throw new Error("unknown response");
+        }
+      }
 
       this.notify.toast({
         message: msg("Successfully created browser profile."),
