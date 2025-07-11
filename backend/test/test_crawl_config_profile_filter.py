@@ -72,7 +72,7 @@ def test_filter_configs_by_single_profile_id(
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
-        params={"profileId": profile_id},
+        params={"profileIds": profile_id},
     )
     assert r.status_code == 200
     data = r.json()
@@ -101,7 +101,7 @@ def test_filter_configs_by_multiple_profile_ids(
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
-        params={"profileId": [profile_id, profile_2_id]},
+        params={"profileIds": [profile_id, profile_2_id]},
     )
     assert r.status_code == 200
     data = r.json()
@@ -130,7 +130,7 @@ def test_filter_configs_by_nonexistent_profile_id(admin_auth_headers, default_or
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
-        params={"profileId": nonexistent_profile_id},
+        params={"profileIds": nonexistent_profile_id},
     )
     assert r.status_code == 200
     data = r.json()
@@ -138,27 +138,3 @@ def test_filter_configs_by_nonexistent_profile_id(admin_auth_headers, default_or
     # Should find no configs with this profile ID
     assert data["total"] == 0
     assert data["items"] == []
-
-
-def test_deprecated_profileid_param(
-    admin_auth_headers, default_org_id, profile_id, config_1_id
-):
-    # Test the deprecated profileid parameter still works
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
-        headers=admin_auth_headers,
-        params={"profileid": profile_id},
-    )
-    assert r.status_code == 200
-    data = r.json()
-
-    # Should find at least one config with this profile ID
-    assert data["total"] >= 1
-    found_config = False
-    for config in data["items"]:
-        if config["id"] == config_1_id:
-            assert config["profileid"] == profile_id
-            found_config = True
-        # All returned configs should have the requested profile ID
-        assert config["profileid"] == profile_id
-    assert found_config
