@@ -206,20 +206,24 @@ def test_commit_browser_to_existing_profile(
     )
 
     # Commit new browser to existing profile
-    r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
-        headers=admin_auth_headers,
-        json={
-            "browserid": profile_browser_3_id,
-            "name": PROFILE_NAME_UPDATED,
-            "description": PROFILE_DESC_UPDATED,
-        },
-    )
-    assert r.status_code == 200
+    while True:
+        r = requests.patch(
+            f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
+            headers=admin_auth_headers,
+            json={
+                "browserid": profile_browser_3_id,
+                "name": PROFILE_NAME_UPDATED,
+                "description": PROFILE_DESC_UPDATED,
+            },
+        )
+        assert r.status_code == 200
+        if r.json().get("detail") == "waiting_for_browser":
+            time.sleep(5)
+            continue
+
+        break
+
     assert r.json()["updated"]
-
-    time.sleep(5)
-
     # Ensure modified was updated but created was not
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
