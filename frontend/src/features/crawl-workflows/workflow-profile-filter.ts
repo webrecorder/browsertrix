@@ -28,7 +28,8 @@ import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
 
-const MAX_PROFILES_IN_LABEL = 3;
+const MAX_PROFILES_IN_LABEL = 2;
+const MAX_ORIGINS_IN_LIST = 5;
 
 export type BtrixChangeWorkflowProfileFilterEvent = BtrixChangeEvent<
   string[] | undefined
@@ -295,14 +296,11 @@ export class WorkflowProfileFilter extends BtrixElement {
                   >
                     ${this.localize
                       .list(
-                        profile.origins.length > MAX_PROFILES_IN_LABEL
+                        profile.origins.length > MAX_ORIGINS_IN_LIST
                           ? [
-                              ...profile.origins.slice(
-                                0,
-                                MAX_PROFILES_IN_LABEL,
-                              ),
+                              ...profile.origins.slice(0, MAX_ORIGINS_IN_LIST),
                               msg(
-                                str`${this.localize.number(profile.origins.length - MAX_PROFILES_IN_LABEL)} more`,
+                                str`${this.localize.number(profile.origins.length - MAX_ORIGINS_IN_LIST)} more`,
                               ),
                             ]
                           : profile.origins,
