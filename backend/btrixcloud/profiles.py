@@ -259,8 +259,7 @@ class ProfileOps:
             print(json)
             resource = json["resource"]
         # pylint: disable=bare-except
-        except Exception as e:
-            print(e)
+        except:
             print("Profile commit: browser not valid")
             return False
 
