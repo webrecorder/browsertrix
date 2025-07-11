@@ -174,8 +174,6 @@ class ProfileOps:
 
     async def ping_profile_browser(self, browserid: str) -> dict[str, Any]:
         """ping profile browser to keep it running"""
-        await self.crawl_manager.keep_alive_profile_browser(browserid)
-
         json = await self._send_browser_req(browserid, "/ping")
 
         return {"success": True, "origins": json.get("origins") or []}
@@ -248,15 +246,14 @@ class ProfileOps:
 
         filename_data = {"filename": f"profiles/profile-{profileid}.tar.gz"}
 
-        await self.crawl_manager.keep_alive_profile_browser(
-            browser_commit.browserid, mark_committing="committing"
-        )
-
         try:
             json = await self._send_browser_req(
-                browser_commit.browserid, "/createProfileJS", "POST", json=filename_data
+                browser_commit.browserid,
+                "/createProfileJS",
+                "POST",
+                json=filename_data,
+                committing="committing",
             )
-            print(json)
             resource = json["resource"]
         # pylint: disable=bare-except
         except:
@@ -310,7 +307,7 @@ class ProfileOps:
         await self.orgs.inc_org_bytes_stored(org.id, file_size, "profile")
 
         await self.crawl_manager.keep_alive_profile_browser(
-            browser_commit.browserid, mark_committing="done"
+            browser_commit.browserid, committing="done"
         )
 
         return True
@@ -477,8 +474,13 @@ class ProfileOps:
         path: str,
         method: str = "GET",
         json: Optional[dict[str, Any]] = None,
+        committing="",
     ) -> dict[str, Any]:
         """make request to browser api to get state"""
+        await self.crawl_manager.keep_alive_profile_browser(
+            browserid, committing=committing
+        )
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.request(

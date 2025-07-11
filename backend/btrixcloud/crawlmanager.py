@@ -373,15 +373,13 @@ class CrawlManager(K8sAPI):
 
         return metadata
 
-    async def keep_alive_profile_browser(
-        self, browserid: str, mark_committing=""
-    ) -> None:
+    async def keep_alive_profile_browser(self, browserid: str, committing="") -> None:
         """update profile browser to not expire"""
         expire_at = dt_now() + timedelta(seconds=30)
 
         update = {"expireTime": date_to_str(expire_at)}
-        if mark_committing:
-            update["committing"] = mark_committing
+        if committing:
+            update["committing"] = committing
 
         await self._patch_job(browserid, update, "profilejobs")
 
