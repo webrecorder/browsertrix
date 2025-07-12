@@ -25,6 +25,7 @@ import { type SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsController } from "@/controllers/searchParams";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import { type BtrixChangeWorkflowProfileFilterEvent } from "@/features/crawl-workflows/workflow-profile-filter";
 import type { BtrixChangeWorkflowScheduleFilterEvent } from "@/features/crawl-workflows/workflow-schedule-filter";
 import type { BtrixChangeWorkflowTagFilterEvent } from "@/features/crawl-workflows/workflow-tag-filter";
 import { pageHeader } from "@/layouts/pageHeader";
@@ -131,6 +132,9 @@ export class WorkflowsList extends BtrixElement {
   @state()
   private filterByTags?: string[];
 
+  @state()
+  private filterByProfiles?: string[];
+
   @query("#deleteDialog")
   private readonly deleteDialog?: SlDialog | null;
 
@@ -171,6 +175,12 @@ export class WorkflowsList extends BtrixElement {
       this.filterByTags = params.getAll("tags");
     } else {
       this.filterByTags = undefined;
+    }
+
+    if (params.has("profiles")) {
+      this.filterByProfiles = params.getAll("profiles");
+    } else {
+      this.filterByProfiles = undefined;
     }
 
     // add filters present in search params
@@ -239,6 +249,7 @@ export class WorkflowsList extends BtrixElement {
     const resetToFirstPageProps = [
       "filterByCurrentUser",
       "filterByTags",
+      "filterByProfiles",
       "filterByScheduled",
       "filterBy",
       "orderBy",
@@ -278,14 +289,12 @@ export class WorkflowsList extends BtrixElement {
       changedProperties.has("filterBy") ||
       changedProperties.has("filterByCurrentUser") ||
       changedProperties.has("filterByTags") ||
+      changedProperties.has("filterByProfiles") ||
       changedProperties.has("orderBy")
     ) {
       this.searchParams.update((params) => {
         // Reset page
         params.delete("page");
-
-        // Existing tags
-        const tags = params.getAll("tags");
 
         const newParams = [
           // Known filters
@@ -298,6 +307,8 @@ export class WorkflowsList extends BtrixElement {
           ["mine", this.filterByCurrentUser || undefined],
 
           ["tags", this.filterByTags],
+
+          ["profiles", this.filterByProfiles],
 
           // Sorting fields
           [
@@ -319,7 +330,8 @@ export class WorkflowsList extends BtrixElement {
           if (value !== undefined) {
             if (Array.isArray(value)) {
               value.forEach((v) => {
-                if (!tags.includes(v)) {
+                // Only add new array values to URL
+                if (!params.getAll(filter).includes(v)) {
                   params.append(filter, v);
                 }
               });
@@ -629,6 +641,13 @@ export class WorkflowsList extends BtrixElement {
           this.filterByTags = e.detail.value;
         }}
       ></btrix-workflow-tag-filter>
+
+      <btrix-workflow-profile-filter
+        .profiles=${this.filterByProfiles}
+        @btrix-change=${(e: BtrixChangeWorkflowProfileFilterEvent) => {
+          this.filterByProfiles = e.detail.value;
+        }}
+      ></btrix-workflow-profile-filter>
 
       <btrix-filter-chip
         ?checked=${this.filterBy.isCrawlRunning === true}
@@ -976,6 +995,7 @@ export class WorkflowsList extends BtrixElement {
           INITIAL_PAGE_SIZE,
         userid: this.filterByCurrentUser ? this.userInfo?.id : undefined,
         tag: this.filterByTags || undefined,
+        profileIds: this.filterByProfiles || undefined,
         sortBy: this.orderBy.field,
         sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
       },

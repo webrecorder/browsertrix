@@ -54,7 +54,7 @@ export class WorkflowTagFilter extends BtrixElement {
 
   private selected = new Map<string, boolean>();
 
-  protected willUpdate(changedProperties: PropertyValues): void {
+  protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("tags")) {
       if (this.tags) {
         this.selected = new Map(this.tags.map((tag) => [tag, true]));
