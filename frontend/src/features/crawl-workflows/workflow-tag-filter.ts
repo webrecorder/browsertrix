@@ -22,13 +22,17 @@ import { isFocusable } from "tabbable";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
 import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
+import { stopProp } from "@/utils/events";
 import { tw } from "@/utils/tailwind";
 
 const MAX_TAGS_IN_LABEL = 5;
 
-export type BtrixChangeWorkflowTagFilterEvent = BtrixChangeEvent<
-  string[] | undefined
->;
+type ChangeWorkflowTagEventDetails =
+  | { tags: string[]; type: "and" | "or" }
+  | undefined;
+
+export type BtrixChangeWorkflowTagFilterEvent =
+  BtrixChangeEvent<ChangeWorkflowTagEventDetails>;
 
 /**
  * @fires btrix-change
@@ -52,7 +56,17 @@ export class WorkflowTagFilter extends BtrixElement {
     keys: ["tag"],
   });
 
+  @state()
+  private get selectedTags() {
+    return Array.from(this.selected.entries())
+      .filter(([_tag, selected]) => selected)
+      .map(([tag]) => tag);
+  }
+
   private selected = new Map<string, boolean>();
+
+  @state()
+  private type: "and" | "or" = "or";
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("tags")) {
@@ -92,17 +106,17 @@ export class WorkflowTagFilter extends BtrixElement {
         @sl-after-hide=${() => {
           this.searchString = "";
 
-          const selectedTags = [];
-
-          for (const [tag, value] of this.selected) {
-            if (value) {
-              selectedTags.push(tag);
-            }
-          }
+          console.log("after hide");
 
           this.dispatchEvent(
-            new CustomEvent<BtrixChangeEvent["detail"]>("btrix-change", {
-              detail: { value: selectedTags.length ? selectedTags : undefined },
+            new CustomEvent<
+              BtrixChangeEvent<ChangeWorkflowTagEventDetails>["detail"]
+            >("btrix-change", {
+              detail: {
+                value: this.selectedTags.length
+                  ? { tags: this.selectedTags, type: this.type }
+                  : undefined,
+              },
             }),
           );
         }}
@@ -141,15 +155,16 @@ export class WorkflowTagFilter extends BtrixElement {
                         checkbox.checked = false;
                       });
 
+                      this.type = "or";
+
                       this.dispatchEvent(
-                        new CustomEvent<BtrixChangeEvent["detail"]>(
-                          "btrix-change",
-                          {
-                            detail: {
-                              value: undefined,
-                            },
+                        new CustomEvent<
+                          BtrixChangeEvent<ChangeWorkflowTagEventDetails>["detail"]
+                        >("btrix-change", {
+                          detail: {
+                            value: undefined,
                           },
-                        ),
+                        }),
                       );
                     }}
                     >${msg("Clear")}</sl-button
@@ -157,7 +172,32 @@ export class WorkflowTagFilter extends BtrixElement {
                 : nothing}
             </sl-menu-label>
 
-            <div class="px-3">${this.renderSearch()}</div>
+            <div class="flex gap-2 px-3">
+              ${this.renderSearch()}
+              <sl-radio-group
+                size="small"
+                value=${this.type}
+                @sl-change=${(event: SlChangeEvent) => {
+                  this.type = (event.target as HTMLInputElement).value as
+                    | "or"
+                    | "and";
+                }}
+                @sl-after-hide=${stopProp}
+              >
+                <sl-tooltip hoist content=${msg("Any of the selected tags")}>
+                  <sl-radio-button value="or" checked>
+                    <sl-icon name="union" slot="prefix"></sl-icon>
+                    ${msg("Any")}
+                  </sl-radio-button>
+                </sl-tooltip>
+                <sl-tooltip hoist content=${msg("All of the selected tags")}>
+                  <sl-radio-button value="and">
+                    <sl-icon name="intersect" slot="prefix"></sl-icon>
+                    ${msg("All")}
+                  </sl-radio-button>
+                </sl-tooltip>
+              </sl-radio-group>
+            </div>
           </header>
 
           ${this.orgTagsTask.render({
@@ -194,6 +234,7 @@ export class WorkflowTagFilter extends BtrixElement {
             ),
           ]
         : tags,
+      { type: this.type === "and" ? "conjunction" : "disjunction" },
     );
 
     return formatter2.map((part, index, array) =>
@@ -266,6 +307,7 @@ export class WorkflowTagFilter extends BtrixElement {
           const { checked, value } = e.target as SlCheckbox;
 
           this.selected.set(value, checked);
+          this.requestUpdate("selectedTags");
         }}
       >
         ${repeat(

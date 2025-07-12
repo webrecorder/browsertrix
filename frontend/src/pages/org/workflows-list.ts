@@ -133,6 +133,9 @@ export class WorkflowsList extends BtrixElement {
   private filterByTags?: string[];
 
   @state()
+  private filterByTagsType: "and" | "or" = "or";
+
+  @state()
   private filterByProfiles?: string[];
 
   @query("#deleteDialog")
@@ -190,6 +193,10 @@ export class WorkflowsList extends BtrixElement {
         this.filterByCurrentUser = value === "true";
       }
 
+      if (key === "tagsType") {
+        this.filterByTagsType = value === "and" ? "and" : "or";
+      }
+
       // Sorting field
       if (key === "sortBy") {
         if (value in sortableFields) {
@@ -210,7 +217,18 @@ export class WorkflowsList extends BtrixElement {
       }
 
       // Ignored params
-      if (["page", "mine", "tags", "sortBy", "sortDir"].includes(key)) continue;
+      if (
+        [
+          "page",
+          "mine",
+          "tags",
+          "tagsType",
+          "profiles",
+          "sortBy",
+          "sortDir",
+        ].includes(key)
+      )
+        continue;
 
       // Convert string bools to filter values
       if (value === "true") {
@@ -249,6 +267,7 @@ export class WorkflowsList extends BtrixElement {
     const resetToFirstPageProps = [
       "filterByCurrentUser",
       "filterByTags",
+      "filterByTagsType",
       "filterByProfiles",
       "filterByScheduled",
       "filterBy",
@@ -289,6 +308,7 @@ export class WorkflowsList extends BtrixElement {
       changedProperties.has("filterBy") ||
       changedProperties.has("filterByCurrentUser") ||
       changedProperties.has("filterByTags") ||
+      changedProperties.has("filterByTagsType") ||
       changedProperties.has("filterByProfiles") ||
       changedProperties.has("orderBy")
     ) {
@@ -307,6 +327,11 @@ export class WorkflowsList extends BtrixElement {
           ["mine", this.filterByCurrentUser || undefined],
 
           ["tags", this.filterByTags],
+
+          [
+            "tagsType",
+            this.filterByTagsType !== "or" ? this.filterByTagsType : undefined,
+          ],
 
           ["profiles", this.filterByProfiles],
 
@@ -638,7 +663,8 @@ export class WorkflowsList extends BtrixElement {
       <btrix-workflow-tag-filter
         .tags=${this.filterByTags}
         @btrix-change=${(e: BtrixChangeWorkflowTagFilterEvent) => {
-          this.filterByTags = e.detail.value;
+          this.filterByTags = e.detail.value?.tags;
+          this.filterByTagsType = e.detail.value?.type || "or";
         }}
       ></btrix-workflow-tag-filter>
 
@@ -995,6 +1021,7 @@ export class WorkflowsList extends BtrixElement {
           INITIAL_PAGE_SIZE,
         userid: this.filterByCurrentUser ? this.userInfo?.id : undefined,
         tag: this.filterByTags || undefined,
+        tagMatch: this.filterByTagsType,
         profileIds: this.filterByProfiles || undefined,
         sortBy: this.orderBy.field,
         sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
