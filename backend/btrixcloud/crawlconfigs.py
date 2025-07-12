@@ -4,7 +4,7 @@ Crawl Config API handling
 
 # pylint: disable=too-many-lines
 
-from typing import List, Union, Optional, TYPE_CHECKING, cast, Dict, Tuple
+from typing import List, Optional, TYPE_CHECKING, cast, Dict, Tuple, Annotated
 
 import asyncio
 import json
@@ -46,6 +46,7 @@ from .models import (
     CrawlerProxies,
     ValidateCustomBehavior,
     RawCrawlConfig,
+    ListFilterType,
 )
 from .utils import (
     dt_now,
@@ -597,13 +598,14 @@ class CrawlConfigOps:
         page: int = 1,
         created_by: Optional[UUID] = None,
         modified_by: Optional[UUID] = None,
-        profileid: Optional[UUID] = None,
+        profile_ids: Optional[List[UUID]] = None,
         first_seed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        tag_match: Optional[ListFilterType] = ListFilterType.AND,
         schedule: Optional[bool] = None,
-        isCrawlRunning: Optional[bool] = None,
+        is_crawl_running: Optional[bool] = None,
         sort_by: str = "lastRun",
         sort_direction: int = -1,
     ) -> tuple[list[CrawlConfigOut], int]:
@@ -616,7 +618,8 @@ class CrawlConfigOps:
         match_query = {"oid": org.id, "inactive": {"$ne": True}}
 
         if tags:
-            match_query["tags"] = {"$all": tags}
+            query_type = "$all" if tag_match == ListFilterType.AND else "$in"
+            match_query["tags"] = {query_type: tags}
 
         if created_by:
             match_query["createdBy"] = created_by
@@ -624,8 +627,8 @@ class CrawlConfigOps:
         if modified_by:
             match_query["modifiedBy"] = modified_by
 
-        if profileid:
-            match_query["profileid"] = profileid
+        if profile_ids:
+            match_query["profileid"] = {"$in": profile_ids}
 
         if name:
             match_query["name"] = name
@@ -639,8 +642,8 @@ class CrawlConfigOps:
             else:
                 match_query["schedule"] = {"$in": ["", None]}
 
-        if isCrawlRunning is not None:
-            match_query["isCrawlRunning"] = isCrawlRunning
+        if is_crawl_running is not None:
+            match_query["isCrawlRunning"] = is_crawl_running
 
         # pylint: disable=duplicate-code
         aggregate = [
@@ -1369,24 +1372,46 @@ def init_crawl_config_api(
     @router.get("", response_model=PaginatedCrawlConfigOutResponse)
     async def get_crawl_configs(
         org: Organization = Depends(org_viewer_dep),
-        pageSize: int = DEFAULT_PAGE_SIZE,
+        page_size: Annotated[
+            int, Query(alias="pageSize", title="Page Size")
+        ] = DEFAULT_PAGE_SIZE,
         page: int = 1,
         # createdBy, kept as userid for API compatibility
-        userid: Optional[UUID] = None,
-        modifiedBy: Optional[UUID] = None,
-        profileid: Optional[UUID] = None,
-        firstSeed: Optional[str] = None,
+        user_id: Annotated[
+            Optional[UUID], Query(alias="userid", title="User ID")
+        ] = None,
+        modified_by: Annotated[
+            Optional[UUID], Query(alias="modifiedBy", title="Modified By User ID")
+        ] = None,
+        profile_ids: Annotated[
+            Optional[List[UUID]], Query(alias="profileIds", title="Profile IDs")
+        ] = None,
+        first_seed: Annotated[
+            Optional[str], Query(alias="firstSeed", title="First Seed")
+        ] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        tag: Union[List[str], None] = Query(default=None),
+        tag: Annotated[Optional[List[str]], Query(title="Tags")] = None,
+        tag_match: Annotated[
+            Optional[ListFilterType],
+            Query(
+                alias="tagMatch",
+                title="Tag Match Type",
+                description='Defaults to `"and"` if omitted',
+            ),
+        ] = ListFilterType.AND,
         schedule: Optional[bool] = None,
-        isCrawlRunning: Optional[bool] = None,
-        sortBy: str = "",
-        sortDirection: int = -1,
+        is_crawl_running: Annotated[
+            Optional[bool], Query(alias="isCrawlRunning", title="Is Crawl Running")
+        ] = None,
+        sort_by: Annotated[str, Query(alias="sortBy", title="Sort Field")] = "",
+        sort_direction: Annotated[
+            int, Query(alias="sortDirection", title="Sort Direction")
+        ] = -1,
     ):
         # pylint: disable=duplicate-code
-        if firstSeed:
-            firstSeed = urllib.parse.unquote(firstSeed)
+        if first_seed:
+            first_seed = urllib.parse.unquote(first_seed)
 
         if name:
             name = urllib.parse.unquote(name)
@@ -1396,21 +1421,22 @@ def init_crawl_config_api(
 
         crawl_configs, total = await ops.get_crawl_configs(
             org,
-            created_by=userid,
-            modified_by=modifiedBy,
-            profileid=profileid,
-            first_seed=firstSeed,
+            created_by=user_id,
+            modified_by=modified_by,
+            profile_ids=profile_ids,
+            first_seed=first_seed,
             name=name,
             description=description,
             tags=tag,
+            tag_match=tag_match,
             schedule=schedule,
-            isCrawlRunning=isCrawlRunning,
-            page_size=pageSize,
+            is_crawl_running=is_crawl_running,
+            page_size=page_size,
             page=page,
-            sort_by=sortBy,
-            sort_direction=sortDirection,
+            sort_by=sort_by,
+            sort_direction=sort_direction,
         )
-        return paginated_format(crawl_configs, total, page, pageSize)
+        return paginated_format(crawl_configs, total, page, page_size)
 
     @router.get("/tags", response_model=List[str], deprecated=True)
     async def get_crawl_config_tags(org: Organization = Depends(org_viewer_dep)):
