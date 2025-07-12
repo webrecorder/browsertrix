@@ -236,7 +236,7 @@ export class ConfigDetails extends BtrixElement {
               () =>
                 html`<a
                   class="text-blue-500 hover:text-blue-600"
-                  href=${`/orgs/${crawlConfig!.oid}/browser-profiles/profile/${
+                  href=${`${this.navigate.orgBasePath}/browser-profiles/profile/${
                     crawlConfig!.profileid
                   }`}
                   @click=${this.navigate.link}
