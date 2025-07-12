@@ -599,8 +599,6 @@ class CrawlConfigOps:
         created_by: Optional[UUID] = None,
         modified_by: Optional[UUID] = None,
         profile_ids: Optional[List[UUID]] = None,
-        # deprecated - use profile_ids instead
-        profileid: Optional[UUID] = None,
         first_seed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -628,9 +626,6 @@ class CrawlConfigOps:
 
         if modified_by:
             match_query["modifiedBy"] = modified_by
-
-        if profileid:
-            profile_ids = [profileid]
 
         if profile_ids:
             match_query["profileid"] = {"$in": profile_ids}
@@ -1388,16 +1383,8 @@ def init_crawl_config_api(
         modified_by: Annotated[
             Optional[UUID], Query(alias="modifiedBy", title="Modified By User ID")
         ] = None,
-        profile_id: Annotated[
-            Optional[List[UUID]], Query(alias="profileId", title="Profile IDs")
-        ] = None,
-        old_profile_id: Annotated[
-            Optional[UUID],
-            Query(
-                alias="profileid",
-                deprecated=True,
-                description="Use `profile_id` instead",
-            ),
+        profile_ids: Annotated[
+            Optional[List[UUID]], Query(alias="profileIds", title="Profile IDs")
         ] = None,
         first_seed: Annotated[
             Optional[str], Query(alias="firstSeed", title="First Seed")
@@ -1436,8 +1423,7 @@ def init_crawl_config_api(
             org,
             created_by=user_id,
             modified_by=modified_by,
-            profile_ids=profile_id,
-            profileid=old_profile_id,
+            profile_ids=profile_ids,
             first_seed=first_seed,
             name=name,
             description=description,
