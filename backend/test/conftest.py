@@ -703,7 +703,7 @@ def profile_id(admin_auth_headers, default_org_id, profile_browser_id):
 
     # Create profile
     start_time = time.monotonic()
-    time_limit = 300
+    time_limit = 30
     while True:
         try:
             r = requests.post(
@@ -794,7 +794,7 @@ def profile_2_id(admin_auth_headers, default_org_id, profile_browser_2_id):
 
     # Create profile
     start_time = time.monotonic()
-    time_limit = 300
+    time_limit = 30
     while True:
         try:
             r = requests.post(
