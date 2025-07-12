@@ -344,7 +344,7 @@ def test_create_profile_read_only_org(
 
     # Try to create profile, verify we get 403 forbidden
     start_time = time.monotonic()
-    time_limit = 300
+    time_limit = 30
     while True:
         try:
             r = requests.post(
