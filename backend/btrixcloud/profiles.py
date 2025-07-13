@@ -199,6 +199,8 @@ class ProfileOps:
         if not profileid:
             raise HTTPException(status_code=400, detail="browser_not_valid")
 
+        self.orgs.can_write_data(org, include_time=False)
+
         committing = metadata.get("committing")
         if not committing:
             self._run_task(
@@ -231,22 +233,22 @@ class ProfileOps:
     ) -> bool:
         """commit profile and shutdown profile browser"""
         # pylint: disable=too-many-locals
-        now = dt_now()
-
-        if existing_profile:
-            profileid = existing_profile.id
-            created = existing_profile.created
-            created_by = existing_profile.createdBy
-            created_by_name = existing_profile.createdByName
-        else:
-            profileid = UUID(metadata["profileid"])
-            created = now
-            created_by = user.id
-            created_by_name = user.name if user.name else user.email
-
-        filename_data = {"filename": f"profiles/profile-{profileid}.tar.gz"}
-
         try:
+            now = dt_now()
+
+            if existing_profile:
+                profileid = existing_profile.id
+                created = existing_profile.created
+                created_by = existing_profile.createdBy
+                created_by_name = existing_profile.createdByName
+            else:
+                profileid = UUID(metadata["profileid"])
+                created = now
+                created_by = user.id
+                created_by_name = user.name if user.name else user.email
+
+            filename_data = {"filename": f"profiles/profile-{profileid}.tar.gz"}
+
             json = await self._send_browser_req(
                 browser_commit.browserid,
                 "/createProfileJS",
@@ -255,60 +257,59 @@ class ProfileOps:
                 committing="committing",
             )
             resource = json["resource"]
-        # pylint: disable=bare-except
-        except:
-            print("Profile commit: browser not valid")
+
+            # backwards compatibility
+            file_size = resource.get("size") or resource.get("bytes")
+
+            profile_file = ProfileFile(
+                hash=resource["hash"],
+                size=file_size,
+                filename=resource["path"],
+                storage=org.storage,
+            )
+
+            baseid = metadata.get("btrix.baseprofile")
+            if baseid:
+                print("baseid", baseid)
+                baseid = UUID(baseid)
+
+            profile = Profile(
+                id=profileid,
+                name=browser_commit.name,
+                description=browser_commit.description,
+                created=created,
+                createdBy=created_by,
+                createdByName=created_by_name,
+                modified=now,
+                modifiedBy=user.id,
+                modifiedByName=user.name if user.name else user.email,
+                origins=json["origins"],
+                resource=profile_file,
+                userid=UUID(metadata.get("btrix.user")),
+                oid=org.id,
+                baseid=baseid,
+                crawlerChannel=browser_commit.crawlerChannel,
+                proxyId=browser_commit.proxyId,
+            )
+
+            await self.profiles.find_one_and_update(
+                {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
+            )
+
+            await self.background_job_ops.create_replica_jobs(
+                org.id, profile_file, str(profileid), "profile"
+            )
+
+            await self.orgs.inc_org_bytes_stored(org.id, file_size, "profile")
+
+            await self.crawl_manager.keep_alive_profile_browser(
+                browser_commit.browserid, committing="done"
+            )
+
+        # pylint: disable=broad-except
+        except Exception as e:
+            print("Profile commit failed", e)
             return False
-
-        # backwards compatibility
-        file_size = resource.get("size") or resource.get("bytes")
-
-        profile_file = ProfileFile(
-            hash=resource["hash"],
-            size=file_size,
-            filename=resource["path"],
-            storage=org.storage,
-        )
-
-        baseid = metadata.get("btrix.baseprofile")
-        if baseid:
-            print("baseid", baseid)
-            baseid = UUID(baseid)
-
-        self.orgs.can_write_data(org, include_time=False)
-
-        profile = Profile(
-            id=profileid,
-            name=browser_commit.name,
-            description=browser_commit.description,
-            created=created,
-            createdBy=created_by,
-            createdByName=created_by_name,
-            modified=now,
-            modifiedBy=user.id,
-            modifiedByName=user.name if user.name else user.email,
-            origins=json["origins"],
-            resource=profile_file,
-            userid=UUID(metadata.get("btrix.user")),
-            oid=org.id,
-            baseid=baseid,
-            crawlerChannel=browser_commit.crawlerChannel,
-            proxyId=browser_commit.proxyId,
-        )
-
-        await self.profiles.find_one_and_update(
-            {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
-        )
-
-        await self.background_job_ops.create_replica_jobs(
-            org.id, profile_file, str(profileid), "profile"
-        )
-
-        await self.orgs.inc_org_bytes_stored(org.id, file_size, "profile")
-
-        await self.crawl_manager.keep_alive_profile_browser(
-            browser_commit.browserid, committing="done"
-        )
 
         return True
 

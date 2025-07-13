@@ -361,9 +361,9 @@ def test_create_profile_read_only_org(
             if detail == "waiting_for_browser":
                 time.sleep(5)
                 continue
-            if detail == "org_set_to_read_only":
-                assert r.status_code == 403
-                break
+            assert detail == "org_set_to_read_only"
+            assert r.status_code == 403
+            break
         except:
             if time.monotonic() - start_time > time_limit:
                 raise
