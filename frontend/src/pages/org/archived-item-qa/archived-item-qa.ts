@@ -187,14 +187,14 @@ export class ArchivedItemQA extends BtrixElement {
     return this.notFailedQaRuns && !this.notFailedQaRuns.length;
   }
 
-  private get selectedRun() {
+  private get selectedFinishedRun() {
     if (!this.qaRunId) return;
 
     return this.notFailedQaRuns?.find(({ id }) => id === this.qaRunId);
   }
 
   private get analyzed() {
-    return this.selectedRun && !isActive(this.selectedRun);
+    return this.selectedFinishedRun && !isActive(this.selectedFinishedRun);
   }
 
   private readonly pollTask = new Task(this, {
@@ -552,23 +552,26 @@ export class ArchivedItemQA extends BtrixElement {
               <sl-icon name="replaywebpage" library="app"></sl-icon>
               ${msg("Replay")}
             </btrix-navigation-button>
-            ${when(
-              this.noRuns,
-              () => html`
-                <div class="ml-auto flex items-center gap-3">
-                  <btrix-popover
+            <div class="ml-auto flex items-center gap-3">
+              ${when(
+                !this.analyzed,
+                () =>
+                  html`<btrix-popover
                     content=${msg(
                       "Screenshot, text, and resource quality metrics are only available for analyzed crawls. Run analysis to view and compare all QA metrics.",
                     )}
                   >
-                    <span
-                      class="inline-flex items-center gap-1.5 text-xs text-neutral-500"
+                    <div
+                      class="flex items-center gap-1.5 text-xs text-neutral-500"
                     >
                       <sl-icon class="text-sm" name="info-circle"></sl-icon>
                       ${msg("Limited view")}
-                    </span>
-                  </btrix-popover>
-
+                    </div>
+                  </btrix-popover>`,
+              )}
+              ${when(
+                this.noRuns,
+                () => html`
                   <sl-button
                     size="small"
                     variant="primary"
@@ -582,30 +585,29 @@ export class ArchivedItemQA extends BtrixElement {
                     ></sl-icon>
                     ${msg("Run Analysis")}
                   </sl-button>
-                </div>
-              `,
-              () =>
-                when(
-                  this.notFailedQaRuns,
-                  (qaRuns) => html`
-                    <btrix-qa-run-dropdown
-                      class="ml-auto"
-                      .items=${qaRuns}
-                      crawlId=${this.itemId || ""}
-                      selectedId=${this.qaRunId || ""}
-                      @btrix-select=${(e: CustomEvent<SelectDetail>) => {
-                        const params = new URLSearchParams(searchParams);
-                        params.set("qaRunId", e.detail.item.id);
-                        this.navigate.to(
-                          `${window.location.pathname}?${params.toString()}`,
-                          undefined,
-                          false,
-                        );
-                      }}
-                    ></btrix-qa-run-dropdown>
-                  `,
-                ),
-            )}
+                `,
+                () =>
+                  when(
+                    this.notFailedQaRuns,
+                    (qaRuns) => html`
+                      <btrix-qa-run-dropdown
+                        .items=${qaRuns}
+                        crawlId=${this.itemId || ""}
+                        selectedId=${this.qaRunId || ""}
+                        @btrix-select=${(e: CustomEvent<SelectDetail>) => {
+                          const params = new URLSearchParams(searchParams);
+                          params.set("qaRunId", e.detail.item.id);
+                          this.navigate.to(
+                            `${window.location.pathname}?${params.toString()}`,
+                            undefined,
+                            false,
+                          );
+                        }}
+                      ></btrix-qa-run-dropdown>
+                    `,
+                  ),
+              )}
+            </div>
           </nav>
           ${this.renderPanelToolbar()} ${this.renderPanel()}
         </div>
