@@ -1012,7 +1012,10 @@ https://replayweb.page/docs`}
 
         if (text) {
           const textBlob = new Blob([text]);
-          if (textBlob.size > MAX_SEED_LIST_STRING_BYTES) {
+          if (
+            textBlob.size > MAX_SEED_LIST_STRING_BYTES ||
+            text.split(/\n/).length > URL_LIST_MAX_URLS
+          ) {
             const file = new File([textBlob], DEFAULT_SEED_LIST_FILE_NAME, {
               type: "text/plain",
             });
