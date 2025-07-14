@@ -62,7 +62,6 @@ export class WorkflowsNew extends LiteElement {
         customBehaviors: [],
         clickSelector: DEFAULT_AUTOCLICK_SELECTOR,
       },
-      seedFileId: null,
       tags: [],
       crawlTimeout: null,
       maxCrawlSize: null,
