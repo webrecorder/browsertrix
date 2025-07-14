@@ -555,20 +555,34 @@ export class ArchivedItemQA extends BtrixElement {
             ${when(
               this.noRuns,
               () => html`
-                <sl-button
-                  class="ml-auto"
-                  size="small"
-                  variant="primary"
-                  @click=${() => void this.startQARun()}
-                  ?disabled=${isArchivingDisabled(this.org, true)}
-                >
-                  <sl-icon
-                    slot="prefix"
-                    name="microscope"
-                    library="app"
-                  ></sl-icon>
-                  ${msg("Run Analysis")}
-                </sl-button>
+                <div class="ml-auto flex items-center gap-3">
+                  <btrix-popover
+                    content=${msg(
+                      "Screenshot, text, and resource quality metrics are only available for analyzed crawls. Run analysis to view and compare all QA metrics.",
+                    )}
+                  >
+                    <span
+                      class="inline-flex items-center gap-1.5 text-xs text-neutral-500"
+                    >
+                      <sl-icon class="text-sm" name="info-circle"></sl-icon>
+                      ${msg("Limited view")}
+                    </span>
+                  </btrix-popover>
+
+                  <sl-button
+                    size="small"
+                    variant="primary"
+                    @click=${() => void this.startQARun()}
+                    ?disabled=${isArchivingDisabled(this.org, true)}
+                  >
+                    <sl-icon
+                      slot="prefix"
+                      name="microscope"
+                      library="app"
+                    ></sl-icon>
+                    ${msg("Run Analysis")}
+                  </sl-button>
+                </div>
               `,
               () =>
                 when(
