@@ -40,6 +40,7 @@ import flow from "lodash/fp/flow";
 import isEqual from "lodash/fp/isEqual";
 import throttle from "lodash/fp/throttle";
 import uniq from "lodash/fp/uniq";
+import queryString from "query-string";
 
 import {
   SELECTOR_DELIMITER,
@@ -47,6 +48,7 @@ import {
 } from "./link-selector-table";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { BtrixFileChangeEvent } from "@/components/ui/file-list/events";
 import type {
   SelectCrawlerChangeEvent,
   SelectCrawlerUpdateEvent,
@@ -136,6 +138,7 @@ import {
 type CrawlConfigParams = WorkflowParams & {
   config: WorkflowParams["config"] & {
     seeds: Seed[];
+    seedFileId?: string | null;
   };
 };
 type WorkflowRunParams = { runNow: boolean; updateRunning?: boolean };
@@ -1072,6 +1075,11 @@ https://replayweb.page/docs`}
       drop
       openFile
       required
+      @btrix-change=${(e: BtrixFileChangeEvent) => {
+        this.updateFormState({
+          seedFile: e.detail.value[0],
+        });
+      }}
     >
       <sl-icon name="file-earmark-arrow-up"></sl-icon>
       <p class="mt-1 text-pretty text-center">
@@ -2523,8 +2531,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
       return;
     }
 
+    const parseConfigParams: Parameters<WorkflowEditor["parseConfig"]>[0] = {};
+
+    // Upload seed file first if it exists, since ID will be used to
+    // create/update the workflow
+    if (this.formState.seedListFormat === SeedListFormat.File) {
+      try {
+        parseConfigParams.seedFileId = await this.uploadSeedFile();
+      } catch {
+        return;
+      }
+    }
+
     const config: CrawlConfigParams & WorkflowRunParams = {
-      ...this.parseConfig(),
+      ...this.parseConfig(parseConfigParams),
       runNow: this.saveAndRun && !this.isCrawlRunning,
     };
 
@@ -2642,6 +2662,44 @@ https://archiveweb.page/images/${"logo.svg"}`}
     this.isSubmitting = false;
   }
 
+  private async uploadSeedFile() {
+    if (!this.formState.seedFile) {
+      this.notify.toast({
+        message: msg("Please choose a valid URL list file."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "workflow-created-status",
+      });
+
+      return;
+    }
+
+    try {
+      const params = queryString.stringify({
+        filename: this.formState.seedFile.name,
+      });
+      const data = await this.api.upload(
+        `/orgs/${this.orgId}/files/seedFile?${params}`,
+        this.formState.seedFile,
+      );
+
+      return data.id;
+    } catch (err) {
+      if (isApiError(err)) {
+        console.debug(err.details);
+      }
+
+      this.notify.toast({
+        message: msg(
+          "Uploading URL list file failed. Please choose another file and try again.",
+        ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "workflow-created-status",
+      });
+    }
+  }
+
   private async onReset() {
     this.navigate.to(
       `${this.navigate.orgBasePath}/workflows${this.configId ? `/${this.configId}/${WorkflowTab.Settings}` : ""}`,
@@ -2709,7 +2767,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   }
 
-  private parseConfig(): CrawlConfigParams {
+  private parseConfig(uploadParams?: {
+    seedFileId?: string;
+  }): CrawlConfigParams {
     const config: CrawlConfigParams = {
       // Job types are now merged into a single type
       jobType: "custom",
@@ -2724,7 +2784,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       autoAddCollections: this.formState.autoAddCollections,
       config: {
         ...(isPageScopeType(this.formState.scopeType)
-          ? this.parseUrlListConfig()
+          ? this.parseUrlListConfig(uploadParams)
           : this.parseSeededConfig()),
         behaviorTimeout: this.formState.behaviorTimeoutSeconds,
         pageLoadTimeout: this.formState.pageLoadTimeoutSeconds,
@@ -2747,7 +2807,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,
-      seedFileId: null,
     };
 
     return config;
@@ -2767,15 +2826,23 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return behaviors.join(",");
   }
 
-  private parseUrlListConfig(): Pick<
+  private parseUrlListConfig(uploadParams?: {
+    seedFileId?: string;
+  }): Pick<
     CrawlConfigParams["config"],
-    "seeds" | "scopeType" | "extraHops" | "useSitemap" | "failOnFailedSeed"
+    | "seeds"
+    | "seedFileId"
+    | "scopeType"
+    | "extraHops"
+    | "useSitemap"
+    | "failOnFailedSeed"
   > {
     const config = {
       seeds: urlListToArray(this.formState.urlList).map((seedUrl) => {
         const newSeed: Seed = { url: seedUrl, scopeType: ScopeType.Page };
         return newSeed;
       }),
+      seedFileId: uploadParams?.seedFileId,
       scopeType: ScopeType.Page,
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
       useSitemap: false,
