@@ -29,6 +29,7 @@ import { WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
+import type { StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import {
   DEFAULT_MAX_SCALE,
@@ -151,6 +152,15 @@ export class WorkflowDetail extends BtrixElement {
       return await this.getSeeds(workflowId, signal);
     },
     args: () => [this.workflowId, this.isEditing] as const,
+  });
+
+  private readonly seedFileTask = new Task(this, {
+    task: async ([workflow], { signal }) => {
+      if (!workflow || !workflow.config.seedFileId) return;
+
+      return await this.getSeedFile(workflow.config.seedFileId, signal);
+    },
+    args: () => [this.workflowTask.value, this.isEditing] as const,
   });
 
   private readonly latestCrawlTask = new Task(this, {
@@ -858,6 +868,7 @@ export class WorkflowDetail extends BtrixElement {
           <btrix-workflow-editor
             .initialWorkflow=${this.workflow}
             .initialSeeds=${this.seeds.items}
+            .initialSeedFile=${this.seedFileTask.value}
             configId=${this.workflowId}
             @reset=${() => this.navigate.to(this.basePath)}
           ></btrix-workflow-editor>
@@ -2139,6 +2150,7 @@ export class WorkflowDetail extends BtrixElement {
       <btrix-config-details
         .crawlConfig=${this.workflow}
         .seeds=${this.seeds?.items}
+        .seedFile=${this.seedFileTask.value}
         anchorLinks
       ></btrix-config-details>
     </section>`;
@@ -2212,6 +2224,14 @@ export class WorkflowDetail extends BtrixElement {
   private async getSeeds(workflowId: string, signal: AbortSignal) {
     const data = await this.api.fetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawlconfigs/${workflowId}/seeds`,
+      { signal },
+    );
+    return data;
+  }
+
+  private async getSeedFile(seedFileId: string, signal: AbortSignal) {
+    const data = await this.api.fetch<StorageSeedFile>(
+      `/orgs/${this.orgId}/files/${seedFileId}`,
       { signal },
     );
     return data;
