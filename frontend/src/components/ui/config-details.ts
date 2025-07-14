@@ -17,7 +17,7 @@ import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
-import { WorkflowScopeType } from "@/types/workflow";
+import { WorkflowScopeType, type StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
@@ -42,6 +42,9 @@ export class ConfigDetails extends BtrixElement {
 
   @property({ type: Array })
   seeds?: Seed[];
+
+  @property({ type: Object })
+  seedFile?: StorageSeedFile;
 
   @property({ type: Boolean })
   anchorLinks = false;
@@ -114,13 +117,18 @@ export class ConfigDetails extends BtrixElement {
             (config) => html`
               ${this.renderSetting(
                 msg("Crawl Scope"),
-                when(this.seeds, (seeds) => {
-                  if (!config.scopeType) return;
-                  if (isPageScopeType(config.scopeType) && seeds.length > 1) {
-                    return scopeTypeLabel[WorkflowScopeType.PageList];
-                  }
-                  return scopeTypeLabel[config.scopeType];
-                }),
+                config.seedFileId
+                  ? scopeTypeLabel[WorkflowScopeType.PageList]
+                  : when(this.seeds, (seeds) => {
+                      if (!config.scopeType) return;
+                      if (
+                        isPageScopeType(config.scopeType) &&
+                        seeds.length > 1
+                      ) {
+                        return scopeTypeLabel[WorkflowScopeType.PageList];
+                      }
+                      return scopeTypeLabel[config.scopeType];
+                    }),
               )}
               ${isPageScopeType(config.scopeType)
                 ? this.renderConfirmUrlListSettings(config)
@@ -371,30 +379,48 @@ export class ConfigDetails extends BtrixElement {
   private readonly renderConfirmUrlListSettings = (
     config: CrawlConfig["config"],
   ) => {
+    const seedFile = () =>
+      when(
+        this.seedFile,
+        (file) =>
+          html`<btrix-file-list>
+            <btrix-file-list-item
+              name=${file.originalFilename}
+              size=${file.size}
+              href=${file.path}
+              .removable=${false}
+            ></btrix-file-list-item>
+          </btrix-file-list>`,
+      );
+
+    const seeds = () =>
+      when(
+        this.seeds,
+        (seeds) => html`
+          <ul>
+            ${seeds.map(
+              (seed: Seed) => html`
+                <li>
+                  <a
+                    class="text-blue-600 hover:text-blue-500 hover:underline"
+                    href="${seed.url}"
+                    target="_blank"
+                    rel="noreferrer"
+                    >${seed.url}</a
+                  >
+                </li>
+              `,
+            )}
+          </ul>
+        `,
+      );
+
     return html`
       ${this.renderSetting(
-        config.scopeType === WorkflowScopeType.Page
+        config.scopeType === WorkflowScopeType.Page && !config.seedFileId
           ? msg("Page URL")
           : msg("Page URLs"),
-        this.seeds?.length
-          ? html`
-              <ul>
-                ${this.seeds.map(
-                  (seed: Seed) => html`
-                    <li>
-                      <a
-                        class="text-blue-600 hover:text-blue-500 hover:underline"
-                        href="${seed.url}"
-                        target="_blank"
-                        rel="noreferrer"
-                        >${seed.url}</a
-                      >
-                    </li>
-                  `,
-                )}
-              </ul>
-            `
-          : undefined,
+        config.seedFileId ? seedFile() : seeds(),
         true,
       )}
       ${this.renderSetting(

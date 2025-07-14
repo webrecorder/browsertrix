@@ -249,7 +249,10 @@ export function getInitialFormState(params: {
     }
     formState.useSitemap = seedsConfig.useSitemap;
   } else {
-    if (params.initialSeeds?.length) {
+    if (params.initialWorkflow.config.seedFileId) {
+      formState.scopeType = WorkflowScopeType.PageList;
+      formState.seedListFormat = SeedListFormat.File;
+    } else if (params.initialSeeds?.length) {
       if (params.initialSeeds.length === 1) {
         formState.scopeType = WorkflowScopeType.Page;
       } else {

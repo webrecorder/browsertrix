@@ -94,6 +94,7 @@ import {
 import type { UnderlyingFunction } from "@/types/utils";
 import {
   NewWorkflowOnlyScopeType,
+  type StorageSeedFile,
   type WorkflowTag,
   type WorkflowTags,
 } from "@/types/workflow";
@@ -271,6 +272,9 @@ export class WorkflowEditor extends BtrixElement {
 
   @property({ type: Array })
   initialSeeds?: Seed[];
+
+  @property({ type: Object })
+  initialSeedFile?: StorageSeedFile;
 
   @state()
   private showCrawlerChannels = false;
@@ -1060,6 +1064,21 @@ https://replayweb.page/docs`}
   };
 
   private readonly renderSeedListFileUpload = () => {
+    const file = this.initialSeedFile;
+
+    if (!this.formState.seedFile && file) {
+      return html`<btrix-file-list>
+        <btrix-file-list-item
+          name=${file.originalFilename}
+          size=${file.size}
+          href=${file.path}
+          @btrix-remove=${() => {
+            console.log("TODO");
+          }}
+        ></btrix-file-list-item>
+      </btrix-file-list>`;
+    }
+
     const browseFilesButton = html`<button
       class="text-primary-500 transition-colors hover:text-primary-600"
     >
