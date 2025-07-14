@@ -354,6 +354,10 @@ export class WorkflowsList extends BtrixElement {
         for (const [filter, value] of newParams) {
           if (value !== undefined) {
             if (Array.isArray(value)) {
+              // Rather than a more efficient method where we compare the existing & wanted arrays,
+              // it's simpler to just delete and re-append values here. If we were working with large
+              // arrays, we could change this, but we'll leave it as is for now — if we were working
+              // with truly large arrays, we wouldn't be using search params anyways.
               params.delete(filter);
               value.forEach((v) => {
                 params.append(filter, v);
