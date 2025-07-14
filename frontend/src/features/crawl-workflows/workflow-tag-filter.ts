@@ -106,8 +106,6 @@ export class WorkflowTagFilter extends BtrixElement {
         @sl-after-hide=${() => {
           this.searchString = "";
 
-          console.log("after hide");
-
           this.dispatchEvent(
             new CustomEvent<
               BtrixChangeEvent<ChangeWorkflowTagEventDetails>["detail"]
