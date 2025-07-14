@@ -115,9 +115,9 @@ import {
   appDefaults,
   BYTES_PER_GB,
   DEFAULT_AUTOCLICK_SELECTOR,
-  DEFAULT_SEED_LIST_FILE_NAME,
   DEFAULT_SELECT_LINKS,
   defaultLabel,
+  defaultSeedListFileName,
   getDefaultFormState,
   getInitialFormState,
   getServerDefaults,
@@ -1016,7 +1016,7 @@ https://replayweb.page/docs`}
             textBlob.size > MAX_SEED_LIST_STRING_BYTES ||
             text.split(/\n/).length > URL_LIST_MAX_URLS
           ) {
-            const file = new File([textBlob], DEFAULT_SEED_LIST_FILE_NAME, {
+            const file = new File([textBlob], defaultSeedListFileName(), {
               type: "text/plain",
             });
 
@@ -1067,15 +1067,13 @@ https://replayweb.page/docs`}
     return html`<btrix-file-input
       id="seedUrlList"
       accept=".${SEED_LIST_FILE_EXT}"
+      max=${MAX_SEED_LIST_FILE_BYTES}
       .files=${this.formState.seedFile ? [this.formState.seedFile] : null}
       drop
       openFile
       required
     >
-      <sl-icon
-        name="file-earmark-arrow-up"
-        class="text-xl text-neutral-400"
-      ></sl-icon>
+      <sl-icon name="file-earmark-arrow-up"></sl-icon>
       <p class="mt-1 text-pretty text-center">
         ${msg(html`Drag file here or ${browseFilesButton}`)}
       </p>
@@ -2185,7 +2183,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private hasRequiredFields(): boolean {
     if (isPageScopeType(this.formState.scopeType)) {
-      return Boolean(this.formState.urlList);
+      return Boolean(
+        this.formState.seedListFormat === SeedListFormat.File
+          ? this.formState.seedFile
+          : this.formState.urlList,
+      );
     }
 
     return Boolean(this.formState.primarySeedUrl);

@@ -1,4 +1,4 @@
-import { localized } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
@@ -14,6 +14,7 @@ import type {
 import { TailwindElement } from "@/classes/TailwindElement";
 import { FormControl } from "@/mixins/FormControl";
 import { validationMessageFor } from "@/strings/validation";
+import localize from "@/utils/localize";
 import { tw } from "@/utils/tailwind";
 
 import "@/components/ui/file-list";
@@ -70,6 +71,12 @@ export class FileInput extends FormControl(TailwindElement) {
    */
   @property({ type: Boolean })
   openFile = false;
+
+  /**
+   * Maximum file size in bytes
+   */
+  @property({ type: Number })
+  max = Infinity;
 
   @property({ type: Boolean })
   required = false;
@@ -147,7 +154,24 @@ export class FileInput extends FormControl(TailwindElement) {
       validity = { valueMissing: true };
       message = validationMessageFor.valueMissing;
     } else if (this.files) {
-      // TODO Check min/max size
+      this.files.some((file) => {
+        if (file.size === 0) {
+          validity = { rangeUnderflow: true };
+          message = msg("Please choose a file that is not empty.");
+        } else if (this.max && file.size > this.max) {
+          const maxByteSize = localize.bytes(this.max);
+
+          validity = { rangeOverflow: true };
+          message = msg(
+            str`Please choose a file smaller than ${maxByteSize}.`,
+            {
+              desc: "`maxByteSize` example: '25 MB'. 'max' is shorthand for 'maximum'",
+            },
+          );
+        }
+
+        return message;
+      });
     }
 
     this.setValidity(validity, message);
