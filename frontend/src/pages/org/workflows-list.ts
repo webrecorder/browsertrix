@@ -354,11 +354,9 @@ export class WorkflowsList extends BtrixElement {
         for (const [filter, value] of newParams) {
           if (value !== undefined) {
             if (Array.isArray(value)) {
+              params.delete(filter);
               value.forEach((v) => {
-                // Only add new array values to URL
-                if (!params.getAll(filter).includes(v)) {
-                  params.append(filter, v);
-                }
+                params.append(filter, v);
               });
             } else {
               params.set(filter, value.toString());
