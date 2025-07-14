@@ -1,0 +1,130 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}-emails
+  namespace: {{ .Release.Namespace }}
+
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+      role: emails
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+        role: emails
+
+      annotations:
+        # force helm to update the deployment each time
+        {{- if not .Values.frontend_only }}
+        "helm.update": {{ randAlphaNum 5 | quote }}
+        {{- end }}
+
+    spec:
+      {{- if .Values.main_node_type }}
+      nodeSelector:
+        nodeType: {{ .Values.main_node_type }}
+      {{- end }}
+
+      containers:
+        - name: api
+          image: {{ .Values.emails_image }}
+          imagePullPolicy: {{ .Values.emails_pull_policy }}
+          command:
+              - node
+              - dist/api-server.js
+
+          resources:
+            limits:
+              memory: {{ .Values.emails_memory }}
+
+            requests:
+              cpu: {{ .Values.emails_cpu }}
+              memory: {{ .Values.emails_memory }}
+
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            periodSeconds: 10
+            failureThreshold: 8640
+            successThreshold: 1
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            failureThreshold: 5
+            successThreshold: 1
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            failureThreshold: 15
+            successThreshold: 1
+
+---
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.name }}-emails
+  labels:
+    app: {{ .Values.name }}
+    role: emails
+
+{{- if .Values.service }}
+  {{- if .Values.service.annotations }}
+  annotations:
+  {{- range $key, $val := .Values.service.annotations }}
+    {{ $key }}: {{ $val | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+
+spec:
+  selector:
+    app: {{ .Values.name }}
+    role: emails
+
+  ports:
+    - protocol: TCP
+      port: 3000
+      name: api
+
+{{- if gt (int .Values.emails_max_replicas) 1 }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: emails-autoscaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.name }}-emails
+  minReplicas: 1
+  maxReplicas: {{ .Values.emails_max_replicas }}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{ .Values.emails_avg_cpu_threshold }}
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: {{ .Values.emails_avg_memory_threshold }}
+{{- end }}

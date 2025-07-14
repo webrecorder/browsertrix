@@ -52,10 +52,6 @@ spec:
           configMap:
             name: app-templates
 
-        - name: email-templates
-          configMap:
-            name: email-templates
-
       initContainers:
         - name: migrations
           image: {{ .Values.backend_image }}
@@ -86,9 +82,6 @@ spec:
 
             - name: app-templates
               mountPath: /app/btrixcloud/templates/
-
-            - name: email-templates
-              mountPath: /app/btrixcloud/email-templates/
 
           resources:
             limits:
@@ -149,9 +142,6 @@ spec:
 
             - name: app-templates
               mountPath: /app/btrixcloud/templates/
-
-            - name: email-templates
-              mountPath: /app/btrixcloud/email-templates/
 
           resources:
             limits:
@@ -226,9 +216,6 @@ spec:
 
             - name: app-templates
               mountPath: /app/btrixcloud/templates/
-
-            - name: email-templates
-              mountPath: /app/btrixcloud/email-templates/
 
           resources:
             limits:
