@@ -221,6 +221,32 @@ const plurals = {
       id: "browserWindows.plural.other",
     }),
   },
+  profiles: {
+    zero: msg("profiles", {
+      desc: 'plural form of "profiles" for zero profiles',
+      id: "profiles.plural.zero",
+    }),
+    one: msg("profile", {
+      desc: 'singular form for "profile"',
+      id: "profiles.plural.one",
+    }),
+    two: msg("profiles", {
+      desc: 'plural form of "profiles" for two profiles',
+      id: "profiles.plural.two",
+    }),
+    few: msg("profiles", {
+      desc: 'plural form of "profiles" for few profiles',
+      id: "profiles.plural.few",
+    }),
+    many: msg("profiles", {
+      desc: 'plural form of "profiles" for many profiles',
+      id: "profiles.plural.many",
+    }),
+    other: msg("profiles", {
+      desc: 'plural form of "profiles" for multiple/other profiles',
+      id: "profiles.plural.other",
+    }),
+  },
 };
 
 export const pluralOf = (word: keyof typeof plurals, count: number) => {
