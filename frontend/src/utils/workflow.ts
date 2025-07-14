@@ -27,7 +27,6 @@ export const BYTES_PER_GB = 1e9;
 export const DEFAULT_SELECT_LINKS = ["a[href]->href" as const];
 export const DEFAULT_AUTOCLICK_SELECTOR = "a";
 export const SEED_LIST_FILE_EXT = "txt";
-export const DEFAULT_SEED_LIST_FILE_NAME = `url-list.${SEED_LIST_FILE_EXT}`;
 export const MAX_SEED_LIST_STRING_BYTES = 500 * 1000;
 export const MAX_SEED_LIST_FILE_BYTES = 25 * 1e6;
 
@@ -95,6 +94,13 @@ export function defaultLabel(value: unknown): string {
     return msg(str`Default: ${value}`);
   }
   return "";
+}
+
+export function defaultSeedListFileName() {
+  return `url-list-${new Date()
+    .toISOString()
+    .split(".")[0]
+    .replace(/[^0-9]/g, "")}.${SEED_LIST_FILE_EXT}`;
 }
 
 export type FormState = {
