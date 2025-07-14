@@ -1,0 +1,32 @@
+{
+  "name": "react-email-starter",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "email build",
+    "dev": "email dev",
+    "export": "email export",
+    "dev:api": "tsx api-server.ts",
+    "build:api": "tsc",
+    "start": "node dist/api-server.js"
+  },
+  "dependencies": {
+    "@react-email/components": "0.1.1",
+    "@sendgrid/mail": "^7.7.0",
+    "@webrecorder/hickory": "^0.4.0",
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.9",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.1",
+    "react-email": "4.0.17",
+    "tsx": "^4.20.3",
+    "typescript": "^5.3.3"
+  }
+}
