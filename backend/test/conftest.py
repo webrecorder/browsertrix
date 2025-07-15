@@ -1,8 +1,6 @@
 import os
 import pytest
 import requests
-import socket
-import subprocess
 import time
 from typing import Dict
 from uuid import UUID
@@ -616,19 +614,6 @@ def _create_profile_browser(
         if data.get("success"):
             return browser_id
         time.sleep(5)
-
-
-@pytest.fixture(scope="function")
-def echo_server():
-    print(f"Echo server starting", flush=True)
-    p = subprocess.Popen(["python3", os.path.join(curr_dir, "echo_server.py")])
-    print(f"Echo server started", flush=True)
-    time.sleep(1)
-    yield p
-    time.sleep(10)
-    print(f"Echo server terminating", flush=True)
-    p.terminate()
-    print(f"Echo server terminated", flush=True)
 
 
 PROFILE_NAME = "Test profile"
