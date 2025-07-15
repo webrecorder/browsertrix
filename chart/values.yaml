@@ -448,6 +448,9 @@ email:
   # use to provide an additional support email in email templates
   support_email: ""
 
+  # endpoint for email templates
+  template_endpoint: "http://emails:300/email" # TODO what should this actually be?
+
 # Deployment options
 # =========================================
 
