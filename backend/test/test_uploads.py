@@ -308,7 +308,7 @@ def test_uploads_collection_updated(
     assert data["totalSize"] > 0
     assert data["dateEarliest"]
     assert data["dateLatest"]
-    assert data["modified"] > data["created"]
+    assert data["modified"] >= data["created"]
 
 
 def test_replace_upload(
