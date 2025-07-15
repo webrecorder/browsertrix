@@ -389,6 +389,9 @@ export class WorkflowEditor extends BtrixElement {
   @query("btrix-custom-behaviors-table")
   private readonly customBehaviorsTable?: CustomBehaviorsTable | null;
 
+  @query("sl-textarea#seedUrlList")
+  private readonly seedUrlListTextarea?: SlTextarea | null;
+
   // CSS parser should ideally match the parser used in browsertrix-crawler.
   // https://github.com/webrecorder/browsertrix-crawler/blob/v1.5.8/package.json#L23
   private readonly cssParser = createParser();
@@ -435,6 +438,26 @@ export class WorkflowEditor extends BtrixElement {
           ?.activeTab
     ) {
       window.location.hash = this.progressState.activeTab;
+    }
+    const prevFormState = changedProperties.get("formState") as
+      | FormState
+      | undefined;
+    if (prevFormState) {
+      if (prevFormState.seedListFormat !== this.formState.seedListFormat) {
+        void this.focusOnSeedListFormatChange();
+      }
+    }
+  }
+
+  private async focusOnSeedListFormatChange() {
+    if (this.formState.seedListFormat === SeedListFormat.JSON) {
+      if (!this.seedUrlListTextarea) {
+        console.debug("missing this.seedUrlListTextarea");
+        return;
+      }
+
+      await this.seedUrlListTextarea.updateComplete;
+      this.seedUrlListTextarea.focus();
     }
   }
 
@@ -969,8 +992,16 @@ export class WorkflowEditor extends BtrixElement {
           <sl-radio-button value=${SeedListFormat.JSON}
             >${msg("Enter URLs")}</sl-radio-button
           >
-          <sl-radio-button value=${SeedListFormat.File}
-            >${msg("Upload URL List")}</sl-radio-button
+          <sl-radio-button
+            value=${SeedListFormat.File}
+            @click=${() => {
+              // Reset file if it's been removed
+              if (this.initialSeedFile && !this.formState.seedFileId) {
+                this.formState.seedFileId = this.initialSeedFile.id;
+              }
+            }}
+          >
+            ${msg("Upload URL List")}</sl-radio-button
           >
         </sl-radio-group>
 
@@ -1060,6 +1091,7 @@ https://replayweb.page/docs`}
         }
       }}
       @sl-change=${this.doValidateUrlList}
+      @sl-blur=${this.doValidateUrlList}
     ></sl-textarea>`;
   };
 
