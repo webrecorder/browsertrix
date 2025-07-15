@@ -43,6 +43,12 @@ export class FileInput extends FormControl(TailwindElement) {
   label?: string;
 
   /**
+   * Form control help text
+   */
+  @property({ type: String })
+  helpText?: string;
+
+  /**
    * Selected files.
    */
   @property({ type: Array })
@@ -193,6 +199,18 @@ export class FileInput extends FormControl(TailwindElement) {
         ? html`<label for="fileInput" class="form-label">${this.label}</label>`
         : nothing}
       ${this.files?.length ? this.renderFiles() : this.renderInput()}
+
+      <div class=${clsx(tw`form-help-text`, !this.helpText && tw`hidden`)}>
+        <slot
+          name="help-text"
+          @slotchange=${(e: Event) => {
+            (e.target as HTMLSlotElement)
+              .closest(".form-help-text")
+              ?.classList.remove(tw`hidden`);
+          }}
+          >${this.helpText}</slot
+        >
+      </div>
     `;
   }
 
