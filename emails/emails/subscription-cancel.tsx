@@ -152,3 +152,8 @@ SubscriptionCancelEmail.PreviewProps = {
 } satisfies SubscriptionCancelEmailProps;
 
 export default SubscriptionCancelEmail;
+
+export const subject = ({ cancel_date }: SubscriptionCancelEmailProps) => {
+  const date = reRenderDate(cancel_date);
+  return `Your Browsertrix subscription will be cancelled on ${date}`;
+};

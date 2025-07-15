@@ -197,3 +197,10 @@ TrialEndingSoonEmail.PreviewProps = {
 } satisfies TrialEndingSoonEmailProps;
 
 export default TrialEndingSoonEmail;
+
+export const subject = ({ trial_end_date }: TrialEndingSoonEmailProps) => {
+  const date = reRenderDate(trial_end_date);
+  const daysLeft = differenceInDays(new Date(trial_end_date));
+  const relative = formatRelativeDate(daysLeft, "days");
+  return `Your Browsertrix trial ends ${relative}`;
+};

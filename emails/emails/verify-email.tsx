@@ -91,3 +91,5 @@ VerifyEmail.PreviewProps = {
 } satisfies VerifyEmailProps;
 
 export default VerifyEmail;
+
+export const subject = () => "Verify your Browsertrix account";

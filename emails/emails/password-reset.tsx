@@ -80,3 +80,5 @@ PasswordResetEmail.PreviewProps = {
 } satisfies PasswordResetEmailProps;
 
 export default PasswordResetEmail;
+
+export const subject = () => "Reset your Browsertrix password";

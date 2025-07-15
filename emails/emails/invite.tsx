@@ -21,7 +21,7 @@ export const schema = z.object({
   trial_remaining_days: z.number().int().optional(),
 });
 
-export type Props = z.infer<typeof schema>;
+export type InviteUserEmailProps = z.infer<typeof schema>;
 
 export const InviteUserEmail = ({
   is_new,
@@ -31,7 +31,7 @@ export const InviteUserEmail = ({
   support_email,
   validity_period_days = 7,
   trial_remaining_days,
-}: Props) => {
+}: InviteUserEmailProps) => {
   const previewText = `Join ${org_name} on Browsertrix`;
 
   return (
@@ -341,6 +341,19 @@ InviteUserEmail.PreviewProps = {
   support_email: "support@webrecorder.net",
   validity_period_days: 7,
   trial_remaining_days: 7,
-} satisfies Props;
+} satisfies InviteUserEmailProps;
 
 export default InviteUserEmail;
+
+export const subject = ({
+  trial_remaining_days,
+  org_name,
+  sender,
+}: InviteUserEmailProps) => {
+  if (trial_remaining_days != null) {
+    return "Start your Browsertrix trial";
+  }
+  return sender || org_name
+    ? `Join ${sender || org_name} on Browsertrix`
+    : `Get started with Browsertrix`;
+};

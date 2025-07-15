@@ -116,3 +116,5 @@ FailedBgJobEmail.PreviewProps = {
 } satisfies FailedBgJobEmailProps;
 
 export default FailedBgJobEmail;
+
+export const subject = () => "Failed Browsertrix background job";

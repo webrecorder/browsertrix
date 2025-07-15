@@ -9,6 +9,7 @@ import React from "react";
 type TemplateModule = {
   schema: z.ZodSchema<any>;
   default: (props: any) => React.ReactElement;
+  subject: (props: any) => string;
 };
 
 type Templates = Record<string, TemplateModule>;
@@ -37,7 +38,7 @@ app.post("/api/emails/:templateName", async (req: Request, res: Response) => {
 
     // Type assertion to handle dynamic template access
     const templateModule = (templates as Templates)[templateKey];
-    const { schema, default: Template } = templateModule;
+    const { schema, default: Template, subject } = templateModule;
 
     // Parse props with the specific template's schema
     const props = schema.parse(req.body);
@@ -47,7 +48,7 @@ app.post("/api/emails/:templateName", async (req: Request, res: Response) => {
         : render(Template(props)),
       render(Template(props), { plainText: true }),
     ]);
-    res.send({ html, plainText });
+    res.send({ html, plainText, subject: subject(props) });
   } catch (error) {
     console.error("Error rendering email:", error);
     if (error instanceof z.ZodError) {
