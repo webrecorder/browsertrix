@@ -97,7 +97,7 @@ export function defaultLabel(value: unknown): string {
 }
 
 export function defaultSeedListFileName() {
-  return `url-list-${new Date()
+  return `URL-List-${new Date()
     .toISOString()
     .split(".")[0]
     .replace(/[^0-9]/g, "")}.${SEED_LIST_FILE_EXT}`;
