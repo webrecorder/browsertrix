@@ -113,7 +113,7 @@ data:
   CRAWL_ARGS: {{- include "btrix.crawler_args" . }}
 
   # disable behaviors for QA runs, otherwise use same args
-  QA_ARGS: {{- include "btrix.crawler_args" . }} --behaviors=""
+  QA_ARGS: {{- include "btrix.crawler_args" . }} --behaviors=siteSpecific
 
 ---
 apiVersion: v1
