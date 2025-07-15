@@ -62,14 +62,14 @@ class Migration(BaseMigration):
                 )
 
         # Crawls
-        match_query: Dict[str, Any] = {
+        crawl_query: Dict[str, Any] = {
             "type": "crawl",
             "$or": [
                 {"firstSeed": {"$in": [None, ""]}},
                 {"seedCount": {"$in": [None, 0]}},
             ],
         }
-        async for crawl_raw in crawls_mdb.find(match_query):
+        async for crawl_raw in crawls_mdb.find(crawl_query):
             crawl_id = crawl_raw["_id"]
             try:
                 crawl = Crawl.from_dict(crawl_raw)
