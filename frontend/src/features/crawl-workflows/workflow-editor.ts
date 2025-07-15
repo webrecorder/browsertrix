@@ -164,6 +164,8 @@ const formName = "newJobConfig";
 const panelSuffix = "--panel";
 const defaultFormState = getDefaultFormState();
 
+const pastedUrlListFileName = msg("URL List (created from paste)");
+
 enum SubmitType {
   Save = "save",
   SaveAndRun = "run",
@@ -989,20 +991,12 @@ export class WorkflowEditor extends BtrixElement {
           name="seedListFormat"
           size="small"
         >
-          <sl-radio-button value=${SeedListFormat.JSON}
-            >${msg("Enter URLs")}</sl-radio-button
-          >
-          <sl-radio-button
-            value=${SeedListFormat.File}
-            @click=${() => {
-              // Reset file if it's been removed
-              if (this.initialSeedFile && !this.formState.seedFileId) {
-                this.formState.seedFileId = this.initialSeedFile.id;
-              }
-            }}
-          >
-            ${msg("Upload URL List")}</sl-radio-button
-          >
+          <sl-radio-button value=${SeedListFormat.JSON}>
+            ${msg("Enter URLs")}
+          </sl-radio-button>
+          <sl-radio-button value=${SeedListFormat.File}>
+            ${msg("Upload URL List")}
+          </sl-radio-button>
         </sl-radio-group>
 
         ${choose(this.formState.seedListFormat, [
@@ -1042,24 +1036,25 @@ https://replayweb.page/docs`}
       required
       help-text=${msg("Enter one URL per line.")}
       @paste=${(e: ClipboardEvent) => {
-        const text = e.clipboardData
-          ?.getData("text")
+        const text = `${(e.currentTarget as SlTextarea).value}
+          ${e.clipboardData?.getData("text")}`
           // Remove zero-width characters
-          .replace(/[\u200B-\u200D\uFEFF]/g, "")
-          .trim();
+          .replace(/[\u200B-\u200D\uFEFF]/g, "");
 
         if (text) {
           const textBlob = new Blob([text]);
           if (
             textBlob.size > MAX_SEED_LIST_STRING_BYTES ||
-            text.split(/\n/).length > URL_LIST_MAX_URLS
+            urlListToArray(text).length > URL_LIST_MAX_URLS
           ) {
-            const file = new File([textBlob], defaultSeedListFileName(), {
+            const file = new File([textBlob], pastedUrlListFileName, {
               type: "text/plain",
             });
 
             this.updateFormState(
               {
+                urlList: undefined,
+                seedFileId: null,
                 seedListFormat: SeedListFormat.File,
                 seedFile: file,
               },
@@ -1133,6 +1128,11 @@ https://replayweb.page/docs`}
           seedFile: e.detail.value[0],
         });
       }}
+      @btrix-remove=${() => {
+        this.updateFormState({
+          seedFile: null,
+        });
+      }}
     >
       <sl-icon name="file-earmark-arrow-up"></sl-icon>
       <p class="mt-1 text-pretty text-center">
@@ -1144,6 +1144,42 @@ https://replayweb.page/docs`}
           desc: "`maxByteSize` example: '25 MB'. 'max' is shorthand for 'maximum'",
         })}
       </div>
+
+      ${when(
+        this.initialSeedFile &&
+          !this.formState.seedFileId &&
+          !this.formState.seedFile &&
+          this.initialWorkflow?.config.seedFileId,
+        // Enable undoing removing an uploaded file
+        (seedFileId) => html`
+          <div slot="help-text">
+            <sl-icon
+              class="mr-0.5 align-[-.175em]"
+              name="exclamation-triangle"
+            ></sl-icon>
+            ${msg("Uploaded URL list will be deleted.")}
+            <a
+              class="text-cyan-500 underline hover:no-underline"
+              role="button"
+              @click=${() => this.updateFormState({ seedFileId })}
+            >
+              ${msg("Undo File Removal")}
+            </a>
+          </div>
+        `,
+        () =>
+          when(
+            this.formState.seedFile?.name === pastedUrlListFileName,
+            () =>
+              html`<div slot="help-text">
+                <sl-icon
+                  class="mr-0.5 align-[-.175em]"
+                  name="info-circle"
+                ></sl-icon>
+                ${msg("Automatically converted large URL list to a file.")}
+              </div>`,
+          ),
+      )}
     </btrix-file-input>`;
   };
 
@@ -2732,7 +2768,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     try {
       const params = queryString.stringify({
-        filename: this.formState.seedFile.name,
+        filename: defaultSeedListFileName(),
       });
       const data = await this.api.upload(
         `/orgs/${this.orgId}/files/seedFile?${params}`,

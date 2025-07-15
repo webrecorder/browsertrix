@@ -866,7 +866,7 @@ export class WorkflowDetail extends BtrixElement {
           <btrix-workflow-editor
             .initialWorkflow=${this.workflow}
             .initialSeeds=${this.seeds.items}
-            .initialSeedFile=${this.seedFileTask.value}
+            .initialSeedFile=${this.seedFileTask.value || undefined}
             configId=${this.workflowId}
             @reset=${() => this.navigate.to(this.basePath)}
           ></btrix-workflow-editor>
