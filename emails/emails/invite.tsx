@@ -137,7 +137,7 @@ export const InviteUserEmail = ({
         {is_new ? (
           <>
             Set up your account on{" "}
-            <strong className="text-stone-900">Browsertrix</strong>. You'll pick
+            <strong className="text-stone-900">Browsertrix</strong>. You’ll pick
             a password
             {org_name ? (
               sender ? (
