@@ -13,6 +13,18 @@ export const formatDate = (date: Date) => {
   return formatter.format(date);
 };
 
+export const formatDateTime = (date: Date) => {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+  });
+  return formatter.format(date);
+};
+
 export const differenceInDays = (date1: Date, date2 = new Date()) => {
   const diffTime = Math.abs(date2.getTime() - date1.getTime());
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
