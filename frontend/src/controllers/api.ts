@@ -213,6 +213,14 @@ export class APIController implements ReactiveController {
         if (xhr.status === 403) {
           reject(AbortReason.QuotaReached);
         }
+        if (xhr.status === 404) {
+          reject(
+            new APIError({
+              message: xhr.statusText,
+              status: xhr.status,
+            }),
+          );
+        }
       });
       xhr.addEventListener("error", () => {
         reject(
