@@ -863,7 +863,7 @@ export class WorkflowDetail extends BtrixElement {
       <btrix-detail-page-title .item=${this.workflow}></btrix-detail-page-title>
     </header>
 
-    ${this.workflow && this.seeds
+    ${this.workflow && this.seeds && this.seedFileTask.value
       ? html`
           <btrix-workflow-editor
             .initialWorkflow=${this.workflow}
@@ -877,6 +877,7 @@ export class WorkflowDetail extends BtrixElement {
           Promise.all([
             this.workflowTask.taskComplete,
             this.seedsTask.taskComplete,
+            this.seedFileTask.taskComplete,
           ]).catch(this.renderPageError),
           this.renderLoading(),
         )}

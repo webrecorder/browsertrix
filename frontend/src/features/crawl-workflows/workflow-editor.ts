@@ -1066,14 +1066,16 @@ https://replayweb.page/docs`}
   private readonly renderSeedListFileUpload = () => {
     const file = this.initialSeedFile;
 
-    if (!this.formState.seedFile && file) {
+    if (this.formState.seedFileId && file) {
       return html`<btrix-file-list>
         <btrix-file-list-item
           name=${file.originalFilename}
           size=${file.size}
           href=${file.path}
           @btrix-remove=${() => {
-            console.log("TODO");
+            this.updateFormState({
+              seedFileId: null,
+            });
           }}
         ></btrix-file-list-item>
       </btrix-file-list>`;
