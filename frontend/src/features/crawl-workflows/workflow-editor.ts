@@ -1034,12 +1034,12 @@ https://archiveweb.page/guide`}
         break;
       case ScopeType.Custom:
         helpText = msg(
-          html`Will crawl all page URLs that begin with
+          html`Will start with
             <span class="break-word text-blue-500"
               >${exampleDomain}${examplePathname}</span
             >
-            or any URL that begins with those specified in
-            <em>Extra URL Prefixes in Scope</em>`,
+            and include <em>only</em> URLs that start with the
+            <em>URL Prefixes in Scope</em> listed below.`,
         );
         break;
       default:
@@ -1092,6 +1092,30 @@ https://archiveweb.page/guide`}
                 true,
               );
             }
+            if (
+              this.formState.primarySeedUrl &&
+              this.formState.scopeType === ScopeType.Custom &&
+              !this.formState.customIncludeUrlList
+            ) {
+              let prefixUrl = this.formState.primarySeedUrl;
+              try {
+                const startingUrl = new URL(this.formState.primarySeedUrl);
+                prefixUrl =
+                  startingUrl.origin +
+                  startingUrl.pathname.slice(
+                    0,
+                    startingUrl.pathname.lastIndexOf("/") + 1,
+                  );
+              } catch (e) {
+                // ignore
+              }
+              this.updateFormState(
+                {
+                  customIncludeUrlList: prefixUrl,
+                },
+                true,
+              );
+            }
           }}
         >
           <div slot="help-text">${helpText}</div>
@@ -1104,7 +1128,7 @@ https://archiveweb.page/guide`}
           ${inputCol(html`
             <sl-textarea
               name="customIncludeUrlList"
-              label=${msg("Extra URL Prefixes in Scope")}
+              label=${msg("URL Prefixes in Scope")}
               rows="3"
               autocomplete="off"
               inputmode="url"
@@ -1115,8 +1139,7 @@ https://example.net`}
             ></sl-textarea>
           `)}
           ${this.renderHelpTextCol(
-            msg(`If the crawler finds pages outside of the Crawl Scope they
-            will only be saved if they begin with URLs listed here.`),
+            msg(`Only crawl pages that begin with URLs listed here.`),
           )}
         `,
       )}
@@ -2643,7 +2666,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       scopeType: this.formState.scopeType as ScopeType,
       include:
         this.formState.scopeType === ScopeType.Custom
-          ? [...includeUrlList.map((url) => regexEscape(url))]
+          ? [...includeUrlList.map((url) => "^" + regexEscape(url))]
           : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
