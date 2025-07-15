@@ -90,6 +90,16 @@ export class FileInput extends FormControl(TailwindElement) {
   // Object URLs are used to view files
   private readonly fileToObjectUrl = new Map<File, string>();
 
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    this.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        this.input?.click();
+      }
+    });
+  }
+
   disconnectedCallback(): void {
     for (const url of this.fileToObjectUrl.values()) {
       URL.revokeObjectURL(url);
