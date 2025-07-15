@@ -107,6 +107,7 @@ export type FormState = {
   primarySeedUrl: string;
   urlList: string;
   seedListFormat: SeedListFormat;
+  seedFileId: string | null;
   seedFile: File | null;
   includeLinkedPages: boolean;
   useSitemap: boolean;
@@ -168,6 +169,7 @@ export const getDefaultFormState = (): FormState => ({
   primarySeedUrl: "",
   urlList: "",
   seedListFormat: SeedListFormat.JSON,
+  seedFileId: null,
   seedFile: null,
   includeLinkedPages: false,
   useSitemap: false,
@@ -250,6 +252,7 @@ export function getInitialFormState(params: {
     formState.useSitemap = seedsConfig.useSitemap;
   } else {
     if (params.initialWorkflow.config.seedFileId) {
+      formState.seedFileId = params.initialWorkflow.config.seedFileId;
       formState.scopeType = WorkflowScopeType.PageList;
       formState.seedListFormat = SeedListFormat.File;
     } else if (params.initialSeeds?.length) {
