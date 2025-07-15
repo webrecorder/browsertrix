@@ -449,7 +449,7 @@ email:
   support_email: ""
 
   # endpoint for email templates
-  template_endpoint: "http://emails:300/email" # TODO what should this actually be?
+  template_endpoint: "http://emails:3000/api/emails" # TODO what should this actually be?
 
 # Deployment options
 # =========================================
