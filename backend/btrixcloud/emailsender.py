@@ -104,6 +104,7 @@ class EmailSender:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             print("Error fetching email template", exc)
+            raise exc
 
     async def send_user_validation(
         self, receiver_email: str, token: str, headers: Optional[dict] = None
