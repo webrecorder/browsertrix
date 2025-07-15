@@ -156,7 +156,8 @@ export class WorkflowDetail extends BtrixElement {
 
   private readonly seedFileTask = new Task(this, {
     task: async ([workflow], { signal }) => {
-      if (!workflow || !workflow.config.seedFileId) return;
+      if (!workflow) return;
+      if (!workflow.config.seedFileId) return null;
 
       return await this.getSeedFile(workflow.config.seedFileId, signal);
     },
@@ -863,7 +864,7 @@ export class WorkflowDetail extends BtrixElement {
       <btrix-detail-page-title .item=${this.workflow}></btrix-detail-page-title>
     </header>
 
-    ${this.workflow && this.seeds && this.seedFileTask.value
+    ${this.workflow && this.seeds && this.seedFileTask.value !== undefined
       ? html`
           <btrix-workflow-editor
             .initialWorkflow=${this.workflow}
@@ -878,7 +879,9 @@ export class WorkflowDetail extends BtrixElement {
             this.workflowTask.taskComplete,
             this.seedsTask.taskComplete,
             this.seedFileTask.taskComplete,
-          ]).catch(this.renderPageError),
+          ])
+            .catch(this.renderPageError)
+            .then(this.renderLoading),
           this.renderLoading(),
         )}
   `;
