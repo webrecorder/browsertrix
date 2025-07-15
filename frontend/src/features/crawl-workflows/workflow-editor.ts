@@ -2246,7 +2246,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     if (isPageScopeType(this.formState.scopeType)) {
       return Boolean(
         this.formState.seedListFormat === SeedListFormat.File
-          ? this.formState.seedFile
+          ? this.formState.seedFile || this.formState.seedFileId
           : this.formState.urlList,
       );
     }
@@ -2586,20 +2586,23 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     this.isSubmitting = true;
 
-    const parseConfigParams: Parameters<WorkflowEditor["parseConfig"]>[0] = {};
+    const uploadParams: Parameters<WorkflowEditor["parseConfig"]>[0] = {};
 
     // Upload seed file first if it exists, since ID will be used to
     // create/update the workflow
-    if (this.formState.seedListFormat === SeedListFormat.File) {
+    if (
+      this.formState.seedListFormat === SeedListFormat.File &&
+      this.formState.seedFile
+    ) {
       try {
-        parseConfigParams.seedFileId = await this.uploadSeedFile();
+        uploadParams.seedFileId = await this.uploadSeedFile();
       } catch {
         return;
       }
     }
 
     const config: CrawlConfigParams & WorkflowRunParams = {
-      ...this.parseConfig(parseConfigParams),
+      ...this.parseConfig(uploadParams),
       runNow: this.saveAndRun && !this.isCrawlRunning,
     };
 
@@ -2895,7 +2898,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         const newSeed: Seed = { url: seedUrl, scopeType: ScopeType.Page };
         return newSeed;
       }),
-      seedFileId: uploadParams?.seedFileId,
+      seedFileId: uploadParams?.seedFileId ?? this.formState.seedFileId,
       scopeType: ScopeType.Page,
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
       useSitemap: false,
