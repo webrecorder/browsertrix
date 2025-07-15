@@ -39,7 +39,7 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
 
             time.sleep(10)
         except:
-            pass
+            time.sleep(10)
 
         attempts += 1
 
@@ -112,7 +112,7 @@ def test_delete_org_superadmin(admin_auth_headers, default_org_id):
 
             time.sleep(10)
         except:
-            pass
+            time.sleep(10)
 
         attempts += 1
 

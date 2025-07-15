@@ -690,7 +690,7 @@ def prepare_browser_for_profile_commit(
                 break
             time.sleep(5)
         except:
-            pass
+            time.sleep(5)
         attempts += 1
 
 
