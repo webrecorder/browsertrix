@@ -103,7 +103,7 @@ class EmailSender:
                         # server.sendmail(self.sender, receiver, message)
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            print("Error fetching portal url", exc)
+            print("Error fetching email template", exc)
 
     async def send_user_validation(
         self, receiver_email: str, token: str, headers: Optional[dict] = None
@@ -113,7 +113,7 @@ class EmailSender:
         origin = get_origin(headers)
 
         await self._send_encrypted(
-            receiver_email, "validate", origin=origin, token=token
+            receiver_email, "verifyEmail", origin=origin, token=token
         )
 
     # pylint: disable=too-many-arguments
@@ -153,7 +153,7 @@ class EmailSender:
 
         await self._send_encrypted(
             receiver_email,
-            "password_reset",
+            "passwordReset",
             origin=origin,
             token=token,
             support_email=self.support_email,
@@ -168,7 +168,7 @@ class EmailSender:
     ):
         """Send background job failed email to superuser"""
         await self._send_encrypted(
-            receiver_email, "failed_bg_job", job=job, org=org, finished=finished
+            receiver_email, "failedBgJob", job=job, org=org, finished=finished
         )
 
     async def send_subscription_will_be_canceled(
@@ -186,7 +186,7 @@ class EmailSender:
 
         await self._send_encrypted(
             receiver_email,
-            "sub_cancel",
+            "subscriptionCancel",
             org_url=org_url,
             user_name=user_name,
             org_name=org.name,
