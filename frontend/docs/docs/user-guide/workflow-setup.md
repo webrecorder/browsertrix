@@ -60,7 +60,7 @@ _Site Crawl_
 :   This scope will crawl all pages on the domain and any subdomains found. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
 
 `Custom Page Prefix`
-:   This scope will crawl all pages that begin with the _Crawl Start URL_ as well as pages from any URL that begin with the URLs listed in `Extra URL Prefixes in Scope`
+:   This scope will crawl the _Crawl Start URL_ as well as pages from any URL that begin with the URLs listed in `URL Prefixes in Scope`. If `https://example.com/path` is set as the _Crawl Start URL_, `https://example.com/` will be automatically added to `URL Prefixes in Scope` by default, but can be removed or modified as needed.
 
 ### Page URL(s)
 
