@@ -405,7 +405,7 @@ export class ArchivedItemQA extends BtrixElement {
 
   private get backUrl() {
     if (this.fromWorkflow) {
-      return `${this.navigate.orgBasePath}/workflows/${this.workflowId}`;
+      return `${this.navigate.orgBasePath}/workflows/${this.workflowId}/latest`;
     }
 
     return `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}#qa`;
@@ -421,7 +421,7 @@ export class ArchivedItemQA extends BtrixElement {
     return html`
       ${this.renderHidden()}
 
-      <div class="flex items-center">${this.renderBackLink()}</div>
+      <div class="mb-4 flex items-center">${this.renderBackLink()}</div>
 
       <article class="qa-grid grid min-h-screen gap-x-6 gap-y-0 lg:snap-start">
         <header
@@ -434,27 +434,39 @@ export class ArchivedItemQA extends BtrixElement {
               ${msg("Review")} ${itemName}
             </h1>
           </div>
-          <div class="ml-auto flex">
-            <sl-button
-              size="small"
-              variant="text"
-              href="${crawlBaseUrl}#qa"
-              @click=${this.navigate.link}
-              >${msg("Exit Review")}</sl-button
-            >
+          <sl-button-group class="ml-auto">
             <sl-button
               variant="success"
               size="small"
               @click=${() => void this.reviewDialog?.show()}
             >
-              <sl-icon slot="prefix" name="patch-check"> </sl-icon>
+              <sl-icon slot="prefix" name="patch-check"></sl-icon>
               ${msg("Finish Review")}
             </sl-button>
-          </div>
+            <sl-dropdown distance="4" hoist>
+              <sl-button
+                slot="trigger"
+                variant="success"
+                size="small"
+                caret
+                aria-label=${msg("More options")}
+              ></sl-button>
+              <sl-menu>
+                <sl-menu-item @click=${() => void this.reviewDialog?.show()}>
+                  <sl-icon slot="prefix" name="patch-check-fill"></sl-icon>
+                  ${msg("Rate Crawl")}
+                </sl-menu-item>
+                <btrix-menu-item-link href="${crawlBaseUrl}#qa">
+                  <sl-icon slot="prefix" name="clipboard2-data-fill"></sl-icon>
+                  ${msg("Go to QA Overview")}
+                </btrix-menu-item-link>
+              </sl-menu>
+            </sl-dropdown>
+          </sl-button-group>
         </header>
 
         <div
-          class="grid--pageToolbar flex flex-wrap items-center justify-stretch gap-2 overflow-hidden border-b py-2 @container"
+          class="grid--pageToolbar flex flex-wrap items-center justify-stretch gap-2 border-b py-2 @container"
         >
           <h3
             class="flex-auto flex-shrink-0 flex-grow basis-32 truncate font-semibold text-neutral-700"
@@ -562,7 +574,7 @@ export class ArchivedItemQA extends BtrixElement {
                     )}
                   >
                     <div
-                      class="flex items-center gap-1.5 text-xs text-neutral-500"
+                      class="flex items-center gap-1.5 whitespace-nowrap text-xs text-neutral-500"
                     >
                       <sl-icon class="text-sm" name="info-circle"></sl-icon>
                       ${msg("Limited view")}
@@ -682,7 +694,7 @@ export class ArchivedItemQA extends BtrixElement {
   private renderBackLink() {
     return pageBack({
       href: this.backUrl,
-      content: this.fromWorkflow ? msg("Workflow") : msg("Crawl"),
+      content: this.fromWorkflow ? msg("Workflow") : msg("Crawl QA Overview"),
     });
   }
 
@@ -691,7 +703,7 @@ export class ArchivedItemQA extends BtrixElement {
     return html`
       <btrix-dialog
         class="reviewDialog [--width:60rem]"
-        label=${msg("QA Review")}
+        label=${msg("Finish Review")}
       >
         <form class="qaReviewForm" @submit=${this.onSubmitReview}>
           <div class="flex flex-col gap-6 md:flex-row">
@@ -747,10 +759,10 @@ export class ArchivedItemQA extends BtrixElement {
             </div>
             <div class="flex-1 pl-4 md:border-l">
               <sl-textarea
-                label=${msg("Update archived item description?")}
+                label=${msg("Update crawl metadata?")}
                 name="description"
                 value=${this.item?.description ?? ""}
-                placeholder=${msg("No description, yet")}
+                placeholder=${msg("Add a description")}
                 rows="10"
                 autocomplete="off"
                 help-text=${helpText}
