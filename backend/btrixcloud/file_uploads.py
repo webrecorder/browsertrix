@@ -301,6 +301,15 @@ class FileUploadOps:
     ) -> Dict[str, bool]:
         """Delete user-uploaded file from storage and db"""
         file = await self.get_file(file_id, org)
+
+        # Make sure seed file isn't currently referenced by any workflows
+        if file.type == "seedFile":
+            matching_workflow = await self.crawl_configs.find_one(
+                {"config.seedFileId": file_id}
+            )
+            if matching_workflow:
+                raise HTTPException(status_code=400, detail="seed_file_in_use")
+
         await self.storage_ops.delete_file_object(org, file)
         await self.files.delete_one({"_id": file_id, "oid": org.id})
         if file.type == "seedFile":

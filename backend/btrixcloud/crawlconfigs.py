@@ -514,17 +514,6 @@ class CrawlConfigOps:
                     status_code=400, detail="use_one_of_seeds_or_seedfile"
                 )
 
-        # Delete old seed file if it's been unset
-        if (
-            orig_crawl_config.config
-            and orig_crawl_config.config.seedFileId
-            and update.config
-            and update.config.seedFileId is None
-        ):
-            await self.file_ops.delete_user_file(
-                orig_crawl_config.config.seedFileId, org
-            )
-
         if update.config and update.config.seeds:
             if update.config.seedFileId or (
                 orig_crawl_config.config.seedFileId
@@ -638,6 +627,20 @@ class CrawlConfigOps:
             )
 
         crawlconfig = CrawlConfig.from_dict(result)
+
+        # Delete old seed file if it's been unset
+        if (
+            orig_crawl_config.config
+            and orig_crawl_config.config.seedFileId
+            and update.config
+            and update.config.seedFileId is None
+        ):
+            try:
+                await self.file_ops.delete_user_file(
+                    orig_crawl_config.config.seedFileId, org
+                )
+            except HTTPException:
+                pass
 
         # update in crawl manager to change schedule
         if schedule_changed:
@@ -972,7 +975,12 @@ class CrawlConfigOps:
         # if no crawls have been run, actually delete
         if not crawlconfig.crawlAttemptCount:
             if crawlconfig.config and crawlconfig.config.seedFileId:
-                await self.file_ops.delete_user_file(crawlconfig.config.seedFileId, org)
+                try:
+                    await self.file_ops.delete_user_file(
+                        crawlconfig.config.seedFileId, org
+                    )
+                except HTTPException:
+                    pass
 
             result = await self.crawl_configs.delete_one(
                 {"_id": crawlconfig.id, "oid": crawlconfig.oid}
