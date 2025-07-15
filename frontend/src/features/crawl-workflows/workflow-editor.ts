@@ -2550,6 +2550,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
       return;
     }
 
+    this.isSubmitting = true;
+
     const parseConfigParams: Parameters<WorkflowEditor["parseConfig"]>[0] = {};
 
     // Upload seed file first if it exists, since ID will be used to
@@ -2570,8 +2572,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
     if (this.configId) {
       config.updateRunning = this.saveAndRun && Boolean(this.isCrawlRunning);
     }
-
-    this.isSubmitting = true;
 
     try {
       const data = await (this.configId
