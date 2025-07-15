@@ -2,10 +2,10 @@
 Migration 0048 - Calculate firstSeed/seedCount and store directly in database
 """
 
-from typing import cast, List
+from typing import cast, List, Dict, Any
 
 from btrixcloud.migrations import BaseMigration
-from btrixcloud.models import CrawlConfig, Seed
+from btrixcloud.models import CrawlConfig, Crawl, Seed
 
 
 MIGRATION_VERSION = "0048"
@@ -25,7 +25,7 @@ class Migration(BaseMigration):
         Calculate firstSeed and seedCount for workflows and store in db
         """
         crawls_mdb = self.mdb["crawls"]
-        crawl_configs_mdb = self.mdb["crawlconfigs"]
+        crawl_configs_mdb = self.mdb["crawl_configs"]
 
         match_query = {"$or": [{"firstSeed": None}, {"seedCount": None}]}
 
@@ -62,11 +62,19 @@ class Migration(BaseMigration):
                 )
 
         # Crawls
+        match_query: Dict[str, Any] = {
+            "type": "crawl",
+            "$or": [
+                {"firstSeed": {"$in": [None, ""]}},
+                {"seedCount": {"$in": [None, 0]}},
+            ],
+        }
         async for crawl_raw in crawls_mdb.find(match_query):
             crawl_id = crawl_raw["_id"]
-            config_raw = await crawl_configs_mdb.find_one({"_id": crawl_raw["cid"]})
-
             try:
+                crawl = Crawl.from_dict(crawl_raw)
+                config_raw = await crawl_configs_mdb.find_one({"_id": crawl.cid})
+
                 seed_count = config_raw.get("seedCount", 0)
                 first_seed = config_raw.get("firstSeed", "")
 
