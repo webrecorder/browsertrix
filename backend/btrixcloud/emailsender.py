@@ -54,7 +54,7 @@ class EmailSender:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.request(
-                    "GET",
+                    "POST",
                     self.email_template_endpoint + "/" + name,
                     json=kwargs,
                     raise_for_status=True,
