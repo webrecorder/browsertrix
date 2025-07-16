@@ -1107,10 +1107,13 @@ https://replayweb.page/docs`}
             });
           }}
         >
-          <span slot="name">
-            ${file.originalFilename}
-            <span class="text-neutral-500"
-              >&mdash; ${this.localize.number(file.seedCount)}
+          <span slot="name" class="flex gap-1 overflow-hidden">
+            <sl-tooltip content=${file.originalFilename}>
+              <span class="truncate">${file.originalFilename}</span>
+            </sl-tooltip>
+            <span class="text-neutral-400" role="separator">&mdash;</span>
+            <span class="whitespace-nowrap text-neutral-500"
+              >${this.localize.number(file.seedCount)}
               ${pluralOf("URLs", file.seedCount)}</span
             >
           </span>
