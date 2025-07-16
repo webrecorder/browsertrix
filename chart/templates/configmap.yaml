@@ -101,6 +101,8 @@ data:
 
   PRESIGN_BATCH_SIZE: "{{ .Values.presign_batch_size | default 8 }}"
 
+  CLEANUP_JOB_CRON_SCHEDULE: "{{ .Values.cleanup_job_cron_schedule }}"
+
 
 ---
 apiVersion: v1

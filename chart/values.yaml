@@ -162,6 +162,11 @@ backend_avg_cpu_threshold: 80
 # scale up if avg memory utilization exceeds
 backend_avg_memory_threshold: 95
 
+# Cron schedule for periodically cleaning up unused files
+# Defaults to every Sunday at midnight
+cleanup_job_cron_schedule: "0 0 * * 0"
+
+
 # Nginx Image
 # =========================================
 frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.17.4"
