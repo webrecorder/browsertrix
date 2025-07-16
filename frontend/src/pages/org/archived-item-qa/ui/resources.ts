@@ -25,7 +25,7 @@ function resourceTable(
     columns.push(msg("Good During Analysis"), msg("Bad During Analysis"));
   }
 
-  let rows = [
+  const rows = [
     [
       html`<span class="font-semibold capitalize"
         >${msg("All Resources")}</span
@@ -37,6 +37,46 @@ function resourceTable(
         >${localize.number(crawlResources[TOTAL].bad)}</span
       >`,
     ],
+    ...Object.keys(qaResources || crawlResources)
+      .filter((key) => key !== TOTAL)
+      .map((key) => [
+        html`<span
+          class=${["json", "html"].includes(key)
+            ? tw`uppercase`
+            : tw`capitalize`}
+          >${key}</span
+        >`,
+        html`${Object.prototype.hasOwnProperty.call(crawlResources, key)
+          ? localize.number(crawlResources[key].good)
+          : 0}`,
+        html`${Object.prototype.hasOwnProperty.call(crawlResources, key)
+          ? localize.number(crawlResources[key].bad)
+          : 0}`,
+        ...(qaResources
+          ? [
+              html`<span
+                class=${Object.prototype.hasOwnProperty.call(
+                  crawlResources,
+                  key,
+                ) && crawlResources[key].good === qaResources[key].good
+                  ? tw`text-neutral-400`
+                  : tw`text-danger`}
+              >
+                ${localize.number(qaResources[key].good)}
+              </span>`,
+              html`<span
+                class=${Object.prototype.hasOwnProperty.call(
+                  crawlResources,
+                  key,
+                ) && crawlResources[key].bad === qaResources[key].bad
+                  ? tw`text-neutral-400`
+                  : tw`font-semibold text-danger`}
+              >
+                ${localize.number(qaResources[key].bad)}
+              </span>`,
+            ]
+          : []),
+      ]),
   ];
 
   if (qaResources) {
@@ -62,36 +102,6 @@ function resourceTable(
         ${localize.number(qaResources[TOTAL].bad)}
       </span>`,
     );
-    rows = [
-      ...rows,
-      ...Object.keys(qaResources)
-        .filter((key) => key !== TOTAL)
-        .map((key) => [
-          html`<span class="capitalize">${key}</span>`,
-          html`${Object.prototype.hasOwnProperty.call(crawlResources, key)
-            ? localize.number(crawlResources[key].good)
-            : 0}`,
-          html`${Object.prototype.hasOwnProperty.call(crawlResources, key)
-            ? localize.number(crawlResources[key].bad)
-            : 0}`,
-          html`<span
-            class=${Object.prototype.hasOwnProperty.call(crawlResources, key) &&
-            crawlResources[key].good === qaResources[key].good
-              ? tw`text-neutral-400`
-              : tw`text-danger`}
-          >
-            ${localize.number(qaResources[key].good)}
-          </span>`,
-          html`<span
-            class=${Object.prototype.hasOwnProperty.call(crawlResources, key) &&
-            crawlResources[key].bad === qaResources[key].bad
-              ? tw`text-neutral-400`
-              : tw`font-semibold text-danger`}
-          >
-            ${localize.number(qaResources[key].bad)}
-          </span>`,
-        ]),
-    ];
   }
 
   return html`

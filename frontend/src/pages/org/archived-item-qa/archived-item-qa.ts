@@ -832,11 +832,11 @@ export class ArchivedItemQA extends BtrixElement {
         this.qaDataRegistered,
       ],
       () =>
-        until(
+        html`${until(
           this.replaySwReg.then((reg) => {
             return html`${iframe(reg)}${rwp(reg)}`;
           }),
-        ),
+        )}`,
     );
   }
 
