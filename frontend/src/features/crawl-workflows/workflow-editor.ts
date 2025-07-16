@@ -752,7 +752,7 @@ export class WorkflowEditor extends BtrixElement {
             type="submit"
             value=${SubmitType.Save}
             ?disabled=${this.isSubmitting}
-            ?loading=${this.isSubmitting}
+            ?loading=${this.isSubmitting && !this.saveAndRun}
           >
             ${msg("Save")}
             ${when(this.showKeyboardShortcuts, () => keyboardShortcut("S"))}
@@ -773,7 +773,8 @@ export class WorkflowEditor extends BtrixElement {
               isArchivingDisabled(this.org, true)) ||
             this.isSubmitting ||
             this.isCrawlRunning === null}
-            ?loading=${this.isSubmitting || this.isCrawlRunning === null}
+            ?loading=${(this.isSubmitting && this.saveAndRun) ||
+            this.isCrawlRunning === null}
           >
             ${this.isCrawlRunning ? msg("Update Crawl") : msg("Run Crawl")}
             ${when(this.showKeyboardShortcuts, () => keyboardShortcut("Enter"))}
@@ -1105,7 +1106,15 @@ https://replayweb.page/docs`}
               seedFileId: null,
             });
           }}
-        ></btrix-file-list-item>
+        >
+          <span slot="name">
+            ${file.originalFilename}
+            <span class="text-neutral-500"
+              >&mdash; ${this.localize.number(file.seedCount)}
+              ${pluralOf("URLs", file.seedCount)}</span
+            >
+          </span>
+        </btrix-file-list-item>
       </btrix-file-list>`;
     }
 
@@ -2756,7 +2765,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async uploadSeedFile() {
-    if (!this.formState.seedFile) {
+    const { seedFile } = this.formState;
+
+    if (!seedFile) {
       this.notify.toast({
         message: msg("Please choose a valid URL list file."),
         variant: "danger",
@@ -2769,11 +2780,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     try {
       const params = queryString.stringify({
-        filename: defaultSeedListFileName(),
+        filename:
+          seedFile.name === pastedUrlListFileName
+            ? defaultSeedListFileName()
+            : seedFile.name,
       });
       const data = await this.api.upload(
         `/orgs/${this.orgId}/files/seedFile?${params}`,
-        this.formState.seedFile,
+        seedFile,
       );
 
       return data.id;
