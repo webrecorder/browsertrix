@@ -229,7 +229,7 @@ class CrawlManager(K8sAPI):
             )
             if cron_job:
                 print(
-                    "Weekly cron job to clean up used seed files already exists",
+                    "Cron job to clean up used seed files already exists",
                     flush=True,
                 )
                 return
@@ -237,7 +237,10 @@ class CrawlManager(K8sAPI):
         except Exception as err:
             print(f"Exception trying to find seed file clean up job: {err}", flush=True)
 
-        print("Creating weekly cron job to clean up used seed files", flush=True)
+        print(
+            f"Creating cron job to clean up used seed files, schedule: {job_schedule}",
+            flush=True,
+        )
 
         params = {
             "id": job_id,
