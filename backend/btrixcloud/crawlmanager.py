@@ -217,8 +217,9 @@ class CrawlManager(K8sAPI):
 
         job_id = "cleanup-seed-files-cron"
 
-        # Midnight every Sunday
-        weekly_schedule = "0 0 * * 0"
+        # Default schedule is midnight every Sunday
+        default_schedule = "0 0 * * 0"
+        job_schedule = os.environ.get("CLEANUP_JOB_CRON_SCHEDULE", default_schedule)
 
         # Don't create a duplicate cron job if already exists
         try:
@@ -243,7 +244,7 @@ class CrawlManager(K8sAPI):
             "job_type": BgJobType.CLEANUP_SEED_FILES.value,
             "backend_image": os.environ.get("BACKEND_IMAGE", ""),
             "pull_policy": os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
-            "schedule": weekly_schedule,
+            "schedule": job_schedule,
         }
 
         data = self.templates.env.get_template("background_cron_job.yaml").render(
