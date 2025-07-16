@@ -297,6 +297,9 @@ export class WorkflowEditor extends BtrixElement {
   private formState = defaultFormState;
 
   @state()
+  private seedFileUrlCount?: number;
+
+  @state()
   private serverError?: TemplateResult | string;
 
   @state()
@@ -322,6 +325,8 @@ export class WorkflowEditor extends BtrixElement {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
+
+  private readonly seedFileReader = new FileReader();
 
   private readonly handleCurrentTarget = makeCurrentTargetHandler(this);
   private readonly checkFormValidity = formValidator(this);
@@ -409,6 +414,19 @@ export class WorkflowEditor extends BtrixElement {
       "btrix-intersect",
       this.onPanelIntersect as UnderlyingFunction<typeof this.onPanelIntersect>,
     );
+
+    // Store count of seed `File`
+    this.seedFileReader.onload = () => {
+      if (typeof this.seedFileReader.result === "string") {
+        this.seedFileUrlCount = this.seedFileReader.result
+          .trim()
+          .split(/\s+/g).length;
+      }
+    };
+
+    this.seedFileReader.onerror = (err: unknown) => {
+      console.debug("FileReader error:", err);
+    };
   }
 
   disconnectedCallback(): void {
@@ -428,6 +446,18 @@ export class WorkflowEditor extends BtrixElement {
     }
     if (changedProperties.has("configId")) {
       this.isCrawlRunning = this.configId ? null : false;
+    }
+    const prevFormState = changedProperties.get("formState") as
+      | FormState
+      | undefined;
+    if (prevFormState) {
+      if (prevFormState.seedFile !== this.formState.seedFile) {
+        if (this.formState.seedFile) {
+          this.seedFileReader.readAsText(this.formState.seedFile);
+        } else {
+          this.seedFileUrlCount = undefined;
+        }
+      }
     }
   }
 
@@ -976,6 +1006,29 @@ export class WorkflowEditor extends BtrixElement {
   };
 
   private renderUrlList() {
+    let numberOfURLs: string | null = null;
+
+    if (this.formState.seedListFormat === SeedListFormat.File) {
+      if (this.org) {
+        const { maxPagesPerCrawl } = this.org.quotas;
+        if (maxPagesPerCrawl) {
+          numberOfURLs = `${this.localize.number(maxPagesPerCrawl)} ${pluralOf("URLs", maxPagesPerCrawl)}`;
+        }
+      }
+    } else {
+      numberOfURLs = `${this.localize.number(URL_LIST_MAX_URLS)} ${pluralOf("URLs", URL_LIST_MAX_URLS)}`;
+    }
+
+    const jsonAdditionalInfo = msg(str`To enter more than ${numberOfURLs}`, {
+      desc: "`numberOfURLs` example: '1000 URLs'",
+    });
+    const fileAdditionalInfo = numberOfURLs
+      ? msg(
+          str`The crawler will visit and record up to ${numberOfURLs} listed in the file.`,
+          { desc: "`numberOfURLs` example: '1,000 URLs'" },
+        )
+      : msg("The crawler will visit and record each URL listed in the file.");
+
     return html`
       ${inputCol(html`
         <label
@@ -1007,18 +1060,18 @@ export class WorkflowEditor extends BtrixElement {
       `)}
       ${this.renderHelpTextCol(
         this.formState.seedListFormat === SeedListFormat.File
-          ? html`${msg(
-              "The crawler will visit and record each URL listed in the file.",
-            )}
+          ? html`${fileAdditionalInfo}
             ${this.renderUserGuideLink({
               hash: "page-urls",
               content: msg("Read more about URL list files"),
             })}.`
-          : html`${infoTextFor["urlList"]} ${msg("For very large lists")},
-            ${this.renderUserGuideLink({
-              hash: "page-urls",
-              content: msg("upload a URL list file"),
-            })}.`,
+          : html`${infoTextFor["urlList"]}
+              <br />
+              ${jsonAdditionalInfo},
+              ${this.renderUserGuideLink({
+                hash: "page-urls",
+                content: msg("upload a URL list file"),
+              })}.`,
       )}
     `;
   }
@@ -1041,12 +1094,15 @@ https://replayweb.page/docs`}
           ${e.clipboardData?.getData("text")}`
           // Remove zero-width characters
           .replace(/[\u200B-\u200D\uFEFF]/g, "")
+          // Remove multiple whitespaces
+          .replace(/\s+/g, "\n")
           .trim();
 
         if (text) {
           const textBlob = new Blob([text]);
           if (
-            textBlob.size > MAX_SEED_LIST_STRING_BYTES ||
+            (textBlob.size > MAX_SEED_LIST_STRING_BYTES &&
+              textBlob.size <= MAX_SEED_LIST_FILE_BYTES) ||
             urlListToArray(text).length > URL_LIST_MAX_URLS
           ) {
             const file = new File([textBlob], pastedUrlListFileName, {
@@ -1128,6 +1184,53 @@ https://replayweb.page/docs`}
     </button>`;
     const maxByteSize = this.localize.bytes(MAX_SEED_LIST_FILE_BYTES);
 
+    let helpText: TemplateResult | null = null;
+    const numberOfURLs =
+      this.seedFileUrlCount &&
+      `${this.localize.number(this.seedFileUrlCount)}
+      ${pluralOf("URLs", this.seedFileUrlCount)}`;
+
+    if (
+      this.initialSeedFile &&
+      this.initialWorkflow?.config.seedFileId &&
+      !this.formState.seedFileId &&
+      !this.formState.seedFile
+    ) {
+      // Enable undoing removing an uploaded file
+      helpText = html`<sl-icon
+          class="mr-0.5 align-[-.175em]"
+          name="exclamation-triangle"
+        ></sl-icon>
+        ${msg("Uploaded URL list will be deleted.")}
+        <a
+          class="text-cyan-500 underline hover:no-underline"
+          role="button"
+          @click=${() =>
+            this.updateFormState({
+              seedFileId: this.initialWorkflow?.config.seedFileId,
+            })}
+        >
+          ${msg("Undo File Removal")}
+        </a>`;
+    } else if (this.formState.seedFile?.name === pastedUrlListFileName) {
+      helpText = html`<sl-icon
+          class="mr-0.5 align-[-.175em]"
+          name="info-circle"
+        ></sl-icon>
+        ${numberOfURLs
+          ? msg(
+              str`Automatically converted list of ${numberOfURLs} to a file.`,
+              {
+                desc: "`numberOfURLs` example: '1,000 URLs'",
+              },
+            )
+          : msg("Automatically converted large URL list to a file.")}`;
+    } else if (this.seedFileUrlCount) {
+      helpText = html`${msg(str`${numberOfURLs} entered.`, {
+        desc: "`numberOfURLs` example: '1,000 URLs'",
+      })}`;
+    }
+
     return html`<btrix-file-input
       id="seedUrlList"
       accept=".${SEED_LIST_FILE_EXT}"
@@ -1147,7 +1250,10 @@ https://replayweb.page/docs`}
         });
       }}
     >
-      <sl-icon name="file-earmark-arrow-up"></sl-icon>
+      <sl-icon
+        name="file-earmark-arrow-up"
+        class="text-xl text-cyan-400"
+      ></sl-icon>
       <p class="mt-1 text-pretty text-center">
         ${msg(html`Drag file here or ${browseFilesButton}`)}
       </p>
@@ -1158,41 +1264,7 @@ https://replayweb.page/docs`}
         })}
       </div>
 
-      ${when(
-        this.initialSeedFile &&
-          !this.formState.seedFileId &&
-          !this.formState.seedFile &&
-          this.initialWorkflow?.config.seedFileId,
-        // Enable undoing removing an uploaded file
-        (seedFileId) => html`
-          <div slot="help-text">
-            <sl-icon
-              class="mr-0.5 align-[-.175em]"
-              name="exclamation-triangle"
-            ></sl-icon>
-            ${msg("Uploaded URL list will be deleted.")}
-            <a
-              class="text-cyan-500 underline hover:no-underline"
-              role="button"
-              @click=${() => this.updateFormState({ seedFileId })}
-            >
-              ${msg("Undo File Removal")}
-            </a>
-          </div>
-        `,
-        () =>
-          when(
-            this.formState.seedFile?.name === pastedUrlListFileName,
-            () =>
-              html`<div slot="help-text">
-                <sl-icon
-                  class="mr-0.5 align-[-.175em]"
-                  name="info-circle"
-                ></sl-icon>
-                ${msg("Automatically converted large URL list to a file.")}
-              </div>`,
-          ),
-      )}
+      ${helpText ? html`<div slot="help-text">${helpText}</div>` : nothing}
     </btrix-file-input>`;
   };
 
