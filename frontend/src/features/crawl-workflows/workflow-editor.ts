@@ -2801,7 +2801,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             : e.details;
 
           if (typeof errorDetail === "string") {
-            let errorDetailMessage = errorDetail.replace(/_/, " ");
+            let errorDetailMessage = errorDetail.replace(/_/g, " ");
 
             if (isApiErrorDetail(errorDetail)) {
               switch (errorDetail) {
@@ -2818,12 +2818,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 case APIErrorDetail.InvalidLang:
                   errorDetailMessage = msg("Invalid language code");
                   break;
+                case APIErrorDetail.UseOneOfSeedsOrSeedFile:
+                  errorDetailMessage = msg(
+                    "Remove URL list file, or delete entered URLs",
+                  );
+                  break;
                 default:
                   break;
               }
             }
 
-            this.serverError = `${msg("Please fix the following issue: ")} ${errorDetailMessage}`;
+            this.serverError = `${msg("Please fix the following issue:")} ${errorDetailMessage}`;
           }
         }
       } else {
