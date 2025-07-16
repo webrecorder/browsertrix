@@ -367,27 +367,39 @@ def init_uploads_api(app, user_dep, *args):
         tags=["uploads"],
         response_model=CrawlOut,
     )
-    async def get_upload(crawlid: str, org: Organization = Depends(org_crawl_dep)):
-        return await ops.get_crawl_out(crawlid, org, "upload")
+    async def get_upload(
+        crawlid: str, request: Request, org: Organization = Depends(org_crawl_dep)
+    ):
+        return await ops.get_crawl_out(
+            crawlid, org, "upload", headers=dict(request.headers)
+        )
 
     @app.get(
         "/orgs/all/uploads/{crawl_id}/replay.json",
         tags=["uploads"],
         response_model=CrawlOutWithResources,
     )
-    async def get_upload_replay_admin(crawl_id, user: User = Depends(user_dep)):
+    async def get_upload_replay_admin(
+        crawl_id, request: Request, user: User = Depends(user_dep)
+    ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return await ops.get_crawl_out(crawl_id, None, "upload")
+        return await ops.get_crawl_out(
+            crawl_id, None, "upload", headers=dict(request.headers)
+        )
 
     @app.get(
         "/orgs/{oid}/uploads/{crawl_id}/replay.json",
         tags=["uploads"],
         response_model=CrawlOutWithResources,
     )
-    async def get_upload_replay(crawl_id, org: Organization = Depends(org_viewer_dep)):
-        return await ops.get_crawl_out(crawl_id, org, "upload")
+    async def get_upload_replay(
+        crawl_id, request: Request, org: Organization = Depends(org_viewer_dep)
+    ):
+        return await ops.get_crawl_out(
+            crawl_id, org, "upload", headers=dict(request.headers)
+        )
 
     @app.get(
         "/orgs/{oid}/uploads/{crawl_id}/download",

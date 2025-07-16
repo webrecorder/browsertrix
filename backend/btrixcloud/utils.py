@@ -181,8 +181,8 @@ def get_origin(headers) -> str:
     if not headers:
         return default_origin
 
-    scheme = headers.get("X-Forwarded-Proto")
-    host = headers.get("Host")
+    scheme = headers.get("x-forwarded-proto")
+    host = headers.get("host")
     if not scheme or not host:
         return default_origin
 
