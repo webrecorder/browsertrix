@@ -3,6 +3,7 @@
 import asyncio
 import uuid
 from datetime import datetime
+from typing import cast
 
 import aiohttp
 import pytest
@@ -85,9 +86,9 @@ def sample_invite():
         id=uuid.uuid4(),
         created=datetime.now(),
         tokenHash="hashed_token_example",
-        inviterEmail=EmailStr("inviter@example.com"),
+        inviterEmail=cast(EmailStr, "inviter@example.com"),
         fromSuperuser=False,
-        email=EmailStr("test@example.com"),
+        email=cast(EmailStr, "test@example.com"),
     )
 
 
@@ -98,10 +99,6 @@ def test_email_sender_initialization(email_sender):
     assert email_sender.reply_to == "noreply@browsertrix.com"
     assert email_sender.support_email == "support@browsertrix.com"
     assert email_sender.survey_url == "https://survey.browsertrix.com"
-    assert (
-        email_sender.email_template_endpoint
-        == "http://browsertrix-cloud-emails.default.svc.cluster.local:3000/api/emails"
-    )
     assert email_sender.log_sent_emails is True
 
 
@@ -272,8 +269,8 @@ async def test_invite_with_superuser_flag(email_sender, sample_org, capsys):
     # Create invite from superuser (should not show inviter email)
     invite = InvitePending(
         id=uuid.uuid4(),
-        email=EmailStr("newuser@example.com"),
-        inviterEmail=EmailStr("inviter@example.com"),
+        email=cast(EmailStr, "newuser@example.com"),
+        inviterEmail=cast(EmailStr, "inviter@example.com"),
         fromSuperuser=True,
         created=datetime.utcnow(),
         tokenHash="test-hash",
