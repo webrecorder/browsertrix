@@ -423,7 +423,7 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
     assert data["initialPages"]
     assert (
         data["pagesQueryUrl"]
-        == f"http://custom-domain.example.com/orgs/{default_org_id}/collections/{_coll_id}/pages"
+        == f"http://custom-domain.example.com/api/orgs/{default_org_id}/collections/{_coll_id}/pages"
     )
     assert data["downloadUrl"] is None
     assert "preloadResources" in data
@@ -439,7 +439,7 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
 def test_collection_public(crawler_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
-        headers={"host": "custom-domain.example.com", **crawler_auth_headers},
+        headers=crawler_auth_headers,
     )
     assert r.status_code == 404
 
@@ -456,13 +456,13 @@ def test_collection_public(crawler_auth_headers, default_org_id):
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
-        headers=crawler_auth_headers,
+        headers={"host": "custom-domain.example.com", **crawler_auth_headers},
     )
     data = r.json()
     assert data["initialPages"]
     assert (
         data["pagesQueryUrl"]
-        == "http://custom-domain.example.com/orgs/{default_org_id}/collections/{_coll_id}/public/pages"
+        == f"http://custom-domain.example.com/api/orgs/{default_org_id}/collections/{_coll_id}/public/pages"
     )
     assert data["downloadUrl"] is not None
     assert "preloadResources" in data
