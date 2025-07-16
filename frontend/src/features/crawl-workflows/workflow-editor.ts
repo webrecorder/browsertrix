@@ -1039,7 +1039,8 @@ https://replayweb.page/docs`}
         const text = `${(e.currentTarget as SlTextarea).value}
           ${e.clipboardData?.getData("text")}`
           // Remove zero-width characters
-          .replace(/[\u200B-\u200D\uFEFF]/g, "");
+          .replace(/[\u200B-\u200D\uFEFF]/g, "")
+          .trim();
 
         if (text) {
           const textBlob = new Blob([text]);
