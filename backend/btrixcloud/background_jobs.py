@@ -505,7 +505,7 @@ class BackgroundJobOps:
             )
             await self.jobs.insert_one(cleanup_job.to_dict())
             if not success:
-                await self._send_bg_job_failure_email(job, finished)
+                await self._send_bg_job_failure_email(cleanup_job, finished)
             return
 
         job = await self.get_background_job(job_id)
