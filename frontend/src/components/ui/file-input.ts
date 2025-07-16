@@ -1,7 +1,7 @@
-import { localized } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { without } from "lodash/fp";
@@ -13,6 +13,8 @@ import type {
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { FormControl } from "@/mixins/FormControl";
+import { validationMessageFor } from "@/strings/validation";
+import localize from "@/utils/localize";
 import { tw } from "@/utils/tailwind";
 
 import "@/components/ui/file-list";
@@ -41,6 +43,18 @@ export class FileInput extends FormControl(TailwindElement) {
   label?: string;
 
   /**
+   * Form control help text
+   */
+  @property({ type: String })
+  helpText?: string;
+
+  /**
+   * Selected files.
+   */
+  @property({ type: Array })
+  files?: File[] | null = null;
+
+  /**
    * Specify which file types are allowed
    */
   @property({ type: String })
@@ -58,14 +72,47 @@ export class FileInput extends FormControl(TailwindElement) {
   @property({ type: Boolean })
   drop = false;
 
-  @state()
-  private files: File[] = [];
+  /**
+   * Enable opening files in a new window
+   */
+  @property({ type: Boolean })
+  openFile = false;
+
+  /**
+   * Maximum file size in bytes
+   */
+  @property({ type: Number })
+  max = Infinity;
+
+  @property({ type: Boolean })
+  required = false;
 
   @query("#dropzone")
   private readonly dropzone?: HTMLElement | null;
 
   @query("input[type='file']")
   private readonly input?: HTMLInputElement | null;
+
+  // Object URLs are used to view files
+  private readonly fileToObjectUrl = new Map<File, string>();
+
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    this.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        this.input?.click();
+      }
+    });
+  }
+
+  disconnectedCallback(): void {
+    for (const url of this.fileToObjectUrl.values()) {
+      URL.revokeObjectURL(url);
+    }
+
+    super.disconnectedCallback();
+  }
 
   formResetCallback() {
     this.files = [];
@@ -77,8 +124,26 @@ export class FileInput extends FormControl(TailwindElement) {
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("files")) {
+      if (this.files && this.openFile) {
+        this.setObjectUrls(this.files);
+      }
+
       this.syncFormValue();
     }
+  }
+
+  protected updated(changedProperties: PropertyValues): void {
+    if (changedProperties.has("files") || changedProperties.has("required")) {
+      this.validateFiles();
+    }
+  }
+
+  private setObjectUrls(files: File[]) {
+    files.forEach((file) => {
+      if (this.fileToObjectUrl.get(file)) return;
+
+      this.fileToObjectUrl.set(file, URL.createObjectURL(file));
+    });
   }
 
   private syncFormValue() {
@@ -90,11 +155,42 @@ export class FileInput extends FormControl(TailwindElement) {
     // construct `FormData` instead
     const formData = new FormData();
 
-    this.files.forEach((file) => {
+    this.files?.forEach((file) => {
       formData.append(formControlName, file);
     });
 
     this.setFormValue(formData);
+  }
+
+  private validateFiles() {
+    let validity: ValidityStateFlags = {};
+    let message: string | undefined = undefined;
+
+    if (this.required && !this.files?.length) {
+      validity = { valueMissing: true };
+      message = validationMessageFor.valueMissing;
+    } else if (this.files) {
+      this.files.some((file) => {
+        if (file.size === 0) {
+          validity = { rangeUnderflow: true };
+          message = msg("Please choose a file that is not empty.");
+        } else if (this.max && file.size > this.max) {
+          const maxByteSize = localize.bytes(this.max);
+
+          validity = { rangeOverflow: true };
+          message = msg(
+            str`Please choose a file smaller than ${maxByteSize}.`,
+            {
+              desc: "`maxByteSize` example: '25 MB'. 'max' is shorthand for 'maximum'",
+            },
+          );
+        }
+
+        return message;
+      });
+    }
+
+    this.setValidity(validity, message);
   }
 
   render() {
@@ -102,7 +198,19 @@ export class FileInput extends FormControl(TailwindElement) {
       ${this.label
         ? html`<label for="fileInput" class="form-label">${this.label}</label>`
         : nothing}
-      ${this.files.length ? this.renderFiles() : this.renderInput()}
+      ${this.files?.length ? this.renderFiles() : this.renderInput()}
+
+      <div class=${clsx(tw`form-help-text`, !this.helpText && tw`hidden`)}>
+        <slot
+          name="help-text"
+          @slotchange=${(e: Event) => {
+            (e.target as HTMLSlotElement)
+              .closest(".form-help-text")
+              ?.classList.remove(tw`hidden`);
+          }}
+          >${this.helpText}</slot
+        >
+      </div>
     `;
   }
 
@@ -130,7 +238,6 @@ export class FileInput extends FormControl(TailwindElement) {
       >
         <input
           id="fileInput"
-          class="sr-only"
           type="file"
           accept=${ifDefined(this.accept)}
           ?multiple=${this.multiple}
@@ -143,24 +250,45 @@ export class FileInput extends FormControl(TailwindElement) {
           }}
         />
         <div class="relative z-10">
-          <slot></slot>
+          <slot
+            @slotchange=${{
+              // Hide input visually
+              handleEvent: () => this.input?.classList.add(tw`sr-only`),
+              once: true,
+            }}
+          ></slot>
         </div>
       </div>
     `;
   };
 
   private readonly renderFiles = () => {
+    if (!this.files) return;
+
     return html`
       <btrix-file-list
         @btrix-remove=${(e: BtrixFileRemoveEvent) => {
-          this.files = without([e.detail.item])(this.files);
+          if (!this.files) return;
+
+          const { item } = e.detail;
+
+          if (item instanceof File) {
+            this.files = without([item])(this.files);
+          } else {
+            this.files = this.files.filter((file) => file.name !== item.name);
+          }
         }}
       >
         ${repeat(
           this.files,
           (file) => file.name,
           (file) => html`
-            <btrix-file-list-item .file=${file}></btrix-file-list-item>
+            <btrix-file-list-item
+              .file=${file}
+              href=${ifDefined(
+                this.openFile ? this.fileToObjectUrl.get(file) : undefined,
+              )}
+            ></btrix-file-list-item>
           `,
         )}
       </btrix-file-list>

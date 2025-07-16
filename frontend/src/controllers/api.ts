@@ -151,6 +151,7 @@ export class APIController implements ReactiveController {
       default: {
         if (typeof errorDetail === "string") {
           errorMessage = errorDetail;
+          errorDetails = [errorDetail];
         } else if (Array.isArray(errorDetail) && errorDetail.length) {
           errorDetails = errorDetail;
 
@@ -212,6 +213,14 @@ export class APIController implements ReactiveController {
         }
         if (xhr.status === 403) {
           reject(AbortReason.QuotaReached);
+        }
+        if (xhr.status === 404) {
+          reject(
+            new APIError({
+              message: xhr.statusText,
+              status: xhr.status,
+            }),
+          );
         }
       });
       xhr.addEventListener("error", () => {

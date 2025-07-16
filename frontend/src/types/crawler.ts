@@ -1,4 +1,5 @@
 import type { CrawlState } from "./crawlState";
+import type { StorageFile } from "./storage";
 
 export enum ScopeType {
   Prefix = "prefix",
@@ -32,6 +33,7 @@ type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 
 export type SeedConfig = Expand<
   Pick<Seed, "scopeType" | "include" | "exclude" | "limit" | "extraHops"> & {
+    seedFileId?: string | null;
     lang?: string | null;
     blockAds?: boolean;
     behaviorTimeout: number | null;
@@ -188,13 +190,7 @@ export type Crawl = ArchivedItemBase &
     scale: number;
     browserWindows: number;
     shouldPause: boolean | null;
-    resources?: {
-      name: string;
-      path: string;
-      hash: string;
-      size: number;
-      numReplicas: number;
-    }[];
+    resources?: (StorageFile & { numReplicas: number })[];
   };
 
 export type Upload = ArchivedItemBase & {
