@@ -719,12 +719,12 @@ class OrgOps:
     async def set_default_org_name_from_user_name(
         self, org: Organization, user_name: str
     ) -> None:
-        """set's the org name and slug as "<USERNAME>'s Archive", adding a suffix for duplicates"""
+        """set's the org name and slug as "<USERNAME>’s Archive", adding a suffix for duplicates"""
         suffix = ""
         count = 1
 
         while True:
-            org.name = f"{user_name}'s Archive{suffix}"
+            org.name = f"{user_name}’s Archive{suffix}"
             org.slug = slug_from_name(org.name)
 
             try:
