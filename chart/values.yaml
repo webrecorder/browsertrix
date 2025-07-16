@@ -164,6 +164,11 @@ emails_cpu: "10m"
 
 emails_memory: "350Mi"
 
+# if set, maps the emails service to a fixed port on host machine
+# must be between 30000 - 32767
+# use for deployments on localhost
+local_emails_port: 30872
+
 # Nginx Image
 # =========================================
 frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.17.3"
