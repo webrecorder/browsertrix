@@ -15,7 +15,7 @@ import queryString from "query-string";
 
 import stylesheet from "./archived-item-qa.stylesheet.css";
 import type * as QATypes from "./types";
-import { renderResources } from "./ui/resources";
+import { renderResourceDiff, renderResources } from "./ui/resources";
 import { renderImage, renderScreenshots } from "./ui/screenshots";
 import { renderSeverityBadge } from "./ui/severityBadge";
 import { renderText, renderTextDiff } from "./ui/text";
@@ -1013,7 +1013,9 @@ export class ArchivedItemQA extends BtrixElement {
             ? renderTextDiff(this.crawlData, this.qaData)
             : renderText(this.crawlData);
         case "resources":
-          return renderResources(this.crawlData, this.qaData);
+          return this.analyzed
+            ? renderResourceDiff(this.crawlData, this.qaData)
+            : renderResources(this.crawlData);
         case "replay":
           return this.renderReplay();
         default:
