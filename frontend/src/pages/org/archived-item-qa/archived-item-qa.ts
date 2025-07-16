@@ -425,11 +425,11 @@ export class ArchivedItemQA extends BtrixElement {
 
       <article class="qa-grid grid min-h-screen gap-x-6 gap-y-0 lg:snap-start">
         <header
-          class="grid--header flex flex-wrap items-center justify-between gap-1 border-b py-2"
+          class="grid--header flex flex-wrap items-center justify-between gap-2 border-b py-2 md:flex-nowrap"
         >
           <div class="flex items-center gap-2 overflow-hidden">
             <h1
-              class="flex min-w-32 flex-1 flex-shrink-0 gap-1 truncate text-base font-semibold leading-tight"
+              class="flex min-w-32 max-w-prose flex-1 flex-shrink-0 gap-1 truncate text-base font-semibold leading-tight"
             >
               ${msg("Review")} ${itemName}
             </h1>
@@ -565,7 +565,7 @@ export class ArchivedItemQA extends BtrixElement {
                 () =>
                   html`<btrix-popover
                     content=${msg(
-                      "Screenshot, text, and resource quality metrics are only available for analyzed crawls. Run analysis to view and compare all QA metrics.",
+                      "Screenshot, text, and resource comparison views are only available for analyzed crawls. Run analysis to view and compare all quality metrics.",
                     )}
                   >
                     <div
