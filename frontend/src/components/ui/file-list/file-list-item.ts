@@ -102,7 +102,9 @@ export class FileListItem extends TailwindElement {
     return html`<div class="item">
       <div class="file">
         <div class="details">
-          <div class="name">${item.name}</div>
+          <div class="name">
+            <slot name="name">${item.name}</slot>
+          </div>
           <div class="size">
             ${this.progressValue !== undefined
               ? html`${this.localize.bytes(
