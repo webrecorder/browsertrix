@@ -960,3 +960,22 @@ def test_add_crawl_config_with_seed_file(
     assert data["name"] == "Seed File Test Crawl"
     assert data["config"]["seedFileId"] == seed_file_id
     assert data["config"]["seeds"] is None
+
+
+def test_delete_in_use_seed_file(
+    crawler_auth_headers, default_org_id, seed_file_id, seed_file_config_id
+):
+    # Attempt to delete in-use seed file, verify we get 400 response
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/files/{seed_file_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "seed_file_in_use"
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/files/{seed_file_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["id"] == seed_file_id
