@@ -170,8 +170,6 @@ def test_delete_org_crawl_running(
         except:
             time.sleep(10)
 
-
-
         attempts += 1
 
     # Check that org was deleted

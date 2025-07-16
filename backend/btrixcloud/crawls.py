@@ -12,7 +12,7 @@ from uuid import UUID
 
 from typing import Optional, List, Dict, Union, Any, Sequence, AsyncIterator
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from redis import asyncio as exceptions
 from redis.asyncio.client import Redis
@@ -1345,19 +1345,27 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         tags=["crawls"],
         response_model=CrawlOutWithResources,
     )
-    async def get_crawl_admin(crawl_id, user: User = Depends(user_dep)):
+    async def get_crawl_admin(
+        crawl_id, request: Request, user: User = Depends(user_dep)
+    ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return await ops.get_crawl_out(crawl_id, None, "crawl")
+        return await ops.get_crawl_out(
+            crawl_id, None, "crawl", headers=dict(request.headers)
+        )
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/replay.json",
         tags=["crawls"],
         response_model=CrawlOutWithResources,
     )
-    async def get_crawl_out(crawl_id, org: Organization = Depends(org_viewer_dep)):
-        return await ops.get_crawl_out(crawl_id, org, "crawl")
+    async def get_crawl_out(
+        crawl_id, request: Request, org: Organization = Depends(org_viewer_dep)
+    ):
+        return await ops.get_crawl_out(
+            crawl_id, org, "crawl", headers=dict(request.headers)
+        )
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/download", tags=["crawls"], response_model=bytes

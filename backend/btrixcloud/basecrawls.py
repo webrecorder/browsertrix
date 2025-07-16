@@ -18,7 +18,7 @@ import os
 import urllib.parse
 
 import asyncio
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, Depends, Request
 from fastapi.responses import StreamingResponse
 import pymongo
 
@@ -1057,27 +1057,33 @@ def init_base_crawls_api(app, user_dep, *args):
         tags=["all-crawls"],
         response_model=CrawlOutWithResources,
     )
-    async def get_base_crawl(crawl_id: str, org: Organization = Depends(org_crawl_dep)):
-        return await ops.get_crawl_out(crawl_id, org)
+    async def get_base_crawl(
+        crawl_id: str, request: Request, org: Organization = Depends(org_crawl_dep)
+    ):
+        return await ops.get_crawl_out(crawl_id, org, headers=dict(request.headers))
 
     @app.get(
         "/orgs/all/all-crawls/{crawl_id}/replay.json",
         tags=["all-crawls"],
         response_model=CrawlOutWithResources,
     )
-    async def get_base_crawl_admin(crawl_id, user: User = Depends(user_dep)):
+    async def get_base_crawl_admin(
+        crawl_id, request: Request, user: User = Depends(user_dep)
+    ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return await ops.get_crawl_out(crawl_id, None)
+        return await ops.get_crawl_out(crawl_id, None, headers=dict(request.headers))
 
     @app.get(
         "/orgs/{oid}/all-crawls/{crawl_id}/replay.json",
         tags=["all-crawls"],
         response_model=CrawlOutWithResources,
     )
-    async def get_crawl_out(crawl_id, org: Organization = Depends(org_viewer_dep)):
-        return await ops.get_crawl_out(crawl_id, org)
+    async def get_crawl_out(
+        crawl_id, request: Request, org: Organization = Depends(org_viewer_dep)
+    ):
+        return await ops.get_crawl_out(crawl_id, org, headers=dict(request.headers))
 
     @app.get(
         "/orgs/{oid}/all-crawls/{crawl_id}/download",
