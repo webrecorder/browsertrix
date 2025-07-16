@@ -32,11 +32,6 @@ spec:
                 containerName: btrixbgjob
                 operator: NotIn
                 values: [0]
-          
-          volumes:
-            - name: ops-configs
-              secret:
-                secretName: ops-configs
 
           containers:
             - name: btrixbgjob
@@ -51,10 +46,6 @@ spec:
                     name: backend-env-config
                 - secretRef:
                     name: mongo-auth
-
-              volumeMounts:
-                - name: ops-configs
-                  mountPath: /ops-configs/
 
               command: ["python3", "-m", "btrixcloud.main_bg"]
 
