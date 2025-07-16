@@ -1,7 +1,9 @@
 import json
 import os
+import subprocess
 import time
 
+import pytest
 import requests
 
 from .conftest import API_PREFIX
@@ -20,8 +22,150 @@ ECHO_SERVER_URL_FROM_K8S = os.environ.get(
     "ECHO_SERVER_HOST_URL", "http://host.docker.internal:18080"
 )
 
+FAILED_STATES = ["canceled", "failed", "skipped_quota_reached"]
 
-def test_list_webhook_events(admin_auth_headers, default_org_id):
+SUCCESSFUL_STATES = ["complete", "stopped_by_user", "stopped_quota_reached"]
+
+FINISHED_STATES = [*FAILED_STATES, *SUCCESSFUL_STATES]
+
+
+@pytest.fixture(scope="function")
+def echo_server():
+    print(f"Echo server starting", flush=True)
+    p = subprocess.Popen(["python3", os.path.join(curr_dir, "echo_server.py")])
+    print(f"Echo server started", flush=True)
+    time.sleep(1)
+    yield p
+    time.sleep(10)
+    print(f"Echo server terminating", flush=True)
+    p.terminate()
+    print(f"Echo server terminated", flush=True)
+
+
+@pytest.fixture(scope="session")
+def all_crawls_crawl_id(crawler_auth_headers, default_org_id):
+    # Start crawl.
+    crawl_data = {
+        "runNow": True,
+        "name": "All Crawls Test Crawl",
+        "description": "Lorem ipsum",
+        "config": {
+            "seeds": [{"url": "https://webrecorder.net/"}],
+            "exclude": "community",
+            "limit": 3,
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+    crawl_id = data["run_now_job"]
+
+    # Wait for it to complete and then return crawl ID
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=crawler_auth_headers,
+        )
+        data = r.json()
+        if data["state"] in FINISHED_STATES:
+            break
+        time.sleep(5)
+
+    # Add description to crawl
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}",
+        headers=crawler_auth_headers,
+        json={"description": "Lorem ipsum"},
+    )
+    assert r.status_code == 200
+    return crawl_id
+
+
+def test_update_event_webhook_urls_org_admin(admin_auth_headers, default_org_id):
+    # Verify no URLs are configured
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    if data.get("webhooks"):
+        webhooks = data.get("webhooks")
+        assert webhooks.get("crawlStarted") is None
+        assert webhooks.get("crawlFinished") is None
+        assert webhooks.get("crawlDeleted") is None
+        assert webhooks.get("uploadFinished") is None
+        assert webhooks.get("uploadDeleted") is None
+        assert webhooks.get("addedToCollection") is None
+        assert webhooks.get("removedFromCollection") is None
+        assert webhooks.get("collectionDeleted") is None
+
+    # Set URLs and verify
+    CRAWL_STARTED_URL = "https://example.com/crawl/started"
+    CRAWL_FINISHED_URL = "https://example.com/crawl/finished"
+    CRAWL_DELETED_URL = "https://example.com/crawl/deleted"
+    UPLOAD_FINISHED_URL = "https://example.com/upload/finished"
+    UPLOAD_DELETED_URL = "https://example.com/upload/deleted"
+    COLL_ADDED_URL = "https://example.com/coll/added"
+    COLL_REMOVED_URL = "http://example.com/coll/removed"
+    COLL_DELETED_URL = "http://example.com/coll/deleted"
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/event-webhook-urls",
+        headers=admin_auth_headers,
+        json={
+            "crawlStarted": CRAWL_STARTED_URL,
+            "crawlFinished": CRAWL_FINISHED_URL,
+            "crawlDeleted": CRAWL_DELETED_URL,
+            "uploadFinished": UPLOAD_FINISHED_URL,
+            "uploadDeleted": UPLOAD_DELETED_URL,
+            "addedToCollection": COLL_ADDED_URL,
+            "removedFromCollection": COLL_REMOVED_URL,
+            "collectionDeleted": COLL_DELETED_URL,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    urls = data["webhookUrls"]
+    assert urls["crawlStarted"] == CRAWL_STARTED_URL
+    assert urls["crawlFinished"] == CRAWL_FINISHED_URL
+    assert urls["crawlDeleted"] == CRAWL_DELETED_URL
+
+    assert urls["uploadFinished"] == UPLOAD_FINISHED_URL
+    assert urls["uploadDeleted"] == UPLOAD_DELETED_URL
+
+    assert urls["addedToCollection"] == COLL_ADDED_URL
+    assert urls["removedFromCollection"] == COLL_REMOVED_URL
+    assert urls["collectionDeleted"] == COLL_DELETED_URL
+
+
+def test_update_event_webhook_urls_org_crawler(crawler_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/event-webhook-urls",
+        headers=crawler_auth_headers,
+        json={
+            "crawlStarted": "https://example.com/crawlstarted",
+            "crawlFinished": "https://example.com/crawlfinished",
+            "uploadFinished": "https://example.com/uploadfinished",
+            "addedToCollection": "https://example.com/added",
+            "removedFromCollection": "https://example.com/removed",
+        },
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "User does not have permission to perform this action"
+
+
+def test_list_webhook_events(admin_auth_headers, default_org_id, crawl_id_wr):
     # Verify that webhook URLs have been set in previous tests
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}",
@@ -40,6 +184,8 @@ def test_list_webhook_events(admin_auth_headers, default_org_id):
     assert urls["collectionDeleted"]
 
     # Verify list endpoint works as expected
+    # At this point we expect webhook attempts to fail since they're not
+    # configured against a valid endpoint
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/webhooks",
         headers=admin_auth_headers,
@@ -62,7 +208,7 @@ def test_list_webhook_events(admin_auth_headers, default_org_id):
     assert _webhook_event_id
 
 
-def test_get_webhook_event(admin_auth_headers, default_org_id):
+def test_get_webhook_event(admin_auth_headers, default_org_id, crawl_id_wr):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/webhooks/{_webhook_event_id}",
         headers=admin_auth_headers,
@@ -99,7 +245,7 @@ def test_get_webhook_event(admin_auth_headers, default_org_id):
         assert len(body["itemIds"]) >= 1
 
 
-def test_retry_webhook_event(admin_auth_headers, default_org_id):
+def test_retry_webhook_event(admin_auth_headers, default_org_id, crawl_id_wr):
     # Expect to fail because we haven't set up URLs that accept webhooks
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/webhooks/{_webhook_event_id}/retry",
@@ -175,6 +321,7 @@ def test_webhooks_sent(
         "autoAddCollections": [webhooks_coll_id],
         "config": {
             "seeds": [{"url": "https://webrecorder.net/"}],
+            "limit": 2,
         },
     }
     r = requests.post(

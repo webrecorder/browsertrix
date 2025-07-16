@@ -1,7 +1,6 @@
 import os
 import pytest
 import requests
-import socket
 import subprocess
 import time
 from typing import Dict
@@ -691,7 +690,7 @@ def prepare_browser_for_profile_commit(
                 break
             time.sleep(5)
         except:
-            pass
+            time.sleep(5)
         attempts += 1
 
 

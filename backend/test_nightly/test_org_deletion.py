@@ -168,7 +168,9 @@ def test_delete_org_crawl_running(
 
             time.sleep(10)
         except:
-            pass
+            time.sleep(10)
+
+
 
         attempts += 1
 
@@ -214,7 +216,7 @@ def test_delete_org_qa_running(
 
             time.sleep(10)
         except:
-            pass
+            time.sleep(10)
 
         attempts += 1
 
@@ -260,7 +262,7 @@ def test_delete_org_profile_running(
 
             time.sleep(10)
         except:
-            pass
+            time.sleep(10)
 
         attempts += 1
 
