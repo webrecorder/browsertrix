@@ -12,6 +12,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 import aiohttp
+from fastapi import HTTPException
 
 from .models import CreateReplicaJob, DeleteReplicaJob, Organization, InvitePending
 from .utils import is_bool, get_origin
@@ -58,9 +59,9 @@ class EmailSender:
                     json=kwargs,
                 ) as resp:
                     if resp.status != 200:
-                        raise Exception(
-                            f"Failed to fetch email template: {resp.status}",
-                            await resp.text(),
+                        raise HTTPException(
+                            status_code=resp.status,
+                            detail=await resp.text(),
                         )
 
                     json = await resp.json()
