@@ -4,6 +4,8 @@ invite_expire_seconds: 10
 
 max_pages_per_crawl: 300
 
+# Every minute, for use in testing cleaning up seed files
+cleanup_job_cron_schedule: "* * * * *"
 
 # enable to allow access to minio directly
 minio_local_access_port: 30090
