@@ -62,7 +62,7 @@ export function renderName(item: ArchivedItem | Workflow, className?: string) {
     const remainder = item.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
-      nameSuffix = html`<div class="ml-1">
+      nameSuffix = html`<div class="ml-1 text-neutral-500">
         +${localize.number(remainder, { notation: "compact" })}
         ${pluralOf("URLs", remainder)}
       </div>`;
