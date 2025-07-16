@@ -36,6 +36,7 @@ jobs:
             matches:
               - 'backend/**'
               - 'chart/**'
+              - 'emails/**'
               - '.github/workflows/k3d-ci.yaml'
 
   btrix-k3d-test:
