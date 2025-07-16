@@ -7,7 +7,7 @@ import { z } from "zod";
 
 export const schema = z.object({
   origin: z.string().url(),
-  token: z.string().uuid(),
+  token: z.string(),
   support_email: z.string().email().optional(),
 });
 
