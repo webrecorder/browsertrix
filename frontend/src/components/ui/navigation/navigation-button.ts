@@ -85,7 +85,7 @@ export class NavigationButton extends TailwindElement {
 
         this.icon ? tw`min-h-6 min-w-6` : tw``,
         {
-          small: this.icon ? tw`min-h-6 p-0` : tw`min-h-6 px-2 py-0`,
+          small: this.icon ? tw`min-h-6 px-1 py-0` : tw`min-h-6 px-2 py-0`,
           medium: tw`p-2`,
           large: tw`px-2 py-4`,
         }[this.size],
