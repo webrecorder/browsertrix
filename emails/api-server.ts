@@ -1,4 +1,6 @@
 import express, { Request, Response } from "express";
+import { pinoHttp } from "pino-http";
+import { pino } from "pino";
 import { render, pretty as makePretty } from "@react-email/components";
 
 import * as templates from "./emails/index.js";
@@ -14,13 +16,20 @@ type TemplateModule = {
 
 type Templates = Record<string, TemplateModule>;
 
+const log = pino({
+  level: process.env.LOG_LEVEL || "info",
+  name: "emails-api",
+});
+
 const app = express();
+app.use(pinoHttp({ logger: log }));
 const port = process.env.PORT || process.env.LOCAL_EMAILS_PORT || 3000;
 
 app.use(express.json());
 
 // Health check endpoint
-app.get("/health", (_, res) => {
+app.get("/health", (req, res) => {
+  req.log.debug({ msg: "Health check successful" });
   res.status(200).json({ status: "ok" });
 });
 
@@ -32,6 +41,7 @@ app.post("/api/emails/:templateName", async (req: Request, res: Response) => {
     const { pretty = false } = req.body;
 
     if (!templateName || !(templateKey in templates)) {
+      req.log.error({ msg: "Template not found", templateName });
       res.status(404).json({ error: "Template not found" });
       return;
     }
@@ -48,20 +58,29 @@ app.post("/api/emails/:templateName", async (req: Request, res: Response) => {
         : render(Template(props)),
       render(Template(props), { plainText: true }),
     ]);
+    req.log.debug({
+      msg: "Email template rendered successfully",
+      templateName,
+      props,
+    });
     res.send({ html, plainText, subject: subject(props) });
   } catch (error) {
-    console.error("Error rendering email:", error);
     if (error instanceof z.ZodError) {
+      req.log.error({
+        msg: "Failed to render email template: zod validation error",
+        errors: error.errors,
+      });
       res.status(400).json({
         error: "Invalid request data",
         details: error.errors,
       });
     } else {
+      req.log.error({ msg: "Failed to render email template", error });
       res.status(500).json({ error: "Failed to render email template" });
     }
   }
 });
 
 app.listen(port, () => {
-  console.log(`Email API server running at http://localhost:${port}`);
+  log.info(`Email API server running at http://localhost:${port}`);
 });
