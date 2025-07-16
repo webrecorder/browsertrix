@@ -15,7 +15,7 @@ type TemplateModule = {
 type Templates = Record<string, TemplateModule>;
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || process.env.LOCAL_EMAILS_PORT || 3000;
 
 app.use(express.json());
 
