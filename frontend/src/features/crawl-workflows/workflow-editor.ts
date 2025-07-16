@@ -138,7 +138,7 @@ import {
 
 type CrawlConfigParams = WorkflowParams & {
   config: WorkflowParams["config"] & {
-    seeds: Seed[];
+    seeds: Seed[] | null;
     seedFileId?: string | null;
   };
 };
@@ -3024,12 +3024,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
     | "useSitemap"
     | "failOnFailedSeed"
   > {
+    const jsonSeeds = this.formState.seedListFormat === SeedListFormat.JSON;
+
     const config = {
-      seeds: urlListToArray(this.formState.urlList).map((seedUrl) => {
-        const newSeed: Seed = { url: seedUrl, scopeType: ScopeType.Page };
-        return newSeed;
-      }),
-      seedFileId: uploadParams?.seedFileId ?? this.formState.seedFileId,
+      seeds: jsonSeeds
+        ? urlListToArray(this.formState.urlList).map((seedUrl) => {
+            const newSeed: Seed = { url: seedUrl, scopeType: ScopeType.Page };
+            return newSeed;
+          })
+        : null,
+      seedFileId: jsonSeeds
+        ? null
+        : uploadParams?.seedFileId ?? this.formState.seedFileId,
       scopeType: ScopeType.Page,
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
       useSitemap: false,
