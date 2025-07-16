@@ -1,6 +1,6 @@
 import z from "zod";
 import { Template } from "../templates/btrix.js";
-import { formatDateTime } from "../lib/date.js";
+import { formatDateTime, parseDate } from "../lib/date.js";
 import {
   CodeInline,
   Column,
@@ -13,15 +13,15 @@ export const schema = z.object({
   org: z.string().optional(),
   job: z.object({
     id: z.string(),
-    oid: z.string(),
+    oid: z.string().optional(),
     type: z.string(),
-    started: z.date(),
+    started: z.string(),
     object_type: z.string().optional(),
     object_id: z.string().optional(),
     file_path: z.string().optional(),
     replica_storage: z.string().optional(),
   }),
-  finished: z.date(),
+  finished: z.string(),
 });
 
 export type FailedBgJobEmailProps = z.infer<typeof schema>;
@@ -61,8 +61,12 @@ export const FailedBgJobEmail = ({
       linky={{ version: "concerned", caption: false }}
     >
       <table align="center" width="100%">
-        <DataRow label="Started At">{formatDateTime(job.started)}</DataRow>
-        <DataRow label="Finished At">{formatDateTime(finished)}</DataRow>
+        <DataRow label="Started At">
+          {formatDateTime(parseDate(job.started))}
+        </DataRow>
+        <DataRow label="Finished At">
+          {formatDateTime(parseDate(finished))}
+        </DataRow>
         {org && (
           <DataRow label="Organization">
             <Code>{org}</Code>
@@ -106,13 +110,13 @@ FailedBgJobEmail.PreviewProps = {
     id: "1234567890",
     oid: "1234567890",
     type: "type",
-    started: new Date(),
+    started: new Date().toISOString(),
     object_type: "object_type",
     object_id: "object_id",
     file_path: "file_path",
     replica_storage: "replica_storage",
   },
-  finished: new Date(),
+  finished: new Date().toISOString(),
 } satisfies FailedBgJobEmailProps;
 
 export default FailedBgJobEmail;

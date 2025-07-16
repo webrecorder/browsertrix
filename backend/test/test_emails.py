@@ -2,6 +2,7 @@
 
 import asyncio
 import uuid
+import os
 from datetime import datetime
 from typing import cast
 
@@ -11,7 +12,7 @@ import pytest
 from btrixcloud.emailsender import EmailSender
 from btrixcloud.models import Organization, InvitePending, EmailStr, StorageRef
 
-EMAILS_HOST_PREFIX = "http://127.0.0.1:30872"
+EMAILS_HOST_PREFIX = os.environ.get("EMAIL_TEMPLATE_ENDPOINT") or "http://127.0.0.1:30872"
 
 
 @pytest.fixture(scope="class")
@@ -107,7 +108,7 @@ async def test_send_user_validation(email_sender, capsys):
     """Test sending user validation email"""
     test_email = "newuser@example.com"
     test_token = "abc123def456"
-    test_headers = {"Host": "app.browsertrix.com"}
+    test_headers = {"Host": "app.browsertrix.com", "X-Forwarded-Proto": "https"}
 
     await email_sender.send_user_validation(
         receiver_email=test_email, token=test_token, headers=test_headers
@@ -133,7 +134,7 @@ async def test_send_user_invite_new_user(
         token=test_token,
         org_name=sample_org.name,
         is_new=True,
-        headers={"Host": "app.browsertrix.com"},
+        headers={"Host": "app.browsertrix.com", "X-Forwarded-Proto": "https"},
     )
 
     # Check log output
@@ -141,7 +142,7 @@ async def test_send_user_invite_new_user(
     assert "Email: created" in captured.out
     assert "invite" in captured.out
     assert sample_invite.email in captured.out
-    assert "is_new=True" in captured.out
+    assert str(test_token) in captured.out
 
 
 @pytest.mark.asyncio
@@ -156,7 +157,7 @@ async def test_send_user_invite_existing_user(
         token=test_token,
         org_name=sample_org.name,
         is_new=False,
-        headers={"Host": "app.browsertrix.com"},
+        headers={"Host": "app.browsertrix.com", "X-Forwarded-Proto": "https"},
     )
 
     # Check log output
@@ -164,19 +165,19 @@ async def test_send_user_invite_existing_user(
     assert "Email: created" in captured.out
     assert "invite" in captured.out
     assert sample_invite.email in captured.out
-    assert "is_new=False" in captured.out
+    assert str(test_token) in captured.out
 
 
 @pytest.mark.asyncio
 async def test_send_password_reset(email_sender, capsys):
     """Test sending password reset email"""
     test_email = "existinguser@example.com"
-    test_token = "reset_token_123"
+    test_token = uuid.uuid4()
 
     await email_sender.send_user_forgot_password(
         receiver_email=test_email,
-        token=test_token,
-        headers={"Host": "app.browsertrix.com"},
+        token=str(test_token),
+        headers={"Host": "app.browsertrix.com", "X-Forwarded-Proto": "https"},
     )
 
     # Check log output
@@ -184,6 +185,7 @@ async def test_send_password_reset(email_sender, capsys):
     assert "Email: created" in captured.out
     assert "passwordReset" in captured.out
     assert test_email in captured.out
+    assert str(test_token) in captured.out
 
 
 @pytest.mark.asyncio
@@ -206,7 +208,7 @@ async def test_send_background_job_failed(email_sender, sample_org, capsys):
     captured = capsys.readouterr()
     assert "Email: created" in captured.out
     assert "failedBgJob" in captured.out
-    assert str(sample_org.name) in captured.out
+    assert str(sample_org.id) in captured.out
 
 
 @pytest.mark.asyncio
@@ -219,7 +221,7 @@ async def test_send_subscription_cancellation(email_sender, sample_org, capsys):
         user_name="Test User",
         receiver_email="admin@example.com",
         org=sample_org,
-        headers={"Host": "app.browsertrix.com"},
+        headers={"Host": "app.browsertrix.com", "X-Forwarded-Proto": "https"},
     )
 
     # Check log output
@@ -237,10 +239,18 @@ async def test_email_sender_no_smtp_configured(monkeypatch, capsys):
     monkeypatch.setenv("LOG_SENT_EMAILS", "true")
     monkeypatch.setenv("EMAIL_SMTP_HOST", "")
 
+    # Point to the test email template service
+    monkeypatch.setenv(
+        "EMAIL_TEMPLATE_ENDPOINT",
+        f"{EMAILS_HOST_PREFIX}/api/emails",
+    )
+
+    test_headers = {"Host": "app.browsertrix.com", "X-Forwarded-Proto": "https"}
+
     sender = EmailSender()
 
     await sender.send_user_validation(
-        receiver_email="test@example.com", token="test_token"
+        receiver_email="test@example.com", token="test_token", headers=test_headers
     )
 
     captured = capsys.readouterr()
@@ -281,7 +291,7 @@ async def test_invite_with_superuser_flag(email_sender, sample_org, capsys):
         token=uuid.uuid4(),
         org_name=sample_org.name,
         is_new=True,
-        headers={"Host": "app.browsertrix.com"},
+        headers={"Host": "app.browsertrix.com", "X-Forwarded-Proto": "https"},
     )
 
     captured = capsys.readouterr()

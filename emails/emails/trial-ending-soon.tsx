@@ -7,6 +7,7 @@ import {
   formatRelativeDate,
   formatRelativeDateToParts,
   offsetDays,
+  reRenderDate,
 } from "../lib/date.js";
 import { Warning } from "../components/warning.js";
 
@@ -22,16 +23,6 @@ export const schema = z.object({
 });
 
 export type TrialEndingSoonEmailProps = z.infer<typeof schema>;
-
-function reRenderDate(date: string) {
-  try {
-    const parsedDate = new Date(date);
-    return formatDate(parsedDate);
-  } catch (error) {
-    console.error("Error parsing date:", error);
-    return date;
-  }
-}
 
 export const TrialEndingSoonEmail = ({
   user_name,

@@ -53,12 +53,13 @@ class EmailSender:
 
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.request(
-                    "POST",
+                async with session.post(
                     self.email_template_endpoint + "/" + name,
                     json=kwargs,
-                    raise_for_status=True,
                 ) as resp:
+                    if resp.status != 200:
+                        raise Exception(f"Failed to fetch email template: {resp.status}", await resp.text())
+
                     json = await resp.json()
 
                     html = json["html"]
@@ -114,7 +115,7 @@ class EmailSender:
         origin = get_origin(headers)
 
         await self._send_encrypted(
-            receiver_email, "verifyEmail", origin=origin, token=token
+            receiver_email, "verifyEmail", origin=origin, token=token, receiver_email=receiver_email
         )
 
     # pylint: disable=too-many-arguments
@@ -169,7 +170,7 @@ class EmailSender:
     ):
         """Send background job failed email to superuser"""
         await self._send_encrypted(
-            receiver_email, "failedBgJob", job=job, org=org, finished=finished
+            receiver_email, "failedBgJob", job=job, org=str(org.id) if org else None, finished=finished.isoformat()
         )
 
     async def send_subscription_will_be_canceled(
@@ -191,7 +192,7 @@ class EmailSender:
             org_url=org_url,
             user_name=user_name,
             org_name=org.name,
-            cancel_date=cancel_date,
+            cancel_date=cancel_date.isoformat(),
             support_email=self.support_email,
             survey_url=self.survey_url,
         )

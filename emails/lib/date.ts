@@ -1,3 +1,22 @@
+export function parseDate(date: string) {
+  try {
+    return new Date(date);
+  } catch (error) {
+    console.error("Error parsing date:", error);
+    throw new Error("Invalid date format");
+  }
+}
+
+export function reRenderDate(date: string) {
+  try {
+    const parsedDate = new Date(date);
+    return formatDate(parsedDate);
+  } catch (error) {
+    console.error("Error parsing date:", error);
+    return date;
+  }
+}
+
 export const offsetDays = (days: number, from = new Date()) => {
   const date = new Date(from);
   date.setDate(date.getDate() + days);
