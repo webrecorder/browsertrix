@@ -491,6 +491,23 @@ class BackgroundJobOps:
         """Update job as finished, including
         job-specific task handling"""
 
+        # For weekly cron seed file cleanup jobs, no database record will exist
+        # for each run before this point, so create it here
+        if job_type == BgJobType.CLEANUP_SEED_FILES:
+            if not started:
+                started = finished
+            cleanup_job = CleanupSeedFilesJob(
+                id=f"seed-files-{secrets.token_hex(5)}",
+                type=BgJobType.CLEANUP_SEED_FILES,
+                started=started,
+                finished=finished,
+                success=success,
+            )
+            await self.jobs.insert_one(cleanup_job.to_dict())
+            if not success:
+                await self._send_bg_job_failure_email(job, finished)
+            return
+
         job = await self.get_background_job(job_id)
         if job.finished:
             return
@@ -506,42 +523,29 @@ class BackgroundJobOps:
                     cast(DeleteReplicaJob, job)
                 )
         else:
-            print(
-                f"Background job {job.id} failed, sending email to superuser",
-                flush=True,
-            )
-            superuser = await self.user_manager.get_superuser()
-            org = None
-            if job.oid:
-                org = await self.org_ops.get_org_by_id(job.oid)
-            await asyncio.get_event_loop().run_in_executor(
-                None,
-                self.email.send_background_job_failed,
-                job,
-                finished,
-                superuser.email,
-                org,
-            )
-
-        # For weekly cron seed file cleanup jobs, no database record will exist
-        # for each run before this point, so ensure update has all necessary fields
-        # to create the db entry here
-        if job_type == BgJobType.CLEANUP_SEED_FILES:
-            if not started:
-                started = finished
-            cleanup_job = CleanupSeedFilesJob(
-                id=f"seed-files-{secrets.token_hex(5)}",
-                type=BgJobType.CLEANUP_SEED_FILES,
-                started=started,
-                finished=finished,
-                success=success,
-            )
-            await self.jobs.insert_one(cleanup_job.to_dict())
-            return
+            await self._send_bg_job_failure_email(job, finished)
 
         await self.jobs.find_one_and_update(
             {"_id": job_id, "oid": oid},
             {"$set": {"success": success, "finished": finished}},
+        )
+
+    async def _send_bg_job_failure_email(self, job: BackgroundJob, finished: datetime):
+        print(
+            f"Background job {job.id} failed, sending email to superuser",
+            flush=True,
+        )
+        superuser = await self.user_manager.get_superuser()
+        org = None
+        if job.oid:
+            org = await self.org_ops.get_org_by_id(job.oid)
+        await asyncio.get_event_loop().run_in_executor(
+            None,
+            self.email.send_background_job_failed,
+            job,
+            finished,
+            superuser.email,
+            org,
         )
 
     async def get_background_job(
