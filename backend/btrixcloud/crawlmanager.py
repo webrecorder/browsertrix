@@ -234,8 +234,8 @@ class CrawlManager(K8sAPI):
                 )
                 return
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            print(f"Exception trying to find seed file clean up job: {err}", flush=True)
+        except Exception:
+            pass
 
         print(
             f"Creating cron job to clean up used seed files, schedule: {job_schedule}",
@@ -254,7 +254,7 @@ class CrawlManager(K8sAPI):
             params
         )
 
-        await self.create_from_yaml(data, namespace=self.namespace)
+        await self.create_from_yaml(data, namespace=DEFAULT_NAMESPACE)
 
     async def create_crawl_job(
         self,
