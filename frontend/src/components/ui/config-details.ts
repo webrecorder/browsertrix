@@ -389,7 +389,15 @@ export class ConfigDetails extends BtrixElement {
               size=${file.size}
               href=${file.path}
               .removable=${false}
-            ></btrix-file-list-item>
+            >
+              <span slot="name">
+                ${file.originalFilename}
+                <span class="text-neutral-500"
+                  >&mdash; ${this.localize.number(file.seedCount)}
+                  ${pluralOf("URLs", file.seedCount)}</span
+                >
+              </span>
+            </btrix-file-list-item>
           </btrix-file-list>`,
       );
 
