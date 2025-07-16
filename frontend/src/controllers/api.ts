@@ -151,6 +151,7 @@ export class APIController implements ReactiveController {
       default: {
         if (typeof errorDetail === "string") {
           errorMessage = errorDetail;
+          errorDetails = [errorDetail];
         } else if (Array.isArray(errorDetail) && errorDetail.length) {
           errorDetails = errorDetail;
 
