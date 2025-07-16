@@ -12,7 +12,9 @@ import pytest
 from btrixcloud.emailsender import EmailSender
 from btrixcloud.models import Organization, InvitePending, EmailStr, StorageRef
 
-EMAILS_HOST_PREFIX = os.environ.get("EMAIL_TEMPLATE_ENDPOINT") or "http://127.0.0.1:30872"
+EMAILS_HOST_PREFIX = (
+    os.environ.get("EMAIL_TEMPLATE_ENDPOINT") or "http://127.0.0.1:30872"
+)
 
 
 @pytest.fixture(scope="class")

@@ -58,7 +58,10 @@ class EmailSender:
                     json=kwargs,
                 ) as resp:
                     if resp.status != 200:
-                        raise Exception(f"Failed to fetch email template: {resp.status}", await resp.text())
+                        raise Exception(
+                            f"Failed to fetch email template: {resp.status}",
+                            await resp.text(),
+                        )
 
                     json = await resp.json()
 
@@ -115,7 +118,11 @@ class EmailSender:
         origin = get_origin(headers)
 
         await self._send_encrypted(
-            receiver_email, "verifyEmail", origin=origin, token=token, receiver_email=receiver_email
+            receiver_email,
+            "verifyEmail",
+            origin=origin,
+            token=token,
+            receiver_email=receiver_email,
         )
 
     # pylint: disable=too-many-arguments
@@ -170,7 +177,11 @@ class EmailSender:
     ):
         """Send background job failed email to superuser"""
         await self._send_encrypted(
-            receiver_email, "failedBgJob", job=job, org=str(org.id) if org else None, finished=finished.isoformat()
+            receiver_email,
+            "failedBgJob",
+            job=job,
+            org=str(org.id) if org else None,
+            finished=finished.isoformat(),
         )
 
     async def send_subscription_will_be_canceled(
