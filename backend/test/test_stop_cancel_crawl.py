@@ -181,7 +181,7 @@ def test_stop_crawl_partial(
 def test_crawl_with_hostname(default_org_id, crawler_auth_headers):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
-        headers={"host": "custom-domain.example.com", **crawler_auth_headers},
+        headers={"X-Forwarded-Proto": "https", "host": "custom-domain.example.com", **crawler_auth_headers},
     )
     assert r.status_code == 200
-    assert r.json()["pagesQueryUrl"].startswith("http://custom-domain.example.com/")
+    assert r.json()["pagesQueryUrl"].startswith("https://custom-domain.example.com/")
