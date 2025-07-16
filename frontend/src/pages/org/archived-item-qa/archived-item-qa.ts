@@ -18,7 +18,7 @@ import type * as QATypes from "./types";
 import { renderResources } from "./ui/resources";
 import { renderImage, renderScreenshots } from "./ui/screenshots";
 import { renderSeverityBadge } from "./ui/severityBadge";
-import { renderText } from "./ui/text";
+import { renderText, renderTextDiff } from "./ui/text";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
@@ -527,34 +527,29 @@ export class ArchivedItemQA extends BtrixElement {
                   : nothing,
               )}
             </btrix-navigation-button>
-            ${when(
-              this.analyzed,
-              () => html`
-                <btrix-navigation-button
-                  id="text-tab"
-                  href=${`${crawlBaseUrl}/review/text?${searchParams.toString()}`}
-                  ?active=${this.tab === "text"}
-                  @click=${this.onTabNavClick}
-                >
-                  <sl-icon name="file-text-fill"></sl-icon>
-                  ${msg("Text")}
-                  ${when(this.page || currentPage, (page) =>
-                    isQaPage(page)
-                      ? renderSeverityBadge(page.qa.textMatch)
-                      : nothing,
-                  )}
-                </btrix-navigation-button>
-                <btrix-navigation-button
-                  id="text-tab"
-                  href=${`${crawlBaseUrl}/review/resources?${searchParams.toString()}`}
-                  ?active=${this.tab === "resources"}
-                  @click=${this.onTabNavClick}
-                >
-                  <sl-icon name="puzzle-fill"></sl-icon>
-                  ${msg("Resources")}
-                </btrix-navigation-button>
-              `,
-            )}
+            <btrix-navigation-button
+              id="text-tab"
+              href=${`${crawlBaseUrl}/review/text?${searchParams.toString()}`}
+              ?active=${this.tab === "text"}
+              @click=${this.onTabNavClick}
+            >
+              <sl-icon name="file-text-fill"></sl-icon>
+              ${msg("Text")}
+              ${when(this.page || currentPage, (page) =>
+                isQaPage(page)
+                  ? renderSeverityBadge(page.qa.textMatch)
+                  : nothing,
+              )}
+            </btrix-navigation-button>
+            <btrix-navigation-button
+              id="text-tab"
+              href=${`${crawlBaseUrl}/review/resources?${searchParams.toString()}`}
+              ?active=${this.tab === "resources"}
+              @click=${this.onTabNavClick}
+            >
+              <sl-icon name="puzzle-fill"></sl-icon>
+              ${msg("Resources")}
+            </btrix-navigation-button>
             <btrix-navigation-button
               id="replay-tab"
               href=${`${crawlBaseUrl}/review/replay?${searchParams.toString()}`}
@@ -1014,7 +1009,9 @@ export class ArchivedItemQA extends BtrixElement {
                 ${renderImage(this.crawlData)}
               </div>`;
         case "text":
-          return renderText(this.crawlData, this.qaData);
+          return this.analyzed
+            ? renderTextDiff(this.crawlData, this.qaData)
+            : renderText(this.crawlData);
         case "resources":
           return renderResources(this.crawlData, this.qaData);
         case "replay":

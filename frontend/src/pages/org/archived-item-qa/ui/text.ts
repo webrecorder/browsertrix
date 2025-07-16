@@ -77,14 +77,30 @@ function renderDiff(
   );
 }
 
-export function renderText(crawlData: ReplayData, qaData: ReplayData) {
-  const noData = html`<div
+const noData = () =>
+  html`<div
     class="m-4 flex flex-col items-center justify-center gap-2 text-xs text-neutral-500"
   >
     <sl-icon name="slash-circle"></sl-icon>
     ${msg("Text data not available")}
   </div>`;
 
+export function renderText(data: ReplayData) {
+  return html`<div class="h-full flex-col overflow-hidden rounded-lg border">
+    ${when(
+      data,
+      ({ text }) =>
+        text !== undefined
+          ? html`<div class="h-full overflow-auto overscroll-contain p-3">
+              ${text}
+            </div>`
+          : noData(),
+      renderSpinner,
+    )}
+  </div>`;
+}
+
+export function renderTextDiff(crawlData: ReplayData, qaData: ReplayData) {
   return html`
     <div class=${tw`flex h-full flex-col`}>
       <div class=${tw`mb-2 flex font-semibold`}>
@@ -95,24 +111,24 @@ export function renderText(crawlData: ReplayData, qaData: ReplayData) {
           ${msg("Text extracted during analysis")}
         </h3>
       </div>
-      <div
-        class=${tw`flex-1 overflow-auto overscroll-contain rounded-lg border`}
-      >
-        ${guard([crawlData, qaData], () =>
-          when(
-            crawlData?.text !== undefined && qaData?.text !== undefined,
-            () => html`
-              <div
-                class=${tw`flex min-h-full ${crawlData?.text && qaData?.text ? "" : tw`items-center justify-center`}`}
-              >
-                ${crawlData?.text && qaData?.text
-                  ? renderDiff(crawlData.text, qaData.text)
-                  : noData}
-              </div>
-            `,
-            renderSpinner,
-          ),
-        )}
+      <div class="flex-1 overflow-hidden rounded-lg border">
+        <div class=${tw`h-full overflow-auto overscroll-contain`}>
+          ${guard([crawlData, qaData], () =>
+            when(
+              crawlData?.text !== undefined && qaData?.text !== undefined,
+              () => html`
+                <div
+                  class=${tw`flex min-h-full ${crawlData?.text && qaData?.text ? "" : tw`items-center justify-center`}`}
+                >
+                  ${crawlData?.text && qaData?.text
+                    ? renderDiff(crawlData.text, qaData.text)
+                    : noData()}
+                </div>
+              `,
+              renderSpinner,
+            ),
+          )}
+        </div>
       </div>
     </div>
   `;
