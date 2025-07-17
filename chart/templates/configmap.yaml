@@ -103,6 +103,8 @@ data:
 
   CLEANUP_JOB_CRON_SCHEDULE: "{{ .Values.cleanup_job_cron_schedule }}"
 
+  CLEANUP_FILES_AFTER_MINUTES: "{{ .Values.cleanup_files_after_minutes | default 1440 }}"
+
 
 ---
 apiVersion: v1

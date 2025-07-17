@@ -491,8 +491,8 @@ class BackgroundJobOps:
         """Update job as finished, including
         job-specific task handling"""
 
-        # For weekly cron seed file cleanup jobs, no database record will exist
-        # for each run before this point, so create it here
+        # For seed file cleanup jobs, no database record will exist for each
+        # run before this point, so create it here
         if job_type == BgJobType.CLEANUP_SEED_FILES:
             if not started:
                 started = finished

@@ -39,8 +39,8 @@ def test_seed_file_cleanup_cron_job(admin_auth_headers, default_org_id, seed_fil
     # Check that at least one bg job entry exists for cleanup jobs and that
     # the jobs are marked as successful
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs?jobType=cleanup-seed-files",
-        headers=admin_auth_headers
+        f"{API_PREFIX}/orgs/all/jobs?jobType=cleanup-seed-files",
+        headers=admin_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
@@ -60,4 +60,3 @@ def test_seed_file_cleanup_cron_job(admin_auth_headers, default_org_id, seed_fil
         headers=admin_auth_headers,
     )
     assert r.status_code == 404
-
