@@ -31,6 +31,7 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
 import {
   NewWorkflowOnlyScopeType,
+  type DuplicateWorkflowSettings,
   type StorageSeedFile,
 } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
@@ -2325,7 +2326,7 @@ export class WorkflowDetail extends BtrixElement {
     };
 
     const seeds = this.seeds?.items;
-    const seedFile = this.seedFileTask.value;
+    const seedFile = this.seedFileTask.value ?? undefined;
 
     this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, {
       scopeType:
@@ -2335,7 +2336,7 @@ export class WorkflowDetail extends BtrixElement {
       workflow: workflowParams,
       seeds,
       seedFile,
-    });
+    } satisfies DuplicateWorkflowSettings);
 
     this.notify.toast({
       message: msg("Copied settings to new workflow."),

@@ -1,6 +1,6 @@
 import type { StorageFile } from "./storage";
 
-import { ScopeType } from "@/types/crawler";
+import { ScopeType, type Seed, type WorkflowParams } from "@/types/crawler";
 
 export enum NewWorkflowOnlyScopeType {
   PageList = "page-list",
@@ -20,4 +20,11 @@ export type WorkflowTags = {
 export type StorageSeedFile = StorageFile & {
   firstSeed: string;
   seedCount: number;
+};
+
+export type DuplicateWorkflowSettings = {
+  workflow: WorkflowParams;
+  scopeType?: ScopeType | NewWorkflowOnlyScopeType;
+  seeds?: Seed[];
+  seedFile?: StorageSeedFile;
 };

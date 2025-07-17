@@ -33,7 +33,11 @@ import { WorkflowTab } from "@/routes";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import { NewWorkflowOnlyScopeType } from "@/types/workflow";
+import {
+  NewWorkflowOnlyScopeType,
+  type DuplicateWorkflowSettings,
+  type StorageSeedFile,
+} from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
@@ -1049,10 +1053,15 @@ export class WorkflowsList extends BtrixElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig(workflow: ListWorkflow) {
-    const [fullWorkflow, seeds] = await Promise.all([
-      this.getWorkflow(workflow),
-      this.getSeeds(workflow),
-    ]);
+    const fullWorkflow = await this.getWorkflow(workflow);
+    let seeds;
+    let seedFile;
+
+    if (fullWorkflow.config.seedFileId) {
+      seedFile = await this.getSeedFile(fullWorkflow.config.seedFileId);
+    } else {
+      seeds = await this.getSeeds(workflow);
+    }
 
     const workflowParams: WorkflowParams = {
       ...fullWorkflow,
@@ -1060,11 +1069,16 @@ export class WorkflowsList extends BtrixElement {
     };
 
     this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, {
+      scopeType:
+        seedFile || (seeds?.items.length && seeds.items.length > 1)
+          ? NewWorkflowOnlyScopeType.PageList
+          : workflowParams.config.scopeType,
       workflow: workflowParams,
-      seeds: seeds.items,
-    });
+      seeds: seeds?.items,
+      seedFile,
+    } satisfies DuplicateWorkflowSettings);
 
-    if (seeds.total > SEEDS_MAX) {
+    if (seeds && seeds.total > SEEDS_MAX) {
       this.notify.toast({
         title: msg(str`Partially copied Workflow`),
         message: msg(
@@ -1242,6 +1256,13 @@ export class WorkflowsList extends BtrixElement {
     // NOTE Returns first 1000 seeds (backend pagination max)
     const data = await this.api.fetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/seeds`,
+    );
+    return data;
+  }
+
+  private async getSeedFile(seedFileId: string) {
+    const data = await this.api.fetch<StorageSeedFile>(
+      `/orgs/${this.orgId}/files/${seedFileId}`,
     );
     return data;
   }
