@@ -25,9 +25,9 @@ import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow
 import { OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
 import type { ProxiesAPIResponse } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
-import type { DuplicateWorkflowSettings } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
+import type { DuplicateWorkflowSettings } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import { type OrgData } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
