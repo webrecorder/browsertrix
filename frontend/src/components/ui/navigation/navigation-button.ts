@@ -39,14 +39,11 @@ export class NavigationButton extends TailwindElement {
   @property({ type: Boolean })
   disabled = false;
 
-  @property({ type: Boolean })
-  icon = false;
-
   @property({ type: String, reflect: true })
   role: ARIAMixin["role"] = null;
 
   @property({ type: String })
-  size: "small" | "medium" | "large" = "medium";
+  size: "x-small" | "small" | "medium" | "large" = "medium";
 
   @property({ type: String })
   align: "left" | "center" | "right" = "left";
@@ -82,10 +79,9 @@ export class NavigationButton extends TailwindElement {
       part="button"
       class=${clsx([
         tw`flex w-full cursor-pointer items-center gap-2 rounded font-medium leading-[16px] transition hover:transition-none focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-1 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50`,
-
-        this.icon ? tw`min-h-6 min-w-6` : tw``,
         {
-          small: this.icon ? tw`min-h-6 p-0` : tw`min-h-6 px-2 py-0`,
+          "x-small": tw`min-size-6 px-1 py-0`,
+          small: tw`min-h-6 px-2 py-0`,
           medium: tw`p-2`,
           large: tw`px-2 py-4`,
         }[this.size],
