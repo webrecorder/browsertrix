@@ -314,9 +314,9 @@ export class BrowserProfilesNew extends BtrixElement {
 
     try {
       let data;
+      let retriesLeft = 300;
 
-      // eslint-disable-next-line no-constant-condition, @typescript-eslint/no-unnecessary-condition
-      while (true) {
+      while (retriesLeft > 0) {
         data = await this.api.fetch<{ id?: string; detail?: string }>(
           `/orgs/${this.orgId}/profiles`,
           {
@@ -332,6 +332,16 @@ export class BrowserProfilesNew extends BtrixElement {
         } else {
           throw new Error("unknown response");
         }
+
+        retriesLeft -= 1;
+      }
+
+      if (!retriesLeft) {
+        throw new Error("too many retries waiting for browser");
+      }
+
+      if (!data) {
+        throw new Error("unknown response");
       }
 
       this.notify.toast({
@@ -345,6 +355,8 @@ export class BrowserProfilesNew extends BtrixElement {
         `${this.navigate.orgBasePath}/browser-profiles/profile/${data.id}`,
       );
     } catch (e) {
+      console.debug(e);
+
       this.isSubmitting = false;
 
       let message = msg("Sorry, couldn't create browser profile at this time.");
