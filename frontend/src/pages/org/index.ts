@@ -25,6 +25,7 @@ import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow
 import { OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
 import type { ProxiesAPIResponse } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
+import type { DuplicateWorkflowSettings } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
@@ -542,7 +543,8 @@ export class Org extends BtrixElement {
     }
 
     if (this.orgPath.startsWith("/workflows/new")) {
-      const { workflow, seeds, seedFile, scopeType } = this.viewStateData || {};
+      const { workflow, seeds, seedFile, scopeType } = (this.viewStateData ||
+        {}) satisfies Partial<DuplicateWorkflowSettings>;
 
       return html` <btrix-workflows-new
         class="col-span-5"
