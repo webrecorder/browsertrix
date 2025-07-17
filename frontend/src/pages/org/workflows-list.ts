@@ -1073,7 +1073,7 @@ export class WorkflowsList extends BtrixElement {
       });
     } else {
       this.notify.toast({
-        message: msg(str`Copied Workflow to new template.`),
+        message: msg("Copied settings to new workflow."),
         variant: "success",
         icon: "check2-circle",
         id: "workflow-copied-status",

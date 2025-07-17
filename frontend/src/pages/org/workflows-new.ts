@@ -1,6 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
 import { mergeDeep } from "immutable";
+import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -8,9 +9,9 @@ import type { PartialDeep } from "type-fest";
 
 import { ScopeType, type Seed, type WorkflowParams } from "./types";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
-import { WorkflowScopeType } from "@/types/workflow";
-import LiteElement, { html } from "@/utils/LiteElement";
+import { WorkflowScopeType, type StorageSeedFile } from "@/types/workflow";
 import { tw } from "@/utils/tailwind";
 import {
   DEFAULT_AUTOCLICK_SELECTOR,
@@ -28,12 +29,15 @@ import {
  */
 @customElement("btrix-workflows-new")
 @localized()
-export class WorkflowsNew extends LiteElement {
+export class WorkflowsNew extends BtrixElement {
   @property({ type: Boolean })
   isCrawler!: boolean;
 
   @property({ type: Array })
   initialSeeds?: Seed[];
+
+  @property({ type: Object })
+  initialSeedFile?: StorageSeedFile;
 
   @property({ type: String })
   scopeType?: WorkflowFormState["scopeType"];
@@ -76,7 +80,7 @@ export class WorkflowsNew extends LiteElement {
   private renderBreadcrumbs() {
     const breadcrumbs: Breadcrumb[] = [
       {
-        href: `${this.orgBasePath}/workflows`,
+        href: `${this.navigate.orgBasePath}/workflows`,
         content: msg("Crawl Workflows"),
       },
       {
@@ -148,6 +152,7 @@ export class WorkflowsNew extends LiteElement {
             )}
             .initialWorkflow=${initialWorkflow}
             .initialSeeds=${this.initialSeeds}
+            .initialSeedFile=${this.initialSeedFile}
           ></btrix-workflow-editor>
         `;
       })}
