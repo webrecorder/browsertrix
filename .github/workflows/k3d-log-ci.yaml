@@ -5,8 +5,9 @@ on:
     branches:
       - main
     paths:
-      - 'backend/**'
-      - 'chart/**'
+      - "backend/**"
+      - "chart/**"
+      - "emails/**"
 
 jobs:
   btrix-k3d-admin-logging-test:
@@ -30,7 +31,7 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v3
         with:
-           version: 3.10.2
+          version: 3.10.2
 
       - name: Add hosts to /etc/hosts
         run: |
@@ -43,7 +44,7 @@ jobs:
           POD=$(kubectl get pods -A | grep nginx-ingress | head -n 1 | awk '{print $2}')
           while [[ $(kubectl get pods $POD -n kube-system -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do kubectl get pods -n kube-system; sleep 5; done
           sleep 20
- 
+
       - name: Start Cluster with Helm (chart/admin/logging)
         run: |
           ./chart/admin/logging/scripts/eck_install.sh

@@ -1,5 +1,6 @@
 -r requirements.txt
 
 pytest
+pytest-asyncio
 requests
 boto3

@@ -144,10 +144,14 @@ class SubOps:
     async def send_cancel_emails(self, cancel_date: datetime, org: Organization):
         """Asynchronously send cancellation emails to all org admins"""
         users = await self.org_ops.get_users_for_org(org, UserRole.OWNER)
-        for user in users:
-            self.user_manager.email.send_subscription_will_be_canceled(
-                cancel_date, user.name, user.email, org
-            )
+        await asyncio.gather(
+            *[
+                self.user_manager.email.send_subscription_will_be_canceled(
+                    cancel_date, user.name, user.email, org
+                )
+                for user in users
+            ]
+        )
 
     async def cancel_subscription(self, cancel: SubscriptionCancel) -> dict[str, bool]:
         """delete subscription data, and unless if readOnlyOnCancel is true, the entire org"""
