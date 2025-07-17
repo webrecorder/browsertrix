@@ -54,7 +54,6 @@ def seed_file_config_id(crawler_auth_headers, default_org_id, seed_file_used_id)
     return r.json()["id"]
 
 
-
 def test_seed_file_cleanup_cron_job(
     admin_auth_headers,
     default_org_id,
