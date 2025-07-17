@@ -27,6 +27,7 @@ import type { ProxiesAPIResponse } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
+import type { DuplicateWorkflowSettings } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import { type OrgData } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
@@ -542,13 +543,15 @@ export class Org extends BtrixElement {
     }
 
     if (this.orgPath.startsWith("/workflows/new")) {
-      const { workflow, seeds, scopeType } = this.viewStateData || {};
+      const { workflow, seeds, seedFile, scopeType } = (this.viewStateData ||
+        {}) satisfies Partial<DuplicateWorkflowSettings>;
 
       return html` <btrix-workflows-new
         class="col-span-5"
         ?isCrawler=${this.appState.isCrawler}
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
+        .initialSeedFile=${seedFile}
         scopeType=${ifDefined(scopeType)}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
