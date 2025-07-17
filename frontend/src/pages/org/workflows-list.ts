@@ -12,7 +12,6 @@ import {
   type ListWorkflow,
   type Seed,
   type Workflow,
-  type WorkflowParams,
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -35,10 +34,10 @@ import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import {
   NewWorkflowOnlyScopeType,
-  type DuplicateWorkflowSettings,
   type StorageSeedFile,
 } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
+import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
@@ -1063,20 +1062,13 @@ export class WorkflowsList extends BtrixElement {
       seeds = await this.getSeeds(workflow);
     }
 
-    const workflowParams: WorkflowParams = {
-      ...fullWorkflow,
-      name: workflow.name ? msg(str`${workflow.name} Copy`) : "",
-    };
-
-    this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, {
-      scopeType:
-        seedFile || (seeds?.items.length && seeds.items.length > 1)
-          ? NewWorkflowOnlyScopeType.PageList
-          : workflowParams.config.scopeType,
-      workflow: workflowParams,
-      seeds: seeds?.items,
+    const settings = settingsForDuplicate({
+      workflow: fullWorkflow,
+      seeds,
       seedFile,
-    } satisfies DuplicateWorkflowSettings);
+    });
+
+    this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, settings);
 
     if (seeds && seeds.total > SEEDS_MAX) {
       this.notify.toast({
