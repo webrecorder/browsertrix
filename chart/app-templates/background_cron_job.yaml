@@ -8,7 +8,7 @@ metadata:
 
 spec:
   concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 0
+  successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 2
 
   schedule: "{{ schedule }}"
@@ -33,6 +33,11 @@ spec:
                 operator: NotIn
                 values: [0]
 
+          volumes:
+            - name: ops-configs
+              secret:
+                secretName: ops-configs
+
           containers:
             - name: btrixbgjob
               image: {{ backend_image }}
@@ -41,11 +46,19 @@ spec:
               - name: BG_JOB_TYPE
                 value: {{ job_type }}
 
+              volumeMounts:
+                - name: ops-configs
+                  mountPath: /ops-configs/
+
               envFrom:
                 - configMapRef:
                     name: backend-env-config
                 - secretRef:
                     name: mongo-auth
+
+              volumeMounts:
+                - name: ops-configs
+                  mountPath: /ops-configs/
 
               command: ["python3", "-m", "btrixcloud.main_bg"]
 
