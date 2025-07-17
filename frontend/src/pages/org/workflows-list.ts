@@ -1075,9 +1075,7 @@ export class WorkflowsList extends BtrixElement {
       // or URL list workflows created via API.
       this.notify.toast({
         title: msg(str`Partially copied workflow settings`),
-        message: msg(
-          str`The first ${urlCount} URLs were copied. To copy more, use URL list files.`,
-        ),
+        message: msg(str`The first ${urlCount} URLs were copied.`),
         variant: "warning",
         id: "workflow-copied-status",
       });
