@@ -2318,20 +2318,35 @@ export class WorkflowDetail extends BtrixElement {
     await this.updateComplete;
     if (!this.workflow) return;
 
+    const seeds = this.seeds;
+
     const settings = settingsForDuplicate({
       workflow: this.workflow,
-      seeds: this.seeds,
+      seeds,
       seedFile: this.seedFileTask.value ?? undefined,
     });
 
     this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, settings);
 
-    this.notify.toast({
-      message: msg("Copied settings to new workflow."),
-      variant: "success",
-      icon: "check2-circle",
-      id: "workflow-copied-success",
-    });
+    if (seeds && seeds.total > seeds.items.length) {
+      const urlCount = this.localize.number(seeds.items.length);
+
+      // This is likely an edge case for old workflows with >1,000 seeds
+      // or URL list workflows created via API.
+      this.notify.toast({
+        title: msg(str`Partially copied workflow settings`),
+        message: msg(str`Only the first ${urlCount} URLs were copied.`),
+        variant: "warning",
+        id: "workflow-copied-status",
+      });
+    } else {
+      this.notify.toast({
+        message: msg("Copied settings to new workflow."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "workflow-copied-status",
+      });
+    }
   }
 
   private async delete(): Promise<void> {

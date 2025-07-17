@@ -55,8 +55,6 @@ const FILTER_BY_CURRENT_USER_STORAGE_KEY =
 const INITIAL_PAGE_SIZE = 10;
 const POLL_INTERVAL_SECONDS = 10;
 const ABORT_REASON_THROTTLE = "throttled";
-// NOTE Backend pagination max is 1000
-const SEEDS_MAX = 1000;
 
 const sortableFields: Record<
   SortField,
@@ -1070,11 +1068,15 @@ export class WorkflowsList extends BtrixElement {
 
     this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, settings);
 
-    if (seeds && seeds.total > SEEDS_MAX) {
+    if (seeds && seeds.total > seeds.items.length) {
+      const urlCount = this.localize.number(seeds.items.length);
+
+      // This is likely an edge case for old workflows with >1,000 seeds
+      // or URL list workflows created via API.
       this.notify.toast({
-        title: msg(str`Partially copied Workflow`),
+        title: msg(str`Partially copied workflow settings`),
         message: msg(
-          str`Only first ${this.localize.number(SEEDS_MAX)} URLs were copied.`,
+          str`The first ${urlCount} URLs were copied. To copy more, use URL list files.`,
         ),
         variant: "warning",
         id: "workflow-copied-status",
