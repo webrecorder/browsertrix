@@ -29,7 +29,10 @@ import { WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
-import type { StorageSeedFile } from "@/types/workflow";
+import {
+  NewWorkflowOnlyScopeType,
+  type StorageSeedFile,
+} from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import {
   DEFAULT_MAX_SCALE,
@@ -2307,7 +2310,12 @@ export class WorkflowDetail extends BtrixElement {
    */
   private async duplicateConfig() {
     if (!this.workflow) await this.workflowTask.taskComplete;
-    if (!this.seeds) await this.seedsTask.taskComplete;
+
+    await Promise.all([
+      this.seedsTask.taskComplete,
+      this.seedFileTask.taskComplete,
+    ]);
+
     await this.updateComplete;
     if (!this.workflow) return;
 
@@ -2316,13 +2324,21 @@ export class WorkflowDetail extends BtrixElement {
       name: this.workflow.name ? msg(str`${this.workflow.name} Copy`) : "",
     };
 
+    const seeds = this.seeds?.items;
+    const seedFile = this.seedFileTask.value;
+
     this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, {
+      scopeType:
+        seedFile || (seeds?.length && seeds.length > 1)
+          ? NewWorkflowOnlyScopeType.PageList
+          : workflowParams.config.scopeType,
       workflow: workflowParams,
-      seeds: this.seeds?.items,
+      seeds,
+      seedFile,
     });
 
     this.notify.toast({
-      message: msg(str`Copied Workflow to new template.`),
+      message: msg("Copied settings to new workflow."),
       variant: "success",
       icon: "check2-circle",
       id: "workflow-copied-success",

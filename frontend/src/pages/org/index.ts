@@ -542,13 +542,14 @@ export class Org extends BtrixElement {
     }
 
     if (this.orgPath.startsWith("/workflows/new")) {
-      const { workflow, seeds, scopeType } = this.viewStateData || {};
+      const { workflow, seeds, seedFile, scopeType } = this.viewStateData || {};
 
       return html` <btrix-workflows-new
         class="col-span-5"
         ?isCrawler=${this.appState.isCrawler}
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
+        .initialSeedFile=${seedFile}
         scopeType=${ifDefined(scopeType)}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
