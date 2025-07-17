@@ -15,8 +15,8 @@ from .models import (
     UserUploadFile,
     UserUploadFileOut,
     SeedFile,
-    ImageFile,
-    ImageFilePreparer,
+    UserFile,
+    UserFilePreparer,
     Organization,
     User,
     AddedResponseId,
@@ -200,7 +200,7 @@ class FileUploadOps:
 
         prefix = org.storage.get_storage_extra_path(str(org.id)) + f"{upload_type}s/"
 
-        file_prep = ImageFilePreparer(
+        file_prep = UserFilePreparer(
             prefix,
             new_filename,
             original_filename=filename,
@@ -228,7 +228,7 @@ class FileUploadOps:
 
         print(f"{upload_type} stream upload complete", flush=True)
 
-        file_obj = file_prep.get_image_file(org.storage)
+        file_obj = file_prep.get_user_file(org.storage)
 
         # Validate size
         max_size = SEED_FILE_MAX_SIZE
@@ -271,16 +271,16 @@ class FileUploadOps:
         return {"added": True, "id": file_id}
 
     async def _parse_seed_info_from_file(
-        self, file_obj: ImageFile, org: Organization
+        self, file_obj: UserFile, org: Organization
     ) -> Tuple[str, int]:
         first_seed = ""
         seed_count = 0
 
-        image_file_out = await file_obj.get_image_file_out(org, self.storage_ops)
+        file_out = await file_obj.get_file_out(org, self.storage_ops)
 
         with tempfile.TemporaryFile() as fp:
             async with aiohttp.ClientSession() as session:
-                async with session.get(image_file_out.path) as resp:
+                async with session.get(file_out.path) as resp:
                     async for chunk in resp.content.iter_chunked(4096):
                         fp.write(chunk)
 

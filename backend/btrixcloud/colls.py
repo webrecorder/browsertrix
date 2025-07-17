@@ -45,8 +45,8 @@ from .models import (
     CollAccessType,
     UpdateCollHomeUrl,
     User,
-    ImageFile,
-    ImageFilePreparer,
+    UserFile,
+    UserFilePreparer,
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
 )
@@ -379,10 +379,8 @@ class CollectionOps:
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
-            image_file = ImageFile(**thumbnail)
-            result["thumbnail"] = await image_file.get_image_file_out(
-                org, self.storage_ops
-            )
+            image_file = UserFile(**thumbnail)
+            result["thumbnail"] = await image_file.get_file_out(org, self.storage_ops)
 
         return CollOut.from_dict(result)
 
@@ -411,8 +409,8 @@ class CollectionOps:
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
-            image_file = ImageFile(**thumbnail)
-            result["thumbnail"] = await image_file.get_public_image_file_out(
+            image_file = UserFile(**thumbnail)
+            result["thumbnail"] = await image_file.get_public_file_out(
                 org, self.storage_ops
             )
 
@@ -430,10 +428,8 @@ class CollectionOps:
         if not thumbnail:
             raise HTTPException(status_code=404, detail="thumbnail_not_found")
 
-        image_file = ImageFile(**thumbnail)
-        image_file_out = await image_file.get_public_image_file_out(
-            org, self.storage_ops
-        )
+        image_file = UserFile(**thumbnail)
+        image_file_out = await image_file.get_public_file_out(org, self.storage_ops)
 
         path = self.storage_ops.resolve_internal_access_path(image_file_out.path)
 
@@ -540,14 +536,14 @@ class CollectionOps:
         for res in items:
             thumbnail = res.get("thumbnail")
             if thumbnail:
-                image_file = ImageFile(**thumbnail)
+                image_file = UserFile(**thumbnail)
 
                 if public_colls_out:
-                    res["thumbnail"] = await image_file.get_public_image_file_out(
+                    res["thumbnail"] = await image_file.get_public_file_out(
                         org, self.storage_ops
                     )
                 else:
-                    res["thumbnail"] = await image_file.get_image_file_out(
+                    res["thumbnail"] = await image_file.get_file_out(
                         org, self.storage_ops
                     )
 
@@ -879,7 +875,7 @@ class CollectionOps:
 
         prefix = org.storage.get_storage_extra_path(str(org.id)) + "images/"
 
-        file_prep = ImageFilePreparer(
+        file_prep = UserFilePreparer(
             prefix,
             image_filename,
             original_filename=filename,
@@ -907,7 +903,7 @@ class CollectionOps:
 
         print("Collection thumbnail stream upload complete", flush=True)
 
-        thumbnail_file = file_prep.get_image_file(org.storage)
+        thumbnail_file = file_prep.get_user_file(org.storage)
 
         if thumbnail_file.size > THUMBNAIL_MAX_SIZE:
             print(
