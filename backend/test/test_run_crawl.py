@@ -1366,3 +1366,53 @@ def test_crawls_exclude_behavior_logs(
     crawls = r.json()["items"]
     for crawl in crawls:
         assert data.get("behaviorLogs") == []
+
+
+def test_seed_file_crawl(
+    crawler_auth_headers, default_org_id, seed_file_id, seed_file_config_id
+):
+    # Run crawl from workflow with seed file
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{seed_file_config_id}/run",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    crawl_id = r.json()["started"]
+
+    # Wait for it to complete
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=crawler_auth_headers,
+        )
+        data = r.json()
+        if data["state"] in FINISHED_STATES:
+            break
+        time.sleep(5)
+
+    time.sleep(10)
+
+    # Check on crawl
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["config"]["seedFileId"] == seed_file_id
+    assert data["state"] == "complete"
+
+    # Validate crawl pages
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+    for page in data["items"]:
+        assert page["url"] in (
+            "https://specs.webrecorder.net/",
+            "https://webrecorder.net/",
+        )

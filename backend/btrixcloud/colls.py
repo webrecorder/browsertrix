@@ -45,8 +45,8 @@ from .models import (
     CollAccessType,
     UpdateCollHomeUrl,
     User,
-    ImageFile,
-    ImageFilePreparer,
+    UserFile,
+    UserFilePreparer,
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
 )
@@ -379,10 +379,8 @@ class CollectionOps:
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
-            image_file = ImageFile(**thumbnail)
-            result["thumbnail"] = await image_file.get_image_file_out(
-                org, self.storage_ops
-            )
+            image_file = UserFile(**thumbnail)
+            result["thumbnail"] = await image_file.get_file_out(org, self.storage_ops)
 
         return CollOut.from_dict(result)
 
@@ -411,8 +409,8 @@ class CollectionOps:
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
-            image_file = ImageFile(**thumbnail)
-            result["thumbnail"] = await image_file.get_public_image_file_out(
+            image_file = UserFile(**thumbnail)
+            result["thumbnail"] = await image_file.get_public_file_out(
                 org, self.storage_ops
             )
 
@@ -430,10 +428,8 @@ class CollectionOps:
         if not thumbnail:
             raise HTTPException(status_code=404, detail="thumbnail_not_found")
 
-        image_file = ImageFile(**thumbnail)
-        image_file_out = await image_file.get_public_image_file_out(
-            org, self.storage_ops
-        )
+        image_file = UserFile(**thumbnail)
+        image_file_out = await image_file.get_public_file_out(org, self.storage_ops)
 
         path = self.storage_ops.resolve_internal_access_path(image_file_out.path)
 
@@ -540,14 +536,14 @@ class CollectionOps:
         for res in items:
             thumbnail = res.get("thumbnail")
             if thumbnail:
-                image_file = ImageFile(**thumbnail)
+                image_file = UserFile(**thumbnail)
 
                 if public_colls_out:
-                    res["thumbnail"] = await image_file.get_public_image_file_out(
+                    res["thumbnail"] = await image_file.get_public_file_out(
                         org, self.storage_ops
                     )
                 else:
-                    res["thumbnail"] = await image_file.get_image_file_out(
+                    res["thumbnail"] = await image_file.get_file_out(
                         org, self.storage_ops
                     )
 
@@ -622,6 +618,10 @@ class CollectionOps:
     async def delete_collection(self, coll_id: UUID, org: Organization):
         """Delete collection and remove from associated crawls."""
         await self.crawl_ops.remove_collection_from_all_crawls(coll_id, org)
+
+        coll = await self.get_collection(coll_id, org.id)
+        if coll.thumbnail:
+            await self.delete_thumbnail(coll_id, org)
 
         result = await self.collections.delete_one({"_id": coll_id, "oid": org.id})
         if result.deleted_count < 1:
@@ -854,7 +854,7 @@ class CollectionOps:
 
         return {"updated": True}
 
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, duplicate-code
     async def upload_thumbnail_stream(
         self,
         stream,
@@ -875,7 +875,7 @@ class CollectionOps:
 
         prefix = org.storage.get_storage_extra_path(str(org.id)) + "images/"
 
-        file_prep = ImageFilePreparer(
+        file_prep = UserFilePreparer(
             prefix,
             image_filename,
             original_filename=filename,
@@ -903,7 +903,7 @@ class CollectionOps:
 
         print("Collection thumbnail stream upload complete", flush=True)
 
-        thumbnail_file = file_prep.get_image_file(org.storage)
+        thumbnail_file = file_prep.get_user_file(org.storage)
 
         if thumbnail_file.size > THUMBNAIL_MAX_SIZE:
             print(
@@ -937,6 +937,10 @@ class CollectionOps:
             {"$set": coll.to_dict()},
         )
 
+        await self.orgs.inc_org_bytes_stored_field(
+            org.id, "bytesStoredThumbnails", thumbnail_file.size
+        )
+
         return {"added": True}
 
     async def delete_thumbnail(self, coll_id: UUID, org: Organization):
@@ -956,7 +960,23 @@ class CollectionOps:
             {"$set": {"thumbnail": None}},
         )
 
+        await self.orgs.inc_org_bytes_stored_field(
+            org.id, "bytesStoredThumbnails", -coll.thumbnail.size
+        )
+
         return {"deleted": True}
+
+    async def calculate_thumbnail_storage(self, oid: UUID) -> int:
+        """Calculate storage for thumbnails in org"""
+        total_size = 0
+
+        cursor = self.collections.find({"oid": oid})
+        async for coll_dict in cursor:
+            file_ = coll_dict.get("thumbnail")
+            if file_:
+                total_size += file_.get("size", 0)
+
+        return total_size
 
 
 # ============================================================================
@@ -998,6 +1018,7 @@ def init_collections_api(
         namePrefix: Optional[str] = None,
         access: Optional[str] = None,
     ):
+        # pylint: disable=duplicate-code
         collections, total = await colls.list_collections(
             org,
             page_size=pageSize,

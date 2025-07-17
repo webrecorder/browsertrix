@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import secrets
 from datetime import datetime
 from typing import Optional, Tuple, Union, List, Dict, TYPE_CHECKING, cast
 from uuid import UUID
@@ -24,6 +25,7 @@ from .models import (
     RecalculateOrgStatsJob,
     ReAddOrgPagesJob,
     OptimizePagesJob,
+    CleanupSeedFilesJob,
     PaginatedBackgroundJobResponse,
     AnyJob,
     StorageRef,
@@ -43,7 +45,7 @@ else:
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes, too-many-public-methods
 class BackgroundJobOps:
     """k8s background job management"""
 
@@ -473,16 +475,38 @@ class BackgroundJobOps:
             print(f"warning: optimize pages job could not be started: {exc}")
             return None
 
+    async def ensure_cron_cleanup_jobs_exist(self):
+        """Ensure background job to clean up unused seed files weekly exists"""
+        await self.crawl_manager.ensure_cleanup_seed_file_cron_job_exists()
+
     async def job_finished(
         self,
         job_id: str,
         job_type: str,
         success: bool,
         finished: datetime,
+        started: Optional[datetime] = None,
         oid: Optional[UUID] = None,
     ) -> None:
         """Update job as finished, including
         job-specific task handling"""
+
+        # For seed file cleanup jobs, no database record will exist for each
+        # run before this point, so create it here
+        if job_type == BgJobType.CLEANUP_SEED_FILES:
+            if not started:
+                started = finished
+            cleanup_job = CleanupSeedFilesJob(
+                id=f"seed-files-{secrets.token_hex(5)}",
+                type=BgJobType.CLEANUP_SEED_FILES,
+                started=started,
+                finished=finished,
+                success=success,
+            )
+            await self.jobs.insert_one(cleanup_job.to_dict())
+            if not success:
+                await self._send_bg_job_failure_email(cleanup_job, finished)
+            return
 
         job = await self.get_background_job(job_id)
         if job.finished:
@@ -499,26 +523,29 @@ class BackgroundJobOps:
                     cast(DeleteReplicaJob, job)
                 )
         else:
-            print(
-                f"Background job {job.id} failed, sending email to superuser",
-                flush=True,
-            )
-            superuser = await self.user_manager.get_superuser()
-            org = None
-            if job.oid:
-                org = await self.org_ops.get_org_by_id(job.oid)
-            await asyncio.get_event_loop().run_in_executor(
-                None,
-                self.email.send_background_job_failed,
-                job,
-                finished,
-                superuser.email,
-                org,
-            )
+            await self._send_bg_job_failure_email(job, finished)
 
         await self.jobs.find_one_and_update(
             {"_id": job_id, "oid": oid},
             {"$set": {"success": success, "finished": finished}},
+        )
+
+    async def _send_bg_job_failure_email(self, job: BackgroundJob, finished: datetime):
+        print(
+            f"Background job {job.id} failed, sending email to superuser",
+            flush=True,
+        )
+        superuser = await self.user_manager.get_superuser()
+        org = None
+        if job.oid:
+            org = await self.org_ops.get_org_by_id(job.oid)
+        await asyncio.get_event_loop().run_in_executor(
+            None,
+            self.email.send_background_job_failed,
+            job,
+            finished,
+            superuser.email,
+            org,
         )
 
     async def get_background_job(
@@ -530,6 +557,7 @@ class BackgroundJobOps:
         RecalculateOrgStatsJob,
         ReAddOrgPagesJob,
         OptimizePagesJob,
+        CleanupSeedFilesJob,
     ]:
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
@@ -542,6 +570,7 @@ class BackgroundJobOps:
 
         return self._get_job_by_type_from_data(res)
 
+    # pylint: disable=too-many-return-statements
     def _get_job_by_type_from_data(self, data: dict[str, object]):
         """convert dict to propert background job type"""
         if data["type"] == BgJobType.CREATE_REPLICA:
@@ -558,6 +587,9 @@ class BackgroundJobOps:
 
         if data["type"] == BgJobType.OPTIMIZE_PAGES:
             return OptimizePagesJob.from_dict(data)
+
+        if data["type"] == BgJobType.CLEANUP_SEED_FILES:
+            return CleanupSeedFilesJob.from_dict(data)
 
         return DeleteOrgJob.from_dict(data)
 
@@ -735,6 +767,9 @@ class BackgroundJobOps:
                 existing_job_id=job.id,
             )
             return {"success": True}
+
+        if job.type == BgJobType.CLEANUP_SEED_FILES:
+            raise HTTPException(status_code=400, detail="cron_job_retry_not_supported")
 
         return {"success": False}
 

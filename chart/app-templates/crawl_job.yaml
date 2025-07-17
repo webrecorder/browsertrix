@@ -41,3 +41,4 @@ spec:
 
   isSinglePage: "{{ is_single_page }}"
 
+  seedFileUrl: "{{ seed_file_url }}"
