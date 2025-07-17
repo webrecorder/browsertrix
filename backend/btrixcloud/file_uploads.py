@@ -330,9 +330,16 @@ class FileUploadOps:
         return total_size
 
     async def cleanup_unused_seed_files(self):
-        """Delete older seed files (at least one day old) not used in workflows"""
-        one_day_ago = dt_now() - timedelta(days=1)
-        match_query = {"type": "seedFile", "created": {"$lt": one_day_ago}}
+        """Delete older seed files that are not used in workflows"""
+        cleanup_after_mins = int(os.environ.get("CLEANUP_FILES_AFTER_MINUTES", 1440))
+
+        print(
+            f"Cleaning up unused seed files more than {cleanup_after_mins} minutes old",
+            flush=True,
+        )
+
+        cleanup_before = dt_now() - timedelta(minutes=cleanup_after_mins)
+        match_query = {"type": "seedFile", "created": {"$lt": cleanup_before}}
 
         errored = False
         error_msg = ""

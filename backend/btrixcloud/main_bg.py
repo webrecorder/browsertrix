@@ -59,6 +59,15 @@ async def main():
             traceback.print_exc()
             return 1
 
+    if job_type == BgJobType.CLEANUP_SEED_FILES:
+        try:
+            await file_ops.cleanup_unused_seed_files()
+            return 0
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            traceback.print_exc()
+            return 1
+
     # Run job (org-specific)
     if not oid:
         print("Org id missing, quitting")
@@ -95,15 +104,6 @@ async def main():
                 await page_ops.re_add_crawl_pages(crawl_id=crawl_id, oid=org.id)
 
             await coll_ops.recalculate_org_collection_stats(org)
-            return 0
-        # pylint: disable=broad-exception-caught
-        except Exception:
-            traceback.print_exc()
-            return 1
-
-    if job_type == BgJobType.CLEANUP_SEED_FILES:
-        try:
-            await file_ops.cleanup_unused_seed_files()
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:
