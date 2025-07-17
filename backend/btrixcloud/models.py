@@ -1150,8 +1150,14 @@ class FilePreparer:
 
 
 # ============================================================================
-class ImageFileOut(BaseModel):
-    """output for user-upload imaged file (conformance to Data Resource Spec)"""
+class UserFileOut(BaseModel):
+    """output for user-uploaded file as stored on other document
+
+    Used for collection thumbnails.
+    Should merge with UserUploadFile models below (used to store files in
+    distinct files mongo collection) eventually.
+    Conforms to Data Resource Spec.
+    """
 
     name: str
     path: str
@@ -1166,8 +1172,14 @@ class ImageFileOut(BaseModel):
 
 
 # ============================================================================
-class PublicImageFileOut(BaseModel):
-    """public output for user-upload imaged file (conformance to Data Resource Spec)"""
+class PublicUserFileOut(BaseModel):
+    """public output for user-uploaded file stored on other document
+
+    Used for collection thumbnails.
+    Should merge with UserUploadFile models below (used to store files in
+    distinct files mongo collection) eventually.
+    Conforms to Data Resource Spec.
+    """
 
     name: str
     path: str
@@ -1178,8 +1190,14 @@ class PublicImageFileOut(BaseModel):
 
 
 # ============================================================================
-class ImageFile(BaseFile):
-    """User-uploaded image file"""
+class UserFile(BaseFile):
+    """User-uploaded file stored on anther mongo document
+
+    Used for collection thumbnails.
+    Should merge with UserUploadFile models below (used to store files in
+    distinct files mongo collection) eventually.
+    Conforms to Data Resource Spec.
+    """
 
     originalFilename: str
     mime: str
@@ -1187,12 +1205,12 @@ class ImageFile(BaseFile):
     userName: str
     created: datetime
 
-    async def get_image_file_out(self, org, storage_ops) -> ImageFileOut:
-        """Get ImageFileOut with new presigned url"""
+    async def get_file_out(self, org, storage_ops) -> UserFileOut:
+        """Get UserFileOut with new presigned url"""
         presigned_url, _ = await storage_ops.get_presigned_url(org, self)
         presigned_url = storage_ops.resolve_internal_access_path(presigned_url)
 
-        return ImageFileOut(
+        return UserFileOut(
             name=self.filename,
             path=presigned_url or "",
             hash=self.hash,
@@ -1204,12 +1222,12 @@ class ImageFile(BaseFile):
             created=self.created,
         )
 
-    async def get_public_image_file_out(self, org, storage_ops) -> PublicImageFileOut:
-        """Get PublicImageFileOut with new presigned url"""
+    async def get_public_file_out(self, org, storage_ops) -> PublicUserFileOut:
+        """Get PublicUserFileOut with new presigned url"""
         presigned_url, _ = await storage_ops.get_presigned_url(org, self)
         presigned_url = storage_ops.resolve_internal_access_path(presigned_url)
 
-        return PublicImageFileOut(
+        return PublicUserFileOut(
             name=self.filename,
             path=presigned_url or "",
             hash=self.hash,
@@ -1219,8 +1237,8 @@ class ImageFile(BaseFile):
 
 
 # ============================================================================
-class ImageFilePreparer(FilePreparer):
-    """Wrapper for user image streaming uploads"""
+class UserFilePreparer(FilePreparer):
+    """Wrapper for user streaming uploads"""
 
     # pylint: disable=too-many-arguments, too-many-function-args
 
@@ -1240,12 +1258,12 @@ class ImageFilePreparer(FilePreparer):
         self.user_name = user.name
         self.created = created
 
-    def get_image_file(
+    def get_user_file(
         self,
         storage: StorageRef,
-    ) -> ImageFile:
-        """get user-uploaded image file"""
-        return ImageFile(
+    ) -> UserFile:
+        """get user-uploaded file"""
+        return UserFile(
             filename=self.upload_name,
             hash=self.upload_hasher.hexdigest(),
             size=self.upload_size,
@@ -1259,8 +1277,8 @@ class ImageFilePreparer(FilePreparer):
 
 
 # ============================================================================
-class UserUploadFileOut(ImageFileOut):
-    """Output model for all user-uploaded files"""
+class UserUploadFileOut(UserFileOut):
+    """Output model for all user-uploaded files stored in files mongo collection"""
 
     id: UUID
     oid: UUID
@@ -1562,7 +1580,7 @@ class Collection(BaseMongoModel):
     homeUrlTs: Optional[datetime] = None
     homeUrlPageId: Optional[UUID] = None
 
-    thumbnail: Optional[ImageFile] = None
+    thumbnail: Optional[UserFile] = None
     thumbnailSource: Optional[CollectionThumbnailSource] = None
     defaultThumbnailName: Optional[str] = None
 
@@ -1618,7 +1636,7 @@ class CollOut(BaseMongoModel):
     homeUrlPageId: Optional[UUID] = None
 
     resources: List[CrawlFileOut] = []
-    thumbnail: Optional[ImageFileOut] = None
+    thumbnail: Optional[UserFileOut] = None
     thumbnailSource: Optional[CollectionThumbnailSource] = None
     defaultThumbnailName: Optional[str] = None
 
@@ -1661,7 +1679,7 @@ class PublicCollOut(BaseMongoModel):
     homeUrlTs: Optional[datetime] = None
 
     resources: List[CrawlFileOut] = []
-    thumbnail: Optional[PublicImageFileOut] = None
+    thumbnail: Optional[PublicUserFileOut] = None
     defaultThumbnailName: Optional[str] = None
 
     allowPublicDownload: bool = True
