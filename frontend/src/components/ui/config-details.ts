@@ -19,11 +19,11 @@ import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
 import { WorkflowScopeType } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
+import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
-import { regexUnescape } from "@/utils/string";
 import { getServerDefaults } from "@/utils/workflow";
 
 /**
@@ -440,7 +440,7 @@ export class ConfigDetails extends BtrixElement {
                 <btrix-data-table
                   .columns=${[msg("URL Prefix")]}
                   .rows=${includeUrlList.map((url) => [
-                    regexUnescape(url).replace(/^\^+/, ""),
+                    unescapeCustomPrefix(url),
                   ])}
                 >
                 </btrix-data-table>
