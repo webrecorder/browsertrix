@@ -60,7 +60,7 @@ _Site Crawl_
 :   This scope will crawl all pages on the domain and any subdomains found. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
 
 `Custom Page Prefix`
-:   This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in _URL Prefixes in Scope_. By default, _URL Prefixes in Scope_ will be prefilled with the prefix of the _Crawl Start URL_ to the last `/`. For example, if `https://example.com/path/page` is set as the _Crawl Start URL_, `https://example.com/path/` will be automatically added to `URL Prefixes in Scope`. This prefix can then be removed or modified as needed.
+:   This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_URL Prefixes in Scope_](#url-prefixes-in-scope).
 
 ### Page URL(s)
 
@@ -91,11 +91,13 @@ When enabled, the crawler will fail the entire crawl if any of the provided URLs
 
 Instructs the crawler to stop visiting new links past a specified depth.
 
-### Extra URL Prefixes in Scope
+### URL Prefixes in Scope
 
-This field accepts additional URLs or domains that will be crawled if URLs that lead to them are found.
+When using a scope of `Custom Page Prefix`, this field accepts URLs or domains that will be crawled if URLs that lead to them are found.
 
-This can be useful for crawling websites that span multiple domains such as `example.org` and `example.net`.
+By default, _URL Prefixes in Scope_ will be prefilled with the _Crawl Start URL_ up to the last slash (`/`). For example, if `https://example.com/path/page` is set as the _Crawl Start URL_, `https://example.com/path/` will be automatically added to _URL Prefixes in Scope_. This URL prefix can then be removed or modified as needed.
+
+This field can also be useful for crawling websites that span multiple domains such as `https://example.org` and `https://example.net`. To crawl websites outside of scope for scope types other than `Custom Page Prefix`, see [_Additional Pages_](#additional-pages).
 
 ### Include Any Linked Page ("one hop out")
 
