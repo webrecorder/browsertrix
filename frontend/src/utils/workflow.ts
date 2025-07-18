@@ -218,7 +218,7 @@ export function getInitialFormState(params: {
     if (primarySeedConfig.include?.length) {
       formState.customIncludeUrlList = primarySeedConfig.include
         // Unescape regex
-        .map(regexUnescape)
+        .map((url) => regexUnescape(url).replace(/^\^+/, ""))
         .join("\n");
       // if we have additional include URLs, set to "custom" scope here
       // to indicate 'Custom Page Prefix' option
