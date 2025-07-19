@@ -1,3 +1,5 @@
+export type { Page } from "@/features/qa/page-list/helpers/page";
+
 export const TABS = ["screenshots", "text", "resources", "replay"] as const;
 export type QATab = (typeof TABS)[number];
 

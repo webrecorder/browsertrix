@@ -694,11 +694,9 @@ export class WorkflowDetail extends BtrixElement {
 
     if (this.groupedWorkflowTab === WorkflowTab.LatestCrawl && latestCrawl) {
       const latestCrawlId = latestCrawl.id;
-      const logTotals = this.logTotalsTask.value;
       const authToken = this.authState?.headers.Authorization.split(" ")[1];
       const disableDownload = this.isRunning;
       const disableReplay = !latestCrawl.fileSize;
-      const disableLogs = !(logTotals?.errors || logTotals?.behaviors);
       const replayHref = `/api/orgs/${this.orgId}/all-crawls/${latestCrawlId}/download?auth_bearer=${authToken}`;
       const replayFilename = `browsertrix-${latestCrawlId}.wacz`;
 
@@ -738,7 +736,7 @@ export class WorkflowDetail extends BtrixElement {
                 slot="trigger"
                 size="small"
                 caret
-                ?disabled=${disableReplay && disableLogs}
+                ?disabled=${disableDownload}
               >
                 <sl-visually-hidden
                   >${msg("Download options")}</sl-visually-hidden
@@ -764,7 +762,6 @@ export class WorkflowDetail extends BtrixElement {
                 </btrix-menu-item-link>
                 <btrix-menu-item-link
                   href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
-                  ?disabled=${disableLogs}
                   download
                 >
                   <sl-icon
@@ -1758,11 +1755,12 @@ export class WorkflowDetail extends BtrixElement {
               class="micro -ml-2"
               size="small"
               variant="text"
-              href="${this.basePath}/crawls/${this.lastCrawlId}#qa"
+              href="${this.basePath}/crawls/${this
+                .lastCrawlId}/review/screenshots?from=workflow"
               @click=${this.navigate.link}
             >
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-              ${msg("Add Review")}
+              ${msg("Review Crawl")}
             </sl-button> `}
       </div> `;
     };
