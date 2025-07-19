@@ -3,9 +3,7 @@ import ISO6391 from "iso-639-1";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
-import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import capitalize from "lodash/fp/capitalize";
-import RegexColorize from "regex-colorize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { none, notSpecified } from "@/layouts/empty";
@@ -21,6 +19,7 @@ import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
 import { WorkflowScopeType } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
+import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { pluralOf } from "@/utils/pluralize";
@@ -433,19 +432,18 @@ export class ConfigDetails extends BtrixElement {
           : undefined,
         true,
       )}
-      ${when(scopeType === WorkflowScopeType.Prefix, () =>
+      ${when(scopeType === WorkflowScopeType.Custom, () =>
         this.renderSetting(
-          msg("Extra URL Prefixes in Scope"),
+          msg("URL Prefixes in Scope"),
           includeUrlList.length
             ? html`
-                <ul>
-                  ${includeUrlList.map(
-                    (url: string) =>
-                      staticHtml`<li class="regex">${unsafeStatic(
-                        new RegexColorize().colorizeText(url) as string,
-                      )}</li>`,
-                  )}
-                </ul>
+                <btrix-data-table
+                  .columns=${[msg("URL Prefix")]}
+                  .rows=${includeUrlList.map((url) => [
+                    unescapeCustomPrefix(url),
+                  ])}
+                >
+                </btrix-data-table>
               `
             : none,
           true,
