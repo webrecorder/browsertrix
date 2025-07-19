@@ -18,10 +18,10 @@ import {
   WorkflowScopeType,
   type NewWorkflowOnlyScopeType,
 } from "@/types/workflow";
+import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEFAULT_MAX_SCALE, isPageScopeType } from "@/utils/crawler";
 import { getNextDate, getScheduleInterval } from "@/utils/cron";
 import localize, { getDefaultLang } from "@/utils/localize";
-import { regexUnescape } from "@/utils/string";
 
 export const BYTES_PER_GB = 1e9;
 export const DEFAULT_SELECT_LINKS = ["a[href]->href" as const];
@@ -218,7 +218,7 @@ export function getInitialFormState(params: {
     if (primarySeedConfig.include?.length) {
       formState.customIncludeUrlList = primarySeedConfig.include
         // Unescape regex
-        .map(regexUnescape)
+        .map(unescapeCustomPrefix)
         .join("\n");
       // if we have additional include URLs, set to "custom" scope here
       // to indicate 'Custom Page Prefix' option
