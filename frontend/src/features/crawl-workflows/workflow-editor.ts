@@ -1017,7 +1017,7 @@ export class WorkflowEditor extends BtrixElement {
       `)}
       ${this.renderHelpTextCol(
         msg(
-          `If checked, the crawler will fail if behaviors discover the browser is not logged in on supported social media sites (Facebook, Instagram, TikTok, X, YouTube).`,
+          `If checked, the crawl will fail if behaviors discover the browser is not logged in on supported social media sites (Facebook, Instagram, TikTok, X, YouTube).`,
         ),
         false,
       )}
@@ -1519,7 +1519,7 @@ https://example.net`}
       `)}
       ${this.renderHelpTextCol(
         msg(
-          `If checked, the crawler will fail if behaviors discover the browser is not logged in on supported social media sites (Facebook, Instagram, TikTok, X, YouTube)).`,
+          `If checked, the crawl will fail if behaviors discover the browser is not logged in on supported social media sites (Facebook, Instagram, TikTok, X, YouTube).`,
         ),
         false,
       )}
