@@ -29,7 +29,7 @@ app.use(express.json());
 
 // Health check endpoint
 app.get("/health", (req, res) => {
-  req.log.debug({ msg: "Health check successful" });
+  req.log.trace({ msg: "Health check successful" });
   res.status(200).json({ status: "ok" });
 });
 
