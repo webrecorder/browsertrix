@@ -243,6 +243,7 @@ WAITING_STATES = get_args(TYPE_WAITING_STATES)
 TYPE_FAILED_STATES = Literal[
     "canceled",
     "failed",
+    "failed_not_logged_in",
     "skipped_storage_quota_reached",
     "skipped_time_quota_reached",
 ]

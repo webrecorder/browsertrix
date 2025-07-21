@@ -832,10 +832,15 @@ class CrawlOperator(BaseOperator):
         """Mark crawl as failed, log crawl state and print crawl logs, if possible"""
         prev_state = status.state
 
-        if not await self.mark_finished(crawl, status, "failed", stats=stats):
+        failed_state = "failed"
+
+        if status.failReason and status.failReason == "not_logged_in":
+            failed_state = "failed_not_logged_in"
+
+        if not await self.mark_finished(crawl, status, failed_state, stats=stats):
             return False
 
-        if not self.log_failed_crawl_lines or prev_state == "failed":
+        if not self.log_failed_crawl_lines or prev_state in ("failed", "failed_not_logged_in"):
             return True
 
         pod_names = list(pods.keys())
@@ -1487,6 +1492,8 @@ class CrawlOperator(BaseOperator):
         status.pagesFound = stats.found
         status.size = stats.size
         status.sizeHuman = humanize.naturalsize(status.size)
+
+        status.failReason = await redis.get(f"{crawl.id}:failReason")
 
         await self.crawl_ops.update_running_crawl_stats(
             crawl.db_crawl_id, crawl.is_qa, stats
