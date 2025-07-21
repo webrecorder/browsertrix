@@ -1907,6 +1907,7 @@ export class WorkflowDetail extends BtrixElement {
           message = msg("This crawl can’t be replayed since it was canceled.");
           break;
         case "failed":
+        case "failed_not_logged_in":
           message = msg("This crawl can’t be replayed because it failed.");
           break;
         default:
@@ -1918,7 +1919,9 @@ export class WorkflowDetail extends BtrixElement {
     const actionButton = (workflow: Workflow) => {
       if (!workflow.lastCrawlId) return;
 
-      if (workflow.lastCrawlState === "failed") {
+      const failedStates = ["failed", "failed_not_logged_in"];
+
+      if (failedStates.includes(workflow.lastCrawlState || "")) {
         return html`<div class="mt-4">
           <sl-button
             size="small"
