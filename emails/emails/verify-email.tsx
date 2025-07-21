@@ -7,7 +7,7 @@ import { z } from "zod";
 
 export const schema = z.object({
   receiver_email: z.email(),
-  origin: z.url(),
+  origin: z.string(),
   token: z.string(),
   support_email: z.email().optional(),
 });
