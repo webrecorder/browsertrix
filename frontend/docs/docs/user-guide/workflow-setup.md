@@ -83,6 +83,10 @@ When enabled, the crawler will visit all the links it finds within each page def
 ??? example "Crawling tags & search queries with Page List crawls"
     This setting can be useful for crawling the content of specific tags or search queries. Specify the tag or search query URL(s) in the _Crawl URL(s)_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
 
+### Fail Crawl If Not Logged In
+
+When enabled, the crawler will fail the crawl if it behaviors detect that the browser is not logged in for specific supported social media sites (Facebook, Instagram, TikTok, X, YouTube).
+
 ### Fail Crawl on Failed URL
 
 When enabled, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled. The resulting archived item will have a status of "Failed".
@@ -110,6 +114,10 @@ This can be useful for capturing links on a page that lead outside the website t
 When enabled, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if found. It will not crawl pages found in the sitemap that do not meet the crawl's scope settings or limits.
 
 This can be useful for discovering and capturing pages on a website that aren't linked to from the seed and which might not otherwise be captured.
+
+### Fail Crawl If Not Logged In
+
+When enabled, the crawler will fail the crawl if it behaviors detect that the browser is not logged in for specific supported social media sites (Facebook, Instagram, TikTok, X, YouTube).
 
 ### Link Selectors
 
