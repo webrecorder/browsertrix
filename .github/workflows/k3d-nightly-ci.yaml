@@ -9,6 +9,7 @@ on:
 
 env:
   ECHO_SERVER_HOST_URL: http://host.k3d.internal:18080
+  APP_ORIGIN: http://host.k3d.internal:8080
 
 jobs:
   collect-test-modules:

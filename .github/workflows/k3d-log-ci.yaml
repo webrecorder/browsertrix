@@ -9,6 +9,9 @@ on:
       - "chart/**"
       - "emails/**"
 
+env:
+  APP_ORIGIN: http://host.k3d.internal:8080
+
 jobs:
   btrix-k3d-admin-logging-test:
     runs-on: ubuntu-latest

@@ -12,6 +12,7 @@ on:
 
 env:
   ECHO_SERVER_HOST_URL: http://10.0.1.1:18080
+  APP_ORIGIN: http://10.0.1.1:8080
 
 jobs:
   btrix-microk8s-test:

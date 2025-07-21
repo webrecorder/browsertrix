@@ -10,6 +10,7 @@ concurrency:
 
 env:
   ECHO_SERVER_HOST_URL: http://host.k3d.internal:18080
+  APP_ORIGIN: http://host.k3d.internal:8080
 
 jobs:
   # In order to be able to have required checks, a workflow can't be entirely
