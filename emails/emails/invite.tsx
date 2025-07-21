@@ -15,7 +15,7 @@ export const schema = z.object({
   is_new: z.boolean().optional(),
   sender: z.string().optional(),
   org_name: z.string().optional(),
-  invite_url: z.url(),
+  invite_url: z.string(),
   support_email: z.email().optional(),
   validity_period_days: z.number().int().positive().optional(),
   trial_remaining_days: z.number().int().optional(),
