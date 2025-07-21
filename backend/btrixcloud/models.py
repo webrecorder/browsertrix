@@ -349,6 +349,7 @@ class RawCrawlConfig(BaseModel):
 
     useSitemap: Optional[bool] = False
     failOnFailedSeed: Optional[bool] = False
+    failOnContentCheck: Optional[bool] = False
 
     logging: Optional[str] = None
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
