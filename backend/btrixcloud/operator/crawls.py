@@ -840,7 +840,10 @@ class CrawlOperator(BaseOperator):
         if not await self.mark_finished(crawl, status, failed_state, stats=stats):
             return False
 
-        if not self.log_failed_crawl_lines or prev_state in ("failed", "failed_not_logged_in"):
+        if not self.log_failed_crawl_lines or prev_state in (
+            "failed",
+            "failed_not_logged_in",
+        ):
             return True
 
         pod_names = list(pods.keys())
