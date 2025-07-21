@@ -7,7 +7,7 @@
     "build": "email build",
     "dev": "email dev",
     "export": "email export",
-    "dev:api": "tsx api-server.ts",
+    "dev:api": "NODE_ENV=development tsx api-server.ts",
     "build:api": "tsc",
     "start": "node dist/api-server.js"
   },
