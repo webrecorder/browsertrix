@@ -43,7 +43,7 @@ jobs:
       - name: Build Emails
         uses: docker/build-push-action@v4
         with:
-          context: backend
+          context: emails
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-emails:${{ env.VERSION }}, webrecorder/browsertrix-emails:latest
