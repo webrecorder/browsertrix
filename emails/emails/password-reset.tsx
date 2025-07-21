@@ -6,7 +6,7 @@ import { Button } from "../components/button.js";
 import { z } from "zod";
 
 export const schema = z.object({
-  origin: z.url(),
+  origin: z.string(),
   token: z.string(),
   support_email: z.email().optional(),
 });
