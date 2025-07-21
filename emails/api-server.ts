@@ -76,6 +76,7 @@ app.post("/api/emails/:templateName", async (req: Request, res: Response) => {
       req.log.error({
         msg: "Failed to render email template: zod validation error",
         issues: error.issues,
+        body: req.body,
       });
       res.status(400).json({
         error: "Invalid request data",
