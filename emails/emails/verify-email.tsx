@@ -6,10 +6,10 @@ import { Button } from "../components/button.js";
 import { z } from "zod";
 
 export const schema = z.object({
-  receiver_email: z.string().email(),
-  origin: z.string().url(),
+  receiver_email: z.email(),
+  origin: z.url(),
   token: z.string(),
-  support_email: z.string().email().optional(),
+  support_email: z.email().optional(),
 });
 
 export type VerifyEmailProps = z.infer<typeof schema>;

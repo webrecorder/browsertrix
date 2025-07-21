@@ -16,10 +16,10 @@ import { z } from "zod";
 export const schema = z.object({
   user_name: z.string(),
   org_name: z.string(),
-  org_url: z.string().url(),
+  org_url: z.url(),
   trial_end_date: z.string(),
   behavior_on_trial_end: z.enum(["cancel", "continue"]).optional(),
-  support_email: z.string().email().optional(),
+  support_email: z.email().optional(),
 });
 
 export type TrialEndingSoonEmailProps = z.infer<typeof schema>;

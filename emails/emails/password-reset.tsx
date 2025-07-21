@@ -6,9 +6,9 @@ import { Button } from "../components/button.js";
 import { z } from "zod";
 
 export const schema = z.object({
-  origin: z.string().url(),
+  origin: z.url(),
   token: z.string(),
-  support_email: z.string().email().optional(),
+  support_email: z.email().optional(),
 });
 
 export type PasswordResetEmailProps = z.infer<typeof schema>;

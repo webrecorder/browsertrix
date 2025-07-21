@@ -13,7 +13,7 @@ export const schema = z.object({
   org_url: z.string(),
   cancel_date: z.string(),
   survey_url: z.string().optional(),
-  support_email: z.string().email().optional(),
+  support_email: z.email().optional(),
 });
 
 export type SubscriptionCancelEmailProps = z.infer<typeof schema>;
