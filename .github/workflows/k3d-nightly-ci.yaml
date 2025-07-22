@@ -1,9 +1,6 @@
 name: Nightly tests (K3d)
 
 on:
-  push:
-    branches:
-      - issue-2673-seed-file-backend-support
   schedule:
     # Run daily at 8am UTC
     - cron:  '0 8 * * *'
