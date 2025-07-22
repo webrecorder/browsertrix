@@ -2095,7 +2095,7 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Are you sure you want to delete
                 <x id="0" equiv-text="&lt;strong&gt;${this.selectedCollection?.name}&lt;/strong&gt;"/>?</source>
         <target state="translated">Êtes-vous certain de vouloir supprimer
-                 &lt;x id="0" equiv-text="&amp;lt ;strong&amp;gt ;${this.selectedCollection ?.name}&amp;lt ;/strong&amp;gt ;"/&gt; ?</target>
+                <x id="0" equiv-text="&lt;strong&gt;${this.selectedCollection?.name}&lt;/strong&gt;"/> ?</target>
       </trans-unit>
       <trans-unit id="s7be481b712fcb089" xml:space="preserve">
         <source>Search by Name</source>
@@ -5058,7 +5058,7 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       </trans-unit>
       <trans-unit id="hacc9b91be8da34c8" xml:space="preserve">
         <source>Add the following JavaScript to your <x id="0" equiv-text="&lt;code class=&quot;text-[0.9em]&quot;&gt;"/>/replay/sw.js<x id="1" equiv-text="&lt;/code&gt;"/>:</source>
-        <target state="translated">Ajoutez le JavaScript suivant à votre &lt;x id="0" equiv-text="&amp;lt ;code class=&amp;quot ;text-[0.9em]&amp;quot ;&amp;gt ;"/&gt;/replay/sw.js&lt;x id="1" equiv-text="&amp;lt ;/code&amp;gt ;"/&gt; :</target>
+        <target state="translated">Ajoutez le JavaScript suivant à votre <x id="0" equiv-text="&lt;code class=&quot;text-[0.9em]&quot;&gt;"/>/replay/sw.js<x id="1" equiv-text="&lt;/code&gt;"/> :</target>
       </trans-unit>
       <trans-unit id="h654faf8fb38c80f3" xml:space="preserve">
         <source>See <x id="0" equiv-text="&lt;a class=&quot;text-primary&quot; href=&quot;https://replayweb.page/docs/embedding&quot; target=&quot;_blank&quot;&gt;"/> our embedding guide<x id="1" equiv-text="&lt;/a&gt;"/> for more details.</source>
