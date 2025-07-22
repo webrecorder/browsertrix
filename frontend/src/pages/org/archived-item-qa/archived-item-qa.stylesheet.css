@@ -13,14 +13,28 @@ article > * {
 }
 
 /* Tailwind 'lg' responsive size */
-@media only screen and (min-width: 1024px) {
+@media only screen and (min-width: 64rem) {
   .qa-grid {
     grid-template:
       "header header"
       "pageToolbar pageList"
       "tabGroup pageList";
-    grid-template-columns: 1fr 35rem;
+    grid-template-columns: 1fr 24rem;
     grid-template-rows: repeat(2, min-content) 1fr;
+  }
+}
+
+/* Tailwind 'xl' responsive size */
+@media only screen and (min-width: 80rem) {
+  .qa-grid {
+    grid-template-columns: 1fr 30rem;
+  }
+}
+
+/* Tailwind '2xl' responsive size */
+@media only screen and (min-width: 96rem) {
+  .qa-grid {
+    grid-template-columns: 1fr 35rem;
   }
 }
 
