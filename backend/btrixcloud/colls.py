@@ -222,7 +222,11 @@ class CollectionOps:
         )
 
     async def add_crawls_to_collection(
-        self, coll_id: UUID, crawl_ids: List[str], org: Organization
+        self,
+        coll_id: UUID,
+        crawl_ids: List[str],
+        org: Organization,
+        headers: Optional[dict] = None,
     ) -> CollOut:
         """Add crawls to collection"""
         await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
@@ -245,10 +249,14 @@ class CollectionOps:
             )
         )
 
-        return await self.get_collection_out(coll_id, org)
+        return await self.get_collection_out(coll_id, org, headers)
 
     async def remove_crawls_from_collection(
-        self, coll_id: UUID, crawl_ids: List[str], org: Organization
+        self,
+        coll_id: UUID,
+        crawl_ids: List[str],
+        org: Organization,
+        headers: Optional[dict] = None,
     ) -> CollOut:
         """Remove crawls from collection"""
         await self.crawl_ops.remove_from_collection(crawl_ids, coll_id)
@@ -270,7 +278,7 @@ class CollectionOps:
             )
         )
 
-        return await self.get_collection_out(coll_id, org)
+        return await self.get_collection_out(coll_id, org, headers)
 
     async def get_collection_raw(
         self, coll_id: UUID, oid: UUID, public_or_unlisted_only: bool = False
@@ -1067,9 +1075,11 @@ def init_collections_api(
         response_model=CollOut,
     )
     async def get_collection(
-        coll_id: UUID, org: Organization = Depends(org_viewer_dep)
+        coll_id: UUID, request: Request, org: Organization = Depends(org_viewer_dep)
     ):
-        return await colls.get_collection_out(coll_id, org)
+        return await colls.get_collection_out(
+            coll_id, org, headers=dict(request.headers)
+        )
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/replay.json",
@@ -1136,9 +1146,12 @@ def init_collections_api(
     async def add_crawl_to_collection(
         crawlList: AddRemoveCrawlList,
         coll_id: UUID,
+        request: Request,
         org: Organization = Depends(org_crawl_dep),
     ) -> CollOut:
-        return await colls.add_crawls_to_collection(coll_id, crawlList.crawlIds, org)
+        return await colls.add_crawls_to_collection(
+            coll_id, crawlList.crawlIds, org, headers=dict(request.headers)
+        )
 
     @app.post(
         "/orgs/{oid}/collections/{coll_id}/remove",
@@ -1148,10 +1161,11 @@ def init_collections_api(
     async def remove_crawl_from_collection(
         crawlList: AddRemoveCrawlList,
         coll_id: UUID,
+        request: Request,
         org: Organization = Depends(org_crawl_dep),
     ) -> CollOut:
         return await colls.remove_crawls_from_collection(
-            coll_id, crawlList.crawlIds, org
+            coll_id, crawlList.crawlIds, org, headers=dict(request.headers)
         )
 
     @app.delete(
