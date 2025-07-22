@@ -107,6 +107,8 @@ export class Pagination extends LitElement {
 
       /* Use width of text to determine input width */
       .totalPages {
+        /* Match the height of '<btrix-inline-input size="small">' */
+        --sl-input-height-small: var(--sl-font-size-x-large);
         padding: 0 1ch;
         height: var(--sl-input-height-small);
         min-width: 1ch;
