@@ -75,6 +75,9 @@ export const infoTextFor = {
   customBehavior: msg(
     `Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.`,
   ),
+  saveStorage: msg(
+    `Save the browser's localStorage and sessionStorage in resulting web archive. Use caution sharing WACZs created with this option.`,
+  ),
 } as const satisfies Partial<Record<Field, string | TemplateResult>>;
 
 export default infoTextFor;

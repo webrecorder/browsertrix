@@ -1656,6 +1656,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(infoTextFor["blockAds"], false)}
       ${inputCol(html`
+        <sl-checkbox name="saveStorage" ?checked=${this.formState.saveStorage}>
+          ${msg("Save local and session storage")}
+        </sl-checkbox>
+      `)}
+      ${this.renderHelpTextCol(infoTextFor["saveStorage"])}
+      ${inputCol(html`
         <sl-input
           name="userAgent"
           label=${msg("User Agent")}
@@ -2631,7 +2637,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private parseUrlListConfig(): Pick<
     CrawlConfigParams["config"],
-    "seeds" | "scopeType" | "extraHops" | "useSitemap" | "failOnFailedSeed"
+    | "seeds"
+    | "scopeType"
+    | "extraHops"
+    | "useSitemap"
+    | "failOnFailedSeed"
+    | "saveStorage"
   > {
     const config = {
       seeds: urlListToArray(this.formState.urlList).map((seedUrl) => {
@@ -2642,6 +2653,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
       useSitemap: false,
       failOnFailedSeed: this.formState.failOnFailedSeed,
+      saveStorage: this.formState.saveStorage,
     };
 
     return config;
@@ -2649,7 +2661,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private parseSeededConfig(): Pick<
     CrawlConfigParams["config"],
-    "seeds" | "scopeType" | "useSitemap" | "failOnFailedSeed"
+    "seeds" | "scopeType" | "useSitemap" | "failOnFailedSeed" | "saveStorage"
   > {
     const primarySeedUrl = this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeUrlList
@@ -2680,6 +2692,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       scopeType: this.formState.scopeType as ScopeType,
       useSitemap: this.formState.useSitemap,
       failOnFailedSeed: false,
+      saveStorage: this.formState.saveStorage,
     };
     return config;
   }
