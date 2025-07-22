@@ -225,7 +225,7 @@ class CrawlManager(K8sAPI):
         try:
             cron_job = await self.batch_api.read_namespaced_cron_job(
                 name=job_id,
-                namespace=self.namespace,
+                namespace=DEFAULT_NAMESPACE,
             )
             if cron_job:
                 print(
