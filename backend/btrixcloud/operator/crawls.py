@@ -832,10 +832,10 @@ class CrawlOperator(BaseOperator):
         """Mark crawl as failed, log crawl state and print crawl logs, if possible"""
         prev_state = status.state
 
-        failed_state = "failed"
-
         if status.failReason and status.failReason == "not_logged_in":
             failed_state = "failed_not_logged_in"
+        else:
+            failed_state = "failed"
 
         if not await self.mark_finished(crawl, status, failed_state, stats=stats):
             return False
