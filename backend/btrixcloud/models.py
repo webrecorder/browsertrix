@@ -1205,10 +1205,12 @@ class UserFile(BaseFile):
     userName: str
     created: datetime
 
-    async def get_file_out(self, org, storage_ops) -> UserFileOut:
+    async def get_file_out(
+        self, org, storage_ops, headers: Optional[dict] = None
+    ) -> UserFileOut:
         """Get UserFileOut with new presigned url"""
         presigned_url, _ = await storage_ops.get_presigned_url(org, self)
-        presigned_url = storage_ops.resolve_internal_access_path(presigned_url)
+        presigned_url = storage_ops.resolve_relative_access_path(presigned_url, headers)
 
         return UserFileOut(
             name=self.filename,
@@ -1222,10 +1224,12 @@ class UserFile(BaseFile):
             created=self.created,
         )
 
-    async def get_public_file_out(self, org, storage_ops) -> PublicUserFileOut:
+    async def get_public_file_out(
+        self, org, storage_ops, headers: Optional[dict] = None
+    ) -> PublicUserFileOut:
         """Get PublicUserFileOut with new presigned url"""
         presigned_url, _ = await storage_ops.get_presigned_url(org, self)
-        presigned_url = storage_ops.resolve_internal_access_path(presigned_url)
+        presigned_url = storage_ops.resolve_relative_access_path(presigned_url, headers)
 
         return PublicUserFileOut(
             name=self.filename,
@@ -1313,10 +1317,12 @@ class UserUploadFile(BaseMongoModel):
     firstSeed: Optional[str] = None
     seedCount: Optional[int] = None
 
-    async def get_file_out(self, org, storage_ops) -> UserUploadFileOut:
+    async def get_file_out(
+        self, org, storage_ops, headers: Optional[dict] = None
+    ) -> UserUploadFileOut:
         """Get UserUploadFileOut with new presigned url"""
         presigned_url, _ = await storage_ops.get_presigned_url(org, self)
-        presigned_url = storage_ops.resolve_internal_access_path(presigned_url)
+        presigned_url = storage_ops.resolve_relative_access_path(presigned_url, headers)
 
         return UserUploadFileOut(
             name=self.filename,

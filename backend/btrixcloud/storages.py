@@ -59,7 +59,7 @@ from .models import (
     UserUploadFile,
 )
 
-from .utils import slug_from_name, dt_now
+from .utils import slug_from_name, dt_now, get_origin
 from .version import __version__
 
 
@@ -350,6 +350,14 @@ class StorageOps:
         """Resolve relative path for internal access to minio bucket"""
         if path.startswith("/"):
             return self.frontend_origin + path
+        return path
+
+    def resolve_relative_access_path(self, path: str, headers: Optional[dict] = None):
+        """Resolve relative path for internal access or external if headers provided"""
+        if path.startswith("/"):
+            if headers is None:
+                return self.frontend_origin + path
+            return get_origin(headers) + path
         return path
 
     def get_org_relative_path(

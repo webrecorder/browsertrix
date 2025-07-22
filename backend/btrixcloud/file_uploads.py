@@ -26,12 +26,12 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now
+from .storages import StorageOps, CHUNK_SIZE
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
-    from .storages import StorageOps
 else:
-    OrgOps = StorageOps = object
+    OrgOps = object
 
 
 ALLOWED_UPLOAD_TYPES = ["seedFile"]
@@ -103,10 +103,11 @@ class FileUploadOps:
         file_id: UUID,
         org: Optional[Organization] = None,
         type_: Optional[str] = None,
+        headers: Optional[dict] = None,
     ) -> UserUploadFileOut:
         """Get file output model by UUID"""
         user_file = await self.get_file(file_id, org, type_)
-        return await user_file.get_file_out(org, self.storage_ops)
+        return await user_file.get_file_out(org, self.storage_ops, headers)
 
     async def list_user_files(
         self,
@@ -115,6 +116,7 @@ class FileUploadOps:
         page: int = 1,
         sort_by: str = "created",
         sort_direction: int = -1,
+        headers: Optional[dict] = None,
     ) -> Tuple[list[UserUploadFileOut], int]:
         """list all user-uploaded files"""
         # pylint: disable=too-many-locals
@@ -170,7 +172,7 @@ class FileUploadOps:
         user_files = []
         for res in items:
             file_ = UserUploadFile.from_dict(res)
-            file_out = await file_.get_file_out(org, self.storage_ops)
+            file_out = await file_.get_file_out(org, self.storage_ops, headers)
             user_files.append(file_out)
 
         return user_files, total
@@ -277,11 +279,12 @@ class FileUploadOps:
         seed_count = 0
 
         file_out = await file_obj.get_file_out(org, self.storage_ops)
+        print("PATH", file_out.path)
 
         with tempfile.TemporaryFile() as fp:
             async with aiohttp.ClientSession() as session:
                 async with session.get(file_out.path) as resp:
-                    async for chunk in resp.content.iter_chunked(4096):
+                    async for chunk in resp.content.iter_chunked(CHUNK_SIZE):
                         fp.write(chunk)
 
             fp.seek(0)
@@ -396,8 +399,10 @@ def init_file_uploads_api(
             request.stream(), filename, org, user, upload_type="seedFile"
         )
 
+    # pylint: disable=too-many-arguments
     @router.get("", response_model=PaginatedUserFileResponse)
     async def list_user_files(
+        request: Request,
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -411,12 +416,15 @@ def init_file_uploads_api(
             page=page,
             sort_by=sortBy,
             sort_direction=sortDirection,
+            headers=dict(request.headers),
         )
         return paginated_format(user_files, total, page, pageSize)
 
     @router.get("/{file_id}", response_model=UserUploadFileOut)
-    async def get_user_file(file_id: UUID, org: Organization = Depends(org_viewer_dep)):
-        return await ops.get_file_out(file_id, org)
+    async def get_user_file(
+        file_id: UUID, request: Request, org: Organization = Depends(org_viewer_dep)
+    ):
+        return await ops.get_file_out(file_id, org, headers=dict(request.headers))
 
     @router.delete("/{file_id}", response_model=SuccessResponse)
     async def delete_user_file(

@@ -35,7 +35,7 @@ def test_seed_file_upload(crawler_auth_headers, default_org_id):
     assert data["oid"] == default_org_id
 
     assert data["name"]
-    assert data["path"]
+    assert data["path"].startswith("http://localhost:30870/data/")
     assert data["hash"]
     assert data["size"] > 0
 
@@ -69,7 +69,7 @@ def test_list_user_files(crawler_auth_headers, default_org_id):
         assert data["oid"] == default_org_id
 
         assert data["name"]
-        assert data["path"]
+        assert data["path"].startswith("http://localhost:30870/data/")
         assert data["hash"]
         assert data["size"] > 0
 

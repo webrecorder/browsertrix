@@ -380,7 +380,9 @@ class CollectionOps:
         thumbnail = result.get("thumbnail")
         if thumbnail:
             image_file = UserFile(**thumbnail)
-            result["thumbnail"] = await image_file.get_file_out(org, self.storage_ops)
+            result["thumbnail"] = await image_file.get_file_out(
+                org, self.storage_ops, headers
+            )
 
         return CollOut.from_dict(result)
 
@@ -388,6 +390,7 @@ class CollectionOps:
         self,
         coll_id: UUID,
         org: Organization,
+        headers: dict,
         allow_unlisted: bool = False,
     ) -> PublicCollOut:
         """Get PublicCollOut by id"""
@@ -411,13 +414,13 @@ class CollectionOps:
         if thumbnail:
             image_file = UserFile(**thumbnail)
             result["thumbnail"] = await image_file.get_public_file_out(
-                org, self.storage_ops
+                org, self.storage_ops, headers
             )
 
         return PublicCollOut.from_dict(result)
 
     async def get_public_thumbnail(
-        self, slug: str, org: Organization
+        self, slug: str, org: Organization, headers: dict
     ) -> StreamingResponse:
         """return thumbnail of public collection, if any"""
         result = await self.get_collection_raw_by_slug(
@@ -429,7 +432,9 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="thumbnail_not_found")
 
         image_file = UserFile(**thumbnail)
-        image_file_out = await image_file.get_public_file_out(org, self.storage_ops)
+        image_file_out = await image_file.get_public_file_out(
+            org, self.storage_ops, headers
+        )
 
         path = self.storage_ops.resolve_internal_access_path(image_file_out.path)
 
@@ -457,6 +462,7 @@ class CollectionOps:
         name: Optional[str] = None,
         name_prefix: Optional[str] = None,
         access: Optional[str] = None,
+        headers: Optional[dict] = None,
     ):
         """List all collections for org"""
         # pylint: disable=too-many-locals, duplicate-code, too-many-branches
@@ -540,11 +546,11 @@ class CollectionOps:
 
                 if public_colls_out:
                     res["thumbnail"] = await image_file.get_public_file_out(
-                        org, self.storage_ops
+                        org, self.storage_ops, headers
                     )
                 else:
                     res["thumbnail"] = await image_file.get_file_out(
-                        org, self.storage_ops
+                        org, self.storage_ops, headers
                     )
 
             res["orgName"] = org.name
@@ -800,6 +806,7 @@ class CollectionOps:
         page: int = 1,
         sort_by: Optional[str] = None,
         sort_direction: int = 1,
+        headers: Optional[dict] = None,
     ):
         """List public collections for org"""
         try:
@@ -819,6 +826,7 @@ class CollectionOps:
             sort_by=sort_by,
             sort_direction=sort_direction,
             public_colls_out=True,
+            headers=headers,
         )
 
         public_org_details = PublicOrgDetails(
@@ -1009,6 +1017,7 @@ def init_collections_api(
         response_model=PaginatedCollOutResponse,
     )
     async def list_collection_all(
+        request: Request,
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -1028,6 +1037,7 @@ def init_collections_api(
             name=name,
             name_prefix=namePrefix,
             access=access,
+            headers=dict(request.headers),
         )
         return paginated_format(collections, total, page, pageSize)
 
@@ -1171,6 +1181,7 @@ def init_collections_api(
     )
     async def get_org_public_collections(
         org_slug: str,
+        request: Request,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: Optional[str] = None,
@@ -1182,6 +1193,7 @@ def init_collections_api(
             page=page,
             sort_by=sortBy,
             sort_direction=sortDirection,
+            headers=dict(request.headers),
         )
 
     @app.get(
@@ -1192,6 +1204,7 @@ def init_collections_api(
     async def get_public_collection(
         org_slug: str,
         coll_slug: str,
+        request: Request,
     ):
         try:
             org = await colls.orgs.get_org_by_slug(org_slug)
@@ -1202,7 +1215,9 @@ def init_collections_api(
 
         coll = await colls.get_collection_by_slug(coll_slug)
 
-        return await colls.get_public_collection_out(coll.id, org, allow_unlisted=True)
+        return await colls.get_public_collection_out(
+            coll.id, org, dict(request.headers), allow_unlisted=True
+        )
 
     @app.get(
         "/public/orgs/{org_slug}/collections/{coll_slug}/download",
@@ -1235,10 +1250,7 @@ def init_collections_api(
         tags=["collections", "public"],
         response_class=StreamingResponse,
     )
-    async def get_public_thumbnail(
-        org_slug: str,
-        coll_slug: str,
-    ):
+    async def get_public_thumbnail(org_slug: str, coll_slug: str, request: Request):
         try:
             org = await colls.orgs.get_org_by_slug(org_slug)
         # pylint: disable=broad-exception-caught
@@ -1246,7 +1258,7 @@ def init_collections_api(
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        return await colls.get_public_thumbnail(coll_slug, org)
+        return await colls.get_public_thumbnail(coll_slug, org, dict(request.headers))
 
     @app.post(
         "/orgs/{oid}/collections/{coll_id}/home-url",

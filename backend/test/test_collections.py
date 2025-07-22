@@ -1283,7 +1283,7 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
     thumbnail = collection["thumbnail"]
 
     assert thumbnail["name"]
-    assert thumbnail["path"]
+    assert thumbnail["path"].startswith("http://localhost:30870/data/")
     assert thumbnail["hash"]
     assert thumbnail["size"] > 0
 
@@ -1369,7 +1369,7 @@ def test_list_public_colls_home_url_thumbnail():
             assert thumbnail
 
             assert thumbnail["name"]
-            assert thumbnail["path"]
+            assert thumbnail["path"].startswith("http://localhost:30870/data/")
             assert thumbnail["hash"]
             assert thumbnail["size"]
             assert thumbnail["mime"]
@@ -1419,7 +1419,7 @@ def test_get_public_collection(default_org_id):
     assert thumbnail
 
     assert thumbnail["name"]
-    assert thumbnail["path"]
+    assert thumbnail["path"].startswith("http://localhost:30870/data/")
     assert thumbnail["hash"]
     assert thumbnail["size"]
     assert thumbnail["mime"]

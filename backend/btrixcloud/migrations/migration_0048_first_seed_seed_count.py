@@ -19,7 +19,7 @@ class Migration(BaseMigration):
     def __init__(self, mdb, **kwargs):
         super().__init__(mdb, migration_version=MIGRATION_VERSION)
 
-    async def migrate_up(self):
+    async def migrate_up(self) -> None:
         """Perform migration up.
 
         Calculate firstSeed and seedCount for workflows and store in db
