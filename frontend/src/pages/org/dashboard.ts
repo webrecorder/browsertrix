@@ -972,13 +972,14 @@ export class Dashboard extends BtrixElement {
         ${when(
           stat.button,
           (button) =>
-            html`<btrix-button size="x-small" href=${`${this.navigate.orgBasePath}${button.url}`} @click=${this.navigate.link}
-              >${
-                button.label ??
-                html`<sl-tooltip content=${msg("View All")} placement="right"
-                  ><sl-icon name="arrow-right-circle"></sl-icon
-                ></sl-tooltip>`
-              }</sl-button
+            html`<btrix-button
+              size="x-small"
+              href=${`${this.navigate.orgBasePath}${button.url}`}
+              @click=${this.navigate.link}
+              >${button.label ??
+              html`<sl-tooltip content=${msg("View All")} placement="right"
+                ><sl-icon name="arrow-right-circle"></sl-icon
+              ></sl-tooltip>`}</btrix-button
             >`,
         )}
       </div>
