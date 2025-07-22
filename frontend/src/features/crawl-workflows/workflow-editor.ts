@@ -732,7 +732,7 @@ export class WorkflowEditor extends BtrixElement {
             this.isCrawlRunning === null}
             ?loading=${this.isSubmitting || this.isCrawlRunning === null}
           >
-            ${msg(this.isCrawlRunning ? "Update Crawl" : "Run Crawl")}
+            ${this.isCrawlRunning ? msg("Update Crawl") : msg("Run Crawl")}
             ${when(this.showKeyboardShortcuts, () => keyboardShortcut("Enter"))}
           </sl-button>
         </sl-tooltip>
