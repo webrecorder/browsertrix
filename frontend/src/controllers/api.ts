@@ -16,6 +16,8 @@ export interface APIEventMap {
 export enum AbortReason {
   UserCancel = "user-canceled",
   QuotaReached = "storage_quota_reached",
+  NetworkError = "network-error",
+  RequestTimeout = "request-timeout",
 }
 
 /**
@@ -214,7 +216,7 @@ export class APIController implements ReactiveController {
         if (xhr.status === 403) {
           reject(AbortReason.QuotaReached);
         }
-        if (xhr.status === 404) {
+        if (xhr.status >= 404) {
           reject(
             new APIError({
               message: xhr.statusText,
@@ -224,12 +226,10 @@ export class APIController implements ReactiveController {
         }
       });
       xhr.addEventListener("error", () => {
-        reject(
-          new APIError({
-            message: xhr.statusText,
-            status: xhr.status,
-          }),
-        );
+        reject(AbortReason.NetworkError);
+      });
+      xhr.addEventListener("timeout", () => {
+        reject(AbortReason.RequestTimeout);
       });
       xhr.addEventListener("abort", () => {
         reject(AbortReason.UserCancel);
