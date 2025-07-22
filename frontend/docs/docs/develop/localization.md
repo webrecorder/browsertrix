@@ -108,7 +108,7 @@ msg(str`You have ${number_of_URLs} pending as of ${date}.`);
 
 ### Handling HTML in strings
 
-Lit supports HTML in translation strings. However, try to avoid including markup in strings by using multiple `msg()`s, as HTML makes it more difficult for translators to update strings in the Weblate interface, as well as more performance overhead.
+Lit supports HTML in translation strings. However, try to avoid including markup in strings by using multiple `msg()`s. In addition to a performance overhead, strings with HTML are more difficult to manage through the Weblate interface.
 
 ```js
 // Instead of this:
