@@ -4,7 +4,7 @@ import traceback
 import os
 import math
 from pprint import pprint
-from typing import Optional, Any, Sequence
+from typing import Optional, Any, Sequence, Literal
 from datetime import datetime, timedelta
 from uuid import UUID
 
@@ -832,10 +832,10 @@ class CrawlOperator(BaseOperator):
         """Mark crawl as failed, log crawl state and print crawl logs, if possible"""
         prev_state = status.state
 
+        failed_state: Literal["failed", "failed_not_logged_in"] = "failed"
+
         if status.failReason and status.failReason == "not_logged_in":
             failed_state = "failed_not_logged_in"
-        else:
-            failed_state = "failed"
 
         if not await self.mark_finished(crawl, status, failed_state, stats=stats):
             return False
