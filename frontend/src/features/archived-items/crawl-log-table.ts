@@ -11,9 +11,7 @@ import { stopProp } from "@/utils/events";
 import { tw } from "@/utils/tailwind";
 
 const labelFor: Record<CrawlLogContext, string> = {
-  [CrawlLogContext.General]: msg("General", {
-    desc: "'General' crawl log context type",
-  }),
+  [CrawlLogContext.General]: msg("General"),
   [CrawlLogContext.Behavior]: msg("Page Behavior"),
   [CrawlLogContext.BehaviorScript]: msg("Built-in Behavior"),
   [CrawlLogContext.BehaviorScriptCustom]: msg("Custom Behavior Script"),

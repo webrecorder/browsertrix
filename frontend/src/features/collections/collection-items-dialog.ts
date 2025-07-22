@@ -207,7 +207,7 @@ export class CollectionItemsDialog extends BtrixElement {
       <span slot="label">
         ${msg("Select Archived Items")}
         <span class="font-normal text-neutral-500"
-          >${msg(str`in ${this.collectionName}`)}</span
+          >${msg("in")} ${this.collectionName}</span
         >
       </span>
       <div class="dialogContent flex flex-col">
