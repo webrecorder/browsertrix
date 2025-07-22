@@ -199,9 +199,7 @@ export class ArchivedItemDetail extends BtrixElement {
       this.qaRuns
     ) {
       if (!this.qaRunId) {
-        this.qaRunId = this.qaRuns.find((run) =>
-          isSuccessfullyFinished(run),
-        )?.id;
+        this.qaRunId = this.qaRuns.find((run) => isNotFailed(run))?.id;
       }
     }
 
@@ -1441,7 +1439,7 @@ export class ArchivedItemDetail extends BtrixElement {
       this.qaRuns = await this.getQARuns();
     } catch {
       this.notify.toast({
-        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        message: msg("Sorry, couldn't retrieve QA analysis runs at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
         id: "archived-item-retrieve-error",

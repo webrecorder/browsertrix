@@ -481,7 +481,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
     const qaRun = qaRuns.find(({ id }) => id === this.qaRunId);
 
     if (!qaRun && isRunningOrStarting) {
-      return html`<btrix-alert class="mb-3" variant="success">
+      return html`<btrix-alert class="my-3" variant="success">
         ${msg("Running QA analysis on pages...")}
       </btrix-alert>`;
     }
