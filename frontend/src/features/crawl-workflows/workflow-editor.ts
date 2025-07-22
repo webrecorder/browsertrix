@@ -1981,6 +1981,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(infoTextFor["blockAds"], false)}
       ${inputCol(html`
+        <sl-checkbox name="saveStorage" ?checked=${this.formState.saveStorage}>
+          ${msg("Save local and session storage")}
+        </sl-checkbox>
+      `)}
+      ${this.renderHelpTextCol(infoTextFor["saveStorage"])}
+      ${inputCol(html`
         <sl-input
           name="userAgent"
           label=${msg("User Agent")}
@@ -3064,6 +3070,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     | "useSitemap"
     | "failOnFailedSeed"
     | "failOnContentCheck"
+    | "saveStorage"
   > {
     const jsonSeeds = this.formState.seedListFormat === SeedListFormat.JSON;
 
@@ -3082,6 +3089,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       useSitemap: false,
       failOnFailedSeed: this.formState.failOnFailedSeed,
       failOnContentCheck: this.formState.failOnContentCheck,
+      saveStorage: this.formState.saveStorage,
     };
 
     return config;
@@ -3094,6 +3102,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     | "useSitemap"
     | "failOnFailedSeed"
     | "failOnContentCheck"
+    | "saveStorage"
   > {
     const primarySeedUrl = this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeUrlList
@@ -3125,6 +3134,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       useSitemap: this.formState.useSitemap,
       failOnFailedSeed: false,
       failOnContentCheck: this.formState.failOnContentCheck,
+      saveStorage: this.formState.saveStorage,
     };
     return config;
   }

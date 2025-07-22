@@ -262,6 +262,10 @@ This setting will only be shown if multiple different release channels are avail
 
 Will prevent any content from the domains listed in [Steven Black's Unified Hosts file](https://github.com/StevenBlack/hosts) (ads & malware) from being captured by the crawler.
 
+### Save Local and Session Storage
+
+When enabled, instructs the crawler to save the browser's localStorage and sessionStorage data for each page in the web archive as part of the `WARC-JSON-Metadata` field. This option may be necessary to properly archive and replay certain websites. Use caution when sharing WACZ files created with this option enabled, as the saved browser storage may contain sensitive information.
+
 ### User Agent
 
 Sets the browser's [user agent](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent) in outgoing requests to the specified value. If left blank, the crawler will use the Brave browser's default user agent. For a list of common user agents see [useragents.me](https://www.useragents.me/).
