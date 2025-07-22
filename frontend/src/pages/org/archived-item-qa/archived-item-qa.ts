@@ -469,7 +469,7 @@ export class ArchivedItemQA extends BtrixElement {
           class="grid--pageToolbar flex flex-wrap items-center justify-stretch gap-2 border-b py-2 @container"
         >
           <h3
-            class="flex-auto flex-shrink-0 flex-grow basis-32 truncate font-semibold text-neutral-700"
+            class="flex-auto flex-shrink-0 flex-grow basis-52 truncate font-semibold leading-7 text-neutral-700"
             title="${this.page?.title ?? ""}"
           >
             ${this.page?.title ||
@@ -485,7 +485,8 @@ export class ArchivedItemQA extends BtrixElement {
               class="order-1"
             >
               <sl-icon slot="prefix" name="arrow-left"></sl-icon>
-              ${msg("Previous Page")}
+              ${msg("Previous")}
+              <span class="sr-only @lg:not-sr-only">${msg("Page")}</span>
             </sl-button>
             <btrix-page-qa-approval
               class="order-3 mx-auto @lg:order-2 @lg:mx-0 @lg:w-auto"
@@ -503,7 +504,8 @@ export class ArchivedItemQA extends BtrixElement {
               class="order-2 @lg:order-3"
             >
               <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-              ${msg("Next Page")}
+              ${msg("Next")}
+              <span class="sr-only @lg:not-sr-only">${msg("Page")}</span>
             </sl-button>
           </div>
         </div>
@@ -511,7 +513,7 @@ export class ArchivedItemQA extends BtrixElement {
         <div class="grid--tabGroup flex min-w-0 flex-col">
           <nav
             aria-label="${msg("Page heuristics")}"
-            class="-mx-3 my-0 flex items-center gap-2 overflow-x-auto px-3 py-2 lg:mx-0 lg:px-0"
+            class="-mx-3 my-0 flex flex-wrap items-center gap-2 overflow-x-auto px-3 py-2 lg:mx-0 lg:px-0"
           >
             <btrix-navigation-button
               id="screenshot-tab"
