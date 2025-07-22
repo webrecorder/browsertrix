@@ -1130,9 +1130,7 @@ class CrawlConfigOps:
             seed_file_out = await self.file_ops.get_file_out(
                 crawlconfig.config.seedFileId, org
             )
-            seed_file_url = self.storage_ops.resolve_internal_access_path(
-                seed_file_out.path
-            )
+            seed_file_url = seed_file_out.path
 
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
