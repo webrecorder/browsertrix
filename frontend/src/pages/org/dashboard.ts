@@ -250,12 +250,27 @@ export class Dashboard extends BtrixElement {
               ${this.renderStorageMeter(metrics)}
               <dl>
                 ${this.renderStat({
+                  value: metrics.archivedItemCount,
+                  secondaryValue: hasQuota
+                    ? ""
+                    : this.localize.bytes(
+                        metrics.storageUsedCrawls + metrics.storageUsedUploads,
+                      ),
+                  singleLabel: msg("Archived Item"),
+                  pluralLabel: msg("Archived Items"),
+                  iconProps: { name: "file-zip-fill" },
+                  button: {
+                    url: "/items",
+                  },
+                })}
+                ${this.renderStat({
                   value: metrics.crawlCount,
                   secondaryValue: hasQuota
                     ? ""
                     : this.localize.bytes(metrics.storageUsedCrawls),
                   singleLabel: msg("Crawl"),
                   pluralLabel: msg("Crawls"),
+                  indent: true,
                   iconProps: {
                     name: "gear-wide-connected",
                     class: this.colors.crawls,
@@ -271,6 +286,7 @@ export class Dashboard extends BtrixElement {
                     : this.localize.bytes(metrics.storageUsedUploads),
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
+                  indent: true,
                   iconProps: { name: "upload", class: this.colors.uploads },
                   button: {
                     url: "/items/upload",
@@ -289,21 +305,6 @@ export class Dashboard extends BtrixElement {
                   },
                   button: {
                     url: "/browser-profiles",
-                  },
-                })}
-                <sl-divider
-                  style="--spacing:var(--sl-spacing-small)"
-                ></sl-divider>
-                ${this.renderStat({
-                  value: metrics.archivedItemCount,
-                  secondaryValue: hasQuota
-                    ? ""
-                    : this.localize.bytes(metrics.storageUsedBytes),
-                  singleLabel: msg("Archived Item"),
-                  pluralLabel: msg("Archived Items"),
-                  iconProps: { name: "file-zip-fill" },
-                  button: {
-                    url: "/items",
                   },
                 })}
               </dl>
@@ -935,8 +936,9 @@ export class Dashboard extends BtrixElement {
   }
 
   private renderStat(stat: {
-    value: number | string | TemplateResult;
+    value: number | string | TemplateResult | null;
     secondaryValue?: number | string | TemplateResult;
+    indent?: boolean;
     button?: { label?: string | TemplateResult; url: string };
     singleLabel: string;
     pluralLabel: string;
@@ -944,7 +946,12 @@ export class Dashboard extends BtrixElement {
   }) {
     const { value, iconProps } = stat;
     return html`
-      <div class="mb-2 flex items-center gap-2 last:mb-0">
+      <div
+        class=${clsx(
+          tw`mb-2 flex items-center gap-2 last:mb-0`,
+          stat.indent && tw`pl-6`,
+        )}
+      >
         <div class="mr-auto flex items-center tabular-nums">
           <sl-icon
             class=${clsx(
