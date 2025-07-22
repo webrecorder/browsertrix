@@ -355,8 +355,6 @@ export class BrowserProfilesNew extends BtrixElement {
         `${this.navigate.orgBasePath}/browser-profiles/profile/${data.id}`,
       );
     } catch (e) {
-      console.debug(e);
-
       this.isSubmitting = false;
 
       let message = msg("Sorry, couldn't create browser profile at this time.");

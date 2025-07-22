@@ -719,8 +719,6 @@ export class BrowserProfilesDetail extends BtrixElement {
 
       this.browserId = undefined;
     } catch (e) {
-      console.debug(e);
-
       this.notify.toast({
         message: msg("Sorry, couldn't save browser profile at this time."),
         variant: "danger",
