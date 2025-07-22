@@ -737,8 +737,16 @@ export class WorkflowEditor extends BtrixElement {
     `;
 
     return html`
-      <div class="mb-10 flex flex-col gap-12 px-2">
+      <div class="relative mb-10 flex flex-col gap-12 px-2">
         ${this.formSections.map(formSection)}
+        ${when(
+          this.isSubmitting,
+          () =>
+            // Show loading overlay to disable form on submit
+            html`<sl-animation name="fadeIn" duration="150" iterations="1" play>
+              <div class="absolute inset-0 z-50 bg-white/50"></div>
+            </sl-animation>`,
+        )}
       </div>
     `;
   }
