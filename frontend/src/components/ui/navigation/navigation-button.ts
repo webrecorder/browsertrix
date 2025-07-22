@@ -80,7 +80,7 @@ export class NavigationButton extends TailwindElement {
       class=${clsx([
         tw`flex w-full cursor-pointer items-center gap-2 rounded font-medium leading-[16px] transition hover:transition-none focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-1 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50`,
         {
-          "x-small": tw`min-size-6 px-1 py-0`,
+          "x-small": tw`min-h-6 min-w-6 px-1 py-0`,
           small: tw`min-h-6 px-2 py-0`,
           medium: tw`p-2`,
           large: tw`px-2 py-4`,
