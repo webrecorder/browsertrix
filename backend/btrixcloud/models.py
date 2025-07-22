@@ -1293,25 +1293,11 @@ class UserUploadFileOut(UserFileOut):
 
 
 # ============================================================================
-class UserUploadFile(BaseMongoModel):
+class UserUploadFile(UserFile, BaseMongoModel):
     """User-uploaded file saved in files mongo collection"""
 
     id: UUID
     oid: UUID
-
-    filename: str
-    hash: str
-    size: int
-    storage: StorageRef
-
-    replicas: Optional[List[StorageRef]] = []
-
-    originalFilename: str
-    mime: str
-    userid: UUID
-    userName: str
-    created: datetime
-
     type: str
 
     firstSeed: Optional[str] = None
