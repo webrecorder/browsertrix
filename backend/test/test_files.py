@@ -26,7 +26,7 @@ def test_seed_file_upload(crawler_auth_headers, default_org_id):
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/files/{_seed_file_id}",
-        headers=crawler_auth_headers,
+        headers={"Host": "custom-host.example.com", **crawler_auth_headers},
     )
     assert r.status_code == 200
     data = r.json()
@@ -35,7 +35,7 @@ def test_seed_file_upload(crawler_auth_headers, default_org_id):
     assert data["oid"] == default_org_id
 
     assert data["name"]
-    assert data["path"].startswith("http://localhost:30870/data/")
+    assert data["path"].startswith("http://custom-host.example.com/data/")
     assert data["hash"]
     assert data["size"] > 0
 
@@ -53,7 +53,7 @@ def test_seed_file_upload(crawler_auth_headers, default_org_id):
 def test_list_user_files(crawler_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/files",
-        headers=crawler_auth_headers,
+        headers={"Host": "localhost", **crawler_auth_headers},
     )
     assert r.status_code == 200
     data = r.json()
@@ -69,7 +69,7 @@ def test_list_user_files(crawler_auth_headers, default_org_id):
         assert data["oid"] == default_org_id
 
         assert data["name"]
-        assert data["path"].startswith("http://localhost:30870/data/")
+        assert data["path"].startswith("http://localhost/data/")
         assert data["hash"]
         assert data["size"] > 0
 

@@ -1276,7 +1276,7 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
-        headers=crawler_auth_headers,
+        headers={"Host": "localhost:30870", **crawler_auth_headers},
     )
     assert r.status_code == 200
     collection = r.json()
@@ -1335,7 +1335,11 @@ def test_list_public_colls_home_url_thumbnail():
     )
     non_public_image_fields = ("originalFilename", "userid", "userName", "created")
 
-    r = requests.get(f"{API_PREFIX}/public/orgs/{default_org_slug}/collections")
+    r = requests.get(
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections",
+        headers={"Host": "localhost:30870"},
+    )
+
     assert r.status_code == 200
     collections = r.json()["collections"]
     assert len(collections) == 2
@@ -1385,7 +1389,8 @@ def test_list_public_colls_home_url_thumbnail():
 
 def test_get_public_collection(default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}"
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}",
+        headers={"Host": "localhost:30870"},
     )
     assert r.status_code == 200
     coll = r.json()
