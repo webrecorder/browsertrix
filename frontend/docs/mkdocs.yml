@@ -19,7 +19,7 @@ theme:
     - content.code.copy
     - content.action.edit
     - content.tooltips
-    - search.suggest
+    - search.suggest 
   palette:
     scheme: webrecorder
   logo: assets/brand/browsertrix-icon-white.svg

@@ -1,6 +1,6 @@
 # Introduction to QA
 
-About Quality assurance (QA) 
+About Quality assurance (QA)s
 
 Can only be done on:
 - stopped crawls 

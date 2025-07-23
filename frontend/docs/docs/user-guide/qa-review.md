@@ -15,7 +15,7 @@ what we mean by resources
 
 ### Replay
 cannot follow links while in review
-you are replaying the page
+you are replaying the page 
 
 ## Pages
 individual pages
