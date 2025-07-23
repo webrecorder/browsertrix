@@ -52,7 +52,7 @@ ingress:
 
   # required: set email to use tls
   # uncomment and replace example below with your valid email address
-  #cert_email: "you@yourdomain.org"
+  # cert_email: "you@yourdomain.org"
 
   scheme: "https"
   tls: true
@@ -65,18 +65,18 @@ signer:
 
   # uncomment and replace example below with your registered domain
   # host: "second.yourdomain.org"
-# optionally, override default mongodb auth, used for all data storage:
 
-#mongo_auth:
-# username: root
-# password: PASSWORD!
+# optionally, override default mongodb auth, used for all data storage:
+# mongo_auth:
+#   username: root
+#   password: PASSWORD!
 
 # optionally, set these to custom values
 
-#superuser:
-# set this to enable a superuser admim
-# email: admin@example.com
-
-# optional: if not set, automatically generated
-# change or remove this
-# password: PASSWORD!
+# superuser:
+#   # set this to enable a superuser admim
+#   email: admin@example.com
+#
+#   # optional: if not set, automatically generated
+#   # change or remove this
+#   # password: PASSWORD!

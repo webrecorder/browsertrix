@@ -157,7 +157,7 @@ backend_avg_memory_threshold: 95
 
 # Emails Image
 # =========================================
-emails_image: "docker.io/webrecorder/browsertrix-emails:1.17.2"
+emails_image: "docker.io/webrecorder/browsertrix-emails:1.17.3"
 emails_pull_policy: "IfNotPresent"
 
 emails_cpu: "10m"
@@ -454,7 +454,7 @@ email:
   support_email: ""
 
   # endpoint for email templates
-  template_endpoint: "http://browsertrix-cloud-emails:3000/api/emails" # TODO what should this actually be?
+  template_endpoint: "http://browsertrix-cloud-emails:3000/api/emails"
 
 # Deployment options
 # =========================================
