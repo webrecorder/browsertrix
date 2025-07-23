@@ -11,7 +11,7 @@ import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import type { Crawl, CrawlLog, Seed, Workflow, WorkflowParams } from "./types";
+import type { Crawl, CrawlLog, Seed, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Alert } from "@/components/ui/alert";
@@ -29,8 +29,9 @@ import { WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
-import type { StorageSeedFile } from "@/types/workflow";
+import { type StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
+import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import {
   DEFAULT_MAX_SCALE,
   inactiveCrawlStates,
@@ -2152,7 +2153,7 @@ export class WorkflowDetail extends BtrixElement {
       <btrix-config-details
         .crawlConfig=${this.workflow}
         .seeds=${this.seeds?.items}
-        .seedFile=${this.seedFileTask.value}
+        .seedFile=${this.seedFileTask.value || undefined}
         anchorLinks
       ></btrix-config-details>
     </section>`;
@@ -2307,26 +2308,45 @@ export class WorkflowDetail extends BtrixElement {
    */
   private async duplicateConfig() {
     if (!this.workflow) await this.workflowTask.taskComplete;
-    if (!this.seeds) await this.seedsTask.taskComplete;
+
+    if (this.workflow?.config.seedFileId) {
+      await this.seedFileTask.taskComplete;
+    } else {
+      await this.seedsTask.taskComplete;
+    }
+
     await this.updateComplete;
     if (!this.workflow) return;
 
-    const workflowParams: WorkflowParams = {
-      ...this.workflow,
-      name: this.workflow.name ? msg(str`${this.workflow.name} Copy`) : "",
-    };
+    const seeds = this.seeds;
 
-    this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, {
-      workflow: workflowParams,
-      seeds: this.seeds?.items,
+    const settings = settingsForDuplicate({
+      workflow: this.workflow,
+      seeds,
+      seedFile: this.seedFileTask.value ?? undefined,
     });
 
-    this.notify.toast({
-      message: msg(str`Copied Workflow to new template.`),
-      variant: "success",
-      icon: "check2-circle",
-      id: "workflow-copied-success",
-    });
+    this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, settings);
+
+    if (seeds && seeds.total > seeds.items.length) {
+      const urlCount = this.localize.number(seeds.items.length);
+
+      // This is likely an edge case for old workflows with >1,000 seeds
+      // or URL list workflows created via API.
+      this.notify.toast({
+        title: msg(str`Partially copied workflow settings`),
+        message: msg(str`Only the first ${urlCount} URLs were copied.`),
+        variant: "warning",
+        id: "workflow-copied-status",
+      });
+    } else {
+      this.notify.toast({
+        message: msg("Copied settings to new workflow."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "workflow-copied-status",
+      });
+    }
   }
 
   private async delete(): Promise<void> {

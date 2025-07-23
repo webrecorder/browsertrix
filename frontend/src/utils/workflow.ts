@@ -1,3 +1,6 @@
+/**
+ * TODO Move to utils/crawl-configs/
+ */
 import { msg, str } from "@lit/localize";
 import { z } from "zod";
 
