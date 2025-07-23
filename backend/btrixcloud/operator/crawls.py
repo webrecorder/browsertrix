@@ -828,13 +828,14 @@ class CrawlOperator(BaseOperator):
         status: CrawlStatus,
         pods: dict,
         stats: Optional[CrawlStats] = None,
+        fail_reason: Optional[str] = "",
     ) -> bool:
         """Mark crawl as failed, log crawl state and print crawl logs, if possible"""
         prev_state = status.state
 
         failed_state: Literal["failed", "failed_not_logged_in"] = "failed"
 
-        if status.failReason and status.failReason == "not_logged_in":
+        if fail_reason == "not_logged_in":
             failed_state = "failed_not_logged_in"
 
         if not await self.mark_finished(crawl, status, failed_state, stats=stats):
@@ -1496,8 +1497,6 @@ class CrawlOperator(BaseOperator):
         status.size = stats.size
         status.sizeHuman = humanize.naturalsize(status.size)
 
-        status.failReason = await redis.get(f"{crawl.id}:failReason")
-
         await self.crawl_ops.update_running_crawl_stats(
             crawl.db_crawl_id, crawl.is_qa, stats
         )
@@ -1612,7 +1611,9 @@ class CrawlOperator(BaseOperator):
             if status.stopping and not status.pagesDone:
                 await self.mark_finished(crawl, status, "canceled", stats)
             else:
-                await self.fail_crawl(crawl, status, pods, stats)
+                fail_reason = await redis.get(f"{crawl.id}:failReason")
+
+                await self.fail_crawl(crawl, status, pods, stats, fail_reason)
 
         # check for other statuses, default to "running"
         else:

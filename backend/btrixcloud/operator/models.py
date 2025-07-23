@@ -233,8 +233,6 @@ class CrawlStatus(BaseModel):
     restartTime: Optional[str] = None
     canceled: bool = False
 
-    failReason: Optional[str] = None
-
     # updated on pod exits and at regular interval
     # Crawl Execution Time -- time all crawler pods have been running
     # used to track resource usage and enforce execution minutes limit
