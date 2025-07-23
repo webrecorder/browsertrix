@@ -47,7 +47,10 @@ class EmailSender:
 
         self.log_sent_emails = is_bool(os.environ.get("LOG_SENT_EMAILS"))
 
-        self.email_template_endpoint = os.environ.get("EMAIL_TEMPLATE_ENDPOINT") or ""
+        email_template_endpoint = os.environ.get("EMAIL_TEMPLATE_ENDPOINT")
+        if not email_template_endpoint:
+            raise ValueError("Environment variable EMAIL_TEMPLATE_ENDPOINT is required but not set")
+        self.email_template_endpoint = email_template_endpoint
 
     async def _send_encrypted(self, receiver: str, name: str, **kwargs) -> None:
         """Send Encrypted SMTP Message using given template name"""
