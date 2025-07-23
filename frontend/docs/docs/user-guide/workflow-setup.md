@@ -85,7 +85,7 @@ When enabled, the crawler will visit all the links it finds within each page def
 
 ### Fail Crawl If Not Logged In
 
-When enabled, the crawler will fail the crawl if it behaviors detect that the browser is not logged in for specific supported social media sites.
+When enabled, the crawl will fail if behaviors detect the presence or absence of content on supported pages indicating that the browser is not logged in.
 
 For more details see [the Browsertrix Crawler documentation for Fail on Content Check](https://crawler.docs.browsertrix.com/user-guide/behaviors/#fail-on-content-check).
 
