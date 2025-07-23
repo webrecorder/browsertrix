@@ -126,7 +126,6 @@ export class Dashboard extends BtrixElement {
   }
 
   render() {
-    const hasQuota = Boolean(this.metrics?.storageQuotaBytes);
     const quotaReached =
       this.metrics &&
       this.metrics.storageQuotaBytes > 0 &&
@@ -251,11 +250,9 @@ export class Dashboard extends BtrixElement {
               <dl>
                 ${this.renderStat({
                   value: metrics.archivedItemCount,
-                  secondaryValue: hasQuota
-                    ? ""
-                    : this.localize.bytes(
-                        metrics.storageUsedCrawls + metrics.storageUsedUploads,
-                      ),
+                  secondaryValue: this.localize.bytes(
+                    metrics.storageUsedCrawls + metrics.storageUsedUploads,
+                  ),
                   singleLabel: msg("Archived Item"),
                   pluralLabel: msg("Archived Items"),
                   iconProps: { name: "file-zip-fill" },
@@ -265,9 +262,9 @@ export class Dashboard extends BtrixElement {
                 })}
                 ${this.renderStat({
                   value: metrics.crawlCount,
-                  secondaryValue: hasQuota
-                    ? ""
-                    : this.localize.bytes(metrics.storageUsedCrawls),
+                  secondaryValue: this.localize.bytes(
+                    metrics.storageUsedCrawls,
+                  ),
                   singleLabel: msg("Crawl"),
                   pluralLabel: msg("Crawls"),
                   indent: true,
@@ -281,9 +278,9 @@ export class Dashboard extends BtrixElement {
                 })}
                 ${this.renderStat({
                   value: metrics.uploadCount,
-                  secondaryValue: hasQuota
-                    ? ""
-                    : this.localize.bytes(metrics.storageUsedUploads),
+                  secondaryValue: this.localize.bytes(
+                    metrics.storageUsedUploads,
+                  ),
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
                   indent: true,
@@ -294,9 +291,9 @@ export class Dashboard extends BtrixElement {
                 })}
                 ${this.renderStat({
                   value: metrics.profileCount,
-                  secondaryValue: hasQuota
-                    ? ""
-                    : this.localize.bytes(metrics.storageUsedProfiles),
+                  secondaryValue: this.localize.bytes(
+                    metrics.storageUsedProfiles,
+                  ),
                   singleLabel: msg("Browser Profile"),
                   pluralLabel: msg("Browser Profiles"),
                   iconProps: {
