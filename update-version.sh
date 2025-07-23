@@ -12,3 +12,4 @@ sed -E -i "" "s/^version:.*$/version: v$version/" chart/Chart.yaml
 
 sed -E -i "" "s/\/browsertrix-backend:[[:alnum:].-]+/\/browsertrix-backend:$version/" chart/values.yaml
 sed -E -i "" "s/\/browsertrix-frontend:[[:alnum:].-]+/\/browsertrix-frontend:$version/" chart/values.yaml
+sed -E -i "" "s/\/browsertrix-emails:[[:alnum:].-]+/\/browsertrix-emails:$version/" chart/values.yaml
