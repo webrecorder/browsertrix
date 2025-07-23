@@ -165,7 +165,7 @@ cleanup_files_after_minutes: 1440
 
 # Emails Image
 # =========================================
-emails_image: "docker.io/webrecorder/browsertrix-emails:1.17.2"
+emails_image: "docker.io/webrecorder/browsertrix-emails:1.18.0"
 emails_pull_policy: "IfNotPresent"
 
 emails_cpu: "10m"
