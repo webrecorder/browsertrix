@@ -42,6 +42,7 @@ def main():
         _,
         _,
         _,
+        _,
     ) = init_ops()
 
     return init_operator_api(

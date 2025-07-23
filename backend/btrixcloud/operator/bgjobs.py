@@ -28,6 +28,7 @@ class BgJobOperator(BaseOperator):
         async def mc_finalize_background_jobs(data: MCDecoratorSyncData):
             return await self.finalize_background_job(data)
 
+    # pylint: disable=too-many-locals
     async def finalize_background_job(self, data: MCDecoratorSyncData) -> dict:
         """handle finished background job"""
 
@@ -44,11 +45,16 @@ class BgJobOperator(BaseOperator):
             print(
                 "Succeeded: {status.get('succeeded')}, Num Pods: {spec.get('parallelism')}"
             )
+        start_time = status.get("startTime")
         completion_time = status.get("completionTime")
 
         finalized = True
 
+        started = None
         finished = None
+
+        if start_time:
+            started = str_to_date(start_time)
         if completion_time:
             finished = str_to_date(completion_time)
         if not finished:
@@ -62,7 +68,12 @@ class BgJobOperator(BaseOperator):
 
         try:
             await self.background_job_ops.job_finished(
-                job_id, job_type, success=success, finished=finished, oid=org_id
+                job_id,
+                job_type,
+                success=success,
+                started=started,
+                finished=finished,
+                oid=org_id,
             )
             # print(
             #    f"{job_type} background job completed: success: {success}, {job_id}",

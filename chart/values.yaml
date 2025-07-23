@@ -162,6 +162,15 @@ backend_avg_cpu_threshold: 80
 # scale up if avg memory utilization exceeds
 backend_avg_memory_threshold: 95
 
+# Cron schedule for periodically cleaning up unused files
+# Defaults to every Sunday at midnight
+cleanup_job_cron_schedule: "0 0 * * 0"
+
+# number of minutes before unused seed files are eligible
+# for cleanup. defaults to 1 day (1440 minutes) 
+cleanup_files_after_minutes: 1440
+
+
 # Nginx Image
 # =========================================
 frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.17.4"
@@ -255,8 +264,11 @@ crawler_namespace: "crawlers"
 # if set, will restrict QA to image names that are >= than this value
 # min_qa_crawler_image: ""
 
-# if set, will restrict autoclick behavior to image names that are >= than this value
+# if set, will restrict autoclick behavior to image names that are >= this value
 min_autoclick_crawler_image: "docker.io/webrecorder/browsertrix-crawler:1.5.0"
+
+# if set, will restrict seed files to image names that are >= this value
+min_seed_file_crawler_image: "docker.io/webrecorder/browsertrix-crawler:1.7.0"
 
 # optional: enable to use a persist volume claim for all crawls
 # can be enabled to use a multi-write shared filesystem

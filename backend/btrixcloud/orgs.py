@@ -101,9 +101,10 @@ if TYPE_CHECKING:
     from .users import UserManager
     from .background_jobs import BackgroundJobOps
     from .pages import PageOps
+    from .file_uploads import FileUploadOps
 else:
     InviteOps = BaseCrawlOps = ProfileOps = CollectionOps = object
-    BackgroundJobOps = UserManager = PageOps = object
+    BackgroundJobOps = UserManager = PageOps = FileUploadOps = object
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
@@ -160,6 +161,7 @@ class OrgOps:
         coll_ops: CollectionOps,
         background_job_ops: BackgroundJobOps,
         page_ops: PageOps,
+        file_ops: FileUploadOps,
     ) -> None:
         """Set additional ops classes"""
         # pylint: disable=attribute-defined-outside-init
@@ -168,6 +170,7 @@ class OrgOps:
         self.coll_ops = coll_ops
         self.background_job_ops = background_job_ops
         self.page_ops = page_ops
+        self.file_ops = file_ops
 
     def set_default_primary_storage(self, storage: StorageRef):
         """set default primary storage"""
@@ -994,6 +997,8 @@ class OrgOps:
             "storageUsedCrawls": org.bytesStoredCrawls,
             "storageUsedUploads": org.bytesStoredUploads,
             "storageUsedProfiles": org.bytesStoredProfiles,
+            "storageUsedSeedFiles": org.bytesStoredSeedFiles or 0,
+            "storageUsedThumbnails": org.bytesStoredThumbnails or 0,
             "storageQuotaBytes": storage_quota,
             "archivedItemCount": archived_item_count,
             "crawlCount": crawl_count,
@@ -1417,7 +1422,13 @@ class OrgOps:
                 org.id
             )
 
-            org_size = total_crawl_size + profile_size
+            seed_file_size = await self.file_ops.calculate_seed_file_storage(org.id)
+
+            thumbnail_size = await self.coll_ops.calculate_thumbnail_storage(org.id)
+
+            user_file_size = seed_file_size + thumbnail_size
+
+            org_size = total_crawl_size + profile_size + user_file_size
 
             await self.orgs.find_one_and_update(
                 {"_id": org.id},
@@ -1427,6 +1438,8 @@ class OrgOps:
                         "bytesStoredCrawls": crawl_size,
                         "bytesStoredUploads": upload_size,
                         "bytesStoredProfiles": profile_size,
+                        "bytesStoredSeedFiles": seed_file_size,
+                        "bytesStoredThumbnails": thumbnail_size,
                     }
                 },
             )
@@ -1445,6 +1458,16 @@ class OrgOps:
             {"_id": oid},
             {"$set": {"lastCrawlFinished": last_crawl_finished}},
         )
+
+    async def inc_org_bytes_stored_field(self, oid: UUID, field: str, size: int):
+        """Increment specific org bytesStored* field"""
+        try:
+            await self.orgs.find_one_and_update(
+                {"_id": oid}, {"$inc": {field: size, "bytesStored": size}}
+            )
+        # pylint: disable=broad-exception-caught
+        except Exception as err:
+            print(f"Error updating field {field} on org {oid}: {err}", flush=True)
 
 
 # ============================================================================
