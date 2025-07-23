@@ -26,6 +26,9 @@ import localize, { getDefaultLang } from "@/utils/localize";
 export const BYTES_PER_GB = 1e9;
 export const DEFAULT_SELECT_LINKS = ["a[href]->href" as const];
 export const DEFAULT_AUTOCLICK_SELECTOR = "a";
+export const SEED_LIST_FILE_EXT = "txt";
+export const MAX_SEED_LIST_STRING_BYTES = 500 * 1000;
+export const MAX_SEED_LIST_FILE_BYTES = 25 * 1e6;
 
 export const SECTIONS = [
   "scope",
@@ -45,6 +48,11 @@ export enum GuideHash {
   BrowserSettings = "browser-settings",
   Scheduling = "scheduling",
   Metadata = "metadata",
+}
+
+export enum SeedListFormat {
+  JSON = "json",
+  File = "file",
 }
 
 export const workflowTabToGuideHash: Record<SectionsEnum, GuideHash> = {
@@ -88,9 +96,19 @@ export function defaultLabel(value: unknown): string {
   return "";
 }
 
+export function defaultSeedListFileName() {
+  return `URL-List-${new Date()
+    .toISOString()
+    .split(".")[0]
+    .replace(/[^0-9]/g, "")}.${SEED_LIST_FILE_EXT}`;
+}
+
 export type FormState = {
   primarySeedUrl: string;
   urlList: string;
+  seedListFormat: SeedListFormat;
+  seedFileId: string | null;
+  seedFile: File | null;
   includeLinkedPages: boolean;
   useSitemap: boolean;
   failOnFailedSeed: boolean;
@@ -150,6 +168,9 @@ export const appDefaults: WorkflowDefaults = {
 export const getDefaultFormState = (): FormState => ({
   primarySeedUrl: "",
   urlList: "",
+  seedListFormat: SeedListFormat.JSON,
+  seedFileId: null,
+  seedFile: null,
   includeLinkedPages: false,
   useSitemap: false,
   failOnFailedSeed: false,
@@ -230,7 +251,11 @@ export function getInitialFormState(params: {
     }
     formState.useSitemap = seedsConfig.useSitemap;
   } else {
-    if (params.initialSeeds?.length) {
+    if (params.initialWorkflow.config.seedFileId) {
+      formState.seedFileId = params.initialWorkflow.config.seedFileId;
+      formState.scopeType = WorkflowScopeType.PageList;
+      formState.seedListFormat = SeedListFormat.File;
+    } else if (params.initialSeeds?.length) {
       if (params.initialSeeds.length === 1) {
         formState.scopeType = WorkflowScopeType.Page;
       } else {

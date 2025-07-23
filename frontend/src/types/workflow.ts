@@ -1,3 +1,5 @@
+import type { StorageFile } from "./storage";
+
 import { ScopeType } from "@/types/crawler";
 
 export enum NewWorkflowOnlyScopeType {
@@ -13,4 +15,9 @@ export type WorkflowTag = {
 
 export type WorkflowTags = {
   tags: WorkflowTag[];
+};
+
+export type StorageSeedFile = StorageFile & {
+  firstSeed: string;
+  seedCount: number;
 };
