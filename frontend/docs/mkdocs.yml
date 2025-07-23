@@ -66,6 +66,10 @@ nav:
           - user-guide/collection.md
           - user-guide/public-collections-gallery.md
           - user-guide/presentation-sharing.md
+      - Quality Assurance:
+        - user-guide/quality-assurance.md
+        - user-guide/qa-run-analysis.md
+        - user-guide/qa-review.md
       - Browser Profiles:
           - user-guide/browser-profiles.md
       - Org Settings:
