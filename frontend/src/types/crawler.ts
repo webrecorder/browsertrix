@@ -47,6 +47,7 @@ export type SeedConfig = Expand<
     selectLinks: string[];
     customBehaviors: string[];
     clickSelector: string;
+    saveStorage?: boolean;
   }
 >;
 
