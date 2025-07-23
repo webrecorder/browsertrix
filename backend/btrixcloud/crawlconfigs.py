@@ -988,7 +988,7 @@ class CrawlConfigOps:
                     await self.file_ops.delete_seed_file(
                         crawlconfig.config.seedFileId, org
                     )
-                except HTTPException as e:
+                except HTTPException:
                     pass
 
             status = "deleted"
