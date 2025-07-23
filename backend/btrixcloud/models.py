@@ -1146,38 +1146,14 @@ class FilePreparer:
 
 # ============================================================================
 
-### USER-UPLOADED IMAGES ###
-
-
-# ============================================================================
-class UserFileOut(BaseModel):
-    """output for user-uploaded file as stored on other document
-
-    Used for collection thumbnails.
-    Should merge with UserUploadFile models below (used to store files in
-    distinct files mongo collection) eventually.
-    Conforms to Data Resource Spec.
-    """
-
-    name: str
-    path: str
-    hash: str
-    size: int
-
-    originalFilename: str
-    mime: str
-    userid: UUID
-    userName: str
-    created: datetime
+### USER-UPLOADED FILES ###
 
 
 # ============================================================================
 class PublicUserFileOut(BaseModel):
     """public output for user-uploaded file stored on other document
 
-    Used for collection thumbnails.
-    Should merge with UserUploadFile models below (used to store files in
-    distinct files mongo collection) eventually.
+    Public User Upload File (used for collection thumbnails).
     Conforms to Data Resource Spec.
     """
 
@@ -1190,12 +1166,9 @@ class PublicUserFileOut(BaseModel):
 
 
 # ============================================================================
-class UserFile(BaseFile):
-    """User-uploaded file stored on anther mongo document
-
-    Used for collection thumbnails.
-    Should merge with UserUploadFile models below (used to store files in
-    distinct files mongo collection) eventually.
+class UserFileOut(PublicUserFileOut):
+    """output for user-uploaded file as stored on other document,
+    additional non-public fields included
     Conforms to Data Resource Spec.
     """
 
@@ -1205,16 +1178,35 @@ class UserFile(BaseFile):
     userName: str
     created: datetime
 
+
+# ============================================================================
+class UserFile(BaseFile):
+    """User-uploaded file stored on anther mongo document
+
+    Base user uploaded file (currently used for collection thumbnails).
+    Conforms to Data Resource Spec.
+    """
+
+    originalFilename: str
+    mime: str
+    userid: UUID
+    userName: str
+    created: datetime
+
+    async def get_absolute_presigned_url(
+        self, org, storage_ops, headers: Optional[dict]
+    ) -> str:
+        """Get presigned URL as absolute URL"""
+        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
+        return storage_ops.resolve_relative_access_path(presigned_url, headers) or ""
+
     async def get_file_out(
         self, org, storage_ops, headers: Optional[dict] = None
     ) -> UserFileOut:
         """Get UserFileOut with new presigned url"""
-        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
-        presigned_url = storage_ops.resolve_relative_access_path(presigned_url, headers)
-
         return UserFileOut(
             name=self.filename,
-            path=presigned_url or "",
+            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
             hash=self.hash,
             size=self.size,
             originalFilename=self.originalFilename,
@@ -1228,12 +1220,9 @@ class UserFile(BaseFile):
         self, org, storage_ops, headers: Optional[dict] = None
     ) -> PublicUserFileOut:
         """Get PublicUserFileOut with new presigned url"""
-        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
-        presigned_url = storage_ops.resolve_relative_access_path(presigned_url, headers)
-
         return PublicUserFileOut(
             name=self.filename,
-            path=presigned_url or "",
+            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
             hash=self.hash,
             size=self.size,
             mime=self.mime,
@@ -1281,8 +1270,8 @@ class UserFilePreparer(FilePreparer):
 
 
 # ============================================================================
-class UserUploadFileOut(UserFileOut):
-    """Output model for all user-uploaded files stored in files mongo collection"""
+class SeedFileOut(UserFileOut):
+    """Output model for user-uploaded seed files"""
 
     id: UUID
     oid: UUID
@@ -1293,26 +1282,26 @@ class UserUploadFileOut(UserFileOut):
 
 
 # ============================================================================
-class UserUploadFile(UserFile, BaseMongoModel):
-    """User-uploaded file saved in files mongo collection"""
+class SeedFile(UserFile, BaseMongoModel):
+    """Stores user-uploaded file files in 'file_uploads' mongo collection
+    Used with crawl workflows
+    """
+
+    type: Literal["seedFile"] = "seedFile"
 
     id: UUID
     oid: UUID
-    type: str
 
     firstSeed: Optional[str] = None
     seedCount: Optional[int] = None
 
     async def get_file_out(
         self, org, storage_ops, headers: Optional[dict] = None
-    ) -> UserUploadFileOut:
-        """Get UserUploadFileOut with new presigned url"""
-        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
-        presigned_url = storage_ops.resolve_relative_access_path(presigned_url, headers)
-
-        return UserUploadFileOut(
+    ) -> SeedFileOut:
+        """Get SeedFileOut with new presigned url"""
+        return SeedFileOut(
             name=self.filename,
-            path=presigned_url or "",
+            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
             hash=self.hash,
             size=self.size,
             originalFilename=self.originalFilename,
@@ -1326,13 +1315,6 @@ class UserUploadFile(UserFile, BaseMongoModel):
             firstSeed=self.firstSeed,
             seedCount=self.seedCount,
         )
-
-
-# ============================================================================
-class SeedFile(UserUploadFile):
-    """Seed file for crawl workflows"""
-
-    type: Literal["seedFile"] = "seedFile"
 
 
 # ============================================================================
@@ -3061,7 +3043,7 @@ class PaginatedUserOutResponse(PaginatedResponse):
 class PaginatedUserFileResponse(PaginatedResponse):
     """Response model for user-uploaded files (e.g. seed files)"""
 
-    items: List[UserUploadFileOut]
+    items: List[SeedFileOut]
 
 
 # ============================================================================

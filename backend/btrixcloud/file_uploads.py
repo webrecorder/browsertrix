@@ -12,8 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 import pymongo
 
 from .models import (
-    UserUploadFile,
-    UserUploadFileOut,
+    SeedFileOut,
     SeedFile,
     UserFile,
     UserFilePreparer,
@@ -88,28 +87,28 @@ class FileUploadOps:
 
         return res
 
-    async def get_file(
+    async def get_seed_file(
         self,
         file_id: UUID,
         org: Optional[Organization] = None,
         type_: Optional[str] = None,
-    ) -> UserUploadFile:
+    ) -> SeedFile:
         """Get file by UUID"""
         file_raw = await self.get_file_raw(file_id, org, type_)
-        return UserUploadFile.from_dict(file_raw)
+        return SeedFile.from_dict(file_raw)
 
-    async def get_file_out(
+    async def get_seed_file_out(
         self,
         file_id: UUID,
         org: Optional[Organization] = None,
         type_: Optional[str] = None,
         headers: Optional[dict] = None,
-    ) -> UserUploadFileOut:
+    ) -> SeedFileOut:
         """Get file output model by UUID"""
-        user_file = await self.get_file(file_id, org, type_)
+        user_file = await self.get_seed_file(file_id, org, type_)
         return await user_file.get_file_out(org, self.storage_ops, headers)
 
-    async def list_user_files(
+    async def list_seed_files(
         self,
         org: Organization,
         page_size: int = DEFAULT_PAGE_SIZE,
@@ -117,7 +116,7 @@ class FileUploadOps:
         sort_by: str = "created",
         sort_direction: int = -1,
         headers: Optional[dict] = None,
-    ) -> Tuple[list[UserUploadFileOut], int]:
+    ) -> Tuple[list[SeedFileOut], int]:
         """list all user-uploaded files"""
         # pylint: disable=too-many-locals
 
@@ -171,7 +170,7 @@ class FileUploadOps:
 
         user_files = []
         for res in items:
-            file_ = UserUploadFile.from_dict(res)
+            file_ = SeedFile.from_dict(res)
             file_out = await file_.get_file_out(org, self.storage_ops, headers)
             user_files.append(file_out)
 
@@ -278,12 +277,13 @@ class FileUploadOps:
         first_seed = ""
         seed_count = 0
 
-        file_out = await file_obj.get_file_out(org, self.storage_ops)
-        print("PATH", file_out.path)
+        file_url = await file_obj.get_absolute_presigned_url(
+            org, self.storage_ops, None
+        )
 
         with tempfile.TemporaryFile() as fp:
             async with aiohttp.ClientSession() as session:
-                async with session.get(file_out.path) as resp:
+                async with session.get(file_url) as resp:
                     async for chunk in resp.content.iter_chunked(CHUNK_SIZE):
                         fp.write(chunk)
 
@@ -299,11 +299,11 @@ class FileUploadOps:
 
         return first_seed, seed_count
 
-    async def delete_user_file(
+    async def delete_seed_file(
         self, file_id: UUID, org: Organization
     ) -> Dict[str, bool]:
         """Delete user-uploaded file from storage and db"""
-        file = await self.get_file(file_id, org)
+        file = await self.get_seed_file(file_id, org)
 
         # Make sure seed file isn't currently referenced by any workflows
         if file.type == "seedFile":
@@ -358,7 +358,7 @@ class FileUploadOps:
 
             try:
                 org = await self.org_ops.get_org_by_id(file_dict["oid"])
-                await self.delete_user_file(file_id, org)
+                await self.delete_seed_file(file_id, org)
                 print(f"Deleted unused seed file {file_id}", flush=True)
             # pylint: disable=broad-exception-caught
             except Exception as err:
@@ -401,7 +401,7 @@ def init_file_uploads_api(
 
     # pylint: disable=too-many-arguments
     @router.get("", response_model=PaginatedUserFileResponse)
-    async def list_user_files(
+    async def list_seed_files(
         request: Request,
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
@@ -410,7 +410,7 @@ def init_file_uploads_api(
         sortDirection: int = -1,
     ):
         # pylint: disable=duplicate-code
-        user_files, total = await ops.list_user_files(
+        user_files, total = await ops.list_seed_files(
             org,
             page_size=pageSize,
             page=page,
@@ -420,17 +420,17 @@ def init_file_uploads_api(
         )
         return paginated_format(user_files, total, page, pageSize)
 
-    @router.get("/{file_id}", response_model=UserUploadFileOut)
-    async def get_user_file(
+    @router.get("/{file_id}", response_model=SeedFileOut)
+    async def get_seed_file(
         file_id: UUID, request: Request, org: Organization = Depends(org_viewer_dep)
     ):
-        return await ops.get_file_out(file_id, org, headers=dict(request.headers))
+        return await ops.get_seed_file_out(file_id, org, headers=dict(request.headers))
 
     @router.delete("/{file_id}", response_model=SuccessResponse)
     async def delete_user_file(
         file_id: UUID, org: Organization = Depends(org_crawl_dep)
     ):
-        return await ops.delete_user_file(file_id, org)
+        return await ops.delete_seed_file(file_id, org)
 
     if org_ops.router:
         org_ops.router.include_router(router)

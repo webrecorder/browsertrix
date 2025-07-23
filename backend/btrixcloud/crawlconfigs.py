@@ -282,7 +282,9 @@ class CrawlConfigOps:
 
         if config_in.config.seedFileId:
             # Validate file with that id exists
-            seed_file = await self.file_ops.get_file(config_in.config.seedFileId, org)
+            seed_file = await self.file_ops.get_seed_file(
+                config_in.config.seedFileId, org
+            )
 
             # Validate seeds not set
             if config_in.config.seeds:
@@ -504,7 +506,7 @@ class CrawlConfigOps:
 
         if update.config and update.config.seedFileId:
             # Validate file with that id exists
-            seed_file = await self.file_ops.get_file(update.config.seedFileId, org)
+            seed_file = await self.file_ops.get_seed_file(update.config.seedFileId, org)
 
             # Validate seeds not set
             if update.config.seeds or (
@@ -636,7 +638,7 @@ class CrawlConfigOps:
             and update.config.seedFileId is None
         ):
             try:
-                await self.file_ops.delete_user_file(
+                await self.file_ops.delete_seed_file(
                     orig_crawl_config.config.seedFileId, org
                 )
             except HTTPException:
@@ -976,7 +978,7 @@ class CrawlConfigOps:
         if not crawlconfig.crawlAttemptCount:
             if crawlconfig.config and crawlconfig.config.seedFileId:
                 try:
-                    await self.file_ops.delete_user_file(
+                    await self.file_ops.delete_seed_file(
                         crawlconfig.config.seedFileId, org
                     )
                 except HTTPException:
@@ -1127,7 +1129,7 @@ class CrawlConfigOps:
                     status_code=400, detail="seed_file_not_supported_by_crawler"
                 )
 
-            seed_file_out = await self.file_ops.get_file_out(
+            seed_file_out = await self.file_ops.get_seed_file_out(
                 crawlconfig.config.seedFileId, org
             )
             seed_file_url = seed_file_out.path
