@@ -85,7 +85,9 @@ When enabled, the crawler will visit all the links it finds within each page def
 
 ### Fail Crawl If Not Logged In
 
-When enabled, the crawler will fail the crawl if it behaviors detect that the browser is not logged in for specific supported social media sites (Facebook, Instagram, TikTok, X, YouTube).
+When enabled, the crawler will fail the crawl if it behaviors detect that the browser is not logged in for specific supported social media sites.
+
+For more details see [the Browsertrix Crawler documentation for Fail on Content Check](https://crawler.docs.browsertrix.com/user-guide/behaviors/#fail-on-content-check).
 
 ### Fail Crawl on Failed URL
 
