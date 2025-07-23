@@ -28,7 +28,7 @@ individual pages
 screenshot during crawl vs screenshot during analysis
 
 ### review page rating
-comparision of crawl and analysis based on screenshots, text, and resources
+comparision of crawl and analysis based on screenshots, text, and resources 
 
 
 ## Write Review

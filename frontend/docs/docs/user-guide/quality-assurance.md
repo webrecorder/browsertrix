@@ -34,7 +34,7 @@ overview of the dashboard you will see
 
 ### Review by Screenshots
 what we mean by screenshots
-
+ 
 ### Review by Text
 what we mean by text
 
