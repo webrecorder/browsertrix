@@ -35,6 +35,8 @@ type Metrics = {
   storageUsedCrawls: number;
   storageUsedUploads: number;
   storageUsedProfiles: number;
+  storageUsedSeedFiles: number;
+  storageUsedThumbnails: number;
   storageQuotaBytes: number;
   archivedItemCount: number;
   crawlCount: number;
@@ -82,8 +84,10 @@ export class Dashboard extends BtrixElement {
     default: tw`text-neutral-600`,
     crawls: tw`text-green-600`,
     uploads: tw`text-sky-600`,
+    archivedItems: tw`text-cyan-500`,
     browserProfiles: tw`text-indigo-600`,
     runningTime: tw`text-blue-600`,
+    misc: tw`text-neutral-500`,
   };
 
   private readonly collections = new Task(this, {
@@ -249,25 +253,13 @@ export class Dashboard extends BtrixElement {
               ${this.renderStorageMeter(metrics)}
               <dl>
                 ${this.renderStat({
-                  value: metrics.archivedItemCount,
-                  secondaryValue: this.localize.bytes(
-                    metrics.storageUsedCrawls + metrics.storageUsedUploads,
-                  ),
-                  singleLabel: msg("Archived Item"),
-                  pluralLabel: msg("Archived Items"),
-                  iconProps: { name: "file-zip-fill" },
-                  button: {
-                    url: "/items",
-                  },
-                })}
-                ${this.renderStat({
                   value: metrics.crawlCount,
                   secondaryValue: this.localize.bytes(
                     metrics.storageUsedCrawls,
                   ),
                   singleLabel: msg("Crawl"),
                   pluralLabel: msg("Crawls"),
-                  indent: true,
+
                   iconProps: {
                     name: "gear-wide-connected",
                     class: this.colors.crawls,
@@ -283,10 +275,28 @@ export class Dashboard extends BtrixElement {
                   ),
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
-                  indent: true,
+
                   iconProps: { name: "upload", class: this.colors.uploads },
                   button: {
                     url: "/items/upload",
+                  },
+                })}
+                <sl-divider
+                  style="--spacing:var(--sl-spacing-small)"
+                ></sl-divider>
+                ${this.renderStat({
+                  value: metrics.archivedItemCount,
+                  secondaryValue: this.localize.bytes(
+                    metrics.storageUsedCrawls + metrics.storageUsedUploads,
+                  ),
+                  singleLabel: msg("Archived Item"),
+                  pluralLabel: msg("Archived Items"),
+                  iconProps: {
+                    name: "file-zip-fill",
+                    class: this.colors.archivedItems,
+                  },
+                  button: {
+                    url: "/items",
                   },
                 })}
                 ${this.renderStat({
@@ -304,6 +314,9 @@ export class Dashboard extends BtrixElement {
                     url: "/browser-profiles",
                   },
                 })}
+                ${metrics.storageUsedSeedFiles || metrics.storageUsedThumbnails
+                  ? this.renderMiscStorage(metrics)
+                  : nothing}
               </dl>
             `,
           )}
@@ -534,6 +547,25 @@ export class Dashboard extends BtrixElement {
     `;
   }
 
+  private renderMiscStorage(metrics: Metrics) {
+    return html`
+      <div class="mb-2 flex items-center gap-2 last:mb-0">
+        <dt class="mr-auto flex items-center tabular-nums">
+          <sl-icon
+            class=${clsx(tw`mr-2 text-base`, this.colors.misc)}
+            name="box2"
+          ></sl-icon>
+          ${msg("Miscellaneous")}
+        </dt>
+        <dd class="font-monostyle text-xs text-neutral-500">
+          ${this.localize.bytes(
+            metrics.storageUsedSeedFiles + metrics.storageUsedThumbnails,
+          )}
+        </dd>
+      </div>
+    `;
+  }
+
   private renderNoPublicCollections() {
     if (!this.org || !this.metrics) return;
 
@@ -574,6 +606,8 @@ export class Dashboard extends BtrixElement {
     const hasQuota = Boolean(metrics.storageQuotaBytes);
     const isStorageFull =
       hasQuota && metrics.storageUsedBytes >= metrics.storageQuotaBytes;
+    const misc = metrics.storageUsedSeedFiles + metrics.storageUsedThumbnails;
+
     const renderBar = (value: number, label: string, color: string) => html`
       <btrix-meter-bar
         value=${(value / metrics.storageUsedBytes) * 100}
@@ -640,6 +674,9 @@ export class Dashboard extends BtrixElement {
                   msg("Profiles"),
                   this.colors.browserProfiles,
                 ),
+              )}
+              ${when(misc, () =>
+                renderBar(misc, msg("Miscellaneous"), this.colors.misc),
               )}
               <div slot="available" class="flex-1">
                 <sl-tooltip class="text-center">
@@ -935,20 +972,14 @@ export class Dashboard extends BtrixElement {
   private renderStat(stat: {
     value: number | string | TemplateResult | null;
     secondaryValue?: number | string | TemplateResult;
-    indent?: boolean;
     button?: { label?: string | TemplateResult; url: string };
     singleLabel: string;
-    pluralLabel: string;
+    pluralLabel?: string;
     iconProps: { name: string; library?: string; class?: string };
   }) {
     const { value, iconProps } = stat;
     return html`
-      <div
-        class=${clsx(
-          tw`mb-2 flex items-center gap-2 last:mb-0`,
-          stat.indent && tw`pl-6`,
-        )}
-      >
+      <div class="mb-2 flex items-center gap-2 last:mb-0">
         <div class="mr-auto flex items-center tabular-nums">
           <sl-icon
             class=${clsx(
@@ -959,7 +990,9 @@ export class Dashboard extends BtrixElement {
             library=${ifDefined(iconProps.library)}
           ></sl-icon>
           <dt class="order-last">
-            ${value === 1 ? stat.singleLabel : stat.pluralLabel}
+            ${value === 1
+              ? stat.singleLabel
+              : stat.pluralLabel ?? stat.singleLabel}
           </dt>
           <dd class="mr-1">
             ${typeof value === "number" ? this.localize.number(value) : value}
