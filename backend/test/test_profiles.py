@@ -206,20 +206,24 @@ def test_commit_browser_to_existing_profile(
     )
 
     # Commit new browser to existing profile
-    r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
-        headers=admin_auth_headers,
-        json={
-            "browserid": profile_browser_3_id,
-            "name": PROFILE_NAME_UPDATED,
-            "description": PROFILE_DESC_UPDATED,
-        },
-    )
-    assert r.status_code == 200
+    while True:
+        r = requests.patch(
+            f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
+            headers=admin_auth_headers,
+            json={
+                "browserid": profile_browser_3_id,
+                "name": PROFILE_NAME_UPDATED,
+                "description": PROFILE_DESC_UPDATED,
+            },
+        )
+        assert r.status_code == 200
+        if r.json().get("detail") == "waiting_for_browser":
+            time.sleep(5)
+            continue
+
+        break
+
     assert r.json()["updated"]
-
-    time.sleep(5)
-
     # Ensure modified was updated but created was not
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
@@ -340,7 +344,7 @@ def test_create_profile_read_only_org(
 
     # Try to create profile, verify we get 403 forbidden
     start_time = time.monotonic()
-    time_limit = 300
+    time_limit = 30
     while True:
         try:
             r = requests.post(
@@ -357,9 +361,9 @@ def test_create_profile_read_only_org(
             if detail == "waiting_for_browser":
                 time.sleep(5)
                 continue
-            if detail == "org_set_to_read_only":
-                assert r.status_code == 403
-                break
+            assert detail == "org_set_to_read_only"
+            assert r.status_code == 403
+            break
         except:
             if time.monotonic() - start_time > time_limit:
                 raise

@@ -11,7 +11,7 @@ import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import type { Crawl, CrawlLog, Seed, Workflow, WorkflowParams } from "./types";
+import type { Crawl, CrawlLog, Seed, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Alert } from "@/components/ui/alert";
@@ -29,7 +29,9 @@ import { WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
+import { type StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
+import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import {
   DEFAULT_MAX_SCALE,
   inactiveCrawlStates,
@@ -151,6 +153,16 @@ export class WorkflowDetail extends BtrixElement {
       return await this.getSeeds(workflowId, signal);
     },
     args: () => [this.workflowId, this.isEditing] as const,
+  });
+
+  private readonly seedFileTask = new Task(this, {
+    task: async ([workflow], { signal }) => {
+      if (!workflow) return;
+      if (!workflow.config.seedFileId) return null;
+
+      return await this.getSeedFile(workflow.config.seedFileId, signal);
+    },
+    args: () => [this.workflowTask.value, this.isEditing] as const,
   });
 
   private readonly latestCrawlTask = new Task(this, {
@@ -694,11 +706,9 @@ export class WorkflowDetail extends BtrixElement {
 
     if (this.groupedWorkflowTab === WorkflowTab.LatestCrawl && latestCrawl) {
       const latestCrawlId = latestCrawl.id;
-      const logTotals = this.logTotalsTask.value;
       const authToken = this.authState?.headers.Authorization.split(" ")[1];
       const disableDownload = this.isRunning;
       const disableReplay = !latestCrawl.fileSize;
-      const disableLogs = !(logTotals?.errors || logTotals?.behaviors);
       const replayHref = `/api/orgs/${this.orgId}/all-crawls/${latestCrawlId}/download?auth_bearer=${authToken}`;
       const replayFilename = `browsertrix-${latestCrawlId}.wacz`;
 
@@ -738,7 +748,7 @@ export class WorkflowDetail extends BtrixElement {
                 slot="trigger"
                 size="small"
                 caret
-                ?disabled=${disableReplay && disableLogs}
+                ?disabled=${disableDownload}
               >
                 <sl-visually-hidden
                   >${msg("Download options")}</sl-visually-hidden
@@ -764,7 +774,6 @@ export class WorkflowDetail extends BtrixElement {
                 </btrix-menu-item-link>
                 <btrix-menu-item-link
                   href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
-                  ?disabled=${disableLogs}
                   download
                 >
                   <sl-icon
@@ -853,11 +862,12 @@ export class WorkflowDetail extends BtrixElement {
       <btrix-detail-page-title .item=${this.workflow}></btrix-detail-page-title>
     </header>
 
-    ${this.workflow && this.seeds
+    ${this.workflow && this.seeds && this.seedFileTask.value !== undefined
       ? html`
           <btrix-workflow-editor
             .initialWorkflow=${this.workflow}
             .initialSeeds=${this.seeds.items}
+            .initialSeedFile=${this.seedFileTask.value || undefined}
             configId=${this.workflowId}
             @reset=${() => this.navigate.to(this.basePath)}
           ></btrix-workflow-editor>
@@ -866,7 +876,10 @@ export class WorkflowDetail extends BtrixElement {
           Promise.all([
             this.workflowTask.taskComplete,
             this.seedsTask.taskComplete,
-          ]).catch(this.renderPageError),
+            this.seedFileTask.taskComplete,
+          ])
+            .catch(this.renderPageError)
+            .then(this.renderLoading),
           this.renderLoading(),
         )}
   `;
@@ -1758,11 +1771,12 @@ export class WorkflowDetail extends BtrixElement {
               class="micro -ml-2"
               size="small"
               variant="text"
-              href="${this.basePath}/crawls/${this.lastCrawlId}#qa"
+              href="${this.basePath}/crawls/${this
+                .lastCrawlId}/review/screenshots?from=workflow"
               @click=${this.navigate.link}
             >
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-              ${msg("Add Review")}
+              ${msg("Review Crawl")}
             </sl-button> `}
       </div> `;
     };
@@ -2139,6 +2153,7 @@ export class WorkflowDetail extends BtrixElement {
       <btrix-config-details
         .crawlConfig=${this.workflow}
         .seeds=${this.seeds?.items}
+        .seedFile=${this.seedFileTask.value || undefined}
         anchorLinks
       ></btrix-config-details>
     </section>`;
@@ -2217,6 +2232,14 @@ export class WorkflowDetail extends BtrixElement {
     return data;
   }
 
+  private async getSeedFile(seedFileId: string, signal: AbortSignal) {
+    const data = await this.api.fetch<StorageSeedFile>(
+      `/orgs/${this.orgId}/files/${seedFileId}`,
+      { signal },
+    );
+    return data;
+  }
+
   private async getCrawls(
     workflowId: string,
     params: WorkflowDetail["crawlsParams"],
@@ -2285,26 +2308,45 @@ export class WorkflowDetail extends BtrixElement {
    */
   private async duplicateConfig() {
     if (!this.workflow) await this.workflowTask.taskComplete;
-    if (!this.seeds) await this.seedsTask.taskComplete;
+
+    if (this.workflow?.config.seedFileId) {
+      await this.seedFileTask.taskComplete;
+    } else {
+      await this.seedsTask.taskComplete;
+    }
+
     await this.updateComplete;
     if (!this.workflow) return;
 
-    const workflowParams: WorkflowParams = {
-      ...this.workflow,
-      name: this.workflow.name ? msg(str`${this.workflow.name} Copy`) : "",
-    };
+    const seeds = this.seeds;
 
-    this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, {
-      workflow: workflowParams,
-      seeds: this.seeds?.items,
+    const settings = settingsForDuplicate({
+      workflow: this.workflow,
+      seeds,
+      seedFile: this.seedFileTask.value ?? undefined,
     });
 
-    this.notify.toast({
-      message: msg(str`Copied Workflow to new template.`),
-      variant: "success",
-      icon: "check2-circle",
-      id: "workflow-copied-success",
-    });
+    this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, settings);
+
+    if (seeds && seeds.total > seeds.items.length) {
+      const urlCount = this.localize.number(seeds.items.length);
+
+      // This is likely an edge case for old workflows with >1,000 seeds
+      // or URL list workflows created via API.
+      this.notify.toast({
+        title: msg(str`Partially copied workflow settings`),
+        message: msg(str`Only the first ${urlCount} URLs were copied.`),
+        variant: "warning",
+        id: "workflow-copied-status",
+      });
+    } else {
+      this.notify.toast({
+        message: msg("Copied settings to new workflow."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "workflow-copied-status",
+      });
+    }
   }
 
   private async delete(): Promise<void> {

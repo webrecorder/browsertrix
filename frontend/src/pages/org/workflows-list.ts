@@ -12,7 +12,6 @@ import {
   type ListWorkflow,
   type Seed,
   type Workflow,
-  type WorkflowParams,
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -33,8 +32,12 @@ import { WorkflowTab } from "@/routes";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import { NewWorkflowOnlyScopeType } from "@/types/workflow";
+import {
+  NewWorkflowOnlyScopeType,
+  type StorageSeedFile,
+} from "@/types/workflow";
 import { isApiError } from "@/utils/api";
+import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
@@ -52,8 +55,6 @@ const FILTER_BY_CURRENT_USER_STORAGE_KEY =
 const INITIAL_PAGE_SIZE = 10;
 const POLL_INTERVAL_SECONDS = 10;
 const ABORT_REASON_THROTTLE = "throttled";
-// NOTE Backend pagination max is 1000
-const SEEDS_MAX = 1000;
 
 const sortableFields: Record<
   SortField,
@@ -1049,33 +1050,38 @@ export class WorkflowsList extends BtrixElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig(workflow: ListWorkflow) {
-    const [fullWorkflow, seeds] = await Promise.all([
-      this.getWorkflow(workflow),
-      this.getSeeds(workflow),
-    ]);
+    const fullWorkflow = await this.getWorkflow(workflow);
+    let seeds;
+    let seedFile;
 
-    const workflowParams: WorkflowParams = {
-      ...fullWorkflow,
-      name: workflow.name ? msg(str`${workflow.name} Copy`) : "",
-    };
+    if (fullWorkflow.config.seedFileId) {
+      seedFile = await this.getSeedFile(fullWorkflow.config.seedFileId);
+    } else {
+      seeds = await this.getSeeds(workflow);
+    }
 
-    this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, {
-      workflow: workflowParams,
-      seeds: seeds.items,
+    const settings = settingsForDuplicate({
+      workflow: fullWorkflow,
+      seeds,
+      seedFile,
     });
 
-    if (seeds.total > SEEDS_MAX) {
+    this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, settings);
+
+    if (seeds && seeds.total > seeds.items.length) {
+      const urlCount = this.localize.number(seeds.items.length);
+
+      // This is likely an edge case for old workflows with >1,000 seeds
+      // or URL list workflows created via API.
       this.notify.toast({
-        title: msg(str`Partially copied Workflow`),
-        message: msg(
-          str`Only first ${this.localize.number(SEEDS_MAX)} URLs were copied.`,
-        ),
+        title: msg(str`Partially copied workflow settings`),
+        message: msg(str`The first ${urlCount} URLs were copied.`),
         variant: "warning",
         id: "workflow-copied-status",
       });
     } else {
       this.notify.toast({
-        message: msg(str`Copied Workflow to new template.`),
+        message: msg("Copied settings to new workflow."),
         variant: "success",
         icon: "check2-circle",
         id: "workflow-copied-status",
@@ -1242,6 +1248,13 @@ export class WorkflowsList extends BtrixElement {
     // NOTE Returns first 1000 seeds (backend pagination max)
     const data = await this.api.fetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/seeds`,
+    );
+    return data;
+  }
+
+  private async getSeedFile(seedFileId: string) {
+    const data = await this.api.fetch<StorageSeedFile>(
+      `/orgs/${this.orgId}/files/${seedFileId}`,
     );
     return data;
   }

@@ -1,6 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import {
   css,
   html,
@@ -9,7 +10,6 @@ import {
   type TemplateResult,
 } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
@@ -30,6 +30,7 @@ import type { QARun } from "@/types/qa";
 import { isActive, isSuccessfullyFinished } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { pluralOf } from "@/utils/pluralize";
+import { tw } from "@/utils/tailwind";
 
 type QAStatsThreshold = {
   lowerBoundary: `${number}`;
@@ -99,6 +100,9 @@ export class ArchivedItemDetailQA extends BtrixElement {
 
   @property({ attribute: false })
   mostRecentNonFailedQARun?: QARun;
+
+  @property({ attribute: false })
+  mostRecentSuccessQARun?: QARun;
 
   @state()
   private pages?: APIPaginatedList<ArchivedItemPage>;
@@ -477,7 +481,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
     const qaRun = qaRuns.find(({ id }) => id === this.qaRunId);
 
     if (!qaRun && isRunningOrStarting) {
-      return html`<btrix-alert class="mb-3" variant="success">
+      return html`<btrix-alert class="my-3" variant="success">
         ${msg("Running QA analysis on pages...")}
       </btrix-alert>`;
     }
@@ -642,7 +646,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
     const remainingPageCount = pageCount - analyzedPageCount;
     const remainderBarLabel = qaIsRunning ? msg("Pending") : msg("Incomplete");
 
-    console.log({ pageCount, barData, analyzedPageCount });
     return html`
       <btrix-meter class="flex-1" value=${analyzedPageCount} max=${pageCount}>
         ${barData.map((bar) => {
@@ -771,25 +774,22 @@ export class ArchivedItemDetailQA extends BtrixElement {
           ${this.pages?.items.map(
             (page, idx) => html`
               <btrix-table-row
-                class="${idx > 0 ? "border-t" : ""} ${this.qaRunId
-                  ? "cursor-pointer transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50"
-                  : ""} select-none"
+                class=${clsx(
+                  idx > 0 && tw`border-t`,
+                  tw`cursor-pointer select-none transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50`,
+                )}
               >
                 <btrix-table-cell
                   class="block overflow-hidden"
-                  rowClickTarget=${ifDefined(this.qaRunId ? "a" : undefined)}
+                  rowClickTarget="a"
                 >
-                  ${this.qaRunId
-                    ? html`
-                        <a
-                          href=${`${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.crawlId}/review/screenshots?qaRunId=${this.qaRunId}&itemPageId=${page.id}`}
-                          title=${msg(str`Review "${page.title ?? page.url}"`)}
-                          @click=${this.navigate.link}
-                        >
-                          ${pageTitle(page)}
-                        </a>
-                      `
-                    : pageTitle(page)}
+                  <a
+                    href=${`${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.crawlId}/review/screenshots?qaRunId=${this.mostRecentSuccessQARun?.id || ""}&itemPageId=${page.id}`}
+                    title=${msg(str`Review "${page.title ?? page.url}"`)}
+                    @click=${this.navigate.link}
+                  >
+                    ${pageTitle(page)}
+                  </a>
                 </btrix-table-cell>
                 <btrix-table-cell
                   >${this.renderApprovalStatus(page)}</btrix-table-cell

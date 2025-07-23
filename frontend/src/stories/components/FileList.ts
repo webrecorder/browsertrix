@@ -1,15 +1,23 @@
 import { html } from "lit";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import "@/components/ui/file-list";
 
-export type RenderProps = { files: File[] };
+import type { FileListItem } from "@/components/ui/file-list/file-list-item";
 
-export const renderComponent = ({ files }: Partial<RenderProps>) => {
+export type RenderProps = { items: Partial<FileListItem>[] };
+
+export const renderComponent = ({ items }: Partial<RenderProps>) => {
   return html`
     <btrix-file-list @btrix-remove=${console.log}>
-      ${files?.map(
-        (file) => html`
-          <btrix-file-list-item .file=${file}></btrix-file-list-item>
+      ${items?.map(
+        (item) => html`
+          <btrix-file-list-item
+            .file=${item.file}
+            name=${ifDefined(item.name)}
+            size=${ifDefined(item.size)}
+            href=${ifDefined(item.href)}
+          ></btrix-file-list-item>
         `,
       )}
     </btrix-file-list>

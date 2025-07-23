@@ -344,26 +344,20 @@ export class WorkflowListItem extends BtrixElement {
         const compactDuration = this.localize.humanizeDuration(dur, {
           compact: true,
         });
-        return msg(str`in ${compactDuration}`, {
-          desc: "`compactDuration` example: '2h'",
-        });
+        return `${msg("in")} ${compactDuration}`;
       };
       const verboseIn = (dur: number) => {
         const verboseDuration = this.localize.humanizeDuration(dur, {
           verbose: true,
           unitCount: 2,
         });
-        return msg(str`in ${verboseDuration}`, {
-          desc: "`verboseDuration` example: '2 hours, 15 seconds'",
-        });
+        return `${msg("in")} ${verboseDuration}`;
       };
       const compactFor = (dur: number) => {
         const compactDuration = this.localize.humanizeDuration(dur, {
           compact: true,
         });
-        return msg(str`for ${compactDuration}`, {
-          desc: "`compactDuration` example: '2h'",
-        });
+        return `${msg("for")} ${compactDuration}`;
       };
       const verboseFor = (dur: number) => {
         const verboseDuration = this.localize.humanizeDuration(dur, {

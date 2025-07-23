@@ -1,8 +1,10 @@
 import { localized, msg } from "@lit/localize";
 import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import type { BtrixFileRemoveEvent } from "./events";
+import type { FileLike } from "./types";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { LocalizeController } from "@/controllers/localize";
@@ -62,6 +64,21 @@ export class FileListItem extends TailwindElement {
   @property({ attribute: false })
   file?: File | null = null;
 
+  @property({ type: String })
+  name?: FileLike["name"];
+
+  @property({ type: Number })
+  size?: FileLike["size"];
+
+  @property({ type: Boolean })
+  removable = true;
+
+  /**
+   * Shows link to open the file URL in a new tab.
+   */
+  @property({ type: String })
+  href = "";
+
   @property({ type: Number })
   progressValue?: number;
 
@@ -70,30 +87,37 @@ export class FileListItem extends TailwindElement {
 
   readonly localize = new LocalizeController(this);
 
+  get item() {
+    return (
+      this.file ||
+      (this.name ? { name: this.name, size: this.size || 0 } : null)
+    );
+  }
+
   render() {
-    if (!this.file) return;
+    const item = this.item;
+
+    if (!item) return;
+
     return html`<div class="item">
       <div class="file">
         <div class="details">
-          <div class="name">${this.file.name}</div>
+          <div class="name">
+            <slot name="name">${item.name}</slot>
+          </div>
           <div class="size">
             ${this.progressValue !== undefined
               ? html`${this.localize.bytes(
-                  (this.progressValue / 100) * this.file.size,
+                  (this.progressValue / 100) * item.size,
                 )}
                 / `
-              : ""}${this.localize.bytes(this.file.size)}
+              : ""}${this.localize.bytes(item.size)}
           </div>
         </div>
         <div class="actions">
           ${this.progressValue || this.progressIndeterminate
             ? ""
-            : html`<sl-icon-button
-                name="trash3"
-                class="text-base hover:text-danger"
-                label=${msg("Remove file")}
-                @click=${this.onRemove}
-              ></sl-icon-button>`}
+            : this.renderActions()}
         </div>
       </div>
       ${this.progressValue || this.progressIndeterminate
@@ -108,14 +132,41 @@ export class FileListItem extends TailwindElement {
     </div>`;
   }
 
+  private renderActions() {
+    return html`${when(
+      this.href,
+      (href) =>
+        html`<sl-tooltip content=${msg("View File")}>
+          <sl-icon-button
+            name="box-arrow-up-right"
+            class="text-base"
+            href=${href}
+            target="_blank"
+          ></sl-icon-button>
+        </sl-tooltip>`,
+    )}
+    ${when(
+      this.removable,
+      () =>
+        html`<sl-tooltip content=${msg("Remove File")}>
+          <sl-icon-button
+            name="trash3"
+            class="text-base hover:text-danger"
+            @click=${this.onRemove}
+          ></sl-icon-button>
+        </sl-tooltip>`,
+    )}`;
+  }
+
   private readonly onRemove = async () => {
-    if (!this.file) return;
+    const item = this.item;
+
+    if (!item) return;
+
     await this.updateComplete;
     this.dispatchEvent(
       new CustomEvent<BtrixFileRemoveEvent["detail"]>("btrix-remove", {
-        detail: {
-          item: this.file,
-        },
+        detail: { item },
         composed: true,
         bubbles: true,
       }),

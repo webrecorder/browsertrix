@@ -11,9 +11,7 @@ import { stopProp } from "@/utils/events";
 import { tw } from "@/utils/tailwind";
 
 const labelFor: Record<CrawlLogContext, string> = {
-  [CrawlLogContext.General]: msg("General", {
-    desc: "'General' crawl log context type",
-  }),
+  [CrawlLogContext.General]: msg("General"),
   [CrawlLogContext.Behavior]: msg("Page Behavior"),
   [CrawlLogContext.BehaviorScript]: msg("Built-in Behavior"),
   [CrawlLogContext.BehaviorScriptCustom]: msg("Custom Behavior Script"),
@@ -148,15 +146,7 @@ export class CrawlLogTable extends TailwindElement {
                   </sl-tooltip>
                 </div>
                 <div class="whitespace-pre-wrap">${log.message}</div>
-                ${log.details.page
-                  ? html`
-                      <div class="truncate" title="${log.details.page}">
-                        ${log.details.page}
-                      </div>
-                    `
-                  : html`<div class="text-neutral-400 group-hover:text-inherit">
-                      ${noData}
-                    </div>`}
+                ${this.renderPageUrl(log)}
               </div>
             </btrix-numbered-list-item>
           `;
@@ -233,6 +223,15 @@ export class CrawlLogTable extends TailwindElement {
         `;
         break;
     }
+  }
+
+  private renderPageUrl(log: CrawlLog) {
+    const url = log.details.page || log.details.url;
+    return url
+      ? html` <div class="truncate" title="${url}">${url}</div> `
+      : html`<div class="text-neutral-400 group-hover:text-inherit">
+          ${noData}
+        </div>`;
   }
 
   private renderLogDetails() {
