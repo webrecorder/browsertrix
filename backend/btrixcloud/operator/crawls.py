@@ -827,13 +827,15 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         pods: dict,
-        stats: Optional[CrawlStats] = None,
-        fail_reason: Optional[str] = "",
+        stats: CrawlStats,
+        redis: Redis,
     ) -> bool:
         """Mark crawl as failed, log crawl state and print crawl logs, if possible"""
         prev_state = status.state
 
         failed_state: Literal["failed", "failed_not_logged_in"] = "failed"
+
+        fail_reason = await redis.get(f"{crawl.id}:failReason")
 
         if fail_reason == "not_logged_in":
             failed_state = "failed_not_logged_in"
@@ -1588,7 +1590,7 @@ class CrawlOperator(BaseOperator):
             # check if one-page crawls actually succeeded
             # if only one page found, and no files, assume failed
             if status.pagesFound == 1 and not status.filesAdded:
-                await self.fail_crawl(crawl, status, pods, stats)
+                await self.fail_crawl(crawl, status, pods, stats, redis)
                 return status
 
             state: TYPE_NON_RUNNING_STATES
@@ -1611,9 +1613,7 @@ class CrawlOperator(BaseOperator):
             if status.stopping and not status.pagesDone:
                 await self.mark_finished(crawl, status, "canceled", stats)
             else:
-                fail_reason = await redis.get(f"{crawl.id}:failReason")
-
-                await self.fail_crawl(crawl, status, pods, stats, fail_reason)
+                await self.fail_crawl(crawl, status, pods, stats, redis)
 
         # check for other statuses, default to "running"
         else:
