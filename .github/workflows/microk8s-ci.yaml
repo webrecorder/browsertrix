@@ -5,9 +5,9 @@ on:
     branches:
       - main
     paths:
-      - 'backend/**'
-      - 'chart/**'
-      - '.github/workflows/microk8s-ci.yaml'
+      - "backend/**"
+      - "chart/**"
+      - ".github/workflows/microk8s-ci.yaml"
   workflow_dispatch:
 
 env:
@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: balchua/microk8s-actions@v0.3.1
         with:
-          channel: '1.25/stable'
+          channel: "1.25/stable"
           addons: '["dns", "helm3", "hostpath-storage", "registry", "host-access"]'
       - name: Checkout
         uses: actions/checkout@v3
@@ -41,6 +41,15 @@ jobs:
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
 
+      - name: Build Emails
+        uses: docker/build-push-action@v3
+        with:
+          context: emails
+          push: true
+          tags: localhost:32000/webrecorder/browsertrix-emails:latest
+          cache-from: type=gha,scope=emails
+          cache-to: type=gha,scope=emails,mode=max
+
       - name: Build Frontend
         uses: docker/build-push-action@v3
         with:
@@ -60,7 +69,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Install Python Libs
         run: pip install -r ./backend/test-requirements.txt

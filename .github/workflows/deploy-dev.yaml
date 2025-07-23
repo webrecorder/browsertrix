@@ -63,6 +63,15 @@ jobs:
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
 
+      - name: Build Emails
+        uses: docker/build-push-action@v3
+        with:
+          context: emails
+          push: true
+          tags: ${{ secrets.DO_REGISTRY_PATH }}/webrecorder/browsertrix-emails:latest
+          cache-from: type=gha,scope=emails
+          cache-to: type=gha,scope=emails,mode=max
+
       - name: Build Frontend
         uses: docker/build-push-action@v3
         env:

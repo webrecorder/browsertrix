@@ -13,6 +13,7 @@
 
 # use version specified in values.yaml, uncomment to use :latest release instead
 # backend_image: docker.io/webrecorder/browsertrix-backend:latest
+# emails_image: docker.io/webrecorder/browsertrix-emails:latest
 # frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
 
 # uncomment to enable custom crawler dropdown
@@ -31,31 +32,28 @@
 
 # overrides to use existing images in local Docker, otherwise will pull from repository
 # backend_pull_policy: "Never"
+# emails_pull_policy: "Never"
 # frontend_pull_policy: "Never"
 # crawler_pull_policy: "Never"
 # redis_pull_policy: "Never"
 
-
 # microk8s: if developing locally, can override these to use images from local microk8s repository (on localhost:32000)
 # backend_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
+# emails_image: "localhost:32000/webrecorder/browsertrix-emails:latest"
 # frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
-
 
 # optionally, override default mongodb auth, used for all data storage:
 
-#mongo_auth:
-  #username: root
-  #password: PASSWORD!
-  
+# mongo_auth:
+#   username: root
+#   password: PASSWORD!
 
 # optionally, set these to custom values
 
-#superuser:
-  # set this to enable a superuser admim
-  # email: admin@example.com
+# superuser:
+#   # set this to enable a superuser admim
+#   email: admin@example.com
 
-  # optional: if not set, automatically generated
-  # change or remove this
-  # password: PASSWORD!
-
-
+#   # optional: if not set, automatically generated
+#   # change or remove this
+#   password: PASSWORD!

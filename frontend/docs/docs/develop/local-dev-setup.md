@@ -12,7 +12,7 @@ However, if you are developing locally, you will need to use your local images i
 
 We recommend the following setup:
 
-1. Copy the provided `./chart/examples/local-config.yaml` Helm configuration file to a separate file `local.yaml`, so that local changes to it will not be accidentally committed to git. 
+1. Copy the provided `./chart/examples/local-config.yaml` Helm configuration file to a separate file `local.yaml`, so that local changes to it will not be accidentally committed to git.
 
     From the root directory:
 
@@ -23,8 +23,10 @@ We recommend the following setup:
 2. Uncomment `backend_image`, `frontend_image`, and pull policies in `./chart/local.yaml`, which will ensure the local images are used:
 ```yaml
 backend_image: docker.io/webrecorder/browsertrix-backend:latest
+emails_image: docker.io/webrecorder/browsertrix-emails:latest
 frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
 backend_pull_policy: 'Never'
+emails_pull_policy: 'Never'
 frontend_pull_policy: 'Never'
 ```
 
@@ -34,6 +36,7 @@ frontend_pull_policy: 'Never'
 
         ```yaml
         backend_pull_policy: 'IfNotPresent'
+        emails_pull_policy: 'IfNotPresent'
         frontend_pull_policy: 'IfNotPresent'
         ```
 
@@ -58,6 +61,7 @@ frontend_pull_policy: 'Never'
         3. In `./chart/local.yaml`, also uncomment the following lines to use the local images:
         ```yaml
         backend_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
+        emails_image: "localhost:32000/webrecorder/browsertrix-emails:latest"
         frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
         ```
 
@@ -69,6 +73,12 @@ frontend_pull_policy: 'Never'
 
         ```shell
         minikube image build -t webrecorder/browsertrix-backend:latest ./backend
+        ```
+
+        To build the emails image, run:
+
+        ```shell
+        minikube image build -t webrecorder/browsertrix-emails:latest ./emails
         ```
 
         To build a local frontend image, run:
@@ -86,16 +96,18 @@ frontend_pull_policy: 'Never'
         2. Serializer the images to .tar:
         ```shell
         docker save webrecorder/browsertrix-backend:latest > ./backend.tar
+        docker save webrecorder/browsertrix-emails:latest > ./emails.tar
         docker save webrecorder/browsertrix-frontend:latest > ./frontend.tar
         ```
 
         3. Import images into k3s containerd:
         ```shell
         k3s ctr images import --base-name webrecorder/browsertrix-backend:latest ./backend.tar
+        k3s ctr images import --base-name webrecorder/browsertrix-emails:latest ./emails.tar
         k3s ctr images import --base-name webrecorder/browsertrix-frontend:latest ./frontend.tar
         ```
 
-4. To change other options, uncomment them as needed in `./chart/local.yaml` or add additional overrides from `./chart/values.yaml`. 
+4. To change other options, uncomment them as needed in `./chart/local.yaml` or add additional overrides from `./chart/values.yaml`.
 
     For example, to set a superuser email to `my_super_user_email@example.com` and password to `MySecretPassword!`, uncomment that block and set:
     ```yaml
