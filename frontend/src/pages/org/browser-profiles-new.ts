@@ -313,13 +313,36 @@ export class BrowserProfilesNew extends BtrixElement {
     };
 
     try {
-      const data = await this.api.fetch<{ id: string }>(
-        `/orgs/${this.orgId}/profiles`,
-        {
-          method: "POST",
-          body: JSON.stringify(params),
-        },
-      );
+      let data;
+      let retriesLeft = 300;
+
+      while (retriesLeft > 0) {
+        data = await this.api.fetch<{ id?: string; detail?: string }>(
+          `/orgs/${this.orgId}/profiles`,
+          {
+            method: "POST",
+            body: JSON.stringify(params),
+          },
+        );
+        if (data.id) {
+          break;
+        }
+        if (data.detail === "waiting_for_browser") {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        } else {
+          throw new Error("unknown response");
+        }
+
+        retriesLeft -= 1;
+      }
+
+      if (!retriesLeft) {
+        throw new Error("too many retries waiting for browser");
+      }
+
+      if (!data) {
+        throw new Error("unknown response");
+      }
 
       this.notify.toast({
         message: msg("Successfully created browser profile."),
@@ -332,6 +355,8 @@ export class BrowserProfilesNew extends BtrixElement {
         `${this.navigate.orgBasePath}/browser-profiles/profile/${data.id}`,
       );
     } catch (e) {
+      console.debug(e);
+
       this.isSubmitting = false;
 
       let message = msg("Sorry, couldn't create browser profile at this time.");

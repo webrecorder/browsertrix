@@ -70,7 +70,10 @@ export class BrowserProfilesDetail extends BtrixElement {
   private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(500);
 
+  private updatedProfileTimer?: number;
+
   disconnectedCallback() {
+    window.clearTimeout(this.updatedProfileTimer);
     if (this.browserId) {
       void this.deleteBrowser(this.browserId);
     }
@@ -679,27 +682,45 @@ export class BrowserProfilesDetail extends BtrixElement {
     };
 
     try {
-      const data = await this.api.fetch<{ updated: boolean }>(
-        `/orgs/${this.orgId}/profiles/${this.profileId}`,
-        {
+      let retriesLeft = 300;
+
+      while (retriesLeft > 0) {
+        const data = await this.api.fetch<{
+          updated?: boolean;
+          detail?: string;
+        }>(`/orgs/${this.orgId}/profiles/${this.profileId}`, {
           method: "PATCH",
           body: JSON.stringify(params),
-        },
-      );
-
-      if (data.updated) {
-        this.notify.toast({
-          message: msg("Successfully saved browser profile."),
-          variant: "success",
-          icon: "check2-circle",
-          id: "browser-profile-save-status",
         });
+        if (data.updated !== undefined) {
+          break;
+        }
+        if (data.detail === "waiting_for_browser") {
+          await new Promise((resolve) => {
+            this.updatedProfileTimer = window.setTimeout(resolve, 2000);
+          });
+        } else {
+          throw new Error("unknown response");
+        }
 
-        this.browserId = undefined;
-      } else {
-        throw data;
+        retriesLeft -= 1;
       }
+
+      if (!retriesLeft) {
+        throw new Error("too many retries waiting for browser");
+      }
+
+      this.notify.toast({
+        message: msg("Successfully saved browser profile."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "browser-profile-save-status",
+      });
+
+      this.browserId = undefined;
     } catch (e) {
+      console.debug(e);
+
       this.notify.toast({
         message: msg("Sorry, couldn't save browser profile at this time."),
         variant: "danger",
