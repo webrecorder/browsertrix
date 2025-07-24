@@ -520,6 +520,11 @@ def test_workflow_total_size_and_last_crawl_stats(
             assert workflow["lastRun"]
             assert workflow["lastCrawlSize"] > 0
 
+            stats = workflow["lastCrawlStats"]
+            assert stats["found"] > 0
+            assert stats["done"] > 0
+            assert stats["size"] > 0
+
             if last_crawl_id == admin_crawl_id:
                 global _admin_crawl_cid
                 _admin_crawl_cid = workflow["id"]
@@ -545,6 +550,11 @@ def test_workflow_total_size_and_last_crawl_stats(
     assert data["lastRun"]
     assert data["lastCrawlSize"] > 0
 
+    stats = data["lastCrawlStats"]
+    assert stats["found"] > 0
+    assert stats["done"] > 0
+    assert stats["size"] > 0
+
 
 def test_incremental_workflow_total_size_and_last_crawl_stats(
     crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id
@@ -564,6 +574,7 @@ def test_incremental_workflow_total_size_and_last_crawl_stats(
     last_crawl_started = data["lastCrawlStartTime"]
     last_crawl_finished = data["lastCrawlTime"]
     last_run = data["lastRun"]
+    last_stats = data["lastCrawlStats"]
 
     # Run new crawl in this workflow
     r = requests.post(
@@ -602,6 +613,10 @@ def test_incremental_workflow_total_size_and_last_crawl_stats(
     assert data["lastCrawlStartTime"] > last_crawl_started
     assert data["lastCrawlTime"] > last_crawl_finished
     assert data["lastRun"] > last_run
+    stats = data["lastCrawlStats"]
+    assert stats["found"] > 0
+    assert stats["done"] > 0
+    assert stats["size"] > 0
 
     # Delete new crawl
     r = requests.post(
@@ -628,6 +643,7 @@ def test_incremental_workflow_total_size_and_last_crawl_stats(
     assert data["lastCrawlStartTime"] == last_crawl_started
     assert data["lastCrawlTime"] == last_crawl_finished
     assert data["lastRun"] == last_run
+    assert data["lastCrawlStats"] == last_stats
 
 
 def test_get_config_seeds(crawler_auth_headers, default_org_id, url_list_config_id):
