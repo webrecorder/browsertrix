@@ -976,20 +976,20 @@ class CrawlConfigOps:
 
         # if no crawls have been run, actually delete
         if not crawlconfig.crawlAttemptCount:
-            if crawlconfig.config and crawlconfig.config.seedFileId:
-                try:
-                    await self.file_ops.delete_seed_file(
-                        crawlconfig.config.seedFileId, org
-                    )
-                except HTTPException:
-                    pass
-
             result = await self.crawl_configs.delete_one(
                 {"_id": crawlconfig.id, "oid": crawlconfig.oid}
             )
 
             if result.deleted_count != 1:
                 raise HTTPException(status_code=404, detail="failed_to_delete")
+
+            if crawlconfig and crawlconfig.config.seedFileId:
+                try:
+                    await self.file_ops.delete_seed_file(
+                        crawlconfig.config.seedFileId, org
+                    )
+                except HTTPException:
+                    pass
 
             status = "deleted"
 
