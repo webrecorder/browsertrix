@@ -12,6 +12,7 @@ import { tw } from "@/utils/tailwind";
 
 const labelFor: Record<CrawlLogContext, string> = {
   [CrawlLogContext.General]: msg("General"),
+  [CrawlLogContext.Scope]: msg("Crawl Scope"),
   [CrawlLogContext.Behavior]: msg("Page Behavior"),
   [CrawlLogContext.BehaviorScript]: msg("Built-in Behavior"),
   [CrawlLogContext.BehaviorScriptCustom]: msg("Custom Behavior Script"),
@@ -21,6 +22,7 @@ const contextLevelFor: Record<CrawlLogContext, number> = {
   [CrawlLogContext.Behavior]: 1,
   [CrawlLogContext.BehaviorScript]: 2,
   [CrawlLogContext.General]: 3,
+  [CrawlLogContext.Scope]: 3,
   [CrawlLogContext.BehaviorScriptCustom]: 4,
 };
 // Minimum context level to highlight
