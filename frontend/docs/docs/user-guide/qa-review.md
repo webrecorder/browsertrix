@@ -1,16 +1,15 @@
 # Review Crawl
 
-## Overview of Crawl
-In a QA analysis, Browsertrix collects data in two stages: first during the initial crawl, and then again during the replay. Rather than comparing the replay to the live site, we compare it to the data captured during the crawl.
+## Overview of Crawl Quality
+In a QA analysis, Browsertrix collects data in two stages: first during the initial crawl, and then again during the replay. Rather than comparing the replay to the live site, we compare it to the data captured during the crawl. This ensures that the web archive that is to be downloaded, added to a collection, or shared provides a high quality replay.
 
 When reviewing the page, you will be able to analyze specific elements beginning with the Starting URL. 
 
-You will be able to review the crawl by:
+You will be able to review the crawled pages by:
 
-- **Screenshots**: A static visual snapshot of a section of the captured page.
+- **Screenshots**: A static visual snapshot of a section of the captured page
 - **Text**: A full transcript of the text within the page
 - **Resources**: Web documents (i.e. HTML, stylesheets, fonts, etc.) that make up the page
-- **Pages**: A full list of the pages captured during the crawl with their Title and URL
 
 !!! note "Navigation Prevented in Replay within QA"
     To navigate through the captured website, use the Replay feature in the Crawling section. Links will not be clickable when using the Replay tab within the Analysis view.
@@ -19,7 +18,7 @@ You will be able to review the crawl by:
     When you first view an analysis of a page, the screenshot, text, and resource comparison views are only available for analyzed crawls. You'll need to run an analysis to view and compare all quality metrics.
     
 ## QA on Your Web Archive
-When you do run an analysis, you'll have a comparison view of the data collected during crawl analysis. If multiple analysis runs have been completed, the page data will be used from the selected analysis run, which are displayed next to the archived item name. The most recent analysis run is selected by default, but you can choose to display data from any other completed or stopped analysis run here as well.
+When you run an analysis, you'll have a comparison view of the data collected. If multiple analysis runs have been completed, the page data will be used from the selected analysis run, which are displayed next to the archived item name. The most recent analysis run is selected by default, but you can choose to display data from any other completed or stopped analysis run here as well.
 
 The depth of your page review may vary depending on available time and the complexity of the page. For automated support, crawl analysis can generate comparisons across three key factors to help highlight potentially problematic pages. If you prefer a manual approach, you can still assess crawls even without running an analysis. You’re still able to review page quality manually and leave comments, provide ratings, and examine the screenshots, text, and resources.
 

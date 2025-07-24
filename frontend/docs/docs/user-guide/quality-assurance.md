@@ -1,14 +1,14 @@
 # Introduction to QA
 
-Quality assurance (QA) in web archiving is the systematic process of verifying that archived web content is accurate, complete, and usable. It often involves checking for broken links, missing content, and ensuring the archived version matches the live website, especially sites with dynamic and interactive elements.
+Quality assurance (QA) in web archiving is the systematic process of verifying that archived web content is accurate, complete, and usable. It often involves checking for broken links, missing content, and ensuring the archived version matches the website website at the time it was crawled, especially sites with dynamic and interactive elements.
 
-Quality assurance has often been performed manually, typically by visually comparing crawl results to the live site and clicking on the hyperlinks of a crawled web page.
+Quality assurance has often been performed manually, typically by visually comparing crawl results to the live site and clicking on the hyperlinks of a crawled web page. This can be tedious and prone to issues if some interactive elements are overlooked, especially if the live site has changed since the time it was crawled and archived. Browsertrix addresses these potential issues through QA tools that provide immediate feedback on the capture quality of the crawl, so that crawl or replay issues can be identified and resolved promptly.
 
 ## Overview of Quality Assurance
-With Browsertrix, you can run a crawl analysis and be able to replay, compare, and check pages all from your browser. 
+With assisted QA, you can analyze any web archive crawled through Browsertrix to compare, replay, and review pages in the web archive.
 
 !!! note "Types of crawls you can review"
-    You are able to review and analyze crawls that have been completed or even stopped crawls. You would not be able to review or run an analysis on cancelled crawls, paused crawls or uploaded crawls.
+    You are able to review and analyze crawls that have been completed or even stopped. You would not be able to review or run an analysis on cancelled crawls, paused crawls or uploaded crawls.
 
 At a quick glance, you can tell: 
 
