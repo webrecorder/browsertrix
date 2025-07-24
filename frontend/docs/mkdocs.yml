@@ -19,7 +19,7 @@ theme:
     - content.code.copy
     - content.action.edit
     - content.tooltips
-    - search.suggest 
+    - search.suggest
   palette:
     scheme: webrecorder
   logo: assets/brand/browsertrix-icon-white.svg
@@ -94,7 +94,6 @@ nav:
       - develop/index.md
       - develop/local-dev-setup.md
       - develop/docs.md
-
       - UI Development:
         - develop/frontend-dev.md
         - develop/ui/components.md
