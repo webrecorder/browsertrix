@@ -68,7 +68,6 @@ nav:
           - user-guide/presentation-sharing.md
       - Quality Assurance:
         - user-guide/quality-assurance.md
-        - user-guide/qa-run-analysis.md
         - user-guide/qa-review.md
       - Browser Profiles:
           - user-guide/browser-profiles.md
