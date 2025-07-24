@@ -26,10 +26,6 @@ A Page refers to a Web page. A Web page is a Web document that is accessed in a 
 
 You will see a list of all the Web pages crawled featuring its Title, URL, any approval rating and comments done by users of the org.
 
-<!-- ### Analysis runs
-what we mean by analysis runs -->
-
-
 <!-- ## Run Analysis
 From the Quality Assurance tab in the Crawl overview page, you will be able to [*Run Analysis*](./qa-run-analysis.md) or *Rerun Analysis* depending on which step of the workflow you are at.  -->
 
