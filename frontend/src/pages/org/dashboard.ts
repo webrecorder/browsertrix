@@ -82,12 +82,12 @@ export class Dashboard extends BtrixElement {
 
   private readonly colors = {
     default: tw`text-neutral-600`,
-    crawls: tw`text-green-600`,
-    uploads: tw`text-sky-600`,
-    archivedItems: tw`text-cyan-500`,
-    browserProfiles: tw`text-indigo-600`,
+    crawls: tw`text-lime-500`,
+    uploads: tw`text-sky-500`,
+    archivedItems: tw`text-primary-500`,
+    browserProfiles: tw`text-orange-500`,
     runningTime: tw`text-blue-600`,
-    misc: tw`text-neutral-500`,
+    misc: tw`text-gray-400`,
   };
 
   private readonly collections = new Task(this, {
@@ -281,6 +281,25 @@ export class Dashboard extends BtrixElement {
                     url: "/items/upload",
                   },
                 })}
+                ${this.renderStat({
+                  value: metrics.profileCount,
+                  secondaryValue: this.localize.bytes(
+                    metrics.storageUsedProfiles,
+                  ),
+                  singleLabel: msg("Browser Profile"),
+                  pluralLabel: msg("Browser Profiles"),
+                  iconProps: {
+                    name: "window-fullscreen",
+                    class: this.colors.browserProfiles,
+                  },
+                  button: {
+                    url: "/browser-profiles",
+                  },
+                })}
+                ${metrics.storageUsedSeedFiles || metrics.storageUsedThumbnails
+                  ? this.renderMiscStorage(metrics)
+                  : nothing}
+
                 <sl-divider
                   style="--spacing:var(--sl-spacing-small)"
                 ></sl-divider>
@@ -299,24 +318,6 @@ export class Dashboard extends BtrixElement {
                     url: "/items",
                   },
                 })}
-                ${this.renderStat({
-                  value: metrics.profileCount,
-                  secondaryValue: this.localize.bytes(
-                    metrics.storageUsedProfiles,
-                  ),
-                  singleLabel: msg("Browser Profile"),
-                  pluralLabel: msg("Browser Profiles"),
-                  iconProps: {
-                    name: "pass-fill",
-                    class: this.colors.browserProfiles,
-                  },
-                  button: {
-                    url: "/browser-profiles",
-                  },
-                })}
-                ${metrics.storageUsedSeedFiles || metrics.storageUsedThumbnails
-                  ? this.renderMiscStorage(metrics)
-                  : nothing}
               </dl>
             `,
           )}
@@ -553,7 +554,7 @@ export class Dashboard extends BtrixElement {
         <dt class="mr-auto flex items-center tabular-nums">
           <sl-icon
             class=${clsx(tw`mr-2 text-base`, this.colors.misc)}
-            name="box2-fill"
+            name="box2"
           ></sl-icon>
           ${msg("Miscellaneous")}
         </dt>
@@ -608,10 +609,17 @@ export class Dashboard extends BtrixElement {
       hasQuota && metrics.storageUsedBytes >= metrics.storageQuotaBytes;
     const misc = metrics.storageUsedSeedFiles + metrics.storageUsedThumbnails;
 
-    const renderBar = (value: number, label: string, color: string) => html`
+    const renderBar = (
+      value: number,
+      label: string,
+      colorClassname: string,
+    ) => html`
       <btrix-meter-bar
         value=${(value / metrics.storageUsedBytes) * 100}
-        style="--background-color:var(--sl-color-${color}-400)"
+        style="--background-color:var(--sl-color-${colorClassname.replace(
+          "text-",
+          "",
+        )})"
       >
         <div class="text-center">
           <div>${label}</div>
