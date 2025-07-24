@@ -76,6 +76,17 @@ export const infoTextFor = {
   customBehavior: msg(
     `Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.`,
   ),
+  failOnContentCheck: msg(
+    html`Fail the crawl if behaviors detect that the browser is not logged in on
+      specific pages. For more details see the
+      <a
+        href="https://crawler.docs.browsertrix.com/user-guide/behaviors/#fail-on-content-check"
+        class="text-blue-600 hover:text-blue-500"
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        >Fail On Content Check section of the crawler documentation</a
+      >.`,
+  ),
 } as const satisfies Partial<Record<Field, string | TemplateResult>>;
 
 export default infoTextFor;

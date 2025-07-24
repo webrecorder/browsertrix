@@ -438,6 +438,10 @@ export class ConfigDetails extends BtrixElement {
         msg("Include Any Linked Page (“one hop out”)"),
         Boolean(config.extraHops),
       )}
+      ${this.renderSetting(
+        msg("Fail Crawl If Not Logged In"),
+        Boolean(config.failOnContentCheck),
+      )}
       ${when(
         config.extraHops,
         () => html`${this.renderLinkSelectors()}${this.renderExclusions()}`,
@@ -501,6 +505,10 @@ export class ConfigDetails extends BtrixElement {
       ${this.renderSetting(
         msg("Check For Sitemap"),
         Boolean(config.useSitemap),
+      )}
+      ${this.renderSetting(
+        msg("Fail Crawl If Not Logged In"),
+        Boolean(config.failOnContentCheck),
       )}
       ${this.renderLinkSelectors()}
       ${this.renderSetting(

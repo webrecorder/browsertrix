@@ -44,6 +44,7 @@ export type SeedConfig = Expand<
     extraHops?: number | null;
     useSitemap?: boolean;
     failOnFailedSeed?: boolean;
+    failOnContentCheck?: boolean;
     depth?: number | null;
     userAgent?: string | null;
     selectLinks: string[];

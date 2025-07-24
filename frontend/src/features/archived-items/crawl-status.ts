@@ -227,6 +227,16 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Failed");
         break;
 
+      case "failed_not_logged_in":
+        color = "var(--danger)";
+        icon = html`<sl-icon
+          name="exclamation-triangle-fill"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Failed: Not Logged In");
+        break;
+
       case "skipped_storage_quota_reached":
         color = "var(--danger)";
         icon = html`<sl-icon
