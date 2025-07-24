@@ -307,7 +307,7 @@ export class Dashboard extends BtrixElement {
                   singleLabel: msg("Browser Profile"),
                   pluralLabel: msg("Browser Profiles"),
                   iconProps: {
-                    name: "window-fullscreen",
+                    name: "pass-fill",
                     class: this.colors.browserProfiles,
                   },
                   button: {
@@ -553,7 +553,7 @@ export class Dashboard extends BtrixElement {
         <dt class="mr-auto flex items-center tabular-nums">
           <sl-icon
             class=${clsx(tw`mr-2 text-base`, this.colors.misc)}
-            name="box2"
+            name="box2-fill"
           ></sl-icon>
           ${msg("Miscellaneous")}
         </dt>
