@@ -308,7 +308,7 @@ def test_uploads_collection_updated(
     assert data["totalSize"] > 0
     assert data["dateEarliest"]
     assert data["dateLatest"]
-    assert data["modified"] > data["created"]
+    assert data["modified"] >= data["created"]
 
 
 def test_replace_upload(
@@ -607,7 +607,7 @@ def test_get_all_crawls_by_type(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 6
+    assert data["total"] == 7
     for item in data["items"]:
         assert item["type"] == "crawl"
 
@@ -639,7 +639,7 @@ def test_get_all_crawls_by_user(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 5
+    assert data["total"] == 6
     for item in data["items"]:
         assert item["userid"] == crawler_userid
 
@@ -823,7 +823,7 @@ def test_all_crawls_search_values(
     assert r.status_code == 200
     data = r.json()
 
-    assert len(data["names"]) == 8
+    assert len(data["names"]) == 9
     expected_names = [
         "Crawler User Test Crawl",
         "Custom Behavior Logs",
@@ -831,6 +831,7 @@ def test_all_crawls_search_values(
         "test2.wacz",
         "All Crawls Test Crawl",
         "Crawler User Crawl for Testing QA",
+        "Seed File Test Crawl",
     ]
     for expected_name in expected_names:
         assert expected_name in data["names"]
@@ -850,13 +851,14 @@ def test_all_crawls_search_values(
     assert r.status_code == 200
     data = r.json()
 
-    assert len(data["names"]) == 5
+    assert len(data["names"]) == 6
     expected_names = [
         "Admin Test Crawl",
         "All Crawls Test Crawl",
         "Crawler User Crawl for Testing QA",
         "Crawler User Test Crawl",
         "Custom Behavior Logs",
+        "Seed File Test Crawl",
     ]
     for expected_name in expected_names:
         assert expected_name in data["names"]

@@ -70,7 +70,10 @@ export class BrowserProfilesDetail extends BtrixElement {
   private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(500);
 
+  private updatedProfileTimer?: number;
+
   disconnectedCallback() {
+    window.clearTimeout(this.updatedProfileTimer);
     if (this.browserId) {
       void this.deleteBrowser(this.browserId);
     }
@@ -160,6 +163,9 @@ export class BrowserProfilesDetail extends BtrixElement {
       <div class="mb-7 flex flex-col gap-5 lg:flex-row">
         <section class="flex-1">
           <header class="flex items-center gap-2">
+            <h2 class="text-lg font-medium leading-none">
+              ${msg("Browser Profile")}
+            </h2>
             <sl-tooltip
               content=${isBackedUp ? msg("Backed Up") : msg("Not Backed Up")}
               ?disabled=${!this.profile}
@@ -167,7 +173,7 @@ export class BrowserProfilesDetail extends BtrixElement {
               <sl-icon
                 class="${isBackedUp
                   ? "text-success"
-                  : "text-neutral-500"} text-base"
+                  : "text-neutral-500"} ml-auto text-base"
                 name=${this.profile
                   ? isBackedUp
                     ? "clouds-fill"
@@ -175,9 +181,36 @@ export class BrowserProfilesDetail extends BtrixElement {
                   : "clouds"}
               ></sl-icon>
             </sl-tooltip>
-            <h2 class="text-lg font-medium leading-none">
-              ${msg("Browser Profile")}
-            </h2>
+
+            ${this.profile?.inUse
+              ? html`
+                  <sl-tooltip
+                    content=${msg(
+                      "View Crawl Workflows using this Browser Profile",
+                    )}
+                  >
+                    <a
+                      href=${`${this.navigate.orgBasePath}/workflows?profiles=${this.profile.id}`}
+                      @click=${this.navigate.link}
+                      class="ml-2 flex items-center gap-2 text-sm font-medium text-primary-500 transition-colors hover:text-primary-600"
+                    >
+                      ${msg("In Use")}
+                      <sl-icon
+                        class="text-base"
+                        name="arrow-right-circle"
+                      ></sl-icon>
+                    </a>
+                  </sl-tooltip>
+                `
+              : html`<sl-tooltip
+                  content=${msg("Not In Use")}
+                  ?disabled=${!this.profile}
+                >
+                  <sl-icon
+                    class="text-base text-neutral-500"
+                    name=${this.profile ? "slash-circle" : "clouds"}
+                  ></sl-icon>
+                </sl-tooltip>`}
           </header>
 
           ${when(this.isCrawler, () =>
@@ -249,12 +282,12 @@ export class BrowserProfilesDetail extends BtrixElement {
         </header>
         <!-- display: inline -->
         <div
-          class="leading whitespace-pre-line rounded border p-5 leading-relaxed first-line:leading-[0]"
+          class="leading whitespace-pre-line rounded border p-5 leading-relaxed"
           >${this.profile
             ? this.profile.description
               ? richText(this.profile.description)
               : html`
-                  <div class="text-center text-neutral-400">
+                  <div class="text-center leading-[0] text-neutral-400">
                     &nbsp;${msg("No description added.")}
                   </div>
                 `
@@ -649,27 +682,45 @@ export class BrowserProfilesDetail extends BtrixElement {
     };
 
     try {
-      const data = await this.api.fetch<{ updated: boolean }>(
-        `/orgs/${this.orgId}/profiles/${this.profileId}`,
-        {
+      let retriesLeft = 300;
+
+      while (retriesLeft > 0) {
+        const data = await this.api.fetch<{
+          updated?: boolean;
+          detail?: string;
+        }>(`/orgs/${this.orgId}/profiles/${this.profileId}`, {
           method: "PATCH",
           body: JSON.stringify(params),
-        },
-      );
-
-      if (data.updated) {
-        this.notify.toast({
-          message: msg("Successfully saved browser profile."),
-          variant: "success",
-          icon: "check2-circle",
-          id: "browser-profile-save-status",
         });
+        if (data.updated !== undefined) {
+          break;
+        }
+        if (data.detail === "waiting_for_browser") {
+          await new Promise((resolve) => {
+            this.updatedProfileTimer = window.setTimeout(resolve, 2000);
+          });
+        } else {
+          throw new Error("unknown response");
+        }
 
-        this.browserId = undefined;
-      } else {
-        throw data;
+        retriesLeft -= 1;
       }
+
+      if (!retriesLeft) {
+        throw new Error("too many retries waiting for browser");
+      }
+
+      this.notify.toast({
+        message: msg("Successfully saved browser profile."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "browser-profile-save-status",
+      });
+
+      this.browserId = undefined;
     } catch (e) {
+      console.debug(e);
+
       this.notify.toast({
         message: msg("Sorry, couldn't save browser profile at this time."),
         variant: "danger",

@@ -180,11 +180,16 @@ There should be 4 pods listed: backend, frontend, minio, and mongodb. If any one
 
 To get more details about why a pod has not started, run `#!sh kubectl describe <podname>` and see the latest status at the bottom.
 
-Often, the error may be obvious, such as failed to pull an image.
+Often, the error may be obvious, such as "failed to pull an image."
 
-If the pod is running, or previously ran, you can also get the logs from the container by running `#!sh kubectl logs <podname>`
+If the pod is running, or previously ran, you can also get the logs from the container by running `#!sh kubectl logs <podname>`.
 
-The outputs of these commands are helpful when reporting an issue [on GitHub](https://github.com/webrecorder/browsertrix/issues)
+The outputs of these commands are helpful when reporting an issue [on GitHub](https://github.com/webrecorder/browsertrix/issues).
+
+??? info "Firewall rules (on RHEL/Fedora)"
+
+    On Red Hat Enterprise Linux and derivatives, communication between pods might be blocked by firewalld.
+    There are short guides on configuring the firewall for these systems in the [k3s](https://docs.k3s.io/installation/requirements?&os=rhel#operating-systems) and [Microk8s](https://microk8s.io/docs/troubleshooting#:~:text=Pod%20communication%20problems%20when%20using%20firewall-cmd) documentation.
 
 ## Updating the Cluster
 

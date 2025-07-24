@@ -3,9 +3,7 @@ import ISO6391 from "iso-639-1";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
-import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import capitalize from "lodash/fp/capitalize";
-import RegexColorize from "regex-colorize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { none, notSpecified } from "@/layouts/empty";
@@ -19,8 +17,9 @@ import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
-import { WorkflowScopeType } from "@/types/workflow";
+import { WorkflowScopeType, type StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
+import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { pluralOf } from "@/utils/pluralize";
@@ -43,6 +42,9 @@ export class ConfigDetails extends BtrixElement {
 
   @property({ type: Array })
   seeds?: Seed[];
+
+  @property({ type: Object })
+  seedFile?: StorageSeedFile;
 
   @property({ type: Boolean })
   anchorLinks = false;
@@ -115,13 +117,18 @@ export class ConfigDetails extends BtrixElement {
             (config) => html`
               ${this.renderSetting(
                 msg("Crawl Scope"),
-                when(this.seeds, (seeds) => {
-                  if (!config.scopeType) return;
-                  if (isPageScopeType(config.scopeType) && seeds.length > 1) {
-                    return scopeTypeLabel[WorkflowScopeType.PageList];
-                  }
-                  return scopeTypeLabel[config.scopeType];
-                }),
+                config.seedFileId
+                  ? scopeTypeLabel[WorkflowScopeType.PageList]
+                  : when(this.seeds, (seeds) => {
+                      if (!config.scopeType) return;
+                      if (
+                        isPageScopeType(config.scopeType) &&
+                        seeds.length > 1
+                      ) {
+                        return scopeTypeLabel[WorkflowScopeType.PageList];
+                      }
+                      return scopeTypeLabel[config.scopeType];
+                    }),
               )}
               ${isPageScopeType(config.scopeType)
                 ? this.renderConfirmUrlListSettings(config)
@@ -236,7 +243,7 @@ export class ConfigDetails extends BtrixElement {
               () =>
                 html`<a
                   class="text-blue-500 hover:text-blue-600"
-                  href=${`/orgs/${crawlConfig!.oid}/browser-profiles/profile/${
+                  href=${`${this.navigate.orgBasePath}/browser-profiles/profile/${
                     crawlConfig!.profileid
                   }`}
                   @click=${this.navigate.link}
@@ -372,30 +379,59 @@ export class ConfigDetails extends BtrixElement {
   private readonly renderConfirmUrlListSettings = (
     config: CrawlConfig["config"],
   ) => {
+    const seedFile = () =>
+      when(
+        this.seedFile,
+        (file) =>
+          html`<btrix-file-list>
+            <btrix-file-list-item
+              name=${file.originalFilename}
+              size=${file.size}
+              href=${file.path}
+              .removable=${false}
+            >
+              <span slot="name" class="flex gap-1 overflow-hidden">
+                <sl-tooltip content=${file.originalFilename}>
+                  <span class="truncate">${file.originalFilename}</span>
+                </sl-tooltip>
+                <span class="text-neutral-400" role="separator">&mdash;</span>
+                <span class="whitespace-nowrap text-neutral-500"
+                  >${this.localize.number(file.seedCount)}
+                  ${pluralOf("URLs", file.seedCount)}</span
+                >
+              </span>
+            </btrix-file-list-item>
+          </btrix-file-list>`,
+      );
+
+    const seeds = () =>
+      when(
+        this.seeds,
+        (seeds) => html`
+          <ul>
+            ${seeds.map(
+              (seed: Seed) => html`
+                <li>
+                  <a
+                    class="text-blue-600 hover:text-blue-500 hover:underline"
+                    href="${seed.url}"
+                    target="_blank"
+                    rel="noreferrer"
+                    >${seed.url}</a
+                  >
+                </li>
+              `,
+            )}
+          </ul>
+        `,
+      );
+
     return html`
       ${this.renderSetting(
-        config.scopeType === WorkflowScopeType.Page
+        config.scopeType === WorkflowScopeType.Page && !config.seedFileId
           ? msg("Page URL")
           : msg("Page URLs"),
-        this.seeds?.length
-          ? html`
-              <ul>
-                ${this.seeds.map(
-                  (seed: Seed) => html`
-                    <li>
-                      <a
-                        class="text-blue-600 hover:text-blue-500 hover:underline"
-                        href="${seed.url}"
-                        target="_blank"
-                        rel="noreferrer"
-                        >${seed.url}</a
-                      >
-                    </li>
-                  `,
-                )}
-              </ul>
-            `
-          : undefined,
+        config.seedFileId ? seedFile() : seeds(),
         true,
       )}
       ${this.renderSetting(
@@ -433,19 +469,18 @@ export class ConfigDetails extends BtrixElement {
           : undefined,
         true,
       )}
-      ${when(scopeType === WorkflowScopeType.Prefix, () =>
+      ${when(scopeType === WorkflowScopeType.Custom, () =>
         this.renderSetting(
-          msg("Extra URL Prefixes in Scope"),
+          msg("URL Prefixes in Scope"),
           includeUrlList.length
             ? html`
-                <ul>
-                  ${includeUrlList.map(
-                    (url: string) =>
-                      staticHtml`<li class="regex">${unsafeStatic(
-                        new RegexColorize().colorizeText(url) as string,
-                      )}</li>`,
-                  )}
-                </ul>
+                <btrix-data-table
+                  .columns=${[msg("URL Prefix")]}
+                  .rows=${includeUrlList.map((url) => [
+                    unescapeCustomPrefix(url),
+                  ])}
+                >
+                </btrix-data-table>
               `
             : none,
           true,

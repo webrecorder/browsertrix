@@ -7,3 +7,6 @@ import("./queue-exclusion-form");
 import("./queue-exclusion-table");
 import("./workflow-editor");
 import("./workflow-list");
+import("./workflow-schedule-filter");
+import("./workflow-tag-filter");
+import("./workflow-profile-filter");

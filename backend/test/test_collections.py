@@ -401,7 +401,7 @@ def test_get_collection(crawler_auth_headers, default_org_id):
 def test_get_collection_replay(crawler_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/replay.json",
-        headers=crawler_auth_headers,
+        headers={"host": "custom-domain.example.com", **crawler_auth_headers},
     )
     assert r.status_code == 200
     data = r.json()
@@ -421,8 +421,9 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
     assert data["initialPages"]
-    assert data["pagesQueryUrl"].endswith(
-        f"/orgs/{default_org_id}/collections/{_coll_id}/pages"
+    assert (
+        data["pagesQueryUrl"]
+        == f"http://custom-domain.example.com/api/orgs/{default_org_id}/collections/{_coll_id}/pages"
     )
     assert data["downloadUrl"] is None
     assert "preloadResources" in data
@@ -455,12 +456,13 @@ def test_collection_public(crawler_auth_headers, default_org_id):
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
-        headers=crawler_auth_headers,
+        headers={"host": "custom-domain.example.com", **crawler_auth_headers},
     )
     data = r.json()
     assert data["initialPages"]
-    assert data["pagesQueryUrl"].endswith(
-        f"/orgs/{default_org_id}/collections/{_coll_id}/public/pages"
+    assert (
+        data["pagesQueryUrl"]
+        == f"http://custom-domain.example.com/api/orgs/{default_org_id}/collections/{_coll_id}/public/pages"
     )
     assert data["downloadUrl"] is not None
     assert "preloadResources" in data
@@ -1274,14 +1276,14 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
-        headers=crawler_auth_headers,
+        headers={"Host": "localhost:30870", **crawler_auth_headers},
     )
     assert r.status_code == 200
     collection = r.json()
     thumbnail = collection["thumbnail"]
 
     assert thumbnail["name"]
-    assert thumbnail["path"]
+    assert thumbnail["path"].startswith("http://localhost:30870/data/")
     assert thumbnail["hash"]
     assert thumbnail["size"] > 0
 
@@ -1333,7 +1335,11 @@ def test_list_public_colls_home_url_thumbnail():
     )
     non_public_image_fields = ("originalFilename", "userid", "userName", "created")
 
-    r = requests.get(f"{API_PREFIX}/public/orgs/{default_org_slug}/collections")
+    r = requests.get(
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections",
+        headers={"Host": "localhost:30870"},
+    )
+
     assert r.status_code == 200
     collections = r.json()["collections"]
     assert len(collections) == 2
@@ -1367,7 +1373,7 @@ def test_list_public_colls_home_url_thumbnail():
             assert thumbnail
 
             assert thumbnail["name"]
-            assert thumbnail["path"]
+            assert thumbnail["path"].startswith("http://localhost:30870/data/")
             assert thumbnail["hash"]
             assert thumbnail["size"]
             assert thumbnail["mime"]
@@ -1383,7 +1389,8 @@ def test_list_public_colls_home_url_thumbnail():
 
 def test_get_public_collection(default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}"
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}",
+        headers={"Host": "localhost:30870"},
     )
     assert r.status_code == 200
     coll = r.json()
@@ -1417,7 +1424,7 @@ def test_get_public_collection(default_org_id):
     assert thumbnail
 
     assert thumbnail["name"]
-    assert thumbnail["path"]
+    assert thumbnail["path"].startswith("http://localhost:30870/data/")
     assert thumbnail["hash"]
     assert thumbnail["size"]
     assert thumbnail["mime"]

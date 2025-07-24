@@ -1,11 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import type {
-  SlChangeEvent,
-  SlCheckbox,
-  SlDialog,
-  SlRadioGroup,
-  SlSelectEvent,
-} from "@shoelace-style/shoelace";
+import type { SlDialog, SlSelectEvent } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
@@ -18,22 +12,32 @@ import {
   type ListWorkflow,
   type Seed,
   type Workflow,
-  type WorkflowParams,
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type {
+  BtrixFilterChipChangeEvent,
+  FilterChip,
+} from "@/components/ui/filter-chip";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsController } from "@/controllers/searchParams";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import { type BtrixChangeWorkflowProfileFilterEvent } from "@/features/crawl-workflows/workflow-profile-filter";
+import type { BtrixChangeWorkflowScheduleFilterEvent } from "@/features/crawl-workflows/workflow-schedule-filter";
+import type { BtrixChangeWorkflowTagFilterEvent } from "@/features/crawl-workflows/workflow-tag-filter";
 import { pageHeader } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import { NewWorkflowOnlyScopeType } from "@/types/workflow";
+import {
+  NewWorkflowOnlyScopeType,
+  type StorageSeedFile,
+} from "@/types/workflow";
 import { isApiError } from "@/utils/api";
+import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
@@ -51,8 +55,6 @@ const FILTER_BY_CURRENT_USER_STORAGE_KEY =
 const INITIAL_PAGE_SIZE = 10;
 const POLL_INTERVAL_SECONDS = 10;
 const ABORT_REASON_THROTTLE = "throttled";
-// NOTE Backend pagination max is 1000
-const SEEDS_MAX = 1000;
 
 const sortableFields: Record<
   SortField,
@@ -128,6 +130,15 @@ export class WorkflowsList extends BtrixElement {
   @state()
   private filterByCurrentUser = false;
 
+  @state()
+  private filterByTags?: string[];
+
+  @state()
+  private filterByTagsType: "and" | "or" = "or";
+
+  @state()
+  private filterByProfiles?: string[];
+
   @query("#deleteDialog")
   private readonly deleteDialog?: SlDialog | null;
 
@@ -164,11 +175,27 @@ export class WorkflowsList extends BtrixElement {
       this.filterByCurrentUser = false;
     }
 
+    if (params.has("tags")) {
+      this.filterByTags = params.getAll("tags");
+    } else {
+      this.filterByTags = undefined;
+    }
+
+    if (params.has("profiles")) {
+      this.filterByProfiles = params.getAll("profiles");
+    } else {
+      this.filterByProfiles = undefined;
+    }
+
     // add filters present in search params
     for (const [key, value] of params) {
       // Filter by current user
       if (key === "mine") {
         this.filterByCurrentUser = value === "true";
+      }
+
+      if (key === "tagsType") {
+        this.filterByTagsType = value === "and" ? "and" : "or";
       }
 
       // Sorting field
@@ -191,7 +218,18 @@ export class WorkflowsList extends BtrixElement {
       }
 
       // Ignored params
-      if (["page", "mine", "sortBy", "sortDir"].includes(key)) continue;
+      if (
+        [
+          "page",
+          "mine",
+          "tags",
+          "tagsType",
+          "profiles",
+          "sortBy",
+          "sortDir",
+        ].includes(key)
+      )
+        continue;
 
       // Convert string bools to filter values
       if (value === "true") {
@@ -229,6 +267,9 @@ export class WorkflowsList extends BtrixElement {
     // Props that reset the page to 1 when changed
     const resetToFirstPageProps = [
       "filterByCurrentUser",
+      "filterByTags",
+      "filterByTagsType",
+      "filterByProfiles",
       "filterByScheduled",
       "filterBy",
       "orderBy",
@@ -267,6 +308,9 @@ export class WorkflowsList extends BtrixElement {
     if (
       changedProperties.has("filterBy") ||
       changedProperties.has("filterByCurrentUser") ||
+      changedProperties.has("filterByTags") ||
+      changedProperties.has("filterByTagsType") ||
+      changedProperties.has("filterByProfiles") ||
       changedProperties.has("orderBy")
     ) {
       this.searchParams.update((params) => {
@@ -283,6 +327,15 @@ export class WorkflowsList extends BtrixElement {
           // Filter by current user
           ["mine", this.filterByCurrentUser || undefined],
 
+          ["tags", this.filterByTags],
+
+          [
+            "tagsType",
+            this.filterByTagsType !== "or" ? this.filterByTagsType : undefined,
+          ],
+
+          ["profiles", this.filterByProfiles],
+
           // Sorting fields
           [
             "sortBy",
@@ -297,11 +350,22 @@ export class WorkflowsList extends BtrixElement {
               ? this.orderBy.direction
               : undefined,
           ],
-        ] satisfies [string, boolean | string | undefined][];
+        ] satisfies [string, boolean | string | string[] | undefined][];
 
         for (const [filter, value] of newParams) {
           if (value !== undefined) {
-            params.set(filter, value.toString());
+            if (Array.isArray(value)) {
+              // Rather than a more efficient method where we compare the existing & wanted arrays,
+              // it's simpler to just delete and re-append values here. If we were working with large
+              // arrays, we could change this, but we'll leave it as is for now — if we were working
+              // with truly large arrays, we wouldn't be using search params anyways.
+              params.delete(filter);
+              value.forEach((v) => {
+                params.append(filter, v);
+              });
+            } else {
+              params.set(filter, value.toString());
+            }
           } else {
             params.delete(filter);
           }
@@ -523,67 +587,8 @@ export class WorkflowsList extends BtrixElement {
 
   private renderControls() {
     return html`
-      <div class="mb-2 flex flex-wrap items-center justify-end gap-2 md:gap-4">
-        <div class=" grow basis-96">${this.renderSearch()}</div>
-
-        <label class="flex flex-wrap items-center" for="schedule-filter">
-          <span class="mr-2 whitespace-nowrap text-sm text-neutral-500">
-            ${msg("Schedule:")}
-          </span>
-          <sl-radio-group
-            size="small"
-            id="schedule-filter"
-            @sl-change=${(e: SlChangeEvent) => {
-              const filter = (e.target as SlRadioGroup).value;
-              switch (filter) {
-                case "all-schedules":
-                  this.filterBy = {
-                    ...this.filterBy,
-                    schedule: undefined,
-                  };
-                  break;
-                case "scheduled":
-                  this.filterBy = {
-                    ...this.filterBy,
-                    schedule: true,
-                  };
-                  break;
-                case "unscheduled":
-                  this.filterBy = {
-                    ...this.filterBy,
-                    schedule: false,
-                  };
-                  break;
-              }
-            }}
-            value=${this.filterBy.schedule === undefined
-              ? "all-schedules"
-              : this.filterBy.schedule
-                ? "scheduled"
-                : "unscheduled"}
-          >
-            <sl-tooltip content=${msg("All Schedule States")}>
-              <sl-radio-button value="all-schedules" pill>
-                <sl-icon
-                  name="asterisk"
-                  label=${msg("All Schedule States")}
-                ></sl-icon>
-              </sl-radio-button>
-            </sl-tooltip>
-            <sl-radio-button value="unscheduled" pill>
-              <sl-icon
-                name="calendar2-x"
-                slot="prefix"
-                label=${msg("No Schedule")}
-              ></sl-icon>
-              ${msg("None")}
-            </sl-radio-button>
-            <sl-radio-button value="scheduled" pill>
-              <sl-icon name="calendar2-check" slot="prefix"></sl-icon>
-              ${msg("Scheduled")}
-            </sl-radio-button>
-          </sl-radio-group>
-        </label>
+      <div class="flex flex-wrap items-center gap-2 md:gap-4">
+        <div class="grow basis-1/2">${this.renderSearch()}</div>
 
         <div class="flex items-center">
           <label
@@ -636,35 +641,96 @@ export class WorkflowsList extends BtrixElement {
             ></sl-icon-button>
           </sl-tooltip>
         </div>
-        <div class="flex flex-wrap gap-2">
-          <label>
-            <span class="mr-1 text-xs text-neutral-500"
-              >${msg("Show Only Running")}</span
-            >
-            <sl-switch
-              @sl-change=${(e: CustomEvent) => {
-                this.filterBy = {
-                  ...this.filterBy,
-                  isCrawlRunning: (e.target as SlCheckbox).checked || undefined,
-                };
-              }}
-              ?checked=${this.filterBy.isCrawlRunning === true}
-            ></sl-switch>
-          </label>
 
-          <label>
-            <span class="mr-1 text-xs text-neutral-500"
-              >${msg("Show Only Mine")}</span
-            >
-            <sl-switch
-              @sl-change=${(e: CustomEvent) =>
-                (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
-              ?checked=${this.filterByCurrentUser}
-            ></sl-switch>
-          </label>
-        </div>
+        ${this.renderFilters()}
       </div>
     `;
+  }
+
+  private renderFilters() {
+    return html`<div class="flex flex-wrap items-center gap-2">
+      <span class="whitespace-nowrap text-sm text-neutral-500">
+        ${msg("Filter by:")}
+      </span>
+
+      <btrix-workflow-schedule-filter
+        .schedule=${this.filterBy.schedule}
+        @btrix-change=${(e: BtrixChangeWorkflowScheduleFilterEvent) => {
+          this.filterBy = {
+            ...this.filterBy,
+            schedule: e.detail.value,
+          };
+        }}
+      ></btrix-workflow-schedule-filter>
+
+      <btrix-workflow-tag-filter
+        .tags=${this.filterByTags}
+        @btrix-change=${(e: BtrixChangeWorkflowTagFilterEvent) => {
+          this.filterByTags = e.detail.value?.tags;
+          this.filterByTagsType = e.detail.value?.type || "or";
+        }}
+      ></btrix-workflow-tag-filter>
+
+      <btrix-workflow-profile-filter
+        .profiles=${this.filterByProfiles}
+        @btrix-change=${(e: BtrixChangeWorkflowProfileFilterEvent) => {
+          this.filterByProfiles = e.detail.value;
+        }}
+      ></btrix-workflow-profile-filter>
+
+      <btrix-filter-chip
+        ?checked=${this.filterBy.isCrawlRunning === true}
+        @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
+          const { checked } = e.target as FilterChip;
+
+          this.filterBy = {
+            ...this.filterBy,
+            isCrawlRunning: checked ? true : undefined,
+          };
+        }}
+      >
+        ${msg("Running")}
+      </btrix-filter-chip>
+
+      <btrix-filter-chip
+        ?checked=${this.filterByCurrentUser}
+        @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
+          const { checked } = e.target as FilterChip;
+
+          this.filterByCurrentUser = Boolean(checked);
+        }}
+      >
+        ${msg("Mine")}
+      </btrix-filter-chip>
+
+      ${when(
+        [
+          this.filterBy.schedule,
+          this.filterBy.isCrawlRunning,
+          this.filterByCurrentUser || undefined,
+          this.filterByTags,
+        ].filter((v) => v !== undefined).length > 1,
+        () => html`
+          <sl-button
+            class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
+            size="small"
+            variant="text"
+            @click=${() => {
+              this.filterBy = {
+                ...this.filterBy,
+                schedule: undefined,
+                isCrawlRunning: undefined,
+              };
+              this.filterByCurrentUser = false;
+              this.filterByTags = undefined;
+            }}
+          >
+            <sl-icon slot="prefix" name="x-lg"></sl-icon>
+            ${msg("Clear All")}
+          </sl-button>
+        `,
+      )}
+    </div>`;
   }
 
   private renderSearch() {
@@ -884,7 +950,11 @@ export class WorkflowsList extends BtrixElement {
   }
 
   private renderEmptyState() {
-    if (Object.keys(this.filterBy).length) {
+    if (
+      Object.keys(this.filterBy).length ||
+      this.filterByCurrentUser ||
+      this.filterByTags
+    ) {
       return html`
         <div class="rounded-lg border bg-neutral-50 p-4">
           <p class="text-center">
@@ -895,6 +965,8 @@ export class WorkflowsList extends BtrixElement {
               class="font-medium text-neutral-500 underline hover:no-underline"
               @click=${() => {
                 this.filterBy = {};
+                this.filterByCurrentUser = false;
+                this.filterByTags = undefined;
               }}
             >
               ${msg("Clear search and filters")}
@@ -951,11 +1023,14 @@ export class WorkflowsList extends BtrixElement {
           this.workflows?.pageSize ||
           INITIAL_PAGE_SIZE,
         userid: this.filterByCurrentUser ? this.userInfo?.id : undefined,
+        tag: this.filterByTags || undefined,
+        tagMatch: this.filterByTagsType,
+        profileIds: this.filterByProfiles || undefined,
         sortBy: this.orderBy.field,
         sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
       },
       {
-        arrayFormat: "comma",
+        arrayFormat: "none", // For tags
       },
     );
 
@@ -975,33 +1050,38 @@ export class WorkflowsList extends BtrixElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig(workflow: ListWorkflow) {
-    const [fullWorkflow, seeds] = await Promise.all([
-      this.getWorkflow(workflow),
-      this.getSeeds(workflow),
-    ]);
+    const fullWorkflow = await this.getWorkflow(workflow);
+    let seeds;
+    let seedFile;
 
-    const workflowParams: WorkflowParams = {
-      ...fullWorkflow,
-      name: workflow.name ? msg(str`${workflow.name} Copy`) : "",
-    };
+    if (fullWorkflow.config.seedFileId) {
+      seedFile = await this.getSeedFile(fullWorkflow.config.seedFileId);
+    } else {
+      seeds = await this.getSeeds(workflow);
+    }
 
-    this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, {
-      workflow: workflowParams,
-      seeds: seeds.items,
+    const settings = settingsForDuplicate({
+      workflow: fullWorkflow,
+      seeds,
+      seedFile,
     });
 
-    if (seeds.total > SEEDS_MAX) {
+    this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, settings);
+
+    if (seeds && seeds.total > seeds.items.length) {
+      const urlCount = this.localize.number(seeds.items.length);
+
+      // This is likely an edge case for old workflows with >1,000 seeds
+      // or URL list workflows created via API.
       this.notify.toast({
-        title: msg(str`Partially copied Workflow`),
-        message: msg(
-          str`Only first ${this.localize.number(SEEDS_MAX)} URLs were copied.`,
-        ),
+        title: msg(str`Partially copied workflow settings`),
+        message: msg(str`The first ${urlCount} URLs were copied.`),
         variant: "warning",
         id: "workflow-copied-status",
       });
     } else {
       this.notify.toast({
-        message: msg(str`Copied Workflow to new template.`),
+        message: msg("Copied settings to new workflow."),
         variant: "success",
         icon: "check2-circle",
         id: "workflow-copied-status",
@@ -1168,6 +1248,13 @@ export class WorkflowsList extends BtrixElement {
     // NOTE Returns first 1000 seeds (backend pagination max)
     const data = await this.api.fetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/seeds`,
+    );
+    return data;
+  }
+
+  private async getSeedFile(seedFileId: string) {
+    const data = await this.api.fetch<StorageSeedFile>(
+      `/orgs/${this.orgId}/files/${seedFileId}`,
     );
     return data;
   }

@@ -4,7 +4,6 @@ import requests
 
 from .conftest import API_PREFIX
 
-
 cid = None
 cid_single_page = None
 UPDATED_NAME = "Updated name"
@@ -13,6 +12,8 @@ UPDATED_TAGS = ["tag3", "tag4"]
 
 _coll_id = None
 _admin_crawl_cid = None
+
+_seed_file_id = None
 
 
 def test_crawl_config_usernames(
@@ -519,6 +520,11 @@ def test_workflow_total_size_and_last_crawl_stats(
             assert workflow["lastRun"]
             assert workflow["lastCrawlSize"] > 0
 
+            stats = workflow["lastCrawlStats"]
+            assert stats["found"] > 0
+            assert stats["done"] > 0
+            assert stats["size"] > 0
+
             if last_crawl_id == admin_crawl_id:
                 global _admin_crawl_cid
                 _admin_crawl_cid = workflow["id"]
@@ -544,6 +550,11 @@ def test_workflow_total_size_and_last_crawl_stats(
     assert data["lastRun"]
     assert data["lastCrawlSize"] > 0
 
+    stats = data["lastCrawlStats"]
+    assert stats["found"] > 0
+    assert stats["done"] > 0
+    assert stats["size"] > 0
+
 
 def test_incremental_workflow_total_size_and_last_crawl_stats(
     crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id
@@ -563,6 +574,7 @@ def test_incremental_workflow_total_size_and_last_crawl_stats(
     last_crawl_started = data["lastCrawlStartTime"]
     last_crawl_finished = data["lastCrawlTime"]
     last_run = data["lastRun"]
+    last_stats = data["lastCrawlStats"]
 
     # Run new crawl in this workflow
     r = requests.post(
@@ -601,6 +613,10 @@ def test_incremental_workflow_total_size_and_last_crawl_stats(
     assert data["lastCrawlStartTime"] > last_crawl_started
     assert data["lastCrawlTime"] > last_crawl_finished
     assert data["lastRun"] > last_run
+    stats = data["lastCrawlStats"]
+    assert stats["found"] > 0
+    assert stats["done"] > 0
+    assert stats["size"] > 0
 
     # Delete new crawl
     r = requests.post(
@@ -627,6 +643,7 @@ def test_incremental_workflow_total_size_and_last_crawl_stats(
     assert data["lastCrawlStartTime"] == last_crawl_started
     assert data["lastCrawlTime"] == last_crawl_finished
     assert data["lastRun"] == last_run
+    assert data["lastCrawlStats"] == last_stats
 
 
 def test_get_config_seeds(crawler_auth_headers, default_org_id, url_list_config_id):
@@ -943,3 +960,38 @@ def test_validate_custom_behavior(crawler_auth_headers, default_org_id):
     )
     assert r.status_code == 404
     assert r.json()["detail"] == "custom_behavior_branch_not_found"
+
+
+def test_add_crawl_config_with_seed_file(
+    crawler_auth_headers, default_org_id, seed_file_id, seed_file_config_id
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{seed_file_config_id}/",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["id"] == seed_file_config_id
+    assert data["name"] == "Seed File Test Crawl"
+    assert data["config"]["seedFileId"] == seed_file_id
+    assert data["config"]["seeds"] is None
+
+
+def test_delete_in_use_seed_file(
+    crawler_auth_headers, default_org_id, seed_file_id, seed_file_config_id
+):
+    # Attempt to delete in-use seed file, verify we get 400 response
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/files/{seed_file_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "seed_file_in_use"
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/files/{seed_file_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["id"] == seed_file_id

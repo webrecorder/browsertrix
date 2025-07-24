@@ -30,7 +30,7 @@
       "@/*": ["./src/*"],
       "~assets/*": ["./src/assets/*"],
     },
-    "lib": ["DOM", "DOM.Iterable", "ES2021.WeakRef"],
+    "lib": ["DOM", "DOM.Iterable", "ES2021.WeakRef", "ES2021.Intl"],
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules"],

@@ -1,6 +1,6 @@
 {
   "name": "browsertrix-frontend",
-  "version": "1.17.2",
+  "version": "1.18.0",
   "main": "index.ts",
   "license": "AGPL-3.0-or-later",
   "dependencies": {

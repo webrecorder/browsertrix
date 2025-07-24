@@ -147,6 +147,20 @@ const pluralFormatter = cached(
   { cacheConstructor: Map },
 );
 
+const listFormatter = cached(
+  (
+    lang: LanguageCode,
+    useNavigatorLocales: boolean,
+    navigatorLocales: readonly string[],
+    options: Intl.ListFormatOptions,
+  ) =>
+    new Intl.ListFormat(
+      mergeLocales(lang, useNavigatorLocales, navigatorLocales),
+      options,
+    ),
+  { cacheConstructor: Map },
+);
+
 export class Localize {
   get activeLanguage() {
     // Use html `lang` as the source of truth since that's
@@ -299,6 +313,23 @@ export class Localize {
       unit,
       unitDisplay: opts.unitDisplay,
     });
+  };
+
+  readonly list = (values: string[], options?: Intl.ListFormatOptions) => {
+    const opts: Intl.ListFormatOptions = {
+      style: "long",
+      type: "conjunction",
+      ...options,
+    };
+
+    const formatter = listFormatter(
+      localize.activeLanguage,
+      appState.userPreferences?.useBrowserLanguageForFormatting ?? true,
+      navigator.languages,
+      opts,
+    );
+
+    return formatter.formatToParts(values);
   };
 }
 

@@ -86,7 +86,7 @@ invite_expire_seconds: 604800
 paused_crawl_limit_minutes: 10080
 
 # base url for replayweb.page
-rwp_base_url: "https://cdn.jsdelivr.net/npm/replaywebpage@2.3.3/"
+rwp_base_url: "https://cdn.jsdelivr.net/npm/replaywebpage/"
 
 superuser:
   # set this to enable a superuser admin
@@ -106,7 +106,7 @@ replica_deletion_delay_days: 0
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.17.2"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.18.0"
 backend_pull_policy: "IfNotPresent"
 
 backend_password_secret: "PASSWORD!"
@@ -162,9 +162,18 @@ backend_avg_cpu_threshold: 80
 # scale up if avg memory utilization exceeds
 backend_avg_memory_threshold: 95
 
+# Cron schedule for periodically cleaning up unused files
+# Defaults to every Sunday at midnight
+cleanup_job_cron_schedule: "0 0 * * 0"
+
+# number of minutes before unused seed files are eligible
+# for cleanup. defaults to 1 day (1440 minutes) 
+cleanup_files_after_minutes: 1440
+
+
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.17.2"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.18.0"
 frontend_pull_policy: "IfNotPresent"
 
 frontend_cpu: "10m"
@@ -255,8 +264,11 @@ crawler_namespace: "crawlers"
 # if set, will restrict QA to image names that are >= than this value
 # min_qa_crawler_image: ""
 
-# if set, will restrict autoclick behavior to image names that are >= than this value
+# if set, will restrict autoclick behavior to image names that are >= this value
 min_autoclick_crawler_image: "docker.io/webrecorder/browsertrix-crawler:1.5.0"
+
+# if set, will restrict seed files to image names that are >= this value
+min_seed_file_crawler_image: "docker.io/webrecorder/browsertrix-crawler:1.7.0"
 
 # optional: enable to use a persist volume claim for all crawls
 # can be enabled to use a multi-write shared filesystem

@@ -122,7 +122,7 @@ def test_validate_new_org_with_quotas_and_update_name(admin_auth_headers):
 
     data = r.json()
     assert data["slug"] == "test-users-archive"
-    assert data["name"] == "Test User's Archive"
+    assert data["name"] == "Test User’s Archive"
 
     assert data["quotas"] == {
         "maxPagesPerCrawl": 100,
@@ -239,7 +239,7 @@ def test_login_existing_user_for_invite():
     org = data["org"]
 
     assert org["id"] == new_subs_oid_2
-    assert org["name"] == "Test User's Archive 2"
+    assert org["name"] == "Test User’s Archive 2"
     assert org["slug"] == "test-users-archive-2"
 
     assert org["quotas"] == {

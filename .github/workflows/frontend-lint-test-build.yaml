@@ -244,6 +244,10 @@ jobs:
         run: yarn install --frozen-lockfile
 
       # Localize:
+      - name: Localization extract dry run
+        working-directory: frontend
+        run: yarn localize:extract
+
       - name: Localization build dry run
         working-directory: frontend
         run: yarn localize:build

@@ -71,6 +71,8 @@ data:
 
   MIN_AUTOCLICK_CRAWLER_IMAGE: "{{ .Values.min_autoclick_crawler_image }}"
 
+  MIN_SEED_FILE_CRAWLER_IMAGE: "{{ .Values.min_seed_file_crawler_image }}"
+
   NUM_BROWSERS: "{{ .Values.crawler_browser_instances }}"
 
   MAX_CRAWLER_MEMORY: "{{ .Values.max_crawler_memory }}"
@@ -99,6 +101,10 @@ data:
 
   PRESIGN_BATCH_SIZE: "{{ .Values.presign_batch_size | default 8 }}"
 
+  CLEANUP_JOB_CRON_SCHEDULE: "{{ .Values.cleanup_job_cron_schedule }}"
+
+  CLEANUP_FILES_AFTER_MINUTES: "{{ .Values.cleanup_files_after_minutes | default 1440 }}"
+
 
 ---
 apiVersion: v1
@@ -113,7 +119,7 @@ data:
   CRAWL_ARGS: {{- include "btrix.crawler_args" . }}
 
   # disable behaviors for QA runs, otherwise use same args
-  QA_ARGS: {{- include "btrix.crawler_args" . }} --behaviors=""
+  QA_ARGS: {{- include "btrix.crawler_args" . }} --behaviors=siteSpecific
 
 ---
 apiVersion: v1

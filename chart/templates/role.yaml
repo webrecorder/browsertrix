@@ -29,7 +29,7 @@ metadata:
   name: bg-job
 rules:
   - apiGroups: ["batch"]
-    resources: ["jobs"]
+    resources: ["jobs", "cronjobs"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 
 ---
