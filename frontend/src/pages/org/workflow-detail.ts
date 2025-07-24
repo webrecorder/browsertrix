@@ -1892,7 +1892,7 @@ export class WorkflowDetail extends BtrixElement {
     return html`
       <div class="aspect-video overflow-hidden rounded-lg border">
         ${guard([this.lastCrawlId], () =>
-          this.latestCrawlTask.render({ complete: this.renderReplay }),
+          when(this.latestCrawlTask.value, this.renderReplay),
         )}
       </div>
     `;
@@ -1960,9 +1960,7 @@ export class WorkflowDetail extends BtrixElement {
     `;
   }
 
-  private readonly renderReplay = (latestCrawl: Crawl | null) => {
-    if (!latestCrawl) return;
-
+  private readonly renderReplay = (latestCrawl: Crawl) => {
     const replaySource = `/api/orgs/${latestCrawl.oid}/crawls/${this.lastCrawlId}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
