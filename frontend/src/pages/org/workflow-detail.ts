@@ -1891,7 +1891,9 @@ export class WorkflowDetail extends BtrixElement {
 
     return html`
       <div class="aspect-video overflow-hidden rounded-lg border">
-        ${guard([this.lastCrawlId], this.renderReplay)}
+        ${guard([this.lastCrawlId], () =>
+          this.latestCrawlTask.render({ complete: this.renderReplay }),
+        )}
       </div>
     `;
   };
@@ -1958,18 +1960,17 @@ export class WorkflowDetail extends BtrixElement {
     `;
   }
 
-  private readonly renderReplay = () => {
-    if (!this.workflow || !this.lastCrawlId) return;
+  private readonly renderReplay = (latestCrawl: Crawl | null) => {
+    if (!latestCrawl) return;
 
-    const replaySource = `/api/orgs/${this.workflow.oid}/crawls/${this.lastCrawlId}/replay.json`;
+    const replaySource = `/api/orgs/${latestCrawl.oid}/crawls/${this.lastCrawlId}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
     return html`
       <replay-web-page
         source="${replaySource}"
-        url="${(this.workflow.seedCount === 1 && this.workflow.firstSeed) ||
-        ""}"
+        url="${(latestCrawl.seedCount === 1 && latestCrawl.firstSeed) || ""}"
         config="${config}"
         replayBase="/replay/"
         noSandbox="true"
