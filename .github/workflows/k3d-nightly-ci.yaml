@@ -3,7 +3,7 @@ name: Nightly tests (K3d)
 on:
   schedule:
     # Run daily at 8am UTC
-    - cron:  '0 8 * * *'
+    - cron: "0 8 * * *"
 
   workflow_dispatch:
 
@@ -59,6 +59,16 @@ jobs:
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
 
+      - name: Build Emails
+        uses: docker/build-push-action@v3
+        with:
+          context: emails
+          load: true
+          #outputs: type=tar,dest=emails.tar
+          tags: webrecorder/browsertrix-emails:latest
+          cache-from: type=gha,scope=emails
+          cache-to: type=gha,scope=emails,mode=max
+
       - name: Build Frontend
         uses: docker/build-push-action@v3
         with:
@@ -69,9 +79,10 @@ jobs:
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
 
-      - name: 'Import Images'
+      - name: "Import Images"
         run: |
           k3d image import webrecorder/browsertrix-backend:latest -m direct -c btrix-nightly --verbose
+          k3d image import webrecorder/browsertrix-emails:latest -m direct -c btrix-nightly --verbose
           k3d image import webrecorder/browsertrix-frontend:latest -m direct -c btrix-nightly --verbose
 
       - name: Install Kubectl
@@ -89,7 +100,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Install Python Libs
         run: pip install -r ./backend/test-requirements.txt
@@ -98,7 +109,7 @@ jobs:
         run: kubectl wait --for=condition=ready pod --all --timeout=240s
 
       - name: Create Extra Test Buckets
-        run:  kubectl exec -i deployment/local-minio -c minio -- mkdir /data/replica-0
+        run: kubectl exec -i deployment/local-minio -c minio -- mkdir /data/replica-0
 
       - name: Run Tests
         run: pytest -vv ./backend/test_nightly/${{ matrix.module }}

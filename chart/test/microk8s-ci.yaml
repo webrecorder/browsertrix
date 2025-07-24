@@ -3,9 +3,11 @@
 
 # use local images
 backend_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
+emails_image: "localhost:32000/webrecorder/browsertrix-emails:latest"
 frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
 
 backend_pull_policy: "IfNotPresent"
+emails_pull_policy: "IfNotPresent"
 frontend_pull_policy: "IfNotPresent"
 
 # for testing only

@@ -93,7 +93,7 @@ class InviteOps:
 
         await self.invites.insert_one(new_user_invite.to_dict())
 
-        self.email.send_user_invite(
+        await self.email.send_user_invite(
             new_user_invite, invite_token, org_name, True, headers
         )
 
@@ -129,7 +129,7 @@ class InviteOps:
 
         await self.invites.insert_one(existing_user_invite.to_dict())
 
-        self.email.send_user_invite(
+        await self.email.send_user_invite(
             existing_user_invite, invite_token, org_name, False, headers
         )
 

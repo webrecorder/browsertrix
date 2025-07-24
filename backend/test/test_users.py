@@ -7,7 +7,6 @@ from .conftest import (
     CRAWLER_USERNAME,
     CRAWLER_USERNAME_LOWERCASE,
     CRAWLER_PW,
-    ADMIN_PW,
     ADMIN_USERNAME,
     FINISHED_STATES,
 )

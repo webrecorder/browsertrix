@@ -323,7 +323,7 @@ class UserManager:
             RESET_VERIFY_TOKEN_LIFETIME_MINUTES,
         )
 
-        self.email.send_user_validation(
+        await self.email.send_user_validation(
             user.email, token, dict(request.headers) if request else None
         )
 
@@ -435,7 +435,7 @@ class UserManager:
         )
 
         print(f"User {user.id} has forgot their password. Reset token: {token}")
-        self.email.send_user_forgot_password(
+        await self.email.send_user_forgot_password(
             user.email, token, request and request.headers
         )
 

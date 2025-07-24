@@ -10,8 +10,9 @@ from typing import Optional, Union
 from email.message import EmailMessage
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+import aiohttp
 from fastapi import HTTPException
-from fastapi.templating import Jinja2Templates
 
 from .models import CreateReplicaJob, DeleteReplicaJob, Organization, InvitePending
 from .utils import is_bool, get_origin
@@ -30,7 +31,7 @@ class EmailSender:
     support_email: str
     survey_url: str
 
-    templates: Jinja2Templates
+    email_template_endpoint: str
 
     log_sent_emails: bool
 
@@ -46,70 +47,92 @@ class EmailSender:
 
         self.log_sent_emails = is_bool(os.environ.get("LOG_SENT_EMAILS"))
 
-        self.templates = Jinja2Templates(
-            directory=os.path.join(os.path.dirname(__file__), "email-templates")
-        )
+        email_template_endpoint = os.environ.get("EMAIL_TEMPLATE_ENDPOINT")
+        if not email_template_endpoint:
+            raise ValueError(
+                "Environment variable EMAIL_TEMPLATE_ENDPOINT is required but not set"
+            )
+        self.email_template_endpoint = email_template_endpoint
 
-    def _send_encrypted(self, receiver: str, name: str, **kwargs) -> None:
+    async def _send_encrypted(self, receiver: str, name: str, **kwargs) -> None:
         """Send Encrypted SMTP Message using given template name"""
 
-        full = self.templates.env.get_template(name).render(kwargs)
-        parts = full.split("~~~")
-        if len(parts) == 3:
-            subject, html, text = parts
-        elif len(parts) == 2:
-            subject, text = parts
-            html = None
-        else:
-            raise HTTPException(status_code=500, detail="invalid_email_template")
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    self.email_template_endpoint + "/" + name,
+                    json=kwargs,
+                ) as resp:
+                    if resp.status != 200:
+                        raise HTTPException(
+                            status_code=resp.status,
+                            detail=await resp.text(),
+                        )
 
-        if self.log_sent_emails:
-            print(full, flush=True)
+                    json = await resp.json()
 
-        if not self.smtp_server:
-            print(
-                f'Email: created "{name}" msg for "{receiver}", but not sent (no SMTP server set)',
-                flush=True,
-            )
-            return
+                    html = json["html"]
+                    text = json["plainText"]
+                    subject = json["subject"]
 
-        msg: Union[EmailMessage, MIMEMultipart]
+                    if self.log_sent_emails:
+                        print(text, flush=True)
 
-        if html:
-            msg = MIMEMultipart("alternative")
-            msg.attach(MIMEText(text.strip(), "plain"))
-            msg.attach(MIMEText(html.strip(), "html"))
-        else:
-            msg = EmailMessage()
-            msg.set_content(text.strip())
+                    if not self.smtp_server:
+                        print(
+                            f'Email: created "{name}" msg for "{receiver}", '
+                            f"but not sent (no SMTP server set)",
+                            flush=True,
+                        )
+                        return
 
-        msg["Subject"] = subject.strip()
-        msg["From"] = self.reply_to
-        msg["To"] = receiver
-        msg["Reply-To"] = msg["From"]
+                    msg: Union[EmailMessage, MIMEMultipart]
 
-        context = ssl.create_default_context()
-        with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
-            if self.smtp_use_tls:
-                server.ehlo()
-                server.starttls(context=context)
-            server.ehlo()
-            if self.password:
-                server.login(self.sender, self.password)
-            server.send_message(msg)
-            # server.sendmail(self.sender, receiver, message)
+                    if html:
+                        msg = MIMEMultipart("alternative")
+                        msg.attach(MIMEText(text.strip(), "plain"))
+                        msg.attach(MIMEText(html.strip(), "html"))
+                    else:
+                        msg = EmailMessage()
+                        msg.set_content(text.strip())
 
-    def send_user_validation(
+                    msg["Subject"] = subject.strip()
+                    msg["From"] = self.reply_to
+                    msg["To"] = receiver
+                    msg["Reply-To"] = msg["From"]
+
+                    context = ssl.create_default_context()
+                    with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                        if self.smtp_use_tls:
+                            server.ehlo()
+                            server.starttls(context=context)
+                        server.ehlo()
+                        if self.password:
+                            server.login(self.sender, self.password)
+                        server.send_message(msg)
+                        # server.sendmail(self.sender, receiver, message)
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            print("Error fetching email template", exc)
+            raise exc
+
+    async def send_user_validation(
         self, receiver_email: str, token: str, headers: Optional[dict] = None
     ):
         """Send email to validate registration email address"""
 
         origin = get_origin(headers)
 
-        self._send_encrypted(receiver_email, "validate", origin=origin, token=token)
+        await self._send_encrypted(
+            receiver_email,
+            "verifyEmail",
+            origin=origin,
+            token=token,
+            receiver_email=receiver_email,
+        )
 
     # pylint: disable=too-many-arguments
-    def send_user_invite(
+    async def send_user_invite(
         self,
         invite: InvitePending,
         token: UUID,
@@ -129,7 +152,7 @@ class EmailSender:
             else f"{origin}/invite/accept/{token}?email={receiver_email}"
         )
 
-        self._send_encrypted(
+        await self._send_encrypted(
             receiver_email,
             "invite",
             invite_url=invite_url,
@@ -139,19 +162,19 @@ class EmailSender:
             support_email=self.support_email,
         )
 
-    def send_user_forgot_password(self, receiver_email, token, headers=None):
+    async def send_user_forgot_password(self, receiver_email, token, headers=None):
         """Send password reset email with token"""
         origin = get_origin(headers)
 
-        self._send_encrypted(
+        await self._send_encrypted(
             receiver_email,
-            "password_reset",
+            "passwordReset",
             origin=origin,
             token=token,
             support_email=self.support_email,
         )
 
-    def send_background_job_failed(
+    async def send_background_job_failed(
         self,
         job: Union[CreateReplicaJob, DeleteReplicaJob],
         finished: datetime,
@@ -159,11 +182,15 @@ class EmailSender:
         org: Optional[Organization] = None,
     ):
         """Send background job failed email to superuser"""
-        self._send_encrypted(
-            receiver_email, "failed_bg_job", job=job, org=org, finished=finished
+        await self._send_encrypted(
+            receiver_email,
+            "failedBgJob",
+            job=job,
+            org=str(org.id) if org else None,
+            finished=finished.isoformat(),
         )
 
-    def send_subscription_will_be_canceled(
+    async def send_subscription_will_be_canceled(
         self,
         cancel_date: datetime,
         user_name: str,
@@ -176,13 +203,13 @@ class EmailSender:
         origin = get_origin(headers)
         org_url = f"{origin}/orgs/{org.slug}/"
 
-        self._send_encrypted(
+        await self._send_encrypted(
             receiver_email,
-            "sub_cancel",
+            "subscriptionCancel",
             org_url=org_url,
             user_name=user_name,
             org_name=org.name,
-            cancel_date=cancel_date,
+            cancel_date=cancel_date.isoformat(),
             support_email=self.support_email,
             survey_url=self.survey_url,
         )

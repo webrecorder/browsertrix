@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-FROM --platform=$BUILDPLATFORM docker.io/library/node:22 as build_deps
+FROM --platform=$BUILDPLATFORM docker.io/library/node:22-alpine as build_deps
 
 WORKDIR /app
 COPY .yarnrc yarn.lock package.json ./
@@ -8,15 +8,15 @@ RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn --p
 
 COPY --link config ./config/
 COPY --link lit-localize.json \
-  postcss.config.js \
-  tailwind.config.js \
-  tsconfig.json \
-  webpack.config.js \
-  webpack.prod.js \
-  .eslintrc.js \
-  tsconfig.eslint.json \
-  index.d.ts \
-  ./
+    postcss.config.js \
+    tailwind.config.js \
+    tsconfig.json \
+    webpack.config.js \
+    webpack.prod.js \
+    .eslintrc.js \
+    tsconfig.eslint.json \
+    index.d.ts \
+    ./
 
 COPY --link lib ./lib/
 COPY --link src ./src/
@@ -29,12 +29,12 @@ ARG GIT_BRANCH_NAME
 ARG VERSION
 
 ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
-  GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
-  VERSION=${VERSION}
+    GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
+    VERSION=${VERSION}
 
 # Prevent Docker image including node_modules to save space
 RUN yarn build && \
-  rm -rf ./node_modules
+    rm -rf ./node_modules
 
 FROM --platform=$BUILDPLATFORM docker.io/library/python:3.12-slim as build_docs
 

@@ -3,9 +3,11 @@
 
 # use local images built to :latest tag
 backend_image: docker.io/webrecorder/browsertrix-backend:latest
+emails_image: docker.io/webrecorder/browsertrix-emails:latest
 frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
 
 backend_pull_policy: "Never"
+emails_pull_policy: "Never"
 frontend_pull_policy: "Never"
 
 default_crawl_filename_template: "@ts-testing-@hostsuffix.wacz"
@@ -31,7 +33,6 @@ mongo_auth:
   username: root
   password: PASSWORD@
 
-
 superuser:
   # set this to enable a superuser admin
   email: admin@example.com
@@ -39,7 +40,6 @@ superuser:
   # optional: if not set, automatically generated
   # change or remove this
   password: PASSW0RD!
-
 
 # test max pages per crawl global limit
 max_pages_per_crawl: 4

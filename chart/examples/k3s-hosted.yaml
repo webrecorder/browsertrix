@@ -16,16 +16,16 @@
 # One way to check that traefik is not running your cluster is with `kubectl get deployments -n kube-system` and see if traefik shows up in the output.
 #
 # Once traefik has been disabled, you must install `nginx-ingress`, which can be installed by:
-# 
+#
 # helm upgrade --install ingress-nginx ingress-nginx \
 #   --repo https://kubernetes.github.io/ingress-nginx \
 #   --namespace ingress-nginx --create-namespace
 #
-# You'll also need to install cert-manager. Browsertrix recommends installing cert-manager through jetpack with the following command: 
+# You'll also need to install cert-manager. Browsertrix recommends installing cert-manager through jetpack with the following command:
 #
 # helm repo add jetstack https://charts.jetstack.io
 # helm repo update
-# 
+#
 # helm repo update jetstack
 # helm upgrade --install \
 #   cert-manager jetstack/cert-manager \
@@ -42,8 +42,8 @@
 # If developing locally, you must import your built containers with ctr
 #
 # `docker save webrecorder/browsertrix-backend:latest | k3s ctr images import --base-name webrecorder/browsertrix-backend:latest -`
+# `docker save webrecorder/browsertrix-emails:latest | k3s ctr images import --base-name webrecorder/browsertrix-emails:latest -`
 # `docker save webrecorder/browsertrix-frontend:latest | k3s ctr images import --base-name webrecorder/browsertrix-frontend:latest -`
-
 
 ingress:
   # required: set host to use tls
@@ -52,13 +52,12 @@ ingress:
 
   # required: set email to use tls
   # uncomment and replace example below with your valid email address
-  #cert_email: "you@yourdomain.org"
+  # cert_email: "you@yourdomain.org"
 
   scheme: "https"
   tls: true
 
 ingress_class: "nginx"
-
 
 # optionally, set host below to enable WACZ signing
 signer:
@@ -67,21 +66,17 @@ signer:
   # uncomment and replace example below with your registered domain
   # host: "second.yourdomain.org"
 
-
 # optionally, override default mongodb auth, used for all data storage:
-
-#mongo_auth:
-  # username: root
-  # password: PASSWORD!
-  
+# mongo_auth:
+#   username: root
+#   password: PASSWORD!
 
 # optionally, set these to custom values
 
-#superuser:
-  # set this to enable a superuser admim
-  # email: admin@example.com
-
-  # optional: if not set, automatically generated
-  # change or remove this
-  # password: PASSWORD!
-
+# superuser:
+#   # set this to enable a superuser admim
+#   email: admin@example.com
+#
+#   # optional: if not set, automatically generated
+#   # change or remove this
+#   # password: PASSWORD!
