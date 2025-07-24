@@ -120,7 +120,7 @@ Avoid using acronyms when reuse is not frequent enough to warrant space savings.
 
 ### Headings
 
-All headings should be set in [title case](https://en.wikipedia.org/wiki/Title_case).
+All headings should be in [MLA style title case](https://capitalizemytitle.com/style/MLA/).
 
 ##### Example
 
