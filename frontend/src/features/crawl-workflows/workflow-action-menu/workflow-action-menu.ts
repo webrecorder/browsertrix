@@ -68,23 +68,34 @@ export class WorkflowActionMenu extends BtrixElement {
           html`${when(
               workflow.isCrawlRunning,
               () => html`
-                ${when(!this.hidePauseResume && !this.disablePauseResume, () =>
-                  paused
-                    ? html`
-                        <sl-menu-item
-                          data-action=${Action.TogglePauseResume}
-                          class="menu-item-success"
-                        >
-                          <sl-icon name="play-circle" slot="prefix"></sl-icon>
-                          ${msg("Resume Crawl")}
-                        </sl-menu-item>
-                      `
-                    : html`
-                        <sl-menu-item data-action=${Action.TogglePauseResume}>
-                          <sl-icon name="pause-circle" slot="prefix"></sl-icon>
-                          ${msg("Pause Crawl")}
-                        </sl-menu-item>
-                      `,
+                ${when(
+                  !this.hidePauseResume &&
+                    !this.disablePauseResume &&
+                    !this.cancelingRun,
+                  () =>
+                    paused
+                      ? html`
+                          <sl-menu-item
+                            data-action=${Action.TogglePauseResume}
+                            class="menu-item-success"
+                            ?disabled=${workflow.lastCrawlStopping}
+                          >
+                            <sl-icon name="play-circle" slot="prefix"></sl-icon>
+                            ${msg("Resume Crawl")}
+                          </sl-menu-item>
+                        `
+                      : html`
+                          <sl-menu-item
+                            data-action=${Action.TogglePauseResume}
+                            ?disabled=${workflow.lastCrawlStopping}
+                          >
+                            <sl-icon
+                              name="pause-circle"
+                              slot="prefix"
+                            ></sl-icon>
+                            ${msg("Pause Crawl")}
+                          </sl-menu-item>
+                        `,
                 )}
 
                 <sl-menu-item
@@ -165,17 +176,15 @@ export class WorkflowActionMenu extends BtrixElement {
           <sl-divider></sl-divider>
         `,
       )}
-      ${when(
-        workflow.tags.length,
-        () =>
-          html`<sl-menu-item
-            @click=${() =>
-              ClipboardController.copyToClipboard(workflow.tags.join(", "))}
-          >
-            <sl-icon name="tags" slot="prefix"></sl-icon>
-            ${msg("Copy Tags")}
-          </sl-menu-item>`,
-      )}
+
+      <sl-menu-item
+        @click=${() =>
+          ClipboardController.copyToClipboard(workflow.tags.join(", "))}
+        ?disabled=${!workflow.tags.length}
+      >
+        <sl-icon name="tags" slot="prefix"></sl-icon>
+        ${msg("Copy Tags")}
+      </sl-menu-item>
 
       <sl-menu-item
         @click=${() => ClipboardController.copyToClipboard(workflow.id)}
@@ -187,6 +196,7 @@ export class WorkflowActionMenu extends BtrixElement {
       ${when(
         canCrawl && !workflow.crawlCount,
         () => html`
+          <sl-divider></sl-divider>
           <sl-menu-item data-action=${Action.Delete} class="menu-item-danger">
             <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${msg("Delete Workflow")}

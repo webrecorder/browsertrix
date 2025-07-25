@@ -233,7 +233,7 @@
   /* Adjust menu item hover and focus styles */
   sl-menu-item,
   btrix-menu-item-link {
-    @apply part-[base]:hover:bg-cyan-50/50 part-[base]:hover:text-cyan-700 part-[base]:focus-visible:bg-cyan-50/50;
+    @apply part-[base]:text-neutral-700 part-[base]:hover:bg-cyan-50/50 part-[base]:hover:text-cyan-700 part-[base]:focus-visible:bg-cyan-50/50;
   }
 
   /* Add menu item variants */
