@@ -305,9 +305,6 @@ export class Dashboard extends BtrixElement {
                 ></sl-divider>
                 ${this.renderStat({
                   value: metrics.archivedItemCount,
-                  secondaryValue: this.localize.bytes(
-                    metrics.storageUsedCrawls + metrics.storageUsedUploads,
-                  ),
                   singleLabel: msg("Archived Item"),
                   pluralLabel: msg("Archived Items"),
                   iconProps: {
@@ -318,6 +315,20 @@ export class Dashboard extends BtrixElement {
                     url: "/items",
                   },
                 })}
+                ${when(
+                  metrics.storageUsedBytes && !metrics.storageQuotaBytes,
+                  () => html`
+                    ${this.renderStat({
+                      value: this.localize.bytes(metrics.storageUsedBytes, {
+                        compactDisplay: "short",
+                      }),
+                      singleLabel: msg("Total"),
+                      iconProps: {
+                        name: "database-fill",
+                      },
+                    })}
+                  `,
+                )}
               </dl>
             `,
           )}
