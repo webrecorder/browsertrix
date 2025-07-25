@@ -130,3 +130,7 @@ To run tests in multiple browsers:
 ```sh
 yarn test --browsers chromium firefox webkit
 ```
+
+## Logging
+
+Calls to `console.log()` and `console.debug()` are discarded by default in production, as configured in `frontend/webpack.prod.js`.
