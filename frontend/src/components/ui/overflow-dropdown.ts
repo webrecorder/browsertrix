@@ -40,7 +40,10 @@ export class OverflowDropdown extends TailwindElement {
   @query("sl-dropdown")
   private readonly dropdown?: SlDropdown;
 
-  @queryAssignedElements({ selector: "sl-menu", flatten: true })
+  @queryAssignedElements({
+    selector: "sl-menu, btrix-workflow-action-menu",
+    flatten: true,
+  })
   private readonly menu!: SlMenu[];
 
   render() {

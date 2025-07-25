@@ -230,17 +230,19 @@
     border: 1px solid var(--sl-panel-border-color);
   }
 
-  sl-menu-item {
-    @apply part-[base]:text-neutral-700 part-[base]:hover:bg-cyan-50/50 part-[base]:focus-visible:bg-cyan-50/50;
+  /* Adjust menu item hover and focus styles */
+  sl-menu-item,
+  btrix-menu-item-link {
+    @apply part-[base]:hover:bg-cyan-50/50 part-[base]:hover:text-cyan-700 part-[base]:focus-visible:bg-cyan-50/50;
   }
 
   /* Add menu item variants */
   .menu-item-success {
-    @apply part-[base]:text-success part-[base]:hover:bg-success-50 part-[base]:focus-visible:bg-success-50;
+    @apply part-[base]:text-success part-[base]:hover:bg-success-50 part-[base]:hover:text-success-700 part-[base]:focus-visible:bg-success-50;
   }
 
   .menu-item-danger {
-    @apply part-[base]:text-danger part-[base]:hover:bg-danger-50 part-[base]:focus-visible:bg-danger-50;
+    @apply part-[base]:text-danger part-[base]:hover:bg-danger-50 part-[base]:hover:text-danger-700 part-[base]:focus-visible:bg-danger-50;
   }
 
   /* Validation styles */
