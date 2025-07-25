@@ -648,7 +648,7 @@ export class Dashboard extends BtrixElement {
                   ${this.localize.bytes(
                     metrics.storageQuotaBytes - metrics.storageUsedBytes,
                   )}
-                  ${msg("Available")}
+                  ${msg("available")}
                 `
               : "",
         )}
