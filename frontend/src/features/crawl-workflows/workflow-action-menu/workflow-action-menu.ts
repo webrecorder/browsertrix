@@ -4,8 +4,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
-import type { BtrixSelectActionEvent } from "./btrix-select-action";
-import { Action } from "./types";
+import { Action, type BtrixSelectActionEvent } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
@@ -14,12 +13,9 @@ import type { Crawl, ListWorkflow, Workflow } from "@/types/crawler";
 import { isNotFailed, isSuccessfullyFinished } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
 
-/**
- * @fires btrix-select-action
- */
 @customElement("btrix-workflow-action-menu")
 @localized()
-export class Component extends BtrixElement {
+export class WorkflowActionMenu extends BtrixElement {
   @property({ type: Object })
   workflow?: ListWorkflow | Workflow;
 
@@ -57,16 +53,13 @@ export class Component extends BtrixElement {
         e.stopPropagation();
         const action = e.detail.item.dataset["action"];
 
-        if (action) {
-          this.dispatchEvent(
-            new CustomEvent<BtrixSelectActionEvent["detail"]>(
-              "btrix-select-action",
-              {
-                detail: { action: action as Action },
-              },
-            ),
-          );
-        }
+        this.dispatchEvent(
+          new CustomEvent<BtrixSelectActionEvent["detail"]>("btrix-select", {
+            detail: { item: { ...e.detail.item, action: action as Action } },
+            bubbles: true,
+            composed: true,
+          }),
+        );
       }}
     >
       ${when(

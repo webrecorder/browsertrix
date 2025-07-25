@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
-import type { SlSelect } from "@shoelace-style/shoelace";
+import type { SlDropdown, SlSelect } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -23,8 +23,10 @@ import {
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
-import type { BtrixSelectActionEvent } from "@/features/crawl-workflows/workflow-action-menu/btrix-select-action";
-import { Action } from "@/features/crawl-workflows/workflow-action-menu/types";
+import {
+  Action,
+  type BtrixSelectActionEvent,
+} from "@/features/crawl-workflows/workflow-action-menu/types";
 import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
@@ -972,7 +974,12 @@ export class WorkflowDetail extends BtrixElement {
         this.renderRunNowButton,
       )}
 
-      <sl-dropdown placement="bottom-end" distance="4" hoist>
+      <sl-dropdown
+        placement="bottom-end"
+        distance="4"
+        hoist
+        @btrix-select=${this.onSelectAction}
+      >
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
         >
@@ -983,14 +990,15 @@ export class WorkflowDetail extends BtrixElement {
           ?hidePauseResume=${hidePauseResume}
           ?disablePauseResume=${disablePauseResume}
           ?cancelingRun=${this.isCancelingRun}
-          @btrix-select-action=${this.onSelectAction}
         ></btrix-workflow-action-menu>
       </sl-dropdown>
     `;
   };
 
   private readonly onSelectAction = (e: BtrixSelectActionEvent) => {
-    switch (e.detail.action) {
+    const dropdown = e.currentTarget as SlDropdown;
+
+    switch (e.detail.item.action) {
       case Action.Run:
         void this.runNowTask.run();
         break;
@@ -1016,9 +1024,12 @@ export class WorkflowDetail extends BtrixElement {
         this.openDialogName = "delete";
         break;
       default:
-        console.debug("unknown workflow action:", e.detail.action);
+        console.debug("unknown workflow action:", e.detail.item.action);
         break;
     }
+
+    void dropdown.hide();
+    dropdown.focusOnTrigger();
   };
 
   private renderDetails() {

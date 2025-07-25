@@ -1,3 +1,5 @@
+import type { BtrixSelectEvent } from "@/events/btrix-select";
+
 export enum Action {
   Run = "run",
   TogglePauseResume = "togglePauseResume",
@@ -8,3 +10,5 @@ export enum Action {
   Duplicate = "duplicate",
   Delete = "delete",
 }
+
+export type BtrixSelectActionEvent = BtrixSelectEvent<{ action: Action }>;

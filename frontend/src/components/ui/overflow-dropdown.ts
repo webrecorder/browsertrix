@@ -11,6 +11,7 @@ import {
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import type { WorkflowActionMenu } from "@/features/crawl-workflows/workflow-action-menu/workflow-action-menu";
 
 /**
  * Dropdown for additional actions.
@@ -44,7 +45,7 @@ export class OverflowDropdown extends TailwindElement {
     selector: "sl-menu, btrix-workflow-action-menu",
     flatten: true,
   })
-  private readonly menu!: SlMenu[];
+  private readonly menu!: (SlMenu | WorkflowActionMenu)[];
 
   render() {
     return html`
@@ -52,6 +53,10 @@ export class OverflowDropdown extends TailwindElement {
         ?disabled=${!this.hasMenuItems}
         hoist
         distance=${ifDefined(this.raised ? "4" : undefined)}
+        @btrix-select=${() => {
+          void this.dropdown?.hide();
+          this.dropdown?.focusOnTrigger();
+        }}
       >
         <btrix-button
           slot="trigger"

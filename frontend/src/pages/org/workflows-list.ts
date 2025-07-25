@@ -24,8 +24,10 @@ import { type SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsController } from "@/controllers/searchParams";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import type { BtrixSelectActionEvent } from "@/features/crawl-workflows/workflow-action-menu/btrix-select-action";
-import { Action } from "@/features/crawl-workflows/workflow-action-menu/types";
+import {
+  Action,
+  type BtrixSelectActionEvent,
+} from "@/features/crawl-workflows/workflow-action-menu/types";
 import { type BtrixChangeWorkflowProfileFilterEvent } from "@/features/crawl-workflows/workflow-profile-filter";
 import type { BtrixChangeWorkflowScheduleFilterEvent } from "@/features/crawl-workflows/workflow-schedule-filter";
 import type { BtrixChangeWorkflowTagFilterEvent } from "@/features/crawl-workflows/workflow-tag-filter";
@@ -800,8 +802,8 @@ export class WorkflowsList extends BtrixElement {
         slot="menu"
         .workflow=${workflow}
         hidePauseResume
-        @btrix-select-action=${async (e: BtrixSelectActionEvent) => {
-          switch (e.detail.action) {
+        @btrix-select=${async (e: BtrixSelectActionEvent) => {
+          switch (e.detail.item.action) {
             case Action.Run:
               void this.runNow(workflow);
               break;
@@ -840,7 +842,7 @@ export class WorkflowsList extends BtrixElement {
               break;
             }
             default:
-              console.debug("unknown workflow action:", e.detail.action);
+              console.debug("unknown workflow action:", e.detail.item.action);
               break;
           }
         }}
