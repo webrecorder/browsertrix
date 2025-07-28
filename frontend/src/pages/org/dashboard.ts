@@ -568,6 +568,16 @@ export class Dashboard extends BtrixElement {
             name="box2"
           ></sl-icon>
           ${msg("Miscellaneous")}
+          <btrix-popover
+            content=${msg(
+              "Total size of all supplementary files in use by your organization, such as workflow URL list files and custom collection thumbnails.",
+            )}
+          >
+            <sl-icon
+              name="info-circle"
+              class="ml-1.5 text-neutral-500"
+            ></sl-icon>
+          </btrix-popover>
         </dt>
         <dd class="font-monostyle text-xs text-neutral-500">
           ${this.localize.bytes(
