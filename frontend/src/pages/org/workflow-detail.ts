@@ -804,7 +804,7 @@ export class WorkflowDetail extends BtrixElement {
         ${this.isCrawler
           ? html`<sl-tooltip content=${msg("Edit Workflow Settings")}>
               <sl-icon-button
-                name="pencil"
+                name="gear"
                 class="text-base"
                 href="${this.basePath}?edit"
                 @click=${this.navigate.link}
