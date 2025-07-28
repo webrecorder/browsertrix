@@ -789,16 +789,30 @@ export class WorkflowDetail extends BtrixElement {
       `;
     }
 
-    if (this.workflowTab === WorkflowTab.Settings && this.isCrawler) {
-      return html` <sl-tooltip content=${msg("Edit Workflow Settings")}>
-        <sl-icon-button
-          name="pencil"
-          class="text-base"
-          href="${this.basePath}?edit"
-          @click=${this.navigate.link}
+    if (this.workflowTab === WorkflowTab.Settings) {
+      return html`
+        <btrix-copy-button
+          name="filetype-json"
+          value=${ifDefined(
+            this.workflow && JSON.stringify(this.workflow.config),
+          )}
+          content=${msg("Copy as JSON")}
+          size="medium"
         >
-        </sl-icon-button>
-      </sl-tooltip>`;
+        </btrix-copy-button>
+
+        ${this.isCrawler
+          ? html`<sl-tooltip content=${msg("Edit Workflow Settings")}>
+              <sl-icon-button
+                name="pencil"
+                class="text-base"
+                href="${this.basePath}?edit"
+                @click=${this.navigate.link}
+              >
+              </sl-icon-button>
+            </sl-tooltip>`
+          : nothing}
+      `;
     }
 
     return nothing;
