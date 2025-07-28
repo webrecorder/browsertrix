@@ -85,9 +85,9 @@ When enabled, the crawler will visit all the links it finds within each page def
 
 ### Fail Crawl if Not Logged In
 
-When enabled, the crawl will fail if behaviors detect the presence or absence of content on supported pages indicating that the browser is not logged in.
+When enabled, the crawl will fail if a [page behavior](#page-behavior) detects the presence or absence of content on supported pages indicating that the browser is not logged in.
 
-For more details see [the Browsertrix Crawler documentation for Fail on Content Check](https://crawler.docs.browsertrix.com/user-guide/behaviors/#fail-on-content-check).
+For details about which websites are supported and how to add this functionality to your own [custom behaviors](#use-custom-behaviors), see the [Browsertrix Crawler documentation for Fail on Content Check](https://crawler.docs.browsertrix.com/user-guide/behaviors/#fail-on-content-check).
 
 ### Fail Crawl on Failed URL
 
