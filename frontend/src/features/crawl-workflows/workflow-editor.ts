@@ -1015,7 +1015,14 @@ export class WorkflowEditor extends BtrixElement {
           ${msg("Fail crawl if not logged in")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(infoTextFor["failOnContentCheck"], false)}
+      ${this.renderHelpTextCol(
+        html`${infoTextFor["failOnContentCheck"]}
+        ${this.renderUserGuideLink({
+          hash: "fail-crawl-if-not-logged-in",
+          content: msg("More details"),
+        })}.`,
+        false,
+      )}
       ${when(this.formState.includeLinkedPages, () =>
         this.renderLinkSelectors(),
       )}
@@ -1512,7 +1519,14 @@ https://example.net`}
           ${msg("Fail crawl if not logged in")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(infoTextFor["failOnContentCheck"], false)}
+      ${this.renderHelpTextCol(
+        html`${infoTextFor["failOnContentCheck"]}
+        ${this.renderUserGuideLink({
+          hash: "fail-crawl-if-not-logged-in",
+          content: msg("More details"),
+        })}.`,
+        false,
+      )}
       ${this.renderLinkSelectors()}
 
       <div class="col-span-5">
