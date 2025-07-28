@@ -1512,12 +1512,7 @@ https://example.net`}
           ${msg("Fail crawl if not logged in")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(
-        msg(
-          `If checked, the crawl will fail if behaviors discover the browser is not logged in on supported social media sites (Facebook, Instagram, TikTok, X, YouTube).`,
-        ),
-        false,
-      )}
+      ${this.renderHelpTextCol(infoTextFor["failOnContentCheck"], false)}
       ${this.renderLinkSelectors()}
 
       <div class="col-span-5">
