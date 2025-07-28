@@ -1015,7 +1015,7 @@ export class WorkflowEditor extends BtrixElement {
           ${msg("Fail crawl if not logged in")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(infoTextFor["failOnContentCheck"])}
+      ${this.renderHelpTextCol(infoTextFor["failOnContentCheck"], false)}
       ${when(this.formState.includeLinkedPages, () =>
         this.renderLinkSelectors(),
       )}

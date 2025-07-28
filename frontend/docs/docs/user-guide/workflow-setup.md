@@ -83,7 +83,7 @@ When enabled, the crawler will visit all the links it finds within each page def
 ??? example "Crawling tags & search queries with Page List crawls"
     This setting can be useful for crawling the content of specific tags or search queries. Specify the tag or search query URL(s) in the _Crawl URL(s)_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
 
-### Fail Crawl If Not Logged In
+### Fail Crawl if Not Logged In
 
 When enabled, the crawl will fail if behaviors detect the presence or absence of content on supported pages indicating that the browser is not logged in.
 

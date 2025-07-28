@@ -507,7 +507,7 @@ export class ConfigDetails extends BtrixElement {
         Boolean(config.useSitemap),
       )}
       ${this.renderSetting(
-        msg("Fail Crawl If Not Logged In"),
+        msg("Fail Crawl if Not Logged In"),
         Boolean(config.failOnContentCheck),
       )}
       ${this.renderLinkSelectors()}
