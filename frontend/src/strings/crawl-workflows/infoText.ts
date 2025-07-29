@@ -80,7 +80,7 @@ export const infoTextFor = {
     `Fail the crawl if a page behavior detects the browser is not logged in on supported pages.`,
   ),
   saveStorage: msg(
-    `Save the browser's localStorage and sessionStorage data for pages. Use caution sharing WACZs created with this option.`,
+    `Include data from the browser's local and session storage in the web archive.`,
   ),
 } as const satisfies Partial<Record<Field, string | TemplateResult>>;
 

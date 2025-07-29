@@ -264,7 +264,7 @@ Will prevent any content from the domains listed in [Steven Black's Unified Host
 
 ### Save Local and Session Storage
 
-When enabled, instructs the crawler to save the browser's localStorage and sessionStorage data for each page in the web archive as part of the `WARC-JSON-Metadata` field. This option may be necessary to properly archive and replay certain websites. Use caution when sharing WACZ files created with this option enabled, as the saved browser storage may contain sensitive information.
+When enabled, instructs the crawler to save the browser's `localStorage` and `sessionStorage` data for each page in the web archive as part of the `WARC-JSON-Metadata` field. This option may be necessary to properly archive and replay certain websites. Use caution when sharing WACZ files created with this option enabled, as the saved browser storage may contain sensitive information.
 
 ### User Agent
 
