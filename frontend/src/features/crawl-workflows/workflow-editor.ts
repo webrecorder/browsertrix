@@ -1985,7 +1985,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ${msg("Save local and session storage")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(infoTextFor["saveStorage"], false)}
+      ${this.renderHelpTextCol(
+        html`${infoTextFor["saveStorage"]}
+        ${this.renderUserGuideLink({
+          hash: "save-local-and-session-storage",
+          content: msg("Implications for shared archives"),
+        })}.`,
+        false,
+      )}
       ${inputCol(html`
         <sl-input
           name="userAgent"
