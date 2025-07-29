@@ -1985,7 +1985,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ${msg("Save local and session storage")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(infoTextFor["saveStorage"])}
+      ${this.renderHelpTextCol(infoTextFor["saveStorage"], false)}
       ${inputCol(html`
         <sl-input
           name="userAgent"
