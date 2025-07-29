@@ -256,6 +256,7 @@ export enum CrawlLogLevel {
 
 export enum CrawlLogContext {
   General = "general",
+  Scope = "scope",
   Behavior = "behavior",
   BehaviorScript = "behaviorScript",
   BehaviorScriptCustom = "behaviorScriptCustom",
