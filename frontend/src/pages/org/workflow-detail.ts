@@ -9,6 +9,8 @@ import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
+import omitBy from "lodash/fp/omitBy";
+import isNil from "lodash/isNil";
 import queryString from "query-string";
 
 import type { Crawl, CrawlLog, Seed, Workflow } from "./types";
@@ -50,6 +52,9 @@ const POLL_INTERVAL_SECONDS = 10;
 const CRAWLS_PAGINATION_NAME = "crawlsPage";
 
 const isLoading = (task: Task) => task.status === TaskStatus.PENDING;
+
+// Omit null or undefined values from object
+const omitNil = omitBy(isNil);
 
 /**
  * Usage:
@@ -794,7 +799,16 @@ export class WorkflowDetail extends BtrixElement {
         <btrix-copy-button
           name="filetype-json"
           value=${ifDefined(
-            this.workflow && JSON.stringify(this.workflow.config),
+            this.workflow &&
+              this.seeds &&
+              JSON.stringify(
+                {
+                  ...omitNil(this.workflow.config),
+                  seeds: this.seeds.items.map(omitNil),
+                },
+                null,
+                2,
+              ),
           )}
           content=${msg("Copy as JSON")}
           size="medium"
