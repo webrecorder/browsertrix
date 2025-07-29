@@ -244,7 +244,8 @@ export class WorkflowListItem extends BtrixElement {
         }
         e.preventDefault();
         await this.updateComplete;
-        const href = `/orgs/${this.orgSlugState}/workflows/${this.workflow?.id}/${this.workflow?.lastCrawlState === "failed" ? WorkflowTab.Logs : WorkflowTab.LatestCrawl}`;
+        const failedStates = ["failed", "failed_not_logged_in"];
+        const href = `/orgs/${this.orgSlugState}/workflows/${this.workflow?.id}/${failedStates.includes(this.workflow?.lastCrawlState || "") ? WorkflowTab.Logs : WorkflowTab.LatestCrawl}`;
         this.navigate.to(href);
       }}
     >

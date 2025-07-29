@@ -28,6 +28,7 @@ export const SUCCESSFUL_STATES = [
 export const FAILED_STATES = [
   "canceled",
   "failed",
+  "failed_not_logged_in",
   "skipped_storage_quota_reached",
   "skipped_time_quota_reached",
 ] as const;

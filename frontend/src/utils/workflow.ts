@@ -115,6 +115,7 @@ export type FormState = {
   includeLinkedPages: boolean;
   useSitemap: boolean;
   failOnFailedSeed: boolean;
+  failOnContentCheck: boolean;
   customIncludeUrlList: string;
   crawlTimeoutMinutes: number;
   behaviorTimeoutSeconds: number | null;
@@ -177,6 +178,7 @@ export const getDefaultFormState = (): FormState => ({
   includeLinkedPages: false,
   useSitemap: false,
   failOnFailedSeed: false,
+  failOnContentCheck: false,
   customIncludeUrlList: "",
   crawlTimeoutMinutes: 0,
   maxCrawlSizeGB: 0,
@@ -269,6 +271,7 @@ export function getInitialFormState(params: {
     }
 
     formState.failOnFailedSeed = seedsConfig.failOnFailedSeed;
+    formState.failOnContentCheck = seedsConfig.failOnContentCheck;
   }
 
   if (params.initialWorkflow.schedule) {
@@ -354,6 +357,8 @@ export function getInitialFormState(params: {
     useSitemap: seedsConfig.useSitemap ?? defaultFormState.useSitemap,
     failOnFailedSeed:
       seedsConfig.failOnFailedSeed ?? defaultFormState.failOnFailedSeed,
+    failOnContentCheck:
+      seedsConfig.failOnContentCheck ?? defaultFormState.failOnContentCheck,
     pageLimit:
       params.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
     autoscrollBehavior: params.initialWorkflow.config.behaviors

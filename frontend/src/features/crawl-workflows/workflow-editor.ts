@@ -1007,6 +1007,22 @@ export class WorkflowEditor extends BtrixElement {
         msg(`If checked, the crawler will visit pages one link away.`),
         false,
       )}
+      ${inputCol(html`
+        <sl-checkbox
+          name="failOnContentCheck"
+          ?checked=${this.formState.failOnContentCheck}
+        >
+          ${msg("Fail crawl if not logged in")}
+        </sl-checkbox>
+      `)}
+      ${this.renderHelpTextCol(
+        html`${infoTextFor["failOnContentCheck"]}
+        ${this.renderUserGuideLink({
+          hash: "fail-crawl-if-not-logged-in",
+          content: msg("More details"),
+        })}.`,
+        false,
+      )}
       ${when(this.formState.includeLinkedPages, () =>
         this.renderLinkSelectors(),
       )}
@@ -1493,6 +1509,22 @@ https://example.net`}
         msg(
           `If checked, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if present.`,
         ),
+        false,
+      )}
+      ${inputCol(html`
+        <sl-checkbox
+          name="failOnContentCheck"
+          ?checked=${this.formState.failOnContentCheck}
+        >
+          ${msg("Fail crawl if not logged in")}
+        </sl-checkbox>
+      `)}
+      ${this.renderHelpTextCol(
+        html`${infoTextFor["failOnContentCheck"]}
+        ${this.renderUserGuideLink({
+          hash: "fail-crawl-if-not-logged-in",
+          content: msg("More details"),
+        })}.`,
         false,
       )}
       ${this.renderLinkSelectors()}
@@ -3031,6 +3063,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     | "extraHops"
     | "useSitemap"
     | "failOnFailedSeed"
+    | "failOnContentCheck"
   > {
     const jsonSeeds = this.formState.seedListFormat === SeedListFormat.JSON;
 
@@ -3048,6 +3081,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
       useSitemap: false,
       failOnFailedSeed: this.formState.failOnFailedSeed,
+      failOnContentCheck: this.formState.failOnContentCheck,
     };
 
     return config;
@@ -3055,7 +3089,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private parseSeededConfig(): Pick<
     CrawlConfigParams["config"],
-    "seeds" | "scopeType" | "useSitemap" | "failOnFailedSeed"
+    | "seeds"
+    | "scopeType"
+    | "useSitemap"
+    | "failOnFailedSeed"
+    | "failOnContentCheck"
   > {
     const primarySeedUrl = this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeUrlList
@@ -3086,6 +3124,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       scopeType: this.formState.scopeType as ScopeType,
       useSitemap: this.formState.useSitemap,
       failOnFailedSeed: false,
+      failOnContentCheck: this.formState.failOnContentCheck,
     };
     return config;
   }
