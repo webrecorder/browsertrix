@@ -170,7 +170,7 @@ emails_pull_policy: "IfNotPresent"
 
 emails_cpu: "10m"
 
-emails_memory: "350Mi"
+emails_memory: "75Mi"
 
 # if set, maps the emails service to a fixed port on host machine
 # must be between 30000 - 32767
