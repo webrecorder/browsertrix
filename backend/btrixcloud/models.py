@@ -403,6 +403,8 @@ class CrawlConfigIn(BaseModel):
 
     crawlFilenameTemplate: Optional[str] = None
 
+    shareable: bool = False
+
 
 # ============================================================================
 class ConfigRevision(BaseMongoModel):
@@ -494,6 +496,8 @@ class CrawlConfigAdditional(BaseModel):
 
     crawlFilenameTemplate: Optional[str] = None
 
+    shareable: Optional[bool] = False
+
 
 # ============================================================================
 class CrawlConfig(CrawlConfigCore, CrawlConfigAdditional):
@@ -552,6 +556,7 @@ class UpdateCrawlConfig(BaseModel):
     browserWindows: Optional[BrowserWindowCount] = None
     crawlFilenameTemplate: Optional[str] = None
     config: Optional[RawCrawlConfig] = None
+    shareable: Optional[bool] = None
 
 
 # ============================================================================

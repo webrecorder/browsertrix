@@ -334,6 +334,7 @@ class CrawlConfigOps:
             proxyId=config_in.proxyId,
             firstSeed=first_seed,
             seedCount=seed_count,
+            shareable=config_in.shareable,
         )
 
         if config_in.runNow:
@@ -544,6 +545,9 @@ class CrawlConfigOps:
         )
         changed = changed or self.check_attr_changed(
             orig_crawl_config, update, "browserWindows"
+        )
+        changed = changed or (
+            self.check_attr_changed(orig_crawl_config, update, "shareable")
         )
 
         schedule_changed = self.check_attr_changed(
