@@ -995,3 +995,63 @@ def test_delete_in_use_seed_file(
     )
     assert r.status_code == 200
     assert r.json()["id"] == seed_file_id
+
+
+def test_shareable_workflow(admin_auth_headers, default_org_id, admin_crawl_id):
+    # Verify workflow is not shareable
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["shareable"] is False
+
+    # Verify public replay.json returns 404 while not shareable
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/public/replay.json"
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "crawl_config_not_found"
+
+    # Mark workflow as shareable
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/",
+        headers=admin_auth_headers,
+        json={"shareable": True},
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["updated"]
+    assert data["settings_changed"]
+    assert data["metadata_changed"] is False
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["shareable"]
+
+    # Verify public replay.json returns last successful crawl while shareable
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/public/replay.json"
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["id"] == admin_crawl_id
+    assert data["oid"] == default_org_id
+    assert data["cid"] == _admin_crawl_cid
+    assert data["type"] == "crawl"
+    assert data["state"] == "complete"
+
+    resources = data["resources"]
+    assert resources
+    assert resources[0]["path"]
+
+    assert len(data["initialPages"]) == 4
+    assert data["pagesQueryUrl"].endswith(
+        f"/orgs/{default_org_id}/crawls/{admin_crawl_id}/pagesSearch"
+    )
+    assert data["downloadUrl"] is None
