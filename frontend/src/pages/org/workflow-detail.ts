@@ -796,25 +796,26 @@ export class WorkflowDetail extends BtrixElement {
 
     if (this.workflowTab === WorkflowTab.Settings) {
       return html`
-        <btrix-copy-button
-          name="filetype-json"
-          value=${ifDefined(
-            this.workflow &&
-              this.seeds &&
-              JSON.stringify(
-                {
-                  ...omitNil(this.workflow.config),
-                  seeds: this.seeds.items.map(omitNil),
-                },
-                null,
-                2,
-              ),
-          )}
-          content=${msg("Copy as JSON")}
-          size="medium"
-        >
-        </btrix-copy-button>
-
+        ${this.appState.isAdmin
+          ? html`<btrix-copy-button
+              name="filetype-json"
+              value=${ifDefined(
+                this.workflow &&
+                  this.seeds &&
+                  JSON.stringify(
+                    {
+                      ...omitNil(this.workflow.config),
+                      seeds: this.seeds.items.map(omitNil),
+                    },
+                    null,
+                    2,
+                  ),
+              )}
+              content=${msg("Copy as JSON")}
+              size="medium"
+            >
+            </btrix-copy-button>`
+          : nothing}
         ${this.isCrawler
           ? html`<sl-tooltip content=${msg("Edit Workflow Settings")}>
               <sl-icon-button
