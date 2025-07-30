@@ -81,5 +81,9 @@ jobs:
         run: pytest -vv ./backend/test/test_*.py
 
       - name: Print Backend Logs
-        if: ${{ failure() }}
+        if: ${{ always() }}
         run: sudo microk8s kubectl logs svc/browsertrix-cloud-backend
+
+      - name: Print Emails Logs
+        if: ${{ always() }}
+        run: sudo microk8s kubectl logs svc/browsertrix-cloud-emails

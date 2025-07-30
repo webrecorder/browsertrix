@@ -134,17 +134,17 @@ jobs:
         run: pytest -vv ./backend/test/test_*.py
 
       - name: Print Backend Logs (API)
-        if: ${{ failure() }}
+        if: ${{ always() }}
         run: kubectl logs svc/browsertrix-cloud-backend -c api
 
       - name: Print Backend Logs (Operator)
-        if: ${{ failure() }}
+        if: ${{ always() }}
         run: kubectl logs svc/browsertrix-cloud-backend -c op
 
       - name: Print Emails Logs
-        if: ${{ failure() }}
+        if: ${{ always() }}
         run: kubectl logs svc/browsertrix-cloud-emails -c api
 
       - name: Print K8S Events
-        if: ${{ failure() }}
+        if: ${{ always() }}
         run: kubectl events --all-namespaces

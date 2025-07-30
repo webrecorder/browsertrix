@@ -115,9 +115,13 @@ jobs:
         run: pytest -vv ./backend/test_nightly/${{ matrix.module }}
 
       - name: Print Backend Logs (API)
-        if: ${{ failure() }}
+        if: ${{ always() }}
         run: kubectl logs svc/browsertrix-cloud-backend -c api
 
       - name: Print Backend Logs (Operator)
-        if: ${{ failure() }}
+        if: ${{ always() }}
         run: kubectl logs svc/browsertrix-cloud-backend -c op
+
+      - name: Print Emails Logs
+        if: ${{ always() }}
+        run: kubectl logs svc/browsertrix-cloud-emails -c api
