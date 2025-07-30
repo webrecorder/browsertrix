@@ -832,9 +832,10 @@ class CrawlConfigOps:
         self,
         cid: UUID,
         org: Organization,
-        request: Request,
+        request: Optional[Request] = None,
     ) -> Optional[CrawlOutWithResources]:
         """Return the last successful crawl out with resources for this config, if any"""
+        headers = dict(request.headers) if request else None
         match_query = {
             "cid": cid,
             "oid": org.id,
@@ -846,7 +847,7 @@ class CrawlConfigOps:
         )
         if last_crawl:
             return await self.crawl_ops.get_crawl_out(
-                last_crawl["_id"], org, "crawl", headers=dict(request.headers)
+                last_crawl["_id"], org, "crawl", headers=headers, cid=cid
             )
 
         return None

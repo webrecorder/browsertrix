@@ -162,6 +162,7 @@ class BaseCrawlOps:
         type_: Optional[str] = None,
         skip_resources=False,
         headers: Optional[dict] = None,
+        cid: Optional[UUID] = None,
     ) -> CrawlOutWithResources:
         """Get crawl data for api output"""
         res = await self.get_crawl_raw(crawlid, org, type_)
@@ -183,9 +184,17 @@ class BaseCrawlOps:
                 oid = res.get("oid")
                 if oid:
                     origin = get_origin(headers)
-                    res["pagesQueryUrl"] = (
-                        origin + f"/api/orgs/{oid}/crawls/{crawlid}/pagesSearch"
-                    )
+                    # If cid is passed, construct pagesSearch query for public
+                    # shareable workflow
+                    if cid:
+                        res["pagesQueryUrl"] = (
+                            origin
+                            + f"/api/orgs/{oid}/crawlconfigs/{cid}/public/pagesSearch"
+                        )
+                    else:
+                        res["pagesQueryUrl"] = (
+                            origin + f"/api/orgs/{oid}/crawls/{crawlid}/pagesSearch"
+                        )
 
                 # this will now disable the downloadUrl in RWP
                 res["downloadUrl"] = None

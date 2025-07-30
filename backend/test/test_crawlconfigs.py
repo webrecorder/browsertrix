@@ -1013,6 +1013,12 @@ def test_shareable_workflow(admin_auth_headers, default_org_id, admin_crawl_id):
     assert r.status_code == 404
     assert r.json()["detail"] == "crawl_config_not_found"
 
+    # Verify public pagesSearch endpoint returns 404 while not shareable
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/public/pagesSearch"
+    )
+    assert r.status_code == 404
+
     # Mark workflow as shareable
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/",
@@ -1051,7 +1057,20 @@ def test_shareable_workflow(admin_auth_headers, default_org_id, admin_crawl_id):
     assert resources[0]["path"]
 
     assert len(data["initialPages"]) == 4
-    assert data["pagesQueryUrl"].endswith(
-        f"/orgs/{default_org_id}/crawls/{admin_crawl_id}/pagesSearch"
+
+    pages_query_url = data["pagesQueryUrl"]
+    assert pages_query_url.endswith(
+        f"/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/public/pagesSearch"
     )
     assert data["downloadUrl"] is None
+
+    # Verify pages search endpoint is accessible and works
+    r = requests.get(pages_query_url)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["items"]
+    for page in data["items"]:
+        assert page["id"]
+        assert page["oid"] == default_org_id
+        assert page["crawl_id"] == admin_crawl_id
+        assert page["url"]

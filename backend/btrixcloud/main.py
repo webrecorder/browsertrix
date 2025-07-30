@@ -266,6 +266,7 @@ def main() -> None:
         storage_ops,
         background_job_ops,
         coll_ops,
+        crawl_config_ops,
         current_active_user,
     )
 
