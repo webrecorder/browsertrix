@@ -450,11 +450,26 @@ export class WorkflowDetail extends BtrixElement {
                 .item=${this.workflow}
               ></btrix-detail-page-title>
               ${when(
+                this.workflow?.shareable,
+                () =>
+                  html`<btrix-popover
+                    content=${msg(
+                      "The latest crawl from this workflow is publicly accessible to anyone with the link. This can be changed with the Browsertrix API.",
+                    )}
+                  >
+                    <btrix-badge class="min-h-5" variant="warning">
+                      <sl-icon
+                        name="info-circle"
+                        class="align-icon mr-1"
+                      ></sl-icon>
+                      ${msg("Public")}
+                    </btrix-badge>
+                  </btrix-popover>`,
+              )}
+              ${when(
                 this.workflow?.inactive,
                 () => html`
-                  <btrix-badge
-                    class="inline-block align-middle"
-                    variant="warning"
+                  <btrix-badge class="min-h-5" variant="warning"
                     >${msg("Inactive")}</btrix-badge
                   >
                 `,
