@@ -2,7 +2,6 @@ import requests
 import time
 
 from .conftest import API_PREFIX
-from mypy.dmypy.client import p
 
 
 def test_recalculate_org_storage(admin_auth_headers, default_org_id):
