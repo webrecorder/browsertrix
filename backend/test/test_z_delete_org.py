@@ -2,6 +2,7 @@ import requests
 import time
 
 from .conftest import API_PREFIX
+from mypy.dmypy.client import p
 
 
 def test_recalculate_org_storage(admin_auth_headers, default_org_id):
@@ -10,6 +11,7 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/recalculate-storage",
         headers=admin_auth_headers,
+        timeout=120,
     )
     assert r.status_code == 200
     data = r.json()
@@ -24,7 +26,9 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
     while True:
         try:
             r = requests.get(
-                f"{API_PREFIX}/orgs/all/jobs/{job_id}", headers=admin_auth_headers
+                f"{API_PREFIX}/orgs/all/jobs/{job_id}",
+                headers=admin_auth_headers,
+                timeout=120,
             )
             assert r.status_code == 200
             success = r.json()["success"]
@@ -35,12 +39,15 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
             if success is False:
                 assert False
 
-            if attempts >= max_attempts:
-                assert False
+
 
             time.sleep(10)
         except:
             time.sleep(10)
+
+        if attempts >= max_attempts:
+            print(f"Giving up waiting for job after {max_attempts} attempts")
+            assert False
 
         attempts += 1
         print(f"Job not yet succeeded, retrying... ({attempts}/{max_attempts})")
