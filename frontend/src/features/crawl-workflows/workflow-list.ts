@@ -21,6 +21,8 @@ import {
 } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
+import { ShareableNotice } from "./shareable-notice";
+
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import { WorkflowTab } from "@/routes";
@@ -252,20 +254,7 @@ export class WorkflowListItem extends BtrixElement {
     >
       <div class="col">
         <div class="detail url items-center truncate">
-          ${when(
-            this.workflow?.shareable,
-            () =>
-              html`<btrix-popover
-                content=${msg(
-                  "The latest crawl from this workflow is publicly accessible to anyone with the link. This can be changed with the Browsertrix API.",
-                )}
-              >
-                <btrix-badge class="mr-1 min-h-5" variant="warning">
-                  <sl-icon name="info-circle" class="align-icon mr-1"></sl-icon>
-                  ${msg("Public")}
-                </btrix-badge>
-              </btrix-popover>`,
-          )}
+          ${when(this.workflow?.shareable, ShareableNotice)}
           ${this.safeRender(this.renderName)}
         </div>
         <div class="desc">

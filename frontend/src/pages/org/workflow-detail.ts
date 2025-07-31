@@ -23,6 +23,7 @@ import {
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
+import { ShareableNotice } from "@/features/crawl-workflows/shareable-notice";
 import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
@@ -451,23 +452,7 @@ export class WorkflowDetail extends BtrixElement {
               <btrix-detail-page-title
                 .item=${this.workflow}
               ></btrix-detail-page-title>
-              ${when(
-                this.workflow?.shareable,
-                () =>
-                  html`<btrix-popover
-                    content=${msg(
-                      "The latest crawl from this workflow is publicly accessible to anyone with the link. This can be changed with the Browsertrix API.",
-                    )}
-                  >
-                    <btrix-badge class="min-h-5" variant="warning">
-                      <sl-icon
-                        name="info-circle"
-                        class="align-icon mr-1"
-                      ></sl-icon>
-                      ${msg("Public")}
-                    </btrix-badge>
-                  </btrix-popover>`,
-              )}
+              ${when(this.workflow?.shareable, ShareableNotice)}
               ${when(
                 this.workflow?.inactive,
                 () => html`
