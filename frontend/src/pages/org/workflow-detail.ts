@@ -445,7 +445,9 @@ export class WorkflowDetail extends BtrixElement {
 
         <div>
           <header class="col-span-1 mb-3 flex flex-wrap gap-2">
-            <div class="flex max-w-full flex-wrap gap-x-2 gap-y-1.5">
+            <div
+              class="flex max-w-full flex-wrap items-center gap-x-2 gap-y-1.5"
+            >
               <btrix-detail-page-title
                 .item=${this.workflow}
               ></btrix-detail-page-title>
@@ -486,9 +488,7 @@ export class WorkflowDetail extends BtrixElement {
               )}
             </div>
 
-            <div
-              class="flex-0 order-first ml-auto flex flex-wrap justify-end gap-2 lg:order-last"
-            >
+            <div class="flex-0 ml-auto flex flex-wrap justify-end gap-2">
               ${when(
                 this.isCrawler && this.workflow && !this.workflow.inactive,
                 this.renderActions,
