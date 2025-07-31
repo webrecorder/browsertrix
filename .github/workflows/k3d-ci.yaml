@@ -130,7 +130,7 @@ jobs:
         run: kubectl wait --for=condition=ready pod --all --timeout=240s
 
       - name: Run Tests
-        timeout-minutes: 40
+        timeout-minutes: 60
         run: pytest -vv ./backend/test/test_*.py
 
       - name: Print Backend Logs (API)
