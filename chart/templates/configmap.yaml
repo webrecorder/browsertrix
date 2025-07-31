@@ -91,6 +91,8 @@ data:
 
   LOG_SENT_EMAILS: "{{ .Values.email.log_sent_emails }}"
 
+  EMAIL_TEMPLATE_ENDPOINT: "{{ .Values.email.template_endpoint }}"
+
   BACKEND_IMAGE: "{{ .Values.backend_image }}"
 
   BACKEND_IMAGE_PULL_POLICY: "{{ .Values.backend_pull_policy }}"
