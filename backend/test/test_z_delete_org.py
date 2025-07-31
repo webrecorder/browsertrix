@@ -43,6 +43,7 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
             time.sleep(10)
 
         attempts += 1
+        print(f"Job not yet succeeded, retrying... ({attempts}/{max_attempts})")
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}",
