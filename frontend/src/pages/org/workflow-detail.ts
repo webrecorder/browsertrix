@@ -9,6 +9,8 @@ import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
+import omitBy from "lodash/fp/omitBy";
+import isNil from "lodash/isNil";
 import queryString from "query-string";
 
 import type { Crawl, CrawlLog, Seed, Workflow } from "./types";
@@ -50,6 +52,9 @@ const POLL_INTERVAL_SECONDS = 10;
 const CRAWLS_PAGINATION_NAME = "crawlsPage";
 
 const isLoading = (task: Task) => task.status === TaskStatus.PENDING;
+
+// Omit null or undefined values from object
+const omitNil = omitBy(isNil);
 
 /**
  * Usage:
@@ -789,16 +794,40 @@ export class WorkflowDetail extends BtrixElement {
       `;
     }
 
-    if (this.workflowTab === WorkflowTab.Settings && this.isCrawler) {
-      return html` <sl-tooltip content=${msg("Edit Workflow Settings")}>
-        <sl-icon-button
-          name="pencil"
-          class="text-base"
-          href="${this.basePath}?edit"
-          @click=${this.navigate.link}
-        >
-        </sl-icon-button>
-      </sl-tooltip>`;
+    if (this.workflowTab === WorkflowTab.Settings) {
+      return html`
+        ${this.appState.isAdmin
+          ? html`<btrix-copy-button
+              name="filetype-json"
+              value=${ifDefined(
+                this.workflow &&
+                  this.seeds &&
+                  JSON.stringify(
+                    {
+                      ...omitNil(this.workflow.config),
+                      seeds: this.seeds.items.map(omitNil),
+                    },
+                    null,
+                    2,
+                  ),
+              )}
+              content=${msg("Copy as JSON")}
+              size="medium"
+            >
+            </btrix-copy-button>`
+          : nothing}
+        ${this.isCrawler
+          ? html`<sl-tooltip content=${msg("Edit Workflow Settings")}>
+              <sl-icon-button
+                name="gear"
+                class="text-base"
+                href="${this.basePath}?edit"
+                @click=${this.navigate.link}
+              >
+              </sl-icon-button>
+            </sl-tooltip>`
+          : nothing}
+      `;
     }
 
     return nothing;
