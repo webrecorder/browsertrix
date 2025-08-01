@@ -1,4 +1,5 @@
-import { Meta } from "@storybook/blocks";
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import { NoRuns } from '../features/crawl-workflows/WorkflowActionMenu.stories';
 
 <Meta title="Design/Action Menus" />
 
@@ -27,3 +28,7 @@ should be ordered as follows:
 | Actions related to exporting/downloading (eg: download archived item)                                                                                 |
 | Copy information to clipboard (eg: copy share link)<br/> Copy IDs to clipboard (eg: copy item ID)                                                     |
 | Destructive actions (eg: delete item)                                                                                                                 |
+
+## Example
+
+<Canvas of={NoRuns} />
