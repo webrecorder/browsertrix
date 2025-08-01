@@ -1891,7 +1891,9 @@ export class WorkflowDetail extends BtrixElement {
 
     return html`
       <div class="aspect-video overflow-hidden rounded-lg border">
-        ${guard([this.lastCrawlId], this.renderReplay)}
+        ${guard([this.lastCrawlId], () =>
+          when(this.latestCrawlTask.value, this.renderReplay),
+        )}
       </div>
     `;
   };
@@ -1907,6 +1909,7 @@ export class WorkflowDetail extends BtrixElement {
           message = msg("This crawl can’t be replayed since it was canceled.");
           break;
         case "failed":
+        case "failed_not_logged_in":
           message = msg("This crawl can’t be replayed because it failed.");
           break;
         default:
@@ -1918,7 +1921,9 @@ export class WorkflowDetail extends BtrixElement {
     const actionButton = (workflow: Workflow) => {
       if (!workflow.lastCrawlId) return;
 
-      if (workflow.lastCrawlState === "failed") {
+      const failedStates = ["failed", "failed_not_logged_in"];
+
+      if (failedStates.includes(workflow.lastCrawlState || "")) {
         return html`<div class="mt-4">
           <sl-button
             size="small"
@@ -1958,18 +1963,15 @@ export class WorkflowDetail extends BtrixElement {
     `;
   }
 
-  private readonly renderReplay = () => {
-    if (!this.workflow || !this.lastCrawlId) return;
-
-    const replaySource = `/api/orgs/${this.workflow.oid}/crawls/${this.lastCrawlId}/replay.json`;
+  private readonly renderReplay = (latestCrawl: Crawl) => {
+    const replaySource = `/api/orgs/${latestCrawl.oid}/crawls/${this.lastCrawlId}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
     return html`
       <replay-web-page
         source="${replaySource}"
-        url="${(this.workflow.seedCount === 1 && this.workflow.firstSeed) ||
-        ""}"
+        url="${(latestCrawl.seedCount === 1 && latestCrawl.firstSeed) || ""}"
         config="${config}"
         replayBase="/replay/"
         noSandbox="true"

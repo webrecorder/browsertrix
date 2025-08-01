@@ -243,6 +243,7 @@ WAITING_STATES = get_args(TYPE_WAITING_STATES)
 TYPE_FAILED_STATES = Literal[
     "canceled",
     "failed",
+    "failed_not_logged_in",
     "skipped_storage_quota_reached",
     "skipped_time_quota_reached",
 ]
@@ -271,6 +272,15 @@ TYPE_ALL_CRAWL_STATES = Literal[
     TYPE_RUNNING_AND_WAITING_STATES, TYPE_NON_RUNNING_STATES
 ]
 ALL_CRAWL_STATES = [*RUNNING_AND_WAITING_STATES, *NON_RUNNING_STATES]
+
+
+# ============================================================================
+class CrawlStats(BaseModel):
+    """Crawl Stats for pages and size"""
+
+    found: int = 0
+    done: int = 0
+    size: int = 0
 
 
 # ============================================================================
@@ -349,6 +359,7 @@ class RawCrawlConfig(BaseModel):
 
     useSitemap: Optional[bool] = False
     failOnFailedSeed: Optional[bool] = False
+    failOnContentCheck: Optional[bool] = False
 
     logging: Optional[str] = None
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
@@ -510,6 +521,7 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     lastCrawlShouldPause: Optional[bool] = False
     lastCrawlPausedAt: Optional[datetime] = None
     lastCrawlPausedExpiry: Optional[datetime] = None
+    lastCrawlStats: Optional[CrawlStats] = None
     profileName: Optional[str] = None
 
     createdByName: Optional[str] = None
@@ -770,15 +782,6 @@ class CrawlFileOut(BaseModel):
     crawlId: Optional[str] = None
     numReplicas: int = 0
     expireAt: Optional[str] = None
-
-
-# ============================================================================
-class CrawlStats(BaseModel):
-    """Crawl Stats for pages and size"""
-
-    found: int = 0
-    done: int = 0
-    size: int = 0
 
 
 # ============================================================================

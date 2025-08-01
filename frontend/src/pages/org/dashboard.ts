@@ -35,6 +35,8 @@ type Metrics = {
   storageUsedCrawls: number;
   storageUsedUploads: number;
   storageUsedProfiles: number;
+  storageUsedSeedFiles: number;
+  storageUsedThumbnails: number;
   storageQuotaBytes: number;
   archivedItemCount: number;
   crawlCount: number;
@@ -80,10 +82,12 @@ export class Dashboard extends BtrixElement {
 
   private readonly colors = {
     default: tw`text-neutral-600`,
-    crawls: tw`text-green-600`,
-    uploads: tw`text-sky-600`,
-    browserProfiles: tw`text-indigo-600`,
+    crawls: tw`text-lime-500`,
+    uploads: tw`text-sky-500`,
+    archivedItems: tw`text-primary-500`,
+    browserProfiles: tw`text-orange-500`,
     runningTime: tw`text-blue-600`,
+    misc: tw`text-gray-400`,
   };
 
   private readonly collections = new Task(this, {
@@ -126,7 +130,6 @@ export class Dashboard extends BtrixElement {
   }
 
   render() {
-    const hasQuota = Boolean(this.metrics?.storageQuotaBytes);
     const quotaReached =
       this.metrics &&
       this.metrics.storageQuotaBytes > 0 &&
@@ -251,11 +254,12 @@ export class Dashboard extends BtrixElement {
               <dl>
                 ${this.renderStat({
                   value: metrics.crawlCount,
-                  secondaryValue: hasQuota
-                    ? ""
-                    : this.localize.bytes(metrics.storageUsedCrawls),
+                  secondaryValue: this.localize.bytes(
+                    metrics.storageUsedCrawls,
+                  ),
                   singleLabel: msg("Crawl"),
                   pluralLabel: msg("Crawls"),
+
                   iconProps: {
                     name: "gear-wide-connected",
                     class: this.colors.crawls,
@@ -266,11 +270,12 @@ export class Dashboard extends BtrixElement {
                 })}
                 ${this.renderStat({
                   value: metrics.uploadCount,
-                  secondaryValue: hasQuota
-                    ? ""
-                    : this.localize.bytes(metrics.storageUsedUploads),
+                  secondaryValue: this.localize.bytes(
+                    metrics.storageUsedUploads,
+                  ),
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
+
                   iconProps: { name: "upload", class: this.colors.uploads },
                   button: {
                     url: "/items/upload",
@@ -278,9 +283,9 @@ export class Dashboard extends BtrixElement {
                 })}
                 ${this.renderStat({
                   value: metrics.profileCount,
-                  secondaryValue: hasQuota
-                    ? ""
-                    : this.localize.bytes(metrics.storageUsedProfiles),
+                  secondaryValue: this.localize.bytes(
+                    metrics.storageUsedProfiles,
+                  ),
                   singleLabel: msg("Browser Profile"),
                   pluralLabel: msg("Browser Profiles"),
                   iconProps: {
@@ -291,21 +296,39 @@ export class Dashboard extends BtrixElement {
                     url: "/browser-profiles",
                   },
                 })}
+                ${metrics.storageUsedSeedFiles || metrics.storageUsedThumbnails
+                  ? this.renderMiscStorage(metrics)
+                  : nothing}
+
                 <sl-divider
                   style="--spacing:var(--sl-spacing-small)"
                 ></sl-divider>
                 ${this.renderStat({
                   value: metrics.archivedItemCount,
-                  secondaryValue: hasQuota
-                    ? ""
-                    : this.localize.bytes(metrics.storageUsedBytes),
                   singleLabel: msg("Archived Item"),
                   pluralLabel: msg("Archived Items"),
-                  iconProps: { name: "file-zip-fill" },
+                  iconProps: {
+                    name: "file-zip-fill",
+                    class: this.colors.archivedItems,
+                  },
                   button: {
                     url: "/items",
                   },
                 })}
+                ${when(
+                  metrics.storageUsedBytes && !metrics.storageQuotaBytes,
+                  () => html`
+                    ${this.renderStat({
+                      value: this.localize.bytes(metrics.storageUsedBytes, {
+                        compactDisplay: "short",
+                      }),
+                      singleLabel: msg("Total"),
+                      iconProps: {
+                        name: "database-fill",
+                      },
+                    })}
+                  `,
+                )}
               </dl>
             `,
           )}
@@ -536,6 +559,35 @@ export class Dashboard extends BtrixElement {
     `;
   }
 
+  private renderMiscStorage(metrics: Metrics) {
+    return html`
+      <div class="mb-2 flex items-center gap-2 last:mb-0">
+        <dt class="mr-auto flex items-center tabular-nums">
+          <sl-icon
+            class=${clsx(tw`mr-2 text-base`, this.colors.misc)}
+            name="box2"
+          ></sl-icon>
+          ${msg("Miscellaneous")}
+          <btrix-popover
+            content=${msg(
+              "Total size of all supplementary files in use by your organization, such as workflow URL list files and custom collection thumbnails.",
+            )}
+          >
+            <sl-icon
+              name="info-circle"
+              class="ml-1.5 text-neutral-500"
+            ></sl-icon>
+          </btrix-popover>
+        </dt>
+        <dd class="font-monostyle text-xs text-neutral-500">
+          ${this.localize.bytes(
+            metrics.storageUsedSeedFiles + metrics.storageUsedThumbnails,
+          )}
+        </dd>
+      </div>
+    `;
+  }
+
   private renderNoPublicCollections() {
     if (!this.org || !this.metrics) return;
 
@@ -576,10 +628,19 @@ export class Dashboard extends BtrixElement {
     const hasQuota = Boolean(metrics.storageQuotaBytes);
     const isStorageFull =
       hasQuota && metrics.storageUsedBytes >= metrics.storageQuotaBytes;
-    const renderBar = (value: number, label: string, color: string) => html`
+    const misc = metrics.storageUsedSeedFiles + metrics.storageUsedThumbnails;
+
+    const renderBar = (
+      value: number,
+      label: string,
+      colorClassname: string,
+    ) => html`
       <btrix-meter-bar
         value=${(value / metrics.storageUsedBytes) * 100}
-        style="--background-color:var(--sl-color-${color}-400)"
+        style="--background-color:var(--sl-color-${colorClassname.replace(
+          "text-",
+          "",
+        )})"
       >
         <div class="text-center">
           <div>${label}</div>
@@ -608,7 +669,7 @@ export class Dashboard extends BtrixElement {
                   ${this.localize.bytes(
                     metrics.storageQuotaBytes - metrics.storageUsedBytes,
                   )}
-                  ${msg("Available")}
+                  ${msg("available")}
                 `
               : "",
         )}
@@ -642,6 +703,9 @@ export class Dashboard extends BtrixElement {
                   msg("Profiles"),
                   this.colors.browserProfiles,
                 ),
+              )}
+              ${when(misc, () =>
+                renderBar(misc, msg("Miscellaneous"), this.colors.misc),
               )}
               <div slot="available" class="flex-1">
                 <sl-tooltip class="text-center">
@@ -935,11 +999,11 @@ export class Dashboard extends BtrixElement {
   }
 
   private renderStat(stat: {
-    value: number | string | TemplateResult;
+    value: number | string | TemplateResult | null;
     secondaryValue?: number | string | TemplateResult;
     button?: { label?: string | TemplateResult; url: string };
     singleLabel: string;
-    pluralLabel: string;
+    pluralLabel?: string;
     iconProps: { name: string; library?: string; class?: string };
   }) {
     const { value, iconProps } = stat;
@@ -955,7 +1019,9 @@ export class Dashboard extends BtrixElement {
             library=${ifDefined(iconProps.library)}
           ></sl-icon>
           <dt class="order-last">
-            ${value === 1 ? stat.singleLabel : stat.pluralLabel}
+            ${value === 1
+              ? stat.singleLabel
+              : stat.pluralLabel ?? stat.singleLabel}
           </dt>
           <dd class="mr-1">
             ${typeof value === "number" ? this.localize.number(value) : value}
@@ -972,13 +1038,14 @@ export class Dashboard extends BtrixElement {
         ${when(
           stat.button,
           (button) =>
-            html`<btrix-button size="x-small" href=${`${this.navigate.orgBasePath}${button.url}`} @click=${this.navigate.link}
-              >${
-                button.label ??
-                html`<sl-tooltip content=${msg("View All")} placement="right"
-                  ><sl-icon name="arrow-right-circle"></sl-icon
-                ></sl-tooltip>`
-              }</sl-button
+            html`<btrix-button
+              size="x-small"
+              href=${`${this.navigate.orgBasePath}${button.url}`}
+              @click=${this.navigate.link}
+              >${button.label ??
+              html`<sl-tooltip content=${msg("View All")} placement="right"
+                ><sl-icon name="arrow-right-circle"></sl-icon
+              ></sl-tooltip>`}</btrix-button
             >`,
         )}
       </div>

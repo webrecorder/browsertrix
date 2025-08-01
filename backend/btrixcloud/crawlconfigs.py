@@ -852,6 +852,7 @@ class CrawlConfigOps:
                 update_query["lastCrawlSize"] = sum(
                     file_.get("size", 0) for file_ in last_crawl.get("files", [])
                 )
+                update_query["lastCrawlStats"] = last_crawl.get("stats")
                 update_query["lastCrawlStopping"] = False
                 update_query["isCrawlRunning"] = False
 
@@ -866,6 +867,7 @@ class CrawlConfigOps:
                 update_query["lastCrawlTime"] = None
                 update_query["lastCrawlState"] = None
                 update_query["lastCrawlSize"] = 0
+                update_query["lastCrawlStats"] = None
                 update_query["lastRun"] = None
                 update_query["isCrawlRunning"] = False
 
@@ -895,6 +897,7 @@ class CrawlConfigOps:
         crawlconfig.lastCrawlShouldPause = crawl.shouldPause
         crawlconfig.lastCrawlPausedAt = crawl.pausedAt
         crawlconfig.lastCrawlPausedExpiry = None
+        crawlconfig.lastCrawlStats = crawl.stats if crawl.stats else None
         if crawl.pausedAt:
             crawlconfig.lastCrawlPausedExpiry = (
                 crawl.pausedAt + self.paused_expiry_delta
@@ -976,20 +979,20 @@ class CrawlConfigOps:
 
         # if no crawls have been run, actually delete
         if not crawlconfig.crawlAttemptCount:
-            if crawlconfig.config and crawlconfig.config.seedFileId:
-                try:
-                    await self.file_ops.delete_seed_file(
-                        crawlconfig.config.seedFileId, org
-                    )
-                except HTTPException:
-                    pass
-
             result = await self.crawl_configs.delete_one(
                 {"_id": crawlconfig.id, "oid": crawlconfig.oid}
             )
 
             if result.deleted_count != 1:
                 raise HTTPException(status_code=404, detail="failed_to_delete")
+
+            if crawlconfig and crawlconfig.config.seedFileId:
+                try:
+                    await self.file_ops.delete_seed_file(
+                        crawlconfig.config.seedFileId, org
+                    )
+                except HTTPException:
+                    pass
 
             status = "deleted"
 
@@ -1420,6 +1423,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
             update_query["lastStartedByName"] = last_crawl.get("userName")
             update_query["lastCrawlState"] = last_crawl.get("state")
             update_query["lastCrawlSize"] = last_crawl_size
+            update_query["lastCrawlStats"] = last_crawl.get("stats")
             update_query["lastCrawlStopping"] = False
             update_query["isCrawlRunning"] = False
 

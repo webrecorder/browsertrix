@@ -44,6 +44,7 @@ export type SeedConfig = Expand<
     extraHops?: number | null;
     useSitemap?: boolean;
     failOnFailedSeed?: boolean;
+    failOnContentCheck?: boolean;
     depth?: number | null;
     userAgent?: string | null;
     selectLinks: string[];
@@ -255,6 +256,7 @@ export enum CrawlLogLevel {
 
 export enum CrawlLogContext {
   General = "general",
+  Scope = "scope",
   Behavior = "behavior",
   BehaviorScript = "behaviorScript",
   BehaviorScriptCustom = "behaviorScriptCustom",

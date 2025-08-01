@@ -1,3 +1,8 @@
+# Formats and builds frontend UI translation files on pull requests
+# from https://github.com/weblate/browsertrix/tree/weblate-browsertrix-browsertrix
+#
+# Pull requests are automatically created by Hosted Weblate.
+# See https://docs.browsertrix.com/develop/localization/
 name: Weblate Reformat
 on:
   pull_request_target

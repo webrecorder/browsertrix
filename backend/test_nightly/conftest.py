@@ -316,7 +316,7 @@ def error_crawl_id(admin_auth_headers, default_org_id):
             headers=admin_auth_headers,
         )
         data = r.json()
-        if data["state"] == "complete":
+        if data["state"] in ("failed", "complete"):
             return crawl_id
         time.sleep(5)
 

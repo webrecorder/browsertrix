@@ -485,6 +485,14 @@ ingress:
   # Optional: Uncomment to use your own cluster-issuer instead of default ACME https validation
   # custom_cluster_issuer: custom_cluster_issuer-name
 
+  # Optional: Uncomment to apply custom annotations
+  # annotations:
+  #   alb.ingress.kubernetes.io/scheme: internet-facing
+  #   alb.ingress.kubernetes.io/target-type: ip
+  #   alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+  #   alb.ingress.kubernetes.io/certificate-arn: "certificate-arn"
+
+
 ingress_class: nginx
 
 # Optional: Front-end injected script
