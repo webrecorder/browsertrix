@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: Browsertrix
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - name: Webrecorder Software LLC
+    country: US
+    website: 'https://webrecorder.net'
+identifiers:
+  - type: url
+    value: >-
+      https://github.com/webrecorder/browsertrix/releases/tag/v1.14.8
+    description: GitHub release
+repository-code: 'https://github.com/webrecorder/browsertrix/'
+url: 'https://webrecorder.net/browsertrix'
+keywords:
+  - kubernetes
+  - web-archiving
+  - wacz
+  - warc
+  - archives
+license: AGPL-3.0
+version: 1.14.8
