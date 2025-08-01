@@ -24,7 +24,7 @@ from .models import (
     PaginatedUserFileResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import dt_now
+from .utils import dt_now, is_url
 from .storages import StorageOps, CHUNK_SIZE
 
 if TYPE_CHECKING:
@@ -245,6 +245,13 @@ class FileUploadOps:
             )
 
         first_seed, seed_count = await self._parse_seed_info_from_file(file_obj, org)
+        if not first_seed or seed_count == 0:
+            print(
+                f"{upload_type} stream upload failed: invalid seed file",
+                flush=True,
+            )
+            await self.storage_ops.delete_file_object(org, file_obj)
+            raise HTTPException(status_code=400, detail="invalid_seed_file")
 
         # Save file to database
         file_to_insert = SeedFile(
@@ -293,9 +300,14 @@ class FileUploadOps:
                 if not line:
                     continue
 
-                if not first_seed:
-                    first_seed = line.decode("utf-8").strip()
-                seed_count += 1
+                try:
+                    seed_url = line.decode("utf-8").strip()
+                    if not first_seed and is_url(seed_url):
+                        first_seed = seed_url
+                    seed_count += 1
+                # pylint: disable=broad-exception-caught
+                except Exception:
+                    pass
 
         return first_seed, seed_count
 

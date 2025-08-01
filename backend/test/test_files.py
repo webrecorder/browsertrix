@@ -97,3 +97,25 @@ def test_delete_seed_file(crawler_auth_headers, default_org_id):
         headers=crawler_auth_headers,
     )
     assert r.status_code == 404
+
+
+def test_invalid_seed_file_upload(crawler_auth_headers, default_org_id):
+    # Ensure we can't upload a binary file as a seed file
+    with open(os.path.join(curr_dir, "data", "thumbnail.jpg"), "rb") as fh:
+        r = requests.put(
+            f"{API_PREFIX}/orgs/{default_org_id}/files/seedFile?filename=imposter.txt",
+            headers=crawler_auth_headers,
+            data=read_in_chunks(fh),
+        )
+        assert r.status_code == 400
+        assert r.json()["detail"] == "invalid_seed_file"
+
+    # Ensure "seed file" with no valid seeds also fails to upload
+    with open(os.path.join(curr_dir, "data", "invalid-seedfile.txt"), "rb") as fh:
+        r = requests.put(
+            f"{API_PREFIX}/orgs/{default_org_id}/files/seedFile?filename=novalidseeds.txt",
+            headers=crawler_auth_headers,
+            data=read_in_chunks(fh),
+        )
+        assert r.status_code == 400
+        assert r.json()["detail"] == "invalid_seed_file"
