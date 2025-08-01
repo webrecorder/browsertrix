@@ -1,6 +1,6 @@
 # Resources / Node Types
 main_node_type: main
- 
+
 crawler_node_type: crawling
 redis_node_type: crawling
 
@@ -13,6 +13,7 @@ crawler_storage: "220Gi"
 # Registry
 {% if use_do_registry %}
 backend_image: "{{ registry_endpoint }}/webrecorder/browsertrix-backend:{{ image_tag }}"
+emails_image: "{{ registry_endpoint }}/webrecorder/browsertrix-emails:{{ image_tag }}"
 frontend_image: "{{ registry_endpoint }}/webrecorder/browsertrix-frontend:{{ image_tag }}"
 crawler_image: "{{ registry_endpoint }}/webrecorder/browsertrix-crawler:{{ image_tag }}"
 {% endif %}

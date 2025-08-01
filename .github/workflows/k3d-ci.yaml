@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # important, to fetch previous commit
+          fetch-depth: 2 # important, to fetch previous commit
 
       # workaround for https://github.com/dorny/paths-filter/issues/240
       - id: previous-sha
@@ -36,6 +36,7 @@ jobs:
             matches:
               - 'backend/**'
               - 'chart/**'
+              - 'emails/**'
               - '.github/workflows/k3d-ci.yaml'
 
   btrix-k3d-test:
@@ -51,6 +52,7 @@ jobs:
           cluster-name: btrix-1
           args: >-
             -p "30870:30870@agent:0:direct"
+            -p "30872:30872@agent:0:direct"
             --agents 1
             --no-lb
             --k3s-arg "--disable=traefik,servicelb,metrics-server@server:*"
@@ -73,6 +75,16 @@ jobs:
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
 
+      - name: Build Emails
+        uses: docker/build-push-action@v3
+        with:
+          context: emails
+          load: true
+          #outputs: type=tar,dest=emails.tar
+          tags: webrecorder/browsertrix-emails:latest
+          cache-from: type=gha,scope=emails
+          cache-to: type=gha,scope=emails,mode=max
+
       - name: Build Frontend
         uses: docker/build-push-action@v3
         with:
@@ -83,15 +95,16 @@ jobs:
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
 
-      - name: 'Import Images'
+      - name: "Import Images"
         run: |
           k3d image import webrecorder/browsertrix-backend:latest -m direct -c btrix-1 --verbose
+          k3d image import webrecorder/browsertrix-emails:latest -m direct -c btrix-1 --verbose
           k3d image import webrecorder/browsertrix-frontend:latest -m direct -c btrix-1 --verbose
 
       - name: Install Kubectl
         uses: azure/setup-kubectl@v3
         with:
-            version: v1.28.2
+          version: v1.28.2
 
       - name: Install Helm
         uses: azure/setup-helm@v3
@@ -121,13 +134,17 @@ jobs:
         run: pytest -vv ./backend/test/test_*.py
 
       - name: Print Backend Logs (API)
-        if: ${{ failure() }}
+        if: ${{ always() }}
         run: kubectl logs svc/browsertrix-cloud-backend -c api
 
       - name: Print Backend Logs (Operator)
-        if: ${{ failure() }}
+        if: ${{ always() }}
         run: kubectl logs svc/browsertrix-cloud-backend -c op
 
+      - name: Print Emails Logs
+        if: ${{ always() }}
+        run: kubectl logs svc/browsertrix-cloud-emails -c api
+
       - name: Print K8S Events
-        if: ${{ failure() }}
+        if: ${{ always() }}
         run: kubectl events --all-namespaces

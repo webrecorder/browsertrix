@@ -22,9 +22,9 @@
 # If developing locally, can override these to use images from local microk8s repository (on localhost:32000)
 #
 # backend_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
+# emails_image: "localhost:32000/webrecorder/browsertrix-emails:latest"
 # frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
 # crawler_image: "localhost:32000/webrecorder/browsertrix-crawler:latest"
-
 
 ingress:
   # required: set host to use tls
@@ -33,13 +33,12 @@ ingress:
 
   # required: set email to use tls
   # uncomment and replace example below with your valid email address
-  #cert_email: "you@yourdomain.org"
+  # cert_email: "you@yourdomain.org"
 
   scheme: "https"
   tls: true
 
 ingress_class: "public"
-
 
 # optionally, set host below to enable WACZ signing
 signer:
@@ -47,22 +46,18 @@ signer:
 
   # uncomment and replace example below with your registered domain
   # host: "second.yourdomain.org"
-
-
 # optionally, override default mongodb auth, used for all data storage:
 
-#mongo_auth:
-  # username: root
-  # password: PASSWORD!
-  
+# mongo_auth:
+#   username: root
+#   password: PASSWORD!
 
 # optionally, set these to custom values
 
-#superuser:
-  # set this to enable a superuser admim
-  # email: admin@example.com
-
-  # optional: if not set, automatically generated
-  # change or remove this
-  # password: PASSWORD!
-
+# superuser:
+#   # set this to enable a superuser admim
+#   email: admin@example.com
+#
+#   # optional: if not set, automatically generated
+#   # change or remove this
+#   password: PASSWORD!
