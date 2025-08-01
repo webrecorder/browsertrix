@@ -1,7 +1,0 @@
-Welcome to Browsertrix, Verify your Registration.
-~~~
-Please verify your registration for Browsertrix for {{ receiver_email }}
-
-You can verify by clicking here: {{ origin }}/verify?token={{ token }}
-
-The verification token is: {{ token }}
