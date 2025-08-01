@@ -34,6 +34,7 @@ def admin_auth_headers():
 
 
 @pytest.fixture(scope="session")
+@pytest.mark.timeout(1200)
 def default_org_id(admin_auth_headers):
     while True:
         r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
@@ -48,6 +49,7 @@ def default_org_id(admin_auth_headers):
 
 
 @pytest.fixture(scope="session")
+@pytest.mark.timeout(1200)
 def crawler_auth_headers(admin_auth_headers, default_org_id):
     requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/add-user",
@@ -73,6 +75,7 @@ def crawler_auth_headers(admin_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="session")
+@pytest.mark.timeout(1200)
 def crawl_id_wr(admin_auth_headers, default_org_id):
     # Start crawl.
     crawl_data = {
@@ -105,6 +108,7 @@ def crawl_id_wr(admin_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="session")
+@pytest.mark.timeout(1200)
 def crawl_id_wr_specs(admin_auth_headers, default_org_id):
     # Start crawl.
     crawl_data = {
@@ -137,6 +141,7 @@ def crawl_id_wr_specs(admin_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="session")
+@pytest.mark.timeout(1200)
 def crawl_config_info(admin_auth_headers, default_org_id):
     # Start crawl.
     crawl_data = {
@@ -182,6 +187,7 @@ def crawl_config_info(admin_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="session")
+@pytest.mark.timeout(1200)
 def large_crawl_id(admin_auth_headers, default_org_id):
     # Start crawl
     crawl_data = {
@@ -218,6 +224,7 @@ def large_crawl_id(admin_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="session")
+@pytest.mark.timeout(1200)
 def large_crawl_finished(admin_auth_headers, default_org_id, large_crawl_id):
     # Wait for crawl to complete
     while True:
@@ -234,6 +241,7 @@ def large_crawl_finished(admin_auth_headers, default_org_id, large_crawl_id):
 
 
 @pytest.fixture(scope="session")
+@pytest.mark.timeout(1200)
 def timeout_crawl(admin_auth_headers, default_org_id):
     # Start crawl
     crawl_data = {
@@ -256,6 +264,7 @@ def timeout_crawl(admin_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="session")
+@pytest.mark.timeout(1200)
 def max_crawl_size_crawl_id(admin_auth_headers, default_org_id):
     # Start crawl
     crawl_data = {
@@ -280,6 +289,7 @@ def max_crawl_size_crawl_id(admin_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="session")
+@pytest.mark.timeout(1200)
 def error_crawl_id(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
@@ -312,6 +322,7 @@ def error_crawl_id(admin_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="session")
+@pytest.mark.timeout(1200)
 def org_with_quotas(admin_auth_headers):
     name = "Quota Org " + datetime.datetime.utcnow().isoformat()
     r = requests.post(
@@ -323,6 +334,7 @@ def org_with_quotas(admin_auth_headers):
 
 
 @pytest.fixture(scope="session")
+@pytest.mark.timeout(1200)
 def deleted_crawl_id(admin_auth_headers, default_org_id):
     # Start crawl.
     crawl_data = {
