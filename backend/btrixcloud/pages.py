@@ -1084,7 +1084,15 @@ class PageOps:
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
 def init_pages_api(
-    app, mdb, crawl_ops, org_ops, storage_ops, background_job_ops, coll_ops, user_dep
+    app,
+    mdb,
+    crawl_ops,
+    org_ops,
+    storage_ops,
+    background_job_ops,
+    coll_ops,
+    crawl_config_ops,
+    user_dep,
 ) -> PageOps:
     """init pages API"""
     # pylint: disable=invalid-name
@@ -1324,6 +1332,47 @@ def init_pages_api(
         """Retrieve paginated list of pages"""
         pages, _ = await ops.list_pages(
             crawl_ids=[crawl_id],
+            search=search,
+            url=url,
+            ts=ts,
+            is_seed=isSeed,
+            depth=depth,
+            org=org,
+            page_size=pageSize,
+            page=page,
+            include_total=False,
+        )
+        return {"items": pages}
+
+    @app.get(
+        "/orgs/{oid}/crawlconfigs/{cid}/public/pagesSearch",
+        tags=["pages", "crawlconfigs"],
+        response_model=PageOutItemsResponse,
+    )
+    async def get_search_pages_list_shareable_crawl_config(
+        cid: UUID,
+        org: Organization = Depends(org_public),
+        search: Optional[str] = None,
+        url: Optional[str] = None,
+        ts: Optional[datetime] = None,
+        isSeed: Optional[bool] = None,
+        depth: Optional[int] = None,
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ):
+        """Retrieve paginated list of pages for last successful crawl of workflow"""
+        crawl_config = await crawl_config_ops.get_crawl_config(
+            cid, org.id, active_only=True
+        )
+        if not crawl_config.shareable:
+            raise HTTPException(status_code=404, detail="crawl_config_not_found")
+
+        last_successful_crawl_out = (
+            await crawl_config_ops.get_last_successful_crawl_out(cid, org)
+        )
+
+        pages, _ = await ops.list_pages(
+            crawl_ids=[last_successful_crawl_out.id],
             search=search,
             url=url,
             ts=ts,
