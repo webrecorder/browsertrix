@@ -34,7 +34,7 @@ else:
     ) = PageOps = BackgroundJobOps = FileUploadOps = CrawlLogOps = object
 
 
-CURR_DB_VERSION = "0049"
+CURR_DB_VERSION = "0050"
 
 
 # ============================================================================
@@ -114,7 +114,14 @@ async def update_and_prepare_db(
     await ping_db(mdb)
     print("Database setup started", flush=True)
     if await run_db_migrations(
-        mdb, user_manager, page_ops, org_ops, background_job_ops, coll_ops, file_ops
+        mdb,
+        user_manager,
+        page_ops,
+        org_ops,
+        background_job_ops,
+        coll_ops,
+        file_ops,
+        crawl_log_ops,
     ):
         await drop_indexes(mdb)
 
@@ -139,7 +146,14 @@ async def update_and_prepare_db(
 # ============================================================================
 # pylint: disable=too-many-locals, too-many-arguments
 async def run_db_migrations(
-    mdb, user_manager, page_ops, org_ops, background_job_ops, coll_ops, file_ops
+    mdb,
+    user_manager,
+    page_ops,
+    org_ops,
+    background_job_ops,
+    coll_ops,
+    file_ops,
+    crawl_log_ops,
 ):
     """Run database migrations."""
 
@@ -179,6 +193,7 @@ async def run_db_migrations(
                 background_job_ops=background_job_ops,
                 coll_ops=coll_ops,
                 file_ops=file_ops,
+                crawl_log_ops=crawl_log_ops,
             )
             if await migration.run():
                 migrations_run = True
