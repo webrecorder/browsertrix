@@ -1089,17 +1089,6 @@ class CrawlScaleResponse(BaseModel):
 
 
 # ============================================================================
-class CrawlLogMessage(BaseModel):
-    """Crawl log message"""
-
-    timestamp: str
-    logLevel: str
-    context: str
-    message: str
-    details: Any
-
-
-# ============================================================================
 
 ### UPLOADED CRAWLS ###
 
@@ -1147,6 +1136,31 @@ class FilePreparer:
         name = slugify(name.rsplit("/", 1)[-1])
         randstr = base64.b32encode(os.urandom(5)).lower()
         return name + "-" + randstr.decode("utf-8") + ext
+
+
+# ============================================================================
+
+### LOGS ###
+
+
+# ============================================================================
+class CrawlLogLine(BaseMongoModel):
+    """Model for crawler log lines"""
+
+    id: UUID
+
+    crawl_id: str
+    oid: UUID
+
+    # TODO: Do we even want to handle these at this point?
+    isQA: bool = False
+    qaRunId: Optional[str] = None
+
+    timestamp: datetime
+    logLevel: str
+    context: str
+    message: str
+    details: Optional[Dict[str, Any]] = None
 
 
 # ============================================================================
@@ -3034,7 +3048,7 @@ class PaginatedWebhookNotificationResponse(PaginatedResponse):
 class PaginatedCrawlLogResponse(PaginatedResponse):
     """Response model for crawl logs"""
 
-    items: List[CrawlLogMessage]
+    items: List[CrawlLogLine]
 
 
 # ============================================================================

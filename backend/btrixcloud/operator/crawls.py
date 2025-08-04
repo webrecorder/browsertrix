@@ -1018,15 +1018,23 @@ class CrawlOperator(BaseOperator):
 
             crawl_error = await redis.rpop(f"{crawl.id}:{self.errors_key}")
             while crawl_error:
-                await self.crawl_ops.add_crawl_error(
-                    crawl.db_crawl_id, crawl.is_qa, crawl_error
+                await self.crawl_log_ops.add_log_line(
+                    crawl.db_crawl_id,
+                    crawl.oid,
+                    is_qa=crawl.is_qa,
+                    log_line=crawl_error,
+                    qa_run_id=qa_run_id,
                 )
                 crawl_error = await redis.rpop(f"{crawl.id}:{self.errors_key}")
 
             behavior_log = await redis.rpop(f"{crawl.id}:{self.behavior_logs_key}")
             while behavior_log:
-                await self.crawl_ops.add_crawl_behavior_log(
-                    crawl.db_crawl_id, behavior_log
+                await self.crawl_log_ops.add_log_line(
+                    crawl.db_crawl_id,
+                    crawl.oid,
+                    is_qa=False,
+                    log_line=behavior_log,
+                    qa_run_id=None,
                 )
                 behavior_log = await redis.rpop(f"{crawl.id}:{self.behavior_logs_key}")
 

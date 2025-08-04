@@ -41,6 +41,7 @@ def main():
         _,
         _,
         _,
+        crawl_log_ops,
         _,
         _,
     ) = init_ops()
@@ -55,6 +56,7 @@ def main():
         event_webhook_ops,
         background_job_ops,
         page_ops,
+        crawl_log_ops,
     )
 
 

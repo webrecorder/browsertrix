@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from .users import UserManager
     from .orgs import OrgOps
     from .crawlconfigs import CrawlConfigOps
+    from .crawl_logs import CrawlLogOps
     from .crawls import CrawlOps
     from .colls import CollectionOps
     from .invites import InviteOps
@@ -30,7 +31,7 @@ if TYPE_CHECKING:
 else:
     UserManager = OrgOps = CrawlConfigOps = CrawlOps = CollectionOps = InviteOps = (
         StorageOps
-    ) = PageOps = BackgroundJobOps = FileUploadOps = object
+    ) = PageOps = BackgroundJobOps = FileUploadOps = CrawlLogOps = object
 
 
 CURR_DB_VERSION = "0049"
@@ -100,6 +101,7 @@ async def update_and_prepare_db(
     page_ops: PageOps,
     background_job_ops: BackgroundJobOps,
     file_ops: FileUploadOps,
+    crawl_log_ops: CrawlLogOps,
 ) -> None:
     """Prepare database for application.
 
@@ -126,6 +128,7 @@ async def update_and_prepare_db(
         page_ops,
         storage_ops,
         file_ops,
+        crawl_log_ops,
     )
     await user_manager.create_super_user()
     await org_ops.create_default_org()
@@ -213,9 +216,9 @@ async def drop_indexes(mdb):
     print("Dropping database indexes", flush=True)
     collection_names = await mdb.list_collection_names()
     for collection in collection_names:
-        # Don't drop pages automatically, as these are large
+        # Don't drop pages or logs automatically, as these are large
         # indices and slow to recreate
-        if collection == "pages":
+        if collection in ("pages", "crawl_logs"):
             continue
 
         try:
@@ -238,6 +241,7 @@ async def create_indexes(
     page_ops,
     storage_ops,
     file_ops,
+    crawl_log_ops,
 ):
     """Create database indexes."""
     print("Creating database indexes", flush=True)
@@ -250,6 +254,7 @@ async def create_indexes(
     await page_ops.init_index()
     await storage_ops.init_index()
     await file_ops.init_index()
+    await crawl_log_ops.init_index()
 
 
 # ============================================================================
