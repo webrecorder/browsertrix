@@ -250,6 +250,7 @@ class CrawlManager(K8sAPI):
             "backend_image": os.environ.get("BACKEND_IMAGE", ""),
             "pull_policy": os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
             "schedule": job_schedule,
+            "larger_resources": True,
         }
 
         data = self.templates.env.get_template("background_cron_job.yaml").render(
