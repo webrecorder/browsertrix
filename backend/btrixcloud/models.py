@@ -812,8 +812,9 @@ class CoreCrawlable(BaseModel):
     fileSize: int = 0
     fileCount: int = 0
 
-    errors: Optional[List[str]] = []
-    behaviorLogs: Optional[List[str]] = []
+    # Retained for backward compatibility
+    errors: Optional[List[str]] = Field(default=[], deprecated=True)
+    behaviorLogs: Optional[List[str]] = Field(default=[], deprecated=True)
 
 
 # ============================================================================
@@ -884,9 +885,6 @@ class CrawlOut(BaseMongoModel):
 
     tags: Optional[List[str]] = []
 
-    errors: Optional[List[str]] = []
-    behaviorLogs: Optional[List[str]] = []
-
     collectionIds: Optional[List[UUID]] = []
 
     crawlExecSeconds: int = 0
@@ -928,6 +926,10 @@ class CrawlOut(BaseMongoModel):
     # Set to older version by default, crawls with optimized
     # pages will have this explicitly set to 2
     version: Optional[int] = 1
+
+    # Retained for backward compatibility
+    errors: Optional[List[str]] = Field(default=[], deprecated=True)
+    behaviorLogs: Optional[List[str]] = Field(default=[], deprecated=True)
 
 
 # ============================================================================
