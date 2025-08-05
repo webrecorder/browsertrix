@@ -1128,6 +1128,7 @@ class CrawlOps(BaseCrawlOps):
         sort_direction: int = -1,
         contexts: Optional[List[str]] = None,
         log_levels: Optional[List[str]] = None,
+        qa_run_id: Optional[str] = None,
     ) -> Tuple[list[CrawlLogLine], int]:
         """get crawl logs"""
         return await self.log_ops.get_crawl_logs(
@@ -1139,6 +1140,7 @@ class CrawlOps(BaseCrawlOps):
             sort_direction=sort_direction,
             contexts=contexts,
             log_levels=log_levels,
+            qa_run_id=qa_run_id,
         )
 
 

@@ -1151,7 +1151,7 @@ class CrawlLogLine(BaseMongoModel):
 
     id: UUID
 
-    crawl_id: str
+    crawlId: str
     oid: UUID
 
     qaRunId: Optional[str] = None

@@ -33,7 +33,7 @@ class CrawlLogOps:
         """init index for crawl logs"""
         await self.logs.create_index(
             [
-                ("crawl_id", pymongo.HASHED),
+                ("crawlId", pymongo.HASHED),
                 ("oid", pymongo.ASCENDING),
                 ("qaRunId", pymongo.ASCENDING),
                 ("timestamp", pymongo.ASCENDING),
@@ -41,7 +41,7 @@ class CrawlLogOps:
         )
         await self.logs.create_index(
             [
-                ("crawl_id", pymongo.HASHED),
+                ("crawlId", pymongo.HASHED),
                 ("oid", pymongo.ASCENDING),
                 ("qaRunId", pymongo.ASCENDING),
                 ("logLevel", pymongo.ASCENDING),
@@ -49,7 +49,7 @@ class CrawlLogOps:
         )
         await self.logs.create_index(
             [
-                ("crawl_id", pymongo.HASHED),
+                ("crawlId", pymongo.HASHED),
                 ("oid", pymongo.ASCENDING),
                 ("qaRunId", pymongo.ASCENDING),
                 ("context", pymongo.ASCENDING),
@@ -57,7 +57,7 @@ class CrawlLogOps:
         )
         await self.logs.create_index(
             [
-                ("crawl_id", pymongo.HASHED),
+                ("crawlId", pymongo.HASHED),
                 ("oid", pymongo.ASCENDING),
                 ("qaRunId", pymongo.ASCENDING),
                 ("message", pymongo.ASCENDING),
@@ -87,7 +87,7 @@ class CrawlLogOps:
 
             log_to_add = CrawlLogLine(
                 id=uuid4(),
-                crawl_id=crawl_id,
+                crawlId=crawl_id,
                 oid=oid,
                 qaRunId=qa_run_id,
                 timestamp=log_dict["timestamp"],
@@ -127,7 +127,7 @@ class CrawlLogOps:
 
         match_query: Dict[str, Any] = {
             "oid": org.id,
-            "crawl_id": crawl_id,
+            "crawlId": crawl_id,
             "qaRunId": qa_run_id,
         }
 
