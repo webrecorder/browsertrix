@@ -1126,8 +1126,8 @@ class CrawlOps(BaseCrawlOps):
         page: int = 1,
         sort_by: str = "timestamp",
         sort_direction: int = -1,
-        contexts: List[str] = None,
-        log_levels: List[str] = None,
+        contexts: Optional[List[str]] = None,
+        log_levels: Optional[List[str]] = None,
     ) -> Tuple[list[CrawlLogLine], int]:
         """get crawl logs"""
         return await self.log_ops.get_crawl_logs(
@@ -1696,7 +1696,7 @@ def init_crawls_api(
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         org: Organization = Depends(org_viewer_dep),
-        sortBy: Optional[str] = "timestamp",
+        sortBy: str = "timestamp",
         sortDirection: int = 1,
     ):
         log_lines, total = await ops.get_crawl_logs(
@@ -1720,7 +1720,7 @@ def init_crawls_api(
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         org: Organization = Depends(org_viewer_dep),
-        sortBy: Optional[str] = "timestamp",
+        sortBy: str = "timestamp",
         sortDirection: int = 1,
     ):
         log_lines, total = await ops.get_crawl_logs(

@@ -1,6 +1,6 @@
 """crawl logs"""
 
-from typing import TYPE_CHECKING, Union, Any, Optional, Dict, Tuple, List
+from typing import TYPE_CHECKING, Any, Optional, Dict, Tuple, List
 
 import json
 from uuid import UUID, uuid4
@@ -35,7 +35,32 @@ class CrawlLogOps:
             [
                 ("crawl_id", pymongo.HASHED),
                 ("oid", pymongo.ASCENDING),
+                ("isQA", pymongo.ASCENDING),
                 ("timestamp", pymongo.ASCENDING),
+            ]
+        )
+        await self.logs.create_index(
+            [
+                ("crawl_id", pymongo.HASHED),
+                ("oid", pymongo.ASCENDING),
+                ("isQA", pymongo.ASCENDING),
+                ("logLevel", pymongo.ASCENDING),
+            ]
+        )
+        await self.logs.create_index(
+            [
+                ("crawl_id", pymongo.HASHED),
+                ("oid", pymongo.ASCENDING),
+                ("isQA", pymongo.ASCENDING),
+                ("context", pymongo.ASCENDING),
+            ]
+        )
+        await self.logs.create_index(
+            [
+                ("crawl_id", pymongo.HASHED),
+                ("oid", pymongo.ASCENDING),
+                ("isQA", pymongo.ASCENDING),
+                ("message", pymongo.ASCENDING),
             ]
         )
 
@@ -91,8 +116,8 @@ class CrawlLogOps:
         page: int = 1,
         sort_by: str = "timestamp",
         sort_direction: int = -1,
-        contexts: List[str] = None,
-        log_levels: List[str] = None,
+        contexts: Optional[List[str]] = None,
+        log_levels: Optional[List[str]] = None,
     ) -> Tuple[list[CrawlLogLine], int]:
         """list all logs for particular crawl"""
         # pylint: disable=too-many-locals, duplicate-code
@@ -101,7 +126,7 @@ class CrawlLogOps:
         page = page - 1
         skip = page_size * page
 
-        match_query: Dict[str, Union[str, List[str]]] = {
+        match_query: Dict[str, Any] = {
             "oid": org.id,
             "crawl_id": crawl_id,
             # For now, only return non-QA crawl logs
