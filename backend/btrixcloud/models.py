@@ -1154,7 +1154,6 @@ class CrawlLogLine(BaseMongoModel):
     crawl_id: str
     oid: UUID
 
-    # TODO: Do we even want to handle these at this point?
     isQA: bool = False
     qaRunId: Optional[str] = None
 

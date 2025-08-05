@@ -19,15 +19,14 @@ class Migration(BaseMigration):
 
     async def migrate_up(self):
         """Perform migration up. Move crawl logs to separate mongo collection."""
-        # pylint: disable=duplicate-code, line-too-long
+        # pylint: disable=duplicate-code, line-too-long, too-many-locals
         if self.crawl_log_ops is None:
             print("Unable to move logs, missing ops", flush=True)
             return
 
         crawls_mdb = self.mdb["crawls"]
 
-        # TODO: Also migrate qaFinished errors?
-
+        # Migrate error and behavior logs
         match_query = {
             "type": "crawl",
             "$or": [{"errors": {"$ne": None}}, {"behaviorLogs": {"$ne": None}}],
@@ -74,3 +73,55 @@ class Migration(BaseMigration):
                     f"Error moving logs for crawl {crawl_id}: {err}",
                     flush=True,
                 )
+
+        # Migrate qaFinished logs
+        qa_query = {
+            "type": "crawl",
+            "qaFinished": {"$nin": [None, {}]},
+        }
+
+        async for crawl_with_qa in crawls_mdb.find(qa_query):
+            crawl_id = crawl_with_qa["_id"]
+            qa_finished = crawl_with_qa.get("qaFinished")
+            if not qa_finished:
+                continue
+            for qa_run_id in qa_finished:
+                qa_error_logs = qa_finished[qa_run_id].get("errors", [])
+                qa_behavior_logs = qa_finished[qa_run_id].get("behaviorLogs", [])
+
+                try:
+                    while qa_error_logs:
+                        qa_error_log = qa_error_logs.pop(0)
+                        await self.crawl_log_ops.add_log_line(
+                            crawl_id=crawl_id,
+                            oid=crawl_with_qa["oid"],
+                            is_qa=True,
+                            log_line=qa_error_log,
+                            qa_run_id=qa_run_id,
+                        )
+
+                    while qa_behavior_logs:
+                        qa_behavior_log = qa_behavior_logs.pop(0)
+                        await self.crawl_log_ops.add_log_line(
+                            crawl_id=crawl_id,
+                            oid=crawl_with_qa["oid"],
+                            is_qa=True,
+                            log_line=qa_behavior_log,
+                            qa_run_id=qa_run_id,
+                        )
+
+                    await crawls_mdb.find_one_and_update(
+                        {"_id": crawl_id},
+                        {
+                            "$set": {
+                                f"qaFinished.{qa_run_id}.errors": None,
+                                f"qaFinished.{qa_run_id}.behaviorLogs": None,
+                            }
+                        },
+                    )
+                # pylint: disable=broad-exception-caught
+                except Exception as err:
+                    print(
+                        f"Error moving logs for crawl {crawl_id} QA run {qa_run_id}: {err}",
+                        flush=True,
+                    )
