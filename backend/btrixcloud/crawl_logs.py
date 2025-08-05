@@ -104,6 +104,8 @@ class CrawlLogOps:
         match_query: Dict[str, Union[str, List[str]]] = {
             "oid": org.id,
             "crawl_id": crawl_id,
+            # For now, only return non-QA crawl logs
+            "isQA": False,
         }
 
         if contexts:
