@@ -35,7 +35,7 @@ class CrawlLogOps:
             [
                 ("crawl_id", pymongo.HASHED),
                 ("oid", pymongo.ASCENDING),
-                ("isQA", pymongo.ASCENDING),
+                ("qaRunId", pymongo.ASCENDING),
                 ("timestamp", pymongo.ASCENDING),
             ]
         )
@@ -43,7 +43,7 @@ class CrawlLogOps:
             [
                 ("crawl_id", pymongo.HASHED),
                 ("oid", pymongo.ASCENDING),
-                ("isQA", pymongo.ASCENDING),
+                ("qaRunId", pymongo.ASCENDING),
                 ("logLevel", pymongo.ASCENDING),
             ]
         )
@@ -51,7 +51,7 @@ class CrawlLogOps:
             [
                 ("crawl_id", pymongo.HASHED),
                 ("oid", pymongo.ASCENDING),
-                ("isQA", pymongo.ASCENDING),
+                ("qaRunId", pymongo.ASCENDING),
                 ("context", pymongo.ASCENDING),
             ]
         )
@@ -59,7 +59,7 @@ class CrawlLogOps:
             [
                 ("crawl_id", pymongo.HASHED),
                 ("oid", pymongo.ASCENDING),
-                ("isQA", pymongo.ASCENDING),
+                ("qaRunId", pymongo.ASCENDING),
                 ("message", pymongo.ASCENDING),
             ]
         )
@@ -68,7 +68,6 @@ class CrawlLogOps:
         self,
         crawl_id: str,
         oid: UUID,
-        is_qa: bool,
         log_line: str,
         qa_run_id: Optional[str] = None,
     ) -> bool:
@@ -90,7 +89,6 @@ class CrawlLogOps:
                 id=uuid4(),
                 crawl_id=crawl_id,
                 oid=oid,
-                isQA=is_qa,
                 qaRunId=qa_run_id,
                 timestamp=log_dict["timestamp"],
                 logLevel=log_dict["logLevel"],
@@ -118,6 +116,7 @@ class CrawlLogOps:
         sort_direction: int = -1,
         contexts: Optional[List[str]] = None,
         log_levels: Optional[List[str]] = None,
+        qa_run_id: Optional[str] = None,
     ) -> Tuple[list[CrawlLogLine], int]:
         """list all logs for particular crawl"""
         # pylint: disable=too-many-locals, duplicate-code
@@ -129,8 +128,7 @@ class CrawlLogOps:
         match_query: Dict[str, Any] = {
             "oid": org.id,
             "crawl_id": crawl_id,
-            # For now, only return non-QA crawl logs
-            "isQA": False,
+            "qaRunId": qa_run_id,
         }
 
         if contexts:

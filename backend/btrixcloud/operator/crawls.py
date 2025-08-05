@@ -1021,7 +1021,6 @@ class CrawlOperator(BaseOperator):
                 await self.crawl_log_ops.add_log_line(
                     crawl.db_crawl_id,
                     crawl.oid,
-                    is_qa=crawl.is_qa,
                     log_line=crawl_error,
                     qa_run_id=qa_run_id,
                 )
@@ -1032,7 +1031,6 @@ class CrawlOperator(BaseOperator):
                 await self.crawl_log_ops.add_log_line(
                     crawl.db_crawl_id,
                     crawl.oid,
-                    is_qa=crawl.is_qa,
                     log_line=behavior_log,
                     qa_run_id=qa_run_id,
                 )

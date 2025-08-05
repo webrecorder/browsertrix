@@ -1707,6 +1707,7 @@ def init_crawls_api(
             sort_by=sortBy,
             sort_direction=sortDirection,
             log_levels=["error", "fatal"],
+            qa_run_id=None,
         )
         return paginated_format(log_lines, total, page, pageSize)
 
@@ -1731,6 +1732,7 @@ def init_crawls_api(
             sort_by=sortBy,
             sort_direction=sortDirection,
             contexts=["behavior", "behaviorScript", "behaviorScriptCustom"],
+            qa_run_id=None,
         )
         return paginated_format(log_lines, total, page, pageSize)
 

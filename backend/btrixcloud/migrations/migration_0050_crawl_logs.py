@@ -43,7 +43,6 @@ class Migration(BaseMigration):
                     await self.crawl_log_ops.add_log_line(
                         crawl_id=crawl_id,
                         oid=crawl_dict["oid"],
-                        is_qa=False,
                         log_line=error_log,
                         qa_run_id=None,
                     )
@@ -53,7 +52,6 @@ class Migration(BaseMigration):
                     await self.crawl_log_ops.add_log_line(
                         crawl_id=crawl_id,
                         oid=crawl_dict["oid"],
-                        is_qa=False,
                         log_line=behavior_log,
                         qa_run_id=None,
                     )
@@ -95,7 +93,6 @@ class Migration(BaseMigration):
                         await self.crawl_log_ops.add_log_line(
                             crawl_id=crawl_id,
                             oid=crawl_with_qa["oid"],
-                            is_qa=True,
                             log_line=qa_error_log,
                             qa_run_id=qa_run_id,
                         )
@@ -105,7 +102,6 @@ class Migration(BaseMigration):
                         await self.crawl_log_ops.add_log_line(
                             crawl_id=crawl_id,
                             oid=crawl_with_qa["oid"],
-                            is_qa=True,
                             log_line=qa_behavior_log,
                             qa_run_id=qa_run_id,
                         )

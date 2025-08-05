@@ -1154,7 +1154,6 @@ class CrawlLogLine(BaseMongoModel):
     crawl_id: str
     oid: UUID
 
-    isQA: bool = False
     qaRunId: Optional[str] = None
 
     timestamp: datetime
@@ -1162,6 +1161,11 @@ class CrawlLogLine(BaseMongoModel):
     context: str
     message: str
     details: Optional[Dict[str, Any]] = None
+
+    @property
+    def is_qa(self) -> bool:
+        """return true if log line is from qa run"""
+        return bool(self.qaRunId)
 
 
 # ============================================================================
