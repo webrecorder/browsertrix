@@ -121,6 +121,7 @@ class CrawlLogOps:
                 "timestamp",
                 "logLevel",
                 "context",
+                "message",
             ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
