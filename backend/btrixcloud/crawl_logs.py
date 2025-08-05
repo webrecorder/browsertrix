@@ -31,8 +31,13 @@ class CrawlLogOps:
 
     async def init_index(self):
         """init index for crawl logs"""
-        # TODO: Add indices
-        await self.logs.create_index([("oid", pymongo.HASHED)])
+        await self.logs.create_index(
+            [
+                ("crawl_id", pymongo.HASHED),
+                ("oid", pymongo.ASCENDING),
+                ("timestamp", pymongo.ASCENDING),
+            ]
+        )
 
     async def add_log_line(
         self,

@@ -1697,7 +1697,7 @@ def init_crawls_api(
         page: int = 1,
         org: Organization = Depends(org_viewer_dep),
         sortBy: Optional[str] = "timestamp",
-        sortDirection: int = -1,
+        sortDirection: int = 1,
     ):
         log_lines, total = await ops.get_crawl_logs(
             org,
@@ -1721,7 +1721,7 @@ def init_crawls_api(
         page: int = 1,
         org: Organization = Depends(org_viewer_dep),
         sortBy: Optional[str] = "timestamp",
-        sortDirection: int = -1,
+        sortDirection: int = 1,
     ):
         log_lines, total = await ops.get_crawl_logs(
             org,
