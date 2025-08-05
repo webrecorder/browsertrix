@@ -1032,9 +1032,9 @@ class CrawlOperator(BaseOperator):
                 await self.crawl_log_ops.add_log_line(
                     crawl.db_crawl_id,
                     crawl.oid,
-                    is_qa=False,
+                    is_qa=crawl.is_qa,
                     log_line=behavior_log,
-                    qa_run_id=None,
+                    qa_run_id=qa_run_id,
                 )
                 behavior_log = await redis.rpop(f"{crawl.id}:{self.behavior_logs_key}")
 
