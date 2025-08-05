@@ -14,3 +14,14 @@ def test_get_crawl_errors(admin_auth_headers, default_org_id, error_crawl_id):
     data = r.json()
     assert data["total"] > 0
     assert data["items"]
+
+    for item in data["items"]:
+        assert item["id"]
+        assert item["crawlId"] == error_crawl_id
+        assert item["oid"] == default_org_id
+        assert item["qaRunId"] is None
+        assert item["timestamp"]
+        assert item["logLevel"] in ("error", "fatal")
+        assert item["context"]
+        assert item["message"]
+        assert item.get("details") or item.get("details") is None
