@@ -1125,7 +1125,7 @@ class CrawlOps(BaseCrawlOps):
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: str = "timestamp",
-        sort_direction: int = -1,
+        sort_direction: int = 1,
         contexts: Optional[List[str]] = None,
         log_levels: Optional[List[str]] = None,
         qa_run_id: Optional[str] = None,
