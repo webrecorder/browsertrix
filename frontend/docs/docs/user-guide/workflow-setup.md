@@ -39,7 +39,7 @@ _Site Crawl_
 :   Crawls a single URL and does not include any linked pages.
 
 `List of Pages`
-:   Crawls only specified URLs and does not include any linked pages.
+:   Crawls only URLs from your specified list and does not include any linked pages. You can enter the URLs directly into the text area (one per line) or upload a text file containing your list.
 
 `In-Page Links`
 :   Crawls only the specified URL and treats linked sections of the page as distinct pages.
