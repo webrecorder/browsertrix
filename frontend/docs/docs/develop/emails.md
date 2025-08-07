@@ -65,6 +65,6 @@ If you're using Docker Desktop or a similar Docker-compatible Kubernetes runtime
 docker run --rm -it -p 5000:80 -p 2525:25 rnwood/smtp4dev
 ```
 
-After a few seconds, you can then open [localhost:3000](http://localhost:3000).
+After a few seconds, you can then open [localhost:5000](http://localhost:5000).
 
 If you're using a different Kubernetes runtime (e.g. k3d, microk8s, etc) you may need to set `smtp_host` to something other than `host.docker.internal` in your `chart/local.yaml`, and you may also need to configure other options. k3d likely uses `host.k3d.internal`, and microk8s `10.0.1.1`, but double check with your Kubernetes runtime documentation.
