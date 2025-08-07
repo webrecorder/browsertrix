@@ -39,7 +39,7 @@ _Site Crawl_
 :   Crawls a single URL and does not include any linked pages.
 
 `List of Pages`
-:   Crawls only URLs from your specified list and does not include any linked pages. You can enter the URLs directly into the designated text area or upload them as a text file.
+:   Crawls only specified URLs and does not include any linked pages (unless [_Include Any Linked Page_](#include-any-linked-page) is enabled). Each URL must be entered on its own line. URLs can be entered directly into the designated text area or uploaded as a text file. These options cannot be combined in a single workflow.
 
     Up to 100 URLs can be entered into the text area. If you paste a list of over 100 URLs, Browsertrix will automatically convert the list into a text file and attach it to the workflow. Text files can be viewed and deleted from within the workflow, but cannot be edited in place.
     
