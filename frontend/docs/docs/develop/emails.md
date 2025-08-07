@@ -18,7 +18,9 @@ You can then view the email templates in your browser at [localhost:3000](http:/
 
 Templates themselves are located in the `emails` directory.
 
-## Testing Email Sending
+You can also send test emails from the development server using a service provided by Resend with the **Send** button in the top right corner when viewing an email template.
+
+## Testing Email Sending from Browsertrix
 
 Email sending can be tested locally with a tool such as [smtp4dev](https://github.com/rnwood/smtp4dev).
 
