@@ -36,7 +36,7 @@ If you have previously deployed the Browsertrix backend, you'll need to make som
   emails_pull_policy: "Never"
   frontend_pull_policy: "Never"
   ```
-2. If you'd like to view emails in a service such as [smtp4dev](https://github.com/rnwood/smtp4dev) locally (see [Using smtp4dev](#using-smtp4dev)), rather than just viewing emails in pod logs, update your `chart/local.yaml` to include email sending options:
+2. If you'd like to test sending emails locally rather than just viewing emails in pod logs without using an external e-mail service, you can use the [smtp4dev](https://github.com/rnwood/smtp4dev) Docker image locally (see [Using smtp4dev](#using-smtp4dev)). To do so, update your `chart/local.yaml` to include email sending options:
   ```yaml hl_lines="1-7"
   email:
     smtp_host: "host.docker.internal"
