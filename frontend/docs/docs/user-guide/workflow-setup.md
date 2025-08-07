@@ -38,12 +38,20 @@ _Site Crawl_
 `Single Page`
 :   Crawls a single URL and does not include any linked pages.
 
-`List of Pages`
-:   Crawls only specified URLs and does not include any linked pages (unless [_Include Any Linked Page_](#include-any-linked-page) is enabled). Each URL must be entered on its own line. URLs can be entered directly into the designated text area or uploaded as a text file. These options cannot be combined in a single workflow.
+`List of Pages` <a name="list-of-pages"></a>
+:   Crawls a list of specified URLs.
 
-    Up to 100 URLs can be entered into the text area. If you paste a list of over 100 URLs, Browsertrix will automatically convert the list into a text file and attach it to the workflow. Text files can be viewed and deleted from within the workflow, but cannot be edited in place.
+    Select one of two options to provide a list of URLs:
+
+    *Enter URLs* - If the list is small enough, 100 URLs or less, the URLs can be entered directly into the text area. If a large list is pasted into the textbox, it will be converted into an uploaded URL list and attached to the workflow.
+
+    *Upload URL List* - A longer list of URLs can be provided as a text file, containing one URL per line. The text file may not exceed 25MB, but there is no limit to the number of URLs in the file. Once a file is added, a link will be provided to view the file (but not edit it). To change the file, a new file can be uploaded in its place.
     
-   Ensure each URL is on its own line so the crawler can queue all provided URLs for crawling. It will continue queuing until it reaches either the organization's pages per crawl limit or the crawl workflow's page limit. Once one of these limits is hit, it will stop queuing additional URLs. Duplicate URLs will be queued only once, while invalid URLs will be skipped and not queued at all. The crawl will fail if the list contains no valid URLs or if there is a file formatting error.
+    For both options, each line should contain a valid URL (starting with https:// or http://). Invalid or duplicate URLs will be skipped. The crawl will fail if the list contains no valid URLs or if the file is not a list of URLs.
+
+    While the uploaded text file can contain an unlimited number of URLs, the crawl will still be limited by the [page limit](#max-pages) for the workflow or organization - URLs beyond the limit will not be crawled.
+
+    If both a list of entered list and an uploaded file are provided, the currently selected option will be used.
 
 `In-Page Links`
 :   Crawls only the specified URL and treats linked sections of the page as distinct pages.
@@ -69,6 +77,8 @@ _Site Crawl_
 ### Page URL(s)
 
 One or more URLs of the page to crawl. URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
+
+See [List Of Pages](#list-of-pages) for additional info when providing a list of URLs.
 
 ??? example "Crawling with HTTP basic auth"
 

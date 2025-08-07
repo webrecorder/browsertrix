@@ -1086,14 +1086,14 @@ export class WorkflowEditor extends BtrixElement {
         this.formState.seedListFormat === SeedListFormat.File
           ? html`${fileAdditionalInfo}
             ${this.renderUserGuideLink({
-              hash: "page-urls",
+              hash: "list-of-pages",
               content: msg("Read more about URL list files"),
             })}.`
           : html`${infoTextFor["urlList"]}
               <br />
               ${jsonAdditionalInfo},
               ${this.renderUserGuideLink({
-                hash: "page-urls",
+                hash: "list-of-pages",
                 content: msg("upload a URL list file"),
               })}.`,
       )}
@@ -2249,7 +2249,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     hash: string;
     content: string;
   }) {
-    const path = `workflow-setup#${hash}`;
+    const path = `workflow-setup/#${hash}`;
 
     return html`<a
       href="${this.docsUrl}user-guide/${path}"
