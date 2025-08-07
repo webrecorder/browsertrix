@@ -39,7 +39,11 @@ _Site Crawl_
 :   Crawls a single URL and does not include any linked pages.
 
 `List of Pages`
-:   Crawls only specified URLs and does not include any linked pages.
+:   Crawls only specified URLs and does not include any linked pages (unless [_Include Any Linked Page_](#include-any-linked-page) is enabled). Each URL must be entered on its own line. URLs can be entered directly into the designated text area or uploaded as a text file. These options cannot be combined in a single workflow.
+
+    Up to 100 URLs can be entered into the text area. If you paste a list of over 100 URLs, Browsertrix will automatically convert the list into a text file and attach it to the workflow. Text files can be viewed and deleted from within the workflow, but cannot be edited in place.
+    
+   Ensure each URL is on its own line so the crawler can queue all provided URLs for crawling. It will continue queuing until it reaches either the organization's pages per crawl limit or the crawl workflow's page limit. Once one of these limits is hit, it will stop queuing additional URLs. Duplicate URLs will be queued only once, while invalid URLs will be skipped and not queued at all. The crawl will fail if the list contains no valid URLs or if there is a file formatting error.
 
 `In-Page Links`
 :   Crawls only the specified URL and treats linked sections of the page as distinct pages.
