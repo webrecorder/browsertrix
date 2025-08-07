@@ -8,7 +8,10 @@ To view and edit email templates, you can run the React Email development server
 cd emails
 ```
 ```sh
-npm run dev
+yarn install
+```
+```sh
+yarn dev
 ```
 
 You can then view the email templates in your browser at [localhost:3000](http://localhost:3000).
