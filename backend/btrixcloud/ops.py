@@ -12,6 +12,7 @@ from .basecrawls import BaseCrawlOps
 from .colls import CollectionOps
 from .crawls import CrawlOps
 from .crawlconfigs import CrawlConfigOps
+from .crawl_logs import CrawlLogOps
 from .file_uploads import FileUploadOps
 from .invites import InviteOps
 from .orgs import OrgOps
@@ -39,6 +40,7 @@ def init_ops() -> Tuple[
     UserManager,
     InviteOps,
     FileUploadOps,
+    CrawlLogOps,
     AsyncIOMotorClient,
     AsyncIOMotorDatabase,
 ]:
@@ -56,6 +58,8 @@ def init_ops() -> Tuple[
     event_webhook_ops = EventWebhookOps(mdb, org_ops)
 
     crawl_manager = CrawlManager()
+
+    crawl_log_ops = CrawlLogOps(mdb, org_ops)
 
     storage_ops = StorageOps(org_ops, crawl_manager, mdb)
 
@@ -96,7 +100,7 @@ def init_ops() -> Tuple[
 
     base_crawl_ops = BaseCrawlOps(*base_crawl_init)
 
-    crawl_ops = CrawlOps(crawl_manager, *base_crawl_init)
+    crawl_ops = CrawlOps(crawl_manager, crawl_log_ops, *base_crawl_init)
 
     upload_ops = UploadOps(*base_crawl_init)
 
@@ -137,6 +141,7 @@ def init_ops() -> Tuple[
         user_manager,
         invite_ops,
         file_ops,
+        crawl_log_ops,
         dbclient,
         mdb,
     )

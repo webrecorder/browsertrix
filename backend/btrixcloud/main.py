@@ -29,6 +29,7 @@ from .profiles import init_profiles_api
 from .storages import init_storages_api
 from .uploads import init_uploads_api
 from .crawlconfigs import init_crawl_config_api
+from .crawl_logs import CrawlLogOps
 from .colls import init_collections_api
 from .crawls import init_crawls_api
 from .basecrawls import init_base_crawls_api
@@ -195,6 +196,8 @@ def main() -> None:
 
     crawl_manager = CrawlManager()
 
+    crawl_log_ops = CrawlLogOps(mdb, org_ops)
+
     storage_ops = init_storages_api(
         org_ops, crawl_manager, app, mdb, current_active_user
     )
@@ -254,7 +257,7 @@ def main() -> None:
 
     base_crawl_ops = init_base_crawls_api(*base_crawl_init)
 
-    crawls = init_crawls_api(crawl_manager, *base_crawl_init)
+    crawls = init_crawls_api(crawl_manager, crawl_log_ops, *base_crawl_init)
 
     upload_ops = init_uploads_api(*base_crawl_init)
 
