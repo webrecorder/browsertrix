@@ -24,6 +24,10 @@ import { type SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsController } from "@/controllers/searchParams";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import {
+  Action,
+  type BtrixSelectActionEvent,
+} from "@/features/crawl-workflows/workflow-action-menu/types";
 import { type BtrixChangeWorkflowProfileFilterEvent } from "@/features/crawl-workflows/workflow-profile-filter";
 import type { BtrixChangeWorkflowScheduleFilterEvent } from "@/features/crawl-workflows/workflow-schedule-filter";
 import type { BtrixChangeWorkflowTagFilterEvent } from "@/features/crawl-workflows/workflow-tag-filter";
@@ -794,11 +798,59 @@ export class WorkflowsList extends BtrixElement {
 
   private readonly renderWorkflowItem = (workflow: ListWorkflow) => html`
     <btrix-workflow-list-item .workflow=${workflow}>
-      <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
+      <btrix-workflow-action-menu
+        slot="menu"
+        .workflow=${workflow}
+        hidePauseResume
+        @btrix-select=${async (e: BtrixSelectActionEvent) => {
+          switch (e.detail.item.action) {
+            case Action.Run:
+              void this.runNow(workflow);
+              break;
+            case Action.TogglePauseResume:
+              // TODO
+              break;
+            case Action.Stop:
+              void this.stop(workflow.lastCrawlId);
+              break;
+            case Action.Cancel:
+              void this.cancel(workflow.lastCrawlId);
+              break;
+            case Action.EditBrowserWindows:
+              this.navigate.to(
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}`,
+                {
+                  dialog: "scale",
+                },
+              );
+              break;
+            case Action.EditExclusions:
+              this.navigate.to(
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}`,
+                {
+                  dialog: "exclusions",
+                },
+              );
+              break;
+            case Action.Duplicate:
+              void this.duplicateConfig(workflow);
+              break;
+            case Action.Delete: {
+              this.workflowToDelete = workflow;
+              await this.updateComplete;
+              void this.deleteDialog?.show();
+              break;
+            }
+            default:
+              console.debug("unknown workflow action:", e.detail.item.action);
+              break;
+          }
+        }}
+      ></btrix-workflow-action-menu>
     </btrix-workflow-list-item>
   `;
 
-  private renderMenuItems(workflow: ListWorkflow) {
+  private renderMenu(workflow: ListWorkflow) {
     return html`
       ${when(
         workflow.isCrawlRunning && this.appState.isCrawler,

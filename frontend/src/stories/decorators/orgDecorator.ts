@@ -8,6 +8,8 @@ import { AppStateService } from "@/utils/state";
 
 const { users, usage, quotas, ...org } = orgMock;
 
+export { orgMock };
+
 export type StorybookOrgProps = {
   orgUsers?: boolean;
   orgUsage?: boolean;
