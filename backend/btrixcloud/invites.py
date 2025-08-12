@@ -214,7 +214,7 @@ class InviteOps:
             created=dt_now(),
             role=invite.role if hasattr(invite, "role") else UserRole.VIEWER,
             # URL decode email address just in case
-            email=EmailStr(urllib.parse.unquote(invite.email)),
+            email=urllib.parse.unquote(invite.email),
             inviterEmail=user.email,
             fromSuperuser=user.is_superuser,
             tokenHash=get_hash(invite_token),
