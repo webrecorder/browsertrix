@@ -16,6 +16,7 @@ from fastapi import HTTPException
 
 from .models import CreateReplicaJob, DeleteReplicaJob, Organization, InvitePending
 from .utils import is_bool, get_origin
+from backend.btrixcloud.models import Subscription
 
 
 # pylint: disable=too-few-public-methods, too-many-instance-attributes
@@ -138,6 +139,7 @@ class EmailSender:
         token: UUID,
         org_name: str,
         is_new: bool,
+        subscription: Optional[Subscription] = None,
         headers: Optional[dict] = None,
     ):
         """Send email to invite new user"""
@@ -160,6 +162,11 @@ class EmailSender:
             sender=invite.inviterEmail if not invite.fromSuperuser else "",
             org_name=org_name,
             support_email=self.support_email,
+            trial_remaining_days=(
+                (subscription.futureCancelDate - datetime.now()).days
+                if subscription and subscription.futureCancelDate
+                else None
+            ),
         )
 
     async def send_user_forgot_password(self, receiver_email, token, headers=None):
