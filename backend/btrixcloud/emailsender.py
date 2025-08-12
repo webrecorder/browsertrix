@@ -167,8 +167,8 @@ class EmailSender:
             sender=invite.inviterEmail if not invite.fromSuperuser else "",
             org_name=org_name,
             support_email=self.support_email,
-            trial_remaining_days=(
-                (subscription.futureCancelDate - datetime.now(timezone.utc)).days
+            trial_end_date=(
+                subscription.futureCancelDate.isoformat()
                 if subscription and subscription.futureCancelDate
                 else None
             ),
