@@ -1948,6 +1948,7 @@ class Subscription(BaseModel):
     planId: str
 
     futureCancelDate: Optional[datetime] = None
+    # pylint: disable=C0301
     "When in a trial, future cancel date is the trial end date; when not in a trial, future cancel date is the date the subscription will be canceled, if set"
 
     readOnlyOnCancel: bool = False

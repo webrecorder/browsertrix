@@ -68,6 +68,7 @@ class InviteOps:
             await self.invites.create_index([("tokenHash", pymongo.HASHED)])
 
     async def add_new_user_invite(
+        # pylint: disable=R0913
         self,
         new_user_invite: InvitePending,
         invite_token: UUID,

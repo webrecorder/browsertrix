@@ -14,9 +14,14 @@ from email.mime.multipart import MIMEMultipart
 import aiohttp
 from fastapi import HTTPException
 
-from .models import CreateReplicaJob, DeleteReplicaJob, Organization, InvitePending
+from .models import (
+    CreateReplicaJob,
+    DeleteReplicaJob,
+    Organization,
+    InvitePending,
+    Subscription,
+)
 from .utils import is_bool, get_origin
-from backend.btrixcloud.models import Subscription
 
 
 # pylint: disable=too-few-public-methods, too-many-instance-attributes

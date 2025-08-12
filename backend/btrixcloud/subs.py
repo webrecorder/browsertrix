@@ -27,6 +27,7 @@ from .models import (
     SubscriptionPortalUrlRequest,
     SubscriptionPortalUrlResponse,
     SubscriptionCanceledResponse,
+    SubscriptionTrialEndReminder,
     SubscriptionReminderResponse,
     Organization,
     InviteToOrgRequest,
@@ -41,7 +42,6 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now
-from backend.btrixcloud.models import SubscriptionTrialEndReminder
 
 
 # if set, will enable this api
@@ -188,6 +188,8 @@ class SubOps:
         self,
         reminder: SubscriptionTrialEndReminder,
     ):
+        """Send a trial end reminder email to the organization admins"""
+
         org = await self.org_ops.find_org_by_subscription_id(reminder.subId)
 
         if not org:
