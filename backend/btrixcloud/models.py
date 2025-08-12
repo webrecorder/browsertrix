@@ -1960,6 +1960,7 @@ class SubscriptionCanceledResponse(BaseModel):
     deleted: bool
     canceled: bool
 
+
 # ============================================================================
 class SubscriptionReminderResponse(BaseModel):
     """Response model for subscription reminder"""

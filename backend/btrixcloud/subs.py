@@ -197,16 +197,14 @@ class SubOps:
             )
 
         if not org.subscription:
-            print(f"Subscription not found for organization ID {org.id} with sub id {reminder.subId}")
-            raise HTTPException(
-                status_code=404, detail="subscription_not_found"
+            print(
+                f"Subscription not found for organization ID {org.id} with sub id {reminder.subId}"
             )
+            raise HTTPException(status_code=404, detail="subscription_not_found")
 
         if not org.subscription.futureCancelDate:
             print(f"Future cancel date not found for subscription ID {reminder.subId}")
-            raise HTTPException(
-                status_code=404, detail="future_cancel_date_not_found"
-            )
+            raise HTTPException(status_code=404, detail="future_cancel_date_not_found")
 
         users = await self.org_ops.get_users_for_org(org, UserRole.OWNER)
         await asyncio.gather(
@@ -216,7 +214,7 @@ class SubOps:
                     user_name=user.name,
                     receiver_email=user.email,
                     org=org,
-                    behavior_on_trial_end=reminder.behavior_on_trial_end
+                    behavior_on_trial_end=reminder.behavior_on_trial_end,
                 )
                 for user in users
             ]

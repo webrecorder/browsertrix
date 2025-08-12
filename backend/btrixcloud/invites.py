@@ -20,7 +20,7 @@ from .models import (
     InviteOut,
     User,
     Organization,
-    Subscription
+    Subscription,
 )
 from .users import UserManager
 from .emailsender import EmailSender
