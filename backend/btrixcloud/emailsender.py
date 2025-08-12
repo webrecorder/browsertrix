@@ -5,7 +5,7 @@ import os
 import smtplib
 import ssl
 from uuid import UUID
-from typing import Optional, Union
+from typing import Optional, Union, Literal
 
 from email.message import EmailMessage
 from email.mime.text import MIMEText
@@ -219,4 +219,29 @@ class EmailSender:
             cancel_date=cancel_date.isoformat(),
             support_email=self.support_email,
             survey_url=self.survey_url,
+        )
+
+    async def send_subscription_trial_ending_soon(
+        self,
+        trial_end_date: datetime,
+        user_name: str,
+        receiver_email: str,
+        behavior_on_trial_end: Literal["cancel", "continue"],
+        org: Organization,
+        headers=None,
+    ):
+        """Send email indicating subscription trial is ending soon"""
+
+        origin = get_origin(headers)
+        org_url = f"{origin}/orgs/{org.slug}/"
+
+        await self._send_encrypted(
+            receiver_email,
+            "trialEndingSoon",
+            user_name=user_name,
+            org_name=org.name,
+            org_url=org_url,
+            trial_end_date=trial_end_date.isoformat(),
+            behavior_on_trial_end=behavior_on_trial_end,
+            support_email=self.support_email,
         )

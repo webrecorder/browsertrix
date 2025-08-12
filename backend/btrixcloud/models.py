@@ -1905,6 +1905,14 @@ class SubscriptionCancel(BaseModel):
 
 
 # ============================================================================
+class SubscriptionTrialEndReminder(BaseModel):
+    """Email reminder that subscription will end soon"""
+
+    subId: str
+    behavior_on_trial_end: Literal["cancel", "continue"]
+
+
+# ============================================================================
 class SubscriptionCancelOut(SubscriptionCancel, SubscriptionEventOut):
     """Output model for subscription cancellation event"""
 
@@ -1940,6 +1948,8 @@ class Subscription(BaseModel):
     planId: str
 
     futureCancelDate: Optional[datetime] = None
+    "When in a trial, future cancel date is the trial end date; when not in a trial, future cancel date is the date the subscription will be canceled, if set"
+
     readOnlyOnCancel: bool = False
 
 
@@ -1949,6 +1959,12 @@ class SubscriptionCanceledResponse(BaseModel):
 
     deleted: bool
     canceled: bool
+
+# ============================================================================
+class SubscriptionReminderResponse(BaseModel):
+    """Response model for subscription reminder"""
+
+    sent: bool
 
 
 # ============================================================================

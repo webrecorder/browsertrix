@@ -27,6 +27,7 @@ from .models import (
     SubscriptionPortalUrlRequest,
     SubscriptionPortalUrlResponse,
     SubscriptionCanceledResponse,
+    SubscriptionReminderResponse,
     Organization,
     InviteToOrgRequest,
     InviteAddedResponse,
@@ -40,6 +41,7 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now
+from backend.btrixcloud.models import SubscriptionTrialEndReminder
 
 
 # if set, will enable this api
@@ -181,6 +183,46 @@ class SubOps:
 
         await self.add_sub_event("cancel", cancel, org.id)
         return {"canceled": True, "deleted": deleted}
+
+    async def send_trial_end_reminder(
+        self,
+        reminder: SubscriptionTrialEndReminder,
+    ):
+        org = await self.org_ops.find_org_by_subscription_id(reminder.subId)
+
+        if not org:
+            print(f"Organization not found for subscription ID {reminder.subId}")
+            raise HTTPException(
+                status_code=404, detail="org_for_subscription_not_found"
+            )
+
+        if not org.subscription:
+            print(f"Subscription not found for organization ID {org.id} with sub id {reminder.subId}")
+            raise HTTPException(
+                status_code=404, detail="subscription_not_found"
+            )
+
+        if not org.subscription.futureCancelDate:
+            print(f"Future cancel date not found for subscription ID {reminder.subId}")
+            raise HTTPException(
+                status_code=404, detail="future_cancel_date_not_found"
+            )
+
+        users = await self.org_ops.get_users_for_org(org, UserRole.OWNER)
+        await asyncio.gather(
+            *[
+                self.user_manager.email.send_subscription_trial_ending_soon(
+                    trial_end_date=org.subscription.futureCancelDate,
+                    user_name=user.name,
+                    receiver_email=user.email,
+                    org=org,
+                    behavior_on_trial_end=reminder.behavior_on_trial_end
+                )
+                for user in users
+            ]
+        )
+
+        return SubscriptionReminderResponse(sent=True)
 
     async def add_sub_event(
         self,
@@ -394,6 +436,17 @@ def init_subs_api(
         cancel: SubscriptionCancel,
     ):
         return await ops.cancel_subscription(cancel)
+
+    @app.post(
+        "/subscriptions/trial-end-reminder",
+        tags=["subscriptions"],
+        dependencies=[Depends(user_or_shared_secret_dep)],
+        response_model=SubscriptionReminderResponse,
+    )
+    async def send_trial_end_reminder(
+        reminder: SubscriptionTrialEndReminder,
+    ):
+        return await ops.send_trial_end_reminder(reminder)
 
     assert org_ops.router
 
