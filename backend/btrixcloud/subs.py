@@ -202,13 +202,18 @@ class SubOps:
             print(
                 f"Subscription not found for organization ID {org.id} with sub id {reminder.subId}"
             )
-            raise HTTPException(status_code=404, detail="subscription_not_found")
+            raise HTTPException(status_code=500, detail="subscription_not_found")
 
         if not org.subscription.futureCancelDate:
             print(f"Future cancel date not found for subscription ID {reminder.subId}")
-            raise HTTPException(status_code=404, detail="future_cancel_date_not_found")
+            raise HTTPException(status_code=500, detail="future_cancel_date_not_found")
 
         users = await self.org_ops.get_users_for_org(org, UserRole.OWNER)
+
+        if len(users) == 0:
+            print(f"No admin users found for organization ID {org.id}")
+            raise HTTPException(status_code=500, detail="no_admin_users_found")
+
         await asyncio.gather(
             *[
                 self.user_manager.email.send_subscription_trial_ending_soon(
