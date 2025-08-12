@@ -6,11 +6,12 @@ import { Warning } from "../components/warning.js";
 import { Card } from "../components/card.js";
 
 import { z } from "zod";
+import { trimTrailingSlash } from "../lib/url.js";
 
 export const schema = z.object({
   user_name: z.string(),
   org_name: z.string(),
-  org_url: z.string(),
+  org_url: z.string().transform(trimTrailingSlash),
   cancel_date: z.string(),
   survey_url: z.string().optional(),
   support_email: z.email().optional(),

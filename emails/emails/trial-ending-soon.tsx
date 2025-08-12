@@ -12,11 +12,12 @@ import {
 import { Warning } from "../components/warning.js";
 
 import { z } from "zod";
+import { trimTrailingSlash } from "../lib/url.js";
 
 export const schema = z.object({
   user_name: z.string(),
   org_name: z.string(),
-  org_url: z.url(),
+  org_url: z.url().transform(trimTrailingSlash),
   trial_end_date: z.string(),
   behavior_on_trial_end: z.enum(["cancel", "continue"]).optional(),
   support_email: z.email().optional(),
