@@ -1,6 +1,6 @@
 """Basic Email Sending Support"""
 
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import smtplib
 import ssl
@@ -168,7 +168,7 @@ class EmailSender:
             org_name=org_name,
             support_email=self.support_email,
             trial_remaining_days=(
-                (subscription.futureCancelDate - datetime.now()).days
+                (subscription.futureCancelDate - datetime.now(timezone.utc)).days
                 if subscription and subscription.futureCancelDate
                 else None
             ),
