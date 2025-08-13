@@ -21,7 +21,7 @@ export const schema = z.object({
   invite_url: z.string(),
   support_email: z.email().optional(),
   validity_period_days: z.number().int().positive().optional(),
-  trial_end_date: z.string().optional(),
+  trial_end_date: z.string().nullish(),
 });
 
 export type InviteUserEmailProps = z.infer<typeof schema>;
