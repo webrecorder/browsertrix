@@ -78,7 +78,9 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 
 ### Page URL(s)
 
-One or more URLs of the page to crawl. URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
+One or more URLs of the pages to crawl, visible when using a crawl scope of _Single Page_ or _List of Pages_. URLs will be crawled in the order that they are specified.
+
+URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
 
 See [List Of Pages](#list-of-pages) for additional info when providing a list of URLs.
 
@@ -90,7 +92,7 @@ See [List Of Pages](#list-of-pages) for additional info when providing a list of
 
 ### Crawl Start URL
 
-This is the first page that the crawler will visit. _Site Crawl_ scopes are based on this URL.
+This is the first page that the crawler will visit. When using a crawl scope of _In-Page Links_, _Pages in Same Directory_, _Pages on Same Domain_, or _Pages on Same Domain + Subdomains_, this URL is the basis for determining whether a linked URL is within scope and should be crawled.
 
 ### Include Any Linked Page
 
@@ -393,7 +395,9 @@ Describe and organize your crawl workflow and the resulting archived items.
 
 ### Name
 
-Allows a custom name to be set for the workflow. If no name is set, the workflow's name will be set to the _Crawl Start URL_. For Page List crawls, the workflow's name will be set to the first URL present in the _Crawl URL(s)_ field, with an added `(+x)` where `x` represents the total number of URLs in the list.
+Allows a custom name to be set for the workflow.
+
+If no name is set, the workflow's name will be set to the first page URL specified in _Scope_ (also referred to as the crawl start URL.) For _Single Page_ and _List of Pages_ crawls, the workflow's name will be suffixed by `+ N` where `N` represents the number of page URLs in addition to the crawl start URL.
 
 ### Description
 

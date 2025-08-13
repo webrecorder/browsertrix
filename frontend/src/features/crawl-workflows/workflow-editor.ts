@@ -2231,6 +2231,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private renderJobMetadata() {
+    const link_to_scope = html`<button
+      type="button"
+      class="text-blue-600 hover:text-blue-500"
+      @click=${async () => {
+        this.updateProgressState({ activeTab: "scope" });
+
+        await this.updateComplete;
+
+        void this.scrollToActivePanel();
+      }}
+    >
+      ${msg("Scope")}
+    </button>`;
+
     return html`
       ${inputCol(html`
         <sl-input
@@ -2245,8 +2259,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Customize this Workflow's name. Workflows are named after
-        the first Crawl URL by default.`),
+        html`${msg(`Customize the name of this workflow.`)}
+        ${msg(
+          html`If omitted, the workflow will be named after the first page URL
+          specified in ${link_to_scope}.`,
+        )} `,
       )}
       ${inputCol(html`
         <sl-textarea
