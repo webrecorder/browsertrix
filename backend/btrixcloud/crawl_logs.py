@@ -80,7 +80,7 @@ class CrawlLogOps:
             details = None
             log_dict_details = log_dict.get("details")
             if log_dict_details:
-                if isinstance(log_dict_details, Dict):
+                if isinstance(log_dict_details, dict):
                     details = log_dict_details
                 else:
                     details = {"items": log_dict_details}
