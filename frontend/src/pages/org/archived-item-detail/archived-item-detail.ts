@@ -20,6 +20,7 @@ import type {
   Workflow,
 } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
+import type { NonEmptyArray } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import {
   isActive,
@@ -145,11 +146,13 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private timerId?: number;
 
-  private get hasFiles(): boolean | null {
-    if (!this.item) return null;
-    if (!this.item.resources) return false;
+  private hasFiles(item?: ArchivedItem): item is ArchivedItem & {
+    resources: NonEmptyArray<ArchivedItem["resources"]>;
+  } {
+    if (!item) return false;
+    if (!item.resources) return false;
 
-    return this.item.resources.length > 0;
+    return Boolean(item.resources[0]);
   }
 
   private get formattedFinishedDate() {
@@ -763,7 +766,7 @@ export class ArchivedItemDetail extends BtrixElement {
 
     const config = JSON.stringify({ headers });
 
-    const canReplay = this.hasFiles;
+    const canReplay = this.hasFiles(this.item);
 
     return html`
       <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
@@ -977,10 +980,10 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private renderFiles() {
     return html`
-      ${this.hasFiles
+      ${this.hasFiles(this.item)
         ? html`
             <ul class="rounded-lg border text-sm">
-              ${this.item!.resources!.map(
+              ${this.item.resources.map(
                 (file) => html`
                   <li
                     class="flex justify-between border-t p-3 first:border-t-0"
