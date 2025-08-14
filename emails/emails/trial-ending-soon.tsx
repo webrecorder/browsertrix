@@ -7,7 +7,6 @@ import {
   formatRelativeDate,
   formatRelativeDateToParts,
   offsetDays,
-  reRenderDate,
 } from "../lib/date.js";
 import { Warning } from "../components/warning.js";
 
@@ -18,7 +17,7 @@ export const schema = z.object({
   user_name: z.string(),
   org_name: z.string(),
   org_url: z.url().transform(trimTrailingSlash),
-  trial_end_date: z.string(),
+  trial_end_date: z.coerce.date(),
   behavior_on_trial_end: z.enum(["cancel", "continue"]).optional(),
   support_email: z.email().optional(),
 });
@@ -33,7 +32,7 @@ export const TrialEndingSoonEmail = ({
   behavior_on_trial_end = "continue",
   support_email,
 }: TrialEndingSoonEmailProps) => {
-  const date = reRenderDate(trial_end_date);
+  const date = formatDate(trial_end_date);
   const daysLeft = differenceInDays(new Date(trial_end_date));
   const relative = formatRelativeDate(daysLeft, "days");
   const relativeParts = formatRelativeDateToParts(daysLeft, "days");
@@ -182,7 +181,7 @@ export const TrialEndingSoonEmail = ({
 TrialEndingSoonEmail.PreviewProps = {
   user_name: "Emma",
   org_name: "Emma’s Archives",
-  trial_end_date: offsetDays(7).toISOString(),
+  trial_end_date: offsetDays(7),
   org_url: "https://dev.browsertrix.com/orgs/default-org",
   behavior_on_trial_end: "cancel",
   support_email: "support@webrecorder.net",
@@ -191,7 +190,7 @@ TrialEndingSoonEmail.PreviewProps = {
 export default TrialEndingSoonEmail;
 
 export const subject = ({ trial_end_date }: TrialEndingSoonEmailProps) => {
-  const date = reRenderDate(trial_end_date);
+  const date = formatDate(trial_end_date);
   const daysLeft = differenceInDays(new Date(trial_end_date));
   const relative = formatRelativeDate(daysLeft, "days");
   return `Your Browsertrix trial ends ${relative}`;

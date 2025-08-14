@@ -4,10 +4,8 @@ import { Template } from "../templates/btrix.js";
 import {
   differenceInDays,
   formatDate,
-  formatRelativeDate,
   formatRelativeDateToParts,
   offsetDays,
-  reRenderDate,
 } from "../lib/date.js";
 import { formatNumber } from "../lib/number.js";
 import { Button } from "../components/button.js";
@@ -21,7 +19,7 @@ export const schema = z.object({
   invite_url: z.string(),
   support_email: z.email().optional(),
   validity_period_days: z.number().int().positive().optional(),
-  trial_end_date: z.string().nullish(),
+  trial_end_date: z.coerce.date().nullish(),
 });
 
 export type InviteUserEmailProps = z.infer<typeof schema>;
@@ -35,9 +33,7 @@ export const InviteUserEmail = ({
   validity_period_days = 7,
   trial_end_date,
 }: InviteUserEmailProps) => {
-  const daysLeft = trial_end_date
-    ? differenceInDays(new Date(trial_end_date))
-    : null;
+  const daysLeft = trial_end_date ? differenceInDays(trial_end_date) : null;
   const relativeParts = daysLeft
     ? formatRelativeDateToParts(daysLeft, "days")
     : null;
@@ -348,7 +344,7 @@ InviteUserEmail.PreviewProps = {
   invite_url: "https://app.browsertrix.com/invite-url-123-demo",
   support_email: "support@webrecorder.net",
   validity_period_days: 7,
-  trial_end_date: offsetDays(7).toISOString(),
+  trial_end_date: offsetDays(7),
 } satisfies InviteUserEmailProps;
 
 export default InviteUserEmail;
