@@ -130,6 +130,25 @@ export class ArchivedItemDetail extends BtrixElement {
     return `auth_bearer=${this.authState?.headers.Authorization.split(" ")[1]}`;
   }
 
+  private get itemDownload() {
+    let path = "";
+    let name = "";
+
+    if (this.hasFiles(this.item)) {
+      if (this.item.resources.length > 1) {
+        path = `/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?${this.authQuery}`;
+        name = `${this.itemId}.wacz`;
+      } else {
+        const file = this.item.resources[0];
+
+        path = file.path;
+        name = file.name;
+      }
+    }
+
+    return { path, name };
+  }
+
   private get listUrl(): string {
     let path = "items";
     if (this.workflowId) {
@@ -618,6 +637,8 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderMenu() {
     if (!this.item) return;
 
+    const { path, name } = this.itemDownload;
+
     return html`
       <sl-dropdown placement="bottom-end" distance="4" hoist>
         <sl-button slot="trigger" size="small" caret
@@ -650,10 +671,7 @@ export class ArchivedItemDetail extends BtrixElement {
                   </btrix-menu-item-link>
                 `,
               )}
-              <btrix-menu-item-link
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?${this.authQuery}`}
-                download
-              >
+              <btrix-menu-item-link href=${path} download=${name}>
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                 ${msg("Download Item")}
                 ${this.item?.fileSize
@@ -1023,33 +1041,18 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderDownloadFiles() {
     if (!this.hasFiles(this.item)) return;
 
-    if (this.item.resources.length > 1) {
-      return html`<sl-tooltip content=${msg("Download Files as Multi-WACZ")}>
-        <sl-button
-          href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?${this.authQuery}`}
-          download=${`browsertrix-${this.itemId}.wacz`}
-          size="small"
-          variant="primary"
-        >
-          <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-          ${msg("Download Files")}
-        </sl-button>
-      </sl-tooltip>`;
-    }
+    const singleFile = this.item.resources.length === 1;
+    const { path, name } = this.itemDownload;
 
-    const file = this.item.resources[0];
-
-    return html`
-      <sl-button
-        href=${file.path}
-        download=${file.name}
-        size="small"
-        variant="primary"
-      >
+    return html`<sl-tooltip
+      content=${msg("Download Files as Multi-WACZ")}
+      ?disabled=${singleFile}
+    >
+      <sl-button href=${path} download=${name} size="small" variant="primary">
         <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-        ${msg("Download File")}
+        ${singleFile ? msg("Download File") : msg("Download Files")}
       </sl-button>
-    `;
+    </sl-tooltip>`;
   }
 
   private renderLogs() {
