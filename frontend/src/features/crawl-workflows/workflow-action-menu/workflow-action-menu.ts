@@ -10,6 +10,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
 import { WorkflowTab } from "@/routes";
 import type { Crawl, ListWorkflow, Workflow } from "@/types/crawler";
+import { downloadLink } from "@/utils/crawl-workflows/downloadLink";
 import { isNotFailed, isSuccessfullyFinished } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
 
@@ -209,23 +210,14 @@ export class WorkflowActionMenu extends BtrixElement {
   private renderLatestCrawlMenu(latestCrawl: Crawl) {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
     const logTotals = this.logTotals;
-
-    let path = `/api/orgs/${this.orgId}/all-crawls/${latestCrawl.id}/download?auth_bearer=${authToken}`;
-    let name = `${latestCrawl.id}.wacz`;
-
-    if (latestCrawl.resources?.length === 1) {
-      const file = latestCrawl.resources[0];
-
-      path = file.path;
-      name = file.name;
-    }
+    const download = downloadLink(latestCrawl, this.authState);
 
     return html`
       <sl-menu slot="submenu">
         <btrix-menu-item-link
-          href=${path}
+          href=${download.path}
           ?disabled=${!latestCrawl.fileSize}
-          download=${name}
+          download=${download.name}
         >
           <sl-icon name="cloud-download" slot="prefix"></sl-icon>
           ${msg("Download Item")}

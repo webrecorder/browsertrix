@@ -37,6 +37,7 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
 import { type StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
+import { downloadLink } from "@/utils/crawl-workflows/downloadLink";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import {
   DEFAULT_MAX_SCALE,
@@ -718,16 +719,7 @@ export class WorkflowDetail extends BtrixElement {
       const authToken = this.authState?.headers.Authorization.split(" ")[1];
       const disableDownload = this.isRunning;
       const disableReplay = !latestCrawl.fileSize;
-
-      let path = `/api/orgs/${this.orgId}/all-crawls/${latestCrawlId}/download?auth_bearer=${authToken}`;
-      let name = `${latestCrawlId}.wacz`;
-
-      if (latestCrawl.resources?.length === 1) {
-        const file = latestCrawl.resources[0];
-
-        path = file.path;
-        name = file.name;
-      }
+      const download = downloadLink(latestCrawl, this.authState);
 
       return html`
         <btrix-copy-button
@@ -746,8 +738,8 @@ export class WorkflowDetail extends BtrixElement {
           <sl-button-group>
             <sl-button
               size="small"
-              href=${path}
-              download=${name}
+              href=${download.path}
+              download=${download.name}
               ?disabled=${disableDownload || disableReplay}
             >
               <sl-icon name="cloud-download" slot="prefix"></sl-icon>
@@ -766,9 +758,9 @@ export class WorkflowDetail extends BtrixElement {
               </sl-button>
               <sl-menu>
                 <btrix-menu-item-link
-                  href=${path}
+                  href=${download.path}
                   ?disabled=${disableDownload || disableReplay}
-                  download=${name}
+                  download=${download.name}
                 >
                   <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                   ${msg("Item")}
