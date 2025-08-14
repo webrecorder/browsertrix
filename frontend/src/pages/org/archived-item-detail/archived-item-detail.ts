@@ -280,6 +280,7 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   render() {
+    const authToken = this.authState?.headers.Authorization.split(" ")[1];
     let sectionContent: string | TemplateResult<1> = "";
 
     switch (this.activeTab) {
@@ -329,7 +330,7 @@ export class ArchivedItemDetail extends BtrixElement {
           html` ${this.renderTitle(this.tabLabels.logs)}
             <sl-tooltip content=${msg("Download Entire Log File")}>
               <sl-button
-                href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/logs?auth_bearer=${this.authState?.headers.Authorization.split(" ")[1]}`}
+                href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/logs?auth_bearer=${authToken}`}
                 download=${`browsertrix-${this.itemId}-logs.log`}
                 size="small"
                 variant="primary"
