@@ -50,7 +50,7 @@ const crawlSortOptions: SortOptions = [
   },
   {
     field: "firstSeed",
-    label: msg("Crawl Start URL"),
+    label: msg("First Page URL"),
     defaultDirection: 1,
   },
 ];
