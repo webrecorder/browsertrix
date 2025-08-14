@@ -26,7 +26,7 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
   firstSeed: {
-    label: msg("Crawl Start URL"),
+    label: msg("First Page URL"),
     defaultDirection: "desc",
   },
   fileSize: {
