@@ -126,6 +126,10 @@ export class ArchivedItemDetail extends BtrixElement {
     config: msg("Crawl Settings"),
   };
 
+  private get authQuery() {
+    return `auth_bearer=${this.authState?.headers.Authorization.split(" ")[1]}`;
+  }
+
   private get listUrl(): string {
     let path = "items";
     if (this.workflowId) {
@@ -147,7 +151,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private timerId?: number;
 
   private hasFiles(item?: ArchivedItem): item is ArchivedItem & {
-    resources: NonEmptyArray<ArchivedItem["resources"]>;
+    resources: NonEmptyArray<NonNullable<ArchivedItem["resources"]>[number]>;
   } {
     if (!item) return false;
     if (!item.resources) return false;
@@ -288,7 +292,6 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   render() {
-    const authToken = this.authState?.headers.Authorization.split(" ")[1];
     let sectionContent: string | TemplateResult<1> = "";
 
     switch (this.activeTab) {
@@ -329,17 +332,7 @@ export class ArchivedItemDetail extends BtrixElement {
       case "files":
         sectionContent = this.renderPanel(
           html` ${this.renderTitle(this.tabLabels.files)}
-            <sl-tooltip content=${msg("Download Files as Multi-WACZ")}>
-              <sl-button
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
-                download=${`browsertrix-${this.itemId}.wacz`}
-                size="small"
-                variant="primary"
-              >
-                <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-                ${msg("Download Files")}
-              </sl-button>
-            </sl-tooltip>`,
+          ${this.renderDownloadFiles()}`,
           this.renderFiles(),
         );
         break;
@@ -348,7 +341,7 @@ export class ArchivedItemDetail extends BtrixElement {
           html` ${this.renderTitle(this.tabLabels.logs)}
             <sl-tooltip content=${msg("Download Entire Log File")}>
               <sl-button
-                href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/logs?auth_bearer=${authToken}`}
+                href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/logs?${this.authQuery}`}
                 download=${`browsertrix-${this.itemId}-logs.log`}
                 size="small"
                 variant="primary"
@@ -625,8 +618,6 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderMenu() {
     if (!this.item) return;
 
-    const authToken = this.authState?.headers.Authorization.split(" ")[1];
-
     return html`
       <sl-dropdown placement="bottom-end" distance="4" hoist>
         <sl-button slot="trigger" size="small" caret
@@ -660,7 +651,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 `,
               )}
               <btrix-menu-item-link
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?${this.authQuery}`}
                 download
               >
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
@@ -1026,6 +1017,40 @@ export class ArchivedItemDetail extends BtrixElement {
               ${msg("No files to download.")}
             </p>
           `}
+    `;
+  }
+
+  private renderDownloadFiles() {
+    if (!this.hasFiles(this.item)) return;
+
+    if (this.item.resources.length > 1) {
+      return html`<sl-tooltip content=${msg("Download Files as Multi-WACZ")}>
+        <sl-button
+          href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?${this.authQuery}`}
+          download=${`browsertrix-${this.itemId}.wacz`}
+          size="small"
+          variant="primary"
+        >
+          <sl-icon slot="prefix" name="cloud-download"></sl-icon>
+          ${msg("Download Files")}
+        </sl-button>
+      </sl-tooltip>`;
+    }
+
+    const file = this.item.resources[0];
+
+    console.log(file);
+
+    return html`
+      <sl-button
+        href=${file.path}
+        download=${file.name}
+        size="small"
+        variant="primary"
+      >
+        <sl-icon slot="prefix" name="cloud-download"></sl-icon>
+        ${msg("Download File")}
+      </sl-button>
     `;
   }
 
