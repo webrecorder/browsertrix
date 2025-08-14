@@ -2,6 +2,9 @@ import type { Auth } from "@/types/auth";
 import type { ArchivedItem } from "@/types/crawler";
 import { hasFiles } from "@/utils/crawl-workflows/hasFiles";
 
+/**
+ * Get link to download archived item
+ */
 export function downloadLink(
   item?: ArchivedItem,
   authState?: Auth | null,
