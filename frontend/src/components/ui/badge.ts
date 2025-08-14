@@ -37,9 +37,6 @@ export class Badge extends TailwindElement {
   @property({ type: String, reflect: true })
   role: string | null = "status";
 
-  @property({ type: String })
-  class = "";
-
   static styles = css`
     :host {
       display: inline-flex;
@@ -76,7 +73,6 @@ export class Badge extends TailwindElement {
                 blue: tw`bg-blue-50 text-blue-600`,
               }[this.variant],
           this.pill ? tw`min-w-[1.125rem] rounded-full px-1` : tw`rounded px-2`,
-          this.class,
         )}
         part="base"
       >
