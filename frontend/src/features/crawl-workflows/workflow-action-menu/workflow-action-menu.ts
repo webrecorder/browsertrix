@@ -210,12 +210,22 @@ export class WorkflowActionMenu extends BtrixElement {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
     const logTotals = this.logTotals;
 
+    let path = `/api/orgs/${this.orgId}/all-crawls/${latestCrawl.id}/download?auth_bearer=${authToken}`;
+    let name = `${latestCrawl.id}.wacz`;
+
+    if (latestCrawl.resources?.length === 1) {
+      const file = latestCrawl.resources[0];
+
+      path = file.path;
+      name = file.name;
+    }
+
     return html`
       <sl-menu slot="submenu">
         <btrix-menu-item-link
-          href=${`/api/orgs/${this.orgId}/all-crawls/${latestCrawl.id}/download?auth_bearer=${authToken}`}
+          href=${path}
           ?disabled=${!latestCrawl.fileSize}
-          download
+          download=${name}
         >
           <sl-icon name="cloud-download" slot="prefix"></sl-icon>
           ${msg("Download Item")}
