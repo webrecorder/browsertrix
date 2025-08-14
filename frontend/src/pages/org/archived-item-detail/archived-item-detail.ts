@@ -1039,8 +1039,6 @@ export class ArchivedItemDetail extends BtrixElement {
 
     const file = this.item.resources[0];
 
-    console.log(file);
-
     return html`
       <sl-button
         href=${file.path}
