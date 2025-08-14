@@ -21,7 +21,7 @@ import {
 } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
-import { ShareableNotice } from "./shareable-notice";
+import { ShareableNotice } from "./templates/shareable-notice";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";

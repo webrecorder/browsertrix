@@ -23,7 +23,7 @@ import {
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
-import { ShareableNotice } from "@/features/crawl-workflows/shareable-notice";
+import { ShareableNotice } from "@/features/crawl-workflows/templates/shareable-notice";
 import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
