@@ -9,8 +9,9 @@
       <trans-unit id="scbeafb2ef469257c">
         <source>Need login</source>
       </trans-unit>
-      <trans-unit id="sa3ce85ea4e96897c">
+      <trans-unit id="sa3ce85ea4e96897c" xml:space="preserve">
         <source>Storage quota reached</source>
+        <target state="translated">Speicher Limit erreicht</target>
       </trans-unit>
       <trans-unit id="s07018373ca29dfcb">
         <source>Monthly execution minutes quota reached</source>
