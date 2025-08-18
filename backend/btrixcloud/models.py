@@ -370,6 +370,8 @@ class RawCrawlConfig(BaseModel):
     selectLinks: List[str] = ["a[href]->href"]
     clickSelector: str = "a"
 
+    saveStorage: Optional[bool] = False
+
 
 # ============================================================================
 class CrawlConfigIn(BaseModel):

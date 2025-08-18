@@ -79,6 +79,9 @@ export const infoTextFor = {
   failOnContentCheck: msg(
     `Fail the crawl if a page behavior detects the browser is not logged in on supported pages.`,
   ),
+  saveStorage: msg(
+    `Include data from the browser's local and session storage in the web archive.`,
+  ),
 } as const satisfies Partial<Record<Field, string | TemplateResult>>;
 
 export default infoTextFor;

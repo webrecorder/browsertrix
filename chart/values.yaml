@@ -6,7 +6,6 @@
 # ex: enable only 'en' and 'es' locales
 # locales_enabled: "en,es"
 
-
 # Crawler Settings
 # =========================================
 
@@ -34,7 +33,6 @@ crawler_extract_full_text: to-warc
 # if set, each workflow can have a lower limit, but not higher
 max_pages_per_crawl: 50000
 
-
 # default template for generate wacz files
 # supports following interpolated vars:
 # @ts - current timestamp
@@ -43,16 +41,13 @@ max_pages_per_crawl: 50000
 # @id - full crawl id
 default_crawl_filename_template: "@ts-@hostsuffix.wacz"
 
-
 # advanced: additional args to be passed to the crawler
 # this is mostly for testing of new/experimental crawler flags
 # standard crawler options are covered with other options above
 crawler_extra_args: ""
 
-
 # max allowed browser windows per crawl
 max_browser_windows: 8
-
 
 # Cluster Settings
 # =========================================
@@ -103,7 +98,6 @@ default_org: "My Organization"
 # if set >0, will keep replicas (if any) for this number of days
 replica_deletion_delay_days: 0
 
-
 # API Image
 # =========================================
 backend_image: "docker.io/webrecorder/browsertrix-backend:1.18.0"
@@ -140,7 +134,6 @@ sign_up_url: ""
 # set e-mail to show for subscriptions related info
 sales_email: ""
 
-
 # survey e-mail
 # if set, subscription cancellation e-mails will include a link to this survey
 user_survey_url: ""
@@ -167,9 +160,22 @@ backend_avg_memory_threshold: 95
 cleanup_job_cron_schedule: "0 0 * * 0"
 
 # number of minutes before unused seed files are eligible
-# for cleanup. defaults to 1 day (1440 minutes) 
+# for cleanup. defaults to 1 day (1440 minutes)
 cleanup_files_after_minutes: 1440
 
+# Emails Image
+# =========================================
+emails_image: "docker.io/webrecorder/browsertrix-emails:1.18.0"
+emails_pull_policy: "IfNotPresent"
+
+emails_cpu: "10m"
+
+emails_memory: "75Mi"
+
+# if set, maps the emails service to a fixed port on host machine
+# must be between 30000 - 32767
+# use for deployments on localhost
+local_emails_port: 30872
 
 # Nginx Image
 # =========================================
@@ -205,7 +211,6 @@ frontend_avg_cpu_threshold: 80
 # scale up if avg memory utilization exceeds
 frontend_avg_memory_threshold: 95
 
-
 # MongoDB Image
 # =========================================
 mongo_local: true
@@ -219,7 +224,6 @@ mongo_cpu: "12m"
 
 mongo_memory: "512Mi"
 
-
 mongo_auth:
   # specify either username + password (for local mongo)
   username: root
@@ -227,7 +231,6 @@ mongo_auth:
 
   # or full URL (for remote mongo server)
   # db_url: mongodb+srv://...
-
 
 # Redis Image
 # =========================================
@@ -239,7 +242,6 @@ redis_cpu: "10m"
 redis_memory: "200Mi"
 
 redis_storage: "3Gi"
-
 
 # Crawler Channels
 # =========================================
@@ -316,7 +318,6 @@ crawler_extra_memory_per_browser: 768Mi
 # if set to true, automatically adjust crawler memory usage up to max_crawler_memory
 enable_auto_resize_crawlers: false
 
-
 # max crawler memory, if set, will enable auto-resizing of crawler pods up to this size
 # if not set, no auto-resizing is done, and crawls always use 'crawler_memory' memory
 # max_crawler_memory:
@@ -330,14 +331,12 @@ enable_auto_resize_crawlers: false
 # the workdir is used to store the browser profile data and other temporary files
 # profile_browser_workdir_size: 4Gi
 
-
 # Other Crawler Settings
 # ----------------------
 
 # minimum size allocated to each crawler
 # should be at least double crawl session size to ensure space for WACZ and browser profile data
 crawler_storage: "25Gi"
-
 
 # if set, will ensure 'crawler_storage' is at least this times used storage
 # eg. if crawler session reaches 10Gb, and this value is 2.5, will attempt
@@ -384,7 +383,6 @@ btrix-proxies:
 # crawler_gid: 201407
 # crawler_fsgroup: 201407
 
-
 # optional: enable/disable crawler network policy, prevents crawler pods from accessing internal services
 crawler_enable_network_policy: true
 
@@ -397,7 +395,6 @@ crawler_enable_network_policy: true
 
 # time to wait for graceful stop
 grace_period: 1000
-
 
 # Local Minio Pod (optional)
 # =========================================
@@ -422,7 +419,6 @@ minio_access_path: &minio_access_path "/data/"
 minio_cpu: "10m"
 minio_memory: "1024Mi"
 
-
 # Storage
 # =========================================
 # should include the local minio bucket, if enabled, and any other available buckets for default storage
@@ -445,12 +441,10 @@ storages:
     # if not specified, defaults to 'path' for local minio or
     # 'virtual' for all other storages
 
-
 # optional: duration in minutes for WACZ download links to be valid
 # used by webhooks and replay
 # max value = 10079 (one week minus one minute)
 # storage_presign_duration_minutes: 10079
-
 
 # Email Options
 # =========================================
@@ -470,6 +464,8 @@ email:
   # use to provide an additional support email in email templates
   support_email: ""
 
+  # endpoint for email templates
+  template_endpoint: "http://browsertrix-cloud-emails:3000/api/emails"
 
 # Deployment options
 # =========================================
@@ -518,7 +514,6 @@ signer_cpu: "5m"
 
 signer_memory: "50Mi"
 
-
 # Migration Options (Advanced)
 # =========================================
 
@@ -546,5 +541,4 @@ fqdn_suffix: .svc.cluster.local
 addons:
   admin:
     logging: false
-
 # metacontroller:

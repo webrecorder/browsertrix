@@ -1,5 +1,7 @@
 -r requirements.txt
 
 pytest
+pytest-asyncio
+pytest-timeout
 requests
 boto3

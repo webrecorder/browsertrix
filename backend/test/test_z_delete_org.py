@@ -1,5 +1,6 @@
 import requests
 import time
+import pytest
 
 from .conftest import API_PREFIX
 
@@ -10,6 +11,7 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/recalculate-storage",
         headers=admin_auth_headers,
+        timeout=120,
     )
     assert r.status_code == 200
     data = r.json()
@@ -24,7 +26,9 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
     while True:
         try:
             r = requests.get(
-                f"{API_PREFIX}/orgs/all/jobs/{job_id}", headers=admin_auth_headers
+                f"{API_PREFIX}/orgs/all/jobs/{job_id}",
+                headers=admin_auth_headers,
+                timeout=120,
             )
             assert r.status_code == 200
             success = r.json()["success"]
@@ -33,16 +37,17 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
                 break
 
             if success is False:
-                assert False
-
-            if attempts >= max_attempts:
-                assert False
+                pytest.fail("Job failed")
 
             time.sleep(10)
         except:
             time.sleep(10)
 
+        if attempts >= max_attempts:
+            pytest.fail(f"Giving up waiting for job after {max_attempts} attempts")
+
         attempts += 1
+        print(f"Job not yet succeeded, retrying... ({attempts}/{max_attempts})")
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}",
@@ -60,7 +65,7 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
 def test_delete_org_non_superadmin(crawler_auth_headers, default_org_id):
     # Assert that non-superadmin can't delete org
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}", headers=crawler_auth_headers
+        f"{API_PREFIX}/orgs/{default_org_id}", headers=crawler_auth_headers, timeout=120
     )
     assert r.status_code == 403
     assert r.json()["detail"] == "Not Allowed"
@@ -72,7 +77,9 @@ def test_delete_org_superadmin(admin_auth_headers, default_org_id):
     item_ids = []
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls", headers=admin_auth_headers
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls",
+        headers=admin_auth_headers,
+        timeout=120,
     )
     assert r.status_code == 200
     data = r.json()
@@ -82,7 +89,7 @@ def test_delete_org_superadmin(admin_auth_headers, default_org_id):
 
     # Delete org and its data
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers
+        f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers, timeout=120
     )
     assert r.status_code == 200
     data = r.json()
@@ -97,7 +104,9 @@ def test_delete_org_superadmin(admin_auth_headers, default_org_id):
     while True:
         try:
             r = requests.get(
-                f"{API_PREFIX}/orgs/all/jobs/{job_id}", headers=admin_auth_headers
+                f"{API_PREFIX}/orgs/all/jobs/{job_id}",
+                headers=admin_auth_headers,
+                timeout=120,
             )
             assert r.status_code == 200
             success = r.json()["success"]
@@ -106,24 +115,28 @@ def test_delete_org_superadmin(admin_auth_headers, default_org_id):
                 break
 
             if success is False:
-                assert False
-
-            if attempts >= max_attempts:
-                assert False
+                pytest.fail("Job failed")
 
             time.sleep(10)
         except:
             time.sleep(10)
 
+        if attempts >= max_attempts:
+            pytest.fail(f"Giving up waiting for job after {max_attempts} attempts")
+
         attempts += 1
+        print(f"Job not yet succeeded, retrying... ({attempts}/{max_attempts})")
 
     # Ensure org and items got deleted
-    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers, timeout=120
+    )
     assert r.status_code == 404
 
     for item_id in item_ids:
         r = requests.get(
             f"{API_PREFIX}/orgs/all/all-crawls/{item_id}/replay.json",
             headers=admin_auth_headers,
+            timeout=120,
         )
         assert r.status_code == 404

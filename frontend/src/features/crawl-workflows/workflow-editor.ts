@@ -1086,14 +1086,14 @@ export class WorkflowEditor extends BtrixElement {
         this.formState.seedListFormat === SeedListFormat.File
           ? html`${fileAdditionalInfo}
             ${this.renderUserGuideLink({
-              hash: "page-urls",
+              hash: "list-of-pages",
               content: msg("Read more about URL list files"),
             })}.`
           : html`${infoTextFor["urlList"]}
               <br />
               ${jsonAdditionalInfo},
               ${this.renderUserGuideLink({
-                hash: "page-urls",
+                hash: "list-of-pages",
                 content: msg("upload a URL list file"),
               })}.`,
       )}
@@ -1981,6 +1981,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(infoTextFor["blockAds"], false)}
       ${inputCol(html`
+        <sl-checkbox name="saveStorage" ?checked=${this.formState.saveStorage}>
+          ${msg("Save local and session storage")}
+        </sl-checkbox>
+      `)}
+      ${this.renderHelpTextCol(
+        html`${infoTextFor["saveStorage"]}
+        ${this.renderUserGuideLink({
+          hash: "save-local-and-session-storage",
+          content: msg("Implications for shared archives"),
+        })}.`,
+        false,
+      )}
+      ${inputCol(html`
         <sl-input
           name="userAgent"
           label=${msg("User Agent")}
@@ -2236,7 +2249,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     hash: string;
     content: string;
   }) {
-    const path = `workflow-setup#${hash}`;
+    const path = `workflow-setup/#${hash}`;
 
     return html`<a
       href="${this.docsUrl}user-guide/${path}"
@@ -3064,6 +3077,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     | "useSitemap"
     | "failOnFailedSeed"
     | "failOnContentCheck"
+    | "saveStorage"
   > {
     const jsonSeeds = this.formState.seedListFormat === SeedListFormat.JSON;
 
@@ -3082,6 +3096,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       useSitemap: false,
       failOnFailedSeed: this.formState.failOnFailedSeed,
       failOnContentCheck: this.formState.failOnContentCheck,
+      saveStorage: this.formState.saveStorage,
     };
 
     return config;
@@ -3094,6 +3109,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     | "useSitemap"
     | "failOnFailedSeed"
     | "failOnContentCheck"
+    | "saveStorage"
   > {
     const primarySeedUrl = this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeUrlList
@@ -3125,6 +3141,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       useSitemap: this.formState.useSitemap,
       failOnFailedSeed: false,
       failOnContentCheck: this.formState.failOnContentCheck,
+      saveStorage: this.formState.saveStorage,
     };
     return config;
   }

@@ -271,6 +271,10 @@ export class ConfigDetails extends BtrixElement {
             seedsConfig?.blockAds,
           )}
           ${this.renderSetting(
+            msg("Save Local and Session Storage"),
+            seedsConfig?.saveStorage,
+          )}
+          ${this.renderSetting(
             msg("User Agent"),
             seedsConfig?.userAgent
               ? seedsConfig.userAgent
