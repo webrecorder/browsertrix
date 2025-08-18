@@ -23,6 +23,7 @@ import {
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
+import { ShareableNotice } from "@/features/crawl-workflows/templates/shareable-notice";
 import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
@@ -445,16 +446,17 @@ export class WorkflowDetail extends BtrixElement {
 
         <div>
           <header class="col-span-1 mb-3 flex flex-wrap gap-2">
-            <div class="flex max-w-full flex-wrap gap-x-2 gap-y-1.5">
+            <div
+              class="flex max-w-full flex-wrap items-center gap-x-2 gap-y-1.5"
+            >
               <btrix-detail-page-title
                 .item=${this.workflow}
               ></btrix-detail-page-title>
+              ${when(this.workflow?.shareable, ShareableNotice)}
               ${when(
                 this.workflow?.inactive,
                 () => html`
-                  <btrix-badge
-                    class="inline-block align-middle"
-                    variant="warning"
+                  <btrix-badge class="min-h-5" variant="warning"
                     >${msg("Inactive")}</btrix-badge
                   >
                 `,
@@ -471,9 +473,7 @@ export class WorkflowDetail extends BtrixElement {
               )}
             </div>
 
-            <div
-              class="flex-0 order-first ml-auto flex flex-wrap justify-end gap-2 lg:order-last"
-            >
+            <div class="flex-0 ml-auto flex flex-wrap justify-end gap-2">
               ${when(
                 this.isCrawler && this.workflow && !this.workflow.inactive,
                 this.renderActions,
