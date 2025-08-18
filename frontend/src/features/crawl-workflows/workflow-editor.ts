@@ -344,7 +344,7 @@ export class WorkflowEditor extends BtrixElement {
 
   private get utcSchedule() {
     if (!this.formState.scheduleFrequency) {
-      return "";
+      return this.formState.scheduleCustom;
     }
     return getUTCSchedule({
       interval: this.formState.scheduleFrequency,
@@ -2048,6 +2048,27 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private readonly renderScheduleCron = () => {
     const utcSchedule = this.utcSchedule;
+    const scheduledDate = html`
+      <div class="mt-3 text-xs text-neutral-500">
+        <p class="mb-1">
+          ${msg("Schedule:")}
+          <span class="text-blue-500"
+            >${utcSchedule
+              ? humanizeSchedule(utcSchedule)
+              : msg("Invalid schedule")}</span
+          >
+        </p>
+        <p>
+          ${msg("Next scheduled run:")}
+          <span
+            >${utcSchedule
+              ? humanizeNextDate(utcSchedule)
+              : msg("Invalid date")}</span
+          >
+        </p>
+      </div>
+    `;
+
     return html`
       ${this.renderSectionHeading(msg("Set Schedule"))}
       ${inputCol(html`
@@ -2055,11 +2076,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="scheduleFrequency"
           label=${msg("Frequency")}
           value=${this.formState.scheduleFrequency}
-          @sl-change=${(e: Event) =>
+          @sl-change=${(e: Event) => {
+            const scheduleFrequency = (e.target as HTMLSelectElement)
+              .value as FormState["scheduleFrequency"];
+
             this.updateFormState({
-              scheduleFrequency: (e.target as HTMLSelectElement)
-                .value as FormState["scheduleFrequency"],
-            })}
+              scheduleFrequency,
+              scheduleCustom: scheduleFrequency
+                ? ""
+                : this.formState.scheduleCustom || "* * * * *",
+            });
+          }}
         >
           <sl-option value="daily"
             >${this.scheduleFrequencyLabels["daily"]}</sl-option
@@ -2070,6 +2097,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <sl-option value="monthly"
             >${this.scheduleFrequencyLabels["monthly"]}</sl-option
           >
+          <sl-divider></sl-divider>
+          <sl-option value="">${msg("Custom")}</sl-option>
         </sl-select>
       `)}
       ${this.renderHelpTextCol(
@@ -2122,44 +2151,49 @@ https://archiveweb.page/images/${"logo.svg"}`}
           )}
         `,
       )}
-      ${inputCol(html`
-        <btrix-time-input
-          hour=${ifDefined(this.formState.scheduleTime?.hour)}
-          minute=${ifDefined(this.formState.scheduleTime?.minute)}
-          period=${ifDefined(this.formState.scheduleTime?.period)}
-          @time-change=${(e: TimeInputChangeEvent) => {
-            this.updateFormState({
-              scheduleTime: e.detail,
-            });
-          }}
-        >
-          <span slot="label">${msg("Start Time")}</span>
-        </btrix-time-input>
-        <div class="mt-3 text-xs text-neutral-500">
-          <p class="mb-1">
-            ${msg(
-              html`Schedule:
-                <span class="text-blue-500"
-                  >${utcSchedule
-                    ? humanizeSchedule(utcSchedule)
-                    : msg("Invalid date")}</span
-                >.`,
-            )}
-          </p>
-          <p>
-            ${msg(
-              html`Next scheduled run:
-                <span
-                  >${utcSchedule
-                    ? humanizeNextDate(utcSchedule)
-                    : msg("Invalid date")}</span
-                >.`,
-            )}
-          </p>
-        </div>
-      `)}
-      ${this.renderHelpTextCol(
-        msg(`A crawl will run at this time in your current timezone.`),
+      ${when(
+        this.formState.scheduleFrequency,
+        () =>
+          html`${inputCol(html`
+            <btrix-time-input
+              hour=${ifDefined(this.formState.scheduleTime?.hour)}
+              minute=${ifDefined(this.formState.scheduleTime?.minute)}
+              period=${ifDefined(this.formState.scheduleTime?.period)}
+              @time-change=${(e: TimeInputChangeEvent) => {
+                this.updateFormState({
+                  scheduleTime: e.detail,
+                });
+              }}
+            >
+              <span slot="label">${msg("Start Time")}</span>
+            </btrix-time-input>
+            ${scheduledDate}
+          `)}
+          ${this.renderHelpTextCol(
+            msg(`A crawl will run at this time in your current timezone.`),
+          )}`,
+        () => html`
+          ${inputCol(html`
+            <sl-input
+              name="scheduleCustom"
+              label=${msg("Cron Schedule")}
+              placeholder="* * * * *"
+              value=${ifDefined(this.formState.scheduleCustom)}
+              required
+            >
+            </sl-input>
+            ${scheduledDate}
+          `)}
+          ${this.renderHelpTextCol(html`
+            ${msg(`Specify a schedule in Cron format.`)}
+            <a
+              href="https://crontab.guru"
+              class="text-blue-600 hover:text-blue-500"
+              target="_blank"
+              >${msg("Open crontab guru in new tab")}</a
+            >
+          `)}
+        `,
       )}
     `;
   };

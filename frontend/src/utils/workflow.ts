@@ -141,6 +141,7 @@ export type FormState = {
     minute: number;
     period: "AM" | "PM";
   };
+  scheduleCustom?: string;
   jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
