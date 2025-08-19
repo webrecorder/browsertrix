@@ -31,7 +31,7 @@ const langaugeFiles: Record<Language, Promise<{ default: LanguageFn }>> = {
 };
 
 /**
- * Syntax highlighting for javascript, HTML (XML), and CSS
+ * Syntax highlighting for javascript, HTML (XML), CSS, and URLs
  */
 @customElement("btrix-code")
 export class Code extends TailwindElement {
