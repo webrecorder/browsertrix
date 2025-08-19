@@ -15,5 +15,7 @@ export const notApplicable = stringFor.notApplicable;
 export const deleteConfirmation = (name: string | TemplateResult) =>
   msg(html`
     Are you sure you want to delete
-    <strong class="font-semibold">${name}</strong>?
+    <span class="inline-flex max-w-full">
+      <strong class="inline-flex max-w-full font-semibold">${name}</strong>?
+    </span>
   `);

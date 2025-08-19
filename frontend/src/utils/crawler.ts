@@ -2,7 +2,7 @@ import { msg } from "@lit/localize";
 import clsx from "clsx";
 import { html, type TemplateResult } from "lit";
 
-import type { ArchivedItem, Crawl, Workflow } from "@/types/crawler";
+import type { Crawl, Workflow } from "@/types/crawler";
 import {
   FAILED_STATES,
   RUNNING_AND_WAITING_STATES,
@@ -55,25 +55,31 @@ export function isPageScopeType(
   );
 }
 
-export function renderName(item: ArchivedItem | Workflow, className?: string) {
+export function renderName(
+  item: Pick<Workflow, "name" | "seedCount" | "firstSeed"> | null | undefined,
+  className?: string,
+) {
+  if (!item)
+    return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
+
   if (item.name)
-    return html`<div class=${clsx("truncate", className)}>${item.name}</div>`;
+    return html`<span class=${clsx("truncate", className)}>${item.name}</span>`;
   if (item.firstSeed && item.seedCount) {
     const remainder = item.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
-      nameSuffix = html`<div class="ml-1 text-neutral-500">
+      nameSuffix = html`<span class="ml-1 whitespace-nowrap text-neutral-500">
         +${localize.number(remainder, { notation: "compact" })}
         ${pluralOf("URLs", remainder)}
-      </div>`;
+      </span>`;
     }
     return html`
-      <div class="inline-flex w-full overflow-hidden whitespace-nowrap">
-        <div class=${clsx("min-w-0 truncate", className)}>
+      <span class="inline-flex w-full overflow-hidden whitespace-nowrap">
+        <span class=${clsx("min-w-0 truncate", className)}>
           ${item.firstSeed}
-        </div>
+        </span>
         ${nameSuffix}
-      </div>
+      </span>
     `;
   }
 

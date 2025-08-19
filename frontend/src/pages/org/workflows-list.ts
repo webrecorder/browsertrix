@@ -42,6 +42,7 @@ import {
 } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
+import { renderName } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
@@ -559,7 +560,7 @@ export class WorkflowsList extends BtrixElement {
         this.workflowToDelete,
         (workflow) => html`
           <btrix-dialog id="deleteDialog" .label=${msg("Delete Workflow?")}>
-            ${deleteConfirmation(this.renderName(workflow))}
+            ${deleteConfirmation(renderName(workflow))}
             <div slot="footer" class="flex justify-between">
               <sl-button
                 size="small"
@@ -982,25 +983,6 @@ export class WorkflowsList extends BtrixElement {
     `;
   }
 
-  private renderName(crawlConfig: ListWorkflow) {
-    if (crawlConfig.name) return crawlConfig.name;
-    const { firstSeed, seedCount } = crawlConfig;
-    if (seedCount === 1) {
-      return firstSeed;
-    }
-    const remainderCount = seedCount - 1;
-    if (remainderCount === 1) {
-      return msg(
-        html`${firstSeed}
-          <span class="text-neutral-500">+${remainderCount} URL</span>`,
-      );
-    }
-    return msg(
-      html`${firstSeed}
-        <span class="text-neutral-500">+${remainderCount} URLs</span>`,
-    );
-  }
-
   private renderEmptyState() {
     if (
       Object.keys(this.filterBy).length ||
@@ -1150,7 +1132,7 @@ export class WorkflowsList extends BtrixElement {
       void this.fetchWorkflows();
       this.notify.toast({
         message: msg(
-          html`Deleted <strong>${this.renderName(workflow)}</strong> Workflow.`,
+          html`Deleted <strong>${renderName(workflow)}</strong> Workflow.`,
         ),
         variant: "success",
         icon: "check2-circle",
@@ -1221,7 +1203,7 @@ export class WorkflowsList extends BtrixElement {
 
       this.notify.toast({
         message: msg(
-          html`Started crawl from <strong>${this.renderName(workflow)}</strong>.
+          html`Started crawl from <strong>${renderName(workflow)}</strong>.
             <br />
             <a
               class="underline hover:no-underline"
