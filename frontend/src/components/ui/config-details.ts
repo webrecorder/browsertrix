@@ -420,7 +420,7 @@ export class ConfigDetails extends BtrixElement {
                 <btrix-table-row>
                   <btrix-table-cell>
                     <btrix-overflow-scroll
-                      class="-ml-5 w-[calc(100%+theme(spacing.5))] contain-inline-size part-[content]:px-5"
+                      class="-ml-5 w-[calc(100%+theme(spacing.5))] contain-inline-size part-[content]:px-5 part-[content]:[scrollbar-width:thin]"
                     >
                       <btrix-code
                         language="url"
@@ -490,7 +490,7 @@ export class ConfigDetails extends BtrixElement {
         primarySeedUrl
           ? html`
               <btrix-overflow-scroll
-                class="-mx-5 w-[calc(100%+theme(spacing.10))] contain-inline-size part-[content]:px-5"
+                class="-mx-5 w-[calc(100%+theme(spacing.10))] contain-inline-size part-[content]:px-5 part-[content]:[scrollbar-width:thin]"
               >
                 <a
                   class="decoration-blue-500 hover:underline"
