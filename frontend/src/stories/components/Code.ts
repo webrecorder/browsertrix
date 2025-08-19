@@ -9,9 +9,13 @@ type Language = `${Code["language"]}`;
 
 export type RenderProps = Omit<Code, "language"> & { language: Language };
 
-export const renderCode = ({ language, value }: Partial<RenderProps>) => {
+export const renderCode = ({ language, value, wrap }: Partial<RenderProps>) => {
   return html`
-    <btrix-code language=${ifDefined(language)} value=${ifDefined(value)}>
+    <btrix-code
+      language=${ifDefined(language)}
+      value=${ifDefined(value)}
+      ?wrap=${wrap}
+    >
     </btrix-code>
   `;
 };
