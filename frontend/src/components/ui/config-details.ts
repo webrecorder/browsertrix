@@ -414,14 +414,14 @@ export class ConfigDetails extends BtrixElement {
       when(
         this.seeds,
         (seeds) => html`
-          <btrix-overflow-scroll
-            class="-mx-5 contain-inline-size part-[content]:px-5"
-          >
-            <btrix-table>
-              ${seeds.map(
-                (seed: Seed) => html`
-                  <btrix-table-row>
-                    <btrix-table-cell>
+          <btrix-table>
+            ${seeds.map(
+              (seed: Seed) => html`
+                <btrix-table-row>
+                  <btrix-table-cell>
+                    <btrix-overflow-scroll
+                      class="-mx-5 w-[calc(100%+theme(spacing.10))] contain-inline-size part-[content]:px-5"
+                    >
                       <a
                         class="block w-max text-blue-600 hover:text-blue-500 hover:underline"
                         href="${seed.url}"
@@ -429,12 +429,12 @@ export class ConfigDetails extends BtrixElement {
                         rel="noreferrer"
                         >${seed.url}</a
                       >
-                    </btrix-table-cell>
-                  </btrix-table-row>
-                `,
-              )}
-            </btrix-table>
-          </btrix-overflow-scroll>
+                    </btrix-overflow-scroll>
+                  </btrix-table-cell>
+                </btrix-table-row>
+              `,
+            )}
+          </btrix-table>
         `,
       );
 
