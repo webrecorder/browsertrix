@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import { type SlTooltip } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
@@ -44,6 +45,9 @@ export class CopyButton extends TailwindElement {
   @property({ type: String })
   size: "x-small" | "small" | "medium" = "small";
 
+  @property({ type: String })
+  placement: SlTooltip["placement"] = "top";
+
   private readonly clipboardController = new ClipboardController(this);
 
   render() {
@@ -55,6 +59,7 @@ export class CopyButton extends TailwindElement {
             ? this.content
             : ClipboardController.text.copy}
         ?hoist=${this.hoist}
+        placement=${this.placement}
       >
         <btrix-button
           size=${this.size}

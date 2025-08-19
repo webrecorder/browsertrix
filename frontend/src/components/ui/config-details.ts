@@ -414,22 +414,35 @@ export class ConfigDetails extends BtrixElement {
       when(
         this.seeds,
         (seeds) => html`
-          <btrix-table>
+          <btrix-table class="grid-cols-[1fr_auto]">
             ${seeds.map(
               (seed: Seed) => html`
                 <btrix-table-row>
                   <btrix-table-cell>
                     <btrix-overflow-scroll
-                      class="-mx-5 w-[calc(100%+theme(spacing.10))] contain-inline-size part-[content]:px-5"
+                      class="-ml-5 w-[calc(100%+theme(spacing.5))] contain-inline-size part-[content]:px-5"
                     >
-                      <a
-                        class="block w-max text-blue-600 hover:text-blue-500 hover:underline"
+                      <btrix-code
+                        language="url"
+                        class="block w-max whitespace-nowrap"
+                        .value=${seed.url}
+                      ></btrix-code>
+                    </btrix-overflow-scroll>
+                  </btrix-table-cell>
+                  <btrix-table-cell>
+                    <btrix-copy-button .value=${seed.url} placement="left">
+                    </btrix-copy-button>
+                    <sl-tooltip
+                      placement="right"
+                      content=${msg("Open in New Tab")}
+                    >
+                      <sl-icon-button
+                        name="arrow-up-right"
                         href="${seed.url}"
                         target="_blank"
-                        rel="noreferrer"
-                        >${seed.url}</a
                       >
-                    </btrix-overflow-scroll>
+                      </sl-icon-button>
+                    </sl-tooltip>
                   </btrix-table-cell>
                 </btrix-table-row>
               `,
@@ -441,7 +454,7 @@ export class ConfigDetails extends BtrixElement {
     return html`
       ${this.renderSetting(
         config.scopeType === WorkflowScopeType.Page && !config.seedFileId
-          ? msg("Page URL")
+          ? html`${msg("Page")} ${pluralOf("URLs", this.seeds?.length || 0)}`
           : msg("Page URLs"),
         config.seedFileId ? seedFile() : seeds(),
         true,
@@ -475,13 +488,23 @@ export class ConfigDetails extends BtrixElement {
       ${this.renderSetting(
         msg("Crawl Start URL"),
         primarySeedUrl
-          ? html`<a
-              class="text-blue-600 hover:text-blue-500 hover:underline"
-              href="${primarySeedUrl}"
-              target="_blank"
-              rel="noreferrer"
-              >${primarySeedUrl}</a
-            >`
+          ? html`
+              <btrix-overflow-scroll
+                class="-mx-5 w-[calc(100%+theme(spacing.10))] contain-inline-size part-[content]:px-5"
+              >
+                <a
+                  class="decoration-blue-500 hover:underline"
+                  href="${primarySeedUrl}"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <btrix-code
+                    language="url"
+                    .value="${primarySeedUrl}"
+                  ></btrix-code>
+                </a>
+              </btrix-overflow-scroll>
+            `
           : undefined,
         true,
       )}
@@ -586,7 +609,11 @@ export class ConfigDetails extends BtrixElement {
     );
   }
 
-  private renderSetting(label: string, value: unknown, breakAll?: boolean) {
+  private renderSetting(
+    label: string | TemplateResult,
+    value: unknown,
+    breakAll?: boolean,
+  ) {
     let content = value;
 
     if (!this.crawlConfig) {
@@ -599,7 +626,8 @@ export class ConfigDetails extends BtrixElement {
       content = notSpecified;
     }
     return html`
-      <btrix-desc-list-item label=${label} class=${breakAll ? "break-all" : ""}>
+      <btrix-desc-list-item class=${breakAll ? "break-all" : ""}>
+        <span slot="label">${label}</span>
         ${content}
       </btrix-desc-list-item>
     `;
