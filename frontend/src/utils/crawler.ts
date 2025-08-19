@@ -2,7 +2,7 @@ import { msg } from "@lit/localize";
 import clsx from "clsx";
 import { html, type TemplateResult } from "lit";
 
-import type { Crawl, Workflow } from "@/types/crawler";
+import type { ArchivedItem, Crawl, Workflow } from "@/types/crawler";
 import {
   FAILED_STATES,
   RUNNING_AND_WAITING_STATES,
@@ -56,7 +56,10 @@ export function isPageScopeType(
 }
 
 export function renderName(
-  item: Pick<Workflow, "name" | "seedCount" | "firstSeed"> | null | undefined,
+  item:
+    | Pick<Workflow | ArchivedItem, "name" | "seedCount" | "firstSeed">
+    | null
+    | undefined,
   className?: string,
 ) {
   if (!item)
