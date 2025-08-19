@@ -366,7 +366,9 @@ export class ConfigDetails extends BtrixElement {
   }: {
     id: string;
     heading: string;
-    renderDescItems: (seedsConfig?: CrawlConfig["config"]) => TemplateResult;
+    renderDescItems: (
+      seedsConfig?: CrawlConfig["config"],
+    ) => TemplateResult | undefined;
   }) {
     return html`
       <section id=${id} class="mb-8">
@@ -412,21 +414,27 @@ export class ConfigDetails extends BtrixElement {
       when(
         this.seeds,
         (seeds) => html`
-          <ul>
-            ${seeds.map(
-              (seed: Seed) => html`
-                <li>
-                  <a
-                    class="text-blue-600 hover:text-blue-500 hover:underline"
-                    href="${seed.url}"
-                    target="_blank"
-                    rel="noreferrer"
-                    >${seed.url}</a
-                  >
-                </li>
-              `,
-            )}
-          </ul>
+          <btrix-overflow-scroll
+            class="-mx-5 contain-inline-size part-[content]:px-5"
+          >
+            <btrix-table>
+              ${seeds.map(
+                (seed: Seed) => html`
+                  <btrix-table-row>
+                    <btrix-table-cell>
+                      <a
+                        class="block w-max text-blue-600 hover:text-blue-500 hover:underline"
+                        href="${seed.url}"
+                        target="_blank"
+                        rel="noreferrer"
+                        >${seed.url}</a
+                      >
+                    </btrix-table-cell>
+                  </btrix-table-row>
+                `,
+              )}
+            </btrix-table>
+          </btrix-overflow-scroll>
         `,
       );
 
