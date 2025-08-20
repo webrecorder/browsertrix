@@ -372,7 +372,7 @@ Specify a custom schedule using a Cron expression that follows the Unix Cron for
 | **Description** | minute | hour | day of the month | month | day of the week |
 | **Possible Values** | 0 - 59 | 0 - 23 | 1 - 31 | 1 - 12 | 0 - 6<br/>sun, mon, tue, wed, thu, fri, sat |
 
-For example, `0 * * * *` would run a crawl at the top of every UTC hour. `0 0 31 12 *` would run a crawl on December 31st every year. You can use a tool like [CronExpert](https://cronexpert.com/) to generate and check valid Cron syntax and view common expressions.
+For example, `0 * * * *` would run a crawl at the top of every UTC hour. `0 0 31 12 *` would run a crawl on December 31st every year. You can use a tool like [crontab.guru](https://crontab.guru/) to generate and check valid Cron syntax and view common expressions.
 
 Cron schedules are always in [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time).
 
