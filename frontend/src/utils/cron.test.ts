@@ -10,6 +10,7 @@ describe("cron utils", () => {
 
     it("handles weekly intervals", () => {
       expect(getScheduleInterval("1 1 * * 1")).to.equal("weekly");
+      expect(getScheduleInterval("1 1 * * FRI")).to.equal("weekly");
     });
 
     it("handles monthly intervals", () => {
@@ -26,6 +27,7 @@ describe("cron utils", () => {
       // Hourly:
       expect(getScheduleInterval("1 * * * *")).to.equal(null);
       // Yearly:
+      expect(getScheduleInterval("1 1 1 JAN *")).to.equal(null);
       expect(getScheduleInterval("1 1 1 1 *")).to.equal(null);
       expect(getScheduleInterval("1 1 1 1 1")).to.equal(null);
     });
