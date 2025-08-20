@@ -279,18 +279,22 @@ export function getInitialFormState(params: {
 
   if (params.initialWorkflow.schedule) {
     formState.scheduleType = "cron";
-    formState.scheduleFrequency = getScheduleInterval(
-      params.initialWorkflow.schedule,
-    );
-    const nextDate = getNextDate(params.initialWorkflow.schedule)!;
-    formState.scheduleDayOfMonth = nextDate.getDate();
-    formState.scheduleDayOfWeek = nextDate.getDay();
-    const hours = nextDate.getHours();
-    formState.scheduleTime = {
-      hour: hours % 12 || 12,
-      minute: nextDate.getMinutes(),
-      period: hours > 11 ? "PM" : "AM",
-    };
+    const interval = getScheduleInterval(params.initialWorkflow.schedule);
+
+    if (interval) {
+      formState.scheduleFrequency = interval;
+      const nextDate = getNextDate(params.initialWorkflow.schedule)!;
+      formState.scheduleDayOfMonth = nextDate.getDate();
+      formState.scheduleDayOfWeek = nextDate.getDay();
+      const hours = nextDate.getHours();
+      formState.scheduleTime = {
+        hour: hours % 12 || 12,
+        minute: nextDate.getMinutes(),
+        period: hours > 11 ? "PM" : "AM",
+      };
+    } else {
+      formState.scheduleCustom = params.initialWorkflow.schedule;
+    }
   } else {
     formState.scheduleType = "none";
   }
