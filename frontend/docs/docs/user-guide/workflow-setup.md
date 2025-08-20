@@ -362,16 +362,16 @@ Sets the time that the scheduled crawl will start according to your current time
 
 ### Cron Schedule
 
-When using a `Custom` frequency, a custom schedule can be specified by using a Cron expression or supported macros.
+When using a `Custom` _Frequency_, a custom schedule can be specified by using a Cron expression or supported macros.
 
 Cron expressions should follow the Unix Cron format:
 
 | Position | * | * | * | * | * |
 | - | - | - | - | - | - |
 | **Description** | minute | hour | day of the month | month | day of the week |
-| **Possible Values** | 0 - 59 | 0 - 23 | 1 - 31 | 1 - 12 | 0 - 6<br/>sun, mon, tue, wed, thu, fri, sat |
+| **Possible Values** | 0 - 59 | 0 - 23 | 1 - 31 | 1 - 12 | 0 - 6<br/>or `sun`, `mon`, `tue`, `wed`, `thu`, `fri`, `sat` |
 
-For example, `0 0 31 12 *` would run a crawl on December 31st every year.
+For example, `0 0 31 12 *` would run a crawl on December 31st every year and `0 0 * * fri` would run a crawl every Friday at midnight.
 
 Additionally, the following macros are supported:
 
@@ -383,7 +383,7 @@ Additionally, the following macros are supported:
 | `@daily` | Run once a day at midnight |
 | `@hourly` | Run once an hour at the beginning of the hour |
 
-You can use a tool like [CronExpert](https://cronexpert.com/) to generate and check Cron syntax validity and view common expressions.
+You can use a tool like [crontab.guru](https://crontab.guru/) to check Cron syntax validity and view [common expressions](https://crontab.guru/examples.html).
 
 Cron schedules are always in [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time).
 
