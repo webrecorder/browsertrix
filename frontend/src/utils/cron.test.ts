@@ -33,6 +33,14 @@ describe("cron utils", () => {
       expect(getScheduleInterval("1 1 1 1 *")).to.equal(null);
       expect(getScheduleInterval("1 1 1 1 1")).to.equal(null);
     });
+
+    it("returns null for macros", () => {
+      expect(getScheduleInterval("@yearly")).to.equal(null);
+      expect(getScheduleInterval("@monthly")).to.equal(null);
+      expect(getScheduleInterval("@weekly")).to.equal(null);
+      expect(getScheduleInterval("@daily")).to.equal(null);
+      expect(getScheduleInterval("@hourly")).to.equal(null);
+    });
   });
 
   describe("humanizeSchedule()", () => {
