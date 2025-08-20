@@ -1,5 +1,6 @@
 import { parseCron } from "@cheap-glitch/mi-cron";
 import { msg, str } from "@lit/localize";
+import cronstrue from "cronstrue";
 
 import localize from "./localize";
 
@@ -9,16 +10,31 @@ export type ScheduleInterval = "daily" | "weekly" | "monthly";
 
 /**
  * Parse interval from cron expression
+ *
+ * Known intervals:
+ * Daily:   minute hour *          * *
+ * Weekly:  minute hour *          * dayOfWeek
+ * Monthly: minute hour dayOfMonth * *
  **/
-export function getScheduleInterval(schedule: string): ScheduleInterval {
-  const [_minute, _hour, dayOfMonth, _month, dayOfWeek] = schedule.split(" ");
-  if (dayOfMonth === "*") {
-    if (dayOfWeek === "*") {
-      return "daily";
-    }
+export function getScheduleInterval(schedule: string): ScheduleInterval | null {
+  const [minute, hour, dayOfMonth, month, dayOfWeek] = schedule.split(" ");
+  if (minute === "*" || hour === "*" || month !== "*") {
+    return null;
+  }
+
+  if (dayOfMonth === "*" && dayOfWeek === "*") {
+    return "daily";
+  }
+
+  if (dayOfMonth === "*" && dayOfWeek !== "*") {
     return "weekly";
   }
-  return "monthly";
+
+  if (dayOfMonth !== "*" && dayOfWeek === "*") {
+    return "monthly";
+  }
+
+  return null;
 }
 
 /**
@@ -65,6 +81,17 @@ export function humanizeSchedule(
 ): string {
   const locale = localize.activeLanguage;
   const interval = getScheduleInterval(schedule);
+
+  if (!interval) {
+    const humanized = cronstrue.toString(schedule, {
+      verbose: false, // TODO Support shorter string
+      locale,
+    });
+
+    // Add timezone prefix
+    return `${humanized} (UTC)`;
+  }
+
   const parsed = parseCron(schedule);
   if (!parsed) {
     // Invalid date
@@ -132,10 +159,7 @@ export function humanizeSchedule(
         intervalMsg = msg(str`Every day at ${formattedTime}`);
         break;
       case "weekly":
-        intervalMsg = msg(
-          str`Every ${formattedWeekDay}
-            at ${formattedTime}`,
-        );
+        intervalMsg = msg(str`Every ${formattedWeekDay} at ${formattedTime}`);
         break;
       case "monthly":
         intervalMsg = msg(
