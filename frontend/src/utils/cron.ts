@@ -17,7 +17,11 @@ export type ScheduleInterval = "daily" | "weekly" | "monthly";
  * Monthly: minute hour dayOfMonth * *
  **/
 export function getScheduleInterval(schedule: string): ScheduleInterval | null {
-  const [minute, hour, dayOfMonth, month, dayOfWeek] = schedule.split(" ");
+  const parts = schedule.split(" ");
+
+  if (parts.length !== 5) return null;
+
+  const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
   if (minute.startsWith("*") || hour.startsWith("*") || month !== "*") {
     return null;
   }
@@ -83,13 +87,17 @@ export function humanizeSchedule(
   const interval = getScheduleInterval(schedule);
 
   if (!interval) {
-    const humanized = cronstrue.toString(schedule, {
-      verbose: false, // TODO Support shorter string
-      locale,
-    });
+    try {
+      const humanized = cronstrue.toString(schedule, {
+        verbose: false, // TODO Support shorter string
+        locale,
+      });
 
-    // Add timezone prefix
-    return `${humanized} (UTC)`;
+      // Add timezone prefix
+      return `${humanized} (UTC)`;
+    } catch {
+      return "";
+    }
   }
 
   const parsed = parseCron(schedule);

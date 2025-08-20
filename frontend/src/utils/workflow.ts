@@ -317,6 +317,7 @@ export function getInitialFormState(params: {
         period: hours > 11 ? "PM" : "AM",
       };
     } else {
+      formState.scheduleFrequency = "";
       formState.scheduleCustom = params.initialWorkflow.schedule;
     }
   } else {
