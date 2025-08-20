@@ -2220,7 +2220,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               required
             >
             </sl-input>
-            ${scheduledDate(this.formState.scheduleCustom, { utc: true })}
+            ${scheduledDate(this.formState.scheduleCustom)}
           `)}
           ${this.renderHelpTextCol(html`
             ${msg("Specify a schedule in Cron format.")}
