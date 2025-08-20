@@ -267,7 +267,12 @@ export class WorkflowEditor extends BtrixElement {
   @property({ type: String })
   initialScopeType?: FormState["scopeType"];
 
-  @property({ type: Object })
+  @property({
+    type: Object,
+    // Fixes values being reset on navigation events,
+    // such as when the user guide is open
+    hasChanged: (a, b) => !isEqual(a, b),
+  })
   initialWorkflow?: WorkflowParams;
 
   private updatingScopeType = false;
