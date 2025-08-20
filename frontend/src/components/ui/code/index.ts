@@ -26,7 +26,7 @@ const langaugeFiles: Record<Language, Promise<{ default: LanguageFn }>> = {
     /* webpackChunkName: "highlight.js" */ "highlight.js/lib/languages/css"
   ),
   [Language.URL]: import(
-    /* webpackChunkName: "highlight.js" */ "./hljs-url-language"
+    /* webpackChunkName: "highlight.js" */ "./languages/url"
   ),
 };
 
