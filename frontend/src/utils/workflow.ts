@@ -132,15 +132,39 @@ export type FormState = {
   browserWindows: WorkflowParams["browserWindows"];
   blockAds: WorkflowParams["config"]["blockAds"];
   lang: WorkflowParams["config"]["lang"];
+  /**
+   * NOTE The UI currently only supports "cron" and "none".
+   */
   scheduleType: "date" | "cron" | "none";
+  /**
+   * One of known frequency enums.
+   *
+   * If an empty string, either `scheduleType` should be `"none"`
+   * or `scheduleCustom` should be set.
+   */
   scheduleFrequency: "daily" | "weekly" | "monthly" | "";
+  /**
+   * Day of the month local to the user's browser timezone.
+   * Only used if `scheduleFrequency` is `"monthly"`.
+   */
   scheduleDayOfMonth?: number;
+  /**
+   * Day of the week local to the user's browser timezone.
+   * Only used if `scheduleFrequency` is `"weekly"`.
+   */
   scheduleDayOfWeek?: number;
+  /**
+   * Time local to the user's browser timezone.
+   * Only used if `scheduleFrequency` is specified.
+   */
   scheduleTime?: {
     hour: number;
     minute: number;
     period: "AM" | "PM";
   };
+  /**
+   * Custom schedule in cron format.
+   */
   scheduleCustom?: string;
   jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
