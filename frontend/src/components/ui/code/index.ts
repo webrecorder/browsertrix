@@ -12,6 +12,7 @@ export enum Language {
   Javascript = "javascript",
   XML = "xml",
   CSS = "css",
+  URL = "url",
 }
 
 const langaugeFiles: Record<Language, Promise<{ default: LanguageFn }>> = {
@@ -24,10 +25,13 @@ const langaugeFiles: Record<Language, Promise<{ default: LanguageFn }>> = {
   [Language.CSS]: import(
     /* webpackChunkName: "highlight.js" */ "highlight.js/lib/languages/css"
   ),
+  [Language.URL]: import(
+    /* webpackChunkName: "highlight.js" */ "./languages/url"
+  ),
 };
 
 /**
- * Syntax highlighting for javascript, HTML (XML), and CSS
+ * Syntax highlighting for javascript, HTML (XML), CSS, and URLs
  */
 @customElement("btrix-code")
 export class Code extends TailwindElement {
@@ -43,6 +47,18 @@ export class Code extends TailwindElement {
       color: var(--sl-color-violet-500);
     }
 
+    .hljs-protocol {
+      color: var(--sl-color-neutral-400);
+    }
+
+    .hljs-path {
+      color: var(--sl-color-blue-900);
+    }
+
+    .hljs-domain {
+      color: var(--sl-color-blue-600);
+    }
+
     .hljs-string {
       color: #032f62;
     }
@@ -52,7 +68,7 @@ export class Code extends TailwindElement {
   value = "";
 
   @property({ type: String })
-  language = Language.XML;
+  language: Language = Language.XML;
 
   @property({ type: Boolean })
   wrap = true;

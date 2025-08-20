@@ -44,6 +44,7 @@ import {
   isActive,
   isSkipped,
   isSuccessfullyFinished,
+  renderName,
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
@@ -606,7 +607,7 @@ export class WorkflowDetail extends BtrixElement {
         @sl-show=${this.showDialog}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
-        ${deleteConfirmation(this.renderName())}
+        ${deleteConfirmation(renderName(this.workflow))}
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
@@ -670,7 +671,7 @@ export class WorkflowDetail extends BtrixElement {
       breadcrumbs.push(
         {
           href: this.basePath,
-          content: this.workflow ? this.renderName() : undefined,
+          content: this.workflow ? renderName(this.workflow) : undefined,
         },
         {
           content: msg("Edit Settings"),
@@ -678,7 +679,7 @@ export class WorkflowDetail extends BtrixElement {
       );
     } else {
       breadcrumbs.push({
-        content: this.workflow ? this.renderName() : undefined,
+        content: this.workflow ? renderName(this.workflow) : undefined,
       });
     }
 
@@ -1168,32 +1169,6 @@ export class WorkflowDetail extends BtrixElement {
         )}
       </btrix-desc-list-item>
     `;
-  }
-
-  private renderName() {
-    if (!this.workflow)
-      return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
-    if (this.workflow.name)
-      return html`<span class="truncate">${this.workflow.name}</span>`;
-    const { seedCount, firstSeed } = this.workflow;
-    if (seedCount === 1) {
-      return html`<span class="truncate">${firstSeed}</span>`;
-    }
-    const remainderCount = seedCount - 1;
-    if (remainderCount === 1) {
-      return msg(
-        html` <span class="truncate">${firstSeed}</span>
-          <span class="whitespace-nowrap text-neutral-500"
-            >+${remainderCount} URL</span
-          >`,
-      );
-    }
-    return msg(
-      html` <span class="truncate">${firstSeed}</span>
-        <span class="whitespace-nowrap text-neutral-500"
-          >+${remainderCount} URLs</span
-        >`,
-    );
   }
 
   private renderCrawls() {
@@ -2263,7 +2238,7 @@ export class WorkflowDetail extends BtrixElement {
 
       this.notify.toast({
         message: msg(
-          html`Deleted <strong>${this.renderName()}</strong> Workflow.`,
+          html`Deleted <strong>${renderName(this.workflow)}</strong> Workflow.`,
         ),
         variant: "success",
         icon: "check2-circle",
