@@ -17,16 +17,9 @@ export const deleteConfirmation = (name: string | TemplateResult) => {
     >${name}</strong
   >`;
 
-  // This is necessary because we need to wrap the item name + the question mark
-  // in a span element for correct layout, which makes translating it tricky.
-  // This simplifies the markup in the translated template, while hopefully still
-  // allowing for enough variation in e.g. punctuation placement when translating.
-  const wrapItemName = (strings: TemplateStringsArray, ...items: unknown[]) =>
-    html`<span class="inline-flex max-w-full"
-      >${html(strings, ...items)}</span
-    >`;
-
-  return msg(html`
-    Are you sure you want to delete ${wrapItemName`${itemName}?`}
-  `);
+  return html`<span class="*:inline-flex *:max-w-full"
+    >${msg(
+      html`Are you sure you want to delete <span>${itemName}?</span>`,
+    )}</span
+  >`;
 };
