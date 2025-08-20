@@ -1,7 +1,9 @@
+import { parseCron } from "@cheap-glitch/mi-cron";
 import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
   SlBlurEvent,
+  SlChangeEvent,
   SlCheckbox,
   SlDetails,
   SlHideEvent,
@@ -11,6 +13,7 @@ import type {
   SlTextarea,
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
+import cronstrue from "cronstrue";
 import { createParser } from "css-selector-parser";
 import Fuse from "fuse.js";
 import { mergeDeep } from "immutable";
@@ -2052,21 +2055,26 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private readonly renderScheduleCron = () => {
-    const scheduledDate = (schedule?: string) =>
-      schedule
-        ? html`
-            <div class="mt-3 text-xs text-neutral-500">
-              <p class="mb-1">
-                ${msg("Schedule:")}
-                <span class="text-blue-500">${humanizeSchedule(schedule)}</span>
-              </p>
-              <p>
-                ${msg("Next scheduled run:")}
-                <span>${humanizeNextDate(schedule)}</span>
-              </p>
-            </div>
-          `
-        : nothing;
+    const scheduledDate = (schedule?: string) => {
+      if (!schedule) return nothing;
+
+      const humanized = humanizeSchedule(schedule);
+
+      if (!humanized) return nothing;
+
+      return html`
+        <div class="mt-3 text-xs text-neutral-500">
+          <p class="mb-1">
+            ${msg("Schedule:")}
+            <span class="text-blue-500">${humanized}</span>
+          </p>
+          <p>
+            ${msg("Next scheduled run:")}
+            <span>${humanizeNextDate(schedule)}</span>
+          </p>
+        </div>
+      `;
+    };
 
     return html`
       ${this.renderSectionHeading(msg("Set Schedule"))}
@@ -2178,6 +2186,35 @@ https://archiveweb.page/images/${"logo.svg"}`}
               label=${msg("Cron Schedule")}
               placeholder="* * * * *"
               value=${ifDefined(this.formState.scheduleCustom)}
+              minlength="9"
+              @sl-change=${(e: SlChangeEvent) => {
+                const input = e.target as SlInput;
+                const value = (e.target as SlInput).value;
+                const parsed = parseCron(value);
+
+                if (parsed) {
+                  input.helpText = "";
+                  input.setCustomValidity("");
+                } else {
+                  let errorMessage = "";
+
+                  try {
+                    cronstrue.toString(value);
+                  } catch (err) {
+                    if (typeof err === "string") {
+                      // TODO Handle localized error?
+                      errorMessage = err.replace("Error: ", "");
+                    }
+                  }
+
+                  errorMessage =
+                    errorMessage ||
+                    msg("Please fix invalid Cron expression syntax.");
+
+                  input.helpText = errorMessage;
+                  input.setCustomValidity(errorMessage);
+                }
+              }}
               required
             >
             </sl-input>
