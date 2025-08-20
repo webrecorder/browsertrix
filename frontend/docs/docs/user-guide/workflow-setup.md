@@ -318,9 +318,6 @@ Automatically start crawls periodically on a daily, weekly, or monthly schedule.
 
 ### Crawl Schedule Type
 
-#### Run Immediately on Save
-:   When selected, the crawl will run immediately as configured. It will not run again unless manually instructed.
-
 #### Run on a Recurring Basis
 :   When selected, additional configuration options for instructing the system when to run the crawl will be shown. If a crawl is already running when the schedule is set to activate it, the scheduled crawl will not run.
 
@@ -365,14 +362,28 @@ Sets the time that the scheduled crawl will start according to your current time
 
 ### Cron Schedule
 
-Specify a custom schedule using a Cron expression that follows the Unix Cron format:
+When using a `Custom` frequency, a custom schedule can be specified by using a Cron expression or supported macros.
+
+Cron expressions should follow the Unix Cron format:
 
 | Position | * | * | * | * | * |
 | - | - | - | - | - | - |
 | **Description** | minute | hour | day of the month | month | day of the week |
 | **Possible Values** | 0 - 59 | 0 - 23 | 1 - 31 | 1 - 12 | 0 - 6<br/>sun, mon, tue, wed, thu, fri, sat |
 
-For example, `0 * * * *` would run a crawl at the top of every UTC hour. `0 0 31 12 *` would run a crawl on December 31st every year. You can use a tool like [crontab.guru](https://crontab.guru/) to generate and check valid Cron syntax and view common expressions.
+For example, `0 0 31 12 *` would run a crawl on December 31st every year.
+
+Additionally, the following macros are supported:
+
+| Value | Description |
+| - | - |
+| `@yearly` | Run once a year at midnight of 1 January |
+| `@monthly` | 	Run once a month at midnight of the first day of the month |
+| `@weekly` | Run once a week at midnight on Sunday |
+| `@daily` | Run once a day at midnight |
+| `@hourly` | Run once an hour at the beginning of the hour |
+
+You can use a tool like [CronExpert](https://cronexpert.com/) to generate and check Cron syntax validity and view common expressions.
 
 Cron schedules are always in [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time).
 
