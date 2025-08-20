@@ -18,14 +18,16 @@ describe("cron utils", () => {
     });
 
     it("returns null if not daily, weekly, or monthly", () => {
-      // Every second:
+      // Every minute:
       expect(getScheduleInterval("* * * * *")).to.equal(null);
       expect(getScheduleInterval("* 1 * * *")).to.equal(null);
       expect(getScheduleInterval("* * 1 * *")).to.equal(null);
       expect(getScheduleInterval("* * * 1 *")).to.equal(null);
       expect(getScheduleInterval("* * * * 1")).to.equal(null);
+      expect(getScheduleInterval("*/5 * * * *")).to.equal(null);
       // Hourly:
       expect(getScheduleInterval("1 * * * *")).to.equal(null);
+      expect(getScheduleInterval("0 */5 * * *")).to.equal(null);
       // Yearly:
       expect(getScheduleInterval("1 1 1 JAN *")).to.equal(null);
       expect(getScheduleInterval("1 1 1 1 *")).to.equal(null);

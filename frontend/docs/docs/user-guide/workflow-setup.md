@@ -331,6 +331,26 @@ Automatically start crawls periodically on a daily, weekly, or monthly schedule.
 
 Set how often a scheduled crawl will run.
 
+#### Options
+
+All option support specifying the specific hour and minute the crawl should run.
+
+##### Daily
+
+Run crawl once every day.
+
+##### Weekly
+
+Run crawl once every week.
+
+##### Monthly
+
+Run crawl once every month.
+
+##### Custom
+
+Run crawl at a custom interval, such as hourly or yearly. See [Cron Schedule](#cron-schedule) for details.
+
 ### Day
 
 Sets the day of the week for which crawls scheduled with a `Weekly` _Frequency_ will run.
@@ -342,6 +362,19 @@ Sets the date of the month for which crawls scheduled with a `Monthly` _Frequenc
 ### Start Time
 
 Sets the time that the scheduled crawl will start according to your current timezone.
+
+### Cron Schedule
+
+Specify a custom schedule using a Cron expression that follows the Unix Cron format:
+
+| Position | * | * | * | * | * |
+| - | - | - | - | - | - |
+| **Description** | minute | hour | day of the month | month | day of the week |
+| **Possible Values** | 0 - 59 | 0 - 23 | 1 - 31 | 1 - 12 | 0 - 6<br/>sun, mon, tue, wed, thu, fri, sat |
+
+For example, `0 * * * *` would run a crawl at the top of every UTC hour. `0 0 31 12 *` would run a crawl on December 31st every year. You can use a tool like [CronExpert](https://cronexpert.com/) to generate and check valid Cron syntax and view common expressions.
+
+Cron schedules are always in [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time).
 
 ## Metadata
 
