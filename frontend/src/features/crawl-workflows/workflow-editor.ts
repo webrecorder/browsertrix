@@ -2047,27 +2047,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private readonly renderScheduleCron = () => {
-    const utcSchedule = this.utcSchedule;
-    const scheduledDate = html`
-      <div class="mt-3 text-xs text-neutral-500">
-        <p class="mb-1">
-          ${msg("Schedule:")}
-          <span class="text-blue-500"
-            >${utcSchedule
-              ? humanizeSchedule(utcSchedule)
-              : msg("Invalid schedule")}</span
-          >
-        </p>
-        <p>
-          ${msg("Next scheduled run:")}
-          <span
-            >${utcSchedule
-              ? humanizeNextDate(utcSchedule)
-              : msg("Invalid date")}</span
-          >
-        </p>
-      </div>
-    `;
+    const scheduledDate = (schedule?: string) =>
+      schedule
+        ? html`
+            <div class="mt-3 text-xs text-neutral-500">
+              <p class="mb-1">
+                ${msg("Schedule:")}
+                <span class="text-blue-500">${humanizeSchedule(schedule)}</span>
+              </p>
+              <p>
+                ${msg("Next scheduled run:")}
+                <span>${humanizeNextDate(schedule)}</span>
+              </p>
+            </div>
+          `
+        : nothing;
 
     return html`
       ${this.renderSectionHeading(msg("Set Schedule"))}
@@ -2084,7 +2078,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               scheduleFrequency,
               scheduleCustom: scheduleFrequency
                 ? ""
-                : this.formState.scheduleCustom || "* * * * *",
+                : this.formState.scheduleCustom || "",
             });
           }}
         >
@@ -2167,7 +2161,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             >
               <span slot="label">${msg("Start Time")}</span>
             </btrix-time-input>
-            ${scheduledDate}
+            ${scheduledDate(this.utcSchedule)}
           `)}
           ${this.renderHelpTextCol(
             msg(`A crawl will run at this time in your current timezone.`),
@@ -2176,13 +2170,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ${inputCol(html`
             <sl-input
               name="scheduleCustom"
-              label=${msg("Cron Schedule")}
+              label=${msg("Cron Schedule in UTC")}
               placeholder="* * * * *"
               value=${ifDefined(this.formState.scheduleCustom)}
               required
             >
             </sl-input>
-            ${scheduledDate}
+            ${scheduledDate(this.formState.scheduleCustom)}
           `)}
           ${this.renderHelpTextCol(html`
             ${msg(`Specify a schedule in Cron format.`)}
