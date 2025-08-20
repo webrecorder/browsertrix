@@ -2184,13 +2184,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
             <sl-input
               name="scheduleCustom"
               label=${msg("Cron Schedule")}
-              placeholder="* * * * *"
+              placeholder="@hourly"
               value=${ifDefined(this.formState.scheduleCustom)}
               minlength="6"
               @sl-change=${(e: SlChangeEvent) => {
                 const input = e.target as SlInput;
                 const value = (e.target as SlInput).value;
                 const parsed = parseCron(value);
+
+                if (!value) return;
 
                 if (parsed) {
                   input.helpText = "";
@@ -2221,7 +2223,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
             ${scheduledDate(this.formState.scheduleCustom, { utc: true })}
           `)}
           ${this.renderHelpTextCol(html`
-            ${msg(`Specify a schedule in Cron format.`)}
+            ${msg("Specify a schedule in Cron format.")}
+            ${msg(
+              html`Supports Unix cron syntax and certain macros like
+                <code>@hourly</code> and <code>@yearly</code>.`,
+            )}
             ${this.renderUserGuideLink({
               hash: "cron-schedule",
               content: msg("More details"),
