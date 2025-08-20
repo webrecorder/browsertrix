@@ -2055,7 +2055,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private readonly renderScheduleCron = () => {
-    const scheduledDate = (schedule?: string) => {
+    const scheduledDate = (schedule?: string, opts?: { utc: boolean }) => {
       if (!schedule) return nothing;
 
       const humanized = humanizeSchedule(schedule);
@@ -2070,7 +2070,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           </p>
           <p>
             ${msg("Next scheduled run:")}
-            <span>${humanizeNextDate(schedule)}</span>
+            <span>${humanizeNextDate(schedule, opts)}</span>
           </p>
         </div>
       `;
@@ -2186,7 +2186,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               label=${msg("Cron Schedule")}
               placeholder="* * * * *"
               value=${ifDefined(this.formState.scheduleCustom)}
-              minlength="9"
+              minlength="6"
               @sl-change=${(e: SlChangeEvent) => {
                 const input = e.target as SlInput;
                 const value = (e.target as SlInput).value;
@@ -2218,7 +2218,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               required
             >
             </sl-input>
-            ${scheduledDate(this.formState.scheduleCustom)}
+            ${scheduledDate(this.formState.scheduleCustom, { utc: true })}
           `)}
           ${this.renderHelpTextCol(html`
             ${msg(`Specify a schedule in Cron format.`)}

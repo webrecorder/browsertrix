@@ -47,7 +47,7 @@ export function getScheduleInterval(schedule: string): ScheduleInterval | null {
  **/
 export function humanizeNextDate(
   schedule: string,
-  options: { length?: "short" } = {},
+  options: { length?: "short"; utc?: boolean } = {},
 ): string {
   const locale = localize.activeLanguage;
   const nextDate = parseCron.nextDate(schedule);
@@ -61,6 +61,7 @@ export function humanizeNextDate(
       year: "numeric",
       hour: "numeric",
       minute: "numeric",
+      timeZone: options.utc ? "UTC" : undefined,
     });
   }
 
@@ -72,6 +73,7 @@ export function humanizeNextDate(
     hour: "numeric",
     minute: "numeric",
     timeZoneName: "short",
+    timeZone: options.utc ? "UTC" : undefined,
   });
 }
 
