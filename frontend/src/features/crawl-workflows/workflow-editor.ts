@@ -2170,7 +2170,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ${inputCol(html`
             <sl-input
               name="scheduleCustom"
-              label=${msg("Cron Schedule in UTC")}
+              label=${msg("Cron Schedule")}
               placeholder="* * * * *"
               value=${ifDefined(this.formState.scheduleCustom)}
               required
@@ -2180,12 +2180,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
           `)}
           ${this.renderHelpTextCol(html`
             ${msg(`Specify a schedule in Cron format.`)}
-            <a
-              href="https://crontab.guru"
-              class="text-blue-600 hover:text-blue-500"
-              target="_blank"
-              >${msg("Open crontab guru in new tab")}</a
-            >
+            ${this.renderUserGuideLink({
+              hash: "cron-schedule",
+              content: msg("More details"),
+            })}
           `)}
         `,
       )}

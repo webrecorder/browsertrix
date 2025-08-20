@@ -18,7 +18,7 @@ export type ScheduleInterval = "daily" | "weekly" | "monthly";
  **/
 export function getScheduleInterval(schedule: string): ScheduleInterval | null {
   const [minute, hour, dayOfMonth, month, dayOfWeek] = schedule.split(" ");
-  if (minute === "*" || hour === "*" || month !== "*") {
+  if (minute.startsWith("*") || hour.startsWith("*") || month !== "*") {
     return null;
   }
 
