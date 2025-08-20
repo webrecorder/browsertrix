@@ -2,7 +2,7 @@ import { msg } from "@lit/localize";
 import clsx from "clsx";
 import { html, type TemplateResult } from "lit";
 
-import type { ArchivedItem, Crawl, Workflow } from "@/types/crawler";
+import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import {
   FAILED_STATES,
   RUNNING_AND_WAITING_STATES,
@@ -28,6 +28,10 @@ export const DEPTH_SUPPORTED_SCOPES = [
   "custom",
   "any",
 ];
+
+export function isCrawl(item: Crawl | Upload): item is Crawl {
+  return item.type === "crawl";
+}
 
 export function isActive({ state }: Partial<Crawl | QARun>) {
   return (activeCrawlStates as readonly (typeof state)[]).includes(state);
