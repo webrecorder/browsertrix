@@ -104,9 +104,9 @@ export const TrialEndingSoonEmail = ({
       {behavior_on_trial_end === "cancel" ? (
         <>
           <Text className="text-base text-stone-700">
-            If you haven’t already, please consider adding a payment method to
-            continue using Browsertrix. You can do so at any time before the
-            trial ends from your organization’s{" "}
+            If you’d like to continue using Browsertrix, you can continue your
+            subscription at any time before the trial ends from your
+            organization’s{" "}
             <Link
               className="text-cyan-600 font-bold"
               href={`${org_url}/settings/billing`}
