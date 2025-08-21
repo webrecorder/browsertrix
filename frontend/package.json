@@ -170,7 +170,8 @@
   "resolutions": {
     "**/playwright": "1.49.0",
     "**/lit": "~3.2.0",
-    "@web/dev-server-esbuild/esbuild": "^0.19.5"
+    "@web/dev-server-esbuild/esbuild": "^0.19.5",
+    "**/koa": "^2.16.1"
   },
   "browserslist": [
     "defaults"
