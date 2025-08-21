@@ -231,7 +231,7 @@ class EmailSender:
         trial_end_date: datetime,
         user_name: str,
         receiver_email: str,
-        behavior_on_trial_end: Literal["cancel", "continue"],
+        behavior_on_trial_end: Literal["cancel", "continue", "read-only"],
         org: Organization,
         headers=None,
     ):

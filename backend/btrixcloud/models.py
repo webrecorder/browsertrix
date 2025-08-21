@@ -1910,7 +1910,7 @@ class SubscriptionTrialEndReminder(BaseModel):
     """Email reminder that subscription will end soon"""
 
     subId: str
-    behavior_on_trial_end: Literal["cancel", "continue"]
+    behavior_on_trial_end: Literal["cancel", "continue", "read-only"]
 
 
 # ============================================================================
