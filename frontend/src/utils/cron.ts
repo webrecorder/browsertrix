@@ -77,6 +77,28 @@ export function humanizeNextDate(
   });
 }
 
+export function validateCron(schedule: string): {
+  valid: boolean;
+  error?: string;
+} {
+  const locale = localize.activeLanguage;
+
+  try {
+    cronstrue.toString(schedule, {
+      locale,
+    });
+
+    return { valid: true };
+  } catch (err) {
+    if (typeof err === "string") {
+      // TODO Custom localized errors since construe doesn't translate errors
+      return { valid: false, error: err.replace("Error: ", "") };
+    }
+  }
+
+  return { valid: false };
+}
+
 /**
  * Get human-friendly schedule from cron expression
  * Example: "Every day at 9:30 AM CDT"
