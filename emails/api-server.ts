@@ -28,16 +28,9 @@ const parentLog = pino({
     : undefined),
 });
 
-let currentCommit;
-try {
-  currentCommit = await import("./current-commit.js");
-} catch (_) {
-  if (process.env.NODE_ENV !== "development") {
-    parentLog.error("Failed to import current commit");
-  }
-}
-
-const log = parentLog.child({ commit: currentCommit });
+const log = parentLog.child({
+  commit: process.env.GIT_COMMIT_HASH || "unknown",
+});
 
 const app = express();
 app.use(pinoHttp({ logger: log }));

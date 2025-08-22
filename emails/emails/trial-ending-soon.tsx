@@ -198,7 +198,7 @@ TrialEndingSoonEmail.PreviewProps = {
   org_name: "Emma’s Archives",
   trial_end_date: offsetDays(7),
   org_url: "https://dev.browsertrix.com/orgs/default-org",
-  behavior_on_trial_end: "cancel",
+  behavior_on_trial_end: "read-only",
   support_email: "support@webrecorder.net",
 } satisfies TrialEndingSoonEmailProps;
 
