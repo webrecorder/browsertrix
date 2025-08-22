@@ -16,7 +16,7 @@ type TemplateModule = {
 
 type Templates = Record<string, TemplateModule>;
 
-const log = pino({
+const parentLog = pino({
   level: process.env.LOG_LEVEL || "info",
   name: "emails-api",
   ...(process.env.NODE_ENV === "development"
@@ -27,6 +27,17 @@ const log = pino({
       }
     : undefined),
 });
+
+let currentCommit;
+try {
+  currentCommit = await import("./current-commit.js");
+} catch (_) {
+  if (process.env.NODE_ENV !== "development") {
+    parentLog.error("Failed to import current commit");
+  }
+}
+
+const log = parentLog.child({ commit: currentCommit });
 
 const app = express();
 app.use(pinoHttp({ logger: log }));

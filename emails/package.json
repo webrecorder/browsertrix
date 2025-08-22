@@ -8,7 +8,7 @@
     "dev": "email dev",
     "export": "email export",
     "dev:api": "NODE_ENV=development tsx api-server.ts",
-    "build:api": "tsc",
+    "build:api": "tsc && node scripts/write-current-commit.js",
     "start": "node dist/api-server.js"
   },
   "dependencies": {
