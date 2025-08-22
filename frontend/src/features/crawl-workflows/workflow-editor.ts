@@ -1,4 +1,3 @@
-import { parseCron } from "@cheap-glitch/mi-cron";
 import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
@@ -13,7 +12,6 @@ import type {
   SlTextarea,
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import cronstrue from "cronstrue";
 import { createParser } from "css-selector-parser";
 import Fuse from "fuse.js";
 import { mergeDeep } from "immutable";
@@ -108,6 +106,7 @@ import {
   getUTCSchedule,
   humanizeNextDate,
   humanizeSchedule,
+  validateCron,
 } from "@/utils/cron";
 import { makeCurrentTargetHandler, stopProp } from "@/utils/events";
 import { formValidator, maxLengthValidator } from "@/utils/form";
@@ -2076,6 +2075,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `;
     };
 
+    const hourly_macro_code = html`<code>@hourly</code>`;
+    const yearly_macro_code = html`<code>@yearly</code>`;
+
     return html`
       ${this.renderSectionHeading(msg("Set Schedule"))}
       ${inputCol(html`
@@ -2184,34 +2186,24 @@ https://archiveweb.page/images/${"logo.svg"}`}
             <sl-input
               name="scheduleCustom"
               label=${msg("Cron Schedule")}
+              class="part-[input]:font-mono"
               placeholder="@hourly"
               value=${ifDefined(this.formState.scheduleCustom)}
               minlength="6"
               @sl-change=${(e: SlChangeEvent) => {
                 const input = e.target as SlInput;
                 const value = (e.target as SlInput).value;
-                const parsed = parseCron(value);
 
                 if (!value) return;
 
-                if (parsed) {
+                const { valid, error } = validateCron(value);
+
+                if (valid) {
                   input.helpText = "";
                   input.setCustomValidity("");
                 } else {
-                  let errorMessage = "";
-
-                  try {
-                    cronstrue.toString(value);
-                  } catch (err) {
-                    if (typeof err === "string") {
-                      // TODO Handle localized error?
-                      errorMessage = err.replace("Error: ", "");
-                    }
-                  }
-
-                  errorMessage =
-                    errorMessage ||
-                    msg("Please fix invalid Cron expression syntax.");
+                  const errorMessage =
+                    error ?? msg("Please fix invalid Cron expression syntax.");
 
                   input.helpText = errorMessage;
                   input.setCustomValidity(errorMessage);
@@ -2226,7 +2218,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             ${msg("Specify a schedule in Cron format.")}
             ${msg(
               html`Supports Unix cron syntax and certain macros like
-                <code>@hourly</code> and <code>@yearly</code>.`,
+              ${hourly_macro_code} and ${yearly_macro_code}.`,
             )}
             ${this.renderUserGuideLink({
               hash: "cron-schedule",
