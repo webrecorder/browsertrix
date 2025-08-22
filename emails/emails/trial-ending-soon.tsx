@@ -104,9 +104,9 @@ export const TrialEndingSoonEmail = ({
       {behavior_on_trial_end === "cancel" ? (
         <>
           <Text className="text-base text-stone-700">
-            If you’d like to continue using Browsertrix, you can continue your
-            subscription at any time before the trial ends from your
-            organization’s{" "}
+            You’ve cancelled your trial of Browsertrix. If you change your mind,
+            you can continue your subscription at any time before the trial ends
+            from your organization’s{" "}
             <Link
               className="text-cyan-600 font-bold"
               href={`${org_url}/settings/billing`}
@@ -117,8 +117,7 @@ export const TrialEndingSoonEmail = ({
             .
           </Text>
           <Warning>
-            If you opt to end your trial without continuing, all data hosted on
-            Browsertrix under the{" "}
+            Otherwise, all data hosted on Browsertrix under the{" "}
             <Link
               className="text-red-800 font-bold"
               href={org_url}
