@@ -12,6 +12,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     cast,
+    Union,
 )
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
@@ -57,7 +58,7 @@ from .models import (
     User,
 )
 
-from .utils import slug_from_name, dt_now
+from .utils import slug_from_name, dt_now, get_origin
 from .version import __version__
 
 
@@ -350,6 +351,14 @@ class StorageOps:
             return self.frontend_origin + path
         return path
 
+    def resolve_relative_access_path(self, path: str, headers: Optional[dict] = None):
+        """Resolve relative path for internal access or external if headers provided"""
+        if path.startswith("/"):
+            if headers is None:
+                return self.frontend_origin + path
+            return get_origin(headers) + path
+        return path
+
     def get_org_relative_path(
         self, org: Organization, ref: StorageRef, file_path: str
     ) -> str:
@@ -619,7 +628,9 @@ class StorageOps:
 
         return urls, now + self.signed_duration_delta
 
-    async def delete_file_object(self, org: Organization, crawlfile: BaseFile) -> bool:
+    async def delete_file_object(
+        self, org: Organization, crawlfile: Union[BaseFile]
+    ) -> bool:
         """delete crawl file from storage."""
         return await self._delete_file(org, crawlfile.filename, crawlfile.storage)
 

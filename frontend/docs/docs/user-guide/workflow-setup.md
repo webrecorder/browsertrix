@@ -12,7 +12,7 @@ Specify the range and depth of your crawl.
 
 Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 
-_Page Crawl_
+#### Page Crawl
 :   Choose one of these crawl scopes if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one hop out.
 
     A Page Crawl workflow can be simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
@@ -22,7 +22,7 @@ _Page Crawl_
         - You have a list of URLs that you can copy-and-paste (`List of Pages`)
         - You want to include URLs with different domain names in the same crawl (`List of Pages`)
 
-_Site Crawl_
+#### Site Crawl
 :   Choose one of these crawl scopes to have the the crawler automatically find pages based on a domain name, start page URL, or directory on a website.
 
     Site Crawl workflows are great for advanced use cases where you don't need (or want) to know every single URL of the website that you're archiving.
@@ -35,13 +35,27 @@ _Site Crawl_
 
 #### Page Crawl
 
-`Single Page`
+##### Single Page
 :   Crawls a single URL and does not include any linked pages.
 
-`List of Pages`
-:   Crawls only specified URLs and does not include any linked pages.
+##### List of Pages
+:   Crawls a list of specified URLs.
 
-`In-Page Links`
+    Select one of two options to provide a list of URLs:
+
+    ###### Enter URLs
+    :    If the list is small enough, 100 URLs or less, the URLs can be entered directly into the text area. If a large list is pasted into the textbox, it will be converted into an uploaded URL list and attached to the workflow.
+
+    ###### Upload URL List
+    :    A longer list of URLs can be provided as a text file, containing one URL per line. The text file may not exceed 25MB, but there is no limit to the number of URLs in the file. Once a file is added, a link will be provided to view the file (but not edit it). To change the file, a new file can be uploaded in its place.
+
+    For both options, each line should contain a valid URL (starting with https:// or http://). Invalid or duplicate URLs will be skipped. The crawl will fail if the list contains no valid URLs or if the file is not a list of URLs.
+
+    While the uploaded text file can contain an unlimited number of URLs, the crawl will still be limited by the [page limit](#max-pages) for the workflow or organization - URLs beyond the limit will not be crawled.
+
+    If both a list of entered list and an uploaded file are provided, the currently selected option will be used.
+
+##### In-Page Links
 :   Crawls only the specified URL and treats linked sections of the page as distinct pages.
 
     Any link that begins with the _Crawl Start URL_ followed by a hashtag symbol (`#`) and then a string is considered an in-page link. This is commonly used to link to a section of a page. For example, because the "Scope" section of this guide is linked by its heading as `/user-guide/workflow-setup/#scope` it would be treated as a separate page under the _In-Page Links_ scope.
@@ -50,26 +64,28 @@ _Site Crawl_
 
 #### Site Crawl
 
-`Pages in Same Directory`
+##### Pages in Same Directory
 :   This scope will only crawl pages in the same directory as the _Crawl Start URL_. If `example.com/path` is set as the _Crawl Start URL_, `example.com/path/path2` will be crawled but `example.com/path3` will not.
 
-`Pages on Same Domain`
+##### Pages on Same Domain
 :   This scope will crawl all pages on the domain entered as the _Crawl Start URL_ however it will ignore subdomains such as `subdomain.example.com`.
 
-`Pages on Same Domain + Subdomains`
+##### Pages on Same Domain + Subdomains
 :   This scope will crawl all pages on the domain and any subdomains found. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
 
-`Custom Page Prefix`
+##### Custom Page Prefix
 :   This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_URL Prefixes in Scope_](#url-prefixes-in-scope).
 
 ### Page URL(s)
 
 One or more URLs of the page to crawl. URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
 
+See [List Of Pages](#list-of-pages) for additional info when providing a list of URLs.
+
 ??? example "Crawling with HTTP basic auth"
 
     All crawl scopes support [HTTP Basic Auth](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication) which can be provided as part of the URL, for example: `https://username:password@example.com`.
-    
+
     **These credentials WILL BE WRITTEN into the archive.** We recommend exercising caution and only archiving with dedicated archival accounts, changing your password or deleting the account when finished.
 
 ### Crawl Start URL
@@ -82,6 +98,12 @@ When enabled, the crawler will visit all the links it finds within each page def
 
 ??? example "Crawling tags & search queries with Page List crawls"
     This setting can be useful for crawling the content of specific tags or search queries. Specify the tag or search query URL(s) in the _Crawl URL(s)_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
+
+### Fail Crawl if Not Logged In
+
+When enabled, the crawl will fail if a [page behavior](#page-behavior) detects the presence or absence of content on supported pages indicating that the browser is not logged in.
+
+For details about which websites are supported and how to add this functionality to your own [custom behaviors](#use-custom-behaviors), see the [Browsertrix Crawler documentation for Fail on Content Check](https://crawler.docs.browsertrix.com/user-guide/behaviors/#fail-on-content-check).
 
 ### Fail Crawl on Failed URL
 
@@ -138,12 +160,12 @@ The exclusions table will instruct the crawler to ignore links it finds on pages
 
 This can be useful for avoiding crawler traps — sites that may automatically generate pages such as calendars or filter options — or other pages that should not be crawled according to their URL.
 
-`Matches text`
+#### Matches text
 :   Will perform simple matching of entered text and exclude all URLs where matching text is found.
 
     e.g: If `about` is entered, `example.com/aboutme/` will not be crawled.
 
-`Regex`
+#### Regex
 :   Regular expressions (Regex) can also be used to perform more complex matching.
 
     e.g: If `#!regex \babout\/?\b` is entered, `example.com/about/` will not be crawled however `example.com/aboutme/` will be crawled.
@@ -186,7 +208,7 @@ When clicking a link-like element that would normally result in navigation, auto
     This behavior can be helpful for:
 
     - Websites that use anchor links (`<a>`) in non-standard ways, such as by using JavaScript in place of the standard `href` attribute to create a hyperlink.
-    
+
     - Websites that use `<a>` in place of a `<button>` to reveal in-page content.
 
 #### Click Selector
@@ -248,13 +270,17 @@ There are some trade-offs:
 
 ### Crawler Release Channel
 
-Sets the release channel of [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) to be used for this crawl. Crawls started by this workflow will use the latest crawler version from the selected release channel. Generally "Default" will be the most stable, however others may have newer features (or bugs)!  
+Sets the release channel of [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) to be used for this crawl. Crawls started by this workflow will use the latest crawler version from the selected release channel. Generally "Default" will be the most stable, however others may have newer features (or bugs)!
 
 This setting will only be shown if multiple different release channels are available for use.
 
 ### Block Ads by Domain
 
 Will prevent any content from the domains listed in [Steven Black's Unified Hosts file](https://github.com/StevenBlack/hosts) (ads & malware) from being captured by the crawler.
+
+### Save Local and Session Storage
+
+When enabled, instructs the crawler to save the browser's `localStorage` and `sessionStorage` data for each page in the web archive as part of the `WARC-JSON-Metadata` field. This option may be necessary to properly archive and replay certain websites. Use caution when sharing WACZ files created with this option enabled, as the saved browser storage may contain sensitive information.
 
 ### User Agent
 
@@ -292,13 +318,13 @@ Automatically start crawls periodically on a daily, weekly, or monthly schedule.
 
 ### Crawl Schedule Type
 
-`Run Immediately on Save`
+#### Run Immediately on Save
 :   When selected, the crawl will run immediately as configured. It will not run again unless manually instructed.
 
-`Run on a Recurring Basis`
+#### Run on a Recurring Basis
 :   When selected, additional configuration options for instructing the system when to run the crawl will be shown. If a crawl is already running when the schedule is set to activate it, the scheduled crawl will not run.
 
-`No Schedule`
+#### No Schedule
 :   When selected, the configuration options that have been set will be saved but the system will not do anything with them unless manually instructed.
 
 ### Frequency

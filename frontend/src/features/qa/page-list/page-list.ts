@@ -1,15 +1,17 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
 import { html, type PropertyValues } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, queryAsync } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
+
+import type { Page } from "./helpers/page";
+import type { QaPage } from "./ui/page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type PageChangeEvent } from "@/components/ui/pagination";
 import { renderSpinner } from "@/pages/org/archived-item-qa/ui/spinner";
 import type { APIPaginatedList, APISortQuery } from "@/types/api";
-import type { ArchivedItemQAPage } from "@/types/qa";
 import { pluralOf } from "@/utils/pluralize";
 
 export type SortDirection = "asc" | "desc";
@@ -82,11 +84,14 @@ export class PageList extends BtrixElement {
   @property({ type: String })
   qaRunId?: string;
 
+  @property({ type: Boolean })
+  analyzed?: boolean;
+
   @property({ type: String })
   itemPageId?: string;
 
   @property({ type: Object })
-  pages?: APIPaginatedList<ArchivedItemQAPage>;
+  pages?: APIPaginatedList<Page>;
 
   @property({ type: Number })
   totalPages = 0;
@@ -107,13 +112,20 @@ export class PageList extends BtrixElement {
   @query(".scrollContainer")
   private readonly scrollContainer?: HTMLElement | null;
 
+  @queryAsync("btrix-qa-page[selected]")
+  private readonly selectedPage!: Promise<QaPage | null>;
+
   protected async updated(changedProperties: PropertyValues<this>) {
     if (
       changedProperties.has("pages") &&
       changedProperties.get("pages") &&
       this.pages
     ) {
-      this.scrollContainer?.scrollTo({ top: 0, left: 0 });
+      if (this.itemPageId) {
+        void this.selectedPage.then((el) => el?.scrollIntoView());
+      } else {
+        this.scrollContainer?.scrollTo({ top: 0, left: 0 });
+      }
     }
   }
 
@@ -122,7 +134,8 @@ export class PageList extends BtrixElement {
       <div
         class="z-40 mb-1 flex flex-wrap items-center gap-2 rounded-lg border bg-neutral-50 p-2"
       >
-        ${this.renderSortControl()} ${this.renderFilterControl()}
+        ${when(this.qaRunId && this.analyzed, () => this.renderSortControl())}
+        ${this.renderFilterControl()}
       </div>
       <div
         class="scrollContainer relative -mx-2 overflow-y-auto overscroll-contain px-2"
@@ -150,7 +163,7 @@ export class PageList extends BtrixElement {
                   ${repeat(
                     items,
                     ({ id }) => id,
-                    (page: ArchivedItemQAPage) => html`
+                    (page) => html`
                       <btrix-qa-page
                         class="is-leaf -my-4 scroll-my-8 py-4 first-of-type:mt-0 last-of-type:mb-0"
                         .page=${page}

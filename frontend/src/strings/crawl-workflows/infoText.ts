@@ -6,6 +6,7 @@ import { type FormState } from "@/utils/workflow";
 type Field = keyof FormState;
 
 export const infoTextFor = {
+  urlList: msg("The crawler will visit and record each URL listed here."),
   exclusions: msg(
     "Specify exclusion rules for what pages should not be visited.",
   ),
@@ -74,6 +75,12 @@ export const infoTextFor = {
   ),
   customBehavior: msg(
     `Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.`,
+  ),
+  failOnContentCheck: msg(
+    `Fail the crawl if a page behavior detects the browser is not logged in on supported pages.`,
+  ),
+  saveStorage: msg(
+    `Include data from the browser's local and session storage in the web archive.`,
   ),
 } as const satisfies Partial<Record<Field, string | TemplateResult>>;
 

@@ -66,6 +66,9 @@ nav:
           - user-guide/collection.md
           - user-guide/public-collections-gallery.md
           - user-guide/presentation-sharing.md
+      - Quality Assurance:
+        - user-guide/quality-assurance.md
+        - user-guide/qa-review.md
       - Browser Profiles:
           - user-guide/browser-profiles.md
       - Org Settings:
@@ -91,15 +94,12 @@ nav:
       - develop/index.md
       - develop/local-dev-setup.md
       - develop/docs.md
-
+      - develop/emails.md
       - UI Development:
         - develop/frontend-dev.md
         - develop/ui/components.md
         - develop/ui/storybook.md
         - develop/localization.md
-        - Design:
-          - develop/ui/design-action-menus.md
-          - develop/ui/design-status-icons.md
 
   - API Reference: !ENV [ API_DOCS_URL, "/api/" ]
 

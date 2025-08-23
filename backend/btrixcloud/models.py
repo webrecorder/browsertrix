@@ -24,6 +24,7 @@ from pydantic import (
     RootModel,
     BeforeValidator,
     TypeAdapter,
+    ConfigDict,
 )
 from slugify import slugify
 
@@ -243,6 +244,7 @@ WAITING_STATES = get_args(TYPE_WAITING_STATES)
 TYPE_FAILED_STATES = Literal[
     "canceled",
     "failed",
+    "failed_not_logged_in",
     "skipped_storage_quota_reached",
     "skipped_time_quota_reached",
 ]
@@ -271,6 +273,15 @@ TYPE_ALL_CRAWL_STATES = Literal[
     TYPE_RUNNING_AND_WAITING_STATES, TYPE_NON_RUNNING_STATES
 ]
 ALL_CRAWL_STATES = [*RUNNING_AND_WAITING_STATES, *NON_RUNNING_STATES]
+
+
+# ============================================================================
+class CrawlStats(BaseModel):
+    """Crawl Stats for pages and size"""
+
+    found: int = 0
+    done: int = 0
+    size: int = 0
 
 
 # ============================================================================
@@ -321,6 +332,8 @@ class RawCrawlConfig(BaseModel):
 
     seeds: Optional[List[Seed]] = []
 
+    seedFileId: Optional[UUID] = None
+
     scopeType: Optional[ScopeType] = ScopeType.PREFIX
 
     include: Union[str, List[str], None] = None
@@ -347,6 +360,7 @@ class RawCrawlConfig(BaseModel):
 
     useSitemap: Optional[bool] = False
     failOnFailedSeed: Optional[bool] = False
+    failOnContentCheck: Optional[bool] = False
 
     logging: Optional[str] = None
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
@@ -356,6 +370,8 @@ class RawCrawlConfig(BaseModel):
 
     selectLinks: List[str] = ["a[href]->href"]
     clickSelector: str = "a"
+
+    saveStorage: Optional[bool] = False
 
 
 # ============================================================================
@@ -439,6 +455,9 @@ class CrawlConfigCore(BaseMongoModel):
     crawlerChannel: Optional[str] = None
     proxyId: Optional[str] = None
 
+    firstSeed: str = ""
+    seedCount: int = 0
+
 
 # ============================================================================
 class CrawlConfigAdditional(BaseModel):
@@ -505,9 +524,8 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     lastCrawlShouldPause: Optional[bool] = False
     lastCrawlPausedAt: Optional[datetime] = None
     lastCrawlPausedExpiry: Optional[datetime] = None
+    lastCrawlStats: Optional[CrawlStats] = None
     profileName: Optional[str] = None
-    firstSeed: Optional[str] = None
-    seedCount: int = 0
 
     createdByName: Optional[str] = None
     modifiedByName: Optional[str] = None
@@ -575,6 +593,7 @@ class CrawlConfigAddedResponse(BaseModel):
     run_now_job: Optional[str] = None
     storageQuotaReached: bool
     execMinutesQuotaReached: bool
+    errorDetail: Optional[str] = None
 
 
 # ============================================================================
@@ -598,7 +617,7 @@ class CrawlConfigSearchValues(BaseModel):
 
     names: List[str]
     descriptions: List[str]
-    firstSeeds: List[AnyHttpUrl]
+    firstSeeds: List[str]
     workflowIds: List[UUID]
 
 
@@ -766,15 +785,6 @@ class CrawlFileOut(BaseModel):
     crawlId: Optional[str] = None
     numReplicas: int = 0
     expireAt: Optional[str] = None
-
-
-# ============================================================================
-class CrawlStats(BaseModel):
-    """Crawl Stats for pages and size"""
-
-    found: int = 0
-    done: int = 0
-    size: int = 0
 
 
 # ============================================================================
@@ -952,7 +962,7 @@ class CrawlSearchValuesResponse(BaseModel):
 
     names: List[str]
     descriptions: List[str]
-    firstSeeds: List[AnyHttpUrl]
+    firstSeeds: List[str]
 
 
 # ============================================================================
@@ -1142,28 +1152,16 @@ class FilePreparer:
 
 # ============================================================================
 
-### USER-UPLOADED IMAGES ###
+### USER-UPLOADED FILES ###
 
 
 # ============================================================================
-class ImageFileOut(BaseModel):
-    """output for user-upload imaged file (conformance to Data Resource Spec)"""
+class PublicUserFileOut(BaseModel):
+    """public output for user-uploaded file stored on other document
 
-    name: str
-    path: str
-    hash: str
-    size: int
-
-    originalFilename: str
-    mime: str
-    userid: UUID
-    userName: str
-    created: datetime
-
-
-# ============================================================================
-class PublicImageFileOut(BaseModel):
-    """public output for user-upload imaged file (conformance to Data Resource Spec)"""
+    Public User Upload File (used for collection thumbnails).
+    Conforms to Data Resource Spec.
+    """
 
     name: str
     path: str
@@ -1174,8 +1172,11 @@ class PublicImageFileOut(BaseModel):
 
 
 # ============================================================================
-class ImageFile(BaseFile):
-    """User-uploaded image file"""
+class UserFileOut(PublicUserFileOut):
+    """output for user-uploaded file as stored on other document,
+    additional non-public fields included
+    Conforms to Data Resource Spec.
+    """
 
     originalFilename: str
     mime: str
@@ -1183,13 +1184,35 @@ class ImageFile(BaseFile):
     userName: str
     created: datetime
 
-    async def get_image_file_out(self, org, storage_ops) -> ImageFileOut:
-        """Get ImageFileOut with new presigned url"""
+
+# ============================================================================
+class UserFile(BaseFile):
+    """User-uploaded file stored on anther mongo document
+
+    Base user uploaded file (currently used for collection thumbnails).
+    Conforms to Data Resource Spec.
+    """
+
+    originalFilename: str
+    mime: str
+    userid: UUID
+    userName: str
+    created: datetime
+
+    async def get_absolute_presigned_url(
+        self, org, storage_ops, headers: Optional[dict]
+    ) -> str:
+        """Get presigned URL as absolute URL"""
         presigned_url, _ = await storage_ops.get_presigned_url(org, self)
+        return storage_ops.resolve_relative_access_path(presigned_url, headers) or ""
 
-        return ImageFileOut(
+    async def get_file_out(
+        self, org, storage_ops, headers: Optional[dict] = None
+    ) -> UserFileOut:
+        """Get UserFileOut with new presigned url"""
+        return UserFileOut(
             name=self.filename,
-            path=presigned_url or "",
+            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
             hash=self.hash,
             size=self.size,
             originalFilename=self.originalFilename,
@@ -1199,13 +1222,13 @@ class ImageFile(BaseFile):
             created=self.created,
         )
 
-    async def get_public_image_file_out(self, org, storage_ops) -> PublicImageFileOut:
-        """Get PublicImageFileOut with new presigned url"""
-        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
-
-        return PublicImageFileOut(
+    async def get_public_file_out(
+        self, org, storage_ops, headers: Optional[dict] = None
+    ) -> PublicUserFileOut:
+        """Get PublicUserFileOut with new presigned url"""
+        return PublicUserFileOut(
             name=self.filename,
-            path=presigned_url or "",
+            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
             hash=self.hash,
             size=self.size,
             mime=self.mime,
@@ -1213,8 +1236,8 @@ class ImageFile(BaseFile):
 
 
 # ============================================================================
-class ImageFilePreparer(FilePreparer):
-    """Wrapper for user image streaming uploads"""
+class UserFilePreparer(FilePreparer):
+    """Wrapper for user streaming uploads"""
 
     # pylint: disable=too-many-arguments, too-many-function-args
 
@@ -1234,12 +1257,12 @@ class ImageFilePreparer(FilePreparer):
         self.user_name = user.name
         self.created = created
 
-    def get_image_file(
+    def get_user_file(
         self,
         storage: StorageRef,
-    ) -> ImageFile:
-        """get user-uploaded image file"""
-        return ImageFile(
+    ) -> UserFile:
+        """get user-uploaded file"""
+        return UserFile(
             filename=self.upload_name,
             hash=self.upload_hasher.hexdigest(),
             size=self.upload_size,
@@ -1249,6 +1272,54 @@ class ImageFilePreparer(FilePreparer):
             userid=self.userid,
             userName=self.user_name,
             created=self.created,
+        )
+
+
+# ============================================================================
+class SeedFileOut(UserFileOut):
+    """Output model for user-uploaded seed files"""
+
+    id: UUID
+    oid: UUID
+    type: str
+
+    firstSeed: Optional[str] = None
+    seedCount: Optional[int] = None
+
+
+# ============================================================================
+class SeedFile(UserFile, BaseMongoModel):
+    """Stores user-uploaded file files in 'file_uploads' mongo collection
+    Used with crawl workflows
+    """
+
+    type: Literal["seedFile"] = "seedFile"
+
+    id: UUID
+    oid: UUID
+
+    firstSeed: Optional[str] = None
+    seedCount: Optional[int] = None
+
+    async def get_file_out(
+        self, org, storage_ops, headers: Optional[dict] = None
+    ) -> SeedFileOut:
+        """Get SeedFileOut with new presigned url"""
+        return SeedFileOut(
+            name=self.filename,
+            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
+            hash=self.hash,
+            size=self.size,
+            originalFilename=self.originalFilename,
+            mime=self.mime,
+            userid=self.userid,
+            userName=self.userName,
+            created=self.created,
+            id=self.id,
+            oid=self.oid,
+            type=self.type,
+            firstSeed=self.firstSeed,
+            seedCount=self.seedCount,
         )
 
 
@@ -1489,7 +1560,7 @@ class Collection(BaseMongoModel):
     homeUrlTs: Optional[datetime] = None
     homeUrlPageId: Optional[UUID] = None
 
-    thumbnail: Optional[ImageFile] = None
+    thumbnail: Optional[UserFile] = None
     thumbnailSource: Optional[CollectionThumbnailSource] = None
     defaultThumbnailName: Optional[str] = None
 
@@ -1545,7 +1616,7 @@ class CollOut(BaseMongoModel):
     homeUrlPageId: Optional[UUID] = None
 
     resources: List[CrawlFileOut] = []
-    thumbnail: Optional[ImageFileOut] = None
+    thumbnail: Optional[UserFileOut] = None
     thumbnailSource: Optional[CollectionThumbnailSource] = None
     defaultThumbnailName: Optional[str] = None
 
@@ -1588,7 +1659,7 @@ class PublicCollOut(BaseMongoModel):
     homeUrlTs: Optional[datetime] = None
 
     resources: List[CrawlFileOut] = []
-    thumbnail: Optional[PublicImageFileOut] = None
+    thumbnail: Optional[PublicUserFileOut] = None
     defaultThumbnailName: Optional[str] = None
 
     allowPublicDownload: bool = True
@@ -1835,6 +1906,14 @@ class SubscriptionCancel(BaseModel):
 
 
 # ============================================================================
+class SubscriptionTrialEndReminder(BaseModel):
+    """Email reminder that subscription will end soon"""
+
+    subId: str
+    behavior_on_trial_end: Literal["cancel", "continue", "read-only"]
+
+
+# ============================================================================
 class SubscriptionCancelOut(SubscriptionCancel, SubscriptionEventOut):
     """Output model for subscription cancellation event"""
 
@@ -1865,11 +1944,16 @@ class SubscriptionPortalUrlResponse(BaseModel):
 class Subscription(BaseModel):
     """subscription data"""
 
+    model_config = ConfigDict(use_attribute_docstrings=True)
+
     subId: str
     status: str
     planId: str
 
     futureCancelDate: Optional[datetime] = None
+    # pylint: disable=C0301
+    """When in a trial, future cancel date is the trial end date; when not in a trial, future cancel date is the date the subscription will be canceled, if set."""
+
     readOnlyOnCancel: bool = False
 
 
@@ -1986,6 +2070,8 @@ class OrgOut(BaseMongoModel):
     bytesStoredCrawls: int
     bytesStoredUploads: int
     bytesStoredProfiles: int
+    bytesStoredSeedFiles: int = 0
+    bytesStoredThumbnails: int = 0
     origin: Optional[AnyHttpUrl] = None
 
     storageQuotaReached: Optional[bool] = False
@@ -2049,6 +2135,8 @@ class Organization(BaseMongoModel):
     bytesStoredCrawls: int = 0
     bytesStoredUploads: int = 0
     bytesStoredProfiles: int = 0
+    bytesStoredSeedFiles: int = 0
+    bytesStoredThumbnails: int = 0
 
     # total usage + exec time
     usage: Dict[str, int] = {}
@@ -2196,6 +2284,8 @@ class OrgMetrics(BaseModel):
     storageUsedCrawls: int
     storageUsedUploads: int
     storageUsedProfiles: int
+    storageUsedSeedFiles: int
+    storageUsedThumbnails: int
     storageQuotaBytes: int
     archivedItemCount: int
     crawlCount: int
@@ -2619,6 +2709,7 @@ class BgJobType(str, Enum):
     RECALCULATE_ORG_STATS = "recalculate-org-stats"
     READD_ORG_PAGES = "readd-org-pages"
     OPTIMIZE_PAGES = "optimize-pages"
+    CLEANUP_SEED_FILES = "cleanup-seed-files"
 
 
 # ============================================================================
@@ -2689,6 +2780,13 @@ class OptimizePagesJob(BackgroundJob):
 
 
 # ============================================================================
+class CleanupSeedFilesJob(BackgroundJob):
+    """Model for tracking jobs to cleanup unused seed files"""
+
+    type: Literal[BgJobType.CLEANUP_SEED_FILES] = BgJobType.CLEANUP_SEED_FILES
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
@@ -2700,6 +2798,7 @@ AnyJob = RootModel[
         RecalculateOrgStatsJob,
         ReAddOrgPagesJob,
         OptimizePagesJob,
+        CleanupSeedFilesJob,
     ]
 ]
 
@@ -2957,6 +3056,13 @@ class PaginatedUserOutResponse(PaginatedResponse):
     """Response model for user emails with org info"""
 
     items: List[UserOutNoId]
+
+
+# ============================================================================
+class PaginatedUserFileResponse(PaginatedResponse):
+    """Response model for user-uploaded files (e.g. seed files)"""
+
+    items: List[SeedFileOut]
 
 
 # ============================================================================

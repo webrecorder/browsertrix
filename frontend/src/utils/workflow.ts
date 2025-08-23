@@ -1,3 +1,6 @@
+/**
+ * TODO Move to utils/crawl-configs/
+ */
 import { msg, str } from "@lit/localize";
 import { z } from "zod";
 
@@ -26,6 +29,9 @@ import localize, { getDefaultLang } from "@/utils/localize";
 export const BYTES_PER_GB = 1e9;
 export const DEFAULT_SELECT_LINKS = ["a[href]->href" as const];
 export const DEFAULT_AUTOCLICK_SELECTOR = "a";
+export const SEED_LIST_FILE_EXT = "txt";
+export const MAX_SEED_LIST_STRING_BYTES = 500 * 1000;
+export const MAX_SEED_LIST_FILE_BYTES = 25 * 1e6;
 
 export const SECTIONS = [
   "scope",
@@ -45,6 +51,11 @@ export enum GuideHash {
   BrowserSettings = "browser-settings",
   Scheduling = "scheduling",
   Metadata = "metadata",
+}
+
+export enum SeedListFormat {
+  JSON = "json",
+  File = "file",
 }
 
 export const workflowTabToGuideHash: Record<SectionsEnum, GuideHash> = {
@@ -88,12 +99,23 @@ export function defaultLabel(value: unknown): string {
   return "";
 }
 
+export function defaultSeedListFileName() {
+  return `URL-List-${new Date()
+    .toISOString()
+    .split(".")[0]
+    .replace(/[^0-9]/g, "")}.${SEED_LIST_FILE_EXT}`;
+}
+
 export type FormState = {
   primarySeedUrl: string;
   urlList: string;
+  seedListFormat: SeedListFormat;
+  seedFileId: string | null;
+  seedFile: File | null;
   includeLinkedPages: boolean;
   useSitemap: boolean;
   failOnFailedSeed: boolean;
+  failOnContentCheck: boolean;
   customIncludeUrlList: string;
   crawlTimeoutMinutes: number;
   behaviorTimeoutSeconds: number | null;
@@ -132,6 +154,7 @@ export type FormState = {
   proxyId: string | null;
   selectLinks: string[];
   clickSelector: string;
+  saveStorage: WorkflowParams["config"]["saveStorage"];
 };
 
 export type FormStateField = keyof FormState;
@@ -150,9 +173,13 @@ export const appDefaults: WorkflowDefaults = {
 export const getDefaultFormState = (): FormState => ({
   primarySeedUrl: "",
   urlList: "",
+  seedListFormat: SeedListFormat.JSON,
+  seedFileId: null,
+  seedFile: null,
   includeLinkedPages: false,
   useSitemap: false,
   failOnFailedSeed: false,
+  failOnContentCheck: false,
   customIncludeUrlList: "",
   crawlTimeoutMinutes: 0,
   maxCrawlSizeGB: 0,
@@ -189,6 +216,7 @@ export const getDefaultFormState = (): FormState => ({
   selectLinks: DEFAULT_SELECT_LINKS,
   clickSelector: DEFAULT_AUTOCLICK_SELECTOR,
   customBehavior: false,
+  saveStorage: false,
 });
 
 export const mapSeedToUrl = (arr: Seed[]) =>
@@ -230,7 +258,11 @@ export function getInitialFormState(params: {
     }
     formState.useSitemap = seedsConfig.useSitemap;
   } else {
-    if (params.initialSeeds?.length) {
+    if (params.initialWorkflow.config.seedFileId) {
+      formState.seedFileId = params.initialWorkflow.config.seedFileId;
+      formState.scopeType = WorkflowScopeType.PageList;
+      formState.seedListFormat = SeedListFormat.File;
+    } else if (params.initialSeeds?.length) {
       if (params.initialSeeds.length === 1) {
         formState.scopeType = WorkflowScopeType.Page;
       } else {
@@ -241,6 +273,7 @@ export function getInitialFormState(params: {
     }
 
     formState.failOnFailedSeed = seedsConfig.failOnFailedSeed;
+    formState.failOnContentCheck = seedsConfig.failOnContentCheck;
   }
 
   if (params.initialWorkflow.schedule) {
@@ -326,6 +359,8 @@ export function getInitialFormState(params: {
     useSitemap: seedsConfig.useSitemap ?? defaultFormState.useSitemap,
     failOnFailedSeed:
       seedsConfig.failOnFailedSeed ?? defaultFormState.failOnFailedSeed,
+    failOnContentCheck:
+      seedsConfig.failOnContentCheck ?? defaultFormState.failOnContentCheck,
     pageLimit:
       params.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
     autoscrollBehavior: params.initialWorkflow.config.behaviors
@@ -346,6 +381,7 @@ export function getInitialFormState(params: {
     crawlerChannel:
       params.initialWorkflow.crawlerChannel || defaultFormState.crawlerChannel,
     proxyId: params.initialWorkflow.proxyId || defaultFormState.proxyId,
+    saveStorage: params.initialWorkflow.config.saveStorage,
     ...formState,
   };
 }

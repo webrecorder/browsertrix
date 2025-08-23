@@ -71,6 +71,8 @@ data:
 
   MIN_AUTOCLICK_CRAWLER_IMAGE: "{{ .Values.min_autoclick_crawler_image }}"
 
+  MIN_SEED_FILE_CRAWLER_IMAGE: "{{ .Values.min_seed_file_crawler_image }}"
+
   NUM_BROWSERS: "{{ .Values.crawler_browser_instances }}"
 
   MAX_CRAWLER_MEMORY: "{{ .Values.max_crawler_memory }}"
@@ -89,6 +91,8 @@ data:
 
   LOG_SENT_EMAILS: "{{ .Values.email.log_sent_emails }}"
 
+  EMAIL_TEMPLATE_ENDPOINT: "{{ .Values.email.template_endpoint }}"
+
   BACKEND_IMAGE: "{{ .Values.backend_image }}"
 
   BACKEND_IMAGE_PULL_POLICY: "{{ .Values.backend_pull_policy }}"
@@ -98,6 +102,10 @@ data:
   REPLICA_DELETION_DELAY_DAYS: "{{ .Values.replica_deletion_delay_days | default 0 }}"
 
   PRESIGN_BATCH_SIZE: "{{ .Values.presign_batch_size | default 8 }}"
+
+  CLEANUP_JOB_CRON_SCHEDULE: "{{ .Values.cleanup_job_cron_schedule }}"
+
+  CLEANUP_FILES_AFTER_MINUTES: "{{ .Values.cleanup_files_after_minutes | default 1440 }}"
 
 
 ---
@@ -202,17 +210,3 @@ metadata:
 
 data:
 {{ (.Files.Glob "app-templates/*.yaml").AsConfig | indent 2 }}
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: email-templates
-  namespace: {{ .Release.Namespace }}
-
-data:
-{{- $email_templates := .Values.email.templates | default dict }}
-{{- range tuple "failed_bg_job" "invite" "password_reset" "validate" "sub_cancel" }}
-  {{ . }}: |
-{{ ((get $email_templates . ) | default ($.Files.Get (printf "%s/%s" "email-templates" . ))) | indent 4 }}
-  {{- end }}

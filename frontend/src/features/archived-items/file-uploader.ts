@@ -319,7 +319,7 @@ export class FileUploader extends BtrixElement {
 
   private readonly handleRemoveFile = (e: FileRemoveEvent) => {
     this.cancelUpload();
-    const idx = this.fileList.indexOf(e.detail.item);
+    const idx = this.fileList.indexOf(e.detail.item as File);
     if (idx === -1) return;
     this.fileList = [
       ...this.fileList.slice(0, idx),

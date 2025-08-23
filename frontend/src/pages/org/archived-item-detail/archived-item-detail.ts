@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task, TaskStatus } from "@lit/task";
 import clsx, { type ClassValue } from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -20,9 +21,11 @@ import type {
   Workflow,
 } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
+import type { StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import {
   isActive,
+  isCrawl,
   isNotFailed,
   isSuccessfullyFinished,
   renderName,
@@ -81,7 +84,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private qaRunId?: string;
 
   @state()
-  private isQAActive = false;
+  private isRunActive = false;
 
   @state()
   qaRuns?: QARun[];
@@ -103,6 +106,9 @@ export class ArchivedItemDetail extends BtrixElement {
 
   @state()
   mostRecentNonFailedQARun?: QARun;
+
+  @state()
+  private mostRecentSuccessQARun?: QARun;
 
   @query("#stopQARunDialog")
   private readonly stopQARunDialog?: Dialog | null;
@@ -136,6 +142,10 @@ export class ArchivedItemDetail extends BtrixElement {
     return `${this.navigate.orgBasePath}/${path}`;
   }
 
+  private get reviewUrl(): string {
+    return `${new URL(window.location.href).pathname}/review/screenshots${this.mostRecentSuccessQARun ? `?qaRunId=${this.mostRecentSuccessQARun.id}` : ""}`;
+  }
+
   private timerId?: number;
 
   private get hasFiles(): boolean | null {
@@ -158,6 +168,17 @@ export class ArchivedItemDetail extends BtrixElement {
       time-zone-name="short"
     ></btrix-format-date>`;
   }
+
+  private readonly seedFileTask = new Task(this, {
+    task: async ([item], { signal }) => {
+      if (!item) return;
+      if (!isCrawl(item)) return;
+      if (!item.config.seedFileId) return null;
+
+      return await this.getSeedFile(item.config.seedFileId, signal);
+    },
+    args: () => [this.item] as const,
+  });
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("itemId") && this.itemId) {
@@ -182,15 +203,17 @@ export class ArchivedItemDetail extends BtrixElement {
       this.mostRecentNonFailedQARun = this.qaRuns?.find((run) =>
         isNotFailed(run),
       );
+      this.mostRecentSuccessQARun = this.qaRuns?.find((run) =>
+        isSuccessfullyFinished(run),
+      );
     }
     if (
       (changedProperties.has("qaRuns") ||
         changedProperties.has("mostRecentNonFailedQARun")) &&
-      this.qaRuns &&
-      this.mostRecentNonFailedQARun?.id
+      this.qaRuns
     ) {
       if (!this.qaRunId) {
-        this.qaRunId = this.mostRecentNonFailedQARun.id;
+        this.qaRunId = this.qaRuns.find((run) => isNotFailed(run))?.id;
       }
     }
 
@@ -300,6 +323,7 @@ export class ArchivedItemDetail extends BtrixElement {
               .qaRuns=${this.qaRuns}
               .qaRunId=${this.qaRunId}
               .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
+              .mostRecentSuccessQARun=${this.mostRecentSuccessQARun}
               @btrix-qa-runs-update=${() => void this.fetchQARuns()}
             ></btrix-archived-item-detail-qa>
           `,
@@ -637,6 +661,15 @@ export class ArchivedItemDetail extends BtrixElement {
           ${when(
             isSuccessfullyFinished(this.item),
             () => html`
+              ${when(
+                this.itemType === "crawl",
+                () => html`
+                  <btrix-menu-item-link href=${this.reviewUrl}>
+                    <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
+                    ${msg("Review Crawl")}
+                  </btrix-menu-item-link>
+                `,
+              )}
               <btrix-menu-item-link
                 href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
                 download
@@ -677,20 +710,20 @@ export class ArchivedItemDetail extends BtrixElement {
           )}
           <sl-menu-item
             @click=${() =>
-              ClipboardController.copyToClipboard(this.item!.tags.join(", "))}
-            ?disabled=${!this.item.tags.length}
-          >
-            <sl-icon name="tags" slot="prefix"></sl-icon>
-            ${msg("Copy Tags")}
-          </sl-menu-item>
-          <sl-menu-item
-            @click=${() =>
               ClipboardController.copyToClipboard(
                 this.item?.id ?? this.itemId ?? "",
               )}
           >
             <sl-icon name="copy" slot="prefix"></sl-icon>
             ${msg("Copy Item ID")}
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${() =>
+              ClipboardController.copyToClipboard(this.item!.tags.join(", "))}
+            ?disabled=${!this.item.tags.length}
+          >
+            <sl-icon name="tags" slot="prefix"></sl-icon>
+            ${msg("Copy Tags")}
           </sl-menu-item>
           ${when(
             this.isCrawler,
@@ -1015,15 +1048,24 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private renderConfig() {
     return html`
-      <div aria-live="polite" aria-busy=${!this.item || !this.seeds}>
+      <div
+        aria-live="polite"
+        aria-busy=${!this.item ||
+        !this.seeds ||
+        this.seedFileTask.status === TaskStatus.PENDING}
+      >
         ${when(
-          this.item && this.seeds && this.workflow,
+          this.item &&
+            this.seeds &&
+            this.workflow &&
+            this.seedFileTask.status !== TaskStatus.PENDING,
           () => html`
             <btrix-config-details
               .crawlConfig=${{
                 ...this.item,
               } as CrawlConfig}
               .seeds=${this.seeds!.items}
+              .seedFile=${this.seedFileTask.value || undefined}
               hideMetadata
             ></btrix-config-details>
           `,
@@ -1034,16 +1076,10 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private readonly renderQAHeader = (qaRuns: QARun[]) => {
-    const qaIsRunning = this.isQAActive;
-    const qaIsAvailable = !!this.mostRecentNonFailedQARun;
-
-    const reviewLink =
-      qaIsAvailable && this.qaRunId
-        ? `${new URL(window.location.href).pathname}/review/screenshots?qaRunId=${this.qaRunId}`
-        : undefined;
+    const analyzing = this.isRunActive;
 
     return html`
-      ${qaIsRunning
+      ${analyzing
         ? html`
             <sl-button-group>
               <sl-button
@@ -1074,31 +1110,22 @@ export class ArchivedItemDetail extends BtrixElement {
                 qaRuns.length === 0 ? "primary" : "default"
               }"
               @click=${() => void this.startQARun()}
-              ?disabled=${isArchivingDisabled(this.org, true) || qaIsRunning}
+              ?disabled=${isArchivingDisabled(this.org, true) || analyzing}
             >
               <sl-icon slot="prefix" name="microscope" library="app"></sl-icon>
               ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
             </sl-button>
           `}
-      ${qaRuns.length
-        ? html`
-            <sl-tooltip
-              ?disabled=${qaIsAvailable}
-              content=${msg("No completed analysis runs are available.")}
-            >
-              <sl-button
-                variant="primary"
-                size="small"
-                href="${ifDefined(reviewLink)}"
-                @click=${this.navigate.link}
-                ?disabled=${!qaIsAvailable}
-              >
-                <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
-                ${msg("Review Crawl")}
-              </sl-button>
-            </sl-tooltip>
-          `
-        : nothing}
+
+      <sl-button
+        size="small"
+        variant=${qaRuns.length === 0 ? "default" : "primary"}
+        href=${this.reviewUrl}
+        @click=${this.navigate.link}
+      >
+        <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
+        ${msg("Review Crawl")}
+      </sl-button>
 
       <btrix-dialog id="stopQARunDialog" .label=${msg("Stop QA Analysis?")}>
         ${msg(
@@ -1435,16 +1462,16 @@ export class ArchivedItemDetail extends BtrixElement {
       this.qaRuns = await this.getQARuns();
     } catch {
       this.notify.toast({
-        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        message: msg("Sorry, couldn't retrieve QA analysis runs at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
         id: "archived-item-retrieve-error",
       });
     }
 
-    this.isQAActive = Boolean(this.qaRuns?.[0] && isActive(this.qaRuns[0]));
+    this.isRunActive = Boolean(this.qaRuns?.[0] && isActive(this.qaRuns[0]));
 
-    if (this.isQAActive) {
+    if (this.isRunActive) {
       // Clear current timer, if it exists
       if (this.timerId != null) {
         this.stopPoll();
@@ -1454,6 +1481,14 @@ export class ArchivedItemDetail extends BtrixElement {
         void this.fetchQARuns();
       }, 1000 * POLL_INTERVAL_SECONDS);
     }
+  }
+
+  private async getSeedFile(seedFileId: string, signal: AbortSignal) {
+    const data = await this.api.fetch<StorageSeedFile>(
+      `/orgs/${this.orgId}/files/${seedFileId}`,
+      { signal },
+    );
+    return data;
   }
 
   private stopPoll() {

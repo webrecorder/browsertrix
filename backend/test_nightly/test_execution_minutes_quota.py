@@ -1,7 +1,8 @@
 import math
 import requests
 import time
-from datetime import datetime
+import pytest
+
 from typing import Dict
 
 from .conftest import API_PREFIX
@@ -106,6 +107,7 @@ def test_set_execution_mins_extra_quotas(org_with_quotas, admin_auth_headers):
         assert update["update"]
 
 
+@pytest.mark.timeout(1200)
 def test_crawl_stopped_when_quota_reached_with_extra(
     org_with_quotas, admin_auth_headers
 ):

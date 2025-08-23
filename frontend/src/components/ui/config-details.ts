@@ -17,7 +17,7 @@ import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
-import { WorkflowScopeType } from "@/types/workflow";
+import { WorkflowScopeType, type StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
@@ -42,6 +42,9 @@ export class ConfigDetails extends BtrixElement {
 
   @property({ type: Array })
   seeds?: Seed[];
+
+  @property({ type: Object })
+  seedFile?: StorageSeedFile;
 
   @property({ type: Boolean })
   anchorLinks = false;
@@ -114,13 +117,18 @@ export class ConfigDetails extends BtrixElement {
             (config) => html`
               ${this.renderSetting(
                 msg("Crawl Scope"),
-                when(this.seeds, (seeds) => {
-                  if (!config.scopeType) return;
-                  if (isPageScopeType(config.scopeType) && seeds.length > 1) {
-                    return scopeTypeLabel[WorkflowScopeType.PageList];
-                  }
-                  return scopeTypeLabel[config.scopeType];
-                }),
+                config.seedFileId
+                  ? scopeTypeLabel[WorkflowScopeType.PageList]
+                  : when(this.seeds, (seeds) => {
+                      if (!config.scopeType) return;
+                      if (
+                        isPageScopeType(config.scopeType) &&
+                        seeds.length > 1
+                      ) {
+                        return scopeTypeLabel[WorkflowScopeType.PageList];
+                      }
+                      return scopeTypeLabel[config.scopeType];
+                    }),
               )}
               ${isPageScopeType(config.scopeType)
                 ? this.renderConfirmUrlListSettings(config)
@@ -263,6 +271,10 @@ export class ConfigDetails extends BtrixElement {
             seedsConfig?.blockAds,
           )}
           ${this.renderSetting(
+            msg("Save Local and Session Storage"),
+            seedsConfig?.saveStorage,
+          )}
+          ${this.renderSetting(
             msg("User Agent"),
             seedsConfig?.userAgent
               ? seedsConfig.userAgent
@@ -354,7 +366,9 @@ export class ConfigDetails extends BtrixElement {
   }: {
     id: string;
     heading: string;
-    renderDescItems: (seedsConfig?: CrawlConfig["config"]) => TemplateResult;
+    renderDescItems: (
+      seedsConfig?: CrawlConfig["config"],
+    ) => TemplateResult | undefined;
   }) {
     return html`
       <section id=${id} class="mb-8">
@@ -371,35 +385,87 @@ export class ConfigDetails extends BtrixElement {
   private readonly renderConfirmUrlListSettings = (
     config: CrawlConfig["config"],
   ) => {
-    return html`
-      ${this.renderSetting(
-        config.scopeType === WorkflowScopeType.Page
-          ? msg("Page URL")
-          : msg("Page URLs"),
-        this.seeds?.length
-          ? html`
-              <ul>
-                ${this.seeds.map(
-                  (seed: Seed) => html`
-                    <li>
-                      <a
-                        class="text-blue-600 hover:text-blue-500 hover:underline"
+    const seedFile = () =>
+      when(
+        this.seedFile,
+        (file) =>
+          html`<btrix-file-list>
+            <btrix-file-list-item
+              name=${file.originalFilename}
+              size=${file.size}
+              href=${file.path}
+              .removable=${false}
+            >
+              <span slot="name" class="flex gap-1 overflow-hidden">
+                <sl-tooltip content=${file.originalFilename}>
+                  <span class="truncate">${file.originalFilename}</span>
+                </sl-tooltip>
+                <span class="text-neutral-400" role="separator">&mdash;</span>
+                <span class="whitespace-nowrap text-neutral-500"
+                  >${this.localize.number(file.seedCount)}
+                  ${pluralOf("URLs", file.seedCount)}</span
+                >
+              </span>
+            </btrix-file-list-item>
+          </btrix-file-list>`,
+      );
+
+    const seeds = () =>
+      when(
+        this.seeds,
+        (seeds) => html`
+          <btrix-table class="grid-cols-[1fr_auto]">
+            ${seeds.map(
+              (seed: Seed) => html`
+                <btrix-table-row>
+                  <btrix-table-cell>
+                    <btrix-overflow-scroll
+                      class="-ml-5 w-[calc(100%+theme(spacing.5))] contain-inline-size part-[content]:px-5 part-[content]:[scrollbar-width:thin]"
+                    >
+                      <btrix-code
+                        language="url"
+                        class="block w-max whitespace-nowrap"
+                        .value=${seed.url}
+                      ></btrix-code>
+                    </btrix-overflow-scroll>
+                  </btrix-table-cell>
+                  <btrix-table-cell>
+                    <btrix-copy-button .value=${seed.url} placement="left">
+                    </btrix-copy-button>
+                    <sl-tooltip
+                      placement="right"
+                      content=${msg("Open in New Tab")}
+                    >
+                      <sl-icon-button
+                        name="arrow-up-right"
                         href="${seed.url}"
                         target="_blank"
-                        rel="noreferrer"
-                        >${seed.url}</a
                       >
-                    </li>
-                  `,
-                )}
-              </ul>
-            `
-          : undefined,
+                      </sl-icon-button>
+                    </sl-tooltip>
+                  </btrix-table-cell>
+                </btrix-table-row>
+              `,
+            )}
+          </btrix-table>
+        `,
+      );
+
+    return html`
+      ${this.renderSetting(
+        config.scopeType === WorkflowScopeType.Page && !config.seedFileId
+          ? html`${msg("Page")} ${pluralOf("URLs", this.seeds?.length || 0)}`
+          : msg("Page URLs"),
+        config.seedFileId ? seedFile() : seeds(),
         true,
       )}
       ${this.renderSetting(
         msg("Include Any Linked Page (“one hop out”)"),
         Boolean(config.extraHops),
+      )}
+      ${this.renderSetting(
+        msg("Fail Crawl If Not Logged In"),
+        Boolean(config.failOnContentCheck),
       )}
       ${when(
         config.extraHops,
@@ -422,13 +488,23 @@ export class ConfigDetails extends BtrixElement {
       ${this.renderSetting(
         msg("Crawl Start URL"),
         primarySeedUrl
-          ? html`<a
-              class="text-blue-600 hover:text-blue-500 hover:underline"
-              href="${primarySeedUrl}"
-              target="_blank"
-              rel="noreferrer"
-              >${primarySeedUrl}</a
-            >`
+          ? html`
+              <btrix-overflow-scroll
+                class="-mx-5 w-[calc(100%+theme(spacing.10))] contain-inline-size part-[content]:px-5 part-[content]:[scrollbar-width:thin]"
+              >
+                <a
+                  class="decoration-blue-500 hover:underline"
+                  href="${primarySeedUrl}"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <btrix-code
+                    language="url"
+                    .value="${primarySeedUrl}"
+                  ></btrix-code>
+                </a>
+              </btrix-overflow-scroll>
+            `
           : undefined,
         true,
       )}
@@ -464,6 +540,10 @@ export class ConfigDetails extends BtrixElement {
       ${this.renderSetting(
         msg("Check For Sitemap"),
         Boolean(config.useSitemap),
+      )}
+      ${this.renderSetting(
+        msg("Fail Crawl if Not Logged In"),
+        Boolean(config.failOnContentCheck),
       )}
       ${this.renderLinkSelectors()}
       ${this.renderSetting(
@@ -529,7 +609,11 @@ export class ConfigDetails extends BtrixElement {
     );
   }
 
-  private renderSetting(label: string, value: unknown, breakAll?: boolean) {
+  private renderSetting(
+    label: string | TemplateResult,
+    value: unknown,
+    breakAll?: boolean,
+  ) {
     let content = value;
 
     if (!this.crawlConfig) {
@@ -542,7 +626,8 @@ export class ConfigDetails extends BtrixElement {
       content = notSpecified;
     }
     return html`
-      <btrix-desc-list-item label=${label} class=${breakAll ? "break-all" : ""}>
+      <btrix-desc-list-item class=${breakAll ? "break-all" : ""}>
+        <span slot="label">${label}</span>
         ${content}
       </btrix-desc-list-item>
     `;

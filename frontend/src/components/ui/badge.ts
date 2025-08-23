@@ -12,6 +12,7 @@ export type BadgeVariant =
   | "neutral"
   | "primary"
   | "cyan"
+  | "blue"
   | "high-contrast";
 
 /**
@@ -46,7 +47,7 @@ export class Badge extends TailwindElement {
     return html`
       <span
         class=${clsx(
-          tw`inline-flex h-[1.125rem] items-center justify-center align-[1px] text-xs`,
+          tw`inline-flex min-h-4 items-center justify-center align-[1px] text-xs leading-none`,
           this.outline
             ? [
                 tw`ring-1`,
@@ -54,7 +55,7 @@ export class Badge extends TailwindElement {
                   success: tw`bg-success-500 text-success-500 ring-success-500`,
                   warning: tw`bg-warning-600 text-warning-600 ring-warning-600`,
                   danger: tw`bg-danger-500 text-danger-500 ring-danger-500`,
-                  neutral: tw`g-neutral-100 text-neutral-600 ring-neutral-600`,
+                  neutral: tw`bg-neutral-100 text-neutral-600 ring-neutral-600`,
                   "high-contrast": tw`bg-neutral-600 text-neutral-0 ring-neutral-0`,
                   primary: tw`bg-white text-primary ring-primary`,
                   cyan: tw`bg-cyan-50 text-cyan-600 ring-cyan-600`,

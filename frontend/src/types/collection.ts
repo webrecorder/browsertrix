@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { storageFileSchema } from "./storage";
+
 export enum CollectionAccess {
   Private = "private",
   Public = "public",
@@ -30,12 +32,7 @@ export const publicCollectionSchema = z.object({
   resources: z.array(z.string()),
   dateEarliest: z.string().datetime().nullable(),
   dateLatest: z.string().datetime().nullable(),
-  thumbnail: z
-    .object({
-      name: z.string(),
-      path: z.string().url(),
-    })
-    .nullable(),
+  thumbnail: storageFileSchema.nullable(),
   thumbnailSource: collectionThumbnailSourceSchema.nullable(),
   defaultThumbnailName: z.string().nullable(),
   crawlCount: z.number(),

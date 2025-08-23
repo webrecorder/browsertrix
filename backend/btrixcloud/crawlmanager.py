@@ -37,6 +37,7 @@ class CrawlManager(K8sAPI):
         baseprofile: str = "",
         profile_filename: str = "",
         proxy_id: str = "",
+        profileid: str = "",
     ) -> str:
         """run browser for profile creation"""
 
@@ -60,6 +61,7 @@ class CrawlManager(K8sAPI):
             "crawler_image": crawler_image,
             "image_pull_policy": image_pull_policy,
             "proxy_id": proxy_id or DEFAULT_PROXY_ID,
+            "profileid": profileid,
         }
 
         data = self.templates.env.get_template("profile_job.yaml").render(params)
@@ -212,6 +214,51 @@ class CrawlManager(K8sAPI):
 
         return job_id
 
+    async def ensure_cleanup_seed_file_cron_job_exists(self):
+        """ensure cron background job to clean up unused seed files weekly exists"""
+
+        job_id = "cleanup-seed-files-cron"
+
+        # Default schedule is midnight every Sunday
+        default_schedule = "0 0 * * 0"
+        job_schedule = os.environ.get("CLEANUP_JOB_CRON_SCHEDULE", default_schedule)
+
+        # Don't create a duplicate cron job if already exists
+        try:
+            cron_job = await self.batch_api.read_namespaced_cron_job(
+                name=job_id,
+                namespace=DEFAULT_NAMESPACE,
+            )
+            if cron_job:
+                print(
+                    "Cron job to clean up used seed files already exists",
+                    flush=True,
+                )
+                return
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            pass
+
+        print(
+            f"Creating cron job to clean up used seed files, schedule: {job_schedule}",
+            flush=True,
+        )
+
+        params = {
+            "id": job_id,
+            "job_type": BgJobType.CLEANUP_SEED_FILES.value,
+            "backend_image": os.environ.get("BACKEND_IMAGE", ""),
+            "pull_policy": os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
+            "schedule": job_schedule,
+            "larger_resources": True,
+        }
+
+        data = self.templates.env.get_template("background_cron_job.yaml").render(
+            params
+        )
+
+        await self.create_from_yaml(data, namespace=DEFAULT_NAMESPACE)
+
     async def create_crawl_job(
         self,
         crawlconfig: CrawlConfig,
@@ -221,6 +268,7 @@ class CrawlManager(K8sAPI):
         storage_filename: str,
         profile_filename: str,
         is_single_page: bool,
+        seed_file_url: str,
     ) -> str:
         """create new crawl job from config"""
         cid = str(crawlconfig.id)
@@ -246,6 +294,7 @@ class CrawlManager(K8sAPI):
             profile_filename=profile_filename,
             proxy_id=crawlconfig.proxyId or DEFAULT_PROXY_ID,
             is_single_page=is_single_page,
+            seed_file_url=seed_file_url,
         )
 
     async def reload_running_crawl_config(self, crawl_id: str):
@@ -365,14 +414,21 @@ class CrawlManager(K8sAPI):
         except:
             return {}
 
-        return browser["metadata"]["labels"]
+        metadata = browser["metadata"]["labels"]
 
-    async def ping_profile_browser(self, browserid: str) -> None:
-        """return ping profile browser"""
+        metadata["committing"] = browser.get("spec", {}).get("committing")
+
+        return metadata
+
+    async def keep_alive_profile_browser(self, browserid: str, committing="") -> None:
+        """update profile browser to not expire"""
         expire_at = dt_now() + timedelta(seconds=30)
-        await self._patch_job(
-            browserid, {"expireTime": date_to_str(expire_at)}, "profilejobs"
-        )
+
+        update = {"expireTime": date_to_str(expire_at)}
+        if committing:
+            update["committing"] = committing
+
+        await self._patch_job(browserid, update, "profilejobs")
 
     async def rollover_restart_crawl(self, crawl_id: str) -> dict:
         """Rolling restart of crawl by updating restartTime field"""

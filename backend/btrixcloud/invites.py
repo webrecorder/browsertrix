@@ -16,10 +16,11 @@ from .models import (
     EmailStr,
     UserRole,
     InvitePending,
-    InviteRequest,
+    InviteToOrgRequest,
     InviteOut,
     User,
     Organization,
+    Subscription,
 )
 from .users import UserManager
 from .emailsender import EmailSender
@@ -67,10 +68,12 @@ class InviteOps:
             await self.invites.create_index([("tokenHash", pymongo.HASHED)])
 
     async def add_new_user_invite(
+        # pylint: disable=R0913
         self,
         new_user_invite: InvitePending,
         invite_token: UUID,
         org_name: str,
+        subscription: Optional[Subscription],
         headers: Optional[dict],
     ) -> None:
         """Add invite for new user"""
@@ -93,8 +96,13 @@ class InviteOps:
 
         await self.invites.insert_one(new_user_invite.to_dict())
 
-        self.email.send_user_invite(
-            new_user_invite, invite_token, org_name, True, headers
+        await self.email.send_user_invite(
+            invite=new_user_invite,
+            token=invite_token,
+            org_name=org_name,
+            is_new=True,
+            subscription=subscription,
+            headers=headers,
         )
 
     # pylint: disable=too-many-arguments
@@ -129,8 +137,13 @@ class InviteOps:
 
         await self.invites.insert_one(existing_user_invite.to_dict())
 
-        self.email.send_user_invite(
-            existing_user_invite, invite_token, org_name, False, headers
+        await self.email.send_user_invite(
+            invite=existing_user_invite,
+            token=invite_token,
+            org_name=org_name,
+            is_new=False,
+            subscription=org.subscription,
+            headers=headers,
         )
 
     async def get_valid_invite(
@@ -173,7 +186,7 @@ class InviteOps:
     # pylint: disable=too-many-arguments
     async def invite_user(
         self,
-        invite: InviteRequest,
+        invite: InviteToOrgRequest,
         user: User,
         user_manager: UserManager,
         org: Organization,
@@ -199,7 +212,7 @@ class InviteOps:
             id=uuid4(),
             oid=oid,
             created=dt_now(),
-            role=invite.role if hasattr(invite, "role") else None,
+            role=invite.role if hasattr(invite, "role") else UserRole.VIEWER,
             # URL decode email address just in case
             email=urllib.parse.unquote(invite.email),
             inviterEmail=user.email,
@@ -223,10 +236,11 @@ class InviteOps:
             return False, invite_token
 
         await self.add_new_user_invite(
-            invite_pending,
-            invite_token,
-            org_name,
-            headers,
+            new_user_invite=invite_pending,
+            invite_token=invite_token,
+            org_name=org_name,
+            headers=headers,
+            subscription=org.subscription,
         )
         return True, invite_token
 
@@ -275,11 +289,10 @@ class InviteOps:
             created=invite.created,
             inviterEmail=inviter_email,
             inviterName=inviter_name,
-            fromSuperuser=from_superuser,
+            fromSuperuser=from_superuser or False,
             oid=invite.oid,
             role=invite.role,
             email=invite.email,
-            userid=invite.userid,
         )
 
         if not invite.oid:

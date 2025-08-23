@@ -27,6 +27,7 @@ from .models import (
     SubscriptionPortalUrlRequest,
     SubscriptionPortalUrlResponse,
     SubscriptionCanceledResponse,
+    SubscriptionTrialEndReminder,
     Organization,
     InviteToOrgRequest,
     InviteAddedResponse,
@@ -144,10 +145,14 @@ class SubOps:
     async def send_cancel_emails(self, cancel_date: datetime, org: Organization):
         """Asynchronously send cancellation emails to all org admins"""
         users = await self.org_ops.get_users_for_org(org, UserRole.OWNER)
-        for user in users:
-            self.user_manager.email.send_subscription_will_be_canceled(
-                cancel_date, user.name, user.email, org
-            )
+        await asyncio.gather(
+            *[
+                self.user_manager.email.send_subscription_will_be_canceled(
+                    cancel_date, user.name, user.email, org
+                )
+                for user in users
+            ]
+        )
 
     async def cancel_subscription(self, cancel: SubscriptionCancel) -> dict[str, bool]:
         """delete subscription data, and unless if readOnlyOnCancel is true, the entire org"""
@@ -177,6 +182,47 @@ class SubOps:
 
         await self.add_sub_event("cancel", cancel, org.id)
         return {"canceled": True, "deleted": deleted}
+
+    async def send_trial_end_reminder(
+        self,
+        reminder: SubscriptionTrialEndReminder,
+    ):
+        """Send a trial end reminder email to the organization admins"""
+
+        org = await self.org_ops.find_org_by_subscription_id(reminder.subId)
+
+        if not org:
+            print(f"Organization not found for subscription ID {reminder.subId}")
+            raise HTTPException(
+                status_code=404, detail="org_for_subscription_not_found"
+            )
+
+        assert org.subscription
+
+        if not org.subscription.futureCancelDate:
+            print(f"Future cancel date not found for subscription ID {reminder.subId}")
+            raise HTTPException(status_code=400, detail="future_cancel_date_not_found")
+
+        users = await self.org_ops.get_users_for_org(org, UserRole.OWNER)
+
+        if len(users) == 0:
+            print(f"No admin users found for organization ID {org.id}")
+            raise HTTPException(status_code=400, detail="no_admin_users_found")
+
+        await asyncio.gather(
+            *[
+                self.user_manager.email.send_subscription_trial_ending_soon(
+                    trial_end_date=org.subscription.futureCancelDate,
+                    user_name=user.name,
+                    receiver_email=user.email,
+                    org=org,
+                    behavior_on_trial_end=reminder.behavior_on_trial_end,
+                )
+                for user in users
+            ]
+        )
+
+        return SuccessResponse(success=True)
 
     async def add_sub_event(
         self,
@@ -390,6 +436,17 @@ def init_subs_api(
         cancel: SubscriptionCancel,
     ):
         return await ops.cancel_subscription(cancel)
+
+    @app.post(
+        "/subscriptions/send-trial-end-reminder",
+        tags=["subscriptions"],
+        dependencies=[Depends(user_or_shared_secret_dep)],
+        response_model=SuccessResponse,
+    )
+    async def send_trial_end_reminder(
+        reminder: SubscriptionTrialEndReminder,
+    ):
+        return await ops.send_trial_end_reminder(reminder)
 
     assert org_ops.router
 

@@ -25,6 +25,7 @@ LINES_TO_TEST = 10
         ("info,debug", "general,worker"),
     ],
 )
+@pytest.mark.timeout(1800)
 def test_stream_crawl_logs_wacz(
     admin_auth_headers,
     default_org_id,

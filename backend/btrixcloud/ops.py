@@ -12,6 +12,7 @@ from .basecrawls import BaseCrawlOps
 from .colls import CollectionOps
 from .crawls import CrawlOps
 from .crawlconfigs import CrawlConfigOps
+from .file_uploads import FileUploadOps
 from .invites import InviteOps
 from .orgs import OrgOps
 from .pages import PageOps
@@ -37,6 +38,7 @@ def init_ops() -> Tuple[
     EventWebhookOps,
     UserManager,
     InviteOps,
+    FileUploadOps,
     AsyncIOMotorClient,
     AsyncIOMotorDatabase,
 ]:
@@ -57,6 +59,8 @@ def init_ops() -> Tuple[
 
     storage_ops = StorageOps(org_ops, crawl_manager, mdb)
 
+    file_ops = FileUploadOps(mdb, org_ops, storage_ops)
+
     background_job_ops = BackgroundJobOps(
         mdb, email, user_manager, org_ops, crawl_manager, storage_ops
     )
@@ -65,6 +69,7 @@ def init_ops() -> Tuple[
         mdb, org_ops, crawl_manager, storage_ops, background_job_ops
     )
 
+    # pylint: disable=duplicate-code
     crawl_config_ops = CrawlConfigOps(
         dbclient,
         mdb,
@@ -72,6 +77,8 @@ def init_ops() -> Tuple[
         org_ops,
         crawl_manager,
         profile_ops,
+        file_ops,
+        storage_ops,
     )
 
     coll_ops = CollectionOps(mdb, storage_ops, org_ops, event_webhook_ops)
@@ -103,7 +110,9 @@ def init_ops() -> Tuple[
 
     background_job_ops.set_ops(crawl_ops, profile_ops)
 
-    org_ops.set_ops(base_crawl_ops, profile_ops, coll_ops, background_job_ops, page_ops)
+    org_ops.set_ops(
+        base_crawl_ops, profile_ops, coll_ops, background_job_ops, page_ops, file_ops
+    )
 
     user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
 
@@ -127,6 +136,7 @@ def init_ops() -> Tuple[
         event_webhook_ops,
         user_manager,
         invite_ops,
+        file_ops,
         dbclient,
         mdb,
     )

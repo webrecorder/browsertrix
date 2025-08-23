@@ -12,7 +12,6 @@ import {
   type ListWorkflow,
   type Seed,
   type Workflow,
-  type WorkflowParams,
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -25,6 +24,10 @@ import { type SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsController } from "@/controllers/searchParams";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import {
+  Action,
+  type BtrixSelectActionEvent,
+} from "@/features/crawl-workflows/workflow-action-menu/types";
 import { type BtrixChangeWorkflowProfileFilterEvent } from "@/features/crawl-workflows/workflow-profile-filter";
 import type { BtrixChangeWorkflowScheduleFilterEvent } from "@/features/crawl-workflows/workflow-schedule-filter";
 import type { BtrixChangeWorkflowTagFilterEvent } from "@/features/crawl-workflows/workflow-tag-filter";
@@ -33,8 +36,13 @@ import { WorkflowTab } from "@/routes";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import { NewWorkflowOnlyScopeType } from "@/types/workflow";
+import {
+  NewWorkflowOnlyScopeType,
+  type StorageSeedFile,
+} from "@/types/workflow";
 import { isApiError } from "@/utils/api";
+import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
+import { renderName } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
@@ -52,8 +60,6 @@ const FILTER_BY_CURRENT_USER_STORAGE_KEY =
 const INITIAL_PAGE_SIZE = 10;
 const POLL_INTERVAL_SECONDS = 10;
 const ABORT_REASON_THROTTLE = "throttled";
-// NOTE Backend pagination max is 1000
-const SEEDS_MAX = 1000;
 
 const sortableFields: Record<
   SortField,
@@ -554,7 +560,7 @@ export class WorkflowsList extends BtrixElement {
         this.workflowToDelete,
         (workflow) => html`
           <btrix-dialog id="deleteDialog" .label=${msg("Delete Workflow?")}>
-            ${deleteConfirmation(this.renderName(workflow))}
+            ${deleteConfirmation(renderName(workflow))}
             <div slot="footer" class="flex justify-between">
               <sl-button
                 size="small"
@@ -793,11 +799,59 @@ export class WorkflowsList extends BtrixElement {
 
   private readonly renderWorkflowItem = (workflow: ListWorkflow) => html`
     <btrix-workflow-list-item .workflow=${workflow}>
-      <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
+      <btrix-workflow-action-menu
+        slot="menu"
+        .workflow=${workflow}
+        hidePauseResume
+        @btrix-select=${async (e: BtrixSelectActionEvent) => {
+          switch (e.detail.item.action) {
+            case Action.Run:
+              void this.runNow(workflow);
+              break;
+            case Action.TogglePauseResume:
+              // TODO
+              break;
+            case Action.Stop:
+              void this.stop(workflow.lastCrawlId);
+              break;
+            case Action.Cancel:
+              void this.cancel(workflow.lastCrawlId);
+              break;
+            case Action.EditBrowserWindows:
+              this.navigate.to(
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}`,
+                {
+                  dialog: "scale",
+                },
+              );
+              break;
+            case Action.EditExclusions:
+              this.navigate.to(
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}`,
+                {
+                  dialog: "exclusions",
+                },
+              );
+              break;
+            case Action.Duplicate:
+              void this.duplicateConfig(workflow);
+              break;
+            case Action.Delete: {
+              this.workflowToDelete = workflow;
+              await this.updateComplete;
+              void this.deleteDialog?.show();
+              break;
+            }
+            default:
+              console.debug("unknown workflow action:", e.detail.item.action);
+              break;
+          }
+        }}
+      ></btrix-workflow-action-menu>
     </btrix-workflow-list-item>
   `;
 
-  private renderMenuItems(workflow: ListWorkflow) {
+  private renderMenu(workflow: ListWorkflow) {
     return html`
       ${when(
         workflow.isCrawlRunning && this.appState.isCrawler,
@@ -929,25 +983,6 @@ export class WorkflowsList extends BtrixElement {
     `;
   }
 
-  private renderName(crawlConfig: ListWorkflow) {
-    if (crawlConfig.name) return crawlConfig.name;
-    const { firstSeed, seedCount } = crawlConfig;
-    if (seedCount === 1) {
-      return firstSeed;
-    }
-    const remainderCount = seedCount - 1;
-    if (remainderCount === 1) {
-      return msg(
-        html`${firstSeed}
-          <span class="text-neutral-500">+${remainderCount} URL</span>`,
-      );
-    }
-    return msg(
-      html`${firstSeed}
-        <span class="text-neutral-500">+${remainderCount} URLs</span>`,
-    );
-  }
-
   private renderEmptyState() {
     if (
       Object.keys(this.filterBy).length ||
@@ -1049,33 +1084,38 @@ export class WorkflowsList extends BtrixElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig(workflow: ListWorkflow) {
-    const [fullWorkflow, seeds] = await Promise.all([
-      this.getWorkflow(workflow),
-      this.getSeeds(workflow),
-    ]);
+    const fullWorkflow = await this.getWorkflow(workflow);
+    let seeds;
+    let seedFile;
 
-    const workflowParams: WorkflowParams = {
-      ...fullWorkflow,
-      name: workflow.name ? msg(str`${workflow.name} Copy`) : "",
-    };
+    if (fullWorkflow.config.seedFileId) {
+      seedFile = await this.getSeedFile(fullWorkflow.config.seedFileId);
+    } else {
+      seeds = await this.getSeeds(workflow);
+    }
 
-    this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, {
-      workflow: workflowParams,
-      seeds: seeds.items,
+    const settings = settingsForDuplicate({
+      workflow: fullWorkflow,
+      seeds,
+      seedFile,
     });
 
-    if (seeds.total > SEEDS_MAX) {
+    this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, settings);
+
+    if (seeds && seeds.total > seeds.items.length) {
+      const urlCount = this.localize.number(seeds.items.length);
+
+      // This is likely an edge case for old workflows with >1,000 seeds
+      // or URL list workflows created via API.
       this.notify.toast({
-        title: msg(str`Partially copied Workflow`),
-        message: msg(
-          str`Only first ${this.localize.number(SEEDS_MAX)} URLs were copied.`,
-        ),
+        title: msg(str`Partially copied workflow settings`),
+        message: msg(str`The first ${urlCount} URLs were copied.`),
         variant: "warning",
         id: "workflow-copied-status",
       });
     } else {
       this.notify.toast({
-        message: msg(str`Copied Workflow to new template.`),
+        message: msg("Copied settings to new workflow."),
         variant: "success",
         icon: "check2-circle",
         id: "workflow-copied-status",
@@ -1092,7 +1132,7 @@ export class WorkflowsList extends BtrixElement {
       void this.fetchWorkflows();
       this.notify.toast({
         message: msg(
-          html`Deleted <strong>${this.renderName(workflow)}</strong> Workflow.`,
+          html`Deleted <strong>${renderName(workflow)}</strong> Workflow.`,
         ),
         variant: "success",
         icon: "check2-circle",
@@ -1163,7 +1203,7 @@ export class WorkflowsList extends BtrixElement {
 
       this.notify.toast({
         message: msg(
-          html`Started crawl from <strong>${this.renderName(workflow)}</strong>.
+          html`Started crawl from <strong>${renderName(workflow)}</strong>.
             <br />
             <a
               class="underline hover:no-underline"
@@ -1242,6 +1282,13 @@ export class WorkflowsList extends BtrixElement {
     // NOTE Returns first 1000 seeds (backend pagination max)
     const data = await this.api.fetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/seeds`,
+    );
+    return data;
+  }
+
+  private async getSeedFile(seedFileId: string) {
+    const data = await this.api.fetch<StorageSeedFile>(
+      `/orgs/${this.orgId}/files/${seedFileId}`,
     );
     return data;
   }

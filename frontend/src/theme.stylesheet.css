@@ -143,6 +143,11 @@
     display: inline-block;
     margin-bottom: var(--sl-spacing-3x-small);
   }
+  .form-control-label--required::after {
+    content: var(--sl-input-required-content);
+    margin-inline-start: var(--sl-input-required-content-offset);
+    color: var(--sl-input-required-content-color);
+  }
   .form-help-text,
   btrix-tag-input::part(form-control-help-text),
   sl-input::part(form-control-help-text),
@@ -223,6 +228,21 @@
   /* Add border to menu */
   sl-menu {
     border: 1px solid var(--sl-panel-border-color);
+  }
+
+  /* Adjust menu item hover and focus styles */
+  sl-menu-item,
+  btrix-menu-item-link {
+    @apply part-[base]:text-neutral-700 part-[base]:hover:bg-cyan-50/50 part-[base]:hover:text-cyan-700 part-[base]:focus-visible:bg-cyan-50/50;
+  }
+
+  /* Add menu item variants */
+  .menu-item-success {
+    @apply part-[base]:text-success part-[base]:hover:bg-success-50 part-[base]:hover:text-success-700 part-[base]:focus-visible:bg-success-50;
+  }
+
+  .menu-item-danger {
+    @apply part-[base]:text-danger part-[base]:hover:bg-danger-50 part-[base]:hover:text-danger-700 part-[base]:focus-visible:bg-danger-50;
   }
 
   /* Validation styles */

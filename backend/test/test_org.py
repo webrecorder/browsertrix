@@ -496,12 +496,16 @@ def test_org_metrics(crawler_auth_headers, default_org_id):
     assert data["storageUsedBytes"] > 0
     assert data["storageUsedCrawls"] > 0
     assert data["storageUsedUploads"] >= 0
+    assert data["storageUsedThumbnails"] >= 0
+    assert data["storageUsedThumbnails"] >= 0
     assert data["storageUsedProfiles"] >= 0
     assert (
         data["storageUsedBytes"]
         == data["storageUsedCrawls"]
         + data["storageUsedUploads"]
         + data["storageUsedProfiles"]
+        + data["storageUsedSeedFiles"]
+        + data["storageUsedThumbnails"]
     )
     assert data["storageQuotaBytes"] >= 0
     assert data["archivedItemCount"] > 0

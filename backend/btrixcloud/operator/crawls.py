@@ -4,7 +4,7 @@ import traceback
 import os
 import math
 from pprint import pprint
-from typing import Optional, Any, Sequence
+from typing import Optional, Any, Sequence, Literal
 from datetime import datetime, timedelta
 from uuid import UUID
 
@@ -182,6 +182,7 @@ class CrawlOperator(BaseOperator):
             scheduled=spec.get("manual") != "1",
             qa_source_crawl_id=spec.get("qaSourceCrawlId"),
             is_single_page=spec.get("isSinglePage") == "1",
+            seed_file_url=spec.get("seedFileUrl", ""),
         )
 
         # if finalizing, crawl is being deleted
@@ -469,6 +470,10 @@ class CrawlOperator(BaseOperator):
         raw_config["behaviors"] = self._filter_autoclick_behavior(
             raw_config["behaviors"], params["crawler_image"]
         )
+
+        if crawl.seed_file_url:
+            raw_config["seedFile"] = crawl.seed_file_url
+        raw_config.pop("seedFileId", None)
 
         params["config"] = json.dumps(raw_config)
 
@@ -822,15 +827,26 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         pods: dict,
-        stats: Optional[CrawlStats] = None,
+        stats: CrawlStats,
+        redis: Redis,
     ) -> bool:
         """Mark crawl as failed, log crawl state and print crawl logs, if possible"""
         prev_state = status.state
 
-        if not await self.mark_finished(crawl, status, "failed", stats=stats):
+        failed_state: Literal["failed", "failed_not_logged_in"] = "failed"
+
+        fail_reason = await redis.get(f"{crawl.id}:failReason")
+
+        if fail_reason == "not_logged_in":
+            failed_state = "failed_not_logged_in"
+
+        if not await self.mark_finished(crawl, status, failed_state, stats=stats):
             return False
 
-        if not self.log_failed_crawl_lines or prev_state == "failed":
+        if not self.log_failed_crawl_lines or prev_state in (
+            "failed",
+            "failed_not_logged_in",
+        ):
             return True
 
         pod_names = list(pods.keys())
@@ -1574,7 +1590,7 @@ class CrawlOperator(BaseOperator):
             # check if one-page crawls actually succeeded
             # if only one page found, and no files, assume failed
             if status.pagesFound == 1 and not status.filesAdded:
-                await self.fail_crawl(crawl, status, pods, stats)
+                await self.fail_crawl(crawl, status, pods, stats, redis)
                 return status
 
             state: TYPE_NON_RUNNING_STATES
@@ -1597,7 +1613,7 @@ class CrawlOperator(BaseOperator):
             if status.stopping and not status.pagesDone:
                 await self.mark_finished(crawl, status, "canceled", stats)
             else:
-                await self.fail_crawl(crawl, status, pods, stats)
+                await self.fail_crawl(crawl, status, pods, stats, redis)
 
         # check for other statuses, default to "running"
         else:
