@@ -1966,13 +1966,6 @@ class SubscriptionCanceledResponse(BaseModel):
 
 
 # ============================================================================
-class SubscriptionReminderResponse(BaseModel):
-    """Response model for subscription reminder"""
-
-    sent: bool
-
-
-# ============================================================================
 # User Org Info With Subs
 # ============================================================================
 class UserOrgInfoOutWithSubs(UserOrgInfoOut):

@@ -28,7 +28,6 @@ from .models import (
     SubscriptionPortalUrlResponse,
     SubscriptionCanceledResponse,
     SubscriptionTrialEndReminder,
-    SubscriptionReminderResponse,
     Organization,
     InviteToOrgRequest,
     InviteAddedResponse,
@@ -223,7 +222,7 @@ class SubOps:
             ]
         )
 
-        return SubscriptionReminderResponse(sent=True)
+        return SuccessResponse(success=True)
 
     async def add_sub_event(
         self,
@@ -439,10 +438,10 @@ def init_subs_api(
         return await ops.cancel_subscription(cancel)
 
     @app.post(
-        "/subscriptions/trial-end-reminder",
+        "/subscriptions/send-trial-end-reminder",
         tags=["subscriptions"],
         dependencies=[Depends(user_or_shared_secret_dep)],
-        response_model=SubscriptionReminderResponse,
+        response_model=SuccessResponse,
     )
     async def send_trial_end_reminder(
         reminder: SubscriptionTrialEndReminder,
