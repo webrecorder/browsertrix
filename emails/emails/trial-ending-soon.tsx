@@ -117,7 +117,7 @@ export const TrialEndingSoonEmail = ({
             .
           </Text>
           <Warning>
-            Otherwise, all data hosted on Browsertrix under the{" "}
+            All data hosted on Browsertrix under the{" "}
             <Link
               className="text-red-800 font-bold"
               href={org_url}
