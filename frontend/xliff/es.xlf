@@ -35,7 +35,7 @@
         <target state="translated"> <x id="0" equiv-text="${this.renderInput()}"/> de <x id="1" equiv-text="${this.pages} "/></target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s5697808ce744d508">
-        <source>Current page, page <x id="0" equiv-text="${this.page}"/></source>
+        <source>Current page, page <x id="0" equiv-text="${this._page}"/></source>
         <target state="translated">Página actual, página <x id="0" equiv-text="${this.page}"/></target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s81a19821f3e4a3d2">
@@ -194,10 +194,6 @@
         <source>Please shorten this text to <x id="0" equiv-text="${maxLength}"/> or fewer characters.</source>
         <target state="translated">Por favor, abrevie este texto a <x id="0" equiv-text="${maxLength}"/> o menos caracteres.</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="s9f8c17b4d595bb2d">
-        <source>Manage Billing</source>
-        <target state="translated">Gestionar facturación</target>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="s5a38b8a21f9d9ab7">
         <source>Update Billing</source>
         <target state="translated">Actualizar facturación</target>
@@ -216,10 +212,6 @@
       </trans-unit>
       <trans-unit id="s87d8a89eee6ca824">
         <source>Subscription status, features, and add-ons, if applicable.</source>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="sc93b55ebdda10016">
-        <source>You can view plan details, update payment methods, and update billing information by clicking “<x id="0" equiv-text="${this.portalUrlLabel}"/>”.</source>
-        <target state="translated">Puedes ver los detalles de tu plan, actualizar los métodos de pago, y actualizar la información de facturación haciendo clic en “<x id="0" equiv-text="${this.portalUrlLabel}"/>”.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="h1abcffb9335ebc6d">
         <source>To upgrade to Pro, contact us at
@@ -431,12 +423,6 @@
       </trans-unit>
       <trans-unit id="s68eac1025cee6964">
         <source>Crawl Scope</source>
-      </trans-unit>
-      <trans-unit id="se544485215819946">
-        <source>Per-Crawl Limits</source>
-      </trans-unit>
-      <trans-unit id="s90b49a493c7010f0">
-        <source>Per-Page Limits</source>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s4d34e4682643b600">
         <source>Browser Settings</source>
@@ -756,10 +742,6 @@
       <trans-unit id="saa8aa81ad6f055fd">
         <source>Level</source>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="s9d6c4c0517894d2a">
-        <source>Error Message</source>
-        <target state="translated">Mensaje de error</target>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="s1c67a1fa4d07bd8b">
         <source>Page URL</source>
         <target state="translated">Dirección URL de la página</target>
@@ -775,20 +757,11 @@
       <trans-unit id="s4c60317e4731da19">
         <source>Starting</source>
       </trans-unit>
-      <trans-unit id="s0b01847c8ab4dd76">
-        <source>Waiting (At Capacity)</source>
-      </trans-unit>
-      <trans-unit id="sd1615a1ffbc4ca6b">
-        <source>Waiting (Crawl Limit)</source>
-      </trans-unit>
       <trans-unit id="s85994a70cd39166c">
         <source>Running</source>
       </trans-unit>
       <trans-unit id="s4f566a3b2235ad29">
         <source>Stopping</source>
-      </trans-unit>
-      <trans-unit id="s1f4459adc67dfb55">
-        <source>Finishing Crawl</source>
       </trans-unit>
       <trans-unit id="sb4ef767c2f04d346">
         <source>Generating WACZ</source>
@@ -872,12 +845,6 @@
         <source>Settings</source>
         <target state="translated">Ajustes</target>
       </trans-unit>
-      <trans-unit id="s09075b7d9df189b9">
-        <source>Workflow not found.</source>
-      </trans-unit>
-      <trans-unit id="sf612ca852330362b">
-        <source>Sorry, couldn't retrieve Workflow at this time.</source>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="s4409ada9c5c2a7f8">
         <source>Inactive</source>
         <target state="translated">No activo</target>
@@ -921,9 +888,6 @@
       <trans-unit xml:space="preserve" id="sc8865a6e612fb020">
         <source>Edit Browser Windows</source>
         <target state="translated">Editar ventanas del navegador</target>
-      </trans-unit>
-      <trans-unit id="s8cf2c15722a31ab4">
-        <source>Downloading will be enabled when this crawl is finished.</source>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s09af18496f032668">
         <source>Download Logs</source>
@@ -972,14 +936,6 @@
       <trans-unit id="sa348b8b53e07a21b">
         <source>No Schedule</source>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="s4a8134a67288fde0">
-        <source>Created By</source>
-        <target state="translated">Creado por</target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="sf72695e8cd91f93c">
-        <source><x id="0" equiv-text="${workflow.createdByName}"/> on <x id="1" equiv-text="${this.localize.date(new Date(workflow.created), {&#10;    year: &quot;numeric&quot;,&#10;    month: &quot;numeric&quot;,&#10;    day: &quot;numeric&quot;,&#10;})}"/></source>
-        <target state="translated"><x id="0" equiv-text="${workflow.createdByName}"/> en <x id="1" equiv-text="${this.localize.date(new Date(workflow.created), {&#10;    year: &quot;numeric&quot;,&#10;    month: &quot;numeric&quot;,&#10;    day: &quot;numeric&quot;,&#10;})}"/></target>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="hcb76d3d062f4fe97">
         <source> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;          &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></source>
         <target state="translated"> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;          &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></target>
@@ -990,13 +946,6 @@
       </trans-unit>
       <trans-unit id="s900a5e61e7ade066">
         <source>View:</source>
-      </trans-unit>
-      <trans-unit id="sb090ab524895d2b4">
-        <source>All Crawls</source>
-      </trans-unit>
-      <trans-unit id="he775de5878ab0942">
-        <source>Crawl is currently running.
-                    <x id="0" equiv-text="&lt;a href=&quot;${`${window.location.pathname}#watch`}&quot; class=&quot;underline hover:no-underline&quot;&gt;"/>Watch Crawl Progress<x id="1" equiv-text="&lt;/a&gt;"/></source>
       </trans-unit>
       <trans-unit id="s76d9944af031bdb3">
         <source>No matching crawls found.</source>
@@ -1009,9 +958,6 @@
       </trans-unit>
       <trans-unit id="s1582c2bf884b8052">
         <source>Run Duration</source>
-      </trans-unit>
-      <trans-unit id="s1885dd59daa24f31">
-        <source>Crawl Size</source>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s63dc27cd73a61aa2">
         <source>Browser Windows</source>
@@ -1029,35 +975,8 @@
       <trans-unit id="s9faa4c27631001f6">
         <source>Crawl stopping...</source>
       </trans-unit>
-      <trans-unit id="sb660858279ecdbc7">
-        <source>Crawl workflow is not currently running.</source>
-      </trans-unit>
-      <trans-unit id="s2d60617060d16a4a">
-        <source>Replay Latest Crawl</source>
-      </trans-unit>
-      <trans-unit id="sb0977bdf896ee15d">
-        <source>QA Latest Crawl</source>
-      </trans-unit>
-      <trans-unit id="s0b3d512df6b7e85c">
-        <source>Crawl is not running.</source>
-      </trans-unit>
-      <trans-unit id="h27573a6e2ed7211d">
-        <source>Viewing error logs for currently running crawl.
-                    <x id="0" equiv-text="&lt;a href=&quot;${`${window.location.pathname}#watch`}&quot; class=&quot;underline hover:no-underline&quot;&gt;"/>Watch Crawl Progress<x id="1" equiv-text="&lt;/a&gt;"/></source>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s31b57d50c6a992ba">
-        <source>Error logs currently not available.</source>
-        <target state="translated">Los registros de error no se encuentran disponibles actualmente.</target>
-      </trans-unit>
-      <trans-unit id="s639f3dec21008b90">
-        <source>No error logs found yet for latest crawl.</source>
-      </trans-unit>
       <trans-unit id="sb663339526803ecb">
         <source>Logs will show here after you run a crawl.</source>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="sa641ef4b0f2af2b4">
-        <source>Displaying latest <x id="0" equiv-text="${this.localize.number(LOGS_PAGE_SIZE)}"/> errors of <x id="1" equiv-text="${this.localize.number(this.logs!.total)}"/>.</source>
-        <target state="translated">Mostrar los últimos <x id="0" equiv-text="${this.localize.number(LOGS_PAGE_SIZE)}"/> errores de <x id="1" equiv-text="${this.localize.number(this.logs!.total)}"/>.</target>
       </trans-unit>
       <trans-unit id="sa7bc374e662a4beb">
         <source>Upcoming Pages</source>
@@ -1081,9 +1000,6 @@
       </trans-unit>
       <trans-unit id="sc8eda12c58f5d10f">
         <source>Sorry, couldn't retrieve all crawl settings at this time.</source>
-      </trans-unit>
-      <trans-unit id="sb6b7b4847d9c4a52">
-        <source>Sorry, couldn't get crawls at this time.</source>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s1a20a47c9bf221da">
         <source><x id="0" equiv-text="${this.workflow.name}"/> Copy</source>
@@ -1128,9 +1044,6 @@
       </trans-unit>
       <trans-unit id="s6f62c58028d235ff">
         <source>Only org owners can delete other users' archived items.</source>
-      </trans-unit>
-      <trans-unit id="s29424e3f5e73a2ee">
-        <source>Sorry, couldn't retrieve crawl error logs at this time.</source>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s6666c5055de36901">
         <source>Start typing to search</source>
@@ -1483,14 +1396,6 @@
         <source>Crawl Settings</source>
         <target state="translated">Configuración de Crawl</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="s58cfa43fd4318df9">
-        <source>Download all files as a single WACZ</source>
-        <target state="translated">Descargar todos los archivos como un único WACZ</target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s7a2da4018fdc9300">
-        <source>Download as Multi-WACZ</source>
-        <target state="translated">Descargar como varios WACZ</target>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="s252a52330d32b900">
         <source>Metadata</source>
         <target state="translated">Metadatos</target>
@@ -1573,10 +1478,6 @@
         <source>No files to download.</source>
         <target state="translated">No hay archivos para descargar.</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="s9f5fa96cb69dbf70">
-        <source>No error logs to display.</source>
-        <target state="translated">No hay registros de error para mostrar.</target>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="sc05332c751d49fa1">
         <source>Stop Analysis</source>
         <target state="translated">Parar análisis</target>
@@ -1620,9 +1521,6 @@
       </trans-unit>
       <trans-unit id="s77b8aee24f2143f1">
         <source>Sorry, couldn't load all crawl settings.</source>
-      </trans-unit>
-      <trans-unit id="sb4bc9654d1402034">
-        <source>Sorry, couldn't retrieve crawl logs at this time.</source>
       </trans-unit>
       <trans-unit id="sad61764572206873">
         <source>Sorry, couldn't cancel crawl at this time.</source>
@@ -1849,13 +1747,6 @@
         <source>Browser Profiles</source>
         <target state="translated">Perfiles de navegador</target>
       </trans-unit>
-      <trans-unit id="s527bc3bad26def9d">
-        <source>Not used in any crawl workflows.</source>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="se9b9328201b35732">
-        <source>(no name)</source>
-        <target state="translated">(sin nombre)</target>
-      </trans-unit>
       <trans-unit id="s6029661d996c9385">
         <source>Save Browser Profile</source>
       </trans-unit>
@@ -1873,16 +1764,9 @@
       <trans-unit id="s6f6f70a05859338b">
         <source>Sorry, couldn't create browser profile at this time.</source>
       </trans-unit>
-      <trans-unit id="h132d0ccd2402fb33">
-        <source>Could not delete <x id="0" equiv-text="&lt;strong&gt;${profileName}&lt;/strong&gt;"/>, in use by
-              <x id="1" equiv-text="&lt;strong&gt;${data.crawlconfigs.map(({ name }) =&gt; name).join(&quot;, &quot;)}&lt;/strong&gt;"/>. Please remove browser profile from Workflow to continue.</source>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="ha6f8533fba325287">
         <source>Deleted <x id="0" equiv-text="&lt;strong&gt;${profileName}&lt;/strong&gt;"/>.</source>
         <target state="translated"><x id="0" equiv-text="&lt;strong&gt;${profileName}&lt;/strong&gt;"/> eliminado.</target>
-      </trans-unit>
-      <trans-unit id="s6a43c0c6daea3998">
-        <source>Sorry, couldn't delete browser profile at this time.</source>
       </trans-unit>
       <trans-unit id="s3c262944058333a4">
         <source>Sorry, couldn't retrieve browser profiles at this time.</source>
@@ -2125,14 +2009,6 @@
       <trans-unit xml:space="preserve" id="s0686beeebd4ed8cb">
         <source>Text Match</source>
         <target state="translated">Coincidencia de texto</target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s2344bb018c2ade99">
-        <source>Showing all <x id="0" equiv-text="${this.localize.number(this.totalPages)}"/> pages</source>
-        <target state="translated">Mostrando las <x id="0" equiv-text="${this.localize.number(this.totalPages)}"/> páginas</target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="sd2afbd920020fe6d">
-        <source>Showing <x id="0" equiv-text="${this.localize.number(total)}"/> of <x id="1" equiv-text="${this.localize.number(this.totalPages)}"/> pages</source>
-        <target state="translated">Mostrando <x id="0" equiv-text="${this.localize.number(total)}"/> de <x id="1" equiv-text="${this.localize.number(this.totalPages)}"/> páginas</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sd7c439303c5c7045">
         <source>No matching pages found</source>
@@ -2414,10 +2290,6 @@
         <source>Disabled</source>
         <target state="translated">Deshabilitado</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="s2ca35daaa4e03216">
-        <source>Enabled (default)</source>
-        <target state="translated">Habilitado (predeterminado)</target>
-      </trans-unit>
       <trans-unit id="sacf95026f82adb10">
         <source>No custom profile</source>
       </trans-unit>
@@ -2434,9 +2306,6 @@
       </trans-unit>
       <trans-unit id="s063b2ed6541c9181">
         <source>Run on a Recurring Basis</source>
-      </trans-unit>
-      <trans-unit id="s00147a7c30a80117">
-        <source>Extra URL Prefixes in Scope</source>
       </trans-unit>
       <trans-unit id="s00952de51c229a2e">
         <source><x id="0" equiv-text="${primarySeedConfig.depth}"/> hop(s)</source>
@@ -2632,10 +2501,6 @@
         <source>Active with issue: Execution minutes quota reached</source>
         <target state="translated">Activo con incidencia: Cuota de minutos de ejecución alcanzada</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="s0fa3391db68e4425">
-        <source>disabled</source>
-        <target state="translated">deshabilitado</target>
-      </trans-unit>
       <trans-unit id="s37e449970d4403d8">
         <source>Archiving Disabled:</source>
       </trans-unit>
@@ -2752,10 +2617,6 @@
       <trans-unit xml:space="preserve" id="s1b210718400e7ea8">
         <source><x id="0" equiv-text="${this.localize.number(pageCount)}"/> page</source>
         <target state="translated"><x id="0" equiv-text="${this.localize.number(pageCount)}"/> página</target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s92921878e886e36d">
-        <source>Duration</source>
-        <target state="translated">Duración</target>
       </trans-unit>
       <trans-unit id="s3c162d34398019aa">
         <source>Collection Auto-Add</source>
@@ -2929,10 +2790,6 @@
         <source>File Size</source>
         <target state="translated">Tamaño de archivo</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="sf51117c57a1110ec">
-        <source>in <x id="0" equiv-text="${this.collectionName}"/></source>
-        <target state="translated">en <x id="0" equiv-text="${this.collectionName}"/></target>
-      </trans-unit>
       <trans-unit id="sf27239dda9b1416d">
         <source>Crawls in Collection (<x id="0" equiv-text="${this.localize.number(data!.total)}"/>)</source>
       </trans-unit>
@@ -2999,10 +2856,6 @@
         <source>Monthly</source>
         <target state="translated">Mensual</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="sb15d4f1e13d04925">
-        <source>Limits</source>
-        <target state="translated">Límites</target>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="hf77ba6b1d74e2cdb">
         <source>Fields marked with
                   <x id="0" equiv-text="&lt;span style=&quot;color:var(--sl-input-required-content-color)&quot;&gt;"/>*<x id="1" equiv-text="&lt;/span&gt;"/>
@@ -3029,12 +2882,6 @@
         <source>Will crawl all pages on
             <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> and
             <x id="1" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;"/>subdomain.<x id="2" equiv-text="${exampleHost}&lt;/span&gt;"/>.</source>
-      </trans-unit>
-      <trans-unit id="h2303b42f0dff5ee4">
-        <source>Will crawl all page URLs that begin with
-            <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;"/>
-            or any URL that begins with those specified in
-            <x id="1" equiv-text="&lt;em&gt;"/>Extra URL Prefixes in Scope<x id="2" equiv-text="&lt;/em&gt;"/></source>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s262c31c801cfbcd9">
         <source>Please enter a valid URL.</source>
@@ -3067,10 +2914,6 @@
       <trans-unit xml:space="preserve" id="sa4f9d4099c408ae6">
         <source>Must be less than maximum of <x id="0" equiv-text="${this.localize.number(+max)}"/></source>
         <target state="translated">Debe ser menos que el máximo de <x id="0" equiv-text="${this.localize.number(+max)}"/></target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="sd412fd49fb930199">
-        <source>When enabled the browser will automatically scroll to the end of the page.</source>
-        <target state="translated">Al habilitarse, el navegador se desplazará automáticamente al final de la página.</target>
       </trans-unit>
       <trans-unit id="s9a3cc9f85491f80b">
         <source>Increase the number of open browser windows during a crawl. This will speed up your crawl by effectively running more crawlers at the same time.</source>
@@ -3185,15 +3028,12 @@
         <source>---</source>
         <target state="translated">---</target>
       </trans-unit>
-      <trans-unit id="sa84bc532c73403ed">
-        <source>Running for <x id="0" equiv-text="${this.localize.humanizeDuration(diff, {&#10;    compact: true,&#10;})}"/></source>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="sc154fb69dffcdef9">
         <source>billing settings</source>
         <target state="translated">ajustes de facturación</target>
       </trans-unit>
       <trans-unit id="s7fa0d24b94690373">
-        <source>Your subscription ends on <x id="0" equiv-text="${dateStr}"/>. Your user account, org, and all associated data will be deleted.</source>
+        <source>Your subscription ends on <x id="0" equiv-text="${trialEndDate}"/>. Your user account, org, and all associated data will be deleted.</source>
       </trans-unit>
       <trans-unit id="h16be212de6638b6c">
         <source>We suggest downloading your archived items before they
@@ -3201,13 +3041,13 @@
                   <x id="0" equiv-text="${billingTabLink}"/>.</source>
       </trans-unit>
       <trans-unit id="sc3e0d8cbe688ccd5">
-        <source>Archiving will be disabled in <x id="0" equiv-text="${daysDiff}"/> days</source>
+        <source>Archiving will be disabled in <x id="0" equiv-text="${daysUntilTrialEnd}"/> days</source>
       </trans-unit>
       <trans-unit id="sda57befc109a45f6">
         <source>Archiving will be disabled within one day</source>
       </trans-unit>
       <trans-unit id="s618b35a93b6fd392">
-        <source>Your subscription ends on <x id="0" equiv-text="${dateStr}"/>. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.</source>
+        <source>Your subscription ends on <x id="0" equiv-text="${trialEndDate}"/>. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.</source>
       </trans-unit>
       <trans-unit id="sfb85ab2a166e4c99">
         <source>Archiving is disabled for this org</source>
@@ -3250,42 +3090,20 @@
         <source>Month</source>
         <target state="translated">Mes</target>
       </trans-unit>
-      <trans-unit id="s79ab9c8346b9be59">
-        <source>Total duration of crawls and QA analysis runs, from start to finish</source>
-      </trans-unit>
-      <trans-unit id="sea9560007df1aaa9">
-        <source>Aggregated time across all browser windows that the crawler was actively executing a crawl or QA analysis run, i.e. not in a waiting state</source>
-      </trans-unit>
       <trans-unit id="sc1a83f0d03f25927">
         <source>Billable Execution Time</source>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="se2ec05b5a091819b">
-        <source>Execution time used that is billable to the current month of the plan</source>
-        <target state="translated">Tiempo de ejecución usado que se factura al mes actual del plan</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s599754097e848667">
         <source>Rollover Execution Time</source>
         <target state="translated">Prorrogar tiempo de ejecución</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="s9ca038237c7e3f8a">
-        <source>Additional execution time used, of which any extra minutes will roll over to next month as billable time</source>
-        <target state="translated">Tiempo de ejecución adicional usado, del cual cualquier minuto extra pasará al mes siguiente como tiempo facturable</target>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="s77c5956de0c7b221">
         <source>Gifted Execution Time</source>
         <target state="translated">Tiempo de ejecución regalado</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="s39a11e7a4beab91d">
-        <source>Execution time used that is free of charge</source>
-        <target state="translated">Tiempo de ejecución gratuito usado</target>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="s43b124b5dcec3779">
         <source>Excellent</source>
         <target state="translated">Excelente</target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s047852d575e8d720">
-        <source>Admin dashboard</source>
-        <target state="translated">Panel de control de administrador</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="scdb1bac161852c73">
         <source>Welcome</source>
@@ -3379,12 +3197,6 @@
       </trans-unit>
       <trans-unit id="s9689f44e0a49b830">
         <source>Date Started</source>
-      </trans-unit>
-      <trans-unit id="s2056041ac63786fc">
-        <source>Running crawls</source>
-      </trans-unit>
-      <trans-unit id="sce252e7b2e662cc5">
-        <source>All Running Crawls</source>
       </trans-unit>
       <trans-unit id="sa8d4790d89fbcb7d">
         <source>Any Active Status</source>
@@ -3668,9 +3480,6 @@
         <source>Log Out</source>
         <target state="translated">Cerrar sesión</target>
       </trans-unit>
-      <trans-unit id="s0558d72e9d8fc3dc">
-        <source>Running Crawls</source>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="s5ed8698a2f254511">
         <source>Sign Up</source>
         <target state="translated">Registrar</target>
@@ -3924,10 +3733,6 @@
       <trans-unit id="s4cb3d6de6b76708d">
         <source>Crawl finishing...</source>
       </trans-unit>
-      <trans-unit id="ha60886587b96e32c">
-        <source>Started crawl from <x id="0" equiv-text="&lt;strong&gt;${this.renderName(workflow)}&lt;/strong&gt;"/>.
-            <x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate.orgBasePath}/workflows/${workflow.id}#watch&quot; @click=&quot;${this.navigate.link.bind(this)}&quot;&gt;"/>Watch crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
-      </trans-unit>
       <trans-unit id="sb32ae1652df8c7ad">
         <source>Workflow settings used to run this crawl</source>
       </trans-unit>
@@ -3986,10 +3791,6 @@
         <source>New Crawl Workflow</source>
         <target state="translated">Nuevo flujo de crawl</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="s51691497846184b2">
-        <source>Setup Guide</source>
-        <target state="translated">Guía de configuración</target>
-      </trans-unit>
       <trans-unit id="s4bd63450e427cc68">
         <source>Page URLs</source>
       </trans-unit>
@@ -4017,10 +3818,6 @@
             <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;"/>#example-page<x id="1" equiv-text="&lt;/span&gt;"/>
             will be treated as a separate page.</source>
       </trans-unit>
-      <trans-unit id="s09a8c053783eafa0">
-        <source>If the crawler finds pages outside of the Crawl Scope they
-            will only be saved if they begin with URLs listed here.</source>
-      </trans-unit>
       <trans-unit id="sb43ce2ffe2a4857f">
         <source>Limits how many hops away the crawler can visit while staying within the Crawl Scope.</source>
       </trans-unit>
@@ -4034,9 +3831,6 @@
       </trans-unit>
       <trans-unit id="s083f85625c5d739f">
         <source>In-Page Links</source>
-      </trans-unit>
-      <trans-unit id="sd5aac2757a442b2a">
-        <source>Choose a proxy to crawl through</source>
       </trans-unit>
       <trans-unit id="s972f8ea379345cf8">
         <source>Your org doesn't have permission to use the proxy configured for this crawl.</source>
@@ -4129,7 +3923,7 @@
         <target state="translated">Eliminar <x id="0" equiv-text="${this.localize.number(removeCount)} ${pluralOf(&quot;items&quot;, removeCount)}"/></target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s1f1b3cea8b3a20f3">
-        <source>You have <x id="0" equiv-text="${daysDiff}"/> days left of your Browsertrix trial</source>
+        <source>You have <x id="0" equiv-text="${daysUntilTrialEnd}"/> days left of your Browsertrix trial</source>
         <target state="translated">Le quedan <x id="0" equiv-text="${daysDiff}"/> días de su periodo de prueba de Browsertrix</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="se4dfda71fd51327d">
@@ -4144,10 +3938,6 @@
         <source>To choose a plan and continue using Browsertrix, see
                   <x id="0" equiv-text="${billingTabLink}"/>.</source>
         <target state="translated">Para elegir un plan y seguir utilizando Browsertrix, consulte <x id="0" equiv-text="${billingTabLink}"/>.</target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s17658c5f9a5e8a52">
-        <source>Your trial will end on <x id="0" equiv-text="${futureCancelDate}"/></source>
-        <target state="translated">Su periodo de prueba terminará el <x id="0" equiv-text="${futureCancelDate}"/></target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s5f5b3049f319a00a">
         <source>Your plan will be canceled on <x id="0" equiv-text="${futureCancelDate}"/></source>
@@ -4196,7 +3986,7 @@
         <source>Your org will be deleted in one day.</source>
       </trans-unit>
       <trans-unit id="se392e1f811076a30">
-        <source>Your org will be deleted in <x id="0" equiv-text="${daysDiff}"/> days</source>
+        <source>Your org will be deleted in <x id="0" equiv-text="${daysUntilTrialEnd}"/> days</source>
       </trans-unit>
       <trans-unit id="se1037ae4d9adb08a">
         <source>You have one day left of your Browsertrix trial</source>
@@ -4208,11 +3998,6 @@
         <source>Deleting an org will delete all
                   <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    ${this.localize.bytes(org.bytesStored)}&#10;                  &lt;/strong&gt;"/>
                   of data associated with the org.</source>
-      </trans-unit>
-      <trans-unit id="h737a03dd2c6c5d2a">
-        <source>Your free trial ends on <x id="0" equiv-text="${dateStr}"/>. To continue using
-                    Browsertrix, select <x id="1" equiv-text="&lt;strong&gt;"/>Subscribe Now<x id="2" equiv-text="&lt;/strong&gt;"/> in
-                    <x id="3" equiv-text="${billingTabLink}"/>.</source>
       </trans-unit>
       <trans-unit id="saf8636a6d65b1842">
         <source>Your browser’s language settings will take precedence over the language chosen above when formatting numbers, dates, and durations.</source>
@@ -4527,9 +4312,6 @@
       <trans-unit id="s5aff130b6d78c668">
         <source>Trial Cancelled</source>
       </trans-unit>
-      <trans-unit id="s2e515f3ca456f9c6">
-        <source>Trial Canceled</source>
-      </trans-unit>
       <trans-unit id="s31e12850da47731e">
         <source>Payment Failed</source>
       </trans-unit>
@@ -4602,12 +4384,6 @@
       <trans-unit id="sf160136cfa00f822">
         <source>Enter a page URL to choose timestamp</source>
       </trans-unit>
-      <trans-unit id="s2892cf7cbbdf4424">
-        <source>Autoclick behavior</source>
-      </trans-unit>
-      <trans-unit id="se49bd27b259a14ed">
-        <source>When enabled the browser will automatically click on links that don't navigate to other pages.</source>
-      </trans-unit>
       <trans-unit id="hb4d7d27dcde87b24">
         <source>Describe your collection in long-form rich text (e.g.
                         <x id="0" equiv-text="&lt;strong&gt;"/>bold<x id="1" equiv-text="&lt;/strong&gt;"/> and <x id="2" equiv-text="&lt;em&gt;"/>italicized<x id="3" equiv-text="&lt;/em&gt;"/> text.)</source>
@@ -4640,18 +4416,6 @@
       </trans-unit>
       <trans-unit id="s949a92849e4dadd0">
         <source>Update your org's public collections gallery settings to make this page visible to anyone on the internet.</source>
-      </trans-unit>
-      <trans-unit id="s378e60a37da39c87">
-        <source>Autoscroll Behavior</source>
-      </trans-unit>
-      <trans-unit id="s7411baab8649ad44">
-        <source>Autoclick Behavior</source>
-      </trans-unit>
-      <trans-unit id="s965c503c3e42fdfe">
-        <source>Enabled</source>
-      </trans-unit>
-      <trans-unit id="s534f3a25ad3b4ba5">
-        <source>Disabled (default)</source>
       </trans-unit>
       <trans-unit id="s0f451bba9522bdac">
         <source>Edit Collection Settings</source>
@@ -4747,20 +4511,8 @@
       <trans-unit id="s09625da767d1ec6b">
         <source>Save and run with new settings</source>
       </trans-unit>
-      <trans-unit id="h3e80c83387cea4f1">
-        <source>Run Crawl</source>
-      </trans-unit>
-      <trans-unit id="s35424380fd3348a7">
-        <source>Autoscroll behavior</source>
-      </trans-unit>
       <trans-unit id="sb0caa86199d0e901">
         <source>Specify the range and depth of your crawl.</source>
-      </trans-unit>
-      <trans-unit id="sc19a3a2ee5d51584">
-        <source>Enforce maximum limits on your crawl.</source>
-      </trans-unit>
-      <trans-unit id="s980f8fdc5f70bd71">
-        <source>Configure the browser that's used to visit URLs during the crawl.</source>
       </trans-unit>
       <trans-unit id="s954a81b79f2ebf71">
         <source>Schedule recurring crawls.</source>
@@ -4947,6 +4699,800 @@
       </trans-unit>
       <trans-unit id="s585d9e9cc7eea6c8">
         <source>Payment never made</source>
+      </trans-unit>
+      <trans-unit id="sb96d0978e46f4a9c">
+        <source>Behaviors</source>
+      </trans-unit>
+      <trans-unit id="s53654e41e7b2114d">
+        <source>Custom Behaviors</source>
+      </trans-unit>
+      <trans-unit id="s30a3d76cd4da93e7">
+        <source>Autoscroll</source>
+      </trans-unit>
+      <trans-unit id="s58fd9002de2d2506">
+        <source>Autoclick</source>
+      </trans-unit>
+      <trans-unit id="s0187b8012de0ed1d">
+        <source>Page Load Limit</source>
+      </trans-unit>
+      <trans-unit id="s7654bbca59e5b6ab">
+        <source>Link Selectors</source>
+      </trans-unit>
+      <trans-unit id="sa131b4e138b3f834">
+        <source>Click Selector</source>
+      </trans-unit>
+      <trans-unit id="sa4b71eadd80c1750">
+        <source>Crawl Limits</source>
+      </trans-unit>
+      <trans-unit id="s05b81abc9475a254">
+        <source>Page Behavior</source>
+      </trans-unit>
+      <trans-unit id="s548daf0e6fcc5b75">
+        <source>URL Prefixes in Scope</source>
+      </trans-unit>
+      <trans-unit id="s1e91c74b6b748a7e">
+        <source>URL Prefix</source>
+      </trans-unit>
+      <trans-unit id="sda68b7b6b6da0a83">
+        <source>Contract</source>
+      </trans-unit>
+      <trans-unit id="s3b151ca64eb26ec1">
+        <source>Expand</source>
+      </trans-unit>
+      <trans-unit id="s73f51a3532f29159">
+        <source>Expand row</source>
+      </trans-unit>
+      <trans-unit id="s77318393dfdb0775">
+        <source>Remove row</source>
+      </trans-unit>
+      <trans-unit id="sf9aee319a006c9b4">
+        <source>Add</source>
+      </trans-unit>
+      <trans-unit id="s0d1be7a2c400c080">
+        <source>more</source>
+      </trans-unit>
+      <trans-unit id="s2cfa650f5dbfd87a">
+        <source>Please fill out this field.</source>
+      </trans-unit>
+      <trans-unit id="s6d2defb7308bd5a0">
+        <source>Trials</source>
+      </trans-unit>
+      <trans-unit id="sab0b871c3b894ae1">
+        <source>Cancellation Scheduled</source>
+      </trans-unit>
+      <trans-unit id="s2bf359cf530e6c24">
+        <source>Unexpected States</source>
+      </trans-unit>
+      <trans-unit id="s454fc453e983e6ca">
+        <source>Active with issue</source>
+      </trans-unit>
+      <trans-unit id="sf15c7a44fe1edf18">
+        <source>Subscription Cancellation Scheduled</source>
+      </trans-unit>
+      <trans-unit id="s7672b03efcb2c967">
+        <source>Cancels in</source>
+      </trans-unit>
+      <trans-unit id="se8e673766034abc8">
+        <source>Subscription Cancellation Scheduled in the Past</source>
+      </trans-unit>
+      <trans-unit id="s06f789e1d8a3a771">
+        <source>Subscription was scheduled for cancellation at</source>
+      </trans-unit>
+      <trans-unit id="se91b25c09df38f26">
+        <source>but is still active.</source>
+      </trans-unit>
+      <trans-unit id="s8fd8d12488792481">
+        <source>This indicates something has gone wrong.</source>
+      </trans-unit>
+      <trans-unit id="s12d8e53b129785ad">
+        <source>Trial Cancellation Scheduled</source>
+      </trans-unit>
+      <trans-unit id="s198607e2e5c01e9d">
+        <source>Trial Cancellation Scheduled in the Past</source>
+      </trans-unit>
+      <trans-unit id="s266f23ab1e83b0ee">
+        <source>Trial was scheduled for cancellation at</source>
+      </trans-unit>
+      <trans-unit id="s6d7efb5ab40b33b4">
+        <source>Subscription</source>
+      </trans-unit>
+      <trans-unit id="s3e5e42591152500b">
+        <source>Plan ID</source>
+      </trans-unit>
+      <trans-unit id="saf610f95f7bde6c2">
+        <source>Action on Cancel</source>
+      </trans-unit>
+      <trans-unit id="s495fb499e4f4d80a">
+        <source>Read-Only</source>
+      </trans-unit>
+      <trans-unit id="sd125fc898a94db91">
+        <source>Open in Stripe</source>
+      </trans-unit>
+      <trans-unit id="s79eadabc6983776b">
+        <source>Subscription ID Copied</source>
+      </trans-unit>
+      <trans-unit id="s303dd5a00a9ead02">
+        <source>Copy Subscription ID</source>
+      </trans-unit>
+      <trans-unit id="s763691cb20cd7c68">
+        <source>Manage Org</source>
+      </trans-unit>
+      <trans-unit id="s123b7254b44dd148">
+        <source>Waiting</source>
+      </trans-unit>
+      <trans-unit id="sc85bf6baacaf7fbc">
+        <source>At Capacity</source>
+      </trans-unit>
+      <trans-unit id="s6a49d15062b258c8">
+        <source>At Crawl Limit</source>
+      </trans-unit>
+      <trans-unit id="s77248ff4f9b0b9c6">
+        <source>Pausing</source>
+      </trans-unit>
+      <trans-unit id="s0eb071c3476d6bcb">
+        <source>Finishing Downloads</source>
+      </trans-unit>
+      <trans-unit id="s96d4cdbea889aca3">
+        <source>Creating WACZ</source>
+      </trans-unit>
+      <trans-unit id="s249d1d0d99e2844d">
+        <source>Resuming</source>
+      </trans-unit>
+      <trans-unit id="s95bc8722b2708f8b">
+        <source>Paused</source>
+      </trans-unit>
+      <trans-unit id="scfa4a900107fb8de">
+        <source>Stopped: Paused Too Long</source>
+      </trans-unit>
+      <trans-unit id="sb5e4ac8715f22a97">
+        <source>Run By</source>
+      </trans-unit>
+      <trans-unit id="s3a1ed135dfaefb19">
+        <source>Built-in Behavior</source>
+      </trans-unit>
+      <trans-unit id="sbe374e729c239e9f">
+        <source>Custom Behavior Script</source>
+      </trans-unit>
+      <trans-unit id="s9be776fa13e19263">
+        <source>TIMESTAMP</source>
+      </trans-unit>
+      <trans-unit id="s5480c0f031b57c1c">
+        <source>CONTEXT</source>
+      </trans-unit>
+      <trans-unit id="sb78893081e833904">
+        <source>MESSAGE</source>
+      </trans-unit>
+      <trans-unit id="s17a3eb194f019b56">
+        <source>PAGE</source>
+      </trans-unit>
+      <trans-unit id="s9a377b0854914cff">
+        <source>STACK</source>
+      </trans-unit>
+      <trans-unit id="s181645cdd00951c2">
+        <source>Open live page in new tab</source>
+      </trans-unit>
+      <trans-unit id="sb05ee36313adad06">
+        <source>Errors</source>
+      </trans-unit>
+      <trans-unit id="se031a50b520c9c09">
+        <source>No errors logged.</source>
+      </trans-unit>
+      <trans-unit id="s4c6abd0800357489">
+        <source>No behaviors logged.</source>
+      </trans-unit>
+      <trans-unit id="s4f1ad6b48a5df506">
+        <source>Logs</source>
+      </trans-unit>
+      <trans-unit id="sb5ab807953a599e6">
+        <source>Behavior Logs</source>
+      </trans-unit>
+      <trans-unit id="he1748a0173c6ed88">
+        <source>Viewing <x id="0" equiv-text="${displayCount}"/> of <x id="1" equiv-text="${totalCount}"/> most relevant logs</source>
+      </trans-unit>
+      <trans-unit id="s84f127d0d6112b5a">
+        <source>This is a selection of the most relevant behaviors and errors logged during the crawl. Download all logs to view additional warning, info, and debug logs.</source>
+      </trans-unit>
+      <trans-unit id="s3053c1966522e314">
+        <source>Thumbnail image for “<x id="0" equiv-text="${this.collectionName}"/>” collection</source>
+      </trans-unit>
+      <trans-unit id="sbe5acfc2d10b70da">
+        <source>Thumbnail image</source>
+      </trans-unit>
+      <trans-unit id="sf6d979ddd7be7ab5">
+        <source>Top Page Hostnames</source>
+      </trans-unit>
+      <trans-unit id="s08b73807b55c4bbe">
+        <source>in</source>
+      </trans-unit>
+      <trans-unit id="sfd44c85841193e19">
+        <source>Git Repo</source>
+      </trans-unit>
+      <trans-unit id="s6d67119d9740096d">
+        <source>Please enter a valid URL</source>
+      </trans-unit>
+      <trans-unit id="sa905c5308f9508fc">
+        <source>Please enter a valid branch</source>
+      </trans-unit>
+      <trans-unit id="s43ec416edb909018">
+        <source>Please enter an existing URL</source>
+      </trans-unit>
+      <trans-unit id="s3082cdd80ea46422">
+        <source>Select Source</source>
+      </trans-unit>
+      <trans-unit id="s2e532e19ed477a56">
+        <source>Path</source>
+      </trans-unit>
+      <trans-unit id="s7a07940a2b62f185">
+        <source>Branch</source>
+      </trans-unit>
+      <trans-unit id="sa3cac5ca1680616f">
+        <source>Enter URL to Git repository</source>
+      </trans-unit>
+      <trans-unit id="s65eafcab5fd23e0c">
+        <source>Optional path</source>
+      </trans-unit>
+      <trans-unit id="sb34813376e47a593">
+        <source>Optional branch</source>
+      </trans-unit>
+      <trans-unit id="sbf825651b8beb3a1">
+        <source>Enter location of behavior file</source>
+      </trans-unit>
+      <trans-unit id="se85548c7c12ce99c">
+        <source>URL is valid</source>
+      </trans-unit>
+      <trans-unit id="s5f43af3669b1e098">
+        <source>Source</source>
+      </trans-unit>
+      <trans-unit id="s8536310dff203395">
+        <source>Script Location</source>
+      </trans-unit>
+      <trans-unit id="sb7de757523371af5">
+        <source>CSS Selector</source>
+      </trans-unit>
+      <trans-unit id="s86e0be30d2b3dad1">
+        <source>Link Attribute</source>
+      </trans-unit>
+      <trans-unit id="sfcd302e594cb4fae">
+        <source>Enter selector</source>
+      </trans-unit>
+      <trans-unit id="s0df2318af169c1b8">
+        <source>Please enter a valid CSS selector</source>
+      </trans-unit>
+      <trans-unit id="scb85f1783a3bb94d">
+        <source>Enter attribute</source>
+      </trans-unit>
+      <trans-unit id="sedb87b45188d5cb9">
+        <source>Please enter a valid HTML attribute</source>
+      </trans-unit>
+      <trans-unit id="s5553719ec1d517cc">
+        <source>Choose a proxy to crawl through.</source>
+      </trans-unit>
+      <trans-unit id="h79e3c0954fe19439">
+        <source>Customize how URLs are extracted from a page. The crawler will use the
+      specified
+      <x id="0" equiv-text="&lt;a href=&quot;https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors&quot; class=&quot;text-blue-600 hover:text-blue-500&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;"/>CSS selectors<x id="1" equiv-text="&lt;/a&gt;"/>
+      to find URLs that are defined in custom HTML attributes.</source>
+      </trans-unit>
+      <trans-unit id="s1d4605483a8f58c8">
+        <source>Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.</source>
+      </trans-unit>
+      <trans-unit id="s458d6675e46c65e5">
+        <source>Save and apply settings to current crawl</source>
+      </trans-unit>
+      <trans-unit id="s238db453282b913f">
+        <source>Update Crawl</source>
+      </trans-unit>
+      <trans-unit id="h897208c319c5e1a6">
+        <source>Will start with
+            <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;"/>
+            and include <x id="1" equiv-text="&lt;em&gt;"/>only<x id="2" equiv-text="&lt;/em&gt;"/> URLs that start with the
+            <x id="3" equiv-text="&lt;em&gt;"/>URL Prefixes in Scope<x id="4" equiv-text="&lt;/em&gt;"/> listed below.</source>
+      </trans-unit>
+      <trans-unit id="s01c361a1dbd3a5f3">
+        <source>Only crawl pages that begin with URLs listed here.</source>
+      </trans-unit>
+      <trans-unit id="h359a6ab58f25e9b9">
+        <source>If none are specified, the crawler will default to
+                  <x id="0" equiv-text="${defaultValue}"/>.</source>
+      </trans-unit>
+      <trans-unit id="s12821c3d3ee21ff4">
+        <source>May be overridden by custom behaviors.</source>
+      </trans-unit>
+      <trans-unit id="s03b23cad5702be33">
+        <source>Automatically scroll to the end of the page.</source>
+      </trans-unit>
+      <trans-unit id="s4802666d550233ec">
+        <source>Default:</source>
+      </trans-unit>
+      <trans-unit id="sf3b92e48f0e9b2a1">
+        <source>Automatically click on all link-like elements without navigating away from the page.</source>
+      </trans-unit>
+      <trans-unit id="s31c2c0be0c65e440">
+        <source>Optionally, specify the CSS selector used to autoclick elements.</source>
+      </trans-unit>
+      <trans-unit id="s912ac851d4e642f5">
+        <source>Defaults to "a".</source>
+      </trans-unit>
+      <trans-unit id="s5babef97b0ea19a4">
+        <source>Page Timing</source>
+      </trans-unit>
+      <trans-unit id="s5c00d0ed2c1c2c2c">
+        <source>Use Custom Behaviors</source>
+      </trans-unit>
+      <trans-unit id="s98f873c6e27a066a">
+        <source>Limit the size and duration of the crawl.</source>
+      </trans-unit>
+      <trans-unit id="s6b5d41d8cdf42b92">
+        <source>Customize how the browser loads and interacts with a page.</source>
+      </trans-unit>
+      <trans-unit id="s3ccb0cf32e1b9bd5">
+        <source>Configure the browser used to crawl.</source>
+      </trans-unit>
+      <trans-unit id="sb54659e334ba9135">
+        <source>Page link selectors contain invalid selector or attribute</source>
+      </trans-unit>
+      <trans-unit id="sd06447e2d8c713f3">
+        <source>Invalid language code</source>
+      </trans-unit>
+      <trans-unit id="sdcb27818fed9da90">
+        <source>for</source>
+      </trans-unit>
+      <trans-unit id="s7eb71de6874c83bf">
+        <source>Crawl paused on</source>
+      </trans-unit>
+      <trans-unit id="s2b827d4f5e0ada9d">
+        <source>since</source>
+      </trans-unit>
+      <trans-unit id="s4aee34a672e5cfc0">
+        <source>Created by</source>
+      </trans-unit>
+      <trans-unit id="s4e2a864916e5db75">
+        <source>Edited by</source>
+      </trans-unit>
+      <trans-unit id="s73777ac0d940661b">
+        <source>Filter by Schedule Type</source>
+      </trans-unit>
+      <trans-unit id="sb4f1dffbb6be6302">
+        <source>Clear</source>
+      </trans-unit>
+      <trans-unit id="sda8f3cd35a79b78d">
+        <source>Tagged</source>
+      </trans-unit>
+      <trans-unit id="s68fba0cb63f339b5">
+        <source>Filter by Tags</source>
+      </trans-unit>
+      <trans-unit id="s75bb442f07458a13">
+        <source>Any of the selected tags</source>
+      </trans-unit>
+      <trans-unit id="saf3be8e33406c058">
+        <source>All of the selected tags</source>
+      </trans-unit>
+      <trans-unit id="sc3f14b735e4dbbc0">
+        <source>No matching tags found.</source>
+      </trans-unit>
+      <trans-unit id="sda6cb46faa225e63">
+        <source>No tags found.</source>
+      </trans-unit>
+      <trans-unit id="s041489fa7f9e6fe6">
+        <source><x id="0" equiv-text="${this.localize.number(tags.length - MAX_TAGS_IN_LABEL)}"/> more</source>
+      </trans-unit>
+      <trans-unit id="s039071b804a1d150">
+        <source>Filter tags</source>
+      </trans-unit>
+      <trans-unit id="s79f5200d70ee4b12">
+        <source>Search for tag</source>
+      </trans-unit>
+      <trans-unit id="s3b2e12b9a03ff421">
+        <source>Using <x id="0" equiv-text="${pluralOf(&quot;profiles&quot;, this.profiles.length)}"/></source>
+      </trans-unit>
+      <trans-unit id="s3d7bce6c62397a89">
+        <source>Filter by Browser Profile</source>
+      </trans-unit>
+      <trans-unit id="s9f58587c68ec69c5">
+        <source>No matching profiles found.</source>
+      </trans-unit>
+      <trans-unit id="sb37c3dd68f03a8be">
+        <source>No profiles found.</source>
+      </trans-unit>
+      <trans-unit id="s60a4a8e8ac2ef517">
+        <source>Filter profiles</source>
+      </trans-unit>
+      <trans-unit id="s1db33bbf2de19a27">
+        <source>Search for profile</source>
+      </trans-unit>
+      <trans-unit id="s537a83747484e682">
+        <source>Not in use</source>
+      </trans-unit>
+      <trans-unit id="sd2ffca980366a43d">
+        <source>Your free trial ends on <x id="0" equiv-text="${trialEndDate}"/>.</source>
+      </trans-unit>
+      <trans-unit id="h7fd7360a8ca3cf56">
+        <source>To continue using Browsertrix, select
+                        <x id="0" equiv-text="&lt;strong&gt;"/>Subscribe Now<x id="1" equiv-text="&lt;/strong&gt;"/> in <x id="2" equiv-text="${billingTabLink}"/>.</source>
+      </trans-unit>
+      <trans-unit id="s2dc0cf608ab631a2">
+        <source>Afterwards, your subscription will continue automatically.</source>
+      </trans-unit>
+      <trans-unit id="h3bc88bf930dc05eb">
+        <source>View and manage your subscription in
+                      <x id="0" equiv-text="${billingTabLink}"/>.</source>
+      </trans-unit>
+      <trans-unit id="s0c5cbc6552d94f10">
+        <source>Total duration of workflow and QA analysis runs.</source>
+      </trans-unit>
+      <trans-unit id="seeec1ccce454a18f">
+        <source>Aggregated time across all browser windows that the crawler was actively executing a crawl or QA analysis run, i.e. not waiting or paused.</source>
+      </trans-unit>
+      <trans-unit id="s288f689fd73f668f">
+        <source>Execution time used that is billable to the current month of the plan.</source>
+      </trans-unit>
+      <trans-unit id="sa27f084c8a8623ac">
+        <source>Additional execution time used, of which any extra minutes will roll over to next month as billable time.</source>
+      </trans-unit>
+      <trans-unit id="sd77ffcceffd8b1a9">
+        <source>Execution time used that is free of charge.</source>
+      </trans-unit>
+      <trans-unit id="s01e3d9ff3caf5b7f">
+        <source>Showing all <x id="0" equiv-text="${this.localize.number(this.totalPages)} ${pluralOf(&quot;pages&quot;, this.totalPages)}"/></source>
+      </trans-unit>
+      <trans-unit id="s8c07176b5ff0175b">
+        <source>Showing <x id="0" equiv-text="${this.localize.number(total)}"/> of <x id="1" equiv-text="${this.localize.number(this.totalPages)} ${pluralOf(&quot;pages&quot;, this.totalPages)}"/></source>
+      </trans-unit>
+      <trans-unit id="se313da332d8c6937">
+        <source>Manage Subscription</source>
+      </trans-unit>
+      <trans-unit id="sc34746d059a1f565">
+        <source>Click “<x id="0" equiv-text="${this.portalUrlLabel}"/>” to view plan details, payment methods, and billing information.</source>
+      </trans-unit>
+      <trans-unit id="sc10dc3155d21bd22">
+        <source>Your trial ends <x id="0" equiv-text="${futureCancelDate}"/></source>
+      </trans-unit>
+      <trans-unit id="se647fb588a673832">
+        <source>subscription will automatically continue</source>
+      </trans-unit>
+      <trans-unit id="s60dffb8015f2732b">
+        <source>You also have the ability to cancel your trial or permanently delete your account from the subscription portal.</source>
+      </trans-unit>
+      <trans-unit id="s2787aaf7e8d916c0">
+        <source>Sorry, something unexpected went wrong</source>
+      </trans-unit>
+      <trans-unit id="s5ada2b9d18023e8d">
+        <source>Try reloading the page.</source>
+      </trans-unit>
+      <trans-unit id="sd5b6130b4937488c">
+        <source>Reload</source>
+      </trans-unit>
+      <trans-unit id="s5305f21679f2304d">
+        <source>If the problem persists, please reach out to us.</source>
+      </trans-unit>
+      <trans-unit id="sec0a1c173e10764c">
+        <source>Contact Support</source>
+      </trans-unit>
+      <trans-unit id="sf7817bcbec073cc2">
+        <source>Downloads are disabled while running. Pause the crawl or wait for the crawl to finish to download.</source>
+      </trans-unit>
+      <trans-unit id="s96c14e921f8f5789">
+        <source>Download Item as WACZ</source>
+      </trans-unit>
+      <trans-unit id="sd3386a2ef42e80b9">
+        <source>Download</source>
+      </trans-unit>
+      <trans-unit id="s27f98dea19749a5f">
+        <source>Download options</source>
+      </trans-unit>
+      <trans-unit id="s52cfa1d198476806">
+        <source>Item</source>
+      </trans-unit>
+      <trans-unit id="s24f39319b8853791">
+        <source>Log</source>
+      </trans-unit>
+      <trans-unit id="s89118d3a7be870ca">
+        <source>Resume</source>
+      </trans-unit>
+      <trans-unit id="s061cc20e3432dead">
+        <source>Pause</source>
+      </trans-unit>
+      <trans-unit id="s311aa7f38cae6bd1">
+        <source>Resume Crawl</source>
+      </trans-unit>
+      <trans-unit id="sa09f17b6ca51459a">
+        <source>Pause Crawl</source>
+      </trans-unit>
+      <trans-unit id="s00b9ca852bcdfb8b">
+        <source>Download Log</source>
+      </trans-unit>
+      <trans-unit id="sf8c2169fe8bac095">
+        <source>View Item Details</source>
+      </trans-unit>
+      <trans-unit id="sbfbbc245e1ce643c">
+        <source>Last Run</source>
+      </trans-unit>
+      <trans-unit id="s8b97ea84af17c029">
+        <source>Never</source>
+      </trans-unit>
+      <trans-unit id="s8159967c9bc45420">
+        <source>Viewing page <x id="0" equiv-text="${page}"/> of <x id="1" equiv-text="${pageCount}"/></source>
+      </trans-unit>
+      <trans-unit id="sa15dffef1e7c424d">
+        <source>Workflow crawl is currently in progress.</source>
+      </trans-unit>
+      <trans-unit id="s7952f7df3d316178">
+        <source>This workflow has an active crawl.</source>
+      </trans-unit>
+      <trans-unit id="s7d04e896a9fa3733">
+        <source>View Crawl</source>
+      </trans-unit>
+      <trans-unit id="sb7064f1605bf6030">
+        <source>Sorry, couldn't retrieve crawls at this time</source>
+      </trans-unit>
+      <trans-unit id="s9375cab2f4e8da28">
+        <source>Watch</source>
+      </trans-unit>
+      <trans-unit id="sa6475d7e59c069dc">
+        <source>More Info</source>
+      </trans-unit>
+      <trans-unit id="s0c968319184ed0fd">
+        <source>View Metadata</source>
+      </trans-unit>
+      <trans-unit id="sdcabcb2e7625beb4">
+        <source>View Quality Assurance</source>
+      </trans-unit>
+      <trans-unit id="s05e84c2fed939a4e">
+        <source>View WACZ Files</source>
+      </trans-unit>
+      <trans-unit id="s074375c07f63a7a0">
+        <source>left to resume</source>
+      </trans-unit>
+      <trans-unit id="sc676aa90614e8569">
+        <source>This crawl will stop on <x id="0" equiv-text="${formattedDate}"/>.</source>
+      </trans-unit>
+      <trans-unit id="s166f1e6f5ff4255b">
+        <source>Pages crawled so far will be saved, but the crawl will not be resumable.</source>
+      </trans-unit>
+      <trans-unit id="s1e02f664bb0b1278">
+        <source>This crawl is currently paused.</source>
+      </trans-unit>
+      <trans-unit id="s12d6dde9b30c3093">
+        <source>Dismiss</source>
+      </trans-unit>
+      <trans-unit id="s98467a5334566be5">
+        <source>If the crawl isn't resumed by <x id="0" equiv-text="${formattedDate}"/>, the crawl will stop gracefully.</source>
+      </trans-unit>
+      <trans-unit id="sd35b30198a76659b">
+        <source>All pages crawled so far will be saved.</source>
+      </trans-unit>
+      <trans-unit id="s31cdf9078e8c9006">
+        <source>You can replay or download your crawl while it's paused to assess whether to resume the crawl.</source>
+      </trans-unit>
+      <trans-unit id="scaac73d4084b7b5b">
+        <source>Running in</source>
+      </trans-unit>
+      <trans-unit id="sd6d66abcbc667a80">
+        <source>Execution time will be calculated once this crawl is finished or paused.</source>
+      </trans-unit>
+      <trans-unit id="s08b06007b5567108">
+        <source>of</source>
+      </trans-unit>
+      <trans-unit id="se59074e006867c22">
+        <source>QA will be enabled once this crawl is complete.</source>
+      </trans-unit>
+      <trans-unit id="sb074d76c0eefdb80">
+        <source>Add Review</source>
+      </trans-unit>
+      <trans-unit id="sf8296f13c736c55c">
+        <source>This workflow hasn’t been run yet.</source>
+      </trans-unit>
+      <trans-unit id="sd44ebf4b7e12e581">
+        <source>This crawl can’t be replayed since it was canceled.</source>
+      </trans-unit>
+      <trans-unit id="sf797477fb43158c4">
+        <source>This crawl can’t be replayed because it failed.</source>
+      </trans-unit>
+      <trans-unit id="s5d0cfd2336e9b564">
+        <source>Replay is not available for this crawl.</source>
+      </trans-unit>
+      <trans-unit id="s9a619971fdfa57e9">
+        <source>View Error Logs</source>
+      </trans-unit>
+      <trans-unit id="sc14318ba899b5f11">
+        <source>View Crawl Details</source>
+      </trans-unit>
+      <trans-unit id="s7760813a9150dee9">
+        <source>Pausing crawl.</source>
+      </trans-unit>
+      <trans-unit id="sac60ca2a83545fc8">
+        <source>Resuming paused crawl.</source>
+      </trans-unit>
+      <trans-unit id="s1adff5debacb25d9">
+        <source>Something went wrong, couldn't pause crawl.</source>
+      </trans-unit>
+      <trans-unit id="s8e33fcb49ce016f6">
+        <source>Something went wrong, couldn't resume paused crawl.</source>
+      </trans-unit>
+      <trans-unit id="s5bf2b882067cb50c">
+        <source>Canceling crawl.</source>
+      </trans-unit>
+      <trans-unit id="s26367d2e40b85a58">
+        <source>Stopping crawl.</source>
+      </trans-unit>
+      <trans-unit id="s1dda9be6b59c97b6">
+        <source>Sort in descending order</source>
+      </trans-unit>
+      <trans-unit id="sace0a5ec41314a9e">
+        <source>Sort in ascending order</source>
+      </trans-unit>
+      <trans-unit id="sb2a3e46c8aab919d">
+        <source>Sort Descending</source>
+      </trans-unit>
+      <trans-unit id="s1166a8180d217027">
+        <source>Sort Ascending</source>
+      </trans-unit>
+      <trans-unit id="sc32bb2e1a8047c9a">
+        <source>Filter by:</source>
+      </trans-unit>
+      <trans-unit id="s04dc16aea8ff5276">
+        <source>Mine</source>
+      </trans-unit>
+      <trans-unit id="s76d1628d0e8b9245">
+        <source>Clear All</source>
+      </trans-unit>
+      <trans-unit id="hd3a8e2a369b53f21">
+        <source>Started crawl from <x id="0" equiv-text="&lt;strong&gt;${this.renderName(workflow)}&lt;/strong&gt;"/>.
+            <x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate&#10;    .orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}&quot; @click=&quot;${this.navigate.link.bind(this)}&quot;&gt;"/>Watch crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
+      </trans-unit>
+      <trans-unit id="s392dbb428ea8db4f">
+        <source>Download Files as Multi-WACZ</source>
+      </trans-unit>
+      <trans-unit id="s324af80396dec1b2">
+        <source>Download Files</source>
+      </trans-unit>
+      <trans-unit id="sbe3c410d493d34c2">
+        <source>Download Entire Log File</source>
+      </trans-unit>
+      <trans-unit id="s9e6a312ceed88840">
+        <source>View as List</source>
+      </trans-unit>
+      <trans-unit id="s3d249bb480032121">
+        <source>List</source>
+      </trans-unit>
+      <trans-unit id="sa97c648b901dd7d8">
+        <source>View as Grid</source>
+      </trans-unit>
+      <trans-unit id="s25e1a07e454c2c11">
+        <source>Grid</source>
+      </trans-unit>
+      <trans-unit id="s32348fea32072b4a">
+        <source>View Crawl Workflows using this Browser Profile</source>
+      </trans-unit>
+      <trans-unit id="s877e6d116acf17dd">
+        <source>In Use</source>
+      </trans-unit>
+      <trans-unit id="sfc3747db9a304f42">
+        <source>Not In Use</source>
+      </trans-unit>
+      <trans-unit id="h6a43c0c6daea3998">
+        <source>Sorry, couldn't delete browser profile at this time.</source>
+      </trans-unit>
+      <trans-unit id="ha5332522cefc9ed8">
+        <source>Could not delete <x id="0" equiv-text="&lt;strong&gt;${profileName}&lt;/strong&gt;"/>, currently in
+              use. Please remove browser profile from all crawl workflows to
+              continue.</source>
+      </trans-unit>
+      <trans-unit id="sae0b06618cf27f2b">
+        <source>View All</source>
+      </trans-unit>
+      <trans-unit id="se10ba1474991f337">
+        <source>Active Crawls – Admin</source>
+      </trans-unit>
+      <trans-unit id="sbe065c86d8013431">
+        <source>Active Crawls</source>
+      </trans-unit>
+      <trans-unit id="s636752c906454221">
+        <source>Dashboard – Admin</source>
+      </trans-unit>
+      <trans-unit id="h07de37b46b85d46a">
+        <source>on <x id="0" equiv-text="${date}"/></source>
+        <note from="lit-localize">`date` example: 'January 1st, 2025 at 05:00 PM EST'</note>
+      </trans-unit>
+      <trans-unit id="se67781afb32e12ca">
+        <source>for <x id="0" equiv-text="${verboseDuration}"/></source>
+        <note from="lit-localize">`verboseDuration` example: '2 hours, 15 seconds'</note>
+      </trans-unit>
+      <trans-unit id="browserWindows.plural.few">
+        <source>browser windows</source>
+        <note from="lit-localize">plural form of "browser windows" for few browser windows</note>
+      </trans-unit>
+      <trans-unit id="browserWindows.plural.many">
+        <source>browser windows</source>
+        <note from="lit-localize">plural form of "browser windows" for many browser windows</note>
+      </trans-unit>
+      <trans-unit id="browserWindows.plural.other">
+        <source>browser windows</source>
+        <note from="lit-localize">plural form of "browser windows" for multiple/other browser windows</note>
+      </trans-unit>
+      <trans-unit id="browserWindows.plural.two">
+        <source>browser windows</source>
+        <note from="lit-localize">plural form of "browser windows" for two browser windows</note>
+      </trans-unit>
+      <trans-unit id="browserWindows.plural.zero">
+        <source>browser windows</source>
+        <note from="lit-localize">plural form of "browser windows" for zero browser windows</note>
+      </trans-unit>
+      <trans-unit id="errors.plural.few">
+        <source>errors</source>
+        <note from="lit-localize">plural form of "errors" for few errors</note>
+      </trans-unit>
+      <trans-unit id="errors.plural.many">
+        <source>errors</source>
+        <note from="lit-localize">plural form of "errors" for many errors</note>
+      </trans-unit>
+      <trans-unit id="errors.plural.other">
+        <source>errors</source>
+        <note from="lit-localize">plural form of "errors" for multiple/other errors</note>
+      </trans-unit>
+      <trans-unit id="errors.plural.two">
+        <source>errors</source>
+        <note from="lit-localize">plural form of "errors" for two errors</note>
+      </trans-unit>
+      <trans-unit id="errors.plural.zero">
+        <source>errors</source>
+        <note from="lit-localize">plural form of "errors" for zero errors</note>
+      </trans-unit>
+      <trans-unit id="profiles.plural.few">
+        <source>profiles</source>
+        <note from="lit-localize">plural form of "profiles" for few profiles</note>
+      </trans-unit>
+      <trans-unit id="profiles.plural.many">
+        <source>profiles</source>
+        <note from="lit-localize">plural form of "profiles" for many profiles</note>
+      </trans-unit>
+      <trans-unit id="profiles.plural.other">
+        <source>profiles</source>
+        <note from="lit-localize">plural form of "profiles" for multiple/other profiles</note>
+      </trans-unit>
+      <trans-unit id="profiles.plural.two">
+        <source>profiles</source>
+        <note from="lit-localize">plural form of "profiles" for two profiles</note>
+      </trans-unit>
+      <trans-unit id="profiles.plural.zero">
+        <source>profiles</source>
+        <note from="lit-localize">plural form of "profiles" for zero profiles</note>
+      </trans-unit>
+      <trans-unit id="rows.plural.few">
+        <source>rows</source>
+        <note from="lit-localize">plural form of "rows" for few rows</note>
+      </trans-unit>
+      <trans-unit id="rows.plural.many">
+        <source>rows</source>
+        <note from="lit-localize">plural form of "rows" for many rows</note>
+      </trans-unit>
+      <trans-unit id="rows.plural.other">
+        <source>rows</source>
+        <note from="lit-localize">plural form of "rows" for multiple/other rows</note>
+      </trans-unit>
+      <trans-unit id="rows.plural.two">
+        <source>rows</source>
+        <note from="lit-localize">plural form of "rows" for two rows</note>
+      </trans-unit>
+      <trans-unit id="rows.plural.zero">
+        <source>rows</source>
+        <note from="lit-localize">plural form of "rows" for zero rows</note>
+      </trans-unit>
+      <trans-unit id="browserWindows.plural.one">
+        <source>browser window</source>
+        <note from="lit-localize">singular form for "browser window"</note>
+      </trans-unit>
+      <trans-unit id="errors.plural.one">
+        <source>error</source>
+        <note from="lit-localize">singular form for "error"</note>
+      </trans-unit>
+      <trans-unit id="profiles.plural.one">
+        <source>profile</source>
+        <note from="lit-localize">singular form for "profile"</note>
+      </trans-unit>
+      <trans-unit id="rows.plural.one">
+        <source>row</source>
+        <note from="lit-localize">singular form for "row"</note>
       </trans-unit>
     </body>
   </file>
