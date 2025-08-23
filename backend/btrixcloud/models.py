@@ -24,6 +24,7 @@ from pydantic import (
     RootModel,
     BeforeValidator,
     TypeAdapter,
+    ConfigDict,
 )
 from slugify import slugify
 
@@ -1905,6 +1906,14 @@ class SubscriptionCancel(BaseModel):
 
 
 # ============================================================================
+class SubscriptionTrialEndReminder(BaseModel):
+    """Email reminder that subscription will end soon"""
+
+    subId: str
+    behavior_on_trial_end: Literal["cancel", "continue", "read-only"]
+
+
+# ============================================================================
 class SubscriptionCancelOut(SubscriptionCancel, SubscriptionEventOut):
     """Output model for subscription cancellation event"""
 
@@ -1935,11 +1944,16 @@ class SubscriptionPortalUrlResponse(BaseModel):
 class Subscription(BaseModel):
     """subscription data"""
 
+    model_config = ConfigDict(use_attribute_docstrings=True)
+
     subId: str
     status: str
     planId: str
 
     futureCancelDate: Optional[datetime] = None
+    # pylint: disable=C0301
+    """When in a trial, future cancel date is the trial end date; when not in a trial, future cancel date is the date the subscription will be canceled, if set."""
+
     readOnlyOnCancel: bool = False
 
 

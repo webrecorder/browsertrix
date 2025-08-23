@@ -1,4 +1,4 @@
-import { Heading, Link, Text } from "@react-email/components";
+import { Link, Text } from "@react-email/components";
 
 import { Template } from "../templates/btrix.js";
 import { formatDate, offsetDays } from "../lib/date.js";
@@ -6,27 +6,18 @@ import { Warning } from "../components/warning.js";
 import { Card } from "../components/card.js";
 
 import { z } from "zod";
+import { trimTrailingSlash } from "../lib/url.js";
 
 export const schema = z.object({
   user_name: z.string(),
   org_name: z.string(),
-  org_url: z.string(),
-  cancel_date: z.string(),
+  org_url: z.string().transform(trimTrailingSlash),
+  cancel_date: z.coerce.date(),
   survey_url: z.string().optional(),
   support_email: z.email().optional(),
 });
 
 export type SubscriptionCancelEmailProps = z.infer<typeof schema>;
-
-function reRenderDate(date: string) {
-  try {
-    const parsedDate = new Date(date);
-    return formatDate(parsedDate);
-  } catch (error) {
-    console.error("Error parsing date:", error);
-    return date;
-  }
-}
 
 export const SubscriptionCancelEmail = ({
   user_name,
@@ -36,7 +27,7 @@ export const SubscriptionCancelEmail = ({
   survey_url,
   support_email,
 }: SubscriptionCancelEmailProps) => {
-  const date = reRenderDate(cancel_date);
+  const date = formatDate(cancel_date);
   return (
     <Template
       preview={"Your Browsertrix subscription is cancelling"}
@@ -145,7 +136,7 @@ export const SubscriptionCancelEmail = ({
 SubscriptionCancelEmail.PreviewProps = {
   user_name: "Emma",
   org_name: "Emma’s Archives",
-  cancel_date: offsetDays(7).toISOString(),
+  cancel_date: offsetDays(7),
   survey_url: "https://example.com/survey",
   org_url: "https://dev.browsertrix.com/orgs/default-org",
   support_email: "support@webrecorder.net",
@@ -154,6 +145,6 @@ SubscriptionCancelEmail.PreviewProps = {
 export default SubscriptionCancelEmail;
 
 export const subject = ({ cancel_date }: SubscriptionCancelEmailProps) => {
-  const date = reRenderDate(cancel_date);
+  const date = formatDate(cancel_date);
   return `Your Browsertrix subscription will be cancelled on ${date}`;
 };
