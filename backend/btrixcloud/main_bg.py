@@ -47,6 +47,7 @@ async def main():
         file_ops,
         _,
         _,
+        _,
     ) = init_ops()
 
     # Run job (generic)
