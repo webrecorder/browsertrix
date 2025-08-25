@@ -108,6 +108,7 @@ export type Workflow = CrawlConfig & {
   isCrawlRunning: boolean | null;
   autoAddCollections: string[];
   seedCount: number;
+  shareable?: boolean;
 };
 
 export type ListWorkflow = Omit<Workflow, "config">;
