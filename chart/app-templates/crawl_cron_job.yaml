@@ -30,5 +30,5 @@ spec:
           restartPolicy: Never
           containers:
             - name: noop
-              image: "docker.io/tianon/true"
+              image: "docker.io/tianon/true:multiarch"
               imagePullPolicy: IfNotPresent
