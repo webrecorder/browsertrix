@@ -1,7 +1,12 @@
 import { Link, Text } from "@react-email/components";
 
 import { Template } from "../templates/btrix.js";
-import { formatDate, offsetDays } from "../lib/date.js";
+import {
+  differenceInDays,
+  formatDate,
+  formatRelativeDateToParts,
+  offsetDays,
+} from "../lib/date.js";
 import { Warning } from "../components/warning.js";
 import { Card } from "../components/card.js";
 
@@ -28,14 +33,16 @@ export const SubscriptionCancelEmail = ({
   support_email,
 }: SubscriptionCancelEmailProps) => {
   const date = formatDate(cancel_date);
+  const daysLeft = differenceInDays(new Date(cancel_date));
+  const relativeParts = formatRelativeDateToParts(daysLeft, "days");
   return (
     <Template
-      preview={"Your Browsertrix subscription is cancelling"}
+      preview={"You’ve cancelled your Browsertrix subscription"}
       title={
         <>
           Your <strong className="text-stone-900">Browsertrix</strong>{" "}
-          subscription will be
-          <br /> cancelled on <strong className="text-stone-900">{date}</strong>
+          subscription will
+          <br /> end on <strong className="text-stone-900">{date}</strong>
         </>
       }
       disclaimer={
@@ -71,9 +78,19 @@ export const SubscriptionCancelEmail = ({
       <Text className="text-base text-stone-700">Hello {user_name},</Text>
 
       <Text className="text-base text-stone-700">
-        The Browsertrix subscription for your organization “
-        <strong className="text-stone-900">{org_name}</strong>” is scheduled to
-        be cancelled at the end of this subscription period.
+        This is confirming that you’ve cancelled your Browsertrix subscription
+        for your “<strong className="text-stone-900">{org_name}</strong>”
+        organization. Your subscription ends{" "}
+        {relativeParts.map((part, index) =>
+          part.value !== "in " ? (
+            <strong key={part.value + index} className="text-stone-900">
+              {part.value}
+            </strong>
+          ) : (
+            part.value
+          ),
+        )}
+        , and will not be renewed.
       </Text>
 
       <Warning>
@@ -99,7 +116,7 @@ export const SubscriptionCancelEmail = ({
         >
           billing settings
         </Link>{" "}
-        at any time before <strong className="text-stone-900">{date}</strong>.
+        at any time before then.
       </Text>
 
       <Text className="text-base text-stone-700">
