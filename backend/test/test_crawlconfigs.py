@@ -13,8 +13,6 @@ UPDATED_TAGS = ["tag3", "tag4"]
 _coll_id = None
 _admin_crawl_cid = None
 
-_seed_file_id = None
-
 
 def test_crawl_config_usernames(
     crawler_auth_headers, default_org_id, crawler_config_id
@@ -978,7 +976,7 @@ def test_add_crawl_config_with_seed_file(
     assert data["config"]["seeds"] is None
 
 
-def test_delete_in_use_seed_file(
+def test_delete_seed_file_in_use_crawlconfig(
     crawler_auth_headers, default_org_id, seed_file_id, seed_file_config_id
 ):
     # Attempt to delete in-use seed file, verify we get 400 response
