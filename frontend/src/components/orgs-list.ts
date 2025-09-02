@@ -8,6 +8,7 @@ import type {
   SlRadioGroup,
 } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import { WindowVirtualizerController } from "@tanstack/lit-virtual";
 import Fuse from "fuse.js";
 import {
   css,
@@ -53,8 +54,13 @@ const none = html`
 export class OrgsList extends BtrixElement {
   static styles = css`
     btrix-table {
-      --btrix-table-grid-template-columns: min-content [clickable-start]
-        minmax(auto, 50ch) auto auto auto auto [clickable-end] min-content;
+      --btrix-table-grid-template-columns: 44px [clickable-start]
+        minmax(300px, 37fr) minmax(100px, 10fr) minmax(85px, 7fr)
+        minmax(90px, 9fr) minmax(100px, 10fr) [clickable-end] 40px;
+    }
+    btrix-table-head,
+    btrix-table-row {
+      grid-template-columns: var(--btrix-table-grid-template-columns);
     }
   `;
 
@@ -113,9 +119,41 @@ export class OrgsList extends BtrixElement {
   @state()
   private orgFilter: OrgFilter = OrgFilter.All;
 
-  protected willUpdate(changedProperties: PropertyValues<this>) {
+  private visibleOrgs?: OrgData[];
+  private searchResults?: OrgData[];
+
+  private readonly virtualizerController =
+    new WindowVirtualizerController<Element>(this, {
+      count: this.visibleOrgs?.length ?? 0,
+      estimateSize: () => 41,
+      getItemKey: (index) => this.visibleOrgs?.[index]?.id ?? index,
+      overscan: 20,
+    });
+
+  protected willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
     if (changedProperties.has("orgList")) {
       this.fuse.setCollection(this.orgList ?? []);
+    }
+    if (
+      changedProperties.has("search") ||
+      changedProperties.has("orgFilter") ||
+      changedProperties.has("orgList")
+    ) {
+      this.searchResults = this.search
+        ? this.fuse.search(this.search).map(({ item }) => item)
+        : this.orgList;
+      this.visibleOrgs =
+        this.searchResults?.filter((org) =>
+          this.filterOrg(org, this.orgFilter),
+        ) ?? [];
+
+      const virtualizer = this.virtualizerController.getVirtualizer();
+      virtualizer.setOptions({
+        ...virtualizer.options,
+        count: this.visibleOrgs.length,
+      });
     }
   }
 
@@ -128,13 +166,8 @@ export class OrgsList extends BtrixElement {
       return this.renderSkeleton();
     }
 
-    const searchResults = this.search
-      ? this.fuse.search(this.search).map(({ item }) => item)
-      : this.orgList;
-
-    const orgs = searchResults?.filter((org) =>
-      this.filterOrg(org, this.orgFilter),
-    );
+    const virtualizer = this.virtualizerController.getVirtualizer();
+    const virtualRows = virtualizer.getVirtualItems();
 
     return html`
       <sl-input
@@ -194,13 +227,15 @@ export class OrgsList extends BtrixElement {
               icon: "exclamation-triangle",
               filter: OrgFilter.BadStates,
             },
-          ].map((options) => this.renderFilterButton(searchResults, options))}
+          ].map((options) =>
+            this.renderFilterButton(this.searchResults, options),
+          )}
         </sl-radio-group>
       </btrix-overflow-scroll>
       <btrix-overflow-scroll
         class="-mx-3 [--btrix-overflow-scroll-scrim-color:theme(colors.neutral.50)] part-[content]:px-3"
       >
-        <btrix-table>
+        <btrix-table class="block">
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Status")}</span>
@@ -225,7 +260,23 @@ export class OrgsList extends BtrixElement {
             </btrix-table-header-cell>
           </btrix-table-head>
           <btrix-table-body class="rounded border">
-            ${repeat(orgs || [], (org) => org.id, this.renderOrg)}
+            <div
+              class="relative w-full"
+              style="height: ${virtualizer.getTotalSize()}px;"
+            >
+              <div
+                style="position:absolute;top:0;left:0;width:100%;transform:translateY(${virtualRows[0]
+                  ? virtualRows[0].start
+                  : 0}px);"
+              >
+                ${repeat(
+                  virtualRows,
+                  (virtualRow) => virtualRow.key,
+                  (virtualRow) =>
+                    this.renderOrg(this.visibleOrgs?.[virtualRow.index]),
+                )}
+              </div>
+            </div>
           </btrix-table-body>
         </btrix-table>
       </btrix-overflow-scroll>
@@ -765,7 +816,8 @@ export class OrgsList extends BtrixElement {
     }
   }
 
-  private readonly renderOrg = (org: OrgData) => {
+  private readonly renderOrg = (org?: OrgData) => {
+    if (!org) return;
     if (!this.userInfo) return;
 
     // There shouldn't really be a case where an org is in the org list but
@@ -1031,7 +1083,7 @@ export class OrgsList extends BtrixElement {
       <btrix-table-row
         class="${isUserOrg
           ? ""
-          : "opacity-50"} cursor-pointer select-none border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
+          : "opacity-50"} cursor-pointer select-none grid-cols-[--btrix-table-grid-template-columns--internal] border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
         <btrix-table-cell class="min-w-6 gap-1 pl-2">
           <sl-tooltip content=${status.description} hoist>
