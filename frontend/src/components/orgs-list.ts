@@ -21,6 +21,7 @@ import {
 import { customElement, property, query, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
+import { debounce } from "lodash";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
@@ -120,8 +121,11 @@ export class OrgsList extends BtrixElement {
   @state()
   private orgFilter: OrgFilter = OrgFilter.All;
 
-  private visibleOrgs?: OrgData[];
+  @state()
   private searchResults?: OrgData[];
+
+  @state()
+  private visibleOrgs?: OrgData[];
 
   private readonly virtualizerController =
     new WindowVirtualizerController<Element>(this, {
@@ -137,26 +141,35 @@ export class OrgsList extends BtrixElement {
     if (changedProperties.has("orgList")) {
       this.fuse.setCollection(this.orgList ?? []);
     }
-    if (
-      changedProperties.has("search") ||
-      changedProperties.has("orgFilter") ||
-      changedProperties.has("orgList")
-    ) {
-      this.searchResults = this.search
-        ? this.fuse.search(this.search).map(({ item }) => item)
-        : this.orgList;
-      this.visibleOrgs =
-        this.searchResults?.filter((org) =>
-          this.filterOrg(org, this.orgFilter),
-        ) ?? [];
-
-      const virtualizer = this.virtualizerController.getVirtualizer();
-      virtualizer.setOptions({
-        ...virtualizer.options,
-        count: this.visibleOrgs.length,
-      });
+    if (changedProperties.has("search") || changedProperties.has("orgFilter")) {
+      // if empty search string, immediately update; otherwise, debounce
+      if (this.search === "" || changedProperties.has("orgFilter")) {
+        this.updateVisibleOrgs();
+      } else {
+        this.updateVisibleOrgsDebounced();
+      }
     }
   }
+
+  readonly updateVisibleOrgs = () => {
+    this.searchResults = this.search
+      ? this.fuse.search(this.search).map(({ item }) => item)
+      : this.orgList;
+    this.visibleOrgs =
+      this.searchResults?.filter((org) =>
+        this.filterOrg(org, this.orgFilter),
+      ) ?? [];
+
+    const virtualizer = this.virtualizerController.getVirtualizer();
+    virtualizer.setOptions({
+      ...virtualizer.options,
+      count: this.visibleOrgs.length,
+    });
+  };
+
+  readonly updateVisibleOrgsDebounced = debounce(this.updateVisibleOrgs, 50, {
+    trailing: true,
+  });
 
   protected firstUpdated() {
     this.fuse.setCollection(this.orgList ?? []);
@@ -1084,7 +1097,7 @@ export class OrgsList extends BtrixElement {
       <btrix-table-row
         class="${isUserOrg
           ? ""
-          : "opacity-50"} cursor-pointer select-none grid-cols-[--btrix-table-grid-template-columns--internal] border-b bg-neutral-0 transition-colors contain-strict [contain-intrinsic-height:40px] first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
+          : "opacity-50"} cursor-pointer select-none grid-cols-[--btrix-table-grid-template-columns--internal] border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
         <btrix-table-cell class="min-w-6 gap-1 pl-2">
           <sl-tooltip content=${status.description} hoist>
