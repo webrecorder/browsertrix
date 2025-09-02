@@ -3084,10 +3084,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       browserWindows: this.formState.browserWindows,
       profileid: this.formState.browserProfile?.id || "",
       schedule:
-        (this.formState.scheduleType === "cron" &&
-        this.formState.scheduleFrequency
-          ? this.utcSchedule
-          : this.formState.scheduleCustom) || "",
+        this.formState.scheduleType === "none"
+          ? ""
+          : (this.formState.scheduleFrequency
+              ? this.utcSchedule
+              : this.formState.scheduleCustom) || "",
       crawlTimeout: this.formState.crawlTimeoutMinutes * 60,
       maxCrawlSize: this.formState.maxCrawlSizeGB * BYTES_PER_GB,
       tags: this.formState.tags,
