@@ -9,6 +9,7 @@ import type {
 } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { WindowVirtualizerController } from "@tanstack/lit-virtual";
+import clsx from "clsx";
 import Fuse from "fuse.js";
 import {
   css,
@@ -1100,9 +1101,13 @@ export class OrgsList extends BtrixElement {
         </btrix-table-cell>
         <btrix-table-cell class="p-2" rowClickTarget="a">
           <a
-            class=${org.readOnly ? "text-neutral-500" : "text-neutral-900"}
+            class=${clsx(
+              org.readOnly ? "text-neutral-500" : "text-neutral-900",
+              "truncate",
+            )}
             href="/orgs/${org.slug}/dashboard"
             @click=${this.navigate.link}
+            title=${org.name}
             aria-disabled="${!isUserOrg}"
           >
             ${org.default
