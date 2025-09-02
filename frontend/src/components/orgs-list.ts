@@ -1084,7 +1084,7 @@ export class OrgsList extends BtrixElement {
       <btrix-table-row
         class="${isUserOrg
           ? ""
-          : "opacity-50"} cursor-pointer select-none grid-cols-[--btrix-table-grid-template-columns--internal] border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
+          : "opacity-50"} cursor-pointer select-none grid-cols-[--btrix-table-grid-template-columns--internal] border-b bg-neutral-0 transition-colors contain-strict [contain-intrinsic-height:40px] first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
         <btrix-table-cell class="min-w-6 gap-1 pl-2">
           <sl-tooltip content=${status.description} hoist>
