@@ -52,13 +52,13 @@ describe("cron utils", () => {
 
     it("humanizes weekly schedule", () => {
       expect(humanizeSchedule("30 1 * * 1")).to.equal(
-        "Every Sunday at 7:30 PM GMT-6",
+        "Every Sunday at 8:30 PM GMT-5",
       );
     });
 
     it("humanizes monthly schedule", () => {
       expect(humanizeSchedule("30 1 1 * *")).to.equal(
-        "On day 31 of the month at 7:30 PM GMT-6",
+        "On day 30 of the month at 8:30 PM GMT-5",
       );
     });
 
