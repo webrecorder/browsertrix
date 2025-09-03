@@ -279,7 +279,8 @@ export class OrgsList extends BtrixElement {
               style="height: ${virtualizer.getTotalSize()}px;"
             >
               <div
-                style="position:absolute;top:0;left:0;width:100%;transform:translateY(${virtualRows[0]
+                class="absolute left-0 top-0 w-full"
+                style="transform: translateY(${virtualRows[0]
                   ? virtualRows[0].start
                   : 0}px);"
               >
