@@ -1,0 +1,39 @@
+diff --git a/node_modules/@shoelace-style/shoelace/dist/chunks/chunk.ZLIGP6HZ.js b/node_modules/@shoelace-style/shoelace/dist/chunks/chunk.ZLIGP6HZ.js
+index aa8ef35..de8c78d 100644
+--- a/node_modules/@shoelace-style/shoelace/dist/chunks/chunk.ZLIGP6HZ.js
++++ b/node_modules/@shoelace-style/shoelace/dist/chunks/chunk.ZLIGP6HZ.js
+@@ -1,5 +1,8 @@
+ // src/components/menu-item/submenu-controller.ts
+ import { createRef, ref } from "lit/directives/ref.js";
++import {
++  LocalizeController
++} from "./chunk.WLV3FVBR.js";
+ import { html } from "lit";
+ var SubmenuController = class {
+   constructor(host, hasSlotController) {
+@@ -9,6 +12,7 @@ var SubmenuController = class {
+     this.isPopupConnected = false;
+     this.skidding = 0;
+     this.submenuOpenDelay = 100;
++    this.localize = new LocalizeController(host);
+     // Set the safe triangle cursor position
+     this.handleMouseMove = (event) => {
+       this.host.style.setProperty("--safe-triangle-cursor-x", `${event.clientX}px`);
+@@ -67,7 +71,7 @@ var SubmenuController = class {
+     this.handlePopupReposition = () => {
+       const submenuSlot = this.host.renderRoot.querySelector("slot[name='submenu']");
+       const menu = submenuSlot == null ? void 0 : submenuSlot.assignedElements({ flatten: true }).filter((el) => el.localName === "sl-menu")[0];
+-      const isRtl = getComputedStyle(this.host).direction === "rtl";
++      const isRtl = this.localize.dir() === "rtl";
+       if (!menu) {
+         return;
+       }
+@@ -213,7 +217,7 @@ var SubmenuController = class {
+     return this.popupRef.value ? this.popupRef.value.active : false;
+   }
+   renderSubmenu() {
+-    const isRtl = getComputedStyle(this.host).direction === "rtl";
++    const isRtl = this.localize.dir() === "rtl";
+     if (!this.isConnected) {
+       return html` <slot name="submenu" hidden></slot> `;
+     }
