@@ -23,6 +23,8 @@ import type {
 import type { QARun } from "@/types/qa";
 import type { StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
+import { downloadLink } from "@/utils/crawl-workflows/downloadLink";
+import { hasFiles } from "@/utils/crawl-workflows/hasFiles";
 import {
   isActive,
   isCrawl,
@@ -147,13 +149,6 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private timerId?: number;
-
-  private get hasFiles(): boolean | null {
-    if (!this.item) return null;
-    if (!this.item.resources) return false;
-
-    return this.item.resources.length > 0;
-  }
 
   private get formattedFinishedDate() {
     if (!this.item) return;
@@ -340,17 +335,7 @@ export class ArchivedItemDetail extends BtrixElement {
       case "files":
         sectionContent = this.renderPanel(
           html` ${this.renderTitle(this.tabLabels.files)}
-            <sl-tooltip content=${msg("Download Files as Multi-WACZ")}>
-              <sl-button
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
-                download=${`browsertrix-${this.itemId}.wacz`}
-                size="small"
-                variant="primary"
-              >
-                <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-                ${msg("Download Files")}
-              </sl-button>
-            </sl-tooltip>`,
+          ${this.renderDownloadFilesButton()}`,
           this.renderFiles(),
         );
         break;
@@ -636,7 +621,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderMenu() {
     if (!this.item) return;
 
-    const authToken = this.authState?.headers.Authorization.split(" ")[1];
+    const download = downloadLink(this.item, this.authState);
 
     return html`
       <sl-dropdown placement="bottom-end" distance="4" hoist>
@@ -671,8 +656,8 @@ export class ArchivedItemDetail extends BtrixElement {
                 `,
               )}
               <btrix-menu-item-link
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
-                download
+                href=${download.path}
+                download=${download.name}
               >
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                 ${msg("Download Item")}
@@ -777,7 +762,7 @@ export class ArchivedItemDetail extends BtrixElement {
 
     const config = JSON.stringify({ headers });
 
-    const canReplay = this.hasFiles;
+    const canReplay = hasFiles(this.item);
 
     return html`
       <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
@@ -991,10 +976,10 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private renderFiles() {
     return html`
-      ${this.hasFiles
+      ${hasFiles(this.item)
         ? html`
             <ul class="rounded-lg border text-sm">
-              ${this.item!.resources!.map(
+              ${this.item.resources.map(
                 (file) => html`
                   <li
                     class="flex justify-between border-t p-3 first:border-t-0"
@@ -1038,6 +1023,28 @@ export class ArchivedItemDetail extends BtrixElement {
             </p>
           `}
     `;
+  }
+
+  private renderDownloadFilesButton() {
+    if (!hasFiles(this.item)) return;
+
+    const singleFile = this.item.resources.length === 1;
+    const download = downloadLink(this.item, this.authState);
+
+    return html`<sl-tooltip
+      content=${msg("Download Files as Multi-WACZ")}
+      ?disabled=${singleFile}
+    >
+      <sl-button
+        href=${download.path}
+        download=${download.name}
+        size="small"
+        variant="primary"
+      >
+        <sl-icon slot="prefix" name="cloud-download"></sl-icon>
+        ${singleFile ? msg("Download File") : msg("Download Files")}
+      </sl-button>
+    </sl-tooltip>`;
   }
 
   private renderLogs() {
