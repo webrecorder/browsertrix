@@ -27,6 +27,8 @@ page_id = None
 # (not using the fixture to be able to test running crawl)
 admin_crawl_id = None
 
+seed_file_crawl_id = None
+
 
 def test_list_orgs(admin_auth_headers, default_org_id):
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
@@ -1377,12 +1379,14 @@ def test_seed_file_crawl(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    crawl_id = r.json()["started"]
+
+    global seed_file_crawl_id
+    seed_file_crawl_id = r.json()["started"]
 
     # Wait for it to complete
     while True:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{seed_file_crawl_id}/replay.json",
             headers=crawler_auth_headers,
         )
         data = r.json()
@@ -1394,7 +1398,7 @@ def test_seed_file_crawl(
 
     # Check on crawl
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{seed_file_crawl_id}/replay.json",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -1405,7 +1409,7 @@ def test_seed_file_crawl(
 
     # Validate crawl pages
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/pages",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{seed_file_crawl_id}/pages",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -1416,3 +1420,79 @@ def test_seed_file_crawl(
             "https://specs.webrecorder.net/",
             "https://webrecorder.net/",
         )
+
+
+def test_delete_seed_file_in_use_crawl(
+    crawler_auth_headers, default_org_id, seed_file_id, seed_file_config_id
+):
+    # Remove seed file from workflow
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{seed_file_config_id}/",
+        headers=crawler_auth_headers,
+        json={
+            "config": {
+                "seeds": [{"url": "https://webrecorder.net"}],
+                "scopeType": "page",
+                "limit": 1,
+                "seedFileId": None,
+            }
+        },
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["updated"]
+    assert data["metadata_changed"] == False
+    assert data["settings_changed"] == True
+
+    # Verify seed file was removed
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{seed_file_config_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["config"]["seedFileId"] is None
+
+    # Attempt to delete seed file, ensure we get 400 response
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/files/{seed_file_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "seed_file_in_use"
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/files/{seed_file_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["id"] == seed_file_id
+
+
+def test_delete_seed_file_not_in_use(
+    crawler_auth_headers, default_org_id, seed_file_id, seed_file_config_id
+):
+    # Delete crawl with seed file id so it's no longer in use
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
+        headers=crawler_auth_headers,
+        json={"crawl_ids": [seed_file_crawl_id]},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["deleted"] == 1
+
+    # Delete seed file
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/files/{seed_file_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/files/{seed_file_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 404
