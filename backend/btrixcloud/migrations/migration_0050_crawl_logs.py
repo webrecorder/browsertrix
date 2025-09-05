@@ -29,7 +29,7 @@ class Migration(BaseMigration):
         # Migrate error and behavior logs
         match_query = {
             "type": "crawl",
-            "$or": [{"errors": {"$ne": None}}, {"behaviorLogs": {"$ne": None}}],
+            "$or": [{"errors": {"$exists": True}}, {"behaviorLogs": {"$exists": True}}],
         }
 
         async for crawl_dict in crawls_mdb.find(match_query):
