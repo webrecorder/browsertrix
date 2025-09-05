@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
-import type { SlSelect } from "@shoelace-style/shoelace";
+import type { SlDropdown, SlSelect } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -25,6 +25,10 @@ import {
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
+import {
+  Action,
+  type BtrixSelectActionEvent,
+} from "@/features/crawl-workflows/workflow-action-menu/types";
 import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
@@ -40,6 +44,7 @@ import {
   isActive,
   isSkipped,
   isSuccessfullyFinished,
+  renderName,
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
@@ -602,7 +607,7 @@ export class WorkflowDetail extends BtrixElement {
         @sl-show=${this.showDialog}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
-        ${deleteConfirmation(this.renderName())}
+        ${deleteConfirmation(renderName(this.workflow))}
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
@@ -666,7 +671,7 @@ export class WorkflowDetail extends BtrixElement {
       breadcrumbs.push(
         {
           href: this.basePath,
-          content: this.workflow ? this.renderName() : undefined,
+          content: this.workflow ? renderName(this.workflow) : undefined,
         },
         {
           content: msg("Edit Settings"),
@@ -674,7 +679,7 @@ export class WorkflowDetail extends BtrixElement {
       );
     } else {
       breadcrumbs.push({
-        content: this.workflow ? this.renderName() : undefined,
+        content: this.workflow ? renderName(this.workflow) : undefined,
       });
     }
 
@@ -929,7 +934,6 @@ export class WorkflowDetail extends BtrixElement {
 
   private readonly renderActions = () => {
     if (!this.workflow) return;
-    const workflow = this.workflow;
 
     const archivingDisabled = isArchivingDisabled(this.org, true);
     const cancelStopLoading = this.isCancelingRun;
@@ -938,6 +942,7 @@ export class WorkflowDetail extends BtrixElement {
     const hidePauseResume =
       !this.lastCrawlId ||
       this.isCancelingRun ||
+      this.workflow.lastCrawlState === "starting" ||
       this.workflow.lastCrawlStopping;
     const disablePauseResume =
       this.disablePauseResume ||
@@ -999,199 +1004,63 @@ export class WorkflowDetail extends BtrixElement {
         this.renderRunNowButton,
       )}
 
-      <sl-dropdown placement="bottom-end" distance="4" hoist>
+      <sl-dropdown
+        placement="bottom-end"
+        distance="4"
+        hoist
+        @btrix-select=${this.onSelectAction}
+      >
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
         >
-        <sl-menu>
-          ${when(
-            workflow.isCrawlRunning,
-            // HACK shoelace doesn't current have a way to override non-hover
-            // color without resetting the --sl-color-neutral-700 variable
-            () => html`
-              ${when(!hidePauseResume && !disablePauseResume, () =>
-                paused
-                  ? html`
-                      <sl-menu-item
-                        class="[--sl-color-neutral-700:var(--success)]"
-                        @click=${() => void this.pauseResumeTask.run()}
-                      >
-                        <sl-icon name="play-circle" slot="prefix"></sl-icon>
-                        ${msg("Resume Crawl")}
-                      </sl-menu-item>
-                    `
-                  : html`
-                      <sl-menu-item
-                        @click=${() => void this.pauseResumeTask.run()}
-                      >
-                        <sl-icon name="pause-circle" slot="prefix"></sl-icon>
-                        ${msg("Pause Crawl")}
-                      </sl-menu-item>
-                    `,
-              )}
-
-              <sl-menu-item
-                @click=${() => (this.openDialogName = "stop")}
-                ?disabled=${workflow.lastCrawlStopping || this.isCancelingRun}
-              >
-                <sl-icon name="dash-square" slot="prefix"></sl-icon>
-                ${msg("Stop Crawl")}
-              </sl-menu-item>
-              <sl-menu-item
-                style="--sl-color-neutral-700: var(--danger)"
-                ?disabled=${this.isCancelingRun}
-                @click=${() => (this.openDialogName = "cancel")}
-              >
-                <sl-icon name="x-octagon" slot="prefix"></sl-icon>
-                ${msg(html`Cancel & Discard Crawl`)}
-              </sl-menu-item>
-            `,
-            () => html`
-              <sl-menu-item
-                class="[--sl-color-neutral-700:var(--success)]"
-                ?disabled=${archivingDisabled}
-                @click=${() => void this.runNowTask.run()}
-              >
-                <sl-icon name="play" slot="prefix"></sl-icon>
-                ${msg("Run Crawl")}
-              </sl-menu-item>
-            `,
-          )}
-          <sl-divider></sl-divider>
-          ${when(
-            workflow.isCrawlRunning && !workflow.lastCrawlStopping,
-            () => html`
-              <sl-menu-item @click=${() => (this.openDialogName = "scale")}>
-                <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-                ${msg("Edit Browser Windows")}
-              </sl-menu-item>
-              <sl-menu-item
-                @click=${() => (this.openDialogName = "exclusions")}
-                ?disabled=${!this.isCrawling}
-              >
-                <sl-icon name="table" slot="prefix"></sl-icon>
-                ${msg("Edit Exclusions")}
-              </sl-menu-item>
-            `,
-          )}
-          <sl-menu-item
-            @click=${() =>
-              this.navigate.to(
-                `/orgs/${this.appState.orgSlug}/workflows/${workflow.id}?edit`,
-              )}
-          >
-            <sl-icon name="gear" slot="prefix"></sl-icon>
-            ${msg("Edit Workflow Settings")}
-          </sl-menu-item>
-          <sl-menu-item
-            ?disabled=${archivingDisabled}
-            @click=${() => void this.duplicateConfig()}
-          >
-            <sl-icon name="files" slot="prefix"></sl-icon>
-            ${msg("Duplicate Workflow")}
-          </sl-menu-item>
-          ${when(
-            workflow.lastCrawlId,
-            () => html`
-              <sl-divider></sl-divider>
-              <sl-menu-item>
-                ${this.tabLabels.latest} ${this.renderLatestCrawlMenu()}
-              </sl-menu-item>
-            `,
-          )}
-          <sl-divider></sl-divider>
-          <sl-menu-item
-            @click=${() =>
-              ClipboardController.copyToClipboard(workflow.tags.join(", "))}
-            ?disabled=${!workflow.tags.length}
-          >
-            <sl-icon name="tags" slot="prefix"></sl-icon>
-            ${msg("Copy Tags")}
-          </sl-menu-item>
-          <sl-menu-item
-            @click=${() => ClipboardController.copyToClipboard(workflow.id)}
-          >
-            <sl-icon name="copy" slot="prefix"></sl-icon>
-            ${msg("Copy Workflow ID")}
-          </sl-menu-item>
-
-          ${when(
-            !workflow.crawlCount,
-            () => html`
-              <sl-divider></sl-divider>
-              <sl-menu-item
-                style="--sl-color-neutral-700: var(--danger)"
-                @click=${() => (this.openDialogName = "delete")}
-              >
-                <sl-icon name="trash3" slot="prefix"></sl-icon>
-                ${msg("Delete Workflow")}
-              </sl-menu-item>
-            `,
-          )}
-        </sl-menu>
+        <btrix-workflow-action-menu
+          .workflow=${this.workflow}
+          .latestCrawl=${this.latestCrawlTask.value}
+          .logTotals=${this.logTotalsTask.value}
+          ?hidePauseResume=${hidePauseResume}
+          ?disablePauseResume=${disablePauseResume}
+          ?cancelingRun=${this.isCancelingRun}
+        ></btrix-workflow-action-menu>
       </sl-dropdown>
     `;
   };
 
-  private renderLatestCrawlMenu() {
-    const authToken = this.authState?.headers.Authorization.split(" ")[1];
-    const latestCrawl = this.latestCrawlTask.value;
-    const logTotals = this.logTotalsTask.value;
+  private readonly onSelectAction = (e: BtrixSelectActionEvent) => {
+    const dropdown = e.currentTarget as SlDropdown;
 
-    return html`
-      <sl-menu slot="submenu">
-        <btrix-menu-item-link
-          href=${`/api/orgs/${this.orgId}/all-crawls/${this.lastCrawlId}/download?auth_bearer=${authToken}`}
-          ?disabled=${!latestCrawl?.fileSize}
-          download
-        >
-          <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-          ${msg("Download Item")}
-          ${latestCrawl?.fileSize
-            ? html` <btrix-badge
-                slot="suffix"
-                class="font-monostyle text-xs text-neutral-500"
-                >${this.localize.bytes(latestCrawl.fileSize)}</btrix-badge
-              >`
-            : nothing}
-        </btrix-menu-item-link>
+    switch (e.detail.item.action) {
+      case Action.Run:
+        void this.runNowTask.run();
+        break;
+      case Action.TogglePauseResume:
+        void this.pauseResumeTask.run();
+        break;
+      case Action.Stop:
+        this.openDialogName = "stop";
+        break;
+      case Action.Cancel:
+        this.openDialogName = "cancel";
+        break;
+      case Action.EditBrowserWindows:
+        this.openDialogName = "scale";
+        break;
+      case Action.EditExclusions:
+        this.openDialogName = "exclusions";
+        break;
+      case Action.Duplicate:
+        void this.duplicateConfig();
+        break;
+      case Action.Delete:
+        this.openDialogName = "delete";
+        break;
+      default:
+        console.debug("unknown workflow action:", e.detail.item.action);
+        break;
+    }
 
-        <btrix-menu-item-link
-          href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
-          ?disabled=${!(logTotals?.errors || logTotals?.behaviors)}
-          download
-        >
-          <sl-icon name="file-earmark-arrow-down" slot="prefix"></sl-icon>
-          ${msg("Download Log")}
-        </btrix-menu-item-link>
-
-        <sl-divider></sl-divider>
-
-        ${when(
-          this.archivedItemId,
-          (id) => html`
-            <sl-menu-item
-              @click=${() =>
-                this.navigate.to(
-                  `${this.basePath}/${WorkflowTab.Crawls}/${id}`,
-                )}
-            >
-              <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
-              ${msg("View Item Details")}
-            </sl-menu-item>
-          `,
-        )}
-        <sl-menu-item
-          @click=${() =>
-            ClipboardController.copyToClipboard(this.lastCrawlId || "")}
-          ?disabled=${!this.lastCrawlId}
-        >
-          <sl-icon name="copy" slot="prefix"></sl-icon>
-          ${msg("Copy Item ID")}
-        </sl-menu-item>
-      </sl-menu>
-    `;
-  }
+    void dropdown.hide();
+    dropdown.focusOnTrigger();
+  };
 
   private renderDetails() {
     const relativeDate = (
@@ -1300,32 +1169,6 @@ export class WorkflowDetail extends BtrixElement {
         )}
       </btrix-desc-list-item>
     `;
-  }
-
-  private renderName() {
-    if (!this.workflow)
-      return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
-    if (this.workflow.name)
-      return html`<span class="truncate">${this.workflow.name}</span>`;
-    const { seedCount, firstSeed } = this.workflow;
-    if (seedCount === 1) {
-      return html`<span class="truncate">${firstSeed}</span>`;
-    }
-    const remainderCount = seedCount - 1;
-    if (remainderCount === 1) {
-      return msg(
-        html` <span class="truncate">${firstSeed}</span>
-          <span class="whitespace-nowrap text-neutral-500"
-            >+${remainderCount} URL</span
-          >`,
-      );
-    }
-    return msg(
-      html` <span class="truncate">${firstSeed}</span>
-        <span class="whitespace-nowrap text-neutral-500"
-          >+${remainderCount} URLs</span
-        >`,
-    );
   }
 
   private renderCrawls() {
@@ -2395,7 +2238,7 @@ export class WorkflowDetail extends BtrixElement {
 
       this.notify.toast({
         message: msg(
-          html`Deleted <strong>${this.renderName()}</strong> Workflow.`,
+          html`Deleted <strong>${renderName(this.workflow)}</strong> Workflow.`,
         ),
         variant: "success",
         icon: "check2-circle",

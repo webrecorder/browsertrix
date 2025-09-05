@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task, TaskStatus } from "@lit/task";
 import clsx, { type ClassValue } from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -20,9 +21,11 @@ import type {
   Workflow,
 } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
+import type { StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import {
   isActive,
+  isCrawl,
   isNotFailed,
   isSuccessfullyFinished,
   renderName,
@@ -165,6 +168,17 @@ export class ArchivedItemDetail extends BtrixElement {
       time-zone-name="short"
     ></btrix-format-date>`;
   }
+
+  private readonly seedFileTask = new Task(this, {
+    task: async ([item], { signal }) => {
+      if (!item) return;
+      if (!isCrawl(item)) return;
+      if (!item.config.seedFileId) return null;
+
+      return await this.getSeedFile(item.config.seedFileId, signal);
+    },
+    args: () => [this.item] as const,
+  });
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("itemId") && this.itemId) {
@@ -1034,15 +1048,24 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private renderConfig() {
     return html`
-      <div aria-live="polite" aria-busy=${!this.item || !this.seeds}>
+      <div
+        aria-live="polite"
+        aria-busy=${!this.item ||
+        !this.seeds ||
+        this.seedFileTask.status === TaskStatus.PENDING}
+      >
         ${when(
-          this.item && this.seeds && this.workflow,
+          this.item &&
+            this.seeds &&
+            this.workflow &&
+            this.seedFileTask.status !== TaskStatus.PENDING,
           () => html`
             <btrix-config-details
               .crawlConfig=${{
                 ...this.item,
               } as CrawlConfig}
               .seeds=${this.seeds!.items}
+              .seedFile=${this.seedFileTask.value || undefined}
               hideMetadata
             ></btrix-config-details>
           `,
@@ -1458,6 +1481,14 @@ export class ArchivedItemDetail extends BtrixElement {
         void this.fetchQARuns();
       }, 1000 * POLL_INTERVAL_SECONDS);
     }
+  }
+
+  private async getSeedFile(seedFileId: string, signal: AbortSignal) {
+    const data = await this.api.fetch<StorageSeedFile>(
+      `/orgs/${this.orgId}/files/${seedFileId}`,
+      { signal },
+    );
+    return data;
   }
 
   private stopPoll() {

@@ -52,6 +52,7 @@ class FileUploadOps:
     def __init__(self, mdb, org_ops, storage_ops):
         self.files = mdb["file_uploads"]
         self.crawl_configs = mdb["crawl_configs"]
+        self.crawls = mdb["crawls"]
 
         self.org_ops = org_ops
         self.storage_ops = storage_ops
@@ -325,6 +326,10 @@ class FileUploadOps:
             if matching_workflow:
                 raise HTTPException(status_code=400, detail="seed_file_in_use")
 
+            matching_crawl = await self.crawls.find_one({"config.seedFileId": file_id})
+            if matching_crawl:
+                raise HTTPException(status_code=400, detail="seed_file_in_use")
+
         await self.storage_ops.delete_file_object(org, file)
         await self.files.delete_one({"_id": file_id, "oid": org.id})
         if file.type == "seedFile":
@@ -366,6 +371,12 @@ class FileUploadOps:
                 {"config.seedFileId": file_id}
             )
             if first_matching_workflow:
+                continue
+
+            first_matching_crawl = await self.crawls.find_one(
+                {"config.seedFileId": file_id}
+            )
+            if first_matching_crawl:
                 continue
 
             try:

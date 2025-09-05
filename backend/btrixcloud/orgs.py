@@ -553,6 +553,11 @@ class OrgOps:
         )
         return Organization.from_dict(org_data) if org_data else None
 
+    async def find_org_by_subscription_id(self, sub_id: str) -> Optional[Organization]:
+        """Find org by subscription id"""
+        org_data = await self.orgs.find_one({"subscription.subId": sub_id})
+        return Organization.from_dict(org_data) if org_data else None
+
     async def is_subscription_activated(self, sub_id: str) -> bool:
         """return true if subscription for this org was 'activated', eg. at least
         one user has signed up and changed the slug

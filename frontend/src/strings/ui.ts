@@ -12,8 +12,14 @@ export const noData = stringFor.noData;
 export const notApplicable = stringFor.notApplicable;
 
 // TODO Refactor all generic confirmation messages to use utility
-export const deleteConfirmation = (name: string | TemplateResult) =>
-  msg(html`
-    Are you sure you want to delete
-    <strong class="font-semibold">${name}</strong>?
-  `);
+export const deleteConfirmation = (name: string | TemplateResult) => {
+  const itemName = html`<strong class="inline-flex max-w-full font-semibold"
+    >${name}</strong
+  >`;
+
+  return html`<span class="*:inline-flex *:max-w-full"
+    >${msg(
+      html`Are you sure you want to delete <span>${itemName}?</span>`,
+    )}</span
+  >`;
+};

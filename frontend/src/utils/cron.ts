@@ -1,5 +1,6 @@
 import { parseCron } from "@cheap-glitch/mi-cron";
 import { msg, str } from "@lit/localize";
+import cronstrue from "cronstrue";
 
 import localize from "./localize";
 
@@ -9,16 +10,35 @@ export type ScheduleInterval = "daily" | "weekly" | "monthly";
 
 /**
  * Parse interval from cron expression
+ *
+ * Known intervals:
+ * Daily:   minute hour *          * *
+ * Weekly:  minute hour *          * dayOfWeek
+ * Monthly: minute hour dayOfMonth * *
  **/
-export function getScheduleInterval(schedule: string): ScheduleInterval {
-  const [_minute, _hour, dayOfMonth, _month, dayOfWeek] = schedule.split(" ");
-  if (dayOfMonth === "*") {
-    if (dayOfWeek === "*") {
-      return "daily";
-    }
+export function getScheduleInterval(schedule: string): ScheduleInterval | null {
+  const parts = schedule.split(" ");
+
+  if (parts.length !== 5) return null;
+
+  const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+  if (minute.startsWith("*") || hour.startsWith("*") || month !== "*") {
+    return null;
+  }
+
+  if (dayOfMonth === "*" && dayOfWeek === "*") {
+    return "daily";
+  }
+
+  if (dayOfMonth === "*" && dayOfWeek !== "*") {
     return "weekly";
   }
-  return "monthly";
+
+  if (dayOfMonth !== "*" && dayOfWeek === "*") {
+    return "monthly";
+  }
+
+  return null;
 }
 
 /**
@@ -27,7 +47,7 @@ export function getScheduleInterval(schedule: string): ScheduleInterval {
  **/
 export function humanizeNextDate(
   schedule: string,
-  options: { length?: "short" } = {},
+  options: { length?: "short"; utc?: boolean } = {},
 ): string {
   const locale = localize.activeLanguage;
   const nextDate = parseCron.nextDate(schedule);
@@ -41,6 +61,7 @@ export function humanizeNextDate(
       year: "numeric",
       hour: "numeric",
       minute: "numeric",
+      timeZone: options.utc ? "UTC" : undefined,
     });
   }
 
@@ -52,7 +73,30 @@ export function humanizeNextDate(
     hour: "numeric",
     minute: "numeric",
     timeZoneName: "short",
+    timeZone: options.utc ? "UTC" : undefined,
   });
+}
+
+export function validateCron(schedule: string): {
+  valid: boolean;
+  error?: string;
+} {
+  const locale = localize.activeLanguage;
+
+  try {
+    cronstrue.toString(schedule, {
+      locale,
+    });
+
+    return { valid: true };
+  } catch (err) {
+    if (typeof err === "string") {
+      // TODO Custom localized errors since construe doesn't translate errors
+      return { valid: false, error: err.replace("Error: ", "") };
+    }
+  }
+
+  return { valid: false };
 }
 
 /**
@@ -65,6 +109,21 @@ export function humanizeSchedule(
 ): string {
   const locale = localize.activeLanguage;
   const interval = getScheduleInterval(schedule);
+
+  if (!interval) {
+    try {
+      const humanized = cronstrue.toString(schedule, {
+        verbose: false, // TODO Support shorter string
+        locale,
+      });
+
+      // Add timezone prefix
+      return `${humanized} (UTC)`;
+    } catch {
+      return "";
+    }
+  }
+
   const parsed = parseCron(schedule);
   if (!parsed) {
     // Invalid date
@@ -132,10 +191,7 @@ export function humanizeSchedule(
         intervalMsg = msg(str`Every day at ${formattedTime}`);
         break;
       case "weekly":
-        intervalMsg = msg(
-          str`Every ${formattedWeekDay}
-            at ${formattedTime}`,
-        );
+        intervalMsg = msg(str`Every ${formattedWeekDay} at ${formattedTime}`);
         break;
       case "monthly":
         intervalMsg = msg(

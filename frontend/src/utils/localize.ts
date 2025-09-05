@@ -261,6 +261,15 @@ export class Localize {
   };
 
   private async setTranslation(lang: LanguageCode) {
+    // Load cron string translation
+    try {
+      await import(
+        /* webpackChunkName: 'cronstrue'*/ `cronstrue/locales/${lang}`
+      );
+    } catch (err) {
+      console.debug(err);
+    }
+
     if (
       lang !== getLocale() &&
       (translatedLocales as AllLanguageCodes).includes(lang)

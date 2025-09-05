@@ -1,32 +1,28 @@
-import { Heading, Link, Text } from "@react-email/components";
+import { Link, Text } from "@react-email/components";
 
 import { Template } from "../templates/btrix.js";
-import { formatDate, offsetDays } from "../lib/date.js";
+import {
+  differenceInDays,
+  formatDate,
+  formatRelativeDateToParts,
+  offsetDays,
+} from "../lib/date.js";
 import { Warning } from "../components/warning.js";
 import { Card } from "../components/card.js";
 
 import { z } from "zod";
+import { trimTrailingSlash } from "../lib/url.js";
 
 export const schema = z.object({
   user_name: z.string(),
   org_name: z.string(),
-  org_url: z.string(),
-  cancel_date: z.string(),
+  org_url: z.string().transform(trimTrailingSlash),
+  cancel_date: z.coerce.date(),
   survey_url: z.string().optional(),
   support_email: z.email().optional(),
 });
 
 export type SubscriptionCancelEmailProps = z.infer<typeof schema>;
-
-function reRenderDate(date: string) {
-  try {
-    const parsedDate = new Date(date);
-    return formatDate(parsedDate);
-  } catch (error) {
-    console.error("Error parsing date:", error);
-    return date;
-  }
-}
 
 export const SubscriptionCancelEmail = ({
   user_name,
@@ -36,15 +32,17 @@ export const SubscriptionCancelEmail = ({
   survey_url,
   support_email,
 }: SubscriptionCancelEmailProps) => {
-  const date = reRenderDate(cancel_date);
+  const date = formatDate(cancel_date);
+  const daysLeft = differenceInDays(new Date(cancel_date));
+  const relativeParts = formatRelativeDateToParts(daysLeft, "days");
   return (
     <Template
-      preview={"Your Browsertrix subscription is cancelling"}
+      preview={"You’ve cancelled your Browsertrix subscription"}
       title={
         <>
           Your <strong className="text-stone-900">Browsertrix</strong>{" "}
-          subscription will be
-          <br /> cancelled on <strong className="text-stone-900">{date}</strong>
+          subscription will
+          <br /> end on <strong className="text-stone-900">{date}</strong>
         </>
       }
       disclaimer={
@@ -80,9 +78,19 @@ export const SubscriptionCancelEmail = ({
       <Text className="text-base text-stone-700">Hello {user_name},</Text>
 
       <Text className="text-base text-stone-700">
-        The Browsertrix subscription for your organization “
-        <strong className="text-stone-900">{org_name}</strong>” is scheduled to
-        be cancelled at the end of this subscription period.
+        This is confirming that you’ve cancelled your Browsertrix subscription
+        for your “<strong className="text-stone-900">{org_name}</strong>”
+        organization. Your subscription ends{" "}
+        {relativeParts.map((part, index) =>
+          part.value !== "in " ? (
+            <strong key={part.value + index} className="text-stone-900">
+              {part.value}
+            </strong>
+          ) : (
+            part.value
+          ),
+        )}
+        , and will not be renewed.
       </Text>
 
       <Warning>
@@ -108,7 +116,7 @@ export const SubscriptionCancelEmail = ({
         >
           billing settings
         </Link>{" "}
-        at any time before <strong className="text-stone-900">{date}</strong>.
+        at any time before then.
       </Text>
 
       <Text className="text-base text-stone-700">
@@ -145,7 +153,7 @@ export const SubscriptionCancelEmail = ({
 SubscriptionCancelEmail.PreviewProps = {
   user_name: "Emma",
   org_name: "Emma’s Archives",
-  cancel_date: offsetDays(7).toISOString(),
+  cancel_date: offsetDays(7),
   survey_url: "https://example.com/survey",
   org_url: "https://dev.browsertrix.com/orgs/default-org",
   support_email: "support@webrecorder.net",
@@ -154,6 +162,6 @@ SubscriptionCancelEmail.PreviewProps = {
 export default SubscriptionCancelEmail;
 
 export const subject = ({ cancel_date }: SubscriptionCancelEmailProps) => {
-  const date = reRenderDate(cancel_date);
+  const date = formatDate(cancel_date);
   return `Your Browsertrix subscription will be cancelled on ${date}`;
 };

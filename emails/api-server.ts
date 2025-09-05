@@ -16,7 +16,7 @@ type TemplateModule = {
 
 type Templates = Record<string, TemplateModule>;
 
-const log = pino({
+const parentLog = pino({
   level: process.env.LOG_LEVEL || "info",
   name: "emails-api",
   ...(process.env.NODE_ENV === "development"
@@ -26,6 +26,10 @@ const log = pino({
         },
       }
     : undefined),
+});
+
+const log = parentLog.child({
+  commit: process.env.GIT_COMMIT_HASH || "unknown",
 });
 
 const app = express();

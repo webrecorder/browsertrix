@@ -2,6 +2,7 @@ import { Heading, Hr, Link, Section, Text } from "@react-email/components";
 
 import { Template } from "../templates/btrix.js";
 import {
+  differenceInDays,
   formatDate,
   formatRelativeDateToParts,
   offsetDays,
@@ -18,7 +19,7 @@ export const schema = z.object({
   invite_url: z.string(),
   support_email: z.email().optional(),
   validity_period_days: z.number().int().positive().optional(),
-  trial_remaining_days: z.number().int().optional(),
+  trial_end_date: z.coerce.date().nullish(),
 });
 
 export type InviteUserEmailProps = z.infer<typeof schema>;
@@ -30,8 +31,12 @@ export const InviteUserEmail = ({
   invite_url,
   support_email,
   validity_period_days = 7,
-  trial_remaining_days,
+  trial_end_date,
 }: InviteUserEmailProps) => {
+  const daysLeft = trial_end_date ? differenceInDays(trial_end_date) : null;
+  const relativeParts = daysLeft
+    ? formatRelativeDateToParts(daysLeft, "days")
+    : null;
   const previewText = `Join ${org_name} on Browsertrix`;
 
   return (
@@ -263,16 +268,15 @@ export const InviteUserEmail = ({
       >
         View and update your plan, billing information, payment methods, and
         usage history.{" "}
-        {trial_remaining_days && (
+        {relativeParts && (
           <>
             Your trial ends{" "}
-            {formatRelativeDateToParts(trial_remaining_days, "days").map(
-              (part, index) =>
-                part.value !== "in " ? (
-                  <strong key={part.value + index}>{part.value}</strong>
-                ) : (
-                  part.value
-                ),
+            {relativeParts.map((part, index) =>
+              part.value !== "in " ? (
+                <strong key={part.value + index}>{part.value}</strong>
+              ) : (
+                part.value
+              ),
             )}
             , so you may want to double check your billing information and
             payment methods before the trial ends.
@@ -340,17 +344,17 @@ InviteUserEmail.PreviewProps = {
   invite_url: "https://app.browsertrix.com/invite-url-123-demo",
   support_email: "support@webrecorder.net",
   validity_period_days: 7,
-  trial_remaining_days: 7,
+  trial_end_date: offsetDays(7),
 } satisfies InviteUserEmailProps;
 
 export default InviteUserEmail;
 
 export const subject = ({
-  trial_remaining_days,
+  trial_end_date,
   org_name,
   sender,
 }: InviteUserEmailProps) => {
-  if (trial_remaining_days != null) {
+  if (trial_end_date != null) {
     return "Start your Browsertrix trial";
   }
   return sender || org_name

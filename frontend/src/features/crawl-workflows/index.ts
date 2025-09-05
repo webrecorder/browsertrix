@@ -5,6 +5,7 @@ import("./link-selector-table");
 import("./new-workflow-dialog");
 import("./queue-exclusion-form");
 import("./queue-exclusion-table");
+import("./workflow-action-menu/workflow-action-menu");
 import("./workflow-editor");
 import("./workflow-list");
 import("./workflow-schedule-filter");
