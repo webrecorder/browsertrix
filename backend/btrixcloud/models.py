@@ -813,9 +813,6 @@ class CoreCrawlable(BaseModel):
     fileSize: int = 0
     fileCount: int = 0
 
-    errors: Optional[List[str]] = []
-    behaviorLogs: Optional[List[str]] = []
-
 
 # ============================================================================
 class BaseCrawl(CoreCrawlable, BaseMongoModel):
@@ -885,9 +882,6 @@ class CrawlOut(BaseMongoModel):
 
     tags: Optional[List[str]] = []
 
-    errors: Optional[List[str]] = []
-    behaviorLogs: Optional[List[str]] = []
-
     collectionIds: Optional[List[UUID]] = []
 
     crawlExecSeconds: int = 0
@@ -929,6 +923,10 @@ class CrawlOut(BaseMongoModel):
     # Set to older version by default, crawls with optimized
     # pages will have this explicitly set to 2
     version: Optional[int] = 1
+
+    # Retained for backward compatibility
+    errors: Optional[List[str]] = Field(default=[], deprecated=True)
+    behaviorLogs: Optional[List[str]] = Field(default=[], deprecated=True)
 
 
 # ============================================================================
@@ -1090,17 +1088,6 @@ class CrawlScaleResponse(BaseModel):
 
 
 # ============================================================================
-class CrawlLogMessage(BaseModel):
-    """Crawl log message"""
-
-    timestamp: str
-    logLevel: str
-    context: str
-    message: str
-    details: Any
-
-
-# ============================================================================
 
 ### UPLOADED CRAWLS ###
 
@@ -1148,6 +1135,34 @@ class FilePreparer:
         name = slugify(name.rsplit("/", 1)[-1])
         randstr = base64.b32encode(os.urandom(5)).lower()
         return name + "-" + randstr.decode("utf-8") + ext
+
+
+# ============================================================================
+
+### LOGS ###
+
+
+# ============================================================================
+class CrawlLogLine(BaseMongoModel):
+    """Model for crawler log lines"""
+
+    id: UUID
+
+    crawlId: str
+    oid: UUID
+
+    qaRunId: Optional[str] = None
+
+    timestamp: datetime
+    logLevel: str
+    context: str
+    message: str
+    details: Optional[Dict[str, Any]] = None
+
+    @property
+    def is_qa(self) -> bool:
+        """return true if log line is from qa run"""
+        return bool(self.qaRunId)
 
 
 # ============================================================================
@@ -3048,7 +3063,7 @@ class PaginatedWebhookNotificationResponse(PaginatedResponse):
 class PaginatedCrawlLogResponse(PaginatedResponse):
     """Response model for crawl logs"""
 
-    items: List[CrawlLogMessage]
+    items: List[CrawlLogLine]
 
 
 # ============================================================================
