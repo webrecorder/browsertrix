@@ -813,10 +813,6 @@ class CoreCrawlable(BaseModel):
     fileSize: int = 0
     fileCount: int = 0
 
-    # Retained for backward compatibility
-    errors: Optional[List[str]] = Field(default=[], deprecated=True)
-    behaviorLogs: Optional[List[str]] = Field(default=[], deprecated=True)
-
 
 # ============================================================================
 class BaseCrawl(CoreCrawlable, BaseMongoModel):

@@ -59,7 +59,7 @@ class Migration(BaseMigration):
                 await crawls_mdb.find_one_and_update(
                     {"_id": crawl_id},
                     {
-                        "$set": {
+                        "$unset": {
                             "errors": None,
                             "behaviorLogs": None,
                         }
@@ -109,7 +109,7 @@ class Migration(BaseMigration):
                     await crawls_mdb.find_one_and_update(
                         {"_id": crawl_id},
                         {
-                            "$set": {
+                            "$unset": {
                                 f"qaFinished.{qa_run_id}.errors": None,
                                 f"qaFinished.{qa_run_id}.behaviorLogs": None,
                             }
