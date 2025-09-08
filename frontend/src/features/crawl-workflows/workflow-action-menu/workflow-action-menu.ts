@@ -181,7 +181,7 @@ export class WorkflowActionMenu extends BtrixElement {
         @click=${() => ClipboardController.copyToClipboard(workflow.firstSeed)}
       >
         <sl-icon name="link" slot="prefix"></sl-icon>
-        ${msg("Copy First Page URL")}
+        ${msg("Copy Crawl Start URL")}
       </sl-menu-item>
 
       <sl-menu-item

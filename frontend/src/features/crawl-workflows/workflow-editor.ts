@@ -950,7 +950,7 @@ export class WorkflowEditor extends BtrixElement {
               <!-- TODO Use btrix-url-input -->
               <sl-input
                 name="urlList"
-                label=${msg("Page URL")}
+                label=${msg("Crawl Start URL")}
                 placeholder="https://webrecorder.net/blog"
                 autocomplete="off"
                 inputmode="url"
@@ -1010,10 +1010,7 @@ export class WorkflowEditor extends BtrixElement {
           ${msg("Include any linked page (“one hop out”)")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(
-        msg(`If checked, the crawler will visit pages one link away.`),
-        false,
-      )}
+      ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
       ${inputCol(html`
         <sl-checkbox
           name="failOnContentCheck"
@@ -1062,11 +1059,8 @@ export class WorkflowEditor extends BtrixElement {
 
     return html`
       ${inputCol(html`
-        <label
-          class="form-label form-control-label--required"
-          for="seedUrlList"
-        >
-          ${msg("Page URLs")}
+        <label class="sr-only" for="seedUrlList">
+          ${msg("Crawl Start URLs")}
         </label>
 
         <sl-radio-group
@@ -1502,11 +1496,7 @@ https://example.net`}
           ${msg("Include any linked page (“one hop out”)")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(
-        msg(`If checked, the crawler will visit pages one link away outside of
-        Crawl Scope.`),
-        false,
-      )}
+      ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
       ${inputCol(html`
         <sl-checkbox name="useSitemap" ?checked=${this.formState.useSitemap}>
           ${msg("Check for sitemap")}
@@ -2231,19 +2221,26 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private renderJobMetadata() {
-    const link_to_scope = html`<button
-      type="button"
-      class="text-blue-600 hover:text-blue-500"
-      @click=${async () => {
-        this.updateProgressState({ activeTab: "scope" });
+    const isPageList =
+      isPageScopeType(this.formState.scopeType) &&
+      this.formState.scopeType !== ScopeType.Page;
 
-        await this.updateComplete;
+    const linkToScope = (label: string) =>
+      html`<button
+        type="button"
+        class="text-blue-600 hover:text-blue-500"
+        @click=${async () => {
+          this.updateProgressState({ activeTab: "scope" });
 
-        void this.scrollToActivePanel();
-      }}
-    >
-      ${msg("Scope")}
-    </button>`;
+          await this.updateComplete;
+
+          void this.scrollToActivePanel();
+        }}
+      >
+        ${label}
+      </button>`;
+    const link_to_crawl_start_url = linkToScope(msg("Crawl Start URL"));
+    const link_to_scope = linkToScope(msg("Scope"));
 
     return html`
       ${inputCol(html`
@@ -2260,10 +2257,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         html`${msg(`Customize the name of this workflow.`)}
-        ${msg(
-          html`If omitted, the workflow will be named after the first page URL
-          specified in ${link_to_scope}.`,
-        )} `,
+        ${isPageList
+          ? msg(
+              html`If omitted, the workflow will be named after the first URL
+              specified in ${link_to_scope}.`,
+            )
+          : msg(
+              html`If omitted, the workflow will be named after the
+              ${link_to_crawl_start_url}.`,
+            )} `,
       )}
       ${inputCol(html`
         <sl-textarea

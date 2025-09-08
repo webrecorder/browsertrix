@@ -81,7 +81,7 @@ const sortableFields: Record<
 export class CrawlsList extends BtrixElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
-    firstSeed: msg("First Page URL"),
+    firstSeed: msg("Crawl Start URL"),
   };
 
   @property({ type: Boolean })
@@ -540,8 +540,8 @@ export class CrawlsList extends BtrixElement {
         placeholder=${this.itemType === "upload"
           ? msg("Search all uploads by name")
           : this.itemType === "crawl"
-            ? msg("Search all crawls by name or first page URL")
-            : msg("Search all items by name or first page URL")}
+            ? msg("Search all crawls by name or crawl start URL")
+            : msg("Search all items by name or crawl start URL")}
         @btrix-select=${(e: CustomEvent) => {
           const { key, value } = e.detail;
           this.filterBy = {

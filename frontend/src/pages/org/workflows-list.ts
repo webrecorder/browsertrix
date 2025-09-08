@@ -76,7 +76,7 @@ const sortableFields: Record<
     defaultDirection: "asc",
   },
   firstSeed: {
-    label: msg("First Page URL"),
+    label: msg("Crawl Start URL"),
     defaultDirection: "asc",
   },
   created: {
@@ -106,7 +106,7 @@ const USED_FILTERS = [
 export class WorkflowsList extends BtrixElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
-    firstSeed: msg("First Page URL"),
+    firstSeed: msg("Crawl Start URL"),
   };
 
   @state()
@@ -743,7 +743,7 @@ export class WorkflowsList extends BtrixElement {
         .searchOptions=${this.searchOptions}
         .keyLabels=${WorkflowsList.FieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
-        placeholder=${msg("Search all workflows by name or first page URL")}
+        placeholder=${msg("Search all workflows by name or crawl start URL")}
         @btrix-select=${(e: SelectEvent<typeof this.searchKeys>) => {
           const { key, value } = e.detail;
           if (key == null) return;
