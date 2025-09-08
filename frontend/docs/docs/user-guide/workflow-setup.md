@@ -76,35 +76,21 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 ##### Custom Page Prefix
 :   This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_URL Prefixes in Scope_](#url-prefixes-in-scope).
 
-### Crawl Start URL
+### Page URL(s)
 
-Visible when using a crawl scope of _Single Page_, _In-Page Links_, _Pages in Same Directory_, _Pages on Same Domain_, or _Pages on Same Domain + Subdomains_.
+One or more URLs of the page to crawl. URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
 
-This is the first page that the crawler will visit. For _Single Page_ crawls, this is the only page that the crawler will visit unless _Include Linked Pages_ is enabled.
-
-For _In-Page Links_, _Pages in Same Directory_, _Pages on Same Domain_, or _Pages on Same Domain + Subdomains_ crawls, this URL is the basis for determining whether a linked URL is within scope and should be crawled.
-
-URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
-
-### Enter URLs
-
-Visible when using a crawl scope of _List of Pages_. If the list is small enough, 100 URLs or less, the URLs can be entered directly into the text area. If a large list is pasted into the textbox, it will be converted into an uploaded URL list and attached to the workflow.
-
-### Upload URL List
-
-Visible when using a crawl scope of _List of Pages_. A longer list of URLs can be provided as a text file, containing one URL per line. The text file may not exceed 25MB, but there is no limit to the number of URLs in the file. Once a file is added, a link will be provided to view the file (but not edit it). To change the file, a new file can be uploaded in its place.
-
-For both options, each line should contain a valid URL (starting with https:// or http://). Invalid or duplicate URLs will be skipped. The crawl will fail if the list contains no valid URLs or if the file is not a list of URLs.
-
-While the uploaded text file can contain an unlimited number of URLs, the crawl will still be limited by the [page limit](#max-pages) for the workflow or organization - URLs beyond the limit will not be crawled.
-
-If both a list of entered list and an uploaded file are provided, the currently selected option will be used.
+See [List Of Pages](#list-of-pages) for additional info when providing a list of URLs.
 
 ??? example "Crawling with HTTP basic auth"
 
     All crawl scopes support [HTTP Basic Auth](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication) which can be provided as part of the URL, for example: `https://username:password@example.com`.
 
     **These credentials WILL BE WRITTEN into the archive.** We recommend exercising caution and only archiving with dedicated archival accounts, changing your password or deleting the account when finished.
+
+### Crawl Start URL
+
+This is the first page that the crawler will visit. _Site Crawl_ scopes are based on this URL.
 
 ### Include Any Linked Page
 
@@ -407,9 +393,7 @@ Describe and organize your crawl workflow and the resulting archived items.
 
 ### Name
 
-Allows a custom name to be set for the workflow.
-
-If no name is set for _List of Pages_ crawls, the workflow's name will be the first URL suffixed by `+ N`, where `N` represents the additional number of URLs. For all other scope types, the default workflow name is its _Crawl Start URL_.
+Allows a custom name to be set for the workflow. If no name is set, the workflow's name will be set to the _Crawl Start URL_. For Page List crawls, the workflow's name will be set to the first URL present in the _Crawl URL(s)_ field, with an added `(+x)` where `x` represents the total number of URLs in the list.
 
 ### Description
 
