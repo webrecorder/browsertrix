@@ -950,7 +950,7 @@ export class WorkflowEditor extends BtrixElement {
               <!-- TODO Use btrix-url-input -->
               <sl-input
                 name="urlList"
-                label=${msg("Crawl Start URL")}
+                label=${msg("URL to Crawl")}
                 placeholder="https://webrecorder.net/blog"
                 autocomplete="off"
                 inputmode="url"
@@ -999,7 +999,9 @@ export class WorkflowEditor extends BtrixElement {
               >
               </sl-input>
             `)}
-            ${this.renderHelpTextCol(msg(str`The URL of the page to crawl.`))}
+            ${this.renderHelpTextCol(
+              msg(str`The crawler will visit this URL.`),
+            )}
           `
         : this.renderUrlList()}
       ${inputCol(html`
@@ -1059,8 +1061,11 @@ export class WorkflowEditor extends BtrixElement {
 
     return html`
       ${inputCol(html`
-        <label class="sr-only" for="seedUrlList">
-          ${msg("Crawl Start URLs")}
+        <label
+          class="form-label form-control-label--required"
+          for="seedUrlList"
+        >
+          ${msg("URLs to Crawl")}
         </label>
 
         <sl-radio-group
@@ -2221,9 +2226,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private renderJobMetadata() {
-    const isPageList =
-      isPageScopeType(this.formState.scopeType) &&
-      this.formState.scopeType !== ScopeType.Page;
+    const isPageScope = isPageScopeType(this.formState.scopeType);
 
     const linkToScope = (label: string) =>
       html`<button
@@ -2257,11 +2260,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         html`${msg(`Customize the name of this workflow.`)}
-        ${isPageList
-          ? msg(
-              html`If omitted, the workflow will be named after the first URL
-              specified in ${link_to_scope}.`,
-            )
+        ${isPageScope
+          ? this.formState.scopeType === ScopeType.Page
+            ? msg(
+                html`If omitted, the workflow will be named after the URL
+                specified in ${link_to_scope}.`,
+              )
+            : msg(
+                html`If omitted, the workflow will be named after the first URL
+                specified in ${link_to_scope}.`,
+              )
           : msg(
               html`If omitted, the workflow will be named after the
               ${link_to_crawl_start_url}.`,
