@@ -37,6 +37,10 @@ ingress:
 
   scheme: "https"
   tls: true
+  # Optional for Certificate from other authority already added to microk8s as secret
+  # Secret must be added like, assumed command is executed in the path of my-key.key and my-cert.crt 
+  # microk8s kubectl create secret tls onb-tls --namespace default --key=my-key.key --cert=my-cert.crt -o yaml
+  # secretName: my-secret
 
 ingress_class: "public"
 
