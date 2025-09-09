@@ -22,6 +22,9 @@ export type Range<F extends number, T extends number> = Exclude<
   Enumerate<F>
 >;
 
+/** Array with at least one item */
+export type NonEmptyArray<T> = [T, ...T[]];
+
 export enum SortDirection {
   Descending = -1,
   Ascending = 1,
