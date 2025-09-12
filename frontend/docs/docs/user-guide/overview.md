@@ -9,7 +9,7 @@ The storage panel displays the total size and count of archived items and browse
 For organizations with a set storage quota, the storage panel displays a visual breakdown of how much space the organization has left and how much has been taken up by all types of archived items and browser profiles. To view additional information about each item, hover over its section in the graph.
 
 ??? Info "Miscellaneous storage"
-    You may see an additional _Miscellaneous_ size depending on your crawl workflow and collection configuration. _Miscellaneous_ is the total size of all supplementary files in use by your organization, such as [workflow URL list files](./workflow-setup.md#page-urls) and [custom collection thumbnails](./presentation-sharing.md#thumbnail).
+    You may see an additional _Miscellaneous_ size depending on your crawl workflow and collection configuration. _Miscellaneous_ is the total size of all supplementary files in use by your organization, such as [workflow URL list files](./workflow-setup.md#upload-url-list) and [custom collection thumbnails](./presentation-sharing.md#thumbnail).
 
 ## Crawling
 

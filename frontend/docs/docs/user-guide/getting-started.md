@@ -19,7 +19,7 @@ Check if you have crawler permissions by logging in. If you see a _+ Create New.
 When you log in, the first page you see is the [org dashboard](overview.md). If you've navigated away to another page, navigate back to **Dashboard**.
 
 1. Tap the _Create New..._ shortcut and select **Crawl Workflow**.
-2. Enter the URL of the webpage that you noted earlier as the **Page URL**.
+2. Enter the URL of the webpage that you noted earlier as the **URL to Crawl**.
 3. Tap _Run Crawl_.
 4. You should now see your new crawl workflow running. Give the crawler a few moments to warm up, and then watch as it archives the webpage!
 

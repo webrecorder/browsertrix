@@ -950,7 +950,7 @@ export class WorkflowEditor extends BtrixElement {
               <!-- TODO Use btrix-url-input -->
               <sl-input
                 name="urlList"
-                label=${msg("Page URL")}
+                label=${msg("URL to Crawl")}
                 placeholder="https://webrecorder.net/blog"
                 autocomplete="off"
                 inputmode="url"
@@ -999,7 +999,9 @@ export class WorkflowEditor extends BtrixElement {
               >
               </sl-input>
             `)}
-            ${this.renderHelpTextCol(msg(str`The URL of the page to crawl.`))}
+            ${this.renderHelpTextCol(
+              msg(str`The crawler will visit this URL.`),
+            )}
           `
         : this.renderUrlList()}
       ${inputCol(html`
@@ -1010,10 +1012,7 @@ export class WorkflowEditor extends BtrixElement {
           ${msg("Include any linked page (“one hop out”)")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(
-        msg(`If checked, the crawler will visit pages one link away.`),
-        false,
-      )}
+      ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
       ${inputCol(html`
         <sl-checkbox
           name="failOnContentCheck"
@@ -1066,7 +1065,7 @@ export class WorkflowEditor extends BtrixElement {
           class="form-label form-control-label--required"
           for="seedUrlList"
         >
-          ${msg("Page URLs")}
+          ${msg("URLs to Crawl")}
         </label>
 
         <sl-radio-group
@@ -1502,11 +1501,7 @@ https://example.net`}
           ${msg("Include any linked page (“one hop out”)")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(
-        msg(`If checked, the crawler will visit pages one link away outside of
-        Crawl Scope.`),
-        false,
-      )}
+      ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
       ${inputCol(html`
         <sl-checkbox name="useSitemap" ?checked=${this.formState.useSitemap}>
           ${msg("Check for sitemap")}
@@ -2231,6 +2226,25 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private renderJobMetadata() {
+    const isPageScope = isPageScopeType(this.formState.scopeType);
+
+    const linkToScope = (label: string) =>
+      html`<button
+        type="button"
+        class="text-blue-600 hover:text-blue-500"
+        @click=${async () => {
+          this.updateProgressState({ activeTab: "scope" });
+
+          await this.updateComplete;
+
+          void this.scrollToActivePanel();
+        }}
+      >
+        ${label}
+      </button>`;
+    const link_to_crawl_start_url = linkToScope(msg("Crawl Start URL"));
+    const link_to_scope = linkToScope(msg("Scope"));
+
     return html`
       ${inputCol(html`
         <sl-input
@@ -2245,8 +2259,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Customize this Workflow's name. Workflows are named after
-        the first Crawl URL by default.`),
+        html`${msg(`Customize the name of this workflow.`)}
+        ${isPageScope
+          ? this.formState.scopeType === ScopeType.Page
+            ? msg(
+                html`If omitted, the workflow will be named after the URL
+                specified in ${link_to_scope}.`,
+              )
+            : msg(
+                html`If omitted, the workflow will be named after the first URL
+                specified in ${link_to_scope}.`,
+              )
+          : msg(
+              html`If omitted, the workflow will be named after the
+              ${link_to_crawl_start_url}.`,
+            )} `,
       )}
       ${inputCol(html`
         <sl-textarea

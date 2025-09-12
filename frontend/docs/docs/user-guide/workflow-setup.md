@@ -76,11 +76,20 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 ##### Custom Page Prefix
 :   This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_URL Prefixes in Scope_](#url-prefixes-in-scope).
 
-### Page URL(s)
+### Crawl Start URL / URL(s) to Crawl
 
-One or more URLs of the page to crawl. URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
+This is the URL used by the crawler to initiate the crawling process. The URL input may be labeled _Crawl Start URL_ or _URL(s) to Crawl_ depending on which crawl scope is used:
 
-See [List Of Pages](#list-of-pages) for additional info when providing a list of URLs.
+| Crawl Scope | Label | Description |
+| ----------- | ----- | ----------- |
+| _Single Page_ | URL&nbsp;to&nbsp;Crawl | The crawler will visit only this URL. |
+| _List of Pages_ | URLs&nbsp;to&nbsp;Crawl | The crawler will visit each URL specified in the text list or file. |
+| _In-Page Links_<br/>_Pages in Same Directory_<br/>_Pages on Same Domain_<br/>_Pages on Same Domain + Subdomains_<br/>_Custom Page Prefix_ | Crawl&nbsp;Start&nbsp;URL | The crawler will visit this URL as its starting point and use this URL to collect information on which linked pages it should also visit. |
+
+
+URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
+
+Refer to a specific [_Crawl Scope_ option](#crawl-scope-options) for details on how each crawl scope interacts with this URL.
 
 ??? example "Crawling with HTTP basic auth"
 
@@ -88,13 +97,9 @@ See [List Of Pages](#list-of-pages) for additional info when providing a list of
 
     **These credentials WILL BE WRITTEN into the archive.** We recommend exercising caution and only archiving with dedicated archival accounts, changing your password or deleting the account when finished.
 
-### Crawl Start URL
-
-This is the first page that the crawler will visit. _Site Crawl_ scopes are based on this URL.
-
 ### Include Any Linked Page
 
-When enabled, the crawler will visit all the links it finds within each page defined in the _Crawl URL(s)_ field.
+When enabled, the crawler will visit all the links it finds within each URL defined in the [URL input field](#crawl-start-url-urls-to-crawl) under _Crawl Scope_.
 
 ??? example "Crawling tags & search queries with Page List crawls"
     This setting can be useful for crawling the content of specific tags or search queries. Specify the tag or search query URL(s) in the _Crawl URL(s)_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
@@ -393,7 +398,7 @@ Describe and organize your crawl workflow and the resulting archived items.
 
 ### Name
 
-Allows a custom name to be set for the workflow. If no name is set, the workflow's name will be set to the _Crawl Start URL_. For Page List crawls, the workflow's name will be set to the first URL present in the _Crawl URL(s)_ field, with an added `(+x)` where `x` represents the total number of URLs in the list.
+Allows a custom name to be set for the workflow. If no name is set, the workflow's name will be set to the first URL to crawl specified in _Scope_. For _Page List_ crawls, the workflow name may show an added `+N` where `N` represents the number of URLs in addition to the first URL to crawl.
 
 ### Description
 

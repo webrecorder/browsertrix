@@ -453,9 +453,9 @@ export class ConfigDetails extends BtrixElement {
 
     return html`
       ${this.renderSetting(
-        config.scopeType === WorkflowScopeType.Page && !config.seedFileId
-          ? html`${msg("Page")} ${pluralOf("URLs", this.seeds?.length || 0)}`
-          : msg("Page URLs"),
+        config.seedFileId || (this.seeds && this.seeds.length > 1)
+          ? msg("URLs to Crawl")
+          : msg("URL to Crawl"),
         config.seedFileId ? seedFile() : seeds(),
         true,
       )}
