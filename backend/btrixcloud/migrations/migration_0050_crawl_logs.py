@@ -28,7 +28,6 @@ class Migration(BaseMigration):
 
         # Migrate error and behavior logs
         match_query = {
-            "type": "crawl",
             "$or": [{"errors": {"$exists": True}}, {"behaviorLogs": {"$exists": True}}],
         }
 
