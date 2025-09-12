@@ -46,7 +46,7 @@ describe("cron utils", () => {
   describe("humanizeSchedule()", () => {
     it("humanizes daily schedule", () => {
       expect(humanizeSchedule("30 1 * * *")).to.equal(
-        "Every day at 7:30 PM GMT-6",
+        "Every day at 8:30 PM GMT-5",
       );
     });
 
