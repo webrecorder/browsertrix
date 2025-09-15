@@ -28,7 +28,7 @@ import type { Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SubscriptionStatus } from "@/types/billing";
 import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
-import type { OrgData } from "@/utils/orgs";
+import type { OrgData, OrgQuotas } from "@/utils/orgs";
 
 enum OrgFilter {
   All = "all",
@@ -389,6 +389,7 @@ export class OrgsList extends BtrixElement {
   }
 
   private renderOrgQuotas() {
+    type Keys = keyof OrgQuotas;
     return html`
       <btrix-dialog
         id="orgQuotaDialog"
@@ -396,8 +397,8 @@ export class OrgsList extends BtrixElement {
         @sl-after-hide=${() => (this.currOrg = null)}
       >
         ${when(this.currOrg?.quotas, (quotas) =>
-          Object.entries(quotas).map(([key, value]) => {
-            let label;
+          (Object.entries(quotas) as [Keys, number][]).map(([key, value]) => {
+            let label: string;
             switch (key) {
               case "maxConcurrentCrawls":
                 label = msg("Max Concurrent Crawls");
@@ -421,14 +422,15 @@ export class OrgsList extends BtrixElement {
               default:
                 label = msg("Unlabeled");
             }
-            return html` <sl-input
-              class="mb-3 last:mb-0"
-              name=${key}
-              label=${label}
-              value=${value}
-              type="number"
-              @sl-input="${this.onUpdateQuota}"
-            ></sl-input>`;
+            return html` ${msg("Current")}: ${value}
+              <sl-input
+                class="mb-3 last:mb-0"
+                name=${key}
+                label=${label}
+                value="0"
+                type="number"
+                @sl-input="${this.onUpdateQuota}"
+              ></sl-input>`;
           }),
         )}
         <div slot="footer" class="flex justify-end">
