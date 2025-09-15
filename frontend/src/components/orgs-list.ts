@@ -28,7 +28,7 @@ import type { Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SubscriptionStatus } from "@/types/billing";
 import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
-import type { OrgData, OrgQuotas } from "@/utils/orgs";
+import type { OrgData } from "@/utils/orgs";
 
 enum OrgFilter {
   All = "all",
@@ -389,60 +389,64 @@ export class OrgsList extends BtrixElement {
   }
 
   private renderOrgQuotas() {
-    type Keys = keyof OrgQuotas;
-    return html`
-      <btrix-dialog
-        id="orgQuotaDialog"
-        .label=${msg(str`Quotas for: ${this.currOrg?.name || ""}`)}
-        @sl-after-hide=${() => (this.currOrg = null)}
-      >
-        ${when(this.currOrg?.quotas, (quotas) =>
-          (Object.entries(quotas) as [Keys, number][]).map(([key, value]) => {
-            let label: string;
-            switch (key) {
-              case "maxConcurrentCrawls":
-                label = msg("Max Concurrent Crawls");
-                break;
-              case "maxPagesPerCrawl":
-                label = msg("Max Pages Per Crawl");
-                break;
-              case "storageQuota":
-                label = msg("Org Storage Quota (GB)");
-                value = Math.floor(value / 1e9);
-                break;
-              case "maxExecMinutesPerMonth":
-                label = msg("Max Execution Minutes Per Month");
-                break;
-              case "extraExecMinutes":
-                label = msg("Extra Execution Minutes");
-                break;
-              case "giftedExecMinutes":
-                label = msg("Gifted Execution Minutes");
-                break;
-              default:
-                label = msg("Unlabeled");
-            }
-            return html` ${msg("Current")}: ${value}
-              <sl-input
-                class="mb-3 last:mb-0"
-                name=${key}
-                label=${label}
-                value="0"
-                type="number"
-                @sl-input="${this.onUpdateQuota}"
-              ></sl-input>`;
-          }),
-        )}
-        <div slot="footer" class="flex justify-end">
-          <sl-button
-            size="small"
-            @click="${this.onSubmitQuotas}"
-            variant="primary"
-            >${msg("Update Quotas")}
-          </sl-button>
-        </div>
-      </btrix-dialog>
-    `;
+    return html`<btrix-org-quota-editor
+      id="orgQuotaDialog"
+      .activeOrg=${this.currOrg}
+    ></btrix-org-quota-editor>`;
+    // type Keys = keyof OrgQuotas;
+    // return html`
+    //   <btrix-dialog
+    //     id="orgQuotaDialog"
+    //     .label=${msg(str`Quotas for: ${this.currOrg?.name || ""}`)}
+    //     @sl-after-hide=${() => (this.currOrg = null)}
+    //   >
+    //     ${when(this.currOrg?.quotas, (quotas) =>
+    //       (Object.entries(quotas) as [Keys, number][]).map(([key, value]) => {
+    //         let label: string;
+    //         switch (key) {
+    //           case "maxConcurrentCrawls":
+    //             label = msg("Max Concurrent Crawls");
+    //             break;
+    //           case "maxPagesPerCrawl":
+    //             label = msg("Max Pages Per Crawl");
+    //             break;
+    //           case "storageQuota":
+    //             label = msg("Org Storage Quota (GB)");
+    //             value = Math.floor(value / 1e9);
+    //             break;
+    //           case "maxExecMinutesPerMonth":
+    //             label = msg("Max Execution Minutes Per Month");
+    //             break;
+    //           case "extraExecMinutes":
+    //             label = msg("Extra Execution Minutes");
+    //             break;
+    //           case "giftedExecMinutes":
+    //             label = msg("Gifted Execution Minutes");
+    //             break;
+    //           default:
+    //             label = msg("Unlabeled");
+    //         }
+    //         return html` ${msg("Current")}: ${value}
+    //           <sl-input
+    //             class="mb-3 last:mb-0"
+    //             name=${key}
+    //             label=${label}
+    //             value="0"
+    //             type="number"
+    //             @sl-input="${this.onUpdateQuota}"
+    //           ></sl-input>`;
+    //       }),
+    //     )}
+    //     <div slot="footer" class="flex justify-end">
+    //       <sl-button
+    //         size="small"
+    //         @click="${this.onSubmitQuotas}"
+    //         variant="primary"
+    //         >${msg("Update Quotas")}
+    //       </sl-button>
+    //     </div>
+    //   </btrix-dialog>
+    // `;
   }
 
   private renderOrgProxies() {
@@ -710,15 +714,15 @@ export class OrgsList extends BtrixElement {
     }
   }
 
-  private onSubmitQuotas() {
-    if (this.currOrg) {
-      this.dispatchEvent(
-        new CustomEvent("update-quotas", { detail: this.currOrg }),
-      );
+  // private onSubmitQuotas() {
+  //   if (this.currOrg) {
+  //     this.dispatchEvent(
+  //       new CustomEvent("update-quotas", { detail: this.currOrg }),
+  //     );
 
-      void this.orgQuotaDialog?.hide();
-    }
-  }
+  //     void this.orgQuotaDialog?.hide();
+  //   }
+  // }
 
   private onSubmitProxies() {
     if (this.currOrg) {
