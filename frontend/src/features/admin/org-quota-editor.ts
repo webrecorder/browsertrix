@@ -16,6 +16,7 @@ import {
 import { type OrgData, type OrgQuotas } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 
+// These were manually copied over from Cashew on 2025-09-15 — please update if necessary
 const PRESETS = {
   Starter: {
     quotas: {
