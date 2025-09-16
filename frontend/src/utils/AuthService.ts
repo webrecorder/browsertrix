@@ -57,14 +57,13 @@ const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
 
 export default class AuthService {
   private timerId?: number;
+  private readonly broadcastChannel?: BroadcastChannel;
 
   static storageKey = "btrix.auth";
   static unsupportedAuthErrorCode = "UNSUPPORTED_AUTH_TYPE";
   static loggedInEvent: keyof AuthEventMap = "btrix-logged-in";
   static logOutEvent: keyof AuthEventMap = "btrix-log-out";
   static needLoginEvent: keyof AuthEventMap = "btrix-need-login";
-
-  static broadcastChannel = new BroadcastChannel(AuthService.storageKey);
   static storage = {
     getItem() {
       return window.sessionStorage.getItem(AuthService.storageKey);
@@ -73,19 +72,11 @@ export default class AuthService {
       const oldValue = AuthService.storage.getItem();
       if (oldValue === newValue) return;
       window.sessionStorage.setItem(AuthService.storageKey, newValue);
-      AuthService.broadcastChannel.postMessage({
-        name: "auth_storage",
-        value: newValue,
-      } as AuthStorageEventDetail);
     },
     removeItem() {
       const oldValue = AuthService.storage.getItem();
       if (!oldValue) return;
       window.sessionStorage.removeItem(AuthService.storageKey);
-      AuthService.broadcastChannel.postMessage({
-        name: "auth_storage",
-        value: null,
-      } as AuthStorageEventDetail);
     },
   };
 
@@ -192,12 +183,11 @@ export default class AuthService {
    * Retrieve or set auth data from shared session
    * and set up session syncing
    */
-  static async initSessionStorage(): Promise<AuthState> {
+  async initSessionStorage(): Promise<AuthState> {
     const authState =
-      AuthService.getCurrentTabAuth() ||
-      (await AuthService.getSharedSessionAuth());
+      AuthService.getCurrentTabAuth() || (await this.getSharedSessionAuth());
 
-    AuthService.broadcastChannel.addEventListener(
+    this.broadcastChannel?.addEventListener(
       "message",
       ({ data }: MessageEvent<AuthEventDetail>) => {
         if (data.name === "requesting_auth") {
@@ -205,7 +195,7 @@ export default class AuthService {
 
           if (auth) {
             // A new tab/window opened and is requesting shared auth
-            AuthService.broadcastChannel.postMessage({
+            this.broadcastChannel?.postMessage({
               name: "responding_auth",
               auth: AuthService.getCurrentTabAuth(),
             } as AuthResponseEventDetail);
@@ -213,6 +203,10 @@ export default class AuthService {
         }
       },
     );
+
+    if (authState) {
+      this.saveLogin(authState);
+    }
 
     return authState;
   }
@@ -230,20 +224,20 @@ export default class AuthService {
   /**
    * Retrieve shared session from another tab/window
    **/
-  private static async getSharedSessionAuth(): Promise<AuthState> {
+  private async getSharedSessionAuth(): Promise<AuthState> {
     const broadcastPromise = new Promise<AuthState>((resolve) => {
       // Check if there's any authenticated tabs
-      AuthService.broadcastChannel.postMessage({
+      this.broadcastChannel?.postMessage({
         name: "requesting_auth",
       } as AuthRequestEventDetail);
       // Wait for another tab to respond
       const cb = ({ data }: MessageEvent<AuthEventDetail>) => {
         if (data.name === "responding_auth") {
-          AuthService.broadcastChannel.removeEventListener("message", cb);
+          this.broadcastChannel?.removeEventListener("message", cb);
           resolve(data.auth);
         }
       };
-      AuthService.broadcastChannel.addEventListener("message", cb);
+      this.broadcastChannel?.addEventListener("message", cb);
     });
     // Ensure that `getSharedSessionAuth` is resolved within a reasonable
     // timeframe, even if another window/tab doesn't respond:
@@ -270,6 +264,8 @@ export default class AuthService {
   }
 
   constructor() {
+    this.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
+
     // Only have freshness check run in visible tab(s)
     document.addEventListener("visibilitychange", () => {
       if (!this.authState) return;
@@ -307,11 +303,24 @@ export default class AuthService {
   private revoke() {
     this.authState = null;
     AuthService.storage.removeItem();
+
+    this.broadcastChannel?.postMessage({
+      name: "auth_storage",
+      value: null,
+    } as AuthStorageEventDetail);
   }
 
   persist(auth: Auth) {
     this.authState = auth;
-    AuthService.storage.setItem(JSON.stringify(auth));
+
+    const authStr = JSON.stringify(auth);
+
+    AuthService.storage.setItem(authStr);
+
+    this.broadcastChannel?.postMessage({
+      name: "auth_storage",
+      value: authStr,
+    } as AuthStorageEventDetail);
   }
 
   private async checkFreshness() {
