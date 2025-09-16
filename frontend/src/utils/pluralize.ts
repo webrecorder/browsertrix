@@ -247,6 +247,32 @@ const plurals = {
       id: "profiles.plural.other",
     }),
   },
+  changes: {
+    zero: msg("changes", {
+      desc: 'plural form of "changes" for zero changes',
+      id: "changes.plural.zero",
+    }),
+    one: msg("change", {
+      desc: 'singular form for "change"',
+      id: "changes.plural.one",
+    }),
+    two: msg("changes", {
+      desc: 'plural form of "changes" for two changes',
+      id: "changes.plural.two",
+    }),
+    few: msg("changes", {
+      desc: 'plural form of "changes" for few changes',
+      id: "changes.plural.few",
+    }),
+    many: msg("changes", {
+      desc: 'plural form of "changes" for many changes',
+      id: "changes.plural.many",
+    }),
+    other: msg("changes", {
+      desc: 'plural form of "changes" for multiple/other changes',
+      id: "changes.plural.other",
+    }),
+  },
 };
 
 export const pluralOf = (word: keyof typeof plurals, count: number) => {
