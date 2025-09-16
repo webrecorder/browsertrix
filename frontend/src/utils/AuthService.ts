@@ -293,7 +293,10 @@ export default class AuthService {
 
   startFreshnessCheck() {
     window.clearTimeout(this.timerId);
-    void this.checkFreshness();
+
+    if (document.visibilityState === "visible") {
+      void this.checkFreshness();
+    }
   }
 
   private cancelFreshnessCheck() {
