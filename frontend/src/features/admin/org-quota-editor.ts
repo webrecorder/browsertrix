@@ -260,13 +260,12 @@ export class OrgQuotaEditor extends BtrixElement {
                         });
                         this.orgQuotaAdjustments = { ...newQuota };
                       }}
-                      variant=${isCurrentSubscription ? "primary" : "default"}
                     >
                       ${key}
                       ${isCurrentSubscription
                         ? html`<sl-icon
-                            name="credit-card-fill"
-                            slot="suffix"
+                            name="credit-card"
+                            slot="prefix"
                           ></sl-icon>`
                         : null}
                     </sl-button>

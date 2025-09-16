@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export type GridItem<T extends PropertyKey = string> = Record<
   T,
-  string | number | TemplateResult<1> | null | undefined
+  string | number | null | undefined
 >;
 
 export type GridItemValue<T extends PropertyKey = string> =
