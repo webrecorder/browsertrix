@@ -182,8 +182,12 @@ export default class AuthService {
     const authState =
       AuthService.getCurrentTabAuth() || (await this.getSharedSessionAuth());
 
-    if (!this.authState && authState) {
-      this.saveLogin(authState);
+    if (authState) {
+      if (!this.authState) {
+        this.saveLogin(authState);
+      }
+    } else {
+      AppStateService.updateAuth(null);
     }
 
     return authState;
@@ -260,20 +264,15 @@ export default class AuthService {
       { signal },
     );
 
-    /**
-     * Assume another tab has logged out if `orgSlug` preference is removed
-     * See FIXME note in state.ts
-     */
+    // Check for storage event so that the auth token can be removed from
+    // session storage if any other other tab is logged out; otherwise,
+    // the token will be refreshed until the original expiration time
     window.addEventListener(
       "storage",
       (e: StorageEvent) => {
-        if (!this.authState) return;
+        if (e.key !== `${STORAGE_KEY_PREFIX}.loggedIn`) return;
 
-        if (
-          e.key === `${STORAGE_KEY_PREFIX}.orgSlug` &&
-          e.oldValue &&
-          !e.newValue
-        ) {
+        if (this.authState && e.oldValue === "true") {
           this.revoke();
         }
       },
