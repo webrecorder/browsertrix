@@ -4,12 +4,16 @@ import { restore, stub } from "sinon";
 import AuthService from "./AuthService";
 import { AppStateService } from "./state";
 
+import { APIController } from "@/controllers/api";
+
 describe("AuthService", () => {
   beforeEach(() => {
     AppStateService.resetAll();
     window.sessionStorage.clear();
     window.sessionStorage.clear();
     stub(window.history, "pushState");
+    stub(APIController.prototype, "fetch");
+    stub(AuthService.prototype, "refresh");
   });
 
   afterEach(() => {
@@ -56,6 +60,27 @@ describe("AuthService", () => {
         headers: { Authorization: "_fake_headers_from_tab_" },
         tokenExpiresAt: 9999,
         username: "test-auth@example.com_from_tab_",
+      });
+      otherTabChannel.close();
+    });
+    it("saves auth in session storage", async () => {
+      stub(window.sessionStorage, "getItem");
+      const otherTabChannel = new BroadcastChannel(AuthService.storageKey);
+      otherTabChannel.addEventListener("message", () => {
+        otherTabChannel.postMessage({
+          name: "responding_auth",
+          auth: {
+            headers: { Authorization: "_fake_headers_from_tab_to_save_" },
+            tokenExpiresAt: 9999,
+            username: "test-auth@example.com_from_tab_to_save_",
+          },
+        });
+      });
+      await authService.initSessionStorage();
+      expect(authService.authState).to.deep.equal({
+        headers: { Authorization: "_fake_headers_from_tab_to_save_" },
+        tokenExpiresAt: 9999,
+        username: "test-auth@example.com_from_tab_to_save_",
       });
       otherTabChannel.close();
     });
