@@ -3114,9 +3114,9 @@ class BatchFilter(BaseModel):
     profile_ids: Annotated[
         list[UUID] | None, Field(alias="profileIds", title="Profile IDs")
     ] = None
-    first_seed: Annotated[
-        str | None, Field(alias="firstSeed", title="First Seed")
-    ] = None
+    first_seed: Annotated[str | None, Field(alias="firstSeed", title="First Seed")] = (
+        None
+    )
     name: str | None = None
     description: str | None = None
     tags: list[str] | None = None

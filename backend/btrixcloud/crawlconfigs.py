@@ -849,7 +849,9 @@ class CrawlConfigOps:
             page_size=None,
         )
         yield BatchTotalOut(total=total).model_dump_json(indent=None) + "\n"
-        print(f"Got {total} crawl configs with filter params: {created_by}, {modified_by}, {profile_ids}, {first_seed}, {name}, {description}, {tags}, {tag_match}, {schedule}, {is_crawl_running}")
+        print(
+            f"Got {total} crawl configs with filter params: {created_by}, {modified_by}, {profile_ids}, {first_seed}, {name}, {description}, {tags}, {tag_match}, {schedule}, {is_crawl_running}"
+        )
 
         async def run_crawl_with_metadata(config: CrawlConfigOut):
             """Helper that runs crawl and returns metadata with result"""
