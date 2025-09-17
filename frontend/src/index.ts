@@ -141,6 +141,7 @@ export class App extends BtrixElement {
     } catch (e) {
       console.debug(e);
     }
+
     this.syncViewState();
 
     if (authState && !this.userInfo) {

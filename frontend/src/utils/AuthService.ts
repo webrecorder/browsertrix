@@ -179,15 +179,16 @@ export default class AuthService {
    * and set up session syncing
    */
   async initSessionStorage(): Promise<AuthState> {
-    const authState =
-      AuthService.getCurrentTabAuth() || (await this.getSharedSessionAuth());
+    let authState = AuthService.getCurrentTabAuth();
 
-    if (authState) {
-      if (!this.authState) {
+    if (!authState) {
+      authState = await this.getSharedSessionAuth();
+
+      if (authState) {
         this.saveLogin(authState);
+      } else {
+        AppStateService.updateAuth(null);
       }
-    } else {
-      AppStateService.updateAuth(null);
     }
 
     return authState;
