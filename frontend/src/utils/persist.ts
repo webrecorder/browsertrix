@@ -7,7 +7,7 @@ import type {
   StateVar,
 } from "lit-shared-state";
 
-const STORAGE_KEY_PREFIX = "btrix.app";
+export const STORAGE_KEY_PREFIX = "btrix.app";
 
 type ExpiringValue = {
   value: unknown;

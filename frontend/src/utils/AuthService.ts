@@ -1,15 +1,11 @@
-import { nanoid } from "nanoid";
-import { z } from "zod";
-
 import { APIError } from "./api";
+import { STORAGE_KEY_PREFIX } from "./persist";
 import { urlForName } from "./router";
 import appState, { AppStateService } from "./state";
 
 import type { APIUser } from "@/index";
 import type { Auth } from "@/types/auth";
 
-const sessionIdSchema = z.string().nanoid();
-type SessionId = z.infer<typeof sessionIdSchema>;
 type AuthState = Auth | null;
 type JWT = {
   user_id: string;
@@ -32,21 +28,16 @@ export type LogOutEventDetail = {
   redirect?: boolean;
 };
 
-type AuthMessage = {
-  responderId?: SessionId;
-  requesterId?: SessionId;
-};
-
-type AuthRequestEventDetail = AuthMessage & {
+type AuthRequestEventDetail = {
   name: "requesting_auth";
 };
 
-type AuthResponseEventDetail = AuthMessage & {
+type AuthResponseEventDetail = {
   name: "responding_auth";
   auth: AuthState;
 };
 
-export type AuthReceivedEventDetail = AuthMessage & {
+export type AuthReceivedEventDetail = {
   name: "auth_received";
 };
 
@@ -66,8 +57,6 @@ const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
 
 export default class AuthService {
   private timerId?: number;
-  private readonly sessionId: SessionId = nanoid();
-  private broadcastChannel?: BroadcastChannel;
 
   static storageKey = "btrix.auth";
   static unsupportedAuthErrorCode = "UNSUPPORTED_AUTH_TYPE";
@@ -89,6 +78,9 @@ export default class AuthService {
       window.sessionStorage.removeItem(AuthService.storageKey);
     },
   };
+
+  private broadcastChannel?: BroadcastChannel;
+  private readonly finalizeController = new AbortController();
 
   get authState() {
     return appState.auth;
@@ -221,7 +213,6 @@ export default class AuthService {
     const broadcastPromise = new Promise<AuthState>((resolve) => {
       // Check if there's any authenticated tabs
       this.broadcastChannel?.postMessage({
-        requesterId: this.sessionId,
         name: "requesting_auth",
       } satisfies AuthRequestEventDetail);
       // Wait for another tab to respond
@@ -231,10 +222,9 @@ export default class AuthService {
 
           // Confirm receipt
           this.broadcastChannel?.postMessage({
-            requesterId: this.sessionId,
-            responderId: data.responderId,
             name: "auth_received",
           } satisfies AuthReceivedEventDetail);
+
           resolve(data.auth);
         }
       };
@@ -265,17 +255,48 @@ export default class AuthService {
   }
 
   constructor() {
+    const { signal } = this.finalizeController;
+
     this.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
 
     // Only have freshness check run in visible tab(s)
-    document.addEventListener("visibilitychange", () => {
-      if (!this.authState) return;
-      if (document.visibilityState === "visible") {
-        this.startFreshnessCheck();
-      } else {
-        this.cancelFreshnessCheck();
-      }
-    });
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (!this.authState) return;
+        if (document.visibilityState === "visible") {
+          this.startFreshnessCheck();
+        } else {
+          this.cancelFreshnessCheck();
+        }
+      },
+      { signal },
+    );
+
+    /**
+     * Assume another tab has logged out if `orgSlug` preference is removed
+     * See FIXME note in state.ts
+     */
+    window.addEventListener(
+      "storage",
+      (e: StorageEvent) => {
+        if (!this.authState) return;
+
+        if (
+          e.key === `${STORAGE_KEY_PREFIX}.orgSlug` &&
+          e.oldValue &&
+          !e.newValue
+        ) {
+          this.revoke();
+        }
+      },
+      { signal },
+    );
+  }
+
+  finalize() {
+    this.finalizeController.abort();
+    this.stopSharingSession();
   }
 
   saveLogin(auth: Auth) {
@@ -327,7 +348,6 @@ export default class AuthService {
           if (auth) {
             // A new tab/window opened and is requesting shared auth
             this.broadcastChannel?.postMessage({
-              responderId: this.sessionId,
               name: "responding_auth",
               auth: AuthService.getCurrentTabAuth(),
             } satisfies AuthResponseEventDetail);

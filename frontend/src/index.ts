@@ -1079,6 +1079,7 @@ export class App extends BtrixElement {
 
   private clearUser() {
     this.authService.logout();
+    this.authService.finalize();
     this.authService = new AuthService();
     AppStateService.resetUser();
   }
