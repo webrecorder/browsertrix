@@ -1,3 +1,6 @@
+import { nanoid } from "nanoid";
+import { z } from "zod";
+
 import { APIError } from "./api";
 import { urlForName } from "./router";
 import appState, { AppStateService } from "./state";
@@ -5,6 +8,8 @@ import appState, { AppStateService } from "./state";
 import type { APIUser } from "@/index";
 import type { Auth } from "@/types/auth";
 
+const sessionIdSchema = z.string().nanoid();
+type SessionId = z.infer<typeof sessionIdSchema>;
 type AuthState = Auth | null;
 type JWT = {
   user_id: string;
@@ -27,24 +32,28 @@ export type LogOutEventDetail = {
   redirect?: boolean;
 };
 
-type AuthRequestEventDetail = {
+type AuthMessage = {
+  responderId?: SessionId;
+  requesterId?: SessionId;
+};
+
+type AuthRequestEventDetail = AuthMessage & {
   name: "requesting_auth";
 };
 
-type AuthResponseEventDetail = {
+type AuthResponseEventDetail = AuthMessage & {
   name: "responding_auth";
   auth: AuthState;
 };
 
-export type AuthStorageEventDetail = {
-  name: "auth_storage";
-  value: string | null;
+export type AuthReceivedEventDetail = AuthMessage & {
+  name: "auth_received";
 };
 
 export type AuthEventDetail =
   | AuthRequestEventDetail
   | AuthResponseEventDetail
-  | AuthStorageEventDetail;
+  | AuthReceivedEventDetail;
 
 export interface AuthEventMap {
   "btrix-need-login": CustomEvent<NeedLoginEventDetail>;
@@ -57,7 +66,8 @@ const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
 
 export default class AuthService {
   private timerId?: number;
-  private readonly broadcastChannel?: BroadcastChannel;
+  private readonly sessionId: SessionId = nanoid();
+  private broadcastChannel?: BroadcastChannel;
 
   static storageKey = "btrix.auth";
   static unsupportedAuthErrorCode = "UNSUPPORTED_AUTH_TYPE";
@@ -187,23 +197,6 @@ export default class AuthService {
     const authState =
       AuthService.getCurrentTabAuth() || (await this.getSharedSessionAuth());
 
-    this.broadcastChannel?.addEventListener(
-      "message",
-      ({ data }: MessageEvent<AuthEventDetail>) => {
-        if (data.name === "requesting_auth") {
-          const auth = AuthService.getCurrentTabAuth();
-
-          if (auth) {
-            // A new tab/window opened and is requesting shared auth
-            this.broadcastChannel?.postMessage({
-              name: "responding_auth",
-              auth: AuthService.getCurrentTabAuth(),
-            } as AuthResponseEventDetail);
-          }
-        }
-      },
-    );
-
     if (authState) {
       this.saveLogin(authState);
     }
@@ -228,12 +221,20 @@ export default class AuthService {
     const broadcastPromise = new Promise<AuthState>((resolve) => {
       // Check if there's any authenticated tabs
       this.broadcastChannel?.postMessage({
+        requesterId: this.sessionId,
         name: "requesting_auth",
-      } as AuthRequestEventDetail);
+      } satisfies AuthRequestEventDetail);
       // Wait for another tab to respond
       const cb = ({ data }: MessageEvent<AuthEventDetail>) => {
         if (data.name === "responding_auth") {
           this.broadcastChannel?.removeEventListener("message", cb);
+
+          // Confirm receipt
+          this.broadcastChannel?.postMessage({
+            requesterId: this.sessionId,
+            responderId: data.responderId,
+            name: "auth_received",
+          } satisfies AuthReceivedEventDetail);
           resolve(data.auth);
         }
       };
@@ -280,11 +281,13 @@ export default class AuthService {
   saveLogin(auth: Auth) {
     this.persist(auth);
     this.startFreshnessCheck();
+    this.startSharingSession();
   }
 
   logout() {
     this.cancelFreshnessCheck();
     this.revoke();
+    this.stopSharingSession();
   }
 
   startFreshnessCheck() {
@@ -303,11 +306,40 @@ export default class AuthService {
   private revoke() {
     this.authState = null;
     AuthService.storage.removeItem();
+  }
 
-    this.broadcastChannel?.postMessage({
-      name: "auth_storage",
-      value: null,
-    } as AuthStorageEventDetail);
+  /**
+   * Listens to broadcast channel events until confirmaion is received
+   * that the newest window or tab is logged. Once the request is met
+   * this broadcast channel is closed to prevent having too many
+   * destinations, which may slow down postMessage performance.
+   */
+  private startSharingSession() {
+    this.broadcastChannel?.addEventListener(
+      "message",
+      ({ data }: MessageEvent<AuthEventDetail>) => {
+        if (data.name === "auth_received") {
+          this.stopSharingSession();
+        }
+        if (data.name === "requesting_auth") {
+          const auth = AuthService.getCurrentTabAuth();
+
+          if (auth) {
+            // A new tab/window opened and is requesting shared auth
+            this.broadcastChannel?.postMessage({
+              responderId: this.sessionId,
+              name: "responding_auth",
+              auth: AuthService.getCurrentTabAuth(),
+            } satisfies AuthResponseEventDetail);
+          }
+        }
+      },
+    );
+  }
+
+  private stopSharingSession() {
+    this.broadcastChannel?.close();
+    this.broadcastChannel = undefined;
   }
 
   persist(auth: Auth) {
@@ -316,11 +348,6 @@ export default class AuthService {
     const authStr = JSON.stringify(auth);
 
     AuthService.storage.setItem(authStr);
-
-    this.broadcastChannel?.postMessage({
-      name: "auth_storage",
-      value: authStr,
-    } as AuthStorageEventDetail);
   }
 
   private async checkFreshness() {
