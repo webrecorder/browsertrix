@@ -37,14 +37,7 @@ type AuthResponseEventDetail = {
   auth: AuthState;
 };
 
-export type AuthReceivedEventDetail = {
-  name: "auth_received";
-};
-
-export type AuthEventDetail =
-  | AuthRequestEventDetail
-  | AuthResponseEventDetail
-  | AuthReceivedEventDetail;
+export type AuthEventDetail = AuthRequestEventDetail | AuthResponseEventDetail;
 
 export interface AuthEventMap {
   "btrix-need-login": CustomEvent<NeedLoginEventDetail>;
@@ -189,7 +182,7 @@ export default class AuthService {
     const authState =
       AuthService.getCurrentTabAuth() || (await this.getSharedSessionAuth());
 
-    if (authState) {
+    if (!this.authState && authState) {
       this.saveLogin(authState);
     }
 
@@ -219,12 +212,6 @@ export default class AuthService {
       const cb = ({ data }: MessageEvent<AuthEventDetail>) => {
         if (data.name === "responding_auth") {
           this.broadcastChannel?.removeEventListener("message", cb);
-
-          // Confirm receipt
-          this.broadcastChannel?.postMessage({
-            name: "auth_received",
-          } satisfies AuthReceivedEventDetail);
-
           resolve(data.auth);
         }
       };
@@ -329,19 +316,10 @@ export default class AuthService {
     AuthService.storage.removeItem();
   }
 
-  /**
-   * Listens to broadcast channel events until confirmaion is received
-   * that the newest window or tab is logged. Once the request is met
-   * this broadcast channel is closed to prevent having too many
-   * destinations, which may slow down postMessage performance.
-   */
   private startSharingSession() {
     this.broadcastChannel?.addEventListener(
       "message",
       ({ data }: MessageEvent<AuthEventDetail>) => {
-        if (data.name === "auth_received") {
-          this.stopSharingSession();
-        }
         if (data.name === "requesting_auth") {
           const auth = AuthService.getCurrentTabAuth();
 
