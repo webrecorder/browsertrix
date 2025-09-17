@@ -12,6 +12,7 @@ import math
 import os
 
 from typing import Optional, List, Dict, Union, Literal, Any, get_args
+from fastapi import HTTPException
 from typing_extensions import Annotated
 
 from pydantic import (
@@ -3096,3 +3097,22 @@ class ListFilterType(str, Enum):
 
     OR = "or"
     AND = "and"
+
+
+# BATCH ACTIONS
+# ============================================================================
+
+
+class BatchTotalOut(BaseModel):
+    """Response model for batch total"""
+
+    total: int
+
+
+class BatchCrawlRunOut(BaseModel):
+    """Response model for crawl runs"""
+
+    error: HTTPException | None = None
+    crawl_id: str | UUID
+    success: bool
+    position: int | None = None
