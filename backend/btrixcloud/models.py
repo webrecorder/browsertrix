@@ -12,7 +12,6 @@ import math
 import os
 
 from typing import Optional, List, Dict, Union, Literal, Any, get_args
-from fastapi import HTTPException
 from typing_extensions import Annotated
 
 from pydantic import (
@@ -3103,6 +3102,38 @@ class ListFilterType(str, Enum):
 # ============================================================================
 
 
+class BatchFilter(BaseModel):
+    """Base model for batch filters"""
+
+    created_by: Annotated[
+        UUID | None, Field(alias="createdBy", title="Created By User ID")
+    ] = None
+    modified_by: Annotated[
+        UUID | None, Field(alias="modifiedBy", title="Modified By User ID")
+    ] = None
+    profile_ids: Annotated[
+        list[UUID] | None, Field(alias="profileIds", title="Profile IDs")
+    ] = None
+    first_seed: Annotated[
+        str | None, Field(alias="firstSeed", title="First Seed")
+    ] = None
+    name: str | None = None
+    description: str | None = None
+    tags: list[str] | None = None
+    tag_match: Annotated[
+        ListFilterType | None,
+        Field(
+            alias="tagMatch",
+            title="Tag Match Type",
+            description='Defaults to `"and"` if omitted',
+        ),
+    ] = ListFilterType.AND
+    schedule: bool | None = None
+    is_crawl_running: Annotated[
+        bool | None, Field(alias="isCrawlRunning", title="Is Crawl Running")
+    ] = None
+
+
 class BatchTotalOut(BaseModel):
     """Response model for batch total"""
 
@@ -3112,7 +3143,7 @@ class BatchTotalOut(BaseModel):
 class BatchCrawlRunOut(BaseModel):
     """Response model for crawl runs"""
 
-    error: HTTPException | None = None
-    crawl_id: str | UUID
+    error: str | None = None
+    crawl_id: str
     success: bool
     position: int | None = None
