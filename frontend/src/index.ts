@@ -158,8 +158,6 @@ export class App extends BtrixElement {
     window.addEventListener("popstate", () => {
       this.syncViewState();
     });
-
-    // this.startSyncBrowserTabs();
   }
 
   private attachUserGuideListeners() {
@@ -1125,26 +1123,6 @@ export class App extends BtrixElement {
       `,
     });
   }
-
-  // private startSyncBrowserTabs() {
-  //   AuthService.broadcastChannel.addEventListener(
-  //     "message",
-  //     ({ data }: { data: AuthEventDetail }) => {
-  //       if (data.name === "auth_storage") {
-  //         if (data.value !== AuthService.storage.getItem()) {
-  //           if (data.value) {
-  //             this.authService.saveLogin(JSON.parse(data.value) as Auth);
-  //             void this.fetchAndUpdateUserInfo();
-  //             this.syncViewState();
-  //           } else {
-  //             this.clearUser();
-  //             this.routeTo(urlForName("login"));
-  //           }
-  //         }
-  //       }
-  //     },
-  //   );
-  // }
 
   private clearSelectedOrg() {
     AppStateService.updateOrgSlug(null);
