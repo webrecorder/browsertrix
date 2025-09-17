@@ -7,29 +7,34 @@ import { AppStateService } from "./state";
 describe("AuthService", () => {
   beforeEach(() => {
     AppStateService.resetAll();
-    AuthService.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
+    window.sessionStorage.clear();
     window.sessionStorage.clear();
     stub(window.history, "pushState");
   });
 
   afterEach(() => {
-    AuthService.broadcastChannel.close();
     restore();
   });
 
-  describe("AuthService.initSessionStorage()", () => {
+  describe("initSessionStorage()", () => {
+    let authService = new AuthService();
+
+    beforeEach(() => {
+      authService = new AuthService();
+    });
+
     it("returns auth in session storage", async () => {
       stub(window.sessionStorage, "getItem").returns(
         JSON.stringify({
           headers: { Authorization: "_fake_headers_" },
-          tokenExpiresAt: "_fake_tokenExpiresAt_",
+          tokenExpiresAt: 1111,
           username: "test-auth@example.com",
         }),
       );
-      const result = await AuthService.initSessionStorage();
+      const result = await authService.initSessionStorage();
       expect(result).to.deep.equal({
         headers: { Authorization: "_fake_headers_" },
-        tokenExpiresAt: "_fake_tokenExpiresAt_",
+        tokenExpiresAt: 1111,
         username: "test-auth@example.com",
       });
     });
@@ -41,22 +46,22 @@ describe("AuthService", () => {
           name: "responding_auth",
           auth: {
             headers: { Authorization: "_fake_headers_from_tab_" },
-            tokenExpiresAt: "_fake_tokenExpiresAt_from_tab_",
+            tokenExpiresAt: 9999,
             username: "test-auth@example.com_from_tab_",
           },
         });
       });
-      const result = await AuthService.initSessionStorage();
+      const result = await authService.initSessionStorage();
       expect(result).to.deep.equal({
         headers: { Authorization: "_fake_headers_from_tab_" },
-        tokenExpiresAt: "_fake_tokenExpiresAt_from_tab_",
+        tokenExpiresAt: 9999,
         username: "test-auth@example.com_from_tab_",
       });
       otherTabChannel.close();
     });
     it("resolves without stored auth or another tab", async () => {
       stub(window.sessionStorage, "getItem");
-      const result = await AuthService.initSessionStorage();
+      const result = await authService.initSessionStorage();
       expect(result).to.equal(null);
     });
   });
@@ -82,26 +87,6 @@ describe("AuthService", () => {
         );
 
         expect(window.sessionStorage.setItem).to.have.been.called;
-      });
-
-      it("posts to the broadcast channel", () => {
-        stub(AuthService.storage, "getItem").returns("");
-        stub(AuthService.broadcastChannel, "postMessage");
-        stub(window.sessionStorage, "setItem");
-
-        const authValue = JSON.stringify({
-          headers: { Authorization: self.crypto.randomUUID() },
-          tokenExpiresAt: Date.now(),
-          username: "test-auth@example.com",
-        });
-        AuthService.storage.setItem(authValue);
-
-        expect(
-          AuthService.broadcastChannel.postMessage,
-        ).to.have.been.calledWith({
-          name: "auth_storage",
-          value: authValue,
-        });
       });
 
       it("does not store the same value", () => {
