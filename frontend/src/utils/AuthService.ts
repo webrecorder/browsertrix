@@ -1,4 +1,5 @@
 import { APIError } from "./api";
+import { STORAGE_KEY_PREFIX } from "./persist";
 import { urlForName } from "./router";
 import appState, { AppStateService } from "./state";
 
@@ -36,15 +37,7 @@ type AuthResponseEventDetail = {
   auth: AuthState;
 };
 
-export type AuthStorageEventDetail = {
-  name: "auth_storage";
-  value: string | null;
-};
-
-export type AuthEventDetail =
-  | AuthRequestEventDetail
-  | AuthResponseEventDetail
-  | AuthStorageEventDetail;
+export type AuthEventDetail = AuthRequestEventDetail | AuthResponseEventDetail;
 
 export interface AuthEventMap {
   "btrix-need-login": CustomEvent<NeedLoginEventDetail>;
@@ -63,8 +56,6 @@ export default class AuthService {
   static loggedInEvent: keyof AuthEventMap = "btrix-logged-in";
   static logOutEvent: keyof AuthEventMap = "btrix-log-out";
   static needLoginEvent: keyof AuthEventMap = "btrix-need-login";
-
-  static broadcastChannel = new BroadcastChannel(AuthService.storageKey);
   static storage = {
     getItem() {
       return window.sessionStorage.getItem(AuthService.storageKey);
@@ -73,21 +64,16 @@ export default class AuthService {
       const oldValue = AuthService.storage.getItem();
       if (oldValue === newValue) return;
       window.sessionStorage.setItem(AuthService.storageKey, newValue);
-      AuthService.broadcastChannel.postMessage({
-        name: "auth_storage",
-        value: newValue,
-      } as AuthStorageEventDetail);
     },
     removeItem() {
       const oldValue = AuthService.storage.getItem();
       if (!oldValue) return;
       window.sessionStorage.removeItem(AuthService.storageKey);
-      AuthService.broadcastChannel.postMessage({
-        name: "auth_storage",
-        value: null,
-      } as AuthStorageEventDetail);
     },
   };
+
+  private broadcastChannel?: BroadcastChannel;
+  private readonly finalizeController = new AbortController();
 
   get authState() {
     return appState.auth;
@@ -192,23 +178,18 @@ export default class AuthService {
    * Retrieve or set auth data from shared session
    * and set up session syncing
    */
-  static async initSessionStorage(): Promise<AuthState> {
-    const authState =
-      AuthService.getCurrentTabAuth() ||
-      (await AuthService.getSharedSessionAuth());
+  async initSessionStorage(): Promise<AuthState> {
+    let authState = AuthService.getCurrentTabAuth();
 
-    AuthService.broadcastChannel.addEventListener(
-      "message",
-      ({ data }: MessageEvent<AuthEventDetail>) => {
-        if (data.name === "requesting_auth") {
-          // A new tab/window opened and is requesting shared auth
-          AuthService.broadcastChannel.postMessage({
-            name: "responding_auth",
-            auth: AuthService.getCurrentTabAuth(),
-          } as AuthResponseEventDetail);
-        }
-      },
-    );
+    if (!authState) {
+      authState = await this.getSharedSessionAuth();
+    }
+
+    if (authState) {
+      this.saveLogin(authState);
+    } else {
+      AppStateService.updateAuth(null);
+    }
 
     return authState;
   }
@@ -226,20 +207,20 @@ export default class AuthService {
   /**
    * Retrieve shared session from another tab/window
    **/
-  private static async getSharedSessionAuth(): Promise<AuthState> {
+  private async getSharedSessionAuth(): Promise<AuthState> {
     const broadcastPromise = new Promise<AuthState>((resolve) => {
       // Check if there's any authenticated tabs
-      AuthService.broadcastChannel.postMessage({
+      this.broadcastChannel?.postMessage({
         name: "requesting_auth",
-      } as AuthRequestEventDetail);
+      } satisfies AuthRequestEventDetail);
       // Wait for another tab to respond
       const cb = ({ data }: MessageEvent<AuthEventDetail>) => {
         if (data.name === "responding_auth") {
-          AuthService.broadcastChannel.removeEventListener("message", cb);
+          this.broadcastChannel?.removeEventListener("message", cb);
           resolve(data.auth);
         }
       };
-      AuthService.broadcastChannel.addEventListener("message", cb);
+      this.broadcastChannel?.addEventListener("message", cb);
     });
     // Ensure that `getSharedSessionAuth` is resolved within a reasonable
     // timeframe, even if another window/tab doesn't respond:
@@ -266,30 +247,63 @@ export default class AuthService {
   }
 
   constructor() {
+    const { signal } = this.finalizeController;
+
+    this.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
+
     // Only have freshness check run in visible tab(s)
-    document.addEventListener("visibilitychange", () => {
-      if (!this.authState) return;
-      if (document.visibilityState === "visible") {
-        this.startFreshnessCheck();
-      } else {
-        this.cancelFreshnessCheck();
-      }
-    });
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (!this.authState) return;
+        if (document.visibilityState === "visible") {
+          this.startFreshnessCheck();
+        } else {
+          this.cancelFreshnessCheck();
+        }
+      },
+      { signal },
+    );
+
+    // Check for storage event so that the auth token can be removed from
+    // session storage if any other other tab is logged out; otherwise,
+    // the token will be refreshed until the original expiration time
+    window.addEventListener(
+      "storage",
+      (e: StorageEvent) => {
+        if (e.key !== `${STORAGE_KEY_PREFIX}.loggedIn`) return;
+
+        if (this.authState && e.oldValue === "true") {
+          this.revoke();
+        }
+      },
+      { signal },
+    );
+  }
+
+  finalize() {
+    this.finalizeController.abort();
+    this.stopSharingSession();
   }
 
   saveLogin(auth: Auth) {
     this.persist(auth);
     this.startFreshnessCheck();
+    this.startSharingSession();
   }
 
   logout() {
     this.cancelFreshnessCheck();
     this.revoke();
+    this.stopSharingSession();
   }
 
   startFreshnessCheck() {
     window.clearTimeout(this.timerId);
-    void this.checkFreshness();
+
+    if (document.visibilityState === "visible") {
+      void this.checkFreshness();
+    }
   }
 
   private cancelFreshnessCheck() {
@@ -302,9 +316,36 @@ export default class AuthService {
     AuthService.storage.removeItem();
   }
 
+  private startSharingSession() {
+    this.broadcastChannel?.addEventListener(
+      "message",
+      ({ data }: MessageEvent<AuthEventDetail>) => {
+        if (data.name === "requesting_auth") {
+          const auth = AuthService.getCurrentTabAuth();
+
+          if (auth) {
+            // A new tab/window opened and is requesting shared auth
+            this.broadcastChannel?.postMessage({
+              name: "responding_auth",
+              auth: AuthService.getCurrentTabAuth(),
+            } satisfies AuthResponseEventDetail);
+          }
+        }
+      },
+    );
+  }
+
+  private stopSharingSession() {
+    this.broadcastChannel?.close();
+    this.broadcastChannel = undefined;
+  }
+
   persist(auth: Auth) {
     this.authState = auth;
-    AuthService.storage.setItem(JSON.stringify(auth));
+
+    const authStr = JSON.stringify(auth);
+
+    AuthService.storage.setItem(authStr);
   }
 
   private async checkFreshness() {
