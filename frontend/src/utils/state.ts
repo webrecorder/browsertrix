@@ -39,7 +39,14 @@ export function makeAppStateService() {
     auth: Auth | null = null;
 
     // Store user's org slug preference in local storage in order to redirect
-    // to the most recently visited org on next log in
+    // to the most recently visited org on next log in.
+    //
+    // FIXME Since the org slug preference is removed on log out, AuthService
+    // currently checks whether `orgSlug` is being removed in a `storage`
+    // event to determine whether another tab has logged out.
+    // It's not the cleanest solution to use `orgSlug` as a cross-tab logout
+    // event, so we may want to refactor this in the future.
+    //
     // TODO move to `userPreferences`
     @options(persist(window.localStorage))
     orgSlug: string | null = null;
