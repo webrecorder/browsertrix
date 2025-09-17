@@ -39,7 +39,8 @@ export function makeAppStateService() {
     auth: Auth | null = null;
 
     // Store logged-in flag in local storage so that tabs know whether to
-    // check auth again when focused
+    // check auth again when focused.
+    // This can get out of sync with `auth` if any other tabs log in/out.
     @options(persist(window.localStorage))
     loggedIn: boolean | null = null;
 

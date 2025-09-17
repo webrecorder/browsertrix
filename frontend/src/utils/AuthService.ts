@@ -183,12 +183,12 @@ export default class AuthService {
 
     if (!authState) {
       authState = await this.getSharedSessionAuth();
+    }
 
-      if (authState) {
-        this.saveLogin(authState);
-      } else {
-        AppStateService.updateAuth(null);
-      }
+    if (authState) {
+      this.saveLogin(authState);
+    } else {
+      AppStateService.updateAuth(null);
     }
 
     return authState;
