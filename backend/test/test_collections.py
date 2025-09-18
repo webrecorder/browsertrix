@@ -1196,7 +1196,7 @@ def test_same_collection_diff_orgs_correct(non_default_org_id, admin_auth_header
     )
     assert r.status_code == 200
 
-    # public collection not accessible in default org
+    # new collection not accessible (not public) in non-default org
     r = requests.get(
         f"{API_PREFIX}/public/orgs/{NON_DEFAULT_ORG_SLUG}/collections/{PUBLIC_COLLECTION_SLUG}"
     )
