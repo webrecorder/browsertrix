@@ -41,7 +41,7 @@ From the Public Collection Gallery. When Public Collection Gallery is enabled, y
 
 ### Name
 
-A **Name** is always required, so by default, your Collection's name is determined by the Metadata section from your crawl workflow — either a custom name you had set or the first Crawl URL from your workflow.
+A **Name** is always required, so by default, your Collection's name is determined by the name of your crawl workflow.
 
 You can edit the **Name** as long as its within 50 characters, which is roughly between 7 words and 13 words with spaces included in the character count.
 
