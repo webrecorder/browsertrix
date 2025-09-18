@@ -1033,7 +1033,8 @@ export class WorkflowEditor extends BtrixElement {
       ${inputCol(html`
         <sl-checkbox
           name="failOnContentCheck"
-          ?checked=${this.formState.failOnContentCheck}
+          ?checked=${this.formState.failOnContentCheck &&
+          this.formState.browserProfile !== null}
           ?disabled=${this.formState.browserProfile === null}
         >
           ${this.formState.browserProfile === null
@@ -1559,7 +1560,8 @@ https://example.net`}
       ${inputCol(html`
         <sl-checkbox
           name="failOnContentCheck"
-          ?checked=${this.formState.failOnContentCheck}
+          ?checked=${this.formState.failOnContentCheck &&
+          this.formState.browserProfile !== null}
           ?disabled=${this.formState.browserProfile === null}
         >
           ${this.formState.browserProfile === null
@@ -2893,6 +2895,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
         this.customBehaviorsTable.reportValidity();
         return;
       }
+    }
+
+    // Disable content check if no browser profile is selected
+    // This is done here rather than in `willChange` so that the state of the checkbox
+    // can be remembered if the switches from a browser profile to no browser profile,
+    // and then back to a browser profile
+    if (this.formState.browserProfile === null) {
+      this.formState.failOnContentCheck = false;
     }
 
     const isValid = await this.checkFormValidity(this.formElem);
