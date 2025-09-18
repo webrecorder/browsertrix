@@ -642,15 +642,15 @@ export class Dashboard extends BtrixElement {
           "",
         )})"
       >
-        <div class="text-center">
-          <div>${label}</div>
-          <div class="text-xs opacity-80">
-            ${this.localize.bytes(value, {
-              unitDisplay: "narrow",
-            })}
-            | ${this.renderPercentage(value / metrics.storageUsedBytes)}
-          </div>
-        </div>
+        <header class="font-medium leading-none">${label}</header>
+        <hr class="my-2" />
+        <p>
+          ${this.localize.bytes(value, {
+            unitDisplay: "narrow",
+          })}
+          <br />
+          ${this.renderPercentage(value / metrics.storageUsedBytes)}
+        </p>
       </btrix-meter-bar>
     `;
     return html`
@@ -708,18 +708,21 @@ export class Dashboard extends BtrixElement {
                 renderBar(misc, msg("Miscellaneous"), this.colors.misc),
               )}
               <div slot="available" class="flex-1">
-                <sl-tooltip class="text-center">
+                <btrix-popover placement="top" class="text-center">
                   <div slot="content">
-                    <div>${msg("Available")}</div>
-                    <div class="text-xs opacity-80">
+                    <header class="font-medium leading-none">
+                      ${msg("Available")}
+                    </header>
+                    <hr class="my-2" />
+                    <p>
                       ${this.renderPercentage(
                         (metrics.storageQuotaBytes - metrics.storageUsedBytes) /
                           metrics.storageQuotaBytes,
                       )}
-                    </div>
+                    </p>
                   </div>
                   <div class="h-full w-full"></div>
-                </sl-tooltip>
+                </btrix-popover>
               </div>
               <span slot="valueLabel"
                 >${this.localize.bytes(metrics.storageUsedBytes, {
@@ -849,28 +852,29 @@ export class Dashboard extends BtrixElement {
         return html` <btrix-divided-meter-bar
           value=${(used / quotaSecondsAllTypes) * 100}
           quota=${(quota / quotaSecondsAllTypes) * 100}
-          style="--background-color:var(--sl-color-${color}-400); --quota-background-color:var(--sl-color-${color}-100)"
+          style="--background-color:var(--sl-color-${color}-500); --quota-background-color:var(--sl-color-${color}-100)"
         >
-          <div class="text-center">
-            <div>${label}</div>
-            <div class="text-xs opacity-80">
-              ${humanizeExecutionSeconds(used, { displaySeconds: true })} /
-              ${humanizeExecutionSeconds(quota, { displaySeconds: true })}
-            </div>
-          </div>
+          <header class="font-medium leading-none">${label}</header>
+          <hr class="my-2" />
+          <p>
+            ${humanizeExecutionSeconds(used, { displaySeconds: true })}
+            ${msg("of")}
+            <br />
+            ${humanizeExecutionSeconds(quota, { displaySeconds: true })}
+          </p>
         </btrix-divided-meter-bar>`;
       } else {
         return html`<btrix-meter-bar
           value=${100}
-          style="--background-color:var(--sl-color-${color}-400);"
+          style="--background-color:var(--sl-color-${color}-500);"
         >
-          <div class="text-center">
-            <div>${label}</div>
-            <div class="text-xs opacity-80">
-              ${humanizeExecutionSeconds(used, { displaySeconds: true })} |
-              ${this.renderPercentage(used / quota)}
-            </div>
-          </div>
+          <header class="font-medium leading-none">${label}</header>
+          <hr class="my-2" />
+          <p>
+            ${humanizeExecutionSeconds(used, { displaySeconds: true })}
+            <br />
+            ${this.renderPercentage(used / quota)}
+          </p>
         </btrix-meter-bar>`;
       }
     };
@@ -919,7 +923,7 @@ export class Dashboard extends BtrixElement {
                   usageSeconds > quotaSeconds ? quotaSeconds : usageSeconds,
                   hasExtra ? quotaSeconds : quotaSecondsAllTypes,
                   msg("Monthly Execution Time Used"),
-                  "green",
+                  "lime",
                   hasExtra ? true : false,
                 ),
               )}
@@ -940,11 +944,11 @@ export class Dashboard extends BtrixElement {
                     : usageSecondsExtra,
                   quotaSecondsExtra,
                   msg("Extra Execution Time Used"),
-                  "red",
+                  "violet",
                 ),
               )}
               <div slot="available" class="flex-1">
-                <sl-tooltip class="text-center">
+                <btrix-popover placement="top" class="text-center">
                   <div slot="content">
                     <div>${msg("Monthly Execution Time Remaining")}</div>
                     <div class="text-xs opacity-80">
@@ -958,7 +962,7 @@ export class Dashboard extends BtrixElement {
                     </div>
                   </div>
                   <div class="h-full w-full"></div>
-                </sl-tooltip>
+                </btrix-popover>
               </div>
               <span slot="valueLabel">
                 ${humanizeExecutionSeconds(usageSecondsAllTypes, {
