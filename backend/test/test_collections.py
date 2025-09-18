@@ -1168,6 +1168,47 @@ def test_list_public_collections(
     assert r.status_code == 404
     assert r.json()["detail"] == "public_profile_not_found"
 
+def test_same_collection_diff_orgs_correct(non_default_org_id, admin_auth_headers):
+    # public collection exists in default org
+    r = requests.get(
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}"
+    )
+    assert r.status_code == 200
+
+    # create collection with same name in different org, but *not* public
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/collections",
+        headers=admin_auth_headers,
+        json={
+            "name": PUBLIC_COLLECTION_NAME,
+            "slug": PUBLIC_COLLECTION_SLUG,
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+    assert data["name"] == PUBLIC_COLLECTION_NAME
+    new_id = data["id"]
+
+    # public collection still accessible in default org
+    r = requests.get(
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}"
+    )
+    assert r.status_code == 200
+
+    # public collection not accessible in default org
+    r = requests.get(
+        f"{API_PREFIX}/public/orgs/{NON_DEFAULT_ORG_SLUG}/collections/{PUBLIC_COLLECTION_SLUG}"
+    )
+    assert r.status_code == 404
+
+    # Delete second collection
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/collections/{new_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
 
 def test_list_public_collections_no_colls(non_default_org_id, admin_auth_headers):
     # Test existing org that's not public - should return same 404 as

@@ -297,11 +297,12 @@ class CollectionOps:
     async def get_collection_raw_by_slug(
         self,
         coll_slug: str,
+        oid: UUID,
         previous_slugs: bool = False,
         public_or_unlisted_only: bool = False,
     ) -> Dict[str, Any]:
         """Get collection by slug (current or previous) as dict from database"""
-        query: dict[str, object] = {}
+        query: dict[str, object] = {"oid": oid}
         if previous_slugs:
             query["previousSlugs"] = coll_slug
         else:
@@ -323,12 +324,12 @@ class CollectionOps:
         return Collection.from_dict(result)
 
     async def get_collection_by_slug(
-        self, coll_slug: str, public_or_unlisted_only: bool = False
+        self, coll_slug: str, oid: UUID, public_or_unlisted_only: bool = False
     ) -> Collection:
         """Get collection by slug"""
         try:
             result = await self.get_collection_raw_by_slug(
-                coll_slug, public_or_unlisted_only=public_or_unlisted_only
+                coll_slug, oid, public_or_unlisted_only=public_or_unlisted_only
             )
             return Collection.from_dict(result)
         # pylint: disable=broad-exception-caught
@@ -337,6 +338,7 @@ class CollectionOps:
 
         result = await self.get_collection_raw_by_slug(
             coll_slug,
+            oid,
             previous_slugs=True,
             public_or_unlisted_only=public_or_unlisted_only,
         )
@@ -432,7 +434,7 @@ class CollectionOps:
     ) -> StreamingResponse:
         """return thumbnail of public collection, if any"""
         result = await self.get_collection_raw_by_slug(
-            slug, public_or_unlisted_only=True
+            slug, org.id, public_or_unlisted_only=True
         )
 
         thumbnail = result.get("thumbnail")
@@ -1227,7 +1229,7 @@ def init_collections_api(
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        coll = await colls.get_collection_by_slug(coll_slug)
+        coll = await colls.get_collection_by_slug(coll_slug, org.id)
 
         return await colls.get_public_collection_out(
             coll.id, org, dict(request.headers), allow_unlisted=True
@@ -1251,7 +1253,7 @@ def init_collections_api(
 
         # Make sure collection exists and is public/unlisted
         coll = await colls.get_collection_by_slug(
-            coll_slug, public_or_unlisted_only=True
+            coll_slug, org.id, public_or_unlisted_only=True
         )
 
         if coll.allowPublicDownload is False:
