@@ -102,7 +102,7 @@ Refer to a specific [_Crawl Scope_ option](#crawl-scope-options) for details on 
 When enabled, the crawler will visit all the links it finds within each URL defined in the [URL input field](#crawl-start-url-urls-to-crawl) under _Crawl Scope_.
 
 ??? example "Crawling tags & search queries with Page List crawls"
-    This setting can be useful for crawling a list of specific pages, such as a list of search queries. For example, you can create a list of multiple URLs such as: `https://example.com/search?q=search_this`, `https://example.com/search?q=also_search_this`, etc... to the _URLs to Crawl_ text box and enable _Include Any Linked Page_ to crawl all the content present on these search query pages.
+    This setting can be useful for crawling a list of specific pages and pages they link to, such as a list of search queries. For example, you can add a list of multiple URLs such as: `https://example.com/search?q=search_this`, `https://example.com/search?q=also_search_this`, etc... to the _URLs to Crawl_ text box and enable _Include Any Linked Page_ to crawl all the content present on these search query pages.
 
 ### Fail Crawl if Not Logged In
 
