@@ -1962,7 +1962,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           .profileId=${this.formState.browserProfile?.id}
           @on-change=${(e: SelectBrowserProfileChangeEvent) =>
             this.updateFormState({
-              browserProfile: e.detail.value,
+              browserProfile: e.detail.value ?? null,
             })}
         ></btrix-select-browser-profile>
       `)}
