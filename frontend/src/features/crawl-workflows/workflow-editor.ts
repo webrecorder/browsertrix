@@ -943,6 +943,23 @@ export class WorkflowEditor extends BtrixElement {
   };
 
   private readonly renderPageScope = () => {
+    const linkToBrowserSettings = (label: string) =>
+      html`<button
+        type="button"
+        class="text-blue-600 hover:text-blue-500"
+        @click=${async () => {
+          this.updateProgressState({ activeTab: "browserSettings" });
+
+          await this.updateComplete;
+
+          void this.scrollToActivePanel();
+        }}
+      >
+        ${label}
+      </button>`;
+    const link_to_browser_profile = linkToBrowserSettings(
+      msg("Browser Profile"),
+    );
     return html`
       ${this.formState.scopeType === ScopeType.Page
         ? html`
@@ -1016,8 +1033,18 @@ export class WorkflowEditor extends BtrixElement {
       ${inputCol(html`
         <sl-checkbox
           name="failOnContentCheck"
-          ?checked=${this.formState.failOnContentCheck}
+          ?checked=${this.formState.failOnContentCheck &&
+          this.formState.browserProfile !== null}
+          ?disabled=${this.formState.browserProfile === null}
         >
+          ${this.formState.browserProfile === null
+            ? html`<span slot="help-text">
+                ${msg(
+                  html`Custom logged in ${link_to_browser_profile} is required
+                  to use this option.`,
+                )}
+              </span>`
+            : nothing}
           ${msg("Fail crawl if not logged in")}
         </sl-checkbox>
       `)}
@@ -1372,6 +1399,24 @@ https://replayweb.page/docs`}
     const additionalUrlList = urlListToArray(this.formState.urlList);
     const maxUrls = this.localize.number(URL_LIST_MAX_URLS);
 
+    const linkToBrowserSettings = (label: string) =>
+      html`<button
+        type="button"
+        class="text-blue-600 hover:text-blue-500"
+        @click=${async () => {
+          this.updateProgressState({ activeTab: "browserSettings" });
+
+          await this.updateComplete;
+
+          void this.scrollToActivePanel();
+        }}
+      >
+        ${label}
+      </button>`;
+    const link_to_browser_profile = linkToBrowserSettings(
+      msg("Browser Profile"),
+    );
+
     return html`
       ${inputCol(html`
         <sl-input
@@ -1516,8 +1561,17 @@ https://example.net`}
       ${inputCol(html`
         <sl-checkbox
           name="failOnContentCheck"
-          ?checked=${this.formState.failOnContentCheck}
+          ?checked=${this.formState.failOnContentCheck &&
+          this.formState.browserProfile !== null}
+          ?disabled=${this.formState.browserProfile === null}
         >
+          ${this.formState.browserProfile === null
+            ? html`<span slot="help-text">
+                ${msg(
+                  html`Select a ${link_to_browser_profile} to use this option.`,
+                )}
+              </span>`
+            : nothing}
           ${msg("Fail crawl if not logged in")}
         </sl-checkbox>
       `)}
@@ -1911,7 +1965,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           .profileId=${this.formState.browserProfile?.id}
           @on-change=${(e: SelectBrowserProfileChangeEvent) =>
             this.updateFormState({
-              browserProfile: e.detail.value,
+              browserProfile: e.detail.value ?? null,
             })}
         ></btrix-select-browser-profile>
       `)}
@@ -2842,6 +2896,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
         this.customBehaviorsTable.reportValidity();
         return;
       }
+    }
+
+    // Disable failOnContentCheck if no browser profile is selected
+    // This is done here rather than in `willChange` so that the state of the checkbox
+    // can be remembered if the switches from a browser profile to no browser profile,
+    // and then back to a browser profile
+    if (this.formState.browserProfile === null) {
+      this.formState.failOnContentCheck = false;
     }
 
     const isValid = await this.checkFormValidity(this.formElem);
