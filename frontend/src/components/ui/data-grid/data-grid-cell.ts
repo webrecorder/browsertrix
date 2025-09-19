@@ -4,14 +4,15 @@ import { html, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import get from "lodash/fp/get";
+import { type Primitive } from "type-fest";
 
 import { TableCell } from "../table/table-cell";
 
 import type {
   GridColumn,
+  GridColumnNumberType,
   GridColumnSelectType,
   GridItem,
-  GridItemValue,
 } from "./types";
 import { GridColumnType } from "./types";
 
@@ -31,8 +32,8 @@ const cellInputStyle = [
 
 export type InputElement = SlInput | SlSelect | UrlInput;
 
-export type CellEditEventDetail = {
-  field: GridColumn["field"];
+export type CellEditEventDetail<T extends GridItem = GridItem> = {
+  field: keyof T;
   value: InputElement["value"];
   validity: InputElement["validity"];
   validationMessage: InputElement["validationMessage"];
@@ -43,15 +44,17 @@ export type CellEditEventDetail = {
  * @fires btrix-change CustomEvent
  */
 @customElement("btrix-data-grid-cell")
-export class DataGridCell extends TableCell {
+export class DataGridCell<
+  const T extends GridItem = GridItem,
+> extends TableCell {
   @property({ type: Object })
-  column?: GridColumn;
+  column?: GridColumn<T>;
 
   @property({ type: Object })
-  item?: GridItem;
+  item?: T;
 
   @property({ type: String })
-  value?: GridItemValue;
+  value?: T[keyof T];
 
   @property({ type: Boolean })
   editable = false;
@@ -68,7 +71,7 @@ export class DataGridCell extends TableCell {
   @property({ type: Number, reflect: true })
   tabindex = 0;
 
-  readonly #focus = new DataGridFocusController(this, {
+  readonly #focus = new DataGridFocusController<T>(this, {
     setFocusOnTabbable: true,
   });
 
@@ -88,7 +91,7 @@ export class DataGridCell extends TableCell {
     if (!this.column) return null;
 
     return this.shadowRoot!.querySelector<InputElement>(
-      `[name=${this.column.field}]`,
+      `[name=${String(this.column.field)}]`,
     );
   }
 
@@ -116,10 +119,10 @@ export class DataGridCell extends TableCell {
       return this.renderEditCell({ item: this.item, value: this.value });
     }
 
-    return this.renderCell({ item: this.item });
+    return html`${this.renderCell({ item: this.item })}`;
   }
 
-  renderCell = ({ item }: { item: GridItem }) => {
+  renderCell = ({ item }: { item: T }): string | TemplateResult<1> => {
     return html`${(this.column && get(this.column.field, item)) ?? ""}`;
   };
 
@@ -127,9 +130,9 @@ export class DataGridCell extends TableCell {
     item,
     value: cellValue,
   }: {
-    item: GridItem;
-    value?: GridItemValue;
-  }) => {
+    item: T;
+    value?: T[keyof T];
+  }): TemplateResult<1> => {
     const col = this.column;
 
     if (!col) return html``;
@@ -141,7 +144,7 @@ export class DataGridCell extends TableCell {
         return html`
           <div class="box-border w-full p-1">
             <sl-select
-              name=${col.field}
+              name=${String(col.field)}
               value=${value}
               placeholder=${ifDefined(col.inputPlaceholder)}
               class="w-full min-w-[5em]"
@@ -162,7 +165,7 @@ export class DataGridCell extends TableCell {
       }
       case GridColumnType.URL:
         return html`<btrix-url-input
-          name=${col.field}
+          name=${String(col.field)}
           class=${clsx(cellInputStyle)}
           value=${value}
           placeholder=${ifDefined(col.inputPlaceholder)}
@@ -170,21 +173,44 @@ export class DataGridCell extends TableCell {
           hideHelpText
         >
         </btrix-url-input>`;
+      case GridColumnType.Number: {
+        const { min, max, step } = col as GridColumnNumberType<T>;
+        return html`<sl-input
+          name=${String(col.field)}
+          class=${clsx(cellInputStyle)}
+          type="number"
+          value=${value}
+          placeholder=${ifDefined(col.inputPlaceholder)}
+          ?required=${col.required}
+          min=${ifDefined(this.evalWithItemIfFn(min))}
+          max=${ifDefined(this.evalWithItemIfFn(max))}
+          step=${ifDefined(this.evalWithItemIfFn(step))}
+        ></sl-input>`;
+      }
       default:
         break;
     }
 
     return html`
       <sl-input
-        name=${col.field}
+        name=${String(col.field)}
         class=${clsx(cellInputStyle)}
-        type=${col.inputType === GridColumnType.Number ? "number" : "text"}
+        type="text"
         value=${value}
         placeholder=${ifDefined(col.inputPlaceholder)}
         ?required=${col.required}
       ></sl-input>
     `;
   };
+
+  private evalWithItemIfFn<U extends Primitive>(
+    maybeFn: U | ((item: T | undefined) => U),
+  ) {
+    if (typeof maybeFn === "function") {
+      return maybeFn(this.item);
+    }
+    return maybeFn;
+  }
 
   private readonly onInput = (e: Event) => {
     if (!this.column) return;
@@ -194,7 +220,7 @@ export class DataGridCell extends TableCell {
     const input = e.target as InputElement;
 
     this.dispatchEvent(
-      new CustomEvent<CellEditEventDetail>("btrix-input", {
+      new CustomEvent<CellEditEventDetail<T>>("btrix-input", {
         detail: {
           field: this.column.field,
           value: input.value,
@@ -215,7 +241,7 @@ export class DataGridCell extends TableCell {
     const input = e.target as InputElement;
 
     this.dispatchEvent(
-      new CustomEvent<CellEditEventDetail>("btrix-change", {
+      new CustomEvent<CellEditEventDetail<T>>("btrix-change", {
         detail: {
           field: this.column.field,
           value: input.value,
