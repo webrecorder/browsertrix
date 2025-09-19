@@ -38,10 +38,10 @@ export class MeterBar extends TailwindElement {
     if (this.value <= 0) {
       return;
     }
-    return html`<sl-tooltip>
+    return html`<btrix-popover placement="top">
       <div slot="content"><slot></slot></div>
       <div class="bar" style="width:${this.value}%"></div>
-    </sl-tooltip>`;
+    </btrix-popover>`;
   }
 }
 
@@ -79,7 +79,7 @@ export class DividedMeterBar extends TailwindElement {
   `;
 
   render() {
-    return html`<sl-tooltip>
+    return html`<btrix-popover placement="top">
       <div slot="content"><slot></slot></div>
       <div class="quotaBar" style="width:${this.quota}%">
         ${when(this.value, () => {
@@ -91,7 +91,7 @@ export class DividedMeterBar extends TailwindElement {
           ></div>`;
         })}
       </div>
-    </sl-tooltip>`;
+    </btrix-popover>`;
   }
 }
 
