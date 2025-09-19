@@ -2898,7 +2898,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }
     }
 
-    // Disable content check if no browser profile is selected
+    // Disable failOnContentCheck if no browser profile is selected
     // This is done here rather than in `willChange` so that the state of the checkbox
     // can be remembered if the switches from a browser profile to no browser profile,
     // and then back to a browser profile
