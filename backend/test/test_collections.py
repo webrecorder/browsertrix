@@ -1110,7 +1110,7 @@ def test_list_public_collections(
 
     # Enable public profile on org
     public_description = "This is a test public org!"
-    public_url = "https://example.com"
+    public_url = "https://example-com.webrecorder.net"
 
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/public-profile",

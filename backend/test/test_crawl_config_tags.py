@@ -10,7 +10,7 @@ def get_sample_crawl_data(tags):
     return {
         "runNow": False,
         "name": "Test Crawl",
-        "config": {"seeds": [{"url": "https://example.com/"}]},
+        "config": {"seeds": [{"url": "https://example-com.webrecorder.net/"}]},
         "tags": tags,
     }
 

@@ -221,7 +221,7 @@ def test_verify_update(crawler_auth_headers, default_org_id):
     assert data["description"] == UPDATED_DESCRIPTION
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
     assert data["autoAddCollections"] == [_coll_id]
-    assert data["firstSeed"] == "https://example.com/"
+    assert data["firstSeed"] == "https://example-com.webrecorder.net/"
 
 
 def test_update_config_invalid_format(
@@ -232,7 +232,7 @@ def test_update_config_invalid_format(
         headers=crawler_auth_headers,
         json={
             "config": {
-                "seeds": ["https://example.com/"],
+                "seeds": ["https://example-com.webrecorder.net/"],
                 "scopeType": "domain",
                 "limit": 10,
             }
@@ -323,7 +323,7 @@ def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_d
         headers=crawler_auth_headers,
         json={
             "config": {
-                "seeds": [{"url": "https://example.com/"}],
+                "seeds": [{"url": "https://example-com.webrecorder.net/"}],
                 "scopeType": "domain",
                 "selectLinks": ["a[href]->href", "script[src]->src"],
                 "clickSelector": "button",
@@ -353,7 +353,7 @@ def test_update_config_no_changes(
         headers=crawler_auth_headers,
         json={
             "config": {
-                "seeds": [{"url": "https://example.com/"}],
+                "seeds": [{"url": "https://example-com.webrecorder.net/"}],
                 "scopeType": "domain",
                 "selectLinks": ["a[href]->href", "script[src]->src"],
                 "clickSelector": "button",
@@ -664,7 +664,7 @@ def test_get_config_seeds(crawler_auth_headers, default_org_id, url_list_config_
 
     EXPECTED_SEED_URLS = [
         "https://webrecorder.net/",
-        "https://example.com/",
+        "https://example-com.webrecorder.net/",
         "https://specs.webrecorder.net/",
     ]
     found_seed_urls = []
