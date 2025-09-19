@@ -1040,7 +1040,8 @@ export class WorkflowEditor extends BtrixElement {
           ${this.formState.browserProfile === null
             ? html`<span slot="help-text">
                 ${msg(
-                  html`Select a ${link_to_browser_profile} to use this option.`,
+                  html`Custom logged in ${link_to_browser_profile} is required
+                  to use this option.`,
                 )}
               </span>`
             : nothing}
