@@ -2,6 +2,7 @@ import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
   SlBlurEvent,
+  SlChangeEvent,
   SlCheckbox,
   SlDetails,
   SlHideEvent,
@@ -105,6 +106,7 @@ import {
   getUTCSchedule,
   humanizeNextDate,
   humanizeSchedule,
+  validateCron,
 } from "@/utils/cron";
 import { makeCurrentTargetHandler, stopProp } from "@/utils/events";
 import { formValidator, maxLengthValidator } from "@/utils/form";
@@ -267,7 +269,12 @@ export class WorkflowEditor extends BtrixElement {
   @property({ type: String })
   initialScopeType?: FormState["scopeType"];
 
-  @property({ type: Object })
+  @property({
+    type: Object,
+    // Fixes values being reset on navigation events,
+    // such as when the user guide is open
+    hasChanged: (a, b) => !isEqual(a, b),
+  })
   initialWorkflow?: WorkflowParams;
 
   private updatingScopeType = false;
@@ -344,7 +351,7 @@ export class WorkflowEditor extends BtrixElement {
 
   private get utcSchedule() {
     if (!this.formState.scheduleFrequency) {
-      return "";
+      return this.formState.scheduleCustom;
     }
     return getUTCSchedule({
       interval: this.formState.scheduleFrequency,
@@ -936,6 +943,23 @@ export class WorkflowEditor extends BtrixElement {
   };
 
   private readonly renderPageScope = () => {
+    const linkToBrowserSettings = (label: string) =>
+      html`<button
+        type="button"
+        class="text-blue-600 hover:text-blue-500"
+        @click=${async () => {
+          this.updateProgressState({ activeTab: "browserSettings" });
+
+          await this.updateComplete;
+
+          void this.scrollToActivePanel();
+        }}
+      >
+        ${label}
+      </button>`;
+    const link_to_browser_profile = linkToBrowserSettings(
+      msg("Browser Profile"),
+    );
     return html`
       ${this.formState.scopeType === ScopeType.Page
         ? html`
@@ -943,7 +967,7 @@ export class WorkflowEditor extends BtrixElement {
               <!-- TODO Use btrix-url-input -->
               <sl-input
                 name="urlList"
-                label=${msg("Page URL")}
+                label=${msg("URL to Crawl")}
                 placeholder="https://webrecorder.net/blog"
                 autocomplete="off"
                 inputmode="url"
@@ -992,7 +1016,9 @@ export class WorkflowEditor extends BtrixElement {
               >
               </sl-input>
             `)}
-            ${this.renderHelpTextCol(msg(str`The URL of the page to crawl.`))}
+            ${this.renderHelpTextCol(
+              msg(str`The crawler will visit this URL.`),
+            )}
           `
         : this.renderUrlList()}
       ${inputCol(html`
@@ -1003,15 +1029,22 @@ export class WorkflowEditor extends BtrixElement {
           ${msg("Include any linked page (“one hop out”)")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(
-        msg(`If checked, the crawler will visit pages one link away.`),
-        false,
-      )}
+      ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
       ${inputCol(html`
         <sl-checkbox
           name="failOnContentCheck"
-          ?checked=${this.formState.failOnContentCheck}
+          ?checked=${this.formState.failOnContentCheck &&
+          this.formState.browserProfile !== null}
+          ?disabled=${this.formState.browserProfile === null}
         >
+          ${this.formState.browserProfile === null
+            ? html`<span slot="help-text">
+                ${msg(
+                  html`Custom logged in ${link_to_browser_profile} is required
+                  to use this option.`,
+                )}
+              </span>`
+            : nothing}
           ${msg("Fail crawl if not logged in")}
         </sl-checkbox>
       `)}
@@ -1059,7 +1092,7 @@ export class WorkflowEditor extends BtrixElement {
           class="form-label form-control-label--required"
           for="seedUrlList"
         >
-          ${msg("Page URLs")}
+          ${msg("URLs to Crawl")}
         </label>
 
         <sl-radio-group
@@ -1366,6 +1399,24 @@ https://replayweb.page/docs`}
     const additionalUrlList = urlListToArray(this.formState.urlList);
     const maxUrls = this.localize.number(URL_LIST_MAX_URLS);
 
+    const linkToBrowserSettings = (label: string) =>
+      html`<button
+        type="button"
+        class="text-blue-600 hover:text-blue-500"
+        @click=${async () => {
+          this.updateProgressState({ activeTab: "browserSettings" });
+
+          await this.updateComplete;
+
+          void this.scrollToActivePanel();
+        }}
+      >
+        ${label}
+      </button>`;
+    const link_to_browser_profile = linkToBrowserSettings(
+      msg("Browser Profile"),
+    );
+
     return html`
       ${inputCol(html`
         <sl-input
@@ -1495,11 +1546,7 @@ https://example.net`}
           ${msg("Include any linked page (“one hop out”)")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(
-        msg(`If checked, the crawler will visit pages one link away outside of
-        Crawl Scope.`),
-        false,
-      )}
+      ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
       ${inputCol(html`
         <sl-checkbox name="useSitemap" ?checked=${this.formState.useSitemap}>
           ${msg("Check for sitemap")}
@@ -1514,8 +1561,17 @@ https://example.net`}
       ${inputCol(html`
         <sl-checkbox
           name="failOnContentCheck"
-          ?checked=${this.formState.failOnContentCheck}
+          ?checked=${this.formState.failOnContentCheck &&
+          this.formState.browserProfile !== null}
+          ?disabled=${this.formState.browserProfile === null}
         >
+          ${this.formState.browserProfile === null
+            ? html`<span slot="help-text">
+                ${msg(
+                  html`Select a ${link_to_browser_profile} to use this option.`,
+                )}
+              </span>`
+            : nothing}
           ${msg("Fail crawl if not logged in")}
         </sl-checkbox>
       `)}
@@ -1909,7 +1965,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           .profileId=${this.formState.browserProfile?.id}
           @on-change=${(e: SelectBrowserProfileChangeEvent) =>
             this.updateFormState({
-              browserProfile: e.detail.value,
+              browserProfile: e.detail.value ?? null,
             })}
         ></btrix-select-browser-profile>
       `)}
@@ -2047,7 +2103,30 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private readonly renderScheduleCron = () => {
-    const utcSchedule = this.utcSchedule;
+    const scheduledDate = (schedule?: string, opts?: { utc: boolean }) => {
+      if (!schedule) return nothing;
+
+      const humanized = humanizeSchedule(schedule);
+
+      if (!humanized) return nothing;
+
+      return html`
+        <div class="mt-3 text-xs text-neutral-500">
+          <p class="mb-1">
+            ${msg("Schedule:")}
+            <span class="text-blue-500">${humanized}</span>
+          </p>
+          <p>
+            ${msg("Next scheduled run:")}
+            <span>${humanizeNextDate(schedule, opts)}</span>
+          </p>
+        </div>
+      `;
+    };
+
+    const hourly_macro_code = html`<code>@hourly</code>`;
+    const yearly_macro_code = html`<code>@yearly</code>`;
+
     return html`
       ${this.renderSectionHeading(msg("Set Schedule"))}
       ${inputCol(html`
@@ -2055,11 +2134,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="scheduleFrequency"
           label=${msg("Frequency")}
           value=${this.formState.scheduleFrequency}
-          @sl-change=${(e: Event) =>
+          @sl-change=${(e: Event) => {
+            const scheduleFrequency = (e.target as HTMLSelectElement)
+              .value as FormState["scheduleFrequency"];
+
             this.updateFormState({
-              scheduleFrequency: (e.target as HTMLSelectElement)
-                .value as FormState["scheduleFrequency"],
-            })}
+              scheduleFrequency,
+              scheduleCustom: scheduleFrequency
+                ? ""
+                : this.formState.scheduleCustom || "",
+            });
+          }}
         >
           <sl-option value="daily"
             >${this.scheduleFrequencyLabels["daily"]}</sl-option
@@ -2070,6 +2155,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <sl-option value="monthly"
             >${this.scheduleFrequencyLabels["monthly"]}</sl-option
           >
+          <sl-divider></sl-divider>
+          <sl-option value="">${msg("Custom")}</sl-option>
         </sl-select>
       `)}
       ${this.renderHelpTextCol(
@@ -2122,49 +2209,96 @@ https://archiveweb.page/images/${"logo.svg"}`}
           )}
         `,
       )}
-      ${inputCol(html`
-        <btrix-time-input
-          hour=${ifDefined(this.formState.scheduleTime?.hour)}
-          minute=${ifDefined(this.formState.scheduleTime?.minute)}
-          period=${ifDefined(this.formState.scheduleTime?.period)}
-          @time-change=${(e: TimeInputChangeEvent) => {
-            this.updateFormState({
-              scheduleTime: e.detail,
-            });
-          }}
-        >
-          <span slot="label">${msg("Start Time")}</span>
-        </btrix-time-input>
-        <div class="mt-3 text-xs text-neutral-500">
-          <p class="mb-1">
+      ${when(
+        this.formState.scheduleFrequency,
+        () =>
+          html`${inputCol(html`
+            <btrix-time-input
+              hour=${ifDefined(this.formState.scheduleTime?.hour)}
+              minute=${ifDefined(this.formState.scheduleTime?.minute)}
+              period=${ifDefined(this.formState.scheduleTime?.period)}
+              @time-change=${(e: TimeInputChangeEvent) => {
+                this.updateFormState({
+                  scheduleTime: e.detail,
+                });
+              }}
+            >
+              <span slot="label">${msg("Start Time")}</span>
+            </btrix-time-input>
+            ${scheduledDate(this.utcSchedule)}
+          `)}
+          ${this.renderHelpTextCol(
+            msg(`A crawl will run at this time in your current timezone.`),
+          )}`,
+        () => html`
+          ${inputCol(html`
+            <sl-input
+              name="scheduleCustom"
+              label=${msg("Cron Schedule")}
+              class="part-[input]:font-mono"
+              placeholder="@hourly"
+              value=${ifDefined(this.formState.scheduleCustom)}
+              minlength="6"
+              @sl-change=${(e: SlChangeEvent) => {
+                const input = e.target as SlInput;
+                const value = (e.target as SlInput).value;
+
+                if (!value) return;
+
+                const { valid, error } = validateCron(value);
+
+                if (valid) {
+                  input.helpText = "";
+                  input.setCustomValidity("");
+                } else {
+                  const errorMessage =
+                    error ?? msg("Please fix invalid Cron expression syntax.");
+
+                  input.helpText = errorMessage;
+                  input.setCustomValidity(errorMessage);
+                }
+              }}
+              required
+            >
+            </sl-input>
+            ${scheduledDate(this.formState.scheduleCustom)}
+          `)}
+          ${this.renderHelpTextCol(html`
+            ${msg("Specify a schedule in Cron format.")}
             ${msg(
-              html`Schedule:
-                <span class="text-blue-500"
-                  >${utcSchedule
-                    ? humanizeSchedule(utcSchedule)
-                    : msg("Invalid date")}</span
-                >.`,
+              html`Supports Unix cron syntax and certain macros like
+              ${hourly_macro_code} and ${yearly_macro_code}.`,
             )}
-          </p>
-          <p>
-            ${msg(
-              html`Next scheduled run:
-                <span
-                  >${utcSchedule
-                    ? humanizeNextDate(utcSchedule)
-                    : msg("Invalid date")}</span
-                >.`,
-            )}
-          </p>
-        </div>
-      `)}
-      ${this.renderHelpTextCol(
-        msg(`A crawl will run at this time in your current timezone.`),
+            ${this.renderUserGuideLink({
+              hash: "cron-schedule",
+              content: msg("More details"),
+            })}
+          `)}
+        `,
       )}
     `;
   };
 
   private renderJobMetadata() {
+    const isPageScope = isPageScopeType(this.formState.scopeType);
+
+    const linkToScope = (label: string) =>
+      html`<button
+        type="button"
+        class="text-blue-600 hover:text-blue-500"
+        @click=${async () => {
+          this.updateProgressState({ activeTab: "scope" });
+
+          await this.updateComplete;
+
+          void this.scrollToActivePanel();
+        }}
+      >
+        ${label}
+      </button>`;
+    const link_to_crawl_start_url = linkToScope(msg("Crawl Start URL"));
+    const link_to_scope = linkToScope(msg("Scope"));
+
     return html`
       ${inputCol(html`
         <sl-input
@@ -2179,8 +2313,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Customize this Workflow's name. Workflows are named after
-        the first Crawl URL by default.`),
+        html`${msg(`Customize the name of this workflow.`)}
+        ${isPageScope
+          ? this.formState.scopeType === ScopeType.Page
+            ? msg(
+                html`If omitted, the workflow will be named after the URL
+                specified in ${link_to_scope}.`,
+              )
+            : msg(
+                html`If omitted, the workflow will be named after the first URL
+                specified in ${link_to_scope}.`,
+              )
+          : msg(
+              html`If omitted, the workflow will be named after the
+              ${link_to_crawl_start_url}.`,
+            )} `,
       )}
       ${inputCol(html`
         <sl-textarea
@@ -2751,6 +2898,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }
     }
 
+    // Disable failOnContentCheck if no browser profile is selected
+    // This is done here rather than in `willChange` so that the state of the checkbox
+    // can be remembered if the switches from a browser profile to no browser profile,
+    // and then back to a browser profile
+    if (this.formState.browserProfile === null) {
+      this.formState.failOnContentCheck = false;
+    }
+
     const isValid = await this.checkFormValidity(this.formElem);
 
     if (!isValid || this.formHasError) {
@@ -3017,7 +3172,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
       description: this.formState.description,
       browserWindows: this.formState.browserWindows,
       profileid: this.formState.browserProfile?.id || "",
-      schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
+      schedule:
+        this.formState.scheduleType === "none"
+          ? ""
+          : (this.formState.scheduleFrequency
+              ? this.utcSchedule
+              : this.formState.scheduleCustom) || "",
       crawlTimeout: this.formState.crawlTimeoutMinutes * 60,
       maxCrawlSize: this.formState.maxCrawlSizeGB * BYTES_PER_GB,
       tags: this.formState.tags,

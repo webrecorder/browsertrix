@@ -13,6 +13,7 @@ from btrixcloud.utils import is_bool
 if TYPE_CHECKING:
     from btrixcloud.crawlconfigs import CrawlConfigOps
     from btrixcloud.crawls import CrawlOps
+    from btrixcloud.crawl_logs import CrawlLogOps
     from btrixcloud.orgs import OrgOps
     from btrixcloud.colls import CollectionOps
     from btrixcloud.storages import StorageOps
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
     from btrixcloud.pages import PageOps
     from redis.asyncio.client import Redis
 else:
-    CrawlConfigOps = CrawlOps = OrgOps = CollectionOps = Redis = object
+    CrawlConfigOps = CrawlOps = OrgOps = CollectionOps = Redis = CrawlLogOps = object
     StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = PageOps = object
 
 
@@ -154,6 +155,7 @@ class BaseOperator:
     event_webhook_ops: EventWebhookOps
     page_ops: PageOps
     user_ops: UserManager
+    crawl_log_ops: CrawlLogOps
 
     def __init__(
         self,
@@ -166,6 +168,7 @@ class BaseOperator:
         event_webhook_ops,
         background_job_ops,
         page_ops,
+        crawl_log_ops,
     ):
         self.k8s = k8s
         self.crawl_config_ops = crawl_config_ops
@@ -177,6 +180,7 @@ class BaseOperator:
         self.event_webhook_ops = event_webhook_ops
         self.page_ops = page_ops
         self.user_ops = crawl_config_ops.user_manager
+        self.crawl_log_ops = crawl_log_ops
 
         # to avoid background tasks being garbage collected
         # see: https://stackoverflow.com/a/74059981

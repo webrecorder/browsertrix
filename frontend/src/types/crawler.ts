@@ -266,7 +266,7 @@ export enum CrawlLogContext {
 export type CrawlLog = {
   timestamp: string;
   logLevel: CrawlLogLevel;
-  details: Record<string, unknown> & {
+  details?: Record<string, unknown> & {
     behavior?: string;
     page?: string;
     stack?: string;

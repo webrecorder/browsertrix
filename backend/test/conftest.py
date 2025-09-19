@@ -332,7 +332,7 @@ def sample_crawl_data():
     return {
         "runNow": False,
         "name": "Test Crawl",
-        "config": {"seeds": [{"url": "https://example.com/"}], "extraHops": 1},
+        "config": {"seeds": [{"url": "https://example-com.webrecorder.net/"}], "extraHops": 1},
         "tags": ["tag1", "tag2"],
     }
 
@@ -558,7 +558,7 @@ def url_list_config_id(crawler_auth_headers, default_org_id):
         "config": {
             "seeds": [
                 {"url": "https://webrecorder.net"},
-                {"url": "https://example.com"},
+                {"url": "https://example-com.webrecorder.net"},
                 {"url": "https://specs.webrecorder.net"},
             ],
             "limit": 1,
