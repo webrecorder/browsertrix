@@ -37,6 +37,7 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
 import { type StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
+import { downloadLink } from "@/utils/crawl-workflows/downloadLink";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import {
   DEFAULT_MAX_SCALE,
@@ -719,8 +720,7 @@ export class WorkflowDetail extends BtrixElement {
       const authToken = this.authState?.headers.Authorization.split(" ")[1];
       const disableDownload = this.isRunning;
       const disableReplay = !latestCrawl.fileSize;
-      const replayHref = `/api/orgs/${this.orgId}/all-crawls/${latestCrawlId}/download?auth_bearer=${authToken}`;
-      const replayFilename = `browsertrix-${latestCrawlId}.wacz`;
+      const download = downloadLink(latestCrawl, this.authState);
 
       return html`
         <btrix-copy-button
@@ -737,22 +737,15 @@ export class WorkflowDetail extends BtrixElement {
           ?disabled=${!disableDownload}
         >
           <sl-button-group>
-            <sl-tooltip
-              content="${msg("Download Item as WACZ")} (${this.localize.bytes(
-                latestCrawl.fileSize || 0,
-              )})"
-              ?disabled=${disableReplay}
+            <sl-button
+              size="small"
+              href=${download.path}
+              download=${download.name}
+              ?disabled=${disableDownload || disableReplay}
             >
-              <sl-button
-                size="small"
-                href=${replayHref}
-                download=${replayFilename}
-                ?disabled=${disableDownload || disableReplay}
-              >
-                <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-                ${msg("Download")}
-              </sl-button>
-            </sl-tooltip>
+              <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+              ${msg("Download")}
+            </sl-button>
             <sl-dropdown distance="4" placement="bottom-end" hoist>
               <sl-button
                 slot="trigger"
@@ -766,9 +759,9 @@ export class WorkflowDetail extends BtrixElement {
               </sl-button>
               <sl-menu>
                 <btrix-menu-item-link
-                  href=${replayHref}
+                  href=${download.path}
                   ?disabled=${disableDownload || disableReplay}
-                  download=${replayFilename}
+                  download=${download.name}
                 >
                   <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                   ${msg("Item")}
