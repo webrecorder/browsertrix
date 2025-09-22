@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task, TaskStatus } from "@lit/task";
 import type { SlDialog, SlSelectEvent } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
@@ -42,6 +43,7 @@ import {
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { renderName } from "@/utils/crawler";
+import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 type SearchFields = "name" | "firstSeed";
@@ -54,11 +56,8 @@ type Sort = {
 };
 
 type FilterBy = {
-  [K in keyof ListWorkflow]: ListWorkflow[K] extends string ? string : boolean;
+  [K in keyof ListWorkflow]?: boolean;
 };
-type BoolFilterKeys = {
-  [K in keyof FilterBy]: FilterBy[K] extends boolean ? K : never;
-}[keyof FilterBy];
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.crawlConfigs";
@@ -116,14 +115,45 @@ export class WorkflowsList extends BtrixElement {
     firstSeed: msg("Crawl Start URL"),
   };
 
+  private readonly workflows = new Task(this, {
+    task: async ([page]: readonly [number], { signal }) => {
+      this.fetchErrorStatusCode = undefined;
+      const params = { page } as APIPaginationQuery;
+
+      try {
+        return await this.getWorkflows(params, signal);
+      } catch (e) {
+        console.error("workflows task error", e);
+        if (isApiError(e)) {
+          this.fetchErrorStatusCode = e.statusCode;
+        } else if ((e as Error).name === "AbortError") {
+          console.debug("Fetch archived items aborted to throttle");
+        } else {
+          this.notify.toast({
+            message: msg("Sorry, couldn't retrieve Workflows at this time."),
+            variant: "danger",
+            icon: "exclamation-octagon",
+            id: "workflow-retrieve-error",
+          });
+        }
+      }
+
+      // Restart timer for next poll
+      this.timerId = window.setTimeout(() => {
+        void this.workflows.run();
+      }, 1000 * POLL_INTERVAL_SECONDS);
+    },
+    args: () => {
+      return [this.page] as const;
+    },
+    autoRun: false,
+  });
+
   @state()
-  private workflows?: APIPaginatedList<ListWorkflow>;
+  private page = parsePage(new URLSearchParams(location.search).get("page"));
 
   @state()
   private searchOptions: { [x: string]: string }[] = [];
-
-  @state()
-  private isFetching = false;
 
   @state()
   private fetchErrorStatusCode?: number;
@@ -152,11 +182,20 @@ export class WorkflowsList extends BtrixElement {
   @query("#deleteDialog")
   private readonly deleteDialog?: SlDialog | null;
 
+  @state()
+  private get isFilterSet() {
+    return (
+      this.filterByCurrentUser ||
+      this.filterByTags?.length ||
+      this.filterByProfiles?.length ||
+      Object.values(this.filterBy).some(Boolean)
+    );
+  }
+
   // For fuzzy search:
   private readonly searchKeys = ["name", "firstSeed"];
 
   // Use to cancel requests
-  private getWorkflowsController: AbortController | null = null;
   private timerId?: number;
 
   private get selectedSearchFilterKey() {
@@ -243,7 +282,7 @@ export class WorkflowsList extends BtrixElement {
 
       // Convert string bools to filter values
       if (value === "true") {
-        filterBy[key as BoolFilterKeys] = true;
+        filterBy[key as keyof typeof filterBy] = true;
       } else if (value === "false") {
         filterBy[key as keyof typeof filterBy] = false;
       } else {
@@ -292,13 +331,12 @@ export class WorkflowsList extends BtrixElement {
       const isInitialRender = resetToFirstPageProps
         .map((k) => changedProperties.get(k))
         .every((v) => v === undefined);
-      void this.fetchWorkflows({
-        page:
-          // If this is the initial render, use the page from the URL or default to 1; otherwise, reset the page to 1
-          isInitialRender
-            ? parsePage(new URLSearchParams(location.search).get("page")) || 1
-            : 1,
-      });
+      void this.workflows.run([
+        // If this is the initial render, use the page from the URL or default to 1; otherwise, reset the page to 1
+        isInitialRender
+          ? parsePage(new URLSearchParams(location.search).get("page")) || 1
+          : 1,
+      ]);
     }
     if (changedProperties.has("filterByCurrentUser")) {
       window.sessionStorage.setItem(
@@ -390,42 +428,9 @@ export class WorkflowsList extends BtrixElement {
     super.disconnectedCallback();
   }
 
-  private async fetchWorkflows(params?: APIPaginationQuery) {
-    this.fetchErrorStatusCode = undefined;
-
-    this.cancelInProgressGetWorkflows();
-    this.isFetching = true;
-    try {
-      const workflows = await this.getWorkflows(params);
-      this.workflows = workflows;
-    } catch (e) {
-      if (isApiError(e)) {
-        this.fetchErrorStatusCode = e.statusCode;
-      } else if ((e as Error).name === "AbortError") {
-        console.debug("Fetch archived items aborted to throttle");
-      } else {
-        this.notify.toast({
-          message: msg("Sorry, couldn't retrieve Workflows at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "workflow-retrieve-error",
-        });
-      }
-    }
-    this.isFetching = false;
-
-    // Restart timer for next poll
-    this.timerId = window.setTimeout(() => {
-      void this.fetchWorkflows();
-    }, 1000 * POLL_INTERVAL_SECONDS);
-  }
-
   private cancelInProgressGetWorkflows() {
     window.clearTimeout(this.timerId);
-    if (this.getWorkflowsController) {
-      this.getWorkflowsController.abort(ABORT_REASON_THROTTLE);
-      this.getWorkflowsController = null;
-    }
+    this.workflows.abort(ABORT_REASON_THROTTLE);
   }
 
   render() {
@@ -532,6 +537,11 @@ export class WorkflowsList extends BtrixElement {
         <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
           ${this.renderControls()}
         </div>
+        <div
+          class="mb-3 flex min-h-8 flex-wrap items-center justify-between gap-8"
+        >
+          ${this.renderGroupedActions()}
+        </div>
       </div>
 
       ${when(
@@ -547,8 +557,8 @@ export class WorkflowsList extends BtrixElement {
         `,
         () => html`
           <div class="pb-10">
-            ${this.workflows
-              ? this.workflows.total
+            ${this.workflows.value
+              ? this.workflows.value.total
                 ? this.renderWorkflowList()
                 : this.renderEmptyState()
               : this.renderLoading()}
@@ -714,12 +724,7 @@ export class WorkflowsList extends BtrixElement {
       </btrix-filter-chip>
 
       ${when(
-        [
-          this.filterBy.schedule,
-          this.filterBy.isCrawlRunning,
-          this.filterByCurrentUser || undefined,
-          this.filterByTags,
-        ].filter((v) => v !== undefined).length > 1,
+        this.isFilterSet,
         () => html`
           <sl-button
             class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
@@ -733,6 +738,7 @@ export class WorkflowsList extends BtrixElement {
               };
               this.filterByCurrentUser = false;
               this.filterByTags = undefined;
+              this.filterByProfiles = undefined;
             }}
           >
             <sl-icon slot="prefix" name="x-lg"></sl-icon>
@@ -771,12 +777,72 @@ export class WorkflowsList extends BtrixElement {
     `;
   }
 
+  private renderGroupedActions() {
+    if (this.workflows.status != TaskStatus.COMPLETE || !this.workflows.value)
+      return html`<sl-skeleton class="w-24"></sl-skeleton>
+        <btrix-button slot="trigger">
+          <sl-icon
+            name="three-dots-vertical"
+            class="size-4 text-base leading-none"
+          ></sl-icon>
+        </btrix-button>`;
+    const crawlsPluralized = pluralOf("crawls", this.workflows.value.total);
+    const workflowsPluralized = pluralOf(
+      "workflows",
+      this.workflows.value.total,
+    );
+    const numberOfCrawls = this.localize.number(this.workflows.value.total);
+    return html`
+      <span class="text-sm text-neutral-500">
+        ${msg(html`${numberOfCrawls} ${workflowsPluralized}`)}
+      </span>
+      ${this.workflows.value.total > 0
+        ? this.isFilterSet
+          ? html`<div class="flex items-center justify-between">
+              <sl-button size="small" variant="text" type="button">
+                <sl-icon slot="prefix" name="play"></sl-icon>
+                ${msg(html`Run ${numberOfCrawls} ${crawlsPluralized}`)}
+              </sl-button>
+              <btrix-overflow-dropdown>
+                <sl-menu>
+                  <sl-menu-item>
+                    <sl-icon
+                      slot="prefix"
+                      name="file-earmark-bar-graph"
+                    ></sl-icon>
+                    ${msg(
+                      html`Generate Combined Report for ${numberOfCrawls}
+                      ${crawlsPluralized}`,
+                    )}
+                  </sl-menu-item>
+                </sl-menu>
+              </btrix-overflow-dropdown>
+            </div>`
+          : html`<btrix-overflow-dropdown>
+              <sl-menu>
+                <sl-menu-item>
+                  <sl-icon slot="prefix" name="play"></sl-icon>
+                  ${msg(html`Run ${numberOfCrawls} ${crawlsPluralized}`)}
+                </sl-menu-item>
+                <sl-menu-item>
+                  <sl-icon
+                    slot="prefix"
+                    name="file-earmark-bar-graph"
+                  ></sl-icon>
+                  ${msg(html`Generate Combined Report`)}
+                </sl-menu-item>
+              </sl-menu>
+            </btrix-overflow-dropdown>`
+        : null}
+    `;
+  }
+
   private renderWorkflowList() {
-    if (!this.workflows) return;
-    const { page, total, pageSize } = this.workflows;
+    if (!this.workflows.value) return;
+    const { page, total, pageSize } = this.workflows.value;
     return html`
       <btrix-workflow-list>
-        ${this.workflows.items.map(this.renderWorkflowItem)}
+        ${this.workflows.value.items.map(this.renderWorkflowItem)}
       </btrix-workflow-list>
       <footer
         class=${clsx(
@@ -789,9 +855,8 @@ export class WorkflowsList extends BtrixElement {
           totalCount=${total}
           size=${pageSize}
           @page-change=${async (e: PageChangeEvent) => {
-            await this.fetchWorkflows({
-              page: e.detail.page,
-            });
+            this.page = e.detail.page;
+            await this.workflows.taskComplete;
 
             // Scroll to top of list
             // TODO once deep-linking is implemented, scroll to top of pushstate
@@ -883,7 +948,7 @@ export class WorkflowsList extends BtrixElement {
       `;
     }
 
-    if (this.workflows?.page && this.workflows.page > 1) {
+    if (this.workflows.value?.page && this.workflows.value.page > 1) {
       return html`
         <div class="border-b border-t py-5">
           <p class="text-center text-neutral-500">
@@ -893,7 +958,10 @@ export class WorkflowsList extends BtrixElement {
       `;
     }
 
-    if (this.isFetching) {
+    if (
+      this.workflows.status !== TaskStatus.COMPLETE &&
+      this.workflows.status !== TaskStatus.ERROR
+    ) {
       return this.renderLoading();
     }
 
@@ -917,17 +985,18 @@ export class WorkflowsList extends BtrixElement {
    **/
   private async getWorkflows(
     queryParams?: APIPaginationQuery & Record<string, unknown>,
+    signal?: AbortSignal,
   ) {
     const query = queryString.stringify(
       {
         ...this.filterBy,
         page:
           queryParams?.page ||
-          this.workflows?.page ||
+          this.workflows.value?.page ||
           parsePage(new URLSearchParams(location.search).get("page")),
         pageSize:
           queryParams?.pageSize ||
-          this.workflows?.pageSize ||
+          this.workflows.value?.pageSize ||
           INITIAL_PAGE_SIZE,
         userid: this.filterByCurrentUser ? this.userInfo?.id : undefined,
         tag: this.filterByTags || undefined,
@@ -941,14 +1010,12 @@ export class WorkflowsList extends BtrixElement {
       },
     );
 
-    this.getWorkflowsController = new AbortController();
-    const data = await this.api.fetch<APIPaginatedList<Workflow>>(
+    const data = await this.api.fetch<APIPaginatedList<ListWorkflow>>(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
       {
-        signal: this.getWorkflowsController.signal,
+        signal,
       },
     );
-    this.getWorkflowsController = null;
 
     return data;
   }
@@ -1002,7 +1069,7 @@ export class WorkflowsList extends BtrixElement {
         method: "DELETE",
       });
 
-      void this.fetchWorkflows();
+      void this.workflows.run();
       this.notify.toast({
         message: msg(
           html`Deleted <strong>${renderName(workflow)}</strong> Workflow.`,
@@ -1031,7 +1098,7 @@ export class WorkflowsList extends BtrixElement {
         },
       );
       if (data.success) {
-        void this.fetchWorkflows();
+        void this.workflows.run();
       } else {
         this.notify.toast({
           message: msg("Something went wrong, couldn't cancel crawl."),
@@ -1053,7 +1120,7 @@ export class WorkflowsList extends BtrixElement {
         },
       );
       if (data.success) {
-        void this.fetchWorkflows();
+        void this.workflows.run();
       } else {
         this.notify.toast({
           message: msg("Something went wrong, couldn't stop crawl."),
@@ -1091,7 +1158,7 @@ export class WorkflowsList extends BtrixElement {
         duration: 8000,
       });
 
-      await this.fetchWorkflows();
+      await this.workflows.run();
       // Scroll to top of list
       this.scrollIntoView({ behavior: "smooth" });
     } catch (e) {
@@ -1173,7 +1240,7 @@ export class WorkflowsList extends BtrixElement {
     >(`/orgs/${this.orgId}/crawlconfigs/batch/run`, {
       method: "POST",
       body: {
-        ...this.filterBy,
+        ...(this.filterBy as Partial<BatchWorkflowFilter>),
         createdBy: this.filterByCurrentUser ? this.userInfo?.id : undefined,
         tags: this.filterByTags,
         tagMatch: this.filterByTagsType,

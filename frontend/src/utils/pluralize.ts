@@ -247,6 +247,32 @@ const plurals = {
       id: "profiles.plural.other",
     }),
   },
+  workflows: {
+    zero: msg("workflows", {
+      desc: 'plural form of "workflows" for zero workflows',
+      id: "workflows.plural.zero",
+    }),
+    one: msg("workflow", {
+      desc: 'singular form for "workflow"',
+      id: "workflows.plural.one",
+    }),
+    two: msg("workflows", {
+      desc: 'plural form of "workflows" for two workflows',
+      id: "workflows.plural.two",
+    }),
+    few: msg("workflows", {
+      desc: 'plural form of "workflows" for few workflows',
+      id: "workflows.plural.few",
+    }),
+    many: msg("workflows", {
+      desc: 'plural form of "workflows" for many workflows',
+      id: "workflows.plural.many",
+    }),
+    other: msg("workflows", {
+      desc: 'plural form of "workflows" for multiple/other workflows',
+      id: "workflows.plural.other",
+    }),
+  },
 };
 
 export const pluralOf = (word: keyof typeof plurals, count: number) => {
