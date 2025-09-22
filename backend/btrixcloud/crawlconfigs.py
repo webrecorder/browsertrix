@@ -547,8 +547,7 @@ class CrawlConfigOps:
                 )
             if orig_crawl_config.config.failOnContentCheck:
                 if not update.config or (
-                    update.config
-                    and update.config.failOnContentCheck not in (None, False)
+                    update.config and update.config.failOnContentCheck is not False
                 ):
                     raise HTTPException(
                         status_code=400, detail="fail_on_content_check_requires_profile"
