@@ -39,6 +39,7 @@ export const SECTIONS = [
   "behaviors",
   "browserSettings",
   "scheduling",
+  "collection",
   "metadata",
 ] as const;
 export const sectionsEnum = z.enum(SECTIONS);
@@ -50,6 +51,7 @@ export enum GuideHash {
   Behaviors = "page-behavior",
   BrowserSettings = "browser-settings",
   Scheduling = "scheduling",
+  Collection = "collection",
   Metadata = "metadata",
 }
 
@@ -64,6 +66,7 @@ export const workflowTabToGuideHash: Record<SectionsEnum, GuideHash> = {
   behaviors: GuideHash.Behaviors,
   browserSettings: GuideHash.BrowserSettings,
   scheduling: GuideHash.Scheduling,
+  collection: GuideHash.Metadata,
   metadata: GuideHash.Metadata,
 };
 

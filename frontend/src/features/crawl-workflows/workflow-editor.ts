@@ -204,6 +204,10 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
         error: false,
         completed: hasConfigId,
       },
+      collection: {
+        error: false,
+        completed: hasConfigId,
+      },
       metadata: {
         error: false,
         completed: hasConfigId,
@@ -2279,6 +2283,30 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   };
 
+  private renderCollection() {
+    return html`
+      ${inputCol(html`
+        <btrix-collections-add
+          .initialCollections=${this.formState.autoAddCollections}
+          .configId=${this.configId}
+          emptyText=${msg("Search for a Collection to auto-add crawls")}
+          @collections-change=${(e: CollectionsChangeEvent) =>
+            this.updateFormState(
+              {
+                autoAddCollections: e.detail.collections,
+              },
+              true,
+            )}
+        ></btrix-collections-add>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(`Automatically add crawls from this workflow to one or more collections
+          as soon as they complete.
+          Individual crawls can be selected from within the collection later.`),
+      )}
+    `;
+  }
+
   private renderJobMetadata() {
     const isPageScope = isPageScopeType(this.formState.scopeType);
 
@@ -2363,25 +2391,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         msg(`Create or assign this crawl (and its outputs) to one or more tags
         to help organize your archived items.`),
       )}
-      ${inputCol(html`
-        <btrix-collections-add
-          .initialCollections=${this.formState.autoAddCollections}
-          .configId=${this.configId}
-          emptyText=${msg("Search for a Collection to auto-add crawls")}
-          @collections-change=${(e: CollectionsChangeEvent) =>
-            this.updateFormState(
-              {
-                autoAddCollections: e.detail.collections,
-              },
-              true,
-            )}
-        ></btrix-collections-add>
-      `)}
-      ${this.renderHelpTextCol(
-        msg(`Automatically add crawls from this workflow to one or more collections
-          as soon as they complete.
-          Individual crawls can be selected from within the collection later.`),
-      )}
     `;
   }
 
@@ -2453,8 +2462,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
       render: this.renderJobScheduling,
     },
     {
+      name: "collection",
+      desc: msg("Add crawls from this workflow to one or more collections."),
+      render: this.renderCollection,
+    },
+    {
       name: "metadata",
-      desc: msg("Describe and organize crawls from this workflow."),
+      desc: msg("Describe and tag this workflow and its crawls."),
       render: this.renderJobMetadata,
     },
   ];
