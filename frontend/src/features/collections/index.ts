@@ -6,7 +6,7 @@ import("./collection-edit-dialog");
 import("./collection-create-dialog");
 import("./collection-initial-view-dialog");
 import("./collection-workflow-list");
-import("./linked-collections-list");
+import("./linked-collections");
 import("./select-collection-access");
 import("./select-collection-page");
 import("./share-collection");

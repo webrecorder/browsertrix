@@ -315,9 +315,9 @@ export class ConfigDetails extends BtrixElement {
             ${this.renderSetting(
               html`<span class="mb-1 inline-block">${msg("Auto-Add")}</span>`,
               crawlConfig?.autoAddCollections.length
-                ? html`<btrix-linked-collections-list
+                ? html`<btrix-linked-collections
                     .collectionIds=${crawlConfig.autoAddCollections}
-                  ></btrix-linked-collections-list>`
+                  ></btrix-linked-collections>`
                 : undefined,
             )}
           `,
