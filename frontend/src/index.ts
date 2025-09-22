@@ -849,6 +849,11 @@ export class App extends BtrixElement {
 
       case "org": {
         if (!this.isUserInCurrentOrg) {
+          if (this.authState && !this.userInfo) {
+            // Wait for user info to finish loading
+            return this.renderSpinner();
+          }
+
           return this.renderNotFoundPage();
         }
 
