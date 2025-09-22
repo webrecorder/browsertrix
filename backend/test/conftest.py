@@ -332,7 +332,10 @@ def sample_crawl_data():
     return {
         "runNow": False,
         "name": "Test Crawl",
-        "config": {"seeds": [{"url": "https://example-com.webrecorder.net/"}], "extraHops": 1},
+        "config": {
+            "seeds": [{"url": "https://example-com.webrecorder.net/"}],
+            "extraHops": 1,
+        },
         "tags": ["tag1", "tag2"],
     }
 
@@ -820,6 +823,35 @@ def profile_2_id(admin_auth_headers, default_org_id, profile_browser_2_id):
             if time.monotonic() - start_time > time_limit:
                 raise
             time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def profile_2_config_id(admin_auth_headers, default_org_id, profile_2_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_2_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == profile_2_id
+
+    # Use profile in a workflow
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json={
+            "runNow": False,
+            "name": "Profile 2 Test Crawl",
+            "description": "Crawl using browser profile",
+            "config": {
+                "seeds": [{"url": "https://webrecorder.net/"}],
+                "exclude": "community",
+            },
+            "profileid": profile_2_id,
+        },
+    )
+    data = r.json()
+    return data["id"]
 
 
 @pytest.fixture(scope="session")
