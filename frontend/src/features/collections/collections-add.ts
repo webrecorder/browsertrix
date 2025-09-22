@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
@@ -47,10 +47,6 @@ export class CollectionsAdd extends BtrixElement {
 
   @property({ type: String })
   label?: string;
-
-  /* Text to show on collection empty state */
-  @property({ type: String })
-  emptyText?: string;
 
   @state()
   private collectionIds: string[] = [];
@@ -122,13 +118,7 @@ export class CollectionsAdd extends BtrixElement {
                 ></btrix-linked-collections>
               </div>
             `
-          : this.emptyText
-            ? html`
-                <div class="mb-2">
-                  <p class="text-0-500 text-center">${this.emptyText}</p>
-                </div>
-              `
-            : "",
+          : nothing,
       )}
     </div>`;
   }

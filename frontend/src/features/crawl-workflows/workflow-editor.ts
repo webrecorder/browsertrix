@@ -2290,7 +2290,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
           .label=${msg("Auto-Add to Collection")}
           .initialCollections=${this.formState.autoAddCollections}
           .configId=${this.configId}
-          emptyText=${msg("Search for a Collection to auto-add crawls")}
           @collections-change=${(e: CollectionsChangeEvent) =>
             this.updateFormState(
               {
