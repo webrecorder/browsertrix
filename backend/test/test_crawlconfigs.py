@@ -1099,7 +1099,7 @@ def test_update_crawl_config_remove_profile_no_fail_on_content_check(
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{profile_2_config_id}/",
         headers=crawler_auth_headers,
-        json={"profileid": None},
+        json={"profileid": ""},
     )
     assert r.status_code == 200
     data = r.json()
