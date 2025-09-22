@@ -23,8 +23,8 @@ def test_get_config_by_modified_by(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?modifiedBy={crawler_userid}",
         headers=crawler_auth_headers,
     )
-    assert len(r.json()["items"]) == 9
-    assert r.json()["total"] == 9
+    assert len(r.json()["items"]) == 10
+    assert r.json()["total"] == 10
 
 
 def test_get_configs_by_first_seed(
