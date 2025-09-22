@@ -99,7 +99,7 @@ export class CollectionsAdd extends BtrixElement {
   render() {
     return html`<div>
       <label class="form-label">
-        ${this.label || msg("Collection Auto-Add")}
+        ${this.label || msg("Add to Collection")}
       </label>
       <div class="mb-2 rounded-lg border bg-neutral-50 p-2">
         ${this.renderSearch()}
