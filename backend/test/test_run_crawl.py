@@ -422,7 +422,7 @@ def test_download_wacz_crawls(
         with ZipFile(fh, "r") as zip_file:
             contents = zip_file.namelist()
 
-            assert len(contents) >= 2
+            assert len(contents) == 2
             for filename in contents:
                 assert filename.endswith(".wacz") or filename == "datapackage.json"
                 assert zip_file.getinfo(filename).compress_type == ZIP_STORED
@@ -435,6 +435,69 @@ def test_download_wacz_crawls(
                         assert resource["name"] == resource["path"]
                         assert resource["hash"]
                         assert resource["bytes"]
+
+
+@pytest.mark.parametrize(
+    "type_path",
+    [
+        # crawls endpoint
+        ("crawls"),
+        # all-crawls endpoint
+        ("all-crawls"),
+    ],
+)
+def test_download_wacz_crawls_as_single_wacz(
+    admin_auth_headers, default_org_id, admin_crawl_id, type_path
+):
+    with TemporaryFile() as fh:
+        with requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/{type_path}/{admin_crawl_id}/download?preferSingleWACZ=true",
+            headers=admin_auth_headers,
+            stream=True,
+        ) as r:
+            assert r.status_code == 200
+            for chunk in r.iter_content():
+                fh.write(chunk)
+
+        fh.seek(0)
+        with ZipFile(fh, "r") as zip_file:
+            contents = zip_file.namelist()
+
+            assert len(contents) >= 6
+
+            assert "datapackage.json" in contents
+            assert "datapackage-digest.json" in contents
+
+            archives_found = False
+            indexes_found = False
+            pages_found = False
+            logs_found = False
+
+            for filename in contents:
+                print(filename)
+                if filename.startswith("archive/") and filename.endswith(".warc.gz"):
+                    archives_found = True
+                if filename.startswith("indexes/"):
+                    indexes_found = True
+                if filename.startswith("pages/") and filename.endswith(".jsonl"):
+                    pages_found = True
+                if filename.startswith("logs/") and filename.endswith(".log"):
+                    logs_found = True
+
+                if filename == "datapackage.json":
+                    data = zip_file.read(filename).decode("utf-8")
+                    datapackage = json.loads(data)
+                    assert len(datapackage["resources"]) >= 6
+                    for resource in datapackage["resources"]:
+                        assert resource["name"]
+                        assert resource["path"]
+                        assert resource["hash"]
+                        assert resource["bytes"]
+
+            assert archives_found
+            assert indexes_found
+            assert pages_found
+            assert logs_found
 
 
 def test_update_crawl(

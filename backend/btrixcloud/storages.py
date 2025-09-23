@@ -836,7 +836,7 @@ class StorageOps:
     ) -> Iterator[bytes]:
         """generate streaming zip as sync"""
 
-        def get_file(path: str) -> Iterable[bytes]:
+        def get_file(path: str) -> Iterator[bytes]:
             path = self.resolve_internal_access_path(path)
             r = requests.get(path, stream=True, timeout=None)
             yield from r.iter_content(CHUNK_SIZE)
