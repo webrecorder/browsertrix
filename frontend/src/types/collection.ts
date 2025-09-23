@@ -25,8 +25,8 @@ export const publicCollectionSchema = z.object({
   orgName: z.string(),
   orgPublicProfile: z.boolean(),
   name: z.string(),
-  created: z.string().datetime().nullable(), // TODO check if this just needed migration to not be null
-  modified: z.string().datetime(),
+  created: z.string().datetime().nullable(), // NOTE dates may be null for older collections since we can't backfill
+  modified: z.string().datetime().nullable(),
   caption: z.string().nullable(),
   description: z.string().nullable(),
   resources: z.array(z.string()),
