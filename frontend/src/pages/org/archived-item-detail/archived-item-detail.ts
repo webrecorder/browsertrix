@@ -342,7 +342,7 @@ export class ArchivedItemDetail extends BtrixElement {
           html` ${this.renderTitle(this.tabLabels.files)}
             <sl-tooltip content=${msg("Download Files as Multi-WACZ")}>
               <sl-button
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}&preferSingleWACZ=true`}
                 download=${`browsertrix-${this.itemId}.wacz`}
                 size="small"
                 variant="primary"
@@ -671,7 +671,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 `,
               )}
               <btrix-menu-item-link
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}&preferSingleWACZ=true`}
                 download
               >
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
