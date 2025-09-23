@@ -1617,11 +1617,12 @@ def init_orgs_api(
 
         return {"updated": True}
 
-    @router.get("/plans", tags=["settings"], response_model=PlansResponse)
-    async def get_plans(user: User = Depends(user_dep)) -> PlansResponse:
+    @app.get("/orgs/plans", tags=["organizations"], response_model=PlansResponse)
+    async def get_plans(user: User = Depends(user_dep)):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
-        plans_json = os.environ.get("BTRIX_PLANS")
+        plans_json = os.environ.get("AVAILABLE_PLANS")
+        print("DEBUG plans_json:", plans_json)
         if not plans_json:
             print("Info: Plans not configured")
             return PlansResponse(plans=[])

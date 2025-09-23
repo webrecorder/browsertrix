@@ -3,9 +3,11 @@ import { type SlDialog } from "@shoelace-style/shoelace";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref, type Ref } from "lit/directives/ref.js";
+import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import { isEqual } from "lodash";
 import { type Entries } from "type-fest";
+import z from "zod";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type RowEditEventDetail } from "@/components/ui/data-grid/data-grid-row";
@@ -13,83 +15,21 @@ import {
   GridColumnType,
   type GridColumn,
 } from "@/components/ui/data-grid/types";
-import { type OrgData, type OrgQuotas } from "@/utils/orgs";
+import { orgQuotasSchema, type OrgData, type OrgQuotas } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 
-// These were manually copied over from Cashew on 2025-09-15 — please update if necessary
-const PRESETS = {
-  Starter: {
-    quotas: {
-      maxConcurrentCrawls: 1,
-      maxPagesPerCrawl: 2000,
-      storageQuota: 100_000_000_000,
-      maxExecMinutesPerMonth: 180,
-    },
-    subscriptionIds: ["starter", "starterTest"],
-  },
-  Standard: {
-    quotas: {
-      maxConcurrentCrawls: 2,
-      maxPagesPerCrawl: 5000,
-      storageQuota: 220_000_000_000,
-      maxExecMinutesPerMonth: 360,
-    },
-    subscriptionIds: ["standard", "standardTest"],
-  },
-  Plus: {
-    quotas: {
-      maxConcurrentCrawls: 3,
-      maxPagesPerCrawl: 10000,
-      storageQuota: 500_000_000_000,
-      maxExecMinutesPerMonth: 720,
-    },
-    subscriptionIds: ["plus", "plusTest"],
-  },
-  "Pro Standard": {
-    quotas: {
-      maxConcurrentCrawls: 4,
-      maxPagesPerCrawl: 50_000,
-      storageQuota: 1_000_000_000_000,
-      maxExecMinutesPerMonth: 50 * 60,
-    },
-    subscriptionIds: ["pro-standard-monthly", "pro-standard-yearly"],
-  },
-  "Pro Teams": {
-    quotas: {
-      maxConcurrentCrawls: 5,
-      maxPagesPerCrawl: 100_000,
-      storageQuota: 3_000_000_000_000,
-      maxExecMinutesPerMonth: 80 * 60,
-    },
-    subscriptionIds: ["pro-teams-monthly", "pro-teams-yearly"],
-  },
-  "Pro Plus": {
-    quotas: {
-      maxConcurrentCrawls: 10,
-      maxPagesPerCrawl: 400_000,
-      storageQuota: 5_000_000_000_000,
-      maxExecMinutesPerMonth: 150 * 60,
-    },
-    subscriptionIds: ["pro-plus-monthly", "pro-plus-yearly"],
-  },
-  Unset: {
-    quotas: {
-      maxConcurrentCrawls: 0,
-      maxPagesPerCrawl: 0,
-      storageQuota: 0,
-      maxExecMinutesPerMonth: 0,
-    },
-    subscriptionIds: [],
-  },
-} as const satisfies Record<
-  string,
-  {
-    quotas: {
-      [key in keyof OrgQuotas]?: number;
-    };
-    subscriptionIds?: string[];
-  }
->;
+const PlanSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  org_quotas: orgQuotasSchema,
+  testmode: z.boolean(),
+});
+
+const PlansResponseSchema = z.object({
+  plans: z.array(PlanSchema),
+});
+
+type PlansResponse = z.infer<typeof PlansResponseSchema>;
 
 const LABELS = {
   maxConcurrentCrawls: {
@@ -135,6 +75,9 @@ export class OrgQuotaEditor extends BtrixElement {
   orgQuotaAdjustments: Partial<OrgQuotas> = {};
 
   dialog: Ref<SlDialog> = createRef();
+
+  @state()
+  plans = this.api.fetch<PlansResponse>("/orgs/plans");
 
   show() {
     void this.dialog.value?.show();
@@ -243,65 +186,75 @@ export class OrgQuotaEditor extends BtrixElement {
           >
           <btrix-overflow-scroll class="-mx-4 part-[content]:px-4">
             <sl-button-group id="org-quota-presets">
-              ${(Object.entries(PRESETS) as Entries<typeof PRESETS>).map(
-                ([key, value]) => {
-                  const isCurrentSubscription = (
-                    value.subscriptionIds as string[]
-                  ).includes(this.activeOrg?.subscription?.planId ?? "");
-                  return html`<btrix-popover placement="top">
-                    <sl-button
-                      @click=${() => {
-                        const newQuota: Partial<OrgQuotas> = {};
-                        (
-                          Object.entries(value.quotas) as Entries<
-                            typeof value.quotas
-                          >
-                        ).forEach(([k, v]) => {
-                          newQuota[k] = v - quotas[k];
-                        });
-                        this.orgQuotaAdjustments = { ...newQuota };
-                      }}
-                    >
-                      ${key}
-                      ${isCurrentSubscription
-                        ? html`<sl-icon
-                            name="credit-card"
-                            slot="prefix"
-                          ></sl-icon>`
-                        : null}
-                    </sl-button>
-                    <div slot="content">
-                      <header class="mb-2 font-medium">
-                        ${key}${isCurrentSubscription
-                          ? html` -
-                              <b class="text-primary-600"
-                                >${msg("This is the current subscription.")}</b
-                              >`
-                          : null}
-                      </header>
+              ${until(
+                this.plans.then(({ plans }) =>
+                  plans.map(({ id, name, org_quotas }) => {
+                    const isCurrentSubscription =
+                      id === this.activeOrg?.subscription?.planId;
+                    const presets: Omit<
+                      OrgQuotas,
+                      `${"extra" | "gifted"}ExecMinutes`
+                    > = {
+                      maxConcurrentCrawls: org_quotas.maxConcurrentCrawls,
+                      maxExecMinutesPerMonth: org_quotas.maxExecMinutesPerMonth,
+                      maxPagesPerCrawl: org_quotas.maxPagesPerCrawl,
+                      storageQuota: org_quotas.storageQuota,
+                    };
+                    return html`<btrix-popover placement="top">
+                      <sl-button
+                        @click=${() => {
+                          const newQuota: Partial<OrgQuotas> = {};
 
-                      <hr class="my-2" />
-                      <table>
-                        <tbody>
-                          ${(
-                            Object.entries(value.quotas) as Entries<
-                              typeof value.quotas
-                            >
-                          ).map(
-                            ([key, value]) => html`
-                              <tr>
-                                <td class="pr-2">${LABELS[key].label}</td>
-                                <td class="pr-2">
-                                  ${this.format(value, LABELS[key].type)}
-                                </td>
-                              </tr>
-                            `,
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </btrix-popover>`;
-                },
+                          (
+                            Object.entries(presets) as Entries<typeof presets>
+                          ).forEach(([k, v]) => {
+                            newQuota[k] = v - quotas[k];
+                          });
+                          this.orgQuotaAdjustments = { ...newQuota };
+                        }}
+                      >
+                        ${name}
+                        ${isCurrentSubscription
+                          ? html`<sl-icon
+                              name="credit-card"
+                              slot="prefix"
+                            ></sl-icon>`
+                          : null}
+                      </sl-button>
+                      <div slot="content">
+                        <header class="mb-2 font-medium">
+                          ${name}${isCurrentSubscription
+                            ? html` -
+                                <b class="text-primary-600"
+                                  >${msg(
+                                    "This is the current subscription.",
+                                  )}</b
+                                >`
+                            : null}
+                        </header>
+
+                        <hr class="my-2" />
+                        <table>
+                          <tbody>
+                            ${(
+                              Object.entries(presets) as Entries<typeof presets>
+                            ).map(
+                              ([key, value]) => html`
+                                <tr>
+                                  <td class="pr-2">${LABELS[key].label}</td>
+                                  <td class="pr-2">
+                                    ${this.format(value, LABELS[key].type)}
+                                  </td>
+                                </tr>
+                              `,
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </btrix-popover>`;
+                  }),
+                ),
+                msg("Loading plans..."),
               )}
             </sl-button-group>
           </btrix-overflow-scroll>

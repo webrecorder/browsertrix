@@ -107,7 +107,7 @@ data:
 
   CLEANUP_FILES_AFTER_MINUTES: "{{ .Values.cleanup_files_after_minutes | default 1440 }}"
 
-  BTRIX_PLANS: "{{ .Values.available_plans }}"
+  AVAILABLE_PLANS: {{ .Values.available_plans | toJson }}
 
 ---
 apiVersion: v1

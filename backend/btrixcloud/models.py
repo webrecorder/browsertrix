@@ -1856,11 +1856,6 @@ class Plan(BaseModel):
     id: str
     name: str
     org_quotas: OrgQuotas
-    stripe_product_ids: list[str] = []
-    stripe_price_ids: list[str] = []
-    stripe_portal_config_id: str | None = None
-    hubspot_product_id: str | None = None
-    hubspot_deal_amount: float | None = None
     testmode: bool = False
 
 # ============================================================================
