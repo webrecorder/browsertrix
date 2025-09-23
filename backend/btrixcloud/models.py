@@ -1588,6 +1588,8 @@ class Collection(BaseMongoModel):
 
     previousSlugs: List[str] = []
 
+    hasDedupIndex = False
+
 
 # ============================================================================
 class CollIn(BaseModel):
