@@ -2287,7 +2287,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return html`
       ${inputCol(html`
         <btrix-collections-add
-          .label=${msg("Auto-Add")}
+          .label=${msg("Auto-Add to Collection")}
           .initialCollections=${this.formState.autoAddCollections}
           .configId=${this.configId}
           emptyText=${msg("Search for a Collection to auto-add crawls")}

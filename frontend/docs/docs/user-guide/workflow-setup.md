@@ -392,9 +392,9 @@ You can use a tool like [crontab.guru](https://crontab.guru/) to check Cron synt
 
 Cron schedules are always in [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time).
 
-## Collection
+## Collections
 
-### Auto-Add
+### Auto-Add to Collection
 
 Search for and specify [collections](collection.md) that this crawl workflow should automatically add archived items to as soon as crawling finishes. Canceled and Failed crawls will not be added to collections.
 

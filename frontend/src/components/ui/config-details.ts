@@ -313,7 +313,9 @@ export class ConfigDetails extends BtrixElement {
           heading: sectionStrings.collection,
           renderDescItems: () => html`
             ${this.renderSetting(
-              html`<span class="mb-1 inline-block">${msg("Auto-Add")}</span>`,
+              html`<span class="mb-1 inline-block"
+                >${msg("Auto-Add to Collection")}</span
+              >`,
               crawlConfig?.autoAddCollections.length
                 ? html`<btrix-linked-collections
                     .collectionIds=${crawlConfig.autoAddCollections}
