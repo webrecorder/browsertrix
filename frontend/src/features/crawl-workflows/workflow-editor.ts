@@ -204,7 +204,7 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
         error: false,
         completed: hasConfigId,
       },
-      collection: {
+      collections: {
         error: false,
         completed: hasConfigId,
       },
@@ -2283,7 +2283,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   };
 
-  private renderCollection() {
+  private renderCollections() {
     return html`
       ${inputCol(html`
         <btrix-collections-add
@@ -2463,9 +2463,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       render: this.renderJobScheduling,
     },
     {
-      name: "collection",
+      name: "collections",
       desc: msg("Add crawls from this workflow to one or more collections."),
-      render: this.renderCollection,
+      render: this.renderCollections,
     },
     {
       name: "metadata",

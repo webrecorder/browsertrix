@@ -310,7 +310,7 @@ export class ConfigDetails extends BtrixElement {
       ${when(!this.hideMetadata, () =>
         this.renderSection({
           id: "collection",
-          heading: sectionStrings.collection,
+          heading: sectionStrings.collections,
           renderDescItems: () => html`
             ${this.renderSetting(
               html`<span class="mb-1 inline-block"
