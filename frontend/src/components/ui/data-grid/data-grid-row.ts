@@ -30,8 +30,8 @@ export type RowEditEventDetail<T extends GridItem = GridItem> =
 
 const cell = directive(CellDirective);
 
-const cellStyle = tw`focus-visible:-outline-offset-2`;
-const editableCellStyle = tw`p-0 focus-visible:bg-slate-50 `;
+const cellStyle = tw`min-w-0 focus-visible:-outline-offset-2`;
+const editableCellStyle = tw`min-w-0 p-0 focus-visible:bg-slate-50`;
 
 /**
  * @fires btrix-remove CustomEvent
@@ -223,7 +223,10 @@ export class DataGridRow<
 
     if (!item) return;
 
-    const editable = this.editCells && col.editable;
+    const editable =
+      this.editCells && typeof col.editable === "function"
+        ? col.editable(item)
+        : col.editable;
     const tooltipContent = editable
       ? this.#invalidInputsMap.get(col.field)
       : col.renderCellTooltip

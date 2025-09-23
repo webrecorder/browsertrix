@@ -20,7 +20,7 @@ import { DataGridFocusController } from "@/components/ui/data-grid/controllers/f
 import type { UrlInput } from "@/components/ui/url-input";
 import { tw } from "@/utils/tailwind";
 
-const cellInputStyle = [
+export const cellInputStyle = [
   tw`size-full [--sl-input-background-color-hover:transparent] [--sl-input-background-color:transparent] [--sl-input-border-radius-medium:0] [--sl-input-spacing-medium:var(--sl-spacing-small)] focus:z-10`,
   // TODO We need to upgrade to Tailwind v4 for inset rings to actually work
   // tw`focus-within:part-[base]:inset-ring-2`,

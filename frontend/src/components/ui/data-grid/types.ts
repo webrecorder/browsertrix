@@ -40,7 +40,7 @@ export type GridColumn<
   field: Key;
   label: string | TemplateResult;
   description?: string;
-  editable?: boolean;
+  editable?: boolean | ((item: Item | undefined) => boolean | undefined);
   required?: boolean;
   inputPlaceholder?: string;
   width?: string;

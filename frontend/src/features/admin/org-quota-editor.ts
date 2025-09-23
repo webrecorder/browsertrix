@@ -1,5 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { type SlDialog } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref, type Ref } from "lit/directives/ref.js";
@@ -10,6 +11,7 @@ import { type Entries } from "type-fest";
 import z from "zod";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { cellInputStyle } from "@/components/ui/data-grid/data-grid-cell";
 import { type RowEditEventDetail } from "@/components/ui/data-grid/data-grid-row";
 import {
   GridColumnType,
@@ -31,7 +33,14 @@ const PlansResponseSchema = z.object({
 
 type PlansResponse = z.infer<typeof PlansResponseSchema>;
 
-const LABELS = {
+const LABELS: {
+  [key in keyof OrgQuotas]: {
+    label: string;
+    type: "number" | "bytes";
+    scale?: number;
+    adjustmentOnly?: boolean;
+  };
+} = {
   maxConcurrentCrawls: {
     label: msg("Max Concurrent Crawls"),
     type: "number",
@@ -52,17 +61,13 @@ const LABELS = {
   extraExecMinutes: {
     label: msg("Extra Execution Minutes"),
     type: "number",
+    adjustmentOnly: true,
   },
   giftedExecMinutes: {
     label: msg("Gifted Execution Minutes"),
     type: "number",
+    adjustmentOnly: true,
   },
-} as const satisfies {
-  [key in keyof OrgQuotas]: {
-    label: string;
-    type: "number" | "bytes";
-    scale?: number;
-  };
 };
 
 @customElement("btrix-org-quota-editor")
@@ -111,7 +116,7 @@ export class OrgQuotaEditor extends BtrixElement {
         const items = entries.map(([key, value]) => {
           const labelConfig = LABELS[key];
           let currentAdjustment = this.orgQuotaAdjustments[key] || 0;
-          if (labelConfig.type === "bytes") {
+          if (labelConfig.scale != undefined) {
             currentAdjustment = Math.floor(
               currentAdjustment / labelConfig.scale,
             );
@@ -135,46 +140,94 @@ export class OrgQuotaEditor extends BtrixElement {
           {
             label: msg("Value"),
             field: "current",
-            editable: false,
+            editable: (item) => item && !LABELS[item.key].adjustmentOnly,
+            inputType: GridColumnType.Number,
             width: "1fr",
-            renderCell: ({ item }) => {
+            renderEditCell: ({ item }) => {
               const key = item.key;
-              const value = item.current;
+              let value = item.current;
               const labelConfig = LABELS[key];
-              const format = (v: number, isInitialValue = true) =>
-                this.format(v, labelConfig.type, isInitialValue);
 
-              return this.orgQuotaAdjustments[key]
-                ? Math.sign(this.orgQuotaAdjustments[key]) === 1
-                  ? html`<span class="tabular-nums">
-                      <b>${format(value + this.orgQuotaAdjustments[key])}</b>
-                      <span class="inline-block">
-                        (${format(value, false)}
-                        <span class="whitespace-nowrap text-green-600">
-                          +&nbsp;${format(this.orgQuotaAdjustments[key])}</span
-                        >)</span
-                      ></span
+              if (labelConfig.scale != undefined) {
+                value = Math.floor(value / labelConfig.scale);
+              }
+              return html`<sl-input
+                class=${clsx(cellInputStyle)}
+                type="number"
+                value="${value}"
+                min="0"
+                step="1"
+              >
+                ${labelConfig.type === "bytes"
+                  ? html`<span class="whitespace-nowrap" slot="suffix"
+                      >GB</span
                     >`
-                  : html`<span class="tabular-nums">
-                      <b>${format(value + this.orgQuotaAdjustments[key])}</b>
-                      <span class="inline-block">
-                        (${format(value, false)}
-                        <span class="whitespace-nowrap text-red-600">
-                          -&nbsp;${format(-this.orgQuotaAdjustments[key])}</span
-                        >)</span
-                      ></span
-                    >`
-                : format(value);
+                  : ""}
+              </sl-input>`;
             },
           },
           {
             label: msg("Adjustment"),
             field: "adjustment",
             editable: true,
-            width: "1fr",
+            width: "2fr",
             inputType: GridColumnType.Number,
-            min: (item) => -1 * (item?.current ?? 0),
-            step: 1,
+            renderEditCell: ({ item }) => {
+              const key = item.key;
+              let value = this.orgQuotaAdjustments[key] ?? 0;
+              const labelConfig = LABELS[key];
+              const format = (v: number, isInitialValue = true) =>
+                this.format(v, labelConfig.type, isInitialValue);
+
+              const displayValue = this.orgQuotaAdjustments[key]
+                ? Math.sign(this.orgQuotaAdjustments[key]) === 1
+                  ? html`<span class="tabular-nums">
+                      <b
+                        >${format(
+                          (this.org?.quotas[key] || 0) +
+                            this.orgQuotaAdjustments[key],
+                        )}</b
+                      >
+                      <span class="inline-block">
+                        (${format(this.org?.quotas[key] || 0, false)}
+                        <span class="whitespace-nowrap text-green-600">
+                          +&nbsp;${format(this.orgQuotaAdjustments[key])}</span
+                        >)</span
+                      ></span
+                    >`
+                  : html`<span class="tabular-nums">
+                      <b
+                        >${format(
+                          (this.org?.quotas[key] || 0) +
+                            this.orgQuotaAdjustments[key],
+                        )}</b
+                      >
+                      <span class="inline-block">
+                        (${format(this.org?.quotas[key] || 0, false)}
+                        <span class="whitespace-nowrap text-red-600">
+                          -&nbsp;${format(-this.orgQuotaAdjustments[key])}</span
+                        >)</span
+                      ></span
+                    >`
+                : null;
+              if (labelConfig.scale != undefined) {
+                value = Math.floor(value / labelConfig.scale);
+              }
+              return html`<sl-input
+                  class=${clsx(cellInputStyle)}
+                  type="number"
+                  value="${value}"
+                  min=${-1 * item.current}
+                  step="1"
+                >
+                  ${labelConfig.type === "bytes"
+                    ? html`<span class="whitespace-nowrap" slot="suffix"
+                        >GB</span
+                      >`
+                    : ""}
+                </sl-input>
+                ${displayValue}`;
+            },
           },
         ];
 
@@ -267,13 +320,22 @@ export class OrgQuotaEditor extends BtrixElement {
               const key = event.detail.rowKey as keyof OrgQuotas;
               let value = Number(event.detail.value);
               const labelConfig = LABELS[key];
-              if (labelConfig.type === "bytes") {
+              if (labelConfig.scale != undefined) {
                 value = Math.floor(value * labelConfig.scale);
               }
-              this.orgQuotaAdjustments = {
-                ...this.orgQuotaAdjustments,
-                [key]: value,
-              };
+              if (event.detail.field === "adjustment") {
+                console.log("adjustment", value);
+                this.orgQuotaAdjustments = {
+                  ...this.orgQuotaAdjustments,
+                  [key]: value,
+                };
+              } else if (event.detail.field === "current") {
+                console.log("current", value);
+                this.orgQuotaAdjustments = {
+                  ...this.orgQuotaAdjustments,
+                  [key]: value - (this.org?.quotas[key] || 0),
+                };
+              }
             }}
           ></btrix-data-grid>
         `;
