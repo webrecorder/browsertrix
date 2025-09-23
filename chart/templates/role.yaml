@@ -14,7 +14,7 @@ rules:
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 
 - apiGroups: ["btrix.cloud"]
-  resources: ["crawljobs", "profilejobs"]
+  resources: ["crawljobs", "profilejobs", "collindexes"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 
 - apiGroups: ["metrics.k8s.io"]

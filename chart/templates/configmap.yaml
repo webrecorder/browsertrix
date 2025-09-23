@@ -152,6 +152,11 @@ data:
 
     redis_storage: "{{ .Values.redis_storage }}"
 
+    redis_dedupe_storage: "{{ .Values.redis_dedupe_storage }}"
+    redis_dedupe_memory: "{{ .Values.redis_dedupe_memory }}"
+
+    dedupe_importer_channel: {{ .Values.dedupe_importer_channel | default "default" }}
+
     # crawler
     crawler_image_pull_policy: {{ .Values.crawler_pull_policy }}
 
