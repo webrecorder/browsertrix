@@ -420,7 +420,7 @@ export class ArchivedItemDetail extends BtrixElement {
                         class="text-base"
                         name="pencil"
                         @click=${this.openMetadataEditor}
-                        label=${msg("Edit Metadata")}
+                        label=${msg("Edit Archived Item")}
                       ></sl-icon-button>
                     `,
                   )}
@@ -430,9 +430,24 @@ export class ArchivedItemDetail extends BtrixElement {
               )}
             </div>
             <div class="col-span-1 row-span-1 flex flex-col">
-              ${this.renderPanel(msg("Collections"), this.renderCollections(), [
-                tw`rounded-lg border p-4`,
-              ])}
+              ${this.renderPanel(
+                html`
+                  ${this.renderTitle(msg("Collections"))}
+                  ${when(
+                    this.isCrawler,
+                    () => html`
+                      <sl-icon-button
+                        class="text-base"
+                        name="pencil"
+                        @click=${this.openMetadataEditor}
+                        label=${msg("Edit Archived Item")}
+                      ></sl-icon-button>
+                    `,
+                  )}
+                `,
+                this.renderCollections(),
+                [tw`rounded-lg border p-4`],
+              )}
             </div>
           </div>
         `;
@@ -658,7 +673,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 }}
               >
                 <sl-icon name="pencil" slot="prefix"></sl-icon>
-                ${msg("Edit Metadata")}
+                ${msg("Edit Archived Item")}
               </sl-menu-item>
               <sl-divider></sl-divider>
             `,
