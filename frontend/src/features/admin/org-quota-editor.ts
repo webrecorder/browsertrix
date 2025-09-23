@@ -104,6 +104,9 @@ export class OrgQuotaEditor extends BtrixElement {
     const changeCount = Object.values(this.orgQuotaAdjustments).filter(
       (value) => !!value,
     ).length;
+    const subtractiveChanges = Object.values(this.orgQuotaAdjustments).filter(
+      (value) => value < 0,
+    ).length;
     return html` <btrix-dialog
       ${ref(this.dialog)}
       .label=${msg(str`Quotas for: ${this.activeOrg?.name || ""}`)}
@@ -376,7 +379,13 @@ export class OrgQuotaEditor extends BtrixElement {
       <div slot="footer" class="flex justify-end">
         <div class="px-4 py-2 text-xs text-neutral-700">
           ${this.localize.number(changeCount)}
-          ${pluralOf("changes", changeCount)}
+          ${pluralOf("changes", changeCount)}${subtractiveChanges > 0
+            ? html`,
+                <span class="text-warning-600"
+                  >${this.localize.number(subtractiveChanges)}
+                  ${msg("subtractive")}</span
+                >`
+            : null}
         </div>
         <sl-button
           size="small"
