@@ -147,7 +147,9 @@ export class OrgQuotaEditor extends BtrixElement {
             width: "1fr",
             renderCell: ({ item: { key, initialValue } }) =>
               html`<span class="text-xs text-neutral-600"
-                >${this.format(initialValue, LABELS[key].type, true)}</span
+                >${this.format(initialValue, LABELS[key].type, {
+                  asNumber: true,
+                })}</span
               >`,
           },
           {
@@ -202,7 +204,9 @@ export class OrgQuotaEditor extends BtrixElement {
             width: "1fr",
             renderCell: ({ item: { key, currentValue: current } }) =>
               html`<span class="cursor-not-allowed"
-                >${this.format(current, LABELS[key].type, true)}</span
+                >${this.format(current, LABELS[key].type, {
+                  asNumber: true,
+                })}</span
               >`,
             renderEditCell: ({ item, value: _value }) => {
               const key = item.key;
@@ -251,6 +255,11 @@ export class OrgQuotaEditor extends BtrixElement {
                       maxPagesPerCrawl: org_quotas.maxPagesPerCrawl,
                       storageQuota: org_quotas.storageQuota,
                     };
+                    const mismatchesCurrentPlan =
+                      isCurrentSubscription &&
+                      (Object.entries(presets) as Entries<typeof presets>).some(
+                        ([k, v]) => v !== quotas[k],
+                      );
                     return html`<btrix-popover placement="top">
                       <sl-button
                         @click=${() => {
@@ -271,6 +280,13 @@ export class OrgQuotaEditor extends BtrixElement {
                               slot="prefix"
                             ></sl-icon>`
                           : null}
+                        ${mismatchesCurrentPlan
+                          ? html`<sl-icon
+                              name="exclamation-triangle"
+                              slot="suffix"
+                              class="text-warning-600"
+                            ></sl-icon>`
+                          : null}
                       </sl-button>
                       <div slot="content">
                         <header class="mb-2 font-medium">
@@ -289,18 +305,38 @@ export class OrgQuotaEditor extends BtrixElement {
                           <tbody>
                             ${(
                               Object.entries(presets) as Entries<typeof presets>
-                            ).map(
-                              ([key, value]) => html`
+                            ).map(([key, value]) => {
+                              const currentValue = this.format(
+                                quotas[key],
+                                LABELS[key].type,
+                                { plain: true },
+                              );
+                              return html`
                                 <tr>
                                   <td class="pr-2">${LABELS[key].label}</td>
                                   <td class="pr-2">
                                     ${this.format(value, LABELS[key].type)}
+                                    ${mismatchesCurrentPlan &&
+                                    value !== quotas[key]
+                                      ? html`<span class="text-warning-600"
+                                          >(${msg(
+                                            html`currently ${currentValue}`,
+                                          )})</span
+                                        >`
+                                      : null}
                                   </td>
                                 </tr>
-                              `,
-                            )}
+                              `;
+                            })}
                           </tbody>
                         </table>
+                        ${mismatchesCurrentPlan
+                          ? html`<p class="mt-2 font-semibold text-warning-600">
+                              ${msg(
+                                "Quotas for this org do not match its current plan.",
+                              )}
+                            </p>`
+                          : null}
                       </div>
                     </btrix-popover>`;
                   }),
@@ -353,12 +389,23 @@ export class OrgQuotaEditor extends BtrixElement {
     </btrix-dialog>`;
   }
 
-  private format(v: number, type: "bytes" | "number", isInitialValue = true) {
-    if (v <= 0)
-      return isInitialValue
-        ? html`<span class="text-xs text-neutral-600">${msg("Unset")}</span>`
-        : html`<span class="text-xs text-neutral-400">${msg("0")}</span>`;
+  private format(
+    v: number,
+    type: "bytes" | "number",
+    options: { plain?: boolean; asNumber?: boolean } = {},
+  ) {
+    const { plain, asNumber } = options;
     const fn = type === "bytes" ? this.localize.bytes : this.localize.number;
+    if (plain) {
+      if (v <= 0) {
+        return asNumber ? fn(0) : msg("Unset");
+      }
+      return fn(v);
+    }
+    if (v <= 0)
+      return asNumber
+        ? html`<span class="text-xs text-neutral-400">${fn(0)}</span>`
+        : html`<span class="text-xs text-neutral-600">${msg("Unset")}</span>`;
     return fn(v);
   }
 
