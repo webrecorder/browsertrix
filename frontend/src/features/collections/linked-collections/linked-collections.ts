@@ -49,7 +49,10 @@ export class LinkedCollections extends BtrixElement {
   private readonly collectionsTask = new Task(this, {
     task: async ([ids]) => {
       // The API doesn't currently support getting collections by a list of IDs
-      const requests: Promise<CollectionLikeItem>[] = [];
+      const collectionsWithRequest: {
+        id: string;
+        request: Promise<CollectionLikeItem>;
+      }[] = [];
 
       ids.forEach(async (id) => {
         let request = this.collectionsMap.get(id);
@@ -63,10 +66,10 @@ export class LinkedCollections extends BtrixElement {
           this.collectionsMap.set(id, request);
         }
 
-        requests.push(request);
+        collectionsWithRequest.push({ id, request });
       });
 
-      return await Promise.all(requests);
+      return collectionsWithRequest;
     },
     args: () => [this.collectionIds] as const,
   });
@@ -76,6 +79,7 @@ export class LinkedCollections extends BtrixElement {
       this.collectionsTask.value || this.collectionIds.map((id) => ({ id }));
 
     return html`<btrix-linked-collections-list
+      aria-live="polite"
       .collections=${collections}
       baseUrl="${this.navigate.orgBasePath}/collections/view"
       ?removable=${this.removable}

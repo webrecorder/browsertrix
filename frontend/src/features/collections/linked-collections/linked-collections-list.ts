@@ -2,6 +2,7 @@ import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { until } from "lit/directives/until.js";
 
 import type {
   BtrixRemoveLinkedCollectionEvent,
@@ -17,7 +18,9 @@ import { tw } from "@/utils/tailwind";
 @localized()
 export class LinkedCollectionsList extends TailwindElement {
   @property({ type: Array })
-  collections: CollectionLikeItem[] = [];
+  collections: (CollectionLikeItem & {
+    request?: Promise<CollectionLikeItem>;
+  })[] = [];
 
   @property({ type: String })
   baseUrl?: string;
@@ -31,15 +34,22 @@ export class LinkedCollectionsList extends TailwindElement {
     }
 
     return html`<ul class="divide-y rounded border">
-      ${this.collections.map(this.renderItem)}
+      ${this.collections.map((item) =>
+        item.request
+          ? until(item.request.then(this.renderItem))
+          : this.renderItem(item, { loading: true }),
+      )}
     </ul>`;
   }
 
-  private readonly renderItem = (item: CollectionLikeItem) => {
+  private readonly renderItem = (
+    item: CollectionLikeItem,
+    { loading } = { loading: false },
+  ) => {
     const actual = isActualCollection(item);
 
     const content = [
-      html`<div class="flex-1 p-1.5 leading-none">${item.name}</div>`,
+      html`<div class="flex-1 truncate p-1.5 leading-none">${item.name}</div>`,
     ];
 
     if (actual) {
@@ -97,8 +107,7 @@ export class LinkedCollectionsList extends TailwindElement {
     }
 
     return html`<li
-      aria-live="polite"
-      aria-busy="${!item.name}"
+      aria-busy="${loading}"
       class=${clsx(
         tw`flex min-h-8 items-center transition-opacity delay-75`,
         item.name ? tw`opacity-100` : tw`opacity-0`,
