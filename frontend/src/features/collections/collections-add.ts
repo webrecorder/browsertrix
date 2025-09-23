@@ -9,7 +9,7 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Combobox } from "@/components/ui/combobox";
-import type { BtrixRemoveLinkedCollectionEvent } from "@/features/collections/linked-collections/linked-collections-list";
+import type { BtrixRemoveLinkedCollectionEvent } from "@/features/collections/linked-collections/types";
 import type {
   APIPaginatedList,
   APIPaginationQuery,

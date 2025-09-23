@@ -4,7 +4,7 @@ import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import isEqual from "lodash/fp/isEqual";
 
-import type { CollectionLikeItem } from "./linked-collections-list";
+import type { CollectionLikeItem } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Collection } from "@/types/collection";

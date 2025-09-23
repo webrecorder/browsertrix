@@ -3,29 +3,15 @@ import clsx from "clsx";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
+import type {
+  BtrixRemoveLinkedCollectionEvent,
+  CollectionLikeItem,
+} from "./types";
+import { isActualCollection } from "./utils";
+
 import { TailwindElement } from "@/classes/TailwindElement";
-import type { BtrixRemoveEvent } from "@/events/btrix-remove";
-import { collectionSchema, type Collection } from "@/types/collection";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
-
-// NOTE Some API endpoints return only the ID for a collection
-export type CollectionLikeItem = Collection | { id: string; name?: string };
-
-export type BtrixRemoveLinkedCollectionEvent =
-  BtrixRemoveEvent<CollectionLikeItem>;
-
-const isActualCollection = (item: CollectionLikeItem): item is Collection => {
-  try {
-    collectionSchema.parse(item);
-    return true;
-  } catch (err) {
-    if (item.name) {
-      console.debug(err);
-    }
-  }
-  return false;
-};
 
 @customElement("btrix-linked-collections-list")
 @localized()
