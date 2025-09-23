@@ -4,6 +4,8 @@ import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import isEqual from "lodash/fp/isEqual";
 
+import type { CollectionLikeItem } from "./linked-collections-list";
+
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Collection } from "@/types/collection";
 
@@ -22,37 +24,72 @@ export class LinkedCollections extends BtrixElement {
   @property({ type: Array, hasChanged: (a, b) => !isEqual(a, b) })
   collectionIds: string[] = [];
 
+  @property({ type: Boolean })
+  removable?: boolean;
+
+  // Use a custom abort controller rather than the one provided by `Task`
+  // to only abort on disconnect
+  private collectionsTaskController = new AbortController();
+
+  private readonly collectionsMap = new Map<
+    string,
+    Promise<CollectionLikeItem>
+  >();
+
+  disconnectedCallback(): void {
+    this.collectionsTaskController.abort();
+    super.disconnectedCallback();
+  }
+
+  connectedCallback(): void {
+    this.collectionsTaskController = new AbortController();
+    super.connectedCallback();
+  }
+
   private readonly collectionsTask = new Task(this, {
-    task: async ([ids], { signal }) => {
+    task: async ([ids]) => {
       // The API doesn't currently support getting collections by a list of IDs
-      return Promise.all(ids.map(async (id) => this.getCollection(id, signal)));
+      const requests: Promise<CollectionLikeItem>[] = [];
+
+      ids.forEach(async (id) => {
+        let request = this.collectionsMap.get(id);
+
+        if (!request) {
+          request = this.fetchCollection(
+            id,
+            this.collectionsTaskController.signal,
+          );
+
+          this.collectionsMap.set(id, request);
+        }
+
+        requests.push(request);
+      });
+
+      return await Promise.all(requests);
     },
     args: () => [this.collectionIds] as const,
   });
 
   render() {
-    return this.collectionsTask.render({
-      complete: (items) => {
-        const collections = items.filter(
-          (v): v is Collection => v !== undefined,
-        );
+    const collections =
+      this.collectionsTask.value || this.collectionIds.map((id) => ({ id }));
 
-        if (!collections.length) {
-          return;
-        }
-
-        return html`<btrix-linked-collections-list
-          .collections=${collections}
-          baseUrl="${this.navigate.orgBasePath}/collections/view"
-        ></btrix-linked-collections-list>`;
-      },
-    });
+    return html`<btrix-linked-collections-list
+      .collections=${collections}
+      baseUrl="${this.navigate.orgBasePath}/collections/view"
+      ?removable=${this.removable}
+    ></btrix-linked-collections-list>`;
   }
 
-  private async getCollection(id: string, signal: AbortSignal) {
-    return this.api.fetch<Collection | undefined>(
-      `/orgs/${this.orgId}/collections/${id}`,
-      { signal },
-    );
+  private async fetchCollection(id: string, signal: AbortSignal) {
+    try {
+      return await this.api.fetch<Collection>(
+        `/orgs/${this.orgId}/collections/${id}`,
+        { signal },
+      );
+    } catch {
+      return { id };
+    }
   }
 }

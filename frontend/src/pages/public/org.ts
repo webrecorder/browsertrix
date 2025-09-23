@@ -8,7 +8,11 @@ import queryString from "query-string";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { page, pageHeading } from "@/layouts/page";
 import type { APIPaginatedList, APISortQuery } from "@/types/api";
-import { CollectionAccess, type Collection } from "@/types/collection";
+import {
+  CollectionAccess,
+  type Collection,
+  type PublicCollection,
+} from "@/types/collection";
 import type { OrgData, PublicOrgCollections } from "@/types/org";
 import { SortDirection } from "@/types/utils";
 import { richText } from "@/utils/rich-text";
@@ -321,7 +325,7 @@ export class PublicOrg extends BtrixElement {
   }
 
   private async getUserPublicCollections({ orgId }: { orgId: string }) {
-    const params: APISortQuery<Collection> & {
+    const params: APISortQuery<PublicCollection> & {
       access: CollectionAccess;
     } = {
       sortBy: "dateLatest",
@@ -330,7 +334,7 @@ export class PublicOrg extends BtrixElement {
     };
     const query = queryString.stringify(params);
 
-    const data = await this.api.fetch<APIPaginatedList<Collection>>(
+    const data = await this.api.fetch<APIPaginatedList<PublicCollection>>(
       `/orgs/${orgId}/collections?${query}`,
     );
 

@@ -639,7 +639,9 @@ export class CollectionDetail extends BtrixElement {
 
   private renderDetailItem(
     label: string | TemplateResult,
-    renderContent: (collection: PublicCollection) => TemplateResult | string,
+    renderContent: (
+      collection: Collection | PublicCollection,
+    ) => TemplateResult | string,
   ) {
     return metadataItemWithCollection(this.collection)({
       label,

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const storageFileSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   name: z.string(),
   path: z.string().url(),
   hash: z.string(),
