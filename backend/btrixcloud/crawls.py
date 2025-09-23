@@ -1373,9 +1373,13 @@ def init_crawls_api(
         "/orgs/{oid}/crawls/{crawl_id}/download", tags=["crawls"], response_model=bytes
     )
     async def download_crawl_as_single_wacz(
-        crawl_id: str, org: Organization = Depends(org_viewer_dep)
+        crawl_id: str,
+        preferSingleWACZ: bool = False,
+        org: Organization = Depends(org_viewer_dep),
     ):
-        return await ops.download_crawl_as_single_wacz(crawl_id, org)
+        return await ops.download_crawl_as_single_wacz(
+            crawl_id, org, prefer_single_wacz=preferSingleWACZ
+        )
 
     # QA APIs
     # ---------------------
