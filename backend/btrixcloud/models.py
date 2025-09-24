@@ -1849,6 +1849,7 @@ class OrgQuotasIn(BaseModel):
     extraExecMinutes: Optional[int] = None
     giftedExecMinutes: Optional[int] = None
 
+
 # ============================================================================
 class Plan(BaseModel):
     """Available Browsertrix plan, from env"""
@@ -1858,11 +1859,13 @@ class Plan(BaseModel):
     org_quotas: OrgQuotas
     testmode: bool = False
 
+
 # ============================================================================
 class PlansResponse(BaseModel):
     """Response for plans api endpoint"""
 
     plans: list[Plan]
+
 
 # ============================================================================
 class SubscriptionEventOut(BaseModel):
