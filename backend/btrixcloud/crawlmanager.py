@@ -11,7 +11,7 @@ from fastapi import HTTPException
 from .utils import dt_now, date_to_str, scale_from_browser_windows
 from .k8sapi import K8sAPI
 
-from .models import StorageRef, CrawlConfig, BgJobType
+from .models import StorageRef, CrawlConfig, BgJobType, Collection
 
 
 # ============================================================================
@@ -467,6 +467,32 @@ class CrawlManager(K8sAPI):
     async def delete_crawl_config_by_id(self, cid: str) -> None:
         """Delete all crawl configs by id"""
         await self._delete_crawl_configs(f"btrix.crawlconfig={cid}")
+
+    async def create_coll_index(self, collection: Collection):
+        """create collection index"""
+        params = {
+            "id": str(collection.id),
+            "oid": str(collection.oid),
+            "collItemsUpdatedAddAt": date_to_str(collection.modified or dt_now()),
+        }
+        data = self.templates.env.get_template("coll_index.yaml").render(params)
+
+        await self.create_from_yaml(data)
+
+        return str(collection.id)
+
+    async def update_coll_index(self, collection: Collection):
+        """force collection index to update"""
+        return await self.patch_custom_object(
+            f"collindex-${collection.id}",
+            {"collItemsUpdatedAt": date_to_str(dt_now())},
+            "collindexes",
+        )
+
+    async def delete_coll_index(self, collection: Collection):
+        """delete collection index"""
+        res = await self.delete_custom_object(str(collection.id), "collindexes")
+        return res
 
     # ========================================================================
     # Internal Methods

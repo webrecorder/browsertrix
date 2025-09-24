@@ -57,6 +57,8 @@ from .utils import (
     get_origin,
 )
 
+from .crawlmanager import CrawlManager
+
 if TYPE_CHECKING:
     from .orgs import OrgOps
     from .storages import StorageOps
@@ -81,8 +83,16 @@ class CollectionOps:
     event_webhook_ops: EventWebhookOps
     crawl_ops: CrawlOps
     page_ops: PageOps
+    crawl_manager: CrawlManager
 
-    def __init__(self, mdb, storage_ops, orgs, event_webhook_ops):
+    def __init__(
+        self,
+        mdb,
+        orgs: OrgOps,
+        storage_ops: StorageOps,
+        crawl_manager: CrawlManager,
+        event_webhook_ops: EventWebhookOps,
+    ):
         self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
@@ -91,6 +101,7 @@ class CollectionOps:
 
         self.orgs = orgs
         self.storage_ops = storage_ops
+        self.crawl_manager = crawl_manager
         self.event_webhook_ops = event_webhook_ops
 
     def set_crawl_ops(self, ops):
@@ -293,6 +304,24 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         return result
+
+    async def toggle_dedup_index(self, coll_id: UUID, enabled: bool):
+        """toggle dedup index to be enabled/disabled for collection"""
+        result = await self.collections.find_one_and_update(
+            {"_id": coll_id, "dedup_index": not enabled},
+            {"$set": {"dedup_index": enabled}},
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+        # not changed, nothing to do
+        if not result:
+            return False
+
+        coll = Collection.from_dict(result)
+
+        if enabled:
+            return await self.crawl_manager.create_coll_index(coll)
+
+        return await self.crawl_manager.delete_coll_index(coll)
 
     async def get_collection_raw_by_slug(
         self,
@@ -1000,12 +1029,20 @@ class CollectionOps:
 # ============================================================================
 # pylint: disable=too-many-locals
 def init_collections_api(
-    app, mdb, orgs, storage_ops, event_webhook_ops, user_dep
+    app,
+    mdb,
+    orgs: OrgOps,
+    storage_ops: StorageOps,
+    crawl_manager: CrawlManager,
+    event_webhook_ops: EventWebhookOps,
+    user_dep,
 ) -> CollectionOps:
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
 
-    colls: CollectionOps = CollectionOps(mdb, storage_ops, orgs, event_webhook_ops)
+    colls: CollectionOps = CollectionOps(
+        mdb, orgs, storage_ops, crawl_manager, event_webhook_ops
+    )
 
     org_crawl_dep = orgs.org_crawl_dep
     org_viewer_dep = orgs.org_viewer_dep

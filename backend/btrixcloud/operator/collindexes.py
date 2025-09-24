@@ -1,8 +1,10 @@
 """Operator handler for CollIndexes"""
 
-from btrixcloud.utils import str_to_date, dt_now
-from pydantic import BaseModel, Field
 from typing import Literal, get_args
+from uuid import UUID
+from pydantic import BaseModel
+
+from btrixcloud.utils import str_to_date
 
 from .models import MCSyncData, POD
 from .baseoperator import BaseOperator
@@ -14,9 +16,21 @@ INDEX_STATES = get_args(TYPE_INDEX_STATES)
 
 # ============================================================================
 class CollIndexStatus(BaseModel):
+    """CollIndex Status"""
+
     state: TYPE_INDEX_STATES = "initing"
 
     lastCollUpdated: str
+
+
+# ============================================================================
+class CollIndexSpec(BaseModel):
+    """CollIndex Spec"""
+
+    id: UUID
+    oid: UUID
+
+    collItemsUpdatedAt: str
 
 
 # ============================================================================
@@ -25,7 +39,8 @@ class CollIndexOperator(BaseOperator):
 
     shared_params = {}
 
-    def __init__(self):
+    def __init__(self, *args):
+        super().__init__(*args)
         self.shared_params.update(self.k8s.shared_params)
         self.shared_params["redis_storage"] = self.shared_params[
             "redis_coll_index_storage"
@@ -46,11 +61,11 @@ class CollIndexOperator(BaseOperator):
             return await self.sync_index(data)
 
     async def sync_index(self, data: MCSyncData):
-        spec = data.parent.get("spec", {})  # spec is the data from crawl_job.yaml
-        index_id = spec["id"]
-
+        """sync CollIndex object with existing state"""
+        spec = CollIndexSpec(**data.parent.get("spec", {}))
         status = CollIndexStatus(**data.parent.get("status", {}))
 
+        index_id = str(spec.id)
         redis_name = "coll-redis-" + index_id
         new_children = self._load_redis(index_id, redis_name)
 
@@ -65,6 +80,15 @@ class CollIndexOperator(BaseOperator):
             "status": status.dict(exclude_none=True),
             "children": new_children,
         }
+
+    def is_import_needed(self, spec: CollIndexSpec, status: CollIndexStatus):
+        """returnt rue if a reimport is needed based on last import date"""
+        coll_update_date = str_to_date(spec.collItemsUpdatedAt)
+        last_import_date = str_to_date(status.lastCollUpdated)
+        if not coll_update_date or not last_import_date:
+            return True
+
+        return coll_update_date >= last_import_date
 
     def _load_redis(self, index_id: str, name: str):
         params = {}

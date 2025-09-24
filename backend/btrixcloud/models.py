@@ -1588,7 +1588,7 @@ class Collection(BaseMongoModel):
 
     previousSlugs: List[str] = []
 
-    hasDedupIndex = False
+    hasDedupIndex: bool = False
 
 
 # ============================================================================

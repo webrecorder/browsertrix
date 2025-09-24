@@ -2,8 +2,15 @@
 Migration 0010 - Precomputing collection total size
 """
 
+from typing import cast
+
 from btrixcloud.colls import CollectionOps
 from btrixcloud.migrations import BaseMigration
+
+from btrixcloud.orgs import OrgOps
+from btrixcloud.storages import StorageOps
+from btrixcloud.webhooks import EventWebhookOps
+from btrixcloud.crawlmanager import CrawlManager
 
 
 MIGRATION_VERSION = "0010"
@@ -22,7 +29,13 @@ class Migration(BaseMigration):
         Recompute collection data to include totalSize.
         """
         # pylint: disable=duplicate-code
-        coll_ops = CollectionOps(self.mdb, None, None, None)
+        coll_ops = CollectionOps(
+            self.mdb,
+            cast(OrgOps, None),
+            cast(StorageOps, None),
+            cast(CrawlManager, None),
+            cast(EventWebhookOps, None),
+        )
 
         async for coll in coll_ops.collections.find({}):
             coll_id = coll["_id"]
