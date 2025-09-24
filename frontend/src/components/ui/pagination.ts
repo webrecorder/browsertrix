@@ -214,7 +214,9 @@ export class Pagination extends LitElement {
     super.connectedCallback();
   }
 
-  async willUpdate(changedProperties: PropertyValues<this>) {
+  async willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
     if (changedProperties.has("totalCount") || changedProperties.has("size")) {
       this.calculatePages();
     }
@@ -239,8 +241,8 @@ export class Pagination extends LitElement {
       this.onPageChange(constrainedPage, { dispatch: true });
     }
 
-    if (changedProperties.get("page") && this._page) {
-      this.inputValue = `${this._page}`;
+    if (changedProperties.get("_page")) {
+      this.inputValue = `${this.page}`;
     }
   }
 
