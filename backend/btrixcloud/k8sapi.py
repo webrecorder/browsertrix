@@ -228,14 +228,26 @@ class K8sAPI:
 
     async def delete_crawl_job(self, crawl_id):
         """delete custom crawljob object"""
-        try:
-            name = f"crawljob-{crawl_id}"
+        name = f"crawljob-{crawl_id}"
 
+        return await self.delete_custom_object(name, "crawljobs")
+
+    async def delete_profile_browser(self, browserid):
+        """delete custom crawljob object"""
+        name = f"profilejobs-{browserid}"
+
+        res = await self.delete_custom_object(name, "profilejobs")
+
+        return res.get("success") is True
+
+    async def delete_custom_object(self, name: str, plural: str):
+        """delete custom object with name and plural type"""
+        try:
             await self.custom_api.delete_namespaced_custom_object(
                 group="btrix.cloud",
                 version="v1",
                 namespace=self.namespace,
-                plural="crawljobs",
+                plural=plural,
                 name=name,
                 grace_period_seconds=0,
                 # delete as background to allow operator to do proper cleanup
@@ -245,23 +257,6 @@ class K8sAPI:
 
         except ApiException as api_exc:
             return {"error": str(api_exc.reason)}
-
-    async def delete_profile_browser(self, browserid):
-        """delete custom crawljob object"""
-        try:
-            await self.custom_api.delete_namespaced_custom_object(
-                group="btrix.cloud",
-                version="v1",
-                namespace=self.namespace,
-                plural="profilejobs",
-                name=f"profilejob-{browserid}",
-                grace_period_seconds=0,
-                propagation_policy="Background",
-            )
-            return True
-
-        except ApiException:
-            return False
 
     async def get_profile_browser(self, browserid):
         """get profile browser"""
@@ -274,8 +269,14 @@ class K8sAPI:
         )
 
     async def _patch_job(self, crawl_id, body, pluraltype="crawljobs") -> dict:
+        """patch crawl/profile job"""
+        name = f"{pluraltype[:-1]}-{crawl_id}"
+
+        return await self.patch_custom_object(name, body, pluraltype)
+
+    async def patch_custom_object(self, name: str, body, pluraltype: str) -> dict:
+        """patch custom object"""
         try:
-            name = f"{pluraltype[:-1]}-{crawl_id}"
 
             await self.custom_api.patch_namespaced_custom_object(
                 group="btrix.cloud",
