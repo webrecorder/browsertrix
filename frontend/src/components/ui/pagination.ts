@@ -59,6 +59,12 @@ export function calculatePages({
  * </btrix-pagination>
  * ```
  *
+ * You can also disable pagination persistence via search params by setting name to `null`:
+ * ```ts
+ * <btrix-pagination .name=${null} totalCount="11" @page-change=${console.log}>
+ * </btrix-pagination>
+ * ```
+ *
  * @fires page-change {PageChangeEvent}
  */
 @customElement("btrix-pagination")
@@ -157,6 +163,7 @@ export class Pagination extends LitElement {
   ];
 
   searchParams = new SearchParamsController(this, (params) => {
+    if (this.name == null) return;
     const page = parsePage(params.get(this.name));
     if (this._page !== page) {
       this.dispatchEvent(
@@ -185,7 +192,7 @@ export class Pagination extends LitElement {
   }
 
   @property({ type: String })
-  name = "page";
+  name: string | null = "page";
 
   @property({ type: Number })
   totalCount = 0;
@@ -212,13 +219,15 @@ export class Pagination extends LitElement {
       this.calculatePages();
     }
 
-    const parsedPage = parseFloat(
-      this.searchParams.searchParams.get(this.name) ?? "1",
-    );
-    if (parsedPage != this._page) {
-      const page = parsePage(this.searchParams.searchParams.get(this.name));
-      const constrainedPage = Math.max(1, Math.min(this.pages, page));
-      this.onPageChange(constrainedPage, { dispatch: false });
+    if (this.name != null) {
+      const parsedPage = parseFloat(
+        this.searchParams.searchParams.get(this.name) ?? "1",
+      );
+      if (parsedPage != this._page) {
+        const page = parsePage(this.searchParams.searchParams.get(this.name));
+        const constrainedPage = Math.max(1, Math.min(this.pages, page));
+        this.onPageChange(constrainedPage, { dispatch: false });
+      }
     }
 
     // if page is out of bounds, clamp it & dispatch an event to re-fetch data
@@ -407,10 +416,14 @@ export class Pagination extends LitElement {
   }
 
   private setPage(page: number) {
-    if (page === 1) {
-      this.searchParams.delete(this.name);
+    if (this.name != null) {
+      if (page === 1) {
+        this.searchParams.delete(this.name);
+      } else {
+        this.searchParams.set(this.name, page.toString());
+      }
     } else {
-      this.searchParams.set(this.name, page.toString());
+      this._page = page;
     }
   }
 
