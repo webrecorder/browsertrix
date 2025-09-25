@@ -38,7 +38,7 @@ spec:
 
   proxyId: "{{ proxy_id }}"
 
-  dedup_coll_id: "{{ dedup_coll_id }}"
+  dedupCollId: "{{ dedup_coll_id }}"
 
   pausedAt: "{{ pausedAt }}"
 

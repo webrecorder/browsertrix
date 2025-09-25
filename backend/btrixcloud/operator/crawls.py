@@ -170,6 +170,7 @@ class CrawlOperator(BaseOperator):
             storage=StorageRef(spec["storageName"]),
             crawler_channel=spec.get("crawlerChannel", "default"),
             proxy_id=spec.get("proxyId"),
+            dedup_coll_id=spec.get("dedupCollId"),
             scale=spec.get("scale", 1),
             browser_windows=spec.get("browserWindows", 1),
             started=data.parent["metadata"]["creationTimestamp"],
@@ -338,6 +339,13 @@ class CrawlOperator(BaseOperator):
         params["warc_prefix"] = spec.get("warcPrefix")
 
         params["redis_url"] = self.k8s.get_redis_url(crawl_id)
+
+        if crawl.dedup_coll_id:
+            params["redis_dedup_url"] = self.k8s.get_redis_url(
+                "coll-" + crawl.dedup_coll_id
+            )
+        else:
+            params["redis_dedup_url"] = ""
 
         if spec.get("restartTime") != status.restartTime:
             # pylint: disable=invalid-name

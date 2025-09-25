@@ -366,6 +366,9 @@ class CrawlConfigOps:
         storage_quota_reached = False
         exec_mins_quota_reached = False
 
+        if config_in.dedupCollId:
+            await self.coll_ops.toggle_dedup_index(config_in.dedupCollId, True)
+
         if config_in.runNow:
             try:
                 crawl_id = await self.run_now_internal(crawlconfig, org, user)
@@ -615,6 +618,12 @@ class CrawlConfigOps:
             != sorted(update.autoAddCollections)
         )
 
+        # pylint: disable=fixme
+        # todo: remove eventually, for now, add first auto-add collection
+        # as the dedup collection
+        if not update.dedupCollId and update.autoAddCollections:
+            update.dedupCollId = update.autoAddCollections[0]
+
         metadata_changed = metadata_changed or (
             update.dedupCollId is not None
             and update.dedupCollId != orig_crawl_config.dedupCollId
@@ -662,6 +671,9 @@ class CrawlConfigOps:
             query["firstSeed"] = update.config.seeds[0].url
             query["seedCount"] = len(update.config.seeds)
             query["seedFileId"] = None
+
+        if update.dedupCollId:
+            await self.coll_ops.toggle_dedup_index(update.dedupCollId, True)
 
         # update in db
         result = await self.crawl_configs.find_one_and_update(

@@ -66,6 +66,10 @@ class CollIndexOperator(BaseOperator):
         spec = CollIndexSpec(**data.parent.get("spec", {}))
         status = CollIndexStatus(**data.parent.get("status", {}))
 
+        if data.finalizing:
+            # allow deletion
+            return {"status": status.dict(), "children": [], "finalized": True}
+
         index_id = str(spec.id)
         redis_name = "redis-coll-" + index_id
         new_children = self.load_redis(index_id, redis_name)
