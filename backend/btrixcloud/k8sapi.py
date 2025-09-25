@@ -14,6 +14,7 @@ from kubernetes_asyncio.utils import create_from_dict
 from kubernetes_asyncio.client.exceptions import ApiException
 
 from redis import asyncio as aioredis
+from redis.asyncio.client import Redis
 
 from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
@@ -51,6 +52,7 @@ class K8sAPI:
         # custom resource's client API
         self.add_custom_resource("CrawlJob", "crawljobs")
         self.add_custom_resource("ProfileJob", "profilejobs")
+        self.add_custom_resource("CollIndex", "collindexes")
 
     def add_custom_resource(self, name, plural):
         """add custom resource"""
@@ -60,11 +62,9 @@ class K8sAPI:
         """return custom API"""
         return self.custom_resources[kind] if kind in self.custom_resources else None
 
-    def get_redis_url(self, crawl_id):
-        """get redis url for crawl id"""
-        redis_url = (
-            f"redis://redis-{crawl_id}.redis.{self.namespace}.svc.cluster.local/0"
-        )
+    def get_redis_url(self, obj_id):
+        """get redis url for obj id"""
+        redis_url = f"redis://redis-{obj_id}.redis.{self.namespace}.svc.cluster.local/0"
         return redis_url
 
     async def get_redis_client(self, redis_url):
@@ -75,6 +75,23 @@ class K8sAPI:
             auto_close_connection_pool=True,
             socket_timeout=20,
         )
+
+    async def get_redis_connected(self, obj_id: str) -> Optional[Redis]:
+        """init redis, ensure connectivity"""
+        redis_url = self.get_redis_url(obj_id)
+        redis = None
+        try:
+            redis = await self.get_redis_client(redis_url)
+            # test connection
+            await redis.ping()
+            return redis
+
+        # pylint: disable=bare-except
+        except:
+            if redis:
+                await redis.close()
+
+            return None
 
     # pylint: disable=too-many-arguments, too-many-locals
     def new_crawl_job_yaml(

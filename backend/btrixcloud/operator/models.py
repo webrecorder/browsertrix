@@ -14,6 +14,7 @@ BTRIX_API = "btrix.cloud/v1"
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
 POD = "Pod.v1"
+JOB = "Job.batch/v1"
 CJS = f"CrawlJob.{BTRIX_API}"
 
 StopReason = Literal[

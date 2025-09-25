@@ -394,6 +394,8 @@ class CrawlConfigIn(BaseModel):
     proxyId: Optional[str] = None
 
     autoAddCollections: Optional[List[UUID]] = []
+    dedupCollId: Optional[UUID] = None
+
     tags: Optional[List[str]] = []
 
     crawlTimeout: int = 0
@@ -459,6 +461,8 @@ class CrawlConfigCore(BaseMongoModel):
 
     firstSeed: str = ""
     seedCount: int = 0
+
+    dedupCollId: Optional[UUID] = None
 
 
 # ============================================================================
@@ -545,6 +549,7 @@ class UpdateCrawlConfig(BaseModel):
     tags: Optional[List[str]] = None
     description: Optional[str] = None
     autoAddCollections: Optional[List[UUID]] = None
+    dedupCollId: Optional[UUID] = None
     runNow: bool = False
     updateRunning: bool = False
 
@@ -587,6 +592,8 @@ class CrawlConfigDefaults(BaseModel):
     exclude: Optional[List[str]] = None
 
     customBehaviors: List[str] = []
+
+    dedupCollId: Optional[UUID] = None
 
 
 # ============================================================================
@@ -1499,6 +1506,13 @@ class PageUrlCount(BaseModel):
 
 
 # ============================================================================
+class ResourcesOnly(BaseModel):
+    """Resources-only response"""
+
+    resources: Optional[List[CrawlFileOut]] = []
+
+
+# ============================================================================
 class CrawlOutWithResources(CrawlOut):
     """Crawl output model including resources"""
 
@@ -1606,6 +1620,8 @@ class CollIn(BaseModel):
     defaultThumbnailName: Optional[str] = None
     allowPublicDownload: bool = True
 
+    hasDedupIndex: bool = False
+
 
 # ============================================================================
 class CollOut(BaseMongoModel):
@@ -1650,6 +1666,7 @@ class CollOut(BaseMongoModel):
     downloadUrl: Optional[str] = None
 
     topPageHosts: List[HostCount] = []
+    hasDedupIndex: bool = False
 
 
 # ============================================================================
@@ -1701,6 +1718,7 @@ class UpdateColl(BaseModel):
     defaultThumbnailName: Optional[str] = None
     allowPublicDownload: Optional[bool] = None
     thumbnailSource: Optional[CollectionThumbnailSource] = None
+    hasDedupIndex: Optional[bool] = None
 
 
 # ============================================================================

@@ -5,6 +5,7 @@ import secrets
 
 from typing import Optional, Dict, Tuple
 from datetime import datetime, timedelta
+from uuid import UUID
 
 from fastapi import HTTPException
 
@@ -481,17 +482,17 @@ class CrawlManager(K8sAPI):
 
         return str(collection.id)
 
-    async def update_coll_index(self, collection: Collection):
+    async def update_coll_index(self, coll_id: UUID):
         """force collection index to update"""
         return await self.patch_custom_object(
-            f"collindex-${collection.id}",
+            f"collindex-{coll_id}",
             {"collItemsUpdatedAt": date_to_str(dt_now())},
             "collindexes",
         )
 
-    async def delete_coll_index(self, collection: Collection):
+    async def delete_coll_index(self, coll_id: UUID):
         """delete collection index"""
-        res = await self.delete_custom_object(str(collection.id), "collindexes")
+        res = await self.delete_custom_object(str(coll_id), "collindexes")
         return res
 
     # ========================================================================

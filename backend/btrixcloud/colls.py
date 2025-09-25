@@ -49,6 +49,7 @@ from .models import (
     UserFilePreparer,
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
+    ResourcesOnly,
 )
 from .utils import (
     dt_now,
@@ -157,6 +158,9 @@ class CollectionOps:
             await self.collections.insert_one(coll.to_dict())
             org = await self.orgs.get_org_by_id(oid)
             await self.clear_org_previous_slugs_matching_slug(slug, org)
+            if coll_in.hasDedupIndex:
+                await self.toggle_dedup_index(coll.id, True)
+                coll.hasDedupIndex = True
 
             if crawl_ids:
                 await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
@@ -221,6 +225,9 @@ class CollectionOps:
         if slug_update:
             await self.clear_org_previous_slugs_matching_slug(slug_update, org)
 
+        if update.hasDedupIndex is not None:
+            await self.toggle_dedup_index(coll_id, update.hasDedupIndex)
+
         return {"updated": True}
 
     async def clear_org_previous_slugs_matching_slug(
@@ -232,6 +239,16 @@ class CollectionOps:
             {"$pull": {"previousSlugs": slug}},
         )
 
+    async def get_coll_dedup_index(self, coll_id: UUID) -> bool:
+        """return true/false if collection has dedup index, or raise"""
+        result = await self.collections.find_one(
+            {"_id": coll_id}, projection=["hasDedupIndex"]
+        )
+        if not result:
+            raise HTTPException(status_code=404, detail="collection_not_found")
+
+        return result["hasDedupIndex"] is True
+
     async def add_crawls_to_collection(
         self,
         coll_id: UUID,
@@ -240,8 +257,6 @@ class CollectionOps:
         headers: Optional[dict] = None,
     ) -> CollOut:
         """Add crawls to collection"""
-        await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
-
         modified = dt_now()
         result = await self.collections.find_one_and_update(
             {"_id": coll_id},
@@ -251,8 +266,11 @@ class CollectionOps:
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
+        # do this after checking if collection exists
+        await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
+
         await self.update_collection_counts_and_tags(coll_id)
-        await self.update_collection_dates(coll_id, org.id)
+        await self.update_collection_dates(coll_id, org.id, update_index=True)
 
         asyncio.create_task(
             self.event_webhook_ops.create_added_to_collection_notification(
@@ -308,10 +326,11 @@ class CollectionOps:
     async def toggle_dedup_index(self, coll_id: UUID, enabled: bool):
         """toggle dedup index to be enabled/disabled for collection"""
         result = await self.collections.find_one_and_update(
-            {"_id": coll_id, "dedup_index": not enabled},
-            {"$set": {"dedup_index": enabled}},
+            {"_id": coll_id, "hasDedupIndex": {"$ne": enabled}},
+            {"$set": {"hasDedupIndex": enabled}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
+
         # not changed, nothing to do
         if not result:
             return False
@@ -321,7 +340,7 @@ class CollectionOps:
         if enabled:
             return await self.crawl_manager.create_coll_index(coll)
 
-        return await self.crawl_manager.delete_coll_index(coll)
+        return await self.crawl_manager.delete_coll_index(coll.id)
 
     async def get_collection_raw_by_slug(
         self,
@@ -424,6 +443,16 @@ class CollectionOps:
             )
 
         return CollOut.from_dict(result)
+
+    async def get_internal_replay_list(self, coll_id: UUID, oid: UUID) -> ResourcesOnly:
+        """get list of internally resolved signed WACZ files"""
+        org = await self.orgs.get_org_by_id(oid)
+        resources, _, _ = await self.get_collection_crawl_resources(coll_id, org)
+
+        for file_ in resources:
+            file_.path = self.storage_ops.resolve_internal_access_path(file_.path)
+
+        return ResourcesOnly(resources=resources)
 
     async def get_public_collection_out(
         self,
@@ -769,7 +798,9 @@ class CollectionOps:
             },
         )
 
-    async def update_collection_dates(self, coll_id: UUID, oid: UUID):
+    async def update_collection_dates(
+        self, coll_id: UUID, oid: UUID, update_index=False
+    ):
         """Update collection earliest and latest dates from page timestamps"""
         # pylint: disable=too-many-locals
         coll = await self.get_collection(coll_id, oid)
@@ -777,6 +808,10 @@ class CollectionOps:
 
         earliest_ts = None
         latest_ts = None
+
+        # update_index is set, update dedup index if it exists
+        if update_index and coll.hasDedupIndex:
+            await self.crawl_manager.update_coll_index(coll_id)
 
         match_query = {
             "oid": coll.oid,
@@ -812,13 +847,15 @@ class CollectionOps:
 
     async def update_crawl_collections(self, crawl_id: str, oid: UUID):
         """Update counts, dates, and modified for all collections in crawl"""
-        crawl = await self.crawls.find_one({"_id": crawl_id})
-        crawl_coll_ids = crawl.get("collectionIds")
+        crawl = await self.crawl_ops.get_crawl(crawl_id)
         modified = dt_now()
+        coll_ids = crawl.collectionIds or []
 
-        for coll_id in crawl_coll_ids:
+        for coll_id in coll_ids:
             await self.update_collection_counts_and_tags(coll_id)
-            await self.update_collection_dates(coll_id, oid)
+            await self.update_collection_dates(
+                coll_id, oid, crawl.dedupCollId != coll_id
+            )
             await self.collections.find_one_and_update(
                 {"_id": coll_id},
                 {"$set": {"modified": modified}},

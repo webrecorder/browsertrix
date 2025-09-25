@@ -316,6 +316,12 @@ class CrawlConfigOps:
 
             first_seed = seeds[0].url
 
+        # pylint: disable=fixme
+        # todo: remove eventually, for now, add first auto-add collection
+        # as the dedup collection
+        if not config_in.dedupCollId and config_in.autoAddCollections:
+            config_in.dedupCollId = config_in.autoAddCollections[0]
+
         now = dt_now()
         crawlconfig = CrawlConfig(
             id=uuid4(),
@@ -343,6 +349,7 @@ class CrawlConfigOps:
             firstSeed=first_seed,
             seedCount=seed_count,
             shareable=config_in.shareable,
+            dedupCollId=config_in.dedupCollId,
         )
 
         if config_in.runNow:
@@ -606,6 +613,11 @@ class CrawlConfigOps:
             update.autoAddCollections is not None
             and sorted(orig_crawl_config.autoAddCollections)
             != sorted(update.autoAddCollections)
+        )
+
+        metadata_changed = metadata_changed or (
+            update.dedupCollId is not None
+            and update.dedupCollId != orig_crawl_config.dedupCollId
         )
 
         run_now = update.runNow
@@ -1114,6 +1126,10 @@ class CrawlConfigOps:
         await self.crawl_configs.update_many(
             {"oid": org.id, "autoAddCollections": coll_id},
             {"$pull": {"autoAddCollections": coll_id}},
+        )
+
+        await self.crawl_configs.update_many(
+            {"oid": org.id, "dedupCollId": coll_id}, {"$set": {"dedupCollId": None}}
         )
 
     async def get_crawl_config_tags(self, org):

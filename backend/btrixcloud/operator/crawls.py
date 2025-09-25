@@ -152,8 +152,6 @@ class CrawlOperator(BaseOperator):
         cid = spec["cid"]
         oid = spec["oid"]
 
-        redis_url = self.k8s.get_redis_url(crawl_id)
-
         params = {}
         params.update(self.k8s.shared_params)
         params["id"] = crawl_id
@@ -262,7 +260,7 @@ class CrawlOperator(BaseOperator):
 
                 self.sync_resources(status, pod_name, pod, data.children)
 
-            status = await self.sync_crawl_state(redis_url, crawl, status, pods, data)
+            status = await self.sync_crawl_state(crawl, status, pods, data)
 
             if self.k8s.enable_auto_resize:
                 # auto sizing handled here
@@ -339,7 +337,7 @@ class CrawlOperator(BaseOperator):
 
         params["warc_prefix"] = spec.get("warcPrefix")
 
-        params["redis_url"] = redis_url
+        params["redis_url"] = self.k8s.get_redis_url(crawl_id)
 
         if spec.get("restartTime") != status.restartTime:
             # pylint: disable=invalid-name
@@ -406,6 +404,7 @@ class CrawlOperator(BaseOperator):
 
         pod_info = status.podStatus[name]
         params["name"] = name
+        params["obj_type"] = "crawl"
         params["cpu"] = pod_info.newCpu or params.get("redis_cpu")
         params["memory"] = pod_info.newMemory or params.get("redis_memory")
         params["no_pvc"] = crawl.is_single_page
@@ -913,25 +912,8 @@ class CrawlOperator(BaseOperator):
             "finalized": finalized,
         }
 
-    async def _get_redis(self, redis_url: str) -> Optional[Redis]:
-        """init redis, ensure connectivity"""
-        redis = None
-        try:
-            redis = await self.k8s.get_redis_client(redis_url)
-            # test connection
-            await redis.ping()
-            return redis
-
-        # pylint: disable=bare-except
-        except:
-            if redis:
-                await redis.close()
-
-            return None
-
     async def sync_crawl_state(
         self,
-        redis_url: str,
         crawl: CrawlSpec,
         status: CrawlStatus,
         pods: dict[str, dict],
@@ -948,7 +930,7 @@ class CrawlOperator(BaseOperator):
 
         try:
             if redis_running:
-                redis = await self._get_redis(redis_url)
+                redis = await self.k8s.get_redis_connected(crawl.id)
 
             await self.add_used_stats(crawl.id, status.podStatus, redis, metrics)
 
@@ -1746,8 +1728,7 @@ class CrawlOperator(BaseOperator):
     async def mark_for_cancelation(self, crawl_id):
         """mark crawl as canceled in redis"""
         try:
-            redis_url = self.k8s.get_redis_url(crawl_id)
-            redis = await self._get_redis(redis_url)
+            redis = await self.k8s.get_redis_connected(crawl_id)
             if not redis:
                 return False
 
