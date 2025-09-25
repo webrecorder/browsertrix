@@ -1623,7 +1623,6 @@ def init_orgs_api(
             raise HTTPException(status_code=403, detail="Not Allowed")
         plans_json = os.environ.get("AVAILABLE_PLANS")
         if not plans_json:
-            print("Info: Plans not configured")
             return PlansResponse(plans=[])
         try:
             plans = PlansResponse.model_validate_json(plans_json)
