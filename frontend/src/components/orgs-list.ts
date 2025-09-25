@@ -660,16 +660,6 @@ export class OrgsList extends BtrixElement {
     }
   }
 
-  // private onSubmitQuotas() {
-  //   if (this.currOrg) {
-  //     this.dispatchEvent(
-  //       new CustomEvent("update-quotas", { detail: this.currOrg }),
-  //     );
-
-  //     void this.orgQuotaDialog?.hide();
-  //   }
-  // }
-
   private onSubmitProxies() {
     if (this.currOrg) {
       this.dispatchEvent(
