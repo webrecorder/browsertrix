@@ -112,6 +112,7 @@ class K8sAPI:
         profile_filename: str = "",
         qa_source: str = "",
         proxy_id: str = "",
+        dedup_coll_id: str = "",
         is_single_page: bool = False,
         seed_file_url: str = "",
     ):
@@ -138,6 +139,7 @@ class K8sAPI:
             "profile_filename": profile_filename,
             "qa_source": qa_source,
             "proxy_id": proxy_id,
+            "dedup_coll_id": dedup_coll_id,
             "is_single_page": "1" if is_single_page else "0",
             "seed_file_url": seed_file_url,
         }
@@ -163,6 +165,7 @@ class K8sAPI:
         profile_filename: str = "",
         qa_source: str = "",
         proxy_id: str = "",
+        dedup_coll_id: str = "",
         is_single_page: bool = False,
         seed_file_url: str = "",
     ) -> str:
@@ -184,6 +187,7 @@ class K8sAPI:
             profile_filename=profile_filename,
             qa_source=qa_source,
             proxy_id=proxy_id,
+            dedup_coll_id=dedup_coll_id,
             is_single_page=is_single_page,
             seed_file_url=seed_file_url,
         )

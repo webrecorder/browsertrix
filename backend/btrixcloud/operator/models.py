@@ -87,6 +87,7 @@ class CrawlSpec(BaseModel):
     max_crawl_size: int = 0
     qa_source_crawl_id: Optional[str] = ""
     proxy_id: Optional[str] = None
+    dedup_coll_id: Optional[str] = None
     is_single_page: bool = False
     seed_file_url: Optional[str] = ""
 

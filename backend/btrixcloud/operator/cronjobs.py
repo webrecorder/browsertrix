@@ -140,6 +140,9 @@ class CronJobOperator(BaseOperator):
             storage_filename=self.crawl_config_ops.default_filename_template,
             profile_filename=profile_filename or "",
             proxy_id=crawlconfig.proxyId or "",
+            dedup_coll_id=(
+                str(crawlconfig.dedupCollId) if crawlconfig.dedupCollId else ""
+            ),
             is_single_page=self.crawl_config_ops.is_single_page(crawlconfig.config),
         )
 

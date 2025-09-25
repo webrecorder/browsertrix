@@ -294,6 +294,9 @@ class CrawlManager(K8sAPI):
             storage_filename=storage_filename,
             profile_filename=profile_filename,
             proxy_id=crawlconfig.proxyId or DEFAULT_PROXY_ID,
+            dedup_coll_id=(
+                str(crawlconfig.dedupCollId) if crawlconfig.dedupCollId else ""
+            ),
             is_single_page=is_single_page,
             seed_file_url=seed_file_url,
         )
