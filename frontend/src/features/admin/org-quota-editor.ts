@@ -71,6 +71,24 @@ const LABELS: {
   },
 };
 
+const defaultPlans: PlansResponse = {
+  plans: [
+    {
+      id: "unset",
+      name: "Unset",
+      org_quotas: {
+        extraExecMinutes: 0,
+        giftedExecMinutes: 0,
+        maxConcurrentCrawls: 0,
+        maxExecMinutesPerMonth: 0,
+        maxPagesPerCrawl: 0,
+        storageQuota: 0,
+      },
+      testmode: false,
+    },
+  ],
+};
+
 @customElement("btrix-org-quota-editor")
 @localized()
 export class OrgQuotaEditor extends BtrixElement {
@@ -83,7 +101,10 @@ export class OrgQuotaEditor extends BtrixElement {
   dialog: Ref<SlDialog> = createRef();
 
   @state()
-  plans = this.api.fetch<PlansResponse>("/orgs/plans");
+  plans = this.api
+    .fetch<PlansResponse>("/orgs/plans")
+    // Default to an "unset" plan preset if no plans are available from the backend
+    .then((plans) => (plans.plans.length === 0 ? defaultPlans : plans));
 
   show() {
     void this.dialog.value?.show();
