@@ -98,10 +98,15 @@ spec:
     updateStrategy:
       method: InPlace
 
-#  - apiVersion: v1
-#    resource: configmaps
-#    updateStrategy:
-#      method: InPlace
+  - apiVersion: batch/v1
+    resource: jobs
+    updateStrategy:
+      method: InPlace
+
+  - apiVersion: v1
+    resource: configmaps
+    updateStrategy:
+      method: InPlace
 
   hooks:
     sync:
