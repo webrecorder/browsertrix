@@ -829,9 +829,22 @@ class StorageOps:
                 yield from file_stream
 
     def _sync_dl(
-        self, metadata: dict[str, str], all_files: List[CrawlFileOut]
+        self,
+        metadata: dict[str, str],
+        all_files: List[CrawlFileOut],
+        prefer_single_wacz: bool = False,
     ) -> Iterator[bytes]:
         """generate streaming zip as sync"""
+
+        def get_file(path: str) -> Iterator[bytes]:
+            path = self.resolve_internal_access_path(path)
+            r = requests.get(path, stream=True, timeout=None)
+            yield from r.iter_content(CHUNK_SIZE)
+
+        if len(all_files) == 1 and prefer_single_wacz:
+            wacz_file = all_files[0]
+            return get_file(wacz_file.path)
+
         datapackage = {
             "profile": "multi-wacz-package",
             "resources": [
@@ -850,11 +863,6 @@ class StorageOps:
 
         def get_datapackage() -> Iterable[bytes]:
             yield datapackage_bytes
-
-        def get_file(path: str) -> Iterable[bytes]:
-            path = self.resolve_internal_access_path(path)
-            r = requests.get(path, stream=True, timeout=None)
-            yield from r.iter_content(CHUNK_SIZE)
 
         def member_files() -> (
             Iterable[tuple[str, datetime, int, Method, Iterable[bytes]]]
@@ -884,13 +892,18 @@ class StorageOps:
         return cast(Iterator[bytes], stream_zip(member_files(), chunk_size=CHUNK_SIZE))
 
     async def download_streaming_wacz(
-        self, metadata: dict[str, str], files: List[CrawlFileOut]
+        self,
+        metadata: dict[str, str],
+        files: List[CrawlFileOut],
+        prefer_single_wacz: bool = False,
     ) -> Iterator[bytes]:
         """return an iter for downloading a stream nested wacz file
         from list of files"""
         loop = asyncio.get_event_loop()
 
-        resp = await loop.run_in_executor(None, self._sync_dl, metadata, files)
+        resp = await loop.run_in_executor(
+            None, self._sync_dl, metadata, files, prefer_single_wacz
+        )
 
         return resp
 

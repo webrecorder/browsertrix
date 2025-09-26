@@ -719,7 +719,7 @@ export class WorkflowDetail extends BtrixElement {
       const authToken = this.authState?.headers.Authorization.split(" ")[1];
       const disableDownload = this.isRunning;
       const disableReplay = !latestCrawl.fileSize;
-      const replayHref = `/api/orgs/${this.orgId}/all-crawls/${latestCrawlId}/download?auth_bearer=${authToken}`;
+      const replayHref = `/api/orgs/${this.orgId}/all-crawls/${latestCrawlId}/download?auth_bearer=${authToken}&preferSingleWACZ=true`;
       const replayFilename = `browsertrix-${latestCrawlId}.wacz`;
 
       return html`

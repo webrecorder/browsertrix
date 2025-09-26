@@ -897,8 +897,15 @@ class BaseCrawlOps:
             "firstSeeds": list(first_seeds),
         }
 
-    async def download_crawl_as_single_wacz(self, crawl_id: str, org: Organization):
-        """Download all WACZs in archived item as streaming nested WACZ"""
+    async def download_crawl_as_single_wacz(
+        self, crawl_id: str, org: Organization, prefer_single_wacz: bool = False
+    ):
+        """Download archived item as a single WACZ file
+
+        If prefer_single_wacz is false, always returns a multi-WACZ
+        If prefer_single_wacz is true and archived item has only one WACZ,
+        returns that instead
+        """
         crawl = await self.get_crawl_out(crawl_id, org)
 
         if not crawl.resources:
@@ -911,9 +918,15 @@ class BaseCrawlOps:
         if crawl.description:
             metadata["description"] = crawl.description
 
-        resp = await self.storage_ops.download_streaming_wacz(metadata, crawl.resources)
+        resp = await self.storage_ops.download_streaming_wacz(
+            metadata, crawl.resources, prefer_single_wacz=prefer_single_wacz
+        )
 
-        headers = {"Content-Disposition": f'attachment; filename="{crawl_id}.wacz"'}
+        filename = f"{crawl_id}.wacz"
+        if len(crawl.resources) == 1 and prefer_single_wacz:
+            filename = crawl.resources[0].name
+
+        headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
         return StreamingResponse(
             resp, headers=headers, media_type="application/wacz+zip"
         )
@@ -1076,9 +1089,13 @@ def init_base_crawls_api(app, user_dep, *args):
         response_model=bytes,
     )
     async def download_base_crawl_as_single_wacz(
-        crawl_id: str, org: Organization = Depends(org_viewer_dep)
+        crawl_id: str,
+        preferSingleWACZ: bool = False,
+        org: Organization = Depends(org_viewer_dep),
     ):
-        return await ops.download_crawl_as_single_wacz(crawl_id, org)
+        return await ops.download_crawl_as_single_wacz(
+            crawl_id, org, prefer_single_wacz=preferSingleWACZ
+        )
 
     @app.patch(
         "/orgs/{oid}/all-crawls/{crawl_id}",

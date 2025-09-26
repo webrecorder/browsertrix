@@ -220,7 +220,7 @@ export class WorkflowActionMenu extends BtrixElement {
     return html`
       <sl-menu slot="submenu">
         <btrix-menu-item-link
-          href=${`/api/orgs/${this.orgId}/all-crawls/${latestCrawl.id}/download?auth_bearer=${authToken}`}
+          href=${`/api/orgs/${this.orgId}/all-crawls/${latestCrawl.id}/download?auth_bearer=${authToken}&preferSingleWACZ=true`}
           ?disabled=${!latestCrawl.fileSize}
           download
         >
