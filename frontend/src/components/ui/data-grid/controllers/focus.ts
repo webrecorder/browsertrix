@@ -9,6 +9,7 @@ import {
 
 import type { DataGridCell } from "../data-grid-cell";
 import type { DataGridRow } from "../data-grid-row";
+import { type GridItem } from "../types";
 
 type Options = {
   /**
@@ -21,11 +22,13 @@ type Options = {
 /**
  * Utilities for managing focus in a data grid.
  */
-export class DataGridFocusController implements ReactiveController {
-  readonly #host: DataGridRow | DataGridCell;
+export class DataGridFocusController<const T extends GridItem = GridItem>
+  implements ReactiveController
+{
+  readonly #host: DataGridRow<T> | DataGridCell<T>;
 
   constructor(
-    host: DataGridRow | DataGridCell,
+    host: DataGridRow<T> | DataGridCell<T>,
     opts: Options = {
       setFocusOnTabbable: false,
     },

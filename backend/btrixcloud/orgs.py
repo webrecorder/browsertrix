@@ -14,6 +14,7 @@ from tempfile import NamedTemporaryFile
 
 from typing import Optional, TYPE_CHECKING, Dict, Callable, List, AsyncGenerator, Any
 
+from pydantic import ValidationError
 from pymongo import ReturnDocument
 from pymongo.collation import Collation
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -29,6 +30,7 @@ from .models import (
     WAITING_STATES,
     BaseCrawl,
     Organization,
+    PlansResponse,
     StorageRef,
     OrgQuotas,
     OrgQuotasIn,
@@ -1614,6 +1616,19 @@ def init_orgs_api(
             ) from dupe
 
         return {"updated": True}
+
+    @app.get("/orgs/plans", tags=["organizations"], response_model=PlansResponse)
+    async def get_plans(user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+        plans_json = os.environ.get("AVAILABLE_PLANS")
+        if not plans_json:
+            return PlansResponse(plans=[])
+        try:
+            plans = PlansResponse.model_validate_json(plans_json)
+            return plans
+        except ValidationError as err:
+            raise HTTPException(status_code=400, detail="invalid_plans") from err
 
     @router.post("/quotas", tags=["organizations"], response_model=UpdatedResponse)
     async def update_quotas(

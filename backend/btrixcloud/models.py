@@ -1851,6 +1851,23 @@ class OrgQuotasIn(BaseModel):
 
 
 # ============================================================================
+class Plan(BaseModel):
+    """Available Browsertrix plan, from env"""
+
+    id: str
+    name: str
+    org_quotas: OrgQuotas
+    testmode: bool = False
+
+
+# ============================================================================
+class PlansResponse(BaseModel):
+    """Response for plans api endpoint"""
+
+    plans: list[Plan]
+
+
+# ============================================================================
 class SubscriptionEventOut(BaseModel):
     """Fields to add to output models for subscription events"""
 
