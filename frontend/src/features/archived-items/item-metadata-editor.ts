@@ -1,8 +1,10 @@
 import { localized, msg } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
+import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type {
   TagInputEvent,
   Tags,
@@ -12,7 +14,6 @@ import { type CollectionsChangeEvent } from "@/features/collections/collections-
 import type { ArchivedItem } from "@/types/crawler";
 import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
 import { maxLengthValidator } from "@/utils/form";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 /**
  * Usage:
@@ -30,7 +31,7 @@ import LiteElement, { html } from "@/utils/LiteElement";
  */
 @customElement("btrix-item-metadata-editor")
 @localized()
-export class CrawlMetadataEditor extends LiteElement {
+export class CrawlMetadataEditor extends BtrixElement {
   @property({ type: Object })
   crawl?: ArchivedItem;
 
@@ -78,7 +79,7 @@ export class CrawlMetadataEditor extends LiteElement {
   render() {
     return html`
       <btrix-dialog
-        .label=${msg("Edit Metadata")}
+        .label=${msg("Edit Archived Item")}
         .open=${this.open}
         @sl-show=${() => (this.isDialogVisible = true)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
@@ -125,11 +126,11 @@ export class CrawlMetadataEditor extends LiteElement {
           @tags-change=${(e: TagsChangeEvent) =>
             (this.tagsToSave = e.detail.tags)}
         ></btrix-tag-input>
-        <div class="mt-4">
+        <div class="mt-7">
           <btrix-collections-add
             .initialCollections=${this.crawl.collectionIds}
             .configId=${"temp"}
-            label=${msg("Add to Collection")}
+            label=${msg("Include in Collection")}
             @collections-change=${(e: CollectionsChangeEvent) =>
               (this.collectionsToSave = e.detail.collections)}
           >
@@ -166,7 +167,7 @@ export class CrawlMetadataEditor extends LiteElement {
   private async fetchTags() {
     if (!this.crawl) return;
     try {
-      const { tags } = await this.apiFetch<WorkflowTags>(
+      const { tags } = await this.api.fetch<WorkflowTags>(
         `/orgs/${this.crawl.oid}/crawlconfigs/tagCounts`,
       );
 
@@ -220,7 +221,7 @@ export class CrawlMetadataEditor extends LiteElement {
     this.isSubmittingUpdate = true;
 
     try {
-      const data = await this.apiFetch<{ updated: boolean }>(
+      const data = await this.api.fetch<{ updated: boolean }>(
         `/orgs/${this.crawl.oid}/all-crawls/${this.crawl.id}`,
         {
           method: "PATCH",
@@ -233,7 +234,7 @@ export class CrawlMetadataEditor extends LiteElement {
       }
 
       this.dispatchEvent(new CustomEvent("updated"));
-      this.notify({
+      this.notify.toast({
         message: msg("Successfully saved crawl details."),
         variant: "success",
         icon: "check2-circle",
@@ -241,7 +242,7 @@ export class CrawlMetadataEditor extends LiteElement {
       });
       this.requestClose();
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't save crawl details at this time."),
         variant: "danger",
         icon: "exclamation-octagon",

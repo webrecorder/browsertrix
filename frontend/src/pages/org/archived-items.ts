@@ -593,7 +593,7 @@ export class CrawlsList extends BtrixElement {
             }}
           >
             <sl-icon name="pencil" slot="prefix"></sl-icon>
-            ${msg("Edit Metadata")}
+            ${msg("Edit Archived Item")}
           </sl-menu-item>
           <sl-divider></sl-divider>
         `,

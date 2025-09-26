@@ -15,7 +15,7 @@ export function metadataItemWithCollection(
     render,
   }: {
     label: string | TemplateResult;
-    render: (c: PublicCollection) => TemplateResult | string;
+    render: (c: Collection | PublicCollection) => TemplateResult | string;
   }) {
     return html`
       <btrix-desc-list-item label=${label}>

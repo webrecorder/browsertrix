@@ -8,6 +8,7 @@ const section: Record<SectionsEnum, string> = {
   behaviors: msg("Page Behavior"),
   browserSettings: msg("Browser Settings"),
   scheduling: msg("Scheduling"),
+  collections: msg("Collections"),
   metadata: msg("Metadata"),
 };
 

@@ -16,9 +16,7 @@ import {
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
-import type { Collection } from "@/types/collection";
 import { WorkflowScopeType, type StorageSeedFile } from "@/types/workflow";
-import { isApiError } from "@/utils/api";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
@@ -60,13 +58,9 @@ export class ConfigDetails extends BtrixElement {
     maxPagesPerCrawl?: number;
   };
 
-  @state()
-  private collections: Collection[] = [];
-
   async connectedCallback() {
     super.connectedCallback();
     void this.fetchOrgDefaults();
-    await this.fetchCollections();
   }
 
   render() {
@@ -315,6 +309,24 @@ export class ConfigDetails extends BtrixElement {
       })}
       ${when(!this.hideMetadata, () =>
         this.renderSection({
+          id: "collection",
+          heading: sectionStrings.collections,
+          renderDescItems: () => html`
+            ${this.renderSetting(
+              html`<span class="mb-1 inline-block"
+                >${msg("Auto-Add to Collection")}</span
+              >`,
+              crawlConfig?.autoAddCollections.length
+                ? html`<btrix-linked-collections
+                    .collectionIds=${crawlConfig.autoAddCollections}
+                  ></btrix-linked-collections>`
+                : undefined,
+            )}
+          `,
+        }),
+      )}
+      ${when(!this.hideMetadata, () =>
+        this.renderSection({
           id: "crawl-metadata",
           heading: sectionStrings.metadata,
           renderDescItems: () => html`
@@ -337,21 +349,6 @@ export class ConfigDetails extends BtrixElement {
                       html`<btrix-tag class="mr-2 mt-1">${tag}</btrix-tag>`,
                   )
                 : [],
-            )}
-            ${this.renderSetting(
-              msg("Collections"),
-              this.collections.length
-                ? this.collections.map(
-                    (coll) =>
-                      html`<sl-tag class="mr-2 mt-1" variant="neutral">
-                        ${coll.name}
-                        <span class="font-monostyle pl-1 text-xs">
-                          (${this.localize.number(coll.crawlCount)}
-                          ${pluralOf("items", coll.crawlCount)})
-                        </span>
-                      </sl-tag>`,
-                  )
-                : undefined,
             )}
           `,
         }),
@@ -631,44 +628,6 @@ export class ConfigDetails extends BtrixElement {
         ${content}
       </btrix-desc-list-item>
     `;
-  }
-
-  private async fetchCollections() {
-    if (this.crawlConfig?.autoAddCollections) {
-      try {
-        await this.getCollections();
-      } catch (e) {
-        this.notify.toast({
-          message:
-            isApiError(e) && e.statusCode === 404
-              ? msg("Collections not found.")
-              : msg(
-                  "Sorry, couldn't retrieve Collection details at this time.",
-                ),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "collection-fetch-status",
-        });
-      }
-    }
-  }
-
-  private async getCollections() {
-    const collections: Collection[] = [];
-    const orgId = this.crawlConfig?.oid;
-
-    if (this.crawlConfig?.autoAddCollections && orgId) {
-      for (const collectionId of this.crawlConfig.autoAddCollections) {
-        const data = await this.api.fetch<Collection | undefined>(
-          `/orgs/${orgId}/collections/${collectionId}`,
-        );
-        if (data) {
-          collections.push(data);
-        }
-      }
-    }
-    this.collections = collections;
-    this.requestUpdate();
   }
 
   // TODO Consolidate with workflow-editor

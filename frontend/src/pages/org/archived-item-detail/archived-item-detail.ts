@@ -403,13 +403,13 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       default:
         sectionContent = html`
-          <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <div class="col-span-1 flex flex-col">
+          <div class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:grid-rows-2">
+            <div class="col-span-1 row-span-1 flex flex-col lg:row-span-2">
               ${this.renderPanel(msg("Overview"), this.renderOverview(), [
                 tw`rounded-lg border p-4`,
               ])}
             </div>
-            <div class="col-span-1 flex flex-col">
+            <div class="col-span-1 row-span-1 flex flex-col">
               ${this.renderPanel(
                 html`
                   ${this.renderTitle(msg("Metadata"))}
@@ -420,12 +420,32 @@ export class ArchivedItemDetail extends BtrixElement {
                         class="text-base"
                         name="pencil"
                         @click=${this.openMetadataEditor}
-                        label=${msg("Edit Metadata")}
+                        label=${msg("Edit Archived Item")}
                       ></sl-icon-button>
                     `,
                   )}
                 `,
                 this.renderMetadata(),
+                [tw`rounded-lg border p-4`],
+              )}
+            </div>
+            <div class="col-span-1 row-span-1 flex flex-col">
+              ${this.renderPanel(
+                html`
+                  ${this.renderTitle(msg("Collections"))}
+                  ${when(
+                    this.isCrawler,
+                    () => html`
+                      <sl-icon-button
+                        class="text-base"
+                        name="pencil"
+                        @click=${this.openMetadataEditor}
+                        label=${msg("Edit Archived Item")}
+                      ></sl-icon-button>
+                    `,
+                  )}
+                `,
+                this.renderCollections(),
                 [tw`rounded-lg border p-4`],
               )}
             </div>
@@ -653,7 +673,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 }}
               >
                 <sl-icon name="pencil" slot="prefix"></sl-icon>
-                ${msg("Edit Metadata")}
+                ${msg("Edit Archived Item")}
               </sl-menu-item>
               <sl-divider></sl-divider>
             `,
@@ -959,26 +979,26 @@ export class ArchivedItemDetail extends BtrixElement {
             () => html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`,
           )}
         </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("In Collections")}>
+      </btrix-desc-list>
+    `;
+  }
+
+  private renderCollections() {
+    const noneText = html`<span class="text-neutral-300">${msg("None")}</span>`;
+    return html`
+      <btrix-desc-list>
+        <btrix-desc-list-item label=${msg("Included In")}>
           ${when(
             this.item,
-            () =>
+            (item) =>
               when(
-                this.item!.collections.length,
+                item.collections.length,
                 () => html`
-                  <ul>
-                    ${this.item!.collections.map(
-                      ({ id, name }) =>
-                        html`<li class="mt-1">
-                          <a
-                            class="text-primary hover:text-primary-400"
-                            href=${`${this.navigate.orgBasePath}/collections/view/${id}`}
-                            @click=${this.navigate.link}
-                            >${name}</a
-                          >
-                        </li>`,
-                    )}
-                  </ul>
+                  <btrix-linked-collections-list
+                    class="mt-1 block"
+                    .collections=${item.collections}
+                    baseUrl="${this.navigate.orgBasePath}/collections/view"
+                  ></btrix-linked-collections-list>
                 `,
                 () => noneText,
               ),
