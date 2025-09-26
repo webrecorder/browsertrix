@@ -495,8 +495,7 @@ class CrawlManager(K8sAPI):
 
     async def delete_coll_index(self, coll_id: UUID):
         """delete collection index"""
-        res = await self.delete_custom_object(str(coll_id), "collindexes")
-        return res
+        return await self.delete_custom_object(f"collindex-{coll_id}", "collindexes")
 
     # ========================================================================
     # Internal Methods
