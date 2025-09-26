@@ -621,8 +621,9 @@ class CrawlConfigOps:
         # pylint: disable=fixme
         # todo: remove eventually, for now, add first auto-add collection
         # as the dedup collection
-        if not update.dedupCollId and update.autoAddCollections:
+        if update.dedupCollId is None and update.autoAddCollections:
             update.dedupCollId = update.autoAddCollections[0]
+            metadata_changed = True
 
         metadata_changed = metadata_changed or (
             update.dedupCollId is not None

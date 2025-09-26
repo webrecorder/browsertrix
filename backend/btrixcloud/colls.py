@@ -697,12 +697,12 @@ class CollectionOps:
         if coll.thumbnail:
             await self.delete_thumbnail(coll_id, org)
 
+        if coll.hasDedupIndex:
+            await self.crawl_manager.delete_coll_index(coll.id)
+
         result = await self.collections.delete_one({"_id": coll_id, "oid": org.id})
         if result.deleted_count < 1:
             raise HTTPException(status_code=404, detail="collection_not_found")
-
-        if coll.hasDedupIndex:
-            await self.crawl_manager.delete_coll_index(coll.id)
 
         asyncio.create_task(
             self.event_webhook_ops.create_collection_deleted_notification(coll_id, org)
