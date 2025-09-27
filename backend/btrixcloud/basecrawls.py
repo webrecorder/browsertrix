@@ -596,26 +596,17 @@ class BaseCrawlOps:
         self, crawl_ids: List[str], collection_id: UUID, org: Organization
     ):
         """Add crawls to collection."""
-        for crawl_id in crawl_ids:
-            crawl = await self.get_base_crawl(crawl_id, org)
-            crawl_collections = crawl.collectionIds
-            if crawl_collections and crawl_id in crawl_collections:
-                raise HTTPException(
-                    status_code=400, detail="crawl_already_in_collection"
-                )
-
-            await self.crawls.find_one_and_update(
-                {"_id": crawl_id},
-                {"$push": {"collectionIds": collection_id}},
-            )
+        await self.crawls.update_many(
+            {"_id": {"$in": crawl_ids}, "oid": org.id},
+            {"$addToSet": {"collectionIds": collection_id}},
+        )
 
     async def remove_from_collection(self, crawl_ids: List[str], collection_id: UUID):
         """Remove crawls from collection."""
-        for crawl_id in crawl_ids:
-            await self.crawls.find_one_and_update(
-                {"_id": crawl_id},
-                {"$pull": {"collectionIds": collection_id}},
-            )
+        await self.crawls.update_many(
+            {"_id": {"$in": crawl_ids}},
+            {"$pull": {"collectionIds": collection_id}},
+        )
 
     async def remove_collection_from_all_crawls(
         self, collection_id: UUID, org: Organization
