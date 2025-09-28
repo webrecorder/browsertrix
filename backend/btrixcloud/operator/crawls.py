@@ -51,6 +51,7 @@ from .models import (
     CMAP,
     PVC,
     CJS,
+    COLLINDEX,
     BTRIX_API,
 )
 
@@ -245,12 +246,28 @@ class CrawlOperator(BaseOperator):
                     return self._empty_response(status)
 
         if status.state in ("starting", "waiting_org_limit"):
-            if not await self.can_start_new(crawl, data, status):
+            if not self.can_start_new(crawl, data):
+                await self.set_state(
+                    "waiting_org_limit", status, crawl, allowed_from=["starting"]
+                )
                 return self._empty_response(status)
 
-            await self.set_state(
-                "starting", status, crawl, allowed_from=["waiting_org_limit"]
-            )
+            if status.state != "starting":
+                await self.set_state(
+                    "starting", status, crawl, allowed_from=["waiting_org_limit"]
+                )
+
+        if status.state in ("starting", "waiting_dedup_index"):
+            if self.is_waiting_for_dedup_index(crawl, data):
+                await self.set_state(
+                    "waiting_dedup_index", status, crawl, allowed_from=["starting"]
+                )
+                return self._empty_response(status)
+
+            if status.state != "starting":
+                await self.set_state(
+                    "starting", status, crawl, allowed_from=["waiting_dedup_index"]
+                )
 
         status.scale = len(pods)
         if status.scale:
@@ -736,6 +753,7 @@ class CrawlOperator(BaseOperator):
         spec = data.parent.get("spec", {})
         crawl_id = spec["id"]
         oid = spec.get("oid")
+        coll_id = spec.get("dedupCollId")
         # filter by role as well (job vs qa-job)
         role = data.parent.get("metadata", {}).get("labels", {}).get("role")
         related_resources = [
@@ -745,6 +763,21 @@ class CrawlOperator(BaseOperator):
                 "labelSelector": {"matchLabels": {"btrix.org": oid, "role": role}},
             },
         ]
+
+        if coll_id:
+            related_resources.append(
+                {
+                    "apiVersion": BTRIX_API,
+                    "resource": "collindexes",
+                    "labelSelector": {
+                        "matchLabels": {
+                            "oid": oid,
+                            "role": "collindex",
+                            "coll": coll_id,
+                        }
+                    },
+                }
+            )
 
         if self.k8s.enable_auto_resize:
             related_resources.append(
@@ -757,12 +790,11 @@ class CrawlOperator(BaseOperator):
 
         return {"relatedResources": related_resources}
 
-    async def can_start_new(
+    def can_start_new(
         self,
         crawl: CrawlSpec,
         data: MCSyncData,
-        status: CrawlStatus,
-    ):
+    ) -> bool:
         """return true if crawl can start, otherwise set crawl to 'queued' state
         until more crawls for org finish"""
         max_crawls = crawl.org.quotas.maxConcurrentCrawls or 0
@@ -791,9 +823,25 @@ class CrawlOperator(BaseOperator):
                 break
             i += 1
 
-        await self.set_state(
-            "waiting_org_limit", status, crawl, allowed_from=["starting"]
-        )
+        return False
+
+    def is_waiting_for_dedup_index(self, crawl: CrawlSpec, data: MCSyncData) -> bool:
+        """return true if we need to wait for dedup index to be ready
+        before starting the crawl"""
+        if not crawl.dedup_coll_id:
+            return False
+
+        # index object doesn't exist
+        if not data.related[COLLINDEX]:
+            return True
+
+        for index in data.related[COLLINDEX].values():
+            if index.get("status", {}).get("state") == "ready":
+                return True
+
+            # only check first index, should only be one
+            break
+
         return False
 
     async def cancel_crawl(

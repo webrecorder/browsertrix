@@ -16,6 +16,7 @@ PVC = "PersistentVolumeClaim.v1"
 POD = "Pod.v1"
 JOB = "Job.batch/v1"
 CJS = f"CrawlJob.{BTRIX_API}"
+COLLINDEX = f"CollIndex.{BTRIX_API}"
 
 StopReason = Literal[
     "stopped_by_user",
