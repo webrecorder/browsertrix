@@ -243,6 +243,14 @@ redis_memory: "200Mi"
 
 redis_storage: "3Gi"
 
+
+# Redis Dedup Index
+# =========================================
+redis_dedup_memory: "1Gi"
+
+redis_dedup_storage: "5Gi"
+
+
 # Crawler Channels
 # =========================================
 # Support for additional crawler release channels
