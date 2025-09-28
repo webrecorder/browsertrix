@@ -237,7 +237,7 @@ TYPE_RUNNING_STATES = Literal[
 RUNNING_STATES = get_args(TYPE_RUNNING_STATES)
 
 TYPE_WAITING_STATES = Literal[
-    "starting", "waiting_capacity", "waiting_org_limit", "paused"
+    "starting", "waiting_capacity", "waiting_org_limit", "waiting_dedup_index", "paused"
 ]
 WAITING_STATES = get_args(TYPE_WAITING_STATES)
 
