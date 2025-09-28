@@ -44,8 +44,8 @@ class CollIndexOperator(BaseOperator):
     def __init__(self, *args):
         super().__init__(*args)
         self.shared_params.update(self.k8s.shared_params)
-        self.shared_params["redis_storage"] = "5Gi"
-        self.shared_params["memory"] = "1Gi"
+        self.shared_params["redis_storage"] = self.shared_params["redis_dedup_storage"]
+        self.shared_params["memory"] = self.shared_params["redis_dedup_memory"]
         self.shared_params["cpu"] = self.shared_params["redis_cpu"]
         self.shared_params["init_redis"] = True
         self.shared_params["obj_type"] = "coll"
