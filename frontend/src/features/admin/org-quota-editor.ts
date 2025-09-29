@@ -129,6 +129,7 @@ export class OrgQuotaEditor extends BtrixElement {
       (value) => value < 0,
     ).length;
     return html` <btrix-dialog
+      class="[--width:60rem]"
       ${ref(this.dialog)}
       .label=${msg(str`Quotas for: ${this.activeOrg?.name || ""}`)}
       @sl-after-hide=${() => {
@@ -258,34 +259,69 @@ export class OrgQuotaEditor extends BtrixElement {
         ];
 
         return html`
-          <label
-            class="font-sm font-medium text-neutral-500"
-            for="org-quota-presets"
-            >${msg("Presets")}</label
-          >
-          <btrix-overflow-scroll class="-mx-4 part-[content]:px-4">
-            <sl-button-group id="org-quota-presets">
-              ${until(
-                this.plans.then(({ plans }) =>
-                  plans.map(({ id, name, org_quotas }) => {
-                    const isCurrentSubscription =
-                      id === this.activeOrg?.subscription?.planId;
-                    const presets: Omit<
-                      OrgQuotas,
-                      `${"extra" | "gifted"}ExecMinutes`
-                    > = {
-                      maxConcurrentCrawls: org_quotas.maxConcurrentCrawls,
-                      maxExecMinutesPerMonth: org_quotas.maxExecMinutesPerMonth,
-                      maxPagesPerCrawl: org_quotas.maxPagesPerCrawl,
-                      storageQuota: org_quotas.storageQuota,
+          <div class="grid grid-cols-[auto_auto] gap-4">
+            <div>
+              <btrix-data-grid
+                editCells
+                .columns=${columns}
+                rowKey="key"
+                .items=${items}
+                @btrix-input=${(
+                  event: CustomEvent<RowEditEventDetail<Item>>,
+                ) => {
+                  const key = event.detail.rowKey as keyof OrgQuotas;
+                  let value = Number(event.detail.value);
+                  const labelConfig = LABELS[key];
+                  if (labelConfig.scale != undefined) {
+                    value = Math.floor(value * labelConfig.scale);
+                  }
+                  if (event.detail.field === "adjustment") {
+                    this.orgQuotaAdjustments = {
+                      ...this.orgQuotaAdjustments,
+                      [key]: value,
                     };
-                    const mismatchesCurrentPlan =
-                      isCurrentSubscription &&
-                      (Object.entries(presets) as Entries<typeof presets>).some(
-                        ([k, v]) => v !== quotas[k],
-                      );
-                    return html`<btrix-popover placement="top">
-                      <sl-button
+                  } else if (event.detail.field === "currentValue") {
+                    this.orgQuotaAdjustments = {
+                      ...this.orgQuotaAdjustments,
+                      [key]: value - (quotas[key] || 0),
+                    };
+                  }
+                }}
+              >
+                <h3
+                  class="mb-3 text-lg font-semibold leading-none"
+                  slot="label"
+                >
+                  ${msg("Quotas")}
+                </h3>
+              </btrix-data-grid>
+            </div>
+            <div>
+              <h3 class="mb-3 text-lg font-semibold leading-none">
+                ${msg("Presets")}
+              </h3>
+              <sl-menu class="py-0">
+                ${until(
+                  this.plans.then(({ plans }) =>
+                    plans.map(({ id, name, org_quotas }) => {
+                      const isCurrentSubscription =
+                        id === this.activeOrg?.subscription?.planId;
+                      const presets: Omit<
+                        OrgQuotas,
+                        `${"extra" | "gifted"}ExecMinutes`
+                      > = {
+                        maxConcurrentCrawls: org_quotas.maxConcurrentCrawls,
+                        maxExecMinutesPerMonth:
+                          org_quotas.maxExecMinutesPerMonth,
+                        maxPagesPerCrawl: org_quotas.maxPagesPerCrawl,
+                        storageQuota: org_quotas.storageQuota,
+                      };
+                      const mismatchesCurrentPlan =
+                        isCurrentSubscription &&
+                        (
+                          Object.entries(presets) as Entries<typeof presets>
+                        ).some(([k, v]) => v !== quotas[k]);
+                      return html` <sl-menu-item
                         @click=${() => {
                           const newQuota: Partial<OrgQuotas> = {};
 
@@ -303,7 +339,7 @@ export class OrgQuotaEditor extends BtrixElement {
                               name="credit-card"
                               slot="prefix"
                             ></sl-icon>`
-                          : null}
+                          : html`<span slot="prefix" class="size-3.5"></span>`}
                         ${mismatchesCurrentPlan
                           ? html`<sl-icon
                               name="exclamation-triangle"
@@ -311,89 +347,68 @@ export class OrgQuotaEditor extends BtrixElement {
                               class="text-warning-600"
                             ></sl-icon>`
                           : null}
-                      </sl-button>
-                      <div slot="content">
-                        <header class="mb-2 font-medium">
-                          ${name}${isCurrentSubscription
-                            ? html` -
-                                <b class="text-primary-600"
-                                  >${msg(
-                                    "This is the current subscription.",
-                                  )}</b
-                                >`
-                            : null}
-                        </header>
+                        <sl-menu slot="submenu" class="p-4 text-xs">
+                          <header class="mb-2 font-medium">
+                            ${name}${isCurrentSubscription
+                              ? html` -
+                                  <b class="text-primary-600"
+                                    >${msg(
+                                      "This is the current subscription.",
+                                    )}</b
+                                  >`
+                              : null}
+                          </header>
 
-                        <hr class="my-2" />
-                        <table>
-                          <tbody>
-                            ${(
-                              Object.entries(presets) as Entries<typeof presets>
-                            ).map(([key, value]) => {
-                              const currentValue = this.format(
-                                quotas[key],
-                                LABELS[key].type,
-                                { plain: true },
-                              );
-                              return html`
-                                <tr>
-                                  <td class="pr-2">${LABELS[key].label}</td>
-                                  <td class="pr-2">
-                                    ${this.format(value, LABELS[key].type)}
-                                    ${mismatchesCurrentPlan &&
-                                    value !== quotas[key]
-                                      ? html`<span class="text-warning-600"
-                                          >(${msg(
-                                            html`currently ${currentValue}`,
-                                          )})</span
-                                        >`
-                                      : null}
-                                  </td>
-                                </tr>
-                              `;
-                            })}
-                          </tbody>
-                        </table>
-                        ${mismatchesCurrentPlan
-                          ? html`<p class="mt-2 font-semibold text-warning-600">
-                              ${msg(
-                                "Quotas for this org do not match its current plan.",
-                              )}
-                            </p>`
-                          : null}
-                      </div>
-                    </btrix-popover>`;
-                  }),
-                ),
-                msg("Loading plans..."),
-              )}
-            </sl-button-group>
-          </btrix-overflow-scroll>
-          <btrix-data-grid
-            editCells
-            .columns=${columns}
-            rowKey="key"
-            .items=${items}
-            @btrix-input=${(event: CustomEvent<RowEditEventDetail<Item>>) => {
-              const key = event.detail.rowKey as keyof OrgQuotas;
-              let value = Number(event.detail.value);
-              const labelConfig = LABELS[key];
-              if (labelConfig.scale != undefined) {
-                value = Math.floor(value * labelConfig.scale);
-              }
-              if (event.detail.field === "adjustment") {
-                this.orgQuotaAdjustments = {
-                  ...this.orgQuotaAdjustments,
-                  [key]: value,
-                };
-              } else if (event.detail.field === "currentValue") {
-                this.orgQuotaAdjustments = {
-                  ...this.orgQuotaAdjustments,
-                  [key]: value - (quotas[key] || 0),
-                };
-              }
-            }}
-          ></btrix-data-grid>
+                          <hr class="my-2" />
+                          <table>
+                            <tbody>
+                              ${(
+                                Object.entries(presets) as Entries<
+                                  typeof presets
+                                >
+                              ).map(([key, value]) => {
+                                const currentValue = this.format(
+                                  quotas[key],
+                                  LABELS[key].type,
+                                  { plain: true },
+                                );
+                                return html`
+                                  <tr>
+                                    <td class="pr-2">${LABELS[key].label}</td>
+                                    <td class="pr-2">
+                                      ${this.format(value, LABELS[key].type)}
+                                      ${mismatchesCurrentPlan &&
+                                      value !== quotas[key]
+                                        ? html`<span class="text-warning-600"
+                                            >(${msg(
+                                              html`currently ${currentValue}`,
+                                            )})</span
+                                          >`
+                                        : null}
+                                    </td>
+                                  </tr>
+                                `;
+                              })}
+                            </tbody>
+                          </table>
+                          ${mismatchesCurrentPlan
+                            ? html`<p
+                                class="mt-2 font-semibold text-warning-600"
+                              >
+                                ${msg(
+                                  "Quotas for this org do not match its current plan.",
+                                )}
+                              </p>`
+                            : null}
+                        </sl-menu>
+                      </sl-menu-item>`;
+                    }),
+                  ),
+                  msg("Loading plans..."),
+                )}
+              </sl-menu>
+            </div>
+          </div>
         `;
       })}
 
