@@ -162,6 +162,7 @@ export class WorkflowsList extends BtrixElement {
     this.updateFiltersFromSearchParams(params);
   });
 
+  // TODO (emma): refactor this logic into smaller parts using `SearchParamsValue`
   private updateFiltersFromSearchParams(
     params = this.searchParams.searchParams,
   ) {
