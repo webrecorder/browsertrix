@@ -41,29 +41,7 @@ export function calculatePages({
 }
 
 /**
- * Pagination
- *
- * Persists via a search param in the URL. Defaults to `page`, but can be set with the `name` attribute.
- *
- * Usage example:
- * ```ts
- * <btrix-pagination totalCount="11" @page-change=${console.log}>
- * </btrix-pagination>
- * ```
- *
- * You can have multiple paginations on one page by setting different names:
- * ```ts
- * <btrix-pagination name="page-a" totalCount="11" @page-change=${console.log}>
- * </btrix-pagination>
- * <btrix-pagination name="page-b" totalCount="2" @page-change=${console.log}>
- * </btrix-pagination>
- * ```
- *
- * You can also disable pagination persistence via search params by setting name to `null`:
- * ```ts
- * <btrix-pagination .name=${null} totalCount="11" @page-change=${console.log}>
- * </btrix-pagination>
- * ```
+ * Displays navigation links for paginated content.
  *
  * @fires page-change {PageChangeEvent}
  */
@@ -163,7 +141,7 @@ export class Pagination extends LitElement {
   ];
 
   searchParams = new SearchParamsController(this, (params) => {
-    if (this.name == null) return;
+    if (this.disablePersist) return;
     const page = parsePage(params.get(this.name));
     if (this._page !== page) {
       this.dispatchEvent(
@@ -179,6 +157,9 @@ export class Pagination extends LitElement {
   @state()
   private _page = 1;
 
+  /**
+   * Current page
+   */
   @property({ type: Number })
   set page(page: number) {
     if (page !== this._page) {
@@ -191,17 +172,40 @@ export class Pagination extends LitElement {
     return this._page;
   }
 
+  /**
+   * Name of search param in URL.
+   * You can have multiple pagination elements in one view by setting different names.
+   */
   @property({ type: String })
-  name: string | null = "page";
+  name = "page";
 
+  /**
+   * Total number of items in the collection.
+   */
   @property({ type: Number })
   totalCount = 0;
 
+  /**
+   * Size of the paginated set
+   *
+   * @TODO Rename to `pageSize` as to not confuse with Shoelace `size`
+   */
   @property({ type: Number })
   size = 10;
 
+  /**
+   * Display pagination as minimally functional controls (previous, current, and next)
+   *
+   * @TODO Switch to a more standard attribute
+   */
   @property({ type: Boolean })
   compact = false;
+
+  /**
+   * Disable persisting current page in the URL
+   */
+  @property({ type: Boolean })
+  disablePersist = false;
 
   @state()
   private inputValue = "";
@@ -221,7 +225,7 @@ export class Pagination extends LitElement {
       this.calculatePages();
     }
 
-    if (this.name != null) {
+    if (!this.disablePersist) {
       const parsedPage = parseFloat(
         this.searchParams.searchParams.get(this.name) ?? "1",
       );
@@ -418,7 +422,7 @@ export class Pagination extends LitElement {
   }
 
   private setPage(page: number) {
-    if (this.name != null) {
+    if (!this.disablePersist) {
       if (page === 1) {
         this.searchParams.delete(this.name);
       } else {
