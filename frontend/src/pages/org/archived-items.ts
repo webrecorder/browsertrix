@@ -961,7 +961,7 @@ export class CrawlsList extends BtrixElement {
         crawlType: params.itemType,
       },
       {
-        arrayFormat: "comma",
+        arrayFormat: "none",
       },
     );
 

@@ -1252,7 +1252,7 @@ def init_crawls_api(
         page: int = 1,
         userid: Optional[UUID] = None,
         cid: Optional[UUID] = None,
-        state: Optional[str] = None,
+        state: Annotated[list[str] | None, Query()] = None,
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -1269,10 +1269,12 @@ def init_crawls_api(
         sortBy: Optional[str] = None,
         sortDirection: int = -1,
     ):
-        # pylint: disable=duplicate-code
-        states = []
-        if state:
-            states = state.split(",")
+        # Support both comma-separated values and multiple search parameters
+        # e.g. `?state=running,paused` and `?state=running&state=paused`
+        if state and len(state) == 1:
+            states = state[0].split(",")
+        else:
+            states = state if state else None
 
         if firstSeed:
             firstSeed = urllib.parse.unquote(firstSeed)
