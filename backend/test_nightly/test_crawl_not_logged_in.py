@@ -10,11 +10,6 @@ from .conftest import API_PREFIX
 config_id = None
 
 
-@pytest.fixture(scope="session")
-def profile_browser_id(admin_auth_headers, default_org_id):
-    return _create_profile_browser(admin_auth_headers, default_org_id)
-
-
 def _create_profile_browser(
     headers: Dict[str, str], oid: UUID, url: str = "https://webrecorder.net"
 ):
@@ -38,6 +33,11 @@ def _create_profile_browser(
         if data.get("success"):
             return browser_id
         time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def profile_browser_id(admin_auth_headers, default_org_id):
+    return _create_profile_browser(admin_auth_headers, default_org_id)
 
 
 def prepare_browser_for_profile_commit(
