@@ -253,6 +253,27 @@ export class CrawlsList extends BtrixElement {
   @query("#stateSelect")
   stateSelect?: SlSelect;
 
+  private get hasFiltersSet() {
+    return [
+      this.filterBy.value.firstSeed,
+      this.filterBy.value.name,
+      this.filterBy.value.state?.length || undefined,
+      this.filterByCurrentUser.value || undefined,
+      this.filterByTags.value?.length || undefined,
+    ].some((v) => v !== undefined);
+  }
+
+  private clearFilters() {
+    this.filterBy.value = {
+      ...this.filterBy.value,
+      firstSeed: undefined,
+      name: undefined,
+      state: undefined,
+    };
+    this.filterByCurrentUser.value = false;
+    this.filterByTags.value = undefined;
+  }
+
   private readonly archivedItemsTask = new Task(this, {
     task: async (
       [
@@ -620,28 +641,13 @@ export class CrawlsList extends BtrixElement {
               </btrix-filter-chip> `
             : ""}
           ${when(
-            [
-              this.filterBy.value.firstSeed,
-              this.filterBy.value.name,
-              this.filterBy.value.state?.length || undefined,
-              this.filterByCurrentUser.value || undefined,
-              this.filterByTags.value?.length || undefined,
-            ].some((v) => v !== undefined),
+            this.hasFiltersSet,
             () => html`
               <sl-button
                 class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
                 size="small"
                 variant="text"
-                @click=${() => {
-                  this.filterBy.value = {
-                    ...this.filterBy.value,
-                    firstSeed: undefined,
-                    name: undefined,
-                    state: undefined,
-                  };
-                  this.filterByCurrentUser.value = false;
-                  this.filterByTags.value = undefined;
-                }}
+                @click=${this.clearFilters}
               >
                 <sl-icon slot="prefix" name="x-lg"></sl-icon>
                 ${msg("Clear All")}
@@ -852,7 +858,7 @@ export class CrawlsList extends BtrixElement {
   };
 
   private renderEmptyState() {
-    if (Object.keys(this.filterBy).length) {
+    if (this.hasFiltersSet) {
       return html`
         <div class="rounded-lg border bg-neutral-50 p-4">
           <p class="text-center">
@@ -862,7 +868,7 @@ export class CrawlsList extends BtrixElement {
             <button
               class="font-medium text-neutral-500 underline hover:no-underline"
               @click=${() => {
-                this.filterBy.value = {};
+                this.clearFilters();
                 if (this.stateSelect) {
                   // TODO pass in value to sl-select after upgrading
                   // shoelace to >=2.0.0-beta.88. Passing an array value
