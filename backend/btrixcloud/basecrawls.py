@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import (
+    Annotated,
     Optional,
     List,
     Union,
@@ -18,7 +19,7 @@ import os
 import urllib.parse
 
 import asyncio
-from fastapi import HTTPException, Depends, Request
+from fastapi import HTTPException, Depends, Query, Request
 from fastapi.responses import StreamingResponse
 import pymongo
 
@@ -28,6 +29,7 @@ from .models import (
     BaseCrawl,
     CrawlOut,
     CrawlOutWithResources,
+    ListFilterType,
     UpdateCrawl,
     DeleteCrawlList,
     Organization,
@@ -632,6 +634,8 @@ class BaseCrawlOps:
         userid: Optional[UUID] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        tags: list[str] | None = None,
+        tag_match: ListFilterType | None = None,
         collection_id: Optional[UUID] = None,
         states: Optional[List[str]] = None,
         first_seed: Optional[str] = None,
@@ -669,6 +673,10 @@ class BaseCrawlOps:
 
         if cid:
             query["cid"] = cid
+
+        if tags:
+            query_type = "$all" if tag_match == ListFilterType.AND else "$in"
+            query["tags"] = {query_type: tags}
 
         aggregate = [
             {"$match": query},
@@ -986,6 +994,15 @@ def init_base_crawls_api(app, user_dep, *args):
         state: Optional[str] = None,
         firstSeed: Optional[str] = None,
         description: Optional[str] = None,
+        tags: Annotated[list[str] | None, Query()] = None,
+        tag_match: Annotated[
+            ListFilterType | None,
+            Query(
+                alias="tagMatch",
+                title="Tag Match Type",
+                description='Defaults to `"and"` if omitted',
+            ),
+        ] = ListFilterType.AND,
         collectionId: Optional[UUID] = None,
         crawlType: Optional[str] = None,
         cid: Optional[UUID] = None,
@@ -1011,6 +1028,8 @@ def init_base_crawls_api(app, user_dep, *args):
             userid=userid,
             name=name,
             description=description,
+            tags=tags,
+            tag_match=tag_match,
             collection_id=collectionId,
             states=states,
             first_seed=firstSeed,
