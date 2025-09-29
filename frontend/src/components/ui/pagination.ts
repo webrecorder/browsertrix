@@ -194,8 +194,7 @@ export class Pagination extends LitElement {
   size = 10;
 
   /**
-   * Display pagination as minimally functional controls (previous, current, and next.)
-   * This should be used sparingly, likely for secondary pagination in a view.
+   * Display pagination as minimally functional controls (previous, current, and next)
    *
    * @TODO Switch to a more standard attribute
    */
