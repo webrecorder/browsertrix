@@ -21,7 +21,6 @@ import urllib.parse
 import asyncio
 from fastapi import HTTPException, Depends, Query, Request
 from fastapi.responses import StreamingResponse
-from motor.motor_asyncio import AsyncIOMotorCollection
 import pymongo
 
 from .models import (
