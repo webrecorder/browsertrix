@@ -659,49 +659,81 @@ export class CrawlsList extends BtrixElement {
 
   private renderControls() {
     return html`
-      <div
-        class="grid grid-cols-1 items-center gap-x-2 gap-y-2 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)]"
-      >
-        <div class="col-span-1 md:col-span-2 lg:col-span-1">
-          ${this.renderSearch()}
-        </div>
+      <div class="flex flex-wrap items-center gap-2 md:gap-4">
+        <div class="grow basis-1/2">${this.renderSearch()}</div>
 
         <div class="flex items-center">
-          <div class="mx-2 whitespace-nowrap text-neutral-500">
+          <label
+            class="mr-2 whitespace-nowrap text-sm text-neutral-500"
+            for="sort-select"
+          >
             ${msg("Sort by:")}
-          </div>
-          <div class="flex grow">${this.renderSortControl()}</div>
+          </label>
+          ${this.renderSortControl()}
         </div>
-      </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="whitespace-nowrap text-sm text-neutral-500">
+            ${msg("Filter by:")}
+          </span>
+          <btrix-archived-item-state-filter
+            .states=${this.filterBy.value.state}
+            @btrix-change=${(e: BtrixChangeArchivedItemStateFilterEvent) => {
+              this.filterBy.value = {
+                ...this.filterBy.value,
+                state: e.detail.value,
+              };
+            }}
+          ></btrix-archived-item-state-filter>
 
-      <div class="flex flex-wrap items-center gap-2">
-        <btrix-archived-item-state-filter
-          .states=${this.filterBy.value.state}
-          @btrix-change=${(e: BtrixChangeArchivedItemStateFilterEvent) => {
-            this.filterBy.value = {
-              ...this.filterBy.value,
-              state: e.detail.value,
-            };
-          }}
-        ></btrix-archived-item-state-filter>
-        <btrix-archived-item-tag-filter
-          .tags=${this.filterByTags.value}
-          @btrix-change=${(e: BtrixChangeArchivedItemTagFilterEvent) => {
-            this.filterByTags.value = e.detail.value?.tags;
-            this.filterByTagsType.value = e.detail.value?.type || "or";
-          }}
-        ></btrix-archived-item-tag-filter>
-        ${this.userInfo?.id
-          ? html`<btrix-filter-chip
-              ?checked=${this.filterByCurrentUser.value}
-              @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
-                const { checked } = e.target as FilterChip;
-                this.filterByCurrentUser.value = Boolean(checked);
-              }}
-            >
-              ${msg("Mine")}
-            </btrix-filter-chip> `
-          : ""}
+          <btrix-archived-item-tag-filter
+            .tags=${this.filterByTags.value}
+            @btrix-change=${(e: BtrixChangeArchivedItemTagFilterEvent) => {
+              this.filterByTags.value = e.detail.value?.tags;
+              this.filterByTagsType.value = e.detail.value?.type || "or";
+            }}
+          ></btrix-archived-item-tag-filter>
+
+          ${this.userInfo?.id
+            ? html`<btrix-filter-chip
+                ?checked=${this.filterByCurrentUser.value}
+                @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
+                  const { checked } = e.target as FilterChip;
+                  this.filterByCurrentUser.value = Boolean(checked);
+                }}
+              >
+                ${msg("Mine")}
+              </btrix-filter-chip> `
+            : ""}
+          ${when(
+            [
+              this.filterBy.value.firstSeed,
+              this.filterBy.value.name,
+              this.filterBy.value.state?.length || undefined,
+              this.filterByCurrentUser.value || undefined,
+              this.filterByTags.value?.length || undefined,
+            ].some((v) => v !== undefined),
+            () => html`
+              <sl-button
+                class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
+                size="small"
+                variant="text"
+                @click=${() => {
+                  this.filterBy.value = {
+                    ...this.filterBy.value,
+                    firstSeed: undefined,
+                    name: undefined,
+                    state: undefined,
+                  };
+                  this.filterByCurrentUser.value = false;
+                  this.filterByTags.value = undefined;
+                }}
+              >
+                <sl-icon slot="prefix" name="x-lg"></sl-icon>
+                ${msg("Clear All")}
+              </sl-button>
+            `,
+          )}
+        </div>
       </div>
     `;
   }
@@ -714,7 +746,8 @@ export class CrawlsList extends BtrixElement {
     );
     return html`
       <sl-select
-        class="flex-1 md:w-[24ch]"
+        id="sort-select"
+        class="flex-1 md:min-w-[9.2rem]"
         size="small"
         pill
         value=${this.orderBy.value.field}
@@ -730,16 +763,28 @@ export class CrawlsList extends BtrixElement {
       >
         ${options}
       </sl-select>
-      <sl-icon-button
-        name="arrow-down-up"
-        label=${msg("Reverse sort")}
-        @click=${() => {
-          this.orderBy.value = {
-            ...this.orderBy.value,
-            direction: this.orderBy.value.direction === "asc" ? "desc" : "asc",
-          };
-        }}
-      ></sl-icon-button>
+      <sl-tooltip
+        content=${this.orderBy.value.direction === "asc"
+          ? msg("Sort in descending order")
+          : msg("Sort in ascending order")}
+      >
+        <sl-icon-button
+          name=${this.orderBy.value.direction === "asc"
+            ? "sort-up-alt"
+            : "sort-down"}
+          class="text-base"
+          label=${this.orderBy.value.direction === "asc"
+            ? msg("Sort Descending")
+            : msg("Sort Ascending")}
+          @click=${() => {
+            this.orderBy.value = {
+              ...this.orderBy.value,
+              direction:
+                this.orderBy.value.direction === "asc" ? "desc" : "asc",
+            };
+          }}
+        ></sl-icon-button>
+      </sl-tooltip>
     `;
   }
 
