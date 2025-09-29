@@ -91,7 +91,7 @@ class BaseCrawlOps:
         event_webhook_ops: EventWebhookOps,
         background_job_ops: BackgroundJobOps,
     ):
-        self.crawls: AsyncIOMotorCollection[Any] = mdb["crawls"]  # pyright: ignore[reportExplicitAny]
+        self.crawls = mdb["crawls"]
         self.presigned_urls = mdb["presigned_urls"]
         self.crawl_configs = crawl_configs
         self.user_manager = users
@@ -976,7 +976,8 @@ class BaseCrawlOps:
         """get distinct tags from all archived items for this org"""
         tags = await self.crawls.aggregate(
             [
-                # Match only against the states of archived items that might be displayed in the frontend
+                # Match only against the states of archived items that might be
+                # displayed in the frontend
                 {"$match": {"oid": org.id, "state": {"$in": SUCCESSFUL_STATES}}},
                 {"$unwind": "$tags"},
                 {"$group": {"_id": "$tags", "count": {"$sum": 1}}},
@@ -1029,7 +1030,7 @@ def init_base_crawls_api(app, user_dep, *args):
         # Support both comma-separated values and multiple search parameters
         # e.g. `?state=running,paused` and `?state=running&state=paused`
         if state and len(state) == 1:
-            states = state[0].split(",")
+            states: list[str] | None = state[0].split(",")
         else:
             states = state if state else None
 

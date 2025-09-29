@@ -1272,7 +1272,7 @@ def init_crawls_api(
         # Support both comma-separated values and multiple search parameters
         # e.g. `?state=running,paused` and `?state=running&state=paused`
         if state and len(state) == 1:
-            states = state[0].split(",")
+            states: list[str] | None = state[0].split(",")
         else:
             states = state if state else None
 
