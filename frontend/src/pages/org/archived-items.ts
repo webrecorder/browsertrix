@@ -13,6 +13,7 @@ import type { ArchivedItem, Crawl, Workflow } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
+import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -35,7 +36,10 @@ type SortField =
   | "qaRunCount"
   | "lastQAState"
   | "lastQAStarted";
-type SortDirection = "asc" | "desc";
+const SORT_DIRECTIONS = ["asc", "desc"] as const;
+type SortDirection = (typeof SORT_DIRECTIONS)[number];
+
+type Keys<T> = (keyof T)[];
 
 const POLL_INTERVAL_SECONDS = 5;
 const INITIAL_PAGE_SIZE = 20;
@@ -70,6 +74,21 @@ const sortableFields: Record<
   },
 };
 
+type SortBy = {
+  field: SortField;
+  direction: SortDirection;
+};
+const DEFAULT_SORT_BY: SortBy = {
+  field: "finished",
+  direction: sortableFields["finished"].defaultDirection!,
+};
+
+type FilterBy = {
+  state?: CrawlState[];
+  name?: string;
+  firstSeed?: string;
+};
+
 /**
  * Usage:
  * ```ts
@@ -100,20 +119,120 @@ export class CrawlsList extends BtrixElement {
   private searchOptions: Record<string, string>[] = [];
 
   @state()
-  private orderBy: {
-    field: SortField;
-    direction: SortDirection;
-  } = {
-    field: "finished",
-    direction: sortableFields["finished"].defaultDirection!,
-  };
+  private readonly orderBy = new SearchParamsValue<SortBy>(
+    this,
+    (value, params) => {
+      if (value.field === DEFAULT_SORT_BY.field) {
+        params.delete("sortBy");
+      } else {
+        params.set("sortBy", value.field);
+      }
+      if (value.direction === sortableFields[value.field].defaultDirection) {
+        params.delete("sortDir");
+      } else {
+        params.set("sortDir", value.direction);
+      }
+      return params;
+    },
+    (params) => {
+      const field = params.get("sortBy") as SortBy["field"] | null;
+      if (!field) {
+        return DEFAULT_SORT_BY;
+      }
+      let direction = params.get("sortDir");
+      if (
+        !direction ||
+        (SORT_DIRECTIONS as readonly string[]).includes(direction)
+      ) {
+        direction =
+          sortableFields[field].defaultDirection || DEFAULT_SORT_BY.direction;
+      }
+      return { field, direction: direction as SortDirection };
+    },
+  );
+  private readonly filterByCurrentUser = new SearchParamsValue<boolean>(
+    this,
+    (value, params) => {
+      if (value) {
+        params.set("mine", "true");
+      } else {
+        params.delete("mine");
+      }
+      return params;
+    },
+    (params) => params.get("mine") === "true",
+    {
+      initial: (initialValue) =>
+        window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
+          "true" ||
+        initialValue ||
+        false,
+    },
+  );
+  private readonly filterByTags = new SearchParamsValue<string[]>(
+    this,
+    (value, params) => {
+      if (value.length) {
+        value.forEach((v) => {
+          params.append("tags", v);
+        });
+      } else {
+        params.delete("tags");
+      }
+      return params;
+    },
+    (params) => params.getAll("tags"),
+  );
 
   @state()
-  private filterByCurrentUser = false;
+  private readonly filterByTagsType = new SearchParamsValue<"and" | "or">(
+    this,
+    (value, params) => {
+      if (value === "and") {
+        params.set("tagsType", value);
+      } else {
+        params.delete("tagsType");
+      }
+      return params;
+    },
+    (params) => (params.get("tagsType") === "and" ? "and" : "or"),
+  );
 
   @state()
-  private filterBy: Partial<Record<keyof ArchivedItem, string | CrawlState[]>> =
-    {};
+  private readonly filterBy = new SearchParamsValue<FilterBy>(
+    this,
+    (value, params) => {
+      const keys = Object.keys(value) as Keys<typeof value>;
+      keys.forEach((key) => {
+        if (value[key] == null) {
+          params.delete(key);
+        } else {
+          switch (key) {
+            case "firstSeed":
+            case "name":
+              params.set(key, value[key]);
+              break;
+            case "state":
+              params.delete(key);
+              value[key].forEach((state) => {
+                params.append(key, state);
+              });
+              break;
+          }
+        }
+      });
+      return params;
+    },
+    (params) => {
+      const state = params.getAll("state") as CrawlState[];
+
+      return {
+        firstSeed: params.get("firstSeed") ?? undefined,
+        name: params.get("name") ?? undefined,
+        state: state.length ? state : undefined,
+      };
+    },
+  );
 
   @state()
   private itemToEdit: ArchivedItem | null = null;
@@ -188,14 +307,102 @@ export class CrawlsList extends BtrixElement {
   private readonly searchKeys = ["name", "firstSeed"];
 
   private get selectedSearchFilterKey() {
-    return Object.keys(CrawlsList.FieldLabels).find((key) =>
-      Boolean((this.filterBy as Record<string, unknown>)[key]),
-    );
+    return (
+      Object.keys(CrawlsList.FieldLabels) as Keys<typeof CrawlsList.FieldLabels>
+    ).find((key) => Boolean(this.filterBy.value[key]));
   }
+
+  // searchParams = new SearchParamsController(this, (params) => {
+  //   this.updateFiltersFromSearchParams(params);
+  // });
+
+  // private updateFiltersFromSearchParams(
+  //   params = this.searchParams.searchParams,
+  // ) {
+  //   const filterBy = { ...this.filterBy.value };
+  //   // remove filters no longer present in search params
+  //   for (const key of Object.keys(filterBy) as Keys<typeof filterBy>) {
+  //     if (!params.has(key)) {
+  //       filterBy[key] = undefined;
+  //     }
+  //   }
+
+  //   // remove current user filter if not present in search params
+  //   if (!params.has("mine")) {
+  //     this.filterByCurrentUser.value = false;
+  //   }
+
+  //   if (params.has("tags")) {
+  //     this.filterByTags. = params.getAll("tags");
+  //   } else {
+  //     this.filterByTags = undefined;
+  //   }
+
+  //   // if (params.has("profiles")) {
+  //   //   this.filterByProfiles = params.getAll("profiles");
+  //   // } else {
+  //   //   this.filterByProfiles = undefined;
+  //   // }
+
+  //   // add filters present in search params
+  //   for (const [key, value] of params) {
+  //     // Filter by current user
+  //     if (key === "mine") {
+  //       this.filterByCurrentUser = value === "true";
+  //     }
+
+  //     if (key === "tagsType") {
+  //       this.filterByTagsType = value === "and" ? "and" : "or";
+  //     }
+
+  //     // Sorting field
+  //     if (key === "sortBy") {
+  //       if (value in sortableFields) {
+  //         this.orderBy = {
+  //           field: value as SortField,
+  //           direction:
+  //             // Use default direction for field if available, otherwise use current direction
+  //             sortableFields[value as SortField].defaultDirection ||
+  //             this.orderBy.direction,
+  //         };
+  //       }
+  //     }
+  //     if (key === "sortDir") {
+  //       if (SORT_DIRECTIONS.includes(value as SortDirection)) {
+  //         // Overrides sort direction if specified
+  //         this.orderBy = { ...this.orderBy, direction: value as SortDirection };
+  //       }
+  //     }
+
+  //     // Ignored params
+  //     if (
+  //       [
+  //         "page",
+  //         "mine",
+  //         "tags",
+  //         "tagsType",
+  //         "profiles",
+  //         "sortBy",
+  //         "sortDir",
+  //       ].includes(key)
+  //     )
+  //       continue;
+
+  //     // // Convert string bools to filter values
+  //     // if (value === "true") {
+  //     //   filterBy[key as keyof typeof filterBy] = true;
+  //     // } else if (value === "false") {
+  //     //   filterBy[key as keyof typeof filterBy] = false;
+  //     // } else {
+  //     //   filterBy[key as keyof typeof filterBy] = undefined;
+  //     // }
+  //   }
+  //   this.filterBy = { ...filterBy };
+  // }
 
   constructor() {
     super();
-    this.filterByCurrentUser =
+    this.filterByCurrentUser.value =
       window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
       "true";
   }
@@ -210,8 +417,8 @@ export class CrawlsList extends BtrixElement {
       changedProperties.has("itemType")
     ) {
       if (changedProperties.has("itemType")) {
-        this.filterBy = {};
-        this.orderBy = {
+        this.filterBy.value = {};
+        this.orderBy.value = {
           field: "finished",
           direction: sortableFields["finished"].defaultDirection!,
         };
@@ -224,7 +431,7 @@ export class CrawlsList extends BtrixElement {
       if (changedProperties.has("filterByCurrentUser")) {
         window.sessionStorage.setItem(
           FILTER_BY_CURRENT_USER_STORAGE_KEY,
-          this.filterByCurrentUser.toString(),
+          this.filterByCurrentUser.value.toString(),
         );
       }
     }
@@ -459,8 +666,8 @@ export class CrawlsList extends BtrixElement {
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
               await this.updateComplete;
-              this.filterBy = {
-                ...this.filterBy,
+              this.filterBy.value = {
+                ...this.filterBy.value,
                 state: value,
               };
             }}
@@ -485,8 +692,10 @@ export class CrawlsList extends BtrixElement {
               >
               <sl-switch
                 @sl-change=${(e: CustomEvent) =>
-                  (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
-                ?checked=${this.filterByCurrentUser}
+                  (this.filterByCurrentUser.value = (
+                    e.target as SlCheckbox
+                  ).checked)}
+                ?checked=${this.filterByCurrentUser.value}
               ></sl-switch>
             </label>
           </div>`
@@ -505,13 +714,14 @@ export class CrawlsList extends BtrixElement {
         class="flex-1 md:w-[24ch]"
         size="small"
         pill
-        value=${this.orderBy.field}
+        value=${this.orderBy.value.field}
         @sl-change=${(e: Event) => {
           const field = (e.target as HTMLSelectElement).value as SortField;
-          this.orderBy = {
+          this.orderBy.value = {
             field: field,
             direction:
-              sortableFields[field].defaultDirection || this.orderBy.direction,
+              sortableFields[field].defaultDirection ||
+              this.orderBy.value.direction,
           };
         }}
       >
@@ -521,9 +731,9 @@ export class CrawlsList extends BtrixElement {
         name="arrow-down-up"
         label=${msg("Reverse sort")}
         @click=${() => {
-          this.orderBy = {
-            ...this.orderBy,
-            direction: this.orderBy.direction === "asc" ? "desc" : "asc",
+          this.orderBy.value = {
+            ...this.orderBy.value,
+            direction: this.orderBy.value.direction === "asc" ? "desc" : "asc",
           };
         }}
       ></sl-icon-button>
@@ -544,8 +754,8 @@ export class CrawlsList extends BtrixElement {
             : msg("Search all items by name or crawl start URL")}
         @btrix-select=${(e: CustomEvent) => {
           const { key, value } = e.detail;
-          this.filterBy = {
-            ...this.filterBy,
+          this.filterBy.value = {
+            ...this.filterBy.value,
             [key]: value,
           };
         }}
@@ -554,8 +764,8 @@ export class CrawlsList extends BtrixElement {
             name: _name,
             firstSeed: _firstSeed,
             ...otherFilters
-          } = this.filterBy;
-          this.filterBy = otherFilters;
+          } = this.filterBy.value;
+          this.filterBy.value = otherFilters;
         }}
       >
       </btrix-search-combobox>
@@ -685,7 +895,7 @@ export class CrawlsList extends BtrixElement {
             <button
               class="font-medium text-neutral-500 underline hover:no-underline"
               @click=${() => {
-                this.filterBy = {};
+                this.filterBy.value = {};
                 if (this.stateSelect) {
                   // TODO pass in value to sl-select after upgrading
                   // shoelace to >=2.0.0-beta.88. Passing an array value
@@ -733,14 +943,16 @@ export class CrawlsList extends BtrixElement {
     const query = queryString.stringify(
       {
         ...params.filterBy,
-        state: params.filterBy.state?.length
-          ? params.filterBy.state
+        state: params.filterBy.value.state?.length
+          ? params.filterBy.value.state
           : finishedCrawlStates,
         page: params.pagination.page,
         pageSize: params.pagination.pageSize,
-        userid: params.filterByCurrentUser ? this.userInfo!.id : undefined,
-        sortBy: params.orderBy.field,
-        sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
+        userid: params.filterByCurrentUser.value
+          ? this.userInfo!.id
+          : undefined,
+        sortBy: params.orderBy.value.field,
+        sortDirection: params.orderBy.value.direction === "desc" ? -1 : 1,
         crawlType: params.itemType,
       },
       {
