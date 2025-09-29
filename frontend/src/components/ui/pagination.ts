@@ -187,6 +187,8 @@ export class Pagination extends LitElement {
 
   /**
    * Size of the paginated set
+   *
+   * @TODO Rename to `pageSize` as to not confuse with Shoelace `size`
    */
   @property({ type: Number })
   size = 10;
@@ -194,6 +196,8 @@ export class Pagination extends LitElement {
   /**
    * Display pagination as minimally functional controls (previous, current, and next.)
    * This should be used sparingly, likely for secondary pagination in a view.
+   *
+   * @TODO Switch to a more standard attribute
    */
   @property({ type: Boolean })
   compact = false;
