@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
-import type { SlCheckbox, SlSelect } from "@shoelace-style/shoelace";
+import type { SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -11,9 +11,15 @@ import queryString from "query-string";
 import type { ArchivedItem, Crawl, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import {
+  type BtrixFilterChipChangeEvent,
+  type FilterChip,
+} from "@/components/ui/filter-chip";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
+import { type BtrixChangeArchivedItemTagFilterEvent } from "@/features/archived-items/archived-item-tag-filter";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -169,22 +175,18 @@ export class CrawlsList extends BtrixElement {
         false,
     },
   );
-  private readonly filterByTags = new SearchParamsValue<string[]>(
+  private readonly filterByTags = new SearchParamsValue<string[] | undefined>(
     this,
     (value, params) => {
-      if (value.length) {
-        value.forEach((v) => {
-          params.append("tags", v);
-        });
-      } else {
-        params.delete("tags");
-      }
+      params.delete("tags");
+      value?.forEach((v) => {
+        params.append("tags", v);
+      });
       return params;
     },
     (params) => params.getAll("tags"),
   );
 
-  @state()
   private readonly filterByTagsType = new SearchParamsValue<"and" | "or">(
     this,
     (value, params) => {
@@ -198,7 +200,6 @@ export class CrawlsList extends BtrixElement {
     (params) => (params.get("tagsType") === "and" ? "and" : "or"),
   );
 
-  @state()
   private readonly filterBy = new SearchParamsValue<FilterBy>(
     this,
     (value, params) => {
@@ -411,10 +412,12 @@ export class CrawlsList extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
-      changedProperties.has("filterByCurrentUser") ||
-      changedProperties.has("filterBy") ||
-      changedProperties.has("orderBy") ||
-      changedProperties.has("itemType")
+      changedProperties.has("filterByCurrentUser.value") ||
+      changedProperties.has("filterBy.value") ||
+      changedProperties.has("orderBy.value") ||
+      changedProperties.has("itemType") ||
+      changedProperties.has("filterByTags.value") ||
+      changedProperties.has("filterByTagsType.value")
     ) {
       if (changedProperties.has("itemType")) {
         this.filterBy.value = {};
@@ -643,37 +646,12 @@ export class CrawlsList extends BtrixElement {
   `;
 
   private renderControls() {
-    const viewPlaceholder = msg("Any");
-    const viewOptions = finishedCrawlStates;
-
     return html`
       <div
         class="grid grid-cols-1 items-center gap-x-2 gap-y-2 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)]"
       >
         <div class="col-span-1 md:col-span-2 lg:col-span-1">
           ${this.renderSearch()}
-        </div>
-        <div class="flex items-center">
-          <div class="mx-2 text-neutral-500">${msg("Status:")}</div>
-          <sl-select
-            id="stateSelect"
-            class="flex-1 md:w-[14.5rem]"
-            size="small"
-            pill
-            multiple
-            max-options-visible="1"
-            placeholder=${viewPlaceholder}
-            @sl-change=${async (e: CustomEvent) => {
-              const value = (e.target as SlSelect).value as CrawlState[];
-              await this.updateComplete;
-              this.filterBy.value = {
-                ...this.filterBy.value,
-                state: value,
-              };
-            }}
-          >
-            ${viewOptions.map(this.renderStatusMenuItem)}
-          </sl-select>
         </div>
 
         <div class="flex items-center">
@@ -684,22 +662,35 @@ export class CrawlsList extends BtrixElement {
         </div>
       </div>
 
-      ${this.userInfo?.id
-        ? html` <div class="mt-2 flex h-6 justify-end">
-            <label>
-              <span class="mr-1 text-xs text-neutral-500"
-                >${msg("Show Only Mine")}</span
-              >
-              <sl-switch
-                @sl-change=${(e: CustomEvent) =>
-                  (this.filterByCurrentUser.value = (
-                    e.target as SlCheckbox
-                  ).checked)}
-                ?checked=${this.filterByCurrentUser.value}
-              ></sl-switch>
-            </label>
-          </div>`
-        : ""}
+      <div class="flex flex-wrap items-center gap-2">
+        <btrix-archived-item-state-filter
+          .states=${this.filterBy.value.state}
+          @btrix-change=${(e: BtrixChangeArchivedItemStateFilterEvent) => {
+            this.filterBy.value = {
+              ...this.filterBy.value,
+              state: e.detail.value,
+            };
+          }}
+        ></btrix-archived-item-state-filter>
+        <btrix-archived-item-tag-filter
+          .tags=${this.filterByTags.value}
+          @btrix-change=${(e: BtrixChangeArchivedItemTagFilterEvent) => {
+            this.filterByTags.value = e.detail.value?.tags;
+            this.filterByTagsType.value = e.detail.value?.type || "or";
+          }}
+        ></btrix-archived-item-tag-filter>
+        ${this.userInfo?.id
+          ? html`<btrix-filter-chip
+              ?checked=${this.filterByCurrentUser.value}
+              @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
+                const { checked } = e.target as FilterChip;
+                this.filterByCurrentUser.value = Boolean(checked);
+              }}
+            >
+              ${msg("Mine")}
+            </btrix-filter-chip> `
+          : ""}
+      </div>
     `;
   }
 
@@ -937,17 +928,21 @@ export class CrawlsList extends BtrixElement {
       orderBy: CrawlsList["orderBy"];
       filterBy: CrawlsList["filterBy"];
       filterByCurrentUser: CrawlsList["filterByCurrentUser"];
+      filterbyTags: CrawlsList["filterByTags"];
+      filterbyTagsType: CrawlsList["filterByTagsType"];
     },
     signal: AbortSignal,
   ) {
     const query = queryString.stringify(
       {
-        ...params.filterBy,
+        ...params.filterBy.value,
         state: params.filterBy.value.state?.length
           ? params.filterBy.value.state
           : finishedCrawlStates,
         page: params.pagination.page,
         pageSize: params.pagination.pageSize,
+        tag: params.filterbyTags.value,
+        tagMatch: params.filterbyTagsType.value,
         userid: params.filterByCurrentUser.value
           ? this.userInfo!.id
           : undefined,

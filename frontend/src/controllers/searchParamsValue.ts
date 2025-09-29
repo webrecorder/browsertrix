@@ -20,6 +20,7 @@ export class SearchParamsValue<T> implements ReactiveController {
   set value(value: T) {
     this._value = value;
     this.searchParams.update((params) => this.encoder(value, params));
+    this.host.requestUpdate();
   }
 
   constructor(
