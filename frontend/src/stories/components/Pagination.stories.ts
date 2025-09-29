@@ -29,10 +29,23 @@ export const Basic: Story = {
 
 /**
  * By default, the current page persists between page reloads via a search param in the URL.
- * You can disable pagination persistence by setting `disablePersist` to `true`.
+ * You can disable pagination persistence by setting `disablePersist`.
  */
 export const DisablePersistence: Story = {
   args: {
     disablePersist: true,
+  },
+};
+
+/**
+ * Pagination can be displayed with a reduced amount of controls to fit a smaller visual space.
+ * Only the controls for the previous, current, and next page will be visible. Users can jump
+ * to a page by entering the page number in the input field for the current page.
+ *
+ * This should be used sparingly, such as for paginating secondary content in a view.
+ */
+export const Compact: Story = {
+  args: {
+    compact: true,
   },
 };
