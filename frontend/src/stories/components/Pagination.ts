@@ -5,7 +5,7 @@ import type { Pagination } from "@/components/ui/pagination";
 
 import "@/components/ui/pagination";
 
-export type RenderProps = Pagination & {};
+export type RenderProps = Pagination;
 
 export const renderComponent = ({
   page,
@@ -21,6 +21,7 @@ export const renderComponent = ({
       totalCount=${ifDefined(totalCount)}
       size=${ifDefined(size)}
       ?compact=${compact}
+      @page-change=${console.log}
     >
     </btrix-pagination>
   `;

@@ -41,29 +41,11 @@ export function calculatePages({
 }
 
 /**
- * Pagination
+ * Displays navigation links between pages.
  *
- * Persists via a search param in the URL. Defaults to `page`, but can be set with the `name` attribute.
- *
- * Usage example:
- * ```ts
- * <btrix-pagination totalCount="11" @page-change=${console.log}>
- * </btrix-pagination>
- * ```
- *
- * You can have multiple paginations on one page by setting different names:
- * ```ts
- * <btrix-pagination name="page-a" totalCount="11" @page-change=${console.log}>
- * </btrix-pagination>
- * <btrix-pagination name="page-b" totalCount="2" @page-change=${console.log}>
- * </btrix-pagination>
- * ```
- *
- * You can also disable pagination persistence via search params by setting name to `null`:
- * ```ts
- * <btrix-pagination .name=${null} totalCount="11" @page-change=${console.log}>
- * </btrix-pagination>
- * ```
+ * The current page is persisted between reloads via a search param in the URL.
+ * The search param key defaults to `page`, but can be set with the `name` attribute.
+ * You can have multiple paginations on one page by setting different names.
  *
  * @fires page-change {PageChangeEvent}
  */
