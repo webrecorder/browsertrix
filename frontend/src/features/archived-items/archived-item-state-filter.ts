@@ -23,6 +23,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
 import { type CrawlState } from "@/types/crawlState";
 import { finishedCrawlStates } from "@/utils/crawler";
+import { tw } from "@/utils/tailwind";
 
 const MAX_STATES_IN_LABEL = 2;
 
@@ -179,7 +180,10 @@ export class ArchivedItemStateFilter extends BtrixElement {
 
   private renderLabel(state: CrawlState) {
     const { icon, label } = CrawlStatus.getContent({ state });
-    return html`${icon}${label}`;
+    return html`<span
+      class=${tw`inline-flex items-baseline gap-1 [&_sl-icon]:relative [&_sl-icon]:bottom-[-0.05rem]`}
+      >${icon}${label}</span
+    >`;
   }
 
   private renderSearch() {
@@ -225,7 +229,12 @@ export class ArchivedItemStateFilter extends BtrixElement {
             class="w-full part-[label]:flex part-[base]:w-full part-[label]:w-full part-[label]:items-center part-[label]:justify-between part-[base]:rounded part-[base]:p-2 part-[base]:hover:bg-primary-50"
             value=${state}
             ?checked=${checked}
-            >${icon}${label}
+          >
+            <span class="contents"
+              >${label}<span class="ml-2 flex place-content-center"
+                >${icon}</span
+              ></span
+            >
           </sl-checkbox>
         </li>
       `;

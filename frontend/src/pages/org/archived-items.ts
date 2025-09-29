@@ -214,9 +214,9 @@ export class CrawlsList extends BtrixElement {
               params.set(key, value[key]);
               break;
             case "state":
-              params.delete(key);
+              params.delete("status");
               value[key].forEach((state) => {
-                params.append(key, state);
+                params.append("status", state);
               });
               break;
           }
@@ -225,7 +225,7 @@ export class CrawlsList extends BtrixElement {
       return params;
     },
     (params) => {
-      const state = params.getAll("state") as CrawlState[];
+      const state = params.getAll("status") as CrawlState[];
 
       return {
         firstSeed: params.get("firstSeed") ?? undefined,
@@ -325,94 +325,6 @@ export class CrawlsList extends BtrixElement {
     ).find((key) => Boolean(this.filterBy.value[key]));
   }
 
-  // searchParams = new SearchParamsController(this, (params) => {
-  //   this.updateFiltersFromSearchParams(params);
-  // });
-
-  // private updateFiltersFromSearchParams(
-  //   params = this.searchParams.searchParams,
-  // ) {
-  //   const filterBy = { ...this.filterBy.value };
-  //   // remove filters no longer present in search params
-  //   for (const key of Object.keys(filterBy) as Keys<typeof filterBy>) {
-  //     if (!params.has(key)) {
-  //       filterBy[key] = undefined;
-  //     }
-  //   }
-
-  //   // remove current user filter if not present in search params
-  //   if (!params.has("mine")) {
-  //     this.filterByCurrentUser.value = false;
-  //   }
-
-  //   if (params.has("tags")) {
-  //     this.filterByTags. = params.getAll("tags");
-  //   } else {
-  //     this.filterByTags = undefined;
-  //   }
-
-  //   // if (params.has("profiles")) {
-  //   //   this.filterByProfiles = params.getAll("profiles");
-  //   // } else {
-  //   //   this.filterByProfiles = undefined;
-  //   // }
-
-  //   // add filters present in search params
-  //   for (const [key, value] of params) {
-  //     // Filter by current user
-  //     if (key === "mine") {
-  //       this.filterByCurrentUser = value === "true";
-  //     }
-
-  //     if (key === "tagsType") {
-  //       this.filterByTagsType = value === "and" ? "and" : "or";
-  //     }
-
-  //     // Sorting field
-  //     if (key === "sortBy") {
-  //       if (value in sortableFields) {
-  //         this.orderBy = {
-  //           field: value as SortField,
-  //           direction:
-  //             // Use default direction for field if available, otherwise use current direction
-  //             sortableFields[value as SortField].defaultDirection ||
-  //             this.orderBy.direction,
-  //         };
-  //       }
-  //     }
-  //     if (key === "sortDir") {
-  //       if (SORT_DIRECTIONS.includes(value as SortDirection)) {
-  //         // Overrides sort direction if specified
-  //         this.orderBy = { ...this.orderBy, direction: value as SortDirection };
-  //       }
-  //     }
-
-  //     // Ignored params
-  //     if (
-  //       [
-  //         "page",
-  //         "mine",
-  //         "tags",
-  //         "tagsType",
-  //         "profiles",
-  //         "sortBy",
-  //         "sortDir",
-  //       ].includes(key)
-  //     )
-  //       continue;
-
-  //     // // Convert string bools to filter values
-  //     // if (value === "true") {
-  //     //   filterBy[key as keyof typeof filterBy] = true;
-  //     // } else if (value === "false") {
-  //     //   filterBy[key as keyof typeof filterBy] = false;
-  //     // } else {
-  //     //   filterBy[key as keyof typeof filterBy] = undefined;
-  //     // }
-  //   }
-  //   this.filterBy = { ...filterBy };
-  // }
-
   constructor() {
     super();
     this.filterByCurrentUser.value =
@@ -431,7 +343,10 @@ export class CrawlsList extends BtrixElement {
       changedProperties.has("filterByTags.value") ||
       changedProperties.has("filterByTagsType.value")
     ) {
-      if (changedProperties.has("itemType")) {
+      if (
+        changedProperties.has("itemType") &&
+        changedProperties.get("itemType")
+      ) {
         this.filterBy.value = {};
         this.orderBy.value = {
           field: "finished",
