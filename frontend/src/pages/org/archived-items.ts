@@ -940,8 +940,8 @@ export class CrawlsList extends BtrixElement {
       orderBy: CrawlsList["orderBy"]["value"];
       filterBy: CrawlsList["filterBy"]["value"];
       filterByCurrentUser: CrawlsList["filterByCurrentUser"]["value"];
-      filterbyTags: CrawlsList["filterByTags"]["value"];
-      filterbyTagsType: CrawlsList["filterByTagsType"]["value"];
+      filterByTags: CrawlsList["filterByTags"]["value"];
+      filterByTagsType: CrawlsList["filterByTagsType"]["value"];
     },
     signal: AbortSignal,
   ) {
@@ -953,8 +953,8 @@ export class CrawlsList extends BtrixElement {
           : finishedCrawlStates,
         page: params.pagination.page,
         pageSize: params.pagination.pageSize,
-        tags: params.filterbyTags,
-        tagMatch: params.filterbyTagsType,
+        tags: params.filterByTags,
+        tagMatch: params.filterByTagsType,
         userid: params.filterByCurrentUser ? this.userInfo!.id : undefined,
         sortBy: params.orderBy.field,
         sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
