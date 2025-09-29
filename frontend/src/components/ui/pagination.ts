@@ -141,7 +141,7 @@ export class Pagination extends LitElement {
   ];
 
   searchParams = new SearchParamsController(this, (params) => {
-    if (!this.persist) return;
+    if (this.disablePersist) return;
     const page = parsePage(params.get(this.name));
     if (this._page !== page) {
       this.dispatchEvent(
@@ -203,10 +203,10 @@ export class Pagination extends LitElement {
   compact = false;
 
   /**
-   * Persist current page in the URL
+   * Disable persisting current page in the URL
    */
   @property({ type: Boolean })
-  persist = true;
+  disablePersist = false;
 
   @state()
   private inputValue = "";
@@ -226,7 +226,7 @@ export class Pagination extends LitElement {
       this.calculatePages();
     }
 
-    if (this.persist) {
+    if (!this.disablePersist) {
       const parsedPage = parseFloat(
         this.searchParams.searchParams.get(this.name) ?? "1",
       );
@@ -423,7 +423,7 @@ export class Pagination extends LitElement {
   }
 
   private setPage(page: number) {
-    if (this.persist) {
+    if (!this.disablePersist) {
       if (page === 1) {
         this.searchParams.delete(this.name);
       } else {

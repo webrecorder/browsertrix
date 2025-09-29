@@ -29,10 +29,10 @@ export const Basic: Story = {
 
 /**
  * By default, the current page persists between page reloads via a search param in the URL.
- * You can disable pagination persistence by setting `persist` to `false`.
+ * You can disable pagination persistence by setting `disablePersist` to `true`.
  */
 export const DisablePersistence: Story = {
   args: {
-    persist: false,
+    disablePersist: true,
   },
 };

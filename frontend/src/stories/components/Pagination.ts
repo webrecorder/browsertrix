@@ -13,7 +13,7 @@ export const renderComponent = ({
   totalCount,
   size,
   compact,
-  persist,
+  disablePersist,
 }: Partial<RenderProps>) => {
   return html`
     <btrix-pagination
@@ -22,7 +22,7 @@ export const renderComponent = ({
       totalCount=${ifDefined(totalCount)}
       size=${ifDefined(size)}
       ?compact=${compact}
-      ?persist=${persist}
+      ?disablePersist=${disablePersist}
       @page-change=${console.log}
     >
     </btrix-pagination>
