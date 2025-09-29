@@ -894,6 +894,14 @@ export class CrawlsList extends BtrixElement {
       `;
     }
 
+    if (this.itemType === "upload") {
+      return html`
+        <div class="border-b border-t py-5">
+          <p class="text-center text-neutral-500">${msg("No uploads yet.")}</p>
+        </div>
+      `;
+    }
+
     return html`
       <div class="border-b border-t py-5">
         <p class="text-center text-neutral-500">
