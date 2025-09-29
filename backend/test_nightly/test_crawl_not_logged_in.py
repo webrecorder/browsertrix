@@ -2,6 +2,8 @@ import time
 
 import pytest
 import requests
+from typing import Dict
+from uuid import UUID
 
 from .conftest import API_PREFIX
 
@@ -9,7 +11,125 @@ config_id = None
 
 
 @pytest.fixture(scope="session")
-def fail_not_logged_in_crawl_id(admin_auth_headers, default_org_id):
+def profile_browser_id(admin_auth_headers, default_org_id):
+    return _create_profile_browser(admin_auth_headers, default_org_id)
+
+
+def _create_profile_browser(
+    headers: Dict[str, str], oid: UUID, url: str = "https://webrecorder.net"
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{oid}/profiles/browser",
+        headers=headers,
+        json={"url": url},
+    )
+    assert r.status_code == 200
+    browser_id = r.json()["browserid"]
+
+    time.sleep(5)
+
+    # Wait until successful ping, then return profile browser id
+    while True:
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{oid}/profiles/browser/{browser_id}/ping",
+            headers=headers,
+        )
+        data = r.json()
+        if data.get("success"):
+            return browser_id
+        time.sleep(5)
+
+
+def prepare_browser_for_profile_commit(
+    browser_id: str, headers: Dict[str, str], oid: UUID
+) -> None:
+    # Ping to make sure it doesn't expire
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{oid}/profiles/browser/{browser_id}/ping",
+        headers=headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data.get("success")
+    assert data.get("origins") or data.get("origins") == []
+
+    # Verify browser seems good
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{oid}/profiles/browser/{browser_id}",
+        headers=headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["url"]
+    assert data["path"]
+    assert data["password"]
+    assert data["auth_bearer"]
+    assert data["scale"]
+    assert data["oid"] == oid
+
+    # Navigate to new URL
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{oid}/profiles/browser/{browser_id}/navigate",
+        headers=headers,
+        json={"url": "https://webrecorder.net/tools"},
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
+
+    # Ping browser until ready
+    max_attempts = 20
+    attempts = 1
+    while attempts <= max_attempts:
+        try:
+            r = requests.post(
+                f"{API_PREFIX}/orgs/{oid}/profiles/browser/{browser_id}/ping",
+                headers=headers,
+            )
+            data = r.json()
+            if data["success"]:
+                break
+            time.sleep(5)
+        except:
+            time.sleep(5)
+        attempts += 1
+
+
+@pytest.fixture(scope="session")
+def profile_id(admin_auth_headers, default_org_id, profile_browser_id):
+    prepare_browser_for_profile_commit(
+        profile_browser_id, admin_auth_headers, default_org_id
+    )
+
+    # Create profile
+    start_time = time.monotonic()
+    time_limit = 30
+    while True:
+        try:
+            r = requests.post(
+                f"{API_PREFIX}/orgs/{default_org_id}/profiles",
+                headers=admin_auth_headers,
+                json={
+                    "browserid": profile_browser_id,
+                    "name": "Test profile",
+                },
+                timeout=10,
+            )
+            assert r.status_code == 200
+            data = r.json()
+            if data.get("detail") and data.get("detail") == "waiting_for_browser":
+                time.sleep(5)
+                continue
+            if data.get("added"):
+                assert data["storageQuotaReached"] in (True, False)
+                return data["id"]
+        except:
+            if time.monotonic() - start_time > time_limit:
+                raise
+            time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def fail_not_logged_in_crawl_id(admin_auth_headers, default_org_id, profile_id):
     # Start crawl
     crawl_data = {
         "runNow": True,
@@ -20,6 +140,7 @@ def fail_not_logged_in_crawl_id(admin_auth_headers, default_org_id):
             "limit": 1,
             "failOnContentCheck": True,
         },
+        "profileid": profile_id,
     }
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
