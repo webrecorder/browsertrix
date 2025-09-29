@@ -41,11 +41,7 @@ export function calculatePages({
 }
 
 /**
- * Displays navigation links between pages.
- *
- * The current page is persisted between reloads via a search param in the URL.
- * The search param key defaults to `page`, but can be set with the `name` attribute.
- * You can have multiple paginations on one page by setting different names.
+ * Displays navigation links for paginated content.
  *
  * @fires page-change {PageChangeEvent}
  */
@@ -145,7 +141,7 @@ export class Pagination extends LitElement {
   ];
 
   searchParams = new SearchParamsController(this, (params) => {
-    if (this.name == null) return;
+    if (!this.persist) return;
     const page = parsePage(params.get(this.name));
     if (this._page !== page) {
       this.dispatchEvent(
@@ -161,6 +157,9 @@ export class Pagination extends LitElement {
   @state()
   private _page = 1;
 
+  /**
+   * Current page
+   */
   @property({ type: Number })
   set page(page: number) {
     if (page !== this._page) {
@@ -173,17 +172,37 @@ export class Pagination extends LitElement {
     return this._page;
   }
 
+  /**
+   * Name of search param in URL.
+   * You can have multiple pagination elements in one view by setting different names.
+   */
   @property({ type: String })
-  name: string | null = "page";
+  name = "page";
 
+  /**
+   * Total number of items in the collection.
+   */
   @property({ type: Number })
   totalCount = 0;
 
+  /**
+   * Size of the paginated set
+   */
   @property({ type: Number })
   size = 10;
 
+  /**
+   * Display pagination as minimally functional controls (previous, current, and next.)
+   * This should be used sparingly, likely for secondary pagination in a view.
+   */
   @property({ type: Boolean })
   compact = false;
+
+  /**
+   * Persist current page in the URL
+   */
+  @property({ type: Boolean })
+  persist = true;
 
   @state()
   private inputValue = "";
@@ -203,7 +222,7 @@ export class Pagination extends LitElement {
       this.calculatePages();
     }
 
-    if (this.name != null) {
+    if (this.persist) {
       const parsedPage = parseFloat(
         this.searchParams.searchParams.get(this.name) ?? "1",
       );
@@ -400,7 +419,7 @@ export class Pagination extends LitElement {
   }
 
   private setPage(page: number) {
-    if (this.name != null) {
+    if (this.persist) {
       if (page === 1) {
         this.searchParams.delete(this.name);
       } else {

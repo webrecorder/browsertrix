@@ -28,10 +28,11 @@ export const Basic: Story = {
 };
 
 /**
- * You can also disable pagination persistence via search params by setting name to `null`.
+ * By default, the current page persists between page reloads via a search param in the URL.
+ * You can disable pagination persistence by setting `persist` to `false`.
  */
 export const DisablePersistence: Story = {
   args: {
-    name: null,
+    persist: false,
   },
 };
