@@ -255,7 +255,15 @@ export class CrawlsList extends BtrixElement {
 
   private readonly archivedItemsTask = new Task(this, {
     task: async (
-      [itemType, pagination, orderBy, filterBy, filterByCurrentUser],
+      [
+        itemType,
+        pagination,
+        orderBy,
+        filterBy,
+        filterByCurrentUser,
+        filterByTags,
+        filterByTagsType,
+      ],
       { signal },
     ) => {
       try {
@@ -266,6 +274,8 @@ export class CrawlsList extends BtrixElement {
             orderBy,
             filterBy,
             filterByCurrentUser,
+            filterByTags,
+            filterByTagsType,
           },
           signal,
         );
@@ -296,9 +306,11 @@ export class CrawlsList extends BtrixElement {
       [
         this.itemType,
         this.pagination,
-        this.orderBy,
-        this.filterBy,
-        this.filterByCurrentUser,
+        this.orderBy.value,
+        this.filterBy.value,
+        this.filterByCurrentUser.value,
+        this.filterByTags.value,
+        this.filterByTagsType.value,
       ] as const,
   });
 
@@ -925,29 +937,27 @@ export class CrawlsList extends BtrixElement {
     params: {
       itemType: CrawlsList["itemType"];
       pagination: CrawlsList["pagination"];
-      orderBy: CrawlsList["orderBy"];
-      filterBy: CrawlsList["filterBy"];
-      filterByCurrentUser: CrawlsList["filterByCurrentUser"];
-      filterbyTags: CrawlsList["filterByTags"];
-      filterbyTagsType: CrawlsList["filterByTagsType"];
+      orderBy: CrawlsList["orderBy"]["value"];
+      filterBy: CrawlsList["filterBy"]["value"];
+      filterByCurrentUser: CrawlsList["filterByCurrentUser"]["value"];
+      filterbyTags: CrawlsList["filterByTags"]["value"];
+      filterbyTagsType: CrawlsList["filterByTagsType"]["value"];
     },
     signal: AbortSignal,
   ) {
     const query = queryString.stringify(
       {
-        ...params.filterBy.value,
-        state: params.filterBy.value.state?.length
-          ? params.filterBy.value.state
+        ...params.filterBy,
+        state: params.filterBy.state?.length
+          ? params.filterBy.state
           : finishedCrawlStates,
         page: params.pagination.page,
         pageSize: params.pagination.pageSize,
-        tag: params.filterbyTags.value,
-        tagMatch: params.filterbyTagsType.value,
-        userid: params.filterByCurrentUser.value
-          ? this.userInfo!.id
-          : undefined,
-        sortBy: params.orderBy.value.field,
-        sortDirection: params.orderBy.value.direction === "desc" ? -1 : 1,
+        tags: params.filterbyTags,
+        tagMatch: params.filterbyTagsType,
+        userid: params.filterByCurrentUser ? this.userInfo!.id : undefined,
+        sortBy: params.orderBy.field,
+        sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
         crawlType: params.itemType,
       },
       {
