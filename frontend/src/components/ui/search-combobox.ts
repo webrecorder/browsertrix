@@ -41,8 +41,8 @@ export class SearchCombobox<T> extends LitElement {
   @property({ type: String })
   placeholder: string = msg("Start typing to search");
 
-  @state()
-  private searchByValue = "";
+  @property({ type: String })
+  searchByValue = "";
 
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;

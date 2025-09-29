@@ -710,6 +710,10 @@ export class CrawlsList extends BtrixElement {
         .searchOptions=${this.searchOptions}
         .keyLabels=${CrawlsList.FieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
+        searchByValue=${ifDefined(
+          this.selectedSearchFilterKey &&
+            this.filterBy.value[this.selectedSearchFilterKey],
+        )}
         placeholder=${this.itemType === "upload"
           ? msg("Search all uploads by name")
           : this.itemType === "crawl"
