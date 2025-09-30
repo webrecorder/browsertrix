@@ -318,8 +318,13 @@ class CrawlConfigOps:
 
         # the dedup collection id must also be in auto add collections
         if config_in.dedupCollId:
-            if config_in.dedupCollId not in config_in.autoAddCollections:
-                raise HTTPException(status_code=400, "dedup_coll_id_not_in_autoadd")
+            if (
+                not config_in.autoAddCollections
+                or config_in.dedupCollId not in config_in.autoAddCollections
+            ):
+                raise HTTPException(
+                    status_code=400, detail="dedup_coll_id_not_in_autoadd"
+                )
 
         now = dt_now()
         crawlconfig = CrawlConfig(
@@ -623,8 +628,13 @@ class CrawlConfigOps:
         )
 
         if update.dedupCollId:
-            if update.dedupCollId not in update.autoAddCollections:
-                raise HTTPException(status_code=400, "dedup_coll_id_not_in_autoadd")
+            if (
+                not update.autoAddCollections
+                or update.dedupCollId not in update.autoAddCollections
+            ):
+                raise HTTPException(
+                    status_code=400, detail="dedup_coll_id_not_in_autoadd"
+                )
 
         run_now = update.runNow
 
