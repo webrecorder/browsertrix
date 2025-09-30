@@ -163,6 +163,8 @@ class UploadOps(BaseCrawlOps):
             except:
                 raise HTTPException(status_code=400, detail="invalid_collection_id")
 
+        print("UUIDS", collection_uuids)
+
         uploaded = UploadedCrawl(
             id=crawl_id,
             name=name or "New Upload @ " + str(now),
