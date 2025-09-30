@@ -4,7 +4,15 @@ Crawl Config API handling
 
 # pylint: disable=too-many-lines
 
-from typing import List, Optional, TYPE_CHECKING, cast, Dict, Tuple, Annotated, Union
+from typing import (
+    List,
+    Optional,
+    TYPE_CHECKING,
+    cast,
+    Dict,
+    Tuple,
+    Annotated,
+)
 
 import asyncio
 import json
@@ -17,10 +25,14 @@ import urllib.parse
 
 import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
+    BatchCrawlRunOut,
+    BatchFilter,
+    BatchTotalOut,
     CrawlConfigIn,
     ConfigRevision,
     CrawlConfig,
@@ -715,8 +727,8 @@ class CrawlConfigOps:
     async def get_crawl_configs(
         self,
         org: Organization,
-        page_size: int = DEFAULT_PAGE_SIZE,
-        page: int = 1,
+        page_size: int | None = DEFAULT_PAGE_SIZE,
+        page: int | None = 1,
         created_by: Optional[UUID] = None,
         modified_by: Optional[UUID] = None,
         profile_ids: Optional[List[UUID]] = None,
@@ -733,10 +745,12 @@ class CrawlConfigOps:
         """Get all crawl configs for an organization is a member of"""
         # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         # Zero-index page for query
-        page = page - 1
-        skip = page * page_size
+        page = page - 1 if page is not None else 1
+        skip = page * page_size if page_size is not None else 0
 
-        match_query = {"oid": org.id, "inactive": {"$ne": True}}
+        match_query: dict[
+            str, object | str | int | list[dict[str, object | str | int]]
+        ] = {"oid": org.id, "inactive": {"$ne": True}}
 
         if tags:
             query_type = "$all" if tag_match == ListFilterType.AND else "$in"
@@ -767,7 +781,7 @@ class CrawlConfigOps:
             match_query["isCrawlRunning"] = is_crawl_running
 
         # pylint: disable=duplicate-code
-        aggregate: List[Dict[str, Union[object, str, int]]] = [
+        aggregate: list[dict[str, object | str | int]] = [
             {"$match": match_query},
             {"$unset": ["config"]},
         ]
@@ -798,14 +812,15 @@ class CrawlConfigOps:
 
             aggregate.extend([{"$sort": sort_query}])
 
+        items_stages = [{"$skip": skip}]
+        if page_size is not None:
+            items_stages.append({"$limit": page_size})
+
         aggregate.extend(
             [
                 {
                     "$facet": {
-                        "items": [
-                            {"$skip": skip},
-                            {"$limit": page_size},
-                        ],
+                        "items": items_stages,
                         "total": [{"$count": "count"}],
                     }
                 },
@@ -831,6 +846,64 @@ class CrawlConfigOps:
             configs.append(config)
 
         return configs, total
+
+    async def run_crawls_by_filters(
+        self,
+        org: Organization,
+        user: User,
+        created_by: UUID | None = None,
+        modified_by: UUID | None = None,
+        profile_ids: list[UUID] | None = None,
+        first_seed: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        tag_match: ListFilterType | None = ListFilterType.AND,
+        schedule: bool | None = None,
+        is_crawl_running: bool | None = None,
+    ):
+        crawl_configs, total = await self.get_crawl_configs(
+            org,
+            created_by=created_by,
+            modified_by=modified_by,
+            profile_ids=profile_ids,
+            first_seed=first_seed,
+            name=name,
+            description=description,
+            tags=tags,
+            tag_match=tag_match,
+            schedule=schedule,
+            is_crawl_running=is_crawl_running,
+            page_size=None,
+        )
+        yield BatchTotalOut(total=total).model_dump_json(indent=None) + "\n"
+        print(
+            f"Got {total} crawl configs with filter params: {created_by}, {modified_by}, {profile_ids}, {first_seed}, {name}, {description}, {tags}, {tag_match}, {schedule}, {is_crawl_running}"
+        )
+
+        async def run_crawl_with_metadata(config: CrawlConfigOut):
+            """Helper that runs crawl and returns metadata with result"""
+            try:
+                crawl_id = await self.run_now(config.id, org, user)
+                return BatchCrawlRunOut(crawl_id=crawl_id, success=True)
+            except Exception as e:
+                print(f"Error running crawl for config {config.id}: {e}")
+                return BatchCrawlRunOut(
+                    crawl_id=str(config.id), success=False, error=str(e)
+                )
+
+        async with asyncio.TaskGroup() as tg:
+            tasks = [
+                tg.create_task(run_crawl_with_metadata(config))
+                for config in crawl_configs
+            ]
+
+            completed = 0
+            for task in asyncio.as_completed(tasks):
+                result = await task
+                completed += 1
+                result.position = completed
+                yield result.model_dump_json(indent=None) + "\n"
 
     async def is_profile_in_use(self, profileid: UUID, org: Organization) -> bool:
         """return true/false if any active workflows exist with given profile"""
@@ -1701,6 +1774,41 @@ def init_crawl_config_api(
         org: Organization = Depends(org_crawl_dep),
     ):
         return await ops.validate_custom_behavior(behavior.customBehavior)
+
+    # GROUP ACTIONS
+
+    @router.post("/batch/run")
+    async def run_multiple(
+        filter: BatchFilter,
+        org: Organization = Depends(org_crawl_dep),
+        user: User = Depends(user_dep),
+    ):
+        if filter.first_seed:
+            filter.first_seed = urllib.parse.unquote(filter.first_seed)
+
+        if filter.name:
+            filter.name = urllib.parse.unquote(filter.name)
+
+        if filter.description:
+            filter.description = urllib.parse.unquote(filter.description)
+
+        return StreamingResponse(
+            ops.run_crawls_by_filters(
+                org=org,
+                user=user,
+                created_by=filter.created_by,
+                modified_by=filter.modified_by,
+                profile_ids=filter.profile_ids,
+                first_seed=filter.first_seed,
+                name=filter.name,
+                description=filter.description,
+                tags=filter.tags,
+                tag_match=filter.tag_match,
+                schedule=filter.schedule,
+                is_crawl_running=filter.is_crawl_running,
+            ),
+            media_type="application/jsonl",
+        )
 
     org_ops.router.include_router(router)
 

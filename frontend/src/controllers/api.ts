@@ -20,6 +20,30 @@ export enum AbortReason {
   RequestTimeout = "request-timeout",
 }
 
+function splitStream(splitOn: string) {
+  let buffer = "";
+
+  return new TransformStream({
+    transform(chunk, controller) {
+      buffer += chunk;
+      const parts = buffer.split(splitOn);
+      parts.slice(0, -1).forEach((part) => controller.enqueue(part));
+      buffer = parts[parts.length - 1];
+    },
+    flush(controller) {
+      if (buffer) controller.enqueue(buffer);
+    },
+  });
+}
+
+function parseJSON<T>() {
+  return new TransformStream<string, T>({
+    transform(chunk, controller) {
+      controller.enqueue(JSON.parse(chunk) as T);
+    },
+  });
+}
+
 /**
  * Utilities for interacting with the Browsertrix backend API
  *
@@ -260,5 +284,29 @@ export class APIController implements ReactiveController {
     }
 
     this.onUploadProgress.cancel();
+  }
+
+  async fetchStream<
+    T = unknown,
+    Body extends RequestInit["body"] | object = undefined,
+  >(path: string, options?: Omit<RequestInit, "body"> & { body?: Body }) {
+    const mergedOptions: RequestInit | undefined = options as
+      | RequestInit
+      | undefined;
+    if (options?.body) {
+      mergedOptions!.body = JSON.stringify(options.body);
+    }
+    const response = await fetch(path, mergedOptions);
+    if (!response.ok) {
+      throw new APIError({
+        message: response.statusText,
+        status: response.status,
+      });
+    }
+    const reader = response.body;
+    if (!reader) {
+      throw new Error("Response body is not readable");
+    }
+    return reader.pipeThrough(splitStream("\n")).pipeThrough(parseJSON<T>());
   }
 }

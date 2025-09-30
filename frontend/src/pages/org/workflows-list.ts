@@ -53,6 +53,13 @@ type Sort = {
   direction: SortDirection;
 };
 
+type FilterBy = {
+  [K in keyof ListWorkflow]: ListWorkflow[K] extends string ? string : boolean;
+};
+type BoolFilterKeys = {
+  [K in keyof FilterBy]: FilterBy[K] extends boolean ? K : never;
+}[keyof FilterBy];
+
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.crawlConfigs";
 const INITIAL_PAGE_SIZE = 10;
@@ -128,7 +135,7 @@ export class WorkflowsList extends BtrixElement {
   private orderBy: Sort = DEFAULT_SORT;
 
   @state()
-  private filterBy: Partial<{ [k in keyof ListWorkflow]: boolean }> = {};
+  private filterBy: Partial<FilterBy> = {};
 
   @state()
   private filterByCurrentUser = false;
@@ -236,7 +243,7 @@ export class WorkflowsList extends BtrixElement {
 
       // Convert string bools to filter values
       if (value === "true") {
-        filterBy[key as keyof typeof filterBy] = true;
+        filterBy[key as BoolFilterKeys] = true;
       } else if (value === "false") {
         filterBy[key as keyof typeof filterBy] = false;
       } else {
@@ -1158,4 +1165,44 @@ export class WorkflowsList extends BtrixElement {
     );
     return data;
   }
+
+  private async runBatchWorkflows() {
+    const data = await this.api.fetchStream<
+      BatchWorkflowUpdate,
+      BatchWorkflowFilter
+    >(`/orgs/${this.orgId}/crawlconfigs/batch/run`, {
+      method: "POST",
+      body: {
+        ...this.filterBy,
+        createdBy: this.filterByCurrentUser ? this.userInfo?.id : undefined,
+        tags: this.filterByTags,
+        tagMatch: this.filterByTagsType,
+        profileIds: this.filterByProfiles || undefined,
+      },
+    });
+    return data;
+  }
 }
+
+type BatchWorkflowFilter = {
+  createdBy?: string;
+  modifiedBy?: string;
+  profileIds?: string[];
+  firstSeed?: string;
+  name?: string;
+  description?: string;
+  tags?: string[];
+  tagMatch?: "and" | "or";
+  schedule?: boolean;
+  isCrawlRunning?: boolean;
+};
+type BatchWorkflowStart = {
+  total: number;
+};
+type BatchWorkflowProgress = {
+  error?: string;
+  crawl_id: string;
+  success: boolean;
+  position: number;
+};
+type BatchWorkflowUpdate = BatchWorkflowStart | BatchWorkflowProgress;
