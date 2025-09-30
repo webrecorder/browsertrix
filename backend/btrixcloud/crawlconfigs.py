@@ -316,11 +316,10 @@ class CrawlConfigOps:
 
             first_seed = seeds[0].url
 
-        # pylint: disable=fixme
-        # todo: remove eventually, for now, add first auto-add collection
-        # as the dedup collection
-        if not config_in.dedupCollId and config_in.autoAddCollections:
-            config_in.dedupCollId = config_in.autoAddCollections[0]
+        # the dedup collection id must also be in auto add collections
+        if config_in.dedupCollId:
+            if config_in.dedupCollId not in config_in.autoAddCollections:
+                raise HTTPException(status_code=400, "dedup_coll_id_not_in_autoadd")
 
         now = dt_now()
         crawlconfig = CrawlConfig(
@@ -618,17 +617,14 @@ class CrawlConfigOps:
             != sorted(update.autoAddCollections)
         )
 
-        # pylint: disable=fixme
-        # todo: remove eventually, for now, add first auto-add collection
-        # as the dedup collection
-        if update.dedupCollId is None and update.autoAddCollections:
-            update.dedupCollId = update.autoAddCollections[0]
-            metadata_changed = True
-
         metadata_changed = metadata_changed or (
             update.dedupCollId is not None
             and update.dedupCollId != orig_crawl_config.dedupCollId
         )
+
+        if update.dedupCollId:
+            if update.dedupCollId not in update.autoAddCollections:
+                raise HTTPException(status_code=400, "dedup_coll_id_not_in_autoadd")
 
         run_now = update.runNow
 
