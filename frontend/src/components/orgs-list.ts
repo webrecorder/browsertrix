@@ -389,58 +389,10 @@ export class OrgsList extends BtrixElement {
   }
 
   private renderOrgQuotas() {
-    return html`
-      <btrix-dialog
-        id="orgQuotaDialog"
-        .label=${msg(str`Quotas for: ${this.currOrg?.name || ""}`)}
-        @sl-after-hide=${() => (this.currOrg = null)}
-      >
-        ${when(this.currOrg?.quotas, (quotas) =>
-          Object.entries(quotas).map(([key, value]) => {
-            let label;
-            switch (key) {
-              case "maxConcurrentCrawls":
-                label = msg("Max Concurrent Crawls");
-                break;
-              case "maxPagesPerCrawl":
-                label = msg("Max Pages Per Crawl");
-                break;
-              case "storageQuota":
-                label = msg("Org Storage Quota (GB)");
-                value = Math.floor(value / 1e9);
-                break;
-              case "maxExecMinutesPerMonth":
-                label = msg("Max Execution Minutes Per Month");
-                break;
-              case "extraExecMinutes":
-                label = msg("Extra Execution Minutes");
-                break;
-              case "giftedExecMinutes":
-                label = msg("Gifted Execution Minutes");
-                break;
-              default:
-                label = msg("Unlabeled");
-            }
-            return html` <sl-input
-              class="mb-3 last:mb-0"
-              name=${key}
-              label=${label}
-              value=${value}
-              type="number"
-              @sl-input="${this.onUpdateQuota}"
-            ></sl-input>`;
-          }),
-        )}
-        <div slot="footer" class="flex justify-end">
-          <sl-button
-            size="small"
-            @click="${this.onSubmitQuotas}"
-            variant="primary"
-            >${msg("Update Quotas")}
-          </sl-button>
-        </div>
-      </btrix-dialog>
-    `;
+    return html`<btrix-org-quota-editor
+      id="orgQuotaDialog"
+      .activeOrg=${this.currOrg}
+    ></btrix-org-quota-editor>`;
   }
 
   private renderOrgProxies() {
@@ -705,16 +657,6 @@ export class OrgsList extends BtrixElement {
       } else if (hasProxy) {
         this.currOrg.allowedProxies.splice(proxyIndex, 1);
       }
-    }
-  }
-
-  private onSubmitQuotas() {
-    if (this.currOrg) {
-      this.dispatchEvent(
-        new CustomEvent("update-quotas", { detail: this.currOrg }),
-      );
-
-      void this.orgQuotaDialog?.hide();
     }
   }
 
