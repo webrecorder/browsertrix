@@ -155,7 +155,7 @@ data:
     redis_dedup_storage: "{{ .Values.redis_dedup_storage }}"
     redis_dedup_memory: "{{ .Values.redis_dedup_memory }}"
 
-    dedup_importer_channel: "{{ .Values.dedup_importer_channel | default 'default' }}"
+    dedup_importer_channel: {{ .Values.dedup_importer_channel | default "default" }}
 
     # crawler
     crawler_image_pull_policy: {{ .Values.crawler_pull_policy }}
