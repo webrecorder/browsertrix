@@ -10,9 +10,19 @@ import urllib.parse
 from datetime import datetime
 from uuid import UUID
 
-from typing import Optional, List, Dict, Union, Any, Sequence, AsyncIterator, Tuple
+from typing import (
+    Annotated,
+    Optional,
+    List,
+    Dict,
+    Union,
+    Any,
+    Sequence,
+    AsyncIterator,
+    Tuple,
+)
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from redis import asyncio as exceptions
 from redis.asyncio.client import Redis
@@ -31,6 +41,7 @@ from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
 from .crawl_logs import CrawlLogOps
 from .models import (
+    ListFilterType,
     UpdateCrawl,
     DeleteCrawlList,
     CrawlConfig,
@@ -149,6 +160,8 @@ class CrawlOps(BaseCrawlOps):
         first_seed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        tags: list[str] | None = None,
+        tag_match: ListFilterType | None = ListFilterType.AND,
         collection_id: Optional[UUID] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -176,6 +189,10 @@ class CrawlOps(BaseCrawlOps):
 
         if running_only:
             query["state"] = {"$in": RUNNING_AND_WAITING_STATES}
+
+        if tags:
+            query_type = "$all" if tag_match == ListFilterType.AND else "$in"
+            query["tags"] = {query_type: tags}
 
         # Override running_only if state list is explicitly passed
         if state:
@@ -1235,18 +1252,29 @@ def init_crawls_api(
         page: int = 1,
         userid: Optional[UUID] = None,
         cid: Optional[UUID] = None,
-        state: Optional[str] = None,
+        state: Annotated[list[str] | None, Query()] = None,
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        tags: Annotated[list[str] | None, Query()] = None,
+        tag_match: Annotated[
+            ListFilterType | None,
+            Query(
+                alias="tagMatch",
+                title="Tag Match Type",
+                description='Defaults to `"and"` if omitted',
+            ),
+        ] = ListFilterType.AND,
         collectionId: Optional[UUID] = None,
         sortBy: Optional[str] = None,
         sortDirection: int = -1,
     ):
-        # pylint: disable=duplicate-code
-        states = []
-        if state:
-            states = state.split(",")
+        # Support both comma-separated values and multiple search parameters
+        # e.g. `?state=running,paused` and `?state=running&state=paused`
+        if state and len(state) == 1:
+            states: list[str] | None = state[0].split(",")
+        else:
+            states = state if state else None
 
         if firstSeed:
             firstSeed = urllib.parse.unquote(firstSeed)
@@ -1266,6 +1294,8 @@ def init_crawls_api(
             first_seed=firstSeed,
             name=name,
             description=description,
+            tags=tags,
+            tag_match=tag_match,
             collection_id=collectionId,
             page_size=pageSize,
             page=page,
