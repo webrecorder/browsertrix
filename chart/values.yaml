@@ -271,6 +271,11 @@ crawler_pull_policy: "IfNotPresent"
 
 crawler_namespace: "crawlers"
 
+
+# set this to custom crawler channel used for dedup index importing
+# dedup_importer_channel: "default"
+
+
 # if set, will restrict QA to image names that are >= than this value
 # min_qa_crawler_image: ""
 

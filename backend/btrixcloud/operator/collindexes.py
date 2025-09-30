@@ -49,6 +49,9 @@ class CollIndexOperator(BaseOperator):
         self.shared_params["cpu"] = self.shared_params["redis_cpu"]
         self.shared_params["init_redis"] = True
         self.shared_params["obj_type"] = "coll"
+        self.dedup_importer_channel = (
+            self.shared_params.get("dedup_importer_channel") or "default"
+        )
 
     def init_routes(self, app):
         """init routes for this operator"""
@@ -140,7 +143,7 @@ class CollIndexOperator(BaseOperator):
         params["name"] = name
         params["id"] = index_id
         params["crawler_image"] = self.crawl_config_ops.get_channel_crawler_image(
-            "default"
+            self.dedup_importer_channel
         )
 
         params["redis_url"] = self.k8s.get_redis_url("coll-" + index_id)
