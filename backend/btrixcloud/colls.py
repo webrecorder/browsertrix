@@ -850,14 +850,15 @@ class CollectionOps:
 
     async def update_crawl_collections(self, crawl_id: str, oid: UUID):
         """Update counts, dates, and modified for all collections in crawl"""
-        crawl = await self.crawl_ops.get_crawl(crawl_id)
+        # accessing directly to handle both crawls and uploads
+        crawl = await self.crawls.find_one({"_id": crawl_id})
+        crawl_coll_ids = crawl.get("collectionIds") or []
         modified = dt_now()
-        coll_ids = crawl.collectionIds or []
 
-        for coll_id in coll_ids:
+        for coll_id in crawl_coll_ids:
             await self.update_collection_counts_and_tags(coll_id)
             await self.update_collection_dates(
-                coll_id, oid, crawl.dedupCollId != coll_id
+                coll_id, oid, crawl.get("dedupCollId") != coll_id
             )
             await self.collections.find_one_and_update(
                 {"_id": coll_id},
