@@ -264,14 +264,14 @@ export class CrawlsList extends BtrixElement {
   }
 
   private clearFilters() {
-    this.filterBy.value = {
+    this.filterBy.setValue({
       ...this.filterBy.value,
       firstSeed: undefined,
       name: undefined,
       state: undefined,
-    };
-    this.filterByCurrentUser.value = false;
-    this.filterByTags.value = undefined;
+    });
+    this.filterByCurrentUser.setValue(false);
+    this.filterByTags.setValue(undefined);
   }
 
   private readonly archivedItemsTask = new Task(this, {
@@ -348,9 +348,10 @@ export class CrawlsList extends BtrixElement {
 
   constructor() {
     super();
-    this.filterByCurrentUser.value =
+    this.filterByCurrentUser.setValue(
       window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
-      "true";
+        "true",
+    );
   }
 
   protected willUpdate(
@@ -368,11 +369,11 @@ export class CrawlsList extends BtrixElement {
         changedProperties.has("itemType") &&
         changedProperties.get("itemType")
       ) {
-        this.filterBy.value = {};
-        this.orderBy.value = {
+        this.filterBy.setValue({});
+        this.orderBy.setValue({
           field: "finished",
           direction: sortableFields["finished"].defaultDirection!,
-        };
+        });
       }
       this.pagination = {
         page: 1,
@@ -614,18 +615,18 @@ export class CrawlsList extends BtrixElement {
           <btrix-archived-item-state-filter
             .states=${this.filterBy.value.state}
             @btrix-change=${(e: BtrixChangeArchivedItemStateFilterEvent) => {
-              this.filterBy.value = {
+              this.filterBy.setValue({
                 ...this.filterBy.value,
                 state: e.detail.value,
-              };
+              });
             }}
           ></btrix-archived-item-state-filter>
 
           <btrix-archived-item-tag-filter
             .tags=${this.filterByTags.value}
             @btrix-change=${(e: BtrixChangeArchivedItemTagFilterEvent) => {
-              this.filterByTags.value = e.detail.value?.tags;
-              this.filterByTagsType.value = e.detail.value?.type || "or";
+              this.filterByTags.setValue(e.detail.value?.tags);
+              this.filterByTagsType.setValue(e.detail.value?.type || "or");
             }}
           ></btrix-archived-item-tag-filter>
 
@@ -634,7 +635,7 @@ export class CrawlsList extends BtrixElement {
                 ?checked=${this.filterByCurrentUser.value}
                 @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
                   const { checked } = e.target as FilterChip;
-                  this.filterByCurrentUser.value = Boolean(checked);
+                  this.filterByCurrentUser.setValue(Boolean(checked));
                 }}
               >
                 ${msg("Mine")}
@@ -674,12 +675,12 @@ export class CrawlsList extends BtrixElement {
         value=${this.orderBy.value.field}
         @sl-change=${(e: Event) => {
           const field = (e.target as HTMLSelectElement).value as SortField;
-          this.orderBy.value = {
+          this.orderBy.setValue({
             field: field,
             direction:
               sortableFields[field].defaultDirection ||
               this.orderBy.value.direction,
-          };
+          });
         }}
       >
         ${options}
@@ -698,11 +699,11 @@ export class CrawlsList extends BtrixElement {
             ? msg("Sort Descending")
             : msg("Sort Ascending")}
           @click=${() => {
-            this.orderBy.value = {
+            this.orderBy.setValue({
               ...this.orderBy.value,
               direction:
                 this.orderBy.value.direction === "asc" ? "desc" : "asc",
-            };
+            });
           }}
         ></sl-icon-button>
       </sl-tooltip>
@@ -727,10 +728,10 @@ export class CrawlsList extends BtrixElement {
             : msg("Search all items by name or crawl start URL")}
         @btrix-select=${(e: CustomEvent) => {
           const { key, value } = e.detail;
-          this.filterBy.value = {
+          this.filterBy.setValue({
             ...this.filterBy.value,
             [key]: value,
-          };
+          });
         }}
         @btrix-clear=${() => {
           const {
@@ -738,7 +739,7 @@ export class CrawlsList extends BtrixElement {
             firstSeed: _firstSeed,
             ...otherFilters
           } = this.filterBy.value;
-          this.filterBy.value = otherFilters;
+          this.filterBy.setValue(otherFilters);
         }}
       >
       </btrix-search-combobox>

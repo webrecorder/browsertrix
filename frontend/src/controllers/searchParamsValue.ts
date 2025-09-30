@@ -19,9 +19,9 @@ import { SearchParamsController } from "@/controllers/searchParams";
  * argument is the decoder, which receives the current URLSearchParams object
  * and converts this into a valid value.
  *
- * To access the value, use the `value` property. Setting the value will update
- * the URL search params and push state to the history stack, and reading it is
- * cached, so performance should be good no matter what.
+ * To access the value, use the `value` property. Setting the value with
+ * `setValue` will update the URL search params and push state to the history
+ * stack, and reading it is cached, so performance should be good no matter what.
  *
  * There is currently one option available via a third parameter, `initial`,
  * which can be used to modify the initial value based on the URL search params
@@ -45,7 +45,7 @@ import { SearchParamsController } from "@/controllers/searchParams";
  *     (params) => params.get("q") ?? ""
  *   );
  *   render() {
- *     return html`<input .value=${this.query.value} @input=${(e) => {this.query.value = e.target.value}} />`;
+ *     return html`<input .value=${this.query.value} @input=${(e) => {this.query.setValue(e.target.value)}} />`;
  *   }
  * }
  * ```
@@ -62,10 +62,10 @@ export class SearchParamsValue<T> implements ReactiveController {
   ) => URLSearchParams;
   private readonly decoder: (params: URLSearchParams) => T;
 
-  get value(): T {
+  public get value(): T {
     return this._value;
   }
-  set value(value: T) {
+  public setValue(value: T) {
     this._value = value;
     this.searchParams.update((params) => this.encoder(value, params));
     this.host.requestUpdate();
