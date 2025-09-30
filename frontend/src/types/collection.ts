@@ -25,8 +25,8 @@ export const publicCollectionSchema = z.object({
   orgName: z.string(),
   orgPublicProfile: z.boolean(),
   name: z.string(),
-  created: z.string().datetime(),
-  modified: z.string().datetime(),
+  created: z.string().datetime().nullable(), // NOTE dates may be null for older collections since we can't backfill
+  modified: z.string().datetime().nullable(),
   caption: z.string().nullable(),
   description: z.string().nullable(),
   resources: z.array(z.string()),
@@ -47,13 +47,15 @@ export const publicCollectionSchema = z.object({
   totalSize: z.number(),
   allowPublicDownload: z.boolean(),
   homeUrl: z.string().url().nullable(),
-  homeUrlPageId: z.string().url().nullable(),
+  homeUrlPageId: z.string().nullable(),
   homeUrlTs: z.string().datetime().nullable(),
   access: z.nativeEnum(CollectionAccess),
 });
 export type PublicCollection = z.infer<typeof publicCollectionSchema>;
 
 export const collectionSchema = publicCollectionSchema.extend({
+  orgName: z.string().optional(),
+  orgPublicProfile: z.boolean().optional(),
   tags: z.array(z.string()),
   access: z.nativeEnum(CollectionAccess),
 });

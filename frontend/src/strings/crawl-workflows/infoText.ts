@@ -7,6 +7,9 @@ type Field = keyof FormState;
 
 export const infoTextFor = {
   urlList: msg("The crawler will visit and record each URL listed here."),
+  includeLinkedPages: msg(
+    "If checked, the crawler will visit pages one link away.",
+  ),
   exclusions: msg(
     "Specify exclusion rules for what pages should not be visited.",
   ),

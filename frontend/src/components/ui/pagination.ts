@@ -41,23 +41,7 @@ export function calculatePages({
 }
 
 /**
- * Pagination
- *
- * Persists via a search param in the URL. Defaults to `page`, but can be set with the `name` attribute.
- *
- * Usage example:
- * ```ts
- * <btrix-pagination totalCount="11" @page-change=${console.log}>
- * </btrix-pagination>
- * ```
- *
- * You can have multiple paginations on one page by setting different names:
- * ```ts
- * <btrix-pagination name="page-a" totalCount="11" @page-change=${console.log}>
- * </btrix-pagination>
- * <btrix-pagination name="page-b" totalCount="2" @page-change=${console.log}>
- * </btrix-pagination>
- * ```
+ * Displays navigation links for paginated content.
  *
  * @fires page-change {PageChangeEvent}
  */
@@ -157,6 +141,7 @@ export class Pagination extends LitElement {
   ];
 
   searchParams = new SearchParamsController(this, (params) => {
+    if (this.disablePersist) return;
     const page = parsePage(params.get(this.name));
     if (this._page !== page) {
       this.dispatchEvent(
@@ -172,6 +157,9 @@ export class Pagination extends LitElement {
   @state()
   private _page = 1;
 
+  /**
+   * Current page
+   */
   @property({ type: Number })
   set page(page: number) {
     if (page !== this._page) {
@@ -184,17 +172,40 @@ export class Pagination extends LitElement {
     return this._page;
   }
 
+  /**
+   * Name of search param in URL.
+   * You can have multiple pagination elements in one view by setting different names.
+   */
   @property({ type: String })
   name = "page";
 
+  /**
+   * Total number of items in the collection.
+   */
   @property({ type: Number })
   totalCount = 0;
 
+  /**
+   * Size of the paginated set
+   *
+   * @TODO Rename to `pageSize` as to not confuse with Shoelace `size`
+   */
   @property({ type: Number })
   size = 10;
 
+  /**
+   * Display pagination as minimally functional controls (previous, current, and next)
+   *
+   * @TODO Switch to a more standard attribute
+   */
   @property({ type: Boolean })
   compact = false;
+
+  /**
+   * Disable persisting current page in the URL
+   */
+  @property({ type: Boolean })
+  disablePersist = false;
 
   @state()
   private inputValue = "";
@@ -207,18 +218,22 @@ export class Pagination extends LitElement {
     super.connectedCallback();
   }
 
-  async willUpdate(changedProperties: PropertyValues<this>) {
+  async willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
     if (changedProperties.has("totalCount") || changedProperties.has("size")) {
       this.calculatePages();
     }
 
-    const parsedPage = parseFloat(
-      this.searchParams.searchParams.get(this.name) ?? "1",
-    );
-    if (parsedPage != this._page) {
-      const page = parsePage(this.searchParams.searchParams.get(this.name));
-      const constrainedPage = Math.max(1, Math.min(this.pages, page));
-      this.onPageChange(constrainedPage, { dispatch: false });
+    if (!this.disablePersist) {
+      const parsedPage = parseFloat(
+        this.searchParams.searchParams.get(this.name) ?? "1",
+      );
+      if (parsedPage != this._page) {
+        const page = parsePage(this.searchParams.searchParams.get(this.name));
+        const constrainedPage = Math.max(1, Math.min(this.pages, page));
+        this.onPageChange(constrainedPage, { dispatch: false });
+      }
     }
 
     // if page is out of bounds, clamp it & dispatch an event to re-fetch data
@@ -230,8 +245,8 @@ export class Pagination extends LitElement {
       this.onPageChange(constrainedPage, { dispatch: true });
     }
 
-    if (changedProperties.get("page") && this._page) {
-      this.inputValue = `${this._page}`;
+    if (changedProperties.get("_page")) {
+      this.inputValue = `${this.page}`;
     }
   }
 
@@ -407,10 +422,14 @@ export class Pagination extends LitElement {
   }
 
   private setPage(page: number) {
-    if (page === 1) {
-      this.searchParams.delete(this.name);
+    if (!this.disablePersist) {
+      if (page === 1) {
+        this.searchParams.delete(this.name);
+      } else {
+        this.searchParams.set(this.name, page.toString());
+      }
     } else {
-      this.searchParams.set(this.name, page.toString());
+      this._page = page;
     }
   }
 

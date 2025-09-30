@@ -24,6 +24,7 @@ from pydantic import (
     RootModel,
     BeforeValidator,
     TypeAdapter,
+    ConfigDict,
 )
 from slugify import slugify
 
@@ -817,9 +818,6 @@ class CoreCrawlable(BaseModel):
     fileSize: int = 0
     fileCount: int = 0
 
-    errors: Optional[List[str]] = []
-    behaviorLogs: Optional[List[str]] = []
-
 
 # ============================================================================
 class BaseCrawl(CoreCrawlable, BaseMongoModel):
@@ -889,9 +887,6 @@ class CrawlOut(BaseMongoModel):
 
     tags: Optional[List[str]] = []
 
-    errors: Optional[List[str]] = []
-    behaviorLogs: Optional[List[str]] = []
-
     collectionIds: Optional[List[UUID]] = []
 
     crawlExecSeconds: int = 0
@@ -933,6 +928,10 @@ class CrawlOut(BaseMongoModel):
     # Set to older version by default, crawls with optimized
     # pages will have this explicitly set to 2
     version: Optional[int] = 1
+
+    # Retained for backward compatibility
+    errors: Optional[List[str]] = Field(default=[], deprecated=True)
+    behaviorLogs: Optional[List[str]] = Field(default=[], deprecated=True)
 
 
 # ============================================================================
@@ -1094,17 +1093,6 @@ class CrawlScaleResponse(BaseModel):
 
 
 # ============================================================================
-class CrawlLogMessage(BaseModel):
-    """Crawl log message"""
-
-    timestamp: str
-    logLevel: str
-    context: str
-    message: str
-    details: Any
-
-
-# ============================================================================
 
 ### UPLOADED CRAWLS ###
 
@@ -1152,6 +1140,34 @@ class FilePreparer:
         name = slugify(name.rsplit("/", 1)[-1])
         randstr = base64.b32encode(os.urandom(5)).lower()
         return name + "-" + randstr.decode("utf-8") + ext
+
+
+# ============================================================================
+
+### LOGS ###
+
+
+# ============================================================================
+class CrawlLogLine(BaseMongoModel):
+    """Model for crawler log lines"""
+
+    id: UUID
+
+    crawlId: str
+    oid: UUID
+
+    qaRunId: Optional[str] = None
+
+    timestamp: datetime
+    logLevel: str
+    context: str
+    message: str
+    details: Optional[Dict[str, Any]] = None
+
+    @property
+    def is_qa(self) -> bool:
+        """return true if log line is from qa run"""
+        return bool(self.qaRunId)
 
 
 # ============================================================================
@@ -1840,6 +1856,23 @@ class OrgQuotasIn(BaseModel):
 
 
 # ============================================================================
+class Plan(BaseModel):
+    """Available Browsertrix plan, from env"""
+
+    id: str
+    name: str
+    org_quotas: OrgQuotas
+    testmode: bool = False
+
+
+# ============================================================================
+class PlansResponse(BaseModel):
+    """Response for plans api endpoint"""
+
+    plans: list[Plan]
+
+
+# ============================================================================
 class SubscriptionEventOut(BaseModel):
     """Fields to add to output models for subscription events"""
 
@@ -1910,6 +1943,14 @@ class SubscriptionCancel(BaseModel):
 
 
 # ============================================================================
+class SubscriptionTrialEndReminder(BaseModel):
+    """Email reminder that subscription will end soon"""
+
+    subId: str
+    behavior_on_trial_end: Literal["cancel", "continue", "read-only"]
+
+
+# ============================================================================
 class SubscriptionCancelOut(SubscriptionCancel, SubscriptionEventOut):
     """Output model for subscription cancellation event"""
 
@@ -1940,11 +1981,16 @@ class SubscriptionPortalUrlResponse(BaseModel):
 class Subscription(BaseModel):
     """subscription data"""
 
+    model_config = ConfigDict(use_attribute_docstrings=True)
+
     subId: str
     status: str
     planId: str
 
     futureCancelDate: Optional[datetime] = None
+    # pylint: disable=C0301
+    """When in a trial, future cancel date is the trial end date; when not in a trial, future cancel date is the date the subscription will be canceled, if set."""
+
     readOnlyOnCancel: bool = False
 
 
@@ -3039,7 +3085,7 @@ class PaginatedWebhookNotificationResponse(PaginatedResponse):
 class PaginatedCrawlLogResponse(PaginatedResponse):
     """Response model for crawl logs"""
 
-    items: List[CrawlLogMessage]
+    items: List[CrawlLogLine]
 
 
 # ============================================================================

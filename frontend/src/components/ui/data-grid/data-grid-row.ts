@@ -23,23 +23,30 @@ import { tw } from "@/utils/tailwind";
 export type RowRemoveEventDetail = {
   key?: string;
 };
+export type RowEditEventDetail<T extends GridItem = GridItem> =
+  CellEditEventDetail<T> & {
+    rowKey?: string;
+  };
 
 const cell = directive(CellDirective);
 
-const cellStyle = tw`focus-visible:-outline-offset-2`;
-const editableCellStyle = tw`p-0 focus-visible:bg-slate-50 `;
+const cellStyle = tw`min-w-0 focus-visible:-outline-offset-2`;
+const editableCellStyle = tw`min-w-0 p-0 focus-visible:bg-slate-50`;
 
 /**
  * @fires btrix-remove CustomEvent
+ * @fires btrix-input CustomEvent
  */
 @customElement("btrix-data-grid-row")
 @localized()
-export class DataGridRow extends FormControl(TableRow) {
+export class DataGridRow<
+  const T extends GridItem = GridItem,
+> extends FormControl(TableRow) {
   /**
    * Set of columns.
    */
   @property({ type: Array })
-  columns?: GridColumn[] = [];
+  columns?: GridColumn<T>[] = [];
 
   /**
    * Row key/ID.
@@ -51,7 +58,7 @@ export class DataGridRow extends FormControl(TableRow) {
    * Data to be presented as a row.
    */
   @property({ type: Object, hasChanged: (a, b) => !isEqual(a, b) })
-  item?: GridItem;
+  item?: T;
 
   /**
    * Whether the row can be removed.
@@ -93,12 +100,12 @@ export class DataGridRow extends FormControl(TableRow) {
   private expanded = false;
 
   @state()
-  private cellValues: Partial<GridItem> = {};
+  private cellValues: Partial<T> = {};
 
   readonly #focus = new DataGridFocusController(this);
 
   readonly #invalidInputsMap = new Map<
-    GridColumn["field"],
+    GridColumn<T>["field"],
     InputElement["validationMessage"]
   >();
 
@@ -135,11 +142,11 @@ export class DataGridRow extends FormControl(TableRow) {
   }
 
   @queryAll("btrix-data-grid-cell")
-  private readonly gridCells?: NodeListOf<DataGridCell>;
+  private readonly gridCells?: NodeListOf<DataGridCell<T>>;
 
-  private setValue(cellValues: Partial<GridItem>) {
+  private setValue(cellValues: Partial<T>) {
     Object.keys(cellValues).forEach((field) => {
-      this.cellValues[field] = cellValues[field];
+      (this.cellValues[field] as T[keyof T] | undefined) = cellValues[field];
     });
 
     this.setFormValue(JSON.stringify(this.cellValues));
@@ -211,12 +218,15 @@ export class DataGridRow extends FormControl(TableRow) {
 
   renderDetails = (_row: { item: GridItem }) => html``;
 
-  private readonly renderCell = (col: GridColumn, i: number) => {
+  private readonly renderCell = (col: GridColumn<T>, i: number) => {
     const item = this.item;
 
     if (!item) return;
 
-    const editable = this.editCells && col.editable;
+    const editable =
+      this.editCells && typeof col.editable === "function"
+        ? col.editable(item)
+        : col.editable;
     const tooltipContent = editable
       ? this.#invalidInputsMap.get(col.field)
       : col.renderCellTooltip
@@ -252,7 +262,7 @@ export class DataGridRow extends FormControl(TableRow) {
           .item=${item}
           value=${ifDefined(this.cellValues[col.field] ?? undefined)}
           ?editable=${editable}
-          ${cell(col)}
+          ${cell(col as GridColumn)}
           @keydown=${this.onKeydown}
         ></btrix-data-grid-cell>
 
@@ -276,7 +286,7 @@ export class DataGridRow extends FormControl(TableRow) {
       }
 
       const gridCells = Array.from(this.gridCells);
-      const i = gridCells.indexOf(e.target as DataGridCell);
+      const i = gridCells.indexOf(e.target as DataGridCell<T>);
 
       if (i === -1) return;
 
@@ -335,6 +345,17 @@ export class DataGridRow extends FormControl(TableRow) {
   ) => {
     e.stopPropagation();
 
+    this.dispatchEvent(
+      new CustomEvent<RowEditEventDetail>("btrix-input", {
+        detail: {
+          ...e.detail,
+          rowKey: this.key,
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
     const { field, value, validity, validationMessage } = e.detail;
     const tableCell = e.target as DataGridCell;
 
@@ -347,7 +368,7 @@ export class DataGridRow extends FormControl(TableRow) {
 
     this.setValue({
       [field]: value.toString(),
-    });
+    } as Partial<T>);
   };
 
   private readonly onCellChange = async (

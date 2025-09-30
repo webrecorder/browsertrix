@@ -228,7 +228,7 @@ export class CrawlLogTable extends TailwindElement {
   }
 
   private renderPageUrl(log: CrawlLog) {
-    const url = log.details.page || log.details.url;
+    const url = log.details?.page || log.details?.url;
     return url
       ? html` <div class="truncate" title="${url}">${url}</div> `
       : html`<div class="text-neutral-400 group-hover:text-inherit">
@@ -239,7 +239,7 @@ export class CrawlLogTable extends TailwindElement {
   private renderLogDetails() {
     if (!this.selectedLog) return;
     const { context, details } = this.selectedLog;
-    const { page, stack, ...unknownDetails } = details;
+    const { page, stack, ...unknownDetails } = details || {};
 
     return html`
       <btrix-desc-list>

@@ -1,13 +1,7 @@
 import z from "zod";
 import { Template } from "../templates/btrix.js";
-import { formatDateTime, parseDate } from "../lib/date.js";
-import {
-  CodeInline,
-  Column,
-  Row,
-  Section,
-  Text,
-} from "@react-email/components";
+import { formatDateTime } from "../lib/date.js";
+import { CodeInline } from "@react-email/components";
 
 export const schema = z.object({
   org: z.string().optional(),
@@ -15,13 +9,13 @@ export const schema = z.object({
     id: z.string(),
     oid: z.string().optional(),
     type: z.string(),
-    started: z.string(),
+    started: z.coerce.date(),
     object_type: z.string().optional(),
     object_id: z.string().optional(),
     file_path: z.string().optional(),
     replica_storage: z.string().optional(),
   }),
-  finished: z.string(),
+  finished: z.coerce.date(),
 });
 
 export type FailedBgJobEmailProps = z.infer<typeof schema>;
@@ -61,12 +55,8 @@ export const FailedBgJobEmail = ({
       linky={{ version: "concerned", caption: false }}
     >
       <table align="center" width="100%">
-        <DataRow label="Started At">
-          {formatDateTime(parseDate(job.started))}
-        </DataRow>
-        <DataRow label="Finished At">
-          {formatDateTime(parseDate(finished))}
-        </DataRow>
+        <DataRow label="Started At">{formatDateTime(job.started)}</DataRow>
+        <DataRow label="Finished At">{formatDateTime(finished)}</DataRow>
         {org && (
           <DataRow label="Organization">
             <Code>{org}</Code>
@@ -110,13 +100,13 @@ FailedBgJobEmail.PreviewProps = {
     id: "1234567890",
     oid: "1234567890",
     type: "type",
-    started: new Date().toISOString(),
+    started: new Date(),
     object_type: "object_type",
     object_id: "object_id",
     file_path: "file_path",
     replica_storage: "replica_storage",
   },
-  finished: new Date().toISOString(),
+  finished: new Date(),
 } satisfies FailedBgJobEmailProps;
 
 export default FailedBgJobEmail;

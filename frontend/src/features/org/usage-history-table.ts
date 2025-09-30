@@ -16,6 +16,8 @@ enum Field {
   GiftedExecutionTime = "giftedExecutionTime",
 }
 
+type Item = Record<`${Field}`, number>;
+
 @customElement("btrix-usage-history-table")
 @localized()
 export class UsageHistoryTable extends BtrixElement {
@@ -46,7 +48,7 @@ export class UsageHistoryTable extends BtrixElement {
       `;
     }
 
-    const cols: GridColumn<Field>[] = [
+    const cols: GridColumn<Item>[] = [
       {
         field: Field.Month,
         label: msg("Month"),
@@ -165,7 +167,7 @@ export class UsageHistoryTable extends BtrixElement {
   }
 
   private readonly renderSecondsForField =
-    (field: Field) =>
+    (field: `${Field}`) =>
     ({ item }: { item: GridItem<Field> }) => html`
       ${item[field] ? humanizeExecutionSeconds(+item[field]) : noData}
     `;

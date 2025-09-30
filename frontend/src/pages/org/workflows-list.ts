@@ -21,7 +21,6 @@ import type {
 } from "@/components/ui/filter-chip";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
-import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsController } from "@/controllers/searchParams";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import {
@@ -42,7 +41,7 @@ import {
 } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
-import { isArchivingDisabled } from "@/utils/orgs";
+import { renderName } from "@/utils/crawler";
 import { tw } from "@/utils/tailwind";
 
 type SearchFields = "name" | "firstSeed";
@@ -163,6 +162,7 @@ export class WorkflowsList extends BtrixElement {
     this.updateFiltersFromSearchParams(params);
   });
 
+  // TODO (emma): refactor this logic into smaller parts using `SearchParamsValue`
   private updateFiltersFromSearchParams(
     params = this.searchParams.searchParams,
   ) {
@@ -559,7 +559,7 @@ export class WorkflowsList extends BtrixElement {
         this.workflowToDelete,
         (workflow) => html`
           <btrix-dialog id="deleteDialog" .label=${msg("Delete Workflow?")}>
-            ${deleteConfirmation(this.renderName(workflow))}
+            ${deleteConfirmation(renderName(workflow))}
             <div slot="footer" class="flex justify-between">
               <sl-button
                 size="small"
@@ -744,7 +744,7 @@ export class WorkflowsList extends BtrixElement {
         .searchOptions=${this.searchOptions}
         .keyLabels=${WorkflowsList.FieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
-        placeholder=${msg("Search all Workflows by name or Crawl Start URL")}
+        placeholder=${msg("Search all workflows by name or crawl start URL")}
         @btrix-select=${(e: SelectEvent<typeof this.searchKeys>) => {
           const { key, value } = e.detail;
           if (key == null) return;
@@ -849,157 +849,6 @@ export class WorkflowsList extends BtrixElement {
       ></btrix-workflow-action-menu>
     </btrix-workflow-list-item>
   `;
-
-  private renderMenu(workflow: ListWorkflow) {
-    return html`
-      ${when(
-        workflow.isCrawlRunning && this.appState.isCrawler,
-        // HACK shoelace doesn't current have a way to override non-hover
-        // color without resetting the --sl-color-neutral-700 variable
-        () => html`
-          <sl-menu-item
-            @click=${() => void this.stop(workflow.lastCrawlId)}
-            ?disabled=${workflow.lastCrawlStopping}
-          >
-            <sl-icon name="dash-square" slot="prefix"></sl-icon>
-            ${msg("Stop Crawl")}
-          </sl-menu-item>
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => void this.cancel(workflow.lastCrawlId)}
-          >
-            <sl-icon name="x-octagon" slot="prefix"></sl-icon>
-            ${msg(html`Cancel & Discard Crawl`)}
-          </sl-menu-item>
-        `,
-      )}
-      ${when(
-        this.appState.isCrawler && !workflow.isCrawlRunning,
-        () => html`
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--success)"
-            ?disabled=${isArchivingDisabled(this.org, true)}
-            @click=${() => void this.runNow(workflow)}
-          >
-            <sl-icon name="play" slot="prefix"></sl-icon>
-            ${msg("Run Crawl")}
-          </sl-menu-item>
-        `,
-      )}
-      ${when(
-        this.appState.isCrawler &&
-          workflow.isCrawlRunning &&
-          !workflow.lastCrawlStopping,
-        // HACK shoelace doesn't current have a way to override non-hover
-        // color without resetting the --sl-color-neutral-700 variable
-        () => html`
-          <sl-divider></sl-divider>
-          <sl-menu-item
-            @click=${() =>
-              this.navigate.to(
-                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}`,
-                {
-                  dialog: "scale",
-                },
-              )}
-          >
-            <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-            ${msg("Edit Browser Windows")}
-          </sl-menu-item>
-          <sl-menu-item
-            ?disabled=${workflow.lastCrawlState !== "running"}
-            @click=${() =>
-              this.navigate.to(
-                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}`,
-                {
-                  dialog: "exclusions",
-                },
-              )}
-          >
-            <sl-icon name="table" slot="prefix"></sl-icon>
-            ${msg("Edit Exclusions")}
-          </sl-menu-item>
-          <sl-divider></sl-divider>
-        `,
-      )}
-      ${when(
-        this.appState.isCrawler,
-        () =>
-          html`<sl-menu-item
-            @click=${() =>
-              this.navigate.to(
-                `${this.navigate.orgBasePath}/workflows/${workflow.id}?edit`,
-              )}
-          >
-            <sl-icon name="gear" slot="prefix"></sl-icon>
-            ${msg("Edit Workflow Settings")}
-          </sl-menu-item>`,
-      )}
-      <sl-menu-item
-        @click=${() =>
-          ClipboardController.copyToClipboard(workflow.tags.join(", "))}
-        ?disabled=${!workflow.tags.length}
-      >
-        <sl-icon name="tags" slot="prefix"></sl-icon>
-        ${msg("Copy Tags")}
-      </sl-menu-item>
-      ${when(
-        this.appState.isCrawler,
-        () => html`
-          <sl-menu-item
-            ?disabled=${isArchivingDisabled(this.org, true)}
-            @click=${() => void this.duplicateConfig(workflow)}
-          >
-            <sl-icon name="files" slot="prefix"></sl-icon>
-            ${msg("Duplicate Workflow")}
-          </sl-menu-item>
-          <sl-divider></sl-divider>
-          <sl-menu-item
-            @click=${() => ClipboardController.copyToClipboard(workflow.id)}
-          >
-            <sl-icon name="copy" slot="prefix"></sl-icon>
-            ${msg("Copy Workflow ID")}
-          </sl-menu-item>
-          ${when(
-            !workflow.crawlCount,
-            () => html`
-              <sl-divider></sl-divider>
-              <sl-menu-item
-                style="--sl-color-neutral-700: var(--danger)"
-                @click=${async () => {
-                  this.workflowToDelete = workflow;
-                  await this.updateComplete;
-                  void this.deleteDialog?.show();
-                }}
-              >
-                <sl-icon name="trash3" slot="prefix"></sl-icon>
-                ${msg("Delete Workflow")}
-              </sl-menu-item>
-            `,
-          )}
-        `,
-      )}
-    `;
-  }
-
-  private renderName(crawlConfig: ListWorkflow) {
-    if (crawlConfig.name) return crawlConfig.name;
-    const { firstSeed, seedCount } = crawlConfig;
-    if (seedCount === 1) {
-      return firstSeed;
-    }
-    const remainderCount = seedCount - 1;
-    if (remainderCount === 1) {
-      return msg(
-        html`${firstSeed}
-          <span class="text-neutral-500">+${remainderCount} URL</span>`,
-      );
-    }
-    return msg(
-      html`${firstSeed}
-        <span class="text-neutral-500">+${remainderCount} URLs</span>`,
-    );
-  }
 
   private renderEmptyState() {
     if (
@@ -1150,7 +999,7 @@ export class WorkflowsList extends BtrixElement {
       void this.fetchWorkflows();
       this.notify.toast({
         message: msg(
-          html`Deleted <strong>${this.renderName(workflow)}</strong> Workflow.`,
+          html`Deleted <strong>${renderName(workflow)}</strong> Workflow.`,
         ),
         variant: "success",
         icon: "check2-circle",
@@ -1221,7 +1070,7 @@ export class WorkflowsList extends BtrixElement {
 
       this.notify.toast({
         message: msg(
-          html`Started crawl from <strong>${this.renderName(workflow)}</strong>.
+          html`Started crawl from <strong>${renderName(workflow)}</strong>.
             <br />
             <a
               class="underline hover:no-underline"

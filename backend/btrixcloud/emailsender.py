@@ -5,7 +5,7 @@ import os
 import smtplib
 import ssl
 from uuid import UUID
-from typing import Optional, Union
+from typing import Optional, Union, Literal
 
 from email.message import EmailMessage
 from email.mime.text import MIMEText
@@ -14,7 +14,13 @@ from email.mime.multipart import MIMEMultipart
 import aiohttp
 from fastapi import HTTPException
 
-from .models import CreateReplicaJob, DeleteReplicaJob, Organization, InvitePending
+from .models import (
+    CreateReplicaJob,
+    DeleteReplicaJob,
+    Organization,
+    InvitePending,
+    Subscription,
+)
 from .utils import is_bool, get_origin
 
 
@@ -138,6 +144,7 @@ class EmailSender:
         token: UUID,
         org_name: str,
         is_new: bool,
+        subscription: Optional[Subscription] = None,
         headers: Optional[dict] = None,
     ):
         """Send email to invite new user"""
@@ -160,6 +167,11 @@ class EmailSender:
             sender=invite.inviterEmail if not invite.fromSuperuser else "",
             org_name=org_name,
             support_email=self.support_email,
+            trial_end_date=(
+                subscription.futureCancelDate.isoformat()
+                if subscription and subscription.futureCancelDate
+                else None
+            ),
         )
 
     async def send_user_forgot_password(self, receiver_email, token, headers=None):
@@ -212,4 +224,29 @@ class EmailSender:
             cancel_date=cancel_date.isoformat(),
             support_email=self.support_email,
             survey_url=self.survey_url,
+        )
+
+    async def send_subscription_trial_ending_soon(
+        self,
+        trial_end_date: datetime,
+        user_name: str,
+        receiver_email: str,
+        behavior_on_trial_end: Literal["cancel", "continue", "read-only"],
+        org: Organization,
+        headers=None,
+    ):
+        """Send email indicating subscription trial is ending soon"""
+
+        origin = get_origin(headers)
+        org_url = f"{origin}/orgs/{org.slug}/"
+
+        await self._send_encrypted(
+            receiver_email,
+            "trialEndingSoon",
+            user_name=user_name,
+            org_name=org.name,
+            org_url=org_url,
+            trial_end_date=trial_end_date.isoformat(),
+            behavior_on_trial_end=behavior_on_trial_end,
+            support_email=self.support_email,
         )

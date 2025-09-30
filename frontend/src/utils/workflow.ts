@@ -39,6 +39,7 @@ export const SECTIONS = [
   "behaviors",
   "browserSettings",
   "scheduling",
+  "collections",
   "metadata",
 ] as const;
 export const sectionsEnum = z.enum(SECTIONS);
@@ -50,6 +51,7 @@ export enum GuideHash {
   Behaviors = "page-behavior",
   BrowserSettings = "browser-settings",
   Scheduling = "scheduling",
+  Collections = "collections",
   Metadata = "metadata",
 }
 
@@ -64,6 +66,7 @@ export const workflowTabToGuideHash: Record<SectionsEnum, GuideHash> = {
   behaviors: GuideHash.Behaviors,
   browserSettings: GuideHash.BrowserSettings,
   scheduling: GuideHash.Scheduling,
+  collections: GuideHash.Collections,
   metadata: GuideHash.Metadata,
 };
 
@@ -132,15 +135,40 @@ export type FormState = {
   browserWindows: WorkflowParams["browserWindows"];
   blockAds: WorkflowParams["config"]["blockAds"];
   lang: WorkflowParams["config"]["lang"];
+  /**
+   * NOTE The UI currently only supports "cron" and "none".
+   */
   scheduleType: "date" | "cron" | "none";
+  /**
+   * One of known frequency enums.
+   *
+   * If an empty string, either `scheduleType` should be `"none"`
+   * or `scheduleCustom` should be set.
+   */
   scheduleFrequency: "daily" | "weekly" | "monthly" | "";
+  /**
+   * Day of the month local to the user's browser timezone.
+   * Only used if `scheduleFrequency` is `"monthly"`.
+   */
   scheduleDayOfMonth?: number;
+  /**
+   * Day of the week local to the user's browser timezone.
+   * Only used if `scheduleFrequency` is `"weekly"`.
+   */
   scheduleDayOfWeek?: number;
+  /**
+   * Time local to the user's browser timezone.
+   * Only used if `scheduleFrequency` is specified.
+   */
   scheduleTime?: {
     hour: number;
     minute: number;
     period: "AM" | "PM";
   };
+  /**
+   * Custom schedule in cron format.
+   */
+  scheduleCustom?: string;
   jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
@@ -278,18 +306,23 @@ export function getInitialFormState(params: {
 
   if (params.initialWorkflow.schedule) {
     formState.scheduleType = "cron";
-    formState.scheduleFrequency = getScheduleInterval(
-      params.initialWorkflow.schedule,
-    );
-    const nextDate = getNextDate(params.initialWorkflow.schedule)!;
-    formState.scheduleDayOfMonth = nextDate.getDate();
-    formState.scheduleDayOfWeek = nextDate.getDay();
-    const hours = nextDate.getHours();
-    formState.scheduleTime = {
-      hour: hours % 12 || 12,
-      minute: nextDate.getMinutes(),
-      period: hours > 11 ? "PM" : "AM",
-    };
+    const interval = getScheduleInterval(params.initialWorkflow.schedule);
+
+    if (interval) {
+      formState.scheduleFrequency = interval;
+      const nextDate = getNextDate(params.initialWorkflow.schedule)!;
+      formState.scheduleDayOfMonth = nextDate.getDate();
+      formState.scheduleDayOfWeek = nextDate.getDay();
+      const hours = nextDate.getHours();
+      formState.scheduleTime = {
+        hour: hours % 12 || 12,
+        minute: nextDate.getMinutes(),
+        period: hours > 11 ? "PM" : "AM",
+      };
+    } else {
+      formState.scheduleFrequency = "";
+      formState.scheduleCustom = params.initialWorkflow.schedule;
+    }
   } else {
     formState.scheduleType = "none";
   }

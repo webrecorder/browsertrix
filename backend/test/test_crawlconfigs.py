@@ -13,8 +13,6 @@ UPDATED_TAGS = ["tag3", "tag4"]
 _coll_id = None
 _admin_crawl_cid = None
 
-_seed_file_id = None
-
 
 def test_crawl_config_usernames(
     crawler_auth_headers, default_org_id, crawler_config_id
@@ -223,7 +221,7 @@ def test_verify_update(crawler_auth_headers, default_org_id):
     assert data["description"] == UPDATED_DESCRIPTION
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
     assert data["autoAddCollections"] == [_coll_id]
-    assert data["firstSeed"] == "https://example.com/"
+    assert data["firstSeed"] == "https://example-com.webrecorder.net/"
 
 
 def test_update_config_invalid_format(
@@ -234,7 +232,7 @@ def test_update_config_invalid_format(
         headers=crawler_auth_headers,
         json={
             "config": {
-                "seeds": ["https://example.com/"],
+                "seeds": ["https://example-com.webrecorder.net/"],
                 "scopeType": "domain",
                 "limit": 10,
             }
@@ -325,7 +323,7 @@ def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_d
         headers=crawler_auth_headers,
         json={
             "config": {
-                "seeds": [{"url": "https://example.com/"}],
+                "seeds": [{"url": "https://example-com.webrecorder.net/"}],
                 "scopeType": "domain",
                 "selectLinks": ["a[href]->href", "script[src]->src"],
                 "clickSelector": "button",
@@ -355,7 +353,7 @@ def test_update_config_no_changes(
         headers=crawler_auth_headers,
         json={
             "config": {
-                "seeds": [{"url": "https://example.com/"}],
+                "seeds": [{"url": "https://example-com.webrecorder.net/"}],
                 "scopeType": "domain",
                 "selectLinks": ["a[href]->href", "script[src]->src"],
                 "clickSelector": "button",
@@ -666,7 +664,7 @@ def test_get_config_seeds(crawler_auth_headers, default_org_id, url_list_config_
 
     EXPECTED_SEED_URLS = [
         "https://webrecorder.net/",
-        "https://example.com/",
+        "https://example-com.webrecorder.net/",
         "https://specs.webrecorder.net/",
     ]
     found_seed_urls = []
@@ -978,7 +976,7 @@ def test_add_crawl_config_with_seed_file(
     assert data["config"]["seeds"] is None
 
 
-def test_delete_in_use_seed_file(
+def test_delete_seed_file_in_use_crawlconfig(
     crawler_auth_headers, default_org_id, seed_file_id, seed_file_config_id
 ):
     # Attempt to delete in-use seed file, verify we get 400 response
@@ -1074,3 +1072,137 @@ def test_shareable_workflow(admin_auth_headers, default_org_id, admin_crawl_id):
         assert page["oid"] == default_org_id
         assert page["crawl_id"] == admin_crawl_id
         assert page["url"]
+
+
+def test_add_crawl_config_fail_on_content_check_no_profile(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    # Ensure we're not able to set failOnContentCheck on a new crawlconfig
+    # if a profile is not also set
+    sample_crawl_data["config"]["failOnContentCheck"] = True
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "fail_on_content_check_requires_profile"
+
+    # Ensure an empty string doesn't count as a profile being set
+    sample_crawl_data["profileid"] = ""
+    sample_crawl_data["config"]["failOnContentCheck"] = True
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "fail_on_content_check_requires_profile"
+
+
+def test_update_crawl_config_fail_on_content_check_no_profile(
+    crawler_auth_headers, default_org_id
+):
+    # Ensure we're not able to update an existing config with no profile to
+    # enable failOnContentCheck
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/",
+        headers=crawler_auth_headers,
+        json={
+            "config": {
+                "failOnContentCheck": True,
+            }
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "fail_on_content_check_requires_profile"
+
+
+def test_update_crawl_config_remove_profile_with_fail_on_content_check(
+    crawler_auth_headers, default_org_id, profile_2_config_id
+):
+    # Ensure removing a profile fails validation if failOnContentCheck is set
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{profile_2_config_id}/",
+        headers=crawler_auth_headers,
+        json={
+            "profileid": "",
+            "config": {
+                "failOnContentCheck": True,
+            },
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "fail_on_content_check_requires_profile"
+
+
+def test_update_crawl_config_fail_on_content_check_with_profile(
+    crawler_auth_headers, default_org_id, profile_2_config_id
+):
+    # Ensure we are able to update a config to enable failOnContentCheck
+    # if a profile is set for the config
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{profile_2_config_id}/",
+        headers=crawler_auth_headers,
+        json={
+            "config": {
+                "failOnContentCheck": True,
+            }
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["settings_changed"] == True
+    assert data["metadata_changed"] == False
+
+
+def test_update_crawl_config_remove_profile_no_fail_on_content_check(
+    crawler_auth_headers, default_org_id, profile_2_id, profile_2_config_id
+):
+    # First remove failOnContentCheck
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{profile_2_config_id}/",
+        headers=crawler_auth_headers,
+        json={
+            "config": {
+                "failOnContentCheck": False,
+            }
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["settings_changed"] == True
+    assert data["metadata_changed"] == False
+
+    # Now we should be able to remove the profile without getting an error
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{profile_2_config_id}/",
+        headers=crawler_auth_headers,
+        json={"profileid": ""},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["settings_changed"] == True
+    assert data["metadata_changed"] == False
+
+    # Add the profile and failOnContentCheck back
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{profile_2_config_id}/",
+        headers=crawler_auth_headers,
+        json={"profileid": profile_2_id, "config": {"failOnContentCheck": True}},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["settings_changed"] == True
+    assert data["metadata_changed"] == False
+
+    # Now check removing them both together
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{profile_2_config_id}/",
+        headers=crawler_auth_headers,
+        json={"profileid": "", "config": {"failOnContentCheck": False}},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["settings_changed"] == True
+    assert data["metadata_changed"] == False

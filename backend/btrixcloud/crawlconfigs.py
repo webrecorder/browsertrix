@@ -262,6 +262,11 @@ class CrawlConfigOps:
         # ensure profile is valid, if provided
         if profileid:
             await self.profiles.get_profile(profileid, org)
+        else:
+            if config_in.config and config_in.config.failOnContentCheck:
+                raise HTTPException(
+                    status_code=400, detail="fail_on_content_check_requires_profile"
+                )
 
         # ensure proxyId is valid and available for org
         if config_in.proxyId:
@@ -528,6 +533,29 @@ class CrawlConfigOps:
                 raise HTTPException(
                     status_code=400, detail="use_one_of_seeds_or_seedfile"
                 )
+
+        # If adding failOnContentCheck, ensure a profile is set
+        if update.config and update.config.failOnContentCheck:
+            if (orig_crawl_config.profileid and update.profileid == "") or (
+                not orig_crawl_config.profileid and not update.profileid
+            ):
+                raise HTTPException(
+                    status_code=400, detail="fail_on_content_check_requires_profile"
+                )
+
+        # If unsetting profile, ensure failOnContentCheck is also not set
+        if orig_crawl_config.profileid and update.profileid == "":
+            if update.config and update.config.failOnContentCheck:
+                raise HTTPException(
+                    status_code=400, detail="fail_on_content_check_requires_profile"
+                )
+            if orig_crawl_config.config.failOnContentCheck:
+                if not update.config or (
+                    update.config and update.config.failOnContentCheck is not False
+                ):
+                    raise HTTPException(
+                        status_code=400, detail="fail_on_content_check_requires_profile"
+                    )
 
         # indicates if any k8s crawl config settings changed
         changed = False

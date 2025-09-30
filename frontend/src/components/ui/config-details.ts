@@ -16,9 +16,7 @@ import {
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
-import type { Collection } from "@/types/collection";
 import { WorkflowScopeType, type StorageSeedFile } from "@/types/workflow";
-import { isApiError } from "@/utils/api";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
@@ -60,13 +58,9 @@ export class ConfigDetails extends BtrixElement {
     maxPagesPerCrawl?: number;
   };
 
-  @state()
-  private collections: Collection[] = [];
-
   async connectedCallback() {
     super.connectedCallback();
     void this.fetchOrgDefaults();
-    await this.fetchCollections();
   }
 
   render() {
@@ -315,6 +309,24 @@ export class ConfigDetails extends BtrixElement {
       })}
       ${when(!this.hideMetadata, () =>
         this.renderSection({
+          id: "collection",
+          heading: sectionStrings.collections,
+          renderDescItems: () => html`
+            ${this.renderSetting(
+              html`<span class="mb-1 inline-block"
+                >${msg("Auto-Add to Collection")}</span
+              >`,
+              crawlConfig?.autoAddCollections.length
+                ? html`<btrix-linked-collections
+                    .collectionIds=${crawlConfig.autoAddCollections}
+                  ></btrix-linked-collections>`
+                : undefined,
+            )}
+          `,
+        }),
+      )}
+      ${when(!this.hideMetadata, () =>
+        this.renderSection({
           id: "crawl-metadata",
           heading: sectionStrings.metadata,
           renderDescItems: () => html`
@@ -338,21 +350,6 @@ export class ConfigDetails extends BtrixElement {
                   )
                 : [],
             )}
-            ${this.renderSetting(
-              msg("Collections"),
-              this.collections.length
-                ? this.collections.map(
-                    (coll) =>
-                      html`<sl-tag class="mr-2 mt-1" variant="neutral">
-                        ${coll.name}
-                        <span class="font-monostyle pl-1 text-xs">
-                          (${this.localize.number(coll.crawlCount)}
-                          ${pluralOf("items", coll.crawlCount)})
-                        </span>
-                      </sl-tag>`,
-                  )
-                : undefined,
-            )}
           `,
         }),
       )}
@@ -366,7 +363,9 @@ export class ConfigDetails extends BtrixElement {
   }: {
     id: string;
     heading: string;
-    renderDescItems: (seedsConfig?: CrawlConfig["config"]) => TemplateResult;
+    renderDescItems: (
+      seedsConfig?: CrawlConfig["config"],
+    ) => TemplateResult | undefined;
   }) {
     return html`
       <section id=${id} class="mb-8">
@@ -412,29 +411,48 @@ export class ConfigDetails extends BtrixElement {
       when(
         this.seeds,
         (seeds) => html`
-          <ul>
+          <btrix-table class="grid-cols-[1fr_auto]">
             ${seeds.map(
               (seed: Seed) => html`
-                <li>
-                  <a
-                    class="text-blue-600 hover:text-blue-500 hover:underline"
-                    href="${seed.url}"
-                    target="_blank"
-                    rel="noreferrer"
-                    >${seed.url}</a
-                  >
-                </li>
+                <btrix-table-row>
+                  <btrix-table-cell>
+                    <btrix-overflow-scroll
+                      class="-ml-5 w-[calc(100%+theme(spacing.5))] contain-inline-size part-[content]:px-5 part-[content]:[scrollbar-width:thin]"
+                    >
+                      <btrix-code
+                        language="url"
+                        class="block w-max whitespace-nowrap"
+                        .value=${seed.url}
+                      ></btrix-code>
+                    </btrix-overflow-scroll>
+                  </btrix-table-cell>
+                  <btrix-table-cell>
+                    <btrix-copy-button .value=${seed.url} placement="left">
+                    </btrix-copy-button>
+                    <sl-tooltip
+                      placement="right"
+                      content=${msg("Open in New Tab")}
+                    >
+                      <sl-icon-button
+                        name="arrow-up-right"
+                        href="${seed.url}"
+                        target="_blank"
+                      >
+                      </sl-icon-button>
+                    </sl-tooltip>
+                  </btrix-table-cell>
+                </btrix-table-row>
               `,
             )}
-          </ul>
+          </btrix-table>
         `,
       );
 
     return html`
       ${this.renderSetting(
-        config.scopeType === WorkflowScopeType.Page && !config.seedFileId
-          ? msg("Page URL")
-          : msg("Page URLs"),
+        config.seedFileId || (this.seeds && this.seeds.length > 1)
+          ? msg("URLs to Crawl")
+          : msg("URL to Crawl"),
         config.seedFileId ? seedFile() : seeds(),
         true,
       )}
@@ -467,13 +485,23 @@ export class ConfigDetails extends BtrixElement {
       ${this.renderSetting(
         msg("Crawl Start URL"),
         primarySeedUrl
-          ? html`<a
-              class="text-blue-600 hover:text-blue-500 hover:underline"
-              href="${primarySeedUrl}"
-              target="_blank"
-              rel="noreferrer"
-              >${primarySeedUrl}</a
-            >`
+          ? html`
+              <btrix-overflow-scroll
+                class="-mx-5 w-[calc(100%+theme(spacing.10))] contain-inline-size part-[content]:px-5 part-[content]:[scrollbar-width:thin]"
+              >
+                <a
+                  class="decoration-blue-500 hover:underline"
+                  href="${primarySeedUrl}"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <btrix-code
+                    language="url"
+                    .value="${primarySeedUrl}"
+                  ></btrix-code>
+                </a>
+              </btrix-overflow-scroll>
+            `
           : undefined,
         true,
       )}
@@ -578,7 +606,11 @@ export class ConfigDetails extends BtrixElement {
     );
   }
 
-  private renderSetting(label: string, value: unknown, breakAll?: boolean) {
+  private renderSetting(
+    label: string | TemplateResult,
+    value: unknown,
+    breakAll?: boolean,
+  ) {
     let content = value;
 
     if (!this.crawlConfig) {
@@ -591,48 +623,11 @@ export class ConfigDetails extends BtrixElement {
       content = notSpecified;
     }
     return html`
-      <btrix-desc-list-item label=${label} class=${breakAll ? "break-all" : ""}>
+      <btrix-desc-list-item class=${breakAll ? "break-all" : ""}>
+        <span slot="label">${label}</span>
         ${content}
       </btrix-desc-list-item>
     `;
-  }
-
-  private async fetchCollections() {
-    if (this.crawlConfig?.autoAddCollections) {
-      try {
-        await this.getCollections();
-      } catch (e) {
-        this.notify.toast({
-          message:
-            isApiError(e) && e.statusCode === 404
-              ? msg("Collections not found.")
-              : msg(
-                  "Sorry, couldn't retrieve Collection details at this time.",
-                ),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "collection-fetch-status",
-        });
-      }
-    }
-  }
-
-  private async getCollections() {
-    const collections: Collection[] = [];
-    const orgId = this.crawlConfig?.oid;
-
-    if (this.crawlConfig?.autoAddCollections && orgId) {
-      for (const collectionId of this.crawlConfig.autoAddCollections) {
-        const data = await this.api.fetch<Collection | undefined>(
-          `/orgs/${orgId}/collections/${collectionId}`,
-        );
-        if (data) {
-          collections.push(data);
-        }
-      }
-    }
-    this.collections = collections;
-    this.requestUpdate();
   }
 
   // TODO Consolidate with workflow-editor

@@ -10,9 +10,19 @@ import urllib.parse
 from datetime import datetime
 from uuid import UUID
 
-from typing import Optional, List, Dict, Union, Any, Sequence, AsyncIterator
+from typing import (
+    Annotated,
+    Optional,
+    List,
+    Dict,
+    Union,
+    Any,
+    Sequence,
+    AsyncIterator,
+    Tuple,
+)
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from redis import asyncio as exceptions
 from redis.asyncio.client import Redis
@@ -22,7 +32,6 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
     dt_now,
     date_to_str,
-    parse_jsonl_log_messages,
     stream_dict_list_as_csv,
     validate_regexes,
     scale_from_browser_windows,
@@ -30,7 +39,9 @@ from .utils import (
 )
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
+from .crawl_logs import CrawlLogOps
 from .models import (
+    ListFilterType,
     UpdateCrawl,
     DeleteCrawlList,
     CrawlConfig,
@@ -66,6 +77,7 @@ from .models import (
     CrawlScaleResponse,
     CrawlQueueResponse,
     MatchCrawlQueueResponse,
+    CrawlLogLine,
 )
 
 
@@ -80,9 +92,10 @@ class CrawlOps(BaseCrawlOps):
 
     crawl_manager: CrawlManager
 
-    def __init__(self, crawl_manager: CrawlManager, *args):
+    def __init__(self, crawl_manager: CrawlManager, log_ops: CrawlLogOps, *args):
         super().__init__(*args)
         self.crawl_manager = crawl_manager
+        self.log_ops = log_ops
         self.crawl_configs.set_crawl_ops(self)
         self.colls.set_crawl_ops(self)
         self.event_webhook_ops.set_crawl_ops(self)
@@ -147,6 +160,8 @@ class CrawlOps(BaseCrawlOps):
         first_seed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        tags: list[str] | None = None,
+        tag_match: ListFilterType | None = ListFilterType.AND,
         collection_id: Optional[UUID] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -174,6 +189,10 @@ class CrawlOps(BaseCrawlOps):
 
         if running_only:
             query["state"] = {"$in": RUNNING_AND_WAITING_STATES}
+
+        if tags:
+            query_type = "$all" if tag_match == ListFilterType.AND else "$in"
+            query["tags"] = {query_type: tags}
 
         # Override running_only if state list is explicitly passed
         if state:
@@ -669,31 +688,6 @@ class CrawlOps(BaseCrawlOps):
             return False
         return res.get("type") == "upload"
 
-    async def add_crawl_error(
-        self,
-        crawl_id: str,
-        is_qa: bool,
-        error: str,
-    ) -> bool:
-        """add crawl error from redis to mongodb errors field"""
-        prefix = "" if not is_qa else "qa."
-
-        res = await self.crawls.find_one_and_update(
-            {"_id": crawl_id}, {"$push": {f"{prefix}errors": error}}
-        )
-        return res is not None
-
-    async def add_crawl_behavior_log(
-        self,
-        crawl_id: str,
-        log_line: str,
-    ) -> bool:
-        """add crawl behavior log from redis to mongodb behaviorLogs field"""
-        res = await self.crawls.find_one_and_update(
-            {"_id": crawl_id}, {"$push": {"behaviorLogs": log_line}}
-        )
-        return res is not None
-
     async def add_crawl_file(
         self, crawl_id: str, is_qa: bool, crawl_file: CrawlFile, size: int
     ) -> bool:
@@ -1141,6 +1135,31 @@ class CrawlOps(BaseCrawlOps):
             textMatch=text_results,
         )
 
+    async def get_crawl_logs(
+        self,
+        org: Organization,
+        crawl_id: str,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sort_by: str = "timestamp",
+        sort_direction: int = 1,
+        contexts: Optional[List[str]] = None,
+        log_levels: Optional[List[str]] = None,
+        qa_run_id: Optional[str] = None,
+    ) -> Tuple[list[CrawlLogLine], int]:
+        """get crawl logs"""
+        return await self.log_ops.get_crawl_logs(
+            org,
+            crawl_id,
+            page_size=page_size,
+            page=page,
+            sort_by=sort_by,
+            sort_direction=sort_direction,
+            contexts=contexts,
+            log_levels=log_levels,
+            qa_run_id=qa_run_id,
+        )
+
 
 # ============================================================================
 async def recompute_crawl_file_count_and_size(crawls, crawl_id: str):
@@ -1162,11 +1181,13 @@ async def recompute_crawl_file_count_and_size(crawls, crawl_id: str):
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
-def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
+def init_crawls_api(
+    crawl_manager: CrawlManager, crawl_log_ops: CrawlLogOps, app, user_dep, *args
+):
     """API for crawl management, including crawl done callback"""
     # pylint: disable=invalid-name, duplicate-code
 
-    ops = CrawlOps(crawl_manager, *args)
+    ops = CrawlOps(crawl_manager, crawl_log_ops, *args)
 
     org_viewer_dep = ops.orgs.org_viewer_dep
     org_crawl_dep = ops.orgs.org_crawl_dep
@@ -1231,18 +1252,29 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         page: int = 1,
         userid: Optional[UUID] = None,
         cid: Optional[UUID] = None,
-        state: Optional[str] = None,
+        state: Annotated[list[str] | None, Query()] = None,
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        tags: Annotated[list[str] | None, Query()] = None,
+        tag_match: Annotated[
+            ListFilterType | None,
+            Query(
+                alias="tagMatch",
+                title="Tag Match Type",
+                description='Defaults to `"and"` if omitted',
+            ),
+        ] = ListFilterType.AND,
         collectionId: Optional[UUID] = None,
         sortBy: Optional[str] = None,
         sortDirection: int = -1,
     ):
-        # pylint: disable=duplicate-code
-        states = []
-        if state:
-            states = state.split(",")
+        # Support both comma-separated values and multiple search parameters
+        # e.g. `?state=running,paused` and `?state=running&state=paused`
+        if state and len(state) == 1:
+            states: list[str] | None = state[0].split(",")
+        else:
+            states = state if state else None
 
         if firstSeed:
             firstSeed = urllib.parse.unquote(firstSeed)
@@ -1262,6 +1294,8 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
             first_seed=firstSeed,
             name=name,
             description=description,
+            tags=tags,
+            tag_match=tag_match,
             collection_id=collectionId,
             page_size=pageSize,
             page=page,
@@ -1694,15 +1728,20 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         org: Organization = Depends(org_viewer_dep),
+        sortBy: str = "timestamp",
+        sortDirection: int = 1,
     ):
-        crawl = await ops.get_crawl(crawl_id, org)
-
-        skip = (page - 1) * pageSize
-        upper_bound = skip + pageSize
-
-        errors = crawl.errors[skip:upper_bound] if crawl.errors else []
-        parsed_errors = parse_jsonl_log_messages(errors)
-        return paginated_format(parsed_errors, len(crawl.errors or []), page, pageSize)
+        log_lines, total = await ops.get_crawl_logs(
+            org,
+            crawl_id,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+            log_levels=["error", "fatal"],
+            qa_run_id=None,
+        )
+        return paginated_format(log_lines, total, page, pageSize)
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/behaviorLogs",
@@ -1714,18 +1753,19 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         org: Organization = Depends(org_viewer_dep),
+        sortBy: str = "timestamp",
+        sortDirection: int = 1,
     ):
-        crawl = await ops.get_crawl(crawl_id, org)
-
-        skip = (page - 1) * pageSize
-        upper_bound = skip + pageSize
-
-        behavior_logs = (
-            crawl.behaviorLogs[skip:upper_bound] if crawl.behaviorLogs else []
+        log_lines, total = await ops.get_crawl_logs(
+            org,
+            crawl_id,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+            contexts=["behavior", "behaviorScript", "behaviorScriptCustom"],
+            qa_run_id=None,
         )
-        parsed_logs = parse_jsonl_log_messages(behavior_logs)
-        return paginated_format(
-            parsed_logs, len(crawl.behaviorLogs or []), page, pageSize
-        )
+        return paginated_format(log_lines, total, page, pageSize)
 
     return ops

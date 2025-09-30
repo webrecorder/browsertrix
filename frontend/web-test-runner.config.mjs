@@ -67,6 +67,7 @@ export default {
         "node_modules/url-pattern/**/*",
         "node_modules/lodash/**/*",
         "node_modules/color/**/*",
+        "node_modules/cronstrue/**/*",
         "node_modules/slugify/**/*",
         "node_modules/parse-ms/**/*",
         "node_modules/regex-colorize/**/*",

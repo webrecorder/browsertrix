@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import (
+    Annotated,
     Optional,
     List,
     Union,
@@ -18,16 +19,19 @@ import os
 import urllib.parse
 
 import asyncio
-from fastapi import HTTPException, Depends, Request
+from fastapi import HTTPException, Depends, Query, Request
 from fastapi.responses import StreamingResponse
 import pymongo
 
 from .models import (
+    SUCCESSFUL_STATES,
+    CrawlConfigTags,
     CrawlFile,
     CrawlFileOut,
     BaseCrawl,
     CrawlOut,
     CrawlOutWithResources,
+    ListFilterType,
     UpdateCrawl,
     DeleteCrawlList,
     Organization,
@@ -641,6 +645,8 @@ class BaseCrawlOps:
         userid: Optional[UUID] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        tags: list[str] | None = None,
+        tag_match: ListFilterType | None = None,
         collection_id: Optional[UUID] = None,
         states: Optional[List[str]] = None,
         first_seed: Optional[str] = None,
@@ -678,6 +684,10 @@ class BaseCrawlOps:
 
         if cid:
             query["cid"] = cid
+
+        if tags:
+            query_type = "$all" if tag_match == ListFilterType.AND else "$in"
+            query["tags"] = {query_type: tags}
 
         aggregate = [
             {"$match": query},
@@ -970,6 +980,21 @@ class BaseCrawlOps:
 
         return last_crawl_finished
 
+    async def get_all_crawls_tag_counts(self, org: Organization):
+        """get distinct tags from all archived items for this org"""
+        tags = await self.crawls.aggregate(
+            [
+                # Match only against the states of archived items that might be
+                # displayed in the frontend
+                {"$match": {"oid": org.id, "state": {"$in": SUCCESSFUL_STATES}}},
+                {"$unwind": "$tags"},
+                {"$group": {"_id": "$tags", "count": {"$sum": 1}}},
+                {"$project": {"tag": "$_id", "count": "$count", "_id": 0}},
+                {"$sort": {"count": -1, "tag": 1}},
+            ]
+        ).to_list()
+        return tags
+
 
 # ============================================================================
 def init_base_crawls_api(app, user_dep, *args):
@@ -992,16 +1017,30 @@ def init_base_crawls_api(app, user_dep, *args):
         page: int = 1,
         userid: Optional[UUID] = None,
         name: Optional[str] = None,
-        state: Optional[str] = None,
+        state: Annotated[list[str] | None, Query()] = None,
         firstSeed: Optional[str] = None,
         description: Optional[str] = None,
+        tags: Annotated[list[str] | None, Query()] = None,
+        tag_match: Annotated[
+            ListFilterType | None,
+            Query(
+                alias="tagMatch",
+                title="Tag Match Type",
+                description='Defaults to `"and"` if omitted',
+            ),
+        ] = ListFilterType.AND,
         collectionId: Optional[UUID] = None,
         crawlType: Optional[str] = None,
         cid: Optional[UUID] = None,
         sortBy: Optional[str] = "finished",
         sortDirection: int = -1,
     ):
-        states = state.split(",") if state else None
+        # Support both comma-separated values and multiple search parameters
+        # e.g. `?state=running,paused` and `?state=running&state=paused`
+        if state and len(state) == 1:
+            states: list[str] | None = state[0].split(",")
+        else:
+            states = state if state else None
 
         if firstSeed:
             firstSeed = urllib.parse.unquote(firstSeed)
@@ -1020,6 +1059,8 @@ def init_base_crawls_api(app, user_dep, *args):
             userid=userid,
             name=name,
             description=description,
+            tags=tags,
+            tag_match=tag_match,
             collection_id=collectionId,
             states=states,
             first_seed=firstSeed,
@@ -1045,6 +1086,14 @@ def init_base_crawls_api(app, user_dep, *args):
             raise HTTPException(status_code=400, detail="invalid_crawl_type")
 
         return await ops.get_all_crawl_search_values(org, type_=crawlType)
+
+    @app.get(
+        "/orgs/{oid}/all-crawls/tagCounts",
+        tags=["all-crawls"],
+        response_model=CrawlConfigTags,
+    )
+    async def get_all_crawls_tag_counts(org: Organization = Depends(org_viewer_dep)):
+        return {"tags": await ops.get_all_crawls_tag_counts(org)}
 
     @app.get(
         "/orgs/{oid}/all-crawls/{crawl_id}",

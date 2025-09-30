@@ -9,6 +9,7 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Combobox } from "@/components/ui/combobox";
+import type { BtrixRemoveLinkedCollectionEvent } from "@/features/collections/linked-collections/types";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -52,9 +53,6 @@ export class CollectionsAdd extends BtrixElement {
   emptyText?: string;
 
   @state()
-  private collectionsData: { [id: string]: Collection } = {};
-
-  @state()
   private collectionIds: string[] = [];
 
   @query("sl-input")
@@ -89,7 +87,6 @@ export class CollectionsAdd extends BtrixElement {
       this.collectionIds = this.initialCollections;
     }
     super.connectedCallback();
-    void this.initializeCollectionsFromIds();
   }
 
   disconnectedCallback() {
@@ -99,7 +96,7 @@ export class CollectionsAdd extends BtrixElement {
   render() {
     return html`<div>
       <label class="form-label">
-        ${this.label || msg("Collection Auto-Add")}
+        ${this.label || msg("Add to Collection")}
       </label>
       <div class="mb-2 rounded-lg border bg-neutral-50 p-2">
         ${this.renderSearch()}
@@ -109,9 +106,15 @@ export class CollectionsAdd extends BtrixElement {
         this.collectionIds.length
           ? html`
               <div class="mb-2">
-                <ul class="contents">
-                  ${this.collectionIds.map(this.renderCollectionItem, this)}
-                </ul>
+                <btrix-linked-collections
+                  .collectionIds=${this.collectionIds}
+                  removable
+                  @btrix-remove=${(e: BtrixRemoveLinkedCollectionEvent) => {
+                    const { id } = e.detail.item;
+
+                    this.removeCollection(id);
+                  }}
+                ></btrix-linked-collections>
               </div>
             `
           : this.emptyText
@@ -142,12 +145,6 @@ export class CollectionsAdd extends BtrixElement {
             );
             if (coll) {
               const { id } = coll;
-              if (!(this.collectionsData[id] as Collection | undefined)) {
-                this.collectionsData = {
-                  ...this.collectionsData,
-                  [id]: (await this.getCollection(id))!,
-                };
-              }
               this.collectionIds = [...this.collectionIds, id];
               void this.dispatchChange();
             }
@@ -225,35 +222,7 @@ export class CollectionsAdd extends BtrixElement {
     });
   }
 
-  private renderCollectionItem(id: string) {
-    const collection = this.collectionsData[id] as Collection | undefined;
-    return html`<li class="mt-1 rounded-sm border p-1 pl-3">
-      <div
-        class="${collection
-          ? "opacity-100"
-          : "opacity-0"} flex flex-row items-center justify-between gap-2 transition-opacity delay-75"
-      >
-        <div class="grow justify-self-stretch truncate">
-          ${collection?.name}
-        </div>
-        <div class="font-monostyle text-right text-xs text-neutral-500">
-          ${msg(str`${collection?.crawlCount || 0} items`)}
-        </div>
-        <sl-icon-button
-          name="x-lg"
-          label=${msg("Remove from auto-add")}
-          data-key=${id}
-          ?disabled=${!collection}
-          @click=${this.removeCollection}
-        >
-        </sl-icon-button>
-      </div>
-    </li>`;
-  }
-
-  private removeCollection(event: Event) {
-    const target = event.currentTarget as HTMLElement;
-    const collectionId = target.getAttribute("data-key");
+  private removeCollection(collectionId: string) {
     if (collectionId) {
       const collIdIndex = this.collectionIds.indexOf(collectionId);
       if (collIdIndex > -1) {
@@ -324,24 +293,6 @@ export class CollectionsAdd extends BtrixElement {
 
     return data;
   }
-
-  private async initializeCollectionsFromIds() {
-    this.collectionIds.forEach(async (id) => {
-      const data = await this.getCollection(id);
-      if (data) {
-        this.collectionsData = {
-          ...this.collectionsData,
-          [id]: data,
-        };
-      }
-    });
-  }
-
-  private readonly getCollection = async (
-    collId: string,
-  ): Promise<Collection | undefined> => {
-    return this.api.fetch(`/orgs/${this.orgId}/collections/${collId}`);
-  };
 
   private async dispatchChange() {
     await this.updateComplete;

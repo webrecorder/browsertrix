@@ -8,6 +8,8 @@ import type {
   SlRadioGroup,
 } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import { WindowVirtualizerController } from "@tanstack/lit-virtual";
+import clsx from "clsx";
 import Fuse from "fuse.js";
 import {
   css,
@@ -19,6 +21,7 @@ import {
 import { customElement, property, query, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
+import { debounce } from "lodash";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
@@ -53,8 +56,13 @@ const none = html`
 export class OrgsList extends BtrixElement {
   static styles = css`
     btrix-table {
-      --btrix-table-grid-template-columns: min-content [clickable-start]
-        minmax(auto, 50ch) auto auto auto auto [clickable-end] min-content;
+      --btrix-table-grid-template-columns: 44px [clickable-start]
+        minmax(300px, 37fr) minmax(100px, 10fr) minmax(85px, 7fr)
+        minmax(90px, 9fr) minmax(100px, 10fr) [clickable-end] 40px;
+    }
+    btrix-table-head,
+    btrix-table-row {
+      grid-template-columns: var(--btrix-table-grid-template-columns);
     }
   `;
 
@@ -113,11 +121,55 @@ export class OrgsList extends BtrixElement {
   @state()
   private orgFilter: OrgFilter = OrgFilter.All;
 
-  protected willUpdate(changedProperties: PropertyValues<this>) {
+  @state()
+  private searchResults?: OrgData[];
+
+  @state()
+  private visibleOrgs?: OrgData[];
+
+  private readonly virtualizerController =
+    new WindowVirtualizerController<Element>(this, {
+      count: this.visibleOrgs?.length ?? 0,
+      estimateSize: () => 41,
+      getItemKey: (index) => this.visibleOrgs?.[index]?.id ?? index,
+      overscan: 20,
+    });
+
+  protected willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
     if (changedProperties.has("orgList")) {
       this.fuse.setCollection(this.orgList ?? []);
     }
+    if (changedProperties.has("search") || changedProperties.has("orgFilter")) {
+      // if empty search string, immediately update; otherwise, debounce
+      if (this.search === "" || changedProperties.has("orgFilter")) {
+        this.updateVisibleOrgs();
+      } else {
+        this.updateVisibleOrgsDebounced();
+      }
+    }
   }
+
+  readonly updateVisibleOrgs = () => {
+    this.searchResults = this.search
+      ? this.fuse.search(this.search).map(({ item }) => item)
+      : this.orgList;
+    this.visibleOrgs =
+      this.searchResults?.filter((org) =>
+        this.filterOrg(org, this.orgFilter),
+      ) ?? [];
+
+    const virtualizer = this.virtualizerController.getVirtualizer();
+    virtualizer.setOptions({
+      ...virtualizer.options,
+      count: this.visibleOrgs.length,
+    });
+  };
+
+  readonly updateVisibleOrgsDebounced = debounce(this.updateVisibleOrgs, 50, {
+    trailing: true,
+  });
 
   protected firstUpdated() {
     this.fuse.setCollection(this.orgList ?? []);
@@ -128,13 +180,8 @@ export class OrgsList extends BtrixElement {
       return this.renderSkeleton();
     }
 
-    const searchResults = this.search
-      ? this.fuse.search(this.search).map(({ item }) => item)
-      : this.orgList;
-
-    const orgs = searchResults?.filter((org) =>
-      this.filterOrg(org, this.orgFilter),
-    );
+    const virtualizer = this.virtualizerController.getVirtualizer();
+    const virtualRows = virtualizer.getVirtualItems();
 
     return html`
       <sl-input
@@ -194,13 +241,15 @@ export class OrgsList extends BtrixElement {
               icon: "exclamation-triangle",
               filter: OrgFilter.BadStates,
             },
-          ].map((options) => this.renderFilterButton(searchResults, options))}
+          ].map((options) =>
+            this.renderFilterButton(this.searchResults, options),
+          )}
         </sl-radio-group>
       </btrix-overflow-scroll>
       <btrix-overflow-scroll
         class="-mx-3 [--btrix-overflow-scroll-scrim-color:theme(colors.neutral.50)] part-[content]:px-3"
       >
-        <btrix-table>
+        <btrix-table class="block">
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Status")}</span>
@@ -225,7 +274,24 @@ export class OrgsList extends BtrixElement {
             </btrix-table-header-cell>
           </btrix-table-head>
           <btrix-table-body class="rounded border">
-            ${repeat(orgs || [], (org) => org.id, this.renderOrg)}
+            <div
+              class="relative w-full"
+              style="height: ${virtualizer.getTotalSize()}px;"
+            >
+              <div
+                class="absolute left-0 top-0 w-full"
+                style="transform: translateY(${virtualRows[0]
+                  ? virtualRows[0].start
+                  : 0}px);"
+              >
+                ${repeat(
+                  virtualRows,
+                  (virtualRow) => virtualRow.key,
+                  (virtualRow) =>
+                    this.renderOrg(this.visibleOrgs?.[virtualRow.index]),
+                )}
+              </div>
+            </div>
           </btrix-table-body>
         </btrix-table>
       </btrix-overflow-scroll>
@@ -323,58 +389,10 @@ export class OrgsList extends BtrixElement {
   }
 
   private renderOrgQuotas() {
-    return html`
-      <btrix-dialog
-        id="orgQuotaDialog"
-        .label=${msg(str`Quotas for: ${this.currOrg?.name || ""}`)}
-        @sl-after-hide=${() => (this.currOrg = null)}
-      >
-        ${when(this.currOrg?.quotas, (quotas) =>
-          Object.entries(quotas).map(([key, value]) => {
-            let label;
-            switch (key) {
-              case "maxConcurrentCrawls":
-                label = msg("Max Concurrent Crawls");
-                break;
-              case "maxPagesPerCrawl":
-                label = msg("Max Pages Per Crawl");
-                break;
-              case "storageQuota":
-                label = msg("Org Storage Quota (GB)");
-                value = Math.floor(value / 1e9);
-                break;
-              case "maxExecMinutesPerMonth":
-                label = msg("Max Execution Minutes Per Month");
-                break;
-              case "extraExecMinutes":
-                label = msg("Extra Execution Minutes");
-                break;
-              case "giftedExecMinutes":
-                label = msg("Gifted Execution Minutes");
-                break;
-              default:
-                label = msg("Unlabeled");
-            }
-            return html` <sl-input
-              class="mb-3 last:mb-0"
-              name=${key}
-              label=${label}
-              value=${value}
-              type="number"
-              @sl-input="${this.onUpdateQuota}"
-            ></sl-input>`;
-          }),
-        )}
-        <div slot="footer" class="flex justify-end">
-          <sl-button
-            size="small"
-            @click="${this.onSubmitQuotas}"
-            variant="primary"
-            >${msg("Update Quotas")}
-          </sl-button>
-        </div>
-      </btrix-dialog>
-    `;
+    return html`<btrix-org-quota-editor
+      id="orgQuotaDialog"
+      .activeOrg=${this.currOrg}
+    ></btrix-org-quota-editor>`;
   }
 
   private renderOrgProxies() {
@@ -642,16 +660,6 @@ export class OrgsList extends BtrixElement {
     }
   }
 
-  private onSubmitQuotas() {
-    if (this.currOrg) {
-      this.dispatchEvent(
-        new CustomEvent("update-quotas", { detail: this.currOrg }),
-      );
-
-      void this.orgQuotaDialog?.hide();
-    }
-  }
-
   private onSubmitProxies() {
     if (this.currOrg) {
       this.dispatchEvent(
@@ -765,7 +773,8 @@ export class OrgsList extends BtrixElement {
     }
   }
 
-  private readonly renderOrg = (org: OrgData) => {
+  private readonly renderOrg = (org?: OrgData) => {
+    if (!org) return;
     if (!this.userInfo) return;
 
     // There shouldn't really be a case where an org is in the org list but
@@ -1031,7 +1040,7 @@ export class OrgsList extends BtrixElement {
       <btrix-table-row
         class="${isUserOrg
           ? ""
-          : "opacity-50"} cursor-pointer select-none border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
+          : "opacity-50"} cursor-pointer select-none grid-cols-[--btrix-table-grid-template-columns--internal] border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
         <btrix-table-cell class="min-w-6 gap-1 pl-2">
           <sl-tooltip content=${status.description} hoist>
@@ -1048,9 +1057,13 @@ export class OrgsList extends BtrixElement {
         </btrix-table-cell>
         <btrix-table-cell class="p-2" rowClickTarget="a">
           <a
-            class=${org.readOnly ? "text-neutral-500" : "text-neutral-900"}
+            class=${clsx(
+              org.readOnly ? "text-neutral-500" : "text-neutral-900",
+              "truncate",
+            )}
             href="/orgs/${org.slug}/dashboard"
             @click=${this.navigate.link}
+            title=${org.name}
             aria-disabled="${!isUserOrg}"
           >
             ${org.default

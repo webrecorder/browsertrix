@@ -25,11 +25,22 @@ export type GridColumnSelectType = {
   }[];
 };
 
-export type GridColumn<T = string, Item = GridItem> = {
-  field: T;
+export type GridColumnNumberType<Item = GridItem> = {
+  inputType: GridColumnType.Number;
+  min?: number | ((item: Item | undefined) => number | undefined);
+  max?: number | ((item: Item | undefined) => number | undefined);
+  step?: number | ((item: Item | undefined) => number | undefined);
+};
+
+export type GridColumn<
+  Item = GridItem,
+  Key extends keyof Item = keyof Item,
+  InputType extends GridColumnType = GridColumnType,
+> = {
+  field: Key;
   label: string | TemplateResult;
   description?: string;
-  editable?: boolean;
+  editable?: boolean | ((item: Item | undefined) => boolean | undefined);
   required?: boolean;
   inputPlaceholder?: string;
   width?: string;
@@ -38,13 +49,15 @@ export type GridColumn<T = string, Item = GridItem> = {
     item: Item;
     value?: Item[keyof Item];
   }) => TemplateResult<1>;
-  renderCell?: (props: { item: Item }) => TemplateResult<1>;
-  renderCellTooltip?: (props: { item: Item }) => TemplateResult<1>;
+  renderCell?: (props: { item: Item }) => string | TemplateResult<1>;
+  renderCellTooltip?: (props: { item: Item }) => string | TemplateResult<1>;
+  inputType?: InputType;
 } & (
   | {
       inputType?: GridColumnType;
     }
   | GridColumnSelectType
+  | GridColumnNumberType<Item>
 );
 
 const rowIdSchema = z.string().nanoid();

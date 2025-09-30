@@ -76,11 +76,20 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 ##### Custom Page Prefix
 :   This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_URL Prefixes in Scope_](#url-prefixes-in-scope).
 
-### Page URL(s)
+### Crawl Start URL / URL(s) to Crawl
 
-One or more URLs of the page to crawl. URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
+This is the URL used by the crawler to initiate the crawling process. The URL input may be labeled _Crawl Start URL_ or _URL(s) to Crawl_ depending on which crawl scope is used:
 
-See [List Of Pages](#list-of-pages) for additional info when providing a list of URLs.
+| Crawl Scope | Label | Description |
+| ----------- | ----- | ----------- |
+| _Single Page_ | URL&nbsp;to&nbsp;Crawl | The crawler will visit only this URL. |
+| _List of Pages_ | URLs&nbsp;to&nbsp;Crawl | The crawler will visit each URL specified in the text list or file. |
+| _In-Page Links_<br/>_Pages in Same Directory_<br/>_Pages on Same Domain_<br/>_Pages on Same Domain + Subdomains_<br/>_Custom Page Prefix_ | Crawl&nbsp;Start&nbsp;URL | The crawler will visit this URL as its starting point and use this URL to collect information on which linked pages it should also visit. |
+
+
+URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
+
+Refer to a specific [_Crawl Scope_ option](#crawl-scope-options) for details on how each crawl scope interacts with this URL.
 
 ??? example "Crawling with HTTP basic auth"
 
@@ -88,16 +97,12 @@ See [List Of Pages](#list-of-pages) for additional info when providing a list of
 
     **These credentials WILL BE WRITTEN into the archive.** We recommend exercising caution and only archiving with dedicated archival accounts, changing your password or deleting the account when finished.
 
-### Crawl Start URL
-
-This is the first page that the crawler will visit. _Site Crawl_ scopes are based on this URL.
-
 ### Include Any Linked Page
 
-When enabled, the crawler will visit all the links it finds within each page defined in the _Crawl URL(s)_ field.
+When enabled, the crawler will visit all the links it finds within each URL defined in the [URL input field](#crawl-start-url-urls-to-crawl) under _Crawl Scope_.
 
 ??? example "Crawling tags & search queries with Page List crawls"
-    This setting can be useful for crawling the content of specific tags or search queries. Specify the tag or search query URL(s) in the _Crawl URL(s)_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
+    This setting can be useful for crawling a list of specific pages and pages they link to, such as a list of search queries. For example, you can add a list of multiple URLs such as: `https://example.com/search?q=search_this`, `https://example.com/search?q=also_search_this`, etc... to the _URLs to Crawl_ text box and enable _Include Any Linked Page_ to crawl all the content present on these search query pages.
 
 ### Fail Crawl if Not Logged In
 
@@ -318,9 +323,6 @@ Automatically start crawls periodically on a daily, weekly, or monthly schedule.
 
 ### Crawl Schedule Type
 
-#### Run Immediately on Save
-:   When selected, the crawl will run immediately as configured. It will not run again unless manually instructed.
-
 #### Run on a Recurring Basis
 :   When selected, additional configuration options for instructing the system when to run the crawl will be shown. If a crawl is already running when the schedule is set to activate it, the scheduled crawl will not run.
 
@@ -330,6 +332,26 @@ Automatically start crawls periodically on a daily, weekly, or monthly schedule.
 ### Frequency
 
 Set how often a scheduled crawl will run.
+
+#### Options
+
+All option support specifying the specific hour and minute the crawl should run.
+
+##### Daily
+
+Run crawl once every day.
+
+##### Weekly
+
+Run crawl once every week.
+
+##### Monthly
+
+Run crawl once every month.
+
+##### Custom
+
+Run crawl at a custom interval, such as hourly or yearly. See [Cron Schedule](#cron-schedule) for details.
 
 ### Day
 
@@ -343,13 +365,46 @@ Sets the date of the month for which crawls scheduled with a `Monthly` _Frequenc
 
 Sets the time that the scheduled crawl will start according to your current timezone.
 
+### Cron Schedule
+
+When using a `Custom` _Frequency_, a custom schedule can be specified by using a Cron expression or supported macros.
+
+Cron expressions should follow the Unix Cron format:
+
+| Position | * | * | * | * | * |
+| - | - | - | - | - | - |
+| **Description** | minute | hour | day of the month | month | day of the week |
+| **Possible Values** | 0 - 59 | 0 - 23 | 1 - 31 | 1 - 12 | 0 - 6<br/>or `sun`, `mon`, `tue`, `wed`, `thu`, `fri`, `sat` |
+
+For example, `0 0 31 12 *` would run a crawl on December 31st every year and `0 0 * * fri` would run a crawl every Friday at midnight.
+
+Additionally, the following macros are supported:
+
+| Value | Description |
+| - | - |
+| `@yearly` | Run once a year at midnight of 1 January |
+| `@monthly` | 	Run once a month at midnight of the first day of the month |
+| `@weekly` | Run once a week at midnight on Sunday |
+| `@daily` | Run once a day at midnight |
+| `@hourly` | Run once an hour at the beginning of the hour |
+
+You can use a tool like [crontab.guru](https://crontab.guru/) to check Cron syntax validity and view [common expressions](https://crontab.guru/examples.html).
+
+Cron schedules are always in [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time).
+
+## Collections
+
+### Auto-Add to Collection
+
+Search for and specify [collections](collection.md) that this crawl workflow should automatically add archived items to as soon as crawling finishes. Canceled and Failed crawls will not be added to collections.
+
 ## Metadata
 
 Describe and organize your crawl workflow and the resulting archived items.
 
 ### Name
 
-Allows a custom name to be set for the workflow. If no name is set, the workflow's name will be set to the _Crawl Start URL_. For Page List crawls, the workflow's name will be set to the first URL present in the _Crawl URL(s)_ field, with an added `(+x)` where `x` represents the total number of URLs in the list.
+Allows a custom name to be set for the workflow. If no name is set, the workflow's name will be set to the first URL to crawl specified in _Scope_. For _Page List_ crawls, the workflow name may show an added `+N` where `N` represents the number of URLs in addition to the first URL to crawl.
 
 ### Description
 
@@ -358,7 +413,3 @@ Leave optional notes about the workflow's configuration.
 ### Tags
 
 Apply tags to the workflow. Tags applied to the workflow will propagate to every crawl created with it at the time of crawl creation.
-
-### Collection Auto-Add
-
-Search for and specify [collections](collection.md) that this crawl workflow should automatically add archived items to as soon as crawling finishes. Canceled and Failed crawls will not be added to collections.
