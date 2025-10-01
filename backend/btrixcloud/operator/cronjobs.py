@@ -77,7 +77,11 @@ class CronJobOperator(BaseOperator):
 
         # get org
         oid = crawlconfig.oid
-        org = await self.org_ops.get_org_by_id(oid)
+        try:
+            org = await self.org_ops.get_org_by_id(oid)
+        except:
+            print(f"error: error getting org {oid}, skipping schedulued job")
+            return self.get_finished_response(metadata)
 
         # db create
         user = None
