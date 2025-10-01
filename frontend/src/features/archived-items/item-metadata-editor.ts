@@ -1,8 +1,9 @@
 import { localized, msg } from "@lit/localize";
+import type { SlTextarea } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
 import { html } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type {
@@ -10,7 +11,10 @@ import type {
   Tags,
   TagsChangeEvent,
 } from "@/components/ui/tag-input";
-import { type CollectionsChangeEvent } from "@/features/collections/collections-add";
+import type {
+  CollectionsAdd,
+  CollectionsChangeEvent,
+} from "@/features/collections/collections-add";
 import type { ArchivedItem } from "@/types/crawler";
 import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
 import { maxLengthValidator } from "@/utils/form";
@@ -55,6 +59,12 @@ export class CrawlMetadataEditor extends BtrixElement {
 
   @state()
   private collectionsToSave: string[] = [];
+
+  @query("#description-input")
+  public readonly descriptionInput?: SlTextarea | null;
+
+  @query("#collection-input")
+  public readonly collectionInput?: CollectionsAdd | null;
 
   // For fuzzy search:
   private readonly fuse = new Fuse<WorkflowTag>([], {
@@ -109,6 +119,7 @@ export class CrawlMetadataEditor extends BtrixElement {
             `
           : ``}
         <sl-textarea
+          id="description-input"
           class="with-max-help-text mb-3"
           name="crawlDescription"
           label=${msg("Description")}
@@ -128,6 +139,7 @@ export class CrawlMetadataEditor extends BtrixElement {
         ></btrix-tag-input>
         <div class="mt-7">
           <btrix-collections-add
+            id="collection-input"
             .initialCollections=${this.crawl.collectionIds}
             .configId=${"temp"}
             label=${msg("Include in Collection")}
