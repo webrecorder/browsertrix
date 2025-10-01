@@ -15,6 +15,8 @@ import humanize
 from kubernetes.utils import parse_quantity
 from redis import asyncio as exceptions
 
+from fastapi import HTTPException
+
 from btrixcloud.models import (
     TYPE_NON_RUNNING_STATES,
     TYPE_RUNNING_STATES,
@@ -162,7 +164,17 @@ class CrawlOperator(BaseOperator):
         params["userid"] = spec.get("userid", "")
 
         pods = data.children[POD]
-        org = await self.org_ops.get_org_by_id(UUID(oid))
+        try:
+            org = await self.org_ops.get_org_by_id(UUID(oid))
+        except HTTPException as e:
+            # org likely deleted, should delete this crawljob
+            if e.detail == "invalid_org_id":
+                return {
+                    "status": status.dict(exclude_none=True),
+                    "children": {},
+                    "finalized": True,
+                }
+            raise
 
         crawl = CrawlSpec(
             id=crawl_id,
