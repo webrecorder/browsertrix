@@ -371,7 +371,7 @@ class CrawlConfigOps:
         exec_mins_quota_reached = False
 
         if config_in.dedupCollId:
-            await self.coll_ops.toggle_dedup_index(config_in.dedupCollId, True)
+            await self.coll_ops.enable_dedup_index(config_in.dedupCollId)
 
         if config_in.runNow:
             try:
@@ -680,7 +680,7 @@ class CrawlConfigOps:
             query["seedFileId"] = None
 
         if update.dedupCollId:
-            await self.coll_ops.toggle_dedup_index(update.dedupCollId, True)
+            await self.coll_ops.enable_dedup_index(update.dedupCollId)
 
         # update in db
         result = await self.crawl_configs.find_one_and_update(
