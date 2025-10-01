@@ -13,6 +13,7 @@ import type { Combobox } from "@/components/ui/combobox";
 import type {
   BtrixLoadedLinkedCollectionEvent,
   BtrixRemoveLinkedCollectionEvent,
+  CollectionLikeItem,
 } from "@/features/collections/linked-collections/types";
 import type {
   APIPaginatedList,
@@ -53,7 +54,7 @@ export class CollectionsAdd extends BtrixElement {
   label?: string;
 
   @state()
-  private collectionIds: string[] = [];
+  private collections: CollectionLikeItem[] = [];
 
   @query("#search-input")
   private readonly input?: SlInput | null;
@@ -61,8 +62,12 @@ export class CollectionsAdd extends BtrixElement {
   @query("btrix-combobox")
   private readonly combobox?: Combobox | null;
 
-  // Map collection names to ID for fuzzy search
+  // Map collection names to ID for filtering fuzzy search
   private readonly collectionNames = new Map<string, string>();
+
+  private get collectionIds() {
+    return this.collections.map(({ id }) => id);
+  }
 
   private get searchByValue() {
     return this.input ? this.input.value.trim() : "";
@@ -112,7 +117,7 @@ export class CollectionsAdd extends BtrixElement {
 
   connectedCallback() {
     if (this.initialCollections) {
-      this.collectionIds = this.initialCollections;
+      this.collections = this.initialCollections.map((id) => ({ id }));
     }
     super.connectedCallback();
   }
@@ -126,12 +131,12 @@ export class CollectionsAdd extends BtrixElement {
         ${this.renderSearch()}
       </div>
 
-      ${when(this.collectionIds, () =>
-        this.collectionIds.length
+      ${when(this.collections, (collections) =>
+        collections.length
           ? html`
               <div class="mt-2">
                 <btrix-linked-collections
-                  .collectionIds=${this.collectionIds}
+                  .collections=${collections}
                   removable
                   @btrix-loaded=${(e: BtrixLoadedLinkedCollectionEvent) => {
                     const { item } = e.detail;
@@ -170,10 +175,11 @@ export class CollectionsAdd extends BtrixElement {
           const collections = await this.getCollections({ namePrefix: name });
           const coll = collections.items.find((c) => c.name === name);
 
-          if (coll && !this.collectionIds.includes(coll.id)) {
-            const { id } = coll;
-            this.collectionIds = [...this.collectionIds, id];
+          if (coll && this.findCollectionIndexById(coll.id) === -1) {
+            this.collections = [...this.collections, coll];
             void this.dispatchChange();
+
+            this.collectionNames.set(coll.name, coll.id);
 
             if (this.input) {
               this.input.value = "";
@@ -265,11 +271,12 @@ export class CollectionsAdd extends BtrixElement {
 
   private removeCollection(collectionId: string) {
     if (collectionId) {
-      const collIdIndex = this.collectionIds.indexOf(collectionId);
+      const collIdIndex = this.findCollectionIndexById(collectionId);
+
       if (collIdIndex > -1) {
-        this.collectionIds = [
-          ...this.collectionIds.slice(0, collIdIndex),
-          ...this.collectionIds.slice(collIdIndex + 1),
+        this.collections = [
+          ...this.collections.slice(0, collIdIndex),
+          ...this.collections.slice(collIdIndex + 1),
         ];
         void this.dispatchChange();
       }
@@ -280,10 +287,14 @@ export class CollectionsAdd extends BtrixElement {
     void this.searchResultsTask.run();
   });
 
+  private findCollectionIndexById(collectionId: string) {
+    return this.collections.findIndex(({ id }) => id === collectionId);
+  }
+
   private filterOutSelectedCollections(results: Collection[]) {
-    return results.filter((result) => {
-      return !this.collectionIds.some((id) => id === result.id);
-    });
+    return results.filter(
+      (result) => this.findCollectionIndexById(result.id) > -1,
+    );
   }
 
   private async fetchCollectionsByPrefix(
