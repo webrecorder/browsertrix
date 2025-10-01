@@ -1,6 +1,7 @@
-import { localized, msg, str } from "@lit/localize";
-import { Task } from "@lit/task";
+import { localized, msg } from "@lit/localize";
+import { Task, TaskStatus } from "@lit/task";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
+import Fuse from "fuse.js";
 import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -9,17 +10,20 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Combobox } from "@/components/ui/combobox";
-import type { BtrixRemoveLinkedCollectionEvent } from "@/features/collections/linked-collections/types";
+import type {
+  BtrixLoadedLinkedCollectionEvent,
+  BtrixRemoveLinkedCollectionEvent,
+} from "@/features/collections/linked-collections/types";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import type { Collection } from "@/types/collection";
+import type { Collection, CollectionSearchValues } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
 
 const INITIAL_PAGE_SIZE = 10;
-const MIN_SEARCH_LENGTH = 2;
+const MIN_SEARCH_LENGTH = 1;
 
 export type CollectionsChangeEvent = CustomEvent<{
   collections: string[];
@@ -57,6 +61,9 @@ export class CollectionsAdd extends BtrixElement {
   @query("btrix-combobox")
   private readonly combobox?: Combobox | null;
 
+  // Map collection names to ID for fuzzy search
+  private readonly collectionNames = new Map<string, string>();
+
   private get searchByValue() {
     return this.input ? this.input.value.trim() : "";
   }
@@ -64,6 +71,26 @@ export class CollectionsAdd extends BtrixElement {
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
+
+  private readonly searchValuesTask = new Task(this, {
+    task: async (_args, { signal }) => {
+      const { names } = await this.getSearchValues(signal);
+
+      return names;
+    },
+    args: () => [] as const,
+  });
+
+  private readonly searchTask = new Task(this, {
+    task: async ([names], { signal }) => {
+      if (!names || signal.aborted) {
+        return;
+      }
+
+      return new Fuse(names, { shouldSort: false, threshold: 0.2 });
+    },
+    args: () => [this.searchValuesTask.value] as const,
+  });
 
   private readonly searchResultsTask = new Task(this, {
     task: async ([searchByValue, hasSearchStr], { signal }) => {
@@ -90,26 +117,29 @@ export class CollectionsAdd extends BtrixElement {
     super.connectedCallback();
   }
 
-  disconnectedCallback() {
-    super.disconnectedCallback();
-  }
-
   render() {
     return html`<div>
       <label class="form-label">
         ${this.label || msg("Add to Collection")}
       </label>
-      <div class="mb-2 rounded-lg border bg-neutral-50 p-2">
+      <div class="rounded-lg border bg-neutral-50 p-2">
         ${this.renderSearch()}
       </div>
 
       ${when(this.collectionIds, () =>
         this.collectionIds.length
           ? html`
-              <div class="mb-2">
+              <div class="mt-2">
                 <btrix-linked-collections
                   .collectionIds=${this.collectionIds}
                   removable
+                  @btrix-loaded=${(e: BtrixLoadedLinkedCollectionEvent) => {
+                    const { item } = e.detail;
+
+                    if (item.name) {
+                      this.collectionNames.set(item.name, item.id);
+                    }
+                  }}
                   @btrix-remove=${(e: BtrixRemoveLinkedCollectionEvent) => {
                     const { id } = e.detail.item;
 
@@ -124,6 +154,8 @@ export class CollectionsAdd extends BtrixElement {
   }
 
   private renderSearch() {
+    const disabled = !this.searchValuesTask.value?.length;
+
     return html`
       <btrix-combobox
         @request-close=${() => {
@@ -133,15 +165,18 @@ export class CollectionsAdd extends BtrixElement {
         @sl-select=${async (e: CustomEvent<{ item: SlMenuItem }>) => {
           this.combobox?.hide();
           const item = e.detail.item;
-          const collId = item.dataset["key"];
-          if (collId && this.collectionIds.indexOf(collId) === -1) {
-            const coll = this.searchResultsTask.value?.find(
-              (collection) => collection.id === collId,
-            );
-            if (coll) {
-              const { id } = coll;
-              this.collectionIds = [...this.collectionIds, id];
-              void this.dispatchChange();
+          const name = item.dataset["key"];
+
+          const collections = await this.getCollections({ namePrefix: name });
+          const coll = collections.items.find((c) => c.name === name);
+
+          if (coll && !this.collectionIds.includes(coll.id)) {
+            const { id } = coll;
+            this.collectionIds = [...this.collectionIds, id];
+            void this.dispatchChange();
+
+            if (this.input) {
+              this.input.value = "";
             }
           }
         }}
@@ -149,8 +184,9 @@ export class CollectionsAdd extends BtrixElement {
         <sl-input
           id="search-input"
           size="small"
-          placeholder=${msg("Search by Collection name")}
+          placeholder=${msg("Search for collection by name")}
           clearable
+          ?disabled=${disabled}
           @sl-clear=${() => {
             this.combobox?.hide();
           }}
@@ -164,6 +200,19 @@ export class CollectionsAdd extends BtrixElement {
           >}
         >
           <sl-icon name="search" slot="prefix"></sl-icon>
+          ${when(
+            disabled && this.searchValuesTask.status === TaskStatus.COMPLETE,
+            () => html`
+              <div slot="help-text">
+                ${msg("No collections found.")}
+                <btrix-link
+                  href="${this.navigate.orgBasePath}/collections"
+                  target="_blank"
+                  >${msg("Manage Collections")}</btrix-link
+                >
+              </div>
+            `,
+          )}
         </sl-input>
         ${this.renderSearchResults()}
       </btrix-combobox>
@@ -171,13 +220,13 @@ export class CollectionsAdd extends BtrixElement {
   }
 
   private renderSearchResults() {
-    return this.searchResultsTask.render({
+    return this.searchTask.render({
       pending: () => html`
         <sl-menu-item slot="menu-item" disabled>
           <sl-spinner></sl-spinner>
         </sl-menu-item>
       `,
-      complete: (searchResults) => {
+      complete: (fuse) => {
         if (!this.hasSearchStr) {
           return html`
             <sl-menu-item slot="menu-item" disabled>
@@ -186,12 +235,14 @@ export class CollectionsAdd extends BtrixElement {
           `;
         }
 
-        // Filter out stale search results from last debounce invocation
-        const results = searchResults.filter((res) =>
-          new RegExp(`^${this.searchByValue}`, "i").test(res.name),
-        );
+        const results = fuse
+          ?.search(this.searchByValue)
+          // Filter out items that have been selected
+          .filter(({ item }) => !this.collectionNames.get(item))
+          // Show first few results
+          .slice(0, 5);
 
-        if (!results.length) {
+        if (!results?.length) {
           return html`
             <sl-menu-item slot="menu-item" disabled>
               ${msg("No matching Collections found.")}
@@ -200,16 +251,10 @@ export class CollectionsAdd extends BtrixElement {
         }
 
         return html`
-          ${results.map((item: Collection) => {
+          ${results.map(({ item }: { item: string }) => {
             return html`
-              <sl-menu-item slot="menu-item" data-key=${item.id}>
-                ${item.name}
-                <div
-                  slot="suffix"
-                  class="font-monostyle flex-auto text-right text-xs text-neutral-500"
-                >
-                  ${msg(str`${item.crawlCount} items`)}
-                </div>
+              <sl-menu-item slot="menu-item" data-key=${item}>
+                ${item}
               </sl-menu-item>
             `;
           })}
@@ -288,6 +333,13 @@ export class CollectionsAdd extends BtrixElement {
     );
 
     return data;
+  }
+
+  private async getSearchValues(signal: AbortSignal) {
+    return await this.api.fetch<CollectionSearchValues>(
+      `/orgs/${this.orgId}/collections/search-values`,
+      { signal },
+    );
   }
 
   private async dispatchChange() {

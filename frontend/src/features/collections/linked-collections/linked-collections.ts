@@ -4,7 +4,10 @@ import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import isEqual from "lodash/fp/isEqual";
 
-import type { CollectionLikeItem } from "./types";
+import type {
+  BtrixLoadedLinkedCollectionEvent,
+  CollectionLikeItem,
+} from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Collection } from "@/types/collection";
@@ -13,6 +16,8 @@ import "./linked-collections-list";
 
 /**
  * Display list of collections that are linked to a workflow or archived item by ID.
+ *
+ * @fires btrix-loaded
  */
 @customElement("btrix-linked-collections")
 @localized()
@@ -67,6 +72,17 @@ export class LinkedCollections extends BtrixElement {
         }
 
         collectionsWithRequest.push({ id, request });
+
+        void request.then((item) => {
+          this.dispatchEvent(
+            new CustomEvent<BtrixLoadedLinkedCollectionEvent["detail"]>(
+              "btrix-loaded",
+              {
+                detail: { item },
+              },
+            ),
+          );
+        });
       });
 
       return collectionsWithRequest;
