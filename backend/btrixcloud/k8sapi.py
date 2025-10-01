@@ -289,9 +289,9 @@ class K8sAPI:
             name=f"profilejob-{browserid}",
         )
 
-    async def _patch_job(self, crawl_id, body, pluraltype="crawljobs") -> dict:
+    async def _patch_job(self, obj_id, body, pluraltype="crawljobs") -> dict:
         """patch crawl/profile job"""
-        name = f"{pluraltype[:-1]}-{crawl_id}"
+        name = f"{pluraltype[:-1]}-{obj_id}"
 
         return await self.patch_custom_object(name, body, pluraltype)
 
