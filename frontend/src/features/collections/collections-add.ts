@@ -1,7 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
-import { TwoWayMap } from "@solancer/two-way-map";
 import Fuse from "fuse.js";
 import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -23,6 +22,7 @@ import type {
 } from "@/types/api";
 import type { Collection, CollectionSearchValues } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
+import { TwoWayMap } from "@/utils/TwoWayMap";
 
 const INITIAL_PAGE_SIZE = 10;
 const MIN_SEARCH_LENGTH = 1;

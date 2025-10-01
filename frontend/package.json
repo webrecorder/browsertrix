@@ -16,7 +16,6 @@
     "@rollup/plugin-commonjs": "^18.0.0",
     "@shoelace-style/localize": "^3.2.1",
     "@shoelace-style/shoelace": "~2.18.0",
-    "@solancer/two-way-map": "^1.0.4",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tanstack/lit-virtual": "^3.13.12",
     "@tanstack/virtual-core": "^3.13.12",
