@@ -69,7 +69,7 @@ spec:
       affinity:
     {% if crawler_node_type %}
         nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
+          preferredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
                 - key: nodeType
