@@ -1,6 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
+import { TwoWayMap } from "@solancer/two-way-map";
 import Fuse from "fuse.js";
 import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -62,8 +63,8 @@ export class CollectionsAdd extends BtrixElement {
   @query("btrix-combobox")
   private readonly combobox?: Combobox | null;
 
-  // Map collection names to ID for filtering fuzzy search
-  private readonly collectionNames = new Map<string, string>();
+  // Map collection names to ID for managing search options
+  private readonly nameSearchMap = new TwoWayMap<string, string>();
 
   private get collectionIds() {
     return this.collections.map(({ id }) => id);
@@ -142,13 +143,20 @@ export class CollectionsAdd extends BtrixElement {
                     const { item } = e.detail;
 
                     if (item.name) {
-                      this.collectionNames.set(item.name, item.id);
+                      this.nameSearchMap.set(item.name, item.id);
                     }
                   }}
                   @btrix-remove=${(e: BtrixRemoveLinkedCollectionEvent) => {
                     const { id } = e.detail.item;
 
                     this.removeCollection(id);
+
+                    // Remove from search mapping
+                    const name = this.nameSearchMap.getByValue(id);
+
+                    if (name) {
+                      this.nameSearchMap.delete(name);
+                    }
                   }}
                 ></btrix-linked-collections>
               </div>
@@ -179,7 +187,7 @@ export class CollectionsAdd extends BtrixElement {
             this.collections = [...this.collections, coll];
             void this.dispatchChange();
 
-            this.collectionNames.set(coll.name, coll.id);
+            this.nameSearchMap.set(coll.name, coll.id);
 
             if (this.input) {
               this.input.value = "";
@@ -244,7 +252,7 @@ export class CollectionsAdd extends BtrixElement {
         const results = fuse
           ?.search(this.searchByValue)
           // Filter out items that have been selected
-          .filter(({ item }) => !this.collectionNames.get(item))
+          .filter(({ item }) => !this.nameSearchMap.get(item))
           // Show first few results
           .slice(0, 5);
 

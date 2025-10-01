@@ -1906,6 +1906,11 @@
   resolved "https://registry.yarnpkg.com/@sinonjs/text-encoding/-/text-encoding-0.7.2.tgz#5981a8db18b56ba38ef0efb7d995b12aa7b51918"
   integrity sha512-sXXKG+uL9IrKqViTtao2Ws6dy0znu9sOaP1di/jKGW1M6VssO8vlpXCQcpZ+jisQ1tTFAC5Jo/EOzFbggBagFQ==
 
+"@solancer/two-way-map@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@solancer/two-way-map/-/two-way-map-1.0.4.tgz#4b03d91ae430c9d4d0e6acccd58e541ee21c0c93"
+  integrity sha512-Tt3hkLHhrqOR63eXXMXfCP+BLuOmNP0DH7uQalkYqM9PpfQyF0N7AZHPWN9NedX8S6987agh90+9/hpAVPjmzw==
+
 "@storybook/addon-actions@8.6.12":
   version "8.6.12"
   resolved "https://registry.yarnpkg.com/@storybook/addon-actions/-/addon-actions-8.6.12.tgz#b3a0ded04e0318f9dcad12c8946ae66426e0700e"
