@@ -92,7 +92,7 @@ export class CollectionsAdd extends BtrixElement {
         return;
       }
 
-      return new Fuse(names, { shouldSort: false, threshold: 0.2 });
+      return new Fuse(names, { threshold: 0.4, minMatchCharLength: 2 });
     },
     args: () => [this.searchValuesTask.value] as const,
   });
@@ -356,9 +356,9 @@ export class CollectionsAdd extends BtrixElement {
   private async dispatchChange() {
     await this.updateComplete;
     this.dispatchEvent(
-      new CustomEvent("collections-change", {
+      new CustomEvent<CollectionsChangeEvent["detail"]>("collections-change", {
         detail: { collections: this.collectionIds },
-      }) as CollectionsChangeEvent,
+      }),
     );
   }
 }

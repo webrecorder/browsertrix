@@ -13,8 +13,6 @@ import { isActualCollection } from "./utils";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Collection } from "@/types/collection";
 
-import "./linked-collections-list";
-
 /**
  * Display list of collections that are linked to a workflow or archived item by ID.
  *
