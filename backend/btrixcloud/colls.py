@@ -153,14 +153,15 @@ class CollectionOps:
             access=coll_in.access,
             defaultThumbnailName=coll_in.defaultThumbnailName,
             allowPublicDownload=coll_in.allowPublicDownload,
+            hasDedupIndex=coll_in.hasDedupIndex,
         )
         try:
             await self.collections.insert_one(coll.to_dict())
             org = await self.orgs.get_org_by_id(oid)
             await self.clear_org_previous_slugs_matching_slug(slug, org)
-            if coll_in.hasDedupIndex:
-                await self.toggle_dedup_index(coll.id, True)
-                coll.hasDedupIndex = True
+            # create collection index
+            if coll.hasDedupIndex:
+                await self.crawl_manager.create_coll_index(coll)
 
             if crawl_ids:
                 await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
@@ -209,24 +210,32 @@ class CollectionOps:
             db_update["$push"] = {"previousSlugs": previous_slug}
 
         try:
-            result = await self.collections.find_one_and_update(
+            prev_result = await self.collections.find_one_and_update(
                 {"_id": coll_id, "oid": org.id},
                 db_update,
-                return_document=pymongo.ReturnDocument.AFTER,
+                return_document=pymongo.ReturnDocument.BEFORE,
             )
         except pymongo.errors.DuplicateKeyError as err:
             # pylint: disable=raise-missing-from
             field = get_duplicate_key_error_field(err)
             raise HTTPException(status_code=400, detail=f"collection_{field}_taken")
 
-        if not result:
+        if not prev_result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         if slug_update:
             await self.clear_org_previous_slugs_matching_slug(slug_update, org)
 
-        if update.hasDedupIndex is not None:
-            await self.toggle_dedup_index(coll_id, update.hasDedupIndex)
+        # if dedup index is true, but was false
+        if update.hasDedupIndex and not prev_result.get("hasDedupIndex"):
+            # get latest coll, create index
+            coll = await self.get_collection(coll_id, org.id)
+            await self.crawl_manager.create_coll_index(coll)
+
+        # if dedup is false, but was true
+        if update.hasDedupIndex is False and prev_result.get("hasDedupIndex"):
+            # delete index -- may need extra restrictions
+            await self.crawl_manager.delete_coll_index(coll_id)
 
         return {"updated": True}
 
@@ -323,11 +332,11 @@ class CollectionOps:
 
         return result
 
-    async def toggle_dedup_index(self, coll_id: UUID, enabled: bool):
-        """toggle dedup index to be enabled/disabled for collection"""
+    async def enable_dedup_index(self, coll_id: UUID):
+        """enable dedup index if it doesn't exist yet"""
         result = await self.collections.find_one_and_update(
-            {"_id": coll_id, "hasDedupIndex": {"$ne": enabled}},
-            {"$set": {"hasDedupIndex": enabled}},
+            {"_id": coll_id, "hasDedupIndex": {"$ne": True}},
+            {"$set": {"hasDedupIndex": True}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
 
@@ -337,10 +346,9 @@ class CollectionOps:
 
         coll = Collection.from_dict(result)
 
-        if enabled:
-            return await self.crawl_manager.create_coll_index(coll)
+        await self.crawl_manager.create_coll_index(coll)
 
-        return await self.crawl_manager.delete_coll_index(coll.id)
+        return True
 
     async def get_collection_raw_by_slug(
         self,
