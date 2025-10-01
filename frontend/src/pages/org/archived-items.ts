@@ -786,7 +786,7 @@ export class CrawlsList extends BtrixElement {
         isSuccessfullyFinished(item),
         () => html`
           <btrix-menu-item-link
-            href=${`/api/orgs/${this.orgId}/all-crawls/${item.id}/download?auth_bearer=${authToken}`}
+            href=${`/api/orgs/${this.orgId}/all-crawls/${item.id}/download?auth_bearer=${authToken}&preferSingleWACZ=true`}
             download
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>

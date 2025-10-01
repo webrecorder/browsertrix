@@ -340,15 +340,17 @@ export class ArchivedItemDetail extends BtrixElement {
       case "files":
         sectionContent = this.renderPanel(
           html` ${this.renderTitle(this.tabLabels.files)}
-            <sl-tooltip content=${msg("Download Files as Multi-WACZ")}>
+            <sl-tooltip
+              content=${msg("Download all files as a single WACZ file")}
+            >
               <sl-button
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}&preferSingleWACZ=true`}
                 download=${`browsertrix-${this.itemId}.wacz`}
                 size="small"
                 variant="primary"
               >
                 <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-                ${msg("Download Files")}
+                ${msg("Download All")}
               </sl-button>
             </sl-tooltip>`,
           this.renderFiles(),
@@ -691,7 +693,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 `,
               )}
               <btrix-menu-item-link
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}&preferSingleWACZ=true`}
                 download
               >
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
