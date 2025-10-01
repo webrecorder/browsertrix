@@ -1,3 +1,6 @@
+/**
+ * Timezone ID is configured in web-test-runner config
+ */
 import { expect } from "@open-wc/testing";
 
 import { getScheduleInterval, humanizeSchedule } from "./cron";
@@ -46,19 +49,19 @@ describe("cron utils", () => {
   describe("humanizeSchedule()", () => {
     it("humanizes daily schedule", () => {
       expect(humanizeSchedule("30 1 * * *")).to.equal(
-        "Every day at 8:30 PM GMT-5",
+        "Every day at 1:30 PM GMT+12",
       );
     });
 
     it("humanizes weekly schedule", () => {
       expect(humanizeSchedule("30 1 * * 1")).to.equal(
-        "Every Sunday at 8:30 PM GMT-5",
+        "Every Monday at 1:30 PM GMT+12",
       );
     });
 
     it("humanizes monthly schedule", () => {
       expect(humanizeSchedule("30 1 1 * *")).to.equal(
-        "On day 30 of the month at 8:30 PM GMT-5",
+        "On day 1 of the month at 1:30 PM GMT+12",
       );
     });
 
