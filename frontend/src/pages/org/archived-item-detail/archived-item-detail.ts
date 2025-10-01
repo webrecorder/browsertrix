@@ -10,6 +10,7 @@ import capitalize from "lodash/fp/capitalize";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
+import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
 import { pageBack, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
@@ -115,6 +116,9 @@ export class ArchivedItemDetail extends BtrixElement {
 
   @query("#cancelQARunDialog")
   private readonly cancelQARunDialog?: Dialog | null;
+
+  @query("btrix-item-metadata-editor")
+  private readonly editDialog?: CrawlMetadataEditor | null;
 
   private readonly tabLabels: Omit<
     Record<SectionName, string>,
@@ -421,7 +425,7 @@ export class ArchivedItemDetail extends BtrixElement {
                       <sl-icon-button
                         class="text-base"
                         name="pencil"
-                        @click=${this.openMetadataEditor}
+                        @click=${() => this.openMetadataEditor("metadata")}
                         label=${msg("Edit Archived Item")}
                       ></sl-icon-button>
                     `,
@@ -441,7 +445,7 @@ export class ArchivedItemDetail extends BtrixElement {
                       <sl-icon-button
                         class="text-base"
                         name="pencil"
-                        @click=${this.openMetadataEditor}
+                        @click=${() => this.openMetadataEditor("collections")}
                         label=${msg("Edit Archived Item")}
                       ></sl-icon-button>
                     `,
@@ -669,11 +673,7 @@ export class ArchivedItemDetail extends BtrixElement {
           ${when(
             this.isCrawler,
             () => html`
-              <sl-menu-item
-                @click=${() => {
-                  this.openMetadataEditor();
-                }}
-              >
+              <sl-menu-item @click=${this.openMetadataEditor}>
                 <sl-icon name="pencil" slot="prefix"></sl-icon>
                 ${msg("Edit Archived Item")}
               </sl-menu-item>
@@ -1319,7 +1319,26 @@ export class ArchivedItemDetail extends BtrixElement {
     }
   }
 
-  private openMetadataEditor() {
+  private openMetadataEditor(section?: "metadata" | "collections") {
+    if (section) {
+      this.editDialog?.addEventListener(
+        "sl-after-show",
+        () => {
+          switch (section) {
+            case "metadata":
+              this.editDialog?.descriptionInput?.focus();
+              break;
+            case "collections":
+              this.editDialog?.collectionInput?.focus();
+              break;
+            default:
+              break;
+          }
+        },
+        { once: true },
+      );
+    }
+
     this.openDialogName = "metadata";
   }
 
