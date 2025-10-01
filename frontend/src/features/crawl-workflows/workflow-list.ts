@@ -19,6 +19,9 @@ import {
   query,
   queryAssignedElements,
 } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
+
+import { ShareableNotice } from "./templates/shareable-notice";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
@@ -250,7 +253,8 @@ export class WorkflowListItem extends BtrixElement {
       }}
     >
       <div class="col">
-        <div class="detail url truncate">
+        <div class="detail url items-center truncate">
+          ${when(this.workflow?.shareable, ShareableNotice)}
           ${this.safeRender(this.renderName)}
         </div>
         <div class="desc">

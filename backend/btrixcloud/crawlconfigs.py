@@ -16,7 +16,7 @@ from uuid import UUID, uuid4
 import urllib.parse
 
 import aiohttp
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
@@ -27,17 +27,20 @@ from .models import (
     CrawlConfigOut,
     CrawlConfigTags,
     CrawlOut,
+    CrawlOutWithResources,
     UpdateCrawlConfig,
     Organization,
     User,
     PaginatedCrawlConfigOutResponse,
     PaginatedSeedResponse,
     PaginatedConfigRevisionResponse,
+    SUCCESSFUL_STATES,
     FAILED_STATES,
     CrawlerChannel,
     CrawlerChannels,
     StartedResponse,
     SuccessResponse,
+    EmptyResponse,
     CrawlConfigAddedResponse,
     CrawlConfigSearchValues,
     CrawlConfigUpdateResponse,
@@ -339,6 +342,7 @@ class CrawlConfigOps:
             proxyId=config_in.proxyId,
             firstSeed=first_seed,
             seedCount=seed_count,
+            shareable=config_in.shareable,
         )
 
         if config_in.runNow:
@@ -572,6 +576,9 @@ class CrawlConfigOps:
         )
         changed = changed or self.check_attr_changed(
             orig_crawl_config, update, "browserWindows"
+        )
+        changed = changed or (
+            self.check_attr_changed(orig_crawl_config, update, "shareable")
         )
 
         schedule_changed = self.check_attr_changed(
@@ -846,6 +853,30 @@ class CrawlConfigOps:
 
         if len(crawls) == 1:
             return crawls[0]
+
+        return None
+
+    async def get_last_successful_crawl_out(
+        self,
+        cid: UUID,
+        org: Organization,
+        request: Optional[Request] = None,
+    ) -> Optional[CrawlOutWithResources]:
+        """Return the last successful crawl out with resources for this config, if any"""
+        headers = dict(request.headers) if request else None
+        match_query = {
+            "cid": cid,
+            "oid": org.id,
+            "finished": {"$ne": None},
+            "state": {"$in": SUCCESSFUL_STATES},
+        }
+        last_crawl = await self.crawls.find_one(
+            match_query, sort=[("finished", pymongo.DESCENDING)]
+        )
+        if last_crawl:
+            return await self.crawl_ops.get_crawl_out(
+                last_crawl["_id"], org, "crawl", headers=headers, cid=cid
+            )
 
         return None
 
@@ -1503,6 +1534,7 @@ def init_crawl_config_api(
 
     org_crawl_dep = org_ops.org_crawl_dep
     org_viewer_dep = org_ops.org_viewer_dep
+    org_public = org_ops.org_public
 
     @router.get("", response_model=PaginatedCrawlConfigOutResponse)
     async def get_crawl_configs(
@@ -1618,6 +1650,38 @@ def init_crawl_config_api(
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         return ops.get_crawler_proxies()
+
+    @app.get(
+        "/orgs/{oid}/crawlconfigs/{cid}/public/replay.json",
+        response_model=CrawlOutWithResources,
+    )
+    async def get_crawl_config_latest_crawl_public_replay(
+        request: Request,
+        response: Response,
+        cid: UUID,
+        org: Organization = Depends(org_public),
+    ):
+        crawl_config = await ops.get_crawl_config(cid, org.id, active_only=True)
+        if not crawl_config.shareable:
+            raise HTTPException(status_code=404, detail="crawl_config_not_found")
+
+        last_successful_crawl_out = await ops.get_last_successful_crawl_out(
+            cid, org, request
+        )
+
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return last_successful_crawl_out
+
+    @app.options(
+        "orgs/{oid}/crawlconfigs/{cid}/public/replay.json",
+        response_model=EmptyResponse,
+    )
+    async def get_replay_preflight(response: Response):
+        response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return {}
 
     @router.get("/{cid}/seeds", response_model=PaginatedSeedResponse)
     async def get_crawl_config_seeds(
