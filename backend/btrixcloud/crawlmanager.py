@@ -477,7 +477,7 @@ class CrawlManager(K8sAPI):
         params = {
             "id": str(collection.id),
             "oid": str(collection.oid),
-            "collItemsUpdatedAddAt": date_to_str(collection.modified or dt_now()),
+            "collItemsUpdatedAt": date_to_str(collection.modified or dt_now()),
         }
         data = self.templates.env.get_template("coll_index.yaml").render(params)
 
