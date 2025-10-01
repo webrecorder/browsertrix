@@ -40,7 +40,7 @@ export default {
         channel: "chromium",
       },
       async createBrowserContext({ browser }) {
-        return browser.newContext({ timezoneId: "Pacific/Easter" });
+        return browser.newContext({ timezoneId: "Pacific/Fiji" }); // SDT +12:00
       },
     }),
   ],

@@ -1,3 +1,6 @@
+/**
+ * Timezone ID is configured in web-test-runner config
+ */
 import { expect } from "@open-wc/testing";
 import { restore, stub } from "sinon";
 
@@ -70,7 +73,7 @@ describe("Localize", () => {
       const localize = new Localize();
       localize.setLanguage("es");
       expect(localize.date(new Date("2024-01-01T00:00:00.000Z"))).to.equal(
-        "31/12/2023, 19:00",
+        "01/01/2024, 12:00",
       );
     });
 
@@ -110,7 +113,7 @@ describe("Localize", () => {
     it("formats with the current language", () => {
       const localize = new Localize("ko");
       expect(localize.date(new Date("2024-01-01T00:00:00.000Z"))).to.equal(
-        "2023. 12. 31. 오후 07:00",
+        "2024. 01. 01. 오후 12:00",
       );
     });
 
