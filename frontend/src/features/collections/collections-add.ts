@@ -55,7 +55,7 @@ export class CollectionsAdd extends BtrixElement {
   @state()
   private collectionIds: string[] = [];
 
-  @query("sl-input")
+  @query("#search-input")
   private readonly input?: SlInput | null;
 
   @query("btrix-combobox")
@@ -81,6 +81,11 @@ export class CollectionsAdd extends BtrixElement {
     },
     args: () => [this.searchByValue, this.hasSearchStr] as const,
   });
+
+  public focus() {
+    // Move focus to search input
+    this.input?.focus();
+  }
 
   connectedCallback() {
     if (this.initialCollections) {
@@ -152,6 +157,7 @@ export class CollectionsAdd extends BtrixElement {
         }}
       >
         <sl-input
+          id="search-input"
           size="small"
           placeholder=${msg("Search by Collection name")}
           clearable
