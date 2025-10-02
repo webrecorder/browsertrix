@@ -2290,7 +2290,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
           .label=${msg("Auto-Add to Collection")}
           .initialCollections=${this.formState.autoAddCollections}
           .configId=${this.configId}
-          emptyText=${msg("Search for a Collection to auto-add crawls")}
           @collections-change=${(e: CollectionsChangeEvent) =>
             this.updateFormState(
               {
@@ -2299,6 +2298,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
               true,
             )}
         ></btrix-collections-add>
+        ${when(
+          !this.formState.autoAddCollections.length,
+          () => html`
+            <div class="mt-2 rounded-lg border p-3 text-neutral-500">
+              <p class="text-center">${msg("No collections selected.")}</p>
+            </div>
+          `,
+        )}
       `)}
       ${this.renderHelpTextCol(
         msg(`Automatically add crawls from this workflow to one or more collections

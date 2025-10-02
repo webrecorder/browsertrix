@@ -4,15 +4,19 @@ import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import isEqual from "lodash/fp/isEqual";
 
-import type { CollectionLikeItem } from "./types";
+import type {
+  BtrixLoadedLinkedCollectionEvent,
+  CollectionLikeItem,
+} from "./types";
+import { isActualCollection } from "./utils";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Collection } from "@/types/collection";
 
-import "./linked-collections-list";
-
 /**
  * Display list of collections that are linked to a workflow or archived item by ID.
+ *
+ * @fires btrix-loaded
  */
 @customElement("btrix-linked-collections")
 @localized()
@@ -22,7 +26,7 @@ export class LinkedCollections extends BtrixElement {
    * unnecessarily fetched if IDs have not changed
    */
   @property({ type: Array, hasChanged: (a, b) => !isEqual(a, b) })
-  collectionIds: string[] = [];
+  collections: (string | CollectionLikeItem)[] = [];
 
   @property({ type: Boolean })
   removable?: boolean;
@@ -47,36 +51,62 @@ export class LinkedCollections extends BtrixElement {
   }
 
   private readonly collectionsTask = new Task(this, {
-    task: async ([ids]) => {
+    task: async ([collections]) => {
       // The API doesn't currently support getting collections by a list of IDs
-      const collectionsWithRequest: {
-        id: string;
-        request: Promise<CollectionLikeItem>;
-      }[] = [];
+      const collectionsWithRequest: (
+        | {
+            id: string;
+            request: Promise<CollectionLikeItem>;
+          }
+        | CollectionLikeItem
+      )[] = [];
 
-      ids.forEach(async (id) => {
-        let request = this.collectionsMap.get(id);
+      collections.forEach(async (collOrId) => {
+        const idIsString = typeof collOrId === "string";
 
-        if (!request) {
-          request = this.fetchCollection(
-            id,
-            this.collectionsTaskController.signal,
-          );
+        if (idIsString || !isActualCollection(collOrId)) {
+          const id = idIsString ? collOrId : collOrId.id;
 
-          this.collectionsMap.set(id, request);
+          // Render async list that requests collection data
+          let request = this.collectionsMap.get(id);
+
+          if (!request) {
+            request = this.fetchCollection(
+              id,
+              this.collectionsTaskController.signal,
+            );
+
+            this.collectionsMap.set(id, request);
+          }
+
+          collectionsWithRequest.push({ id, request });
+
+          void request.then((item) => {
+            this.dispatchEvent(
+              new CustomEvent<BtrixLoadedLinkedCollectionEvent["detail"]>(
+                "btrix-loaded",
+                {
+                  detail: { item },
+                },
+              ),
+            );
+          });
+        } else {
+          collectionsWithRequest.push(collOrId);
         }
-
-        collectionsWithRequest.push({ id, request });
       });
 
       return collectionsWithRequest;
     },
-    args: () => [this.collectionIds] as const,
+    args: () => [this.collections] as const,
   });
 
   render() {
     const collections =
-      this.collectionsTask.value || this.collectionIds.map((id) => ({ id }));
+      this.collectionsTask.value ||
+      this.collections.map((collOrId) =>
+        typeof collOrId === "string" ? { id: collOrId } : collOrId,
+      );
 
     return html`<btrix-linked-collections-list
       aria-live="polite"

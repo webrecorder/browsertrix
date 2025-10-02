@@ -6,3 +6,7 @@ export type CollectionLikeItem = Collection | { id: string; name?: string };
 
 export type BtrixRemoveLinkedCollectionEvent =
   BtrixRemoveEvent<CollectionLikeItem>;
+
+export type BtrixLoadedLinkedCollectionEvent = CustomEvent<{
+  item: CollectionLikeItem;
+}>;
