@@ -66,7 +66,7 @@ export class WorkflowTagFilter extends BtrixElement {
   private selected = new Map<string, boolean>();
 
   @state()
-  private type: "and" | "or" = "or";
+  type: "and" | "or" = "or";
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("tags")) {
@@ -76,7 +76,10 @@ export class WorkflowTagFilter extends BtrixElement {
         this.selected = new Map();
       }
     }
-    if (changedProperties.has("selectedTags")) {
+    if (
+      changedProperties.has("selectedTags") ||
+      changedProperties.has("type")
+    ) {
       this.dispatchEvent(
         new CustomEvent<
           BtrixChangeEvent<ChangeWorkflowTagEventDetails>["detail"]
