@@ -301,6 +301,10 @@ export class CrawlsList extends BtrixElement {
           signal,
         );
 
+        if (this.getArchivedItemsTimeout) {
+          window.clearTimeout(this.getArchivedItemsTimeout);
+        }
+
         this.getArchivedItemsTimeout = window.setTimeout(() => {
           void this.archivedItemsTask.run();
         }, POLL_INTERVAL_SECONDS * 1000);
