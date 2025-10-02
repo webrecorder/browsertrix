@@ -669,6 +669,7 @@ export class WorkflowsList extends BtrixElement {
 
       <btrix-workflow-tag-filter
         .tags=${this.filterByTags}
+        .type=${this.filterByTagsType}
         @btrix-change=${(e: BtrixChangeWorkflowTagFilterEvent) => {
           this.filterByTags = e.detail.value?.tags;
           this.filterByTagsType = e.detail.value?.type || "or";
