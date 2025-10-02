@@ -159,6 +159,16 @@ export class ArchivedItemTagFilter extends BtrixElement {
                       });
 
                       this.type = "or";
+
+                      this.dispatchEvent(
+                        new CustomEvent<
+                          BtrixChangeEvent<ChangeArchivedItemTagEventDetails>["detail"]
+                        >("btrix-change", {
+                          detail: {
+                            value: undefined,
+                          },
+                        }),
+                      );
                     }}
                     >${msg("Clear")}</sl-button
                   >`
