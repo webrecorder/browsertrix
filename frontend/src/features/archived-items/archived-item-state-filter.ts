@@ -53,7 +53,7 @@ export class ArchivedItemStateFilter extends BtrixElement {
   private readonly fuse = new Fuse<CrawlState>(finishedCrawlStates);
 
   @state()
-  private get selectedStates() {
+  get selectedStates() {
     return Array.from(this.selected.entries())
       .filter(([_tag, selected]) => selected)
       .map(([tag]) => tag);
@@ -68,6 +68,15 @@ export class ArchivedItemStateFilter extends BtrixElement {
       } else if (changedProperties.get("states")) {
         this.selected = new Map();
       }
+    }
+    if (changedProperties.has("selectedStates")) {
+      this.dispatchEvent(
+        new CustomEvent<
+          BtrixChangeEvent<ChangeArchivedItemStateEventDetails>["detail"]
+        >("btrix-change", {
+          detail: { value: this.selectedStates },
+        }),
+      );
     }
   }
 
@@ -87,14 +96,6 @@ export class ArchivedItemStateFilter extends BtrixElement {
         }}
         @sl-after-hide=${() => {
           this.searchString = "";
-
-          this.dispatchEvent(
-            new CustomEvent<
-              BtrixChangeEvent<ChangeArchivedItemStateEventDetails>["detail"]
-            >("btrix-change", {
-              detail: { value: this.selectedStates },
-            }),
-          );
         }}
       >
         ${this.states?.length

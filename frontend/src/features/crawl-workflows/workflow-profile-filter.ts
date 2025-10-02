@@ -59,6 +59,19 @@ export class WorkflowProfileFilter extends BtrixElement {
 
   private selected = new Map<string, boolean>();
 
+  @state()
+  get selectedProfiles() {
+    const selectedProfiles = [];
+
+    for (const [profile, value] of this.selected) {
+      if (value) {
+        selectedProfiles.push(profile);
+      }
+    }
+
+    return selectedProfiles;
+  }
+
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("profiles")) {
       if (this.profiles) {
@@ -66,6 +79,17 @@ export class WorkflowProfileFilter extends BtrixElement {
       } else if (changedProperties.get("profiles")) {
         this.selected = new Map();
       }
+    }
+    if (changedProperties.has("selectedProfiles")) {
+      this.dispatchEvent(
+        new CustomEvent<BtrixChangeEvent["detail"]>("btrix-change", {
+          detail: {
+            value: this.selectedProfiles.length
+              ? this.selectedProfiles
+              : undefined,
+          },
+        }),
+      );
     }
   }
 
@@ -105,22 +129,6 @@ export class WorkflowProfileFilter extends BtrixElement {
         }}
         @sl-after-hide=${() => {
           this.searchString = "";
-
-          const selectedProfiles = [];
-
-          for (const [profile, value] of this.selected) {
-            if (value) {
-              selectedProfiles.push(profile);
-            }
-          }
-
-          this.dispatchEvent(
-            new CustomEvent<BtrixChangeEvent["detail"]>("btrix-change", {
-              detail: {
-                value: selectedProfiles.length ? selectedProfiles : undefined,
-              },
-            }),
-          );
         }}
       >
         ${this.profiles?.length
@@ -344,6 +352,7 @@ export class WorkflowProfileFilter extends BtrixElement {
           const { checked, value } = e.target as SlCheckbox;
 
           this.selected.set(value, checked);
+          this.requestUpdate("selectedProfiles");
         }}
       >
         ${repeat(

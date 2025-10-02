@@ -20,6 +20,7 @@ import { repeat } from "lit/directives/repeat.js";
 import { isFocusable } from "tabbable";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { type FilterChip } from "@/components/ui/filter-chip";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
 import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
 import { stopProp } from "@/utils/events";
@@ -57,7 +58,7 @@ export class ArchivedItemTagFilter extends BtrixElement {
   });
 
   @state()
-  private get selectedTags() {
+  get selectedTags() {
     return Array.from(this.selected.entries())
       .filter(([_tag, selected]) => selected)
       .map(([tag]) => tag);
@@ -68,6 +69,9 @@ export class ArchivedItemTagFilter extends BtrixElement {
   @state()
   private type: "and" | "or" = "or";
 
+  @query("btrix-filter-chip")
+  private readonly filterChip?: FilterChip | null;
+
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("tags")) {
       if (this.tags) {
@@ -75,6 +79,19 @@ export class ArchivedItemTagFilter extends BtrixElement {
       } else if (changedProperties.get("tags")) {
         this.selected = new Map();
       }
+    }
+    if (changedProperties.has("selectedTags")) {
+      this.dispatchEvent(
+        new CustomEvent<
+          BtrixChangeEvent<ChangeArchivedItemTagEventDetails>["detail"]
+        >("btrix-change", {
+          detail: {
+            value: this.selectedTags.length
+              ? { tags: this.selectedTags, type: this.type }
+              : undefined,
+          },
+        }),
+      );
     }
   }
 
@@ -105,18 +122,6 @@ export class ArchivedItemTagFilter extends BtrixElement {
         }}
         @sl-after-hide=${() => {
           this.searchString = "";
-
-          this.dispatchEvent(
-            new CustomEvent<
-              BtrixChangeEvent<ChangeArchivedItemTagEventDetails>["detail"]
-            >("btrix-change", {
-              detail: {
-                value: this.selectedTags.length
-                  ? { tags: this.selectedTags, type: this.type }
-                  : undefined,
-              },
-            }),
-          );
         }}
       >
         ${this.tags?.length
@@ -154,16 +159,6 @@ export class ArchivedItemTagFilter extends BtrixElement {
                       });
 
                       this.type = "or";
-
-                      this.dispatchEvent(
-                        new CustomEvent<
-                          BtrixChangeEvent<ChangeArchivedItemTagEventDetails>["detail"]
-                        >("btrix-change", {
-                          detail: {
-                            value: undefined,
-                          },
-                        }),
-                      );
                     }}
                     >${msg("Clear")}</sl-button
                   >`

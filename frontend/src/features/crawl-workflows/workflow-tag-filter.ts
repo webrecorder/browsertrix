@@ -57,7 +57,7 @@ export class WorkflowTagFilter extends BtrixElement {
   });
 
   @state()
-  private get selectedTags() {
+  get selectedTags() {
     return Array.from(this.selected.entries())
       .filter(([_tag, selected]) => selected)
       .map(([tag]) => tag);
@@ -75,6 +75,19 @@ export class WorkflowTagFilter extends BtrixElement {
       } else if (changedProperties.get("tags")) {
         this.selected = new Map();
       }
+    }
+    if (changedProperties.has("selectedTags")) {
+      this.dispatchEvent(
+        new CustomEvent<
+          BtrixChangeEvent<ChangeWorkflowTagEventDetails>["detail"]
+        >("btrix-change", {
+          detail: {
+            value: this.selectedTags.length
+              ? { tags: this.selectedTags, type: this.type }
+              : undefined,
+          },
+        }),
+      );
     }
   }
 
@@ -105,18 +118,6 @@ export class WorkflowTagFilter extends BtrixElement {
         }}
         @sl-after-hide=${() => {
           this.searchString = "";
-
-          this.dispatchEvent(
-            new CustomEvent<
-              BtrixChangeEvent<ChangeWorkflowTagEventDetails>["detail"]
-            >("btrix-change", {
-              detail: {
-                value: this.selectedTags.length
-                  ? { tags: this.selectedTags, type: this.type }
-                  : undefined,
-              },
-            }),
-          );
         }}
       >
         ${this.tags?.length
