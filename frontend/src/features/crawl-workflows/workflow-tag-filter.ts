@@ -156,18 +156,10 @@ export class WorkflowTagFilter extends BtrixElement {
                       this.checkboxes.forEach((checkbox) => {
                         checkbox.checked = false;
                       });
+                      this.selected = new Map();
 
                       this.type = "or";
-
-                      this.dispatchEvent(
-                        new CustomEvent<
-                          BtrixChangeEvent<ChangeWorkflowTagEventDetails>["detail"]
-                        >("btrix-change", {
-                          detail: {
-                            value: undefined,
-                          },
-                        }),
-                      );
+                      this.requestUpdate("selectedTags");
                     }}
                     >${msg("Clear")}</sl-button
                   >`

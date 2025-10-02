@@ -168,17 +168,9 @@ export class WorkflowProfileFilter extends BtrixElement {
                       this.checkboxes.forEach((checkbox) => {
                         checkbox.checked = false;
                       });
+                      this.selected = new Map();
 
-                      this.dispatchEvent(
-                        new CustomEvent<BtrixChangeEvent["detail"]>(
-                          "btrix-change",
-                          {
-                            detail: {
-                              value: undefined,
-                            },
-                          },
-                        ),
-                      );
+                      this.requestUpdate("selectedProfiles");
                     }}
                     >${msg("Clear")}</sl-button
                   >`
