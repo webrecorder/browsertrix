@@ -1,12 +1,17 @@
+import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
-import { Task, TaskStatus } from "@lit/task";
+import { Task } from "@lit/task";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
-import Fuse from "fuse.js";
 import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import queryString from "query-string";
+
+import {
+  collectionQueryContext,
+  type CollectionQueryContext,
+} from "./context/collectionQuery";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Combobox } from "@/components/ui/combobox";
@@ -20,7 +25,7 @@ import type {
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import type { Collection, CollectionSearchValues } from "@/types/collection";
+import type { Collection } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
 import { TwoWayMap } from "@/utils/TwoWayMap";
 
@@ -45,6 +50,9 @@ export type CollectionsChangeEvent = CustomEvent<{
 @customElement("btrix-collections-add")
 @localized()
 export class CollectionsAdd extends BtrixElement {
+  @consume({ context: collectionQueryContext, subscribe: true })
+  private readonly collectionQuery?: CollectionQueryContext;
+
   @property({ type: Array })
   initialCollections?: string[];
 
@@ -77,26 +85,6 @@ export class CollectionsAdd extends BtrixElement {
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
-
-  private readonly searchValuesTask = new Task(this, {
-    task: async (_args, { signal }) => {
-      const { names } = await this.getSearchValues(signal);
-
-      return names;
-    },
-    args: () => [] as const,
-  });
-
-  private readonly searchTask = new Task(this, {
-    task: async ([names], { signal }) => {
-      if (!names || signal.aborted) {
-        return;
-      }
-
-      return new Fuse(names, { threshold: 0.4, minMatchCharLength: 2 });
-    },
-    args: () => [this.searchValuesTask.value] as const,
-  });
 
   private readonly searchResultsTask = new Task(this, {
     task: async ([searchByValue, hasSearchStr], { signal }) => {
@@ -167,7 +155,7 @@ export class CollectionsAdd extends BtrixElement {
   }
 
   private renderSearch() {
-    const disabled = !this.searchValuesTask.value?.length;
+    const disabled = !this.collectionQuery?.records.length;
 
     return html`
       <btrix-combobox
@@ -178,7 +166,7 @@ export class CollectionsAdd extends BtrixElement {
         @sl-select=${async (e: CustomEvent<{ item: SlMenuItem }>) => {
           this.combobox?.hide();
           const item = e.detail.item;
-          const name = item.dataset["key"];
+          const name = item.dataset["value"];
 
           const collections = await this.getCollections({ namePrefix: name });
           const coll = collections.items.find((c) => c.name === name);
@@ -215,7 +203,7 @@ export class CollectionsAdd extends BtrixElement {
         >
           <sl-icon name="search" slot="prefix"></sl-icon>
           ${when(
-            disabled && this.searchValuesTask.status === TaskStatus.COMPLETE,
+            disabled && this.collectionQuery?.records,
             () => html`
               <div slot="help-text">
                 ${msg("No collections found.")}
@@ -234,47 +222,50 @@ export class CollectionsAdd extends BtrixElement {
   }
 
   private renderSearchResults() {
-    return this.searchTask.render({
-      pending: () => html`
+    if (!this.collectionQuery) {
+      html`
         <sl-menu-item slot="menu-item" disabled>
           <sl-spinner></sl-spinner>
         </sl-menu-item>
-      `,
-      complete: (fuse) => {
-        if (!this.hasSearchStr) {
-          return html`
-            <sl-menu-item slot="menu-item" disabled>
-              ${msg("Start typing to search Collections.")}
-            </sl-menu-item>
-          `;
-        }
+      `;
+    }
 
-        const results = fuse
-          ?.search(this.searchByValue)
-          // Filter out items that have been selected
-          .filter(({ item }) => !this.nameSearchMap.get(item))
-          // Show first few results
-          .slice(0, 5);
+    if (!this.hasSearchStr) {
+      return html`
+        <sl-menu-item slot="menu-item" disabled>
+          ${msg("Start typing to search Collections.")}
+        </sl-menu-item>
+      `;
+    }
 
-        if (!results?.length) {
-          return html`
-            <sl-menu-item slot="menu-item" disabled>
-              ${msg("No matching Collections found.")}
-            </sl-menu-item>
-          `;
-        }
+    const results = this.collectionQuery
+      ?.search(this.searchByValue)
+      // Filter out items that have been selected
+      .filter(({ item }) => !this.nameSearchMap.get(item.name))
+      // Show first few results
+      .slice(0, 5);
 
+    if (!results?.length) {
+      return html`
+        <sl-menu-item slot="menu-item" disabled>
+          ${msg("No matching Collections found.")}
+        </sl-menu-item>
+      `;
+    }
+
+    return html`
+      ${results.map(({ item }) => {
         return html`
-          ${results.map(({ item }: { item: string }) => {
-            return html`
-              <sl-menu-item slot="menu-item" data-key=${item}>
-                ${item}
-              </sl-menu-item>
-            `;
-          })}
+          <sl-menu-item
+            slot="menu-item"
+            data-key="name"
+            data-value=${item["name"]}
+          >
+            ${item["name"]}
+          </sl-menu-item>
         `;
-      },
-    });
+      })}
+    `;
   }
 
   private removeCollection(collectionId: string) {
@@ -352,13 +343,6 @@ export class CollectionsAdd extends BtrixElement {
     );
 
     return data;
-  }
-
-  private async getSearchValues(signal: AbortSignal) {
-    return await this.api.fetch<CollectionSearchValues>(
-      `/orgs/${this.orgId}/collections/search-values`,
-      { signal },
-    );
   }
 
   private async dispatchChange() {

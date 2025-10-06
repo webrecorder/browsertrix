@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import type {
   SlChangeEvent,
@@ -5,7 +6,6 @@ import type {
   SlMenuItem,
   SlRadioGroup,
 } from "@shoelace-style/shoelace";
-import Fuse from "fuse.js";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
@@ -20,6 +20,10 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
+import {
+  collectionQueryContext,
+  type CollectionQueryContext,
+} from "@/features/collections/context/collectionQuery";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
@@ -27,11 +31,7 @@ import { RouteNamespace } from "@/routes";
 import { metadata } from "@/strings/collections/metadata";
 import { monthYearDateRange } from "@/strings/utils";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import {
-  CollectionAccess,
-  type Collection,
-  type CollectionSearchValues,
-} from "@/types/collection";
+import { CollectionAccess, type Collection } from "@/types/collection";
 import { SortDirection, type UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { pluralOf } from "@/utils/pluralize";
@@ -39,12 +39,6 @@ import { tw } from "@/utils/tailwind";
 
 type Collections = APIPaginatedList<Collection>;
 type SearchFields = "name";
-type SearchResult = {
-  item: {
-    key: SearchFields;
-    value: string;
-  };
-};
 type SortField =
   | "modified"
   | "dateLatest"
@@ -92,6 +86,9 @@ enum ListView {
 @customElement("btrix-collections-list")
 @localized()
 export class CollectionsList extends BtrixElement {
+  @consume({ context: collectionQueryContext, subscribe: true })
+  private readonly collectionQuery?: CollectionQueryContext;
+
   @property({ type: Boolean })
   isCrawler?: boolean;
 
@@ -138,13 +135,6 @@ export class CollectionsList extends BtrixElement {
   @query("sl-input")
   private readonly input?: SlInput | null;
 
-  // For fuzzy search:
-  private readonly fuse = new Fuse<{ key: "name"; value: string }>([], {
-    keys: ["value"],
-    shouldSort: false,
-    threshold: 0.2, // stricter; default is 0.6
-  });
-
   private getShareLink(collection: Collection) {
     return `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}/${collection.access === CollectionAccess.Private ? `${RouteNamespace.PrivateOrgs}/${this.orgSlugState}/collections/view` : `${RouteNamespace.PublicOrgs}/${this.orgSlugState}/collections`}/${collection.slug}`;
   }
@@ -159,10 +149,6 @@ export class CollectionsList extends BtrixElement {
     if (changedProperties.has("filterBy") || changedProperties.has("orderBy")) {
       void this.fetchCollections();
     }
-  }
-
-  protected firstUpdated() {
-    void this.fetchSearchValues();
   }
 
   render() {
@@ -437,7 +423,8 @@ export class CollectionsList extends BtrixElement {
       `;
     }
 
-    const searchResults = this.fuse.search(this.searchByValue).slice(0, 10);
+    const searchResults =
+      this.collectionQuery?.search(this.searchByValue).slice(0, 10) || [];
     if (!searchResults.length) {
       return html`
         <sl-menu-item slot="menu-item" disabled
@@ -448,13 +435,9 @@ export class CollectionsList extends BtrixElement {
 
     return html`
       ${searchResults.map(
-        ({ item }: SearchResult) => html`
-          <sl-menu-item
-            slot="menu-item"
-            data-key=${item.key}
-            value=${item.value}
-          >
-            ${item.value}
+        ({ item }) => html`
+          <sl-menu-item slot="menu-item" data-key="name" value=${item.name}>
+            ${item.name}
           </sl-menu-item>
         `,
       )}
@@ -808,26 +791,6 @@ export class CollectionsList extends BtrixElement {
         icon: "exclamation-octagon",
         id: "collection-delete-status",
       });
-    }
-  }
-
-  private async fetchSearchValues() {
-    try {
-      const searchValues: CollectionSearchValues = await this.api.fetch(
-        `/orgs/${this.orgId}/collections/search-values`,
-      );
-      const names = searchValues.names;
-
-      // Update search/filter collection
-      const toSearchItem =
-        (key: SearchFields) =>
-        (value: string): SearchResult["item"] => ({
-          key,
-          value,
-        });
-      this.fuse.setCollection([...names.map(toSearchItem("name"))]);
-    } catch (e) {
-      console.debug(e);
     }
   }
 

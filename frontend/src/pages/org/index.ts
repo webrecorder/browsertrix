@@ -21,6 +21,7 @@ import { proxiesContext, type ProxiesContext } from "@/context/org";
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
+import { CollectionQueryProvider } from "@/features/collections/controllers/collectionQueryProvider";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
 import type { ProxiesAPIResponse } from "@/types/crawler";
@@ -122,6 +123,8 @@ export class Org extends BtrixElement {
   @state()
   private isCreateDialogVisible = false;
 
+  private readonly collectionQueryProvider = new CollectionQueryProvider(this);
+
   connectedCallback() {
     if (
       !this.orgTab ||
@@ -177,6 +180,7 @@ export class Org extends BtrixElement {
     } else if (changedProperties.has("orgTab") && this.orgId) {
       // Get most up to date org data
       void this.updateOrg();
+      void this.collectionQueryProvider.refresh();
     }
     if (changedProperties.has("openDialogName")) {
       // Sync URL to create dialog
