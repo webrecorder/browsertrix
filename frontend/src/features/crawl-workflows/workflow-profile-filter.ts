@@ -57,20 +57,8 @@ export class WorkflowProfileFilter extends BtrixElement {
     keys: ["id", "name", "description", "origins"],
   });
 
-  private selected = new Map<string, boolean>();
-
   @state()
-  get selectedProfiles() {
-    const selectedProfiles = [];
-
-    for (const [profile, value] of this.selected) {
-      if (value) {
-        selectedProfiles.push(profile);
-      }
-    }
-
-    return selectedProfiles;
-  }
+  private selected = new Map<string, boolean>();
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("profiles")) {
@@ -81,12 +69,18 @@ export class WorkflowProfileFilter extends BtrixElement {
       }
     }
     if (changedProperties.has("selectedProfiles")) {
+      const selectedProfiles = [];
+
+      for (const [profile, value] of this.selected) {
+        if (value) {
+          selectedProfiles.push(profile);
+        }
+      }
+
       this.dispatchEvent(
         new CustomEvent<BtrixChangeEvent["detail"]>("btrix-change", {
           detail: {
-            value: this.selectedProfiles.length
-              ? this.selectedProfiles
-              : undefined,
+            value: selectedProfiles.length ? selectedProfiles : undefined,
           },
         }),
       );
@@ -170,7 +164,7 @@ export class WorkflowProfileFilter extends BtrixElement {
                       });
                       this.selected = new Map();
 
-                      this.requestUpdate("selectedProfiles");
+                      this.requestUpdate("selected");
                     }}
                     >${msg("Clear")}</sl-button
                   >`
@@ -344,7 +338,7 @@ export class WorkflowProfileFilter extends BtrixElement {
           const { checked, value } = e.target as SlCheckbox;
 
           this.selected.set(value, checked);
-          this.requestUpdate("selectedProfiles");
+          this.requestUpdate("selected");
         }}
       >
         ${repeat(
