@@ -204,6 +204,10 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
         error: false,
         completed: hasConfigId,
       },
+      deduplication: {
+        error: false,
+        completed: hasConfigId,
+      },
       collections: {
         error: false,
         completed: hasConfigId,
@@ -384,6 +388,11 @@ export class WorkflowEditor extends BtrixElement {
     weekly: msg("Weekly"),
     monthly: msg("Monthly"),
     "": "",
+  };
+
+  private readonly dedupeTypeLabels: Record<FormState["dedupeType"], string> = {
+    collection: msg("Deduplicate using a collection"),
+    none: msg("No deduplication"),
   };
 
   @query(`form[name="${formName}"]`)
@@ -2283,6 +2292,38 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   };
 
+  private renderDeduplication() {
+    return html` ${inputCol(html`
+      <sl-radio-group
+        label=${msg("Crawl Deduplication")}
+        name="dedupeType"
+        value=${this.formState.dedupeType}
+        @sl-change=${(e: Event) =>
+          this.updateFormState({
+            dedupeType: (e.target as SlRadio).value as FormState["dedupeType"],
+          })}
+      >
+        <sl-radio value="none">${this.dedupeTypeLabels["none"]}</sl-radio>
+        <sl-radio value="collection"
+          >${this.dedupeTypeLabels["collection"]}</sl-radio
+        >
+      </sl-radio-group>
+    `)}
+    ${this.renderHelpTextCol(
+      msg(
+        `Enable duplication checks before and during a crawl to avoid duplicate content in archived items.`,
+      ),
+    )}
+    ${when(
+      this.formState.dedupeType === "collection",
+      this.renderDedupeCollection,
+    )}`;
+  }
+
+  private readonly renderDedupeCollection = () => {
+    return html`TODO`;
+  };
+
   private renderCollections() {
     return html`
       ${inputCol(html`
@@ -2468,6 +2509,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       name: "scheduling",
       desc: msg("Schedule recurring crawls."),
       render: this.renderJobScheduling,
+    },
+    {
+      name: "deduplication",
+      desc: msg("Prevent duplicate content from being crawled and stored."),
+      render: this.renderDeduplication,
     },
     {
       name: "collections",
