@@ -460,22 +460,52 @@ class CrawlManager(K8sAPI):
             crawl_id, {"pausedAt": date_to_str(paused_at) if paused_at else ""}
         )
 
-    async def delete_crawl_configs_for_org(self, org: str) -> None:
-        """Delete all crawl configs for given org"""
-        await self._delete_crawl_configs(f"btrix.org={org}")
+    async def delete_all_k8s_resources_for_org(self, oid_str: str) -> None:
+        """Delete all k8s resources related to org"""
+        await self.delete_crawl_config_cron_jobs_for_org(oid_str)
+        await self.delete_bg_job_cron_jobs_for_org(oid_str)
+        await self.delete_crawl_jobs_for_org(oid_str)
+        await self.delete_profile_jobs_for_org(oid_str)
 
     async def delete_crawl_config_by_id(self, cid: str) -> None:
         """Delete all crawl configs by id"""
-        await self._delete_crawl_configs(f"btrix.crawlconfig={cid}")
+        await self._delete_cron_jobs(f"btrix.crawlconfig={cid},role=cron-job")
+
+    async def delete_crawl_config_cron_jobs_for_org(self, oid_str: str) -> None:
+        """Delete all crawl configs for given org"""
+        await self._delete_cron_jobs(f"btrix.org={oid_str},role=cron-job")
+
+    async def delete_bg_job_cron_jobs_for_org(self, oid_str: str) -> None:
+        """Delete all background cron jobsf or org"""
+        await self._delete_cron_jobs(f"btrix.org={oid_str},role=cron-background-job")
+
+    async def delete_crawl_jobs_for_org(self, oid_str: str) -> None:
+        """Delete all crawl jobs for given org"""
+        await self._delete_custom_objects(f"btrix.org={oid_str}", plural="crawljobs")
+
+    async def delete_profile_jobs_for_org(self, oid_str: str) -> None:
+        """Delete all browser profile jobs for given org"""
+        await self._delete_custom_objects(f"btrix.org={oid_str}", plural="profilejobs")
 
     # ========================================================================
     # Internal Methods
-    async def _delete_crawl_configs(self, label) -> None:
-        """Delete any crawl config specific resources (now only cron jobs)"""
+    async def _delete_cron_jobs(self, label) -> None:
+        """Delete namespaced cron jobs (e.g. crawl configs, bg jobs)"""
 
         await self.batch_api.delete_collection_namespaced_cron_job(
             namespace=self.namespace,
             label_selector=label,
+        )
+
+    async def _delete_custom_objects(self, label, plural="crawljobs") -> None:
+        """Delete custom objects (e.g. crawl jobs, profile browser jobs)"""
+
+        await self.custom_api.delete_collection_namespaced_custom_object(
+            group="btrix.cloud",
+            version="v1",
+            namespace=self.namespace,
+            label_selector=label,
+            plural=plural,
         )
 
     async def update_scheduled_job(

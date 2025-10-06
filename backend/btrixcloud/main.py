@@ -142,6 +142,8 @@ def main() -> None:
 
     dbclient, mdb = init_db()
 
+    crawl_manager = CrawlManager()
+
     settings = SettingsResponse(
         registrationEnabled=is_bool(os.environ.get("REGISTRATION_ENABLED")),
         jwtTokenLifetime=JWT_TOKEN_LIFETIME,
@@ -178,6 +180,7 @@ def main() -> None:
         app,
         mdb,
         user_manager,
+        crawl_manager,
         invites,
         current_active_user,
     )
@@ -193,8 +196,6 @@ def main() -> None:
              Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
         )
         sys.exit(1)
-
-    crawl_manager = CrawlManager()
 
     crawl_log_ops = CrawlLogOps(mdb, org_ops)
 
