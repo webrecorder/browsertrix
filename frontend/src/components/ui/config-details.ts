@@ -318,7 +318,7 @@ export class ConfigDetails extends BtrixElement {
               >`,
               crawlConfig?.autoAddCollections.length
                 ? html`<btrix-linked-collections
-                    .collectionIds=${crawlConfig.autoAddCollections}
+                    .collections=${crawlConfig.autoAddCollections}
                   ></btrix-linked-collections>`
                 : undefined,
             )}
