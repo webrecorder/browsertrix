@@ -257,7 +257,7 @@ export class CrawlsList extends BtrixElement {
     return [
       this.filterBy.value.firstSeed,
       this.filterBy.value.name,
-      this.filterBy.value.state?.length || undefined,
+      this.filterBy.value.state.length || undefined,
       this.filterByCurrentUser.value || undefined,
       this.filterByTags.value?.length || undefined,
     ].some((v) => v !== undefined);
@@ -931,7 +931,7 @@ export class CrawlsList extends BtrixElement {
     const query = queryString.stringify(
       {
         ...params.filterBy,
-        state: params.filterBy.state?.length
+        state: params.filterBy.state.length
           ? params.filterBy.state
           : finishedCrawlStates,
         page: params.pagination.page,
