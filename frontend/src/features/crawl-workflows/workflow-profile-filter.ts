@@ -58,7 +58,7 @@ export class WorkflowProfileFilter extends BtrixElement {
   });
 
   @state()
-  private selected = new Map<string, boolean>();
+  selected = new Map<string, boolean>();
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("profiles")) {
@@ -68,7 +68,7 @@ export class WorkflowProfileFilter extends BtrixElement {
         this.selected = new Map();
       }
     }
-    if (changedProperties.has("selectedProfiles")) {
+    if (changedProperties.has("selected")) {
       const selectedProfiles = [];
 
       for (const [profile, value] of this.selected) {
