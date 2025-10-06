@@ -255,7 +255,6 @@ export class ArchivedItemStateFilter extends BtrixElement {
           this.selected = new Map(
             this.selected.set(value as CrawlState, checked),
           );
-          this.requestUpdate("selectedStates");
         }}
       >
         ${repeat(
