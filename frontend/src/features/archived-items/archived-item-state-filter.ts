@@ -53,13 +53,7 @@ export class ArchivedItemStateFilter extends BtrixElement {
   private readonly fuse = new Fuse<CrawlState>(finishedCrawlStates);
 
   @state()
-  get selectedStates() {
-    return Array.from(this.selected.entries())
-      .filter(([_tag, selected]) => selected)
-      .map(([tag]) => tag);
-  }
-
-  private selected = new Map<CrawlState, boolean>();
+  selected = new Map<CrawlState, boolean>();
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("states")) {
@@ -69,12 +63,19 @@ export class ArchivedItemStateFilter extends BtrixElement {
         this.selected = new Map();
       }
     }
-    if (changedProperties.has("selectedStates")) {
+  }
+
+  protected updated(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("selected")) {
       this.dispatchEvent(
         new CustomEvent<
           BtrixChangeEvent<ChangeArchivedItemStateEventDetails>["detail"]
         >("btrix-change", {
-          detail: { value: this.selectedStates },
+          detail: {
+            value: Array.from(this.selected.entries())
+              .filter(([_tag, selected]) => selected)
+              .map(([tag]) => tag),
+          },
         }),
       );
     }
@@ -251,7 +252,9 @@ export class ArchivedItemStateFilter extends BtrixElement {
         @sl-change=${async (e: SlChangeEvent) => {
           const { checked, value } = e.target as SlCheckbox;
 
-          this.selected.set(value as CrawlState, checked);
+          this.selected = new Map(
+            this.selected.set(value as CrawlState, checked),
+          );
           this.requestUpdate("selectedStates");
         }}
       >

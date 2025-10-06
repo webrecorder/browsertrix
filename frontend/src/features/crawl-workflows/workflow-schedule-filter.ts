@@ -25,7 +25,7 @@ export class WorkflowScheduleFilter extends BtrixElement {
   @property({ type: Boolean })
   schedule?: boolean;
 
-  protected willUpdate(changedProperties: PropertyValues): void {
+  protected updated(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("schedule")) {
       this.dispatchEvent(
         new CustomEvent<BtrixChangeWorkflowScheduleFilterEvent["detail"]>(

@@ -58,13 +58,7 @@ export class ArchivedItemTagFilter extends BtrixElement {
   });
 
   @state()
-  get selectedTags() {
-    return Array.from(this.selected.entries())
-      .filter(([_tag, selected]) => selected)
-      .map(([tag]) => tag);
-  }
-
-  private selected = new Map<string, boolean>();
+  selected = new Map<string, boolean>();
 
   @state()
   private type: "and" | "or" = "or";
@@ -80,14 +74,20 @@ export class ArchivedItemTagFilter extends BtrixElement {
         this.selected = new Map();
       }
     }
-    if (changedProperties.has("selectedTags")) {
+  }
+
+  updated(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("selected")) {
+      const selectedTags = Array.from(this.selected.entries())
+        .filter(([_tag, selected]) => selected)
+        .map(([tag]) => tag);
       this.dispatchEvent(
         new CustomEvent<
           BtrixChangeEvent<ChangeArchivedItemTagEventDetails>["detail"]
         >("btrix-change", {
           detail: {
-            value: this.selectedTags.length
-              ? { tags: this.selectedTags, type: this.type }
+            value: selectedTags.length
+              ? { tags: selectedTags, type: this.type }
               : undefined,
           },
         }),
@@ -309,8 +309,7 @@ export class ArchivedItemTagFilter extends BtrixElement {
         @sl-change=${async (e: SlChangeEvent) => {
           const { checked, value } = e.target as SlCheckbox;
 
-          this.selected.set(value, checked);
-          this.requestUpdate("selectedTags");
+          this.selected = new Map(this.selected.set(value, checked));
         }}
       >
         ${repeat(

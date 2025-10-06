@@ -57,13 +57,7 @@ export class WorkflowTagFilter extends BtrixElement {
   });
 
   @state()
-  get selectedTags() {
-    return Array.from(this.selected.entries())
-      .filter(([_tag, selected]) => selected)
-      .map(([tag]) => tag);
-  }
-
-  private selected = new Map<string, boolean>();
+  selected = new Map<string, boolean>();
 
   @state()
   type: "and" | "or" = "or";
@@ -76,17 +70,20 @@ export class WorkflowTagFilter extends BtrixElement {
         this.selected = new Map();
       }
     }
-    if (
-      changedProperties.has("selectedTags") ||
-      changedProperties.has("type")
-    ) {
+  }
+
+  protected updated(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("selected") || changedProperties.has("type")) {
+      const selectedTags = Array.from(this.selected.entries())
+        .filter(([_tag, selected]) => selected)
+        .map(([tag]) => tag);
       this.dispatchEvent(
         new CustomEvent<
           BtrixChangeEvent<ChangeWorkflowTagEventDetails>["detail"]
         >("btrix-change", {
           detail: {
-            value: this.selectedTags.length
-              ? { tags: this.selectedTags, type: this.type }
+            value: selectedTags.length
+              ? { tags: selectedTags, type: this.type }
               : undefined,
           },
         }),
@@ -300,8 +297,7 @@ export class WorkflowTagFilter extends BtrixElement {
         @sl-change=${async (e: SlChangeEvent) => {
           const { checked, value } = e.target as SlCheckbox;
 
-          this.selected.set(value, checked);
-          this.requestUpdate("selectedTags");
+          this.selected = new Map(this.selected.set(value, checked));
         }}
       >
         ${repeat(
