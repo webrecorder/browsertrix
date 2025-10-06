@@ -2321,7 +2321,22 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private readonly renderDedupeCollection = () => {
-    return html`TODO`;
+    return html`
+      ${this.renderSectionHeading(msg("Set Collection"))}
+      ${inputCol(html`
+        <btrix-search-combobox
+          size="medium"
+          label=${msg("Collection Name")}
+          placeholder=${msg("Enter existing or new collection name")}
+        >
+        </btrix-search-combobox>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(
+          "Compare crawls from this workflow with all archived items in a specific collection. Crawls of this workflow will be automatically added to the collection.",
+        ),
+      )}
+    `;
   };
 
   private renderCollections() {
