@@ -15,6 +15,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import { isEqual } from "lodash";
 import { isFocusable } from "tabbable";
 
 import { CrawlStatus } from "./crawl-status";
@@ -52,14 +53,8 @@ export class ArchivedItemStateFilter extends BtrixElement {
 
   private readonly fuse = new Fuse<CrawlState>(finishedCrawlStates);
 
-  @state()
-  private get selectedStates() {
-    return Array.from(this.selected.entries())
-      .filter(([_tag, selected]) => selected)
-      .map(([tag]) => tag);
-  }
-
-  private selected = new Map<CrawlState, boolean>();
+  @state({ hasChanged: isEqual })
+  selected = new Map<CrawlState, boolean>();
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("states")) {
@@ -68,6 +63,22 @@ export class ArchivedItemStateFilter extends BtrixElement {
       } else if (changedProperties.get("states")) {
         this.selected = new Map();
       }
+    }
+  }
+
+  protected updated(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("selected")) {
+      this.dispatchEvent(
+        new CustomEvent<
+          BtrixChangeEvent<ChangeArchivedItemStateEventDetails>["detail"]
+        >("btrix-change", {
+          detail: {
+            value: Array.from(this.selected.entries())
+              .filter(([_tag, selected]) => selected)
+              .map(([tag]) => tag),
+          },
+        }),
+      );
     }
   }
 
@@ -87,14 +98,6 @@ export class ArchivedItemStateFilter extends BtrixElement {
         }}
         @sl-after-hide=${() => {
           this.searchString = "";
-
-          this.dispatchEvent(
-            new CustomEvent<
-              BtrixChangeEvent<ChangeArchivedItemStateEventDetails>["detail"]
-            >("btrix-change", {
-              detail: { value: this.selectedStates },
-            }),
-          );
         }}
       >
         ${this.states?.length
@@ -250,8 +253,9 @@ export class ArchivedItemStateFilter extends BtrixElement {
         @sl-change=${async (e: SlChangeEvent) => {
           const { checked, value } = e.target as SlCheckbox;
 
-          this.selected.set(value as CrawlState, checked);
-          this.requestUpdate("selectedStates");
+          this.selected = new Map(
+            this.selected.set(value as CrawlState, checked),
+          );
         }}
       >
         ${repeat(

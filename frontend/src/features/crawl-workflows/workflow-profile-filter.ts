@@ -17,6 +17,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import { isEqual } from "lodash";
 import queryString from "query-string";
 import { isFocusable } from "tabbable";
 
@@ -57,7 +58,8 @@ export class WorkflowProfileFilter extends BtrixElement {
     keys: ["id", "name", "description", "origins"],
   });
 
-  private selected = new Map<string, boolean>();
+  @state({ hasChanged: isEqual })
+  selected = new Map<string, boolean>();
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("profiles")) {
@@ -66,6 +68,26 @@ export class WorkflowProfileFilter extends BtrixElement {
       } else if (changedProperties.get("profiles")) {
         this.selected = new Map();
       }
+    }
+  }
+
+  protected updated(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("selected")) {
+      const selectedProfiles = [];
+
+      for (const [profile, value] of this.selected) {
+        if (value) {
+          selectedProfiles.push(profile);
+        }
+      }
+
+      this.dispatchEvent(
+        new CustomEvent<BtrixChangeEvent["detail"]>("btrix-change", {
+          detail: {
+            value: selectedProfiles.length ? selectedProfiles : undefined,
+          },
+        }),
+      );
     }
   }
 
@@ -105,22 +127,6 @@ export class WorkflowProfileFilter extends BtrixElement {
         }}
         @sl-after-hide=${() => {
           this.searchString = "";
-
-          const selectedProfiles = [];
-
-          for (const [profile, value] of this.selected) {
-            if (value) {
-              selectedProfiles.push(profile);
-            }
-          }
-
-          this.dispatchEvent(
-            new CustomEvent<BtrixChangeEvent["detail"]>("btrix-change", {
-              detail: {
-                value: selectedProfiles.length ? selectedProfiles : undefined,
-              },
-            }),
-          );
         }}
       >
         ${this.profiles?.length
@@ -160,17 +166,7 @@ export class WorkflowProfileFilter extends BtrixElement {
                       this.checkboxes.forEach((checkbox) => {
                         checkbox.checked = false;
                       });
-
-                      this.dispatchEvent(
-                        new CustomEvent<BtrixChangeEvent["detail"]>(
-                          "btrix-change",
-                          {
-                            detail: {
-                              value: undefined,
-                            },
-                          },
-                        ),
-                      );
+                      this.selected = new Map();
                     }}
                     >${msg("Clear")}</sl-button
                   >`
@@ -343,7 +339,7 @@ export class WorkflowProfileFilter extends BtrixElement {
         @sl-change=${async (e: SlChangeEvent) => {
           const { checked, value } = e.target as SlCheckbox;
 
-          this.selected.set(value, checked);
+          this.selected = new Map(this.selected.set(value, checked));
         }}
       >
         ${repeat(

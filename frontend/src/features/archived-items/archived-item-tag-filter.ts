@@ -17,6 +17,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import { isEqual } from "lodash";
 import { isFocusable } from "tabbable";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -56,17 +57,11 @@ export class ArchivedItemTagFilter extends BtrixElement {
     keys: ["tag"],
   });
 
-  @state()
-  private get selectedTags() {
-    return Array.from(this.selected.entries())
-      .filter(([_tag, selected]) => selected)
-      .map(([tag]) => tag);
-  }
-
-  private selected = new Map<string, boolean>();
+  @state({ hasChanged: isEqual })
+  selected = new Map<string, boolean>();
 
   @state()
-  private type: "and" | "or" = "or";
+  type: "and" | "or" = "or";
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("tags")) {
@@ -75,6 +70,25 @@ export class ArchivedItemTagFilter extends BtrixElement {
       } else if (changedProperties.get("tags")) {
         this.selected = new Map();
       }
+    }
+  }
+
+  protected updated(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("selected") || changedProperties.has("type")) {
+      const selectedTags = Array.from(this.selected.entries())
+        .filter(([_tag, selected]) => selected)
+        .map(([tag]) => tag);
+      this.dispatchEvent(
+        new CustomEvent<
+          BtrixChangeEvent<ChangeArchivedItemTagEventDetails>["detail"]
+        >("btrix-change", {
+          detail: {
+            value: selectedTags.length
+              ? { tags: selectedTags, type: this.type }
+              : undefined,
+          },
+        }),
+      );
     }
   }
 
@@ -105,18 +119,6 @@ export class ArchivedItemTagFilter extends BtrixElement {
         }}
         @sl-after-hide=${() => {
           this.searchString = "";
-
-          this.dispatchEvent(
-            new CustomEvent<
-              BtrixChangeEvent<ChangeArchivedItemTagEventDetails>["detail"]
-            >("btrix-change", {
-              detail: {
-                value: this.selectedTags.length
-                  ? { tags: this.selectedTags, type: this.type }
-                  : undefined,
-              },
-            }),
-          );
         }}
       >
         ${this.tags?.length
@@ -304,8 +306,7 @@ export class ArchivedItemTagFilter extends BtrixElement {
         @sl-change=${async (e: SlChangeEvent) => {
           const { checked, value } = e.target as SlCheckbox;
 
-          this.selected.set(value, checked);
-          this.requestUpdate("selectedTags");
+          this.selected = new Map(this.selected.set(value, checked));
         }}
       >
         ${repeat(
