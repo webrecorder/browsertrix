@@ -1,4 +1,3 @@
-import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import type {
   SlChangeEvent,
@@ -18,12 +17,9 @@ import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { WithSearchOrgContext } from "@/context/search-org/WithSearchOrgContext";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
-import {
-  collectionQueryContext,
-  type CollectionQueryContext,
-} from "@/features/collections/context/collectionQuery";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
@@ -85,10 +81,7 @@ enum ListView {
 
 @customElement("btrix-collections-list")
 @localized()
-export class CollectionsList extends BtrixElement {
-  @consume({ context: collectionQueryContext, subscribe: true })
-  private readonly collectionQuery?: CollectionQueryContext;
-
+export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   @property({ type: Boolean })
   isCrawler?: boolean;
 
@@ -424,7 +417,7 @@ export class CollectionsList extends BtrixElement {
     }
 
     const searchResults =
-      this.collectionQuery?.search(this.searchByValue).slice(0, 10) || [];
+      this.searchOrg.collections?.search(this.searchByValue).slice(0, 10) || [];
     if (!searchResults.length) {
       return html`
         <sl-menu-item slot="menu-item" disabled

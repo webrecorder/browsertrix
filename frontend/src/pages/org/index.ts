@@ -18,10 +18,11 @@ import type {
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { proxiesContext, type ProxiesContext } from "@/context/org";
+import { SearchOrgContextController } from "@/context/search-org/SearchOrgContextController";
+import { searchOrgContextKey } from "@/context/search-org/types";
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
-import { CollectionQueryProvider } from "@/features/collections/controllers/collectionQueryProvider";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
 import type { ProxiesAPIResponse } from "@/types/crawler";
@@ -123,7 +124,7 @@ export class Org extends BtrixElement {
   @state()
   private isCreateDialogVisible = false;
 
-  private readonly collectionQueryProvider = new CollectionQueryProvider(this);
+  private readonly [searchOrgContextKey] = new SearchOrgContextController(this);
 
   connectedCallback() {
     if (
@@ -180,7 +181,7 @@ export class Org extends BtrixElement {
     } else if (changedProperties.has("orgTab") && this.orgId) {
       // Get most up to date org data
       void this.updateOrg();
-      void this.collectionQueryProvider.refresh();
+      void this[searchOrgContextKey].refresh();
     }
     if (changedProperties.has("openDialogName")) {
       // Sync URL to create dialog
@@ -214,6 +215,7 @@ export class Org extends BtrixElement {
     }
 
     if (!this.userInfo || !this.orgId) return;
+
     try {
       const org = await this.getOrg(this.orgId);
 

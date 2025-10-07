@@ -1,4 +1,3 @@
-import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
@@ -8,13 +7,9 @@ import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import queryString from "query-string";
 
-import {
-  collectionQueryContext,
-  type CollectionQueryContext,
-} from "./context/collectionQuery";
-
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Combobox } from "@/components/ui/combobox";
+import { WithSearchOrgContext } from "@/context/search-org/WithSearchOrgContext";
 import type {
   BtrixLoadedLinkedCollectionEvent,
   BtrixRemoveLinkedCollectionEvent,
@@ -49,10 +44,7 @@ export type CollectionsChangeEvent = CustomEvent<{
  */
 @customElement("btrix-collections-add")
 @localized()
-export class CollectionsAdd extends BtrixElement {
-  @consume({ context: collectionQueryContext, subscribe: true })
-  private readonly collectionQuery?: CollectionQueryContext;
-
+export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
   @property({ type: Array })
   initialCollections?: string[];
 
@@ -155,7 +147,8 @@ export class CollectionsAdd extends BtrixElement {
   }
 
   private renderSearch() {
-    const disabled = !this.collectionQuery?.records.length;
+    const collections = this.listSearchValuesFor("collections");
+    const disabled = !collections?.length;
 
     return html`
       <btrix-combobox
@@ -203,7 +196,7 @@ export class CollectionsAdd extends BtrixElement {
         >
           <sl-icon name="search" slot="prefix"></sl-icon>
           ${when(
-            disabled && this.collectionQuery?.records,
+            disabled && collections,
             () => html`
               <div slot="help-text">
                 ${msg("No collections found.")}
@@ -222,7 +215,7 @@ export class CollectionsAdd extends BtrixElement {
   }
 
   private renderSearchResults() {
-    if (!this.collectionQuery) {
+    if (!this.searchOrg.collections) {
       html`
         <sl-menu-item slot="menu-item" disabled>
           <sl-spinner></sl-spinner>
@@ -238,7 +231,7 @@ export class CollectionsAdd extends BtrixElement {
       `;
     }
 
-    const results = this.collectionQuery
+    const results = this.searchOrg.collections
       ?.search(this.searchByValue)
       // Filter out items that have been selected
       .filter(({ item }) => !this.nameSearchMap.get(item.name))
