@@ -17,6 +17,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import { isEqual } from "lodash";
 import { isFocusable } from "tabbable";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -56,11 +57,11 @@ export class ArchivedItemTagFilter extends BtrixElement {
     keys: ["tag"],
   });
 
-  @state()
+  @state({ hasChanged: isEqual })
   selected = new Map<string, boolean>();
 
   @state()
-  private type: "and" | "or" = "or";
+  type: "and" | "or" = "or";
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("tags")) {
@@ -72,8 +73,8 @@ export class ArchivedItemTagFilter extends BtrixElement {
     }
   }
 
-  updated(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("selected")) {
+  protected updated(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("selected") || changedProperties.has("type")) {
       const selectedTags = Array.from(this.selected.entries())
         .filter(([_tag, selected]) => selected)
         .map(([tag]) => tag);
