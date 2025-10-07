@@ -358,7 +358,7 @@ export class Org extends BtrixElement {
         class="mx-auto box-border w-full overflow-x-hidden overscroll-contain"
       >
         <btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
-          <nav class="flex items-end xl:px-6">
+          <nav class="flex w-max items-end xl:px-6">
             ${this.renderNavTab({
               tabName: OrgTab.Dashboard,
               label: msg("Dashboard"),
