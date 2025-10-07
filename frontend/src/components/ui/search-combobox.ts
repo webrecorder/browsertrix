@@ -3,7 +3,6 @@ import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
 import { html, LitElement, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
@@ -44,12 +43,6 @@ export class SearchCombobox<T> extends LitElement {
 
   @property({ type: String })
   searchByValue = "";
-
-  @property({ type: String })
-  label?: string;
-
-  @property({ type: String })
-  size: SlInput["size"] = "small";
 
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
@@ -122,9 +115,8 @@ export class SearchCombobox<T> extends LitElement {
         }}
       >
         <sl-input
-          size=${this.size}
+          size="small"
           placeholder=${this.placeholder}
-          label=${ifDefined(this.label)}
           clearable
           value=${this.searchByValue}
           @sl-clear=${() => {
