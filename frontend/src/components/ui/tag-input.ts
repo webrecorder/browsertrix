@@ -5,7 +5,7 @@ import type {
   SlPopup,
   SlTag,
 } from "@shoelace-style/shoelace";
-import inputCss from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
+import SlInput from "@shoelace-style/shoelace/dist/components/input/input.component.js";
 import {
   css,
   html,
@@ -49,7 +49,7 @@ export type TagInputEvent = CustomEvent<TagInputEventDetail>;
 export class TagInput extends LitElement {
   static styles = [
     dropdown,
-    inputCss,
+    SlInput.styles,
     css`
       :host {
         --tag-height: 1.5rem;
