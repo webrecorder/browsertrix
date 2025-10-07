@@ -8,6 +8,7 @@ import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
 import { type UnderlyingFunction } from "@/types/utils";
+import { hasChanged } from "@/utils/hasChanged";
 
 type SelectEventDetail<T> = {
   key: string | null;
@@ -16,7 +17,7 @@ type SelectEventDetail<T> = {
 export type SelectEvent<T> = CustomEvent<SelectEventDetail<T>>;
 
 const MIN_SEARCH_LENGTH = 2;
-const MAX_SEARCH_RESULTS = 10;
+const MAX_SEARCH_RESULTS = 5;
 
 /**
  * Fuzzy search through list of options
@@ -30,10 +31,10 @@ export class SearchCombobox<T> extends LitElement {
   @property({ type: Array })
   searchOptions: T[] = [];
 
-  @property({ type: Array })
+  @property({ type: Array, hasChanged })
   searchKeys: string[] = [];
 
-  @property({ type: Object })
+  @property({ type: Object, hasChanged })
   keyLabels?: { [key: string]: string };
 
   @property({ type: String })
@@ -61,8 +62,8 @@ export class SearchCombobox<T> extends LitElement {
   @query("sl-input")
   private readonly input!: SlInput;
 
-  private fuse = new Fuse<T>([], {
-    keys: [],
+  protected fuse = new Fuse<T>(this.searchOptions, {
+    keys: this.searchKeys,
     threshold: 0.2, // stricter; default is 0.6
     includeMatches: true,
   });
@@ -79,7 +80,7 @@ export class SearchCombobox<T> extends LitElement {
     }
     if (changedProperties.has("searchKeys")) {
       this.onSearchInput.cancel();
-      this.fuse = new Fuse<T>([], {
+      this.fuse = new Fuse<T>(this.searchOptions, {
         ...(
           this.fuse as unknown as {
             options: ConstructorParameters<typeof Fuse>[1];
