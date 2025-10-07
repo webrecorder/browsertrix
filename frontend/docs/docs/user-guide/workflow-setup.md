@@ -392,10 +392,6 @@ You can use a tool like [crontab.guru](https://crontab.guru/) to check Cron synt
 
 Cron schedules are always in [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time).
 
-## Deduplication
-
-Prevent duplicate content from being crawled and stored.
-
 ## Collections
 
 ### Auto-Add to Collection
