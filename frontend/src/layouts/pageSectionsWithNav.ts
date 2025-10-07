@@ -21,7 +21,7 @@ export function pageSectionsWithNav({
   return html`
     <div
       class=${clsx(
-        tw`flex flex-col`,
+        tw`relative flex flex-col`,
         placement === "start" && tw`gap-8 lg:flex-row`,
       )}
     >
@@ -29,7 +29,7 @@ export function pageSectionsWithNav({
         class=${clsx(
           tw`flex w-full flex-1 flex-col gap-2`,
           sticky && [
-            tw`scrim scrim-to-b z-20 before:-top-2 lg:sticky lg:self-start`,
+            tw`scrim scrim-to-b relative z-20 before:-top-2 lg:sticky lg:self-start`,
             stickyTopClassname || tw`lg:top-2`,
           ],
           placement === "start"

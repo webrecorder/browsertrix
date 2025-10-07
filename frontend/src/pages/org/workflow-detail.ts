@@ -891,7 +891,7 @@ export class WorkflowDetail extends BtrixElement {
     <div class="col-span-1">${this.renderBreadcrumbs()}</div>
 
     <header
-      class="scrim scrim-to-b z-10 col-span-1 mb-3 flex flex-wrap gap-2 before:-top-3 lg:sticky lg:top-3"
+      class="scrim scrim-to-b relative z-10 col-span-1 mb-3 flex flex-wrap gap-2 before:-top-3 lg:sticky lg:top-3"
     >
       <btrix-detail-page-title .item=${this.workflow}></btrix-detail-page-title>
     </header>
