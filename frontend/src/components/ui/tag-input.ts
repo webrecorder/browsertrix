@@ -81,7 +81,7 @@ export class TagInput extends LitElement {
       }
 
       sl-popup::part(popup) {
-        z-index: 5;
+        z-index: 60;
       }
 
       .shake {
@@ -211,6 +211,7 @@ export class TagInput extends LitElement {
             skidding="4"
             distance="-4"
             active
+            flip
           >
             <input
               slot="anchor"
