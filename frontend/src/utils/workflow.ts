@@ -40,6 +40,7 @@ export const SECTIONS = [
   "behaviors",
   "browserSettings",
   "scheduling",
+  "deduplication",
   "collections",
   "metadata",
 ] as const;
@@ -52,6 +53,7 @@ export enum GuideHash {
   Behaviors = "page-behavior",
   BrowserSettings = "browser-settings",
   Scheduling = "scheduling",
+  Deduplication = "deduplication",
   Collections = "collections",
   Metadata = "metadata",
 }
@@ -67,6 +69,7 @@ export const workflowTabToGuideHash: Record<SectionsEnum, GuideHash> = {
   behaviors: GuideHash.Behaviors,
   browserSettings: GuideHash.BrowserSettings,
   scheduling: GuideHash.Scheduling,
+  deduplication: GuideHash.Deduplication,
   collections: GuideHash.Collections,
   metadata: GuideHash.Metadata,
 };
@@ -170,6 +173,7 @@ export type FormState = {
    * Custom schedule in cron format.
    */
   scheduleCustom?: string;
+  dedupeType: "none" | "collection";
   jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
@@ -232,6 +236,7 @@ export const getDefaultFormState = (): FormState => ({
     minute: 0,
     period: "AM",
   },
+  dedupeType: "collection",
   jobName: "",
   browserProfile: null,
   tags: [],
@@ -334,6 +339,10 @@ export function getInitialFormState(params: {
 
   if (params.initialWorkflow.autoAddCollections.length) {
     formState.autoAddCollections = params.initialWorkflow.autoAddCollections;
+  }
+
+  if (params.initialWorkflow.dedupCollId) {
+    formState.dedupeType = "collection";
   }
 
   const secondsToMinutes = (value: unknown, fallback = 0) => {
