@@ -2325,12 +2325,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return html`
       ${this.renderSectionHeading(msg("Set Collection"))}
       ${inputCol(html`
-        <btrix-search-combobox
+        <btrix-choose-collection-name
           size="medium"
           label=${msg("Collection Name")}
           placeholder=${msg("Enter existing or new collection name")}
         >
-        </btrix-search-combobox>
+        </btrix-choose-collection-name>
       `)}
       ${this.renderHelpTextCol(
         msg(
