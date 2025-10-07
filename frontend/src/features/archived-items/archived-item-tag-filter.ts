@@ -20,7 +20,6 @@ import { repeat } from "lit/directives/repeat.js";
 import { isFocusable } from "tabbable";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { type FilterChip } from "@/components/ui/filter-chip";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
 import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
 import { stopProp } from "@/utils/events";
@@ -62,9 +61,6 @@ export class ArchivedItemTagFilter extends BtrixElement {
 
   @state()
   private type: "and" | "or" = "or";
-
-  @query("btrix-filter-chip")
-  private readonly filterChip?: FilterChip | null;
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("tags")) {

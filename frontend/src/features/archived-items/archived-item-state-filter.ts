@@ -15,6 +15,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import { isEqual } from "lodash";
 import { isFocusable } from "tabbable";
 
 import { CrawlStatus } from "./crawl-status";
@@ -52,7 +53,7 @@ export class ArchivedItemStateFilter extends BtrixElement {
 
   private readonly fuse = new Fuse<CrawlState>(finishedCrawlStates);
 
-  @state()
+  @state({ hasChanged: isEqual })
   selected = new Map<CrawlState, boolean>();
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {

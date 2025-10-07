@@ -17,6 +17,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import { isEqual } from "lodash";
 import queryString from "query-string";
 import { isFocusable } from "tabbable";
 
@@ -57,7 +58,7 @@ export class WorkflowProfileFilter extends BtrixElement {
     keys: ["id", "name", "description", "origins"],
   });
 
-  @state()
+  @state({ hasChanged: isEqual })
   selected = new Map<string, boolean>();
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {

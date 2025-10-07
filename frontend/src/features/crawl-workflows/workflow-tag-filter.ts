@@ -17,6 +17,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import { isEqual } from "lodash";
 import { isFocusable } from "tabbable";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -56,7 +57,7 @@ export class WorkflowTagFilter extends BtrixElement {
     keys: ["tag"],
   });
 
-  @state()
+  @state({ hasChanged: isEqual })
   selected = new Map<string, boolean>();
 
   @state()
