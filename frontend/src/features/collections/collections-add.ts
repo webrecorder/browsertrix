@@ -1,10 +1,12 @@
 import { localized, msg } from "@lit/localize";
-import { Task } from "@lit/task";
-import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
+import type {
+  SlInput,
+  SlInputEvent,
+  SlMenuItem,
+} from "@shoelace-style/shoelace";
 import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
-import debounce from "lodash/fp/debounce";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -21,10 +23,8 @@ import type {
   APISortQuery,
 } from "@/types/api";
 import type { Collection } from "@/types/collection";
-import type { UnderlyingFunction } from "@/types/utils";
 import { TwoWayMap } from "@/utils/TwoWayMap";
 
-const INITIAL_PAGE_SIZE = 10;
 const MIN_SEARCH_LENGTH = 1;
 
 export type CollectionsChangeEvent = CustomEvent<{
@@ -57,6 +57,9 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
   @state()
   private collections: CollectionLikeItem[] = [];
 
+  @state()
+  private searchByValue = "";
+
   @query("#search-input")
   private readonly input?: SlInput | null;
 
@@ -70,26 +73,9 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
     return this.collections.map(({ id }) => id);
   }
 
-  private get searchByValue() {
-    return this.input ? this.input.value.trim() : "";
-  }
-
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
-
-  private readonly searchResultsTask = new Task(this, {
-    task: async ([searchByValue, hasSearchStr], { signal }) => {
-      if (!hasSearchStr) return [];
-      const data = await this.fetchCollectionsByPrefix(searchByValue, signal);
-      let searchResults: Collection[] = [];
-      if (data?.items.length) {
-        searchResults = this.filterOutSelectedCollections(data.items);
-      }
-      return searchResults;
-    },
-    args: () => [this.searchByValue, this.hasSearchStr] as const,
-  });
 
   public focus() {
     // Move focus to search input
@@ -190,9 +176,11 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
               this.combobox.show();
             }
           }}
-          @sl-input=${this.onSearchInput as UnderlyingFunction<
-            typeof this.onSearchInput
-          >}
+          @sl-input=${(e: SlInputEvent) => {
+            const input = e.target as SlInput;
+
+            this.searchByValue = input.value.trim();
+          }}
         >
           <sl-icon name="search" slot="prefix"></sl-icon>
           ${when(
@@ -275,47 +263,8 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
     }
   }
 
-  private readonly onSearchInput = debounce(400)(() => {
-    void this.searchResultsTask.run();
-  });
-
   private findCollectionIndexById(collectionId: string) {
     return this.collections.findIndex(({ id }) => id === collectionId);
-  }
-
-  private filterOutSelectedCollections(results: Collection[]) {
-    return results.filter(
-      (result) => this.findCollectionIndexById(result.id) > -1,
-    );
-  }
-
-  private async fetchCollectionsByPrefix(
-    namePrefix: string,
-    signal?: AbortSignal,
-  ) {
-    try {
-      const results = await this.getCollections(
-        {
-          oid: this.orgId,
-          namePrefix: namePrefix,
-          sortBy: "name",
-          pageSize: INITIAL_PAGE_SIZE,
-        },
-        signal,
-      );
-      return results;
-    } catch (e) {
-      if ((e as Error).name === "AbortError") {
-        console.debug("Fetch aborted to throttle");
-      } else {
-        this.notify.toast({
-          message: msg("Sorry, couldn't retrieve Collections at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "collection-fetch-throttled",
-        });
-      }
-    }
   }
 
   private async getCollections(
