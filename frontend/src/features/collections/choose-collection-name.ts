@@ -14,10 +14,10 @@ export class ChooseCollectionName extends WithSearchOrgContext(
 ) {
   searchKeys = searchQueryKeys;
 
-  searchOrgContextUpdated = (value: SearchOrgContext) => {
+  searchOrgContextUpdated = async (value: SearchOrgContext) => {
     if (value.collections) {
-      // this.fuse = value.collections;
-      console.log("update fuse");
+      await this.updateComplete;
+      this.fuse = value.collections;
     }
   };
 }
