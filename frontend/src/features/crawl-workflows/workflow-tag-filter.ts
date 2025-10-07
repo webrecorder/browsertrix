@@ -156,7 +156,6 @@ export class WorkflowTagFilter extends BtrixElement {
                       this.selected = new Map();
 
                       this.type = "or";
-                      this.requestUpdate("selectedTags");
                     }}
                     >${msg("Clear")}</sl-button
                   >`
