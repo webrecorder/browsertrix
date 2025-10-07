@@ -10,5 +10,6 @@ export function connectFuse(values: SearchQuery[]) {
     keys: searchQueryKeys,
     threshold: 0.3,
     useExtendedSearch: true,
+    includeMatches: true,
   });
 }
