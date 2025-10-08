@@ -171,7 +171,7 @@ class CrawlOperator(BaseOperator):
             if e.detail == "invalid_org_id":
                 return {
                     "status": status.dict(exclude_none=True),
-                    "children": {},
+                    "children": [],
                     "finalized": True,
                 }
             raise
