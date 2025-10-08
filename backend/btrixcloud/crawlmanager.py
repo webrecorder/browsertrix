@@ -499,35 +499,15 @@ class CrawlManager(K8sAPI):
 
     async def _delete_custom_objects(self, label, plural="crawljobs") -> None:
         """Delete custom objects (e.g. crawl jobs, profile browser jobs)"""
-
-        objects = await self.custom_api.list_namespaced_custom_object(
+        await self.custom_api.delete_collection_namespaced_custom_object(
             group="btrix.cloud",
             version="v1",
             namespace=self.namespace,
-            plural=plural,
             label_selector=label,
+            plural=plural,
+            grace_period_seconds=0,
+            propagation_policy="Background",
         )
-        print(f"Custom objects with label {label}, plural {plural}", flush=True)
-        items = objects.get("items")
-        item_len = len(items)
-        print(f"Items: {item_len}", flush=True)
-        for item in items:
-            print(item, flush=True)
-
-        delete_response = (
-            await self.custom_api.delete_collection_namespaced_custom_object(
-                group="btrix.cloud",
-                version="v1",
-                namespace=self.namespace,
-                label_selector=label,
-                plural=plural,
-            )
-        )
-        print(
-            f"Custom objects delete response with label {label}, plural {plural}",
-            flush=True,
-        )
-        print(delete_response, flush=True)
 
     async def update_scheduled_job(
         self, crawlconfig: CrawlConfig, userid: Optional[str] = None
