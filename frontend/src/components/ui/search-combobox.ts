@@ -50,7 +50,7 @@ export class SearchCombobox<T> extends LitElement {
   label?: string;
 
   @property({ type: String })
-  size: SlInput["size"] = "small";
+  size?: SlInput["size"];
 
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
@@ -124,9 +124,9 @@ export class SearchCombobox<T> extends LitElement {
         }}
       >
         <sl-input
-          size=${this.size}
           placeholder=${this.placeholder}
           label=${ifDefined(this.label)}
+          size=${ifDefined(this.size)}
           clearable
           value=${this.searchByValue}
           @sl-clear=${() => {
