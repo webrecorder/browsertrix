@@ -155,9 +155,10 @@ export class SearchCombobox<T> extends LitElement {
       `;
     }
 
-    const searchResults = this.fuse
-      .search(this.searchByValue)
-      .slice(0, MAX_SEARCH_RESULTS);
+    const searchResults = this.fuse.search(this.searchByValue, {
+      limit: MAX_SEARCH_RESULTS,
+    });
+
     if (!searchResults.length) {
       return html`
         <sl-menu-item slot="menu-item" disabled
