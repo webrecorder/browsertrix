@@ -592,7 +592,7 @@ export class WorkflowEditor extends BtrixElement {
 
     return html`
       <btrix-tab-list
-        class="mb-5 hidden lg:block"
+        class="mb-10 hidden lg:block"
         tab=${ifDefined(this.progressState?.activeTab)}
       >
         ${STEPS.map(button)}
@@ -615,7 +615,7 @@ export class WorkflowEditor extends BtrixElement {
       return html`<sl-details
         class=${clsx(
           tw`part-[base]:rounded-lg part-[base]:border part-[base]:transition-shadow part-[base]:focus:shadow`,
-          tw`part-[content]:[border-top:solid_1px_var(--sl-panel-border-color)]`,
+          tw`part-[content]:pb-8 part-[content]:[border-top:solid_1px_var(--sl-panel-border-color)]`,
           tw`part-[header]:text-neutral-500 part-[header]:hover:text-blue-400`,
           tw`part-[summary-icon]:[rotate:none]`,
           hasError &&
@@ -748,7 +748,7 @@ export class WorkflowEditor extends BtrixElement {
     `;
 
     return html`
-      <div class="relative mb-10 flex flex-col gap-12 px-2">
+      <div class="relative mb-10 flex flex-col gap-12 px-2 lg:mb-16">
         ${this.formSections.map(formSection)}
         ${when(
           this.isSubmitting,
