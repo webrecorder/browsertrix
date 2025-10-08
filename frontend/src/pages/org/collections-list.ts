@@ -73,6 +73,7 @@ const sortableFields: Record<
   },
 };
 const MIN_SEARCH_LENGTH = 2;
+const MAX_SEARCH_RESULTS = 5;
 
 enum ListView {
   List = "list",
@@ -417,7 +418,9 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     }
 
     const searchResults =
-      this.searchOrg.collections?.search(this.searchByValue).slice(0, 10) || [];
+      this.searchOrg.collections?.search(this.searchByValue, {
+        limit: MAX_SEARCH_RESULTS,
+      }) || [];
     if (!searchResults.length) {
       return html`
         <sl-menu-item slot="menu-item" disabled

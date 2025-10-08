@@ -26,6 +26,7 @@ import type { Collection } from "@/types/collection";
 import { TwoWayMap } from "@/utils/TwoWayMap";
 
 const MIN_SEARCH_LENGTH = 1;
+const MAX_SEARCH_RESULTS = 5;
 
 export type CollectionsChangeEvent = CustomEvent<{
   collections: string[];
@@ -67,7 +68,10 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
   private readonly combobox?: Combobox | null;
 
   // Map collection names to ID for managing search options
-  private readonly nameSearchMap = new TwoWayMap<string, string>();
+  private readonly nameSearchMap = new TwoWayMap<
+    /* name: */ string,
+    /* ID: */ string
+  >();
 
   private get collectionIds() {
     return this.collections.map(({ id }) => id);
@@ -219,12 +223,19 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
       `;
     }
 
-    const results = this.searchOrg.collections
-      ?.search(this.searchByValue)
-      // Filter out items that have been selected
-      .filter(({ item }) => !this.nameSearchMap.get(item.name))
-      // Show first few results
-      .slice(0, 5);
+    // Use search pattern that excludes selected names
+    const includePattern = `"${this.searchByValue}"`;
+    const excludePattern = this.nameSearchMap
+      .keys()
+      .map((name) => `!"${name}"`)
+      .join(" ");
+    const pattern =
+      includePattern + (excludePattern ? ` ${excludePattern}` : "");
+
+    // TODO Evaluate performance of searching in render, which will block the main thread
+    const results = this.searchOrg.collections?.search(pattern, {
+      limit: MAX_SEARCH_RESULTS,
+    });
 
     if (!results?.length) {
       return html`
