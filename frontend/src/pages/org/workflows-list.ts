@@ -20,7 +20,7 @@ import type {
   FilterChip,
 } from "@/components/ui/filter-chip";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
-import { type SelectEvent } from "@/components/ui/search-combobox";
+import type { BtrixSearchComboboxSelectEvent } from "@/components/ui/search-combobox";
 import { SearchParamsController } from "@/controllers/searchParams";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import {
@@ -747,8 +747,8 @@ export class WorkflowsList extends BtrixElement {
         size="small"
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         placeholder=${msg("Search all workflows by name or crawl start URL")}
-        @btrix-select=${(e: SelectEvent<typeof this.searchKeys>) => {
-          const { key, value } = e.detail;
+        @btrix-select=${(e: BtrixSearchComboboxSelectEvent) => {
+          const { key, value } = e.detail.item;
           if (key == null) return;
           this.filterBy = {
             [key]: value,
