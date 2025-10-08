@@ -585,7 +585,7 @@ def test_get_all_crawls_by_first_seed(
     upload_id_2,
 ):
     """Test filtering /all-crawls by first seed"""
-    first_seed = "https://webrecorder.net/"
+    first_seed = "https://old.webrecorder.net/"
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?firstSeed={first_seed}",
         headers=admin_auth_headers,
@@ -839,7 +839,7 @@ def test_all_crawls_search_values(
     assert sorted(data["firstSeeds"]) == [
         "https://old.webrecorder.net/",
         "https://specs.webrecorder.net/",
-        "https://webrecorder.net/",
+        "https://old.webrecorder.net/",
     ]
 
     # Test filtering by crawls
@@ -865,7 +865,7 @@ def test_all_crawls_search_values(
     assert sorted(data["firstSeeds"]) == [
         "https://old.webrecorder.net/",
         "https://specs.webrecorder.net/",
-        "https://webrecorder.net/",
+        "https://old.webrecorder.net/",
     ]
 
     # Test filtering by uploads

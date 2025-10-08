@@ -663,7 +663,7 @@ def test_get_config_seeds(crawler_auth_headers, default_org_id, url_list_config_
     assert data["total"] == 3
 
     EXPECTED_SEED_URLS = [
-        "https://webrecorder.net/",
+        "https://old.webrecorder.net/",
         "https://example-com.webrecorder.net/",
         "https://specs.webrecorder.net/",
     ]
@@ -888,7 +888,7 @@ def test_add_update_crawl_config_custom_behaviors_git_url(
 
 def test_validate_custom_behavior(crawler_auth_headers, default_org_id):
     valid_url = "https://raw.githubusercontent.com/webrecorder/custom-behaviors/refs/heads/main/behaviors/fulcrum.js"
-    invalid_url_404 = "https://webrecorder.net/nonexistent/behavior.js"
+    invalid_url_404 = "https://old.webrecorder.net/nonexistent/behavior.js"
     doesnt_resolve_url = "https://nonexistenturl-for-testing-browsertrix.com"
     malformed_url = "http"
 

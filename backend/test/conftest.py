@@ -104,7 +104,7 @@ def admin_crawl_id(admin_auth_headers, default_org_id):
         "description": "Admin Test Crawl description",
         "tags": ["wr-test-1", "wr-test-2"],
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/", "depth": 1}],
+            "seeds": [{"url": "https://old.webrecorder.net/", "depth": 1}],
             "exclude": "community",
             # limit now set via 'max_pages_per_crawl' global limit
             # "limit": 1,
@@ -208,7 +208,7 @@ def _crawler_create_config_only(crawler_auth_headers, default_org_id):
         "name": "Crawler User Test Crawl",
         "description": "crawler test crawl",
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
             "pageExtraDelay": 10,
             "limit": 3,
             "exclude": "community",
@@ -233,7 +233,7 @@ def crawler_crawl_id(crawler_auth_headers, default_org_id):
         "name": "Crawler User Test Crawl",
         "description": "crawler test crawl",
         "tags": ["wr-test-2"],
-        "config": {"seeds": [{"url": "https://webrecorder.net/"}], "limit": 3},
+        "config": {"seeds": [{"url": "https://old.webrecorder.net/"}], "limit": 3},
         "crawlerChannel": "test",
     }
     r = requests.post(
@@ -360,7 +360,7 @@ def auto_add_crawl_id(crawler_auth_headers, default_org_id, auto_add_collection_
         "description": "For testing auto-adding new workflow crawls to collections",
         "autoAddCollections": [auto_add_collection_id],
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
             "limit": 1,
         },
     }
@@ -400,7 +400,7 @@ def all_crawls_crawl_id(crawler_auth_headers, default_org_id):
         "name": "All Crawls Test Crawl",
         "description": "Lorem ipsum",
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
             "exclude": "community",
         },
     }
@@ -459,7 +459,7 @@ def all_crawls_delete_crawl_ids(admin_auth_headers, default_org_id):
         "name": "All Crawls Delete Test Workflow",
         "description": "Lorem ipsum",
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
             "exclude": "community",
         },
     }
@@ -560,7 +560,7 @@ def url_list_config_id(crawler_auth_headers, default_org_id):
         "description": "Contains 3 seeds",
         "config": {
             "seeds": [
-                {"url": "https://webrecorder.net"},
+                {"url": "https://old.webrecorder.net"},
                 {"url": "https://example-com.webrecorder.net"},
                 {"url": "https://specs.webrecorder.net"},
             ],
@@ -598,7 +598,7 @@ def profile_browser_4_id(admin_auth_headers, default_org_id):
 
 
 def _create_profile_browser(
-    headers: Dict[str, str], oid: UUID, url: str = "https://webrecorder.net"
+    headers: Dict[str, str], oid: UUID, url: str = "https://old.webrecorder.net"
 ):
     r = requests.post(
         f"{API_PREFIX}/orgs/{oid}/profiles/browser",
@@ -676,7 +676,7 @@ def prepare_browser_for_profile_commit(
     r = requests.post(
         f"{API_PREFIX}/orgs/{oid}/profiles/browser/{browser_id}/navigate",
         headers=headers,
-        json={"url": "https://webrecorder.net/tools"},
+        json={"url": "https://old.webrecorder.net/tools"},
     )
     assert r.status_code == 200
     assert r.json()["success"]
@@ -780,7 +780,7 @@ def profile_config_id(admin_auth_headers, default_org_id, profile_id):
             "name": "Profile Test Crawl",
             "description": "Crawl using browser profile",
             "config": {
-                "seeds": [{"url": "https://webrecorder.net/"}],
+                "seeds": [{"url": "https://old.webrecorder.net/"}],
                 "exclude": "community",
             },
             "profileid": profile_id,
@@ -844,7 +844,7 @@ def profile_2_config_id(admin_auth_headers, default_org_id, profile_2_id):
             "name": "Profile 2 Test Crawl",
             "description": "Crawl using browser profile",
             "config": {
-                "seeds": [{"url": "https://webrecorder.net/"}],
+                "seeds": [{"url": "https://old.webrecorder.net/"}],
                 "exclude": "community",
             },
             "profileid": profile_2_id,

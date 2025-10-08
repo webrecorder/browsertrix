@@ -11,7 +11,7 @@ config_id = None
 
 
 def _create_profile_browser(
-    headers: Dict[str, str], oid: UUID, url: str = "https://webrecorder.net"
+    headers: Dict[str, str], oid: UUID, url: str = "https://old.webrecorder.net"
 ):
     r = requests.post(
         f"{API_PREFIX}/orgs/{oid}/profiles/browser",
@@ -71,7 +71,7 @@ def prepare_browser_for_profile_commit(
     r = requests.post(
         f"{API_PREFIX}/orgs/{oid}/profiles/browser/{browser_id}/navigate",
         headers=headers,
-        json={"url": "https://webrecorder.net/tools"},
+        json={"url": "https://old.webrecorder.net/tools"},
     )
     assert r.status_code == 200
     assert r.json()["success"]
