@@ -7,14 +7,14 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
+import type { BtrixSelectEvent } from "@/events/btrix-select";
 import { type UnderlyingFunction } from "@/types/utils";
 import { hasChanged } from "@/utils/hasChanged";
 
-type SelectEventDetail<T> = {
+export type BtrixSearchComboboxSelectEvent = BtrixSelectEvent<{
   key: string | null;
-  value?: T;
-};
-export type SelectEvent<T> = CustomEvent<SelectEventDetail<T>>;
+  value: string;
+}>;
 
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_RESULTS = 5;
@@ -114,12 +114,14 @@ export class SearchCombobox<T> extends LitElement {
           this.searchByValue = value;
           await this.updateComplete;
           this.dispatchEvent(
-            new CustomEvent<SelectEventDetail<T>>("btrix-select", {
-              detail: {
-                key: key ?? null,
-                value: value as T,
+            new CustomEvent<BtrixSearchComboboxSelectEvent["detail"]>(
+              "btrix-select",
+              {
+                detail: {
+                  item: { key: key ?? null, value: value },
+                },
               },
-            }),
+            ),
           );
         }}
       >
