@@ -94,7 +94,7 @@ def test_create_collection(
     assert data["defaultThumbnailName"] == default_thumbnail_name
     assert data["allowPublicDownload"]
 
-    assert data["topPageHosts"] == [{"count": 3, "host": "webrecorder.net"}]
+    assert data["topPageHosts"] == [{"count": 3, "host": "old.webrecorder.net"}]
 
 
 def test_create_public_collection(
@@ -313,7 +313,7 @@ def test_add_remove_crawl_from_collection(
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
     assert data["dateEarliest"]
     assert data["dateLatest"]
-    assert data["topPageHosts"] == [{"count": 7, "host": "webrecorder.net"}]
+    assert data["topPageHosts"] == [{"count": 7, "host": "old.webrecorder.net"}]
 
     # Verify it was added
     r = requests.get(
@@ -701,7 +701,7 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     coll_page_title = coll_page["title"]
 
     # Test search filter, make sure text search isn't case sensitive
-    partial_title = "Archiving"
+    partial_title = "Webrecord"
     partial_title_lower = partial_title.lower()
     partial_url = coll_page_url[:8]
 
@@ -1168,6 +1168,7 @@ def test_list_public_collections(
     assert r.status_code == 404
     assert r.json()["detail"] == "public_profile_not_found"
 
+
 def test_same_collection_diff_orgs_correct(non_default_org_id, admin_auth_headers):
     # public collection exists in default org
     r = requests.get(
@@ -1209,6 +1210,7 @@ def test_same_collection_diff_orgs_correct(non_default_org_id, admin_auth_header
     )
     assert r.status_code == 200
     assert r.json()["success"]
+
 
 def test_list_public_collections_no_colls(non_default_org_id, admin_auth_headers):
     # Test existing org that's not public - should return same 404 as
