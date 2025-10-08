@@ -733,6 +733,7 @@ export class CrawlsList extends BtrixElement {
         .searchKeys=${this.searchKeys}
         .searchOptions=${this.searchOptions}
         .keyLabels=${CrawlsList.FieldLabels}
+        size="small"
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         searchByValue=${ifDefined(
           this.selectedSearchFilterKey &&

@@ -743,6 +743,7 @@ export class WorkflowsList extends BtrixElement {
         .searchKeys=${this.searchKeys}
         .searchOptions=${this.searchOptions}
         .keyLabels=${WorkflowsList.FieldLabels}
+        size="small"
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         searchByValue=${ifDefined(
           this.selectedSearchFilterKey &&
