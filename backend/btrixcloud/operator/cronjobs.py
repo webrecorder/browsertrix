@@ -79,6 +79,7 @@ class CronJobOperator(BaseOperator):
         oid = crawlconfig.oid
         try:
             org = await self.org_ops.get_org_by_id(oid)
+        # pylint: disable=bare-except
         except:
             print(f"error: error getting org {oid}, skipping schedulued job")
             return self.get_finished_response(metadata)
