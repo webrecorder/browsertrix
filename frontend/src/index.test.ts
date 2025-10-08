@@ -2,6 +2,7 @@ import { expect, fixture } from "@open-wc/testing";
 import { html } from "lit";
 import { restore, stub } from "sinon";
 
+import { APIController } from "./controllers/api";
 import { NavigateController } from "./controllers/navigate";
 import { NotifyController } from "./controllers/notify";
 import { type AppSettings } from "./utils/app";
@@ -46,20 +47,20 @@ const mockAppSettings: AppSettings = {
   salesEmail: "",
   supportEmail: "",
   localesEnabled: ["en", "es"],
+  numBrowsersPerInstance: 1,
 };
 
 describe("browsertrix-app", () => {
   beforeEach(() => {
     AppStateService.resetAll();
-    AuthService.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
     window.sessionStorage.clear();
     window.localStorage.clear();
     stub(window.history, "pushState");
     stub(NotifyController.prototype, "toast");
+    stub(APIController.prototype, "fetch");
   });
 
   afterEach(() => {
-    AuthService.broadcastChannel.close();
     restore();
   });
 
@@ -69,7 +70,7 @@ describe("browsertrix-app", () => {
   });
 
   it("don't block render if settings aren't defined", async () => {
-    stub(AuthService, "initSessionStorage").returns(
+    stub(AuthService.prototype, "initSessionStorage").returns(
       Promise.resolve({
         headers: { Authorization: "_fake_headers_" },
         tokenExpiresAt: 0,
@@ -85,16 +86,13 @@ describe("browsertrix-app", () => {
   });
 
   it("renders 404 when not in org", async () => {
-    stub(AuthService, "initSessionStorage").returns(
-      Promise.resolve({
-        headers: { Authorization: "_fake_headers_" },
-        tokenExpiresAt: 0,
-        username: "test-auth@example.com",
-      }),
+    stub(AuthService.prototype, "initSessionStorage").returns(
+      Promise.resolve(mockAuth),
     );
     // @ts-expect-error checkFreshness is private
     stub(AuthService.prototype, "checkFreshness");
 
+    AppStateService.updateAuth(mockAuth);
     AppStateService.updateUser(
       formatAPIUser({
         ...mockAPIUser,
@@ -117,16 +115,13 @@ describe("browsertrix-app", () => {
       role: 10,
     };
 
-    stub(AuthService, "initSessionStorage").returns(
-      Promise.resolve({
-        headers: { Authorization: "_fake_headers_" },
-        tokenExpiresAt: 0,
-        username: "test-auth@example.com",
-      }),
+    stub(AuthService.prototype, "initSessionStorage").returns(
+      Promise.resolve(mockAuth),
     );
     // @ts-expect-error checkFreshness is private
     stub(AuthService.prototype, "checkFreshness");
 
+    AppStateService.updateAuth(mockAuth);
     AppStateService.updateUser(
       formatAPIUser({
         ...mockAPIUser,
@@ -142,7 +137,9 @@ describe("browsertrix-app", () => {
   });
 
   it("renders log in when not authenticated", async () => {
-    stub(AuthService, "initSessionStorage").returns(Promise.resolve(null));
+    stub(AuthService.prototype, "initSessionStorage").returns(
+      Promise.resolve(null),
+    );
     // @ts-expect-error checkFreshness is private
     stub(AuthService.prototype, "checkFreshness");
     stub(NavigateController, "createNavigateEvent").callsFake(
@@ -158,33 +155,12 @@ describe("browsertrix-app", () => {
     expect(el.shadowRoot?.querySelector("btrix-log-in")).to.exist;
   });
 
-  // TODO move tests to AuthService
-  it("sets auth state from session storage", async () => {
-    stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
-    stub(window.sessionStorage, "getItem").callsFake((key) => {
-      if (key === "btrix.auth")
-        return JSON.stringify({
-          headers: { Authorization: "_fake_headers_" },
-          tokenExpiresAt: 0,
-          username: "test-auth@example.com",
-        });
-      return null;
-    });
-    const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
-
-    expect(el.authService.authState).to.eql({
-      headers: { Authorization: "_fake_headers_" },
-      tokenExpiresAt: 0,
-      username: "test-auth@example.com",
-    });
-  });
-
   it("sets user info", async () => {
     stub(App.prototype, "getUserInfo").callsFake(async () =>
       Promise.resolve(mockAPIUser),
     );
     stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
-    stub(AuthService, "initSessionStorage").callsFake(async () =>
+    stub(AuthService.prototype, "initSessionStorage").callsFake(async () =>
       Promise.resolve({
         headers: { Authorization: "_fake_headers_" },
         tokenExpiresAt: 0,
@@ -203,7 +179,7 @@ describe("browsertrix-app", () => {
       Promise.resolve(mockAPIUser),
     );
     stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
-    stub(AuthService, "initSessionStorage").callsFake(async () =>
+    stub(AuthService.prototype, "initSessionStorage").callsFake(async () =>
       Promise.resolve({
         headers: { Authorization: "_fake_headers_" },
         tokenExpiresAt: 0,
@@ -227,6 +203,7 @@ describe("browsertrix-app", () => {
       slug: id,
       role: 10,
     };
+    AppStateService.updateAuth(mockAuth);
     AppStateService.updateUser(
       formatAPIUser({
         ...mockAPIUser,
@@ -235,12 +212,8 @@ describe("browsertrix-app", () => {
     );
     stub(App.prototype, "getLocationPathname").callsFake(() => `/orgs/${id}`);
     stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
-    stub(AuthService, "initSessionStorage").callsFake(async () =>
-      Promise.resolve({
-        headers: { Authorization: "_fake_headers_" },
-        tokenExpiresAt: 0,
-        username: "test-auth@example.com",
-      }),
+    stub(AuthService.prototype, "initSessionStorage").callsFake(async () =>
+      Promise.resolve(mockAuth),
     );
 
     const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
