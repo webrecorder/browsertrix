@@ -110,6 +110,7 @@ import {
 } from "@/utils/cron";
 import { makeCurrentTargetHandler, stopProp } from "@/utils/events";
 import { formValidator, maxLengthValidator } from "@/utils/form";
+import { isNotEqual } from "@/utils/is-not-equal";
 import localize from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
@@ -277,7 +278,7 @@ export class WorkflowEditor extends BtrixElement {
     type: Object,
     // Fixes values being reset on navigation events,
     // such as when the user guide is open
-    hasChanged: (a, b) => !isEqual(a, b),
+    hasChanged: isNotEqual,
   })
   initialWorkflow?: WorkflowParams;
 

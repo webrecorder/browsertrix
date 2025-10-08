@@ -2,7 +2,6 @@ import { localized } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import isEqual from "lodash/fp/isEqual";
 
 import type {
   BtrixLoadedLinkedCollectionEvent,
@@ -12,6 +11,7 @@ import { isActualCollection } from "./utils";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Collection } from "@/types/collection";
+import { isNotEqual } from "@/utils/is-not-equal";
 
 /**
  * Display list of collections that are linked to a workflow or archived item by ID.
@@ -25,7 +25,7 @@ export class LinkedCollections extends BtrixElement {
    * List of collection IDs, checked against values so collection data is not
    * unnecessarily fetched if IDs have not changed
    */
-  @property({ type: Array, hasChanged: (a, b) => !isEqual(a, b) })
+  @property({ type: Array, hasChanged: isNotEqual })
   collections: (string | CollectionLikeItem)[] = [];
 
   @property({ type: Boolean })

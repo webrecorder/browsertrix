@@ -9,7 +9,6 @@ import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
-import { isEqual } from "lodash";
 import debounce from "lodash/fp/debounce";
 import filter from "lodash/fp/filter";
 import flow from "lodash/fp/flow";
@@ -21,6 +20,7 @@ import type { Combobox } from "@/components/ui/combobox";
 import type { APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 type Snapshot = {
@@ -74,7 +74,7 @@ export class SelectCollectionPage extends BtrixElement {
   @state()
   private selectedPage?: Page;
 
-  @property({ type: Object, hasChanged: (a, b) => !isEqual(a, b) })
+  @property({ type: Object, hasChanged: isNotEqual })
   public selectedSnapshot?: Snapshot;
 
   @state()

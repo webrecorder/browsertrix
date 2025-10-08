@@ -6,7 +6,6 @@ import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref, type Ref } from "lit/directives/ref.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
-import { isEqual } from "lodash";
 import { type Entries } from "type-fest";
 import z from "zod";
 
@@ -17,6 +16,7 @@ import {
   GridColumnType,
   type GridColumn,
 } from "@/components/ui/data-grid/types";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { orgQuotasSchema, type OrgData, type OrgQuotas } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
@@ -95,7 +95,7 @@ export class OrgQuotaEditor extends BtrixElement {
   @property({ type: Object })
   activeOrg: OrgData | null = null;
 
-  @state({ hasChanged: (a, b) => !isEqual(a, b) })
+  @state({ hasChanged: isNotEqual })
   orgQuotaAdjustments: Partial<OrgQuotas> = {};
 
   dialog: Ref<SlDialog> = createRef();

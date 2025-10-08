@@ -17,13 +17,13 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
-import { isEqual } from "lodash";
 import { isFocusable } from "tabbable";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
 import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
 import { stopProp } from "@/utils/events";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 const MAX_TAGS_IN_LABEL = 5;
@@ -57,7 +57,7 @@ export class WorkflowTagFilter extends BtrixElement {
     keys: ["tag"],
   });
 
-  @state({ hasChanged: isEqual })
+  @state({ hasChanged: isNotEqual })
   selected = new Map<string, boolean>();
 
   @state()
@@ -297,7 +297,7 @@ export class WorkflowTagFilter extends BtrixElement {
         @sl-change=${async (e: SlChangeEvent) => {
           const { checked, value } = e.target as SlCheckbox;
 
-          this.selected = new Map(this.selected.set(value, checked));
+          this.selected = new Map([...this.selected, [value, checked]]);
         }}
       >
         ${repeat(
