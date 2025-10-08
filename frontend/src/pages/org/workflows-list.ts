@@ -744,6 +744,7 @@ export class WorkflowsList extends BtrixElement {
         .searchKeys=${this.searchKeys}
         .searchOptions=${this.searchOptions}
         .keyLabels=${WorkflowsList.FieldLabels}
+        size="small"
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         placeholder=${msg("Search all workflows by name or crawl start URL")}
         @btrix-select=${(e: SelectEvent<typeof this.searchKeys>) => {
