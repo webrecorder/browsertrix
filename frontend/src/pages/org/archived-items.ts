@@ -7,6 +7,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
+import { type UnionToTuple } from "type-fest";
 
 import type { ArchivedItem, Crawl, Workflow } from "./types";
 
@@ -90,9 +91,9 @@ const DEFAULT_SORT_BY: SortBy = {
 };
 
 type FilterBy = {
-  state?: CrawlState[];
   name?: string;
   firstSeed?: string;
+  state?: CrawlState[];
 };
 
 /**
@@ -203,7 +204,9 @@ export class CrawlsList extends BtrixElement {
   private readonly filterBy = new SearchParamsValue<FilterBy>(
     this,
     (value, params) => {
-      const keys = ["firstSeed", "name", "state"] as (keyof FilterBy)[];
+      const keys = ["name", "firstSeed", "state"] as UnionToTuple<
+        keyof FilterBy
+      >;
       keys.forEach((key) => {
         if (value[key] == null) {
           params.delete(key);
@@ -228,8 +231,8 @@ export class CrawlsList extends BtrixElement {
       const state = params.getAll("status") as CrawlState[];
 
       return {
-        firstSeed: params.get("firstSeed") ?? undefined,
         name: params.get("name") ?? undefined,
+        firstSeed: params.get("firstSeed") ?? undefined,
         state: state.length ? state : undefined,
       };
     },
@@ -257,7 +260,7 @@ export class CrawlsList extends BtrixElement {
     return [
       this.filterBy.value.firstSeed,
       this.filterBy.value.name,
-      this.filterBy.value.state.length || undefined,
+      this.filterBy.value.state?.length || undefined,
       this.filterByCurrentUser.value || undefined,
       this.filterByTags.value?.length || undefined,
     ].some((v) => v !== undefined);
@@ -316,7 +319,7 @@ export class CrawlsList extends BtrixElement {
         } else {
           this.notify.toast({
             message: msg(
-              "Sorry, couldn't retrieve archived items at this time.",
+              "Sorry, couldn’t retrieve archived items at this time.",
             ),
             variant: "danger",
             icon: "exclamation-octagon",
@@ -931,7 +934,7 @@ export class CrawlsList extends BtrixElement {
     const query = queryString.stringify(
       {
         ...params.filterBy,
-        state: params.filterBy.state.length
+        state: params.filterBy.state?.length
           ? params.filterBy.state
           : finishedCrawlStates,
         page: params.pagination.page,
