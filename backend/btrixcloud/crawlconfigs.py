@@ -316,6 +316,16 @@ class CrawlConfigOps:
 
             first_seed = seeds[0].url
 
+        # the dedup collection id must also be in auto add collections
+        if config_in.dedupCollId:
+            if (
+                not config_in.autoAddCollections
+                or config_in.dedupCollId not in config_in.autoAddCollections
+            ):
+                raise HTTPException(
+                    status_code=400, detail="dedup_coll_id_not_in_autoadd"
+                )
+
         now = dt_now()
         crawlconfig = CrawlConfig(
             id=uuid4(),
@@ -343,6 +353,7 @@ class CrawlConfigOps:
             firstSeed=first_seed,
             seedCount=seed_count,
             shareable=config_in.shareable,
+            dedupCollId=config_in.dedupCollId,
         )
 
         if config_in.runNow:
@@ -358,6 +369,9 @@ class CrawlConfigOps:
         error_detail = None
         storage_quota_reached = False
         exec_mins_quota_reached = False
+
+        if config_in.dedupCollId:
+            await self.coll_ops.enable_dedup_index(config_in.dedupCollId)
 
         if config_in.runNow:
             try:
@@ -608,6 +622,20 @@ class CrawlConfigOps:
             != sorted(update.autoAddCollections)
         )
 
+        metadata_changed = metadata_changed or (
+            update.dedupCollId is not None
+            and update.dedupCollId != orig_crawl_config.dedupCollId
+        )
+
+        if update.dedupCollId:
+            if (
+                not update.autoAddCollections
+                or update.dedupCollId not in update.autoAddCollections
+            ):
+                raise HTTPException(
+                    status_code=400, detail="dedup_coll_id_not_in_autoadd"
+                )
+
         run_now = update.runNow
 
         if not changed and not metadata_changed and not run_now:
@@ -650,6 +678,9 @@ class CrawlConfigOps:
             query["firstSeed"] = update.config.seeds[0].url
             query["seedCount"] = len(update.config.seeds)
             query["seedFileId"] = None
+
+        if update.dedupCollId:
+            await self.coll_ops.enable_dedup_index(update.dedupCollId)
 
         # update in db
         result = await self.crawl_configs.find_one_and_update(
@@ -1114,6 +1145,10 @@ class CrawlConfigOps:
         await self.crawl_configs.update_many(
             {"oid": org.id, "autoAddCollections": coll_id},
             {"$pull": {"autoAddCollections": coll_id}},
+        )
+
+        await self.crawl_configs.update_many(
+            {"oid": org.id, "dedupCollId": coll_id}, {"$set": {"dedupCollId": None}}
         )
 
     async def get_crawl_config_tags(self, org):

@@ -403,6 +403,7 @@ class CrawlOps(BaseCrawlOps):
             version=2,
             firstSeed=crawlconfig.firstSeed,
             seedCount=crawlconfig.seedCount,
+            dedupCollId=crawlconfig.dedupCollId,
         )
 
         try:
