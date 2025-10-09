@@ -29,23 +29,21 @@ export type BtrixChooseCollectionNameChangeEvent = BtrixChangeEvent<{
  * @attr label
  * @attr placeholder
  * @attr size
+ * @attr disableSearch
  */
 @customElement("btrix-choose-collection-name")
 @localized()
 export class ChooseCollectionName extends WithSearchOrgContext(
   FormControl(SearchCombobox<SearchQuery>),
 ) {
-  /**
-   * Collection ID
-   */
   @property({ type: String })
-  value = "";
+  collectionId = "";
 
   placeholder = msg("Enter existing or new collection name");
   searchKeys = searchQueryKeys;
   createNew = true;
 
-  private collection?: Collection;
+  #collection?: Collection;
 
   readonly api = new APIController(this);
 
@@ -57,24 +55,26 @@ export class ChooseCollectionName extends WithSearchOrgContext(
     super.connectedCallback();
 
     this.addEventListener("btrix-select", this.onSelect);
-    this.addEventListener("btrix-clear", this.onClear);
   }
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("value") && this.value) {
-      if (this.value !== this.collection?.id) {
+    if (changedProperties.has("collectionId") && this.collectionId) {
+      if (this.collectionId !== this.#collection?.id) {
         void this.fetchCollection();
       }
     }
   }
 
   protected updated(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("value")) {
-      this.setFormValue(this.value);
+    if (changedProperties.has("searchByValue")) {
+      this.setFormValue(this.searchByValue);
     }
 
-    if (changedProperties.has("value") || changedProperties.has("required")) {
-      if (this.required && !this.value) {
+    if (
+      changedProperties.has("searchByValue") ||
+      changedProperties.has("required")
+    ) {
+      if (this.required && !this.searchByValue) {
         this.setValidity(
           { valueMissing: true },
           validationMessageFor.valueMissing,
@@ -93,10 +93,8 @@ export class ChooseCollectionName extends WithSearchOrgContext(
     if (!value) return;
 
     if (!key || key === "name") {
-      this.disableSearch = true;
-
       if (key === "name") {
-        this.collection = await this.getCollectionByName(value);
+        this.#collection = await this.getCollectionByName(value);
       }
 
       await this.updateComplete;
@@ -107,7 +105,7 @@ export class ChooseCollectionName extends WithSearchOrgContext(
           {
             detail: {
               value: {
-                id: this.collection?.id || null,
+                id: this.#collection?.id || null,
                 name: value,
               },
             },
@@ -117,10 +115,6 @@ export class ChooseCollectionName extends WithSearchOrgContext(
     } else {
       console.debug("unknown key for choosing collection:", key);
     }
-  };
-
-  private readonly onClear = () => {
-    this.disableSearch = false;
   };
 
   searchOrgContextUpdated = async (context: SearchOrgContext) => {
@@ -147,10 +141,10 @@ export class ChooseCollectionName extends WithSearchOrgContext(
     this.disabled = true;
 
     try {
-      this.collection = await this.getCollectionById(this.value);
+      this.#collection = await this.getCollectionById(this.collectionId);
 
-      if (this.collection) {
-        this.searchByValue = this.collection.name;
+      if (this.#collection) {
+        this.searchByValue = this.#collection.name;
       }
     } catch (err) {
       console.debug(err);
