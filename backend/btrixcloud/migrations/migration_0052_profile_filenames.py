@@ -1,5 +1,5 @@
 """
-Migration 0052 - Fix profile filenames, ensure it's full path with org id
+Migration 0052 - Fix profile filenames in db to be full path from bucket
 """
 
 from btrixcloud.migrations import BaseMigration
