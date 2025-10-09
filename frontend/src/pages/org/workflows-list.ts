@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import type { SlDialog, SlSelectEvent } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
@@ -6,6 +7,7 @@ import { customElement, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
+import { type UnionToTuple } from "type-fest";
 
 import {
   ScopeType,
@@ -42,6 +44,7 @@ import {
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { renderName } from "@/utils/crawler";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 type SearchFields = "name" | "firstSeed";
@@ -59,7 +62,6 @@ const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.crawlConfigs";
 const INITIAL_PAGE_SIZE = 10;
 const POLL_INTERVAL_SECONDS = 10;
-const ABORT_REASON_THROTTLE = "throttled";
 
 const sortableFields: Record<
   SortField,
@@ -98,10 +100,10 @@ const DEFAULT_SORT_BY = {
 // ] as const satisfies (keyof ListWorkflow)[];
 
 type FilterBy = {
-  schedule?: boolean;
-  isCrawlRunning?: boolean;
   name?: string;
   firstSeed?: string;
+  schedule?: boolean;
+  isCrawlRunning?: boolean;
 };
 
 /**
@@ -119,16 +121,16 @@ export class WorkflowsList extends BtrixElement {
   };
 
   @state()
-  private workflows?: APIPaginatedList<ListWorkflow>;
+  private pagination: Required<APIPaginationQuery> = {
+    page: parsePage(new URLSearchParams(location.search).get("page")),
+    pageSize: INITIAL_PAGE_SIZE,
+  };
 
   @state()
   private searchOptions: { [x: string]: string }[] = [];
 
   @state()
-  private isFetching = false;
-
-  @state()
-  private fetchErrorStatusCode?: number;
+  private readonly fetchErrorStatusCode?: number;
 
   @state()
   private workflowToDelete?: ListWorkflow;
@@ -168,7 +170,12 @@ export class WorkflowsList extends BtrixElement {
   private readonly filterBy = new SearchParamsValue<FilterBy>(
     this,
     (value, params) => {
-      const keys = Object.keys(value) as Keys<typeof value>;
+      const keys = [
+        "name",
+        "firstSeed",
+        "schedule",
+        "isCrawlRunning",
+      ] as UnionToTuple<keyof FilterBy>;
       keys.forEach((key) => {
         if (value[key] == null) {
           params.delete(key);
@@ -179,6 +186,8 @@ export class WorkflowsList extends BtrixElement {
               params.set(key, value[key]);
               break;
             case "schedule":
+              params.set(key, value[key] ? "true" : "false");
+              break;
             case "isCrawlRunning":
               if (value[key]) {
                 params.set(key, "true");
@@ -193,10 +202,12 @@ export class WorkflowsList extends BtrixElement {
     },
     (params) => {
       return {
-        schedule: params.get("schedule") === "true",
-        isCrawlRunning: params.get("isCrawlRunning") === "true",
         name: params.get("name") ?? undefined,
         firstSeed: params.get("firstSeed") ?? undefined,
+        schedule: params.has("schedule")
+          ? params.get("schedule") === "true"
+          : undefined,
+        isCrawlRunning: params.get("isCrawlRunning") === "true",
       };
     },
   );
@@ -266,10 +277,6 @@ export class WorkflowsList extends BtrixElement {
   // For fuzzy search:
   private readonly searchKeys = ["name", "firstSeed"];
 
-  // Use to cancel requests
-  private getWorkflowsController: AbortController | null = null;
-  private timerId?: number;
-
   private get selectedSearchFilterKey() {
     return (
       Object.keys(WorkflowsList.FieldLabels) as Keys<
@@ -277,6 +284,96 @@ export class WorkflowsList extends BtrixElement {
       >
     ).find((key) => Boolean(this.filterBy.value[key]));
   }
+
+  private get hasFiltersSet() {
+    return [
+      this.filterBy.value.firstSeed || undefined,
+      this.filterBy.value.name || undefined,
+      this.filterBy.value.isCrawlRunning || undefined,
+      this.filterBy.value.schedule,
+      this.filterByProfiles.value?.length || undefined,
+      this.filterByCurrentUser.value || undefined,
+      this.filterByTags.value?.length || undefined,
+    ].some((v) => v !== undefined);
+  }
+
+  private clearFilters() {
+    this.filterBy.setValue({
+      ...this.filterBy.value,
+      firstSeed: undefined,
+      name: undefined,
+      isCrawlRunning: undefined,
+      schedule: undefined,
+    });
+    this.filterByCurrentUser.setValue(false);
+    this.filterByTags.setValue(undefined);
+    this.filterByProfiles.setValue(undefined);
+  }
+
+  private getWorkflowsTimeout?: number;
+
+  private readonly workflowsTask = new Task(this, {
+    task: async (
+      [
+        pagination,
+        orderBy,
+        filterBy,
+        filterByCurrentUser,
+        filterByTags,
+        filterByTagsType,
+        filterByProfiles,
+      ],
+      { signal },
+    ) => {
+      try {
+        const data = await this.getWorkflows(
+          {
+            pagination,
+            orderBy,
+            filterBy,
+            filterByCurrentUser,
+            filterByTags,
+            filterByTagsType,
+            filterByProfiles,
+          },
+          signal,
+        );
+
+        if (this.getWorkflowsTimeout) {
+          window.clearTimeout(this.getWorkflowsTimeout);
+        }
+
+        this.getWorkflowsTimeout = window.setTimeout(() => {
+          void this.workflowsTask.run();
+        }, POLL_INTERVAL_SECONDS * 1000);
+
+        return data;
+      } catch (e) {
+        if ((e as Error).name === "AbortError") {
+          console.debug("Fetch workflows aborted to throttle");
+        } else {
+          this.notify.toast({
+            message: msg("Sorry, couldn’t retrieve workflows at this time."),
+            variant: "danger",
+            icon: "exclamation-octagon",
+            id: "workflow-fetch-error",
+          });
+        }
+        throw e;
+      }
+    },
+    args: () =>
+      // TODO consolidate filters into single fetch params
+      [
+        this.pagination,
+        this.orderBy.value,
+        this.filterBy.value,
+        this.filterByCurrentUser.value,
+        this.filterByTags.value,
+        this.filterByTagsType.value,
+        this.filterByProfiles.value,
+      ] as const,
+  });
 
   // searchParams = new SearchParamsController(this, (params) => {
   //   this.updateFiltersFromSearchParams(params);
@@ -361,6 +458,7 @@ export class WorkflowsList extends BtrixElement {
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
+    console.log(changedProperties);
     if (
       changedProperties.has("filterByCurrentUser.value") ||
       changedProperties.has("filterByTags.value") ||
@@ -369,10 +467,12 @@ export class WorkflowsList extends BtrixElement {
       changedProperties.has("filterByScheduled.value") ||
       changedProperties.has("filterBy.value") ||
       changedProperties.has("orderBy.value")
-    )
-      void this.fetchWorkflows({
+    ) {
+      this.pagination = {
         page: 1,
-      });
+        pageSize: INITIAL_PAGE_SIZE,
+      };
+    }
     if (changedProperties.has("filterByCurrentUser")) {
       window.sessionStorage.setItem(
         FILTER_BY_CURRENT_USER_STORAGE_KEY,
@@ -386,46 +486,7 @@ export class WorkflowsList extends BtrixElement {
   }
 
   disconnectedCallback(): void {
-    this.cancelInProgressGetWorkflows();
     super.disconnectedCallback();
-  }
-
-  private async fetchWorkflows(params?: APIPaginationQuery) {
-    this.fetchErrorStatusCode = undefined;
-
-    this.cancelInProgressGetWorkflows();
-    this.isFetching = true;
-    try {
-      const workflows = await this.getWorkflows(params);
-      this.workflows = workflows;
-    } catch (e) {
-      if (isApiError(e)) {
-        this.fetchErrorStatusCode = e.statusCode;
-      } else if ((e as Error).name === "AbortError") {
-        console.debug("Fetch archived items aborted to throttle");
-      } else {
-        this.notify.toast({
-          message: msg("Sorry, couldn't retrieve Workflows at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "workflow-retrieve-error",
-        });
-      }
-    }
-    this.isFetching = false;
-
-    // Restart timer for next poll
-    this.timerId = window.setTimeout(() => {
-      void this.fetchWorkflows();
-    }, 1000 * POLL_INTERVAL_SECONDS);
-  }
-
-  private cancelInProgressGetWorkflows() {
-    window.clearTimeout(this.timerId);
-    if (this.getWorkflowsController) {
-      this.getWorkflowsController.abort(ABORT_REASON_THROTTLE);
-      this.getWorkflowsController = null;
-    }
   }
 
   render() {
@@ -547,11 +608,20 @@ export class WorkflowsList extends BtrixElement {
         `,
         () => html`
           <div class="pb-10">
-            ${this.workflows
-              ? this.workflows.total
-                ? this.renderWorkflowList()
-                : this.renderEmptyState()
-              : this.renderLoading()}
+            ${this.workflowsTask.render({
+              initial: this.renderLoading,
+              pending: () =>
+                // TODO differentiate between pending between poll and
+                // pending from user action, in order to show loading indicator
+                this.workflowsTask.value
+                  ? // Render previous value while latest is loading
+                    this.renderWorkflowList()
+                  : null,
+              complete: () =>
+                this.workflowsTask.value?.total
+                  ? this.renderWorkflowList()
+                  : this.renderEmptyState(),
+            })}
           </div>
         `,
       )}
@@ -716,26 +786,13 @@ export class WorkflowsList extends BtrixElement {
       </btrix-filter-chip>
 
       ${when(
-        [
-          this.filterBy.value.schedule,
-          this.filterBy.value.isCrawlRunning,
-          this.filterByCurrentUser.value || undefined,
-          this.filterByTags,
-        ].filter((v) => v !== undefined).length > 1,
+        this.hasFiltersSet,
         () => html`
           <sl-button
             class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
             size="small"
             variant="text"
-            @click=${() => {
-              this.filterBy.setValue({
-                ...this.filterBy.value,
-                schedule: undefined,
-                isCrawlRunning: undefined,
-              });
-              this.filterByCurrentUser.setValue(false);
-              this.filterByTags.setValue(undefined);
-            }}
+            @click=${this.clearFilters}
           >
             <sl-icon slot="prefix" name="x-lg"></sl-icon>
             ${msg("Clear All")}
@@ -775,11 +832,11 @@ export class WorkflowsList extends BtrixElement {
   }
 
   private renderWorkflowList() {
-    if (!this.workflows) return;
-    const { page, total, pageSize } = this.workflows;
+    if (!this.workflowsTask.value) return;
+    const { page, total, pageSize } = this.workflowsTask.value;
     return html`
       <btrix-workflow-list>
-        ${this.workflows.items.map(this.renderWorkflowItem)}
+        ${this.workflowsTask.value.items.map(this.renderWorkflowItem)}
       </btrix-workflow-list>
       <footer
         class=${clsx(
@@ -792,9 +849,11 @@ export class WorkflowsList extends BtrixElement {
           totalCount=${total}
           size=${pageSize}
           @page-change=${async (e: PageChangeEvent) => {
-            await this.fetchWorkflows({
+            this.pagination = {
+              ...this.pagination,
               page: e.detail.page,
-            });
+            };
+            await this.updateComplete;
 
             // Scroll to top of list
             // TODO once deep-linking is implemented, scroll to top of pushstate
@@ -886,7 +945,7 @@ export class WorkflowsList extends BtrixElement {
       `;
     }
 
-    if (this.workflows?.page && this.workflows.page > 1) {
+    if (this.workflowsTask.value?.page && this.workflowsTask.value.page > 1) {
       return html`
         <div class="border-b border-t py-5">
           <p class="text-center text-neutral-500">
@@ -894,10 +953,6 @@ export class WorkflowsList extends BtrixElement {
           </p>
         </div>
       `;
-    }
-
-    if (this.isFetching) {
-      return this.renderLoading();
     }
 
     return html`
@@ -919,41 +974,39 @@ export class WorkflowsList extends BtrixElement {
    * Fetch Workflows and update state
    **/
   private async getWorkflows(
-    queryParams?: APIPaginationQuery & Record<string, unknown>,
+    params: {
+      pagination: Required<APIPaginationQuery>;
+      orderBy: WorkflowsList["orderBy"]["value"];
+      filterBy: WorkflowsList["filterBy"]["value"];
+      filterByCurrentUser: WorkflowsList["filterByCurrentUser"]["value"];
+      filterByTags: WorkflowsList["filterByTags"]["value"];
+      filterByTagsType: WorkflowsList["filterByTagsType"]["value"];
+      filterByProfiles: WorkflowsList["filterByProfiles"]["value"];
+    },
+    signal: AbortSignal,
   ) {
     const query = queryString.stringify(
       {
-        ...this.filterBy.value,
-        page:
-          queryParams?.page ||
-          this.workflows?.page ||
-          parsePage(new URLSearchParams(location.search).get("page")),
-        pageSize:
-          queryParams?.pageSize ||
-          this.workflows?.pageSize ||
-          INITIAL_PAGE_SIZE,
-        userid: this.filterByCurrentUser.value ? this.userInfo?.id : undefined,
-        tag: this.filterByTags.value || undefined,
-        tagMatch: this.filterByTagsType.value,
-        profileIds: this.filterByProfiles.value || undefined,
-        sortBy: this.orderBy.value.field,
-        sortDirection: this.orderBy.value.direction === "desc" ? -1 : 1,
+        ...params.filterBy,
+        page: params.pagination.page,
+        pageSize: params.pagination.pageSize,
+        userid: params.filterByCurrentUser ? this.userInfo?.id : undefined,
+        tag: params.filterByTags || undefined,
+        tagMatch: params.filterByTagsType,
+        profileIds: params.filterByProfiles || undefined,
+        sortBy: params.orderBy.field,
+        sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
       },
       {
         arrayFormat: "none", // For tags
       },
     );
-
-    this.getWorkflowsController = new AbortController();
-    const data = await this.api.fetch<APIPaginatedList<Workflow>>(
+    return await this.api.fetch<APIPaginatedList<Workflow>>(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
       {
-        signal: this.getWorkflowsController.signal,
+        signal: signal,
       },
     );
-    this.getWorkflowsController = null;
-
-    return data;
   }
 
   /**
@@ -1005,7 +1058,7 @@ export class WorkflowsList extends BtrixElement {
         method: "DELETE",
       });
 
-      void this.fetchWorkflows();
+      void this.workflowsTask.run();
 
       const workflow_name = html`<strong class="inline-flex"
         >${renderName(workflow)}</strong
@@ -1036,7 +1089,7 @@ export class WorkflowsList extends BtrixElement {
         },
       );
       if (data.success) {
-        void this.fetchWorkflows();
+        void this.workflowsTask.run();
       } else {
         this.notify.toast({
           message: msg("Something went wrong, couldn't cancel crawl."),
@@ -1058,7 +1111,7 @@ export class WorkflowsList extends BtrixElement {
         },
       );
       if (data.success) {
-        void this.fetchWorkflows();
+        void this.workflowsTask.run();
       } else {
         this.notify.toast({
           message: msg("Something went wrong, couldn't stop crawl."),
@@ -1096,7 +1149,7 @@ export class WorkflowsList extends BtrixElement {
         duration: 8000,
       });
 
-      await this.fetchWorkflows();
+      void this.workflowsTask.run();
       // Scroll to top of list
       this.scrollIntoView({ behavior: "smooth" });
     } catch (e) {
