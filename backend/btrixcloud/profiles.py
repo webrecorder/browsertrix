@@ -247,13 +247,14 @@ class ProfileOps:
                 created_by = user.id
                 created_by_name = user.name if user.name else user.email
 
-            filename_data = {"filename": f"profiles/profile-{profileid}.tar.gz"}
+            relative_filename = f"profiles/profile-{profileid}.tar.gz"
+            full_filename = f"{str(org.id)}/{relative_filename}"
 
             json = await self._send_browser_req(
                 browser_commit.browserid,
                 "/createProfileJS",
                 "POST",
-                json=filename_data,
+                json={"filename": relative_filename},
                 committing="committing",
             )
             resource = json["resource"]
@@ -264,7 +265,7 @@ class ProfileOps:
             profile_file = ProfileFile(
                 hash=resource["hash"],
                 size=file_size,
-                filename=resource["path"],
+                filename=full_filename,
                 storage=org.storage,
             )
 
