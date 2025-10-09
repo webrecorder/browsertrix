@@ -1,15 +1,17 @@
 import { localized, msg } from "@lit/localize";
-import { Task, TaskStatus } from "@lit/task";
-import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
-import Fuse from "fuse.js";
+import type {
+  SlInput,
+  SlInputEvent,
+  SlMenuItem,
+} from "@shoelace-style/shoelace";
 import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
-import debounce from "lodash/fp/debounce";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Combobox } from "@/components/ui/combobox";
+import { WithSearchOrgContext } from "@/context/search-org/WithSearchOrgContext";
 import type {
   BtrixLoadedLinkedCollectionEvent,
   BtrixRemoveLinkedCollectionEvent,
@@ -20,12 +22,11 @@ import type {
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import type { Collection, CollectionSearchValues } from "@/types/collection";
-import type { UnderlyingFunction } from "@/types/utils";
+import type { Collection } from "@/types/collection";
 import { TwoWayMap } from "@/utils/TwoWayMap";
 
-const INITIAL_PAGE_SIZE = 10;
 const MIN_SEARCH_LENGTH = 1;
+const MAX_SEARCH_RESULTS = 5;
 
 export type CollectionsChangeEvent = CustomEvent<{
   collections: string[];
@@ -44,7 +45,7 @@ export type CollectionsChangeEvent = CustomEvent<{
  */
 @customElement("btrix-collections-add")
 @localized()
-export class CollectionsAdd extends BtrixElement {
+export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
   @property({ type: Array })
   initialCollections?: string[];
 
@@ -57,6 +58,9 @@ export class CollectionsAdd extends BtrixElement {
   @state()
   private collections: CollectionLikeItem[] = [];
 
+  @state()
+  private searchByValue = "";
+
   @query("#search-input")
   private readonly input?: SlInput | null;
 
@@ -64,52 +68,18 @@ export class CollectionsAdd extends BtrixElement {
   private readonly combobox?: Combobox | null;
 
   // Map collection names to ID for managing search options
-  private readonly nameSearchMap = new TwoWayMap<string, string>();
+  private readonly nameSearchMap = new TwoWayMap<
+    /* name: */ string,
+    /* ID: */ string
+  >();
 
   private get collectionIds() {
     return this.collections.map(({ id }) => id);
   }
 
-  private get searchByValue() {
-    return this.input ? this.input.value.trim() : "";
-  }
-
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
-
-  private readonly searchValuesTask = new Task(this, {
-    task: async (_args, { signal }) => {
-      const { names } = await this.getSearchValues(signal);
-
-      return names;
-    },
-    args: () => [] as const,
-  });
-
-  private readonly searchTask = new Task(this, {
-    task: async ([names], { signal }) => {
-      if (!names || signal.aborted) {
-        return;
-      }
-
-      return new Fuse(names, { threshold: 0.4, minMatchCharLength: 2 });
-    },
-    args: () => [this.searchValuesTask.value] as const,
-  });
-
-  private readonly searchResultsTask = new Task(this, {
-    task: async ([searchByValue, hasSearchStr], { signal }) => {
-      if (!hasSearchStr) return [];
-      const data = await this.fetchCollectionsByPrefix(searchByValue, signal);
-      let searchResults: Collection[] = [];
-      if (data?.items.length) {
-        searchResults = this.filterOutSelectedCollections(data.items);
-      }
-      return searchResults;
-    },
-    args: () => [this.searchByValue, this.hasSearchStr] as const,
-  });
 
   public focus() {
     // Move focus to search input
@@ -167,7 +137,8 @@ export class CollectionsAdd extends BtrixElement {
   }
 
   private renderSearch() {
-    const disabled = !this.searchValuesTask.value?.length;
+    const collections = this.listSearchValuesFor("collections");
+    const disabled = !collections?.length;
 
     return html`
       <btrix-combobox
@@ -178,7 +149,7 @@ export class CollectionsAdd extends BtrixElement {
         @sl-select=${async (e: CustomEvent<{ item: SlMenuItem }>) => {
           this.combobox?.hide();
           const item = e.detail.item;
-          const name = item.dataset["key"];
+          const name = item.dataset["value"];
 
           const collections = await this.getCollections({ namePrefix: name });
           const coll = collections.items.find((c) => c.name === name);
@@ -209,13 +180,15 @@ export class CollectionsAdd extends BtrixElement {
               this.combobox.show();
             }
           }}
-          @sl-input=${this.onSearchInput as UnderlyingFunction<
-            typeof this.onSearchInput
-          >}
+          @sl-input=${(e: SlInputEvent) => {
+            const input = e.target as SlInput;
+
+            this.searchByValue = input.value.trim();
+          }}
         >
           <sl-icon name="search" slot="prefix"></sl-icon>
           ${when(
-            disabled && this.searchValuesTask.status === TaskStatus.COMPLETE,
+            disabled && collections,
             () => html`
               <div slot="help-text">
                 ${msg("No collections found.")}
@@ -234,47 +207,72 @@ export class CollectionsAdd extends BtrixElement {
   }
 
   private renderSearchResults() {
-    return this.searchTask.render({
-      pending: () => html`
+    if (!this.searchOrg.collections) {
+      html`
         <sl-menu-item slot="menu-item" disabled>
           <sl-spinner></sl-spinner>
         </sl-menu-item>
-      `,
-      complete: (fuse) => {
-        if (!this.hasSearchStr) {
-          return html`
-            <sl-menu-item slot="menu-item" disabled>
-              ${msg("Start typing to search Collections.")}
-            </sl-menu-item>
-          `;
-        }
+      `;
+    }
 
-        const results = fuse
-          ?.search(this.searchByValue)
-          // Filter out items that have been selected
-          .filter(({ item }) => !this.nameSearchMap.get(item))
-          // Show first few results
-          .slice(0, 5);
+    if (!this.hasSearchStr) {
+      return html`
+        <sl-menu-item slot="menu-item" disabled>
+          ${msg("Start typing to search Collections.")}
+        </sl-menu-item>
+      `;
+    }
 
-        if (!results?.length) {
-          return html`
-            <sl-menu-item slot="menu-item" disabled>
-              ${msg("No matching Collections found.")}
-            </sl-menu-item>
-          `;
-        }
+    // Use search pattern that excludes selected names
+    const includePattern = `"${this.searchByValue}"`;
+    // Fuse doesn't support escaping quotes or operators in expressions yet,
+    // so we still need to manually filter out collection names with quotes
+    // from the search results
+    // https://github.com/krisk/Fuse/issues/765
+    const excludeWithQuotes: string[] = [];
+    const excludeWithoutQuotes: string[] = [];
 
-        return html`
-          ${results.map(({ item }: { item: string }) => {
-            return html`
-              <sl-menu-item slot="menu-item" data-key=${item}>
-                ${item}
-              </sl-menu-item>
-            `;
-          })}
-        `;
-      },
+    this.nameSearchMap.keys().forEach((name) => {
+      if (name.includes('"')) {
+        excludeWithQuotes.push(name);
+      } else {
+        excludeWithoutQuotes.push(`!"${name}"`);
+      }
     });
+
+    const excludePattern = excludeWithoutQuotes.join(" ");
+    const pattern =
+      includePattern + (excludePattern ? ` ${excludePattern}` : "");
+
+    // TODO Evaluate performance of searching in render, which will block the main thread
+    const results = this.searchOrg.collections
+      ?.search(pattern, {
+        limit: MAX_SEARCH_RESULTS + excludeWithQuotes.length,
+      })
+      .filter(({ item }) => !excludeWithQuotes.includes(item["name"]))
+      .slice(0, MAX_SEARCH_RESULTS);
+
+    if (!results?.length) {
+      return html`
+        <sl-menu-item slot="menu-item" disabled>
+          ${msg("No matching Collections found.")}
+        </sl-menu-item>
+      `;
+    }
+
+    return html`
+      ${results.map(({ item }) => {
+        return html`
+          <sl-menu-item
+            slot="menu-item"
+            data-key="name"
+            data-value=${item["name"]}
+          >
+            ${item["name"]}
+          </sl-menu-item>
+        `;
+      })}
+    `;
   }
 
   private removeCollection(collectionId: string) {
@@ -291,47 +289,8 @@ export class CollectionsAdd extends BtrixElement {
     }
   }
 
-  private readonly onSearchInput = debounce(400)(() => {
-    void this.searchResultsTask.run();
-  });
-
   private findCollectionIndexById(collectionId: string) {
     return this.collections.findIndex(({ id }) => id === collectionId);
-  }
-
-  private filterOutSelectedCollections(results: Collection[]) {
-    return results.filter(
-      (result) => this.findCollectionIndexById(result.id) > -1,
-    );
-  }
-
-  private async fetchCollectionsByPrefix(
-    namePrefix: string,
-    signal?: AbortSignal,
-  ) {
-    try {
-      const results = await this.getCollections(
-        {
-          oid: this.orgId,
-          namePrefix: namePrefix,
-          sortBy: "name",
-          pageSize: INITIAL_PAGE_SIZE,
-        },
-        signal,
-      );
-      return results;
-    } catch (e) {
-      if ((e as Error).name === "AbortError") {
-        console.debug("Fetch aborted to throttle");
-      } else {
-        this.notify.toast({
-          message: msg("Sorry, couldn't retrieve Collections at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "collection-fetch-throttled",
-        });
-      }
-    }
   }
 
   private async getCollections(
@@ -352,13 +311,6 @@ export class CollectionsAdd extends BtrixElement {
     );
 
     return data;
-  }
-
-  private async getSearchValues(signal: AbortSignal) {
-    return await this.api.fetch<CollectionSearchValues>(
-      `/orgs/${this.orgId}/collections/search-values`,
-      { signal },
-    );
   }
 
   private async dispatchChange() {
