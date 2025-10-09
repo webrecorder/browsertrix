@@ -81,17 +81,26 @@ export class SearchParamsValue<T> implements ReactiveController {
   readonly #encoder: (value: T, params: URLSearchParams) => URLSearchParams;
   readonly #decoder: (params: URLSearchParams) => T;
 
+  readonly #options: {
+    initial?: (valueFromSearchParams?: T) => T;
+    propertyKey?: PropertyKey;
+    /**
+     * Use a transaction for searchParams updates. Useful in combination with pagination, for example.
+     */
+    transaction?: boolean;
+  };
+
   public get value(): T {
     return this.#value;
   }
   public setValue(value: T) {
     const oldValue = this.#value;
     this.#value = value;
-    this.#searchParams.update((params) => this.#encoder(value, params));
+    this.#searchParams.update((params) => this.#encoder(value, params), {
+      transaction: this.#options.transaction,
+    });
     this.#host.requestUpdate(this.#getPropertyName("setValue"), oldValue);
   }
-
-  #propertyKey: PropertyKey | undefined;
   // Little bit hacky/metaprogramming-y, but this lets us auto-detect property
   // name from the host element's properties without needing to repeat the name
   // in a string passed into options in order to have `requestUpdate` be called
@@ -101,13 +110,14 @@ export class SearchParamsValue<T> implements ReactiveController {
   // externally-triggered ("value") updates a bit more complex.
   #getPropertyName(type: "value" | "setValue"): PropertyKey | undefined {
     // Use explicit property name if provided
-    if (this.#propertyKey) return `${this.#propertyKey.toString()}.${type}`;
+    if (this.#options.propertyKey)
+      return `${this.#options.propertyKey.toString()}.${type}`;
 
     try {
       for (const prop of Reflect.ownKeys(this.#host)) {
         const descriptor = Object.getOwnPropertyDescriptor(this.#host, prop);
         if (descriptor && descriptor.value === this) {
-          this.#propertyKey = prop;
+          this.#options.propertyKey = prop;
           return `${prop.toString()}.${type}`;
         }
       }
@@ -127,12 +137,16 @@ export class SearchParamsValue<T> implements ReactiveController {
     options?: {
       initial?: (valueFromSearchParams?: T) => T;
       propertyKey?: PropertyKey;
+      /**
+       * Use a transaction for searchParams updates. Useful in combination with pagination, for example.
+       */
+      transaction?: boolean;
     },
   ) {
     (this.#host = host).addController(this);
     this.#encoder = encoder;
     this.#decoder = decoder;
-    this.#propertyKey ??= options?.propertyKey;
+    this.#options = options || {};
     this.#searchParams = new SearchParamsController(this.#host, (params) => {
       const oldValue = this.#value;
       this.#value = this.#decoder(params);
