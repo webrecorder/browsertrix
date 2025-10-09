@@ -174,7 +174,7 @@ export type FormState = {
    */
   scheduleCustom?: string;
   dedupeType: "none" | "collection";
-  dedupCollId: string | null;
+  dedupeCollectionId: string | null;
   jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
@@ -237,8 +237,8 @@ export const getDefaultFormState = (): FormState => ({
     minute: 0,
     period: "AM",
   },
-  dedupeType: "collection",
-  dedupCollId: null,
+  dedupeType: "none",
+  dedupeCollectionId: null,
   jobName: "",
   browserProfile: null,
   tags: [],
@@ -345,7 +345,7 @@ export function getInitialFormState(params: {
 
   if (params.initialWorkflow.dedupCollId) {
     formState.dedupeType = "collection";
-    formState.dedupCollId = params.initialWorkflow.dedupCollId;
+    formState.dedupeCollectionId = params.initialWorkflow.dedupCollId;
   }
 
   const secondsToMinutes = (value: unknown, fallback = 0) => {

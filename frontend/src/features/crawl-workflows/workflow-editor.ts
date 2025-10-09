@@ -41,6 +41,7 @@ import flow from "lodash/fp/flow";
 import isEqual from "lodash/fp/isEqual";
 import throttle from "lodash/fp/throttle";
 import uniq from "lodash/fp/uniq";
+import without from "lodash/fp/without";
 import queryString from "query-string";
 
 import type { BtrixChooseCollectionNameChangeEvent } from "../collections/choose-collection-name";
@@ -2297,10 +2298,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
         label=${msg("Crawl Deduplication")}
         name="dedupeType"
         value=${this.formState.dedupeType}
-        @sl-change=${(e: Event) =>
-          this.updateFormState({
-            dedupeType: (e.target as SlRadio).value as FormState["dedupeType"],
-          })}
+        @sl-change=${(e: Event) => {
+          this.updateFormState(
+            {
+              dedupeType: (e.target as SlRadio)
+                .value as FormState["dedupeType"],
+              dedupeCollectionId: null,
+              autoAddCollections: without(
+                this.formState.autoAddCollections,
+                this.formState.dedupeCollectionId,
+              ),
+            },
+            true,
+          );
+        }}
       >
         <sl-radio value="none">${this.dedupeTypeLabels["none"]}</sl-radio>
         <sl-radio value="collection"
@@ -2327,18 +2338,32 @@ https://archiveweb.page/images/${"logo.svg"}`}
           size="medium"
           label=${msg("Collection Name")}
           placeholder=${msg("Enter existing or new collection name")}
-          value=${ifDefined(this.formState.dedupCollId || undefined)}
+          value=${ifDefined(this.formState.dedupeCollectionId || undefined)}
           required
           @btrix-change=${(e: BtrixChooseCollectionNameChangeEvent) => {
             const { id, name } = e.detail.value;
 
             if (id) {
               this.updateFormState({
-                dedupCollId: id,
+                dedupeCollectionId: id,
                 autoAddCollections: [id],
               });
             } else {
               console.log("TODO new name:", name);
+            }
+          }}
+          @btrix-clear=${() => {
+            if (this.formState.dedupeCollectionId) {
+              this.updateFormState(
+                {
+                  dedupeCollectionId: null,
+                  autoAddCollections: without(
+                    this.formState.autoAddCollections,
+                    this.formState.dedupeCollectionId,
+                  ),
+                },
+                true,
+              );
             }
           }}
         >
@@ -3278,7 +3303,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       maxCrawlSize: this.formState.maxCrawlSizeGB * BYTES_PER_GB,
       tags: this.formState.tags,
       autoAddCollections: this.formState.autoAddCollections,
-      dedupCollId: this.formState.dedupCollId,
+      dedupCollId: this.formState.dedupeCollectionId,
       config: {
         ...(isPageScopeType(this.formState.scopeType)
           ? this.parseUrlListConfig(uploadParams)
