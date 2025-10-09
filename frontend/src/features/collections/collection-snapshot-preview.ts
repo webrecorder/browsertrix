@@ -3,11 +3,11 @@ import { Task } from "@lit/task";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
-import { isEqual } from "lodash";
 
 import type { SelectSnapshotDetail } from "./select-collection-page";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { tw } from "@/utils/tailwind";
 
@@ -42,7 +42,7 @@ export class CollectionSnapshotPreview extends TailwindElement {
 
   @property({
     type: Object,
-    hasChanged: (a, b) => !isEqual(a, b),
+    hasChanged: isNotEqual,
   })
   snapshot?: Partial<SelectSnapshotDetail["item"]>;
 

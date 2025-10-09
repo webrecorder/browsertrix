@@ -203,7 +203,7 @@ export class CrawlsList extends BtrixElement {
   private readonly filterBy = new SearchParamsValue<FilterBy>(
     this,
     (value, params) => {
-      const keys = Object.keys(value) as Keys<typeof value>;
+      const keys = ["firstSeed", "name", "state"] as (keyof FilterBy)[];
       keys.forEach((key) => {
         if (value[key] == null) {
           params.delete(key);

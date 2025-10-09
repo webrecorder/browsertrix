@@ -17,7 +17,6 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
-import { isEqual } from "lodash";
 import queryString from "query-string";
 import { isFocusable } from "tabbable";
 
@@ -25,6 +24,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
 import { type APIPaginatedList } from "@/types/api";
 import { type Profile } from "@/types/crawler";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
@@ -58,7 +58,7 @@ export class WorkflowProfileFilter extends BtrixElement {
     keys: ["id", "name", "description", "origins"],
   });
 
-  @state({ hasChanged: isEqual })
+  @state({ hasChanged: isNotEqual })
   selected = new Map<string, boolean>();
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {

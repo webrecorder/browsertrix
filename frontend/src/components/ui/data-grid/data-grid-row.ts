@@ -5,7 +5,6 @@ import { customElement, property, queryAll, state } from "lit/decorators.js";
 import { directive } from "lit/directive.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import isEqual from "lodash/fp/isEqual";
 
 import { CellDirective } from "./cellDirective";
 import type {
@@ -18,6 +17,7 @@ import type { GridColumn, GridItem, GridRowId } from "./types";
 import { DataGridFocusController } from "@/components/ui/data-grid/controllers/focus";
 import { TableRow } from "@/components/ui/table/table-row";
 import { FormControl } from "@/mixins/FormControl";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 export type RowRemoveEventDetail = {
@@ -57,7 +57,7 @@ export class DataGridRow<
   /**
    * Data to be presented as a row.
    */
-  @property({ type: Object, hasChanged: (a, b) => !isEqual(a, b) })
+  @property({ type: Object, hasChanged: isNotEqual })
   item?: T;
 
   /**
