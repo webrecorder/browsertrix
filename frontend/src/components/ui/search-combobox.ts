@@ -63,6 +63,9 @@ export class SearchCombobox<T> extends TailwindElement {
   @property({ type: Boolean })
   required?: boolean;
 
+  @property({ type: Boolean })
+  disabled?: boolean;
+
   @property({ type: String })
   size?: SlInput["size"];
 
@@ -148,6 +151,7 @@ export class SearchCombobox<T> extends TailwindElement {
           placeholder=${this.placeholder}
           label=${ifDefined(this.label)}
           size=${ifDefined(this.size)}
+          ?disabled=${this.disabled}
           clearable
           value=${this.searchByValue}
           @sl-clear=${(e: SlClearEvent) => {
