@@ -1,4 +1,5 @@
-import { localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
+import type Fuse from "fuse.js";
 import type { PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import queryString from "query-string";
@@ -40,6 +41,7 @@ export class ChooseCollectionName extends WithSearchOrgContext(
   @property({ type: String })
   value = "";
 
+  placeholder = msg("Enter existing or new collection name");
   searchKeys = searchQueryKeys;
   createNew = true;
 
@@ -91,7 +93,7 @@ export class ChooseCollectionName extends WithSearchOrgContext(
     if (!value) return;
 
     if (!key || key === "name") {
-      this.iconName = "check-lg";
+      this.disableSearch = true;
 
       if (key === "name") {
         this.collection = await this.getCollectionByName(value);
@@ -118,13 +120,26 @@ export class ChooseCollectionName extends WithSearchOrgContext(
   };
 
   private readonly onClear = () => {
-    this.iconName = undefined;
+    this.disableSearch = false;
   };
 
-  searchOrgContextUpdated = async (value: SearchOrgContext) => {
-    if (value.collections) {
+  searchOrgContextUpdated = async (context: SearchOrgContext) => {
+    if (context.collections) {
       await this.updateComplete;
-      this.fuse = value.collections;
+      this.fuse = context.collections;
+
+      // Handle orgs without any collections
+      if (
+        (
+          context.collections.getIndex() as Fuse.FuseIndex<unknown> & {
+            // FIXME Investigate why FuseIndex type doesn't return size method
+            size: () => number;
+          }
+        ).size() === 0
+      ) {
+        this.disableSearch = true;
+        this.placeholder = msg("Enter new collection name");
+      }
     }
   };
 
