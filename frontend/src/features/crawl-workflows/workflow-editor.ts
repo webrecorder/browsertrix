@@ -2303,6 +2303,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               dedupeType: (e.target as SlRadio)
                 .value as FormState["dedupeType"],
               dedupeCollectionId: null,
+              dedupeCollectionName: null,
               autoAddCollections: without(
                 this.formState.autoAddCollections,
                 this.formState.dedupeCollectionId,
@@ -2336,7 +2337,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
         <btrix-choose-collection-name
           size="medium"
           label=${msg("Collection Name")}
-          value=${ifDefined(this.formState.dedupeCollectionId || undefined)}
+          collectionId=${ifDefined(
+            this.formState.dedupeCollectionId || undefined,
+          )}
+          ?disableSearch=${!!this.formState.dedupeCollectionId}
           required
           @btrix-change=${(e: BtrixChooseCollectionNameChangeEvent) => {
             const { id, name } = e.detail.value;
@@ -2346,8 +2350,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 dedupeCollectionId: id,
                 autoAddCollections: [id],
               });
-            } else {
-              console.log("TODO new name:", name);
+            } else if (name) {
+              this.updateFormState({
+                dedupeCollectionName: name,
+              });
             }
           }}
           @btrix-clear=${() => {
@@ -2355,6 +2361,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               this.updateFormState(
                 {
                   dedupeCollectionId: null,
+                  dedupeCollectionName: null,
                   autoAddCollections: without(
                     this.formState.autoAddCollections,
                     this.formState.dedupeCollectionId,
@@ -2366,6 +2373,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
           }}
         >
         </btrix-choose-collection-name>
+        ${when(
+          this.formState.dedupeCollectionName &&
+            !this.formState.dedupeCollectionId,
+          () => html`
+            <div class="form-help-text">
+              ${msg(
+                "A new collection will be created when this workflow is saved.",
+              )}
+            </div>
+          `,
+        )}
       `)}
       ${this.renderHelpTextCol(
         msg(
@@ -3034,6 +3052,22 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     this.isSubmitting = true;
 
+    // Create new collection if needed
+    if (
+      this.formState.dedupeType === "collection" &&
+      this.formState.dedupeCollectionName &&
+      !this.formState.dedupeCollectionId
+    ) {
+      const { id } = await this.createCollection({
+        name: this.formState.dedupeCollectionName,
+      });
+
+      this.updateFormState({
+        dedupeCollectionId: id,
+        autoAddCollections: [id],
+      });
+    }
+
     const uploadParams: Parameters<WorkflowEditor["parseConfig"]>[0] = {};
 
     // Upload seed file first if it exists, since ID will be used to
@@ -3482,5 +3516,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
     } catch (e) {
       console.debug(e);
     }
+  }
+
+  private async createCollection(
+    params: { name: string },
+    signal?: AbortSignal,
+  ) {
+    return this.api.fetch<{ added: boolean; id: string; name: string }>(
+      `/orgs/${this.orgId}/collections`,
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+        signal,
+      },
+    );
   }
 }
