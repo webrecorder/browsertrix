@@ -49,7 +49,11 @@ def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_con
 
             resource = data["resource"]
             assert resource
-            assert resource["filename"]
+
+            assert (
+                resource["filename"]
+                == f"{default_org_id}/profiles/profile-{profile_id}.tar.gz"
+            )
             assert resource["hash"]
             assert resource["size"]
             assert resource["storage"]
