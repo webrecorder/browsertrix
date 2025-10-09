@@ -2336,7 +2336,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         <btrix-choose-collection-name
           size="medium"
           label=${msg("Collection Name")}
-          placeholder=${msg("Enter existing or new collection name")}
           value=${ifDefined(this.formState.dedupeCollectionId || undefined)}
           required
           @btrix-change=${(e: BtrixChooseCollectionNameChangeEvent) => {
