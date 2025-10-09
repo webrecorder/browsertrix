@@ -1,4 +1,4 @@
-import { type ReactiveController, type ReactiveControllerHost } from "lit";
+import { type ReactiveController, type ReactiveElement } from "lit";
 
 import { SearchParamsController } from "@/controllers/searchParams";
 
@@ -23,13 +23,32 @@ import { SearchParamsController } from "@/controllers/searchParams";
  * `setValue` will update the URL search params and push state to the history
  * stack, and reading it is cached, so performance should be good no matter what.
  *
- * There is currently one option available via a third parameter, `initial`,
- * which can be used to modify the initial value based on the URL search params
- * at the time of initialization. This is useful if there's a default value that
- * should be used if the URL search params are empty, but otherwise the value
- * from the URL should be prioritized, for example.
+ * Updates to the value via `setValue` will request an update from the host
+ * with the name set to the property name of the controller on the host followed
+ * by `.setValue`. This allows you to use lifecycle hooks such as `willUpdate`
+ * you would with any other state or property.
  *
- * Example usage:
+ * Similarly, updates to the value originating from the browser (e.g. user
+ * navigation, URL changes, etc.) will also trigger updates to the value, but
+ * suffixed with `.value`. This allows you to use lifecycle hooks to react to
+ * changes originating in different places differently.
+ *
+ * ## Options
+ *
+ * ### `initial`
+ * `options.initial` can be used to modify the initial value based on the URL
+ * search params at the time of initialization. This is useful if there's a
+ * default value that should be used if the URL search params are empty, but
+ * otherwise the value from the URL should be prioritized, for example.
+ *
+ * ### `propertyName`
+ * `options.propertyName` can be used to specify the name of the property in the
+ * host so that this controller can correctly request updates in the host. This
+ * shouldn't need to be set if the controller is initialized in the host class
+ * body, but if it's initialized in the host class constructor, it should be set
+ * to the name of the property that holds the controller instance.
+ *
+ * ## Example usage
  * ```ts
  * class MyComponent extends LitElement {
  *   query = new SearchParamsValue<string>(
@@ -45,49 +64,84 @@ import { SearchParamsController } from "@/controllers/searchParams";
  *     (params) => params.get("q") ?? ""
  *   );
  *   render() {
- *     return html`<input .value=${this.query.value} @input=${(e) => {this.query.setValue(e.target.value)}} />`;
+ *     return html`<input
+ *       .value=${this.query.value}
+ *       @input=${(e) => {this.query.setValue(e.target.value)}}
+ *     />`;
  *   }
  * }
  * ```
  */
 export class SearchParamsValue<T> implements ReactiveController {
-  host: ReactiveControllerHost;
+  readonly #host: ReactiveElement;
 
-  private _value: T;
+  #value: T;
 
-  private readonly searchParams;
-  private readonly encoder: (
-    value: T,
-    params: URLSearchParams,
-  ) => URLSearchParams;
-  private readonly decoder: (params: URLSearchParams) => T;
+  readonly #searchParams;
+  readonly #encoder: (value: T, params: URLSearchParams) => URLSearchParams;
+  readonly #decoder: (params: URLSearchParams) => T;
 
   public get value(): T {
-    return this._value;
+    return this.#value;
   }
   public setValue(value: T) {
-    this._value = value;
-    this.searchParams.update((params) => this.encoder(value, params));
-    this.host.requestUpdate();
+    const oldValue = this.#value;
+    this.#value = value;
+    this.#searchParams.update((params) => this.#encoder(value, params));
+    this.#host.requestUpdate(this.#getPropertyName("setValue"), oldValue);
+  }
+
+  #propertyKey: PropertyKey | undefined;
+  // Little bit hacky/metaprogramming-y, but this lets us auto-detect property
+  // name from the host element's properties without needing to repeat the name
+  // in a string passed into options in order to have `requestUpdate` be called
+  // with the correct property name. Ideally, eventually we'd use a decorator,
+  // which would allow us to avoid this hacky approach — though that might make
+  // differentiating between internally-triggered ("setValue") and
+  // externally-triggered ("value") updates a bit more complex.
+  #getPropertyName(type: "value" | "setValue"): PropertyKey | undefined {
+    // Use explicit property name if provided
+    if (this.#propertyKey) return `${this.#propertyKey.toString()}.${type}`;
+
+    try {
+      for (const prop of Reflect.ownKeys(this.#host)) {
+        const descriptor = Object.getOwnPropertyDescriptor(this.#host, prop);
+        if (descriptor && descriptor.value === this) {
+          this.#propertyKey = prop;
+          return `${prop.toString()}.${type}`;
+        }
+      }
+    } catch (error) {
+      console.debug(
+        "SearchParamsValue: Failed to auto-detect property name",
+        error,
+      );
+    }
+    return undefined;
   }
 
   constructor(
-    host: ReactiveControllerHost,
+    host: ReactiveElement,
     encoder: (value: T, params: URLSearchParams) => URLSearchParams,
     decoder: (params: URLSearchParams) => T,
-    options?: { initial?: (valueFromSearchParams?: T) => T },
+    options?: {
+      initial?: (valueFromSearchParams?: T) => T;
+      propertyKey?: PropertyKey;
+    },
   ) {
-    (this.host = host).addController(this);
-    this.encoder = encoder;
-    this.decoder = decoder;
-    this.searchParams = new SearchParamsController(this.host, (params) => {
-      this._value = this.decoder(params);
-      this.host.requestUpdate();
+    (this.#host = host).addController(this);
+    this.#encoder = encoder;
+    this.#decoder = decoder;
+    this.#propertyKey ??= options?.propertyKey;
+    this.#searchParams = new SearchParamsController(this.#host, (params) => {
+      const oldValue = this.#value;
+      this.#value = this.#decoder(params);
+      this.#host.requestUpdate(this.#getPropertyName("value"), oldValue);
     });
 
-    this._value = options?.initial
-      ? options.initial(this.decoder(this.searchParams.searchParams))
-      : this.decoder(this.searchParams.searchParams);
+    this.#value = options?.initial
+      ? options.initial(this.#decoder(this.#searchParams.searchParams))
+      : this.#decoder(this.#searchParams.searchParams);
   }
 
   hostConnected() {}
