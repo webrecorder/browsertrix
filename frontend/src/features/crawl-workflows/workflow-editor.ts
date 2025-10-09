@@ -43,6 +43,8 @@ import throttle from "lodash/fp/throttle";
 import uniq from "lodash/fp/uniq";
 import queryString from "query-string";
 
+import type { BtrixChooseCollectionNameChangeEvent } from "../collections/choose-collection-name";
+
 import {
   SELECTOR_DELIMITER,
   type LinkSelectorTable,
@@ -661,20 +663,15 @@ export class WorkflowEditor extends BtrixElement {
           const el = e.currentTarget as SlDetails;
 
           // Check if there's any invalid elements before hiding
-          let invalidEl: SlInput | null = null;
-
-          if (required) {
-            invalidEl = el.querySelector<SlInput>("[required][data-invalid]");
-          }
-
-          invalidEl =
-            invalidEl || el.querySelector<SlInput>("[data-user-invalid]");
+          const invalidEl =
+            el.querySelector<SlInput>("[data-invalid]") ||
+            el.querySelector<HTMLFormElement>(":invalid");
 
           if (invalidEl) {
             e.preventDefault();
 
             invalidEl.focus();
-            invalidEl.checkValidity();
+            invalidEl.reportValidity();
           }
         })}
         @sl-after-show=${this.handleCurrentTarget(
@@ -2329,6 +2326,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
           size="medium"
           label=${msg("Collection Name")}
           placeholder=${msg("Enter existing or new collection name")}
+          value=${ifDefined(this.formState.dedupCollId || undefined)}
+          required
+          @btrix-change=${(e: BtrixChooseCollectionNameChangeEvent) => {
+            const { id, name } = e.detail.value;
+
+            if (id) {
+              this.updateFormState({
+                dedupCollId: id,
+                autoAddCollections: [id],
+              });
+            } else {
+              console.log("TODO new name:", name);
+            }
+          }}
         >
         </btrix-choose-collection-name>
       `)}
@@ -3266,6 +3277,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       maxCrawlSize: this.formState.maxCrawlSizeGB * BYTES_PER_GB,
       tags: this.formState.tags,
       autoAddCollections: this.formState.autoAddCollections,
+      dedupCollId: this.formState.dedupCollId,
       config: {
         ...(isPageScopeType(this.formState.scopeType)
           ? this.parseUrlListConfig(uploadParams)
