@@ -8,7 +8,7 @@ import { searchQueryKeys, type SearchQuery } from "./types";
 export function connectFuse(values: SearchQuery[]) {
   return new Fuse(values, {
     keys: searchQueryKeys,
-    threshold: 0.4,
+    threshold: 0.3,
     useExtendedSearch: true,
   });
 }

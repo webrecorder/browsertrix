@@ -225,17 +225,32 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
 
     // Use search pattern that excludes selected names
     const includePattern = `"${this.searchByValue}"`;
-    const excludePattern = this.nameSearchMap
-      .keys()
-      .map((name) => `!"${name}"`)
-      .join(" ");
+    // Fuse doesn't support escaping quotes or operators in expressions yet,
+    // so we still need to manually filter out collection names with quotes
+    // from the search results
+    // https://github.com/krisk/Fuse/issues/765
+    const excludeWithQuotes: string[] = [];
+    const excludeWithoutQuotes: string[] = [];
+
+    this.nameSearchMap.keys().forEach((name) => {
+      if (name.includes('"')) {
+        excludeWithQuotes.push(name);
+      } else {
+        excludeWithoutQuotes.push(`!"${name}"`);
+      }
+    });
+
+    const excludePattern = excludeWithoutQuotes.join(" ");
     const pattern =
       includePattern + (excludePattern ? ` ${excludePattern}` : "");
 
     // TODO Evaluate performance of searching in render, which will block the main thread
-    const results = this.searchOrg.collections?.search(pattern, {
-      limit: MAX_SEARCH_RESULTS,
-    });
+    const results = this.searchOrg.collections
+      ?.search(pattern, {
+        limit: MAX_SEARCH_RESULTS + excludeWithQuotes.length,
+      })
+      .filter(({ item }) => !excludeWithQuotes.includes(item["name"]))
+      .slice(0, MAX_SEARCH_RESULTS);
 
     if (!results?.length) {
       return html`
