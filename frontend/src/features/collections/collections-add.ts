@@ -17,11 +17,7 @@ import type {
   BtrixRemoveLinkedCollectionEvent,
   CollectionLikeItem,
 } from "@/features/collections/linked-collections/types";
-import type {
-  APIPaginatedList,
-  APIPaginationQuery,
-  APISortQuery,
-} from "@/types/api";
+import type { APIPaginatedList } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import { TwoWayMap } from "@/utils/TwoWayMap";
 
@@ -151,8 +147,9 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
           const item = e.detail.item;
           const name = item.dataset["value"];
 
-          const collections = await this.getCollections({ namePrefix: name });
-          const coll = collections.items.find((c) => c.name === name);
+          if (!name) return;
+
+          const coll = await this.getCollectionByName(name);
 
           if (coll && this.findCollectionIndexById(coll.id) === -1) {
             this.collections = [...this.collections, coll];
@@ -293,24 +290,14 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
     return this.collections.findIndex(({ id }) => id === collectionId);
   }
 
-  private async getCollections(
-    params?: Partial<{
-      oid?: string;
-      namePrefix?: string;
-    }> &
-      APIPaginationQuery &
-      APISortQuery,
-    signal?: AbortSignal,
-  ) {
-    const query = queryString.stringify(params || {}, {
-      arrayFormat: "comma",
-    });
-    const data = await this.api.fetch<APIPaginatedList<Collection>>(
+  private async getCollectionByName(name: string, signal?: AbortSignal) {
+    const query = queryString.stringify({ name, page: 1, pageSize: 1 });
+    const data = await this.api.fetch<APIPaginatedList<Collection | undefined>>(
       `/orgs/${this.orgId}/collections?${query}`,
       { signal },
     );
 
-    return data;
+    return data.items[0];
   }
 
   private async dispatchChange() {
