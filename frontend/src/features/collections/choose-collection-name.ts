@@ -34,11 +34,16 @@ export type BtrixChooseCollectionNameChangeEvent = BtrixChangeEvent<{
 export class ChooseCollectionName extends WithSearchOrgContext(
   FormControl(SearchCombobox<SearchQuery>),
 ) {
+  /**
+   * Collection ID
+   */
   @property({ type: String })
   value = "";
 
   searchKeys = searchQueryKeys;
   createNew = true;
+
+  private collection?: Collection;
 
   readonly api = new APIController(this);
 
@@ -54,12 +59,18 @@ export class ChooseCollectionName extends WithSearchOrgContext(
   }
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("value")) {
-      this.setFormValue(this.value);
+    if (changedProperties.has("value") && this.value) {
+      if (this.value !== this.collection?.id) {
+        void this.fetchCollection();
+      }
     }
   }
 
   protected updated(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("value")) {
+      this.setFormValue(this.value);
+    }
+
     if (changedProperties.has("value") || changedProperties.has("required")) {
       if (this.required && !this.value) {
         this.setValidity(
@@ -82,11 +93,11 @@ export class ChooseCollectionName extends WithSearchOrgContext(
     if (!key || key === "name") {
       this.iconName = "check-lg";
 
-      let collection: Collection | undefined = undefined;
-
       if (key === "name") {
-        collection = await this.getCollectionByName(value);
+        this.collection = await this.getCollectionByName(value);
       }
+
+      await this.updateComplete;
 
       this.dispatchEvent(
         new CustomEvent<BtrixChooseCollectionNameChangeEvent["detail"]>(
@@ -94,7 +105,7 @@ export class ChooseCollectionName extends WithSearchOrgContext(
           {
             detail: {
               value: {
-                id: collection?.id || null,
+                id: this.collection?.id || null,
                 name: value,
               },
             },
@@ -116,6 +127,31 @@ export class ChooseCollectionName extends WithSearchOrgContext(
       this.fuse = value.collections;
     }
   };
+
+  private async fetchCollection() {
+    this.disabled = true;
+
+    try {
+      this.collection = await this.getCollectionById(this.value);
+
+      if (this.collection) {
+        this.searchByValue = this.collection.name;
+      }
+    } catch (err) {
+      console.debug(err);
+    }
+
+    this.disabled = false;
+  }
+
+  private async getCollectionById(id: string, signal?: AbortSignal) {
+    const data = await this.api.fetch<Collection | undefined>(
+      `/orgs/${this.orgId}/collections/${id}`,
+      { signal },
+    );
+
+    return data;
+  }
 
   private async getCollectionByName(name: string, signal?: AbortSignal) {
     const query = queryString.stringify({ name, page: 1, pageSize: 1 });
