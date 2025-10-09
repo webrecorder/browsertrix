@@ -169,7 +169,7 @@ def run_crawl(org_id, headers):
         "runNow": True,
         "name": "Execution Mins Quota",
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
             "extraHops": 1,
         },
     }

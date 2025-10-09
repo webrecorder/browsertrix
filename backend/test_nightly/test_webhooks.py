@@ -50,7 +50,7 @@ def all_crawls_crawl_id(crawler_auth_headers, default_org_id):
         "name": "All Crawls Test Crawl",
         "description": "Lorem ipsum",
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
             "exclude": "community",
             "limit": 3,
         },
@@ -320,7 +320,7 @@ def test_webhooks_sent(
         "name": "Webhook crawl test",
         "autoAddCollections": [webhooks_coll_id],
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
             "limit": 2,
         },
     }

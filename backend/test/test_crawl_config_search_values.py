@@ -50,7 +50,7 @@ def test_get_search_values_1(admin_auth_headers, default_org_id):
         ["Admin Test Crawl description", "crawler test crawl", DESCRIPTION_1]
     )
     assert sorted(data["firstSeeds"]) == sorted(
-        ["https://webrecorder.net/", FIRST_SEED_1_URL]
+        ["https://old.webrecorder.net/", FIRST_SEED_1_URL]
     )
 
 
@@ -85,7 +85,7 @@ def test_get_search_values_2(admin_auth_headers, default_org_id):
         ]
     )
     assert sorted(data["firstSeeds"]) == sorted(
-        ["https://webrecorder.net/", FIRST_SEED_1_URL, FIRST_SEED_2_URL]
+        ["https://old.webrecorder.net/", FIRST_SEED_1_URL, FIRST_SEED_2_URL]
     )
 
 
@@ -122,5 +122,5 @@ def test_get_search_values_3(admin_auth_headers, default_org_id):
         ]
     )
     assert sorted(data["firstSeeds"]) == sorted(
-        ["https://webrecorder.net/", FIRST_SEED_1_URL, FIRST_SEED_2_URL]
+        ["https://old.webrecorder.net/", FIRST_SEED_1_URL, FIRST_SEED_2_URL]
     )

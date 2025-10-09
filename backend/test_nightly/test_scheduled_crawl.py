@@ -17,7 +17,7 @@ def scheduled_config_id(admin_auth_headers, default_org_id):
         "schedule": SCHEDULE,
         "name": "Scheduled crawl",
         "config": {
-            "seeds": [{"url": "https://webrecorder.net"}],
+            "seeds": [{"url": "https://old.webrecorder.net"}],
             "scopeType": "page",
             "limit": 1,
         },

@@ -38,7 +38,7 @@ def crawl_id_running(admin_auth_headers, non_default_org_id):
         "name": "Org deletion while crawl runs",
         "tags": ["wr", "nightly testing"],
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
             "limit": 40,
         },
     }
@@ -70,7 +70,7 @@ def qa_run_id_running(admin_auth_headers, non_default_org_id):
         "name": "Org deletion while QA runs",
         "tags": ["wr", "nightly testing"],
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
             "limit": 10,
         },
     }
@@ -115,7 +115,7 @@ def browser_profile_id_running(admin_auth_headers, non_default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{non_default_org_id}/profiles/browser",
         headers=admin_auth_headers,
-        json={"url": "https://webrecorder.net"},
+        json={"url": "https://old.webrecorder.net"},
     )
     assert r.status_code == 200
     browser_id = r.json()["browserid"]

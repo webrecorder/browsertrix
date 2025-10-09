@@ -80,7 +80,7 @@ def crawl_id_wr(admin_auth_headers, default_org_id):
         "name": "Webrecorder admin test crawl",
         "tags": ["wr", "nightly testing"],
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
             "limit": 1,
         },
     }
@@ -189,7 +189,7 @@ def large_crawl_id(admin_auth_headers, default_org_id):
         "name": "Large Test Crawl",
         "tags": ["wacz-logs"],
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
             "scopeType": "domain",
             "limit": 100,
             "extraHops": 1,
@@ -241,7 +241,7 @@ def timeout_crawl(admin_auth_headers, default_org_id):
         "name": "Crawl with crawl timeout",
         "crawlTimeout": 15,
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
             "scopeType": "domain",
             "limit": 100,
         },
@@ -265,7 +265,7 @@ def max_crawl_size_crawl_id(admin_auth_headers, default_org_id):
         # shut down when operator notices this value has been exceeded.
         "maxCrawlSize": 5242880,
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
             "scopeType": "domain",
             "limit": 100,
         },
@@ -329,7 +329,7 @@ def deleted_crawl_id(admin_auth_headers, default_org_id):
         "runNow": True,
         "name": "Test crawl",
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
             "limit": 1,
         },
     }

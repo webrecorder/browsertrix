@@ -1481,7 +1481,7 @@ def test_seed_file_crawl(
     for page in data["items"]:
         assert page["url"] in (
             "https://specs.webrecorder.net/",
-            "https://webrecorder.net/",
+            "https://old.webrecorder.net/",
         )
 
 
@@ -1494,7 +1494,7 @@ def test_delete_seed_file_in_use_crawl(
         headers=crawler_auth_headers,
         json={
             "config": {
-                "seeds": [{"url": "https://webrecorder.net"}],
+                "seeds": [{"url": "https://old.webrecorder.net"}],
                 "scopeType": "page",
                 "limit": 1,
                 "seedFileId": None,

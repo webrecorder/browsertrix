@@ -30,7 +30,7 @@ def test_get_config_by_modified_by(
 def test_get_configs_by_first_seed(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
 ):
-    first_seed = "https://webrecorder.net/"
+    first_seed = "https://old.webrecorder.net/"
     encoded_first_seed = urllib.parse.quote(first_seed)
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?firstSeed={encoded_first_seed}",
@@ -138,7 +138,7 @@ def test_get_crawl_job_by_config(
 def test_get_crawls_by_first_seed(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
 ):
-    first_seed = "https://webrecorder.net/"
+    first_seed = "https://old.webrecorder.net/"
     encoded_first_seed = urllib.parse.quote(first_seed)
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls?firstSeed={encoded_first_seed}",

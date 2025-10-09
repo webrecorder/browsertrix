@@ -589,7 +589,7 @@ def test_update_read_only(admin_auth_headers, default_org_id):
         "description": "Should not run now",
         "tags": [],
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/", "depth": 1}],
+            "seeds": [{"url": "https://old.webrecorder.net/", "depth": 1}],
             "exclude": "community",
         },
     }
