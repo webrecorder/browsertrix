@@ -90,7 +90,7 @@ spec:
           value: "{{ replica_endpoint }}"
 
 {% if job_type == BgJobType.CREATE_REPLICA %}
-        command: ["rclone", "-vv", "copyto", "--checksum", "primary:{{ primary_file_path }}", "replica:{{ replica_file_path }}"]
+        command: ["rclone", "-vv", "copyto", "--checksum", "--error-on-no-transfer", "primary:{{ primary_file_path }}", "replica:{{ replica_file_path }}"]
 {% elif job_type == BgJobType.DELETE_REPLICA %}
         command: ["rclone", "-vv", "delete", "replica:{{ replica_file_path }}"]
 {% endif %}
