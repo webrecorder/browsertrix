@@ -174,6 +174,7 @@ export type FormState = {
   scheduleCustom?: string;
   dedupeType: "none" | "collection";
   dedupeCollectionId: string | null;
+  dedupeCollectionName: string | null;
   jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
@@ -238,6 +239,7 @@ export const getDefaultFormState = (): FormState => ({
   },
   dedupeType: "none",
   dedupeCollectionId: null,
+  dedupeCollectionName: null,
   jobName: "",
   browserProfile: null,
   tags: [],

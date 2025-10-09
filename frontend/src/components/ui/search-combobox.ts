@@ -28,7 +28,6 @@ const MAX_SEARCH_RESULTS = 5;
 /**
  * Fuzzy search through list of options
  *
- * @slot help-text
  * @fires btrix-select
  * @fires btrix-clear
  */
@@ -181,7 +180,6 @@ export class SearchCombobox<T> extends TailwindElement {
         </sl-input>
         ${this.renderSearchResults()}
       </btrix-combobox>
-      <slot name="help-text"></slot>
     `;
   }
 
