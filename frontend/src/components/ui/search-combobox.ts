@@ -1,7 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import type {
   SlClearEvent,
-  SlIcon,
   SlInput,
   SlMenuItem,
 } from "@shoelace-style/shoelace";
@@ -69,8 +68,8 @@ export class SearchCombobox<T> extends TailwindElement {
   @property({ type: String })
   size?: SlInput["size"];
 
-  @property({ type: String })
-  iconName?: SlIcon["name"];
+  @property({ type: Boolean })
+  disableSearch = false;
 
   @property({ type: Boolean })
   createNew = false;
@@ -175,10 +174,9 @@ export class SearchCombobox<T> extends TailwindElement {
                 >${this.keyLabels![this.selectedKey!]}</sl-tag
               >`,
             () =>
-              html`<sl-icon
-                name=${this.iconName || "search"}
-                slot="prefix"
-              ></sl-icon>`,
+              this.disableSearch
+                ? nothing
+                : html`<sl-icon name="search" slot="prefix"></sl-icon>`,
           )}
         </sl-input>
         ${this.renderSearchResults()}
