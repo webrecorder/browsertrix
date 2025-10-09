@@ -21,7 +21,11 @@ import type {
   BtrixFilterChipChangeEvent,
   FilterChip,
 } from "@/components/ui/filter-chip";
-import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import {
+  parsePage,
+  type PageChangeEvent,
+  type Pagination,
+} from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
@@ -44,7 +48,6 @@ import {
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { renderName } from "@/utils/crawler";
-import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 type SearchFields = "name" | "firstSeed";
@@ -125,6 +128,9 @@ export class WorkflowsList extends BtrixElement {
     page: parsePage(new URLSearchParams(location.search).get("page")),
     pageSize: INITIAL_PAGE_SIZE,
   };
+
+  @query("btrix-pagination")
+  private readonly paginationElement?: Pagination;
 
   @state()
   private searchOptions: { [x: string]: string }[] = [];
@@ -375,103 +381,19 @@ export class WorkflowsList extends BtrixElement {
       ] as const,
   });
 
-  // searchParams = new SearchParamsController(this, (params) => {
-  //   this.updateFiltersFromSearchParams(params);
-  // });
-
-  // // TODO (emma): refactor this logic into smaller parts using `SearchParamsValue`
-  // private updateFiltersFromSearchParams(
-  //   params = this.searchParams.searchParams,
-  // ) {
-  //   // remove current user filter if not present in search params
-  //   if (!params.has("mine")) {
-  //     this.filterByCurrentUser.setValue = false;
-  //   }
-
-  //   if (params.has("tags")) {
-  //     this.filterByTags = params.getAll("tags");
-  //   } else {
-  //     this.filterByTags = undefined;
-  //   }
-
-  //   if (params.has("profiles")) {
-  //     this.filterByProfiles = params.getAll("profiles");
-  //   } else {
-  //     this.filterByProfiles = undefined;
-  //   }
-
-  //   // add filters present in search params
-  //   for (const [key, value] of params) {
-  //     // Filter by current user
-  //     if (key === "mine") {
-  //       this.filterByCurrentUser = value === "true";
-  //     }
-
-  //     if (key === "tagsType") {
-  //       this.filterByTagsType = value === "and" ? "and" : "or";
-  //     }
-
-  //     // Sorting field
-  //     if (key === "sortBy") {
-  //       if (value in sortableFields) {
-  //         this.orderBy = {
-  //           field: value as SortField,
-  //           direction:
-  //             // Use default direction for field if available, otherwise use current direction
-  //             sortableFields[value as SortField].defaultDirection ||
-  //             this.orderBy.direction,
-  //         };
-  //       }
-  //     }
-  //     if (key === "sortDir") {
-  //       if (SORT_DIRECTIONS.includes(value as SortDirection)) {
-  //         // Overrides sort direction if specified
-  //         this.orderBy = { ...this.orderBy, direction: value as SortDirection };
-  //       }
-  //     }
-
-  //     // Ignored params
-  //     if (
-  //       [
-  //         "page",
-  //         "mine",
-  //         "tags",
-  //         "tagsType",
-  //         "profiles",
-  //         "sortBy",
-  //         "sortDir",
-  //       ].includes(key)
-  //     )
-  //       continue;
-
-  //     // // Convert string bools to filter values
-  //     // if (value === "true") {
-  //     //   filterBy[key] = true;
-  //     // } else if (value === "false") {
-  //     //   filterBy[key] = false;
-  //     // } else {
-  //     //   filterBy[key] = undefined;
-  //     // }
-  //   }
-  // }
-
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    console.log(changedProperties);
     if (
-      changedProperties.has("filterByCurrentUser.value") ||
-      changedProperties.has("filterByTags.value") ||
-      changedProperties.has("filterByTagsType.value") ||
-      changedProperties.has("filterByProfiles.value") ||
-      changedProperties.has("filterByScheduled.value") ||
-      changedProperties.has("filterBy.value") ||
-      changedProperties.has("orderBy.value")
+      changedProperties.has("filterByCurrentUser.setValue") ||
+      changedProperties.has("filterByTags.setValue") ||
+      changedProperties.has("filterByTagsType.setValue") ||
+      changedProperties.has("filterByProfiles.setValue") ||
+      changedProperties.has("filterByScheduled.setValue") ||
+      changedProperties.has("filterBy.setValue") ||
+      changedProperties.has("orderBy.setValue")
     ) {
-      this.pagination = {
-        page: 1,
-        pageSize: INITIAL_PAGE_SIZE,
-      };
+      this.paginationElement?.setPage(1, { dispatch: true, replace: true });
     }
     if (changedProperties.has("filterByCurrentUser")) {
       window.sessionStorage.setItem(
@@ -833,7 +755,7 @@ export class WorkflowsList extends BtrixElement {
 
   private renderWorkflowList() {
     if (!this.workflowsTask.value) return;
-    const { page, total, pageSize } = this.workflowsTask.value;
+    const { total, pageSize } = this.workflowsTask.value;
     return html`
       <btrix-workflow-list>
         ${this.workflowsTask.value.items.map(this.renderWorkflowItem)}
@@ -845,7 +767,7 @@ export class WorkflowsList extends BtrixElement {
         )}
       >
         <btrix-pagination
-          page=${page}
+          page=${this.pagination.page}
           totalCount=${total}
           size=${pageSize}
           @page-change=${async (e: PageChangeEvent) => {

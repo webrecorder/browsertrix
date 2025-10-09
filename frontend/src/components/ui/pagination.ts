@@ -163,7 +163,7 @@ export class Pagination extends LitElement {
   @property({ type: Number })
   set page(page: number) {
     if (page !== this._page) {
-      this.setPage(page);
+      this.#setPage(page);
       this._page = page;
     }
   }
@@ -232,7 +232,7 @@ export class Pagination extends LitElement {
       if (parsedPage != this._page) {
         const page = parsePage(this.searchParams.searchParams.get(this.name));
         const constrainedPage = Math.max(1, Math.min(this.pages, page));
-        this.onPageChange(constrainedPage, { dispatch: false });
+        this.setPage(constrainedPage, { dispatch: false });
       }
     }
 
@@ -242,7 +242,7 @@ export class Pagination extends LitElement {
       (this.page > this.pages || this.page < 1)
     ) {
       const constrainedPage = Math.max(1, Math.min(this.pages, this.page));
-      this.onPageChange(constrainedPage, { dispatch: true });
+      this.setPage(constrainedPage, { dispatch: true });
     }
 
     if (changedProperties.get("_page")) {
@@ -337,7 +337,7 @@ export class Pagination extends LitElement {
               nextPage = page;
             }
 
-            this.onPageChange(nextPage);
+            this.setPage(nextPage);
           }}
           @focus=${(e: Event) => {
             // Select text on focus for easy typing
@@ -390,7 +390,7 @@ export class Pagination extends LitElement {
         .active=${isCurrent}
         .size=${"x-small"}
         .align=${"center"}
-        @click=${() => this.onPageChange(page)}
+        @click=${() => this.setPage(page)}
         aria-disabled=${isCurrent}
         >${localize.number(page)}</btrix-navigation-button
       >
@@ -398,18 +398,24 @@ export class Pagination extends LitElement {
   };
 
   private onPrev() {
-    this.onPageChange(this._page > 1 ? this._page - 1 : 1);
+    this.setPage(this._page > 1 ? this._page - 1 : 1);
   }
 
   private onNext() {
-    this.onPageChange(this._page < this.pages ? this._page + 1 : this.pages);
+    this.setPage(this._page < this.pages ? this._page + 1 : this.pages);
   }
 
-  private onPageChange(page: number, opts = { dispatch: true }) {
+  setPage(
+    page: number,
+    options: { dispatch?: boolean; replace?: boolean } = {
+      dispatch: true,
+      replace: false,
+    },
+  ) {
     if (this._page !== page) {
-      this.setPage(page);
+      this.#setPage(page, { replace: options.replace });
 
-      if (opts.dispatch) {
+      if (options.dispatch) {
         this.dispatchEvent(
           new CustomEvent<PageChangeDetail>("page-change", {
             detail: { page: page, pages: this.pages },
@@ -421,12 +427,12 @@ export class Pagination extends LitElement {
     this._page = page;
   }
 
-  private setPage(page: number) {
+  #setPage(page: number, options: { replace?: boolean } = {}) {
     if (!this.disablePersist) {
       if (page === 1) {
         this.searchParams.delete(this.name);
       } else {
-        this.searchParams.set(this.name, page.toString());
+        this.searchParams.set(this.name, page.toString(), options);
       }
     } else {
       this._page = page;
