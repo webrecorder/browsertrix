@@ -19,21 +19,23 @@ import type { APIPaginatedList } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import appState from "@/utils/state";
 
-export type BtrixChooseCollectionNameChangeEvent = BtrixChangeEvent<{
+export type CollectionNameInputChangeEvent = BtrixChangeEvent<{
   id: string | null;
   name: string;
 }>;
 
 /**
+ * Combination input for an existing or new collection name.
+ *
  * @attr required
  * @attr label
  * @attr placeholder
  * @attr size
  * @attr disableSearch
  */
-@customElement("btrix-choose-collection-name")
+@customElement("btrix-collection-name-input")
 @localized()
-export class ChooseCollectionName extends WithSearchOrgContext(
+export class CollectionNameInput extends WithSearchOrgContext(
   FormControl(SearchCombobox<SearchQuery>),
 ) {
   @property({ type: String })
@@ -100,7 +102,7 @@ export class ChooseCollectionName extends WithSearchOrgContext(
       await this.updateComplete;
 
       this.dispatchEvent(
-        new CustomEvent<BtrixChooseCollectionNameChangeEvent["detail"]>(
+        new CustomEvent<CollectionNameInputChangeEvent["detail"]>(
           "btrix-change",
           {
             detail: {
