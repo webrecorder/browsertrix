@@ -2452,7 +2452,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
               },
               true,
             )}
-        ></btrix-collections-add>
+        >
+          ${when(
+            this.formState.dedupeCollectionId,
+            () => html`
+              <btrix-alert class="mt-2" variant="warning">
+                ${msg(
+                  "Adding deduplicated crawls to a collection other than the deduplication source may result in incomplete replay of the non-deduplicated collection.",
+                )}
+              </btrix-alert>
+            `,
+          )}
+        </btrix-collections-add>
         ${when(
           !this.formState.autoAddCollections.length,
           () => html`
