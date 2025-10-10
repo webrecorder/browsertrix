@@ -1674,7 +1674,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       <div class="col-span-5">
         <btrix-details ?open=${isCustom}>
           <span slot="title">
-            ${labelFor.selectLink}
+            ${labelFor.selectLinks}
             ${isCustom
               ? html`<btrix-badge>${selectors.length}</btrix-badge>`
               : ""}
@@ -1792,7 +1792,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
 
     return html`
-      ${this.renderSectionHeading(labelFor.behaviors)}
+      ${this.renderSectionHeading(sectionStrings.behaviors)}
       ${inputCol(
         html`<sl-checkbox
           name="autoscrollBehavior"
@@ -2295,7 +2295,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private renderDeduplication() {
     return html` ${inputCol(html`
       <sl-radio-group
-        label=${msg("Crawl Deduplication")}
+        label=${labelFor.dedupeType}
         name="dedupeType"
         value=${this.formState.dedupeType}
         @sl-change=${(e: Event) => {
@@ -2333,7 +2333,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private readonly renderDedupeCollection = () => {
     return html`
-      ${this.renderSectionHeading(msg("Set Collection"))}
+      ${this.renderSectionHeading(msg("Collection to Use"))}
       ${inputCol(html`
         <btrix-collection-name-input
           size="medium"
@@ -2400,7 +2400,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         <btrix-collections-add
           .label=${msg("Auto-Add to Collection")}
           .initialCollections=${this.formState.autoAddCollections}
-          .configId=${this.configId}
+          .dedupeId=${this.formState.dedupeCollectionId || undefined}
           @collections-change=${(e: CollectionsChangeEvent) =>
             this.updateFormState(
               {

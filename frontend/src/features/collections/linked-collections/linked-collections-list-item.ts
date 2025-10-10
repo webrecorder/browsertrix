@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import type {
@@ -22,6 +22,9 @@ export class LinkedCollectionsListItem extends TailwindElement {
   @property({ type: String })
   baseUrl?: string;
 
+  @property({ type: String })
+  dedupeId?: string;
+
   @property({ type: Boolean })
   removable?: boolean;
 
@@ -34,15 +37,26 @@ export class LinkedCollectionsListItem extends TailwindElement {
     if (!item) return;
 
     const actual = isActualCollection(item);
+    const dedupeEnabled =
+      item.id === this.dedupeId && actual && item.hasDedupIndex;
 
     const content = [
-      html`<div class="flex-1 truncate p-1.5 leading-none">${item.name}</div>`,
+      html`<div
+        class="inline-flex flex-1 items-center gap-2 p-1.5 leading-none"
+      >
+        <div class="w-0 flex-1 truncate">${item.name}</div>
+        ${dedupeEnabled
+          ? html` <btrix-badge variant="primary">
+              ${msg("Deduplicating")}
+            </btrix-badge>`
+          : nothing}
+      </div>`,
     ];
 
     if (actual) {
       content.push(
         html`<div class="flex-none last:mr-1.5">
-          <btrix-badge pill variant="cyan"
+          <btrix-badge variant="cyan"
             >${item.crawlCount}
             ${pluralOf("items", item.crawlCount)}</btrix-badge
           >
@@ -69,26 +83,40 @@ export class LinkedCollectionsListItem extends TailwindElement {
     }
 
     if (this.removable) {
+      const button = html`<sl-icon-button
+        name="x-lg"
+        ?disabled=${dedupeEnabled}
+        @click=${() =>
+          this.dispatchEvent(
+            new CustomEvent<BtrixRemoveLinkedCollectionEvent["detail"]>(
+              "btrix-remove",
+              {
+                detail: {
+                  item: item,
+                },
+                bubbles: true,
+                composed: true,
+              },
+            ),
+          )}
+      ></sl-icon-button>`;
+
       content.push(
         html`<div class="flex-none">
-          <sl-tooltip placement="right" content=${msg("Remove")}>
-            <sl-icon-button
-              name="x-lg"
-              @click=${() =>
-                this.dispatchEvent(
-                  new CustomEvent<BtrixRemoveLinkedCollectionEvent["detail"]>(
-                    "btrix-remove",
-                    {
-                      detail: {
-                        item: item,
-                      },
-                      bubbles: true,
-                      composed: true,
-                    },
-                  ),
+          ${dedupeEnabled
+            ? html`<btrix-popover
+                placement="right"
+                content=${msg(
+                  "This collection cannot be removed because it is being used for deduplication. Either disable deduplication or choose another deduplicating collection to remove this collection.",
                 )}
-            ></sl-icon-button>
-          </sl-tooltip>
+              >
+                ${button}
+              </btrix-popover>`
+            : html`<sl-tooltip placement="right" content=${msg("Remove")}>
+                ${button}
+              </sl-tooltip>`}
+          <btrix-popover content=${msg("Collection used for deduplicating")}>
+          </btrix-popover>
         </div>`,
       );
     }
