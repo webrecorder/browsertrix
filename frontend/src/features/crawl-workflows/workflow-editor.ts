@@ -2321,10 +2321,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
             dedupeCollectionName: null,
           };
 
-          if (dedupeType === "none") {
+          if (dedupeType === "none" && this.formState.dedupeCollectionId) {
             formState.autoAddCollections = without(
+              [this.formState.dedupeCollectionId],
               this.formState.autoAddCollections,
-              this.formState.dedupeCollectionId,
             );
           }
 
@@ -2409,12 +2409,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   dedupeCollectionId: null,
                   dedupeCollectionName: null,
                   autoAddCollections: without(
+                    [this.formState.dedupeCollectionId],
                     this.formState.autoAddCollections,
-                    this.formState.dedupeCollectionId,
                   ),
                 },
                 true,
               );
+            } else {
+              this.updateFormState({
+                dedupeCollectionName: null,
+              });
             }
           }}
         >
@@ -2455,7 +2459,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
             )}
         >
           ${when(
-            this.formState.dedupeCollectionId,
+            this.formState.dedupeCollectionId ||
+              this.formState.dedupeCollectionName,
             () => html`
               <btrix-alert class="mt-2" variant="warning">
                 ${msg(
