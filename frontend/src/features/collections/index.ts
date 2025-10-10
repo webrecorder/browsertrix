@@ -1,4 +1,4 @@
-import("./choose-collection-name");
+import("./collection-name-input");
 import("./collections-add");
 import("./collections-grid");
 import("./collections-grid-with-edit-dialog");

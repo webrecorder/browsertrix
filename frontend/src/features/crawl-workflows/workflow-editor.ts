@@ -44,7 +44,7 @@ import uniq from "lodash/fp/uniq";
 import without from "lodash/fp/without";
 import queryString from "query-string";
 
-import type { BtrixChooseCollectionNameChangeEvent } from "../collections/choose-collection-name";
+import type { CollectionNameInputChangeEvent } from "../collections/collection-name-input";
 
 import {
   SELECTOR_DELIMITER,
@@ -2334,7 +2334,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return html`
       ${this.renderSectionHeading(msg("Set Collection"))}
       ${inputCol(html`
-        <btrix-choose-collection-name
+        <btrix-collection-name-input
           size="medium"
           label=${msg("Collection Name")}
           collectionId=${ifDefined(
@@ -2342,7 +2342,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           )}
           ?disableSearch=${!!this.formState.dedupeCollectionId}
           required
-          @btrix-change=${(e: BtrixChooseCollectionNameChangeEvent) => {
+          @btrix-change=${(e: CollectionNameInputChangeEvent) => {
             const { id, name } = e.detail.value;
 
             if (id) {
@@ -2372,7 +2372,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             }
           }}
         >
-        </btrix-choose-collection-name>
+        </btrix-collection-name-input>
         ${when(
           this.formState.dedupeCollectionName &&
             !this.formState.dedupeCollectionId,
