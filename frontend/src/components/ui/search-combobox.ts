@@ -15,7 +15,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { defaultFuseOptions } from "@/context/search-org/connectFuse";
 import type { BtrixSelectEvent } from "@/events/btrix-select";
 import { type UnderlyingFunction } from "@/types/utils";
-import { hasChanged } from "@/utils/hasChanged";
+import { isNotEqual } from "@/utils/is-not-equal";
 
 export type BtrixSearchComboboxSelectEvent = BtrixSelectEvent<{
   key: string | null;
@@ -37,10 +37,10 @@ export class SearchCombobox<T> extends TailwindElement {
   @property({ type: Array })
   searchOptions: T[] = [];
 
-  @property({ type: Array, hasChanged })
+  @property({ type: Array, hasChanged: isNotEqual })
   searchKeys: string[] = [];
 
-  @property({ type: Object, hasChanged })
+  @property({ type: Object, hasChanged: isNotEqual })
   keyLabels?: { [key: string]: string };
 
   @property({ type: String })
