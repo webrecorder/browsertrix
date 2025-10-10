@@ -114,6 +114,8 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
         ${this.renderSearch()}
       </div>
 
+      <slot></slot>
+
       ${when(this.collections, (collections) =>
         collections.length
           ? html`
