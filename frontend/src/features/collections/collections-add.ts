@@ -33,7 +33,6 @@ export type CollectionsChangeEvent = CustomEvent<{
  * ```ts
  * <btrix-collections-add
  *   .initialCollections=${[]}
- *   .configId=${this.configId}
  *   @collections-change=${console.log}
  * ></btrix-collections-add>
  * ```
@@ -45,8 +44,11 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
   @property({ type: Array })
   initialCollections?: string[];
 
+  /**
+   * ID of collection that is used for deduplication
+   */
   @property({ type: String })
-  configId?: string;
+  dedupeId?: string;
 
   @property({ type: String })
   label?: string;
@@ -104,6 +106,7 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
               <div class="mt-2">
                 <btrix-linked-collections
                   .collections=${collections}
+                  .dedupeId=${this.dedupeId}
                   removable
                   @btrix-loaded=${(e: BtrixLoadedLinkedCollectionEvent) => {
                     const { item } = e.detail;
