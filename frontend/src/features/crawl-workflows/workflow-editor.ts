@@ -40,6 +40,7 @@ import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
 import isEqual from "lodash/fp/isEqual";
 import throttle from "lodash/fp/throttle";
+import union from "lodash/fp/union";
 import uniq from "lodash/fp/uniq";
 import without from "lodash/fp/without";
 import queryString from "query-string";
@@ -2292,31 +2293,70 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private renderDeduplication() {
+    const link_to_collections_settings = html`<button
+      type="button"
+      class="text-blue-600 hover:text-blue-500"
+      @click=${async () => {
+        this.updateProgressState({ activeTab: "collections" });
+        await this.updateComplete;
+        void this.scrollToActivePanel();
+      }}
+    >
+      ${msg("Auto-Add to Collections")}
+    </button>`;
+
     return html` ${inputCol(html`
       <sl-radio-group
         label=${labelFor.dedupeType}
         name="dedupeType"
         value=${this.formState.dedupeType}
         @sl-change=${(e: Event) => {
-          this.updateFormState(
-            {
-              dedupeType: (e.target as SlRadio)
-                .value as FormState["dedupeType"],
-              dedupeCollectionId: null,
-              dedupeCollectionName: null,
-              autoAddCollections: without(
-                this.formState.autoAddCollections,
-                this.formState.dedupeCollectionId,
-              ),
-            },
-            true,
-          );
+          const dedupeType = (e.target as SlRadio)
+            .value as FormState["dedupeType"];
+
+          const formState: Partial<FormState> = {
+            dedupeType,
+            dedupeCollectionId: null,
+            dedupeCollectionName: null,
+          };
+
+          if (dedupeType === "none") {
+            formState.autoAddCollections = without(
+              this.formState.autoAddCollections,
+              this.formState.dedupeCollectionId,
+            );
+          }
+
+          this.updateFormState(formState, true);
         }}
       >
         <sl-radio value="none">${this.dedupeTypeLabels["none"]}</sl-radio>
         <sl-radio value="collection"
           >${this.dedupeTypeLabels["collection"]}</sl-radio
         >
+
+        ${when(
+          this.formState.dedupeType === "none" &&
+            this.initialWorkflow?.dedupCollId,
+          () => html`
+            <div slot="help-text" class="mt-2">
+              <sl-icon
+                class="mr-0.5 align-[-.175em]"
+                name="exclamation-triangle"
+              ></sl-icon>
+
+              ${msg(
+                "Disabling deduplication will also disable auto-adding to the collection.",
+              )}
+              <br />
+              ${msg(
+                html`To continue to auto-add to the collection without
+                deduplication enabled, update the
+                ${link_to_collections_settings} setting.`,
+              )}
+            </div>
+          `,
+        )}
       </sl-radio-group>
     `)}
     ${this.renderHelpTextCol(
@@ -2346,10 +2386,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
             const { id, name } = e.detail.value;
 
             if (id) {
-              this.updateFormState({
-                dedupeCollectionId: id,
-                autoAddCollections: [id],
-              });
+              this.updateFormState(
+                {
+                  dedupeCollectionId: id,
+                  autoAddCollections: union(this.formState.autoAddCollections, [
+                    id,
+                  ]),
+                },
+                true,
+              );
             } else if (name) {
               this.updateFormState({
                 dedupeCollectionName: name,
@@ -2398,7 +2443,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${inputCol(html`
         <btrix-collections-add
           .label=${msg("Auto-Add to Collection")}
-          .initialCollections=${this.formState.autoAddCollections}
+          .collectionIds=${this.formState.autoAddCollections}
           .dedupeId=${this.formState.dedupeCollectionId || undefined}
           @collections-change=${(e: CollectionsChangeEvent) =>
             this.updateFormState(
@@ -3062,10 +3107,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
         name: this.formState.dedupeCollectionName,
       });
 
-      this.updateFormState({
-        dedupeCollectionId: id,
-        autoAddCollections: [id],
-      });
+      this.updateFormState(
+        {
+          dedupeCollectionId: id,
+          autoAddCollections: union(this.formState.autoAddCollections, [id]),
+        },
+        true,
+      );
     }
 
     const uploadParams: Parameters<WorkflowEditor["parseConfig"]>[0] = {};

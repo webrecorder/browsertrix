@@ -140,8 +140,7 @@ export class CrawlMetadataEditor extends BtrixElement {
         <div class="mt-7">
           <btrix-collections-add
             id="collection-input"
-            .initialCollections=${this.crawl.collectionIds}
-            .configId=${"temp"}
+            .collectionIds=${this.crawl.collectionIds}
             label=${msg("Include in Collection")}
             @collections-change=${(e: CollectionsChangeEvent) =>
               (this.collectionsToSave = e.detail.collections)}
