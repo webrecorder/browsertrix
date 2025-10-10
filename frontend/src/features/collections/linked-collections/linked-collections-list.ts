@@ -21,6 +21,9 @@ export class LinkedCollectionsList extends TailwindElement {
   @property({ type: String })
   baseUrl?: string;
 
+  @property({ type: String })
+  dedupeId?: string;
+
   @property({ type: Boolean })
   removable?: boolean;
 
@@ -35,6 +38,7 @@ export class LinkedCollectionsList extends TailwindElement {
 
         return html`<btrix-linked-collections-list-item
           class=${clsx(tw`contents`, i > 0 && tw`part-[base]:border-t`)}
+          .dedupeId=${this.dedupeId}
           .item=${until(request, item)}
           baseUrl=${ifDefined(this.baseUrl)}
           ?removable=${this.removable}
