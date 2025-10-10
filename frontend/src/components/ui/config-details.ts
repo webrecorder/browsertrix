@@ -314,7 +314,7 @@ export class ConfigDetails extends BtrixElement {
         renderDescItems: () => html`
           ${this.renderSetting(
             html`<span class="mb-1 inline-block">${labelFor.dedupeType}</span>`,
-            crawlConfig?.dedupCollId ? msg("Enabled") : undefined,
+            crawlConfig?.dedupCollId ? msg("Enabled") : msg("Disabled"),
           )}
         `,
       })}

@@ -4,9 +4,10 @@ import type {
   SlInputEvent,
   SlMenuItem,
 } from "@shoelace-style/shoelace";
-import { html, nothing } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import difference from "lodash/fp/difference";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -19,7 +20,7 @@ import type {
 } from "@/features/collections/linked-collections/types";
 import type { APIPaginatedList } from "@/types/api";
 import type { Collection } from "@/types/collection";
-import { TwoWayMap } from "@/utils/TwoWayMap";
+import { isNotEqual } from "@/utils/is-not-equal";
 
 const MIN_SEARCH_LENGTH = 1;
 const MAX_SEARCH_RESULTS = 5;
@@ -32,7 +33,7 @@ export type CollectionsChangeEvent = CustomEvent<{
  * Usage:
  * ```ts
  * <btrix-collections-add
- *   .initialCollections=${[]}
+ *   .collectionIds=${[]}
  *   @collections-change=${console.log}
  * ></btrix-collections-add>
  * ```
@@ -41,8 +42,8 @@ export type CollectionsChangeEvent = CustomEvent<{
 @customElement("btrix-collections-add")
 @localized()
 export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
-  @property({ type: Array })
-  initialCollections?: string[];
+  @property({ type: Array, hasChanged: isNotEqual })
+  collectionIds?: string[];
 
   /**
    * ID of collection that is used for deduplication
@@ -53,7 +54,7 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
   @property({ type: String })
   label?: string;
 
-  @state()
+  @state({ hasChanged: isNotEqual })
   private collections: CollectionLikeItem[] = [];
 
   @state()
@@ -66,14 +67,10 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
   private readonly combobox?: Combobox | null;
 
   // Map collection names to ID for managing search options
-  private readonly nameSearchMap = new TwoWayMap<
-    /* name: */ string,
-    /* ID: */ string
+  private readonly nameSearchMap = new Map<
+    /* ID: */ string,
+    /* name: */ string
   >();
-
-  private get collectionIds() {
-    return this.collections.map(({ id }) => id);
-  }
 
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
@@ -84,11 +81,28 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
     this.input?.focus();
   }
 
-  connectedCallback() {
-    if (this.initialCollections) {
-      this.collections = this.initialCollections.map((id) => ({ id }));
+  protected willUpdate(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("collectionIds") && this.collectionIds) {
+      this.collections = this.collectionIds.map((id) => ({
+        id,
+        name: this.nameSearchMap.get(id) || "",
+      }));
     }
-    super.connectedCallback();
+  }
+
+  protected updated(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("collectionIds") && this.collectionIds) {
+      const removedIds = difference(
+        changedProperties.get("collectionIds"),
+        this.collectionIds,
+      );
+
+      if (removedIds.length) {
+        removedIds.forEach((id) => {
+          this.nameSearchMap.delete(id);
+        });
+      }
+    }
   }
 
   render() {
@@ -112,7 +126,7 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
                     const { item } = e.detail;
 
                     if (item.name) {
-                      this.nameSearchMap.set(item.name, item.id);
+                      this.nameSearchMap.set(item.id, item.name);
                     }
                   }}
                   @btrix-remove=${(e: BtrixRemoveLinkedCollectionEvent) => {
@@ -121,11 +135,7 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
                     this.removeCollection(id);
 
                     // Remove from search mapping
-                    const name = this.nameSearchMap.getByValue(id);
-
-                    if (name) {
-                      this.nameSearchMap.delete(name);
-                    }
+                    this.nameSearchMap.delete(id);
                   }}
                 ></btrix-linked-collections>
               </div>
@@ -158,7 +168,7 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
             this.collections = [...this.collections, coll];
             void this.dispatchChange();
 
-            this.nameSearchMap.set(coll.name, coll.id);
+            this.nameSearchMap.set(coll.id, coll.name);
 
             if (this.input) {
               this.input.value = "";
@@ -232,13 +242,13 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
     const excludeWithQuotes: string[] = [];
     const excludeWithoutQuotes: string[] = [];
 
-    this.nameSearchMap.keys().forEach((name) => {
+    for (const name in this.nameSearchMap.values()) {
       if (name.includes('"')) {
         excludeWithQuotes.push(name);
       } else {
         excludeWithoutQuotes.push(`!"${name}"`);
       }
-    });
+    }
 
     const excludePattern = excludeWithoutQuotes.join(" ");
     const pattern =
@@ -307,7 +317,7 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
     await this.updateComplete;
     this.dispatchEvent(
       new CustomEvent<CollectionsChangeEvent["detail"]>("collections-change", {
-        detail: { collections: this.collectionIds },
+        detail: { collections: this.collections.map(({ id }) => id) },
       }),
     );
   }
