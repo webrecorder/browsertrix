@@ -20,6 +20,7 @@
     "Browsertrix",
     "btrix",
     "clsx",
+    "dedup",
     "Elems",
     "favicons",
     "hoverable",
@@ -47,9 +48,14 @@
       ]
     }
   ],
-  "eslint.workingDirectories": ["./frontend"],
+  "eslint.workingDirectories": [
+    "./frontend"
+  ],
   "eslint.nodePath": "./frontend/node_modules",
-  "tailwindCSS.experimental.classRegex": ["tw`([^`]*)", "clsx\\(([^)]*)\\)"],
+  "tailwindCSS.experimental.classRegex": [
+    "tw`([^`]*)",
+    "clsx\\(([^)]*)\\)"
+  ],
   "html.customData": [
     "./node_modules/@shoelace-style/shoelace/dist/vscode.html-custom-data.json"
   ],

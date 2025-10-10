@@ -40,8 +40,12 @@ import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
 import isEqual from "lodash/fp/isEqual";
 import throttle from "lodash/fp/throttle";
+import union from "lodash/fp/union";
 import uniq from "lodash/fp/uniq";
+import without from "lodash/fp/without";
 import queryString from "query-string";
+
+import type { CollectionNameInputChangeEvent } from "../collections/collection-name-input";
 
 import {
   SELECTOR_DELIMITER,
@@ -202,6 +206,10 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
         completed: hasConfigId,
       },
       scheduling: {
+        error: false,
+        completed: hasConfigId,
+      },
+      deduplication: {
         error: false,
         completed: hasConfigId,
       },
@@ -385,6 +393,11 @@ export class WorkflowEditor extends BtrixElement {
     weekly: msg("Weekly"),
     monthly: msg("Monthly"),
     "": "",
+  };
+
+  private readonly dedupeTypeLabels: Record<FormState["dedupeType"], string> = {
+    collection: msg("Deduplicate using a collection"),
+    none: msg("No deduplication"),
   };
 
   @query(`form[name="${formName}"]`)
@@ -652,20 +665,15 @@ export class WorkflowEditor extends BtrixElement {
           const el = e.currentTarget as SlDetails;
 
           // Check if there's any invalid elements before hiding
-          let invalidEl: SlInput | null = null;
-
-          if (required) {
-            invalidEl = el.querySelector<SlInput>("[required][data-invalid]");
-          }
-
-          invalidEl =
-            invalidEl || el.querySelector<SlInput>("[data-user-invalid]");
+          const invalidEl =
+            el.querySelector<SlInput>("[data-invalid]") ||
+            el.querySelector<HTMLFormElement>(":invalid");
 
           if (invalidEl) {
             e.preventDefault();
 
             invalidEl.focus();
-            invalidEl.checkValidity();
+            invalidEl.reportValidity();
           }
         })}
         @sl-after-show=${this.handleCurrentTarget(
@@ -1666,7 +1674,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       <div class="col-span-5">
         <btrix-details ?open=${isCustom}>
           <span slot="title">
-            ${labelFor.selectLink}
+            ${labelFor.selectLinks}
             ${isCustom
               ? html`<btrix-badge>${selectors.length}</btrix-badge>`
               : ""}
@@ -1784,7 +1792,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
 
     return html`
-      ${this.renderSectionHeading(labelFor.behaviors)}
+      ${this.renderSectionHeading(sectionStrings.behaviors)}
       ${inputCol(
         html`<sl-checkbox
           name="autoscrollBehavior"
@@ -2284,13 +2292,163 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   };
 
+  private renderDeduplication() {
+    const link_to_collections_settings = html`<button
+      type="button"
+      class="text-blue-600 hover:text-blue-500"
+      @click=${async () => {
+        this.updateProgressState({ activeTab: "collections" });
+        await this.updateComplete;
+        void this.scrollToActivePanel();
+      }}
+    >
+      ${msg("Auto-Add to Collections")}
+    </button>`;
+
+    return html` ${inputCol(html`
+      <sl-radio-group
+        label=${labelFor.dedupeType}
+        name="dedupeType"
+        value=${this.formState.dedupeType}
+        @sl-change=${(e: Event) => {
+          const dedupeType = (e.target as SlRadio)
+            .value as FormState["dedupeType"];
+
+          const formState: Partial<FormState> = {
+            dedupeType,
+            dedupeCollectionId: null,
+            dedupeCollectionName: null,
+          };
+
+          if (dedupeType === "none" && this.formState.dedupeCollectionId) {
+            formState.autoAddCollections = without(
+              [this.formState.dedupeCollectionId],
+              this.formState.autoAddCollections,
+            );
+          }
+
+          this.updateFormState(formState, true);
+        }}
+      >
+        <sl-radio value="none">${this.dedupeTypeLabels["none"]}</sl-radio>
+        <sl-radio value="collection"
+          >${this.dedupeTypeLabels["collection"]}</sl-radio
+        >
+
+        ${when(
+          this.formState.dedupeType === "none" &&
+            this.initialWorkflow?.dedupCollId,
+          () => html`
+            <div slot="help-text" class="mt-2">
+              <sl-icon
+                class="mr-0.5 align-[-.175em]"
+                name="exclamation-triangle"
+              ></sl-icon>
+
+              ${msg(
+                "Disabling deduplication will also disable auto-adding to the collection.",
+              )}
+              <br />
+              ${msg(
+                html`To continue to auto-add to the collection without
+                deduplication enabled, update the
+                ${link_to_collections_settings} setting.`,
+              )}
+            </div>
+          `,
+        )}
+      </sl-radio-group>
+    `)}
+    ${this.renderHelpTextCol(
+      msg(
+        `Enable duplication checks before and during a crawl to avoid duplicate content in archived items.`,
+      ),
+    )}
+    ${when(
+      this.formState.dedupeType === "collection",
+      this.renderDedupeCollection,
+    )}`;
+  }
+
+  private readonly renderDedupeCollection = () => {
+    return html`
+      ${this.renderSectionHeading(msg("Collection to Use"))}
+      ${inputCol(html`
+        <btrix-collection-name-input
+          size="medium"
+          label=${msg("Collection Name")}
+          collectionId=${ifDefined(
+            this.formState.dedupeCollectionId || undefined,
+          )}
+          ?disableSearch=${!!this.formState.dedupeCollectionId}
+          required
+          @btrix-change=${(e: CollectionNameInputChangeEvent) => {
+            const { id, name } = e.detail.value;
+
+            if (id) {
+              this.updateFormState(
+                {
+                  dedupeCollectionId: id,
+                  autoAddCollections: union(this.formState.autoAddCollections, [
+                    id,
+                  ]),
+                },
+                true,
+              );
+            } else if (name) {
+              this.updateFormState({
+                dedupeCollectionName: name,
+              });
+            }
+          }}
+          @btrix-clear=${() => {
+            if (this.formState.dedupeCollectionId) {
+              this.updateFormState(
+                {
+                  dedupeCollectionId: null,
+                  dedupeCollectionName: null,
+                  autoAddCollections: without(
+                    [this.formState.dedupeCollectionId],
+                    this.formState.autoAddCollections,
+                  ),
+                },
+                true,
+              );
+            } else {
+              this.updateFormState({
+                dedupeCollectionName: null,
+              });
+            }
+          }}
+        >
+        </btrix-collection-name-input>
+        ${when(
+          this.formState.dedupeCollectionName &&
+            !this.formState.dedupeCollectionId,
+          () => html`
+            <div class="form-help-text">
+              ${msg(
+                "A new collection will be created when this workflow is saved.",
+              )}
+            </div>
+          `,
+        )}
+      `)}
+      ${this.renderHelpTextCol(
+        msg(
+          "Compare crawls from this workflow with all archived items in a specific collection. Crawls of this workflow will be automatically added to the collection.",
+        ),
+      )}
+    `;
+  };
+
   private renderCollections() {
     return html`
       ${inputCol(html`
         <btrix-collections-add
           .label=${msg("Auto-Add to Collection")}
-          .initialCollections=${this.formState.autoAddCollections}
-          .configId=${this.configId}
+          .collectionIds=${this.formState.autoAddCollections}
+          .dedupeId=${this.formState.dedupeCollectionId || undefined}
           @collections-change=${(e: CollectionsChangeEvent) =>
             this.updateFormState(
               {
@@ -2298,7 +2456,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
               },
               true,
             )}
-        ></btrix-collections-add>
+        >
+          ${when(
+            this.formState.dedupeCollectionId ||
+              this.formState.dedupeCollectionName,
+            () => html`
+              <btrix-alert class="mt-2" variant="warning">
+                ${msg(
+                  "Adding deduplicated crawls to a collection other than the deduplication source may result in incomplete replay of the non-deduplicated collection.",
+                )}
+              </btrix-alert>
+            `,
+          )}
+        </btrix-collections-add>
         ${when(
           !this.formState.autoAddCollections.length,
           () => html`
@@ -2469,6 +2639,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       name: "scheduling",
       desc: msg("Schedule recurring crawls."),
       render: this.renderJobScheduling,
+    },
+    {
+      name: "deduplication",
+      desc: msg("Prevent duplicate content from being crawled and stored."),
+      render: this.renderDeduplication,
     },
     {
       name: "collections",
@@ -2938,6 +3113,25 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     this.isSubmitting = true;
 
+    // Create new collection if needed
+    if (
+      this.formState.dedupeType === "collection" &&
+      this.formState.dedupeCollectionName &&
+      !this.formState.dedupeCollectionId
+    ) {
+      const { id } = await this.createCollection({
+        name: this.formState.dedupeCollectionName,
+      });
+
+      this.updateFormState(
+        {
+          dedupeCollectionId: id,
+          autoAddCollections: union(this.formState.autoAddCollections, [id]),
+        },
+        true,
+      );
+    }
+
     const uploadParams: Parameters<WorkflowEditor["parseConfig"]>[0] = {};
 
     // Upload seed file first if it exists, since ID will be used to
@@ -3205,6 +3399,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       maxCrawlSize: this.formState.maxCrawlSizeGB * BYTES_PER_GB,
       tags: this.formState.tags,
       autoAddCollections: this.formState.autoAddCollections,
+      dedupCollId: this.formState.dedupeCollectionId,
       config: {
         ...(isPageScopeType(this.formState.scopeType)
           ? this.parseUrlListConfig(uploadParams)
@@ -3385,5 +3580,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
     } catch (e) {
       console.debug(e);
     }
+  }
+
+  private async createCollection(
+    params: { name: string },
+    signal?: AbortSignal,
+  ) {
+    return this.api.fetch<{ added: boolean; id: string; name: string }>(
+      `/orgs/${this.orgId}/collections`,
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+        signal,
+      },
+    );
   }
 }

@@ -70,6 +70,7 @@ export type WorkflowParams = {
   autoAddCollections: string[];
   crawlerChannel: string;
   proxyId: string | null;
+  dedupCollId: string | null;
 };
 
 export type CrawlConfig = WorkflowParams & {
