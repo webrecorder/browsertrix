@@ -5,13 +5,14 @@ import secrets
 
 from typing import Optional, Dict, Tuple
 from datetime import datetime, timedelta
+from uuid import UUID
 
 from fastapi import HTTPException
 
 from .utils import dt_now, date_to_str, scale_from_browser_windows
 from .k8sapi import K8sAPI
 
-from .models import StorageRef, CrawlConfig, BgJobType
+from .models import StorageRef, CrawlConfig, BgJobType, Collection
 
 
 # ============================================================================
@@ -293,6 +294,9 @@ class CrawlManager(K8sAPI):
             storage_filename=storage_filename,
             profile_filename=profile_filename,
             proxy_id=crawlconfig.proxyId or DEFAULT_PROXY_ID,
+            dedup_coll_id=(
+                str(crawlconfig.dedupCollId) if crawlconfig.dedupCollId else ""
+            ),
             is_single_page=is_single_page,
             seed_file_url=seed_file_url,
         )
@@ -467,6 +471,31 @@ class CrawlManager(K8sAPI):
     async def delete_crawl_config_by_id(self, cid: str) -> None:
         """Delete all crawl configs by id"""
         await self._delete_crawl_configs(f"btrix.crawlconfig={cid}")
+
+    async def create_coll_index(self, collection: Collection):
+        """create collection index"""
+        params = {
+            "id": str(collection.id),
+            "oid": str(collection.oid),
+            "collItemsUpdatedAt": date_to_str(collection.modified or dt_now()),
+        }
+        data = self.templates.env.get_template("coll_index.yaml").render(params)
+
+        await self.create_from_yaml(data)
+
+        return str(collection.id)
+
+    async def update_coll_index(self, coll_id: UUID):
+        """force collection index to update"""
+        return await self.patch_custom_object(
+            f"collindex-{coll_id}",
+            {"collItemsUpdatedAt": date_to_str(dt_now())},
+            "collindexes",
+        )
+
+    async def delete_coll_index(self, coll_id: UUID):
+        """delete collection index"""
+        return await self.delete_custom_object(f"collindex-{coll_id}", "collindexes")
 
     # ========================================================================
     # Internal Methods

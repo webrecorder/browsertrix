@@ -2,6 +2,8 @@
 Crawl-related models and types
 """
 
+# pylint: disable=invalid-name, too-many-lines
+
 from datetime import datetime
 from enum import Enum, IntEnum
 from uuid import UUID
@@ -89,7 +91,6 @@ class EmailStr(CasedEmailStr):
         return validate_email(value)[1].lower()
 
 
-# pylint: disable=invalid-name, too-many-lines
 # ============================================================================
 class UserRole(IntEnum):
     """User role"""
@@ -237,7 +238,7 @@ TYPE_RUNNING_STATES = Literal[
 RUNNING_STATES = get_args(TYPE_RUNNING_STATES)
 
 TYPE_WAITING_STATES = Literal[
-    "starting", "waiting_capacity", "waiting_org_limit", "paused"
+    "starting", "waiting_capacity", "waiting_org_limit", "waiting_dedup_index", "paused"
 ]
 WAITING_STATES = get_args(TYPE_WAITING_STATES)
 
@@ -394,6 +395,8 @@ class CrawlConfigIn(BaseModel):
     proxyId: Optional[str] = None
 
     autoAddCollections: Optional[List[UUID]] = []
+    dedupCollId: Optional[UUID] = None
+
     tags: Optional[List[str]] = []
 
     crawlTimeout: int = 0
@@ -459,6 +462,8 @@ class CrawlConfigCore(BaseMongoModel):
 
     firstSeed: str = ""
     seedCount: int = 0
+
+    dedupCollId: Optional[UUID] = None
 
 
 # ============================================================================
@@ -545,6 +550,7 @@ class UpdateCrawlConfig(BaseModel):
     tags: Optional[List[str]] = None
     description: Optional[str] = None
     autoAddCollections: Optional[List[UUID]] = None
+    dedupCollId: Union[UUID, EmptyStr, None] = None
     runNow: bool = False
     updateRunning: bool = False
 
@@ -587,6 +593,8 @@ class CrawlConfigDefaults(BaseModel):
     exclude: Optional[List[str]] = None
 
     customBehaviors: List[str] = []
+
+    dedupCollId: Optional[UUID] = None
 
 
 # ============================================================================
@@ -1499,6 +1507,13 @@ class PageUrlCount(BaseModel):
 
 
 # ============================================================================
+class ResourcesOnly(BaseModel):
+    """Resources-only response"""
+
+    resources: Optional[List[CrawlFileOut]] = []
+
+
+# ============================================================================
 class CrawlOutWithResources(CrawlOut):
     """Crawl output model including resources"""
 
@@ -1588,6 +1603,8 @@ class Collection(BaseMongoModel):
 
     previousSlugs: List[str] = []
 
+    hasDedupIndex: bool = False
+
 
 # ============================================================================
 class CollIn(BaseModel):
@@ -1603,6 +1620,8 @@ class CollIn(BaseModel):
 
     defaultThumbnailName: Optional[str] = None
     allowPublicDownload: bool = True
+
+    hasDedupIndex: bool = False
 
 
 # ============================================================================
@@ -1648,6 +1667,7 @@ class CollOut(BaseMongoModel):
     downloadUrl: Optional[str] = None
 
     topPageHosts: List[HostCount] = []
+    hasDedupIndex: bool = False
 
 
 # ============================================================================
@@ -1699,6 +1719,7 @@ class UpdateColl(BaseModel):
     defaultThumbnailName: Optional[str] = None
     allowPublicDownload: Optional[bool] = None
     thumbnailSource: Optional[CollectionThumbnailSource] = None
+    hasDedupIndex: Optional[bool] = None
 
 
 # ============================================================================
