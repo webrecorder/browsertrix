@@ -97,6 +97,8 @@ export class CollectionNameInput extends WithSearchOrgContext(
     if (!key || key === "name") {
       if (key === "name") {
         this.#collection = await this.getCollectionByName(value);
+      } else {
+        this.#collection = undefined;
       }
 
       await this.updateComplete;
