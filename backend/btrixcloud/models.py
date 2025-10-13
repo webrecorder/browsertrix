@@ -1,6 +1,7 @@
 """
 Crawl-related models and types
 """
+# pylint: disable=invalid-name, too-many-lines
 
 from datetime import datetime
 from enum import Enum, IntEnum
@@ -89,7 +90,6 @@ class EmailStr(CasedEmailStr):
         return validate_email(value)[1].lower()
 
 
-# pylint: disable=invalid-name, too-many-lines
 # ============================================================================
 class UserRole(IntEnum):
     """User role"""
