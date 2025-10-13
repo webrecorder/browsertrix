@@ -1,6 +1,7 @@
 """
 Crawl-related models and types
 """
+
 # pylint: disable=invalid-name, too-many-lines
 
 from datetime import datetime
