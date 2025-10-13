@@ -998,10 +998,12 @@ export class WorkflowsList extends BtrixElement {
       });
 
       void this.fetchWorkflows();
+
+      const workflow_name = html`<strong class="inline-flex"
+        >${renderName(workflow)}</strong
+      >`;
       this.notify.toast({
-        message: msg(
-          html`Deleted <strong>${renderName(workflow)}</strong> Workflow.`,
-        ),
+        message: msg(html`Deleted ${workflow_name} Workflow.`),
         variant: "success",
         icon: "check2-circle",
         id: "workflow-delete-status",
