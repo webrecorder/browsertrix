@@ -38,9 +38,9 @@ export class LinkedCollectionsList extends TailwindElement {
 
         return html`<btrix-linked-collections-list-item
           class=${clsx(tw`contents`, i > 0 && tw`part-[base]:border-t`)}
-          .dedupeId=${this.dedupeId}
           .item=${until(request, item)}
           baseUrl=${ifDefined(this.baseUrl)}
+          ?dedupeSource=${Boolean(this.dedupeId && item.id === this.dedupeId)}
           ?removable=${this.removable}
           ?loading=${until(
             request.then(() => false),

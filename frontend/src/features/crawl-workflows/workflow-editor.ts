@@ -2446,6 +2446,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private renderCollections() {
+    const newDedupeCollectionName =
+      this.formState.dedupeType === "collection" &&
+      !this.formState.dedupeCollectionId &&
+      this.formState.dedupeCollectionName;
+    const showDedupeWarning =
+      !isEqual(
+        this.initialWorkflow?.autoAddCollections,
+        this.formState.autoAddCollections,
+      ) &&
+      (this.formState.dedupeCollectionId || newDedupeCollectionName);
+
     return html`
       ${inputCol(html`
         <btrix-collections-add
@@ -2461,8 +2472,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             )}
         >
           ${when(
-            this.formState.dedupeCollectionId ||
-              this.formState.dedupeCollectionName,
+            showDedupeWarning,
             () => html`
               <btrix-alert class="mt-2" variant="warning">
                 ${msg(
@@ -2473,12 +2483,24 @@ https://archiveweb.page/images/${"logo.svg"}`}
           )}
         </btrix-collections-add>
         ${when(
-          !this.formState.autoAddCollections.length,
-          () => html`
-            <div class="mt-2 rounded-lg border p-3 text-neutral-500">
-              <p class="text-center">${msg("No collections selected.")}</p>
-            </div>
+          newDedupeCollectionName,
+          (name) => html`
+            <ul class="mt-2 rounded border">
+              <btrix-linked-collections-list-item
+                .item=${{ id: "", name }}
+                dedupeSource
+              ></btrix-linked-collections-list-item>
+            </ul>
           `,
+          () =>
+            when(
+              !this.formState.autoAddCollections.length,
+              () => html`
+                <div class="mt-2 rounded-lg border p-3 text-neutral-500">
+                  <p class="text-center">${msg("No collections selected.")}</p>
+                </div>
+              `,
+            ),
         )}
       `)}
       ${this.renderHelpTextCol(
