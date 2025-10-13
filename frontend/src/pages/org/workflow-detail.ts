@@ -2236,10 +2236,11 @@ export class WorkflowDetail extends BtrixElement {
 
       this.navigate.to(`${this.navigate.orgBasePath}/workflows`);
 
+      const workflow_name = html`<strong class="inline-flex"
+        >${renderName(this.workflow)}</strong
+      >`;
       this.notify.toast({
-        message: msg(
-          html`Deleted <strong>${renderName(this.workflow)}</strong> Workflow.`,
-        ),
+        message: msg(html`Deleted ${workflow_name} Workflow.`),
         variant: "success",
         icon: "check2-circle",
         id: "workflow-delete-status",
