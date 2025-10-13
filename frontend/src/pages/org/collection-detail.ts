@@ -234,7 +234,13 @@ export class CollectionDetail extends BtrixElement {
         </div>
       </header>
 
-      <div class="mt-3 rounded-lg border px-4 py-2">
+      <div
+        class="mt-3 rounded-lg border px-4 py-2"
+        aria-busy="${
+          // TODO Switch to task and use task status
+          this.collection === undefined
+        }"
+      >
         ${this.renderInfoBar()}
       </div>
       <div class="flex items-center justify-between py-3">
@@ -590,8 +596,14 @@ export class CollectionDetail extends BtrixElement {
   };
 
   private renderInfoBar() {
+    if (!this.collection) {
+      return html`<div class="h-14">
+        <span class="sr-only">${msg("Loading details")}</span>
+      </div>`;
+    }
+
     const createdDate =
-      this.collection?.created &&
+      this.collection.created &&
       (!this.collection.modified ||
         this.collection.created === this.collection.modified)
         ? this.collection.created

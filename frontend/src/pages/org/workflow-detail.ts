@@ -491,7 +491,11 @@ export class WorkflowDetail extends BtrixElement {
             </div>
           </header>
 
-          <section class="col-span-1 rounded-lg border px-4 py-2">
+          <section
+            class="col-span-1 rounded-lg border px-4 py-2"
+            aria-busy="${this.workflowTask.status === TaskStatus.INITIAL ||
+            this.workflowTask.status === TaskStatus.PENDING}"
+          >
             ${this.renderDetails()}
           </section>
         </div>
@@ -1063,6 +1067,12 @@ export class WorkflowDetail extends BtrixElement {
   };
 
   private renderDetails() {
+    if (!this.workflow) {
+      return html`<div class="h-14">
+        <span class="sr-only">${msg("Loading details")}</span>
+      </div>`;
+    }
+
     return html`
       <btrix-desc-list horizontal>
         ${this.renderDetailItem(
