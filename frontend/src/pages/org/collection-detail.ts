@@ -590,48 +590,6 @@ export class CollectionDetail extends BtrixElement {
   };
 
   private renderInfoBar() {
-    const relativeDate = (
-      dateStr: string,
-      { prefix }: { prefix?: string } = {},
-    ) => {
-      const date = new Date(dateStr);
-      const diff = new Date().getTime() - date.getTime();
-      const seconds = diff / 1000;
-      const minutes = seconds / 60;
-      const hours = minutes / 60;
-
-      return html`
-        <sl-tooltip
-          content=${this.localize.date(date, {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZoneName: "short",
-          })}
-          hoist
-          placement="bottom"
-        >
-          <span>
-            ${prefix}
-            ${hours > 24
-              ? this.localize.date(date, {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })
-              : seconds > 60
-                ? html`<sl-relative-time
-                    sync
-                    date=${dateStr}
-                  ></sl-relative-time>`
-                : `<${this.localize.relativeTime(-1, "minute", { style: "narrow" })}`}
-          </span>
-        </sl-tooltip>
-      `;
-    };
-
     const createdDate =
       this.collection?.created &&
       (!this.collection.modified ||
@@ -653,10 +611,10 @@ export class CollectionDetail extends BtrixElement {
         )}
         ${createdDate
           ? this.renderDetailItem(msg("Created"), () =>
-              relativeDate(createdDate),
+              this.localize.relativeDate(createdDate),
             )
           : this.renderDetailItem(msg("Last Modified"), (col) =>
-              col.modified ? relativeDate(col.modified) : "",
+              col.modified ? this.localize.relativeDate(col.modified) : "",
             )}
       </btrix-desc-list>
     `;
