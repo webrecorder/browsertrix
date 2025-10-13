@@ -2389,6 +2389,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               this.updateFormState(
                 {
                   dedupeCollectionId: id,
+                  dedupeCollectionName: name || "",
                   autoAddCollections: union(this.formState.autoAddCollections, [
                     id,
                   ]),
@@ -2397,6 +2398,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               );
             } else if (name) {
               this.updateFormState({
+                dedupeCollectionId: null,
                 dedupeCollectionName: name,
               });
             }
