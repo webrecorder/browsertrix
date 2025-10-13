@@ -24,7 +24,9 @@ class Migration(BaseMigration):
         """
         profiles_mdb = self.mdb["profiles"]
 
-        async for profile_res in profiles_mdb.find({}):
+        match_query = {"resource.filename": {"$regex": r"^profiles"}}
+
+        async for profile_res in profiles_mdb.find(match_query):
             profile = Profile.from_dict(profile_res)
             if not profile.resource:
                 continue
