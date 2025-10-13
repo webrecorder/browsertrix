@@ -94,7 +94,7 @@ export class DescList extends LitElement {
       display: inline-block;
       flex: 1 0 0;
       min-width: min-content;
-      padding-top: var(--sl-spacing-x-small);
+      padding: var(--sl-spacing-x-small) var(--sl-spacing-medium) 0;
     }
 
     .horizontal ::slotted(btrix-desc-list-item)::before {
