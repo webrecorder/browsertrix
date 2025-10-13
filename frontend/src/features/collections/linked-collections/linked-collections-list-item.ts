@@ -22,8 +22,8 @@ export class LinkedCollectionsListItem extends TailwindElement {
   @property({ type: String })
   baseUrl?: string;
 
-  @property({ type: String })
-  dedupeId?: string;
+  @property({ type: Boolean })
+  dedupeSource?: boolean;
 
   @property({ type: Boolean })
   removable?: boolean;
@@ -37,8 +37,7 @@ export class LinkedCollectionsListItem extends TailwindElement {
     if (!item) return;
 
     const actual = isActualCollection(item);
-    const dedupeEnabled =
-      item.id === this.dedupeId && actual && item.hasDedupIndex;
+    const dedupeEnabled = this.dedupeSource;
 
     const content = [
       html`<div
