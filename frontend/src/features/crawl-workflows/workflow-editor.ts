@@ -2438,7 +2438,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(
-          "Compare crawls from this workflow with all archived items in a specific collection. Crawls of this workflow will be automatically added to the collection.",
+          "This collection will be used as the deduplication source for all crawls of this workflow.",
         ),
       )}
     `;
