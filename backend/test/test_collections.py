@@ -1168,6 +1168,7 @@ def test_list_public_collections(
     assert r.status_code == 404
     assert r.json()["detail"] == "public_profile_not_found"
 
+
 def test_same_collection_diff_orgs_correct(non_default_org_id, admin_auth_headers):
     # public collection exists in default org
     r = requests.get(
@@ -1209,6 +1210,7 @@ def test_same_collection_diff_orgs_correct(non_default_org_id, admin_auth_header
     )
     assert r.status_code == 200
     assert r.json()["success"]
+
 
 def test_list_public_collections_no_colls(non_default_org_id, admin_auth_headers):
     # Test existing org that's not public - should return same 404 as

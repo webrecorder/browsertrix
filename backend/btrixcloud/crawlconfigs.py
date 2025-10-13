@@ -318,13 +318,11 @@ class CrawlConfigOps:
 
         # the dedup collection id must also be in auto add collections
         if config_in.dedupCollId:
-            if (
-                not config_in.autoAddCollections
-                or config_in.dedupCollId not in config_in.autoAddCollections
-            ):
-                raise HTTPException(
-                    status_code=400, detail="dedup_coll_id_not_in_autoadd"
-                )
+            if config_in.autoAddCollections is None:
+                config_in.autoAddCollections = []
+
+            if config_in.dedupCollId not in config_in.autoAddCollections:
+                config_in.autoAddCollections.append(config_in.dedupCollId)
 
         now = dt_now()
         crawlconfig = CrawlConfig(
@@ -616,25 +614,24 @@ class CrawlConfigOps:
             update.tags is not None
             and ",".join(orig_crawl_config.tags) != ",".join(update.tags)
         )
-        metadata_changed = metadata_changed or (
-            update.autoAddCollections is not None
-            and sorted(orig_crawl_config.autoAddCollections)
-            != sorted(update.autoAddCollections)
-        )
+
+        if isinstance(update.dedupCollId, UUID):
+            if update.autoAddCollections is None:
+                update.autoAddCollections = []
+
+            if update.dedupCollId not in update.autoAddCollections:
+                update.autoAddCollections.append(update.dedupCollId)
 
         metadata_changed = metadata_changed or (
             update.dedupCollId is not None
             and update.dedupCollId != orig_crawl_config.dedupCollId
         )
 
-        if update.dedupCollId:
-            if (
-                not update.autoAddCollections
-                or update.dedupCollId not in update.autoAddCollections
-            ):
-                raise HTTPException(
-                    status_code=400, detail="dedup_coll_id_not_in_autoadd"
-                )
+        metadata_changed = metadata_changed or (
+            update.autoAddCollections is not None
+            and sorted(orig_crawl_config.autoAddCollections)
+            != sorted(update.autoAddCollections)
+        )
 
         run_now = update.runNow
 
@@ -657,13 +654,21 @@ class CrawlConfigOps:
         query["modifiedByName"] = user.name
         query["modified"] = dt_now()
 
-        # if empty str, just clear the profile
+        # profile - if empty str, just clear the profile
         if update.profileid == "":
             query["profileid"] = None
         # else, ensure its a valid profile
         elif update.profileid:
             await self.profiles.get_profile(cast(UUID, update.profileid), org)
             query["profileid"] = update.profileid
+
+        # dedup - if empty dedupCollId, clear the coll id
+        if update.dedupCollId == "":
+            query["dedupCollId"] = None
+        # else, enable dedup on collection
+        if isinstance(update.dedupCollId, UUID):
+            query["dedupCollId"] = update.dedupCollId
+            await self.coll_ops.enable_dedup_index(update.dedupCollId)
 
         if update.config is not None:
             query["config"] = update.config.dict()
@@ -678,9 +683,6 @@ class CrawlConfigOps:
             query["firstSeed"] = update.config.seeds[0].url
             query["seedCount"] = len(update.config.seeds)
             query["seedFileId"] = None
-
-        if update.dedupCollId:
-            await self.coll_ops.enable_dedup_index(update.dedupCollId)
 
         # update in db
         result = await self.crawl_configs.find_one_and_update(

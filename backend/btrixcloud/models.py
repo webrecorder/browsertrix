@@ -549,7 +549,7 @@ class UpdateCrawlConfig(BaseModel):
     tags: Optional[List[str]] = None
     description: Optional[str] = None
     autoAddCollections: Optional[List[UUID]] = None
-    dedupCollId: Optional[UUID] = None
+    dedupCollId: Union[UUID, EmptyStr, None] = None
     runNow: bool = False
     updateRunning: bool = False
 
