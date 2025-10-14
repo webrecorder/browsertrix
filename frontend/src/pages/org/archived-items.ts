@@ -16,7 +16,11 @@ import {
   type BtrixFilterChipChangeEvent,
   type FilterChip,
 } from "@/components/ui/filter-chip";
-import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import {
+  parsePage,
+  type PageChangeEvent,
+  type Pagination,
+} from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
@@ -121,6 +125,9 @@ export class CrawlsList extends BtrixElement {
     page: parsePage(new URLSearchParams(location.search).get("page")),
     pageSize: INITIAL_PAGE_SIZE,
   };
+
+  @query("btrix-pagination")
+  private readonly paginationElement?: Pagination;
 
   @state()
   private searchOptions: Record<string, string>[] = [];
@@ -382,10 +389,7 @@ export class CrawlsList extends BtrixElement {
           direction: sortableFields["finished"].defaultDirection!,
         });
       }
-      this.pagination = {
-        page: 1,
-        pageSize: INITIAL_PAGE_SIZE,
-      };
+      this.paginationElement?.setPage(1, { dispatch: true, replace: true });
 
       if (changedProperties.has("filterByCurrentUser")) {
         window.sessionStorage.setItem(
