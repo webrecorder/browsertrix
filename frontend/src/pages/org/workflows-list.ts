@@ -7,7 +7,6 @@ import { customElement, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
-import { type UnionToTuple } from "type-fest";
 
 import {
   ScopeType,
@@ -181,7 +180,7 @@ export class WorkflowsList extends BtrixElement {
         "firstSeed",
         "schedule",
         "isCrawlRunning",
-      ] as UnionToTuple<keyof FilterBy>;
+      ] as (keyof FilterBy)[];
       keys.forEach((key) => {
         if (value[key] == null) {
           params.delete(key);

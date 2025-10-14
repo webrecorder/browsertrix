@@ -7,7 +7,6 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
-import { type UnionToTuple } from "type-fest";
 
 import type { ArchivedItem, Crawl, Workflow } from "./types";
 
@@ -211,9 +210,7 @@ export class CrawlsList extends BtrixElement {
   private readonly filterBy = new SearchParamsValue<FilterBy>(
     this,
     (value, params) => {
-      const keys = ["name", "firstSeed", "state"] as UnionToTuple<
-        keyof FilterBy
-      >;
+      const keys = ["name", "firstSeed", "state"] as (keyof FilterBy)[];
       keys.forEach((key) => {
         if (value[key] == null) {
           params.delete(key);
