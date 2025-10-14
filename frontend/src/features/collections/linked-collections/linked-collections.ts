@@ -28,6 +28,12 @@ export class LinkedCollections extends BtrixElement {
   @property({ type: Array, hasChanged: isNotEqual })
   collections: (string | CollectionLikeItem)[] = [];
 
+  /**
+   * ID of collection that is used for deduplication
+   */
+  @property({ type: String })
+  dedupeId?: string;
+
   @property({ type: Boolean })
   removable?: boolean;
 
@@ -112,6 +118,7 @@ export class LinkedCollections extends BtrixElement {
       aria-live="polite"
       .collections=${collections}
       baseUrl="${this.navigate.orgBasePath}/collections/view"
+      .dedupeId=${this.dedupeId}
       ?removable=${this.removable}
     ></btrix-linked-collections-list>`;
   }
