@@ -84,10 +84,6 @@ export class SearchParamsValue<T> implements ReactiveController {
   readonly #options: {
     initial?: (valueFromSearchParams?: T) => T;
     propertyKey?: PropertyKey;
-    /**
-     * Use a transaction for searchParams updates. Useful in combination with pagination, for example.
-     */
-    transaction?: boolean;
   };
 
   public get value(): T {
@@ -135,10 +131,6 @@ export class SearchParamsValue<T> implements ReactiveController {
     options?: {
       initial?: (valueFromSearchParams?: T) => T;
       propertyKey?: PropertyKey;
-      /**
-       * Use a transaction for searchParams updates. Useful in combination with pagination, for example.
-       */
-      transaction?: boolean;
     },
   ) {
     (this.#host = host).addController(this);
