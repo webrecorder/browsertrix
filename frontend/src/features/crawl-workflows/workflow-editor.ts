@@ -2427,13 +2427,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ${when(
           this.formState.dedupeCollectionName &&
             !this.formState.dedupeCollectionId,
-          () => html`
-            <div class="form-help-text">
-              ${msg(
-                "A new collection will be created when this workflow is saved.",
-              )}
-            </div>
-          `,
+          () => {
+            const workflow_name = html`<strong class="font-medium"
+              >${this.formState.dedupeCollectionName}</strong
+            >`;
+            return html`
+              <div class="form-help-text">
+                ${msg(
+                  html`A new collection named “${workflow_name}” will be created
+                  when this workflow is saved.`,
+                )}
+              </div>
+            `;
+          },
         )}
       `)}
       ${this.renderHelpTextCol(

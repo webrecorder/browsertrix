@@ -58,6 +58,9 @@ export class SearchCombobox<T> extends TailwindElement {
   @property({ type: String })
   name?: string;
 
+  @property({ type: Number })
+  maxlength?: number;
+
   @property({ type: Boolean })
   required?: boolean;
 
@@ -149,6 +152,7 @@ export class SearchCombobox<T> extends TailwindElement {
           placeholder=${this.placeholder}
           label=${ifDefined(this.label)}
           size=${ifDefined(this.size)}
+          maxlength=${ifDefined(this.maxlength)}
           ?disabled=${this.disabled}
           clearable
           value=${this.searchByValue}

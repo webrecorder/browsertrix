@@ -16,7 +16,10 @@ import type { BtrixChangeEvent } from "@/events/btrix-change";
 import { FormControl } from "@/mixins/FormControl";
 import { validationMessageFor } from "@/strings/validation";
 import type { APIPaginatedList } from "@/types/api";
-import type { Collection } from "@/types/collection";
+import {
+  COLLECTION_NAME_MAX_LENGTH,
+  type Collection,
+} from "@/types/collection";
 import appState from "@/utils/state";
 
 export type CollectionNameInputChangeEvent = BtrixChangeEvent<{
@@ -42,8 +45,9 @@ export class CollectionNameInput extends WithSearchOrgContext(
   collectionId = "";
 
   placeholder = msg("Enter existing or new collection name");
-  searchKeys = searchQueryKeys;
   createNew = true;
+  readonly searchKeys = searchQueryKeys;
+  readonly maxlength = COLLECTION_NAME_MAX_LENGTH;
 
   #collection?: Collection;
 
