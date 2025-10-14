@@ -96,9 +96,7 @@ export class SearchParamsValue<T> implements ReactiveController {
   public setValue(value: T) {
     const oldValue = this.#value;
     this.#value = value;
-    this.#searchParams.update((params) => this.#encoder(value, params), {
-      transaction: this.#options.transaction,
-    });
+    this.#searchParams.update((params) => this.#encoder(value, params));
     this.#host.requestUpdate(this.#getPropertyName("setValue"), oldValue);
   }
   // Little bit hacky/metaprogramming-y, but this lets us auto-detect property
