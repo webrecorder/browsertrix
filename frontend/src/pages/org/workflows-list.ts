@@ -263,13 +263,11 @@ export class WorkflowsList extends BtrixElement {
     (params) => (params.get("tagsType") === "and" ? "and" : "or"),
   );
 
-  private readonly filterByProfiles = new SearchParamsValue<
-    string[] | undefined
-  >(
+  private readonly filterByProfiles = new SearchParamsValue<string[]>(
     this,
     (value, params) => {
       params.delete("profiles");
-      value?.forEach((v) => {
+      value.forEach((v) => {
         params.append("profiles", v);
       });
       return params;
@@ -297,7 +295,7 @@ export class WorkflowsList extends BtrixElement {
       this.filterBy.value.name || undefined,
       this.filterBy.value.isCrawlRunning || undefined,
       this.filterBy.value.schedule,
-      this.filterByProfiles.value?.length || undefined,
+      this.filterByProfiles.value.length || undefined,
       this.filterByCurrentUser.value || undefined,
       this.filterByTags.value?.length || undefined,
     ].some((v) => v !== undefined);
@@ -313,7 +311,7 @@ export class WorkflowsList extends BtrixElement {
     });
     this.filterByCurrentUser.setValue(false);
     this.filterByTags.setValue(undefined);
-    this.filterByProfiles.setValue(undefined);
+    this.filterByProfiles.setValue([]);
   }
 
   private getWorkflowsTimeout?: number;
@@ -678,7 +676,8 @@ export class WorkflowsList extends BtrixElement {
       <btrix-workflow-profile-filter
         .profiles=${this.filterByProfiles.value}
         @btrix-change=${(e: BtrixChangeWorkflowProfileFilterEvent) => {
-          this.filterByProfiles.setValue(e.detail.value);
+          this.filterByProfiles.setValue(e.detail.value ?? []);
+          console.log(e.detail.value);
         }}
       ></btrix-workflow-profile-filter>
 
@@ -731,6 +730,10 @@ export class WorkflowsList extends BtrixElement {
         .searchOptions=${this.searchOptions}
         .keyLabels=${WorkflowsList.FieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
+        searchByValue=${ifDefined(
+          this.selectedSearchFilterKey &&
+            this.filterBy.value[this.selectedSearchFilterKey],
+        )}
         placeholder=${msg("Search all workflows by name or crawl start URL")}
         @btrix-select=${(e: SelectEvent<typeof this.searchKeys>) => {
           const { key, value } = e.detail;
@@ -915,7 +918,7 @@ export class WorkflowsList extends BtrixElement {
         userid: params.filterByCurrentUser ? this.userInfo?.id : undefined,
         tag: params.filterByTags || undefined,
         tagMatch: params.filterByTagsType,
-        profileIds: params.filterByProfiles || undefined,
+        profileIds: params.filterByProfiles,
         sortBy: params.orderBy.field,
         sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
       },
