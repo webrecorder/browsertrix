@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import type { SlDialog, SlSelectEvent } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
@@ -19,9 +20,13 @@ import type {
   BtrixFilterChipChangeEvent,
   FilterChip,
 } from "@/components/ui/filter-chip";
-import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import {
+  parsePage,
+  type PageChangeEvent,
+  type Pagination,
+} from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
-import { SearchParamsController } from "@/controllers/searchParams";
+import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import {
   Action,
@@ -42,22 +47,24 @@ import {
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { renderName } from "@/utils/crawler";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
 const SORT_DIRECTIONS = ["asc", "desc"] as const;
 type SortDirection = (typeof SORT_DIRECTIONS)[number];
-type Sort = {
+type SortBy = {
   field: SortField;
   direction: SortDirection;
 };
+
+type Keys<T> = (keyof T)[];
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.crawlConfigs";
 const INITIAL_PAGE_SIZE = 10;
 const POLL_INTERVAL_SECONDS = 10;
-const ABORT_REASON_THROTTLE = "throttled";
 
 const sortableFields: Record<
   SortField,
@@ -85,15 +92,17 @@ const sortableFields: Record<
   },
 };
 
-const DEFAULT_SORT = {
+const DEFAULT_SORT_BY = {
   field: "lastRun",
   direction: sortableFields["lastRun"].defaultDirection!,
 } as const;
 
-const USED_FILTERS = [
-  "schedule",
-  "isCrawlRunning",
-] as const satisfies (keyof ListWorkflow)[];
+type FilterBy = {
+  name?: string;
+  firstSeed?: string;
+  schedule?: boolean;
+  isCrawlRunning?: boolean;
+};
 
 /**
  * Usage:
@@ -109,38 +118,157 @@ export class WorkflowsList extends BtrixElement {
     firstSeed: msg("Crawl Start URL"),
   };
 
-  @state()
-  private workflows?: APIPaginatedList<ListWorkflow>;
+  @state({ hasChanged: isNotEqual })
+  private pagination: Required<APIPaginationQuery> = {
+    page: parsePage(new URLSearchParams(location.search).get("page")),
+    pageSize: INITIAL_PAGE_SIZE,
+  };
+
+  @query("btrix-pagination")
+  private readonly paginationElement?: Pagination;
 
   @state()
   private searchOptions: { [x: string]: string }[] = [];
 
   @state()
-  private isFetching = false;
-
-  @state()
-  private fetchErrorStatusCode?: number;
+  private readonly fetchErrorStatusCode?: number;
 
   @state()
   private workflowToDelete?: ListWorkflow;
 
-  @state()
-  private orderBy: Sort = DEFAULT_SORT;
+  private readonly orderBy = new SearchParamsValue<SortBy>(
+    this,
+    (value, params) => {
+      if (value.field === DEFAULT_SORT_BY.field) {
+        params.delete("sortBy");
+      } else {
+        params.set("sortBy", value.field);
+      }
+      if (value.direction === sortableFields[value.field].defaultDirection) {
+        params.delete("sortDir");
+      } else {
+        params.set("sortDir", value.direction);
+      }
+      return params;
+    },
+    (params) => {
+      const field = params.get("sortBy") as SortBy["field"] | null;
+      if (!field) {
+        return DEFAULT_SORT_BY;
+      }
+      let direction = params.get("sortDir");
+      if (
+        !direction ||
+        (SORT_DIRECTIONS as readonly string[]).includes(direction)
+      ) {
+        direction =
+          sortableFields[field].defaultDirection || DEFAULT_SORT_BY.direction;
+      }
+      return { field, direction: direction as SortDirection };
+    },
+  );
 
-  @state()
-  private filterBy: Partial<{ [k in keyof ListWorkflow]: boolean }> = {};
+  private readonly filterBy = new SearchParamsValue<FilterBy>(
+    this,
+    (value, params) => {
+      const keys = [
+        "name",
+        "firstSeed",
+        "schedule",
+        "isCrawlRunning",
+      ] as (keyof FilterBy)[];
+      keys.forEach((key) => {
+        if (value[key] == null) {
+          params.delete(key);
+        } else {
+          switch (key) {
+            case "firstSeed":
+            case "name":
+              params.set(key, value[key]);
+              break;
+            case "schedule":
+              params.set(key, value[key] ? "true" : "false");
+              break;
+            case "isCrawlRunning":
+              if (value[key]) {
+                params.set(key, "true");
+              } else {
+                params.delete(key);
+              }
+              break;
+          }
+        }
+      });
+      return params;
+    },
+    (params) => {
+      return {
+        name: params.get("name") ?? undefined,
+        firstSeed: params.get("firstSeed") ?? undefined,
+        schedule: params.has("schedule")
+          ? params.get("schedule") === "true"
+          : undefined,
+        isCrawlRunning: params.get("isCrawlRunning") === "true",
+      };
+    },
+  );
 
-  @state()
-  private filterByCurrentUser = false;
+  private readonly filterByCurrentUser = new SearchParamsValue<boolean>(
+    this,
+    (value, params) => {
+      if (value) {
+        params.set("mine", "true");
+      } else {
+        params.delete("mine");
+      }
+      return params;
+    },
+    (params) => params.get("mine") === "true",
+    {
+      initial: (initialValue) =>
+        window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
+          "true" ||
+        initialValue ||
+        false,
+    },
+  );
 
-  @state()
-  private filterByTags?: string[];
+  private readonly filterByTags = new SearchParamsValue<string[] | undefined>(
+    this,
+    (value, params) => {
+      params.delete("tags");
+      value?.forEach((v) => {
+        params.append("tags", v);
+      });
+      return params;
+    },
+    (params) => params.getAll("tags"),
+  );
 
-  @state()
-  private filterByTagsType: "and" | "or" = "or";
+  private readonly filterByTagsType = new SearchParamsValue<"and" | "or">(
+    this,
+    (value, params) => {
+      if (value === "and") {
+        params.set("tagsType", value);
+      } else {
+        params.delete("tagsType");
+      }
+      return params;
+    },
+    (params) => (params.get("tagsType") === "and" ? "and" : "or"),
+  );
 
-  @state()
-  private filterByProfiles?: string[];
+  private readonly filterByProfiles = new SearchParamsValue<string[]>(
+    this,
+    (value, params) => {
+      params.delete("profiles");
+      value.forEach((v) => {
+        params.append("profiles", v);
+      });
+      return params;
+    },
+    (params) => params.getAll("profiles"),
+  );
 
   @query("#deleteDialog")
   private readonly deleteDialog?: SlDialog | null;
@@ -148,156 +276,126 @@ export class WorkflowsList extends BtrixElement {
   // For fuzzy search:
   private readonly searchKeys = ["name", "firstSeed"];
 
-  // Use to cancel requests
-  private getWorkflowsController: AbortController | null = null;
-  private timerId?: number;
-
   private get selectedSearchFilterKey() {
-    return Object.keys(WorkflowsList.FieldLabels).find((key) =>
-      Boolean((this.filterBy as Record<string, unknown>)[key]),
-    );
+    return (
+      Object.keys(WorkflowsList.FieldLabels) as Keys<
+        typeof WorkflowsList.FieldLabels
+      >
+    ).find((key) => Boolean(this.filterBy.value[key]));
   }
 
-  searchParams = new SearchParamsController(this, (params) => {
-    this.updateFiltersFromSearchParams(params);
+  private get hasFiltersSet() {
+    return [
+      this.filterBy.value.firstSeed || undefined,
+      this.filterBy.value.name || undefined,
+      this.filterBy.value.isCrawlRunning || undefined,
+      this.filterBy.value.schedule,
+      this.filterByProfiles.value.length || undefined,
+      this.filterByCurrentUser.value || undefined,
+      this.filterByTags.value?.length || undefined,
+    ].some((v) => v !== undefined);
+  }
+
+  private clearFilters() {
+    this.filterBy.setValue({
+      ...this.filterBy.value,
+      firstSeed: undefined,
+      name: undefined,
+      isCrawlRunning: undefined,
+      schedule: undefined,
+    });
+    this.filterByCurrentUser.setValue(false);
+    this.filterByTags.setValue(undefined);
+    this.filterByProfiles.setValue([]);
+  }
+
+  private getWorkflowsTimeout?: number;
+
+  private readonly workflowsTask = new Task(this, {
+    task: async (
+      [
+        pagination,
+        orderBy,
+        filterBy,
+        filterByCurrentUser,
+        filterByTags,
+        filterByTagsType,
+        filterByProfiles,
+      ],
+      { signal },
+    ) => {
+      try {
+        const data = await this.getWorkflows(
+          {
+            pagination,
+            orderBy,
+            filterBy,
+            filterByCurrentUser,
+            filterByTags,
+            filterByTagsType,
+            filterByProfiles,
+          },
+          signal,
+        );
+
+        if (this.getWorkflowsTimeout) {
+          window.clearTimeout(this.getWorkflowsTimeout);
+        }
+
+        this.getWorkflowsTimeout = window.setTimeout(() => {
+          void this.workflowsTask.run();
+        }, POLL_INTERVAL_SECONDS * 1000);
+
+        return data;
+      } catch (e) {
+        if ((e as Error).name === "AbortError") {
+          console.debug("Fetch workflows aborted to throttle");
+        } else {
+          this.notify.toast({
+            message: msg("Sorry, couldn’t retrieve workflows at this time."),
+            variant: "danger",
+            icon: "exclamation-octagon",
+            id: "workflow-fetch-error",
+          });
+        }
+        throw e;
+      }
+    },
+    args: () =>
+      // TODO consolidate filters into single fetch params
+      [
+        this.pagination,
+        this.orderBy.value,
+        this.filterBy.value,
+        this.filterByCurrentUser.value,
+        this.filterByTags.value,
+        this.filterByTagsType.value,
+        this.filterByProfiles.value,
+      ] as const,
   });
-
-  // TODO (emma): refactor this logic into smaller parts using `SearchParamsValue`
-  private updateFiltersFromSearchParams(
-    params = this.searchParams.searchParams,
-  ) {
-    const filterBy = { ...this.filterBy };
-    // remove filters no longer present in search params
-    for (const key of Object.keys(filterBy)) {
-      if (!params.has(key)) {
-        filterBy[key as keyof typeof filterBy] = undefined;
-      }
-    }
-
-    // remove current user filter if not present in search params
-    if (!params.has("mine")) {
-      this.filterByCurrentUser = false;
-    }
-
-    if (params.has("tags")) {
-      this.filterByTags = params.getAll("tags");
-    } else {
-      this.filterByTags = undefined;
-    }
-
-    if (params.has("profiles")) {
-      this.filterByProfiles = params.getAll("profiles");
-    } else {
-      this.filterByProfiles = undefined;
-    }
-
-    // add filters present in search params
-    for (const [key, value] of params) {
-      // Filter by current user
-      if (key === "mine") {
-        this.filterByCurrentUser = value === "true";
-      }
-
-      if (key === "tagsType") {
-        this.filterByTagsType = value === "and" ? "and" : "or";
-      }
-
-      // Sorting field
-      if (key === "sortBy") {
-        if (value in sortableFields) {
-          this.orderBy = {
-            field: value as SortField,
-            direction:
-              // Use default direction for field if available, otherwise use current direction
-              sortableFields[value as SortField].defaultDirection ||
-              this.orderBy.direction,
-          };
-        }
-      }
-      if (key === "sortDir") {
-        if (SORT_DIRECTIONS.includes(value as SortDirection)) {
-          // Overrides sort direction if specified
-          this.orderBy = { ...this.orderBy, direction: value as SortDirection };
-        }
-      }
-
-      // Ignored params
-      if (
-        [
-          "page",
-          "mine",
-          "tags",
-          "tagsType",
-          "profiles",
-          "sortBy",
-          "sortDir",
-        ].includes(key)
-      )
-        continue;
-
-      // Convert string bools to filter values
-      if (value === "true") {
-        filterBy[key as keyof typeof filterBy] = true;
-      } else if (value === "false") {
-        filterBy[key as keyof typeof filterBy] = false;
-      } else {
-        filterBy[key as keyof typeof filterBy] = undefined;
-      }
-    }
-    this.filterBy = { ...filterBy };
-  }
-
-  constructor() {
-    super();
-    this.updateFiltersFromSearchParams();
-  }
-
-  connectedCallback() {
-    super.connectedCallback();
-    // Apply filterByCurrentUser from session storage, and transparently update url without pushing to history stack
-    // This needs to happen here instead of in the constructor because this only occurs once after the element is connected to the DOM,
-    // and so it overrides the filter state set in `updateFiltersFromSearchParams` but only on first render, not on subsequent navigation.
-    this.filterByCurrentUser =
-      window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
-      "true";
-    if (this.filterByCurrentUser) {
-      this.searchParams.set("mine", "true", { replace: true });
-    }
-  }
 
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    // Props that reset the page to 1 when changed
-    const resetToFirstPageProps = [
-      "filterByCurrentUser",
-      "filterByTags",
-      "filterByTagsType",
-      "filterByProfiles",
-      "filterByScheduled",
-      "filterBy",
-      "orderBy",
-    ];
-
-    // Props that require a data refetch
-    const refetchDataProps = [...resetToFirstPageProps];
-
-    if (refetchDataProps.some((k) => changedProperties.has(k))) {
-      const isInitialRender = resetToFirstPageProps
-        .map((k) => changedProperties.get(k))
-        .every((v) => v === undefined);
-      void this.fetchWorkflows({
-        page:
-          // If this is the initial render, use the page from the URL or default to 1; otherwise, reset the page to 1
-          isInitialRender
-            ? parsePage(new URLSearchParams(location.search).get("page")) || 1
-            : 1,
-      });
+    if (
+      changedProperties.has("filterByCurrentUser.setValue") ||
+      changedProperties.has("filterByTags.setValue") ||
+      changedProperties.has("filterByTagsType.setValue") ||
+      changedProperties.has("filterByProfiles.setValue") ||
+      changedProperties.has("filterByScheduled.setValue") ||
+      changedProperties.has("filterBy.setValue") ||
+      changedProperties.has("orderBy.setValue")
+    ) {
+      this.pagination = {
+        ...this.pagination,
+        page: 1,
+      };
+      this.paginationElement?.setPage(1, { dispatch: false, replace: true });
     }
     if (changedProperties.has("filterByCurrentUser")) {
       window.sessionStorage.setItem(
         FILTER_BY_CURRENT_USER_STORAGE_KEY,
-        this.filterByCurrentUser.toString(),
+        this.filterByCurrentUser.value.toString(),
       );
     }
   }
@@ -306,120 +404,8 @@ export class WorkflowsList extends BtrixElement {
     void this.fetchConfigSearchValues();
   }
 
-  protected updated(
-    changedProperties: PropertyValues<this> & Map<string, unknown>,
-  ) {
-    if (
-      changedProperties.has("filterBy") ||
-      changedProperties.has("filterByCurrentUser") ||
-      changedProperties.has("filterByTags") ||
-      changedProperties.has("filterByTagsType") ||
-      changedProperties.has("filterByProfiles") ||
-      changedProperties.has("orderBy")
-    ) {
-      this.searchParams.update((params) => {
-        // Reset page
-        params.delete("page");
-
-        const newParams = [
-          // Known filters
-          ...USED_FILTERS.map<[string, undefined]>((f) => [f, undefined]),
-
-          // Existing filters
-          ...Object.entries(this.filterBy),
-
-          // Filter by current user
-          ["mine", this.filterByCurrentUser || undefined],
-
-          ["tags", this.filterByTags],
-
-          [
-            "tagsType",
-            this.filterByTagsType !== "or" ? this.filterByTagsType : undefined,
-          ],
-
-          ["profiles", this.filterByProfiles],
-
-          // Sorting fields
-          [
-            "sortBy",
-            this.orderBy.field !== DEFAULT_SORT.field
-              ? this.orderBy.field
-              : undefined,
-          ],
-          [
-            "sortDir",
-            this.orderBy.direction !==
-            sortableFields[this.orderBy.field].defaultDirection
-              ? this.orderBy.direction
-              : undefined,
-          ],
-        ] satisfies [string, boolean | string | string[] | undefined][];
-
-        for (const [filter, value] of newParams) {
-          if (value !== undefined) {
-            if (Array.isArray(value)) {
-              // Rather than a more efficient method where we compare the existing & wanted arrays,
-              // it's simpler to just delete and re-append values here. If we were working with large
-              // arrays, we could change this, but we'll leave it as is for now — if we were working
-              // with truly large arrays, we wouldn't be using search params anyways.
-              params.delete(filter);
-              value.forEach((v) => {
-                params.append(filter, v);
-              });
-            } else {
-              params.set(filter, value.toString());
-            }
-          } else {
-            params.delete(filter);
-          }
-        }
-        return params;
-      });
-    }
-  }
-
   disconnectedCallback(): void {
-    this.cancelInProgressGetWorkflows();
     super.disconnectedCallback();
-  }
-
-  private async fetchWorkflows(params?: APIPaginationQuery) {
-    this.fetchErrorStatusCode = undefined;
-
-    this.cancelInProgressGetWorkflows();
-    this.isFetching = true;
-    try {
-      const workflows = await this.getWorkflows(params);
-      this.workflows = workflows;
-    } catch (e) {
-      if (isApiError(e)) {
-        this.fetchErrorStatusCode = e.statusCode;
-      } else if ((e as Error).name === "AbortError") {
-        console.debug("Fetch archived items aborted to throttle");
-      } else {
-        this.notify.toast({
-          message: msg("Sorry, couldn't retrieve Workflows at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "workflow-retrieve-error",
-        });
-      }
-    }
-    this.isFetching = false;
-
-    // Restart timer for next poll
-    this.timerId = window.setTimeout(() => {
-      void this.fetchWorkflows();
-    }, 1000 * POLL_INTERVAL_SECONDS);
-  }
-
-  private cancelInProgressGetWorkflows() {
-    window.clearTimeout(this.timerId);
-    if (this.getWorkflowsController) {
-      this.getWorkflowsController.abort(ABORT_REASON_THROTTLE);
-      this.getWorkflowsController = null;
-    }
   }
 
   render() {
@@ -541,11 +527,20 @@ export class WorkflowsList extends BtrixElement {
         `,
         () => html`
           <div class="pb-10">
-            ${this.workflows
-              ? this.workflows.total
-                ? this.renderWorkflowList()
-                : this.renderEmptyState()
-              : this.renderLoading()}
+            ${this.workflowsTask.render({
+              initial: this.renderLoading,
+              pending: () =>
+                // TODO differentiate between pending between poll and
+                // pending from user action, in order to show loading indicator
+                this.workflowsTask.value
+                  ? // Render previous value while latest is loading
+                    this.workflowsTask.value.total
+                    ? this.renderWorkflowList()
+                    : this.renderEmptyState()
+                  : null,
+              complete: ({ total }) =>
+                total ? this.renderWorkflowList() : this.renderEmptyState(),
+            })}
           </div>
         `,
       )}
@@ -606,15 +601,15 @@ export class WorkflowsList extends BtrixElement {
             class="flex-1 md:min-w-[9.2rem]"
             size="small"
             pill
-            value=${this.orderBy.field}
+            value=${this.orderBy.value.field}
             @sl-change=${(e: Event) => {
               const field = (e.target as HTMLSelectElement).value as SortField;
-              this.orderBy = {
+              this.orderBy.setValue({
                 field: field,
                 direction:
                   sortableFields[field].defaultDirection ||
-                  this.orderBy.direction,
-              };
+                  this.orderBy.value.direction,
+              });
             }}
           >
             ${Object.entries(sortableFields).map(
@@ -624,23 +619,24 @@ export class WorkflowsList extends BtrixElement {
             )}
           </sl-select>
           <sl-tooltip
-            content=${this.orderBy.direction === "asc"
+            content=${this.orderBy.value.direction === "asc"
               ? msg("Sort in descending order")
               : msg("Sort in ascending order")}
           >
             <sl-icon-button
-              name=${this.orderBy.direction === "asc"
+              name=${this.orderBy.value.direction === "asc"
                 ? "sort-up-alt"
                 : "sort-down"}
               class="text-base"
-              label=${this.orderBy.direction === "asc"
+              label=${this.orderBy.value.direction === "asc"
                 ? msg("Sort Descending")
                 : msg("Sort Ascending")}
               @click=${() => {
-                this.orderBy = {
-                  ...this.orderBy,
-                  direction: this.orderBy.direction === "asc" ? "desc" : "asc",
-                };
+                this.orderBy.setValue({
+                  ...this.orderBy.value,
+                  direction:
+                    this.orderBy.value.direction === "asc" ? "desc" : "asc",
+                });
               }}
             ></sl-icon-button>
           </sl-tooltip>
@@ -658,77 +654,64 @@ export class WorkflowsList extends BtrixElement {
       </span>
 
       <btrix-workflow-schedule-filter
-        .schedule=${this.filterBy.schedule}
+        .schedule=${this.filterBy.value.schedule}
         @btrix-change=${(e: BtrixChangeWorkflowScheduleFilterEvent) => {
-          this.filterBy = {
-            ...this.filterBy,
+          this.filterBy.setValue({
+            ...this.filterBy.value,
             schedule: e.detail.value,
-          };
+          });
         }}
       ></btrix-workflow-schedule-filter>
 
       <btrix-workflow-tag-filter
-        .tags=${this.filterByTags}
-        .type=${this.filterByTagsType}
+        .tags=${this.filterByTags.value}
+        .type=${this.filterByTagsType.value}
         @btrix-change=${(e: BtrixChangeWorkflowTagFilterEvent) => {
-          this.filterByTags = e.detail.value?.tags;
-          this.filterByTagsType = e.detail.value?.type || "or";
+          this.filterByTags.setValue(e.detail.value?.tags);
+          this.filterByTagsType.setValue(e.detail.value?.type || "or");
         }}
       ></btrix-workflow-tag-filter>
 
       <btrix-workflow-profile-filter
-        .profiles=${this.filterByProfiles}
+        .profiles=${this.filterByProfiles.value}
         @btrix-change=${(e: BtrixChangeWorkflowProfileFilterEvent) => {
-          this.filterByProfiles = e.detail.value;
+          this.filterByProfiles.setValue(e.detail.value ?? []);
         }}
       ></btrix-workflow-profile-filter>
 
       <btrix-filter-chip
-        ?checked=${this.filterBy.isCrawlRunning === true}
+        ?checked=${this.filterBy.value.isCrawlRunning === true}
         @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
           const { checked } = e.target as FilterChip;
 
-          this.filterBy = {
-            ...this.filterBy,
+          this.filterBy.setValue({
+            ...this.filterBy.value,
             isCrawlRunning: checked ? true : undefined,
-          };
+          });
         }}
       >
         ${msg("Running")}
       </btrix-filter-chip>
 
       <btrix-filter-chip
-        ?checked=${this.filterByCurrentUser}
+        ?checked=${this.filterByCurrentUser.value}
         @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
           const { checked } = e.target as FilterChip;
 
-          this.filterByCurrentUser = Boolean(checked);
+          this.filterByCurrentUser.setValue(Boolean(checked));
         }}
       >
         ${msg("Mine")}
       </btrix-filter-chip>
 
       ${when(
-        [
-          this.filterBy.schedule,
-          this.filterBy.isCrawlRunning,
-          this.filterByCurrentUser || undefined,
-          this.filterByTags,
-        ].filter((v) => v !== undefined).length > 1,
+        this.hasFiltersSet,
         () => html`
           <sl-button
             class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
             size="small"
             variant="text"
-            @click=${() => {
-              this.filterBy = {
-                ...this.filterBy,
-                schedule: undefined,
-                isCrawlRunning: undefined,
-              };
-              this.filterByCurrentUser = false;
-              this.filterByTags = undefined;
-            }}
+            @click=${this.clearFilters}
           >
             <sl-icon slot="prefix" name="x-lg"></sl-icon>
             ${msg("Clear All")}
@@ -745,21 +728,26 @@ export class WorkflowsList extends BtrixElement {
         .searchOptions=${this.searchOptions}
         .keyLabels=${WorkflowsList.FieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
+        searchByValue=${ifDefined(
+          this.selectedSearchFilterKey &&
+            this.filterBy.value[this.selectedSearchFilterKey],
+        )}
         placeholder=${msg("Search all workflows by name or crawl start URL")}
         @btrix-select=${(e: SelectEvent<typeof this.searchKeys>) => {
           const { key, value } = e.detail;
           if (key == null) return;
-          this.filterBy = {
+          this.filterBy.setValue({
+            ...this.filterBy.value,
             [key]: value,
-          };
+          });
         }}
         @btrix-clear=${() => {
           const {
             name: _name,
             firstSeed: _firstSeed,
             ...otherFilters
-          } = this.filterBy;
-          this.filterBy = otherFilters;
+          } = this.filterBy.value;
+          this.filterBy.setValue(otherFilters);
         }}
       >
       </btrix-search-combobox>
@@ -767,11 +755,11 @@ export class WorkflowsList extends BtrixElement {
   }
 
   private renderWorkflowList() {
-    if (!this.workflows) return;
-    const { page, total, pageSize } = this.workflows;
+    if (!this.workflowsTask.value) return;
+    const { page, total, pageSize } = this.workflowsTask.value;
     return html`
       <btrix-workflow-list>
-        ${this.workflows.items.map(this.renderWorkflowItem)}
+        ${this.workflowsTask.value.items.map(this.renderWorkflowItem)}
       </btrix-workflow-list>
       <footer
         class=${clsx(
@@ -784,9 +772,11 @@ export class WorkflowsList extends BtrixElement {
           totalCount=${total}
           size=${pageSize}
           @page-change=${async (e: PageChangeEvent) => {
-            await this.fetchWorkflows({
+            this.pagination = {
+              ...this.pagination,
               page: e.detail.page,
-            });
+            };
+            await this.updateComplete;
 
             // Scroll to top of list
             // TODO once deep-linking is implemented, scroll to top of pushstate
@@ -853,9 +843,9 @@ export class WorkflowsList extends BtrixElement {
 
   private renderEmptyState() {
     if (
-      Object.keys(this.filterBy).length ||
-      this.filterByCurrentUser ||
-      this.filterByTags
+      Object.keys(this.filterBy.value).length ||
+      this.filterByCurrentUser.value ||
+      this.filterByTags.value
     ) {
       return html`
         <div class="rounded-lg border bg-neutral-50 p-4">
@@ -865,11 +855,7 @@ export class WorkflowsList extends BtrixElement {
             >
             <button
               class="font-medium text-neutral-500 underline hover:no-underline"
-              @click=${() => {
-                this.filterBy = {};
-                this.filterByCurrentUser = false;
-                this.filterByTags = undefined;
-              }}
+              @click=${this.clearFilters}
             >
               ${msg("Clear search and filters")}
             </button>
@@ -878,7 +864,7 @@ export class WorkflowsList extends BtrixElement {
       `;
     }
 
-    if (this.workflows?.page && this.workflows.page > 1) {
+    if (this.workflowsTask.value?.page && this.workflowsTask.value.page > 1) {
       return html`
         <div class="border-b border-t py-5">
           <p class="text-center text-neutral-500">
@@ -886,10 +872,6 @@ export class WorkflowsList extends BtrixElement {
           </p>
         </div>
       `;
-    }
-
-    if (this.isFetching) {
-      return this.renderLoading();
     }
 
     return html`
@@ -911,41 +893,39 @@ export class WorkflowsList extends BtrixElement {
    * Fetch Workflows and update state
    **/
   private async getWorkflows(
-    queryParams?: APIPaginationQuery & Record<string, unknown>,
+    params: {
+      pagination: Required<APIPaginationQuery>;
+      orderBy: WorkflowsList["orderBy"]["value"];
+      filterBy: WorkflowsList["filterBy"]["value"];
+      filterByCurrentUser: WorkflowsList["filterByCurrentUser"]["value"];
+      filterByTags: WorkflowsList["filterByTags"]["value"];
+      filterByTagsType: WorkflowsList["filterByTagsType"]["value"];
+      filterByProfiles: WorkflowsList["filterByProfiles"]["value"];
+    },
+    signal: AbortSignal,
   ) {
     const query = queryString.stringify(
       {
-        ...this.filterBy,
-        page:
-          queryParams?.page ||
-          this.workflows?.page ||
-          parsePage(new URLSearchParams(location.search).get("page")),
-        pageSize:
-          queryParams?.pageSize ||
-          this.workflows?.pageSize ||
-          INITIAL_PAGE_SIZE,
-        userid: this.filterByCurrentUser ? this.userInfo?.id : undefined,
-        tag: this.filterByTags || undefined,
-        tagMatch: this.filterByTagsType,
-        profileIds: this.filterByProfiles || undefined,
-        sortBy: this.orderBy.field,
-        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
+        ...params.filterBy,
+        page: params.pagination.page,
+        pageSize: params.pagination.pageSize,
+        userid: params.filterByCurrentUser ? this.userInfo?.id : undefined,
+        tag: params.filterByTags || undefined,
+        tagMatch: params.filterByTagsType,
+        profileIds: params.filterByProfiles,
+        sortBy: params.orderBy.field,
+        sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
       },
       {
         arrayFormat: "none", // For tags
       },
     );
-
-    this.getWorkflowsController = new AbortController();
-    const data = await this.api.fetch<APIPaginatedList<Workflow>>(
+    return await this.api.fetch<APIPaginatedList<Workflow>>(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
       {
-        signal: this.getWorkflowsController.signal,
+        signal: signal,
       },
     );
-    this.getWorkflowsController = null;
-
-    return data;
   }
 
   /**
@@ -997,7 +977,7 @@ export class WorkflowsList extends BtrixElement {
         method: "DELETE",
       });
 
-      void this.fetchWorkflows();
+      void this.workflowsTask.run();
 
       const workflow_name = html`<strong class="inline-flex"
         >${renderName(workflow)}</strong
@@ -1028,7 +1008,7 @@ export class WorkflowsList extends BtrixElement {
         },
       );
       if (data.success) {
-        void this.fetchWorkflows();
+        void this.workflowsTask.run();
       } else {
         this.notify.toast({
           message: msg("Something went wrong, couldn't cancel crawl."),
@@ -1050,7 +1030,7 @@ export class WorkflowsList extends BtrixElement {
         },
       );
       if (data.success) {
-        void this.fetchWorkflows();
+        void this.workflowsTask.run();
       } else {
         this.notify.toast({
           message: msg("Something went wrong, couldn't stop crawl."),
@@ -1088,7 +1068,7 @@ export class WorkflowsList extends BtrixElement {
         duration: 8000,
       });
 
-      await this.fetchWorkflows();
+      void this.workflowsTask.run();
       // Scroll to top of list
       this.scrollIntoView({ behavior: "smooth" });
     } catch (e) {

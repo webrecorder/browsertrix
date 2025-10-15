@@ -15,7 +15,11 @@ import {
   type BtrixFilterChipChangeEvent,
   type FilterChip,
 } from "@/components/ui/filter-chip";
-import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import {
+  parsePage,
+  type PageChangeEvent,
+  type Pagination,
+} from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
@@ -90,9 +94,9 @@ const DEFAULT_SORT_BY: SortBy = {
 };
 
 type FilterBy = {
-  state?: CrawlState[];
   name?: string;
   firstSeed?: string;
+  state?: CrawlState[];
 };
 
 /**
@@ -120,6 +124,9 @@ export class CrawlsList extends BtrixElement {
     page: parsePage(new URLSearchParams(location.search).get("page")),
     pageSize: INITIAL_PAGE_SIZE,
   };
+
+  @query("btrix-pagination")
+  private readonly paginationElement?: Pagination;
 
   @state()
   private searchOptions: Record<string, string>[] = [];
@@ -203,7 +210,7 @@ export class CrawlsList extends BtrixElement {
   private readonly filterBy = new SearchParamsValue<FilterBy>(
     this,
     (value, params) => {
-      const keys = ["firstSeed", "name", "state"] as (keyof FilterBy)[];
+      const keys = ["name", "firstSeed", "state"] as (keyof FilterBy)[];
       keys.forEach((key) => {
         if (value[key] == null) {
           params.delete(key);
@@ -228,8 +235,8 @@ export class CrawlsList extends BtrixElement {
       const state = params.getAll("status") as CrawlState[];
 
       return {
-        firstSeed: params.get("firstSeed") ?? undefined,
         name: params.get("name") ?? undefined,
+        firstSeed: params.get("firstSeed") ?? undefined,
         state: state.length ? state : undefined,
       };
     },
@@ -316,7 +323,7 @@ export class CrawlsList extends BtrixElement {
         } else {
           this.notify.toast({
             message: msg(
-              "Sorry, couldn't retrieve archived items at this time.",
+              "Sorry, couldn’t retrieve archived items at this time.",
             ),
             variant: "danger",
             icon: "exclamation-octagon",
@@ -379,10 +386,7 @@ export class CrawlsList extends BtrixElement {
           direction: sortableFields["finished"].defaultDirection!,
         });
       }
-      this.pagination = {
-        page: 1,
-        pageSize: INITIAL_PAGE_SIZE,
-      };
+      this.paginationElement?.setPage(1, { dispatch: true, replace: true });
 
       if (changedProperties.has("filterByCurrentUser")) {
         window.sessionStorage.setItem(

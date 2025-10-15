@@ -72,7 +72,7 @@ export class WorkflowProfileFilter extends BtrixElement {
   }
 
   protected updated(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("selected")) {
+    if (changedProperties.get("selected")) {
       const selectedProfiles = [];
 
       for (const [profile, value] of this.selected) {
@@ -339,7 +339,7 @@ export class WorkflowProfileFilter extends BtrixElement {
         @sl-change=${async (e: SlChangeEvent) => {
           const { checked, value } = e.target as SlCheckbox;
 
-          this.selected = new Map(this.selected.set(value, checked));
+          this.selected = new Map([...this.selected, [value, checked]]);
         }}
       >
         ${repeat(

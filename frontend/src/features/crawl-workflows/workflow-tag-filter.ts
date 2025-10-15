@@ -74,7 +74,7 @@ export class WorkflowTagFilter extends BtrixElement {
   }
 
   protected updated(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("selected") || changedProperties.has("type")) {
+    if (changedProperties.get("selected") || changedProperties.get("type")) {
       const selectedTags = Array.from(this.selected.entries())
         .filter(([_tag, selected]) => selected)
         .map(([tag]) => tag);

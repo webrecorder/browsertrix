@@ -14,7 +14,9 @@ export class SearchParamsController implements ReactiveController {
 
   public update(
     update: URLSearchParams | ((prev: URLSearchParams) => URLSearchParams),
-    options: { replace?: boolean; data?: unknown } = { replace: false },
+    options: { replace?: boolean; data?: unknown } = {
+      replace: false,
+    },
   ) {
     this.prevParams = new URLSearchParams(this.searchParams);
     const url = new URL(location.toString());
@@ -35,7 +37,9 @@ export class SearchParamsController implements ReactiveController {
   public set(
     name: string,
     value: string,
-    options: { replace?: boolean; data?: unknown } = { replace: false },
+    options: { replace?: boolean; data?: unknown } = {
+      replace: false,
+    },
   ) {
     this.prevParams = new URLSearchParams(this.searchParams);
     const url = new URL(location.toString());
