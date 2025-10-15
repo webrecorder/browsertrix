@@ -515,14 +515,13 @@ class BackgroundJobOps:
         if job.type != job_type:
             raise HTTPException(status_code=400, detail="invalid_job_type")
 
-        if success:
-            if job_type == BgJobType.CREATE_REPLICA:
-                await self.handle_replica_job_finished(cast(CreateReplicaJob, job))
-            if job_type == BgJobType.DELETE_REPLICA:
-                await self.handle_delete_replica_job_finished(
-                    cast(DeleteReplicaJob, job)
-                )
-        else:
+        if success and job_type == BgJobType.CREATE_REPLICA:
+            await self.handle_replica_job_finished(cast(CreateReplicaJob, job))
+
+        if job_type == BgJobType.DELETE_REPLICA:
+            await self.handle_delete_replica_job_finished(cast(DeleteReplicaJob, job))
+
+        if not success:
             await self._send_bg_job_failure_email(job, finished)
 
         await self.jobs.find_one_and_update(
