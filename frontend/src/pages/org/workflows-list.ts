@@ -32,6 +32,7 @@ import {
   Action,
   type BtrixSelectActionEvent,
 } from "@/features/crawl-workflows/workflow-action-menu/types";
+import { type BtrixChangeWorkflowLastCrawlStateFilterEvent } from "@/features/crawl-workflows/workflow-last-crawl-state-filter";
 import { type BtrixChangeWorkflowProfileFilterEvent } from "@/features/crawl-workflows/workflow-profile-filter";
 import type { BtrixChangeWorkflowScheduleFilterEvent } from "@/features/crawl-workflows/workflow-schedule-filter";
 import type { BtrixChangeWorkflowTagFilterEvent } from "@/features/crawl-workflows/workflow-tag-filter";
@@ -40,6 +41,7 @@ import { WorkflowTab } from "@/routes";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import { type CrawlState } from "@/types/crawlState";
 import {
   NewWorkflowOnlyScopeType,
   type StorageSeedFile,
@@ -102,6 +104,7 @@ type FilterBy = {
   firstSeed?: string;
   schedule?: boolean;
   isCrawlRunning?: boolean;
+  lastCrawlState?: CrawlState[];
 };
 
 /**
@@ -176,6 +179,7 @@ export class WorkflowsList extends BtrixElement {
         "firstSeed",
         "schedule",
         "isCrawlRunning",
+        "lastCrawlState",
       ] as (keyof FilterBy)[];
       keys.forEach((key) => {
         if (value[key] == null) {
@@ -196,12 +200,19 @@ export class WorkflowsList extends BtrixElement {
                 params.delete(key);
               }
               break;
+            case "lastCrawlState":
+              params.delete("lastCrawlStatus");
+              value[key].forEach((state) => {
+                params.append("lastCrawlStatus", state);
+              });
+              break;
           }
         }
       });
       return params;
     },
     (params) => {
+      const status = params.getAll("lastCrawlStatus") as CrawlState[];
       return {
         name: params.get("name") ?? undefined,
         firstSeed: params.get("firstSeed") ?? undefined,
@@ -209,6 +220,7 @@ export class WorkflowsList extends BtrixElement {
           ? params.get("schedule") === "true"
           : undefined,
         isCrawlRunning: params.get("isCrawlRunning") === "true",
+        lastCrawlState: status.length ? status : undefined,
       };
     },
   );
@@ -297,13 +309,7 @@ export class WorkflowsList extends BtrixElement {
   }
 
   private clearFilters() {
-    this.filterBy.setValue({
-      ...this.filterBy.value,
-      firstSeed: undefined,
-      name: undefined,
-      isCrawlRunning: undefined,
-      schedule: undefined,
-    });
+    this.filterBy.setValue({});
     this.filterByCurrentUser.setValue(false);
     this.filterByTags.setValue(undefined);
     this.filterByProfiles.setValue([]);
@@ -678,6 +684,16 @@ export class WorkflowsList extends BtrixElement {
           this.filterByProfiles.setValue(e.detail.value ?? []);
         }}
       ></btrix-workflow-profile-filter>
+
+      <btrix-workflow-last-crawl-state-filter
+        .states=${this.filterBy.value.lastCrawlState}
+        @btrix-change=${(e: BtrixChangeWorkflowLastCrawlStateFilterEvent) => {
+          this.filterBy.setValue({
+            ...this.filterBy.value,
+            lastCrawlState: e.detail.value,
+          });
+        }}
+      ></btrix-workflow-last-crawl-state-filter>
 
       <btrix-filter-chip
         ?checked=${this.filterBy.value.isCrawlRunning === true}
