@@ -395,6 +395,7 @@ export class WorkflowsList extends BtrixElement {
         ...this.pagination,
         page: 1,
       };
+      this.paginationElement?.setPage(1, { dispatch: false, replace: true });
     }
     if (changedProperties.has("filterByCurrentUser")) {
       window.sessionStorage.setItem(

@@ -430,7 +430,7 @@ export class Pagination extends LitElement {
   #setPage(page: number, options: { replace?: boolean } = {}) {
     if (!this.disablePersist) {
       if (page === 1) {
-        this.searchParams.delete(this.name);
+        this.searchParams.delete(this.name, options);
       } else {
         this.searchParams.set(this.name, page.toString(), options);
       }
