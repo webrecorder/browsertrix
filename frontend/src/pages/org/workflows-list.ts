@@ -534,12 +534,12 @@ export class WorkflowsList extends BtrixElement {
                 // pending from user action, in order to show loading indicator
                 this.workflowsTask.value
                   ? // Render previous value while latest is loading
-                    this.renderWorkflowList()
+                    this.workflowsTask.value.total
+                    ? this.renderWorkflowList()
+                    : this.renderEmptyState()
                   : null,
-              complete: () =>
-                this.workflowsTask.value?.total
-                  ? this.renderWorkflowList()
-                  : this.renderEmptyState(),
+              complete: ({ total }) =>
+                total ? this.renderWorkflowList() : this.renderEmptyState(),
             })}
           </div>
         `,
