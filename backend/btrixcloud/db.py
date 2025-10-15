@@ -28,10 +28,11 @@ if TYPE_CHECKING:
     from .pages import PageOps
     from .background_jobs import BackgroundJobOps
     from .file_uploads import FileUploadOps
+    from .crawlmanager import CrawlManager
 else:
     UserManager = OrgOps = CrawlConfigOps = CrawlOps = CollectionOps = InviteOps = (
         StorageOps
-    ) = PageOps = BackgroundJobOps = FileUploadOps = CrawlLogOps = object
+    ) = PageOps = BackgroundJobOps = FileUploadOps = CrawlLogOps = CrawlManager = object
 
 
 CURR_DB_VERSION = "0052"
@@ -102,6 +103,7 @@ async def update_and_prepare_db(
     background_job_ops: BackgroundJobOps,
     file_ops: FileUploadOps,
     crawl_log_ops: CrawlLogOps,
+    crawl_manager: CrawlManager,
 ) -> None:
     """Prepare database for application.
 
@@ -122,6 +124,7 @@ async def update_and_prepare_db(
         coll_ops,
         file_ops,
         crawl_log_ops,
+        crawl_manager,
     ):
         await drop_indexes(mdb)
 
@@ -147,13 +150,14 @@ async def update_and_prepare_db(
 # pylint: disable=too-many-locals, too-many-arguments
 async def run_db_migrations(
     mdb,
-    user_manager,
-    page_ops,
-    org_ops,
-    background_job_ops,
-    coll_ops,
-    file_ops,
-    crawl_log_ops,
+    user_manager: UserManager,
+    page_ops: PageOps,
+    org_ops: OrgOps,
+    background_job_ops: BackgroundJobOps,
+    coll_ops: CollectionOps,
+    file_ops: FileUploadOps,
+    crawl_log_ops: CrawlLogOps,
+    crawl_manager: CrawlManager,
 ):
     """Run database migrations."""
 
@@ -194,6 +198,7 @@ async def run_db_migrations(
                 coll_ops=coll_ops,
                 file_ops=file_ops,
                 crawl_log_ops=crawl_log_ops,
+                crawl_manager=crawl_manager,
             )
             if await migration.run():
                 migrations_run = True
