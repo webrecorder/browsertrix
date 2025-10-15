@@ -182,7 +182,10 @@ export class ArchivedItemStateFilter extends BtrixElement {
   }
 
   private renderLabel(state: CrawlState) {
-    const { icon, label } = CrawlStatus.getContent({ state });
+    const { icon, label } = CrawlStatus.getContent({
+      state,
+      originalState: state,
+    });
     return html`<span
       class=${tw`inline-flex items-baseline gap-1 [&_sl-icon]:relative [&_sl-icon]:bottom-[-0.05rem]`}
       >${icon}${label}</span
@@ -224,7 +227,10 @@ export class ArchivedItemStateFilter extends BtrixElement {
     const state = (state: CrawlState) => {
       const checked = this.selected.get(state) === true;
 
-      const { icon, label } = CrawlStatus.getContent({ state });
+      const { icon, label } = CrawlStatus.getContent({
+        state,
+        originalState: state,
+      });
 
       return html`
         <li role="option" aria-checked=${checked}>
