@@ -1,5 +1,5 @@
 import { type ReactiveController, type ReactiveElement } from "lit";
-import isEqual from "lodash/fp/isEqual";
+import isEqual from "lodash/isEqual";
 
 import { SearchParamsController } from "@/controllers/searchParams";
 
