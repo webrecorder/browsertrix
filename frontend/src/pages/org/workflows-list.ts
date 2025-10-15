@@ -861,11 +861,7 @@ export class WorkflowsList extends BtrixElement {
             >
             <button
               class="font-medium text-neutral-500 underline hover:no-underline"
-              @click=${() => {
-                this.filterBy.setValue({});
-                this.filterByCurrentUser.setValue(false);
-                this.filterByTags.setValue(undefined);
-              }}
+              @click=${this.clearFilters}
             >
               ${msg("Clear search and filters")}
             </button>
