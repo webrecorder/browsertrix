@@ -97,11 +97,6 @@ const DEFAULT_SORT_BY = {
   direction: sortableFields["lastRun"].defaultDirection!,
 } as const;
 
-// const USED_FILTERS = [
-//   "schedule",
-//   "isCrawlRunning",
-// ] as const satisfies (keyof ListWorkflow)[];
-
 type FilterBy = {
   name?: string;
   firstSeed?: string;
