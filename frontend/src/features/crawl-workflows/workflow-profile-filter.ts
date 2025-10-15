@@ -72,7 +72,7 @@ export class WorkflowProfileFilter extends BtrixElement {
   }
 
   protected updated(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("selected")) {
+    if (changedProperties.get("selected")) {
       const selectedProfiles = [];
 
       for (const [profile, value] of this.selected) {

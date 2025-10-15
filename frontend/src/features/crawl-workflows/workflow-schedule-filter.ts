@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import type { SlChangeEvent, SlRadioGroup } from "@shoelace-style/shoelace";
-import { html, nothing, type PropertyValues } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -24,19 +24,6 @@ enum ScheduleType {
 export class WorkflowScheduleFilter extends BtrixElement {
   @property({ type: Boolean })
   schedule?: boolean;
-
-  protected updated(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("schedule")) {
-      this.dispatchEvent(
-        new CustomEvent<BtrixChangeWorkflowScheduleFilterEvent["detail"]>(
-          "btrix-change",
-          {
-            detail: { value: this.schedule },
-          },
-        ),
-      );
-    }
-  }
 
   render() {
     return html`
@@ -73,6 +60,14 @@ export class WorkflowScheduleFilter extends BtrixElement {
                     class="part-[label]:px-0"
                     @click=${() => {
                       this.schedule = undefined;
+
+                      this.dispatchEvent(
+                        new CustomEvent<
+                          BtrixChangeWorkflowScheduleFilterEvent["detail"]
+                        >("btrix-change", {
+                          detail: { value: this.schedule },
+                        }),
+                      );
                     }}
                     >${msg("Clear")}</sl-button
                   >`
@@ -101,6 +96,14 @@ export class WorkflowScheduleFilter extends BtrixElement {
                   this.schedule = undefined;
                   break;
               }
+
+              this.dispatchEvent(
+                new CustomEvent<
+                  BtrixChangeWorkflowScheduleFilterEvent["detail"]
+                >("btrix-change", {
+                  detail: { value: this.schedule },
+                }),
+              );
             }}
           >
             <sl-radio

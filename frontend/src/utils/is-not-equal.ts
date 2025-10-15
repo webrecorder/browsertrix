@@ -1,4 +1,4 @@
-import { isEqual } from "lodash";
+import isEqual from "lodash/isEqual";
 
 /**
  * Inverted version of lodash `isEqual` for use in Lit `@property`/`@state` configs for `hasChanged`.
