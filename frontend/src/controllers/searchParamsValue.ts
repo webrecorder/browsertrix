@@ -1,4 +1,5 @@
 import { type ReactiveController, type ReactiveElement } from "lit";
+import isEqual from "lodash/fp/isEqual";
 
 import { SearchParamsController } from "@/controllers/searchParams";
 
@@ -89,7 +90,12 @@ export class SearchParamsValue<T> implements ReactiveController {
   public get value(): T {
     return this.#value;
   }
+  /**
+   * Set value and request update if deep comparison with current value is not equal.
+   */
   public setValue(value: T) {
+    if (isEqual(value, this.#value)) return;
+
     const oldValue = this.#value;
     this.#value = value;
     this.#searchParams.update((params) => this.#encoder(value, params));
@@ -140,6 +146,9 @@ export class SearchParamsValue<T> implements ReactiveController {
     this.#searchParams = new SearchParamsController(this.#host, (params) => {
       const oldValue = this.#value;
       this.#value = this.#decoder(params);
+
+      if (isEqual(oldValue, this.#value)) return;
+
       this.#host.requestUpdate(this.#getPropertyName("value"), oldValue);
     });
 

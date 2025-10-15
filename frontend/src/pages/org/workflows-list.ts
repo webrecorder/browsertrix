@@ -47,6 +47,7 @@ import {
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { renderName } from "@/utils/crawler";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 type SearchFields = "name" | "firstSeed";
@@ -122,7 +123,7 @@ export class WorkflowsList extends BtrixElement {
     firstSeed: msg("Crawl Start URL"),
   };
 
-  @state()
+  @state({ hasChanged: isNotEqual })
   private pagination: Required<APIPaginationQuery> = {
     page: parsePage(new URLSearchParams(location.search).get("page")),
     pageSize: INITIAL_PAGE_SIZE,
@@ -390,7 +391,10 @@ export class WorkflowsList extends BtrixElement {
       changedProperties.has("filterBy.setValue") ||
       changedProperties.has("orderBy.setValue")
     ) {
-      this.paginationElement?.setPage(1, { dispatch: true, replace: true });
+      this.pagination = {
+        ...this.pagination,
+        page: 1,
+      };
     }
     if (changedProperties.has("filterByCurrentUser")) {
       window.sessionStorage.setItem(
@@ -757,7 +761,7 @@ export class WorkflowsList extends BtrixElement {
 
   private renderWorkflowList() {
     if (!this.workflowsTask.value) return;
-    const { total, pageSize } = this.workflowsTask.value;
+    const { page, total, pageSize } = this.workflowsTask.value;
     return html`
       <btrix-workflow-list>
         ${this.workflowsTask.value.items.map(this.renderWorkflowItem)}
@@ -769,7 +773,7 @@ export class WorkflowsList extends BtrixElement {
         )}
       >
         <btrix-pagination
-          page=${this.pagination.page}
+          page=${page}
           totalCount=${total}
           size=${pageSize}
           @page-change=${async (e: PageChangeEvent) => {
