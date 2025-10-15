@@ -53,13 +53,13 @@ class Migration(BaseMigration):
                         {
                             "$set": {
                                 "resource.filename": new_filename,
-                                "resource.replicas": None,
+                                "resource.replicas": [],
                             }
                         },
                     )
 
                     profile.resource.filename = new_filename
-                    profile.resource.replicas = None
+                    profile.resource.replicas = []
 
                     print(
                         f"Starting background jobs to replicate profile {profile.id}",
