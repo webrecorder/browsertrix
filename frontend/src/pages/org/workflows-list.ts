@@ -676,7 +676,6 @@ export class WorkflowsList extends BtrixElement {
         .profiles=${this.filterByProfiles.value}
         @btrix-change=${(e: BtrixChangeWorkflowProfileFilterEvent) => {
           this.filterByProfiles.setValue(e.detail.value ?? []);
-          console.log(e.detail.value);
         }}
       ></btrix-workflow-profile-filter>
 
