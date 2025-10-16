@@ -21,7 +21,7 @@
   register: db_check
 
 - name: d_ocean | db | create mongodb database
-  ansible.builtin.command: doctl databases create {{ db_name }} --region {{ droplet_region }} --engine mongodb --version 6 --output json
+  ansible.builtin.command: doctl databases create {{ db_name }} --region {{ droplet_region }} --engine mongodb --version 7 --output json
   async: 1800
   poll: 60
   register: db_create
