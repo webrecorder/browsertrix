@@ -101,7 +101,7 @@ type FilterBy = {
   name?: string;
   firstSeed?: string;
   schedule?: boolean;
-  isCrawlRunning?: boolean;
+  isCrawlRunning?: true;
 };
 
 /**
@@ -208,7 +208,7 @@ export class WorkflowsList extends BtrixElement {
         schedule: params.has("schedule")
           ? params.get("schedule") === "true"
           : undefined,
-        isCrawlRunning: params.get("isCrawlRunning") === "true",
+        isCrawlRunning: params.get("isCrawlRunning") === "true" || undefined,
       };
     },
   );
