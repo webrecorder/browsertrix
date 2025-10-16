@@ -2,7 +2,7 @@
 
 import os
 import traceback
-from typing import Optional
+from typing import Optional, List
 
 import yaml
 
@@ -10,6 +10,7 @@ from kubernetes_asyncio import client, config
 from kubernetes_asyncio.stream import WsApiClient
 from kubernetes_asyncio.client.api_client import ApiClient
 from kubernetes_asyncio.client.api import custom_objects_api
+from kubernetes_asyncio.client.models import V1CronJob
 from kubernetes_asyncio.utils import create_from_dict
 from kubernetes_asyncio.client.exceptions import ApiException
 
@@ -388,7 +389,7 @@ class K8sAPI:
             namespace=self.namespace,
         )
 
-    async def list_cron_jobs(self, label: str = ""):
+    async def list_cron_jobs(self, label: str = "") -> List[V1CronJob]:
         """Return list of all cron jobs, optionally filtered by label"""
         resp = await self.batch_api.list_namespaced_cron_job(
             namespace=self.namespace,
@@ -398,7 +399,6 @@ class K8sAPI:
 
     async def _delete_cron_jobs(self, label: str) -> None:
         """Delete namespaced cron jobs (e.g. crawl configs, bg jobs)"""
-
         await self.batch_api.delete_collection_namespaced_cron_job(
             namespace=self.namespace,
             label_selector=label,
