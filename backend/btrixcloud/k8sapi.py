@@ -29,7 +29,10 @@ class K8sAPI:
     def __init__(self):
         super().__init__()
         self.namespace = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
-        self.crawler_fqdn_suffix = os.environ.get("CRAWLER_FQDN_SUFFIX") or f".{self.namespace}.svc.cluster.local"
+        self.crawler_fqdn_suffix = (
+            os.environ.get("CRAWLER_FQDN_SUFFIX")
+            or f".{self.namespace}.svc.cluster.local"
+        )
         self.custom_resources = {}
 
         self.templates = Jinja2Templates(
@@ -63,9 +66,7 @@ class K8sAPI:
 
     def get_redis_url(self, crawl_id):
         """get redis url for crawl id"""
-        redis_url = (
-            f"redis://redis-{crawl_id}.redis{self.crawler_fqdn_suffix}/0"
-        )
+        redis_url = f"redis://redis-{crawl_id}.redis{self.crawler_fqdn_suffix}/0"
         return redis_url
 
     async def get_redis_client(self, redis_url):
