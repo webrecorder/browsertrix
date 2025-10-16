@@ -101,7 +101,7 @@ type FilterBy = {
   name?: string;
   firstSeed?: string;
   schedule?: boolean;
-  isCrawlRunning?: boolean;
+  isCrawlRunning?: boolean | undefined;
 };
 
 /**
@@ -190,8 +190,8 @@ export class WorkflowsList extends BtrixElement {
               params.set(key, value[key] ? "true" : "false");
               break;
             case "isCrawlRunning":
-              if (value[key]) {
-                params.set(key, "true");
+              if ((value[key] as boolean | undefined) != null) {
+                params.set(key, value[key] ? "true" : "false");
               } else {
                 params.delete(key);
               }
@@ -202,13 +202,19 @@ export class WorkflowsList extends BtrixElement {
       return params;
     },
     (params) => {
+      const isCrawlRunning = params.get("isCrawlRunning");
       return {
         name: params.get("name") ?? undefined,
         firstSeed: params.get("firstSeed") ?? undefined,
         schedule: params.has("schedule")
           ? params.get("schedule") === "true"
           : undefined,
-        isCrawlRunning: params.get("isCrawlRunning") === "true",
+        isCrawlRunning:
+          isCrawlRunning === "true"
+            ? true
+            : isCrawlRunning === "false"
+              ? false
+              : undefined,
       };
     },
   );
