@@ -190,7 +190,7 @@ export class WorkflowsList extends BtrixElement {
               params.set(key, value[key] ? "true" : "false");
               break;
             case "isCrawlRunning":
-              if (value[key]) {
+              if (value[key] as boolean | undefined) {
                 params.set(key, "true");
               } else {
                 params.delete(key);
