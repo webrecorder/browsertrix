@@ -2,7 +2,7 @@
 
 import os
 import traceback
-from typing import Optional, List
+from typing import Optional, List, Any
 
 import yaml
 
@@ -396,6 +396,17 @@ class K8sAPI:
             label_selector=label,
         )
         return resp.items
+
+    async def list_crawl_jobs(self, label: str = "") -> List[dict[str, Any]]:
+        """Return list of all crawl jobs, optionally filtered by label)"""
+        resp = await self.custom_api.list_namespaced_custom_object(
+            group="btrix.cloud",
+            version="v1",
+            namespace=self.namespace,
+            plural="crawljobs",
+            label_selector=label,
+        )
+        return resp.get("items", [])
 
     async def _delete_cron_jobs(self, label: str) -> None:
         """Delete namespaced cron jobs (e.g. crawl configs, bg jobs)"""
