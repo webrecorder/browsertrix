@@ -104,9 +104,10 @@ if TYPE_CHECKING:
     from .background_jobs import BackgroundJobOps
     from .pages import PageOps
     from .file_uploads import FileUploadOps
+    from .crawlmanager import CrawlManager
 else:
     InviteOps = BaseCrawlOps = ProfileOps = CollectionOps = object
-    BackgroundJobOps = UserManager = PageOps = FileUploadOps = object
+    BackgroundJobOps = UserManager = PageOps = FileUploadOps = CrawlManager = object
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
@@ -122,6 +123,7 @@ class OrgOps:
 
     invites: InviteOps
     user_manager: UserManager
+    crawl_manager: CrawlManager
     register_to_org_id: Optional[str]
     base_crawl_ops: BaseCrawlOps
     default_primary: Optional[StorageRef]
@@ -132,7 +134,13 @@ class OrgOps:
     org_owner_dep: Optional[Callable]
     org_public: Optional[Callable]
 
-    def __init__(self, mdb, invites: InviteOps, user_manager: UserManager):
+    def __init__(
+        self,
+        mdb,
+        invites: InviteOps,
+        user_manager: UserManager,
+        crawl_manager: CrawlManager,
+    ):
         self.orgs = mdb["organizations"]
         self.crawls_db = mdb["crawls"]
         self.crawl_configs_db = mdb["crawl_configs"]
@@ -154,6 +162,7 @@ class OrgOps:
 
         self.invites = invites
         self.user_manager = user_manager
+        self.crawl_manager = crawl_manager
         self.register_to_org_id = os.environ.get("REGISTER_TO_ORG_ID")
 
     def set_ops(
@@ -1368,6 +1377,7 @@ class OrgOps:
     ) -> None:
         """Delete org and all of its associated data."""
         print(f"Deleting org: {org.slug} {org.name} {org.id}")
+
         # Delete archived items
         cursor = self.crawls_db.find({"oid": org.id}, projection=["_id"])
         items = await cursor.to_list(length=DEL_ITEMS)
@@ -1416,6 +1426,9 @@ class OrgOps:
 
         # Delete org
         await self.orgs.delete_one({"_id": org.id})
+
+        # Delete related k8s objects
+        await self.crawl_manager.delete_all_k8s_resources_for_org(str(org.id))
 
     async def recalculate_storage(self, org: Organization) -> dict[str, bool]:
         """Recalculate org storage use"""
@@ -1483,13 +1496,14 @@ def init_orgs_api(
     app,
     mdb,
     user_manager: UserManager,
+    crawl_manager: CrawlManager,
     invites: InviteOps,
     user_dep: Callable,
 ):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
 
-    ops = OrgOps(mdb, invites, user_manager)
+    ops = OrgOps(mdb, invites, user_manager, crawl_manager)
 
     async def org_dep(oid: UUID, user: User = Depends(user_dep)):
         org = await ops.get_org_for_user_by_id(oid, user)

@@ -39,6 +39,7 @@ NUM_BROWSERS = int(os.environ.get("NUM_BROWSERS", 2))
 MAX_BROWSER_WINDOWS = os.environ.get("MAX_BROWSER_WINDOWS") or 0
 
 # crawl scale for constraint
+# pylint: disable=invalid-name
 if MAX_BROWSER_WINDOWS:
     MAX_BROWSER_WINDOWS = int(MAX_BROWSER_WINDOWS)
     MAX_CRAWL_SCALE = math.ceil(MAX_BROWSER_WINDOWS / NUM_BROWSERS)
