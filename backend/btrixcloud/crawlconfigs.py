@@ -21,6 +21,7 @@ import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
+    TYPE_ALL_CRAWL_STATES,
     CrawlConfigIn,
     ConfigRevision,
     CrawlConfig,
@@ -732,6 +733,7 @@ class CrawlConfigOps:
         description: Optional[str] = None,
         tags: Optional[List[str]] = None,
         tag_match: Optional[ListFilterType] = ListFilterType.AND,
+        last_crawl_state: list[TYPE_ALL_CRAWL_STATES] | None = None,
         schedule: Optional[bool] = None,
         is_crawl_running: Optional[bool] = None,
         sort_by: str = "lastRun",
@@ -772,6 +774,9 @@ class CrawlConfigOps:
 
         if is_crawl_running is not None:
             match_query["isCrawlRunning"] = is_crawl_running
+
+        if last_crawl_state:
+            match_query["lastCrawlState"] = {"$in": last_crawl_state}
 
         # pylint: disable=duplicate-code
         aggregate: List[Dict[str, Union[object, str, int]]] = [
@@ -1567,6 +1572,10 @@ def init_crawl_config_api(
                 description='Defaults to `"and"` if omitted',
             ),
         ] = ListFilterType.AND,
+        last_crawl_state: Annotated[
+            list[TYPE_ALL_CRAWL_STATES] | None,
+            Query(alias="lastCrawlState", title="Last Crawl State"),
+        ] = None,
         schedule: Optional[bool] = None,
         is_crawl_running: Annotated[
             Optional[bool], Query(alias="isCrawlRunning", title="Is Crawl Running")
@@ -1596,6 +1605,7 @@ def init_crawl_config_api(
             description=description,
             tags=tag,
             tag_match=tag_match,
+            last_crawl_state=last_crawl_state,
             schedule=schedule,
             is_crawl_running=is_crawl_running,
             page_size=page_size,

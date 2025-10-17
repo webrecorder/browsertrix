@@ -43,7 +43,7 @@ export const SUCCESSFUL_AND_FAILED_STATES = [
   ...FAILED_STATES,
 ] as const;
 
-const CRAWL_STATES = [
+export const CRAWL_STATES = [
   ...RUNNING_AND_WAITING_STATES,
   ...SUCCESSFUL_AND_FAILED_STATES,
 ] as const;
