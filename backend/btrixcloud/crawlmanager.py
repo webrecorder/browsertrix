@@ -476,7 +476,7 @@ class CrawlManager(K8sAPI):
         await self._delete_cron_jobs(f"btrix.org={oid_str},role=cron-job")
 
     async def delete_bg_job_cron_jobs_for_org(self, oid_str: str) -> None:
-        """Delete all background cron jobsf or org"""
+        """Delete all background cron jobs for given org"""
         await self._delete_cron_jobs(f"btrix.org={oid_str},role=cron-background-job")
 
     async def delete_crawl_jobs_for_org(self, oid_str: str) -> None:
@@ -486,28 +486,6 @@ class CrawlManager(K8sAPI):
     async def delete_profile_jobs_for_org(self, oid_str: str) -> None:
         """Delete all browser profile jobs for given org"""
         await self._delete_custom_objects(f"btrix.org={oid_str}", plural="profilejobs")
-
-    # ========================================================================
-    # Internal Methods
-    async def _delete_cron_jobs(self, label) -> None:
-        """Delete namespaced cron jobs (e.g. crawl configs, bg jobs)"""
-
-        await self.batch_api.delete_collection_namespaced_cron_job(
-            namespace=self.namespace,
-            label_selector=label,
-        )
-
-    async def _delete_custom_objects(self, label, plural="crawljobs") -> None:
-        """Delete custom objects (e.g. crawl jobs, profile browser jobs)"""
-        await self.custom_api.delete_collection_namespaced_custom_object(
-            group="btrix.cloud",
-            version="v1",
-            namespace=self.namespace,
-            label_selector=label,
-            plural=plural,
-            grace_period_seconds=0,
-            propagation_policy="Background",
-        )
 
     async def update_scheduled_job(
         self, crawlconfig: CrawlConfig, userid: Optional[str] = None

@@ -37,6 +37,7 @@ async def main() -> int:
         invite_ops,
         file_ops,
         crawl_log_ops,
+        crawl_manager,
         _,
         mdb,
     ) = init_ops()
@@ -54,6 +55,7 @@ async def main() -> int:
         background_job_ops,
         file_ops,
         crawl_log_ops,
+        crawl_manager,
     )
 
     return 0
