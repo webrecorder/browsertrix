@@ -234,7 +234,13 @@ export class CollectionDetail extends BtrixElement {
         </div>
       </header>
 
-      <div class="mt-3 rounded-lg border px-4 py-2">
+      <div
+        class="mt-3 rounded-lg border px-4 py-2"
+        aria-busy="${
+          // TODO Switch to task and use task status
+          this.collection === undefined
+        }"
+      >
         ${this.renderInfoBar()}
       </div>
       <div class="flex items-center justify-between py-3">
@@ -590,6 +596,19 @@ export class CollectionDetail extends BtrixElement {
   };
 
   private renderInfoBar() {
+    if (!this.collection) {
+      return html`<div class="h-14">
+        <span class="sr-only">${msg("Loading details")}</span>
+      </div>`;
+    }
+
+    const createdDate =
+      this.collection.created &&
+      (!this.collection.modified ||
+        this.collection.created === this.collection.modified)
+        ? this.collection.created
+        : null;
+
     return html`
       <btrix-desc-list horizontal>
         ${this.renderDetailItem(
@@ -602,37 +621,13 @@ export class CollectionDetail extends BtrixElement {
           (col) =>
             `${this.localize.number(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
         )}
-        ${when(this.collection?.created, (created) =>
-          // Collections created before 49516bc4 is released may not have date in db
-          created
-            ? this.renderDetailItem(
-                msg("Date Created"),
-                () =>
-                  html`<btrix-format-date
-                    date=${created}
-                    month="long"
-                    day="numeric"
-                    year="numeric"
-                    hour="numeric"
-                    minute="numeric"
-                    time-zone-name="short"
-                  ></btrix-format-date>`,
-              )
-            : nothing,
-        )}
-        ${this.renderDetailItem(
-          msg("Last Modified"),
-          (col) =>
-            html`<btrix-format-date
-              date=${col.modified}
-              month="long"
-              day="numeric"
-              year="numeric"
-              hour="numeric"
-              minute="numeric"
-              time-zone-name="short"
-            ></btrix-format-date>`,
-        )}
+        ${createdDate
+          ? this.renderDetailItem(msg("Created"), () =>
+              this.localize.relativeDate(createdDate),
+            )
+          : this.renderDetailItem(msg("Last Modified"), (col) =>
+              col.modified ? this.localize.relativeDate(col.modified) : "",
+            )}
       </btrix-desc-list>
     `;
   }

@@ -491,7 +491,11 @@ export class WorkflowDetail extends BtrixElement {
             </div>
           </header>
 
-          <section class="col-span-1 rounded-lg border px-4 py-2">
+          <section
+            class="col-span-1 rounded-lg border px-4 py-2"
+            aria-busy="${this.workflowTask.status === TaskStatus.INITIAL ||
+            this.workflowTask.status === TaskStatus.PENDING}"
+          >
             ${this.renderDetails()}
           </section>
         </div>
@@ -1063,47 +1067,11 @@ export class WorkflowDetail extends BtrixElement {
   };
 
   private renderDetails() {
-    const relativeDate = (
-      dateStr: string,
-      { prefix }: { prefix?: string } = {},
-    ) => {
-      const date = new Date(dateStr);
-      const diff = new Date().getTime() - date.getTime();
-      const seconds = diff / 1000;
-      const minutes = seconds / 60;
-      const hours = minutes / 60;
-
-      return html`
-        <sl-tooltip
-          content=${this.localize.date(date, {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZoneName: "short",
-          })}
-          hoist
-          placement="bottom"
-        >
-          <span>
-            ${prefix}
-            ${hours > 24
-              ? this.localize.date(date, {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })
-              : seconds > 60
-                ? html`<sl-relative-time
-                    sync
-                    date=${dateStr}
-                  ></sl-relative-time>`
-                : `<${this.localize.relativeTime(-1, "minute", { style: "narrow" })}`}
-          </span>
-        </sl-tooltip>
-      `;
-    };
+    if (!this.workflow) {
+      return html`<div class="h-14">
+        <span class="sr-only">${msg("Loading details")}</span>
+      </div>`;
+    }
 
     return html`
       <btrix-desc-list horizontal>
@@ -1120,7 +1088,7 @@ export class WorkflowDetail extends BtrixElement {
         ${this.renderDetailItem(msg("Last Run"), (workflow) =>
           workflow.lastRun
             ? // TODO Use `lastStartedByName` when it's updated to be null for scheduled runs
-              relativeDate(workflow.lastRun, {
+              this.localize.relativeDate(workflow.lastRun, {
                 prefix:
                   workflow.lastRun === workflow.lastCrawlStartTime
                     ? msg("Started")
@@ -1149,7 +1117,7 @@ export class WorkflowDetail extends BtrixElement {
         ${this.renderDetailItem(
           msg("Last Modified"),
           (workflow) =>
-            html`${relativeDate(workflow.modified)} ${msg("by")}
+            html`${this.localize.relativeDate(workflow.modified)} ${msg("by")}
             ${workflow.modifiedByName}`,
         )}
       </btrix-desc-list>
