@@ -40,15 +40,11 @@ class Migration(BaseMigration):
         for cron_job in bg_cron_jobs:
             metadata = cron_job.metadata
 
-            job_type = metadata.labels.get("job_type", "")
-            if metadata.labels.get("role") == "cron-job":
-                job_type = "scheduled crawl"
-
             oid = metadata.labels.get("btrix.org")
             if oid:
                 await self.delete_cron_job_if_org_deleted(UUID(oid), metadata.name)
 
-            if job_type == "delete-replica":
+            if metadata.labels.get("job_type") == "delete-replica":
                 await self.delete_replica_delete_job_if_finished(metadata.name)
 
         crawl_jobs = await self.crawl_manager.list_crawl_jobs()
