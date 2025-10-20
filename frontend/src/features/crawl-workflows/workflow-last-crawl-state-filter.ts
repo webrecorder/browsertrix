@@ -99,9 +99,9 @@ export class WorkflowLastCrawlStateFilter extends BtrixElement {
         }}
       >
         ${this.states?.length
-          ? html`<span class="opacity-75">${msg("Last Crawl Status")}</span>
+          ? html`<span class="opacity-75">${msg("Latest Crawl Status")}</span>
               ${this.renderStatesInLabel(this.states)}`
-          : msg("Last Crawl Status")}
+          : msg("Latest Crawl Status")}
 
         <div
           slot="dropdown-content"
@@ -117,7 +117,7 @@ export class WorkflowLastCrawlStateFilter extends BtrixElement {
                 id="tag-list-label"
                 class="leading-[var(--sl-input-height-small)]"
               >
-                ${msg("Filter by Last Crawl Status")}
+                ${msg("Filter by Latest Crawl Status")}
               </div>
               ${this.states?.length
                 ? html`<sl-button
