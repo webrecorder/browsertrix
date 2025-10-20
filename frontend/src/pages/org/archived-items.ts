@@ -415,17 +415,18 @@ export class CrawlsList extends BtrixElement {
     }[] = [
       {
         itemType: null,
-        label: msg("All"),
+        icon: "file-zip-fill",
+        label: msg("All Items"),
       },
       {
         itemType: "crawl",
         icon: "gear-wide-connected",
-        label: msg("Crawls"),
+        label: msg("Crawled Items"),
       },
       {
         itemType: "upload",
         icon: "upload",
-        label: msg("Uploads"),
+        label: msg("Uploaded Items"),
       },
     ];
 
@@ -458,8 +459,7 @@ export class CrawlsList extends BtrixElement {
             ${listTypes.map(({ label, itemType, icon }) => {
               const isSelected = itemType === this.itemType;
               return html` <btrix-navigation-button
-                .active=${isSelected}
-                aria-selected="${isSelected}"
+                ?active=${isSelected}
                 href=${`${this.navigate.orgBasePath}/items${
                   itemType ? `/${itemType}` : ""
                 }`}

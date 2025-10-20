@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
-import type { SlDialog, SlSelectEvent } from "@shoelace-style/shoelace";
+import type { SlDialog } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
@@ -8,12 +8,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import {
-  ScopeType,
-  type ListWorkflow,
-  type Seed,
-  type Workflow,
-} from "./types";
+import { type ListWorkflow, type Seed, type Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type {
@@ -27,7 +22,6 @@ import {
 } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
-import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import {
   Action,
   type BtrixSelectActionEvent,
@@ -36,16 +30,11 @@ import { type BtrixChangeWorkflowLastCrawlStateFilterEvent } from "@/features/cr
 import { type BtrixChangeWorkflowProfileFilterEvent } from "@/features/crawl-workflows/workflow-profile-filter";
 import type { BtrixChangeWorkflowScheduleFilterEvent } from "@/features/crawl-workflows/workflow-schedule-filter";
 import type { BtrixChangeWorkflowTagFilterEvent } from "@/features/crawl-workflows/workflow-tag-filter";
-import { pageHeader } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
-import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
-import {
-  NewWorkflowOnlyScopeType,
-  type StorageSeedFile,
-} from "@/types/workflow";
+import { type StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { renderName } from "@/utils/crawler";
@@ -416,108 +405,8 @@ export class WorkflowsList extends BtrixElement {
 
   render() {
     return html`
-      <div class="contents">
-        ${pageHeader({
-          title: msg("Crawl Workflows"),
-          actions: html`
-            ${when(
-              this.appState.isAdmin,
-              () =>
-                html`<sl-tooltip content=${msg("Configure crawling defaults")}>
-                  <sl-icon-button
-                    href=${`${this.navigate.orgBasePath}/settings/crawling-defaults`}
-                    class="size-8 text-lg"
-                    name="gear"
-                    label=${msg("Edit org crawling settings")}
-                    @click=${this.navigate.link}
-                  ></sl-icon-button>
-                </sl-tooltip>`,
-            )}
-            ${when(
-              this.appState.isCrawler,
-              () => html`
-                <sl-button-group>
-                  <sl-button
-                    variant="primary"
-                    size="small"
-                    ?disabled=${this.org?.readOnly}
-                    @click=${() =>
-                      this.navigate.to(
-                        `${this.navigate.orgBasePath}/workflows/new`,
-                        {
-                          scopeType:
-                            this.appState.userPreferences?.newWorkflowScopeType,
-                        },
-                      )}
-                  >
-                    <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                    ${msg("New Workflow")}</sl-button
-                  >
-                  <sl-dropdown
-                    distance="4"
-                    placement="bottom-end"
-                    @sl-select=${(e: SlSelectEvent) => {
-                      const { value } = e.detail.item;
-
-                      if (value) {
-                        this.dispatchEvent(
-                          new CustomEvent<SelectJobTypeEvent["detail"]>(
-                            "select-job-type",
-                            {
-                              detail: value as SelectJobTypeEvent["detail"],
-                            },
-                          ),
-                        );
-                      }
-                    }}
-                  >
-                    <sl-button
-                      slot="trigger"
-                      size="small"
-                      variant="primary"
-                      caret
-                      ?disabled=${this.org?.readOnly}
-                    >
-                      <sl-visually-hidden
-                        >${msg("Scope options")}</sl-visually-hidden
-                      >
-                    </sl-button>
-                    <sl-menu>
-                      <sl-menu-label> ${msg("Page Crawl")} </sl-menu-label>
-                      <sl-menu-item value=${ScopeType.Page}
-                        >${scopeTypeLabels[ScopeType.Page]}</sl-menu-item
-                      >
-                      <sl-menu-item value=${NewWorkflowOnlyScopeType.PageList}>
-                        ${scopeTypeLabels[NewWorkflowOnlyScopeType.PageList]}
-                      </sl-menu-item>
-                      <sl-menu-item value=${ScopeType.SPA}>
-                        ${scopeTypeLabels[ScopeType.SPA]}
-                      </sl-menu-item>
-                      <sl-divider></sl-divider>
-                      <sl-menu-label>${msg("Site Crawl")}</sl-menu-label>
-                      <sl-menu-item value=${ScopeType.Prefix}>
-                        ${scopeTypeLabels[ScopeType.Prefix]}
-                      </sl-menu-item>
-                      <sl-menu-item value=${ScopeType.Host}>
-                        ${scopeTypeLabels[ScopeType.Host]}
-                      </sl-menu-item>
-                      <sl-menu-item value=${ScopeType.Domain}>
-                        ${scopeTypeLabels[ScopeType.Domain]}
-                      </sl-menu-item>
-                      <sl-menu-item value=${ScopeType.Custom}>
-                        ${scopeTypeLabels[ScopeType.Custom]}
-                      </sl-menu-item>
-                    </sl-menu>
-                  </sl-dropdown>
-                </sl-button-group>
-              `,
-            )}
-          `,
-          classNames: tw`border-b-transparent`,
-        })}
-        <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
-          ${this.renderControls()}
-        </div>
+      <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
+        ${this.renderControls()}
       </div>
 
       ${when(
