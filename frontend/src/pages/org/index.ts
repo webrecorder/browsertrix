@@ -572,7 +572,8 @@ export class Org extends BtrixElement {
     const crawlingTab = this.orgPath
       .slice(this.orgPath.indexOf(OrgTab.Workflows) + OrgTab.Workflows.length)
       .replace(/(^\/|\/$)/, "")
-      .split("/")[0];
+      .split("/")[0]
+      .split("?")[0];
 
     if ((crawlingTab as CommonTab) === CommonTab.New) {
       const { workflow, seeds, seedFile, scopeType } = (this.viewStateData ||

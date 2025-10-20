@@ -863,7 +863,8 @@ export class App extends BtrixElement {
         const orgTab = pathname
           .slice(pathname.indexOf(slug) + slug.length)
           .replace(/(^\/|\/$)/, "")
-          .split("/")[0];
+          .split("/")[0]
+          .split("?")[0];
 
         return html`<btrix-org
           class="w-full"

@@ -137,7 +137,7 @@ export class OrgCrawling extends BtrixElement {
           ?active=${this.crawlingTab === WorkflowTab.Crawls}
         >
           <sl-icon name="gear-wide-connected"></sl-icon>
-          <span>${msg("Crawls")}</span>
+          <span>${msg("Crawl Runs")}</span>
         </btrix-navigation-button>
       </div>
 
