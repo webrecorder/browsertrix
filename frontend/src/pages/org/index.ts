@@ -24,7 +24,7 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import { OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
+import { CommonTab, OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
 import type { ProxiesAPIResponse } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
@@ -36,6 +36,7 @@ import { AppStateService } from "@/utils/state";
 import type { FormState as WorkflowFormState } from "@/utils/workflow";
 
 import "./workflow-detail";
+import "./workflows-crawl-runs";
 import "./workflows-list";
 import "./archived-item-detail";
 import "./archived-items";
@@ -548,7 +549,7 @@ export class Org extends BtrixElement {
       `;
     }
 
-    if (this.orgPath.startsWith("/workflows/new")) {
+    if (this.orgPath.startsWith(`/${OrgTab.Workflows}/${CommonTab.New}`)) {
       const { workflow, seeds, seedFile, scopeType } = (this.viewStateData ||
         {}) satisfies Partial<DuplicateWorkflowSettings>;
 
@@ -561,6 +562,10 @@ export class Org extends BtrixElement {
         scopeType=${ifDefined(scopeType)}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
+    }
+
+    if (this.orgPath.startsWith(`/${OrgTab.Workflows}/${WorkflowTab.Crawls}`)) {
+      return html`<btrix-workflows-crawl-runs></btrix-workflows-crawl-runs>`;
     }
 
     return html`<btrix-workflows-list
