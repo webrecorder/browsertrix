@@ -4,9 +4,9 @@ import { customElement } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 
-@customElement("btrix-workflows-crawl-runs")
+@customElement("btrix-org-crawls")
 @localized()
-export class WorkflowsCrawlRuns extends BtrixElement {
+export class OrgCrawls extends BtrixElement {
   render() {
     return html`TODO`;
   }

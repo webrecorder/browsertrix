@@ -43,7 +43,7 @@ export const ROUTES = {
     `/${RouteNamespace.PrivateOrgs}/:slug(/)`,
     // Org sections:
     `(/${OrgTab.Dashboard})`,
-    `(/${OrgTab.Workflows}(/crawls)(/${CommonTab.New})(/:workflowId(/:workflowTab)(/crawls${archivedItemPath})))`,
+    `(/${OrgTab.Workflows}(/${WorkflowTab.Crawls})(/${CommonTab.New})(/:workflowId(/:workflowTab)(/${WorkflowTab.Crawls}${archivedItemPath})))`,
     `(/${OrgTab.Items}(/:itemType(${archivedItemPath})))`,
     `(/${OrgTab.Collections}(/${CommonTab.New})(/${CommonTab.View}/:collectionId(/:collectionTab)))`,
     `(/${OrgTab.BrowserProfiles}(/profile(/browser/:browserId)(/:browserProfileId)))`,

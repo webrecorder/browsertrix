@@ -35,8 +35,9 @@ import { type OrgData } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
 import type { FormState as WorkflowFormState } from "@/utils/workflow";
 
+import "./crawling";
 import "./workflow-detail";
-import "./workflows-crawl-runs";
+import "./crawls";
 import "./workflows-list";
 import "./archived-item-detail";
 import "./archived-items";
@@ -568,7 +569,12 @@ export class Org extends BtrixElement {
       `;
     }
 
-    if (this.orgPath.startsWith(`/${OrgTab.Workflows}/${CommonTab.New}`)) {
+    const crawlingTab = this.orgPath
+      .slice(this.orgPath.indexOf(OrgTab.Workflows) + OrgTab.Workflows.length)
+      .replace(/(^\/|\/$)/, "")
+      .split("/")[0];
+
+    if ((crawlingTab as CommonTab) === CommonTab.New) {
       const { workflow, seeds, seedFile, scopeType } = (this.viewStateData ||
         {}) satisfies Partial<DuplicateWorkflowSettings>;
 
@@ -583,11 +589,8 @@ export class Org extends BtrixElement {
       ></btrix-workflows-new>`;
     }
 
-    if (this.orgPath.startsWith(`/${OrgTab.Workflows}/${WorkflowTab.Crawls}`)) {
-      return html`<btrix-workflows-crawl-runs></btrix-workflows-crawl-runs>`;
-    }
-
-    return html`<btrix-workflows-list
+    return html`<btrix-org-crawling
+      crawlingTab=${ifDefined(crawlingTab || undefined)}
       @select-new-dialog=${this.onSelectNewDialog}
       @select-job-type=${(e: SelectJobTypeEvent) => {
         this.openDialogName = undefined;
@@ -602,7 +605,7 @@ export class Org extends BtrixElement {
           scopeType: e.detail,
         });
       }}
-    ></btrix-workflows-list>`;
+    ></btrix-org-crawling>`;
   };
 
   private readonly renderBrowserProfiles = () => {
