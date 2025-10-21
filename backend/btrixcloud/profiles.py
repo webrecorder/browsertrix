@@ -414,6 +414,7 @@ class ProfileOps:
         try:
             profile = await self.get_profile(profileid, org)
             storage_path = profile.resource.filename if profile.resource else ""
+            storage_path = storage_path.lstrip(f"{org.id}/")
             return storage_path, profile.proxyId or ""
         # pylint: disable=bare-except
         except:
