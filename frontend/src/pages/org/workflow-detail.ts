@@ -565,36 +565,18 @@ export class WorkflowDetail extends BtrixElement {
           >
         </div>
       </btrix-dialog>
-      <btrix-dialog
-        .label=${msg("Delete Crawl?")}
-        .open=${this.openDialogName === "deleteCrawl"}
+      <btrix-delete-crawl-dialog
+        .crawl=${this.crawlToDelete || undefined}
+        ?open=${this.openDialogName === "deleteCrawl"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
-        @sl-show=${this.showDialog}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
-      >
-        ${msg(
-          "All files and logs associated with this crawl will also be deleted, and the crawl will be removed from any Collection it is a part of.",
-        )}
-        <div slot="footer" class="flex justify-between">
-          <sl-button
-            size="small"
-            .autofocus=${true}
-            @click=${() => (this.openDialogName = undefined)}
-            >${msg("Cancel")}</sl-button
-          >
-          <sl-button
-            size="small"
-            variant="danger"
-            @click=${async () => {
-              this.openDialogName = undefined;
-              if (this.crawlToDelete) {
-                await this.deleteCrawl(this.crawlToDelete);
-              }
-            }}
-            >${msg("Delete Crawl")}</sl-button
-          >
-        </div>
-      </btrix-dialog>
+        @btrix-confirm=${() => {
+          this.openDialogName = undefined;
+          if (this.crawlToDelete) {
+            void this.deleteCrawl(this.crawlToDelete);
+          }
+        }}
+      ></btrix-delete-crawl-dialog>
       <btrix-dialog
         .label=${msg("Edit Browser Windows")}
         .open=${this.openDialogName === "scale"}
