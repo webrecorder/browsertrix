@@ -214,13 +214,13 @@ export class OrgCrawls extends BtrixElement {
   );
 
   @state()
-  private itemToEdit: Crawl | null = null;
+  private crawlToEdit: Crawl | null = null;
 
   @state()
   private isEditingItem = false;
 
   @state()
-  private itemToDelete: Crawl | null = null;
+  private crawlToDelete: Crawl | null = null;
 
   @state()
   private isDeletingItem = false;
@@ -421,10 +421,10 @@ export class OrgCrawls extends BtrixElement {
         </footer>
       `,
     )}
-    ${this.itemToEdit
+    ${this.crawlToEdit
       ? html`
           <btrix-item-metadata-editor
-            .crawl=${this.itemToEdit}
+            .crawl=${this.crawlToEdit}
             ?open=${this.isEditingItem}
             @request-close=${() => (this.isEditingItem = false)}
             @updated=${() => {
@@ -436,13 +436,14 @@ export class OrgCrawls extends BtrixElement {
       : nothing}
 
     <btrix-delete-crawl-dialog
-      .crawl=${this.itemToDelete || undefined}
+      .crawl=${this.crawlToDelete || undefined}
+      includeName
       ?open=${this.isDeletingItem}
       @sl-after-hide=${() => (this.isDeletingItem = false)}
       @btrix-confirm=${() => {
         this.isDeletingItem = false;
-        if (this.itemToDelete) {
-          void this.deleteItem(this.itemToDelete);
+        if (this.crawlToDelete) {
+          void this.deleteItem(this.crawlToDelete);
         }
       }}
     ></btrix-delete-crawl-dialog>
@@ -605,17 +606,17 @@ export class OrgCrawls extends BtrixElement {
 
     return html`
       ${when(
-        isCrawler && isSuccess,
+        isCrawler,
         () => html`
           <sl-menu-item
             @click=${async () => {
-              this.itemToEdit = crawl;
+              this.crawlToEdit = crawl;
               await this.updateComplete;
               this.isEditingItem = true;
             }}
           >
             <sl-icon name="pencil" slot="prefix"></sl-icon>
-            ${msg("Edit Archived Item")}
+            ${isSuccess ? msg("Edit Archived Item") : msg("Edit Metadata")}
           </sl-menu-item>
           <sl-divider></sl-divider>
         `,
@@ -799,7 +800,7 @@ export class OrgCrawls extends BtrixElement {
   }
 
   private readonly confirmDeleteItem = (item: Crawl) => {
-    this.itemToDelete = item;
+    this.crawlToDelete = item;
     this.isDeletingItem = true;
   };
 
@@ -814,7 +815,7 @@ export class OrgCrawls extends BtrixElement {
       // TODO eager list update before server response
       void this.archivedItemsTask.run();
       // const { items, ...crawlsData } = this.archivedItems!;
-      this.itemToDelete = null;
+      this.crawlToDelete = null;
       // this.archivedItems = {
       //   ...crawlsData,
       //   items: items.filter((c) => c.id !== item.id),
@@ -826,8 +827,8 @@ export class OrgCrawls extends BtrixElement {
         id: "crawl-status",
       });
     } catch (e) {
-      if (this.itemToDelete) {
-        this.confirmDeleteItem(this.itemToDelete);
+      if (this.crawlToDelete) {
+        this.confirmDeleteItem(this.crawlToDelete);
       }
       let message = msg(str`Sorry, couldn't delete crawl at this time.`);
       if (isApiError(e)) {

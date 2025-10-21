@@ -1,4 +1,4 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
@@ -7,12 +7,20 @@ import { when } from "lit/directives/when.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { Crawl } from "@/types/crawler";
+import { renderName } from "@/utils/crawler";
+import { pluralOf } from "@/utils/pluralize";
 
 @customElement("btrix-delete-crawl-dialog")
 @localized()
 export class DeleteCrawlDialog extends BtrixElement {
   @property({ type: Object })
   crawl?: Crawl;
+
+  /**
+   * Include the crawl name when identifying the crawl.
+   */
+  @property({ type: Boolean })
+  includeName = false;
 
   @property({ type: Boolean })
   open = false;
@@ -30,13 +38,33 @@ export class DeleteCrawlDialog extends BtrixElement {
   });
 
   render() {
+    const identifyingMessage = () => {
+      if (!this.crawl?.finished) {
+        return msg("Are you sure you want to delete this crawl?");
+      }
+
+      const finish_date = this.localize.date(this.crawl.finished);
+
+      if (this.includeName) {
+        const item_name = html`<strong class="font-semibold"
+          >${renderName(this.crawl)} (${finish_date})</strong
+        >`;
+
+        return msg(html`Are you sure you want to delete ${item_name}?`);
+      }
+
+      return msg(
+        str`Are you sure you want to delete the ${finish_date} crawl?`,
+      );
+    };
+
     return html`<btrix-dialog .label=${msg("Delete Crawl?")} .open=${this.open}>
-      ${this.renderCollections()}
       <p>
-        ${msg(
-          "All files and logs associated with this crawl will also be deleted, and the crawl will no longer be visible in its associated workflow.",
-        )}
+        ${identifyingMessage()}
+        ${msg("All files and logs associated with this crawl will be deleted.")}
       </p>
+
+      ${this.renderCollections()}
       <div slot="footer" class="flex justify-between">
         <sl-button
           size="small"
@@ -62,27 +90,30 @@ export class DeleteCrawlDialog extends BtrixElement {
   private renderCollections() {
     if (!this.crawl?.collectionIds.length) return;
 
+    const count = this.crawl.collectionIds.length;
+
+    const number_of_collections = this.localize.number(count);
+    const plural_of_collections = pluralOf("collections", count);
+
     return html`
-      <p>
+      <p class="my-2">
         ${msg(
-          "The archived item will be removed from the following collections:",
+          str`The archived item will be removed from ${number_of_collections} ${plural_of_collections}:`,
         )}
       </p>
-      <div class="my-2">
-        ${this.collectionsTask.render({
-          pending: () => html`<sl-spinner></sl-spinner>`,
-          complete: (res) =>
-            when(
-              res,
-              (collections) =>
-                html`<btrix-linked-collections-list
-                  .collections=${collections}
-                  baseUrl="${this.navigate.orgBasePath}/collections/view"
-                >
-                </btrix-linked-collections-list>`,
-            ),
-        })}
-      </div>
+      ${this.collectionsTask.render({
+        pending: () => html`<sl-spinner></sl-spinner>`,
+        complete: (res) =>
+          when(
+            res,
+            (collections) =>
+              html`<btrix-linked-collections-list
+                .collections=${collections}
+                baseUrl="${this.navigate.orgBasePath}/collections/view"
+              >
+              </btrix-linked-collections-list>`,
+          ),
+      })}
     `;
   }
 
