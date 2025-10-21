@@ -32,7 +32,7 @@ import { OrgTab } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
-import { isActive, isSuccessfullyFinished } from "@/utils/crawler";
+import { isActive, isSuccessfullyFinished, renderName } from "@/utils/crawler";
 
 type Crawls = APIPaginatedList<Crawl>;
 const SORT_DIRECTIONS = ["asc", "desc"] as const;
@@ -440,18 +440,24 @@ export class OrgCrawls extends BtrixElement {
         `
       : nothing}
 
-    <btrix-delete-crawl-dialog
-      .crawl=${this.crawlToDelete || undefined}
-      includeName
+    <btrix-delete-item-dialog
+      .item=${this.crawlToDelete || undefined}
       ?open=${this.isDeletingItem}
-      @sl-after-hide=${() => (this.isDeletingItem = false)}
+      @sl-hide=${() => (this.isDeletingItem = false)}
       @btrix-confirm=${() => {
         this.isDeletingItem = false;
         if (this.crawlToDelete) {
           void this.deleteItem(this.crawlToDelete);
         }
       }}
-    ></btrix-delete-crawl-dialog>
+    >
+      ${this.crawlToDelete?.finished
+        ? html`<span slot="name"
+            >${renderName(this.crawlToDelete)}
+            (${this.localize.date(this.crawlToDelete.finished)})</span
+          >`
+        : nothing}
+    </btrix-delete-item-dialog>
   `;
 
   private renderControls() {

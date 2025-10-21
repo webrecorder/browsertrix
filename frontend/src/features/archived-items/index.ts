@@ -4,6 +4,7 @@ import("./archived-item-tag-filter");
 import("./crawl-list");
 import("./crawl-log-table");
 import("./crawl-logs");
+import("./delete-item-dialog");
 import("./item-metadata-editor");
 import("./crawl-pending-exclusions");
 import("./crawl-queue");

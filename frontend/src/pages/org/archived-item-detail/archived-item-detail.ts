@@ -104,7 +104,7 @@ export class ArchivedItemDetail extends BtrixElement {
   activeTab: SectionName = "overview";
 
   @state()
-  private openDialogName?: "scale" | "metadata" | "exclusions";
+  private openDialogName?: "scale" | "metadata" | "exclusions" | "delete";
 
   @state()
   mostRecentNonFailedQARun?: QARun;
@@ -498,6 +498,23 @@ export class ArchivedItemDetail extends BtrixElement {
         @request-close=${() => (this.openDialogName = undefined)}
         @updated=${() => void this.fetchCrawl()}
       ></btrix-item-metadata-editor>
+
+      <btrix-delete-item-dialog
+        .item=${this.item}
+        ?open=${this.openDialogName === "delete"}
+        @sl-hide=${() => (this.openDialogName = undefined)}
+        @btrix-confirm=${() => {
+          this.openDialogName = undefined;
+          void this.deleteCrawl();
+        }}
+      >
+        ${this.item?.finished && isCrawl(this.item)
+          ? html`<strong slot="name" class="font-semibold"
+              >${renderName(this.item)}
+              (${this.localize.date(this.item.finished)})</strong
+            >`
+          : nothing}
+      </btrix-delete-item-dialog>
     `;
   }
 
@@ -769,7 +786,13 @@ export class ArchivedItemDetail extends BtrixElement {
               <sl-divider></sl-divider>
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--danger)"
-                @click=${() => void this.deleteCrawl()}
+                @click=${() => {
+                  if (isSuccess) {
+                    this.openDialogName = "delete";
+                  } else {
+                    void this.deleteCrawl();
+                  }
+                }}
               >
                 <sl-icon name="trash3" slot="prefix"></sl-icon>
                 ${isWorkflowCrawl
@@ -1363,14 +1386,7 @@ export class ArchivedItemDetail extends BtrixElement {
     return !formEl.querySelector("[data-invalid]");
   }
 
-  // TODO replace with in-page dialog
   private async deleteCrawl() {
-    if (
-      !window.confirm(msg(str`Are you sure you want to delete this crawl?`))
-    ) {
-      return;
-    }
-
     try {
       const _data = await this.api.fetch(
         `/orgs/${this.item!.oid}/${
