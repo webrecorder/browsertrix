@@ -676,6 +676,8 @@ export class ArchivedItemDetail extends BtrixElement {
 
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
     const isSuccess = isSuccessfullyFinished(this.item);
+    const isCrawlType = this.itemType === "crawl";
+    const isWorkflowCrawl = this.item.cid === this.workflowId;
 
     return html`
       <sl-dropdown placement="bottom-end" distance="4" hoist>
@@ -697,7 +699,7 @@ export class ArchivedItemDetail extends BtrixElement {
             isSuccess,
             () => html`
               ${when(
-                this.itemType === "crawl",
+                isCrawlType,
                 () => html`
                   <btrix-menu-item-link href=${this.reviewUrl}>
                     <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
@@ -723,7 +725,7 @@ export class ArchivedItemDetail extends BtrixElement {
             `,
           )}
           ${when(
-            this.itemType === "crawl",
+            isCrawlType,
             () => html`
               <sl-menu-item
                 @click=${() =>
@@ -750,7 +752,7 @@ export class ArchivedItemDetail extends BtrixElement {
               )}
           >
             <sl-icon name="copy" slot="prefix"></sl-icon>
-            ${msg("Copy Item ID")}
+            ${msg("Copy ID")}
           </sl-menu-item>
           <sl-menu-item
             @click=${() =>
@@ -769,7 +771,11 @@ export class ArchivedItemDetail extends BtrixElement {
                 @click=${() => void this.deleteCrawl()}
               >
                 <sl-icon name="trash3" slot="prefix"></sl-icon>
-                ${msg("Delete Item")}
+                ${isWorkflowCrawl
+                  ? msg("Delete Crawl")
+                  : isSuccess
+                    ? msg("Delete Archived Item")
+                    : msg("Delete Item")}
               </sl-menu-item>
             `,
           )}
