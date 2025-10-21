@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
-import type { SlSelect } from "@shoelace-style/shoelace";
+import type { SlButton, SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -11,6 +11,7 @@ import queryString from "query-string";
 import type { ArchivedItem, Crawl, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { Dialog } from "@/components/ui/dialog";
 import {
   type BtrixFilterChipChangeEvent,
   type FilterChip,
@@ -580,7 +581,15 @@ export class CrawlsList extends BtrixElement {
         ),
       )}
       <div slot="footer" class="flex justify-between">
-        <sl-button size="small" .autofocus=${true}>${msg("Cancel")}</sl-button>
+        <sl-button
+          size="small"
+          .autofocus=${true}
+          @click=${(e: MouseEvent) =>
+            void (e.currentTarget as SlButton)
+              .closest<Dialog>("btrix-dialog")
+              ?.hide()}
+          >${msg("Cancel")}</sl-button
+        >
         <sl-button
           size="small"
           variant="danger"
