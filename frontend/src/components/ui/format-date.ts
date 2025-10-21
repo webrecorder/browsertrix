@@ -24,6 +24,9 @@ export class FormatDate extends LitElement {
    */
   @property() date?: Date | string | null = new Date();
 
+  @property() dateStyle?: Intl.DateTimeFormatOptions["dateStyle"];
+  @property() timeStyle?: Intl.DateTimeFormatOptions["timeStyle"];
+
   /** The format for displaying the weekday. */
   @property() weekday?: "narrow" | "short" | "long";
 
@@ -74,6 +77,8 @@ export class FormatDate extends LitElement {
     return html`
       <time datetime=${date.toISOString()}>
         ${this.localize.date(date, {
+          dateStyle: this.dateStyle,
+          timeStyle: this.timeStyle,
           weekday: this.weekday,
           era: this.era,
           year: this.year,

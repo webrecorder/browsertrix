@@ -52,10 +52,11 @@ type SectionName = (typeof SECTIONS)[number];
 const POLL_INTERVAL_SECONDS = 5;
 
 /**
- * Usage:
- * ```ts
- * <btrix-archived-item-detail></btrix-archived-item-detail>
- * ```
+ * Detail page for an archived item (crawl or upload) or crawl run.
+ *
+ * Note: The component name is somewhat misleading, since this component
+ * can also be used to display crawl runs that did not result in a
+ * definitive archived item.
  */
 @customElement("btrix-archived-item-detail")
 @localized()
@@ -859,8 +860,8 @@ export class ArchivedItemDetail extends BtrixElement {
               `
             : html`<sl-skeleton class="mb-[3px] h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
-        ${when(this.item, () =>
-          this.item!.type === "upload"
+        ${when(this.item, (item) =>
+          item.type === "upload"
             ? html`
                 <btrix-desc-list-item label=${msg("Uploaded")}>
                   ${this.formattedFinishedDate}
@@ -869,30 +870,30 @@ export class ArchivedItemDetail extends BtrixElement {
             : html`
                 <btrix-desc-list-item label=${msg("Start Time")}>
                   <btrix-format-date
-                    date=${this.item!.started}
-                    month="2-digit"
-                    day="2-digit"
-                    year="numeric"
-                    hour="numeric"
-                    minute="numeric"
-                    time-zone-name="short"
+                    date=${item.started}
+                    dateStyle="long"
+                    timeStyle="long"
                   ></btrix-format-date>
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Finish Time")}>
-                  ${this.item!.finished
-                    ? this.formattedFinishedDate
+                  ${item.finished
+                    ? html`<btrix-format-date
+                        date=${item.finished}
+                        dateStyle="long"
+                        timeStyle="long"
+                      ></btrix-format-date>`
                     : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Run Duration")}>
-                  ${this.item!.finished
+                  ${item.finished
                     ? html`${this.localize.humanizeDuration(
-                        new Date(this.item!.finished).valueOf() -
-                          new Date(this.item!.started).valueOf(),
+                        new Date(item.finished).valueOf() -
+                          new Date(item.started).valueOf(),
                       )}`
                     : html`
                         <span class="text-violet-600">
                           <btrix-relative-duration
-                            value=${this.item!.started}
+                            value=${item.started}
                             unitCount="3"
                             tickSeconds="1"
                           ></btrix-relative-duration>
@@ -900,22 +901,19 @@ export class ArchivedItemDetail extends BtrixElement {
                       `}
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Execution Time")}>
-                  ${this.item!.finished
+                  ${item.finished
                     ? html`<span
-                        >${humanizeExecutionSeconds(
-                          this.item!.crawlExecSeconds,
-                          { displaySeconds: true },
-                        )}</span
+                        >${humanizeExecutionSeconds(item.crawlExecSeconds, {
+                          displaySeconds: true,
+                        })}</span
                       >`
                     : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Initiator")}>
-                  ${this.item!.manual
+                  ${item.manual
                     ? msg(
                         html`Manual start by
-                          <span
-                            >${this.item!.userName || this.item!.userid}</span
-                          >`,
+                          <span>${item.userName || item.userid}</span>`,
                       )
                     : msg(html`Scheduled start`)}
                 </btrix-desc-list-item>
@@ -929,13 +927,11 @@ export class ArchivedItemDetail extends BtrixElement {
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Size")}>
           ${this.item
-            ? html`${this.item.fileSize
-                ? this.localize.bytes(this.item.fileSize || 0)
-                : html`<span class="text-0-400">${msg("Unknown")}</span>`}`
+            ? this.localize.bytes(this.item.fileSize || 0)
             : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         ${this.renderCrawlChannelVersion()}
-        <btrix-desc-list-item label=${msg("Archived Item ID")}>
+        <btrix-desc-list-item label=${msg("ID")}>
           ${this.item
             ? html`<btrix-copy-field
                 value="${this.item.id}"
