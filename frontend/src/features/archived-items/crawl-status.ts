@@ -308,9 +308,9 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "canceled":
-        color = "var(--sl-color-orange-600)";
+        color = "var(--sl-color-neutral-600)";
         icon = html`<sl-icon
-          name="x-octagon-fill"
+          name="x-octagon"
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;
