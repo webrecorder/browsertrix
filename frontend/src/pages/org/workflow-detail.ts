@@ -565,10 +565,10 @@ export class WorkflowDetail extends BtrixElement {
           >
         </div>
       </btrix-dialog>
-      <btrix-delete-crawl-dialog
-        .crawl=${this.crawlToDelete || undefined}
+      <btrix-delete-item-dialog
+        .item=${this.crawlToDelete || undefined}
         ?open=${this.openDialogName === "deleteCrawl"}
-        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-hide=${() => (this.openDialogName = undefined)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
         @btrix-confirm=${() => {
           this.openDialogName = undefined;
@@ -576,7 +576,16 @@ export class WorkflowDetail extends BtrixElement {
             void this.deleteCrawl(this.crawlToDelete);
           }
         }}
-      ></btrix-delete-crawl-dialog>
+      >
+        ${this.crawlToDelete?.finished
+          ? html`<span slot="name"
+              >${msg("crawl that finished on")}
+              <strong class="font-semibold"
+                >${this.localize.date(this.crawlToDelete.finished)}</strong
+              ></span
+            >`
+          : nothing}
+      </btrix-delete-item-dialog>
       <btrix-dialog
         .label=${msg("Edit Browser Windows")}
         .open=${this.openDialogName === "scale"}

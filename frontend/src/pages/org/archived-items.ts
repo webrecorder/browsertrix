@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
-import type { SlButton, SlSelect } from "@shoelace-style/shoelace";
+import type { SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -11,7 +11,6 @@ import queryString from "query-string";
 import type { ArchivedItem, Crawl, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { Dialog } from "@/components/ui/dialog";
 import {
   type BtrixFilterChipChangeEvent,
   type FilterChip,
@@ -33,7 +32,9 @@ import { isApiError } from "@/utils/api";
 import {
   finishedCrawlStates,
   isActive,
+  isCrawl,
   isSuccessfullyFinished,
+  renderName,
 } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
@@ -569,46 +570,24 @@ export class CrawlsList extends BtrixElement {
         `
       : nothing}
 
-    <btrix-dialog
-      .label=${msg("Delete Archived Item?")}
-      .open=${this.isDeletingItem}
+    <btrix-delete-item-dialog
+      .item=${this.itemToDelete || undefined}
+      ?open=${this.isDeletingItem}
       @sl-after-hide=${() => (this.isDeletingItem = false)}
+      @btrix-confirm=${async () => {
+        this.isDeletingItem = false;
+        if (this.itemToDelete) {
+          await this.deleteItem(this.itemToDelete);
+        }
+      }}
     >
-      ${msg("This item will be removed from any Collection it is a part of.")}
-      ${when(this.itemToDelete?.type === "crawl", () =>
-        msg(
-          "All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow.",
-        ),
-      )}
-      <div slot="footer" class="flex justify-between">
-        <sl-button
-          size="small"
-          .autofocus=${true}
-          @click=${(e: MouseEvent) =>
-            void (e.currentTarget as SlButton)
-              .closest<Dialog>("btrix-dialog")
-              ?.hide()}
-          >${msg("Cancel")}</sl-button
-        >
-        <sl-button
-          size="small"
-          variant="danger"
-          @click=${async () => {
-            this.isDeletingItem = false;
-            if (this.itemToDelete) {
-              await this.deleteItem(this.itemToDelete);
-            }
-          }}
-          >${msg(
-            str`Delete ${
-              this.itemToDelete?.type === "upload"
-                ? msg("Upload")
-                : msg("Crawl")
-            }`,
-          )}</sl-button
-        >
-      </div>
-    </btrix-dialog>
+      ${this.itemToDelete?.finished && isCrawl(this.itemToDelete)
+        ? html`<strong slot="name" class="font-semibold"
+            >${renderName(this.itemToDelete)}
+            (${this.localize.date(this.itemToDelete.finished)})</strong
+          >`
+        : nothing}
+    </btrix-delete-item-dialog>
   `;
 
   private renderControls() {
