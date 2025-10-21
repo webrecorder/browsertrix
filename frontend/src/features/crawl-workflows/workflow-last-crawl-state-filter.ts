@@ -65,7 +65,7 @@ export class WorkflowLastCrawlStateFilter extends BtrixElement {
   }
 
   protected updated(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("selected")) {
+    if (changedProperties.get("selected")) {
       this.dispatchEvent(
         new CustomEvent<
           BtrixChangeEvent<ChangeWorkflowLastCrawlStateEventDetails>["detail"]
