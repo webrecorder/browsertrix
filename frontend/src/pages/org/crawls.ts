@@ -20,9 +20,14 @@ import {
   type PageChangeEvent,
   type Pagination,
 } from "@/components/ui/pagination";
+import type { SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
+import {
+  WorkflowSearch,
+  type SearchFields,
+} from "@/features/crawl-workflows/workflow-search";
 import { OrgTab } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { CrawlState } from "@/types/crawlState";
@@ -30,7 +35,6 @@ import { isApiError } from "@/utils/api";
 import { isActive, isSuccessfullyFinished } from "@/utils/crawler";
 
 type Crawls = APIPaginatedList<Crawl>;
-type SearchFields = "name" | "firstSeed";
 const SORT_DIRECTIONS = ["asc", "desc"] as const;
 type SortDirection = (typeof SORT_DIRECTIONS)[number];
 
@@ -85,11 +89,6 @@ type FilterBy = {
 @customElement("btrix-org-crawls")
 @localized()
 export class OrgCrawls extends BtrixElement {
-  static FieldLabels: Record<SearchFields, string> = {
-    name: msg("Name"),
-    firstSeed: msg("Crawl Start URL"),
-  };
-
   @state()
   private pagination: Required<APIPaginationQuery> = {
     page: parsePage(new URLSearchParams(location.search).get("page")),
@@ -249,7 +248,7 @@ export class OrgCrawls extends BtrixElement {
     this.filterByTags.setValue(undefined);
   }
 
-  private readonly archivedItemsTask = new Task(this, {
+  private readonly crawlsTask = new Task(this, {
     task: async (
       [
         pagination,
@@ -262,7 +261,7 @@ export class OrgCrawls extends BtrixElement {
       { signal },
     ) => {
       try {
-        const data = await this.getArchivedItems(
+        const data = await this.getCrawls(
           {
             pagination,
             orderBy,
@@ -279,7 +278,7 @@ export class OrgCrawls extends BtrixElement {
         }
 
         this.getArchivedItemsTimeout = window.setTimeout(() => {
-          void this.archivedItemsTask.run();
+          void this.crawlsTask.run();
         }, POLL_INTERVAL_SECONDS * 1000);
 
         return data;
@@ -316,7 +315,9 @@ export class OrgCrawls extends BtrixElement {
 
   private get selectedSearchFilterKey() {
     return (
-      Object.keys(OrgCrawls.FieldLabels) as Keys<typeof OrgCrawls.FieldLabels>
+      Object.keys(WorkflowSearch.FieldLabels) as Keys<
+        typeof WorkflowSearch.FieldLabels
+      >
     ).find((key) => Boolean(this.filterBy.value[key]));
   }
 
@@ -349,6 +350,10 @@ export class OrgCrawls extends BtrixElement {
     }
   }
 
+  protected firstUpdated() {
+    void this.fetchConfigSearchValues();
+  }
+
   disconnectedCallback(): void {
     window.clearTimeout(this.getArchivedItemsTimeout);
     super.disconnectedCallback();
@@ -361,7 +366,7 @@ export class OrgCrawls extends BtrixElement {
           ${this.renderControls()}
         </div>
 
-        ${this.archivedItemsTask.render({
+        ${this.crawlsTask.render({
           initial: () => html`
             <div class="my-12 flex w-full items-center justify-center text-2xl">
               <sl-spinner></sl-spinner>
@@ -370,9 +375,9 @@ export class OrgCrawls extends BtrixElement {
           pending: () =>
             // TODO differentiate between pending between poll and
             // pending from user action, in order to show loading indicator
-            this.archivedItemsTask.value
+            this.crawlsTask.value
               ? // Render previous value while latest is loading
-                this.renderArchivedItems(this.archivedItemsTask.value)
+                this.renderArchivedItems(this.crawlsTask.value)
               : nothing,
           complete: this.renderArchivedItems,
         })}
@@ -429,7 +434,7 @@ export class OrgCrawls extends BtrixElement {
             @request-close=${() => (this.isEditingItem = false)}
             @updated=${() => {
               /* TODO fetch current page or single crawl */
-              void this.archivedItemsTask.run();
+              void this.crawlsTask.run();
             }}
           ></btrix-item-metadata-editor>
         `
@@ -560,18 +565,18 @@ export class OrgCrawls extends BtrixElement {
 
   private renderSearch() {
     return html`
-      <btrix-search-combobox
-        .searchKeys=${this.searchKeys}
+      <btrix-workflow-search
         .searchOptions=${this.searchOptions}
-        .keyLabels=${OrgCrawls.FieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         searchByValue=${ifDefined(
           this.selectedSearchFilterKey &&
             this.filterBy.value[this.selectedSearchFilterKey],
         )}
-        placeholder=${msg("Search crawls by name or start URL")}
-        @btrix-select=${(e: CustomEvent) => {
+        placeholder=${msg("Search by workflow name or crawl start URL")}
+        @btrix-select=${(e: SelectEvent<WorkflowSearch["searchKeys"]>) => {
           const { key, value } = e.detail;
+          console.log(key, value);
+          if (key == null) return;
           this.filterBy.setValue({
             ...this.filterBy.value,
             [key]: value,
@@ -586,7 +591,7 @@ export class OrgCrawls extends BtrixElement {
           this.filterBy.setValue(otherFilters);
         }}
       >
-      </btrix-search-combobox>
+      </btrix-workflow-search>
     `;
   }
 
@@ -737,7 +742,7 @@ export class OrgCrawls extends BtrixElement {
     `;
   }
 
-  private async getArchivedItems(
+  private async getCrawls(
     params: {
       pagination: OrgCrawls["pagination"];
       orderBy: OrgCrawls["orderBy"]["value"];
@@ -813,7 +818,7 @@ export class OrgCrawls extends BtrixElement {
         }),
       });
       // TODO eager list update before server response
-      void this.archivedItemsTask.run();
+      void this.crawlsTask.run();
       // const { items, ...crawlsData } = this.archivedItems!;
       this.crawlToDelete = null;
       // this.archivedItems = {

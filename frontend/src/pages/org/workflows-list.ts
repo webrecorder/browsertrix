@@ -29,6 +29,10 @@ import {
 import { type BtrixChangeWorkflowLastCrawlStateFilterEvent } from "@/features/crawl-workflows/workflow-last-crawl-state-filter";
 import { type BtrixChangeWorkflowProfileFilterEvent } from "@/features/crawl-workflows/workflow-profile-filter";
 import type { BtrixChangeWorkflowScheduleFilterEvent } from "@/features/crawl-workflows/workflow-schedule-filter";
+import {
+  WorkflowSearch,
+  type SearchFields,
+} from "@/features/crawl-workflows/workflow-search";
 import type { BtrixChangeWorkflowTagFilterEvent } from "@/features/crawl-workflows/workflow-tag-filter";
 import { WorkflowTab } from "@/routes";
 import { deleteConfirmation } from "@/strings/ui";
@@ -41,7 +45,6 @@ import { renderName } from "@/utils/crawler";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
-type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
 const SORT_DIRECTIONS = ["asc", "desc"] as const;
 type SortDirection = (typeof SORT_DIRECTIONS)[number];
@@ -105,11 +108,6 @@ type FilterBy = {
 @customElement("btrix-workflows-list")
 @localized()
 export class WorkflowsList extends BtrixElement {
-  static FieldLabels: Record<SearchFields, string> = {
-    name: msg("Name"),
-    firstSeed: msg("Crawl Start URL"),
-  };
-
   @state({ hasChanged: isNotEqual })
   private pagination: Required<APIPaginationQuery> = {
     page: parsePage(new URLSearchParams(location.search).get("page")),
@@ -274,13 +272,10 @@ export class WorkflowsList extends BtrixElement {
   @query("#deleteDialog")
   private readonly deleteDialog?: SlDialog | null;
 
-  // For fuzzy search:
-  private readonly searchKeys = ["name", "firstSeed"];
-
   private get selectedSearchFilterKey() {
     return (
-      Object.keys(WorkflowsList.FieldLabels) as Keys<
-        typeof WorkflowsList.FieldLabels
+      Object.keys(WorkflowSearch.FieldLabels) as Keys<
+        typeof WorkflowSearch.FieldLabels
       >
     ).find((key) => Boolean(this.filterBy.value[key]));
   }
@@ -628,17 +623,14 @@ export class WorkflowsList extends BtrixElement {
 
   private renderSearch() {
     return html`
-      <btrix-search-combobox
-        .searchKeys=${this.searchKeys}
+      <btrix-workflow-search
         .searchOptions=${this.searchOptions}
-        .keyLabels=${WorkflowsList.FieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         searchByValue=${ifDefined(
           this.selectedSearchFilterKey &&
             this.filterBy.value[this.selectedSearchFilterKey],
         )}
-        placeholder=${msg("Search all workflows by name or crawl start URL")}
-        @btrix-select=${(e: SelectEvent<typeof this.searchKeys>) => {
+        @btrix-select=${(e: SelectEvent<WorkflowSearch["searchKeys"]>) => {
           const { key, value } = e.detail;
           if (key == null) return;
           this.filterBy.setValue({
@@ -655,7 +647,7 @@ export class WorkflowsList extends BtrixElement {
           this.filterBy.setValue(otherFilters);
         }}
       >
-      </btrix-search-combobox>
+      </btrix-workflow-search>
     `;
   }
 
