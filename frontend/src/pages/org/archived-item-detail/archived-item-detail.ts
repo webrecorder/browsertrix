@@ -525,7 +525,7 @@ export class ArchivedItemDetail extends BtrixElement {
       breadcrumbs.push(
         {
           href: `${this.navigate.orgBasePath}/workflows`,
-          content: msg("Crawl Workflows"),
+          content: msg("Workflows"),
         },
         {
           href: `${this.navigate.orgBasePath}/workflows/${this.item?.cid}`,
