@@ -17,30 +17,28 @@ import {
 import { repeat } from "lit/directives/repeat.js";
 import { isFocusable } from "tabbable";
 
-import { CrawlStatus } from "./crawl-status";
-
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
-import { type CrawlState } from "@/types/crawlState";
-import { finishedCrawlStates } from "@/utils/crawler";
+import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { CRAWL_STATES, type CrawlState } from "@/types/crawlState";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 const MAX_STATES_IN_LABEL = 2;
 
-type ChangeArchivedItemStateEventDetails = CrawlState[];
+type ChangeWorkflowLastCrawlStateEventDetails = CrawlState[];
 
-export type BtrixChangeArchivedItemStateFilterEvent =
-  BtrixChangeEvent<ChangeArchivedItemStateEventDetails>;
+export type BtrixChangeWorkflowLastCrawlStateFilterEvent =
+  BtrixChangeEvent<ChangeWorkflowLastCrawlStateEventDetails>;
 
 /**
  * @fires btrix-change
  */
-@customElement("btrix-archived-item-state-filter")
+@customElement("btrix-workflow-last-crawl-state-filter")
 @localized()
-export class ArchivedItemStateFilter extends BtrixElement {
+export class WorkflowLastCrawlStateFilter extends BtrixElement {
   @property({ type: Array })
-  states?: CrawlState[];
+  states?: CrawlState[] | undefined;
 
   @state()
   private searchString = "";
@@ -51,7 +49,7 @@ export class ArchivedItemStateFilter extends BtrixElement {
   @queryAll("sl-checkbox")
   private readonly checkboxes!: NodeListOf<SlCheckbox>;
 
-  private readonly fuse = new Fuse<CrawlState>(finishedCrawlStates);
+  private readonly fuse = new Fuse<CrawlState>(CRAWL_STATES);
 
   @state({ hasChanged: isNotEqual })
   selected = new Map<CrawlState, boolean>();
@@ -70,7 +68,7 @@ export class ArchivedItemStateFilter extends BtrixElement {
     if (changedProperties.has("selected")) {
       this.dispatchEvent(
         new CustomEvent<
-          BtrixChangeEvent<ChangeArchivedItemStateEventDetails>["detail"]
+          BtrixChangeEvent<ChangeWorkflowLastCrawlStateEventDetails>["detail"]
         >("btrix-change", {
           detail: {
             value: Array.from(this.selected.entries())
@@ -85,7 +83,7 @@ export class ArchivedItemStateFilter extends BtrixElement {
   render() {
     const options = this.searchString
       ? this.fuse.search(this.searchString)
-      : finishedCrawlStates.map((state) => ({ item: state }));
+      : CRAWL_STATES.map((state) => ({ item: state }));
     return html`
       <btrix-filter-chip
         ?checked=${!!this.states?.length}
@@ -101,9 +99,9 @@ export class ArchivedItemStateFilter extends BtrixElement {
         }}
       >
         ${this.states?.length
-          ? html`<span class="opacity-75">${msg("Status")}</span>
+          ? html`<span class="opacity-75">${msg("Latest Crawl Status")}</span>
               ${this.renderStatesInLabel(this.states)}`
-          : msg("Status")}
+          : msg("Latest Crawl Status")}
 
         <div
           slot="dropdown-content"
@@ -119,7 +117,7 @@ export class ArchivedItemStateFilter extends BtrixElement {
                 id="tag-list-label"
                 class="leading-[var(--sl-input-height-small)]"
               >
-                ${msg("Filter by Status")}
+                ${msg("Filter by Latest Crawl Status")}
               </div>
               ${this.states?.length
                 ? html`<sl-button
@@ -133,7 +131,7 @@ export class ArchivedItemStateFilter extends BtrixElement {
 
                       this.dispatchEvent(
                         new CustomEvent<
-                          BtrixChangeEvent<ChangeArchivedItemStateEventDetails>["detail"]
+                          BtrixChangeEvent<ChangeWorkflowLastCrawlStateEventDetails>["detail"]
                         >("btrix-change", {
                           detail: {
                             value: [],
