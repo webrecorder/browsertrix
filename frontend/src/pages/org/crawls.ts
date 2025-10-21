@@ -32,7 +32,6 @@ import { isActive, isSuccessfullyFinished } from "@/utils/crawler";
 
 type Crawls = APIPaginatedList<Crawl>;
 type SearchFields = "name" | "firstSeed";
-type SortField = "started" | "finished" | "fileSize";
 const SORT_DIRECTIONS = ["asc", "desc"] as const;
 type SortDirection = (typeof SORT_DIRECTIONS)[number];
 
@@ -42,7 +41,7 @@ const POLL_INTERVAL_SECONDS = 5;
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const sortableFields: Record<
-  SortField,
+  string,
   { label: string; defaultDirection?: SortDirection }
 > = {
   started: {
@@ -53,11 +52,21 @@ const sortableFields: Record<
     label: msg("Date Finished"),
     defaultDirection: "desc",
   },
+  crawlExecSeconds: {
+    label: msg("Execution Time"),
+    defaultDirection: "desc",
+  },
+  pageCount: {
+    label: msg("Pages"),
+    defaultDirection: "desc",
+  },
   fileSize: {
     label: msg("Size"),
     defaultDirection: "desc",
   },
 };
+
+type SortField = keyof typeof sortableFields;
 
 type SortBy = {
   field: SortField;
@@ -84,9 +93,6 @@ export class OrgCrawls extends BtrixElement {
 
   @property({ type: Boolean })
   isCrawler!: boolean;
-
-  @property({ type: String })
-  itemType: Crawl["type"] | null = null;
 
   @state()
   private pagination: Required<APIPaginationQuery> = {
@@ -117,7 +123,7 @@ export class OrgCrawls extends BtrixElement {
       return params;
     },
     (params) => {
-      const field = params.get("sortBy") as SortBy["field"] | null;
+      const field = params.get("sortBy");
       if (!field) {
         return DEFAULT_SORT_BY;
       }
@@ -250,7 +256,6 @@ export class OrgCrawls extends BtrixElement {
   private readonly archivedItemsTask = new Task(this, {
     task: async (
       [
-        itemType,
         pagination,
         orderBy,
         filterBy,
@@ -263,7 +268,6 @@ export class OrgCrawls extends BtrixElement {
       try {
         const data = await this.getArchivedItems(
           {
-            itemType,
             pagination,
             orderBy,
             filterBy,
@@ -300,7 +304,6 @@ export class OrgCrawls extends BtrixElement {
     args: () =>
       // TODO consolidate filters into single fetch params
       [
-        this.itemType,
         this.pagination,
         this.orderBy.value,
         this.filterBy.value,
@@ -336,20 +339,9 @@ export class OrgCrawls extends BtrixElement {
       changedProperties.has("filterByCurrentUser.value") ||
       changedProperties.has("filterBy.value") ||
       changedProperties.has("orderBy.value") ||
-      changedProperties.has("itemType") ||
       changedProperties.has("filterByTags.value") ||
       changedProperties.has("filterByTagsType.value")
     ) {
-      if (
-        changedProperties.has("itemType") &&
-        changedProperties.get("itemType")
-      ) {
-        this.filterBy.setValue({});
-        this.orderBy.setValue({
-          field: "finished",
-          direction: sortableFields["finished"].defaultDirection!,
-        });
-      }
       this.paginationElement?.setPage(1, { dispatch: true, replace: true });
 
       if (changedProperties.has("filterByCurrentUser")) {
@@ -358,10 +350,6 @@ export class OrgCrawls extends BtrixElement {
           this.filterByCurrentUser.value.toString(),
         );
       }
-    }
-
-    if (changedProperties.has("itemType")) {
-      void this.fetchConfigSearchValues();
     }
   }
 
@@ -552,7 +540,7 @@ export class OrgCrawls extends BtrixElement {
         pill
         value=${this.orderBy.value.field}
         @sl-change=${(e: Event) => {
-          const field = (e.target as HTMLSelectElement).value as SortField;
+          const field = (e.target as HTMLSelectElement).value;
           this.orderBy.setValue({
             field: field,
             direction:
@@ -622,7 +610,7 @@ export class OrgCrawls extends BtrixElement {
 
   private readonly renderArchivedItem = (crawl: Crawl) => html`
     <btrix-crawl-list-item
-      href=${`${this.navigate.orgBasePath}/${OrgTab.Workflows}/${crawl.cid}/crawls`}
+      href=${`${this.navigate.orgBasePath}/${OrgTab.Workflows}/${crawl.cid}/crawls/${crawl.id}`}
       .crawl=${crawl}
     >
       <sl-menu slot="menu">
@@ -791,7 +779,6 @@ export class OrgCrawls extends BtrixElement {
 
   private async getArchivedItems(
     params: {
-      itemType: OrgCrawls["itemType"];
       pagination: OrgCrawls["pagination"];
       orderBy: OrgCrawls["orderBy"]["value"];
       filterBy: OrgCrawls["filterBy"]["value"];
@@ -808,11 +795,12 @@ export class OrgCrawls extends BtrixElement {
         page: params.pagination.page,
         pageSize: params.pagination.pageSize,
         tags: params.filterByTags,
-        tagMatch: params.filterByTagsType,
+        tagMatch: params.filterByTags?.length
+          ? params.filterByTagsType
+          : undefined,
         userid: params.filterByCurrentUser ? this.userInfo!.id : undefined,
         sortBy: params.orderBy.field,
         sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
-        crawlType: params.itemType,
       },
       {
         arrayFormat: "none",
@@ -827,7 +815,7 @@ export class OrgCrawls extends BtrixElement {
   private async fetchConfigSearchValues() {
     try {
       const query = queryString.stringify({
-        crawlType: this.itemType,
+        crawlType: "crawl",
       });
       const data: {
         crawlIds: string[];
@@ -857,27 +845,13 @@ export class OrgCrawls extends BtrixElement {
   };
 
   private async deleteItem(item: Crawl) {
-    let apiPath;
-
-    switch (this.itemType) {
-      case "crawl":
-        apiPath = "crawls";
-        break;
-      default:
-        apiPath = "all-crawls";
-        break;
-    }
-
     try {
-      const _data = await this.api.fetch(
-        `/orgs/${item.oid}/${apiPath}/delete`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            crawl_ids: [item.id],
-          }),
-        },
-      );
+      const _data = await this.api.fetch(`/orgs/${item.oid}/crawls/delete`, {
+        method: "POST",
+        body: JSON.stringify({
+          crawl_ids: [item.id],
+        }),
+      });
       // TODO eager list update before server response
       void this.archivedItemsTask.run();
       // const { items, ...crawlsData } = this.archivedItems!;
