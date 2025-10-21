@@ -41,6 +41,7 @@ def init_ops() -> Tuple[
     InviteOps,
     FileUploadOps,
     CrawlLogOps,
+    CrawlManager,
     AsyncIOMotorClient,
     AsyncIOMotorDatabase,
 ]:
@@ -142,6 +143,7 @@ def init_ops() -> Tuple[
         invite_ops,
         file_ops,
         crawl_log_ops,
+        crawl_manager,
         dbclient,
         mdb,
     )
