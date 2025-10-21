@@ -452,7 +452,12 @@ export class WorkflowListItem extends BtrixElement {
       <sl-tooltip hoist placement="bottom">
         <div>
           <div class="detail truncate">
-            <span class="userName">${workflow.modifiedByName}</span>
+            ${workflow.modifiedByName
+              ? html`<btrix-user-chip
+                  userId=${workflow.modifiedBy}
+                  userName=${workflow.modifiedByName}
+                ></btrix-user-chip>`
+              : notSpecified}
           </div>
           <div class="desc">${shortDate(workflow.modified)}</div>
         </div>

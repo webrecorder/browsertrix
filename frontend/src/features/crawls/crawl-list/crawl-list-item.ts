@@ -1,31 +1,12 @@
-/**
- * Display list of crawls
- *
- * Usage example:
- * ```ts
- * <btrix-crawl-list>
- *   <btrix-crawl-list-item .crawl=${crawl1}>
- *   </btrix-crawl-list-item>
- *   <btrix-crawl-list-item .crawl=${crawl2}>
- *   </btrix-crawl-list-item>
- * </btrix-crawl-list>
- * ```
- */
 import { localized, msg } from "@lit/localize";
 import { css, html, nothing, type TemplateResult } from "lit";
-import {
-  customElement,
-  property,
-  query,
-  queryAssignedElements,
-} from "lit/decorators.js";
+import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { TailwindElement } from "@/classes/TailwindElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import type { Crawl } from "@/types/crawler";
-import { renderName } from "@/utils/crawler";
+import { isSkipped, renderName } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
 /**
@@ -99,7 +80,7 @@ export class CrawlListItem extends BtrixElement {
       `;
     } else {
       const label = html`
-        <btrix-table-cell class="clickLabel" role="generic">
+        <btrix-table-cell class="clickLabel pl-0" role="generic">
           ${this.safeRender((workflow) => renderName(workflow))}
         </btrix-table-cell>
       `;
@@ -113,6 +94,12 @@ export class CrawlListItem extends BtrixElement {
         </btrix-table-cell>
       `;
     }
+
+    const skipped = isSkipped(this.crawl);
+    const hasExec = Boolean(this.crawl.crawlExecSeconds);
+    const notApplicable = html`<sl-tooltip content=${msg("Not applicable")}>
+      <sl-icon name="slash" class="text-base text-neutral-400"></sl-icon>
+    </sl-tooltip>`;
 
     return html`
       <btrix-table-row
@@ -171,51 +158,62 @@ export class CrawlListItem extends BtrixElement {
                     minute="2-digit"
                   ></btrix-format-date>
                 `
-              : html`<span class="text-neutral-400" role="presentation"
-                  >---</span
-                >`,
+              : notApplicable,
           )}
         </btrix-table-cell>
         <btrix-table-cell>
           ${this.safeRender((crawl) =>
-            this.localize.humanizeDuration(
-              (crawl.finished
-                ? new Date(crawl.finished)
-                : new Date()
-              ).valueOf() - new Date(crawl.started).valueOf(),
-            ),
-          )}
-        </btrix-table-cell>
-        <btrix-table-cell>
-          ${this.safeRender((crawl) =>
-            humanizeExecutionSeconds(crawl.crawlExecSeconds),
+            !skipped
+              ? html`<sl-tooltip>
+                  ${humanizeExecutionSeconds(crawl.crawlExecSeconds, {
+                    style: "short",
+                  })}
+                  <span slot="content">
+                    ${humanizeExecutionSeconds(crawl.crawlExecSeconds, {
+                      style: "long",
+                    })}
+                  </span>
+                </sl-tooltip>`
+              : notApplicable,
           )}
         </btrix-table-cell>
         <btrix-table-cell>
           ${this.safeRender((crawl) => {
-            const pagesFound = +(crawl.stats?.found || 0);
-            if (crawl.finished) {
-              const pagesComplete = crawl.pageCount ? +crawl.pageCount : 0;
-              return `${this.localize.number(pagesComplete, { notation: "compact" })}`;
+            if (hasExec) {
+              const pagesComplete = crawl.finished
+                ? crawl.pageCount
+                  ? +crawl.pageCount
+                  : 0
+                : +(crawl.stats?.done || 0);
+
+              return this.localize.number(pagesComplete, {
+                notation: "compact",
+              });
             }
 
-            const pagesComplete = +(crawl.stats?.done || 0);
-            return `${this.localize.number(pagesComplete, { notation: "compact" })} / ${this.localize.number(pagesFound, { notation: "compact" })}`;
+            return notApplicable;
           })}
         </btrix-table-cell>
         <btrix-table-cell>
           ${this.safeRender((crawl) =>
-            this.localize.bytes(
-              crawl.finished ? crawl.fileSize || 0 : +(crawl.stats?.size || 0),
-              {
-                unitDisplay: "narrow",
-              },
-            ),
+            hasExec
+              ? this.localize.bytes(
+                  crawl.finished
+                    ? crawl.fileSize || 0
+                    : +(crawl.stats?.size || 0),
+                )
+              : notApplicable,
           )}
         </btrix-table-cell>
         <btrix-table-cell>
           <div class="max-w-sm truncate">
-            ${this.safeRender((crawl) => crawl.userName)}
+            ${this.safeRender(
+              (crawl) =>
+                html`<btrix-user-chip
+                  userId=${crawl.userid}
+                  userName=${crawl.userName}
+                ></btrix-user-chip>`,
+            )}
           </div>
         </btrix-table-cell>
         <btrix-table-cell class="pl-1 pr-1">
@@ -246,112 +244,5 @@ export class CrawlListItem extends BtrixElement {
         <slot name="menu"></slot>
       </btrix-overflow-dropdown>
     </div>`;
-  }
-}
-
-/**
- * @slot
- */
-@customElement("btrix-crawl-list")
-@localized()
-export class CrawlList extends TailwindElement {
-  static styles = css`
-    btrix-table {
-      --btrix-table-cell-gap: var(--sl-spacing-x-small);
-      --btrix-table-cell-padding-x: var(--sl-spacing-small);
-    }
-
-    btrix-table-body {
-      --btrix-table-cell-padding-y: var(--sl-spacing-2x-small);
-    }
-
-    btrix-table-body ::slotted(*:nth-of-type(n + 2)) {
-      --btrix-border-top: 1px solid var(--sl-panel-border-color);
-    }
-
-    btrix-table-body ::slotted(*:first-of-type) {
-      --btrix-border-radius-top: var(--sl-border-radius-medium);
-    }
-
-    btrix-table-body ::slotted(*:last-of-type) {
-      --btrix-border-radius-bottom: var(--sl-border-radius-medium);
-    }
-  `;
-
-  @property({ type: String })
-  collectionId?: string;
-
-  @property({ type: String })
-  workflowId?: string;
-
-  @queryAssignedElements({ selector: "btrix-crawl-list-item" })
-  listItems!: HTMLElement[];
-
-  render() {
-    return html` <style>
-        btrix-table {
-          --btrix-table-grid-template-columns: min-content [clickable-start]
-            ${this.workflowId ? "" : `30ch `}repeat(7, auto) [clickable-end]
-            min-content;
-        }
-      </style>
-      <btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
-        <btrix-table>
-          <btrix-table-head class="mb-2">
-            <btrix-table-header-cell class="pr-0">
-              <span class="sr-only">${msg("Status")}</span>
-            </btrix-table-header-cell>
-            ${this.workflowId
-              ? nothing
-              : html`
-                  <btrix-table-header-cell>
-                    ${msg("Name")}
-                  </btrix-table-header-cell>
-                `}
-            <btrix-table-header-cell>
-              ${msg("Started")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Finished")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell
-              >${msg("Run Duration")}</btrix-table-header-cell
-            >
-            <btrix-table-header-cell
-              >${msg("Execution Time")}</btrix-table-header-cell
-            >
-            <btrix-table-header-cell>${msg("Pages")}</btrix-table-header-cell>
-            <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Run By")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell class="pl-1 pr-1">
-              <span class="sr-only">${msg("Row actions")}</span>
-            </btrix-table-header-cell>
-          </btrix-table-head>
-          <btrix-table-body class="rounded border">
-            <slot @slotchange=${this.handleSlotchange}></slot>
-          </btrix-table-body>
-        </btrix-table>
-      </btrix-overflow-scroll>`;
-  }
-
-  private handleSlotchange() {
-    const assignProp = (
-      el: HTMLElement,
-      attr: { name: string; value: string },
-    ) => {
-      if (!el.attributes.getNamedItem(attr.name)) {
-        el.setAttribute(attr.name, attr.value);
-      }
-    };
-
-    this.listItems.forEach((item) => {
-      assignProp(item, {
-        name: "collectionId",
-        value: this.collectionId || "",
-      });
-      assignProp(item, { name: "workflowId", value: this.workflowId || "" });
-    });
   }
 }
