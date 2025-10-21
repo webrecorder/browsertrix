@@ -1147,6 +1147,25 @@ export class WorkflowDetail extends BtrixElement {
                 };
               }}
             ></btrix-archived-item-state-filter>
+            ${when(
+              this.crawlsParams.state?.length,
+              () => html`
+                <sl-button
+                  class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
+                  size="small"
+                  variant="text"
+                  @click=${() => {
+                    this.crawlsParams = {
+                      ...this.crawlsParams,
+                      state: undefined,
+                    };
+                  }}
+                >
+                  <sl-icon slot="prefix" name="x-lg"></sl-icon>
+                  ${msg("Clear")}
+                </sl-button>
+              `,
+            )}
           </div>
         </div>
 
