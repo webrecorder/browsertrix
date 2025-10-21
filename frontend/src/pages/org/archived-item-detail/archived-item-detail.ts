@@ -304,6 +304,7 @@ export class ArchivedItemDetail extends BtrixElement {
 
   render() {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
+    const isSuccess = this.item && isSuccessfullyFinished(this.item);
     let sectionContent: string | TemplateResult<1> = "";
 
     switch (this.activeTab) {
@@ -415,7 +416,12 @@ export class ArchivedItemDetail extends BtrixElement {
                 tw`rounded-lg border p-4`,
               ])}
             </div>
-            <div class="col-span-1 row-span-1 flex flex-col">
+            <div
+              class=${clsx(
+                tw`col-span-1 flex flex-col`,
+                isSuccess ? tw`row-span-1` : tw`row-span-2`,
+              )}
+            >
               ${this.renderPanel(
                 html`
                   ${this.renderTitle(msg("Metadata"))}
@@ -426,7 +432,7 @@ export class ArchivedItemDetail extends BtrixElement {
                         class="text-base"
                         name="pencil"
                         @click=${() => this.openMetadataEditor("metadata")}
-                        label=${msg("Edit Archived Item")}
+                        label=${msg("Edit Metadata")}
                       ></sl-icon-button>
                     `,
                   )}
@@ -435,26 +441,32 @@ export class ArchivedItemDetail extends BtrixElement {
                 [tw`rounded-lg border p-4`],
               )}
             </div>
-            <div class="col-span-1 row-span-1 flex flex-col">
-              ${this.renderPanel(
-                html`
-                  ${this.renderTitle(msg("Collections"))}
-                  ${when(
-                    this.isCrawler,
-                    () => html`
-                      <sl-icon-button
-                        class="text-base"
-                        name="pencil"
-                        @click=${() => this.openMetadataEditor("collections")}
-                        label=${msg("Edit Archived Item")}
-                      ></sl-icon-button>
+            ${when(
+              isSuccess,
+              () => html`
+                <div class="col-span-1 row-span-1 flex flex-col">
+                  ${this.renderPanel(
+                    html`
+                      ${this.renderTitle(msg("Collections"))}
+                      ${when(
+                        this.isCrawler && isSuccess,
+                        () => html`
+                          <sl-icon-button
+                            class="text-base"
+                            name="pencil"
+                            @click=${() =>
+                              this.openMetadataEditor("collections")}
+                            label=${msg("Edit Collections")}
+                          ></sl-icon-button>
+                        `,
+                      )}
                     `,
+                    this.renderCollections(),
+                    [tw`rounded-lg border p-4`],
                   )}
-                `,
-                this.renderCollections(),
-                [tw`rounded-lg border p-4`],
-              )}
-            </div>
+                </div>
+              `,
+            )}
           </div>
         `;
         break;
@@ -663,6 +675,7 @@ export class ArchivedItemDetail extends BtrixElement {
     if (!this.item) return;
 
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
+    const isSuccess = isSuccessfullyFinished(this.item);
 
     return html`
       <sl-dropdown placement="bottom-end" distance="4" hoist>
@@ -675,13 +688,13 @@ export class ArchivedItemDetail extends BtrixElement {
             () => html`
               <sl-menu-item @click=${this.openMetadataEditor}>
                 <sl-icon name="pencil" slot="prefix"></sl-icon>
-                ${msg("Edit Archived Item")}
+                ${isSuccess ? msg("Edit Archived Item") : msg("Edit Metadata")}
               </sl-menu-item>
               <sl-divider></sl-divider>
             `,
           )}
           ${when(
-            isSuccessfullyFinished(this.item),
+            isSuccess,
             () => html`
               ${when(
                 this.itemType === "crawl",
