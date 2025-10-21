@@ -1,4 +1,5 @@
 import("./custom-behaviors-table");
+import("./delete-crawl-dialog");
 import("./exclusion-editor");
 import("./live-workflow-status");
 import("./link-selector-table");

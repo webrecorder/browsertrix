@@ -2,7 +2,7 @@ import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import { customElement, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
@@ -23,7 +23,6 @@ import {
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
-import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { OrgTab } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { CrawlState } from "@/types/crawlState";
@@ -90,9 +89,6 @@ export class OrgCrawls extends BtrixElement {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
   };
-
-  @property({ type: Boolean })
-  isCrawler!: boolean;
 
   @state()
   private pagination: Required<APIPaginationQuery> = {
@@ -295,7 +291,7 @@ export class OrgCrawls extends BtrixElement {
             message: msg("Sorry, couldn’t retrieve crawl runs at this time."),
             variant: "danger",
             icon: "exclamation-octagon",
-            id: "archived-item-fetch-error",
+            id: "crawl-status",
           });
         }
         throw e;
@@ -439,32 +435,17 @@ export class OrgCrawls extends BtrixElement {
         `
       : nothing}
 
-    <btrix-dialog
-      .label=${msg("Delete Archived Item?")}
-      .open=${this.isDeletingItem}
+    <btrix-delete-crawl-dialog
+      .crawl=${this.itemToDelete || undefined}
+      ?open=${this.isDeletingItem}
       @sl-after-hide=${() => (this.isDeletingItem = false)}
-    >
-      ${msg("This item will be removed from any Collection it is a part of.")}
-      ${when(this.itemToDelete?.type === "crawl", () =>
-        msg(
-          "All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow.",
-        ),
-      )}
-      <div slot="footer" class="flex justify-between">
-        <sl-button size="small" .autofocus=${true}>${msg("Cancel")}</sl-button>
-        <sl-button
-          size="small"
-          variant="danger"
-          @click=${async () => {
-            this.isDeletingItem = false;
-            if (this.itemToDelete) {
-              await this.deleteItem(this.itemToDelete);
-            }
-          }}
-          >${msg("Delete Crawl")}</sl-button
-        >
-      </div>
-    </btrix-dialog>
+      @btrix-confirm=${() => {
+        this.isDeletingItem = false;
+        if (this.itemToDelete) {
+          void this.deleteItem(this.itemToDelete);
+        }
+      }}
+    ></btrix-delete-crawl-dialog>
   `;
 
   private renderControls() {
@@ -613,44 +594,22 @@ export class OrgCrawls extends BtrixElement {
       href=${`${this.navigate.orgBasePath}/${OrgTab.Workflows}/${crawl.cid}/crawls/${crawl.id}`}
       .crawl=${crawl}
     >
-      <sl-menu slot="menu">
-        <sl-menu-item
-          @click=${() => ClipboardController.copyToClipboard(crawl.id)}
-        >
-          <sl-icon name="copy" slot="prefix"></sl-icon>
-          ${msg("Copy Crawl ID")}
-        </sl-menu-item>
-        ${when(
-          this.isCrawler && !isActive(crawl),
-          () => html`
-            <sl-divider></sl-divider>
-            <sl-menu-item
-              style="--sl-color-neutral-700: var(--danger)"
-              @click=${() => {
-                // this.confirmDeleteCrawl(crawl)
-              }}
-            >
-              <sl-icon name="trash3" slot="prefix"></sl-icon>
-              ${msg("Delete Crawl")}
-            </sl-menu-item>
-          `,
-        )}
-      </sl-menu>
+      <sl-menu slot="menu"> ${this.renderMenuItems(crawl)} </sl-menu>
     </btrix-crawl-list-item>
   `;
 
-  private readonly renderMenuItems = (item: Crawl) => {
-    // HACK shoelace doesn't current have a way to override non-hover
-    // color without resetting the --sl-color-neutral-700 variable
+  private readonly renderMenuItems = (crawl: Crawl) => {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
+    const isCrawler = this.appState.isCrawler;
+    const isSuccess = isSuccessfullyFinished(crawl);
 
     return html`
       ${when(
-        this.isCrawler,
+        isCrawler && isSuccess,
         () => html`
           <sl-menu-item
             @click=${async () => {
-              this.itemToEdit = item;
+              this.itemToEdit = crawl;
               await this.updateComplete;
               this.isEditingItem = true;
             }}
@@ -662,19 +621,19 @@ export class OrgCrawls extends BtrixElement {
         `,
       )}
       ${when(
-        isSuccessfullyFinished(item),
+        isSuccess,
         () => html`
           <btrix-menu-item-link
-            href=${`/api/orgs/${this.orgId}/all-crawls/${item.id}/download?auth_bearer=${authToken}&preferSingleWACZ=true`}
+            href=${`/api/orgs/${this.orgId}/all-crawls/${crawl.id}/download?auth_bearer=${authToken}&preferSingleWACZ=true`}
             download
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Item")}
-            ${item.fileSize
+            ${crawl.fileSize
               ? html` <btrix-badge
                   slot="suffix"
                   class="font-monostyle text-xs text-neutral-500"
-                  >${this.localize.bytes(item.fileSize)}</btrix-badge
+                  >${this.localize.bytes(crawl.fileSize)}</btrix-badge
                 >`
               : nothing}
           </btrix-menu-item-link>
@@ -684,14 +643,14 @@ export class OrgCrawls extends BtrixElement {
       <sl-menu-item
         @click=${() =>
           this.navigate.to(
-            `${this.navigate.orgBasePath}/workflows/${item.cid}`,
+            `${this.navigate.orgBasePath}/workflows/${crawl.cid}`,
           )}
       >
         <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
         ${msg("Go to Workflow")}
       </sl-menu-item>
       <sl-menu-item
-        @click=${() => ClipboardController.copyToClipboard(item.cid)}
+        @click=${() => ClipboardController.copyToClipboard(crawl.cid)}
       >
         <sl-icon name="copy" slot="prefix"></sl-icon>
         ${msg("Copy Workflow ID")}
@@ -699,38 +658,38 @@ export class OrgCrawls extends BtrixElement {
 
       <sl-menu-item
         @click=${() =>
-          ClipboardController.copyToClipboard(item.tags.join(", "))}
-        ?disabled=${!item.tags.length}
+          ClipboardController.copyToClipboard(crawl.tags.join(", "))}
+        ?disabled=${!crawl.tags.length}
       >
         <sl-icon name="tags" slot="prefix"></sl-icon>
         ${msg("Copy Tags")}
       </sl-menu-item>
       <sl-menu-item
-        @click=${() => ClipboardController.copyToClipboard(item.id)}
+        @click=${() => ClipboardController.copyToClipboard(crawl.id)}
       >
         <sl-icon name="copy" slot="prefix"></sl-icon>
-        ${msg("Copy Item ID")}
+        ${msg("Copy Crawl ID")}
       </sl-menu-item>
       ${when(
-        this.isCrawler && !isActive(item),
+        isCrawler && !isActive(crawl),
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => this.confirmDeleteItem(item)}
+            class="menu-item-danger"
+            @click=${() => {
+              if (isSuccess) {
+                this.confirmDeleteItem(crawl);
+              } else {
+                void this.deleteItem(crawl);
+              }
+            }}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>
-            ${msg("Delete Item")}
+            ${msg("Delete Crawl")}
           </sl-menu-item>
         `,
       )}
     `;
-  };
-
-  private readonly renderStatusMenuItem = (state: CrawlState) => {
-    const { icon, label } = CrawlStatus.getContent({ state });
-
-    return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
   };
 
   private renderEmptyState() {
@@ -864,6 +823,7 @@ export class OrgCrawls extends BtrixElement {
         message: msg(str`Successfully deleted crawl.`),
         variant: "success",
         icon: "check2-circle",
+        id: "crawl-status",
       });
     } catch (e) {
       if (this.itemToDelete) {
@@ -881,6 +841,7 @@ export class OrgCrawls extends BtrixElement {
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "crawl-status",
       });
     }
   }
