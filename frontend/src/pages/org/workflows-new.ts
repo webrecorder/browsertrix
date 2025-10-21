@@ -81,7 +81,7 @@ export class WorkflowsNew extends BtrixElement {
     const breadcrumbs: Breadcrumb[] = [
       {
         href: `${this.navigate.orgBasePath}/workflows`,
-        content: msg("Crawl Workflows"),
+        content: msg("Crawling"),
       },
       {
         content: msg("New Workflow"),

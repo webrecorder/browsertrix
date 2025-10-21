@@ -86,6 +86,11 @@ type FilterBy = {
   state?: CrawlState[];
 };
 
+/**
+ * A crawl is the operation of a workflow. This is distinct from an archived item,
+ * which is a crawl that has successfully finished and can be replayed. Users can
+ * view, search, and filter crawls from this page.
+ */
 @customElement("btrix-org-crawls")
 @localized()
 export class OrgCrawls extends BtrixElement {

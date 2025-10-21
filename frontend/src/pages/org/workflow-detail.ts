@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
-import type { SlDropdown, SlSelect } from "@shoelace-style/shoelace";
+import type { SlDropdown } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -17,12 +17,9 @@ import type { Crawl, CrawlLog, Seed, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Alert } from "@/components/ui/alert";
-import {
-  calculatePages,
-  parsePage,
-  type PageChangeEvent,
-} from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
+import type { BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { ShareableNotice } from "@/features/crawl-workflows/templates/shareable-notice";
@@ -41,7 +38,6 @@ import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import {
   DEFAULT_MAX_SCALE,
-  inactiveCrawlStates,
   isActive,
   isSkipped,
   isSuccessfullyFinished,
@@ -658,7 +654,7 @@ export class WorkflowDetail extends BtrixElement {
     const breadcrumbs: Breadcrumb[] = [
       {
         href: `${this.navigate.orgBasePath}/workflows`,
-        content: msg("Crawl Workflows"),
+        content: msg("Workflows"),
       },
     ];
 
@@ -1131,45 +1127,26 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private renderCrawls() {
-    const pageView = (crawls: APIPaginatedList<Crawl>) => {
-      const pages = calculatePages(crawls);
-
-      if (crawls.page === 1 || pages < 2) return;
-
-      const page = this.localize.number(crawls.page);
-      const pageCount = this.localize.number(pages);
-
-      return msg(str`Viewing page ${page} of ${pageCount}`);
-    };
-
     return html`
       <section>
         <div
           class="mb-3 flex items-center justify-between rounded-lg border bg-neutral-50 p-3 text-neutral-500"
         >
-          <div>${when(this.crawls, pageView)}</div>
-          <div class="flex items-center">
-            <div class="mx-2">${msg("Status:")}</div>
-            <sl-select
-              id="stateSelect"
-              class="flex-1 md:min-w-[16rem]"
-              size="small"
-              pill
-              multiple
-              max-options-visible="1"
-              placeholder=${msg("Any")}
-              @sl-change=${async (e: CustomEvent) => {
-                const value = (e.target as SlSelect).value as CrawlState[];
-                await this.updateComplete;
+          <div class="flex-wap flex items-center gap-2">
+            <span class="whitespace-nowrap text-sm text-neutral-500">
+              ${msg("Filter by:")}
+            </span>
+            <btrix-archived-item-state-filter
+              .states=${this.crawlsParams.state}
+              showUnfinishedStates
+              @btrix-change=${(e: BtrixChangeArchivedItemStateFilterEvent) => {
                 this.crawlsParams = {
                   ...this.crawlsParams,
                   page: 1,
-                  state: value,
+                  state: e.detail.value,
                 };
               }}
-            >
-              ${inactiveCrawlStates.map(this.renderStatusMenuItem)}
-            </sl-select>
+            ></btrix-archived-item-state-filter>
           </div>
         </div>
 
@@ -1276,7 +1253,7 @@ export class WorkflowDetail extends BtrixElement {
             : html`
                 <div class="p-4">
                   <p class="text-center text-neutral-400">
-                    ${this.crawls?.total
+                    ${this.crawlsParams.state
                       ? msg("No matching crawls found.")
                       : msg("No crawls yet.")}
                   </p>
@@ -2083,7 +2060,7 @@ export class WorkflowDetail extends BtrixElement {
         cid: workflowId,
         sortBy: "started",
         page: params.page ?? this.crawls?.page,
-        pageSize: this.crawls?.pageSize ?? 10,
+        pageSize: this.crawls?.pageSize ?? 50,
         ...params,
       },
       {

@@ -102,10 +102,9 @@ type FilterBy = {
 };
 
 /**
- * Usage:
- * ```ts
- * <btrix-archived-items></btrix-archived-items>
- * ```
+ * An archived item can be any replayable crawl (i.e. crawl with WACZ files)
+ * or an uploaded WACZ. Users can view, search, and filter archived items
+ * from this page.
  */
 @customElement("btrix-archived-items")
 @localized()
