@@ -12,7 +12,7 @@ import { type Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
 import { pageBack, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
-import { WorkflowTab } from "@/routes";
+import { OrgTab, WorkflowTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import type {
   ArchivedItem,
@@ -136,7 +136,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private get listUrl(): string {
     let path = "items";
     if (this.workflowId) {
-      path = `workflows/crawl/${this.workflowId}/${WorkflowTab.Crawls}`;
+      path = `${OrgTab.Workflows}/${this.workflowId}/${WorkflowTab.Crawls}`;
     } else if (this.collectionId) {
       path = `collections/view/${this.collectionId}/items`;
     } else if (this.item?.type === "upload") {
