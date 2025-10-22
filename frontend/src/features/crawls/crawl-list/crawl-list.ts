@@ -64,11 +64,11 @@ export class CrawlList extends TailwindElement {
       this.workflowId ? undefined : "36ch", // Name
       "22ch", // Started
       "22ch", // Finished
-      "15ch", // Execution time
-      "10ch", // Pages
-      "12ch", // Size
-      "auto", // Run by
-      "[clickable-end] min-content",
+      "auto", // Execution time
+      "auto", // Pages
+      "auto", // Size
+      "[clickable-end] 20ch", // Run by
+      "min-content",
     ]
       .filter((v) => v)
       .join(" ");
