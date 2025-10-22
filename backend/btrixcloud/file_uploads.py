@@ -383,6 +383,22 @@ class FileUploadOps:
                 org = await self.org_ops.get_org_by_id(file_dict["oid"])
                 await self.delete_seed_file(file_id, org)
                 print(f"Deleted unused seed file {file_id}", flush=True)
+
+            except HTTPException as e:
+                # handle case where org is deleted by seed file still exists
+                if e.detail == "invalid_org_id":
+                    try:
+                        await self.storage_ops.delete_file_from_default_storage(
+                            file_dict["filename"]
+                        )
+                        await self.files.delete_one({"_id": file_id})
+                    # pylint: disable=broad-exception-caught
+                    except Exception as err:
+                        print(
+                            f"Error deleting orphaned seed file without org {file_id}: {err}",
+                            flush=True,
+                        )
+
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(f"Error deleting unused seed file {file_id}: {err}", flush=True)

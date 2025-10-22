@@ -73,7 +73,7 @@ CHUNK_SIZE = 1024 * 256
 
 # ============================================================================
 # pylint: disable=broad-except,raise-missing-from,too-many-instance-attributes
-# pylint: disable=too-many-public-methods
+# pylint: disable=too-many-public-methods, too-many-lines
 class StorageOps:
     """All storage handling, download/upload operations"""
 
@@ -638,9 +638,13 @@ class StorageOps:
         self, org: Organization, filename: str, storage: StorageRef
     ) -> bool:
         """delete specified file from storage"""
-        status_code = None
-
         s3storage = self.get_org_storage_by_ref(org, storage)
+
+        return await self._delete_file_from_storage(s3storage, filename)
+
+    async def _delete_file_from_storage(self, s3storage: S3Storage, filename: str):
+        """delete file from specified storage"""
+        status_code = None
 
         async with self.get_s3_client(s3storage) as (client, bucket, key):
             key += filename
@@ -648,6 +652,17 @@ class StorageOps:
             status_code = response["ResponseMetadata"]["HTTPStatusCode"]
 
         return status_code == 204
+
+    async def delete_file_from_default_storage(self, filename: str):
+        """delete file from default primary storage, if it exists"""
+        if not self.default_primary:
+            return False
+
+        s3storage = self.default_storages.get(self.default_primary.name)
+        if not s3storage:
+            return False
+
+        return await self._delete_file_from_storage(s3storage, filename)
 
     async def sync_stream_wacz_pages(
         self, wacz_files: List[CrawlFileOut], num_retries=5
