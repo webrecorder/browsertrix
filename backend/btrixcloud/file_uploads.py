@@ -394,6 +394,20 @@ class FileUploadOps:
         if errored:
             raise RuntimeError(f"Error deleting unused seed files: {error_msg}")
 
+    async def delete_org_files(self, org: Organization):
+        """Delete all files associated with an org from database and storage"""
+        match_query = {"oid": org.id}
+        async for file_dict in self.files.find(match_query):
+            file_id = file_dict["_id"]
+            try:
+                await self.delete_seed_file(file_id, org)
+            # pylint: disable=broad-exception-caught
+            except Exception as err:
+                print(
+                    f"Error deleting seed file {file_id} from deleted org: {err}",
+                    flush=True,
+                )
+
 
 # ============================================================================
 def init_file_uploads_api(

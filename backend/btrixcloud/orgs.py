@@ -1401,6 +1401,9 @@ class OrgOps:
 
         await self.crawl_configs_db.delete_many({"oid": org.id})
 
+        # Delete seed files and other user-uploaded files from database and storage
+        await self.file_ops.delete_org_files(org)
+
         # Delete profiles
         async for profile in self.profiles_db.find({"oid": org.id}, projection=["_id"]):
             await self.profile_ops.delete_profile(profile["_id"], org)
