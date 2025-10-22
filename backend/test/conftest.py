@@ -31,6 +31,8 @@ _all_crawls_delete_config_id = None
 NON_DEFAULT_ORG_NAME = "Non-default org"
 NON_DEFAULT_ORG_SLUG = "non-default-org"
 
+RUNNING_STATES = ["running", "pending-wait", "generate-wacz", "uploading-wacz"]
+
 FAILED_STATES = ["canceled", "failed", "skipped_quota_reached"]
 
 SUCCESSFUL_STATES = ["complete", "stopped_by_user", "stopped_quota_reached"]
@@ -266,6 +268,7 @@ def qa_crawl_id(crawler_auth_headers, default_org_id):
         "runNow": True,
         "name": "Crawler User Crawl for Testing QA",
         "description": "crawler test crawl for qa",
+        "tags": ["qa", "wr-test-1"],
         "config": {"seeds": [{"url": "https://old.webrecorder.net/"}], "limit": 1},
         "crawlerChannel": "test",
     }
@@ -295,6 +298,7 @@ def wr_specs_crawl_id(crawler_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
         "name": "Webrecorder Specs sample crawl",
+        "tags": ["wr-test-1"],
         "config": {"seeds": [{"url": "https://specs.webrecorder.net/"}], "limit": 1},
     }
     r = requests.post(
@@ -358,6 +362,7 @@ def auto_add_crawl_id(crawler_auth_headers, default_org_id, auto_add_collection_
         "runNow": True,
         "name": "Auto Add",
         "description": "For testing auto-adding new workflow crawls to collections",
+        "tags": ["wr-test-1"],
         "autoAddCollections": [auto_add_collection_id],
         "config": {
             "seeds": [{"url": "https://old.webrecorder.net/"}],
@@ -399,6 +404,7 @@ def all_crawls_crawl_id(crawler_auth_headers, default_org_id):
         "runNow": True,
         "name": "All Crawls Test Crawl",
         "description": "Lorem ipsum",
+        "tags": ["all-crawls", "wr-test-2"],
         "config": {
             "seeds": [{"url": "https://old.webrecorder.net/"}],
             "exclude": "community",
@@ -458,6 +464,7 @@ def all_crawls_delete_crawl_ids(admin_auth_headers, default_org_id):
         "runNow": True,
         "name": "All Crawls Delete Test Workflow",
         "description": "Lorem ipsum",
+        "tags": ["wr-test-1", "to-delete"],
         "config": {
             "seeds": [{"url": "https://old.webrecorder.net/"}],
             "exclude": "community",
@@ -520,6 +527,7 @@ def custom_behaviors_crawl_id(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
         "name": "Custom Behavior Logs",
+        "tags": ["behaviors", "wr-test-1"],
         "config": {
             "seeds": [{"url": "https://specs.webrecorder.net/"}],
             "customBehaviors": [
@@ -552,12 +560,66 @@ def custom_behaviors_crawl_id(admin_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="session")
+def canceled_crawl_id(admin_auth_headers, default_org_id):
+    crawl_data = {
+        "runNow": True,
+        "name": "Canceled crawl",
+        "tags": ["canceled"],
+        "config": {
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
+            "limit": 5,
+        },
+        "browserWindows": 1,
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    crawl_id = data["run_now_job"]
+
+    # Cancel crawl after it's started
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] in RUNNING_STATES:
+            break
+        time.sleep(5)
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/cancel",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    assert data["success"] == True
+
+    # Wait until crawl finishes
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] in FINISHED_STATES:
+            break
+        time.sleep(5)
+
+    return crawl_id
+
+
+@pytest.fixture(scope="session")
 def url_list_config_id(crawler_auth_headers, default_org_id):
     # Start crawl.
     crawl_data = {
         "runNow": False,
         "name": "URL List config",
         "description": "Contains 3 seeds",
+        "tags": ["wr-test-1", "seed-list"],
         "config": {
             "seeds": [
                 {"url": "https://old.webrecorder.net"},

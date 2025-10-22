@@ -78,6 +78,7 @@ from .models import (
     CrawlQueueResponse,
     MatchCrawlQueueResponse,
     CrawlLogLine,
+    TagsResponse,
 )
 
 
@@ -1354,6 +1355,20 @@ def init_crawls_api(
         return DeletedCountResponseQuota(
             deleted=count, storageQuotaReached=quota_reached
         )
+
+    @app.get(
+        "/orgs/{oid}/crawls/tagCounts",
+        tags=["crawls"],
+        response_model=TagsResponse,
+    )
+    async def get_crawls_tag_counts(
+        org: Organization = Depends(org_viewer_dep),
+        onlySuccessful: bool = True,
+    ):
+        tags = await ops.get_all_crawls_tag_counts(
+            org, only_successful=onlySuccessful, type_="crawl"
+        )
+        return {"tags": tags}
 
     @app.get("/orgs/all/crawls/stats", tags=["crawls"], response_model=bytes)
     async def get_all_orgs_crawl_stats(
