@@ -198,9 +198,12 @@ class FileUploadOps:
 
         file_id = uuid4()
 
-        new_filename = f"{upload_type}-{str(file_id)}{extension}"
+        new_filename = f"{str(file_id)}{extension}"
 
-        prefix = org.storage.get_storage_extra_path(str(org.id)) + f"{upload_type}s/"
+        prefix = (
+            org.storage.get_storage_extra_path(str(org.id))
+            + f"{upload_type}s/{upload_type}"
+        )
 
         file_prep = UserFilePreparer(
             prefix,
