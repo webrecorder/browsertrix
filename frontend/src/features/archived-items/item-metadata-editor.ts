@@ -4,6 +4,7 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
 import { html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type {
@@ -17,6 +18,7 @@ import type {
 } from "@/features/collections/collections-add";
 import type { ArchivedItem } from "@/types/crawler";
 import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
+import { isSuccessfullyFinished } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
 
 /**
@@ -87,9 +89,11 @@ export class CrawlMetadataEditor extends BtrixElement {
   }
 
   render() {
+    const isSuccess = this.crawl && isSuccessfullyFinished(this.crawl);
+
     return html`
       <btrix-dialog
-        .label=${msg("Edit Archived Item")}
+        .label=${isSuccess ? msg("Edit Archived Item") : msg("Edit Metadata")}
         .open=${this.open}
         @sl-show=${() => (this.isDialogVisible = true)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
@@ -103,6 +107,9 @@ export class CrawlMetadataEditor extends BtrixElement {
   private renderEditMetadata() {
     if (!this.crawl) return;
 
+    const item = this.crawl;
+    const isSuccess = isSuccessfullyFinished(item);
+
     const { helpText, validate } = this.validateCrawlDescriptionMax;
     return html`
       <form
@@ -113,7 +120,7 @@ export class CrawlMetadataEditor extends BtrixElement {
         ${this.includeName
           ? html`
               <div class="mb-3">
-                <sl-input label="Name" name="name" value="${this.crawl.name}">
+                <sl-input label="Name" name="name" value="${item.name}">
                 </sl-input>
               </div>
             `
@@ -123,7 +130,7 @@ export class CrawlMetadataEditor extends BtrixElement {
           class="with-max-help-text mb-3"
           name="crawlDescription"
           label=${msg("Description")}
-          value=${this.crawl.description || ""}
+          value=${item.description || ""}
           rows="3"
           autocomplete="off"
           resize="auto"
@@ -131,23 +138,28 @@ export class CrawlMetadataEditor extends BtrixElement {
           @sl-input=${validate}
         ></sl-textarea>
         <btrix-tag-input
-          .initialTags=${this.crawl.tags}
+          .initialTags=${item.tags}
           .tagOptions=${this.tagOptions}
           @tag-input=${this.onTagInput}
           @tags-change=${(e: TagsChangeEvent) =>
             (this.tagsToSave = e.detail.tags)}
         ></btrix-tag-input>
-        <div class="mt-7">
-          <btrix-collections-add
-            id="collection-input"
-            .initialCollections=${this.crawl.collectionIds}
-            .configId=${"temp"}
-            label=${msg("Include in Collection")}
-            @collections-change=${(e: CollectionsChangeEvent) =>
-              (this.collectionsToSave = e.detail.collections)}
-          >
-          </btrix-collections-add>
-        </div>
+        ${when(
+          isSuccess,
+          () => html`
+            <div class="mt-7">
+              <btrix-collections-add
+                id="collection-input"
+                .initialCollections=${item.collectionIds}
+                .configId=${"temp"}
+                label=${msg("Include in Collection")}
+                @collections-change=${(e: CollectionsChangeEvent) =>
+                  (this.collectionsToSave = e.detail.collections)}
+              >
+              </btrix-collections-add>
+            </div>
+          `,
+        )}
       </form>
       <div slot="footer" class="flex justify-between">
         <sl-button form="crawlDetailsForm" type="reset" size="small"
@@ -247,7 +259,7 @@ export class CrawlMetadataEditor extends BtrixElement {
 
       this.dispatchEvent(new CustomEvent("updated"));
       this.notify.toast({
-        message: msg("Successfully saved crawl details."),
+        message: msg("Successfully updated item."),
         variant: "success",
         icon: "check2-circle",
         id: "crawl-details-update-status",
@@ -255,7 +267,7 @@ export class CrawlMetadataEditor extends BtrixElement {
       this.requestClose();
     } catch (e) {
       this.notify.toast({
-        message: msg("Sorry, couldn't save crawl details at this time."),
+        message: msg("Sorry, couldn't save item at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
         id: "crawl-details-update-status",
