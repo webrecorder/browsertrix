@@ -836,7 +836,7 @@ export class CrawlsList extends BtrixElement {
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
+            class="menu-item-danger"
             @click=${() => this.confirmDeleteItem(item)}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>

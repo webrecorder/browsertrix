@@ -785,7 +785,7 @@ export class ArchivedItemDetail extends BtrixElement {
             () => html`
               <sl-divider></sl-divider>
               <sl-menu-item
-                style="--sl-color-neutral-700: var(--danger)"
+                class="menu-item-danger"
                 @click=${() => {
                   if (isSuccess) {
                     this.openDialogName = "delete";
