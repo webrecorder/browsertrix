@@ -206,15 +206,16 @@ export class CrawlListItem extends BtrixElement {
           )}
         </btrix-table-cell>
         <btrix-table-cell>
-          <div class="max-w-sm truncate">
-            ${this.safeRender(
-              (crawl) =>
-                html`<btrix-user-chip
+          ${this.safeRender(
+            (crawl) =>
+              html`<sl-tooltip content=${crawl.userName}
+                ><btrix-user-chip
+                  class="max-w-full"
                   userId=${crawl.userid}
                   userName=${crawl.userName}
-                ></btrix-user-chip>`,
-            )}
-          </div>
+                ></btrix-user-chip
+              ></sl-tooltip>`,
+          )}
         </btrix-table-cell>
         <btrix-table-cell class="pl-1 pr-1">
           ${this.renderActions()}

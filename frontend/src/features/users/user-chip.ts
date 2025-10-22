@@ -16,7 +16,13 @@ export class UserChip extends BtrixElement {
   render() {
     if (!this.userName) return;
 
-    return html`<btrix-badge pill outline size="large" .role=${null}>
+    return html`<btrix-badge
+      class="max-w-full part-[base]:justify-start part-[base]:truncate"
+      pill
+      outline
+      size="large"
+      .role=${null}
+    >
       ${this.userName}
     </btrix-badge>`;
   }
