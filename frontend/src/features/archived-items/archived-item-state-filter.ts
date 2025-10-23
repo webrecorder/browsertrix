@@ -21,7 +21,7 @@ import { CrawlStatus } from "./crawl-status";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
-import { type CrawlState } from "@/types/crawlState";
+import { CRAWL_STATES, type CrawlState } from "@/types/crawlState";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
@@ -42,6 +42,9 @@ export class ArchivedItemStateFilter extends BtrixElement {
   @property({ type: Array })
   states?: CrawlState[];
 
+  @property({ type: Boolean })
+  showUnfinishedStates = false;
+
   @state()
   private searchString = "";
 
@@ -51,10 +54,18 @@ export class ArchivedItemStateFilter extends BtrixElement {
   @queryAll("sl-checkbox")
   private readonly checkboxes!: NodeListOf<SlCheckbox>;
 
-  private readonly fuse = new Fuse<CrawlState>(finishedCrawlStates);
+  private fuse = new Fuse<CrawlState>(finishedCrawlStates);
 
   @state({ hasChanged: isNotEqual })
   selected = new Map<CrawlState, boolean>();
+
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    if (this.showUnfinishedStates) {
+      this.fuse = new Fuse(CRAWL_STATES);
+    }
+  }
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("states")) {
@@ -85,7 +96,9 @@ export class ArchivedItemStateFilter extends BtrixElement {
   render() {
     const options = this.searchString
       ? this.fuse.search(this.searchString)
-      : finishedCrawlStates.map((state) => ({ item: state }));
+      : (this.showUnfinishedStates ? CRAWL_STATES : finishedCrawlStates).map(
+          (state) => ({ item: state }),
+        );
     return html`
       <btrix-filter-chip
         ?checked=${!!this.states?.length}
