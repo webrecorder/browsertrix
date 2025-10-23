@@ -603,18 +603,18 @@ class CrawlConfigAddedResponse(BaseModel):
 
 
 # ============================================================================
-class CrawlConfigTagCount(BaseModel):
-    """Response model for crawlconfig tag count"""
+class TagCount(BaseModel):
+    """Response model for crawlconfig/crawl tag count"""
 
     tag: str
     count: int
 
 
 # ============================================================================
-class CrawlConfigTags(BaseModel):
-    """Response model for crawlconfig tags"""
+class TagsResponse(BaseModel):
+    """Response model for crawlconfig/crawl tags"""
 
-    tags: List[CrawlConfigTagCount]
+    tags: List[TagCount]
 
 
 # ============================================================================

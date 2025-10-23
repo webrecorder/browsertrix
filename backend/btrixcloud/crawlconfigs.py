@@ -26,7 +26,7 @@ from .models import (
     ConfigRevision,
     CrawlConfig,
     CrawlConfigOut,
-    CrawlConfigTags,
+    TagsResponse,
     CrawlOut,
     CrawlOutWithResources,
     UpdateCrawlConfig,
@@ -1622,7 +1622,7 @@ def init_crawl_config_api(
         """
         return await ops.get_crawl_config_tags(org)
 
-    @router.get("/tagCounts", response_model=CrawlConfigTags)
+    @router.get("/tagCounts", response_model=TagsResponse)
     async def get_crawl_config_tag_counts(org: Organization = Depends(org_viewer_dep)):
         return {"tags": await ops.get_crawl_config_tag_counts(org)}
 
