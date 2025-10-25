@@ -115,7 +115,7 @@ class CollIndexOperator(BaseOperator):
         }
 
     def get_import_ts(self, spec: CollIndexSpec, status: CollIndexStatus):
-        """returnt rue if a reimport is needed based on last import date"""
+        """return true if a reimport is needed based on last import date"""
         coll_update_date = str_to_date(spec.collItemsUpdatedAt)
         if not coll_update_date:
             return None
