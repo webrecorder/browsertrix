@@ -22,7 +22,7 @@ class CollIndexStatus(BaseModel):
 
     state: TYPE_INDEX_STATES = "initing"
 
-    lastCollUpdated: str = ""
+    collLastUpdated: str = ""
 
 
 # ============================================================================
@@ -99,7 +99,7 @@ class CollIndexOperator(BaseOperator):
             try:
                 last_update_ts = await redis.get("last_update_ts")
                 if last_update_ts:
-                    status.lastCollUpdated = last_update_ts
+                    status.collLastUpdated = last_update_ts
 
                 # index is ready!
                 if not data.children[JOB]:
@@ -120,7 +120,7 @@ class CollIndexOperator(BaseOperator):
         if not coll_update_date:
             return None
 
-        last_import_date = str_to_date(status.lastCollUpdated)
+        last_import_date = str_to_date(status.collLastUpdated)
         # do update from 'coll_update_date' timestamp
         if not last_import_date or coll_update_date >= last_import_date:
             return re.sub(r"[^0-9]", "", spec.collItemsUpdatedAt)
