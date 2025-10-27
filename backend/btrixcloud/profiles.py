@@ -184,7 +184,9 @@ class ProfileOps:
         self, browserid: str, urlin: UrlIn
     ) -> dict[str, bool]:
         """ping profile browser to keep it running"""
-        await self._send_browser_req(browserid, "/navigate", "POST", data=urlin.dict())
+        await self._send_browser_req(
+            browserid, "/navigate", "POST", post_data=urlin.dict()
+        )
 
         return {"success": True}
 
@@ -260,7 +262,7 @@ class ProfileOps:
                 browser_commit.browserid,
                 "/createProfileJS",
                 "POST",
-                data={"filename": relative_filename},
+                post_data={"filename": relative_filename},
                 committing="committing",
             )
             resource = data["resource"]
@@ -543,7 +545,7 @@ class ProfileOps:
         browserid: str,
         path: str,
         method: str = "GET",
-        data: Optional[dict[str, Any]] = None,
+        post_data: Optional[dict[str, Any]] = None,
         committing="",
     ) -> dict[str, Any]:
         """make request to browser api to get state"""
@@ -556,7 +558,7 @@ class ProfileOps:
                 async with session.request(
                     method,
                     f"http://browser-{browserid}.browser{self.browser_fqdn_suffix}:9223{path}",
-                    json=json,
+                    json=post_data,
                 ) as resp:
                     data = await resp.json()
 
