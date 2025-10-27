@@ -891,14 +891,14 @@ export class ArchivedItemDetail extends BtrixElement {
                 </btrix-desc-list-item>
               `
             : html`
-                <btrix-desc-list-item label=${msg("Start Time")}>
+                <btrix-desc-list-item label=${msg("Date Started")}>
                   <btrix-format-date
                     date=${item.started}
                     dateStyle="long"
                     timeStyle="long"
                   ></btrix-format-date>
                 </btrix-desc-list-item>
-                <btrix-desc-list-item label=${msg("Finish Time")}>
+                <btrix-desc-list-item label=${msg("Date Finished")}>
                   ${item.finished
                     ? html`<btrix-format-date
                         date=${item.finished}
