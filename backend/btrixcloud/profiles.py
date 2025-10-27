@@ -4,11 +4,13 @@ from typing import Optional, TYPE_CHECKING, Any, cast, Dict, List, Tuple
 from uuid import UUID, uuid4
 import os
 import asyncio
+import json
 
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Request, HTTPException
 from starlette.requests import Headers
+from pymongo import ReturnDocument
 import aiohttp
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
@@ -32,7 +34,7 @@ from .models import (
     ProfilePingResponse,
     ProfileBrowserGetUrlResponse,
 )
-from .utils import dt_now
+from .utils import dt_now, str_to_date
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -147,9 +149,9 @@ class ProfileOps:
         self, browserid: str, oid: str, headers: Headers
     ) -> dict[str, str | int]:
         """get profile browser url"""
-        json = await self._send_browser_req(browserid, "/vncpass")
+        data = await self._send_browser_req(browserid, "/vncpass")
 
-        password = json.get("password")
+        password = data.get("password")
 
         if not password:
             raise HTTPException(status_code=400, detail="browser_not_available")
@@ -174,15 +176,15 @@ class ProfileOps:
 
     async def ping_profile_browser(self, browserid: str) -> dict[str, Any]:
         """ping profile browser to keep it running"""
-        json = await self._send_browser_req(browserid, "/ping")
+        data = await self._send_browser_req(browserid, "/ping")
 
-        return {"success": True, "origins": json.get("origins") or []}
+        return {"success": True, "origins": data.get("origins") or []}
 
     async def navigate_profile_browser(
         self, browserid: str, urlin: UrlIn
     ) -> dict[str, bool]:
         """ping profile browser to keep it running"""
-        await self._send_browser_req(browserid, "/navigate", "POST", json=urlin.dict())
+        await self._send_browser_req(browserid, "/navigate", "POST", data=urlin.dict())
 
         return {"success": True}
 
@@ -241,23 +243,27 @@ class ProfileOps:
                 created = existing_profile.created
                 created_by = existing_profile.createdBy
                 created_by_name = existing_profile.createdByName
+                prev_file_size = (
+                    existing_profile.resource.size if existing_profile.resource else 0
+                )
             else:
                 profileid = UUID(metadata["profileid"])
                 created = now
                 created_by = user.id
                 created_by_name = user.name if user.name else user.email
+                prev_file_size = 0
 
             relative_filename = f"profiles/profile-{profileid}.tar.gz"
             full_filename = f"{str(org.id)}/{relative_filename}"
 
-            json = await self._send_browser_req(
+            data = await self._send_browser_req(
                 browser_commit.browserid,
                 "/createProfileJS",
                 "POST",
-                json={"filename": relative_filename},
+                data={"filename": relative_filename},
                 committing="committing",
             )
-            resource = json["resource"]
+            resource = data["resource"]
 
             # backwards compatibility
             file_size = resource.get("size") or resource.get("bytes")
@@ -284,7 +290,7 @@ class ProfileOps:
                 modified=now,
                 modifiedBy=user.id,
                 modifiedByName=user.name if user.name else user.email,
-                origins=json["origins"],
+                origins=data["origins"],
                 resource=profile_file,
                 userid=UUID(metadata.get("btrix.user")),
                 oid=org.id,
@@ -301,7 +307,9 @@ class ProfileOps:
                 org.id, profile_file, str(profileid), "profile"
             )
 
-            await self.orgs.inc_org_bytes_stored(org.id, file_size, "profile")
+            await self.orgs.inc_org_bytes_stored(
+                org.id, file_size - prev_file_size, "profile"
+            )
 
             await self.crawl_manager.keep_alive_profile_browser(
                 browser_commit.browserid, committing="done"
@@ -334,6 +342,57 @@ class ProfileOps:
             raise HTTPException(status_code=404, detail="profile_not_found")
 
         return {"updated": True}
+
+    async def update_profile_from_crawl_upload(
+        self, org_id: UUID, profileid: UUID, crawl_id: str, profile_update: str
+    ) -> bool:
+        """update profile based on stats from saved profile from a finished crawl"""
+        try:
+            data = json.loads(profile_update)
+            size = data["size"]
+            hash_ = data["hash"]
+            modified = str_to_date(data["modified"])
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            print(exc)
+            return False
+
+        res = await self.profiles.find_one_and_update(
+            {"_id": profileid, "resource.filename": {"$exists": True}},
+            {
+                "$set": {
+                    "resource.size": size,
+                    "resource.hash": hash_,
+                    "modified": modified,
+                    "modifiedByCrawl": crawl_id,
+                }
+            },
+            return_document=ReturnDocument.BEFORE,
+        )
+        if not res:
+            return False
+
+        prev_profile = Profile.from_dict(res)
+        profile_file = prev_profile.resource
+        if not profile_file:
+            return False
+
+        prev_file_size = profile_file.size
+        profile_file.size = size
+        profile_file.hash = hash_
+
+        # update replica
+        await self.background_job_ops.create_replica_jobs(
+            org_id, profile_file, str(profileid), "profile"
+        )
+
+        print("prev_file_size", prev_file_size)
+        print("size", size)
+
+        # update stats
+        await self.orgs.inc_org_bytes_stored(org_id, size - prev_file_size, "profile")
+
+        return True
 
     async def list_profiles(
         self,
@@ -476,7 +535,7 @@ class ProfileOps:
         browserid: str,
         path: str,
         method: str = "GET",
-        json: Optional[dict[str, Any]] = None,
+        data: Optional[dict[str, Any]] = None,
         committing="",
     ) -> dict[str, Any]:
         """make request to browser api to get state"""
@@ -491,14 +550,14 @@ class ProfileOps:
                     f"http://browser-{browserid}.browser{self.browser_fqdn_suffix}:9223{path}",
                     json=json,
                 ) as resp:
-                    json = await resp.json()
+                    data = await resp.json()
 
         except Exception as e:
             print(e)
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=200, detail="waiting_for_browser")
 
-        return json or {}
+        return data or {}
 
     async def add_profile_file_replica(
         self, profileid: UUID, filename: str, ref: StorageRef

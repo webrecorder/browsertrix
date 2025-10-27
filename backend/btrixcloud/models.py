@@ -284,6 +284,8 @@ class CrawlStats(BaseModel):
     done: int = 0
     size: int = 0
 
+    profile_update: Optional[str] = ""
+
 
 # ============================================================================
 
@@ -2441,6 +2443,7 @@ class Profile(BaseMongoModel):
     modified: Optional[datetime] = None
     modifiedBy: Optional[UUID] = None
     modifiedByName: Optional[str] = None
+    modifiedByCrawl: Optional[str] = None
 
     baseid: Optional[UUID] = None
     crawlerChannel: Optional[str] = None

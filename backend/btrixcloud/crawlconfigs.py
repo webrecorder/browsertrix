@@ -1213,6 +1213,7 @@ class CrawlConfigOps:
                 warc_prefix=self.get_warc_prefix(org, crawlconfig),
                 storage_filename=storage_filename,
                 profile_filename=profile_filename or "",
+                profileid=str(crawlconfig.profileid) if crawlconfig.profileid else "",
                 is_single_page=self.is_single_page(crawlconfig.config),
                 seed_file_url=seed_file_url,
             )

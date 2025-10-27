@@ -144,6 +144,7 @@ class CronJobOperator(BaseOperator):
             warc_prefix=warc_prefix,
             storage_filename=self.crawl_config_ops.default_filename_template,
             profile_filename=profile_filename or "",
+            profileid=str(crawlconfig.profileid) if crawlconfig.profileid else "",
             proxy_id=crawlconfig.proxyId or "",
             is_single_page=self.crawl_config_ops.is_single_page(crawlconfig.config),
         )
