@@ -61,20 +61,23 @@ export class CrawlList extends TailwindElement {
   render() {
     const columns = [
       "min-content [clickable-start]",
-      this.workflowId ? undefined : "36ch", // Name
-      "22ch", // Started
-      "22ch", // Finished
-      "auto", // Execution time
-      "auto", // Pages
-      "auto", // Size
-      "[clickable-end] 20ch", // Run by
+      this.workflowId ? undefined : "minmax(22ch, 36ch)", // Name
+      "minmax(min-content, 22ch)", // Started
+      "minmax(min-content, 22ch)", // Finished
+      "1fr", // Execution time
+      "1fr", // Pages
+      "1fr", // Size
+      "[clickable-end] minmax(max-content, 20ch)", // Run by
       "min-content",
     ]
       .filter((v) => v)
       .join(" ");
 
     return html` <btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
-      <btrix-table style="--btrix-table-grid-template-columns: ${columns}">
+      <btrix-table
+        style="--btrix-table-grid-template-columns: ${columns}"
+        class="whitespace-nowrap"
+      >
         <btrix-table-head class="mb-2">
           <btrix-table-header-cell class="pr-0">
             <span class="sr-only">${msg("Status")}</span>
@@ -86,12 +89,14 @@ export class CrawlList extends TailwindElement {
                   ${msg("Name")}
                 </btrix-table-header-cell>
               `}
-          <btrix-table-header-cell> ${msg("Started")} </btrix-table-header-cell>
           <btrix-table-header-cell>
-            ${msg("Finished")}
+            ${msg("Date Started")}
           </btrix-table-header-cell>
-          <btrix-table-header-cell
-            >${msg("Execution Time")}</btrix-table-header-cell
+          <btrix-table-header-cell>
+            ${msg("Date Finished")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell title=${msg("Execution Time")}
+            >${msg("Exec Time")}</btrix-table-header-cell
           >
           <btrix-table-header-cell>${msg("Pages")}</btrix-table-header-cell>
           <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
