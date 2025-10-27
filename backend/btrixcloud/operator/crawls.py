@@ -401,6 +401,7 @@ class CrawlOperator(BaseOperator):
                     status,
                     data.children,
                     is_paused,
+                    spec.profileid is not None,
                 )
             )
 
@@ -521,6 +522,7 @@ class CrawlOperator(BaseOperator):
         status: CrawlStatus,
         children,
         is_paused: bool,
+        has_profile: bool,
     ):
         name = f"crawl-{params['id']}-{i}"
         has_pod = name in children[POD]
@@ -566,6 +568,7 @@ class CrawlOperator(BaseOperator):
         params["cpu"] = pod_info.newCpu or cpu
         params["memory"] = pod_info.newMemory or memory
         params["workers"] = workers
+        params["save_profile"] = has_profile and (i == 0)
         if self.k8s.enable_auto_resize:
             params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
         else:
