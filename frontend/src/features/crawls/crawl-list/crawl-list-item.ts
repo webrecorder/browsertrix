@@ -21,7 +21,7 @@ export class CrawlListItem extends BtrixElement {
     }
 
     btrix-table-row {
-      border-top: var(--btrix-border-top, 0);
+      border-top: var(--btrix-border-top, 0px solid transparent);
       border-radius: var(--btrix-border-radius-top, 0)
         var(--btrix-border-radius-to, 0) var(--btrix-border-radius-bottom, 0)
         var(--btrix-border-radius-bottom, 0);
