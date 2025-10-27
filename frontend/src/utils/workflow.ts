@@ -344,9 +344,9 @@ export function getInitialFormState(params: {
     formState.autoAddCollections = params.initialWorkflow.autoAddCollections;
   }
 
-  if (params.initialWorkflow.dedupCollId) {
+  if (params.initialWorkflow.dedupeCollId) {
     formState.dedupeType = "collection";
-    formState.dedupeCollectionId = params.initialWorkflow.dedupCollId;
+    formState.dedupeCollectionId = params.initialWorkflow.dedupeCollId;
   }
 
   const secondsToMinutes = (value: unknown, fallback = 0) => {
