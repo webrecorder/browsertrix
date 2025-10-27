@@ -2338,7 +2338,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
         ${when(
           this.formState.dedupeType === "none" &&
-            this.initialWorkflow?.dedupCollId,
+            this.initialWorkflow?.dedupeCollId,
           () => html`
             <div slot="help-text" class="mt-2">
               <sl-icon
@@ -3430,7 +3430,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       maxCrawlSize: this.formState.maxCrawlSizeGB * BYTES_PER_GB,
       tags: this.formState.tags,
       autoAddCollections: this.formState.autoAddCollections,
-      dedupCollId: this.formState.dedupeCollectionId || "",
+      dedupeCollId: this.formState.dedupeCollectionId || "",
       config: {
         ...(isPageScopeType(this.formState.scopeType)
           ? this.parseUrlListConfig(uploadParams)

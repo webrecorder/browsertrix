@@ -77,7 +77,7 @@ export class WorkflowsNew extends BtrixElement {
       jobType: "custom",
       browserWindows: this.appState.settings?.numBrowsersPerInstance || 1,
       autoAddCollections: [],
-      dedupCollId: null,
+      dedupeCollId: null,
       crawlerChannel: CrawlerChannelImage.Default,
       proxyId: null,
     };

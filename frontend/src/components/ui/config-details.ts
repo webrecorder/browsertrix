@@ -316,7 +316,7 @@ export class ConfigDetails extends BtrixElement {
         renderDescItems: () => html`
           ${this.renderSetting(
             html`<span class="mb-1 inline-block">${labelFor.dedupeType}</span>`,
-            crawlConfig?.dedupCollId ? msg("Enabled") : msg("Disabled"),
+            crawlConfig?.dedupeCollId ? msg("Enabled") : msg("Disabled"),
           )}
         `,
       })}
@@ -332,7 +332,7 @@ export class ConfigDetails extends BtrixElement {
               crawlConfig?.autoAddCollections.length
                 ? html`<btrix-linked-collections
                     .collections=${crawlConfig.autoAddCollections}
-                    dedupeId=${ifDefined(crawlConfig.dedupCollId || undefined)}
+                    dedupeId=${ifDefined(crawlConfig.dedupeCollId || undefined)}
                   ></btrix-linked-collections>`
                 : undefined,
             )}

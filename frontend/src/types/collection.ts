@@ -53,7 +53,7 @@ export const publicCollectionSchema = z.object({
   homeUrlPageId: z.string().nullable(),
   homeUrlTs: z.string().datetime().nullable(),
   access: z.nativeEnum(CollectionAccess),
-  hasDedupIndex: z.boolean(),
+  hasDedupeIndex: z.boolean(),
 });
 export type PublicCollection = z.infer<typeof publicCollectionSchema>;
 
