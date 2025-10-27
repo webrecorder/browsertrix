@@ -331,6 +331,8 @@ class ProfileOps:
             "modified": dt_now(),
             "modifiedBy": user.id,
             "modifiedByName": user.name if user.name else user.email,
+            "modifiedByCID": None,
+            "modifiedByCrawl": None,
         }
 
         if update.description is not None:
@@ -344,7 +346,12 @@ class ProfileOps:
         return {"updated": True}
 
     async def update_profile_from_crawl_upload(
-        self, org_id: UUID, profileid: UUID, crawl_id: str, profile_update: str
+        self,
+        org_id: UUID,
+        profileid: UUID,
+        cid: UUID,
+        crawl_id: str,
+        profile_update: str,
     ) -> bool:
         """update profile based on stats from saved profile from a finished crawl"""
         try:
@@ -364,6 +371,7 @@ class ProfileOps:
                     "resource.size": size,
                     "resource.hash": hash_,
                     "modified": modified,
+                    "modifiedByCID": cid,
                     "modifiedByCrawl": crawl_id,
                 }
             },

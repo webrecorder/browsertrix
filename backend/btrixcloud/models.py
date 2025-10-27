@@ -375,6 +375,7 @@ class RawCrawlConfig(BaseModel):
     clickSelector: str = "a"
 
     saveStorage: Optional[bool] = False
+    #saveProfile: Optional[bool] = False
 
 
 # ============================================================================
@@ -2443,6 +2444,7 @@ class Profile(BaseMongoModel):
     modified: Optional[datetime] = None
     modifiedBy: Optional[UUID] = None
     modifiedByName: Optional[str] = None
+    modifiedByCID: Optional[UUID] = None
     modifiedByCrawl: Optional[str] = None
 
     baseid: Optional[UUID] = None

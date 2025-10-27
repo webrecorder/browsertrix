@@ -1697,7 +1697,11 @@ class CrawlOperator(BaseOperator):
 
             if stats and stats.profile_update and crawl.profileid:
                 await self.crawl_config_ops.profiles.update_profile_from_crawl_upload(
-                    crawl.oid, UUID(crawl.profileid), crawl.id, stats.profile_update
+                    crawl.oid,
+                    UUID(crawl.profileid),
+                    crawl.cid,
+                    crawl.id,
+                    stats.profile_update,
                 )
 
         if state in FAILED_STATES:
