@@ -4,7 +4,17 @@ Crawl Config API handling
 
 # pylint: disable=too-many-lines
 
-from typing import List, Optional, TYPE_CHECKING, cast, Dict, Tuple, Annotated, Union
+from typing import (
+    List,
+    Optional,
+    TYPE_CHECKING,
+    cast,
+    Dict,
+    Tuple,
+    Annotated,
+    Union,
+    Any,
+)
 
 import asyncio
 import json
@@ -616,17 +626,26 @@ class CrawlConfigOps:
             and ",".join(orig_crawl_config.tags) != ",".join(update.tags)
         )
 
-        if isinstance(update.dedupeCollId, UUID):
-            if update.autoAddCollections is None:
-                update.autoAddCollections = []
-
-            if update.dedupeCollId not in update.autoAddCollections:
-                update.autoAddCollections.append(update.dedupeCollId)
-
         metadata_changed = metadata_changed or (
             update.dedupeCollId is not None
             and update.dedupeCollId != orig_crawl_config.dedupeCollId
         )
+
+        dedup_coll_id = None
+        push_to_autoadd = False
+        # determine if there is dedupCollId
+        if isinstance(update.dedupeCollId, UUID) or orig_crawl_config.dedupeCollId:
+            dedup_coll_id = update.dedupeCollId or orig_crawl_config.dedupeCollId
+
+        if isinstance(dedup_coll_id, UUID):
+            # if setting autoAdd, ensure dedupCollId is included
+            if (
+                update.autoAddCollections
+                and dedup_coll_id not in update.autoAddCollections
+            ):
+                update.autoAddCollections.append(dedup_coll_id)
+            else:
+                push_to_autoadd = True
 
         metadata_changed = metadata_changed or (
             update.autoAddCollections is not None
@@ -685,10 +704,14 @@ class CrawlConfigOps:
             query["seedCount"] = len(update.config.seeds)
             query["seedFileId"] = None
 
+        update_query: dict[str, Any] = {"$set": query, "$inc": {"rev": 1}}
+        if push_to_autoadd and dedup_coll_id:
+            update_query["$addToSet"] = {"autoAddCollections": dedup_coll_id}
+
         # update in db
         result = await self.crawl_configs.find_one_and_update(
             {"_id": cid, "inactive": {"$ne": True}},
-            {"$set": query, "$inc": {"rev": 1}},
+            update_query,
             return_document=pymongo.ReturnDocument.AFTER,
         )
 
