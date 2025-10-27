@@ -631,19 +631,22 @@ class CrawlConfigOps:
             and update.dedupeCollId != orig_crawl_config.dedupeCollId
         )
 
-        dedup_coll_id = None
-        push_to_autoadd = False
-        # determine if there is dedupCollId
-        if isinstance(update.dedupeCollId, UUID) or orig_crawl_config.dedupeCollId:
-            dedup_coll_id = update.dedupeCollId or orig_crawl_config.dedupeCollId
+        if isinstance(update.dedupeCollId, UUID):
+            dedupe_coll_id = update.dedupeCollId
+        elif update.dedupeCollId == "":
+            dedupe_coll_id = None
+        else:
+            dedupe_coll_id = orig_crawl_config.dedupeCollId
 
-        if isinstance(dedup_coll_id, UUID):
+        push_to_autoadd = False
+
+        if dedupe_coll_id:
             # if setting autoAdd, ensure dedupCollId is included
             if (
                 update.autoAddCollections
-                and dedup_coll_id not in update.autoAddCollections
+                and dedupe_coll_id not in update.autoAddCollections
             ):
-                update.autoAddCollections.append(dedup_coll_id)
+                update.autoAddCollections.append(dedupe_coll_id)
             else:
                 push_to_autoadd = True
 
@@ -705,8 +708,8 @@ class CrawlConfigOps:
             query["seedFileId"] = None
 
         update_query: dict[str, Any] = {"$set": query, "$inc": {"rev": 1}}
-        if push_to_autoadd and dedup_coll_id:
-            update_query["$addToSet"] = {"autoAddCollections": dedup_coll_id}
+        if push_to_autoadd and dedupe_coll_id:
+            update_query["$addToSet"] = {"autoAddCollections": dedupe_coll_id}
 
         # update in db
         result = await self.crawl_configs.find_one_and_update(
