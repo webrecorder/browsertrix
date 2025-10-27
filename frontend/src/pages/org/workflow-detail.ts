@@ -19,7 +19,6 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { Alert } from "@/components/ui/alert";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
-import type { BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { ShareableNotice } from "@/features/crawl-workflows/templates/shareable-notice";
@@ -27,6 +26,7 @@ import {
   Action,
   type BtrixSelectActionEvent,
 } from "@/features/crawl-workflows/workflow-action-menu/types";
+import type { BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
 import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
@@ -1136,17 +1136,16 @@ export class WorkflowDetail extends BtrixElement {
             <span class="whitespace-nowrap text-sm text-neutral-500">
               ${msg("Filter by:")}
             </span>
-            <btrix-archived-item-state-filter
+            <btrix-crawl-state-filter
               .states=${this.crawlsParams.state}
-              showUnfinishedStates
-              @btrix-change=${(e: BtrixChangeArchivedItemStateFilterEvent) => {
+              @btrix-change=${(e: BtrixChangeCrawlStateFilterEvent) => {
                 this.crawlsParams = {
                   ...this.crawlsParams,
                   page: 1,
                   state: e.detail.value,
                 };
               }}
-            ></btrix-archived-item-state-filter>
+            ></btrix-crawl-state-filter>
             ${when(
               this.crawlsParams.state?.length,
               () => html`

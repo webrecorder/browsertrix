@@ -23,11 +23,11 @@ import {
 import type { SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
-import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
 import {
   WorkflowSearch,
   type SearchFields,
 } from "@/features/crawl-workflows/workflow-search";
+import { type BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
 import { OrgTab } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { CrawlState } from "@/types/crawlState";
@@ -483,16 +483,15 @@ export class OrgCrawls extends BtrixElement {
           <span class="whitespace-nowrap text-sm text-neutral-500">
             ${msg("Filter by:")}
           </span>
-          <btrix-archived-item-state-filter
+          <btrix-crawl-state-filter
             .states=${this.filterBy.value.state}
-            showUnfinishedStates
-            @btrix-change=${(e: BtrixChangeArchivedItemStateFilterEvent) => {
+            @btrix-change=${(e: BtrixChangeCrawlStateFilterEvent) => {
               this.filterBy.setValue({
                 ...this.filterBy.value,
                 state: e.detail.value,
               });
             }}
-          ></btrix-archived-item-state-filter>
+          ></btrix-crawl-state-filter>
 
           ${this.userInfo?.id
             ? html`<btrix-filter-chip
