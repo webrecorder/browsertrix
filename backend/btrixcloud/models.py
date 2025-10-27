@@ -375,7 +375,7 @@ class RawCrawlConfig(BaseModel):
     clickSelector: str = "a"
 
     saveStorage: Optional[bool] = False
-    #saveProfile: Optional[bool] = False
+    # saveProfile: Optional[bool] = False
 
 
 # ============================================================================

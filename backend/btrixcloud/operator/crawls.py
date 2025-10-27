@@ -146,7 +146,9 @@ class CrawlOperator(BaseOperator):
         status = CrawlStatus(**data.parent.get("status", {}))
         status.last_state = status.state
 
-        spec = data.parent.get("spec", {})  # spec is the data from crawl_job.yaml
+        spec: dict[str, str] = data.parent.get(
+            "spec", {}
+        )  # spec is the data from crawl_job.yaml
         crawl_id = spec["id"]
         cid = spec["cid"]
         oid = spec["oid"]
@@ -186,7 +188,7 @@ class CrawlOperator(BaseOperator):
             browser_windows=spec.get("browserWindows", 1),
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
-            paused_at=str_to_date(spec.get("pausedAt")),
+            paused_at=str_to_date(spec.get("pausedAt") or ""),
             timeout=spec.get("timeout") or 0,
             max_crawl_size=int(spec.get("maxCrawlSize") or 0),
             scheduled=spec.get("manual") != "1",
@@ -401,7 +403,7 @@ class CrawlOperator(BaseOperator):
                     status,
                     data.children,
                     is_paused,
-                    spec.profileid is not None,
+                    crawl.profileid is not None,
                 )
             )
 
