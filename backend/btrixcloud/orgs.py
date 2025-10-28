@@ -1143,7 +1143,7 @@ class OrgOps(BaseOrgs):
                     yield b"\n"
                 doc_index += 1
 
-            yield f']{"" if skip_closing_comma else ","}\n'.encode("utf-8")
+            yield f"]{'' if skip_closing_comma else ','}\n".encode("utf-8")
 
         async def json_closing_gen() -> AsyncGenerator:
             """Async generator to close JSON document"""
@@ -1455,10 +1455,12 @@ class OrgOps(BaseOrgs):
     async def recalculate_storage(self, org: Organization) -> dict[str, bool]:
         """Recalculate org storage use"""
         try:
-            total_crawl_size, crawl_size, upload_size = (
-                await self.base_crawl_ops.calculate_org_crawl_file_storage(
-                    org.id,
-                )
+            (
+                total_crawl_size,
+                crawl_size,
+                upload_size,
+            ) = await self.base_crawl_ops.calculate_org_crawl_file_storage(
+                org.id,
             )
             profile_size = await self.profile_ops.calculate_org_profile_file_storage(
                 org.id
@@ -1521,6 +1523,7 @@ def init_orgs_api(
     crawl_manager: CrawlManager,
     invites: InviteOps,
     user_dep: Callable,
+    user_or_shared_secret_dep: Callable,
 ):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
@@ -1670,7 +1673,7 @@ def init_orgs_api(
     async def update_quotas(
         quotas: OrgQuotasIn,
         org: Organization = Depends(org_owner_dep),
-        user: User = Depends(user_dep),
+        user: User = Depends(user_or_shared_secret_dep),
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
