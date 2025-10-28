@@ -2362,7 +2362,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `)}
     ${this.renderHelpTextCol(
       msg(
-        `Enable duplication checks before and during a crawl to avoid duplicate content in archived items.`,
+        `Enable deduplication to prevent content that has already been crawled from being stored.`,
       ),
     )}
     ${when(
@@ -2445,7 +2445,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(
-          "This collection will be used as the deduplication source for all crawls of this workflow.",
+          "All crawls of this workflow will be deduplicated against this collection.",
         ),
       )}
     `;
