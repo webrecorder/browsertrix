@@ -78,6 +78,55 @@ spec:
 
 ---
 apiVersion: metacontroller.k8s.io/v1alpha1
+kind: CompositeController
+metadata:
+  name: collindexes-operator
+spec:
+  generateSelector: false
+  resyncPeriodSeconds: 30
+  parentResource:
+    apiVersion: btrix.cloud/v1
+    resource: collindexes
+  childResources:
+  - apiVersion: v1
+    resource: pods
+    updateStrategy:
+      method: InPlace
+
+  - apiVersion: v1
+    resource: persistentvolumeclaims
+    updateStrategy:
+      method: InPlace
+
+  - apiVersion: batch/v1
+    resource: jobs
+    updateStrategy:
+      method: InPlace
+
+  - apiVersion: v1
+    resource: configmaps
+    updateStrategy:
+      method: InPlace
+
+  hooks:
+    sync:
+      webhook:
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/collindexes/sync
+
+    finalize:
+      webhook:
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/collindexes/finalize
+
+---
+apiVersion: metacontroller.k8s.io/v1alpha1
 kind: DecoratorController
 metadata:
   name: cron-crawljobs-operator

@@ -8,6 +8,7 @@ metadata:
     btrix.org: "{{ oid }}"
     btrix.user: "{{ userid }}"
     btrix.storage: "{{ storage_name }}"
+    dedupe_coll_id: "{{ dedupe_coll_id }}"
 
 spec:
   selector:
@@ -37,6 +38,8 @@ spec:
   storageName: "{{ storage_name }}"
 
   proxyId: "{{ proxy_id }}"
+
+  dedupeCollId: "{{ dedupe_coll_id }}"
 
   pausedAt: "{{ pausedAt }}"
 
