@@ -231,7 +231,7 @@ class CrawlManager(K8sAPI):
             )
             if cron_job:
                 print(
-                    "Cron job to clean up used seed files already exists",
+                    "Cron job to clean up unused seed files already exists",
                     flush=True,
                 )
 
@@ -244,7 +244,7 @@ class CrawlManager(K8sAPI):
                         body=cron_job,
                     )
                     print(
-                        f"Cron job to clean up used seed files updated, schedule: {job_schedule}",
+                        f"Cron job to clean up unused seed files updated, schedule: {job_schedule}",
                         flush=True,
                     )
                 return
@@ -253,7 +253,7 @@ class CrawlManager(K8sAPI):
             pass
 
         print(
-            f"Creating cron job to clean up used seed files, schedule: {job_schedule}",
+            f"Creating cron job to clean up unused seed files, schedule: {job_schedule}",
             flush=True,
         )
 
