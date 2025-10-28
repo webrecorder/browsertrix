@@ -231,7 +231,7 @@ class CollectionOps:
         headers: Optional[dict] = None,
     ) -> CollOut:
         """Add crawls to collection"""
-        await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
+        await self.crawl_ops.validate_all_crawls_successful(crawl_ids)
 
         modified = dt_now()
         result = await self.collections.find_one_and_update(
@@ -241,6 +241,8 @@ class CollectionOps:
         )
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
+
+        await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
 
         await self.update_collection_counts_and_tags(coll_id)
         await self.update_collection_dates(coll_id, org.id)
