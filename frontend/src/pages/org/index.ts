@@ -100,6 +100,7 @@ const UUID_REGEX =
 @needLogin
 export class Org extends BtrixElement {
   @provide({ context: proxiesContext })
+  @state()
   proxies: ProxiesContext = null;
 
   @property({ type: Object })
