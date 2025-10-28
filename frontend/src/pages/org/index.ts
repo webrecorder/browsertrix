@@ -450,11 +450,21 @@ export class Org extends BtrixElement {
             }
           }}
         ></btrix-file-uploader>
-        <btrix-new-browser-profile-dialog
-          ?open=${this.openDialogName === "browser-profile"}
-          @sl-hide=${() => (this.openDialogName = undefined)}
-        >
-        </btrix-new-browser-profile-dialog>
+        ${when(
+          this.proxies && this.org,
+          (org) => html`
+            <btrix-new-browser-profile-dialog
+              defaultProxyId=${ifDefined(
+                org.crawlingDefaults?.proxyId ||
+                  this.proxies?.default_proxy_id ||
+                  undefined,
+              )}
+              ?open=${this.openDialogName === "browser-profile"}
+              @sl-hide=${() => (this.openDialogName = undefined)}
+            >
+            </btrix-new-browser-profile-dialog>
+          `,
+        )}
         <btrix-collection-create-dialog
           ?open=${this.openDialogName === "collection"}
           @sl-hide=${() => (this.openDialogName = undefined)}
