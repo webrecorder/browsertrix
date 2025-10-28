@@ -334,6 +334,16 @@ def test_get_billing_portal_url(admin_auth_headers, echo_server):
     assert r.json() == {"portalUrl": "https://portal.example.com/path/"}
 
 
+def test_get_addon_minutes_checkout_url(admin_auth_headers, echo_server):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{new_subs_oid}/checkout/execution-minutes",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+
+    assert r.json() == {"checkoutUrl": "https://checkout.example.com/path/"}
+
+
 def test_cancel_sub_and_delete_org(admin_auth_headers):
     # cancel, resulting in org deletion
     r = requests.post(

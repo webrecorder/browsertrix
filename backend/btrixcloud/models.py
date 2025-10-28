@@ -1981,6 +1981,21 @@ class SubscriptionPortalUrlResponse(BaseModel):
 
 
 # ============================================================================
+class CheckoutAddonMinutesRequest(BaseModel):
+    """Request for additional minutes checkout session"""
+
+    orgId: str
+    subId: str
+    minutes: int | None = None
+
+
+class CheckoutAddonMinutesResponse(BaseModel):
+    """Response for additional minutes checkout session"""
+
+    checkoutUrl: str
+
+
+# ============================================================================
 class Subscription(BaseModel):
     """subscription data"""
 
