@@ -262,10 +262,7 @@ export class OrgSettings extends BtrixElement {
           [
             "deduplication",
             () =>
-              html`<sl-icon
-                name="database-dedupe-fill"
-                library="app"
-              ></sl-icon>`,
+              html`<sl-icon name="file-earmark-scan3" library="app"></sl-icon>`,
           ],
         ])}
         ${this.tabLabels[name]}
