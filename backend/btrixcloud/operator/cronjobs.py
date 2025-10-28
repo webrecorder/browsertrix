@@ -125,8 +125,20 @@ class CronJobOperator(BaseOperator):
             )
             print("Scheduled Crawl Created: " + crawl_id)
 
-        profile_filename = await self.crawl_config_ops.get_profile_filename(
-            crawlconfig.profileid, org
+        profile_filename, profile_proxy_id = (
+            await self.crawl_config_ops.profiles.get_profile_filename_and_proxy(
+                crawlconfig.profileid, org
+            )
+        )
+        if crawlconfig.profileid and not profile_filename:
+            print(f"error: missing profile")
+            return self.get_finished_response(metadata)
+
+        # only save profile if selected proxy matches profile proxy
+        save_profile_id = (
+            str(crawlconfig.profileid)
+            if crawlconfig.proxyId == profile_proxy_id
+            else ""
         )
 
         crawl_id, crawljob = self.k8s.new_crawl_job_yaml(
@@ -144,7 +156,7 @@ class CronJobOperator(BaseOperator):
             warc_prefix=warc_prefix,
             storage_filename=self.crawl_config_ops.default_filename_template,
             profile_filename=profile_filename or "",
-            profileid=str(crawlconfig.profileid) if crawlconfig.profileid else "",
+            profileid=save_profile_id,
             proxy_id=crawlconfig.proxyId or "",
             is_single_page=self.crawl_config_ops.is_single_page(crawlconfig.config),
         )

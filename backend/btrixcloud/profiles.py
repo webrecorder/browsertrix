@@ -101,9 +101,7 @@ class ProfileOps:
         prev_proxy_id = ""
         if profile_launch.profileId:
             prev_profile_path, prev_proxy_id = (
-                await self.get_profile_storage_path_and_proxy(
-                    profile_launch.profileId, org
-                )
+                await self.get_profile_filename_and_proxy(profile_launch.profileId, org)
             )
 
             if not prev_profile_path:
@@ -476,10 +474,13 @@ class ProfileOps:
         profile.inUse = await self.crawlconfigs.is_profile_in_use(profileid, org)
         return profile
 
-    async def get_profile_storage_path_and_proxy(
-        self, profileid: UUID, org: Organization
+    async def get_profile_filename_and_proxy(
+        self, profileid: Optional[UUID], org: Organization
     ) -> tuple[str, str]:
         """return profile path filename (relative path) for given profile id and org"""
+        if not profileid:
+            return "", ""
+
         try:
             profile = await self.get_profile(profileid, org)
             storage_path = profile.resource.filename if profile.resource else ""
