@@ -641,6 +641,7 @@ export class CrawlsList extends BtrixElement {
 
           <btrix-archived-item-tag-filter
             .tags=${this.filterByTags.value}
+            itemType=${ifDefined(this.itemType || undefined)}
             @btrix-change=${(e: BtrixChangeArchivedItemTagFilterEvent) => {
               this.filterByTags.setValue(e.detail.value?.tags);
               this.filterByTagsType.setValue(e.detail.value?.type || "or");
