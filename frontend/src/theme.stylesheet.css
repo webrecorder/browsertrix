@@ -252,6 +252,10 @@
     @apply part-[base]:text-success part-[base]:hover:bg-success-50 part-[base]:hover:text-success-700 part-[base]:focus-visible:bg-success-50;
   }
 
+  .menu-item-warning {
+    @apply part-[base]:text-warning part-[base]:hover:bg-warning-50 part-[base]:hover:text-warning-700 part-[base]:focus-visible:bg-warning-50;
+  }
+
   .menu-item-danger {
     @apply part-[base]:text-danger part-[base]:hover:bg-danger-50 part-[base]:hover:text-danger-700 part-[base]:focus-visible:bg-danger-50;
   }

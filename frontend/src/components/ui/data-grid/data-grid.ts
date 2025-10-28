@@ -149,9 +149,14 @@ export class DataGrid<
 
     return html`
       <slot name="label">
-        <label id=${this.formControlLabelId} class="form-label text-xs">
-          ${this.formControlLabel}
-        </label>
+        ${this.formControlLabel
+          ? html`<label
+              id=${this.formControlLabelId}
+              class="form-label text-xs"
+            >
+              ${this.formControlLabel}
+            </label>`
+          : nothing}
       </slot>
       <div
         class=${clsx(
