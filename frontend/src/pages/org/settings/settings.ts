@@ -219,7 +219,7 @@ export class OrgSettings extends BtrixElement {
           <btrix-org-settings-crawling-defaults></btrix-org-settings-crawling-defaults>
         </btrix-tab-group-panel>
         <btrix-tab-group-panel name="deduplication">
-          ${this.renderPanelHeader({ title: this.tabLabels.deduplication })}
+          ${this.renderPanelHeader({ title: msg("Deduplication Sources") })}
           <btrix-org-settings-deduplication></btrix-org-settings-deduplication>
         </btrix-tab-group-panel>
       </btrix-tab-group>`;
