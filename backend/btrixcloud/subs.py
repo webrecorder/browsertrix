@@ -15,6 +15,8 @@ from .orgs import OrgOps
 from .users import UserManager
 from .utils import is_bool, get_origin
 from .models import (
+    CheckoutAddonMinutesRequest,
+    CheckoutAddonMinutesResponse,
     SubscriptionCreate,
     SubscriptionImport,
     SubscriptionUpdate,
@@ -363,7 +365,7 @@ class SubOps:
                 async with aiohttp.ClientSession() as session:
                     async with session.request(
                         "POST",
-                        external_subs_app_api_url,
+                        f"{external_subs_app_api_url}/portalUrl",
                         headers={
                             "Authorization": "bearer " + external_subs_app_api_key
                         },
@@ -377,6 +379,33 @@ class SubOps:
                 print("Error fetching portal url", exc)
 
         return SubscriptionPortalUrlResponse()
+
+    async def get_checkout_url(self, org: Organization, minutes: int | None):
+        if not org.subscription:
+            raise HTTPException(
+                status_code=404, detail="Organization has no subscription"
+            )
+        subscription_id = org.subscription.subId
+
+        if external_subs_app_api_url:
+            try:
+                req = CheckoutAddonMinutesRequest(
+                    orgId=str(org.id), subId=subscription_id, minutes=minutes
+                )
+                async with aiohttp.ClientSession() as session:
+                    async with session.request(
+                        "POST",
+                        f"{external_subs_app_api_url}/checkout/additionalMinutes",
+                        headers={
+                            "Authorization": "bearer " + external_subs_app_api_key
+                        },
+                        json=req.model_dump_json(),
+                        raise_for_status=True,
+                    ) as resp:
+                        text = await resp.text()
+                        return CheckoutAddonMinutesResponse.model_validate_json(text)
+            except Exception as exc:
+                print("Error fetching checkout url", exc)
 
 
 # pylint: disable=invalid-name,too-many-arguments
@@ -500,5 +529,16 @@ def init_subs_api(
         org: Organization = Depends(org_ops.org_owner_dep),
     ):
         return await ops.get_billing_portal_url(org, dict(request.headers))
+
+    @org_ops.router.get(
+        "/checkout/execution-minutes",
+        tags=["organizations"],
+        response_model=CheckoutAddonMinutesResponse,
+    )
+    async def get_billing_portal_url(
+        minutes: int | None = None,
+        org: Organization = Depends(org_ops.org_owner_dep),
+    ):
+        return await ops.get_checkout_url(org, minutes)
 
     return ops
