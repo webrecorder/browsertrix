@@ -120,10 +120,10 @@ class CollectionOps:
             [("oid", pymongo.ASCENDING), ("description", pymongo.ASCENDING)]
         )
 
-    async def add_collection(self, oid: UUID, coll_in: CollIn):
+    async def add_collection(self, org: Organization, coll_in: CollIn):
         """Add new collection"""
         crawl_ids = coll_in.crawlIds if coll_in.crawlIds else []
-        await self.crawl_ops.validate_all_crawls_successful(crawl_ids)
+        await self.crawl_ops.validate_all_crawls_successful(crawl_ids, org)
 
         coll_id = uuid4()
         created = dt_now()
@@ -132,7 +132,7 @@ class CollectionOps:
 
         coll = Collection(
             id=coll_id,
-            oid=oid,
+            oid=org.id,
             name=coll_in.name,
             slug=slug,
             description=coll_in.description,
@@ -145,7 +145,6 @@ class CollectionOps:
         )
         try:
             await self.collections.insert_one(coll.to_dict())
-            org = await self.orgs.get_org_by_id(oid)
             await self.clear_org_previous_slugs_matching_slug(slug, org)
 
             if crawl_ids:
@@ -230,7 +229,7 @@ class CollectionOps:
         headers: Optional[dict] = None,
     ) -> CollOut:
         """Add crawls to collection"""
-        await self.crawl_ops.validate_all_crawls_successful(crawl_ids)
+        await self.crawl_ops.validate_all_crawls_successful(crawl_ids, org)
 
         modified = dt_now()
         result = await self.collections.find_one_and_update(
@@ -1022,7 +1021,7 @@ def init_collections_api(
     async def add_collection(
         new_coll: CollIn, org: Organization = Depends(org_crawl_dep)
     ):
-        return await colls.add_collection(org.id, new_coll)
+        return await colls.add_collection(org, new_coll)
 
     @app.get(
         "/orgs/{oid}/collections",

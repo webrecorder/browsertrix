@@ -614,10 +614,12 @@ class BaseCrawlOps:
 
         return resources, pages_optimized
 
-    async def validate_all_crawls_successful(self, crawl_ids: List[str]):
+    async def validate_all_crawls_successful(
+        self, crawl_ids: List[str], org: Organization
+    ):
         """Validate that crawls in list exist and are successful or else raise exception"""
         for crawl_id in crawl_ids:
-            crawl = await self.get_base_crawl(crawl_id)
+            crawl = await self.get_base_crawl(crawl_id, org)
             if crawl.state in FAILED_STATES:
                 raise HTTPException(status_code=400, detail="invalid_failed_crawl")
 
