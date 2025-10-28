@@ -615,12 +615,11 @@ class BaseCrawlOps:
         return resources, pages_optimized
 
     async def validate_all_crawls_successful(self, crawl_ids: List[str]):
-        """Validate that no crawls in list failed or else raise exception"""
-        result = await self.crawls.find_one(
-            {"_id": {"$in": crawl_ids}, "state": {"$in": FAILED_STATES}}
-        )
-        if result:
-            raise HTTPException(status_code=400, detail="invalid_failed_crawl")
+        """Validate that crawls in list exist and are successful or else raise exception"""
+        for crawl_id in crawl_ids:
+            crawl = await self.get_base_crawl(crawl_id)
+            if crawl.state in FAILED_STATES:
+                raise HTTPException(status_code=400, detail="invalid_failed_crawl")
 
     async def add_to_collection(
         self, crawl_ids: List[str], collection_id: UUID, org: Organization
