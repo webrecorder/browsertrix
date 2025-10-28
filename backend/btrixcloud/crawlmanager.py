@@ -244,7 +244,7 @@ class CrawlManager(K8sAPI):
                         body=cron_job,
                     )
                     print(
-                        f"Updated cron job to clean up used seed files, new schedule: {job_schedule}",
+                        f"Cron job to clean up used seed files updated, schedule: {job_schedule}",
                         flush=True,
                     )
                 return
