@@ -4,7 +4,7 @@ dependencies:
   version: 0.1.0
 - name: btrix-crds
   repository: file://./btrix-crds
-  version: 0.1.1
+  version: 0.2.0
 - name: metacontroller-helm
   repository: oci://ghcr.io/metacontroller
   version: 4.11.11
