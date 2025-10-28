@@ -26,10 +26,16 @@ import { tw } from "@/utils/tailwind";
 import "./components/general";
 import "./components/billing";
 import "./components/crawling-defaults";
+import "./components/deduplication";
 
 const styles = unsafeCSS(stylesheet);
 
-type Tab = "information" | "members" | "billing" | "crawling-defaults";
+type Tab =
+  | "information"
+  | "members"
+  | "billing"
+  | "crawling-defaults"
+  | "deduplication";
 type User = {
   email: string;
   role: AccessCode;
@@ -92,6 +98,7 @@ export class OrgSettings extends BtrixElement {
       members: msg("Members"),
       billing: msg("Billing"),
       "crawling-defaults": msg("Crawling Defaults"),
+      deduplication: msg("Deduplication"),
     };
   }
 
@@ -158,6 +165,7 @@ export class OrgSettings extends BtrixElement {
           this.renderTab("billing", "settings/billing"),
         )}
         ${this.renderTab("crawling-defaults", "settings/crawling-defaults")}
+        ${this.renderTab("deduplication", "settings/deduplication")}
 
         <btrix-tab-group-panel name="information">
           ${this.renderPanelHeader({ title: msg("General") })}
@@ -194,7 +202,7 @@ export class OrgSettings extends BtrixElement {
         </btrix-tab-group-panel>
         <btrix-tab-group-panel name="crawling-defaults">
           ${this.renderPanelHeader({
-            title: msg("Crawling Defaults"),
+            title: this.tabLabels["crawling-defaults"],
             actions: html`
               <sl-tooltip
                 content=${msg(
@@ -209,6 +217,10 @@ export class OrgSettings extends BtrixElement {
             `,
           })}
           <btrix-org-settings-crawling-defaults></btrix-org-settings-crawling-defaults>
+        </btrix-tab-group-panel>
+        <btrix-tab-group-panel name="deduplication">
+          ${this.renderPanelHeader({ title: this.tabLabels.deduplication })}
+          <btrix-org-settings-deduplication></btrix-org-settings-deduplication>
         </btrix-tab-group-panel>
       </btrix-tab-group>`;
   }
@@ -246,6 +258,10 @@ export class OrgSettings extends BtrixElement {
           [
             "crawling-defaults",
             () => html`<sl-icon name="file-code-fill"></sl-icon>`,
+          ],
+          [
+            "deduplication",
+            () => html`<sl-icon name="database-fill-gear"></sl-icon>`,
           ],
         ])}
         ${this.tabLabels[name]}
