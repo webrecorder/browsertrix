@@ -123,6 +123,8 @@ class CollectionOps:
     async def add_collection(self, oid: UUID, coll_in: CollIn):
         """Add new collection"""
         crawl_ids = coll_in.crawlIds if coll_in.crawlIds else []
+        await self.crawl_ops.validate_all_crawls_successful(crawl_ids)
+
         coll_id = uuid4()
         created = dt_now()
 
