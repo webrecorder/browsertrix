@@ -484,7 +484,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       return html`
         <btrix-table
           class="[--btrix-table-column-gap:var(--sl-spacing-small)]"
-          style="--btrix-table-grid-template-columns: min-content [clickable-start] minmax(min-content, 45em) repeat(4, 1fr) [clickable-end] min-content"
+          style="--btrix-table-grid-template-columns: min-content [clickable-start] minmax(min-content, 60ch) repeat(4, 1fr) [clickable-end] min-content"
         >
           <btrix-table-head class="mb-2 mt-1 whitespace-nowrap">
             <btrix-table-header-cell>
@@ -615,14 +615,21 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           @click=${this.navigate.link}
         >
           <div class="mb-0.5 truncate">${col.name}</div>
-          <div class="text-xs leading-4 text-neutral-500">
+          <div class="font-monostyle text-xs leading-4 text-neutral-500">
             ${monthYearDateRange(col.dateEarliest, col.dateLatest)}
           </div>
         </a>
       </btrix-table-cell>
-      <btrix-table-cell>
+      <btrix-table-cell class="gap-2">
         ${this.localize.number(col.crawlCount, { notation: "compact" })}
         ${pluralOf("items", col.crawlCount)}
+        ${col.hasDedupeIndex
+          ? html`<sl-tooltip content=${msg("Deduplicated Archived Items")}>
+              <btrix-badge variant="success" pill
+                >${msg("Deduped")}</btrix-badge
+              >
+            </sl-tooltip>`
+          : nothing}
       </btrix-table-cell>
       <btrix-table-cell>
         ${this.localize.number(col.pageCount, { notation: "compact" })}
