@@ -626,8 +626,6 @@ class BaseCrawlOps:
         self, crawl_ids: List[str], collection_id: UUID, org: Organization
     ):
         """Add crawls to collection."""
-        await self.validate_all_crawls_successful(crawl_ids)
-
         await self.crawls.update_many(
             {"_id": {"$in": crawl_ids}, "oid": org.id},
             {"$addToSet": {"collectionIds": collection_id}},
