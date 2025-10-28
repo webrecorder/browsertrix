@@ -624,10 +624,8 @@ export class CollectionDetail extends BtrixElement {
           (col) => html`
             ${this.localize.bytes(col.totalSize)}
             ${col.hasDedupeIndex
-              ? html`<sl-tooltip content=${msg("Deduplicated")}>
-                  <btrix-badge variant="success" pill
-                    >${msg("Deduped")}</btrix-badge
-                  >
+              ? html`<sl-tooltip content=${msg("Deduplicated")} hoist>
+                  <btrix-badge variant="primary">${msg("Deduped")}</btrix-badge>
                 </sl-tooltip>`
               : nothing}
           `,

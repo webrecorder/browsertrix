@@ -25,6 +25,7 @@ import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
 import { metadata } from "@/strings/collections/metadata";
+import { noData } from "@/strings/ui";
 import { monthYearDateRange } from "@/strings/utils";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
@@ -484,7 +485,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       return html`
         <btrix-table
           class="[--btrix-table-column-gap:var(--sl-spacing-small)]"
-          style="--btrix-table-grid-template-columns: min-content [clickable-start] minmax(min-content, 60ch) repeat(4, 1fr) [clickable-end] min-content"
+          style="--btrix-table-grid-template-columns: min-content [clickable-start] minmax(min-content, 60ch) repeat(5, 1fr) [clickable-end] min-content"
         >
           <btrix-table-head class="mb-2 mt-1 whitespace-nowrap">
             <btrix-table-header-cell>
@@ -496,10 +497,15 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
             <btrix-table-header-cell>
               ${msg("Archived Items")}
             </btrix-table-header-cell>
-            <btrix-table-header-cell
-              >${msg("Total Pages")}</btrix-table-header-cell
-            >
-            <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg("Total Pages")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg("Total Size")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg("Deduplication")}
+            </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Last Modified")}
             </btrix-table-header-cell>
@@ -610,7 +616,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       </btrix-table-cell>
       <btrix-table-cell rowClickTarget="a">
         <a
-          class="block truncate py-2"
+          class="block truncate py-2.5"
           href=${`${this.navigate.orgBasePath}/collections/view/${col.id}`}
           @click=${this.navigate.link}
         >
@@ -625,26 +631,32 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         ${pluralOf("items", col.crawlCount)}
       </btrix-table-cell>
       <btrix-table-cell>
-        ${this.localize.number(col.pageCount, { notation: "compact" })}
-        ${pluralOf("pages", col.pageCount)}
-      </btrix-table-cell>
-      <btrix-table-cell class="gap-2">
-        ${this.localize.bytes(col.totalSize || 0)}
-        ${col.hasDedupeIndex
-          ? html`<sl-tooltip content=${msg("Deduplicated")}>
-              <btrix-badge variant="success" pill
-                >${msg("Deduped")}</btrix-badge
-              >
-            </sl-tooltip>`
-          : nothing}
+        ${col.crawlCount
+          ? html`${this.localize.number(col.pageCount, { notation: "compact" })}
+            ${pluralOf("pages", col.pageCount)}`
+          : noData}
       </btrix-table-cell>
       <btrix-table-cell>
+        ${col.crawlCount ? this.localize.bytes(col.totalSize || 0) : noData}
+      </btrix-table-cell>
+      <btrix-table-cell>
+        ${col.hasDedupeIndex
+          ? html`<sl-tooltip content=${msg("Deduplication Source")}>
+              <btrix-badge variant="primary">${msg("Source")}</btrix-badge>
+            </sl-tooltip>`
+          : noData}
+      </btrix-table-cell>
+      <btrix-table-cell class="flex-col items-start justify-center gap-0.5">
         <btrix-format-date
           date=${col.modified}
-          month="2-digit"
-          day="2-digit"
-          year="numeric"
+          dateStyle="medium"
         ></btrix-format-date>
+        <div class="font-monostyle text-xs leading-4 text-neutral-500">
+          <btrix-format-date
+            date=${col.modified}
+            timeStyle="medium"
+          ></btrix-format-date>
+        </div>
       </btrix-table-cell>
       <btrix-table-cell class="p-0">
         ${this.isCrawler ? this.renderActions(col) : ""}
