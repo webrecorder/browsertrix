@@ -234,6 +234,19 @@ class CrawlManager(K8sAPI):
                     "Cron job to clean up used seed files already exists",
                     flush=True,
                 )
+
+                if cron_job.spec.schedule != job_schedule:
+                    cron_job.spec.schedule = job_schedule
+
+                    await self.batch_api.patch_namespaced_cron_job(
+                        name=cron_job.metadata.name,
+                        namespace=DEFAULT_NAMESPACE,
+                        body=cron_job,
+                    )
+                    print(
+                        f"Updated cron job to clean up used seed files, new schedule: {job_schedule}",
+                        flush=True,
+                    )
                 return
         # pylint: disable=broad-exception-caught
         except Exception:
