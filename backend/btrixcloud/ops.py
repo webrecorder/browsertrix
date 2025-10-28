@@ -86,7 +86,9 @@ def init_ops() -> Tuple[
         storage_ops,
     )
 
-    coll_ops = CollectionOps(mdb, storage_ops, org_ops, event_webhook_ops)
+    coll_ops = CollectionOps(
+        mdb, org_ops, storage_ops, crawl_manager, event_webhook_ops
+    )
 
     base_crawl_init = (
         mdb,

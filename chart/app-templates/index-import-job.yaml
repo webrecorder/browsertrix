@@ -1,0 +1,105 @@
+# -------
+# INDEXER
+# -------
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ name }}
+  labels:
+    role: index-import-job
+    coll: {{ id }}
+
+spec:
+  ttlSecondsAfterFinished: 0
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        role: index-import-job
+        coll: {{ id }}
+
+    spec:
+      restartPolicy: OnFailure
+      priorityClassName: index-import-job
+      volumes:
+        - name: config
+          configMap:
+            name: {{ name }}
+
+      containers:
+        - name: indexer
+          image: {{ crawler_image }}
+          imagePullPolicy: {{ crawler_image_pull_policy }}
+          command:
+            - indexer
+            - --sourceUrl
+            - /tmp/config/config.json
+            - --redisDedupeUrl
+            - {{ redis_url }}
+
+          volumeMounts:
+            - name: config
+              mountPath: /tmp/config/
+              readOnly: True
+
+          resources:
+            limits:
+              memory: "500Mi"
+
+            requests:
+              cpu: "300m"
+              memory: "100Mi"
+
+          {% if crawler_liveness_port and crawler_liveness_port != '0' %}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ crawler_liveness_port }}
+
+            initialDelaySeconds: 15
+            periodSeconds: 120
+            failureThreshold: 3
+          {% endif %}
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+
+      affinity:
+    {% if crawler_node_type %}
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: nodeType
+                  operator: In
+                  values:
+                    - "{{ crawler_node_type }}"
+    {% endif %}
+
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 10
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: coll
+                    operator: In
+                    values:
+                    - {{ id }}
+
+      tolerations:
+        - key: nodeType
+          operator: Equal
+          value: crawling
+          effect: NoSchedule
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          tolerationSeconds: 300
+          effect: NoExecute
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
