@@ -137,7 +137,7 @@ class CronJobOperator(BaseOperator):
         # only save profile if selected proxy matches profile proxy
         save_profile_id = (
             str(crawlconfig.profileid)
-            if crawlconfig.proxyId == profile_proxy_id
+            if crawlconfig.profileid and crawlconfig.proxyId == profile_proxy_id
             else ""
         )
 
