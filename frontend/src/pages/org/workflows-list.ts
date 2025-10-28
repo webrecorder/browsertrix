@@ -858,11 +858,7 @@ export class WorkflowsList extends BtrixElement {
   `;
 
   private renderEmptyState() {
-    if (
-      Object.keys(this.filterBy.value).length ||
-      this.filterByCurrentUser.value ||
-      this.filterByTags.value
-    ) {
+    if (this.hasFiltersSet) {
       return html`
         <div class="rounded-lg border bg-neutral-50 p-4">
           <p class="text-center">
