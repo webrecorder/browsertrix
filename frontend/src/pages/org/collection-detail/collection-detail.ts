@@ -719,6 +719,17 @@ export class CollectionDetail extends BtrixElement {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
+      <sl-tooltip content=${msg("Share")}>
+        <sl-icon-button
+          name="box-arrow-up"
+          @click=${() => {
+            this.openDialogName = "edit";
+            this.editTab = "sharing";
+          }}
+        >
+          <sl-icon slot="prefix"></sl-icon>
+        </sl-icon-button>
+      </sl-tooltip>
       <sl-tooltip content=${msg("Edit Collection Settings")}>
         <sl-icon-button
           name="gear"
