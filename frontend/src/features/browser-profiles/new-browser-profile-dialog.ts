@@ -70,14 +70,14 @@ export class NewBrowserProfileDialog extends BtrixElement {
         @reset=${this.onReset}
         @submit=${this.onSubmit}
       >
-        <sl-input
+        <btrix-url-input
           label=${msg("Starting URL")}
           name="url"
           placeholder=${msg("https://example.com")}
           autocomplete="off"
           required
         >
-        </sl-input>
+        </btrix-url-input>
 
         <div class="mt-4">
           <btrix-select-crawler
