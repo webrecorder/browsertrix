@@ -1,4 +1,3 @@
-import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { type SlInput } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
@@ -16,23 +15,22 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { type SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
 import { type SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
-import { proxiesContext, type ProxiesContext } from "@/context/org";
-import { CrawlerChannelImage } from "@/types/crawler";
+import { CrawlerChannelImage, type Proxy } from "@/types/crawler";
 
 @customElement("btrix-new-browser-profile-dialog")
 @localized()
 export class NewBrowserProfileDialog extends BtrixElement {
-  @consume({ context: proxiesContext, subscribe: true })
-  private readonly proxies?: ProxiesContext;
-
-  @property({ type: Boolean })
-  open = false;
-
   @property({ type: String })
   defaultProxyId?: string;
 
   @property({ type: String })
   defaultCrawlerChannel?: string;
+
+  @property({ type: Array })
+  proxyServers?: Proxy[];
+
+  @property({ type: Boolean })
+  open = false;
 
   @state()
   private isSubmitting = false;
@@ -100,14 +98,12 @@ export class NewBrowserProfileDialog extends BtrixElement {
               (this.crawlerChannel = e.detail.value!)}
           ></btrix-select-crawler>
         </div>
-        ${this.proxies?.servers.length
+        ${this.proxyServers?.length
           ? html`
               <div class="mt-4">
                 <btrix-select-crawler-proxy
-                  defaultProxyId=${ifDefined(
-                    this.proxies.default_proxy_id ?? undefined,
-                  )}
-                  .proxyServers=${this.proxies.servers}
+                  defaultProxyId=${ifDefined(this.defaultProxyId || undefined)}
+                  .proxyServers=${this.proxyServers}
                   .proxyId="${this.proxyId || ""}"
                   @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
                     (this.proxyId = e.detail.value)}
