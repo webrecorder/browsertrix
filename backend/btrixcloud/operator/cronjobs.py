@@ -52,7 +52,7 @@ class CronJobOperator(BaseOperator):
             status=status,
         )
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-return-statements
     async def make_new_crawljob(
         self,
         cid: UUID,
@@ -131,7 +131,7 @@ class CronJobOperator(BaseOperator):
             )
         )
         if crawlconfig.profileid and not profile_filename:
-            print(f"error: missing profile")
+            print(f"error: missing profile {crawlconfig.profileid}")
             return self.get_finished_response(metadata)
 
         # only save profile if selected proxy matches profile proxy
