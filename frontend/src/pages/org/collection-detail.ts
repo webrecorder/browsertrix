@@ -619,6 +619,10 @@ export class CollectionDetail extends BtrixElement {
           (col) =>
             `${this.localize.number(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
         )}
+        ${this.renderDetailItem(
+          msg("Total Size"),
+          (col) => html` ${this.localize.bytes(col.totalSize)} `,
+        )}
         ${createdDate
           ? this.renderDetailItem(msg("Created"), () =>
               this.localize.relativeDate(createdDate),
