@@ -1,0 +1,14 @@
+# -------
+# CONFIGMAP
+# -------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  labels:
+    coll: {{ id }}
+    role: configmap
+
+data:
+  config.json: {{ config | tojson }}

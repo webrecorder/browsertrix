@@ -154,6 +154,9 @@ class CronJobOperator(BaseOperator):
             profile_filename=profile_filename or "",
             profileid=str(crawlconfig.profileid) if crawlconfig else "",
             proxy_id=crawlconfig.proxyId or "",
+            dedupe_coll_id=(
+                str(crawlconfig.dedupeCollId) if crawlconfig.dedupeCollId else ""
+            ),
             is_single_page=self.crawl_config_ops.is_single_page(crawlconfig.config),
         )
 

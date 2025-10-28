@@ -9,7 +9,7 @@ metadata:
   name: {{ name }}
   namespace: {{ namespace }}
   labels:
-    crawl: {{ id }}
+    {{ obj_type }}: {{ id }}
     role: redis
 
 spec:
@@ -36,7 +36,7 @@ metadata:
   name: {{ name }}
   namespace: {{ namespace }}
   labels:
-    crawl: {{ id }}
+    {{ obj_type }}: {{ id }}
     role: redis
 
 spec:
@@ -83,7 +83,7 @@ spec:
             topologyKey: "failure-domain.beta.kubernetes.io/zone"
             labelSelector:
               matchLabels:
-                crawl: {{ id }}
+                {{ obj_type }}: {{ id }}
 
   tolerations:
     - key: nodeType
