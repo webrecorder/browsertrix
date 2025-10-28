@@ -64,7 +64,7 @@ const sortableFields: Record<
     defaultDirection: SortDirection.Descending,
   },
   totalSize: {
-    label: msg("Size"),
+    label: msg("Total Size"),
     defaultDirection: SortDirection.Descending,
   },
   modified: {
@@ -620,25 +620,23 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           </div>
         </a>
       </btrix-table-cell>
-      <btrix-table-cell class="gap-2">
+      <btrix-table-cell>
         ${this.localize.number(col.crawlCount, { notation: "compact" })}
         ${pluralOf("items", col.crawlCount)}
-        ${col.hasDedupeIndex
-          ? html`<sl-tooltip content=${msg("Deduplicated Archived Items")}>
-              <btrix-badge variant="success" pill
-                >${msg("Deduped")}</btrix-badge
-              >
-            </sl-tooltip>`
-          : nothing}
       </btrix-table-cell>
       <btrix-table-cell>
         ${this.localize.number(col.pageCount, { notation: "compact" })}
         ${pluralOf("pages", col.pageCount)}
       </btrix-table-cell>
-      <btrix-table-cell>
-        ${this.localize.bytes(col.totalSize || 0, {
-          unitDisplay: "narrow",
-        })}
+      <btrix-table-cell class="gap-2">
+        ${this.localize.bytes(col.totalSize || 0)}
+        ${col.hasDedupeIndex
+          ? html`<sl-tooltip content=${msg("Deduplicated")}>
+              <btrix-badge variant="success" pill
+                >${msg("Deduped")}</btrix-badge
+              >
+            </sl-tooltip>`
+          : nothing}
       </btrix-table-cell>
       <btrix-table-cell>
         <btrix-format-date
