@@ -30,6 +30,9 @@ export class NewBrowserProfileDialog extends BtrixElement {
   @property({ type: String })
   defaultProxyId?: string;
 
+  @property({ type: String })
+  defaultCrawlerChannel?: string;
+
   @state()
   private isSubmitting = false;
 
@@ -48,6 +51,15 @@ export class NewBrowserProfileDialog extends BtrixElement {
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("defaultProxyId") && this.defaultProxyId) {
       this.proxyId = this.proxyId || this.defaultProxyId;
+    }
+
+    if (
+      changedProperties.has("defaultCrawlerChannel") &&
+      this.defaultCrawlerChannel
+    ) {
+      this.crawlerChannel =
+        (this.crawlerChannel !== "default" && this.crawlerChannel) ||
+        this.defaultCrawlerChannel;
     }
   }
 
