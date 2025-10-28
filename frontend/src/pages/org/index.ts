@@ -100,6 +100,7 @@ const UUID_REGEX =
 @needLogin
 export class Org extends BtrixElement {
   @provide({ context: proxiesContext })
+  @state()
   proxies: ProxiesContext = null;
 
   @property({ type: Object })
@@ -450,11 +451,29 @@ export class Org extends BtrixElement {
             }
           }}
         ></btrix-file-uploader>
-        <btrix-new-browser-profile-dialog
-          ?open=${this.openDialogName === "browser-profile"}
-          @sl-hide=${() => (this.openDialogName = undefined)}
-        >
-        </btrix-new-browser-profile-dialog>
+
+        ${when(this.org, (org) =>
+          when(
+            this.proxies,
+            (proxies) => html`
+              <btrix-new-browser-profile-dialog
+                .proxyServers=${proxies.servers}
+                defaultProxyId=${ifDefined(
+                  org.crawlingDefaults?.proxyId ||
+                    proxies.default_proxy_id ||
+                    undefined,
+                )}
+                defaultCrawlerChannel=${ifDefined(
+                  org.crawlingDefaults?.crawlerChannel || undefined,
+                )}
+                ?open=${this.openDialogName === "browser-profile"}
+                @sl-hide=${() => (this.openDialogName = undefined)}
+              >
+              </btrix-new-browser-profile-dialog>
+            `,
+          ),
+        )}
+
         <btrix-collection-create-dialog
           ?open=${this.openDialogName === "collection"}
           @sl-hide=${() => (this.openDialogName = undefined)}

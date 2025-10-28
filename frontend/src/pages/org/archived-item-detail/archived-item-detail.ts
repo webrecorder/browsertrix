@@ -948,8 +948,9 @@ export class ArchivedItemDetail extends BtrixElement {
     }
 
     const text =
-      capitalize(this.item.crawlerChannel || "default") +
-      (this.item.image ? ` (${this.item.image})` : "");
+      (this.item.crawlerChannel
+        ? capitalize(this.item.crawlerChannel)
+        : msg("Default")) + (this.item.image ? ` (${this.item.image})` : "");
 
     return html` <btrix-desc-list-item
       label=${msg("Crawler Channel (Exact Crawler Version)")}

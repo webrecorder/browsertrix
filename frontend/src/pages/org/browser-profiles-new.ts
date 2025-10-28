@@ -4,6 +4,8 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import queryString from "query-string";
 
+import { CrawlerChannelImage } from "./types";
+
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
@@ -279,7 +281,8 @@ export class BrowserProfilesNew extends BtrixElement {
       return;
     }
 
-    const crawlerChannel = this.browserParams.crawlerChannel || "default";
+    const crawlerChannel =
+      this.browserParams.crawlerChannel || CrawlerChannelImage.Default;
     const proxyId = this.browserParams.proxyId;
     const data = await this.createBrowser({
       url,

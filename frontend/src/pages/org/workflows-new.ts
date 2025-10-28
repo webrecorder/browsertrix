@@ -7,7 +7,12 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import type { PartialDeep } from "type-fest";
 
-import { ScopeType, type Seed, type WorkflowParams } from "./types";
+import {
+  CrawlerChannelImage,
+  ScopeType,
+  type Seed,
+  type WorkflowParams,
+} from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
@@ -72,7 +77,7 @@ export class WorkflowsNew extends BtrixElement {
       jobType: "custom",
       browserWindows: this.appState.settings?.numBrowsersPerInstance || 1,
       autoAddCollections: [],
-      crawlerChannel: "default",
+      crawlerChannel: CrawlerChannelImage.Default,
       proxyId: null,
     };
   }
