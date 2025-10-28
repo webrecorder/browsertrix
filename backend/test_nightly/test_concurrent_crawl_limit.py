@@ -1,5 +1,6 @@
 import requests
 import time
+import pytest
 
 from .conftest import API_PREFIX
 from .utils import get_crawl_status
@@ -49,6 +50,9 @@ def test_run_two_only_one_concurrent(org_with_quotas, admin_auth_headers):
         == "waiting_org_limit"
     )
 
+    # additional waiting crawls not allowed due to limit
+    with pytest.raises(requests.exceptions.HTTPError):
+        run_crawl(org_with_quotas, admin_auth_headers)
 
 def test_cancel_and_run_other(org_with_quotas, admin_auth_headers):
     r = requests.post(
@@ -101,6 +105,7 @@ def run_crawl(org_id, headers):
         headers=headers,
         json=crawl_data,
     )
+    r.raise_for_status()
     data = r.json()
 
     return data["run_now_job"]
