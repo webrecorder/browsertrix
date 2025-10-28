@@ -1236,7 +1236,7 @@ class CrawlConfigOps:
         num_waiting = await self.crawls.count_documents(
             {"oid": org.id, "state": "waiting_org_limit"}
         )
-        if num_waiting <= max_concur * self.max_concur_queue_to_limit_scale:
+        if num_waiting < max_concur * self.max_concur_queue_to_limit_scale:
             return False
 
         raise HTTPException(status_code=429, detail="slow_down_too_many_crawls_queued")
