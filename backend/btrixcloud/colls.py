@@ -49,6 +49,7 @@ from .models import (
     UserFilePreparer,
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
+    ResourcesOnly,
 )
 from .utils import (
     dt_now,
@@ -56,6 +57,8 @@ from .utils import (
     get_duplicate_key_error_field,
     get_origin,
 )
+
+from .crawlmanager import CrawlManager
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -81,8 +84,16 @@ class CollectionOps:
     event_webhook_ops: EventWebhookOps
     crawl_ops: CrawlOps
     page_ops: PageOps
+    crawl_manager: CrawlManager
 
-    def __init__(self, mdb, storage_ops, orgs, event_webhook_ops):
+    def __init__(
+        self,
+        mdb,
+        orgs: OrgOps,
+        storage_ops: StorageOps,
+        crawl_manager: CrawlManager,
+        event_webhook_ops: EventWebhookOps,
+    ):
         self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
@@ -91,6 +102,7 @@ class CollectionOps:
 
         self.orgs = orgs
         self.storage_ops = storage_ops
+        self.crawl_manager = crawl_manager
         self.event_webhook_ops = event_webhook_ops
 
     def set_crawl_ops(self, ops):
@@ -141,11 +153,15 @@ class CollectionOps:
             access=coll_in.access,
             defaultThumbnailName=coll_in.defaultThumbnailName,
             allowPublicDownload=coll_in.allowPublicDownload,
+            hasDedupeIndex=coll_in.hasDedupeIndex,
         )
         try:
             await self.collections.insert_one(coll.to_dict())
             org = await self.orgs.get_org_by_id(oid)
             await self.clear_org_previous_slugs_matching_slug(slug, org)
+            # create collection index
+            if coll.hasDedupeIndex:
+                await self.crawl_manager.create_coll_index(coll)
 
             if crawl_ids:
                 await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
@@ -194,21 +210,32 @@ class CollectionOps:
             db_update["$push"] = {"previousSlugs": previous_slug}
 
         try:
-            result = await self.collections.find_one_and_update(
+            prev_result = await self.collections.find_one_and_update(
                 {"_id": coll_id, "oid": org.id},
                 db_update,
-                return_document=pymongo.ReturnDocument.AFTER,
+                return_document=pymongo.ReturnDocument.BEFORE,
             )
         except pymongo.errors.DuplicateKeyError as err:
             # pylint: disable=raise-missing-from
             field = get_duplicate_key_error_field(err)
             raise HTTPException(status_code=400, detail=f"collection_{field}_taken")
 
-        if not result:
+        if not prev_result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         if slug_update:
             await self.clear_org_previous_slugs_matching_slug(slug_update, org)
+
+        # if dedupe index is true, but was false
+        if update.hasDedupeIndex and not prev_result.get("hasDedupeIndex"):
+            # get latest coll, create index
+            coll = await self.get_collection(coll_id, org.id)
+            await self.crawl_manager.create_coll_index(coll)
+
+        # if dedupe is false, but was true
+        if update.hasDedupeIndex is False and prev_result.get("hasDedupeIndex"):
+            # delete index -- may need extra restrictions
+            await self.crawl_manager.delete_coll_index(coll_id)
 
         return {"updated": True}
 
@@ -221,6 +248,16 @@ class CollectionOps:
             {"$pull": {"previousSlugs": slug}},
         )
 
+    async def get_coll_dedupe_index(self, coll_id: UUID) -> bool:
+        """return true/false if collection has dedupe index, or raise"""
+        result = await self.collections.find_one(
+            {"_id": coll_id}, projection=["hasDedupeIndex"]
+        )
+        if not result:
+            raise HTTPException(status_code=404, detail="collection_not_found")
+
+        return result["hasDedupeIndex"] is True
+
     async def add_crawls_to_collection(
         self,
         coll_id: UUID,
@@ -229,8 +266,6 @@ class CollectionOps:
         headers: Optional[dict] = None,
     ) -> CollOut:
         """Add crawls to collection"""
-        await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
-
         modified = dt_now()
         result = await self.collections.find_one_and_update(
             {"_id": coll_id},
@@ -240,8 +275,11 @@ class CollectionOps:
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
+        # do this after checking if collection exists
+        await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
+
         await self.update_collection_counts_and_tags(coll_id)
-        await self.update_collection_dates(coll_id, org.id)
+        await self.update_collection_dates(coll_id, org.id, update_index=True)
 
         asyncio.create_task(
             self.event_webhook_ops.create_added_to_collection_notification(
@@ -270,7 +308,7 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         await self.update_collection_counts_and_tags(coll_id)
-        await self.update_collection_dates(coll_id, org.id)
+        await self.update_collection_dates(coll_id, org.id, update_index=True)
 
         asyncio.create_task(
             self.event_webhook_ops.create_removed_from_collection_notification(
@@ -293,6 +331,24 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         return result
+
+    async def enable_dedupe_index(self, coll_id: UUID):
+        """enable dedupe index if it doesn't exist yet"""
+        result = await self.collections.find_one_and_update(
+            {"_id": coll_id, "hasDedupeIndex": {"$ne": True}},
+            {"$set": {"hasDedupeIndex": True}},
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+
+        # not changed, nothing to do
+        if not result:
+            return False
+
+        coll = Collection.from_dict(result)
+
+        await self.crawl_manager.create_coll_index(coll)
+
+        return True
 
     async def get_collection_raw_by_slug(
         self,
@@ -395,6 +451,16 @@ class CollectionOps:
             )
 
         return CollOut.from_dict(result)
+
+    async def get_internal_replay_list(self, coll_id: UUID, oid: UUID) -> ResourcesOnly:
+        """get list of internally resolved signed WACZ files"""
+        org = await self.orgs.get_org_by_id(oid)
+        resources, _, _ = await self.get_collection_crawl_resources(coll_id, org)
+
+        for file_ in resources:
+            file_.path = self.storage_ops.resolve_internal_access_path(file_.path)
+
+        return ResourcesOnly(resources=resources)
 
     async def get_public_collection_out(
         self,
@@ -639,6 +705,9 @@ class CollectionOps:
         if coll.thumbnail:
             await self.delete_thumbnail(coll_id, org)
 
+        if coll.hasDedupeIndex:
+            await self.crawl_manager.delete_coll_index(coll.id)
+
         result = await self.collections.delete_one({"_id": coll_id, "oid": org.id})
         if result.deleted_count < 1:
             raise HTTPException(status_code=404, detail="collection_not_found")
@@ -740,7 +809,9 @@ class CollectionOps:
             },
         )
 
-    async def update_collection_dates(self, coll_id: UUID, oid: UUID):
+    async def update_collection_dates(
+        self, coll_id: UUID, oid: UUID, update_index=False
+    ):
         """Update collection earliest and latest dates from page timestamps"""
         # pylint: disable=too-many-locals
         coll = await self.get_collection(coll_id, oid)
@@ -748,6 +819,10 @@ class CollectionOps:
 
         earliest_ts = None
         latest_ts = None
+
+        # update_index is set, update dedupe index if it exists
+        if update_index and coll.hasDedupeIndex:
+            await self.crawl_manager.update_coll_index(coll_id)
 
         match_query = {
             "oid": coll.oid,
@@ -783,13 +858,16 @@ class CollectionOps:
 
     async def update_crawl_collections(self, crawl_id: str, oid: UUID):
         """Update counts, dates, and modified for all collections in crawl"""
+        # accessing directly to handle both crawls and uploads
         crawl = await self.crawls.find_one({"_id": crawl_id})
-        crawl_coll_ids = crawl.get("collectionIds")
+        crawl_coll_ids = crawl.get("collectionIds") or []
         modified = dt_now()
 
         for coll_id in crawl_coll_ids:
             await self.update_collection_counts_and_tags(coll_id)
-            await self.update_collection_dates(coll_id, oid)
+            await self.update_collection_dates(
+                coll_id, oid, crawl.get("dedupeCollId") != coll_id
+            )
             await self.collections.find_one_and_update(
                 {"_id": coll_id},
                 {"$set": {"modified": modified}},
@@ -1000,12 +1078,20 @@ class CollectionOps:
 # ============================================================================
 # pylint: disable=too-many-locals
 def init_collections_api(
-    app, mdb, orgs, storage_ops, event_webhook_ops, user_dep
+    app,
+    mdb,
+    orgs: OrgOps,
+    storage_ops: StorageOps,
+    crawl_manager: CrawlManager,
+    event_webhook_ops: EventWebhookOps,
+    user_dep,
 ) -> CollectionOps:
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
 
-    colls: CollectionOps = CollectionOps(mdb, storage_ops, orgs, event_webhook_ops)
+    colls: CollectionOps = CollectionOps(
+        mdb, orgs, storage_ops, crawl_manager, event_webhook_ops
+    )
 
     org_crawl_dep = orgs.org_crawl_dep
     org_viewer_dep = orgs.org_viewer_dep

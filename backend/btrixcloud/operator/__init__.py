@@ -4,9 +4,16 @@ from .profiles import ProfileOperator
 from .bgjobs import BgJobOperator
 from .cronjobs import CronJobOperator
 from .crawls import CrawlOperator
+from .collindexes import CollIndexOperator
 from .baseoperator import K8sOpAPI
 
-operator_classes = [ProfileOperator, BgJobOperator, CronJobOperator, CrawlOperator]
+operator_classes = [
+    ProfileOperator,
+    BgJobOperator,
+    CronJobOperator,
+    CrawlOperator,
+    CollIndexOperator,
+]
 
 
 # ============================================================================

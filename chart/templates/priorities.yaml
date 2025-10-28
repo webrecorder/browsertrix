@@ -35,4 +35,14 @@ value: -1000
 globalDefault: false
 description: "Priority for background jobs"
 
+# Higher Priority for Indexing
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: index-import-job
+value: 5
+globalDefault: false
+description: "Priority for indexing"
+
 

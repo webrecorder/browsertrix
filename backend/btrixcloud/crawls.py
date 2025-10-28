@@ -421,6 +421,7 @@ class CrawlOps(BaseCrawlOps):
             version=2,
             firstSeed=crawlconfig.firstSeed,
             seedCount=crawlconfig.seedCount,
+            dedupeCollId=crawlconfig.dedupeCollId,
         )
 
         try:
@@ -1176,6 +1177,20 @@ class CrawlOps(BaseCrawlOps):
             contexts=contexts,
             log_levels=log_levels,
             qa_run_id=qa_run_id,
+        )
+
+    async def link_required_crawls(
+        self, oid: UUID, crawl_id: str, required_crawls: list[str]
+    ):
+        """link current crawl to dependent crawls (for duplicates)"""
+        self.crawls.find_one_and_update(
+            {"_id": crawl_id, "oid": oid},
+            {"$addToSet": {"requiresCrawls": {"$each": required_crawls}}},
+        )
+
+        self.crawls.update_many(
+            {"_id": {"$in": required_crawls}, "oid": oid},
+            {"$addToSet": {"requiredByCrawls": crawl_id}},
         )
 
 

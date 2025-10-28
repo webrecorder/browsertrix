@@ -15,6 +15,7 @@ from kubernetes_asyncio.utils import create_from_dict
 from kubernetes_asyncio.client.exceptions import ApiException
 
 from redis import asyncio as aioredis
+from redis.asyncio.client import Redis
 
 from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
@@ -23,7 +24,7 @@ from .utils import get_templates_dir, dt_now
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes,too-many-public-methods
 class K8sAPI:
     """K8S API accessors"""
 
@@ -56,6 +57,7 @@ class K8sAPI:
         # custom resource's client API
         self.add_custom_resource("CrawlJob", "crawljobs")
         self.add_custom_resource("ProfileJob", "profilejobs")
+        self.add_custom_resource("CollIndex", "collindexes")
 
     def add_custom_resource(self, name, plural):
         """add custom resource"""
@@ -65,9 +67,9 @@ class K8sAPI:
         """return custom API"""
         return self.custom_resources[kind] if kind in self.custom_resources else None
 
-    def get_redis_url(self, crawl_id):
-        """get redis url for crawl id"""
-        redis_url = f"redis://redis-{crawl_id}.redis{self.crawler_fqdn_suffix}/0"
+    def get_redis_url(self, obj_id):
+        """get redis url for obj id"""
+        redis_url = f"redis://redis-{obj_id}.redis{self.crawler_fqdn_suffix}/0"
         return redis_url
 
     async def get_redis_client(self, redis_url):
@@ -78,6 +80,23 @@ class K8sAPI:
             auto_close_connection_pool=True,
             socket_timeout=20,
         )
+
+    async def get_redis_connected(self, obj_id: str) -> Optional[Redis]:
+        """init redis, ensure connectivity"""
+        redis_url = self.get_redis_url(obj_id)
+        redis = None
+        try:
+            redis = await self.get_redis_client(redis_url)
+            # test connection
+            await redis.ping()
+            return redis
+
+        # pylint: disable=bare-except
+        except:
+            if redis:
+                await redis.close()
+
+            return None
 
     # pylint: disable=too-many-arguments, too-many-locals
     def new_crawl_job_yaml(
@@ -98,6 +117,7 @@ class K8sAPI:
         profile_filename: str = "",
         qa_source: str = "",
         proxy_id: str = "",
+        dedupe_coll_id: str = "",
         is_single_page: bool = False,
         seed_file_url: str = "",
     ):
@@ -124,6 +144,7 @@ class K8sAPI:
             "profile_filename": profile_filename,
             "qa_source": qa_source,
             "proxy_id": proxy_id,
+            "dedupe_coll_id": dedupe_coll_id,
             "is_single_page": "1" if is_single_page else "0",
             "seed_file_url": seed_file_url,
         }
@@ -149,6 +170,7 @@ class K8sAPI:
         profile_filename: str = "",
         qa_source: str = "",
         proxy_id: str = "",
+        dedupe_coll_id: str = "",
         is_single_page: bool = False,
         seed_file_url: str = "",
     ) -> str:
@@ -170,6 +192,7 @@ class K8sAPI:
             profile_filename=profile_filename,
             qa_source=qa_source,
             proxy_id=proxy_id,
+            dedupe_coll_id=dedupe_coll_id,
             is_single_page=is_single_page,
             seed_file_url=seed_file_url,
         )
@@ -231,14 +254,26 @@ class K8sAPI:
 
     async def delete_crawl_job(self, crawl_id):
         """delete custom crawljob object"""
-        try:
-            name = f"crawljob-{crawl_id}"
+        name = f"crawljob-{crawl_id}"
 
+        return await self.delete_custom_object(name, "crawljobs")
+
+    async def delete_profile_browser(self, browserid):
+        """delete custom crawljob object"""
+        name = f"profilejobs-{browserid}"
+
+        res = await self.delete_custom_object(name, "profilejobs")
+
+        return res.get("success") is True
+
+    async def delete_custom_object(self, name: str, plural: str):
+        """delete custom object with name and plural type"""
+        try:
             await self.custom_api.delete_namespaced_custom_object(
                 group="btrix.cloud",
                 version="v1",
                 namespace=self.namespace,
-                plural="crawljobs",
+                plural=plural,
                 name=name,
                 grace_period_seconds=0,
                 # delete as background to allow operator to do proper cleanup
@@ -248,23 +283,6 @@ class K8sAPI:
 
         except ApiException as api_exc:
             return {"error": str(api_exc.reason)}
-
-    async def delete_profile_browser(self, browserid):
-        """delete custom crawljob object"""
-        try:
-            await self.custom_api.delete_namespaced_custom_object(
-                group="btrix.cloud",
-                version="v1",
-                namespace=self.namespace,
-                plural="profilejobs",
-                name=f"profilejob-{browserid}",
-                grace_period_seconds=0,
-                propagation_policy="Background",
-            )
-            return True
-
-        except ApiException:
-            return False
 
     async def get_profile_browser(self, browserid):
         """get profile browser"""
@@ -276,9 +294,15 @@ class K8sAPI:
             name=f"profilejob-{browserid}",
         )
 
-    async def _patch_job(self, crawl_id, body, pluraltype="crawljobs") -> dict:
+    async def _patch_job(self, obj_id, body, pluraltype="crawljobs") -> dict:
+        """patch crawl/profile job"""
+        name = f"{pluraltype[:-1]}-{obj_id}"
+
+        return await self.patch_custom_object(name, body, pluraltype)
+
+    async def patch_custom_object(self, name: str, body, pluraltype: str) -> dict:
+        """patch custom object"""
         try:
-            name = f"{pluraltype[:-1]}-{crawl_id}"
 
             await self.custom_api.patch_namespaced_custom_object(
                 group="btrix.cloud",

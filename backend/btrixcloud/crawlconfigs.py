@@ -4,7 +4,17 @@ Crawl Config API handling
 
 # pylint: disable=too-many-lines
 
-from typing import List, Optional, TYPE_CHECKING, cast, Dict, Tuple, Annotated, Union
+from typing import (
+    List,
+    Optional,
+    TYPE_CHECKING,
+    cast,
+    Dict,
+    Tuple,
+    Annotated,
+    Union,
+    Any,
+)
 
 import asyncio
 import json
@@ -319,6 +329,14 @@ class CrawlConfigOps:
 
             first_seed = seeds[0].url
 
+        # the dedupe collection id must also be in auto add collections
+        if config_in.dedupeCollId:
+            if config_in.autoAddCollections is None:
+                config_in.autoAddCollections = []
+
+            if config_in.dedupeCollId not in config_in.autoAddCollections:
+                config_in.autoAddCollections.append(config_in.dedupeCollId)
+
         now = dt_now()
         crawlconfig = CrawlConfig(
             id=uuid4(),
@@ -346,6 +364,7 @@ class CrawlConfigOps:
             firstSeed=first_seed,
             seedCount=seed_count,
             shareable=config_in.shareable,
+            dedupeCollId=config_in.dedupeCollId,
         )
 
         if config_in.runNow:
@@ -361,6 +380,9 @@ class CrawlConfigOps:
         error_detail = None
         storage_quota_reached = False
         exec_mins_quota_reached = False
+
+        if config_in.dedupeCollId:
+            await self.coll_ops.enable_dedupe_index(config_in.dedupeCollId)
 
         if config_in.runNow:
             try:
@@ -605,6 +627,26 @@ class CrawlConfigOps:
             update.tags is not None
             and ",".join(orig_crawl_config.tags) != ",".join(update.tags)
         )
+
+        metadata_changed = metadata_changed or (
+            update.dedupeCollId is not None
+            and update.dedupeCollId != orig_crawl_config.dedupeCollId
+        )
+
+        if isinstance(update.dedupeCollId, UUID):
+            dedupe_coll_id = update.dedupeCollId
+        elif update.dedupeCollId == "":
+            dedupe_coll_id = None
+        else:
+            dedupe_coll_id = orig_crawl_config.dedupeCollId
+
+        if (
+            dedupe_coll_id
+            and update.autoAddCollections is not None
+            and dedupe_coll_id not in update.autoAddCollections
+        ):
+            update.autoAddCollections.append(dedupe_coll_id)
+
         metadata_changed = metadata_changed or (
             update.autoAddCollections is not None
             and sorted(orig_crawl_config.autoAddCollections)
@@ -632,13 +674,21 @@ class CrawlConfigOps:
         query["modifiedByName"] = user.name
         query["modified"] = dt_now()
 
-        # if empty str, just clear the profile
+        # profile - if empty str, just clear the profile
         if update.profileid == "":
             query["profileid"] = None
         # else, ensure its a valid profile
         elif update.profileid:
             await self.profiles.get_profile(cast(UUID, update.profileid), org)
             query["profileid"] = update.profileid
+
+        # dedupe - if empty dedupeCollId, clear the coll id
+        if update.dedupeCollId == "":
+            query["dedupeCollId"] = None
+        # else, enable dedupe on collection
+        if isinstance(update.dedupeCollId, UUID):
+            query["dedupeCollId"] = update.dedupeCollId
+            await self.coll_ops.enable_dedupe_index(update.dedupeCollId)
 
         if update.config is not None:
             query["config"] = update.config.dict()
@@ -654,10 +704,15 @@ class CrawlConfigOps:
             query["seedCount"] = len(update.config.seeds)
             query["seedFileId"] = None
 
+        update_query: dict[str, Any] = {"$set": query, "$inc": {"rev": 1}}
+        # only add here if not setting autoAddCollections
+        if dedupe_coll_id and "autoAddCollections" not in query:
+            update_query["$addToSet"] = {"autoAddCollections": dedupe_coll_id}
+
         # update in db
         result = await self.crawl_configs.find_one_and_update(
             {"_id": cid, "inactive": {"$ne": True}},
-            {"$set": query, "$inc": {"rev": 1}},
+            update_query,
             return_document=pymongo.ReturnDocument.AFTER,
         )
 
@@ -1121,6 +1176,10 @@ class CrawlConfigOps:
         await self.crawl_configs.update_many(
             {"oid": org.id, "autoAddCollections": coll_id},
             {"$pull": {"autoAddCollections": coll_id}},
+        )
+
+        await self.crawl_configs.update_many(
+            {"oid": org.id, "dedupeCollId": coll_id}, {"$set": {"dedupeCollId": None}}
         )
 
     async def get_crawl_config_tags(self, org):

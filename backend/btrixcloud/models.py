@@ -2,6 +2,8 @@
 Crawl-related models and types
 """
 
+# pylint: disable=invalid-name, too-many-lines
+
 from datetime import datetime
 from enum import Enum, IntEnum
 from uuid import UUID
@@ -90,7 +92,6 @@ class EmailStr(CasedEmailStr):
         return validate_email(value)[1].lower()
 
 
-# pylint: disable=invalid-name, too-many-lines
 # ============================================================================
 class UserRole(IntEnum):
     """User role"""
@@ -238,7 +239,11 @@ TYPE_RUNNING_STATES = Literal[
 RUNNING_STATES = get_args(TYPE_RUNNING_STATES)
 
 TYPE_WAITING_STATES = Literal[
-    "starting", "waiting_capacity", "waiting_org_limit", "paused"
+    "starting",
+    "waiting_capacity",
+    "waiting_org_limit",
+    "waiting_dedupe_index",
+    "paused",
 ]
 WAITING_STATES = get_args(TYPE_WAITING_STATES)
 
@@ -283,6 +288,8 @@ class CrawlStats(BaseModel):
     found: int = 0
     done: int = 0
     size: int = 0
+
+    req_crawls: list[str] = []
 
 
 # ============================================================================
@@ -395,6 +402,8 @@ class CrawlConfigIn(BaseModel):
     proxyId: Optional[str] = None
 
     autoAddCollections: Optional[List[UUID]] = []
+    dedupeCollId: Optional[UUID] = None
+
     tags: Optional[List[str]] = []
 
     crawlTimeout: int = 0
@@ -460,6 +469,8 @@ class CrawlConfigCore(BaseMongoModel):
 
     firstSeed: str = ""
     seedCount: int = 0
+
+    dedupeCollId: Optional[UUID] = None
 
 
 # ============================================================================
@@ -546,6 +557,7 @@ class UpdateCrawlConfig(BaseModel):
     tags: Optional[List[str]] = None
     description: Optional[str] = None
     autoAddCollections: Optional[List[UUID]] = None
+    dedupeCollId: Union[UUID, EmptyStr, None] = None
     runNow: bool = False
     updateRunning: bool = False
 
@@ -588,6 +600,8 @@ class CrawlConfigDefaults(BaseModel):
     exclude: Optional[List[str]] = None
 
     customBehaviors: List[str] = []
+
+    dedupeCollId: Optional[UUID] = None
 
 
 # ============================================================================
@@ -934,6 +948,10 @@ class CrawlOut(BaseMongoModel):
     errors: Optional[List[str]] = Field(default=[], deprecated=True)
     behaviorLogs: Optional[List[str]] = Field(default=[], deprecated=True)
 
+    # Linked Crawls for dedupe
+    requiresCrawls: Optional[list[str]] = []
+    requiredByCrawls: Optional[list[str]] = []
+
 
 # ============================================================================
 class UpdateCrawl(BaseModel):
@@ -1068,6 +1086,9 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     qa: Optional[QARun] = None
     qaFinished: Optional[Dict[str, QARun]] = {}
+
+    requiresCrawls: Optional[list[str]] = []
+    requiredByCrawls: Optional[list[str]] = []
 
 
 # ============================================================================
@@ -1500,6 +1521,13 @@ class PageUrlCount(BaseModel):
 
 
 # ============================================================================
+class ResourcesOnly(BaseModel):
+    """Resources-only response"""
+
+    resources: Optional[List[CrawlFileOut]] = []
+
+
+# ============================================================================
 class CrawlOutWithResources(CrawlOut):
     """Crawl output model including resources"""
 
@@ -1589,6 +1617,8 @@ class Collection(BaseMongoModel):
 
     previousSlugs: List[str] = []
 
+    hasDedupeIndex: bool = False
+
 
 # ============================================================================
 class CollIn(BaseModel):
@@ -1604,6 +1634,8 @@ class CollIn(BaseModel):
 
     defaultThumbnailName: Optional[str] = None
     allowPublicDownload: bool = True
+
+    hasDedupeIndex: bool = False
 
 
 # ============================================================================
@@ -1649,6 +1681,7 @@ class CollOut(BaseMongoModel):
     downloadUrl: Optional[str] = None
 
     topPageHosts: List[HostCount] = []
+    hasDedupeIndex: bool = False
 
 
 # ============================================================================
@@ -1700,6 +1733,7 @@ class UpdateColl(BaseModel):
     defaultThumbnailName: Optional[str] = None
     allowPublicDownload: Optional[bool] = None
     thumbnailSource: Optional[CollectionThumbnailSource] = None
+    hasDedupeIndex: Optional[bool] = None
 
 
 # ============================================================================

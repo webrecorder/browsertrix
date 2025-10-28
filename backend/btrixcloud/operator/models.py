@@ -14,7 +14,9 @@ BTRIX_API = "btrix.cloud/v1"
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
 POD = "Pod.v1"
+JOB = "Job.batch/v1"
 CJS = f"CrawlJob.{BTRIX_API}"
+COLLINDEX = f"CollIndex.{BTRIX_API}"
 
 StopReason = Literal[
     "stopped_by_user",
@@ -86,6 +88,7 @@ class CrawlSpec(BaseModel):
     max_crawl_size: int = 0
     qa_source_crawl_id: Optional[str] = ""
     proxy_id: Optional[str] = None
+    dedupe_coll_id: Optional[str] = None
     is_single_page: bool = False
     seed_file_url: Optional[str] = ""
 
