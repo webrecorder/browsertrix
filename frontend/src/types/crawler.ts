@@ -19,6 +19,10 @@ export enum Behavior {
   SiteSpecific = "siteSpecific",
 }
 
+export enum CrawlerChannelImage {
+  Default = "default",
+}
+
 export type Seed = {
   url: string;
   scopeType: ScopeType | undefined;
@@ -200,7 +204,7 @@ export type Upload = ArchivedItemBase & {
   type: "upload";
   cid: undefined;
   resources: undefined;
-  crawlerChannel: "default";
+  crawlerChannel: CrawlerChannelImage.Default;
   image: null;
   manual: true;
 };

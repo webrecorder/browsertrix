@@ -10,6 +10,7 @@ import type { Tags } from "@/components/ui/tag-input";
 import type { UserGuideEventMap } from "@/index";
 import {
   Behavior,
+  CrawlerChannelImage,
   ScopeType,
   type Profile,
   type Seed,
@@ -239,7 +240,7 @@ export const getDefaultFormState = (): FormState => ({
   autoscrollBehavior: true,
   autoclickBehavior: false,
   userAgent: null,
-  crawlerChannel: "default",
+  crawlerChannel: CrawlerChannelImage.Default,
   proxyId: null,
   selectLinks: DEFAULT_SELECT_LINKS,
   clickSelector: DEFAULT_AUTOCLICK_SELECTOR,

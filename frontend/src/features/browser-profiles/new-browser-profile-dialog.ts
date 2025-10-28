@@ -17,6 +17,7 @@ import type { Dialog } from "@/components/ui/dialog";
 import { type SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
 import { type SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
 import { proxiesContext, type ProxiesContext } from "@/context/org";
+import { CrawlerChannelImage } from "@/types/crawler";
 
 @customElement("btrix-new-browser-profile-dialog")
 @localized()
@@ -37,7 +38,7 @@ export class NewBrowserProfileDialog extends BtrixElement {
   private isSubmitting = false;
 
   @state()
-  private crawlerChannel = "default";
+  private crawlerChannel: string = CrawlerChannelImage.Default;
 
   @state()
   private proxyId: string | null = null;
@@ -58,7 +59,8 @@ export class NewBrowserProfileDialog extends BtrixElement {
       this.defaultCrawlerChannel
     ) {
       this.crawlerChannel =
-        (this.crawlerChannel !== "default" && this.crawlerChannel) ||
+        (this.crawlerChannel !== (CrawlerChannelImage.Default as string) &&
+          this.crawlerChannel) ||
         this.defaultCrawlerChannel;
     }
   }
