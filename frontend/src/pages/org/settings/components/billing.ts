@@ -12,11 +12,10 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { columns } from "@/layouts/columns";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
-import { humanizeSeconds } from "@/utils/executionTimeFormatter";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
-const linkClassList = tw`transition-color text-primary hover:text-primary-500`;
+const linkClassList = tw`text-primary transition-colors hover:text-primary-600`;
 const manageLinkClasslist = clsx(
   linkClassList,
   tw`flex cursor-pointer items-center gap-2 p-2 text-sm font-semibold leading-none`,
@@ -95,7 +94,12 @@ export class OrgSettingsBilling extends BtrixElement {
         ${columns([
           [
             html`
-              <div class="mt-5 rounded-lg border px-4 pb-4">
+              <div
+                class=${clsx(
+                  tw`mt-5 rounded-lg border px-4`,
+                  !this.org?.subscription && tw`pb-4`,
+                )}
+              >
                 <div
                   class="mb-3 flex items-center justify-between border-b py-2"
                 >
@@ -193,6 +197,13 @@ export class OrgSettingsBilling extends BtrixElement {
                       <sl-skeleton class="mb-2"></sl-skeleton>
                       <sl-skeleton class="mb-2"></sl-skeleton>
                       <sl-skeleton class="mb-2"></sl-skeleton>`,
+                )}
+                ${when(
+                  this.org?.subscription,
+                  () =>
+                    html`<btrix-org-settings-billing-addon-link
+                      class="mt-3 flex items-center border-t py-2"
+                    ></btrix-org-settings-billing-addon-link>`,
                 )}
               </div>
             `,
@@ -346,12 +357,11 @@ export class OrgSettingsBilling extends BtrixElement {
   private readonly renderQuotas = (quotas: OrgQuotas) => {
     const maxExecMinutesPerMonth =
       quotas.maxExecMinutesPerMonth &&
-      humanizeSeconds(
-        quotas.maxExecMinutesPerMonth * 60,
-        this.localize.lang(),
-        undefined,
-        "long",
-      );
+      this.localize.number(quotas.maxExecMinutesPerMonth, {
+        style: "unit",
+        unit: "minute",
+        unitDisplay: "long",
+      });
     const maxPagesPerCrawl =
       quotas.maxPagesPerCrawl &&
       `${this.localize.number(quotas.maxPagesPerCrawl)} ${pluralOf("pages", quotas.maxPagesPerCrawl)}`;
@@ -368,7 +378,7 @@ export class OrgSettingsBilling extends BtrixElement {
       <ul class="leading-relaxed text-neutral-700">
         <li>
           ${msg(
-            str`${maxExecMinutesPerMonth || msg("Unlimited minutes")} of crawling time`,
+            str`${maxExecMinutesPerMonth || msg("Unlimited minutes")} of execution time`,
           )}
         </li>
         <li>${msg(str`${storageBytesText} of disk space`)}</li>
