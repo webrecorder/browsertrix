@@ -101,8 +101,8 @@
     /* Transition */
     --sl-transition-x-fast: 100ms;
 
-    /* 
-     * 
+    /*
+     *
      * Browsertrix theme tokens
      *
      */
@@ -176,6 +176,15 @@
 
   sl-button[variant="primary"]:not([outline])::part(base):hover {
     background-color: theme(colors.primary.500);
+  }
+
+  sl-button[variant="text"]::part(base) {
+    color: theme(colors.primary.500);
+    @apply transition-colors;
+  }
+
+  sl-button[variant="text"]::part(base):hover {
+    color: theme(colors.primary.600);
   }
 
   sl-radio-button[checked]::part(button) {
