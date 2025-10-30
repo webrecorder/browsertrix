@@ -148,9 +148,7 @@ class CrawlConfigOps:
             minutes=int(os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", "10080"))
         )
 
-        self.max_concur_queue_to_limit_scale = int(
-            os.environ.get("MAX_CONCUR_QUEUE_TO_LIMIT_SCALE", 0)
-        )
+        self.crawl_queue_limit_scale = int(os.environ.get("CRAWL_QUEUE_LIMIT_SCALE", 0))
 
         self.router = APIRouter(
             prefix="/crawlconfigs",
@@ -1183,7 +1181,7 @@ class CrawlConfigOps:
         if crawlconfig.proxyId and not self.can_org_use_proxy(org, crawlconfig.proxyId):
             raise HTTPException(status_code=404, detail="proxy_not_found")
 
-        await self.too_many_waiting_crawls_check(org)
+        await self.check_if_too_many_waiting_crawls(org)
 
         profile_filename = await self.get_profile_filename(crawlconfig.profileid, org)
         storage_filename = (
@@ -1226,18 +1224,18 @@ class CrawlConfigOps:
             print(traceback.format_exc())
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
 
-    async def too_many_waiting_crawls_check(self, org: Organization):
+    async def check_if_too_many_waiting_crawls(self, org: Organization):
         """if max concurrent crawls are set, limit number of queued crawls to X concurrent limit
         return 429 if at limit"""
         max_concur = org.quotas.maxConcurrentCrawls
         if not max_concur:
-            return False
+            return
 
         num_waiting = await self.crawls.count_documents(
             {"oid": org.id, "state": "waiting_org_limit"}
         )
-        if num_waiting < max_concur * self.max_concur_queue_to_limit_scale:
-            return False
+        if num_waiting < max_concur * self.crawl_queue_limit_scale:
+            return
 
         raise HTTPException(status_code=429, detail="slow_down_too_many_crawls_queued")
 

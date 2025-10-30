@@ -40,7 +40,7 @@ data:
 
   MAX_PAGES_PER_CRAWL: "{{ .Values.max_pages_per_crawl | default 0 }}"
 
-  MAX_CONCUR_QUEUE_TO_LIMIT_SCALE: "{{ .Values.max_concur_queue_to_limit_scale | default 0 }}"
+  CRAWL_QUEUE_LIMIT_SCALE: "{{ .Values.crawl_queue_limit_scale | default 0 }}"
 
   IDLE_TIMEOUT: "{{ .Values.profile_browser_idle_seconds | default 60 }}"
 
