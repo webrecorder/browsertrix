@@ -245,7 +245,9 @@ class SubOps:
         data["oid"] = oid
         await self.subs.insert_one(data)
 
-    def _get_sub_by_type_from_data(self, data: dict[str, object]) -> Union[
+    def _get_sub_by_type_from_data(
+        self, data: dict[str, object]
+    ) -> Union[
         SubscriptionCreateOut,
         SubscriptionImportOut,
         SubscriptionUpdateOut,
@@ -370,7 +372,7 @@ class SubOps:
                         headers={
                             "Authorization": "bearer " + external_subs_app_api_key
                         },
-                        json=req.dict(),
+                        json=req.model_dump(),
                         raise_for_status=True,
                     ) as resp:
                         json = await resp.json()
@@ -394,41 +396,52 @@ class SubOps:
                         "GET",
                         f"{external_subs_app_api_url}/prices/additionalMinutes",
                         headers={
-                            "Authorization": "bearer " + external_subs_app_api_key
+                            "Authorization": "bearer " + external_subs_app_api_key,
                         },
                         raise_for_status=True,
                     ) as resp:
-                        text = await resp.text()
-                        return AddonMinutesPricing.model_validate_json(text)
+                        json = await resp.json()
+                        return AddonMinutesPricing(**json)
             # pylint: disable=broad-exception-caught
             except Exception as exc:
                 print("Error fetching checkout url", exc)
 
-    async def get_checkout_url(self, org: Organization, minutes: int | None):
+    async def get_checkout_url(
+        self,
+        org: Organization,
+        headers: dict[str, str],
+        minutes: int | None,
+    ):
         """Create checkout url for additional minutes"""
         if not org.subscription:
             raise HTTPException(
                 status_code=404, detail="Organization has no subscription"
             )
         subscription_id = org.subscription.subId
+        return_url = f"{get_origin(headers)}/orgs/{org.slug}/settings/billing"
 
         if external_subs_app_api_url:
             try:
                 req = CheckoutAddonMinutesRequest(
-                    orgId=str(org.id), subId=subscription_id, minutes=minutes
+                    orgId=str(org.id),
+                    subId=subscription_id,
+                    minutes=minutes,
+                    return_url=return_url,
                 )
                 async with aiohttp.ClientSession() as session:
                     async with session.request(
                         "POST",
                         f"{external_subs_app_api_url}/checkout/additionalMinutes",
                         headers={
-                            "Authorization": "bearer " + external_subs_app_api_key
+                            "Authorization": "bearer " + external_subs_app_api_key,
+                            "Content-Type": "application/json",
                         },
-                        json=req.model_dump_json(),
+                        json=req.model_dump(),
                         raise_for_status=True,
                     ) as resp:
-                        text = await resp.text()
-                        return CheckoutAddonMinutesResponse.model_validate_json(text)
+                        json = await resp.json()
+                        print(f"get_checkout_url got response: {json}")
+                        return CheckoutAddonMinutesResponse(**json)
             # pylint: disable=broad-exception-caught
             except Exception as exc:
                 print("Error fetching checkout url", exc)
@@ -572,9 +585,10 @@ def init_subs_api(
         response_model=CheckoutAddonMinutesResponse,
     )
     async def get_execution_minutes_checkout_url(
+        request: Request,
         minutes: int | None = None,
         org: Organization = Depends(org_ops.org_owner_dep),
     ):
-        return await ops.get_checkout_url(org, minutes)
+        return await ops.get_checkout_url(org, dict(request.headers), minutes)
 
     return ops
