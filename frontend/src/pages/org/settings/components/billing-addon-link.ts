@@ -148,7 +148,7 @@ export class OrgSettingsBillingAddonLink extends BtrixElement {
                 this.lastClickedMinutesPreset !== m}
               >
                 ${minutes}
-                ${PRICE_PER_MINUTE &&
+                ${this.price.value &&
                 html`<span class="text-xs text-stone-500" slot="suffix">
                   ${priceForMinutes(m)}
                 </span>`}
@@ -157,7 +157,7 @@ export class OrgSettingsBillingAddonLink extends BtrixElement {
           })}
         </sl-menu>
       </sl-dropdown>
-      ${PRICE_PER_MINUTE &&
+      ${this.price.value &&
       html`<div class="ml-auto text-xs text-stone-500">
         ${msg(html`${price} per minute`)}
       </div>`}
