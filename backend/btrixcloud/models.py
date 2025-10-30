@@ -2009,7 +2009,7 @@ class SubscriptionPortalUrlResponse(BaseModel):
 class AddonMinutesPricing(BaseModel):
     """Addon minutes pricing"""
 
-    price: float
+    value: float
     currency: str
 
 
@@ -2020,6 +2020,7 @@ class CheckoutAddonMinutesRequest(BaseModel):
     orgId: str
     subId: str
     minutes: int | None = None
+    return_url: str
 
 
 class CheckoutAddonMinutesResponse(BaseModel):
