@@ -256,7 +256,7 @@ class CrawlOperator(BaseOperator):
                     return self._empty_response(status)
 
         if status.state in ("starting", "waiting_org_limit"):
-            if not await self.can_start_new(crawl, data, status):
+            if not await self.can_start_new(crawl, status):
                 return self._empty_response(status)
 
             await self.set_state(
@@ -736,13 +736,10 @@ class CrawlOperator(BaseOperator):
 
     def get_related(self, data: MCBaseRequest):
         """return objects related to crawl pods"""
-        spec = data.parent.get("spec", {})
-        crawl_id = spec["id"]
-        # oid = spec.get("oid")
-        # filter by role as well (job vs qa-job)
-        # role = data.parent.get("metadata", {}).get("labels", {}).get("role")
         related_resources = []
         if self.k8s.enable_auto_resize:
+            spec = data.parent.get("spec", {})
+            crawl_id = spec["id"]
             related_resources.append(
                 {
                     "apiVersion": METRICS_API,
@@ -756,7 +753,6 @@ class CrawlOperator(BaseOperator):
     async def can_start_new(
         self,
         crawl: CrawlSpec,
-        data: MCSyncData,
         status: CrawlStatus,
     ):
         """return true if crawl can start, otherwise set crawl to 'queued' state
@@ -765,16 +761,16 @@ class CrawlOperator(BaseOperator):
         if not max_crawls:
             return True
 
-        next_waiting_crawls = await self.crawl_ops.get_active_crawls(
+        next_active_crawls = await self.crawl_ops.get_active_crawls(
             crawl.oid, max_crawls
         )
-        print("WAITING CRAWLS", next_waiting_crawls)
 
         # if total crawls < concurrent, always allow, no need to check further
-        if len(next_waiting_crawls) < max_crawls:
+        if len(next_active_crawls) < max_crawls:
             return True
 
-        if crawl.id in next_waiting_crawls:
+        # allow crawl if within first list of active crawls
+        if crawl.id in next_active_crawls:
             return True
 
         await self.set_state(
