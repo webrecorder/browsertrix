@@ -1979,6 +1979,14 @@ class SubscriptionPortalUrlResponse(BaseModel):
 
 
 # ============================================================================
+class AddonMinutesPricing(BaseModel):
+    """Addon minutes pricing"""
+
+    price: float
+    currency: str
+
+
+# ============================================================================
 class CheckoutAddonMinutesRequest(BaseModel):
     """Request for additional minutes checkout session"""
 
