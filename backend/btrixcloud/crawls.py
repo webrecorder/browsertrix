@@ -123,8 +123,8 @@ class CrawlOps(BaseCrawlOps):
         )
         await self.crawls.create_index(
             [
-                ("type", pymongo.HASHED),
-                ("oid", pymongo.DESCENDING),
+                ("state", pymongo.ASCENDING),
+                ("oid", pymongo.ASCENDING),
                 ("started", pymongo.ASCENDING),
             ]
         )

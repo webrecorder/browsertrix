@@ -21,7 +21,6 @@ from btrixcloud.models import (
     TYPE_NON_RUNNING_STATES,
     TYPE_RUNNING_STATES,
     TYPE_ALL_CRAWL_STATES,
-    # NON_RUNNING_STATES,
     RUNNING_STATES,
     WAITING_STATES,
     RUNNING_AND_STARTING_ONLY,
@@ -53,7 +52,6 @@ from .models import (
     CMAP,
     PVC,
     CJS,
-    # BTRIX_API,
 )
 
 
