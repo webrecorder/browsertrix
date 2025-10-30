@@ -231,16 +231,29 @@ class CrawlManager(K8sAPI):
             )
             if cron_job:
                 print(
-                    "Cron job to clean up used seed files already exists",
+                    "Cron job to clean up unused seed files already exists",
                     flush=True,
                 )
+
+                if cron_job.spec.schedule != job_schedule:
+                    cron_job.spec.schedule = job_schedule
+
+                    await self.batch_api.patch_namespaced_cron_job(
+                        name=cron_job.metadata.name,
+                        namespace=DEFAULT_NAMESPACE,
+                        body=cron_job,
+                    )
+                    print(
+                        f"Cron job to clean up unused seed files updated, schedule: {job_schedule}",
+                        flush=True,
+                    )
                 return
         # pylint: disable=broad-exception-caught
         except Exception:
             pass
 
         print(
-            f"Creating cron job to clean up used seed files, schedule: {job_schedule}",
+            f"Creating cron job to clean up unused seed files, schedule: {job_schedule}",
             flush=True,
         )
 
