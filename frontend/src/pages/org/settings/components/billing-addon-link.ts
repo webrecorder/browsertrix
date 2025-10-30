@@ -9,14 +9,36 @@ import { type BillingAddonCheckout } from "@/types/billing";
 import appState from "@/utils/state";
 
 const PRESET_MINUTES = [600, 1500, 3000];
-const PRICE_PER_MINUTE: { value: number; currency: string } | undefined =
-  undefined;
+
+type Price = {
+  value: number;
+  currency: string;
+};
 
 @customElement("btrix-org-settings-billing-addon-link")
 @localized()
 export class OrgSettingsBillingAddonLink extends BtrixElement {
+  static _price: Price | undefined;
+
   @state()
   private lastClickedMinutesPreset: number | undefined = undefined;
+
+  private readonly price = new Task(this, {
+    task: async () => {
+      if (OrgSettingsBillingAddonLink._price)
+        return OrgSettingsBillingAddonLink._price;
+      try {
+        const price = await this.api.fetch<Price>(
+          `/orgs/${this.orgId}/prices/execution-minutes`,
+        );
+        OrgSettingsBillingAddonLink._price = price;
+        return price;
+      } catch (error) {
+        console.log("Failed to fetch price", error);
+        return;
+      }
+    },
+  });
 
   private readonly checkoutUrl = new Task(this, {
     task: async ([minutes]) => {
@@ -73,10 +95,10 @@ export class OrgSettingsBillingAddonLink extends BtrixElement {
 
   render() {
     const priceForMinutes = (minutes: number) => {
-      if (!PRICE_PER_MINUTE) return;
-      return this.localize.number(minutes * PRICE_PER_MINUTE.value, {
+      if (!this.price.value) return;
+      return this.localize.number(minutes * this.price.value.value, {
         style: "currency",
-        currency: PRICE_PER_MINUTE.currency,
+        currency: this.price.value.currency,
       });
     };
     const price = priceForMinutes(1);

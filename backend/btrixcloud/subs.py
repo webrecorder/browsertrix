@@ -382,6 +382,7 @@ class SubOps:
         return SubscriptionPortalUrlResponse()
 
     async def get_execution_minutes_price(self, org: Organization):
+        """Fetch price for addon execution minutes from external subscription app"""
         if not org.subscription:
             raise HTTPException(
                 status_code=404, detail="Organization has no subscription"
@@ -399,10 +400,12 @@ class SubOps:
                     ) as resp:
                         text = await resp.text()
                         return AddonMinutesPricing.model_validate_json(text)
+            # pylint: disable=broad-exception-caught
             except Exception as exc:
                 print("Error fetching checkout url", exc)
 
     async def get_checkout_url(self, org: Organization, minutes: int | None):
+        """Create checkout url for additional minutes"""
         if not org.subscription:
             raise HTTPException(
                 status_code=404, detail="Organization has no subscription"
@@ -426,11 +429,12 @@ class SubOps:
                     ) as resp:
                         text = await resp.text()
                         return CheckoutAddonMinutesResponse.model_validate_json(text)
+            # pylint: disable=broad-exception-caught
             except Exception as exc:
                 print("Error fetching checkout url", exc)
 
 
-# pylint: disable=invalid-name,too-many-arguments
+# pylint: disable=invalid-name,too-many-arguments,too-many-locals
 def init_subs_api(
     app,
     mdb,
@@ -555,7 +559,7 @@ def init_subs_api(
     @org_ops.router.get(
         "/price/execution-minutes",
         tags=["organizations"],
-        response_model=PriceResponse,
+        response_model=AddonMinutesPricing,
     )
     async def get_execution_minutes_price(
         org: Organization = Depends(org_ops.org_owner_dep),
@@ -567,7 +571,7 @@ def init_subs_api(
         tags=["organizations"],
         response_model=CheckoutAddonMinutesResponse,
     )
-    async def get_billing_portal_url(
+    async def get_execution_minutes_checkout_url(
         minutes: int | None = None,
         org: Organization = Depends(org_ops.org_owner_dep),
     ):
