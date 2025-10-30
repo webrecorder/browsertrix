@@ -29,7 +29,7 @@ export class OrgSettingsBillingAddonLink extends BtrixElement {
         return OrgSettingsBillingAddonLink._price;
       try {
         const price = await this.api.fetch<Price>(
-          `/orgs/${this.orgId}/prices/execution-minutes`,
+          `/orgs/${this.orgId}/price/execution-minutes`,
         );
         OrgSettingsBillingAddonLink._price = price;
         return price;
@@ -38,6 +38,7 @@ export class OrgSettingsBillingAddonLink extends BtrixElement {
         return;
       }
     },
+    args: () => [] as const,
   });
 
   private readonly checkoutUrl = new Task(this, {
