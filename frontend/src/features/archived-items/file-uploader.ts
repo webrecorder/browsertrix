@@ -237,7 +237,7 @@ export class FileUploader extends BtrixElement {
       ></btrix-tag-input>
       <div class="mt-4">
         <btrix-collections-add
-          .initialCollections=${this.collectionIds}
+          .collectionIds=${this.collectionIds}
           label=${msg("Add to Collection")}
           @collections-change=${(e: CollectionsChangeEvent) =>
             (this.collectionIds = e.detail.collections)}

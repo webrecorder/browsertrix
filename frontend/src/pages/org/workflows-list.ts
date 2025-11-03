@@ -20,7 +20,7 @@ import {
   type PageChangeEvent,
   type Pagination,
 } from "@/components/ui/pagination";
-import { type SelectEvent } from "@/components/ui/search-combobox";
+import type { BtrixSearchComboboxSelectEvent } from "@/components/ui/search-combobox";
 import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import {
@@ -632,8 +632,8 @@ export class WorkflowsList extends BtrixElement {
           this.selectedSearchFilterKey &&
             this.filterBy.value[this.selectedSearchFilterKey],
         )}
-        @btrix-select=${(e: SelectEvent<WorkflowSearch["searchKeys"]>) => {
-          const { key, value } = e.detail;
+        @btrix-select=${(e: BtrixSearchComboboxSelectEvent) => {
+          const { key, value } = e.detail.item;
           if (key == null) return;
           this.filterBy.setValue({
             ...this.filterBy.value,

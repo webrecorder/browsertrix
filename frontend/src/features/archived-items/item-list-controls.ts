@@ -6,7 +6,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { type SelectEvent } from "@/components/ui/search-combobox";
+import { type BtrixSearchComboboxSelectEvent } from "@/components/ui/search-combobox";
 
 export type FilterBy = Partial<Record<string, string>>;
 export type SearchValues = {
@@ -96,8 +96,9 @@ export class ItemListControls extends TailwindElement {
         .searchOptions=${this.searchOptions}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         placeholder=${msg("Filter by name")}
-        @btrix-select=${(e: SelectEvent<string>) => {
-          const { key, value } = e.detail;
+        size="small"
+        @btrix-select=${(e: BtrixSearchComboboxSelectEvent) => {
+          const { key, value } = e.detail.item;
           if (key) {
             this.dispatchEvent(
               new CustomEvent<FilterChangeEventDetail>("btrix-filter-change", {
