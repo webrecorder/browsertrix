@@ -9,13 +9,10 @@ import { labelWithIcon } from "@/layouts/labelWithIcon";
 import { RUNNING_STATES, type CrawlState } from "@/types/crawlState";
 import { animatePulse } from "@/utils/css";
 
-type CrawlType = "crawl" | "upload" | "qa";
+type CrawlType = "crawl" | "qa";
 
 /**
- * Displays the status of an archived item, QA run, or workflow.
- *
- * At the moment, "crawl" in the component name is somewhat misleading since this can indicate the state
- * of an archived item crawl, archived item upload, workflow run, or QA run.
+ * Displays the status of a crawl type archived item, QA run, or workflow.
  */
 @customElement("btrix-crawl-status")
 @localized()
@@ -218,7 +215,6 @@ export class CrawlStatus extends TailwindElement {
           style="color: ${color}"
         ></sl-icon>`;
         label = {
-          upload: msg("Uploaded"),
           crawl: msg("Complete"),
           qa: msg("Complete"),
         }[type];

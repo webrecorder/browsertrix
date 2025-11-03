@@ -8,6 +8,7 @@ import type { ArchivedItemCheckedEvent } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { labelWithIcon } from "@/layouts/labelWithIcon";
 import { ReviewStatus, type ArchivedItem } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
 import localize from "@/utils/localize";
@@ -105,6 +106,20 @@ export class ArchivedItemListItem extends BtrixElement {
       state: lastQAState || undefined,
     });
 
+    const status = isUpload
+      ? // Uploads are always complete
+        labelWithIcon({
+          icon: html`<sl-icon
+            name="check-circle-fill"
+            class="text-success"
+          ></sl-icon>`,
+          label: msg("Uploaded"),
+        })
+      : html`<btrix-crawl-status
+          state=${this.item.state}
+          hideLabel
+        ></btrix-crawl-status>`;
+
     return html`
       <btrix-table-row
         class=${this.href || this.checkbox
@@ -138,13 +153,7 @@ export class ArchivedItemListItem extends BtrixElement {
           : nothing}
         <btrix-table-cell class="pr-0 text-base">
           ${this.showStatus
-            ? html`
-                <btrix-crawl-status
-                  state=${this.item.state}
-                  hideLabel
-                  type=${this.item.type}
-                ></btrix-crawl-status>
-              `
+            ? status
             : html`
                 <sl-tooltip
                   content=${msg(str`${typeLabel}: ${crawlStatus.label}`)}
