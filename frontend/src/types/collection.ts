@@ -2,6 +2,9 @@ import { z } from "zod";
 
 import { storageFileSchema } from "./storage";
 
+export const COLLECTION_NAME_MAX_LENGTH = 50;
+export const COLLECTION_CAPTION_MAX_LENGTH = 150;
+
 export enum CollectionAccess {
   Private = "private",
   Public = "public",
@@ -50,6 +53,7 @@ export const publicCollectionSchema = z.object({
   homeUrlPageId: z.string().nullable(),
   homeUrlTs: z.string().datetime().nullable(),
   access: z.nativeEnum(CollectionAccess),
+  hasDedupeIndex: z.boolean(),
 });
 export type PublicCollection = z.infer<typeof publicCollectionSchema>;
 

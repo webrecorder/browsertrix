@@ -79,9 +79,7 @@ export class Combobox extends LitElement {
         @keyup=${this.onKeyup}
         @focusout=${this.onFocusout}
       >
-        <div slot="anchor">
-          <slot></slot>
-        </div>
+        <slot slot="anchor"></slot>
         <div
           id="dropdown"
           class="dropdown hidden"
