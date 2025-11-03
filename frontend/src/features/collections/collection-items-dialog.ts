@@ -18,7 +18,7 @@ import type {
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
-import { type CheckboxChangeEventDetail } from "@/features/archived-items/archived-item-list";
+import type { CheckboxChangeEventDetail } from "@/features/archived-items/archived-item-list/types";
 import type {
   FilterBy,
   FilterChangeEventDetail,
