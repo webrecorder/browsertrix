@@ -16,9 +16,20 @@ export class UploadStatus extends TailwindElement {
   hideLabel = false;
 
   render() {
+    let icon = html`<sl-icon
+      name="slash-circle"
+      class="text-neutral-400"
+    ></sl-icon>`;
+    let label: string | undefined = undefined;
+
+    if (this.state === "complete") {
+      icon = html`<sl-icon name="upload" class="text-success"></sl-icon>`;
+      label = msg("Uploaded");
+    }
+
     return labelWithIcon({
-      icon: html`<sl-icon name="upload" class="text-success"></sl-icon>`,
-      label: msg("Uploaded"),
+      icon,
+      label,
       hideLabel: this.hideLabel,
     });
   }
