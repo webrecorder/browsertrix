@@ -8,7 +8,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { type BillingAddonCheckout } from "@/types/billing";
 import appState from "@/utils/state";
 
-const PRESET_MINUTES = [600, 1500, 3000];
+const PRESET_MINUTES = [100, 600, 1500, 3000];
 
 type Price = {
   value: number;
@@ -137,7 +137,12 @@ export class OrgSettingsBillingAddonLink extends BtrixElement {
           </sl-visually-hidden>
         </sl-button>
         <sl-menu>
-          <sl-menu-label>${msg("Preset minute amounts")}</sl-menu-label>
+          <sl-menu-label
+            >${msg("Preset minute amounts")}
+            <div class="text-xs font-normal">
+              ${msg("Amounts are adjustable during checkout.")}
+            </div>
+          </sl-menu-label>
           ${PRESET_MINUTES.map((m) => {
             const minutes = this.localizeMinutes(m);
             return html`
