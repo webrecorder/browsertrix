@@ -10,6 +10,12 @@ import { animatePulse } from "@/utils/css";
 
 type CrawlType = "crawl" | "upload" | "qa";
 
+/**
+ * Displays the status of an archived item or workflow.
+ *
+ * At the moment, "crawl" in the component name is somewhat misleading since this can indicate the state
+ * of an archived item crawl, archived item upload, or a workflow crawl (running, paused, etc.)
+ */
 @customElement("btrix-crawl-status")
 @localized()
 export class CrawlStatus extends TailwindElement {

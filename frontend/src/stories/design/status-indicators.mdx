@@ -1,5 +1,5 @@
 import { Meta, Canvas } from '@storybook/addon-docs/blocks';
-import { AllStates } from '../features/crawls/CrawlStatus.stories';
+import { AllStates } from '../features/archived-items/CrawlStatus.stories';
 import { ColorSwatch } from "../../../.storybook/blocks/ColorSwatch";
 
 <Meta title="Design/Status Indicators" />
@@ -39,7 +39,7 @@ further clarity as to what they indicate.
 | <span className="whitespace-nowrap text-danger-600"><sl-icon style={{verticalAlign:-2}} name="x-octagon"></sl-icon> Danger</span>                                        | Shoelace <ColorSwatch color="var(--sl-color-danger-600)">`--sl-color-danger-600`</ColorSwatch>            | Toasts          | Used to show an error notification                              |
 
 
-### Exact Crawl Status
+### Exact Status
 
 <Canvas of={AllStates} layout='fullscreen' />
 
