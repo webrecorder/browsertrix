@@ -4,7 +4,7 @@ import { css, html, nothing } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
-import type { CheckboxChangeEventDetail } from "./types";
+import type { ArchivedItemCheckedEvent } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
@@ -14,7 +14,6 @@ import localize from "@/utils/localize";
 
 /**
  * @slot actionCell - Action cell
- * @fires btrix-checkbox-change
  */
 @customElement("btrix-archived-item-list-item")
 @localized()
@@ -121,11 +120,13 @@ export class ArchivedItemListItem extends BtrixElement {
                   ?checked=${this.checked}
                   @sl-change=${(e: CustomEvent) => {
                     this.dispatchEvent(
-                      new CustomEvent<CheckboxChangeEventDetail>(
-                        "btrix-checkbox-change",
+                      new CustomEvent<ArchivedItemCheckedEvent["detail"]>(
+                        "btrix-change",
                         {
                           detail: {
-                            checked: (e.currentTarget as SlCheckbox).checked,
+                            value: {
+                              checked: (e.currentTarget as SlCheckbox).checked,
+                            },
                           },
                         },
                       ),
