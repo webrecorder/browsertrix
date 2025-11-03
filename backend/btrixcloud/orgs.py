@@ -1526,6 +1526,20 @@ def init_orgs_api(
 
         return org
 
+    async def org_or_shared_secret_dep(
+        oid: UUID, user: User = Depends(user_or_shared_secret_dep)
+    ):
+        org = await ops.get_org_for_user_by_id(oid, user)
+        if not org:
+            raise HTTPException(status_code=404, detail="org_not_found")
+        if not org.is_viewer(user):
+            raise HTTPException(
+                status_code=403,
+                detail="User does not have permission to view this organization",
+            )
+
+        return org
+
     async def org_crawl_dep(
         org: Organization = Depends(org_dep), user: User = Depends(user_dep)
     ):
@@ -1656,7 +1670,7 @@ def init_orgs_api(
     @router.post("/quotas", tags=["organizations"], response_model=UpdatedResponse)
     async def update_quotas(
         quotas: OrgQuotasIn,
-        org: Organization = Depends(org_owner_dep),
+        org: Organization = Depends(org_or_shared_secret_dep),
         user: User = Depends(user_or_shared_secret_dep),
     ):
         if not user.is_superuser:
