@@ -51,6 +51,12 @@ export const AllStates: Story = {
                 <btrix-table-cell><code>${state}</code></btrix-table-cell>
               </btrix-table-row>`,
           )}
+          <btrix-table-row class="border-t">
+            <btrix-table-cell>
+              <btrix-crawl-status></btrix-crawl-status>
+            </btrix-table-cell>
+            <btrix-table-cell><em>Empty</em></btrix-table-cell>
+          </btrix-table-row>
         </btrix-table-body>
       </btrix-table>
     `,

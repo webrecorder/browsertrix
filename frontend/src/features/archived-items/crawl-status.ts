@@ -5,16 +5,17 @@ import { customElement, property } from "lit/decorators.js";
 import startCase from "lodash/fp/startCase";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { labelWithIcon } from "@/layouts/labelWithIcon";
 import { RUNNING_STATES, type CrawlState } from "@/types/crawlState";
 import { animatePulse } from "@/utils/css";
 
 type CrawlType = "crawl" | "upload" | "qa";
 
 /**
- * Displays the status of an archived item or workflow.
+ * Displays the status of an archived item, QA run, or workflow.
  *
  * At the moment, "crawl" in the component name is somewhat misleading since this can indicate the state
- * of an archived item crawl, archived item upload, or a workflow crawl (running, paused, etc.)
+ * of an archived item crawl, archived item upload, workflow run, or QA run.
  */
 @customElement("btrix-crawl-status")
 @localized()
@@ -373,13 +374,9 @@ export class CrawlStatus extends TailwindElement {
       </div>`;
     }
     if (label) {
-      return html`<div class="flex h-6 items-center gap-2">
-        ${icon}
-        <div class="leading-none">${label}</div>
-      </div>`;
+      return labelWithIcon({ icon, label });
     }
-    return html`<div class="flex h-6 items-center gap-2">
-      ${icon}<sl-skeleton></sl-skeleton>
-    </div>`;
+
+    return labelWithIcon({ icon, label: html`<sl-skeleton></sl-skeleton>` });
   }
 }

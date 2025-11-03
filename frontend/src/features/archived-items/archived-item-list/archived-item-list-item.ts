@@ -142,7 +142,7 @@ export class ArchivedItemListItem extends BtrixElement {
                 <btrix-crawl-status
                   state=${this.item.state}
                   hideLabel
-                  ?isUpload=${isUpload}
+                  type=${this.item.type}
                 ></btrix-crawl-status>
               `
             : html`
