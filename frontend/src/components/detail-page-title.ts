@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import type { Crawl } from "@/types/crawler";
 import { type CrawlState } from "@/types/crawlState";
 import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
@@ -70,18 +71,22 @@ export class DetailPageTitle extends TailwindElement {
   private renderIcon() {
     if (!this.item?.state) return;
 
-    const crawlStatus = CrawlStatus.getContent(this.item);
+    let icon = html``;
 
-    let icon = html`<sl-tooltip
-      content=${msg(str`Crawl: ${crawlStatus.label}`)}
-    >
-      <sl-icon
-        name="gear-wide-connected"
-        style="color: ${crawlStatus.cssColor}"
-      ></sl-icon>
-    </sl-tooltip>`;
+    if (this.item.type === "crawl") {
+      const crawlStatus = CrawlStatus.getContent(this.item as Crawl);
+
+      icon = html`<sl-tooltip content=${msg(str`Crawl: ${crawlStatus.label}`)}>
+        <sl-icon
+          name="gear-wide-connected"
+          style="color: ${crawlStatus.cssColor}"
+        ></sl-icon>
+      </sl-tooltip>`;
+    }
 
     if (this.item.type === "upload") {
+      const crawlStatus = CrawlStatus.getContent({ state: "complete" });
+
       icon = html`<sl-tooltip content=${msg(str`Upload: ${crawlStatus.label}`)}>
         <sl-icon name="upload" style="color: ${crawlStatus.cssColor}"></sl-icon>
       </sl-tooltip>`;

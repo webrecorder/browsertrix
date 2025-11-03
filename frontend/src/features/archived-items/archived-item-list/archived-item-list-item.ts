@@ -8,8 +8,7 @@ import type { ArchivedItemCheckedEvent } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
-import { labelWithIcon } from "@/layouts/labelWithIcon";
-import { ReviewStatus, type ArchivedItem } from "@/types/crawler";
+import { ReviewStatus, type ArchivedItem, type Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
 import localize from "@/utils/localize";
 
@@ -70,7 +69,9 @@ export class ArchivedItemListItem extends BtrixElement {
     const checkboxId = `${this.item.id}-checkbox`;
     const rowName = renderName(this.item);
     const isUpload = this.item.type === "upload";
-    const crawlStatus = CrawlStatus.getContent(this.item);
+    const crawlStatus = isUpload
+      ? CrawlStatus.getContent({ state: "complete" })
+      : CrawlStatus.getContent(this.item as Crawl);
     let typeLabel = msg("Crawl");
     let typeIcon = "gear-wide-connected";
 
@@ -106,20 +107,6 @@ export class ArchivedItemListItem extends BtrixElement {
       state: lastQAState || undefined,
     });
 
-    const status = isUpload
-      ? // Uploads are always complete
-        labelWithIcon({
-          icon: html`<sl-icon
-            name="check-circle-fill"
-            class="text-success"
-          ></sl-icon>`,
-          label: msg("Uploaded"),
-        })
-      : html`<btrix-crawl-status
-          state=${this.item.state}
-          hideLabel
-        ></btrix-crawl-status>`;
-
     return html`
       <btrix-table-row
         class=${this.href || this.checkbox
@@ -152,23 +139,33 @@ export class ArchivedItemListItem extends BtrixElement {
             `
           : nothing}
         <btrix-table-cell class="pr-0 text-base">
-          ${this.showStatus
-            ? status
-            : html`
-                <sl-tooltip
-                  content=${msg(str`${typeLabel}: ${crawlStatus.label}`)}
-                  @sl-hide=${(e: SlHideEvent) => e.stopPropagation()}
-                  @sl-after-hide=${(e: SlHideEvent) => e.stopPropagation()}
-                  hoist
-                >
-                  <sl-icon
-                    class="text-inherit"
-                    style="color: ${crawlStatus.cssColor}"
-                    name=${typeIcon}
-                    label=${typeLabel}
-                  ></sl-icon>
-                </sl-tooltip>
-              `}
+          ${isUpload
+            ? html`<btrix-upload-status
+                state=${this.item.state}
+                hideLabel
+              ></btrix-upload-status>`
+            : this.showStatus
+              ? html`
+                  <btrix-crawl-status
+                    state=${this.item.state}
+                    hideLabel
+                  ></btrix-crawl-status>
+                `
+              : html`
+                  <sl-tooltip
+                    content=${msg(str`${typeLabel}: ${crawlStatus.label}`)}
+                    @sl-hide=${(e: SlHideEvent) => e.stopPropagation()}
+                    @sl-after-hide=${(e: SlHideEvent) => e.stopPropagation()}
+                    hoist
+                  >
+                    <sl-icon
+                      class="text-inherit"
+                      style="color: ${crawlStatus.cssColor}"
+                      name=${typeIcon}
+                      label=${typeLabel}
+                    ></sl-icon>
+                  </sl-tooltip>
+                `}
           <sl-tooltip
             hoist
             content=${activeQAStats
@@ -188,7 +185,7 @@ export class ArchivedItemListItem extends BtrixElement {
                 `
               : html`
                   <sl-icon
-                    class="text-inherit"
+                    class="text-base"
                     style="color: ${qaStatus.cssColor}"
                     name=${isUpload ? "slash" : "microscope"}
                     library=${isUpload ? "default" : "app"}

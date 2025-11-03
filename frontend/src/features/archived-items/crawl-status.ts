@@ -1,5 +1,4 @@
 import { localized, msg } from "@lit/localize";
-import type { SlHideEvent } from "@shoelace-style/shoelace";
 import { css, html, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import startCase from "lodash/fp/startCase";
@@ -357,22 +356,7 @@ export class CrawlStatus extends TailwindElement {
       originalState: this.state,
       type: this.type,
     });
-    if (this.hideLabel) {
-      return html`<div class="flex items-center">
-        <sl-tooltip
-          content=${label}
-          @sl-hide=${(e: SlHideEvent) => e.stopPropagation()}
-          @sl-after-hide=${(e: SlHideEvent) => e.stopPropagation()}
-          .hoist=${this.hoist}
-        >
-          <div>${icon}</div>
-        </sl-tooltip>
-      </div>`;
-    }
-    if (label) {
-      return labelWithIcon({ icon, label });
-    }
 
-    return labelWithIcon({ icon, label: html`<sl-skeleton></sl-skeleton>` });
+    return labelWithIcon({ icon, label, hideLabel: this.hideLabel });
   }
 }
