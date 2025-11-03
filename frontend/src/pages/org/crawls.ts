@@ -20,7 +20,7 @@ import {
   type PageChangeEvent,
   type Pagination,
 } from "@/components/ui/pagination";
-import type { SelectEvent } from "@/components/ui/search-combobox";
+import type { BtrixSearchComboboxSelectEvent } from "@/components/ui/search-combobox";
 import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
@@ -595,8 +595,8 @@ export class OrgCrawls extends BtrixElement {
             this.filterBy.value[this.selectedSearchFilterKey],
         )}
         placeholder=${msg("Search by workflow name or crawl start URL")}
-        @btrix-select=${(e: SelectEvent<WorkflowSearch["searchKeys"]>) => {
-          const { key, value } = e.detail;
+        @btrix-select=${(e: BtrixSearchComboboxSelectEvent) => {
+          const { key, value } = e.detail.item;
           console.log(key, value);
           if (key == null) return;
           this.filterBy.setValue({
