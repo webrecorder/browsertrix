@@ -20,6 +20,7 @@ import {
   type PageChangeEvent,
   type Pagination,
 } from "@/components/ui/pagination";
+import type { BtrixSearchComboboxSelectEvent } from "@/components/ui/search-combobox";
 import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
@@ -749,6 +750,7 @@ export class CrawlsList extends BtrixElement {
         .searchKeys=${this.searchKeys}
         .searchOptions=${this.searchOptions}
         .keyLabels=${CrawlsList.FieldLabels}
+        size="small"
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         searchByValue=${ifDefined(
           this.selectedSearchFilterKey &&
@@ -759,8 +761,11 @@ export class CrawlsList extends BtrixElement {
           : this.itemType === "crawl"
             ? msg("Search all crawls by name or crawl start URL")
             : msg("Search all items by name or crawl start URL")}
-        @btrix-select=${(e: CustomEvent) => {
-          const { key, value } = e.detail;
+        @btrix-select=${(e: BtrixSearchComboboxSelectEvent) => {
+          const { key, value } = e.detail.item;
+
+          if (key == null) return;
+
           this.filterBy.setValue({
             ...this.filterBy.value,
             [key]: value,
