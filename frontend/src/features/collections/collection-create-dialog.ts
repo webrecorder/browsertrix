@@ -17,7 +17,12 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { alerts } from "@/strings/collections/alerts";
-import { CollectionAccess, type Collection } from "@/types/collection";
+import {
+  COLLECTION_CAPTION_MAX_LENGTH,
+  COLLECTION_NAME_MAX_LENGTH,
+  CollectionAccess,
+  type Collection,
+} from "@/types/collection";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 
@@ -49,8 +54,12 @@ export class CollectionCreateDialog extends BtrixElement {
   @queryAsync("#collectionForm")
   private readonly form!: Promise<HTMLFormElement>;
 
-  private readonly validateNameMax = maxLengthValidator(50);
-  private readonly validateCaptionMax = maxLengthValidator(150);
+  private readonly validateNameMax = maxLengthValidator(
+    COLLECTION_NAME_MAX_LENGTH,
+  );
+  private readonly validateCaptionMax = maxLengthValidator(
+    COLLECTION_CAPTION_MAX_LENGTH,
+  );
 
   protected firstUpdated(): void {
     if (this.open) {

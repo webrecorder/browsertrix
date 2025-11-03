@@ -146,7 +146,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     };
     const behaviors = {
       customBehavior: html`
-        <label class="form-label text-xs">${labelFor.customBehaviors}</label>
+        <label class="form-label text-xs">${labelFor.customBehavior}</label>
         <btrix-custom-behaviors-table
           .customBehaviors=${orgDefaults.customBehaviors || []}
           editable
