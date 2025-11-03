@@ -38,17 +38,17 @@ export const AllStates: Story = {
         class="w-full [--btrix-table-cell-padding:var(--sl-spacing-x-small)]"
       >
         <btrix-table-head>
-          <btrix-table-header-cell>State</btrix-table-header-cell>
           <btrix-table-header-cell>Status UI</btrix-table-header-cell>
+          <btrix-table-header-cell>State</btrix-table-header-cell>
         </btrix-table-head>
         <btrix-table-body>
           ${CRAWL_STATES.map(
             (state) =>
               html`<btrix-table-row class="border-t">
-                <btrix-table-cell><code>${state}</code></btrix-table-cell>
                 <btrix-table-cell>
                   <btrix-crawl-status state=${state}></btrix-crawl-status>
                 </btrix-table-cell>
+                <btrix-table-cell><code>${state}</code></btrix-table-cell>
               </btrix-table-row>`,
           )}
         </btrix-table-body>

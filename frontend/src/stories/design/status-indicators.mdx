@@ -1,5 +1,5 @@
-import { Meta } from "@storybook/blocks";
-
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import { AllStates } from '../features/crawls/CrawlStatus.stories';
 import { ColorSwatch } from "../../../.storybook/blocks/ColorSwatch";
 
 <Meta title="Design/Status Indicators" />
@@ -19,6 +19,8 @@ further clarity as to what they indicate.
 
 ## In Use (as of 2025-10-21)
 
+### Generalized Status
+
 | Icon & Label                                                                                                                                                                       | Color                                                                                                     | Context         | Description                                                     |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | --------------- | --------------------------------------------------------------- |
 | <span className="whitespace-nowrap text-success-600"><sl-icon style={{verticalAlign:-2}} name="dot" library="app"></sl-icon> 1 Crawl Running</span>                                | Shoelace <ColorSwatch color="var(--sl-color-success-600)">`--sl-color-success-600`</ColorSwatch>          | Dashboard       | Count of crawls in "running" status when that count is non-zero |
@@ -35,6 +37,11 @@ further clarity as to what they indicate.
 | <span className="whitespace-nowrap text-success-600"><sl-icon style={{verticalAlign:-2}} name="check2-circle"></sl-icon> Success</span>                                            | Shoelace <ColorSwatch color="var(--sl-color-success-600)">`--sl-color-success-600`</ColorSwatch>          | Toasts          | Used to show a success notification                             |
 | <span className="whitespace-nowrap text-warning-600"><sl-icon style={{verticalAlign:-2}} name="exclamation-triangle"></sl-icon> Warning</span>                                     | Shoelace <ColorSwatch color="var(--sl-color-warning-600)">`--sl-color-warning-600`</ColorSwatch>          | Toasts          | Used to show a warning notification                             |
 | <span className="whitespace-nowrap text-danger-600"><sl-icon style={{verticalAlign:-2}} name="x-octagon"></sl-icon> Danger</span>                                        | Shoelace <ColorSwatch color="var(--sl-color-danger-600)">`--sl-color-danger-600`</ColorSwatch>            | Toasts          | Used to show an error notification                              |
+
+
+### Exact Crawl Status
+
+<Canvas of={AllStates} layout='fullscreen' />
 
 ## Intended Implementation
 
