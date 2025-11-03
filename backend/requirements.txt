@@ -1,10 +1,10 @@
 gunicorn
 uvicorn[standard]
-fastapi==0.103.2
+fastapi==0.121.0
 motor
 passlib
 PyJWT==2.8.0
-pydantic>=2.12.3
+pydantic==2.12.3
 email-validator
 loguru
 aiofiles
