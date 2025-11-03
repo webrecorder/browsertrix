@@ -1,38 +1,46 @@
 import { localized, msg } from "@lit/localize";
-import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
+import type {
+  SlClearEvent,
+  SlInput,
+  SlMenuItem,
+} from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
-import { html, LitElement, nothing, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
+import { TailwindElement } from "@/classes/TailwindElement";
+import { defaultFuseOptions } from "@/context/search-org/connectFuse";
+import type { BtrixSelectEvent } from "@/events/btrix-select";
 import { type UnderlyingFunction } from "@/types/utils";
+import { isNotEqual } from "@/utils/is-not-equal";
 
-type SelectEventDetail<T> = {
+export type BtrixSearchComboboxSelectEvent = BtrixSelectEvent<{
   key: string | null;
-  value?: T;
-};
-export type SelectEvent<T> = CustomEvent<SelectEventDetail<T>>;
+  value: string;
+}>;
 
 const MIN_SEARCH_LENGTH = 2;
-const MAX_SEARCH_RESULTS = 10;
+const MAX_SEARCH_RESULTS = 5;
 
 /**
  * Fuzzy search through list of options
  *
- * @event btrix-select
- * @event btrix-clear
+ * @fires btrix-select
+ * @fires btrix-clear
  */
 @customElement("btrix-search-combobox")
 @localized()
-export class SearchCombobox<T> extends LitElement {
+export class SearchCombobox<T> extends TailwindElement {
   @property({ type: Array })
   searchOptions: T[] = [];
 
-  @property({ type: Array })
+  @property({ type: Array, hasChanged: isNotEqual })
   searchKeys: string[] = [];
 
-  @property({ type: Object })
+  @property({ type: Object, hasChanged: isNotEqual })
   keyLabels?: { [key: string]: string };
 
   @property({ type: String })
@@ -44,6 +52,30 @@ export class SearchCombobox<T> extends LitElement {
   @property({ type: String })
   searchByValue = "";
 
+  @property({ type: String })
+  label?: string;
+
+  @property({ type: String })
+  name?: string;
+
+  @property({ type: Number })
+  maxlength?: number;
+
+  @property({ type: Boolean })
+  required?: boolean;
+
+  @property({ type: Boolean })
+  disabled?: boolean;
+
+  @property({ type: String })
+  size?: SlInput["size"];
+
+  @property({ type: Boolean })
+  disableSearch = false;
+
+  @property({ type: Boolean })
+  createNew = false;
+
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
@@ -54,10 +86,9 @@ export class SearchCombobox<T> extends LitElement {
   @query("sl-input")
   private readonly input!: SlInput;
 
-  private fuse = new Fuse<T>([], {
-    keys: [],
-    threshold: 0.2, // stricter; default is 0.6
-    includeMatches: true,
+  protected fuse = new Fuse<T>(this.searchOptions, {
+    ...defaultFuseOptions,
+    keys: this.searchKeys,
   });
 
   disconnectedCallback(): void {
@@ -72,7 +103,7 @@ export class SearchCombobox<T> extends LitElement {
     }
     if (changedProperties.has("searchKeys")) {
       this.onSearchInput.cancel();
-      this.fuse = new Fuse<T>([], {
+      this.fuse = new Fuse<T>(this.searchOptions, {
         ...(
           this.fuse as unknown as {
             options: ConstructorParameters<typeof Fuse>[1];
@@ -106,21 +137,27 @@ export class SearchCombobox<T> extends LitElement {
           this.searchByValue = value;
           await this.updateComplete;
           this.dispatchEvent(
-            new CustomEvent<SelectEventDetail<T>>("btrix-select", {
-              detail: {
-                key: key ?? null,
-                value: value as T,
+            new CustomEvent<BtrixSearchComboboxSelectEvent["detail"]>(
+              "btrix-select",
+              {
+                detail: {
+                  item: { key: key ?? null, value: value },
+                },
               },
-            }),
+            ),
           );
         }}
       >
         <sl-input
-          size="small"
           placeholder=${this.placeholder}
+          label=${ifDefined(this.label)}
+          size=${ifDefined(this.size)}
+          maxlength=${ifDefined(this.maxlength)}
+          ?disabled=${this.disabled}
           clearable
           value=${this.searchByValue}
-          @sl-clear=${() => {
+          @sl-clear=${(e: SlClearEvent) => {
+            e.stopPropagation();
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
             this.dispatchEvent(new CustomEvent("btrix-clear"));
@@ -139,7 +176,10 @@ export class SearchCombobox<T> extends LitElement {
                 style="margin-left: var(--sl-spacing-3x-small)"
                 >${this.keyLabels![this.selectedKey!]}</sl-tag
               >`,
-            () => html`<sl-icon name="search" slot="prefix"></sl-icon>`,
+            () =>
+              this.disableSearch
+                ? nothing
+                : html`<sl-icon name="search" slot="prefix"></sl-icon>`,
           )}
         </sl-input>
         ${this.renderSearchResults()}
@@ -160,38 +200,65 @@ export class SearchCombobox<T> extends LitElement {
       limit: MAX_SEARCH_RESULTS,
     });
 
-    if (!searchResults.length) {
-      return html`
-        <sl-menu-item slot="menu-item" disabled
-          >${msg("No matches found.")}</sl-menu-item
-        >
-      `;
-    }
+    const match = ({ key, value }: Fuse.FuseResultMatch) => {
+      if (!!key && !!value) {
+        const keyLabel = this.keyLabels?.[key];
+        return html`
+          <sl-menu-item slot="menu-item" data-key=${key} value=${value}>
+            ${keyLabel
+              ? html`<sl-tag slot="prefix" size="small" pill
+                  >${keyLabel}</sl-tag
+                >`
+              : nothing}
+            ${value}
+          </sl-menu-item>
+        `;
+      }
+      return nothing;
+    };
+
+    const newName = this.searchByValue.trim();
+    // Hide "Add" if there's a result that matches the entire string (case insensitive)
+    const showCreateNew =
+      this.createNew &&
+      !searchResults.some((res) =>
+        res.matches?.some(
+          ({ value }) =>
+            value && value.toLocaleLowerCase() === newName.toLocaleLowerCase(),
+        ),
+      );
 
     return html`
-      ${searchResults.map(({ matches }) =>
-        matches?.map(({ key, value }) => {
-          if (!!key && !!value) {
-            const keyLabel = this.keyLabels?.[key];
-            return html`
-              <sl-menu-item slot="menu-item" data-key=${key} value=${value}>
-                ${keyLabel
-                  ? html`<sl-tag slot="prefix" size="small" pill
-                      >${keyLabel}</sl-tag
-                    >`
-                  : nothing}
-                ${value}
-              </sl-menu-item>
-            `;
-          }
-          return nothing;
-        }),
+      ${when(
+        searchResults.length,
+        () => html`
+          ${searchResults.map(({ matches }) => matches?.map(match))}
+          ${showCreateNew
+            ? html`<sl-divider slot="menu-item"></sl-divider>`
+            : nothing}
+        `,
+        () =>
+          showCreateNew
+            ? nothing
+            : html`
+                <sl-menu-item slot="menu-item" disabled
+                  >${msg("No matches found.")}</sl-menu-item
+                >
+              `,
       )}
+      ${when(showCreateNew, () => {
+        return html`
+          <sl-menu-item slot="menu-item" value=${newName}>
+            <span class="text-neutral-500">${msg("Create")} “</span
+            >${newName}<span class="text-neutral-500">”</span>
+          </sl-menu-item>
+        `;
+      })}
     `;
   }
 
   private readonly onSearchInput = debounce(150)(() => {
-    this.searchByValue = this.input.value.trim();
+    this.searchByValue = this.input.value;
 
     if (!this.searchResultsOpen && this.hasSearchStr) {
       this.searchResultsOpen = true;
