@@ -121,7 +121,13 @@ class CrawlOps(BaseCrawlOps):
         await self.crawls.create_index(
             [("type", pymongo.HASHED), ("fileSize", pymongo.DESCENDING)]
         )
-
+        await self.crawls.create_index(
+            [
+                ("state", pymongo.ASCENDING),
+                ("oid", pymongo.ASCENDING),
+                ("started", pymongo.ASCENDING),
+            ]
+        )
         await self.crawls.create_index([("finished", pymongo.DESCENDING)])
         await self.crawls.create_index([("oid", pymongo.HASHED)])
         await self.crawls.create_index([("cid", pymongo.HASHED)])
@@ -335,6 +341,18 @@ class CrawlOps(BaseCrawlOps):
             crawls.append(crawl)
 
         return crawls, total
+
+    async def get_active_crawls(self, oid: UUID, limit: int) -> list[str]:
+        """get list of waiting crawls, sorted from earliest to latest"""
+        res = (
+            self.crawls.find(
+                {"state": {"$in": RUNNING_AND_WAITING_STATES}, "oid": oid}, {"_id": 1}
+            )
+            .sort({"started": 1})
+            .limit(limit)
+        )
+        res_list = await res.to_list()
+        return [res["_id"] for res in res_list]
 
     async def delete_crawls(
         self,
