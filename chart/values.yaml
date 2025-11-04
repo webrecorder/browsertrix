@@ -33,6 +33,12 @@ crawler_extract_full_text: to-warc
 # if set, each workflow can have a lower limit, but not higher
 max_pages_per_crawl: 50000
 
+# set limit for how many crawls can be queued at once,
+# calculated as scale multiplier applied to concurrent crawl limit
+# if 0, no limit to concurrent crawl queue
+# if >0, scale to get max queue from concurrent crawl limit
+# crawl_queue_limit_scale: 0
+
 # default template for generate wacz files
 # supports following interpolated vars:
 # @ts - current timestamp
