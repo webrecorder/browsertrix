@@ -210,7 +210,7 @@ export type Upload = ArchivedItemBase & {
 };
 
 export type CrawlerChannel = {
-  id: string;
+  id: CrawlerChannelImage | AnyString;
   image: string;
 };
 

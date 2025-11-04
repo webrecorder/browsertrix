@@ -43,7 +43,7 @@ export class SelectCrawler extends LiteElement {
   size?: SlSelect["size"];
 
   @property({ type: String })
-  crawlerChannel?: string;
+  crawlerChannel?: CrawlerChannel["id"];
 
   @state()
   private selectedCrawler?: CrawlerChannel;
