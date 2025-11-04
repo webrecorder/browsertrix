@@ -1228,7 +1228,7 @@ class CrawlConfigOps:
         """if max concurrent crawls are set, limit number of queued crawls to X concurrent limit
         return 429 if at limit"""
         max_concur = org.quotas.maxConcurrentCrawls
-        if not max_concur:
+        if not max_concur or not self.crawl_queue_limit_scale:
             return
 
         num_waiting = await self.crawls.count_documents(
