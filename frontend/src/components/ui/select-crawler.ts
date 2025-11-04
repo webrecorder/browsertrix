@@ -119,7 +119,10 @@ export class SelectCrawler extends LiteElement {
   }
 
   private async updateSelectedCrawlerChannel() {
-    await this.fetchCrawlerChannels();
+    if (!this.crawlerChannels) {
+      await this.fetchCrawlerChannels();
+    }
+
     await this.updateComplete;
 
     if (!this.crawlerChannels) return;
