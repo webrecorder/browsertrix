@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
 import { type SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -51,17 +52,24 @@ export class SelectCrawler extends LiteElement {
   @state()
   private selectedCrawler?: CrawlerChannel;
 
-  @state()
-  private crawlerChannels?: CrawlerChannel[];
-
-  willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("crawlerChannel")) {
-      void this.updateSelectedCrawlerChannel();
-    }
+  private get crawlerChannels() {
+    return this.crawlerChannelsTask.value;
   }
 
-  protected firstUpdated() {
-    void this.updateSelectedCrawlerChannel();
+  private readonly crawlerChannelsTask = new Task(this, {
+    task: async (_args, { signal }) => {
+      const channels = await this.getCrawlerChannels(signal);
+      void this.updateSelectedCrawlerChannel(channels);
+
+      return channels;
+    },
+    args: () => [] as const,
+  });
+
+  willUpdate(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("crawlerChannel") && this.crawlerChannels) {
+      void this.updateSelectedCrawlerChannel(this.crawlerChannels);
+    }
   }
 
   render() {
@@ -78,10 +86,6 @@ export class SelectCrawler extends LiteElement {
         size=${ifDefined(this.size)}
         hoist
         @sl-change=${this.onChange}
-        @sl-focus=${() => {
-          // Refetch to keep list up to date
-          void this.fetchCrawlerChannels();
-        }}
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
         ?disabled=${!this.crawlerChannels}
@@ -122,17 +126,9 @@ export class SelectCrawler extends LiteElement {
     );
   }
 
-  private async updateSelectedCrawlerChannel() {
-    if (!this.crawlerChannels) {
-      await this.fetchCrawlerChannels();
-    }
-
-    await this.updateComplete;
-
-    if (!this.crawlerChannels) return;
-
+  private async updateSelectedCrawlerChannel(channels: CrawlerChannel[]) {
     if (this.crawlerChannel && !this.selectedCrawler) {
-      this.selectedCrawler = this.crawlerChannels.find(
+      this.selectedCrawler = channels.find(
         ({ id }) => id === this.crawlerChannel,
       );
     }
@@ -146,7 +142,7 @@ export class SelectCrawler extends LiteElement {
           },
         }),
       );
-      this.selectedCrawler = this.crawlerChannels.find(
+      this.selectedCrawler = channels.find(
         ({ id }) => id === this.crawlerChannel,
       );
     }
@@ -156,33 +152,19 @@ export class SelectCrawler extends LiteElement {
     this.dispatchEvent(
       new CustomEvent<SelectCrawlerUpdateDetail>("on-update", {
         detail: {
-          show: this.crawlerChannels.length > 1,
+          show: channels.length > 1,
         },
       }),
     );
   }
 
-  /**
-   * Fetch crawler channels and update internal state
-   */
-  private async fetchCrawlerChannels(): Promise<void> {
-    try {
-      const channels = await this.getCrawlerChannels();
-      this.crawlerChannels = channels;
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't retrieve crawler channels at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "crawler-channel-retrieve-error",
-      });
-    }
-  }
-
-  private async getCrawlerChannels(): Promise<CrawlerChannel[]> {
+  private async getCrawlerChannels(
+    signal: AbortSignal,
+  ): Promise<CrawlerChannel[]> {
     const data: CrawlerChannelsAPIResponse =
       await this.apiFetch<CrawlerChannelsAPIResponse>(
         `/orgs/${this.orgId}/crawlconfigs/crawler-channels`,
+        { signal },
       );
 
     return data.channels;
