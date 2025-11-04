@@ -402,7 +402,7 @@ class SubOps:
                         return AddonMinutesPricing(**json)
             # pylint: disable=broad-exception-caught
             except Exception as exc:
-                print("Error fetching checkout url", exc)
+                print("Error fetching execution minutes price", exc)
 
     async def get_checkout_url(
         self,
