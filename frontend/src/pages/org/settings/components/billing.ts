@@ -191,12 +191,23 @@ export class OrgSettingsBilling extends BtrixElement {
                 </h5>
                 ${when(
                   this.org,
-                  (org) => this.renderQuotas(org.quotas),
+                  (org) => this.renderMonthlyQuotas(org.quotas),
                   () =>
                     html` <sl-skeleton class="mb-2"></sl-skeleton>
                       <sl-skeleton class="mb-2"></sl-skeleton>
                       <sl-skeleton class="mb-2"></sl-skeleton>
                       <sl-skeleton class="mb-2"></sl-skeleton>`,
+                )}
+                ${when(
+                  this.org?.quotas.extraExecMinutes ||
+                    this.org?.quotas.giftedExecMinutes,
+                  () =>
+                    html` <h5
+                        class="mb-2 mt-4 text-xs leading-none text-neutral-500"
+                      >
+                        ${msg("Add-ons")}
+                      </h5>
+                      ${this.renderExtraQuotas(this.org!.quotas)}`,
                 )}
                 ${when(
                   this.org?.subscription,
@@ -354,7 +365,7 @@ export class OrgSettingsBilling extends BtrixElement {
       : nothing}`;
   };
 
-  private readonly renderQuotas = (quotas: OrgQuotas) => {
+  private readonly renderMonthlyQuotas = (quotas: OrgQuotas) => {
     const maxExecMinutesPerMonth =
       quotas.maxExecMinutesPerMonth &&
       this.localize.number(quotas.maxExecMinutesPerMonth, {
@@ -386,6 +397,37 @@ export class OrgSettingsBilling extends BtrixElement {
           ${msg(str`${maxPagesPerCrawl || msg("Unlimited pages")} per crawl`)}
         </li>
         <li>${maxConcurrentCrawls || msg("Unlimited concurrent crawls")}</li>
+      </ul>
+    `;
+  };
+
+  private readonly renderExtraQuotas = (quotas: OrgQuotas) => {
+    const extraExecMinutes = quotas.extraExecMinutes
+      ? this.localize.number(quotas.extraExecMinutes, {
+          style: "unit",
+          unit: "minute",
+          unitDisplay: "long",
+        })
+      : null;
+
+    const giftedExecMinutes = quotas.giftedExecMinutes
+      ? this.localize.number(quotas.giftedExecMinutes, {
+          style: "unit",
+          unit: "minute",
+          unitDisplay: "long",
+        })
+      : null;
+
+    return html`
+      <ul class="leading-relaxed text-neutral-700">
+        ${extraExecMinutes &&
+        html`<li>
+          ${msg(str`${extraExecMinutes} of add-on execution time`)}
+        </li>`}
+        ${giftedExecMinutes &&
+        html`<li>
+          ${msg(str`${giftedExecMinutes} of gifted execution time`)}
+        </li>`}
       </ul>
     `;
   };
