@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
-import { html, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import capitalize from "lodash/fp/capitalize";
@@ -27,6 +27,8 @@ type CrawlerChannelsAPIResponse = {
 /**
  * Crawler channel select dropdown
  *
+ * @TODO Convert to form control
+ *
  * Usage example:
  * ```ts
  * <btrix-select-crawler
@@ -34,7 +36,8 @@ type CrawlerChannelsAPIResponse = {
  * ></btrix-select-crawler>
  * ```
  *
- * @event on-change
+ * @fires on-change
+ * @fires on-update
  */
 @customElement("btrix-select-crawler")
 @localized()
@@ -81,6 +84,7 @@ export class SelectCrawler extends LiteElement {
         }}
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
+        ?disabled=${!this.crawlerChannels}
       >
         ${this.crawlerChannels?.map(
           (crawler) =>
@@ -88,16 +92,16 @@ export class SelectCrawler extends LiteElement {
               ${capitalize(crawler.id)}
             </sl-option>`,
         )}
-        ${this.selectedCrawler
-          ? html`
-              <div slot="help-text">
-                ${msg("Version:")}
+        <div slot="help-text">
+          ${msg("Version:")}
+          ${this.selectedCrawler
+            ? html`
                 <span class="font-monospace"
                   >${this.selectedCrawler.image}</span
                 >
-              </div>
-            `
-          : ``}
+              `
+            : nothing}
+        </div>
       </sl-select>
     `;
   }
