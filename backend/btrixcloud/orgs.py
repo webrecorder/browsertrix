@@ -12,8 +12,18 @@ import time
 from uuid import UUID, uuid4
 from tempfile import NamedTemporaryFile
 
-from typing import Optional, TYPE_CHECKING, Dict, Callable, List, AsyncGenerator, Any
+from typing import (
+    Awaitable,
+    Optional,
+    TYPE_CHECKING,
+    Dict,
+    Callable,
+    List,
+    AsyncGenerator,
+    Any,
+)
 
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import ValidationError
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -1517,13 +1527,13 @@ class OrgOps(BaseOrgs):
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-arguments
 def init_orgs_api(
-    app,
-    mdb,
+    app: APIRouter,
+    mdb: AsyncIOMotorDatabase[Any],
     user_manager: UserManager,
     crawl_manager: CrawlManager,
     invites: InviteOps,
-    user_dep: Callable,
-    user_or_shared_secret_dep: Callable,
+    user_dep: Callable[[str], Awaitable[User]],
+    user_or_shared_secret_dep: Callable[[str], Awaitable[User]],
 ):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
@@ -1587,7 +1597,7 @@ def init_orgs_api(
 
     router = APIRouter(
         prefix="/orgs/{oid}",
-        dependencies=[Depends(org_dep)],
+        dependencies=[Depends(org_or_shared_secret_dep)],
         responses={404: {"description": "Not found"}},
     )
 
