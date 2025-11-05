@@ -21,16 +21,19 @@ from btrixcloud.models import (
     TYPE_NON_RUNNING_STATES,
     TYPE_RUNNING_STATES,
     TYPE_ALL_CRAWL_STATES,
+    TYPE_PAUSED_STATES,
     RUNNING_STATES,
     WAITING_STATES,
     RUNNING_AND_STARTING_ONLY,
     RUNNING_AND_WAITING_STATES,
     SUCCESSFUL_STATES,
     FAILED_STATES,
+    PAUSED_STATES,
     CrawlStats,
     CrawlFile,
     CrawlCompleteIn,
     StorageRef,
+    Organization,
 )
 
 from btrixcloud.utils import (
@@ -394,7 +397,7 @@ class CrawlOperator(BaseOperator):
         if status.pagesFound < status.desiredScale:
             status.desiredScale = max(1, status.pagesFound)
 
-        is_paused = bool(crawl.paused_at) and status.state == "paused"
+        is_paused = bool(crawl.paused_at) and status.state in PAUSED_STATES
 
         for i in range(0, status.desiredScale):
             if status.pagesFound < i * num_browsers_per_pod:
@@ -1421,7 +1424,7 @@ class CrawlOperator(BaseOperator):
         if crawl.stopping:
             return "stopped_by_user"
 
-        if crawl.paused_at:
+        if crawl.paused_at and status.stopReason not in PAUSED_STATES:
             return "paused"
 
         # check timeout if timeout time exceeds elapsed time
@@ -1438,25 +1441,33 @@ class CrawlOperator(BaseOperator):
         if crawl.max_crawl_size and status.size > crawl.max_crawl_size:
             return "size-limit"
 
-        # gracefully stop crawl if current running crawl sizes reach storage quota
+        # pause crawl if current running crawl sizes reach storage quota
         org = crawl.org
 
         if org.readOnly:
-            return "stopped_org_readonly"
+            await self.pause_crawl(crawl, org)
+            return "paused_org_readonly"
 
         if org.quotas.storageQuota:
             active_crawls_total_size = await self.crawl_ops.get_active_crawls_size(
                 crawl.oid
             )
-
             if self.org_ops.storage_quota_reached(org, active_crawls_total_size):
-                return "stopped_storage_quota_reached"
+                await self.pause_crawl(crawl, org)
+                return "paused_storage_quota_reached"
 
         # gracefully stop crawl is execution time quota is reached
         if self.org_ops.exec_mins_quota_reached(org):
-            return "stopped_time_quota_reached"
+            await self.pause_crawl(crawl, org)
+            return "paused_time_quota_reached"
 
         return None
+
+    async def pause_crawl(self, crawl: CrawlSpec, org: Organization):
+        """Pause crawl and update crawl spec"""
+        paused_at = dt_now()
+        await self.crawl_ops.pause_crawl(crawl.id, org, pause=True, paused_at=paused_at)
+        crawl.paused_at = paused_at
 
     async def get_redis_crawl_stats(
         self, redis: Redis, crawl_id: str
@@ -1544,7 +1555,7 @@ class CrawlOperator(BaseOperator):
                 )
 
         # check if no longer paused, clear paused stopping state
-        if status.stopReason == "paused" and not crawl.paused_at:
+        if status.stopReason in PAUSED_STATES and not crawl.paused_at:
             status.stopReason = None
             status.stopping = False
             # should have already been removed, just in case
@@ -1556,9 +1567,9 @@ class CrawlOperator(BaseOperator):
 
             # mark crawl as stopping
             if status.stopping:
-                if status.stopReason == "paused":
+                if status.stopReason in PAUSED_STATES:
                     await redis.set(f"{crawl.id}:paused", "1")
-                    print(f"Crawl pausing, id: {crawl.id}")
+                    print(f"Crawl pausing: {status.stopReason}, id: {crawl.id}")
                 else:
                     await redis.set(f"{crawl.id}:stopping", "1")
                     print(
@@ -1582,14 +1593,27 @@ class CrawlOperator(BaseOperator):
         all_completed = (num_done + num_failed) >= status.scale
 
         # check paused
-        if not all_completed and crawl.paused_at and status.stopReason == "paused":
+        if not all_completed and crawl.paused_at and status.stopReason in PAUSED_STATES:
             num_paused = status_count.get("interrupted", 0)
             if (num_paused + num_failed) >= status.scale:
                 # now fully paused!
                 # remove pausing key and set state to paused
+                paused_state: TYPE_PAUSED_STATES
+                if status.stopReason == "paused_storage_quota_reached":
+                    paused_state = "paused_storage_quota_reached"
+                if status.stopReason == "paused_time_quota_reached":
+                    paused_state = "paused_time_quota_reached"
+                if status.stopReason == "paused_org_readoly":
+                    paused_state = "paused_org_readonly"
+                else:
+                    paused_state = "paused"
+
                 await redis.delete(f"{crawl.id}:paused")
                 await self.set_state(
-                    "paused", status, crawl, allowed_from=RUNNING_AND_WAITING_STATES
+                    paused_state,
+                    status,
+                    crawl,
+                    allowed_from=RUNNING_AND_WAITING_STATES,
                 )
                 return status
 
