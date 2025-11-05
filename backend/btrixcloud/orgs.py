@@ -686,20 +686,17 @@ class OrgOps(BaseOrgs):
             exclude_unset=True, exclude_defaults=True, exclude_none=True
         )
 
-        quota_updates = []
-        for prev_update in org.quotaUpdates or []:
-            quota_updates.append(prev_update.dict())
-        quota_updates.append(
-            OrgQuotaUpdate(update=update, modified=dt_now(), context=context).dict()
-        )
-
         await self.orgs.find_one_and_update(
             {"_id": org.id},
             {
                 "$set": {
                     "quotas": update,
-                    "quotaUpdates": quota_updates,
-                }
+                },
+                "$push": {
+                    "quotaUpdates": OrgQuotaUpdate(
+                        update=OrgQuotas(**update), modified=dt_now(), context=context
+                    ).model_dump()
+                },
             },
         )
 
