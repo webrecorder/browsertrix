@@ -25,6 +25,9 @@ StopReason = Literal[
     "stopped_storage_quota_reached",
     "stopped_time_quota_reached",
     "stopped_org_readonly",
+    "paused_storage_quota_reached",
+    "paused_time_quota_reached",
+    "paused_org_readonly",
 ]
 
 
