@@ -12,8 +12,18 @@ import time
 from uuid import UUID, uuid4
 from tempfile import NamedTemporaryFile
 
-from typing import Optional, TYPE_CHECKING, Dict, Callable, List, AsyncGenerator, Any
+from typing import (
+    Awaitable,
+    Optional,
+    TYPE_CHECKING,
+    Dict,
+    Callable,
+    List,
+    AsyncGenerator,
+    Any,
+)
 
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import ValidationError
 from pymongo import ReturnDocument
 from pymongo.collation import Collation
@@ -1128,7 +1138,7 @@ class OrgOps:
                     yield b"\n"
                 doc_index += 1
 
-            yield f']{"" if skip_closing_comma else ","}\n'.encode("utf-8")
+            yield f"]{'' if skip_closing_comma else ','}\n".encode("utf-8")
 
         async def json_closing_gen() -> AsyncGenerator:
             """Async generator to close JSON document"""
@@ -1436,10 +1446,12 @@ class OrgOps:
     async def recalculate_storage(self, org: Organization) -> dict[str, bool]:
         """Recalculate org storage use"""
         try:
-            total_crawl_size, crawl_size, upload_size = (
-                await self.base_crawl_ops.calculate_org_crawl_file_storage(
-                    org.id,
-                )
+            (
+                total_crawl_size,
+                crawl_size,
+                upload_size,
+            ) = await self.base_crawl_ops.calculate_org_crawl_file_storage(
+                org.id,
             )
             profile_size = await self.profile_ops.calculate_org_profile_file_storage(
                 org.id
@@ -1496,12 +1508,13 @@ class OrgOps:
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-arguments
 def init_orgs_api(
-    app,
-    mdb,
+    app: APIRouter,
+    mdb: AsyncIOMotorDatabase[Any],
     user_manager: UserManager,
     crawl_manager: CrawlManager,
     invites: InviteOps,
-    user_dep: Callable,
+    user_dep: Callable[[str], Awaitable[User]],
+    superuser_or_shared_secret_dep: Callable[[str], Awaitable[User]],
 ):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
@@ -1509,6 +1522,20 @@ def init_orgs_api(
     ops = OrgOps(mdb, invites, user_manager, crawl_manager)
 
     async def org_dep(oid: UUID, user: User = Depends(user_dep)):
+        org = await ops.get_org_for_user_by_id(oid, user)
+        if not org:
+            raise HTTPException(status_code=404, detail="org_not_found")
+        if not org.is_viewer(user):
+            raise HTTPException(
+                status_code=403,
+                detail="User does not have permission to view this organization",
+            )
+
+        return org
+
+    async def org_superuser_or_shared_secret_dep(
+        oid: UUID, user: User = Depends(superuser_or_shared_secret_dep)
+    ):
         org = await ops.get_org_for_user_by_id(oid, user)
         if not org:
             raise HTTPException(status_code=404, detail="org_not_found")
@@ -1647,15 +1674,13 @@ def init_orgs_api(
         except ValidationError as err:
             raise HTTPException(status_code=400, detail="invalid_plans") from err
 
-    @router.post("/quotas", tags=["organizations"], response_model=UpdatedResponse)
+    @app.post(
+        "/orgs/{oid}/quotas", tags=["organizations"], response_model=UpdatedResponse
+    )
     async def update_quotas(
         quotas: OrgQuotasIn,
-        org: Organization = Depends(org_owner_dep),
-        user: User = Depends(user_dep),
+        org: Organization = Depends(org_superuser_or_shared_secret_dep),
     ):
-        if not user.is_superuser:
-            raise HTTPException(status_code=403, detail="Not Allowed")
-
         await ops.update_quotas(org, quotas)
 
         return {"updated": True}

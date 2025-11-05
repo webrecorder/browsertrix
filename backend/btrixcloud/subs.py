@@ -2,19 +2,23 @@
 Subscription API handling
 """
 
-from typing import Callable, Union, Any, Optional, Tuple, List
+from typing import Awaitable, Callable, Union, Any, Optional, Tuple, List
 import os
 import asyncio
 from uuid import UUID
 from datetime import datetime
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 import aiohttp
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from .orgs import OrgOps
 from .users import UserManager
 from .utils import is_bool, get_origin
 from .models import (
+    AddonMinutesPricing,
+    CheckoutAddonMinutesRequest,
+    CheckoutAddonMinutesResponse,
     SubscriptionCreate,
     SubscriptionImport,
     SubscriptionUpdate,
@@ -242,7 +246,9 @@ class SubOps:
         data["oid"] = oid
         await self.subs.insert_one(data)
 
-    def _get_sub_by_type_from_data(self, data: dict[str, object]) -> Union[
+    def _get_sub_by_type_from_data(
+        self, data: dict[str, object]
+    ) -> Union[
         SubscriptionCreateOut,
         SubscriptionImportOut,
         SubscriptionUpdateOut,
@@ -363,11 +369,11 @@ class SubOps:
                 async with aiohttp.ClientSession() as session:
                     async with session.request(
                         "POST",
-                        external_subs_app_api_url,
+                        f"{external_subs_app_api_url}/portalUrl",
                         headers={
                             "Authorization": "bearer " + external_subs_app_api_key
                         },
-                        json=req.dict(),
+                        json=req.model_dump(),
                         raise_for_status=True,
                     ) as resp:
                         json = await resp.json()
@@ -378,14 +384,77 @@ class SubOps:
 
         return SubscriptionPortalUrlResponse()
 
+    async def get_execution_minutes_price(self, org: Organization):
+        """Fetch price for addon execution minutes from external subscription app"""
+        if not org.subscription:
+            raise HTTPException(
+                status_code=404, detail="Organization has no subscription"
+            )
+        if external_subs_app_api_url:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.request(
+                        "GET",
+                        f"{external_subs_app_api_url}/prices/additionalMinutes",
+                        headers={
+                            "Authorization": "bearer " + external_subs_app_api_key,
+                        },
+                        raise_for_status=True,
+                    ) as resp:
+                        json = await resp.json()
+                        return AddonMinutesPricing(**json)
+            # pylint: disable=broad-exception-caught
+            except Exception as exc:
+                print("Error fetching execution minutes price", exc)
 
-# pylint: disable=invalid-name,too-many-arguments
+    async def get_checkout_url(
+        self,
+        org: Organization,
+        headers: dict[str, str],
+        minutes: int | None,
+    ):
+        """Create checkout url for additional minutes"""
+        if not org.subscription:
+            raise HTTPException(
+                status_code=404, detail="Organization has no subscription"
+            )
+        subscription_id = org.subscription.subId
+        return_url = f"{get_origin(headers)}/orgs/{org.slug}/settings/billing"
+
+        if external_subs_app_api_url:
+            try:
+                req = CheckoutAddonMinutesRequest(
+                    orgId=str(org.id),
+                    subId=subscription_id,
+                    minutes=minutes,
+                    return_url=return_url,
+                )
+                async with aiohttp.ClientSession() as session:
+                    async with session.request(
+                        "POST",
+                        f"{external_subs_app_api_url}/checkout/additionalMinutes",
+                        headers={
+                            "Authorization": "bearer " + external_subs_app_api_key,
+                            "Content-Type": "application/json",
+                        },
+                        json=req.model_dump(),
+                        raise_for_status=True,
+                    ) as resp:
+                        json = await resp.json()
+                        print(f"get_checkout_url got response: {json}")
+                        return CheckoutAddonMinutesResponse(**json)
+            # pylint: disable=broad-exception-caught
+            except Exception as exc:
+                print("Error fetching checkout url", exc)
+
+
+# pylint: disable=invalid-name,too-many-arguments,too-many-locals
 def init_subs_api(
-    app,
-    mdb,
+    app: APIRouter,
+    mdb: AsyncIOMotorDatabase[Any],
     org_ops: OrgOps,
     user_manager: UserManager,
-    user_or_shared_secret_dep: Callable,
+    superuser_or_shared_secret_dep: Callable[[str], Awaitable[User]],
 ) -> Optional[SubOps]:
     """init subs API"""
 
@@ -402,14 +471,14 @@ def init_subs_api(
     async def new_sub(
         create: SubscriptionCreate,
         request: Request,
-        user: User = Depends(user_or_shared_secret_dep),
+        user: User = Depends(superuser_or_shared_secret_dep),
     ):
         return await ops.create_new_subscription(create, user, request)
 
     @app.post(
         "/subscriptions/import",
         tags=["subscriptions"],
-        dependencies=[Depends(user_or_shared_secret_dep)],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
         response_model=AddedResponseId,
     )
     async def import_sub(sub_import: SubscriptionImport):
@@ -418,7 +487,7 @@ def init_subs_api(
     @app.post(
         "/subscriptions/update",
         tags=["subscriptions"],
-        dependencies=[Depends(user_or_shared_secret_dep)],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
         response_model=UpdatedResponse,
     )
     async def update_subscription(
@@ -429,7 +498,7 @@ def init_subs_api(
     @app.post(
         "/subscriptions/cancel",
         tags=["subscriptions"],
-        dependencies=[Depends(user_or_shared_secret_dep)],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
         response_model=SubscriptionCanceledResponse,
     )
     async def cancel_subscription(
@@ -440,7 +509,7 @@ def init_subs_api(
     @app.post(
         "/subscriptions/send-trial-end-reminder",
         tags=["subscriptions"],
-        dependencies=[Depends(user_or_shared_secret_dep)],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
         response_model=SuccessResponse,
     )
     async def send_trial_end_reminder(
@@ -453,7 +522,7 @@ def init_subs_api(
     @app.get(
         "/subscriptions/is-activated/{sub_id}",
         tags=["subscriptions"],
-        dependencies=[Depends(user_or_shared_secret_dep)],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
         response_model=SuccessResponse,
     )
     async def is_subscription_activated(
@@ -465,7 +534,7 @@ def init_subs_api(
     @app.get(
         "/subscriptions/events",
         tags=["subscriptions"],
-        dependencies=[Depends(user_or_shared_secret_dep)],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
         response_model=PaginatedSubscriptionEventResponse,
     )
     async def get_sub_events(
@@ -500,5 +569,27 @@ def init_subs_api(
         org: Organization = Depends(org_ops.org_owner_dep),
     ):
         return await ops.get_billing_portal_url(org, dict(request.headers))
+
+    @org_ops.router.get(
+        "/price/execution-minutes",
+        tags=["organizations"],
+        response_model=AddonMinutesPricing,
+    )
+    async def get_execution_minutes_price(
+        org: Organization = Depends(org_ops.org_owner_dep),
+    ):
+        return await ops.get_execution_minutes_price(org)
+
+    @org_ops.router.get(
+        "/checkout/execution-minutes",
+        tags=["organizations"],
+        response_model=CheckoutAddonMinutesResponse,
+    )
+    async def get_execution_minutes_checkout_url(
+        request: Request,
+        minutes: int | None = None,
+        org: Organization = Depends(org_ops.org_owner_dep),
+    ):
+        return await ops.get_checkout_url(org, dict(request.headers), minutes)
 
     return ops
