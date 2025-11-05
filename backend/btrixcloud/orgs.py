@@ -1533,7 +1533,7 @@ def init_orgs_api(
     crawl_manager: CrawlManager,
     invites: InviteOps,
     user_dep: Callable[[str], Awaitable[User]],
-    user_or_shared_secret_dep: Callable[[str], Awaitable[User]],
+    superuser_or_shared_secret_dep: Callable[[str], Awaitable[User]],
 ):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
@@ -1552,8 +1552,8 @@ def init_orgs_api(
 
         return org
 
-    async def org_or_shared_secret_dep(
-        oid: UUID, user: User = Depends(user_or_shared_secret_dep)
+    async def org_superuser_or_shared_secret_dep(
+        oid: UUID, user: User = Depends(superuser_or_shared_secret_dep)
     ):
         org = await ops.get_org_for_user_by_id(oid, user)
         if not org:
@@ -1597,7 +1597,7 @@ def init_orgs_api(
 
     router = APIRouter(
         prefix="/orgs/{oid}",
-        dependencies=[Depends(org_or_shared_secret_dep)],
+        dependencies=[Depends(org_dep)],
         responses={404: {"description": "Not found"}},
     )
 
@@ -1693,15 +1693,13 @@ def init_orgs_api(
         except ValidationError as err:
             raise HTTPException(status_code=400, detail="invalid_plans") from err
 
-    @router.post("/quotas", tags=["organizations"], response_model=UpdatedResponse)
+    @app.post(
+        "/orgs/{oid}/quotas", tags=["organizations"], response_model=UpdatedResponse
+    )
     async def update_quotas(
         quotas: OrgQuotasIn,
-        org: Organization = Depends(org_or_shared_secret_dep),
-        user: User = Depends(user_or_shared_secret_dep),
+        org: Organization = Depends(org_superuser_or_shared_secret_dep),
     ):
-        if not user.is_superuser:
-            raise HTTPException(status_code=403, detail="Not Allowed")
-
         await ops.update_quotas(org, quotas)
 
         return {"updated": True}
