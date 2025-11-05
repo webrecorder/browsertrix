@@ -57,7 +57,7 @@ def test_storage_quota(org_with_quotas, admin_auth_headers):
     assert r.json()["updated"]
 
 
-def test_crawl_stopped_when_storage_quota_reached(org_with_quotas, admin_auth_headers):
+def test_crawl_paused_when_storage_quota_reached(org_with_quotas, admin_auth_headers):
     # Run crawl
     global config_id
     crawl_id, config_id = run_crawl(org_with_quotas, admin_auth_headers)
@@ -82,7 +82,7 @@ def test_crawl_stopped_when_storage_quota_reached(org_with_quotas, admin_auth_he
 
     assert (
         get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers)
-        == "stopped_storage_quota_reached"
+        == "paused_storage_quota_reached"
     )
 
     # Ensure crawl storage went over quota

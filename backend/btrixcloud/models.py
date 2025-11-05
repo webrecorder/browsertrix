@@ -237,10 +237,30 @@ TYPE_RUNNING_STATES = Literal[
 ]
 RUNNING_STATES = get_args(TYPE_RUNNING_STATES)
 
-TYPE_WAITING_STATES = Literal[
-    "starting", "waiting_capacity", "waiting_org_limit", "paused"
+TYPE_MANUALLY_PAUSED_STATES = Literal["paused"]
+
+TYPE_AUTO_PAUSED_STATES = Literal[
+    "paused_storage_quota_reached",
+    "paused_time_quota_reached",
+    "paused_org_readonly",
 ]
-WAITING_STATES = get_args(TYPE_WAITING_STATES)
+AUTO_PAUSED_STATES = get_args(TYPE_AUTO_PAUSED_STATES)
+
+TYPE_PAUSED_STATES = Literal[
+    TYPE_MANUALLY_PAUSED_STATES,
+    TYPE_AUTO_PAUSED_STATES,
+]
+PAUSED_STATES = get_args(TYPE_PAUSED_STATES)
+
+TYPE_WAITING_NOT_PAUSED_STATES = Literal[
+    "starting",
+    "waiting_capacity",
+    "waiting_org_limit",
+]
+WAITING_NOT_PAUSED_STATES = get_args(TYPE_WAITING_NOT_PAUSED_STATES)
+
+TYPE_WAITING_STATES = Literal[TYPE_PAUSED_STATES, TYPE_WAITING_NOT_PAUSED_STATES]
+WAITING_STATES = [*PAUSED_STATES, *WAITING_NOT_PAUSED_STATES]
 
 TYPE_FAILED_STATES = Literal[
     "canceled",
@@ -260,7 +280,7 @@ TYPE_SUCCESSFUL_STATES = Literal[
     "stopped_org_readonly",
 ]
 SUCCESSFUL_STATES = get_args(TYPE_SUCCESSFUL_STATES)
-SUCCESSFUL_AND_PAUSED_STATES = ["paused", *SUCCESSFUL_STATES]
+SUCCESSFUL_AND_PAUSED_STATES = [*PAUSED_STATES, *SUCCESSFUL_STATES]
 
 TYPE_RUNNING_AND_WAITING_STATES = Literal[TYPE_WAITING_STATES, TYPE_RUNNING_STATES]
 RUNNING_AND_WAITING_STATES = [*WAITING_STATES, *RUNNING_STATES]
@@ -283,8 +303,6 @@ class CrawlStats(BaseModel):
     found: int = 0
     done: int = 0
     size: int = 0
-
-    profile_update: Optional[str] = ""
 
 
 # ============================================================================
@@ -887,6 +905,7 @@ class CrawlOut(BaseMongoModel):
 
     fileSize: int = 0
     fileCount: int = 0
+    pendingSize: int = 0
 
     tags: Optional[List[str]] = []
 
@@ -1070,6 +1089,10 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     qa: Optional[QARun] = None
     qaFinished: Optional[Dict[str, QARun]] = {}
+
+    pendingSize: int = 0
+
+    autoPausedEmailsSent: bool = False
 
 
 # ============================================================================

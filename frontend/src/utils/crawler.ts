@@ -5,6 +5,7 @@ import { html, type TemplateResult } from "lit";
 import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import {
   FAILED_STATES,
+  PAUSED_STATES,
   RUNNING_AND_WAITING_STATES,
   SUCCESSFUL_AND_FAILED_STATES,
   SUCCESSFUL_STATES,
@@ -49,6 +50,10 @@ export function isNotFailed({ state }: { state: string | null }) {
   return (
     state && !(FAILED_STATES as readonly string[]).some((str) => str === state)
   );
+}
+
+export function isPaused(state: string | null) {
+  return state && (PAUSED_STATES as readonly string[]).includes(state);
 }
 
 export function isPageScopeType(
