@@ -592,7 +592,7 @@ export class CrawlsList extends BtrixElement {
   private renderControls() {
     return html`
       <div class="flex flex-wrap items-center gap-2 md:gap-4">
-        <div class="grow basis-1/2">${this.renderSearch()}</div>
+        <div class="grow basis-2/3">${this.renderSearch()}</div>
 
         <div class="flex items-center">
           <label
