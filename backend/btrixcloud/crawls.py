@@ -812,7 +812,11 @@ class CrawlOps(BaseCrawlOps):
         return crawls_data
 
     async def pause_crawl(
-        self, crawl_id: str, org: Organization, pause: bool
+        self,
+        crawl_id: str,
+        org: Organization,
+        pause: bool,
+        paused_at: Optional[datetime] = None,
     ) -> Dict[str, bool]:
         """pause or resume a crawl temporarily"""
         crawl = await self.get_base_crawl(crawl_id, org)
@@ -821,10 +825,8 @@ class CrawlOps(BaseCrawlOps):
 
         result = None
 
-        if pause:
+        if pause and not paused_at:
             paused_at = dt_now()
-        else:
-            paused_at = None
 
         try:
             result = await self.crawl_manager.pause_resume_crawl(
