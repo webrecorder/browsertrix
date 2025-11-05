@@ -49,9 +49,6 @@ export class ArchivedItemListItem extends BtrixElement {
   @property({ type: Boolean })
   checked = false;
 
-  @property({ type: Boolean })
-  showStatus = false;
-
   @property({ type: Number })
   index = 0;
 
@@ -144,28 +141,21 @@ export class ArchivedItemListItem extends BtrixElement {
                 state=${this.item.state}
                 hideLabel
               ></btrix-upload-status>`
-            : this.showStatus
-              ? html`
-                  <btrix-crawl-status
-                    state=${this.item.state}
-                    hideLabel
-                  ></btrix-crawl-status>
-                `
-              : html`
-                  <sl-tooltip
-                    content=${msg(str`${typeLabel}: ${crawlStatus.label}`)}
-                    @sl-hide=${(e: SlHideEvent) => e.stopPropagation()}
-                    @sl-after-hide=${(e: SlHideEvent) => e.stopPropagation()}
-                    hoist
-                  >
-                    <sl-icon
-                      class="text-inherit"
-                      style="color: ${crawlStatus.cssColor}"
-                      name=${typeIcon}
-                      label=${typeLabel}
-                    ></sl-icon>
-                  </sl-tooltip>
-                `}
+            : html`
+                <sl-tooltip
+                  content=${msg(str`${typeLabel}: ${crawlStatus.label}`)}
+                  @sl-hide=${(e: SlHideEvent) => e.stopPropagation()}
+                  @sl-after-hide=${(e: SlHideEvent) => e.stopPropagation()}
+                  hoist
+                >
+                  <sl-icon
+                    class="text-inherit"
+                    style="color: ${crawlStatus.cssColor}"
+                    name=${typeIcon}
+                    label=${typeLabel}
+                  ></sl-icon>
+                </sl-tooltip>
+              `}
           <sl-tooltip
             hoist
             content=${activeQAStats

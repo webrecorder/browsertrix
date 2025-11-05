@@ -745,7 +745,6 @@ export class CrawlsList extends BtrixElement {
     <btrix-archived-item-list-item
       href=${`${this.navigate.orgBasePath}/${item.type === "crawl" ? `workflows/${item.cid}/crawls` : `items/${item.type}`}/${item.id}`}
       .item=${item}
-      ?showStatus=${this.itemType !== null}
     >
       <btrix-table-cell slot="actionCell" class="p-0">
         <btrix-overflow-dropdown>

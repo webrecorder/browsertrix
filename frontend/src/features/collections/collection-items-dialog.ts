@@ -368,7 +368,7 @@ export class CollectionItemsDialog extends BtrixElement {
           </div>
         </btrix-section-heading>
       </header>
-      <section class="flex-1 px-3 pb-3 pt-2">
+      <section class="flex-1 overflow-hidden px-3 pb-3 pt-2">
         <btrix-archived-item-list listType="upload">
           <btrix-table-header-cell slot="checkboxCell" class="pr-0">
             <span class="sr-only">${msg("In Collection?")}</span>
