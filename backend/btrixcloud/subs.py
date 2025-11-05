@@ -246,9 +246,7 @@ class SubOps:
         data["oid"] = oid
         await self.subs.insert_one(data)
 
-    def _get_sub_by_type_from_data(
-        self, data: dict[str, object]
-    ) -> Union[
+    def _get_sub_by_type_from_data(self, data: dict[str, object]) -> Union[
         SubscriptionCreateOut,
         SubscriptionImportOut,
         SubscriptionUpdateOut,
