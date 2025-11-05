@@ -1430,7 +1430,6 @@ class CrawlOperator(BaseOperator):
             active_crawls_total_size = await self.crawl_ops.get_active_crawls_size(
                 crawl.oid
             )
-            print("SIZE", active_crawls_total_size)
 
             if self.org_ops.storage_quota_reached(org, active_crawls_total_size):
                 return "stopped_storage_quota_reached"
