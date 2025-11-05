@@ -1703,9 +1703,8 @@ def init_orgs_api(
     async def update_quotas(
         quotas: OrgQuotasIn,
         org: Organization = Depends(org_superuser_or_shared_secret_dep),
-        context: str | None = None,
     ):
-        await ops.update_quotas(org, quotas, context)
+        await ops.update_quotas(org, quotas, quotas.context)
 
         return {"updated": True}
 
