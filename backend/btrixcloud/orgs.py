@@ -625,6 +625,8 @@ class OrgOps:
             else 0
         )
 
+        quotas.context = None
+
         update = quotas.dict(
             exclude_unset=True, exclude_defaults=True, exclude_none=True
         )
@@ -672,6 +674,71 @@ class OrgOps:
                     {"_id": org.id},
                     {"$inc": {"giftedExecSecondsAvailable": gifted_secs_diff}},
                 )
+
+    async def add_to_org_quotas(
+        self, org: Organization, quotas: OrgQuotasIn, context: str | None
+    ):
+        previous_extra_mins = (
+            org.quotas.extraExecMinutes
+            if (org.quotas and org.quotas.extraExecMinutes)
+            else 0
+        )
+        previous_gifted_mins = (
+            org.quotas.giftedExecMinutes
+            if (org.quotas and org.quotas.giftedExecMinutes)
+            else 0
+        )
+
+        update: dict[str, Any] = {
+            "$inc": {},
+        }
+
+        for field, value in quotas.model_dump(exclude_unset=True).items():
+            if field == "context" or value is None:
+                continue
+            inc = max(value, -org.quotas.model_dump().get(field, 0))
+            update["$inc"][f"quotas.{field}"] = inc
+
+        updated_org = await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            update,
+            projection={"quotas": True},
+            return_document=ReturnDocument.AFTER,
+        )
+        updated_quotas = OrgQuotas(**updated_org["quotas"])
+
+        quotaUpdate: dict[str, dict[str, dict[str, Any] | int]] = {
+            "$push": {
+                "quotaUpdates": OrgQuotaUpdate(
+                    modified=dt_now(),
+                    update=updated_quotas,
+                    context=context,
+                ).model_dump()
+            },
+            "$inc": {},
+            "$set": {},
+        }
+
+        # Inc org available fields for extra/gifted execution time as needed
+        if updated_quotas.extraExecMinutes is not None:
+            extra_secs_diff = (
+                updated_quotas.extraExecMinutes - previous_extra_mins
+            ) * 60
+            if org.extraExecSecondsAvailable + extra_secs_diff <= 0:
+                quotaUpdate["$set"]["extraExecSecondsAvailable"] = 0
+            else:
+                quotaUpdate["$inc"]["extraExecSecondsAvailable"] = extra_secs_diff
+
+        if updated_quotas.giftedExecMinutes is not None:
+            gifted_secs_diff = (
+                updated_quotas.giftedExecMinutes - previous_gifted_mins
+            ) * 60
+            if org.giftedExecSecondsAvailable + gifted_secs_diff <= 0:
+                quotaUpdate["$set"]["giftedExecSecondsAvailable"] = 0
+            else:
+                quotaUpdate["$inc"]["giftedExecSecondsAvailable"] = gifted_secs_diff
+
+        await self.orgs.find_one_and_update({"_id": org.id}, quotaUpdate)
 
     async def update_event_webhook_urls(
         self, org: Organization, urls: OrgWebhookUrls
@@ -1681,14 +1748,27 @@ def init_orgs_api(
         except ValidationError as err:
             raise HTTPException(status_code=400, detail="invalid_plans") from err
 
-    @app.post(
-        "/orgs/{oid}/quotas", tags=["organizations"], response_model=UpdatedResponse
-    )
+    @router.post("/quotas", tags=["organizations"], response_model=UpdatedResponse)
     async def update_quotas(
+        quotas: OrgQuotasIn,
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        await ops.update_quotas(org, quotas, quotas.context)
+
+        return {"updated": True}
+
+    @app.post(
+        "/orgs/{oid}/quotas/add", tags=["organizations"], response_model=UpdatedResponse
+    )
+    async def update_quotas_add(
         quotas: OrgQuotasIn,
         org: Organization = Depends(org_superuser_or_shared_secret_dep),
     ):
-        await ops.update_quotas(org, quotas, quotas.context)
+        await ops.add_to_org_quotas(org, quotas, quotas.context)
 
         return {"updated": True}
 
