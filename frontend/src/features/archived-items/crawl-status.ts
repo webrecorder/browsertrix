@@ -1,15 +1,18 @@
 import { localized, msg } from "@lit/localize";
-import type { SlHideEvent } from "@shoelace-style/shoelace";
 import { css, html, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import startCase from "lodash/fp/startCase";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { labelWithIcon } from "@/layouts/labelWithIcon";
 import { RUNNING_STATES, type CrawlState } from "@/types/crawlState";
 import { animatePulse } from "@/utils/css";
 
-type CrawlType = "crawl" | "upload" | "qa";
+type CrawlType = "crawl" | "qa";
 
+/**
+ * Displays the status of a crawl type archived item, QA run, or workflow.
+ */
 @customElement("btrix-crawl-status")
 @localized()
 export class CrawlStatus extends TailwindElement {
@@ -211,7 +214,6 @@ export class CrawlStatus extends TailwindElement {
           style="color: ${color}"
         ></sl-icon>`;
         label = {
-          upload: msg("Uploaded"),
           crawl: msg("Complete"),
           qa: msg("Complete"),
         }[type];
@@ -354,26 +356,7 @@ export class CrawlStatus extends TailwindElement {
       originalState: this.state,
       type: this.type,
     });
-    if (this.hideLabel) {
-      return html`<div class="flex items-center">
-        <sl-tooltip
-          content=${label}
-          @sl-hide=${(e: SlHideEvent) => e.stopPropagation()}
-          @sl-after-hide=${(e: SlHideEvent) => e.stopPropagation()}
-          .hoist=${this.hoist}
-        >
-          <div>${icon}</div>
-        </sl-tooltip>
-      </div>`;
-    }
-    if (label) {
-      return html`<div class="flex h-6 items-center gap-2">
-        ${icon}
-        <div class="leading-none">${label}</div>
-      </div>`;
-    }
-    return html`<div class="flex h-6 items-center gap-2">
-      ${icon}<sl-skeleton></sl-skeleton>
-    </div>`;
+
+    return labelWithIcon({ icon, label, hideLabel: this.hideLabel });
   }
 }
