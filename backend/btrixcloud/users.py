@@ -596,7 +596,7 @@ def init_user_manager(mdb, emailsender, invites):
 def init_users_api(app, user_manager: UserManager):
     """init fastapi_users"""
 
-    auth_jwt_router, current_active_user, shared_secret_or_active_user = init_jwt_auth(
+    auth_jwt_router, current_active_user, shared_secret_or_superuser = init_jwt_auth(
         user_manager
     )
 
@@ -618,7 +618,7 @@ def init_users_api(app, user_manager: UserManager):
         tags=["users"],
     )
 
-    return current_active_user, shared_secret_or_active_user
+    return current_active_user, shared_secret_or_superuser
 
 
 # ============================================================================
