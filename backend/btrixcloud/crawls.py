@@ -355,7 +355,7 @@ class CrawlOps(BaseCrawlOps):
         return [res["_id"] for res in res_list]
 
     async def get_active_crawls_size(self, oid: UUID) -> int:
-        """get size of all running crawls"""
+        """get size of all active (running, waiting, paused) crawls"""
         cursor = self.crawls.aggregate(
             [
                 {"$match": {"state": {"$in": RUNNING_AND_WAITING_STATES}, "oid": oid}},
