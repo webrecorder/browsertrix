@@ -222,7 +222,10 @@ export class CrawlLogs extends BtrixElement {
         `,
         () =>
           this.filter
-            ? emptyMessage({ message: emptyMessageFor[this.filter] })
+            ? emptyMessage({
+                classNames: tw`border-y`,
+                message: emptyMessageFor[this.filter],
+              })
             : nothing,
       )}
     `;

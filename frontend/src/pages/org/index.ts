@@ -54,7 +54,6 @@ import "./archived-item-detail";
 import "./archived-items";
 import "./collections-list";
 import "./collection-detail";
-import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./settings/settings";
 import "./dashboard";
@@ -62,6 +61,7 @@ import "./dashboard";
 import(/* webpackChunkName: "org" */ "./archived-item-qa/archived-item-qa");
 import(/* webpackChunkName: "org" */ "./workflows-new");
 import(/* webpackChunkName: "org" */ "./browser-profiles-new");
+import(/* webpackChunkName: "org" */ "./browser-profiles/profile");
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -647,10 +647,9 @@ export class Org extends BtrixElement {
     const params = this.params as OrgParams["browser-profiles"];
 
     if (params.browserProfileId) {
-      return html`<btrix-browser-profiles-detail
+      return html`<btrix-browser-profiles-profile-page
         profileId=${params.browserProfileId}
-        ?isCrawler=${this.appState.isCrawler}
-      ></btrix-browser-profiles-detail>`;
+      ></btrix-browser-profiles-profile-page>`;
     }
 
     if (params.browserId) {

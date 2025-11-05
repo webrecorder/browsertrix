@@ -14,7 +14,7 @@ export function pageHeading({
   level?: 2 | 3 | 4;
 }) {
   const tag = unsafeStatic(`h${level}`);
-  const classNames = tw`min-w-0 text-lg font-medium leading-8`;
+  const classNames = tw`min-w-0 text-base font-medium leading-8 lg:text-lg`;
 
   return staticHtml`
     <${tag} class=${classNames}>
@@ -42,7 +42,9 @@ export function page(
       class="mx-auto box-border flex min-h-full w-full max-w-screen-desktop flex-1 flex-col gap-3 p-3 lg:px-10 lg:pb-10"
     >
       ${header.breadcrumbs ? html` ${pageNav(header.breadcrumbs)} ` : nothing}
-      ${pageHeader(header)}
-      <main class="flex flex-1 flex-col">${render()}</main>
+      ${header.title ? pageHeader(header) : nothing}
+      ${header.title
+        ? html`<main class="flex flex-1 flex-col">${render()}</main>`
+        : render()}
     </div>`;
 }
