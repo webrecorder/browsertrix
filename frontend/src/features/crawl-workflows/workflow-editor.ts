@@ -486,7 +486,19 @@ export class WorkflowEditor extends BtrixElement {
         (changedProperties.get("progressState") as ProgressState | undefined)
           ?.activeTab
     ) {
-      window.location.hash = this.progressState.activeTab;
+      const prevActiveTab = (
+        changedProperties.get("progressState") as ProgressState | undefined
+      )?.activeTab;
+
+      if (this.progressState.activeTab !== prevActiveTab) {
+        if (prevActiveTab) {
+          window.location.hash = this.progressState.activeTab;
+        } else {
+          const url = new URL(window.location.href);
+          url.hash = this.progressState.activeTab;
+          window.location.replace(url);
+        }
+      }
     }
     const prevFormState = changedProperties.get("formState") as
       | FormState
