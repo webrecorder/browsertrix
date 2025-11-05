@@ -51,7 +51,6 @@ from .models import (
     POD,
     CMAP,
     PVC,
-    CJS,
 )
 
 
@@ -1031,7 +1030,7 @@ class CrawlOperator(BaseOperator):
 
             # update stats and get status
             return await self.update_crawl_state(
-                redis, crawl, status, pods, pod_done_count, data
+                redis, crawl, status, pods, pod_done_count
             )
 
         # pylint: disable=broad-except
@@ -1397,7 +1396,7 @@ class CrawlOperator(BaseOperator):
         return True
 
     async def is_crawl_stopping(
-        self, crawl: CrawlSpec, status: CrawlStatus, data: MCSyncData
+        self, crawl: CrawlSpec, status: CrawlStatus
     ) -> Optional[StopReason]:
         """check if crawl is stopping and set reason"""
         # if user requested stop, then enter stopping phase
@@ -1428,19 +1427,12 @@ class CrawlOperator(BaseOperator):
             return "stopped_org_readonly"
 
         if org.quotas.storageQuota:
-            running_crawls_total_size = status.size
-            for crawl_job in data.related[CJS].values():
-                # if the job id matches current crawl job, then skip
-                # this job to avoid double-counting
-                # using the more up-to-date 'status.size' for this job
-                if crawl_job.get("spec", {}).get("id") == crawl.id:
-                    continue
+            active_crawls_total_size = await self.crawl_ops.get_active_crawls_size(
+                crawl.oid
+            )
+            print("SIZE", active_crawls_total_size)
 
-                crawl_status = crawl_job.get("status", {})
-                if crawl_status:
-                    running_crawls_total_size += crawl_status.get("size", 0)
-
-            if self.org_ops.storage_quota_reached(org, running_crawls_total_size):
+            if self.org_ops.storage_quota_reached(org, active_crawls_total_size):
                 return "stopped_storage_quota_reached"
 
         # gracefully stop crawl is execution time quota is reached
@@ -1479,7 +1471,6 @@ class CrawlOperator(BaseOperator):
         status: CrawlStatus,
         pods: dict[str, dict],
         pod_done_count: int,
-        data: MCSyncData,
     ) -> CrawlStatus:
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
@@ -1536,7 +1527,7 @@ class CrawlOperator(BaseOperator):
             await redis.delete(f"{crawl.id}:paused")
 
         if not status.stopping:
-            status.stopReason = await self.is_crawl_stopping(crawl, status, data)
+            status.stopReason = await self.is_crawl_stopping(crawl, status)
             status.stopping = status.stopReason is not None
 
             # mark crawl as stopping
