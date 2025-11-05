@@ -24,7 +24,7 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import { OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
+import { CommonTab, OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
 import type { ProxiesAPIResponse } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
@@ -35,7 +35,9 @@ import { type OrgData } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
 import type { FormState as WorkflowFormState } from "@/utils/workflow";
 
+import "./crawling";
 import "./workflow-detail";
+import "./crawls";
 import "./workflows-list";
 import "./archived-item-detail";
 import "./archived-items";
@@ -567,7 +569,13 @@ export class Org extends BtrixElement {
       `;
     }
 
-    if (this.orgPath.startsWith("/workflows/new")) {
+    const crawlingTab = this.orgPath
+      .slice(this.orgPath.indexOf(OrgTab.Workflows) + OrgTab.Workflows.length)
+      .replace(/(^\/|\/$)/, "")
+      .split("/")[0]
+      .split("?")[0];
+
+    if ((crawlingTab as CommonTab) === CommonTab.New) {
       const { workflow, seeds, seedFile, scopeType } = (this.viewStateData ||
         {}) satisfies Partial<DuplicateWorkflowSettings>;
 
@@ -582,7 +590,8 @@ export class Org extends BtrixElement {
       ></btrix-workflows-new>`;
     }
 
-    return html`<btrix-workflows-list
+    return html`<btrix-org-crawling
+      crawlingTab=${ifDefined(crawlingTab || undefined)}
       @select-new-dialog=${this.onSelectNewDialog}
       @select-job-type=${(e: SelectJobTypeEvent) => {
         this.openDialogName = undefined;
@@ -597,7 +606,7 @@ export class Org extends BtrixElement {
           scopeType: e.detail,
         });
       }}
-    ></btrix-workflows-list>`;
+    ></btrix-org-crawling>`;
   };
 
   private readonly renderBrowserProfiles = () => {

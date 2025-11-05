@@ -2,13 +2,13 @@ import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import { customElement, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import type { ArchivedItem, Crawl, Workflow } from "./types";
+import type { Crawl, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import {
@@ -20,34 +20,21 @@ import {
   type PageChangeEvent,
   type Pagination,
 } from "@/components/ui/pagination";
+import type { SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
-import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
-import { type BtrixChangeArchivedItemTagFilterEvent } from "@/features/archived-items/archived-item-tag-filter";
-import { CrawlStatus } from "@/features/archived-items/crawl-status";
-import { pageHeader } from "@/layouts/pageHeader";
+import {
+  WorkflowSearch,
+  type SearchFields,
+} from "@/features/crawl-workflows/workflow-search";
+import { type BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
+import { OrgTab } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
-import {
-  finishedCrawlStates,
-  isActive,
-  isCrawl,
-  isSuccessfullyFinished,
-  renderName,
-} from "@/utils/crawler";
-import { isArchivingDisabled } from "@/utils/orgs";
-import { tw } from "@/utils/tailwind";
+import { isActive, isSuccessfullyFinished, renderName } from "@/utils/crawler";
 
-type ArchivedItems = APIPaginatedList<ArchivedItem>;
-type SearchFields = "name" | "firstSeed";
-type SortField =
-  | "finished"
-  | "fileSize"
-  | "reviewStatus"
-  | "qaRunCount"
-  | "lastQAState"
-  | "lastQAStarted";
+type Crawls = APIPaginatedList<Crawl>;
 const SORT_DIRECTIONS = ["asc", "desc"] as const;
 type SortDirection = (typeof SORT_DIRECTIONS)[number];
 
@@ -57,42 +44,40 @@ const POLL_INTERVAL_SECONDS = 5;
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const sortableFields: Record<
-  SortField,
+  string,
   { label: string; defaultDirection?: SortDirection }
 > = {
+  started: {
+    label: msg("Date Started"),
+    defaultDirection: "desc",
+  },
   finished: {
-    label: msg("Date Created"),
+    label: msg("Date Finished"),
+    defaultDirection: "desc",
+  },
+  crawlExecSeconds: {
+    label: msg("Execution Time"),
+    defaultDirection: "desc",
+  },
+  pageCount: {
+    label: msg("Pages"),
     defaultDirection: "desc",
   },
   fileSize: {
     label: msg("Size"),
     defaultDirection: "desc",
   },
-  reviewStatus: {
-    label: msg("QA Rating"),
-    defaultDirection: "desc",
-  },
-  lastQAState: {
-    label: msg("Latest Analysis Status"),
-    defaultDirection: "desc",
-  },
-  lastQAStarted: {
-    label: msg("Last Analysis Run"),
-    defaultDirection: "desc",
-  },
-  qaRunCount: {
-    label: msg("# of Analysis Runs"),
-    defaultDirection: "desc",
-  },
 };
+
+type SortField = keyof typeof sortableFields;
 
 type SortBy = {
   field: SortField;
   direction: SortDirection;
 };
 const DEFAULT_SORT_BY: SortBy = {
-  field: "finished",
-  direction: sortableFields["finished"].defaultDirection!,
+  field: "started",
+  direction: sortableFields["started"].defaultDirection!,
 };
 
 type FilterBy = {
@@ -102,24 +87,13 @@ type FilterBy = {
 };
 
 /**
- * An archived item can be any replayable crawl (i.e. crawl with WACZ files)
- * or an uploaded WACZ. Users can view, search, and filter archived items
- * from this page.
+ * A crawl is the operation of a workflow. This is distinct from an archived item,
+ * which is a crawl that has successfully finished and can be replayed. Users can
+ * view, search, and filter crawls from this page.
  */
-@customElement("btrix-archived-items")
+@customElement("btrix-org-crawls")
 @localized()
-export class CrawlsList extends BtrixElement {
-  static FieldLabels: Record<SearchFields, string> = {
-    name: msg("Name"),
-    firstSeed: msg("Crawl Start URL"),
-  };
-
-  @property({ type: Boolean })
-  isCrawler!: boolean;
-
-  @property({ type: String })
-  itemType: ArchivedItem["type"] | null = null;
-
+export class OrgCrawls extends BtrixElement {
   @state()
   private pagination: Required<APIPaginationQuery> = {
     page: parsePage(new URLSearchParams(location.search).get("page")),
@@ -149,7 +123,7 @@ export class CrawlsList extends BtrixElement {
       return params;
     },
     (params) => {
-      const field = params.get("sortBy") as SortBy["field"] | null;
+      const field = params.get("sortBy");
       if (!field) {
         return DEFAULT_SORT_BY;
       }
@@ -244,19 +218,16 @@ export class CrawlsList extends BtrixElement {
   );
 
   @state()
-  private itemToEdit: ArchivedItem | null = null;
+  private crawlToEdit: Crawl | null = null;
 
   @state()
   private isEditingItem = false;
 
   @state()
-  private itemToDelete: ArchivedItem | null = null;
+  private crawlToDelete: Crawl | null = null;
 
   @state()
   private isDeletingItem = false;
-
-  @state()
-  private isUploadingArchive = false;
 
   @query("#stateSelect")
   stateSelect?: SlSelect;
@@ -282,10 +253,9 @@ export class CrawlsList extends BtrixElement {
     this.filterByTags.setValue(undefined);
   }
 
-  private readonly archivedItemsTask = new Task(this, {
+  private readonly crawlsTask = new Task(this, {
     task: async (
       [
-        itemType,
         pagination,
         orderBy,
         filterBy,
@@ -296,9 +266,8 @@ export class CrawlsList extends BtrixElement {
       { signal },
     ) => {
       try {
-        const data = await this.getArchivedItems(
+        const data = await this.getCrawls(
           {
-            itemType,
             pagination,
             orderBy,
             filterBy,
@@ -314,21 +283,19 @@ export class CrawlsList extends BtrixElement {
         }
 
         this.getArchivedItemsTimeout = window.setTimeout(() => {
-          void this.archivedItemsTask.run();
+          void this.crawlsTask.run();
         }, POLL_INTERVAL_SECONDS * 1000);
 
         return data;
       } catch (e) {
         if ((e as Error).name === "AbortError") {
-          console.debug("Fetch archived items aborted to throttle");
+          console.debug("Fetch crawls aborted to throttle");
         } else {
           this.notify.toast({
-            message: msg(
-              "Sorry, couldn’t retrieve archived items at this time.",
-            ),
+            message: msg("Sorry, couldn’t retrieve crawl runs at this time."),
             variant: "danger",
             icon: "exclamation-octagon",
-            id: "archived-item-fetch-error",
+            id: "crawl-status",
           });
         }
         throw e;
@@ -337,7 +304,6 @@ export class CrawlsList extends BtrixElement {
     args: () =>
       // TODO consolidate filters into single fetch params
       [
-        this.itemType,
         this.pagination,
         this.orderBy.value,
         this.filterBy.value,
@@ -354,7 +320,9 @@ export class CrawlsList extends BtrixElement {
 
   private get selectedSearchFilterKey() {
     return (
-      Object.keys(CrawlsList.FieldLabels) as Keys<typeof CrawlsList.FieldLabels>
+      Object.keys(WorkflowSearch.FieldLabels) as Keys<
+        typeof WorkflowSearch.FieldLabels
+      >
     ).find((key) => Boolean(this.filterBy.value[key]));
   }
 
@@ -373,20 +341,9 @@ export class CrawlsList extends BtrixElement {
       changedProperties.has("filterByCurrentUser.value") ||
       changedProperties.has("filterBy.value") ||
       changedProperties.has("orderBy.value") ||
-      changedProperties.has("itemType") ||
       changedProperties.has("filterByTags.value") ||
       changedProperties.has("filterByTagsType.value")
     ) {
-      if (
-        changedProperties.has("itemType") &&
-        changedProperties.get("itemType")
-      ) {
-        this.filterBy.setValue({});
-        this.orderBy.setValue({
-          field: "finished",
-          direction: sortableFields["finished"].defaultDirection!,
-        });
-      }
       this.paginationElement?.setPage(1, { dispatch: true, replace: true });
 
       if (changedProperties.has("filterByCurrentUser")) {
@@ -396,10 +353,10 @@ export class CrawlsList extends BtrixElement {
         );
       }
     }
+  }
 
-    if (changedProperties.has("itemType")) {
-      void this.fetchConfigSearchValues();
-    }
+  protected firstUpdated() {
+    void this.fetchConfigSearchValues();
   }
 
   disconnectedCallback(): void {
@@ -408,77 +365,13 @@ export class CrawlsList extends BtrixElement {
   }
 
   render() {
-    const listTypes: {
-      itemType: ArchivedItem["type"] | null;
-      label: string;
-      icon?: string;
-    }[] = [
-      {
-        itemType: null,
-        icon: "file-zip-fill",
-        label: msg("All Items"),
-      },
-      {
-        itemType: "crawl",
-        icon: "gear-wide-connected",
-        label: msg("Crawled Items"),
-      },
-      {
-        itemType: "upload",
-        icon: "upload",
-        label: msg("Uploaded Items"),
-      },
-    ];
-
     return html`
       <main>
-        <div class="contents">
-          ${pageHeader({
-            title: msg("Archived Items"),
-            actions: this.isCrawler
-              ? html`
-                  <sl-tooltip
-                    content=${msg("Org Storage Full")}
-                    ?disabled=${!this.org?.storageQuotaReached}
-                  >
-                    <sl-button
-                      size="small"
-                      variant="primary"
-                      @click=${() => (this.isUploadingArchive = true)}
-                      ?disabled=${isArchivingDisabled(this.org)}
-                    >
-                      <sl-icon slot="prefix" name="upload"></sl-icon>
-                      ${msg("Upload WACZ")}
-                    </sl-button>
-                  </sl-tooltip>
-                `
-              : nothing,
-            classNames: tw`mb-3`,
-          })}
-          <div class="mb-3 flex gap-2">
-            ${listTypes.map(({ label, itemType, icon }) => {
-              const isSelected = itemType === this.itemType;
-              return html` <btrix-navigation-button
-                ?active=${isSelected}
-                href=${`${this.navigate.orgBasePath}/items${
-                  itemType ? `/${itemType}` : ""
-                }`}
-                @click=${this.navigate.link}
-                size="small"
-              >
-                ${icon ? html`<sl-icon name=${icon}></sl-icon>` : ""}
-                <span>${label}</span>
-              </btrix-navigation-button>`;
-            })}
-          </div>
-          <div
-            class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4"
-          >
-            ${this.renderControls()}
-          </div>
+        <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
+          ${this.renderControls()}
         </div>
 
-        ${this.archivedItemsTask.render({
+        ${this.crawlsTask.render({
           initial: () => html`
             <div class="my-12 flex w-full items-center justify-center text-2xl">
               <sl-spinner></sl-spinner>
@@ -487,30 +380,13 @@ export class CrawlsList extends BtrixElement {
           pending: () =>
             // TODO differentiate between pending between poll and
             // pending from user action, in order to show loading indicator
-            this.archivedItemsTask.value
+            this.crawlsTask.value
               ? // Render previous value while latest is loading
-                this.renderArchivedItems(this.archivedItemsTask.value)
+                this.renderArchivedItems(this.crawlsTask.value)
               : nothing,
           complete: this.renderArchivedItems,
         })}
       </main>
-      ${when(
-        this.isCrawler && this.orgId,
-        () => html`
-          <btrix-file-uploader
-            ?open=${this.isUploadingArchive}
-            @request-close=${() => (this.isUploadingArchive = false)}
-            @uploaded=${() => {
-              if (this.itemType !== "crawl") {
-                this.pagination = {
-                  ...this.pagination,
-                  page: 1,
-                };
-              }
-            }}
-          ></btrix-file-uploader>
-        `,
-      )}
     `;
   }
 
@@ -519,16 +395,16 @@ export class CrawlsList extends BtrixElement {
     page,
     total,
     pageSize,
-  }: APIPaginatedList<ArchivedItem>) => html`
+  }: APIPaginatedList<Crawl>) => html`
     <section class="mx-2">
       ${items.length
         ? html`
-            <btrix-archived-item-list .listType=${this.itemType}>
+            <btrix-crawl-list>
               <btrix-table-header-cell slot="actionCell" class="p-0">
                 <span class="sr-only">${msg("Row actions")}</span>
               </btrix-table-header-cell>
               ${repeat(items, ({ id }) => id, this.renderArchivedItem)}
-            </btrix-archived-item-list>
+            </btrix-crawl-list>
           `
         : this.renderEmptyState()}
     </section>
@@ -555,35 +431,35 @@ export class CrawlsList extends BtrixElement {
         </footer>
       `,
     )}
-    ${this.itemToEdit
+    ${this.crawlToEdit
       ? html`
           <btrix-item-metadata-editor
-            .crawl=${this.itemToEdit}
+            .crawl=${this.crawlToEdit}
             ?open=${this.isEditingItem}
             @request-close=${() => (this.isEditingItem = false)}
             @updated=${() => {
               /* TODO fetch current page or single crawl */
-              void this.archivedItemsTask.run();
+              void this.crawlsTask.run();
             }}
           ></btrix-item-metadata-editor>
         `
       : nothing}
 
     <btrix-delete-item-dialog
-      .item=${this.itemToDelete || undefined}
+      .item=${this.crawlToDelete || undefined}
       ?open=${this.isDeletingItem}
-      @sl-after-hide=${() => (this.isDeletingItem = false)}
-      @btrix-confirm=${async () => {
+      @sl-hide=${() => (this.isDeletingItem = false)}
+      @btrix-confirm=${() => {
         this.isDeletingItem = false;
-        if (this.itemToDelete) {
-          await this.deleteItem(this.itemToDelete);
+        if (this.crawlToDelete) {
+          void this.deleteItem(this.crawlToDelete);
         }
       }}
     >
-      ${this.itemToDelete?.finished && isCrawl(this.itemToDelete)
-        ? html`<strong slot="name" class="font-semibold"
-            >${renderName(this.itemToDelete)}
-            (${this.localize.date(this.itemToDelete.finished)})</strong
+      ${this.crawlToDelete?.finished
+        ? html`<span slot="name"
+            >${renderName(this.crawlToDelete)}
+            (${this.localize.date(this.crawlToDelete.finished)})</span
           >`
         : nothing}
     </btrix-delete-item-dialog>
@@ -607,23 +483,15 @@ export class CrawlsList extends BtrixElement {
           <span class="whitespace-nowrap text-sm text-neutral-500">
             ${msg("Filter by:")}
           </span>
-          <btrix-archived-item-state-filter
+          <btrix-crawl-state-filter
             .states=${this.filterBy.value.state}
-            @btrix-change=${(e: BtrixChangeArchivedItemStateFilterEvent) => {
+            @btrix-change=${(e: BtrixChangeCrawlStateFilterEvent) => {
               this.filterBy.setValue({
                 ...this.filterBy.value,
                 state: e.detail.value,
               });
             }}
-          ></btrix-archived-item-state-filter>
-
-          <btrix-archived-item-tag-filter
-            .tags=${this.filterByTags.value}
-            @btrix-change=${(e: BtrixChangeArchivedItemTagFilterEvent) => {
-              this.filterByTags.setValue(e.detail.value?.tags);
-              this.filterByTagsType.setValue(e.detail.value?.type || "or");
-            }}
-          ></btrix-archived-item-tag-filter>
+          ></btrix-crawl-state-filter>
 
           ${this.userInfo?.id
             ? html`<btrix-filter-chip
@@ -669,7 +537,7 @@ export class CrawlsList extends BtrixElement {
         pill
         value=${this.orderBy.value.field}
         @sl-change=${(e: Event) => {
-          const field = (e.target as HTMLSelectElement).value as SortField;
+          const field = (e.target as HTMLSelectElement).value;
           this.orderBy.setValue({
             field: field,
             direction:
@@ -707,22 +575,18 @@ export class CrawlsList extends BtrixElement {
 
   private renderSearch() {
     return html`
-      <btrix-search-combobox
-        .searchKeys=${this.searchKeys}
+      <btrix-workflow-search
         .searchOptions=${this.searchOptions}
-        .keyLabels=${CrawlsList.FieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         searchByValue=${ifDefined(
           this.selectedSearchFilterKey &&
             this.filterBy.value[this.selectedSearchFilterKey],
         )}
-        placeholder=${this.itemType === "upload"
-          ? msg("Search all uploads by name")
-          : this.itemType === "crawl"
-            ? msg("Search all crawls by name or crawl start URL")
-            : msg("Search all items by name or crawl start URL")}
-        @btrix-select=${(e: CustomEvent) => {
+        placeholder=${msg("Search by workflow name or crawl start URL")}
+        @btrix-select=${(e: SelectEvent<WorkflowSearch["searchKeys"]>) => {
           const { key, value } = e.detail;
+          console.log(key, value);
+          if (key == null) return;
           this.filterBy.setValue({
             ...this.filterBy.value,
             [key]: value,
@@ -737,120 +601,111 @@ export class CrawlsList extends BtrixElement {
           this.filterBy.setValue(otherFilters);
         }}
       >
-      </btrix-search-combobox>
+      </btrix-workflow-search>
     `;
   }
 
-  private readonly renderArchivedItem = (item: ArchivedItem) => html`
-    <btrix-archived-item-list-item
-      href=${`${this.navigate.orgBasePath}/${item.type === "crawl" ? `workflows/${item.cid}/crawls` : `items/${item.type}`}/${item.id}`}
-      .item=${item}
-      ?showStatus=${this.itemType !== null}
+  private readonly renderArchivedItem = (crawl: Crawl) => html`
+    <btrix-crawl-list-item
+      href=${`${this.navigate.orgBasePath}/${OrgTab.Workflows}/${crawl.cid}/crawls/${crawl.id}`}
+      .crawl=${crawl}
     >
-      <btrix-table-cell slot="actionCell" class="p-0">
-        <btrix-overflow-dropdown>
-          <sl-menu>${this.renderMenuItems(item)}</sl-menu>
-        </btrix-overflow-dropdown>
-      </btrix-table-cell>
-    </btrix-archived-item-list-item>
+      <sl-menu slot="menu"> ${this.renderMenuItems(crawl)} </sl-menu>
+    </btrix-crawl-list-item>
   `;
 
-  private readonly renderMenuItems = (item: ArchivedItem) => {
-    // HACK shoelace doesn't current have a way to override non-hover
-    // color without resetting the --sl-color-neutral-700 variable
+  private readonly renderMenuItems = (crawl: Crawl) => {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
+    const isCrawler = this.appState.isCrawler;
+    const isSuccess = isSuccessfullyFinished(crawl);
 
     return html`
       ${when(
-        this.isCrawler,
+        isCrawler,
         () => html`
           <sl-menu-item
             @click=${async () => {
-              this.itemToEdit = item;
+              this.crawlToEdit = crawl;
               await this.updateComplete;
               this.isEditingItem = true;
             }}
           >
             <sl-icon name="pencil" slot="prefix"></sl-icon>
-            ${msg("Edit Archived Item")}
+            ${isSuccess ? msg("Edit Archived Item") : msg("Edit Metadata")}
           </sl-menu-item>
           <sl-divider></sl-divider>
         `,
       )}
       ${when(
-        isSuccessfullyFinished(item),
+        isSuccess,
         () => html`
           <btrix-menu-item-link
-            href=${`/api/orgs/${this.orgId}/all-crawls/${item.id}/download?auth_bearer=${authToken}&preferSingleWACZ=true`}
+            href=${`/api/orgs/${this.orgId}/all-crawls/${crawl.id}/download?auth_bearer=${authToken}&preferSingleWACZ=true`}
             download
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Item")}
-            ${item.fileSize
+            ${crawl.fileSize
               ? html` <btrix-badge
                   slot="suffix"
                   class="font-monostyle text-xs text-neutral-500"
-                  >${this.localize.bytes(item.fileSize)}</btrix-badge
+                  >${this.localize.bytes(crawl.fileSize)}</btrix-badge
                 >`
               : nothing}
           </btrix-menu-item-link>
           <sl-divider></sl-divider>
         `,
       )}
-      ${item.type === "crawl"
-        ? html`
-            <sl-menu-item
-              @click=${() =>
-                this.navigate.to(
-                  `${this.navigate.orgBasePath}/workflows/${item.cid}`,
-                )}
-            >
-              <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
-              ${msg("Go to Workflow")}
-            </sl-menu-item>
-            <sl-menu-item
-              @click=${() => ClipboardController.copyToClipboard(item.cid)}
-            >
-              <sl-icon name="copy" slot="prefix"></sl-icon>
-              ${msg("Copy Workflow ID")}
-            </sl-menu-item>
-          `
-        : nothing}
+      <sl-menu-item
+        @click=${() =>
+          this.navigate.to(
+            `${this.navigate.orgBasePath}/workflows/${crawl.cid}`,
+          )}
+      >
+        <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
+        ${msg("Go to Workflow")}
+      </sl-menu-item>
+      <sl-menu-item
+        @click=${() => ClipboardController.copyToClipboard(crawl.cid)}
+      >
+        <sl-icon name="copy" slot="prefix"></sl-icon>
+        ${msg("Copy Workflow ID")}
+      </sl-menu-item>
 
       <sl-menu-item
         @click=${() =>
-          ClipboardController.copyToClipboard(item.tags.join(", "))}
-        ?disabled=${!item.tags.length}
+          ClipboardController.copyToClipboard(crawl.tags.join(", "))}
+        ?disabled=${!crawl.tags.length}
       >
         <sl-icon name="tags" slot="prefix"></sl-icon>
         ${msg("Copy Tags")}
       </sl-menu-item>
       <sl-menu-item
-        @click=${() => ClipboardController.copyToClipboard(item.id)}
+        @click=${() => ClipboardController.copyToClipboard(crawl.id)}
       >
         <sl-icon name="copy" slot="prefix"></sl-icon>
-        ${msg("Copy Item ID")}
+        ${msg("Copy Crawl ID")}
       </sl-menu-item>
       ${when(
-        this.isCrawler && (item.type !== "crawl" || !isActive(item)),
+        isCrawler && !isActive(crawl),
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item
             class="menu-item-danger"
-            @click=${() => this.confirmDeleteItem(item)}
+            @click=${() => {
+              if (isSuccess) {
+                this.confirmDeleteItem(crawl);
+              } else {
+                void this.deleteItem(crawl);
+              }
+            }}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>
-            ${msg("Delete Item")}
+            ${msg("Delete Crawl")}
           </sl-menu-item>
         `,
       )}
     `;
-  };
-
-  private readonly renderStatusMenuItem = (state: CrawlState) => {
-    const { icon, label } = CrawlStatus.getContent({ state });
-
-    return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
   };
 
   private renderEmptyState() {
@@ -890,65 +745,52 @@ export class CrawlsList extends BtrixElement {
       `;
     }
 
-    if (this.itemType === "upload") {
-      return html`
-        <div class="border-b border-t py-5">
-          <p class="text-center text-neutral-500">${msg("No uploads yet.")}</p>
-        </div>
-      `;
-    }
-
     return html`
       <div class="border-b border-t py-5">
-        <p class="text-center text-neutral-500">
-          ${msg("No archived items yet.")}
-        </p>
+        <p class="text-center text-neutral-500">${msg("No crawl runs yet.")}</p>
       </div>
     `;
   }
 
-  private async getArchivedItems(
+  private async getCrawls(
     params: {
-      itemType: CrawlsList["itemType"];
-      pagination: CrawlsList["pagination"];
-      orderBy: CrawlsList["orderBy"]["value"];
-      filterBy: CrawlsList["filterBy"]["value"];
-      filterByCurrentUser: CrawlsList["filterByCurrentUser"]["value"];
-      filterByTags: CrawlsList["filterByTags"]["value"];
-      filterByTagsType: CrawlsList["filterByTagsType"]["value"];
+      pagination: OrgCrawls["pagination"];
+      orderBy: OrgCrawls["orderBy"]["value"];
+      filterBy: OrgCrawls["filterBy"]["value"];
+      filterByCurrentUser: OrgCrawls["filterByCurrentUser"]["value"];
+      filterByTags: OrgCrawls["filterByTags"]["value"];
+      filterByTagsType: OrgCrawls["filterByTagsType"]["value"];
     },
     signal: AbortSignal,
   ) {
     const query = queryString.stringify(
       {
         ...params.filterBy,
-        state: params.filterBy.state?.length
-          ? params.filterBy.state
-          : finishedCrawlStates,
+        state: params.filterBy.state,
         page: params.pagination.page,
         pageSize: params.pagination.pageSize,
         tags: params.filterByTags,
-        tagMatch: params.filterByTagsType,
+        tagMatch: params.filterByTags?.length
+          ? params.filterByTagsType
+          : undefined,
         userid: params.filterByCurrentUser ? this.userInfo!.id : undefined,
         sortBy: params.orderBy.field,
         sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
-        crawlType: params.itemType,
       },
       {
         arrayFormat: "none",
       },
     );
 
-    return this.api.fetch<ArchivedItems>(
-      `/orgs/${this.orgId}/all-crawls?${query}`,
-      { signal },
-    );
+    return this.api.fetch<Crawls>(`/orgs/${this.orgId}/crawls?${query}`, {
+      signal,
+    });
   }
 
   private async fetchConfigSearchValues() {
     try {
       const query = queryString.stringify({
-        crawlType: this.itemType,
+        crawlType: "crawl",
       });
       const data: {
         crawlIds: string[];
@@ -972,61 +814,41 @@ export class CrawlsList extends BtrixElement {
     }
   }
 
-  private readonly confirmDeleteItem = (item: ArchivedItem) => {
-    this.itemToDelete = item;
+  private readonly confirmDeleteItem = (item: Crawl) => {
+    this.crawlToDelete = item;
     this.isDeletingItem = true;
   };
 
-  private async deleteItem(item: ArchivedItem) {
-    let apiPath;
-
-    switch (this.itemType) {
-      case "crawl":
-        apiPath = "crawls";
-        break;
-      case "upload":
-        apiPath = "uploads";
-        break;
-      default:
-        apiPath = "all-crawls";
-        break;
-    }
-
+  private async deleteItem(item: Crawl) {
     try {
-      const _data = await this.api.fetch(
-        `/orgs/${item.oid}/${apiPath}/delete`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            crawl_ids: [item.id],
-          }),
-        },
-      );
+      const _data = await this.api.fetch(`/orgs/${item.oid}/crawls/delete`, {
+        method: "POST",
+        body: JSON.stringify({
+          crawl_ids: [item.id],
+        }),
+      });
       // TODO eager list update before server response
-      void this.archivedItemsTask.run();
+      void this.crawlsTask.run();
       // const { items, ...crawlsData } = this.archivedItems!;
-      this.itemToDelete = null;
+      this.crawlToDelete = null;
       // this.archivedItems = {
       //   ...crawlsData,
       //   items: items.filter((c) => c.id !== item.id),
       // };
       this.notify.toast({
-        message: msg(str`Successfully deleted archived item.`),
+        message: msg(str`Successfully deleted crawl.`),
         variant: "success",
         icon: "check2-circle",
+        id: "crawl-status",
       });
     } catch (e) {
-      if (this.itemToDelete) {
-        this.confirmDeleteItem(this.itemToDelete);
+      if (this.crawlToDelete) {
+        this.confirmDeleteItem(this.crawlToDelete);
       }
-      let message = msg(
-        str`Sorry, couldn't delete archived item at this time.`,
-      );
+      let message = msg(str`Sorry, couldn't delete crawl at this time.`);
       if (isApiError(e)) {
         if (e.details == "not_allowed") {
-          message = msg(
-            str`Only org owners can delete other users' archived items.`,
-          );
+          message = msg(str`Only org owners can delete other users' crawls.`);
         } else if (e.message) {
           message = e.message;
         }
@@ -1035,6 +857,7 @@ export class CrawlsList extends BtrixElement {
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "crawl-status",
       });
     }
   }

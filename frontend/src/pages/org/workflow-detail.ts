@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
-import type { SlDropdown, SlSelect } from "@shoelace-style/shoelace";
+import type { SlDropdown } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -17,11 +17,7 @@ import type { Crawl, CrawlLog, Seed, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Alert } from "@/components/ui/alert";
-import {
-  calculatePages,
-  parsePage,
-  type PageChangeEvent,
-} from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
@@ -30,6 +26,7 @@ import {
   Action,
   type BtrixSelectActionEvent,
 } from "@/features/crawl-workflows/workflow-action-menu/types";
+import type { BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
 import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
@@ -41,7 +38,6 @@ import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import {
   DEFAULT_MAX_SCALE,
-  inactiveCrawlStates,
   isActive,
   isSkipped,
   isSuccessfullyFinished,
@@ -565,36 +561,27 @@ export class WorkflowDetail extends BtrixElement {
           >
         </div>
       </btrix-dialog>
-      <btrix-dialog
-        .label=${msg("Delete Crawl?")}
-        .open=${this.openDialogName === "deleteCrawl"}
-        @sl-request-close=${() => (this.openDialogName = undefined)}
-        @sl-show=${this.showDialog}
+      <btrix-delete-item-dialog
+        .item=${this.crawlToDelete || undefined}
+        ?open=${this.openDialogName === "deleteCrawl"}
+        @sl-hide=${() => (this.openDialogName = undefined)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
+        @btrix-confirm=${() => {
+          this.openDialogName = undefined;
+          if (this.crawlToDelete) {
+            void this.deleteCrawl(this.crawlToDelete);
+          }
+        }}
       >
-        ${msg(
-          "All files and logs associated with this crawl will also be deleted, and the crawl will be removed from any Collection it is a part of.",
-        )}
-        <div slot="footer" class="flex justify-between">
-          <sl-button
-            size="small"
-            .autofocus=${true}
-            @click=${() => (this.openDialogName = undefined)}
-            >${msg("Cancel")}</sl-button
-          >
-          <sl-button
-            size="small"
-            variant="danger"
-            @click=${async () => {
-              this.openDialogName = undefined;
-              if (this.crawlToDelete) {
-                await this.deleteCrawl(this.crawlToDelete);
-              }
-            }}
-            >${msg("Delete Crawl")}</sl-button
-          >
-        </div>
-      </btrix-dialog>
+        ${this.crawlToDelete?.finished
+          ? html`<span slot="name"
+              >${msg("crawl that finished on")}
+              <strong class="font-semibold"
+                >${this.localize.date(this.crawlToDelete.finished)}</strong
+              ></span
+            >`
+          : nothing}
+      </btrix-delete-item-dialog>
       <btrix-dialog
         .label=${msg("Edit Browser Windows")}
         .open=${this.openDialogName === "scale"}
@@ -667,7 +654,7 @@ export class WorkflowDetail extends BtrixElement {
     const breadcrumbs: Breadcrumb[] = [
       {
         href: `${this.navigate.orgBasePath}/workflows`,
-        content: msg("Crawl Workflows"),
+        content: msg("Workflows"),
       },
     ];
 
@@ -1140,45 +1127,44 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private renderCrawls() {
-    const pageView = (crawls: APIPaginatedList<Crawl>) => {
-      const pages = calculatePages(crawls);
-
-      if (crawls.page === 1 || pages < 2) return;
-
-      const page = this.localize.number(crawls.page);
-      const pageCount = this.localize.number(pages);
-
-      return msg(str`Viewing page ${page} of ${pageCount}`);
-    };
-
     return html`
       <section>
         <div
           class="mb-3 flex items-center justify-between rounded-lg border bg-neutral-50 p-3 text-neutral-500"
         >
-          <div>${when(this.crawls, pageView)}</div>
-          <div class="flex items-center">
-            <div class="mx-2">${msg("Status:")}</div>
-            <sl-select
-              id="stateSelect"
-              class="flex-1 md:min-w-[16rem]"
-              size="small"
-              pill
-              multiple
-              max-options-visible="1"
-              placeholder=${msg("Any")}
-              @sl-change=${async (e: CustomEvent) => {
-                const value = (e.target as SlSelect).value as CrawlState[];
-                await this.updateComplete;
+          <div class="flex-wap flex items-center gap-2">
+            <span class="whitespace-nowrap text-sm text-neutral-500">
+              ${msg("Filter by:")}
+            </span>
+            <btrix-crawl-state-filter
+              .states=${this.crawlsParams.state}
+              @btrix-change=${(e: BtrixChangeCrawlStateFilterEvent) => {
                 this.crawlsParams = {
                   ...this.crawlsParams,
                   page: 1,
-                  state: value,
+                  state: e.detail.value,
                 };
               }}
-            >
-              ${inactiveCrawlStates.map(this.renderStatusMenuItem)}
-            </sl-select>
+            ></btrix-crawl-state-filter>
+            ${when(
+              this.crawlsParams.state?.length,
+              () => html`
+                <sl-button
+                  class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
+                  size="small"
+                  variant="text"
+                  @click=${() => {
+                    this.crawlsParams = {
+                      ...this.crawlsParams,
+                      state: undefined,
+                    };
+                  }}
+                >
+                  <sl-icon slot="prefix" name="x-lg"></sl-icon>
+                  ${msg("Clear")}
+                </sl-button>
+              `,
+            )}
           </div>
         </div>
 
@@ -1232,7 +1218,7 @@ export class WorkflowDetail extends BtrixElement {
                           () => html`
                             <sl-divider></sl-divider>
                             <sl-menu-item
-                              style="--sl-color-neutral-700: var(--danger)"
+                              class="menu-item-danger"
                               @click=${() => this.confirmDeleteCrawl(crawl)}
                             >
                               <sl-icon name="trash3" slot="prefix"></sl-icon>
@@ -1285,7 +1271,7 @@ export class WorkflowDetail extends BtrixElement {
             : html`
                 <div class="p-4">
                   <p class="text-center text-neutral-400">
-                    ${this.crawls?.total
+                    ${this.crawlsParams.state
                       ? msg("No matching crawls found.")
                       : msg("No crawls yet.")}
                   </p>
@@ -2092,7 +2078,7 @@ export class WorkflowDetail extends BtrixElement {
         cid: workflowId,
         sortBy: "started",
         page: params.page ?? this.crawls?.page,
-        pageSize: this.crawls?.pageSize ?? 10,
+        pageSize: this.crawls?.pageSize ?? 50,
         ...params,
       },
       {

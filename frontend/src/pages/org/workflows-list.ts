@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
-import type { SlDialog, SlSelectEvent } from "@shoelace-style/shoelace";
+import type { SlDialog } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
@@ -8,12 +8,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import {
-  ScopeType,
-  type ListWorkflow,
-  type Seed,
-  type Workflow,
-} from "./types";
+import { type ListWorkflow, type Seed, type Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type {
@@ -27,7 +22,6 @@ import {
 } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
-import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import {
   Action,
   type BtrixSelectActionEvent,
@@ -35,24 +29,22 @@ import {
 import { type BtrixChangeWorkflowLastCrawlStateFilterEvent } from "@/features/crawl-workflows/workflow-last-crawl-state-filter";
 import { type BtrixChangeWorkflowProfileFilterEvent } from "@/features/crawl-workflows/workflow-profile-filter";
 import type { BtrixChangeWorkflowScheduleFilterEvent } from "@/features/crawl-workflows/workflow-schedule-filter";
+import {
+  WorkflowSearch,
+  type SearchFields,
+} from "@/features/crawl-workflows/workflow-search";
 import type { BtrixChangeWorkflowTagFilterEvent } from "@/features/crawl-workflows/workflow-tag-filter";
-import { pageHeader } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
-import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
-import {
-  NewWorkflowOnlyScopeType,
-  type StorageSeedFile,
-} from "@/types/workflow";
+import { type StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { renderName } from "@/utils/crawler";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
-type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
 const SORT_DIRECTIONS = ["asc", "desc"] as const;
 type SortDirection = (typeof SORT_DIRECTIONS)[number];
@@ -116,11 +108,6 @@ type FilterBy = {
 @customElement("btrix-workflows-list")
 @localized()
 export class WorkflowsList extends BtrixElement {
-  static FieldLabels: Record<SearchFields, string> = {
-    name: msg("Name"),
-    firstSeed: msg("Crawl Start URL"),
-  };
-
   @state({ hasChanged: isNotEqual })
   private pagination: Required<APIPaginationQuery> = {
     page: parsePage(new URLSearchParams(location.search).get("page")),
@@ -285,13 +272,10 @@ export class WorkflowsList extends BtrixElement {
   @query("#deleteDialog")
   private readonly deleteDialog?: SlDialog | null;
 
-  // For fuzzy search:
-  private readonly searchKeys = ["name", "firstSeed"];
-
   private get selectedSearchFilterKey() {
     return (
-      Object.keys(WorkflowsList.FieldLabels) as Keys<
-        typeof WorkflowsList.FieldLabels
+      Object.keys(WorkflowSearch.FieldLabels) as Keys<
+        typeof WorkflowSearch.FieldLabels
       >
     ).find((key) => Boolean(this.filterBy.value[key]));
   }
@@ -416,108 +400,8 @@ export class WorkflowsList extends BtrixElement {
 
   render() {
     return html`
-      <div class="contents">
-        ${pageHeader({
-          title: msg("Crawl Workflows"),
-          actions: html`
-            ${when(
-              this.appState.isAdmin,
-              () =>
-                html`<sl-tooltip content=${msg("Configure crawling defaults")}>
-                  <sl-icon-button
-                    href=${`${this.navigate.orgBasePath}/settings/crawling-defaults`}
-                    class="size-8 text-lg"
-                    name="gear"
-                    label=${msg("Edit org crawling settings")}
-                    @click=${this.navigate.link}
-                  ></sl-icon-button>
-                </sl-tooltip>`,
-            )}
-            ${when(
-              this.appState.isCrawler,
-              () => html`
-                <sl-button-group>
-                  <sl-button
-                    variant="primary"
-                    size="small"
-                    ?disabled=${this.org?.readOnly}
-                    @click=${() =>
-                      this.navigate.to(
-                        `${this.navigate.orgBasePath}/workflows/new`,
-                        {
-                          scopeType:
-                            this.appState.userPreferences?.newWorkflowScopeType,
-                        },
-                      )}
-                  >
-                    <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                    ${msg("New Workflow")}</sl-button
-                  >
-                  <sl-dropdown
-                    distance="4"
-                    placement="bottom-end"
-                    @sl-select=${(e: SlSelectEvent) => {
-                      const { value } = e.detail.item;
-
-                      if (value) {
-                        this.dispatchEvent(
-                          new CustomEvent<SelectJobTypeEvent["detail"]>(
-                            "select-job-type",
-                            {
-                              detail: value as SelectJobTypeEvent["detail"],
-                            },
-                          ),
-                        );
-                      }
-                    }}
-                  >
-                    <sl-button
-                      slot="trigger"
-                      size="small"
-                      variant="primary"
-                      caret
-                      ?disabled=${this.org?.readOnly}
-                    >
-                      <sl-visually-hidden
-                        >${msg("Scope options")}</sl-visually-hidden
-                      >
-                    </sl-button>
-                    <sl-menu>
-                      <sl-menu-label> ${msg("Page Crawl")} </sl-menu-label>
-                      <sl-menu-item value=${ScopeType.Page}
-                        >${scopeTypeLabels[ScopeType.Page]}</sl-menu-item
-                      >
-                      <sl-menu-item value=${NewWorkflowOnlyScopeType.PageList}>
-                        ${scopeTypeLabels[NewWorkflowOnlyScopeType.PageList]}
-                      </sl-menu-item>
-                      <sl-menu-item value=${ScopeType.SPA}>
-                        ${scopeTypeLabels[ScopeType.SPA]}
-                      </sl-menu-item>
-                      <sl-divider></sl-divider>
-                      <sl-menu-label>${msg("Site Crawl")}</sl-menu-label>
-                      <sl-menu-item value=${ScopeType.Prefix}>
-                        ${scopeTypeLabels[ScopeType.Prefix]}
-                      </sl-menu-item>
-                      <sl-menu-item value=${ScopeType.Host}>
-                        ${scopeTypeLabels[ScopeType.Host]}
-                      </sl-menu-item>
-                      <sl-menu-item value=${ScopeType.Domain}>
-                        ${scopeTypeLabels[ScopeType.Domain]}
-                      </sl-menu-item>
-                      <sl-menu-item value=${ScopeType.Custom}>
-                        ${scopeTypeLabels[ScopeType.Custom]}
-                      </sl-menu-item>
-                    </sl-menu>
-                  </sl-dropdown>
-                </sl-button-group>
-              `,
-            )}
-          `,
-          classNames: tw`border-b-transparent`,
-        })}
-        <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
-          ${this.renderControls()}
-        </div>
+      <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
+        ${this.renderControls()}
       </div>
 
       ${when(
@@ -593,7 +477,7 @@ export class WorkflowsList extends BtrixElement {
   private renderControls() {
     return html`
       <div class="flex flex-wrap items-center gap-2 md:gap-4">
-        <div class="grow basis-1/2">${this.renderSearch()}</div>
+        <div class="grow basis-2/3">${this.renderSearch()}</div>
 
         <div class="flex items-center">
           <label
@@ -739,17 +623,14 @@ export class WorkflowsList extends BtrixElement {
 
   private renderSearch() {
     return html`
-      <btrix-search-combobox
-        .searchKeys=${this.searchKeys}
+      <btrix-workflow-search
         .searchOptions=${this.searchOptions}
-        .keyLabels=${WorkflowsList.FieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         searchByValue=${ifDefined(
           this.selectedSearchFilterKey &&
             this.filterBy.value[this.selectedSearchFilterKey],
         )}
-        placeholder=${msg("Search all workflows by name or crawl start URL")}
-        @btrix-select=${(e: SelectEvent<typeof this.searchKeys>) => {
+        @btrix-select=${(e: SelectEvent<WorkflowSearch["searchKeys"]>) => {
           const { key, value } = e.detail;
           if (key == null) return;
           this.filterBy.setValue({
@@ -766,7 +647,7 @@ export class WorkflowsList extends BtrixElement {
           this.filterBy.setValue(otherFilters);
         }}
       >
-      </btrix-search-combobox>
+      </btrix-workflow-search>
     `;
   }
 

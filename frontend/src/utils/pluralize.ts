@@ -247,6 +247,32 @@ const plurals = {
       id: "profiles.plural.other",
     }),
   },
+  collections: {
+    zero: msg("collections", {
+      desc: 'plural form of "collections" for zero collections',
+      id: "collections.plural.zero",
+    }),
+    one: msg("collection", {
+      desc: 'singular form for "collection"',
+      id: "collections.plural.one",
+    }),
+    two: msg("collections", {
+      desc: 'plural form of "collections" for two collections',
+      id: "collections.plural.two",
+    }),
+    few: msg("collections", {
+      desc: 'plural form of "collections" for few collections',
+      id: "collections.plural.few",
+    }),
+    many: msg("collections", {
+      desc: 'plural form of "collections" for many collections',
+      id: "collections.plural.many",
+    }),
+    other: msg("collections", {
+      desc: 'plural form of "collections" for multiple/other collections',
+      id: "collections.plural.other",
+    }),
+  },
   changes: {
     zero: msg("changes", {
       desc: 'plural form of "changes" for zero changes',

@@ -20,6 +20,11 @@ export enum WorkflowTab {
   Settings = "settings",
 }
 
+export enum CommonTab {
+  New = "new",
+  View = "view",
+}
+
 const archivedItemPath = "/:itemId(/review/:qaTab)";
 
 export const ROUTES = {
@@ -38,9 +43,9 @@ export const ROUTES = {
     `/${RouteNamespace.PrivateOrgs}/:slug(/)`,
     // Org sections:
     `(/${OrgTab.Dashboard})`,
-    `(/${OrgTab.Workflows}(/new)(/:workflowId(/:workflowTab)(/crawls${archivedItemPath})))`,
+    `(/${OrgTab.Workflows}(/${WorkflowTab.Crawls})(/${CommonTab.New})(/:workflowId(/:workflowTab)(/${WorkflowTab.Crawls}${archivedItemPath})))`,
     `(/${OrgTab.Items}(/:itemType(${archivedItemPath})))`,
-    `(/${OrgTab.Collections}(/new)(/view/:collectionId(/:collectionTab)))`,
+    `(/${OrgTab.Collections}(/${CommonTab.New})(/${CommonTab.View}/:collectionId(/:collectionTab)))`,
     `(/${OrgTab.BrowserProfiles}(/profile(/browser/:browserId)(/:browserProfileId)))`,
     `(/${OrgTab.Settings}(/:settingsTab))`,
   ].join(""),

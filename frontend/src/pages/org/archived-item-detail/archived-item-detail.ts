@@ -12,7 +12,7 @@ import { type Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
 import { pageBack, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
-import { WorkflowTab } from "@/routes";
+import { OrgTab, WorkflowTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import type {
   ArchivedItem,
@@ -104,7 +104,7 @@ export class ArchivedItemDetail extends BtrixElement {
   activeTab: SectionName = "overview";
 
   @state()
-  private openDialogName?: "scale" | "metadata" | "exclusions";
+  private openDialogName?: "scale" | "metadata" | "exclusions" | "delete";
 
   @state()
   mostRecentNonFailedQARun?: QARun;
@@ -136,7 +136,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private get listUrl(): string {
     let path = "items";
     if (this.workflowId) {
-      path = `workflows/crawl/${this.workflowId}/${WorkflowTab.Crawls}`;
+      path = `${OrgTab.Workflows}/${this.workflowId}/${WorkflowTab.Crawls}`;
     } else if (this.collectionId) {
       path = `collections/view/${this.collectionId}/items`;
     } else if (this.item?.type === "upload") {
@@ -498,6 +498,23 @@ export class ArchivedItemDetail extends BtrixElement {
         @request-close=${() => (this.openDialogName = undefined)}
         @updated=${() => void this.fetchCrawl()}
       ></btrix-item-metadata-editor>
+
+      <btrix-delete-item-dialog
+        .item=${this.item}
+        ?open=${this.openDialogName === "delete"}
+        @sl-hide=${() => (this.openDialogName = undefined)}
+        @btrix-confirm=${() => {
+          this.openDialogName = undefined;
+          void this.deleteCrawl();
+        }}
+      >
+        ${this.item?.finished && isCrawl(this.item)
+          ? html`<strong slot="name" class="font-semibold"
+              >${renderName(this.item)}
+              (${this.localize.date(this.item.finished)})</strong
+            >`
+          : nothing}
+      </btrix-delete-item-dialog>
     `;
   }
 
@@ -508,7 +525,7 @@ export class ArchivedItemDetail extends BtrixElement {
       breadcrumbs.push(
         {
           href: `${this.navigate.orgBasePath}/workflows`,
-          content: msg("Crawl Workflows"),
+          content: msg("Workflows"),
         },
         {
           href: `${this.navigate.orgBasePath}/workflows/${this.item?.cid}`,
@@ -768,8 +785,14 @@ export class ArchivedItemDetail extends BtrixElement {
             () => html`
               <sl-divider></sl-divider>
               <sl-menu-item
-                style="--sl-color-neutral-700: var(--danger)"
-                @click=${() => void this.deleteCrawl()}
+                class="menu-item-danger"
+                @click=${() => {
+                  if (isSuccess) {
+                    this.openDialogName = "delete";
+                  } else {
+                    void this.deleteCrawl();
+                  }
+                }}
               >
                 <sl-icon name="trash3" slot="prefix"></sl-icon>
                 ${isWorkflowCrawl
@@ -868,14 +891,14 @@ export class ArchivedItemDetail extends BtrixElement {
                 </btrix-desc-list-item>
               `
             : html`
-                <btrix-desc-list-item label=${msg("Start Time")}>
+                <btrix-desc-list-item label=${msg("Date Started")}>
                   <btrix-format-date
                     date=${item.started}
                     dateStyle="long"
                     timeStyle="long"
                   ></btrix-format-date>
                 </btrix-desc-list-item>
-                <btrix-desc-list-item label=${msg("Finish Time")}>
+                <btrix-desc-list-item label=${msg("Date Finished")}>
                   ${item.finished
                     ? html`<btrix-format-date
                         date=${item.finished}
@@ -1363,14 +1386,7 @@ export class ArchivedItemDetail extends BtrixElement {
     return !formEl.querySelector("[data-invalid]");
   }
 
-  // TODO replace with in-page dialog
   private async deleteCrawl() {
-    if (
-      !window.confirm(msg(str`Are you sure you want to delete this crawl?`))
-    ) {
-      return;
-    }
-
     try {
       const _data = await this.api.fetch(
         `/orgs/${this.item!.oid}/${

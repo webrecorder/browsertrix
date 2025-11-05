@@ -15,10 +15,10 @@ The status of an archived item depends on its type. Uploads will always have the
 | <span class="status-success">:bootstrap-check-circle-fill: Complete</span>     | The crawl completed according to the workflow's settings. Workflows with [crawl limits](workflow-setup.md#crawl-limits) set may stop running before they capture every queued page, but the resulting archived item will still be marked as "Complete". |
 | <span class="status-neutral">:bootstrap-dash-square-fill: Stopped</span>       | The crawl workflow was _stopped_ gracefully by a user and data is saved. |
 | <span class="status-neutral">:bootstrap-exclamation-square-fill: Stopped: Reason</span> | A workflow limit (listed as the reason) was reached and data is saved. |
-| <span class="status-warning">:bootstrap-x-octagon-fill: Canceled</span>        | The crawl workflow was _canceled_ by a user, no data is saved. |
+| <span class="status-neutral">:bootstrap-exclamation-octagon: Canceled</span>        | The crawl workflow was _canceled_ by a user, no data is saved. |
 | <span class="status-danger">:bootstrap-diamond-triangle-fill: Failed</span> | A serious error occurred while crawling, no data is saved.|
 
-Because <span class="status-warning">:bootstrap-x-octagon-fill: Canceled</span> and <span class="status-danger">:bootstrap-exclamation-diamond-fill: Failed</span> crawls do not contain data, they are omitted from the archived items list page and cannot be added to a collection.
+Because <span class="status-neutral">:bootstrap-exclamation-octagon: Canceled</span> and <span class="status-danger">:bootstrap-exclamation-diamond-fill: Failed</span> crawls do not contain data, they are omitted from the archived items list page and cannot be added to a collection.
 
 ## Archived Item Details
 
