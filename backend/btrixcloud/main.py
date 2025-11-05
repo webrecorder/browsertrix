@@ -238,7 +238,13 @@ def main() -> None:
     )
 
     coll_ops = init_collections_api(
-        app, mdb, org_ops, storage_ops, event_webhook_ops, current_active_user
+        app,
+        mdb,
+        org_ops,
+        storage_ops,
+        crawl_manager,
+        event_webhook_ops,
+        current_active_user,
     )
 
     base_crawl_init = (

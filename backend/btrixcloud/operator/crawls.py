@@ -52,6 +52,8 @@ from .models import (
     CMAP,
     PVC,
     CJS,
+    COLLINDEX,
+    BTRIX_API,
 )
 
 
@@ -152,8 +154,6 @@ class CrawlOperator(BaseOperator):
         cid = spec["cid"]
         oid = spec["oid"]
 
-        redis_url = self.k8s.get_redis_url(crawl_id)
-
         params = {}
         params.update(self.k8s.shared_params)
         params["id"] = crawl_id
@@ -182,6 +182,7 @@ class CrawlOperator(BaseOperator):
             storage=StorageRef(spec["storageName"]),
             crawler_channel=spec.get("crawlerChannel", "default"),
             proxy_id=spec.get("proxyId"),
+            dedupe_coll_id=spec.get("dedupeCollId"),
             scale=spec.get("scale", 1),
             browser_windows=spec.get("browserWindows", 1),
             started=data.parent["metadata"]["creationTimestamp"],
@@ -256,12 +257,28 @@ class CrawlOperator(BaseOperator):
                     return self._empty_response(status)
 
         if status.state in ("starting", "waiting_org_limit"):
-            if not await self.can_start_new(crawl, status):
+            if not self.can_start_new(crawl, data):
+                await self.set_state(
+                    "waiting_org_limit", status, crawl, allowed_from=["starting"]
+                )
                 return self._empty_response(status)
 
-            await self.set_state(
-                "starting", status, crawl, allowed_from=["waiting_org_limit"]
-            )
+            if status.state != "starting":
+                await self.set_state(
+                    "starting", status, crawl, allowed_from=["waiting_org_limit"]
+                )
+
+        if status.state in ("starting", "waiting_dedupe_index"):
+            if self.is_waiting_for_dedupe_index(crawl, data):
+                await self.set_state(
+                    "waiting_dedupe_index", status, crawl, allowed_from=["starting"]
+                )
+                return self._empty_response(status)
+
+            if status.state != "starting":
+                await self.set_state(
+                    "starting", status, crawl, allowed_from=["waiting_dedupe_index"]
+                )
 
         status.scale = len(pods)
         if status.scale:
@@ -272,7 +289,7 @@ class CrawlOperator(BaseOperator):
 
                 self.sync_resources(status, pod_name, pod, data.children)
 
-            status = await self.sync_crawl_state(redis_url, crawl, status, pods, data)
+            status = await self.sync_crawl_state(crawl, status, pods, data)
 
             if self.k8s.enable_auto_resize:
                 # auto sizing handled here
@@ -349,7 +366,14 @@ class CrawlOperator(BaseOperator):
 
         params["warc_prefix"] = spec.get("warcPrefix")
 
-        params["redis_url"] = redis_url
+        params["redis_url"] = self.k8s.get_redis_url(crawl_id)
+
+        if crawl.dedupe_coll_id:
+            params["redis_dedupe_url"] = self.k8s.get_redis_url(
+                "coll-" + crawl.dedupe_coll_id
+            )
+        else:
+            params["redis_dedupe_url"] = ""
 
         if spec.get("restartTime") != status.restartTime:
             # pylint: disable=invalid-name
@@ -416,6 +440,7 @@ class CrawlOperator(BaseOperator):
 
         pod_info = status.podStatus[name]
         params["name"] = name
+        params["obj_type"] = "crawl"
         params["cpu"] = pod_info.newCpu or params.get("redis_cpu")
         params["memory"] = pod_info.newMemory or params.get("redis_memory")
         params["no_pvc"] = crawl.is_single_page
@@ -736,7 +761,35 @@ class CrawlOperator(BaseOperator):
 
     def get_related(self, data: MCBaseRequest):
         """return objects related to crawl pods"""
-        related_resources = []
+        spec = data.parent.get("spec", {})
+        crawl_id = spec["id"]
+        oid = spec.get("oid")
+        coll_id = spec.get("dedupeCollId")
+        # filter by role as well (job vs qa-job)
+        role = data.parent.get("metadata", {}).get("labels", {}).get("role")
+        related_resources = [
+            {
+                "apiVersion": BTRIX_API,
+                "resource": "crawljobs",
+                "labelSelector": {"matchLabels": {"btrix.org": oid, "role": role}},
+            },
+        ]
+
+        if coll_id:
+            related_resources.append(
+                {
+                    "apiVersion": BTRIX_API,
+                    "resource": "collindexes",
+                    "labelSelector": {
+                        "matchLabels": {
+                            "oid": oid,
+                            "role": "collindex",
+                            "coll": coll_id,
+                        }
+                    },
+                }
+            )
+
         if self.k8s.enable_auto_resize:
             spec = data.parent.get("spec", {})
             crawl_id = spec["id"]
@@ -750,11 +803,11 @@ class CrawlOperator(BaseOperator):
 
         return {"relatedResources": related_resources}
 
-    async def can_start_new(
+    def can_start_new(
         self,
         crawl: CrawlSpec,
-        status: CrawlStatus,
-    ):
+        data: MCSyncData,
+    ) -> bool:
         """return true if crawl can start, otherwise set crawl to 'queued' state
         until more crawls for org finish"""
         max_crawls = crawl.org.quotas.maxConcurrentCrawls or 0
@@ -773,10 +826,26 @@ class CrawlOperator(BaseOperator):
         if crawl.id in next_active_crawls:
             return True
 
-        await self.set_state(
-            "waiting_org_limit", status, crawl, allowed_from=["starting"]
-        )
         return False
+
+    def is_waiting_for_dedupe_index(self, crawl: CrawlSpec, data: MCSyncData) -> bool:
+        """return true if we need to wait for dedupe index to be ready
+        before starting the crawl"""
+        if not crawl.dedupe_coll_id:
+            return False
+
+        # index object doesn't exist
+        if not data.related[COLLINDEX]:
+            return False
+
+        for index in data.related[COLLINDEX].values():
+            if index.get("status", {}).get("state") == "ready":
+                return False
+
+            # only check first index, should only be one
+            break
+
+        return True
 
     async def cancel_crawl(
         self,
@@ -902,25 +971,8 @@ class CrawlOperator(BaseOperator):
             "finalized": finalized,
         }
 
-    async def _get_redis(self, redis_url: str) -> Optional[Redis]:
-        """init redis, ensure connectivity"""
-        redis = None
-        try:
-            redis = await self.k8s.get_redis_client(redis_url)
-            # test connection
-            await redis.ping()
-            return redis
-
-        # pylint: disable=bare-except
-        except:
-            if redis:
-                await redis.close()
-
-            return None
-
     async def sync_crawl_state(
         self,
-        redis_url: str,
         crawl: CrawlSpec,
         status: CrawlStatus,
         pods: dict[str, dict],
@@ -937,7 +989,7 @@ class CrawlOperator(BaseOperator):
 
         try:
             if redis_running:
-                redis = await self._get_redis(redis_url)
+                redis = await self.k8s.get_redis_connected(crawl.id)
 
             await self.add_used_stats(crawl.id, status.podStatus, redis, metrics)
 
@@ -1469,7 +1521,11 @@ class CrawlOperator(BaseOperator):
         sizes = await redis.hgetall(f"{crawl_id}:size")
         archive_size = sum(int(x) for x in sizes.values())
 
-        stats = CrawlStats(found=pages_found, done=pages_done, size=archive_size)
+        req_crawls = await redis.smembers(f"{crawl_id}:reqCrawls")
+
+        stats = CrawlStats(
+            found=pages_found, done=pages_done, size=archive_size, req_crawls=req_crawls
+        )
         return stats, sizes
 
     async def update_crawl_state(
@@ -1663,7 +1719,7 @@ class CrawlOperator(BaseOperator):
 
         # Regular Crawl Finished
         if not crawl.is_qa:
-            self.run_task(self.do_crawl_finished_tasks(crawl, status, state))
+            self.run_task(self.do_crawl_finished_tasks(crawl, status, state, stats))
 
         # QA Run Finished
         else:
@@ -1677,6 +1733,7 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         state: TYPE_NON_RUNNING_STATES,
+        stats: Optional[CrawlStats],
     ) -> None:
         """Run tasks after crawl completes in asyncio.task coroutine."""
         await self.crawl_config_ops.stats_recompute_last(
@@ -1692,6 +1749,11 @@ class CrawlOperator(BaseOperator):
             await self.coll_ops.add_successful_crawl_to_collections(
                 crawl.id, crawl.cid, crawl.oid
             )
+
+            if stats and stats.req_crawls:
+                await self.crawl_ops.link_required_crawls(
+                    crawl.oid, crawl.id, stats.req_crawls
+                )
 
         if state in FAILED_STATES:
             await self.crawl_ops.delete_crawl_files(crawl.id, crawl.oid)
@@ -1735,8 +1797,7 @@ class CrawlOperator(BaseOperator):
     async def mark_for_cancelation(self, crawl_id):
         """mark crawl as canceled in redis"""
         try:
-            redis_url = self.k8s.get_redis_url(crawl_id)
-            redis = await self._get_redis(redis_url)
+            redis = await self.k8s.get_redis_connected(crawl_id)
             if not redis:
                 return False
 

@@ -2,6 +2,7 @@ import { localized, msg, str } from "@lit/localize";
 import ISO6391 from "iso-639-1";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 
@@ -171,7 +172,7 @@ export class ConfigDetails extends BtrixElement {
         heading: sectionStrings.behaviors,
         renderDescItems: (seedsConfig) => html`
           ${this.renderSetting(
-            labelFor.behaviors,
+            sectionStrings.behaviors,
             [
               seedsConfig?.behaviors?.includes(Behavior.AutoScroll) &&
                 labelFor.autoscrollBehavior,
@@ -194,7 +195,7 @@ export class ConfigDetails extends BtrixElement {
               ),
           )}
           ${this.renderSetting(
-            labelFor.customBehaviors,
+            labelFor.customBehavior,
             seedsConfig?.customBehaviors.length
               ? html`
                   <btrix-custom-behaviors-table
@@ -309,6 +310,16 @@ export class ConfigDetails extends BtrixElement {
           )}
         `,
       })}
+      ${this.renderSection({
+        id: "deduplication",
+        heading: sectionStrings.deduplication,
+        renderDescItems: () => html`
+          ${this.renderSetting(
+            html`<span class="mb-1 inline-block">${labelFor.dedupeType}</span>`,
+            crawlConfig?.dedupeCollId ? msg("Enabled") : msg("Disabled"),
+          )}
+        `,
+      })}
       ${when(!this.hideMetadata, () =>
         this.renderSection({
           id: "collection",
@@ -321,6 +332,7 @@ export class ConfigDetails extends BtrixElement {
               crawlConfig?.autoAddCollections.length
                 ? html`<btrix-linked-collections
                     .collections=${crawlConfig.autoAddCollections}
+                    dedupeId=${ifDefined(crawlConfig.dedupeCollId || undefined)}
                   ></btrix-linked-collections>`
                 : undefined,
             )}
@@ -575,7 +587,7 @@ export class ConfigDetails extends BtrixElement {
     const selectors = this.crawlConfig?.config.selectLinks || [];
 
     return this.renderSetting(
-      labelFor.selectLink,
+      labelFor.selectLinks,
       selectors.length
         ? html`
             <div class="mb-2">
