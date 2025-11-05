@@ -609,7 +609,9 @@ class OrgOps:
             },
         )
 
-    async def update_quotas(self, org: Organization, quotas: OrgQuotasIn) -> None:
+    async def update_quotas(
+        self, org: Organization, quotas: OrgQuotasIn, context: str | None = None
+    ) -> None:
         """update organization quotas"""
 
         previous_extra_mins = (
@@ -630,7 +632,9 @@ class OrgOps:
         quota_updates = []
         for prev_update in org.quotaUpdates or []:
             quota_updates.append(prev_update.dict())
-        quota_updates.append(OrgQuotaUpdate(update=update, modified=dt_now()).dict())
+        quota_updates.append(
+            OrgQuotaUpdate(update=update, modified=dt_now(), context=context).dict()
+        )
 
         await self.orgs.find_one_and_update(
             {"_id": org.id},
@@ -1683,8 +1687,9 @@ def init_orgs_api(
     async def update_quotas(
         quotas: OrgQuotasIn,
         org: Organization = Depends(org_superuser_or_shared_secret_dep),
+        context: str | None = None,
     ):
-        await ops.update_quotas(org, quotas)
+        await ops.update_quotas(org, quotas, context)
 
         return {"updated": True}
 
