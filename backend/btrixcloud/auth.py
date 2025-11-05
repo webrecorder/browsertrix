@@ -66,7 +66,9 @@ class OA2BearerOrQuery(OAuth2PasswordBearer):
     """Override bearer check to also test query"""
 
     async def __call__(
-        self, request: Request = None, websocket: WebSocket = None  # type: ignore
+        self,
+        request: Request = None,
+        websocket: WebSocket = None,  # type: ignore
     ) -> str:
         param = None
         exc = None
@@ -163,7 +165,7 @@ def init_jwt_auth(user_manager):
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-    async def shared_secret_or_active_user(
+    async def shared_secret_or_superuser(
         token: str = Depends(oauth2_scheme),
     ) -> User:
         # allow superadmin access if token matches the known shared secret
@@ -257,4 +259,4 @@ def init_jwt_auth(user_manager):
         user_info = await user_manager.get_user_info_with_orgs(user)
         return get_bearer_response(user, user_info)
 
-    return auth_jwt_router, current_active_user, shared_secret_or_active_user
+    return auth_jwt_router, current_active_user, shared_secret_or_superuser

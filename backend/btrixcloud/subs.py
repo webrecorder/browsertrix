@@ -2,14 +2,15 @@
 Subscription API handling
 """
 
-from typing import Callable, Union, Any, Optional, Tuple, List
+from typing import Awaitable, Callable, Union, Any, Optional, Tuple, List
 import os
 import asyncio
 from uuid import UUID
 from datetime import datetime
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 import aiohttp
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from .orgs import OrgOps
 from .users import UserManager
@@ -245,7 +246,9 @@ class SubOps:
         data["oid"] = oid
         await self.subs.insert_one(data)
 
-    def _get_sub_by_type_from_data(self, data: dict[str, object]) -> Union[
+    def _get_sub_by_type_from_data(
+        self, data: dict[str, object]
+    ) -> Union[
         SubscriptionCreateOut,
         SubscriptionImportOut,
         SubscriptionUpdateOut,
@@ -447,11 +450,11 @@ class SubOps:
 
 # pylint: disable=invalid-name,too-many-arguments,too-many-locals
 def init_subs_api(
-    app,
-    mdb,
+    app: APIRouter,
+    mdb: AsyncIOMotorDatabase[Any],
     org_ops: OrgOps,
     user_manager: UserManager,
-    user_or_shared_secret_dep: Callable,
+    superuser_or_shared_secret_dep: Callable[[str], Awaitable[User]],
 ) -> Optional[SubOps]:
     """init subs API"""
 
@@ -468,14 +471,14 @@ def init_subs_api(
     async def new_sub(
         create: SubscriptionCreate,
         request: Request,
-        user: User = Depends(user_or_shared_secret_dep),
+        user: User = Depends(superuser_or_shared_secret_dep),
     ):
         return await ops.create_new_subscription(create, user, request)
 
     @app.post(
         "/subscriptions/import",
         tags=["subscriptions"],
-        dependencies=[Depends(user_or_shared_secret_dep)],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
         response_model=AddedResponseId,
     )
     async def import_sub(sub_import: SubscriptionImport):
@@ -484,7 +487,7 @@ def init_subs_api(
     @app.post(
         "/subscriptions/update",
         tags=["subscriptions"],
-        dependencies=[Depends(user_or_shared_secret_dep)],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
         response_model=UpdatedResponse,
     )
     async def update_subscription(
@@ -495,7 +498,7 @@ def init_subs_api(
     @app.post(
         "/subscriptions/cancel",
         tags=["subscriptions"],
-        dependencies=[Depends(user_or_shared_secret_dep)],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
         response_model=SubscriptionCanceledResponse,
     )
     async def cancel_subscription(
@@ -506,7 +509,7 @@ def init_subs_api(
     @app.post(
         "/subscriptions/send-trial-end-reminder",
         tags=["subscriptions"],
-        dependencies=[Depends(user_or_shared_secret_dep)],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
         response_model=SuccessResponse,
     )
     async def send_trial_end_reminder(
@@ -519,7 +522,7 @@ def init_subs_api(
     @app.get(
         "/subscriptions/is-activated/{sub_id}",
         tags=["subscriptions"],
-        dependencies=[Depends(user_or_shared_secret_dep)],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
         response_model=SuccessResponse,
     )
     async def is_subscription_activated(
@@ -531,7 +534,7 @@ def init_subs_api(
     @app.get(
         "/subscriptions/events",
         tags=["subscriptions"],
-        dependencies=[Depends(user_or_shared_secret_dep)],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
         response_model=PaginatedSubscriptionEventResponse,
     )
     async def get_sub_events(
