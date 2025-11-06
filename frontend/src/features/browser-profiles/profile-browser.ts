@@ -1,10 +1,12 @@
 import { localized, msg, str } from "@lit/localize";
+import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { isApiError, type APIError } from "@/utils/api";
+import { tw } from "@/utils/tailwind";
 
 const POLL_INTERVAL_SECONDS = 2;
 const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];
@@ -49,6 +51,9 @@ export class ProfileBrowser extends BtrixElement {
 
   @property({ type: Array })
   origins?: string[];
+
+  @property({ type: Boolean })
+  readOnly = false;
 
   @state()
   private iframeSrc?: string;
@@ -100,9 +105,11 @@ export class ProfileBrowser extends BtrixElement {
     super.disconnectedCallback();
   }
 
-  private onBeforeUnload(e: BeforeUnloadEvent) {
-    e.preventDefault();
-  }
+  private readonly onBeforeUnload = (e: BeforeUnloadEvent) => {
+    if (!this.readOnly) {
+      e.preventDefault();
+    }
+  };
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (changedProperties.has("browserId")) {
@@ -160,7 +167,7 @@ export class ProfileBrowser extends BtrixElement {
 
   render() {
     return html`
-      <div id="interactiveBrowser" class="flex h-full w-full flex-col">
+      <div id="interactiveBrowser" class="flex size-full flex-col">
         ${this.renderControlBar()}
         <div
           id="iframeWrapper"
@@ -194,7 +201,7 @@ export class ProfileBrowser extends BtrixElement {
           class="fixed left-1/2 top-2 z-50 flex -translate-x-1/2 items-center rounded-lg bg-white text-base shadow"
         >
           ${this.renderSidebarButton()}
-          <sl-tooltip content=${msg("Exit fullscreen")}>
+          <sl-tooltip content=${msg("Exit Fullscreen")}>
             <sl-icon-button
               name="fullscreen-exit"
               @click=${() => void document.exitFullscreen()}
@@ -206,20 +213,24 @@ export class ProfileBrowser extends BtrixElement {
 
     return html`
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2 px-3 font-medium text-neutral-700">
+        <div class="flex items-center gap-2 px-3 text-neutral-700">
           <span id="profileBrowserLabel"> ${msg("Interactive Browser")} </span>
-          <sl-tooltip
+          <btrix-popover
             content=${msg(
               "Interact with this embedded browser to set up your browser profile. The embedded browser will exit without saving changes after a few minutes of inactivity.",
             )}
+            placement="right"
             hoist
           >
-            <sl-icon class="text-base" name="info-circle"></sl-icon>
-          </sl-tooltip>
+            <sl-icon
+              class="text-base text-neutral-500"
+              name="info-circle"
+            ></sl-icon>
+          </btrix-popover>
         </div>
         <div class="p-1 text-base">
           ${this.renderSidebarButton()}
-          <sl-tooltip content=${msg("Enter fullscreen")}>
+          <sl-tooltip content=${msg("Enter Fullscreen")}>
             <sl-icon-button
               name="arrows-fullscreen"
               @click=${() => void this.enterFullscreen()}
@@ -233,7 +244,7 @@ export class ProfileBrowser extends BtrixElement {
   private renderBrowser() {
     if (this.browserNotAvailable) {
       return html`
-        <div class="flex h-full w-full items-center justify-center">
+        <div class="flex aspect-4/3 w-full items-center justify-center">
           <btrix-alert variant="danger">
             <p>
               ${msg(`Interactive browser session timed out due to inactivity.`)}
@@ -250,9 +261,12 @@ export class ProfileBrowser extends BtrixElement {
     }
 
     if (this.iframeSrc) {
-      return html`<div class="relative h-full w-full">
+      return html`<div class="relative size-full">
         <iframe
-          class="h-full w-full"
+          class=${clsx(
+            tw`w-full`,
+            this.isFullscreen ? tw`h-full` : tw`aspect-4/3`,
+          )}
           src=${this.iframeSrc}
           @load=${this.onIframeLoad}
           aria-labelledby="profileBrowserLabel"
@@ -279,8 +293,16 @@ export class ProfileBrowser extends BtrixElement {
 
     if (this.browserId && !this.isIframeLoaded) {
       return html`
-        <div class="flex h-full w-full items-center justify-center text-3xl">
-          <sl-spinner></sl-spinner>
+        <div
+          class=${clsx(
+            tw`flex w-full flex-col items-center justify-center gap-5`,
+            this.isFullscreen ? tw`h-full` : tw`aspect-4/3`,
+          )}
+        >
+          <p class="text-neutral-600">
+            ${msg("Loading interactive browser...")}
+          </p>
+          <sl-spinner class="text-3xl"></sl-spinner>
         </div>
       `;
     }
@@ -290,7 +312,7 @@ export class ProfileBrowser extends BtrixElement {
 
   private renderSidebarButton() {
     return html`
-      <sl-tooltip content=${msg("Toggle visited site list")}>
+      <sl-tooltip content=${msg("Toggle Visited Sites")}>
         <sl-icon-button
           name="layout-sidebar-reverse"
           class="${this.showOriginSidebar ? "text-blue-600" : ""}"
@@ -303,14 +325,19 @@ export class ProfileBrowser extends BtrixElement {
 
   private renderOrigins() {
     return html`
-      <h4 class="border-b p-2 text-xs leading-tight text-neutral-500">
-        <span class="inline-block align-middle">${msg("Visited Sites")}</span>
-        <sl-tooltip content=${msg("Websites in the browser profile")}
+      <h4 class="border-b p-2 leading-tight text-neutral-700">
+        <span class="mr-1 inline-block align-middle"
+          >${msg("Visited Sites")}</span
+        >
+        <btrix-popover
+          content=${msg("Websites in the browser profile")}
+          placement="top"
+          hoist
           ><sl-icon
             class="inline-block align-middle"
             name="info-circle"
           ></sl-icon
-        ></sl-tooltip>
+        ></btrix-popover>
       </h4>
       <ul>
         ${this.origins?.map((url) => this.renderOriginItem(url))}
@@ -322,17 +349,19 @@ export class ProfileBrowser extends BtrixElement {
     if (!this.newOrigins?.length) return;
 
     return html`
-      <h4 class="border-b p-2 text-xs leading-tight text-neutral-500">
-        <span class="inline-block align-middle">${msg("New Sites")}</span>
-        <sl-tooltip
+      <h4 class="border-b p-2 leading-tight text-neutral-700">
+        <span class="mr-1 inline-block align-middle">${msg("New Sites")}</span>
+        <btrix-popover
           content=${msg(
             "Websites that are not in the browser profile yet. Finish editing and save to add these websites to the profile.",
           )}
+          placement="top"
+          hoist
           ><sl-icon
             class="inline-block align-middle"
             name="info-circle"
           ></sl-icon
-        ></sl-tooltip>
+        ></btrix-popover>
       </h4>
       <ul>
         ${this.newOrigins.map((url) => this.renderOriginItem(url))}
@@ -343,7 +372,7 @@ export class ProfileBrowser extends BtrixElement {
   private renderOriginItem(url: string) {
     return html`<li
       class="border-t-neutral-100${this.iframeSrc
-        ? " hover:bg-slate-50 hover:text-primary"
+        ? " hover:bg-cyan-50/50 hover:text-cyan-700"
         : ""} flex items-center justify-between border-t p-2 first:border-t-0"
       role=${this.iframeSrc ? "button" : "listitem"}
       title=${msg(str`Go to ${url}`)}
@@ -471,8 +500,11 @@ export class ProfileBrowser extends BtrixElement {
       if (!this.origins) {
         this.origins = data.origins;
       } else {
+        const origins = this.origins;
+
         this.newOrigins = data.origins?.filter(
-          (url: string) => !this.origins?.includes(url),
+          (url: string) =>
+            !origins.includes(url) && !origins.includes(url.replace(/\/$/, "")),
         );
       }
 

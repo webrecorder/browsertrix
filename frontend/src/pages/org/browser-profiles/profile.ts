@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html, type TemplateResult } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
@@ -13,8 +13,10 @@ import type {
   FilterChip,
 } from "@/components/ui/filter-chip";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import type { TabGroup } from "@/components/ui/tab-group/tab-group";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import type { WorkflowColumnName } from "@/features/crawl-workflows/workflow-list";
 import { none } from "@/layouts/empty";
 import { emptyMessage } from "@/layouts/emptyMessage";
@@ -33,6 +35,11 @@ import { tw } from "@/utils/tailwind";
 
 const INITIAL_PAGE_SIZE = 5;
 const WORKFLOW_PAGE_QUERY = "workflowsPage";
+
+enum ProfileTab {
+  Config = "config",
+  Browser = "browser",
+}
 
 const workflowColumns = [
   "name",
@@ -59,15 +66,44 @@ export class BrowserProfilesProfilePage extends BtrixElement {
   @state()
   private openDialog?: "metadata" | "metadata-name" | "metadata-description";
 
+  @state()
+  private activetab = ProfileTab.Config;
+
+  @state()
+  private initialNavigateUrl?: string;
+
+  @state()
+  private isBrowserLoaded = false;
+
+  @query("btrix-tab-group")
+  private readonly tabGroup?: TabGroup | null;
+
   private get profile() {
     return this.profileTask.value;
   }
 
   private readonly profileTask = new Task(this, {
     task: async ([profileId], { signal }) => {
-      return this.getProfile(profileId, signal);
+      const profile = await this.getProfile(profileId, signal);
+
+      return profile;
     },
     args: () => [this.profileId] as const,
+  });
+
+  private readonly browserIdTask = new Task(this, {
+    autoRun: false,
+    task: async ([profileId, url], { signal }) => {
+      if (!url) return;
+
+      const { browserid } = await this.createBrowser(
+        { profileId, url },
+        signal,
+      );
+
+      return browserid;
+    },
+    args: () => [this.profileId, this.initialNavigateUrl] as const,
   });
 
   private readonly workflowsTask = new Task(this, {
@@ -116,9 +152,12 @@ export class BrowserProfilesProfilePage extends BtrixElement {
         },
       ],
       title: html`${this.profile?.name ??
-      html`<sl-skeleton class="h-8 w-12" effect="sheen"></sl-skeleton>`}
+      html`<sl-skeleton
+        class="inline-block h-6 w-36"
+        effect="sheen"
+      ></sl-skeleton>`}
       ${when(
-        this.appState.isCrawler,
+        this.profile && this.appState.isCrawler,
         () =>
           html`<sl-tooltip content=${msg("Edit Name")} placement="right">
             <sl-icon-button
@@ -165,11 +204,6 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           ${msg("Actions")}
         </sl-button>
         <sl-menu>
-          <sl-menu-item ?disabled=${archivingDisabled} @click=${() => {}}>
-            <sl-icon slot="prefix" name="clipboard-check-fill"></sl-icon>
-            ${msg("Inspect Profile")}
-          </sl-menu-item>
-          <sl-divider></sl-divider>
           ${when(
             this.appState.isCrawler,
             () => html`
@@ -211,15 +245,75 @@ export class BrowserProfilesProfilePage extends BtrixElement {
 
   private readonly renderPage = () => {
     return html`
-      <div class="grid grid-cols-7 gap-7 lg:mt-2">
+      <div class="grid grid-cols-7 gap-7">
         <div class="col-span-full flex flex-col gap-7 lg:col-span-5">
-          ${this.renderConfig()} ${this.renderUsage()}
+          ${this.renderProfile()} ${this.renderUsage()}
         </div>
 
         <div class="col-span-full lg:col-span-2">${this.renderOverview()}</div>
       </div>
     `;
   };
+
+  private renderProfile() {
+    const showBrowser =
+      this.activetab === ProfileTab.Browser &&
+      this.profileTask.value &&
+      this.browserIdTask.value &&
+      this.initialNavigateUrl;
+    return html`
+      <btrix-tab-group
+        class="scroll-mt-3"
+        active=${this.activetab}
+        @btrix-tab-change=${(e: CustomEvent<string>) => {
+          this.activetab = e.detail as ProfileTab;
+
+          if (e.detail === (ProfileTab.Browser as string)) {
+            this.openBrowser();
+          } else {
+            this.initialNavigateUrl = "";
+          }
+        }}
+      >
+        <btrix-tab-group-tab slot="nav" panel=${ProfileTab.Config} class="mb-3">
+          <sl-icon name="gear-fill"></sl-icon>
+          ${msg("Configuration")}
+        </btrix-tab-group-tab>
+        <btrix-tab-group-tab
+          slot="nav"
+          panel=${ProfileTab.Browser}
+          class="mb-3"
+        >
+          <sl-icon name="clipboard-check-fill"></sl-icon>
+          ${msg("Inspect Profile")}
+        </btrix-tab-group-tab>
+        <btrix-tab-group-panel name=${ProfileTab.Config}>
+          ${this.renderConfig()}
+        </btrix-tab-group-panel>
+        <sl-tooltip slot="action" content=${msg("Configure Profile")}>
+          <sl-icon-button name="gear" class="text-base"></sl-icon-button>
+        </sl-tooltip>
+        <btrix-tab-group-panel name=${ProfileTab.Browser}>
+          <div class="overflow-hidden rounded-lg border">
+            ${showBrowser
+              ? html`<btrix-profile-browser
+                  browserId=${this.browserIdTask.value}
+                  initialNavigateUrl=${ifDefined(this.initialNavigateUrl)}
+                  .origins=${this.profileTask.value.origins}
+                  @btrix-browser-load=${this.onBrowserLoad}
+                  @btrix-browser-reload=${this.onBrowserReload}
+                  @btrix-browser-error=${this.onBrowserError}
+                  @btrix-browser-connection-change=${this
+                    .onBrowserConnectionChange}
+                  readOnly
+                ></btrix-profile-browser>`
+              : html`<div class="h-10"></div>
+                  <div class="aspect-4/3 bg-neutral-50"></div>`}
+          </div>
+        </btrix-tab-group-panel>
+      </btrix-tab-group>
+    `;
+  }
 
   private renderConfig() {
     const originsSkeleton = () =>
@@ -249,6 +343,11 @@ export class BrowserProfilesProfilePage extends BtrixElement {
             <sl-tooltip placement="left" content=${msg("Inspect in Profile")}>
               <button
                 class="flex flex-1 items-center gap-2 truncate p-2 text-neutral-700 hover:text-cyan-700"
+                @click=${() => {
+                  this.initialNavigateUrl = origin;
+                  this.activetab = ProfileTab.Browser;
+                  this.openBrowser();
+                }}
               >
                 <div>
                   <sl-icon
@@ -278,30 +377,13 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     const siteList = html`
       <section>
         <h3 class="mb-1.5 text-xs text-neutral-500">${msg("Visited Sites")}</h3>
-        <ul class="divided rounded border bg-white shadow-sm">
+        <ul class="divide-y rounded border bg-white shadow-sm">
           ${when(this.profile, origins, originsSkeleton)}
         </ul>
       </section>
     `;
 
-    return panel({
-      heading: msg("Configuration"),
-      actions: html`
-        <div class="flex items-center gap-1">
-          ${this.appState.isCrawler
-            ? html`<sl-tooltip content=${msg("Configure Profile")}>
-                <sl-icon-button class="text-base" name="gear"></sl-icon-button>
-              </sl-tooltip>`
-            : undefined}
-
-          <sl-button size="small">
-            <sl-icon slot="prefix" name="clipboard-check-fill"></sl-icon>
-            ${msg("Inspect")}
-          </sl-button>
-        </div>
-      `,
-      body: panelBody({ content: html` ${siteList} ${settings} ` }),
-    });
+    return panelBody({ content: html` ${siteList} ${settings} ` });
   }
 
   private renderOverview() {
@@ -527,13 +609,55 @@ export class BrowserProfilesProfilePage extends BtrixElement {
       () => html`<sl-skeleton effect="sheen"></sl-skeleton>`,
     );
 
+  private readonly openBrowser = () => {
+    if (!this.profile) return;
+
+    this.initialNavigateUrl =
+      this.initialNavigateUrl || this.profile.origins[0];
+
+    void this.browserIdTask.run();
+
+    this.tabGroup?.scrollIntoView();
+  };
+
+  private readonly onBrowserLoad = () => {
+    this.isBrowserLoaded = true;
+  };
+
+  private readonly onBrowserReload = () => {
+    this.isBrowserLoaded = false;
+    void this.browserIdTask.run();
+  };
+
+  private readonly onBrowserError = () => {
+    this.isBrowserLoaded = false;
+  };
+
+  private readonly onBrowserConnectionChange = (
+    e: CustomEvent<BrowserConnectionChange>,
+  ) => {
+    this.isBrowserLoaded = e.detail.connected;
+  };
+
   private async getProfile(profileId: string, signal: AbortSignal) {
-    const data = await this.api.fetch<Profile>(
+    return await this.api.fetch<Profile>(
       `/orgs/${this.orgId}/profiles/${profileId}`,
       { signal },
     );
+  }
 
-    return data;
+  private async createBrowser(
+    params: { url: string; profileId: string },
+    signal: AbortSignal,
+  ) {
+    return this.api.fetch<{ browserid: string }>(
+      `/orgs/${this.orgId}/profiles/browser`,
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+        signal,
+      },
+    );
   }
 
   private async getWorkflows(
