@@ -331,8 +331,6 @@ class ProfileOps:
             "modified": dt_now(),
             "modifiedBy": user.id,
             "modifiedByName": user.name if user.name else user.email,
-            "modifiedByCID": None,
-            "modifiedByCrawl": None,
         }
 
         if update.description is not None:
@@ -370,9 +368,9 @@ class ProfileOps:
                 "$set": {
                     "resource.size": size,
                     "resource.hash": hash_,
-                    "modified": modified,
-                    "modifiedByCID": cid,
-                    "modifiedByCrawl": crawl_id,
+                    "modifiedCrawlDate": modified,
+                    "modifiedCrawlId": crawl_id,
+                    "modifiedCrawlCid": cid,
                 }
             },
             return_document=ReturnDocument.BEFORE,

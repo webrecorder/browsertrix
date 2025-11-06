@@ -2443,8 +2443,10 @@ class Profile(BaseMongoModel):
     modified: Optional[datetime] = None
     modifiedBy: Optional[UUID] = None
     modifiedByName: Optional[str] = None
-    modifiedByCID: Optional[UUID] = None
-    modifiedByCrawl: Optional[str] = None
+
+    modifiedCrawlDate: Optional[datetime] = None
+    modifiedCrawlId: Optional[str] = None
+    modifiedCrawlCid: Optional[UUID] = None
 
     baseid: Optional[UUID] = None
     crawlerChannel: Optional[str] = None
