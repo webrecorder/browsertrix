@@ -17,10 +17,12 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import queryString from "query-string";
 import { isFocusable } from "tabbable";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
+import type { ArchivedItem } from "@/types/crawler";
 import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
 import { stopProp } from "@/utils/events";
 import { isNotEqual } from "@/utils/is-not-equal";
@@ -43,6 +45,9 @@ export type BtrixChangeArchivedItemTagFilterEvent =
 export class ArchivedItemTagFilter extends BtrixElement {
   @property({ type: Array })
   tags?: string[];
+
+  @property({ type: String })
+  itemType?: ArchivedItem["type"];
 
   @state()
   private searchString = "";
@@ -93,9 +98,15 @@ export class ArchivedItemTagFilter extends BtrixElement {
   }
 
   private readonly orgTagsTask = new Task(this, {
-    task: async () => {
+    task: async ([itemType], { signal }) => {
+      const query = queryString.stringify({
+        onlySuccessful: true,
+        crawlType: itemType,
+      });
+
       const { tags } = await this.api.fetch<WorkflowTags>(
-        `/orgs/${this.orgId}/all-crawls/tagCounts`,
+        `/orgs/${this.orgId}/all-crawls/tagCounts?${query}`,
+        { signal },
       );
 
       this.fuse.setCollection(tags);
@@ -103,7 +114,7 @@ export class ArchivedItemTagFilter extends BtrixElement {
       // Match fuse shape
       return tags.map((item) => ({ item }));
     },
-    args: () => [] as const,
+    args: () => [this.itemType] as const,
   });
 
   render() {
