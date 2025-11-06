@@ -33,6 +33,9 @@ export class NewBrowserProfileDialog extends BtrixElement {
   @property({ type: Array })
   proxyServers?: Proxy[];
 
+  @property({ type: Array })
+  crawlerChannels?: CrawlerChannel[];
+
   @property({ type: Boolean })
   open = false;
 
@@ -95,13 +98,15 @@ export class NewBrowserProfileDialog extends BtrixElement {
         >
         </btrix-url-input>
 
-        <div class="mt-4">
-          <btrix-select-crawler
-            .crawlerChannel=${this.crawlerChannel}
-            @on-change=${(e: SelectCrawlerChangeEvent) =>
-              (this.crawlerChannel = e.detail.value!)}
-          ></btrix-select-crawler>
-        </div>
+        ${this.crawlerChannels && this.crawlerChannels.length > 1
+          ? html`<div class="mt-4">
+              <btrix-select-crawler
+                .crawlerChannel=${this.crawlerChannel}
+                @on-change=${(e: SelectCrawlerChangeEvent) =>
+                  (this.crawlerChannel = e.detail.value!)}
+              ></btrix-select-crawler>
+            </div>`
+          : nothing}
         ${this.proxyServers?.length
           ? html`
               <div class="mt-4">

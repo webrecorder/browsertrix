@@ -227,6 +227,10 @@ export type ProxiesAPIResponse = {
   servers: Proxy[];
 };
 
+export type CrawlerChannelsAPIResponse = {
+  channels: CrawlerChannel[];
+};
+
 export type ArchivedItem = Crawl | Upload;
 
 export type ArchivedItemPageComment = {
