@@ -27,6 +27,7 @@ import {
   WorkflowSearch,
   type SearchFields,
 } from "@/features/crawl-workflows/workflow-search";
+import type { BtrixChangeWorkflowTagFilterEvent } from "@/features/crawl-workflows/workflow-tag-filter";
 import { type BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
 import { OrgTab } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -492,6 +493,17 @@ export class OrgCrawls extends BtrixElement {
               });
             }}
           ></btrix-crawl-state-filter>
+
+          <btrix-archived-item-tag-filter
+            .tags=${this.filterByTags.value}
+            .type=${this.filterByTagsType.value}
+            itemType="crawl"
+            includeNotSuccessful
+            @btrix-change=${(e: BtrixChangeWorkflowTagFilterEvent) => {
+              this.filterByTags.setValue(e.detail.value?.tags);
+              this.filterByTagsType.setValue(e.detail.value?.type || "or");
+            }}
+          ></btrix-archived-item-tag-filter>
 
           ${this.userInfo?.id
             ? html`<btrix-filter-chip
