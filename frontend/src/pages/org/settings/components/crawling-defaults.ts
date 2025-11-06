@@ -12,7 +12,7 @@ import type { Entries } from "type-fest";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { LanguageSelect } from "@/components/ui/language-select";
 import type { SelectCrawlerProxy } from "@/components/ui/select-crawler-proxy";
-import { proxiesContext, type ProxiesContext } from "@/context/org";
+import { proxiesContext, type ProxiesContext } from "@/context/proxies";
 import type { CustomBehaviorsTable } from "@/features/crawl-workflows/custom-behaviors-table";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
 import { columns, type Cols } from "@/layouts/columns";

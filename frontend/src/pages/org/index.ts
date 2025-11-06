@@ -17,7 +17,7 @@ import type {
 } from "./settings/settings";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { proxiesContext, type ProxiesContext } from "@/context/org";
+import { proxiesContext, type ProxiesContext } from "@/context/proxies";
 import { SearchOrgContextController } from "@/context/search-org/SearchOrgContextController";
 import { searchOrgContextKey } from "@/context/search-org/types";
 import type { QuotaUpdateDetail } from "@/controllers/api";

@@ -61,7 +61,7 @@ import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { validURL } from "@/components/ui/url-input";
 import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
-import { proxiesContext, type ProxiesContext } from "@/context/org";
+import { proxiesContext, type ProxiesContext } from "@/context/proxies";
 import {
   ObservableController,
   type IntersectEvent,
