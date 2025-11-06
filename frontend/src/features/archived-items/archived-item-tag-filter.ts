@@ -49,6 +49,9 @@ export class ArchivedItemTagFilter extends BtrixElement {
   @property({ type: String })
   itemType?: ArchivedItem["type"];
 
+  @property({ type: Boolean })
+  includeNotSuccessful = false;
+
   @state()
   private searchString = "";
 
@@ -100,7 +103,7 @@ export class ArchivedItemTagFilter extends BtrixElement {
   private readonly orgTagsTask = new Task(this, {
     task: async ([itemType], { signal }) => {
       const query = queryString.stringify({
-        onlySuccessful: true,
+        onlySuccessful: !this.includeNotSuccessful,
         crawlType: itemType,
       });
 
