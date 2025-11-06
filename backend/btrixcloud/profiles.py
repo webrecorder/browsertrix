@@ -394,9 +394,6 @@ class ProfileOps:
             org_id, profile_file, str(profileid), "profile"
         )
 
-        print("prev_file_size", prev_file_size)
-        print("size", size)
-
         # update stats
         await self.orgs.inc_org_bytes_stored(org_id, size - prev_file_size, "profile")
 
