@@ -2,6 +2,7 @@ import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 import queryString from "query-string";
@@ -55,6 +56,9 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     pageSize: INITIAL_PAGE_SIZE,
   };
 
+  @state()
+  private openDialog?: "metadata" | "metadata-name" | "metadata-description";
+
   private get profile() {
     return this.profileTask.value;
   }
@@ -74,6 +78,33 @@ export class BrowserProfilesProfilePage extends BtrixElement {
   });
 
   render() {
+    const badges = (profile: Profile) => {
+      const isBackedUp =
+        profile.resource?.replicas && profile.resource.replicas.length > 0;
+
+      return html`<div class="flex flex-wrap gap-3 whitespace-nowrap">
+        <btrix-badge variant=${profile.inUse ? "primary" : "neutral"}>
+          <sl-icon
+            name=${profile.inUse ? "check-circle" : "dash-circle"}
+            class="mr-1.5"
+          ></sl-icon>
+          ${profile.inUse ? msg("In Use") : msg("Not In Use")}
+        </btrix-badge>
+        <btrix-badge variant=${isBackedUp ? "cyan" : "neutral"}>
+          <sl-icon
+            name=${isBackedUp ? "clouds-fill" : "cloud-slash-fill"}
+            class="mr-1.5"
+          ></sl-icon>
+          ${isBackedUp ? msg("Backed Up") : msg("Not Backed Up")}
+        </btrix-badge>
+      </div> `;
+    };
+    const badgesSkeleton = () =>
+      html`<div class="flex flex-wrap gap-3">
+        <sl-skeleton class="h-4 w-12"></sl-skeleton>
+        <sl-skeleton class="h-4 w-12"></sl-skeleton>
+      </div>`;
+
     const header = {
       breadcrumbs: [
         {
@@ -93,36 +124,36 @@ export class BrowserProfilesProfilePage extends BtrixElement {
             <sl-icon-button
               class="ml-1 text-base"
               name="pencil"
+              @click=${() => (this.openDialog = "metadata-name")}
             ></sl-icon-button>
           </sl-tooltip>`,
       )} `,
-      secondary: this.profileTask.render({
-        complete: (profile) => {
-          const isBackedUp =
-            profile.resource?.replicas && profile.resource.replicas.length > 0;
-
-          return html`<div class="flex flex-wrap gap-3 whitespace-nowrap">
-            <btrix-badge variant=${profile.inUse ? "primary" : "neutral"}>
-              <sl-icon
-                name=${profile.inUse ? "check-circle" : "dash-circle"}
-                class="mr-1.5"
-              ></sl-icon>
-              ${profile.inUse ? msg("In Use") : msg("Not In Use")}
-            </btrix-badge>
-            <btrix-badge variant=${isBackedUp ? "cyan" : "neutral"}>
-              <sl-icon
-                name=${isBackedUp ? "clouds-fill" : "cloud-slash-fill"}
-                class="mr-1.5"
-              ></sl-icon>
-              ${isBackedUp ? msg("Backed Up") : msg("Not Backed Up")}
-            </btrix-badge>
-          </div> `;
-        },
-      }),
+      secondary: when(this.profile, badges, badgesSkeleton),
       actions: this.renderActions(),
     } satisfies Parameters<typeof page>[0];
 
-    return html`${page(header, this.renderPage)}`;
+    return html`${page(header, this.renderPage)}
+    ${when(
+      this.profile,
+      (profile) =>
+        html`<btrix-profile-metadata-dialog
+          .profile=${profile}
+          ?open=${this.openDialog?.startsWith("metadata")}
+          autofocusOn=${ifDefined(
+            this.openDialog === "metadata-name"
+              ? "name"
+              : this.openDialog === "metadata-description"
+                ? "description"
+                : undefined,
+          )}
+          @sl-after-hide=${() => (this.openDialog = undefined)}
+          @btrix-updated=${() => {
+            void this.profileTask.run();
+            this.openDialog = undefined;
+          }}
+        >
+        </btrix-profile-metadata-dialog>`,
+    )} `;
   }
 
   private renderActions() {
@@ -146,7 +177,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                 <sl-icon slot="prefix" name="gear"></sl-icon>
                 ${msg("Configure Profile")}
               </sl-menu-item>
-              <sl-menu-item @click=${() => {}}>
+              <sl-menu-item @click=${() => (this.openDialog = "metadata")}>
                 <sl-icon slot="prefix" name="pencil"></sl-icon>
                 ${msg("Edit Metadata")}
               </sl-menu-item>
@@ -191,7 +222,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
   };
 
   private renderConfig() {
-    const siteListSkeleton = () =>
+    const originsSkeleton = () =>
       html`<sl-skeleton effect="sheen" class="h-7"></sl-skeleton>`;
 
     const settings = html`<div class="mt-5">
@@ -209,58 +240,46 @@ export class BrowserProfilesProfilePage extends BtrixElement {
       </btrix-desc-list>
     </div>`;
 
-    const origins = html`
+    const origins = (profile: Profile) =>
+      profile.origins.map(
+        (origin) => html`
+          <li
+            class="flex items-center leading-none transition-colors hover:bg-cyan-50/50"
+          >
+            <sl-tooltip placement="left" content=${msg("Inspect in Profile")}>
+              <button
+                class="flex flex-1 items-center gap-2 truncate p-2 text-neutral-700 hover:text-cyan-700"
+              >
+                <div>
+                  <sl-icon
+                    name="clipboard-check"
+                    label=${msg("Enter Profile")}
+                  ></sl-icon>
+                </div>
+                <btrix-code language="url" value=${origin} nowrap></btrix-code>
+              </button>
+            </sl-tooltip>
+            <div class="flex items-center gap-0.5">
+              <btrix-copy-button .value=${origin} placement="left">
+              </btrix-copy-button>
+              <sl-tooltip placement="right" content=${msg("Open in New Tab")}>
+                <sl-icon-button
+                  name="arrow-up-right"
+                  href=${origin}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                ></sl-icon-button>
+              </sl-tooltip>
+            </div>
+          </li>
+        `,
+      );
+
+    const siteList = html`
       <section>
         <h3 class="mb-1.5 text-xs text-neutral-500">${msg("Visited Sites")}</h3>
         <ul class="divided rounded border bg-white shadow-sm">
-          ${this.profileTask.render({
-            initial: siteListSkeleton,
-            pending: siteListSkeleton,
-            complete: (profile) =>
-              profile.origins.map(
-                (origin) => html`
-                  <li
-                    class="flex items-center leading-none transition-colors hover:bg-cyan-50/50"
-                  >
-                    <sl-tooltip
-                      placement="left"
-                      content=${msg("Inspect in Profile")}
-                    >
-                      <button
-                        class="flex flex-1 items-center gap-2 truncate p-2 text-neutral-700 hover:text-cyan-700"
-                      >
-                        <div>
-                          <sl-icon
-                            name="clipboard-check"
-                            label=${msg("Enter Profile")}
-                          ></sl-icon>
-                        </div>
-                        <btrix-code
-                          language="url"
-                          value=${origin}
-                          nowrap
-                        ></btrix-code>
-                      </button>
-                    </sl-tooltip>
-                    <div class="flex items-center gap-0.5">
-                      <btrix-copy-button .value=${origin} placement="left">
-                      </btrix-copy-button>
-                      <sl-tooltip
-                        placement="right"
-                        content=${msg("Open in New Tab")}
-                      >
-                        <sl-icon-button
-                          name="arrow-up-right"
-                          href=${origin}
-                          target="_blank"
-                          rel="noopener noreferrer nofollow"
-                        ></sl-icon-button>
-                      </sl-tooltip>
-                    </div>
-                  </li>
-                `,
-              ),
-          })}
+          ${when(this.profile, origins, originsSkeleton)}
         </ul>
       </section>
     `;
@@ -281,7 +300,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           </sl-button>
         </div>
       `,
-      body: panelBody({ content: html` ${origins} ${settings} ` }),
+      body: panelBody({ content: html` ${siteList} ${settings} ` }),
     });
   }
 
@@ -290,7 +309,11 @@ export class BrowserProfilesProfilePage extends BtrixElement {
       heading: msg("Overview"),
       actions: this.appState.isCrawler
         ? html`<sl-tooltip content=${msg("Edit Metadata")}>
-            <sl-icon-button class="text-base" name="pencil"></sl-icon-button>
+            <sl-icon-button
+              class="text-base"
+              name="pencil"
+              @click=${() => (this.openDialog = "metadata-description")}
+            ></sl-icon-button>
           </sl-tooltip>`
         : undefined,
       body: html`
@@ -299,11 +322,11 @@ export class BrowserProfilesProfilePage extends BtrixElement {
             ${this.renderDetail((profile) =>
               profile.description
                 ? html`
+                    <!-- display: inline -->
                     <div
-                      class="text-balanced font-sans leading-relaxed text-neutral-700"
+                      class="text-balanced whitespace-pre-line font-sans leading-relaxed text-neutral-600"
+                      >${profile.description}</div
                     >
-                      ${profile.description}
-                    </div>
                   `
                 : stringFor.none,
             )}
@@ -348,10 +371,9 @@ export class BrowserProfilesProfilePage extends BtrixElement {
 
     return panel({
       heading: msg("Usage"),
-      body: html`${this.profileTask.render({
-        initial: workflowListSkeleton,
-        pending: workflowListSkeleton,
-        complete: (profile) =>
+      body: when(
+        this.profile,
+        (profile) =>
           profile.inUse
             ? html`
                 <div class="mb-4 rounded-lg border px-4 py-2">
@@ -376,14 +398,19 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                   complete: this.renderWorkflows,
                 })}
               `
-            : html`${emptyMessage({
-                message: msg("Not used by any crawl workflows."),
-                actions: html`<sl-button size="small">
-                  <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                  ${msg("Create Workflow Using Profile")}</sl-button
-                >`,
-              })}`,
-      })}`,
+            : panelBody({
+                content: emptyMessage({
+                  message: msg(
+                    "This profile is not in use by any crawl workflows.",
+                  ),
+                  actions: html`<sl-button size="small">
+                    <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                    ${msg("Create Workflow Using Profile")}</sl-button
+                  >`,
+                }),
+              }),
+        workflowListSkeleton,
+      ),
     });
   }
 
