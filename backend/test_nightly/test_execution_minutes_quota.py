@@ -29,7 +29,7 @@ def test_set_execution_mins_quota(org_with_quotas, admin_auth_headers):
     assert data.get("updated") == True
 
 
-def test_crawl_stopped_when_quota_reached(org_with_quotas, admin_auth_headers):
+def test_crawl_paused_when_quota_reached(org_with_quotas, admin_auth_headers):
     # Run crawl
     global config_id
     crawl_id, config_id = run_crawl(org_with_quotas, admin_auth_headers)
@@ -49,10 +49,10 @@ def test_crawl_stopped_when_quota_reached(org_with_quotas, admin_auth_headers):
     ):
         time.sleep(2)
 
-    # Ensure that crawl was stopped by quota
+    # Ensure that crawl was paused by quota
     assert (
         get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers)
-        == "stopped_time_quota_reached"
+        == "paused_time_quota_reached"
     )
 
     time.sleep(5)
@@ -108,7 +108,7 @@ def test_set_execution_mins_extra_quotas(org_with_quotas, admin_auth_headers):
 
 
 @pytest.mark.timeout(1200)
-def test_crawl_stopped_when_quota_reached_with_extra(
+def test_crawl_paused_when_quota_reached_with_extra(
     org_with_quotas, admin_auth_headers
 ):
     # Run crawl
@@ -133,10 +133,10 @@ def test_crawl_stopped_when_quota_reached_with_extra(
     ):
         time.sleep(2)
 
-    # Ensure that crawl was stopped by quota
+    # Ensure that crawl was paused by quota
     assert (
         get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers)
-        == "stopped_time_quota_reached"
+        == "paused_time_quota_reached"
     )
 
     time.sleep(5)
