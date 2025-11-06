@@ -134,11 +134,8 @@ class CronJobOperator(BaseOperator):
             print(f"error: missing profile {crawlconfig.profileid}")
             return self.get_finished_response(metadata)
 
-        # only save profile if selected proxy matches profile proxy
-        save_profile_id = (
-            str(crawlconfig.profileid)
-            if crawlconfig.profileid and crawlconfig.proxyId == profile_proxy_id
-            else ""
+        save_profile_id = self.crawl_config_ops.get_save_profile_id(
+            profile_proxy_id, crawlconfig
         )
 
         crawl_id, crawljob = self.k8s.new_crawl_job_yaml(

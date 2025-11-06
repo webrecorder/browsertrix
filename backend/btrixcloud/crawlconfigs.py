@@ -1176,12 +1176,7 @@ class CrawlConfigOps:
         if crawlconfig.profileid and not profile_filename:
             raise HTTPException(status_code=400, detail="invalid_profile_id")
 
-        # only save profile if selected proxy matches profile proxy
-        save_profile_id = (
-            str(crawlconfig.profileid)
-            if crawlconfig.profileid and crawlconfig.proxyId == profile_proxy_id
-            else ""
-        )
+        save_profile_id = self.get_save_profile_id(profile_proxy_id, crawlconfig)
 
         storage_filename = (
             crawlconfig.crawlFilenameTemplate or self.default_filename_template
@@ -1223,6 +1218,25 @@ class CrawlConfigOps:
             # pylint: disable=raise-missing-from
             print(traceback.format_exc())
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
+
+    def get_save_profile_id(
+        self, profile_proxy_id: str, crawlconfig: CrawlConfig
+    ) -> str:
+        """return profile id if profile should be auto-saved, or empty str if not"""
+        # if no profile, nothing to save
+        if not crawlconfig.profileid:
+            return ""
+
+        # if no proxies, allow saving
+        if not crawlconfig.proxyId and not profile_proxy_id:
+            return str(crawlconfig.profileid)
+
+        # if proxy ids match, allow saving
+        if crawlconfig.proxyId == profile_proxy_id:
+            return str(crawlconfig.profileid)
+
+        # otherwise, don't save
+        return ""
 
     async def check_if_too_many_waiting_crawls(self, org: Organization):
         """if max concurrent crawls are set, limit number of queued crawls to X concurrent limit
