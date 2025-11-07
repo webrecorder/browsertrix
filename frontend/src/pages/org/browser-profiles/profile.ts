@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-// import clsx from "clsx";
+import type { SlMenuItem } from "@shoelace-style/shoelace";
 import { html, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -29,6 +29,7 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Profile, Workflow } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { SortDirection } from "@/types/utils";
+import { isApiError } from "@/utils/api";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
@@ -247,6 +248,11 @@ export class BrowserProfilesProfilePage extends BtrixElement {
 
   private renderActions() {
     const archivingDisabled = isArchivingDisabled(this.org);
+    const menuItemClick = (cb: () => void) => (e: MouseEvent) => {
+      if (e.defaultPrevented || (e.currentTarget as SlMenuItem).disabled)
+        return;
+      cb();
+    };
 
     return html`
       <sl-dropdown distance="4" placement="bottom-end">
@@ -259,7 +265,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
             () => html`
               <sl-menu-item
                 ?disabled=${archivingDisabled}
-                @click=${() => (this.openDialog = "config")}
+                @click=${menuItemClick(() => (this.openDialog = "config"))}
               >
                 <sl-icon slot="prefix" name="gear"></sl-icon>
                 ${msg("Configure Profile")}
@@ -270,7 +276,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
               </sl-menu-item>
               <sl-menu-item
                 ?disabled=${archivingDisabled || !this.profile}
-                @click=${() => void this.duplicateProfile()}
+                @click=${menuItemClick(() => void this.duplicateProfile())}
               >
                 <sl-icon slot="prefix" name="files"></sl-icon>
                 ${msg("Duplicate Profile")}
@@ -284,16 +290,23 @@ export class BrowserProfilesProfilePage extends BtrixElement {
             <sl-icon name="copy" slot="prefix"></sl-icon>
             ${msg("Copy Profile ID")}
           </sl-menu-item>
-          ${when(
-            this.appState.isCrawler,
-            () => html`
+          ${when(this.appState.isCrawler, () => {
+            const disabled = this.profile?.inUse;
+            return html`
               <sl-divider></sl-divider>
-              <sl-menu-item class="menu-item-danger" @click=${() => {}}>
+              <sl-menu-item
+                class="menu-item-danger"
+                ?disabled=${disabled}
+                title=${ifDefined(
+                  disabled ? msg("Cannot delete profile in use") : undefined,
+                )}
+                @click=${menuItemClick(() => void this.deleteProfile())}
+              >
                 <sl-icon slot="prefix" name="trash3"></sl-icon>
                 ${msg("Delete Profile")}
               </sl-menu-item>
-            `,
-          )}
+            `;
+          })}
         </sl-menu>
       </sl-dropdown>
     `;
@@ -739,7 +752,10 @@ export class BrowserProfilesProfilePage extends BtrixElement {
   }
 
   private async duplicateProfile() {
-    if (!this.profile) return;
+    if (!this.profile) {
+      console.debug("missing profile");
+      return;
+    }
 
     const profile = this.profile;
     const url = profile.origins[0];
@@ -753,6 +769,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
         message: msg("Starting up browser..."),
         variant: "success",
         icon: "check2-circle",
+        id: "browser-profile-status",
       });
 
       this.navigate.to(
@@ -766,10 +783,69 @@ export class BrowserProfilesProfilePage extends BtrixElement {
         })}`,
       );
     } catch (e) {
+      console.debug(e);
+
       this.notify.toast({
-        message: msg("Sorry, couldn't create browser profile at this time."),
+        message: msg("Sorry, something went wrong starting up browser."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-status",
+      });
+    }
+  }
+
+  private async deleteProfile() {
+    const name_of_browser_profile = this.profile?.name
+      ? html`<strong class="font-semibold">${this.profile.name}</strong>`
+      : undefined;
+
+    try {
+      await this.api.fetch<Profile>(
+        `/orgs/${this.orgId}/profiles/${this.profileId}`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      this.notify.toast({
+        message: name_of_browser_profile
+          ? msg(html`Deleted ${name_of_browser_profile}.`)
+          : msg("Browser profile deleted."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "browser-profile-status",
+      });
+
+      this.navigate.to(
+        `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}`,
+      );
+    } catch (e) {
+      let title: string | undefined;
+      let message: string | TemplateResult = msg(
+        "Sorry, couldn't delete browser profile at this time.",
+      );
+
+      if (isApiError(e)) {
+        if (e.message === "profile_in_use") {
+          title = msg("Cannot delete browser profile in use");
+          message = name_of_browser_profile
+            ? msg(
+                html`Please remove ${name_of_browser_profile} from all crawl
+                workflows to continue.`,
+              )
+            : msg(
+                "Please remove this browser profile from all crawl workflows to continue.",
+              );
+        }
+      }
+
+      this.notify.toast({
+        title,
+        message: message,
+        variant: "danger",
+        icon: "exclamation-octagon",
+        duration: 10000,
+        id: "browser-profile-status",
       });
     }
   }
