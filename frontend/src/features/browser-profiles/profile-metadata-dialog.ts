@@ -79,7 +79,7 @@ export class ProfileMetadataDialog extends BtrixElement {
         );
 
         this.notify.toast({
-          message: msg("Browser profile metadata updated."),
+          message: msg("Updated browser profile metadata."),
           variant: "success",
           icon: "check2-circle",
           id: "browser-profile-save-status",

@@ -3,7 +3,7 @@ import { html, nothing } from "lit";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 
-import type { Profile } from "@/types/crawler";
+import { CrawlerChannelImage, type Profile } from "@/types/crawler";
 
 export const usageBadge = (inUse: boolean) =>
   html`<btrix-badge
@@ -25,16 +25,27 @@ export const badges = (
     ${when(
       profile.crawlerChannel,
       (channel) =>
-        html`<btrix-badge class="font-monostyle">
-          ${capitalize(channel)} ${msg("Channel")}</btrix-badge
-        >`,
+        html`<sl-tooltip content=${msg("Crawler Release Channel")}>
+          <btrix-badge
+            variant=${channel === CrawlerChannelImage.Default
+              ? "neutral"
+              : "blue"}
+            class="font-monostyle"
+          >
+            <sl-icon name="boxes" class="mr-1.5"></sl-icon>
+            ${capitalize(channel)}
+          </btrix-badge>
+        </sl-tooltip>`,
     )}
     ${when(
       profile.proxyId,
       (proxy) =>
-        html`<btrix-badge class="font-monostyle">
-          ${proxy} ${msg("Proxy")}</btrix-badge
-        >`,
+        html`<sl-tooltip content=${msg("Crawler Proxy Server")}>
+          <btrix-badge variant="blue" class="font-monostyle">
+            <sl-icon name="globe2" class="mr-1.5"></sl-icon>
+            ${proxy}
+          </btrix-badge>
+        </sl-tooltip>`,
     )}
   </div> `;
 };
