@@ -98,7 +98,6 @@ export class ProfileSettingsDialog extends BtrixElement {
         const nameInput = (await this.form).querySelector<SlInput>(
           "btrix-url-input",
         );
-
         if (nameInput) {
           e.preventDefault();
           nameInput.focus();

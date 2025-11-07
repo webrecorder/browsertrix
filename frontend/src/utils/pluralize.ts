@@ -325,30 +325,30 @@ const plurals = {
       id: "workflows.plural.other",
     }),
   },
-  origins: {
-    zero: msg("origins", {
-      desc: 'plural form of "origin" for zero origins',
-      id: "origins.plural.zero",
+  domains: {
+    zero: msg("domains", {
+      desc: 'plural form of "domain" for zero domains',
+      id: "domains.plural.zero",
     }),
-    one: msg("origin", {
-      desc: 'singular form for "origin"',
-      id: "origins.plural.one",
+    one: msg("domain", {
+      desc: 'singular form for "domain"',
+      id: "domains.plural.one",
     }),
-    two: msg("origins", {
-      desc: 'plural form of "origin" for two origins',
-      id: "origins.plural.two",
+    two: msg("domains", {
+      desc: 'plural form of "domain" for two domains',
+      id: "domains.plural.two",
     }),
-    few: msg("origins", {
-      desc: 'plural form of "origin" for few origins',
-      id: "origins.plural.few",
+    few: msg("domains", {
+      desc: 'plural form of "domain" for few domains',
+      id: "domains.plural.few",
     }),
-    many: msg("origins", {
-      desc: 'plural form of "origin" for many origins',
-      id: "origins.plural.many",
+    many: msg("domains", {
+      desc: 'plural form of "domain" for many domains',
+      id: "domains.plural.many",
     }),
-    other: msg("origins", {
-      desc: 'plural form of "origin" for multiple/other origins',
-      id: "origins.plural.other",
+    other: msg("domains", {
+      desc: 'plural form of "domain" for multiple/other domains',
+      id: "domains.plural.other",
     }),
   },
 };

@@ -443,7 +443,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           <btrix-desc-list-item label=${msg("Visited Sites")}>
             ${this.renderDetail(
               (profile) =>
-                `${this.localize.number(profile.origins.length)} ${pluralOf("origins", profile.origins.length)}`,
+                `${this.localize.number(profile.origins.length)} ${pluralOf("domains", profile.origins.length)}`,
             )}
           </btrix-desc-list-item>
           <btrix-desc-list-item label=${msg("Last Modified")}>
