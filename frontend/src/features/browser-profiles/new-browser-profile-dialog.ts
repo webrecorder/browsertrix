@@ -15,7 +15,11 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { type SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
 import { type SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
-import { CrawlerChannelImage, type Proxy } from "@/types/crawler";
+import {
+  CrawlerChannelImage,
+  type CrawlerChannel,
+  type Proxy,
+} from "@/types/crawler";
 
 @customElement("btrix-new-browser-profile-dialog")
 @localized()
@@ -29,6 +33,9 @@ export class NewBrowserProfileDialog extends BtrixElement {
   @property({ type: Array })
   proxyServers?: Proxy[];
 
+  @property({ type: Array })
+  crawlerChannels?: CrawlerChannel[];
+
   @property({ type: Boolean })
   open = false;
 
@@ -36,7 +43,7 @@ export class NewBrowserProfileDialog extends BtrixElement {
   private isSubmitting = false;
 
   @state()
-  private crawlerChannel: string = CrawlerChannelImage.Default;
+  private crawlerChannel: CrawlerChannel["id"] = CrawlerChannelImage.Default;
 
   @state()
   private proxyId: string | null = null;
@@ -57,7 +64,7 @@ export class NewBrowserProfileDialog extends BtrixElement {
       this.defaultCrawlerChannel
     ) {
       this.crawlerChannel =
-        (this.crawlerChannel !== (CrawlerChannelImage.Default as string) &&
+        (this.crawlerChannel !== CrawlerChannelImage.Default &&
           this.crawlerChannel) ||
         this.defaultCrawlerChannel;
     }
@@ -91,13 +98,15 @@ export class NewBrowserProfileDialog extends BtrixElement {
         >
         </btrix-url-input>
 
-        <div class="mt-4">
-          <btrix-select-crawler
-            .crawlerChannel=${this.crawlerChannel}
-            @on-change=${(e: SelectCrawlerChangeEvent) =>
-              (this.crawlerChannel = e.detail.value!)}
-          ></btrix-select-crawler>
-        </div>
+        ${this.crawlerChannels && this.crawlerChannels.length > 1
+          ? html`<div class="mt-4">
+              <btrix-select-crawler
+                .crawlerChannel=${this.crawlerChannel}
+                @on-change=${(e: SelectCrawlerChangeEvent) =>
+                  (this.crawlerChannel = e.detail.value!)}
+              ></btrix-select-crawler>
+            </div>`
+          : nothing}
         ${this.proxyServers?.length
           ? html`
               <div class="mt-4">
