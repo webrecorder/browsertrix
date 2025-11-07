@@ -44,6 +44,7 @@ import type { Profile, Workflow } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { SortDirection } from "@/types/utils";
 import { isApiError } from "@/utils/api";
+import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
@@ -520,7 +521,30 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                   message: msg(
                     "This profile is not in use by any crawl workflows.",
                   ),
-                  actions: html`<sl-button size="small">
+                  actions: html`<sl-button
+                    size="small"
+                    @click=${() => {
+                      this.navigate.to(
+                        `${this.navigate.orgBasePath}/${OrgTab.Workflows}/new`,
+                        settingsForDuplicate({
+                          workflow: {
+                            profileid: this.profileId,
+                            proxyId: profile.proxyId,
+                            crawlerChannel: profile.crawlerChannel,
+                          },
+                        }),
+                      );
+
+                      this.notify.toast({
+                        message: msg(
+                          "Copied browser settings to new workflow.",
+                        ),
+                        variant: "success",
+                        icon: "check2-circle",
+                        id: "workflow-copied-status",
+                      });
+                    }}
+                  >
                     <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                     ${msg("Create Workflow Using Profile")}</sl-button
                   >`,
