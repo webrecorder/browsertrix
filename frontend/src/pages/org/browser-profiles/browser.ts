@@ -201,7 +201,6 @@ export class BrowserProfilesBrowserPage extends BtrixElement {
         <btrix-profile-browser
           browserId=${this.browserId}
           initialNavigateUrl=${ifDefined(this.config.url)}
-          .origins=${this.profileTask.value?.origins}
           @btrix-browser-load=${() => (this.isBrowserLoaded = true)}
           @btrix-browser-reload=${this.onBrowserReload}
           @btrix-browser-error=${this.onBrowserError}
@@ -515,9 +514,12 @@ export class BrowserProfilesBrowserPage extends BtrixElement {
       );
 
       return data;
-    } catch (e) {
-      // TODO Investigate DELETE returning 404
-      console.debug(e);
+    } catch (err) {
+      if (isApiError(err) && err.statusCode === 404) {
+        // Safe to ignore, since unloaded browser will have already been deleted
+      } else {
+        console.debug(err);
+      }
     }
   }
 

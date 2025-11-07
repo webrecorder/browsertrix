@@ -1,7 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { cache } from "lit/directives/cache.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -21,6 +23,10 @@ export type BrowserNotAvailableError = {
 };
 export type BrowserConnectionChange = {
   connected: boolean;
+};
+
+const isPolling = (value: unknown): value is number => {
+  return typeof value === "number";
 };
 
 /**
@@ -49,9 +55,6 @@ export class ProfileBrowser extends BtrixElement {
   @property({ type: String })
   initialNavigateUrl?: string;
 
-  @property({ type: Array })
-  origins?: string[];
-
   @property({ type: Boolean })
   readOnly = false;
 
@@ -59,25 +62,10 @@ export class ProfileBrowser extends BtrixElement {
   disableToggleSites = false;
 
   @state()
-  private iframeSrc?: string;
-
-  @state()
-  private isIframeLoaded = false;
-
-  @state()
-  private browserNotAvailable = false;
-
-  @state()
-  private browserDisconnected = false;
-
-  @state()
   private isFullscreen = false;
 
   @state()
   private showOriginSidebar = false;
-
-  @state()
-  private newOrigins?: string[] = [];
 
   @query("#interactiveBrowser")
   private readonly interactiveBrowser?: HTMLElement;
@@ -85,27 +73,141 @@ export class ProfileBrowser extends BtrixElement {
   @query("#profileBrowserSidebar")
   private readonly sidebar?: HTMLElement;
 
-  @query("#iframeWrapper")
-  private readonly iframeWrapper?: HTMLElement;
-
   @query("iframe")
   private readonly iframe?: HTMLIFrameElement;
 
-  private pollTimerId?: number;
+  /**
+   * Get temporary browser.
+   * If the browser is not available, the task also handles polling.
+   */
+  private readonly browserTask = new Task(this, {
+    task: async ([browserId], { signal }) => {
+      if (!browserId) {
+        console.debug("missing browserId");
+        return;
+      }
+
+      if (isPolling(this.browserTask.value)) {
+        window.clearTimeout(this.browserTask.value);
+      }
+
+      const poll = () =>
+        window.setTimeout(() => {
+          if (!signal.aborted) {
+            void this.browserTask.run();
+          }
+        }, POLL_INTERVAL_SECONDS * 1000);
+
+      let data: BrowserResponseData;
+
+      try {
+        data = await this.getBrowser(browserId, signal);
+      } catch (err) {
+        void this.onBrowserError();
+        throw err;
+      }
+
+      // Check whether temporary browser is up
+      if (data.detail === "waiting_for_browser") {
+        return poll();
+      }
+
+      if (data.url) {
+        // check that the browser is actually available
+        // if not, continue waiting
+        // (will not work with local frontend due to CORS)
+        try {
+          const resp = await fetch(data.url, { method: "HEAD" });
+          if (!resp.ok) {
+            return poll();
+          }
+        } catch (err) {
+          console.debug(err);
+        }
+      }
+
+      if (this.initialNavigateUrl) {
+        await this.navigateBrowser({ url: this.initialNavigateUrl });
+      }
+
+      window.addEventListener("beforeunload", this.onBeforeUnload);
+
+      this.dispatchEvent(
+        new CustomEvent<BrowserLoadDetail>("btrix-browser-load", {
+          detail: data.url,
+        }),
+      );
+
+      return {
+        id: browserId,
+        ...data,
+      };
+    },
+    args: () => [this.browserId] as const,
+  });
+
+  /**
+   * Get updated origins list in temporary browser
+   */
+  private readonly originsTask = new Task(this, {
+    task: async ([browser], { signal }) => {
+      window.clearTimeout(this.pingTask.value);
+
+      if (!browser || isPolling(browser)) return;
+
+      try {
+        const data = await this.pingBrowser(browser.id, signal);
+
+        return data.origins;
+      } catch (err) {
+        if (isApiError(err) && err.details === "no_such_browser") {
+          void this.onBrowserError();
+        } else {
+          void this.onBrowserDisconnected();
+        }
+
+        throw err;
+      }
+    },
+    args: () => [this.browserTask.value] as const,
+  });
+
+  /**
+   * Keep temporary browser alive by polling for origins list
+   */
+  private readonly pingTask = new Task(this, {
+    task: async ([origins], { signal }) => {
+      window.clearTimeout(this.pingTask.value);
+
+      if (!origins) {
+        return;
+      }
+
+      console.log("ping task set timeout");
+
+      return window.setTimeout(() => {
+        if (!signal.aborted) {
+          void this.originsTask.run();
+        }
+      }, POLL_INTERVAL_SECONDS * 1000);
+    },
+    args: () => [this.originsTask.value] as const,
+  });
 
   connectedCallback() {
     super.connectedCallback();
 
     document.addEventListener("fullscreenchange", this.onFullscreenChange);
-    window.addEventListener("beforeunload", this.onBeforeUnload);
   }
 
   disconnectedCallback() {
-    super.disconnectedCallback();
+    if (isPolling(this.browserTask.value))
+      window.clearTimeout(this.browserTask.value);
 
-    window.clearTimeout(this.pollTimerId);
     document.removeEventListener("fullscreenchange", this.onFullscreenChange);
     window.removeEventListener("beforeunload", this.onBeforeUnload);
+
+    super.disconnectedCallback();
   }
 
   private readonly onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -114,48 +216,35 @@ export class ProfileBrowser extends BtrixElement {
     }
   };
 
-  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
-    if (changedProperties.has("browserId")) {
-      if (this.browserId) {
-        window.clearTimeout(this.pollTimerId);
-        void this.fetchBrowser();
-      } else if (changedProperties.get("browserId")) {
-        this.iframeSrc = undefined;
-        this.isIframeLoaded = false;
+  private readonly onBrowserError = async () => {
+    window.removeEventListener("beforeunload", this.onBeforeUnload);
 
-        window.clearTimeout(this.pollTimerId);
-      }
-    }
+    await this.updateComplete;
+    this.dispatchEvent(
+      new CustomEvent<BrowserNotAvailableError>("btrix-browser-error"),
+    );
+  };
+
+  private readonly onBrowserDisconnected = async () => {
+    window.removeEventListener("beforeunload", this.onBeforeUnload);
+
+    await this.updateComplete;
+    this.dispatchEvent(
+      new CustomEvent<BrowserConnectionChange>(
+        "btrix-browser-connection-change",
+        {
+          detail: { connected: false },
+        },
+      ),
+    );
+  };
+
+  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (
       changedProperties.has("showOriginSidebar") &&
       changedProperties.get("showOriginSidebar") !== undefined
     ) {
       this.animateSidebar();
-    }
-  }
-
-  updated(changedProperties: PropertyValues<this> & Map<string, unknown>) {
-    if (changedProperties.has("browserDisconnected")) {
-      this.dispatchEvent(
-        new CustomEvent<BrowserConnectionChange>(
-          "btrix-browser-connection-change",
-          {
-            detail: {
-              connected: !this.browserDisconnected,
-            },
-          },
-        ),
-      );
-    }
-    if (changedProperties.has("browserNotAvailable")) {
-      if (this.browserNotAvailable) {
-        window.removeEventListener("beforeunload", this.onBeforeUnload);
-      } else {
-        window.addEventListener("beforeunload", this.onBeforeUnload);
-      }
-      this.dispatchEvent(
-        new CustomEvent<BrowserNotAvailableError>("btrix-browser-error"),
-      );
     }
   }
 
@@ -169,6 +258,24 @@ export class ProfileBrowser extends BtrixElement {
   }
 
   render() {
+    const browserLoading = () =>
+      cache(
+        html`<div
+          class=${clsx(
+            tw`flex w-full flex-col items-center justify-center gap-5`,
+            this.isFullscreen ? tw`h-full` : tw`aspect-4/3`,
+          )}
+        >
+          <p class="text-neutral-600">
+            ${msg("Loading interactive browser...")}
+          </p>
+          <sl-progress-bar
+            class="w-20 [--height:.5rem]"
+            indeterminate
+          ></sl-progress-bar>
+        </div>`,
+      );
+
     return html`
       <div id="interactiveBrowser" class="flex size-full flex-col">
         ${this.renderControlBar()}
@@ -179,7 +286,31 @@ export class ProfileBrowser extends BtrixElement {
             : "border-t"} relative flex-1 overflow-hidden bg-neutral-50"
           aria-live="polite"
         >
-          ${this.renderBrowser()}
+          ${this.browserTask.render({
+            initial: browserLoading,
+            pending: browserLoading,
+            error: () => html`
+              <div class="flex aspect-4/3 w-full items-center justify-center">
+                <btrix-alert variant="danger">
+                  <p>
+                    ${msg(
+                      `Interactive browser session timed out due to inactivity.`,
+                    )}
+                  </p>
+                  <div class="py-2 text-center">
+                    <sl-button size="small" @click=${this.onClickReload}>
+                      <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
+                      ${msg("Load New Browser")}
+                    </sl-button>
+                  </div>
+                </btrix-alert>
+              </div>
+            `,
+            complete: (result) =>
+              !result || isPolling(result)
+                ? browserLoading()
+                : this.renderBrowser(result),
+          })}
           <div
             id="profileBrowserSidebar"
             class="${hiddenClassList.join(
@@ -189,7 +320,19 @@ export class ProfileBrowser extends BtrixElement {
             <div
               class="flex-1 overflow-auto rounded-lg border bg-white shadow-lg"
             >
-              ${this.renderOrigins()} ${this.renderNewOrigins()}
+              ${when(
+                this.originsTask.value,
+                (origins) => html`
+                  ${this.renderOrigins(origins)}
+                  ${this.renderNewOrigins(
+                    origins.filter(
+                      (url: string) =>
+                        !origins.includes(url) &&
+                        !origins.includes(url.replace(/\/$/, "")),
+                    ),
+                  )}
+                `,
+              )}
             </div>
           </div>
         </div>
@@ -244,77 +387,40 @@ export class ProfileBrowser extends BtrixElement {
     `;
   }
 
-  private renderBrowser() {
-    if (this.browserNotAvailable) {
-      return html`
-        <div class="flex aspect-4/3 w-full items-center justify-center">
-          <btrix-alert variant="danger">
-            <p>
-              ${msg(`Interactive browser session timed out due to inactivity.`)}
-            </p>
-            <div class="py-2 text-center">
-              <sl-button size="small" @click=${this.onClickReload}>
-                <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
-                ${msg("Load New Browser")}
-              </sl-button>
-            </div>
-          </btrix-alert>
-        </div>
-      `;
-    }
-
-    if (this.iframeSrc) {
-      return html`<div class="relative size-full">
-        <iframe
-          class=${clsx(
-            tw`w-full`,
-            this.isFullscreen ? tw`h-full` : tw`aspect-4/3`,
-          )}
-          src=${this.iframeSrc}
-          @load=${this.onIframeLoad}
-          aria-labelledby="profileBrowserLabel"
-        ></iframe>
-        ${when(
-          this.browserDisconnected,
-          () => html`
-            <div
-              class="absolute inset-0 flex items-center justify-center"
-              style="background-color: var(--sl-overlay-background-color);"
-            >
-              <btrix-alert variant="danger">
-                <p>
-                  ${msg(
-                    "Connection to interactive browser lost. Waiting to reconnect...",
-                  )}
-                </p>
-              </btrix-alert>
-            </div>
-          `,
-        )}
-      </div>`;
-    }
-
-    if (this.browserId && !this.isIframeLoaded) {
-      return html`
-        <div
-          class=${clsx(
-            tw`flex w-full flex-col items-center justify-center gap-5`,
-            this.isFullscreen ? tw`h-full` : tw`aspect-4/3`,
-          )}
-        >
-          <p class="text-neutral-600">
-            ${msg("Loading interactive browser...")}
-          </p>
-          <sl-progress-bar
-            class="w-20 [--height:.5rem]"
-            indeterminate
-          ></sl-progress-bar>
-        </div>
-      `;
-    }
-
-    return "";
-  }
+  private readonly renderBrowser = (browser: BrowserResponseData) => {
+    return html`<div class="relative size-full">
+      ${when(
+        browser.url,
+        (url) => html`
+          <iframe
+            class=${clsx(
+              tw`w-full`,
+              this.isFullscreen ? tw`h-full` : tw`aspect-4/3`,
+            )}
+            src=${url}
+            @load=${() => void this.onIframeLoad(url)}
+            aria-labelledby="profileBrowserLabel"
+          ></iframe>
+        `,
+      )}
+      ${this.originsTask.render({
+        error: () => html`
+          <div
+            class="absolute inset-0 flex items-center justify-center"
+            style="background-color: var(--sl-overlay-background-color);"
+          >
+            <btrix-alert variant="danger">
+              <p>
+                ${msg(
+                  "Connection to interactive browser lost. Waiting to reconnect...",
+                )}
+              </p>
+            </btrix-alert>
+          </div>
+        `,
+      })}
+    </div>`;
+  };
 
   private renderSidebarButton() {
     return html`
@@ -329,7 +435,7 @@ export class ProfileBrowser extends BtrixElement {
     `;
   }
 
-  private renderOrigins() {
+  private renderOrigins(origins: string[]) {
     return html`
       <h4 class="border-b p-2 leading-tight text-neutral-700">
         <span class="mr-1 inline-block align-middle"
@@ -346,13 +452,13 @@ export class ProfileBrowser extends BtrixElement {
         ></btrix-popover>
       </h4>
       <ul>
-        ${this.origins?.map((url) => this.renderOriginItem(url))}
+        ${origins.map((url) => this.renderOriginItem(url))}
       </ul>
     `;
   }
 
-  private renderNewOrigins() {
-    if (!this.newOrigins?.length) return;
+  private renderNewOrigins(origins: string[]) {
+    if (!origins.length) return;
 
     return html`
       <h4 class="border-b p-2 leading-tight text-neutral-700">
@@ -370,22 +476,25 @@ export class ProfileBrowser extends BtrixElement {
         ></btrix-popover>
       </h4>
       <ul>
-        ${this.newOrigins.map((url) => this.renderOriginItem(url))}
+        ${origins.map((url) => this.renderOriginItem(url))}
       </ul>
     `;
   }
 
   private renderOriginItem(url: string) {
+    const iframeSrc =
+      !isPolling(this.browserTask.value) && this.browserTask.value?.url;
+
     return html`<li
-      class="border-t-neutral-100${this.iframeSrc
+      class="border-t-neutral-100${iframeSrc
         ? " hover:bg-cyan-50/50 hover:text-cyan-700"
         : ""} flex items-center justify-between border-t p-2 first:border-t-0"
-      role=${this.iframeSrc ? "button" : "listitem"}
+      role=${iframeSrc ? "button" : "listitem"}
       title=${msg(str`Go to ${url}`)}
-      @click=${() => (this.iframeSrc ? this.navigateBrowser({ url }) : {})}
+      @click=${() => (iframeSrc ? this.navigateBrowser({ url }) : {})}
     >
       <div class="w-full truncate text-sm">${url}</div>
-      ${this.iframeSrc
+      ${iframeSrc
         ? html`<sl-icon name="play-btn" class="text-lg"></sl-icon>`
         : ""}
     </li>`;
@@ -395,78 +504,10 @@ export class ProfileBrowser extends BtrixElement {
     this.dispatchEvent(new CustomEvent("btrix-browser-reload"));
   }
 
-  /**
-   * Fetch browser profile and update internal state
-   */
-  private async fetchBrowser(): Promise<void> {
-    await this.updateComplete;
-
-    this.iframeSrc = undefined;
-    this.isIframeLoaded = false;
-
-    await this.checkBrowserStatus();
-  }
-
-  /**
-   * Check whether temporary browser is up
-   **/
-  private async checkBrowserStatus() {
-    let result: BrowserResponseData;
-    try {
-      result = await this.getBrowser();
-      this.browserNotAvailable = false;
-    } catch (e) {
-      this.browserNotAvailable = true;
-      return;
-    }
-
-    if (result.detail === "waiting_for_browser") {
-      this.pollTimerId = window.setTimeout(
-        () => void this.checkBrowserStatus(),
-        POLL_INTERVAL_SECONDS * 1000,
-      );
-
-      return;
-    } else if (result.url) {
-      // check that the browser is actually available
-      // if not, continue waiting
-      // (will not work with local frontend due to CORS)
-      try {
-        const resp = await fetch(result.url, { method: "HEAD" });
-        if (!resp.ok) {
-          this.pollTimerId = window.setTimeout(
-            () => void this.checkBrowserStatus(),
-            POLL_INTERVAL_SECONDS * 1000,
-          );
-          return;
-        }
-      } catch (e) {
-        // ignore
-      }
-
-      if (this.initialNavigateUrl) {
-        await this.navigateBrowser({ url: this.initialNavigateUrl });
-      }
-
-      this.iframeSrc = result.url;
-
-      await this.updateComplete;
-
-      this.dispatchEvent(
-        new CustomEvent<BrowserLoadDetail>("btrix-browser-load", {
-          detail: result.url,
-        }),
-      );
-
-      void this.pingBrowser();
-    } else {
-      console.debug("Unknown checkBrowserStatus state");
-    }
-  }
-
-  private async getBrowser() {
+  private async getBrowser(browserId: string, signal?: AbortSignal) {
     const data = await this.api.fetch<BrowserResponseData>(
-      `/orgs/${this.orgId}/profiles/browser/${this.browserId}`,
+      `/orgs/${this.orgId}/profiles/browser/${browserId}`,
+      { signal },
     );
 
     return data;
@@ -476,8 +517,6 @@ export class ProfileBrowser extends BtrixElement {
    * Navigate to URL in temporary browser
    **/
   private async navigateBrowser({ url }: { url: string }) {
-    if (!this.iframeSrc) return;
-
     const data = this.api.fetch(
       `/orgs/${this.orgId}/profiles/browser/${this.browserId}/navigate`,
       {
@@ -492,42 +531,13 @@ export class ProfileBrowser extends BtrixElement {
   /**
    * Ping temporary browser to keep it alive
    **/
-  private async pingBrowser() {
-    if (!this.iframeSrc) return;
-
-    try {
-      const data = await this.api.fetch<{ origins?: string[] }>(
-        `/orgs/${this.orgId}/profiles/browser/${this.browserId}/ping`,
-        {
-          method: "POST",
-        },
-      );
-
-      if (!this.origins) {
-        this.origins = data.origins;
-      } else {
-        const origins = this.origins;
-
-        this.newOrigins = data.origins?.filter(
-          (url: string) =>
-            !origins.includes(url) && !origins.includes(url.replace(/\/$/, "")),
-        );
-      }
-
-      this.browserDisconnected = false;
-    } catch (e) {
-      if (isApiError(e) && e.details === "no_such_browser") {
-        this.browserNotAvailable = true;
-      } else {
-        this.browserDisconnected = true;
-      }
-
-      await this.updateComplete;
-    }
-
-    this.pollTimerId = window.setTimeout(
-      () => void this.pingBrowser(),
-      POLL_INTERVAL_SECONDS * 1000,
+  private async pingBrowser(browserId: string, signal?: AbortSignal) {
+    return this.api.fetch<{ origins?: string[] }>(
+      `/orgs/${this.orgId}/profiles/browser/${browserId}/ping`,
+      {
+        method: "POST",
+        signal,
+      },
     );
   }
 
@@ -545,16 +555,17 @@ export class ProfileBrowser extends BtrixElement {
     }
   }
 
-  private onIframeLoad() {
-    this.isIframeLoaded = true;
+  private async onIframeLoad(url: string) {
     try {
       this.iframe?.contentWindow?.localStorage.setItem("uiTheme", '"default"');
-    } catch (e) {
-      /* empty */
+    } catch (err) {
+      console.debug(err);
     }
+
+    await this.updateComplete;
     this.dispatchEvent(
       new CustomEvent<BrowserLoadDetail>("btrix-browser-load", {
-        detail: this.iframeSrc,
+        detail: url,
       }),
     );
   }

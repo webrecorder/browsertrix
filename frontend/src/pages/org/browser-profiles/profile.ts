@@ -379,7 +379,6 @@ export class BrowserProfilesProfilePage extends BtrixElement {
               ? html`<btrix-profile-browser
                   browserId=${this.browserIdTask.value}
                   initialNavigateUrl=${ifDefined(this.initialNavigateUrl)}
-                  .origins=${this.profileTask.value.origins}
                   @btrix-browser-load=${this.onBrowserLoad}
                   @btrix-browser-reload=${this.onBrowserReload}
                   @btrix-browser-error=${this.onBrowserError}

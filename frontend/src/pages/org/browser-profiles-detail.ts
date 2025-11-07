@@ -221,7 +221,6 @@ export class BrowserProfilesDetail extends BtrixElement {
                       <btrix-profile-browser
                         class="flex-1 overflow-hidden rounded border"
                         browserId=${ifDefined(this.browserId)}
-                        .origins=${this.profile?.origins}
                         @btrix-browser-load=${() =>
                           (this.isBrowserLoaded = true)}
                         @btrix-browser-error=${this.onBrowserError}

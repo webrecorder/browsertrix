@@ -182,7 +182,6 @@ export class BrowserProfilesNew extends BtrixElement {
         <btrix-profile-browser
           browserId=${this.browserId}
           initialNavigateUrl=${ifDefined(this.browserParams.url)}
-          .origins=${this.browserParams.origins}
           @btrix-browser-load=${() => (this.isBrowserLoaded = true)}
           @btrix-browser-reload=${this.onBrowserReload}
           @btrix-browser-error=${this.onBrowserError}
