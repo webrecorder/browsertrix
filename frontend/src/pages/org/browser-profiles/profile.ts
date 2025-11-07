@@ -268,7 +268,10 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                 <sl-icon slot="prefix" name="pencil"></sl-icon>
                 ${msg("Edit Metadata")}
               </sl-menu-item>
-              <sl-menu-item ?disabled=${archivingDisabled} @click=${() => {}}>
+              <sl-menu-item
+                ?disabled=${archivingDisabled || !this.profile}
+                @click=${() => void this.duplicateProfile()}
+              >
                 <sl-icon slot="prefix" name="files"></sl-icon>
                 ${msg("Duplicate Profile")}
               </sl-menu-item>
@@ -735,9 +738,45 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     );
   }
 
+  private async duplicateProfile() {
+    if (!this.profile) return;
+
+    const profile = this.profile;
+    const url = profile.origins[0];
+
+    try {
+      const data = await this.createBrowser({
+        url,
+      });
+
+      this.notify.toast({
+        message: msg("Starting up browser..."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+
+      this.navigate.to(
+        `${this.navigate.orgBasePath}/browser-profiles/profile/browser/${
+          data.browserid
+        }?${queryString.stringify({
+          url,
+          name: `${profile.name} ${msg("Copy")}`,
+          crawlerChannel: profile.crawlerChannel,
+          proxyId: profile.proxyId,
+        })}`,
+      );
+    } catch (e) {
+      this.notify.toast({
+        message: msg("Sorry, couldn't create browser profile at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
   private async createBrowser(
-    params: { url: string; profileId: string },
-    signal: AbortSignal,
+    params: { url: string; profileId?: string },
+    signal?: AbortSignal,
   ) {
     return this.api.fetch<{ browserid: string }>(
       `/orgs/${this.orgId}/profiles/browser`,

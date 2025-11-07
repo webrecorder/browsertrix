@@ -470,7 +470,7 @@ export class BrowserProfilesList extends BtrixElement {
       const data = await this.createBrowser({ url });
 
       this.notify.toast({
-        message: msg("Starting up browser with selected profile..."),
+        message: msg("Starting up browser..."),
         variant: "success",
         icon: "check2-circle",
       });
@@ -480,10 +480,9 @@ export class BrowserProfilesList extends BtrixElement {
           data.browserid
         }?${queryString.stringify({
           url,
-          name: profile.name,
-          description: profile.description,
-          profileId: profile.id,
+          name: `${profile.name} ${msg("Copy")}`,
           crawlerChannel: profile.crawlerChannel,
+          proxyId: profile.proxyId,
         })}`,
       );
     } catch (e) {

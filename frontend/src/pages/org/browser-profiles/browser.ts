@@ -30,6 +30,7 @@ export class BrowserProfilesBrowserPage extends BtrixElement {
   @property({ type: Object, attribute: false, hasChanged: isNotEqual })
   config: {
     url: string;
+    name?: string;
     crawlerChannel?: string;
     proxyId?: string;
   } = {
@@ -284,7 +285,9 @@ export class BrowserProfilesBrowserPage extends BtrixElement {
       return;
     }
 
-    const nameValue = this.profileTask.value ? this.profileTask.value.name : "";
+    const nameValue = this.profileTask.value
+      ? this.profileTask.value.name
+      : this.config.name || "";
 
     return html`<form @submit=${this.onSubmit}>
       <div class="grid gap-5">

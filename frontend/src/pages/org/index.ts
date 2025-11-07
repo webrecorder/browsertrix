@@ -649,6 +649,7 @@ export class Org extends BtrixElement {
         .browserId=${params.browserId}
         .config=${{
           url: params.url || "",
+          name: params.name,
           crawlerChannel: params.crawlerChannel,
           proxyId: params.proxyId,
         }}
