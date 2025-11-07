@@ -210,7 +210,7 @@ export type Upload = ArchivedItemBase & {
 };
 
 export type CrawlerChannel = {
-  id: string;
+  id: CrawlerChannelImage | AnyString;
   image: string;
 };
 
@@ -225,6 +225,10 @@ export type Proxy = {
 export type ProxiesAPIResponse = {
   default_proxy_id: string | null;
   servers: Proxy[];
+};
+
+export type CrawlerChannelsAPIResponse = {
+  channels: CrawlerChannel[];
 };
 
 export type ArchivedItem = Crawl | Upload;
