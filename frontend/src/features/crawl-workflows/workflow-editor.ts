@@ -50,10 +50,7 @@ import {
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixFileChangeEvent } from "@/components/ui/file-list/events";
-import type {
-  SelectCrawlerChangeEvent,
-  SelectCrawlerUpdateEvent,
-} from "@/components/ui/select-crawler";
+import type { SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
 import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
 import type { SyntaxInput } from "@/components/ui/syntax-input";
 import type { TabListTab } from "@/components/ui/tab-list";
@@ -61,7 +58,14 @@ import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { validURL } from "@/components/ui/url-input";
 import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
-import { proxiesContext, type ProxiesContext } from "@/context/org";
+import {
+  orgCrawlerChannelsContext,
+  type OrgCrawlerChannelsContext,
+} from "@/context/org-crawler-channels";
+import {
+  orgProxiesContext,
+  type OrgProxiesContext,
+} from "@/context/org-proxies";
 import {
   ObservableController,
   type IntersectEvent,
@@ -263,8 +267,11 @@ export class WorkflowEditor extends BtrixElement {
     }
   `;
 
-  @consume({ context: proxiesContext, subscribe: true })
-  private readonly proxies?: ProxiesContext;
+  @consume({ context: orgProxiesContext, subscribe: true })
+  private readonly proxies?: OrgProxiesContext;
+
+  @consume({ context: orgCrawlerChannelsContext, subscribe: true })
+  private readonly crawlerChannels?: OrgCrawlerChannelsContext;
 
   @consume({ context: docsUrlContext })
   private readonly docsUrl?: DocsUrlContext;
@@ -290,9 +297,6 @@ export class WorkflowEditor extends BtrixElement {
 
   @property({ type: Object })
   initialSeedFile?: StorageSeedFile;
-
-  @state()
-  private showCrawlerChannels = false;
 
   @state()
   private tagOptions: WorkflowTag[] = [];
@@ -1965,6 +1969,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private renderBrowserSettings() {
     if (!this.formState.lang) throw new Error("missing formstate.lang");
+
+    const proxies = this.proxies;
+
     return html`
       ${inputCol(html`
         <btrix-select-browser-profile
@@ -1976,14 +1983,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(infoTextFor["browserProfile"])}
-      ${this.proxies?.servers.length
+      ${proxies?.servers.length
         ? [
             inputCol(html`
               <btrix-select-crawler-proxy
                 defaultProxyId=${ifDefined(
-                  this.proxies.default_proxy_id ?? undefined,
+                  proxies.default_proxy_id ?? undefined,
                 )}
-                .proxyServers=${this.proxies.servers}
+                .proxyServers=${proxies.servers}
                 .proxyId="${this.formState.proxyId || ""}"
                 @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
                   this.updateFormState({
@@ -2022,20 +2029,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
           content: msg("See caveats"),
         })}.`,
       )}
-      ${inputCol(html`
-        <btrix-select-crawler
-          .crawlerChannel=${this.formState.crawlerChannel}
-          @on-change=${(e: SelectCrawlerChangeEvent) =>
-            this.updateFormState({
-              crawlerChannel: e.detail.value,
-            })}
-          @on-update=${(e: SelectCrawlerUpdateEvent) =>
-            (this.showCrawlerChannels = e.detail.show)}
-        ></btrix-select-crawler>
-      `)}
-      ${this.showCrawlerChannels
-        ? this.renderHelpTextCol(infoTextFor["crawlerChannel"])
-        : html``}
+      ${when(this.crawlerChannels && this.crawlerChannels.length > 1, () => [
+        inputCol(html`
+          <btrix-select-crawler
+            .crawlerChannel=${this.formState.crawlerChannel}
+            @on-change=${(e: SelectCrawlerChangeEvent) =>
+              this.updateFormState({
+                crawlerChannel: e.detail.value,
+              })}
+          ></btrix-select-crawler>
+        `),
+        this.renderHelpTextCol(infoTextFor["crawlerChannel"]),
+      ])}
       ${inputCol(html`
         <sl-checkbox name="blockAds" ?checked=${this.formState.blockAds}>
           ${msg("Block ads by domain")}
