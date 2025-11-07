@@ -257,7 +257,7 @@ export class ConfigDetails extends BtrixElement {
             crawlConfig?.browserWindows ? `${crawlConfig.browserWindows}` : "",
           )}
           ${this.renderSetting(
-            msg("Crawler Channel (Exact Crawler Version)"),
+            `${msg("Crawler Channel")} ${crawlConfig?.image ? msg("(Exact Crawler Version)") : ""}`.trim(),
             capitalize(
               crawlConfig?.crawlerChannel || CrawlerChannelImage.Default,
             ) + (crawlConfig?.image ? ` (${crawlConfig.image})` : ""),

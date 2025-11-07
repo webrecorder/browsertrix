@@ -12,7 +12,14 @@ import type { Entries } from "type-fest";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { LanguageSelect } from "@/components/ui/language-select";
 import type { SelectCrawlerProxy } from "@/components/ui/select-crawler-proxy";
-import { proxiesContext, type ProxiesContext } from "@/context/org";
+import {
+  orgCrawlerChannelsContext,
+  type OrgCrawlerChannelsContext,
+} from "@/context/org-crawler-channels";
+import {
+  orgProxiesContext,
+  type OrgProxiesContext,
+} from "@/context/org-proxies";
 import type { CustomBehaviorsTable } from "@/features/crawl-workflows/custom-behaviors-table";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
 import { columns, type Cols } from "@/layouts/columns";
@@ -54,8 +61,11 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     }
   `;
 
-  @consume({ context: proxiesContext, subscribe: true })
-  private readonly proxies?: ProxiesContext;
+  @consume({ context: orgProxiesContext, subscribe: true })
+  private readonly proxies?: OrgProxiesContext;
+
+  @consume({ context: orgCrawlerChannelsContext, subscribe: true })
+  private readonly crawlerChannels?: OrgCrawlerChannelsContext;
 
   @state()
   private defaults: WorkflowDefaults = appDefaults;
@@ -209,6 +219,9 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
         </sl-input>
       `,
     };
+    const proxies = this.proxies;
+    const crawlerChannels = this.crawlerChannels;
+
     const browserSettings = {
       browserProfile: html`
         <btrix-select-browser-profile
@@ -216,22 +229,23 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           size="small"
         ></btrix-select-browser-profile>
       `,
-      proxyId: this.proxies?.servers.length
+      proxyId: proxies?.servers.length
         ? html` <btrix-select-crawler-proxy
-            defaultProxyId=${ifDefined(
-              this.proxies.default_proxy_id ?? undefined,
-            )}
-            .proxyServers=${this.proxies.servers}
+            defaultProxyId=${ifDefined(proxies.default_proxy_id ?? undefined)}
+            .proxyServers=${proxies.servers}
             .proxyId="${orgDefaults.proxyId || null}"
             size="small"
           ></btrix-select-crawler-proxy>`
         : undefined,
-      crawlerChannel: html`
-        <btrix-select-crawler
-          crawlerChannel=${ifDefined(orgDefaults.crawlerChannel)}
-          size="small"
-        ></btrix-select-crawler>
-      `,
+      crawlerChannel:
+        crawlerChannels && crawlerChannels.length > 1
+          ? html`
+              <btrix-select-crawler
+                crawlerChannel=${ifDefined(orgDefaults.crawlerChannel)}
+                size="small"
+              ></btrix-select-crawler>
+            `
+          : undefined,
       blockAds: html`<sl-checkbox
         size="small"
         name="blockAds"
