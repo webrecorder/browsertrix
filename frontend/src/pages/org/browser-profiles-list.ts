@@ -1,7 +1,8 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import clsx from "clsx";
 import { css, nothing, type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
@@ -16,6 +17,7 @@ import {
   type SortValues,
 } from "@/components/ui/table/table-header-cell";
 import { ClipboardController } from "@/controllers/clipboard";
+import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { pageHeader } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
@@ -28,32 +30,103 @@ import { html } from "@/utils/LiteElement";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
+const SORT_DIRECTIONS = ["asc", "desc"] as const;
+type SortDirection = (typeof SORT_DIRECTIONS)[number];
+type SortField = "name" | "url" | "modified";
+type SortBy = {
+  field: SortField;
+  direction: SortDirection;
+};
+
+const sortableFields: Record<
+  SortField,
+  { label: string; defaultDirection?: SortDirection }
+> = {
+  name: {
+    label: msg("Name"),
+    defaultDirection: "desc",
+  },
+  url: {
+    label: msg("Visited Sites"),
+    defaultDirection: "asc",
+  },
+  modified: {
+    label: msg("Last Modified"),
+    defaultDirection: "desc",
+  },
+};
+
+const DEFAULT_SORT_BY = {
+  field: "modified",
+  direction: sortableFields.modified.defaultDirection || "desc",
+} as const satisfies SortBy;
 const INITIAL_PAGE_SIZE = 20;
 
-/**
- * Usage:
- * ```ts
- * <btrix-browser-profiles-list
- * ></btrix-browser-profiles-list>
- * ```
- */
 @customElement("btrix-browser-profiles-list")
 @localized()
 export class BrowserProfilesList extends BtrixElement {
-  @property({ type: Boolean })
-  isCrawler = false;
-
   @state()
-  browserProfiles?: APIPaginatedList<Profile>;
-
-  @state()
-  sort: Required<APISortQuery> = {
-    sortBy: "modified",
-    sortDirection: -1,
+  private pagination: Required<APIPaginationQuery> = {
+    page: parsePage(new URLSearchParams(location.search).get("page")),
+    pageSize: INITIAL_PAGE_SIZE,
   };
 
-  @state()
-  private isLoading = true;
+  private readonly orderBy = new SearchParamsValue<SortBy>(
+    this,
+    (value, params) => {
+      if (value.field === DEFAULT_SORT_BY.field) {
+        params.delete("sortBy");
+      } else {
+        params.set("sortBy", value.field);
+      }
+      if (value.direction === sortableFields[value.field].defaultDirection) {
+        params.delete("sortDir");
+      } else {
+        params.set("sortDir", value.direction);
+      }
+      return params;
+    },
+    (params) => {
+      const field = params.get("sortBy") as SortBy["field"] | null;
+      if (!field) {
+        return DEFAULT_SORT_BY;
+      }
+      let direction = params.get("sortDir");
+      if (
+        !direction ||
+        (SORT_DIRECTIONS as readonly string[]).includes(direction)
+      ) {
+        direction =
+          sortableFields[field].defaultDirection || DEFAULT_SORT_BY.direction;
+      }
+      return { field, direction: direction as SortDirection };
+    },
+  );
+
+  get isCrawler() {
+    return this.appState.isCrawler;
+  }
+
+  get browserProfiles() {
+    return this.profilesTask.value;
+  }
+
+  get isLoading() {
+    return !this.browserProfiles;
+  }
+
+  private readonly profilesTask = new Task(this, {
+    task: async ([pagination, orderBy], { signal }) => {
+      return this.getProfiles(
+        {
+          ...pagination,
+          ...orderBy,
+        },
+        signal,
+      );
+    },
+    args: () => [this.pagination, this.orderBy] as const,
+  });
 
   static styles = css`
     btrix-table {
@@ -83,14 +156,6 @@ export class BrowserProfilesList extends BtrixElement {
       height: 2.5rem;
     }
   `;
-
-  protected willUpdate(
-    changedProperties: PropertyValues<this> & Map<string, unknown>,
-  ) {
-    if (changedProperties.has("sort")) {
-      void this.fetchBrowserProfiles();
-    }
-  }
 
   render() {
     return html`${pageHeader({
@@ -168,9 +233,12 @@ export class BrowserProfilesList extends BtrixElement {
         <btrix-table>
           <btrix-table-head class="mb-2">
             ${headerCells.map(({ sortBy, sortDirection, label, className }) => {
-              const isSorting = sortBy === this.sort.sortBy;
+              const isSorting = sortBy === this.orderBy.value.field;
               const sortValue =
-                (isSorting && SortDirection.get(this.sort.sortDirection)) ||
+                (isSorting &&
+                  (this.orderBy.value.direction === "asc"
+                    ? "ascending"
+                    : "descending")) ||
                 "none";
               // TODO implement sort render logic in table-header-cell
               return html`
@@ -179,15 +247,15 @@ export class BrowserProfilesList extends BtrixElement {
                   ariaSort=${sortValue}
                   @click=${() => {
                     if (isSorting) {
-                      this.sort = {
-                        ...this.sort,
-                        sortDirection: this.sort.sortDirection * -1,
-                      };
+                      this.orderBy.setValue({
+                        field: sortBy,
+                        direction: sortDirection === 1 ? "desc" : "asc",
+                      });
                     } else {
-                      this.sort = {
-                        sortBy,
-                        sortDirection,
-                      };
+                      this.orderBy.setValue({
+                        field: sortBy as SortField,
+                        direction: sortDirection === 1 ? "asc" : "desc",
+                      });
                     }
                   }}
                 >
@@ -221,7 +289,10 @@ export class BrowserProfilesList extends BtrixElement {
                   totalCount=${total}
                   size=${pageSize}
                   @page-change=${async (e: PageChangeEvent) => {
-                    void this.fetchBrowserProfiles({ page: e.detail.page });
+                    this.pagination = {
+                      ...this.pagination,
+                      page: e.detail.page,
+                    };
                   }}
                 ></btrix-pagination>
               </footer>
@@ -397,7 +468,10 @@ export class BrowserProfilesList extends BtrixElement {
         id: "browser-profile-deleted-status",
       });
 
-      void this.fetchBrowserProfiles();
+      this.pagination = {
+        ...this.pagination,
+        page: 1,
+      };
     } catch (e) {
       let message = msg(
         html`Sorry, couldn't delete browser profile at this time.`,
@@ -432,43 +506,13 @@ export class BrowserProfilesList extends BtrixElement {
     });
   }
 
-  /**
-   * Fetch browser profiles and update internal state
-   */
-  private async fetchBrowserProfiles(
-    params?: APIPaginationQuery,
-  ): Promise<void> {
-    try {
-      this.isLoading = true;
-      const data = await this.getProfiles({
-        page:
-          params?.page ||
-          this.browserProfiles?.page ||
-          parsePage(new URLSearchParams(location.search).get("page")),
-        pageSize:
-          params?.pageSize ||
-          this.browserProfiles?.pageSize ||
-          INITIAL_PAGE_SIZE,
-      });
-
-      this.browserProfiles = data;
-    } catch (e) {
-      this.notify.toast({
-        message: msg("Sorry, couldn't retrieve browser profiles at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "browser-profile-status",
-      });
-    } finally {
-      this.isLoading = false;
-    }
-  }
-
-  private async getProfiles(params: APIPaginationQuery) {
+  private async getProfiles(
+    params: APIPaginationQuery & APISortQuery,
+    signal: AbortSignal,
+  ) {
     const query = queryString.stringify(
       {
         ...params,
-        ...this.sort,
       },
       {
         arrayFormat: "comma",
@@ -477,6 +521,7 @@ export class BrowserProfilesList extends BtrixElement {
 
     const data = await this.api.fetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles?${query}`,
+      { signal },
     );
 
     return data;
