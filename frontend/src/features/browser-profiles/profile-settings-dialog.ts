@@ -1,4 +1,4 @@
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { type SlInput } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
 import {
@@ -18,12 +18,19 @@ import { type SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawl
 import {
   CrawlerChannelImage,
   type CrawlerChannel,
+  type Profile,
   type Proxy,
 } from "@/types/crawler";
 
-@customElement("btrix-new-browser-profile-dialog")
+@customElement("btrix-profile-settings-dialog")
 @localized()
-export class NewBrowserProfileDialog extends BtrixElement {
+export class ProfileSettingsDialog extends BtrixElement {
+  @property({ type: Object })
+  profile?: Profile;
+
+  @property({ type: String })
+  defaultUrl?: string;
+
   @property({ type: String })
   defaultProxyId?: string;
 
@@ -72,7 +79,9 @@ export class NewBrowserProfileDialog extends BtrixElement {
 
   render() {
     return html` <btrix-dialog
-      .label=${msg(str`Create a New Browser Profile`)}
+      .label=${this.profile
+        ? msg("Configure Browser Profile")
+        : msg("Create New Browser Profile")}
       .open=${this.open}
       @sl-initial-focus=${async (e: CustomEvent) => {
         const nameInput = (await this.form).querySelector<SlInput>(
@@ -94,6 +103,7 @@ export class NewBrowserProfileDialog extends BtrixElement {
           name="url"
           placeholder=${msg("https://example.com")}
           autocomplete="off"
+          value=${ifDefined(this.defaultUrl)}
           required
         >
         </btrix-url-input>
@@ -139,8 +149,9 @@ export class NewBrowserProfileDialog extends BtrixElement {
           ?loading=${this.isSubmitting}
           ?disabled=${this.isSubmitting}
           @click=${() => this.dialog?.submit()}
-          >${msg("Start Browsing")}</sl-button
         >
+          ${msg("Start Browser")}
+        </sl-button>
       </div>
     </btrix-dialog>`;
   }
@@ -155,9 +166,16 @@ export class NewBrowserProfileDialog extends BtrixElement {
 
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
+
+    const form = event.target as HTMLFormElement;
+
+    if (!form.checkValidity()) {
+      return;
+    }
+
     this.isSubmitting = true;
 
-    const formData = new FormData(event.target as HTMLFormElement);
+    const formData = new FormData(form);
     let url = formData.get("url") as string;
 
     try {
@@ -169,21 +187,21 @@ export class NewBrowserProfileDialog extends BtrixElement {
         url: url,
         crawlerChannel: this.crawlerChannel,
         proxyId: this.proxyId,
+        profileId: this.profile?.id,
       });
 
       this.notify.toast({
-        message: msg("Starting up browser for new profile..."),
+        message: msg("Starting up browser..."),
         variant: "success",
         icon: "check2-circle",
         id: "browser-profile-update-status",
       });
       await this.hideDialog();
       this.navigate.to(
-        `${this.navigate.orgBasePath}/browser-profiles/profile/browser/${
+        `${this.navigate.orgBasePath}/browser-profiles/profile${this.profile ? `/${this.profile.id}` : ""}/browser/${
           data.browserid
         }?${queryString.stringify({
           url,
-          name: msg("My Profile"),
           crawlerChannel: this.crawlerChannel,
           proxyId: this.proxyId,
         })}`,
@@ -203,15 +221,18 @@ export class NewBrowserProfileDialog extends BtrixElement {
     url,
     crawlerChannel,
     proxyId,
+    profileId,
   }: {
     url: string;
     crawlerChannel: string;
     proxyId: string | null;
+    profileId?: string;
   }) {
     const params = {
       url,
       crawlerChannel,
       proxyId,
+      profileId,
     };
 
     return this.api.fetch<{ browserid: string }>(

@@ -57,11 +57,11 @@ import "./collection-detail";
 import "./browser-profiles-list";
 import "./settings/settings";
 import "./dashboard";
+import "./browser-profiles";
 
 import(/* webpackChunkName: "org" */ "./archived-item-qa/archived-item-qa");
 import(/* webpackChunkName: "org" */ "./workflows-new");
 import(/* webpackChunkName: "org" */ "./browser-profiles-new");
-import(/* webpackChunkName: "org" */ "./browser-profiles/profile");
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -86,15 +86,12 @@ export type OrgParams = {
     qaTab?: QATab;
   };
   [OrgTab.BrowserProfiles]: {
-    browserProfileId?: string;
+    profileId?: string;
     browserId?: string;
     new?: ResourceName;
     name?: string;
     url?: string;
-    description?: string;
     crawlerChannel?: string;
-    profileId?: string;
-    navigateUrl?: string;
     proxyId?: string;
   };
   [OrgTab.Collections]: ArchivedItemPageParams & {
@@ -493,7 +490,7 @@ export class Org extends BtrixElement {
         ></btrix-file-uploader>
 
         ${showBrowserProfileDialog
-          ? html`<btrix-new-browser-profile-dialog
+          ? html`<btrix-profile-settings-dialog
               .proxyServers=${proxies.servers}
               .crawlerChannels=${crawlerChannels}
               defaultProxyId=${ifDefined(
@@ -507,7 +504,7 @@ export class Org extends BtrixElement {
               ?open=${this.openDialogName === "browser-profile"}
               @sl-hide=${() => (this.openDialogName = undefined)}
             >
-            </btrix-new-browser-profile-dialog>`
+            </btrix-profile-settings-dialog>`
           : nothing}
 
         <btrix-collection-create-dialog
@@ -646,25 +643,22 @@ export class Org extends BtrixElement {
   private readonly renderBrowserProfiles = () => {
     const params = this.params as OrgParams["browser-profiles"];
 
-    if (params.browserProfileId) {
-      return html`<btrix-browser-profiles-profile-page
-        profileId=${params.browserProfileId}
-      ></btrix-browser-profiles-profile-page>`;
+    if (params.browserId) {
+      return html`<btrix-browser-profiles-browser-page
+        .profileId=${params.profileId}
+        .browserId=${params.browserId}
+        .config=${{
+          url: params.url || "",
+          crawlerChannel: params.crawlerChannel,
+          proxyId: params.proxyId,
+        }}
+      ></btrix-browser-profiles-browser-page>`;
     }
 
-    if (params.browserId) {
-      return html`<btrix-browser-profiles-new
-        .browserId=${params.browserId}
-        .browserParams=${{
-          name: params.name || "",
-          url: params.url || "",
-          description: params.description,
-          crawlerChannel: params.crawlerChannel,
-          profileId: params.profileId,
-          navigateUrl: params.navigateUrl,
-          proxyId: params.proxyId ?? null,
-        }}
-      ></btrix-browser-profiles-new>`;
+    if (params.profileId) {
+      return html`<btrix-browser-profiles-profile-page
+        .profileId=${params.profileId}
+      ></btrix-browser-profiles-profile-page>`;
     }
 
     return html`<btrix-browser-profiles-list

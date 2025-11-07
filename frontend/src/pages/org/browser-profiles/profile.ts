@@ -1,5 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
+// import clsx from "clsx";
 import { html, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -18,8 +19,8 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import type { WorkflowColumnName } from "@/features/crawl-workflows/workflow-list";
-import { none } from "@/layouts/empty";
 import { emptyMessage } from "@/layouts/emptyMessage";
+import { labelWithIcon } from "@/layouts/labelWithIcon";
 import { page } from "@/layouts/page";
 import { panel, panelBody } from "@/layouts/panel";
 import { OrgTab } from "@/routes";
@@ -64,7 +65,14 @@ export class BrowserProfilesProfilePage extends BtrixElement {
   };
 
   @state()
-  private openDialog?: "metadata" | "metadata-name" | "metadata-description";
+  private openDialog?:
+    | "metadata"
+    | "metadata-name"
+    | "metadata-description"
+    | "config";
+
+  @state()
+  private configuringProfile = false;
 
   @state()
   private activetab = ProfileTab.Config;
@@ -115,31 +123,36 @@ export class BrowserProfilesProfilePage extends BtrixElement {
 
   render() {
     const badges = (profile: Profile) => {
-      const isBackedUp =
-        profile.resource?.replicas && profile.resource.replicas.length > 0;
-
-      return html`<div class="flex flex-wrap gap-3 whitespace-nowrap">
-        <btrix-badge variant=${profile.inUse ? "primary" : "neutral"}>
+      return html`<div class="flex flex-wrap gap-3 whitespace-nowrap ">
+        <btrix-badge
+          variant=${profile.inUse ? "cyan" : "neutral"}
+          class="font-monostyle"
+        >
           <sl-icon
             name=${profile.inUse ? "check-circle" : "dash-circle"}
             class="mr-1.5"
           ></sl-icon>
           ${profile.inUse ? msg("In Use") : msg("Not In Use")}
         </btrix-badge>
-        <btrix-badge variant=${isBackedUp ? "cyan" : "neutral"}>
-          <sl-icon
-            name=${isBackedUp ? "clouds-fill" : "cloud-slash-fill"}
-            class="mr-1.5"
-          ></sl-icon>
-          ${isBackedUp ? msg("Backed Up") : msg("Not Backed Up")}
-        </btrix-badge>
+
+        ${when(
+          profile.crawlerChannel,
+          (channel) =>
+            html`<btrix-badge class="font-monostyle">
+              ${capitalize(channel)} ${msg("Channel")}</btrix-badge
+            >`,
+        )}
+        ${when(
+          profile.proxyId,
+          (proxy) =>
+            html`<btrix-badge class="font-monostyle">
+              ${proxy} ${msg("Proxy")}</btrix-badge
+            >`,
+        )}
       </div> `;
     };
     const badgesSkeleton = () =>
-      html`<div class="flex flex-wrap gap-3">
-        <sl-skeleton class="h-4 w-12"></sl-skeleton>
-        <sl-skeleton class="h-4 w-12"></sl-skeleton>
-      </div>`;
+      html`<sl-skeleton class="h-4 w-12"></sl-skeleton>`;
 
     const header = {
       breadcrumbs: [
@@ -167,6 +180,25 @@ export class BrowserProfilesProfilePage extends BtrixElement {
             ></sl-icon-button>
           </sl-tooltip>`,
       )} `,
+      // prefix: when(
+      //   this.profile,
+      //   (profile) =>
+      //     html`<sl-tooltip
+      //       content=${profile.inUse ? msg("In Use") : msg("Not in Use")}
+      //     >
+      //       <sl-icon
+      //         name=${profile.inUse ? "check-circle" : "dash-circle"}
+      //         class=${clsx(
+      //           tw`text-lg`,
+      //           profile.inUse ? tw`text-primary` : "text-neutral-500",
+      //         )}
+      //       ></sl-icon>
+      //     </sl-tooltip>`,
+      //   () =>
+      //     html`<sl-skeleton
+      //       class="size-5 [--border-radius:100%]"
+      //     ></sl-skeleton>`,
+      // ),
       secondary: when(this.profile, badges, badgesSkeleton),
       actions: this.renderActions(),
     } satisfies Parameters<typeof page>[0];
@@ -176,22 +208,40 @@ export class BrowserProfilesProfilePage extends BtrixElement {
       this.profile,
       (profile) =>
         html`<btrix-profile-metadata-dialog
-          .profile=${profile}
-          ?open=${this.openDialog?.startsWith("metadata")}
-          autofocusOn=${ifDefined(
-            this.openDialog === "metadata-name"
-              ? "name"
-              : this.openDialog === "metadata-description"
-                ? "description"
-                : undefined,
-          )}
-          @sl-after-hide=${() => (this.openDialog = undefined)}
-          @btrix-updated=${() => {
-            void this.profileTask.run();
-            this.openDialog = undefined;
-          }}
-        >
-        </btrix-profile-metadata-dialog>`,
+            .profile=${profile}
+            ?open=${this.openDialog?.startsWith("metadata")}
+            autofocusOn=${ifDefined(
+              this.openDialog === "metadata-name"
+                ? "name"
+                : this.openDialog === "metadata-description"
+                  ? "description"
+                  : undefined,
+            )}
+            @sl-after-hide=${() => (this.openDialog = undefined)}
+            @btrix-updated=${() => {
+              void this.profileTask.run();
+              this.openDialog = undefined;
+            }}
+          >
+          </btrix-profile-metadata-dialog>
+
+          <btrix-profile-settings-dialog
+            .profile=${profile}
+            defaultUrl=${profile.origins[0]}
+            defaultCrawlerChannel=${ifDefined(profile.crawlerChannel)}
+            defaultProxyId=${ifDefined(profile.proxyId)}
+            ?open=${this.openDialog === "config"}
+            @sl-after-hide=${() => (this.openDialog = undefined)}
+            @btrix-submit=${async () => {
+              this.openDialog = undefined;
+              this.activetab = ProfileTab.Browser;
+              this.openBrowser();
+
+              await this.updateComplete;
+
+              this.configuringProfile = true;
+            }}
+          ></btrix-profile-settings-dialog> `,
     )} `;
   }
 
@@ -207,7 +257,10 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           ${when(
             this.appState.isCrawler,
             () => html`
-              <sl-menu-item ?disabled=${archivingDisabled} @click=${() => {}}>
+              <sl-menu-item
+                ?disabled=${archivingDisabled}
+                @click=${() => (this.openDialog = "config")}
+              >
                 <sl-icon slot="prefix" name="gear"></sl-icon>
                 ${msg("Configure Profile")}
               </sl-menu-item>
@@ -250,7 +303,9 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           ${this.renderProfile()} ${this.renderUsage()}
         </div>
 
-        <div class="col-span-full lg:col-span-2">${this.renderOverview()}</div>
+        <div class="sticky top-3 col-span-full self-start lg:col-span-2">
+          ${this.renderOverview()}
+        </div>
       </div>
     `;
   };
@@ -276,8 +331,8 @@ export class BrowserProfilesProfilePage extends BtrixElement {
         }}
       >
         <btrix-tab-group-tab slot="nav" panel=${ProfileTab.Config} class="mb-3">
-          <sl-icon name="gear-fill"></sl-icon>
-          ${msg("Configuration")}
+          <sl-icon name="window-stack"></sl-icon>
+          ${msg("Visited Sites")}
         </btrix-tab-group-tab>
         <btrix-tab-group-tab
           slot="nav"
@@ -288,11 +343,20 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           ${msg("Inspect Profile")}
         </btrix-tab-group-tab>
         <btrix-tab-group-panel name=${ProfileTab.Config}>
-          ${this.renderConfig()}
+          ${this.renderOrigins()}
         </btrix-tab-group-panel>
-        <sl-tooltip slot="action" content=${msg("Configure Profile")}>
-          <sl-icon-button name="gear" class="text-base"></sl-icon-button>
-        </sl-tooltip>
+        ${when(
+          !this.configuringProfile,
+          () => html`
+            <sl-tooltip slot="action" content=${msg("Configure Profile")}>
+              <sl-icon-button
+                name="gear"
+                class="text-base"
+                @click=${() => (this.openDialog = "config")}
+              ></sl-icon-button>
+            </sl-tooltip>
+          `,
+        )}
         <btrix-tab-group-panel name=${ProfileTab.Browser}>
           <div class="overflow-hidden rounded-lg border">
             ${showBrowser
@@ -306,33 +370,38 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                   @btrix-browser-connection-change=${this
                     .onBrowserConnectionChange}
                   readOnly
-                ></btrix-profile-browser>`
+                ></btrix-profile-browser> `
               : html`<div class="h-10"></div>
                   <div class="aspect-4/3 bg-neutral-50"></div>`}
           </div>
+
+          ${when(this.configuringProfile, this.renderProfileControls)}
         </btrix-tab-group-panel>
       </btrix-tab-group>
     `;
   }
+  private readonly renderProfileControls = () => {
+    return html`
+      <div
+        class="flex-0 sticky bottom-2 -mx-1 mt-2 flex justify-between rounded-lg border bg-neutral-0 p-4 shadow"
+      >
+        <sl-button
+          size="small"
+          @click=${() => (this.configuringProfile = false)}
+        >
+          ${msg("Cancel")}
+        </sl-button>
+        <div>
+          <sl-button variant="primary" size="small" @click=${console.log}>
+            ${msg("Save Profile")}
+          </sl-button>
+        </div>
+      </div>
+    `;
+  };
 
-  private renderConfig() {
-    const originsSkeleton = () =>
-      html`<sl-skeleton effect="sheen" class="h-7"></sl-skeleton>`;
-
-    const settings = html`<div class="mt-5">
-      <btrix-desc-list>
-        <btrix-desc-list-item label=${msg("Crawler Release Channel")}>
-          ${this.renderDetail((profile) =>
-            profile.crawlerChannel ? capitalize(profile.crawlerChannel) : none,
-          )}
-        </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Proxy")}>
-          ${this.renderDetail((profile) =>
-            profile.proxyId ? profile.proxyId : none,
-          )}
-        </btrix-desc-list-item>
-      </btrix-desc-list>
-    </div>`;
+  private renderOrigins() {
+    const originsSkeleton = () => html`<div class="h-9 rounded border"></div>`;
 
     const origins = (profile: Profile) =>
       profile.origins.map(
@@ -374,19 +443,20 @@ export class BrowserProfilesProfilePage extends BtrixElement {
         `,
       );
 
-    const siteList = html`
-      <section>
-        <h3 class="mb-1.5 text-xs text-neutral-500">${msg("Visited Sites")}</h3>
-        <ul class="divide-y rounded border bg-white shadow-sm">
-          ${when(this.profile, origins, originsSkeleton)}
+    return when(
+      this.profile,
+      (profile) => html`
+        <ul class="divide-y rounded-lg border bg-white shadow-sm">
+          ${origins(profile)}
         </ul>
-      </section>
-    `;
-
-    return panelBody({ content: html` ${siteList} ${settings} ` });
+      `,
+      originsSkeleton,
+    );
   }
 
   private renderOverview() {
+    const none = html`<span class="text-neutral-400">${stringFor.none}</span>`;
+
     return panel({
       heading: msg("Overview"),
       actions: this.appState.isCrawler
@@ -410,11 +480,11 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                       >${profile.description}</div
                     >
                   `
-                : stringFor.none,
+                : none,
             )}
           </btrix-desc-list-item>
           <btrix-desc-list-item label=${msg("Tags")}>
-            ${this.renderDetail(() => html`${stringFor.none}`)}
+            ${this.renderDetail(() => html`${none}`)}
           </btrix-desc-list-item>
         </btrix-desc-list>
         <sl-divider class="my-5"></sl-divider>
@@ -422,6 +492,12 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           <btrix-desc-list-item label=${msg("Size")}>
             ${this.renderDetail((profile) =>
               this.localize.bytes(profile.resource?.size || 0),
+            )}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Visited Sites")}>
+            ${this.renderDetail(
+              (profile) =>
+                `${this.localize.number(profile.origins.length)} ${pluralOf("URLs", profile.origins.length)}`,
             )}
           </btrix-desc-list-item>
           <btrix-desc-list-item label=${msg("Last Modified")}>
@@ -440,6 +516,19 @@ export class BrowserProfilesProfilePage extends BtrixElement {
               }
 
               return stringFor.notApplicable;
+            })}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Backup Status")}>
+            ${this.renderDetail((profile) => {
+              const isBackedUp =
+                profile.resource?.replicas &&
+                profile.resource.replicas.length > 0;
+              return labelWithIcon({
+                label: isBackedUp ? msg("Backed Up") : msg("Not Backed Up"),
+                icon: html`<sl-icon
+                  name=${isBackedUp ? "clouds-fill" : "cloud-slash-fill"}
+                ></sl-icon>`,
+              });
             })}
           </btrix-desc-list-item>
         </btrix-desc-list>

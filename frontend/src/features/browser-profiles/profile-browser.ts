@@ -55,6 +55,9 @@ export class ProfileBrowser extends BtrixElement {
   @property({ type: Boolean })
   readOnly = false;
 
+  @property({ type: Boolean })
+  disableToggleSites = false;
+
   @state()
   private iframeSrc?: string;
 
@@ -98,11 +101,11 @@ export class ProfileBrowser extends BtrixElement {
   }
 
   disconnectedCallback() {
+    super.disconnectedCallback();
+
     window.clearTimeout(this.pollTimerId);
     document.removeEventListener("fullscreenchange", this.onFullscreenChange);
     window.removeEventListener("beforeunload", this.onBeforeUnload);
-
-    super.disconnectedCallback();
   }
 
   private readonly onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -302,7 +305,10 @@ export class ProfileBrowser extends BtrixElement {
           <p class="text-neutral-600">
             ${msg("Loading interactive browser...")}
           </p>
-          <sl-spinner class="text-3xl"></sl-spinner>
+          <sl-progress-bar
+            class="w-20 [--height:.5rem]"
+            indeterminate
+          ></sl-progress-bar>
         </div>
       `;
     }
@@ -353,7 +359,7 @@ export class ProfileBrowser extends BtrixElement {
         <span class="mr-1 inline-block align-middle">${msg("New Sites")}</span>
         <btrix-popover
           content=${msg(
-            "Websites that are not in the browser profile yet. Finish editing and save to add these websites to the profile.",
+            "Websites that are not in the browser profile yet. Finish browsing and save to add these websites to the profile.",
           )}
           placement="top"
           hoist
@@ -380,7 +386,7 @@ export class ProfileBrowser extends BtrixElement {
     >
       <div class="w-full truncate text-sm">${url}</div>
       ${this.iframeSrc
-        ? html`<sl-icon name="play-btn" class="text-xl"></sl-icon>`
+        ? html`<sl-icon name="play-btn" class="text-lg"></sl-icon>`
         : ""}
     </li>`;
   }

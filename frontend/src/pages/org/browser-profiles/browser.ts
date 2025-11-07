@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import { html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -13,34 +14,26 @@ import type { BrowserConnectionChange } from "@/features/browser-profiles/profil
 import { page } from "@/layouts/page";
 import { type Breadcrumb } from "@/layouts/pageHeader";
 import { OrgTab } from "@/routes";
-import { CrawlerChannelImage } from "@/types/crawler";
+import { CrawlerChannelImage, type Profile } from "@/types/crawler";
 import { isApiError } from "@/utils/api";
+import { isNotEqual } from "@/utils/is-not-equal";
 
-/**
- * Usage:
- * ```ts
- * <btrix-browser-profiles-new
- *  browserId=${browserId}
- * ></btrix-browser-profiles-new>
- * ```
- */
-@customElement("btrix-browser-profiles-new")
+@customElement("btrix-browser-profiles-browser-page")
 @localized()
-export class BrowserProfilesNew extends BtrixElement {
+export class BrowserProfilesBrowserPage extends BtrixElement {
   @property({ type: String })
-  browserId!: string;
+  profileId?: string;
 
-  @property({ type: Object, attribute: false })
-  browserParams: {
+  @property({ type: String })
+  browserId?: string;
+
+  @property({ type: Object, attribute: false, hasChanged: isNotEqual })
+  config: {
     url: string;
-    name?: string;
-    origins?: string[];
     crawlerChannel?: string;
-    profileId?: string;
     proxyId?: string;
   } = {
     url: "",
-    name: "",
   };
 
   @state()
@@ -55,13 +48,33 @@ export class BrowserProfilesNew extends BtrixElement {
   @query("#discardDialog")
   private readonly discardDialog?: Dialog | null;
 
+  private readonly profileTask = new Task(this, {
+    task: async ([profileId], { signal }) => {
+      if (!profileId) return;
+
+      const profile = await this.getProfile(profileId, signal);
+
+      return profile;
+    },
+    args: () => [this.profileId] as const,
+  });
+
   disconnectedCallback(): void {
-    void this.closeBrowser();
     super.disconnectedCallback();
+
+    if (this.browserId) {
+      void this.deleteBrowser(this.browserId);
+    }
   }
 
   render() {
-    const { profileId, name, origins } = this.browserParams;
+    if (!this.browserId) {
+      return html`<div class="flex size-full items-center justify-center">
+        <btrix-not-found></btrix-not-found>
+      </div>`;
+    }
+
+    const profile = this.profileTask.value;
 
     let breadcrumbs: Breadcrumb[] = [
       {
@@ -69,17 +82,16 @@ export class BrowserProfilesNew extends BtrixElement {
         content: msg("Browser Profiles"),
       },
     ];
-    if (profileId && name) {
+
+    if (this.profileId) {
       breadcrumbs = [
         ...breadcrumbs,
         {
-          href: `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${profileId}`,
-          content: name,
+          href: `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${this.profileId}`,
+          content: profile?.name,
         },
         {
-          content: origins
-            ? msg("Configure Profile")
-            : msg("Duplicate Profile"),
+          content: msg("Configure Profile"),
         },
       ];
     }
@@ -105,16 +117,17 @@ export class BrowserProfilesNew extends BtrixElement {
         )}
       </div> `;
     };
+    const badgesSkeleton = () =>
+      html`<sl-skeleton class="h-4 w-12"></sl-skeleton>`;
 
     const header = {
       breadcrumbs,
-      title:
-        profileId && name
-          ? origins
-            ? name
-            : msg(str`Configure Duplicate of ${name}`)
-          : msg("New Browser Profile"),
-      secondary: badges(this.browserParams),
+      title: this.profileId ? profile?.name : msg("New Browser Profile"),
+      secondary: when(
+        this.profileId ? profile : this.config,
+        badges,
+        badgesSkeleton,
+      ),
       actions: html`<sl-button
         size="small"
         ?disabled=${this.appState.userGuideOpen}
@@ -168,7 +181,7 @@ export class BrowserProfilesNew extends BtrixElement {
             variant="danger"
             @click=${() => {
               void this.discardDialog?.hide();
-              void this.closeBrowser();
+              this.closeBrowser();
             }}
             >${msg("Yes, Cancel")}
           </sl-button>
@@ -178,11 +191,16 @@ export class BrowserProfilesNew extends BtrixElement {
   }
 
   private readonly renderPage = () => {
-    return html` <div class="mb-3 overflow-hidden rounded-lg border">
+    if (!this.browserId)
+      return html`<btrix-alert variant="danger">
+        ${msg("Invalid browser")}
+      </btrix-alert>`;
+
+    return html`<div class="mb-3 overflow-hidden rounded-lg border">
         <btrix-profile-browser
           browserId=${this.browserId}
-          initialNavigateUrl=${ifDefined(this.browserParams.url)}
-          .origins=${this.browserParams.origins}
+          initialNavigateUrl=${ifDefined(this.config.url)}
+          .origins=${this.profileTask.value?.origins}
           @btrix-browser-load=${() => (this.isBrowserLoaded = true)}
           @btrix-browser-reload=${this.onBrowserReload}
           @btrix-browser-error=${this.onBrowserError}
@@ -209,62 +227,64 @@ export class BrowserProfilesNew extends BtrixElement {
 
   private onCancel() {
     if (!this.isBrowserLoaded) {
-      void this.closeBrowser();
+      this.closeBrowser();
     } else {
       void this.discardDialog?.show();
     }
   }
 
-  private async closeBrowser() {
+  private closeBrowser() {
     this.isBrowserLoaded = false;
 
     if (this.browserId) {
-      await this.deleteBrowser(this.browserId);
+      void this.deleteBrowser(this.browserId);
     }
-    this.navigate.to(`${this.navigate.orgBasePath}/browser-profiles`);
+
+    this.navigate.to(
+      `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}${this.profileId ? `/profile/${this.profileId}` : ""}`,
+    );
   }
 
   private renderBrowserProfileControls() {
-    const { profileId, name, origins } = this.browserParams;
-    const shouldSave = profileId && name && origins;
+    const shouldSave = Boolean(this.profileId);
+    const disabled =
+      (shouldSave && !this.profileTask.value) || !this.isBrowserLoaded;
 
     return html`
       <div class="flex justify-between p-4">
         <sl-button size="small" @click="${this.onCancel}">
           ${msg("Cancel")}
         </sl-button>
-        <div>
+        <btrix-popover
+          content=${msg("Save is disabled while browser is loading")}
+          ?disabled=${!disabled}
+        >
           <sl-button
             variant=${shouldSave ? "primary" : "success"}
             size="small"
-            ?disabled=${!this.isBrowserLoaded || this.isSubmitting}
-            ?loading=${Boolean(shouldSave && this.isSubmitting)}
+            ?disabled=${disabled || this.isSubmitting}
+            ?loading=${shouldSave && this.isSubmitting}
             @click=${() => {
-              if (shouldSave) {
-                void this.saveProfile({ name });
+              if (shouldSave && this.profileTask.value) {
+                void this.saveProfile({ name: this.profileTask.value.name });
               } else {
                 this.isDialogVisible = true;
               }
             }}
           >
-            ${msg(shouldSave ? "Save Profile" : "Finish Browsing")}
+            ${msg(this.profileId ? "Save Profile" : "Finish Browsing")}
           </sl-button>
-        </div>
+        </btrix-popover>
       </div>
     `;
   }
 
   private renderForm() {
-    const { profileId, name, origins } = this.browserParams;
-    const nameValue =
-      profileId && name
-        ? // Updating profile
-          origins
-          ? name
-          : // Duplicating profile
-            `${name} ${msg("Copy")}`
-        : // New profile
-          "";
+    if (this.profileId && !this.profileTask.value) {
+      return;
+    }
+
+    const nameValue = this.profileTask.value ? this.profileTask.value.name : "";
 
     return html`<form @submit=${this.onSubmit}>
       <div class="grid gap-5">
@@ -314,16 +334,16 @@ export class BrowserProfilesNew extends BtrixElement {
   }
 
   private async onBrowserReload() {
-    const { url } = this.browserParams;
+    const { url } = this.config;
     if (!url) {
       console.debug("no start url");
       return;
     }
 
     const crawlerChannel =
-      this.browserParams.crawlerChannel || CrawlerChannelImage.Default;
-    const proxyId = this.browserParams.proxyId ?? null;
-    const profileId = this.browserParams.profileId || undefined;
+      this.config.crawlerChannel || CrawlerChannelImage.Default;
+    const proxyId = this.config.proxyId ?? null;
+    const profileId = this.profileId || undefined;
     const data = await this.createBrowser({
       url,
       crawlerChannel,
@@ -332,14 +352,12 @@ export class BrowserProfilesNew extends BtrixElement {
     });
 
     this.navigate.to(
-      `${this.navigate.orgBasePath}/browser-profiles/profile/browser/${
+      `${this.navigate.orgBasePath}/browser-profiles/profile${this.profileId ? `/${this.profileId}` : ""}/browser/${
         data.browserid
       }?${queryString.stringify({
         url,
-        name: this.browserParams.name,
         crawlerChannel,
         proxyId,
-        profileId,
       })}`,
     );
   }
@@ -351,8 +369,8 @@ export class BrowserProfilesNew extends BtrixElement {
     const params = {
       name: formData.get("name") as string,
       description: formData.get("description") as string,
-      crawlerChannel: this.browserParams.crawlerChannel,
-      proxyId: this.browserParams.proxyId,
+      crawlerChannel: this.config.crawlerChannel,
+      proxyId: this.config.proxyId,
     };
 
     await this.saveProfile(params);
@@ -371,11 +389,11 @@ export class BrowserProfilesNew extends BtrixElement {
       let retriesLeft = 300;
 
       while (retriesLeft > 0) {
-        if (this.browserParams.profileId) {
+        if (this.profileId) {
           data = await this.api.fetch<{
             updated?: boolean;
             detail?: string;
-          }>(`/orgs/${this.orgId}/profiles/${this.browserParams.profileId}`, {
+          }>(`/orgs/${this.orgId}/profiles/${this.profileId}`, {
             method: "PATCH",
             body: JSON.stringify({
               browserid: this.browserId,
@@ -427,7 +445,7 @@ export class BrowserProfilesNew extends BtrixElement {
       });
 
       this.navigate.to(
-        `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${this.browserParams.profileId || data.id}`,
+        `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${this.profileId || data.id}`,
       );
     } catch (e) {
       console.debug(e);
@@ -498,5 +516,12 @@ export class BrowserProfilesNew extends BtrixElement {
       // TODO Investigate DELETE returning 404
       console.debug(e);
     }
+  }
+
+  private async getProfile(profileId: string, signal: AbortSignal) {
+    return await this.api.fetch<Profile>(
+      `/orgs/${this.orgId}/profiles/${profileId}`,
+      { signal },
+    );
   }
 }
