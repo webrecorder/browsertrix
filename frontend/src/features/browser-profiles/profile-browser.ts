@@ -7,6 +7,7 @@ import { cache } from "lit/directives/cache.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import { isApiError, type APIError } from "@/utils/api";
 import { tw } from "@/utils/tailwind";
 
@@ -45,6 +46,8 @@ const isPolling = (value: unknown): value is number => {
  * @fires btrix-browser-error
  * @fires btrix-browser-reload
  * @fires btrix-browser-connection-change
+ * @cssPart base
+ * @cssPart browser
  */
 @customElement("btrix-profile-browser")
 @localized()
@@ -59,7 +62,7 @@ export class ProfileBrowser extends BtrixElement {
   readOnly = false;
 
   @property({ type: Boolean })
-  disableToggleSites = false;
+  hideControls = false;
 
   @state()
   private isFullscreen = false;
@@ -183,8 +186,6 @@ export class ProfileBrowser extends BtrixElement {
         return;
       }
 
-      console.log("ping task set timeout");
-
       return window.setTimeout(() => {
         if (!signal.aborted) {
           void this.originsTask.run();
@@ -203,6 +204,8 @@ export class ProfileBrowser extends BtrixElement {
   disconnectedCallback() {
     if (isPolling(this.browserTask.value))
       window.clearTimeout(this.browserTask.value);
+
+    window.clearTimeout(this.pingTask.value);
 
     document.removeEventListener("fullscreenchange", this.onFullscreenChange);
     window.removeEventListener("beforeunload", this.onBeforeUnload);
@@ -248,6 +251,10 @@ export class ProfileBrowser extends BtrixElement {
     }
   }
 
+  public toggleOrigins() {
+    this.showOriginSidebar = !this.showOriginSidebar;
+  }
+
   private animateSidebar() {
     if (!this.sidebar) return;
     if (this.showOriginSidebar) {
@@ -277,14 +284,17 @@ export class ProfileBrowser extends BtrixElement {
       );
 
     return html`
-      <div id="interactiveBrowser" class="flex size-full flex-col">
-        ${this.renderControlBar()}
+      <div id="interactiveBrowser" class="flex size-full flex-col" part="base">
+        ${when(!this.hideControls, this.renderControlBar)}
         <div
           id="iframeWrapper"
           class="${this.isFullscreen
             ? "w-screen h-screen"
-            : "border-t"} relative flex-1 overflow-hidden bg-neutral-50"
+            : this.hideControls
+              ? ""
+              : "border-t"} relative flex-1 overflow-hidden bg-neutral-50"
           aria-live="polite"
+          part="browser"
         >
           ${this.browserTask.render({
             initial: browserLoading,
@@ -332,6 +342,7 @@ export class ProfileBrowser extends BtrixElement {
                     ),
                   )}
                 `,
+                () => emptyMessage({ message: msg("No visited sites yet.") }),
               )}
             </div>
           </div>
@@ -340,11 +351,11 @@ export class ProfileBrowser extends BtrixElement {
     `;
   }
 
-  private renderControlBar() {
+  private readonly renderControlBar = () => {
     if (this.isFullscreen) {
       return html`
         <div
-          class="fixed left-1/2 top-2 z-50 flex -translate-x-1/2 items-center rounded-lg bg-white text-base shadow"
+          class="fixed left-1/2 top-2 z-50 flex -translate-x-1/2 items-center rounded-lg border bg-white text-base shadow-lg"
         >
           ${this.renderSidebarButton()}
           <sl-tooltip content=${msg("Exit Fullscreen")}>
@@ -385,7 +396,7 @@ export class ProfileBrowser extends BtrixElement {
         </div>
       </div>
     `;
-  }
+  };
 
   private readonly renderBrowser = (browser: BrowserResponseData) => {
     return html`<div class="relative size-full">
@@ -428,7 +439,7 @@ export class ProfileBrowser extends BtrixElement {
         <sl-icon-button
           name="layout-sidebar-reverse"
           class="${this.showOriginSidebar ? "text-blue-600" : ""}"
-          @click=${() => (this.showOriginSidebar = !this.showOriginSidebar)}
+          @click=${() => this.toggleOrigins()}
           aria-pressed=${this.showOriginSidebar}
         ></sl-icon-button>
       </sl-tooltip>
@@ -437,20 +448,28 @@ export class ProfileBrowser extends BtrixElement {
 
   private renderOrigins(origins: string[]) {
     return html`
-      <h4 class="border-b p-2 leading-tight text-neutral-700">
-        <span class="mr-1 inline-block align-middle"
-          >${msg("Visited Sites")}</span
+      <header
+        class="flex min-h-10 justify-between border-b p-1 leading-tight text-neutral-700"
+      >
+        <div class="flex items-center gap-1.5 px-2">
+          <h4>${msg("Visited Sites")}</h4>
+          <btrix-popover
+            content=${msg("Websites in the browser profile")}
+            placement="top"
+            hoist
+            ><sl-icon
+              class="inline-block align-middle"
+              name="info-circle"
+            ></sl-icon
+          ></btrix-popover>
+        </div>
+        <sl-icon-button
+          name="chevron-bar-right"
+          class="text-base"
+          @click=${() => (this.showOriginSidebar = false)}
         >
-        <btrix-popover
-          content=${msg("Websites in the browser profile")}
-          placement="top"
-          hoist
-          ><sl-icon
-            class="inline-block align-middle"
-            name="info-circle"
-          ></sl-icon
-        ></btrix-popover>
-      </h4>
+        </sl-icon-button>
+      </header>
       <ul>
         ${origins.map((url) => this.renderOriginItem(url))}
       </ul>
@@ -461,20 +480,24 @@ export class ProfileBrowser extends BtrixElement {
     if (!origins.length) return;
 
     return html`
-      <h4 class="border-b p-2 leading-tight text-neutral-700">
-        <span class="mr-1 inline-block align-middle">${msg("New Sites")}</span>
-        <btrix-popover
-          content=${msg(
-            "Websites that are not in the browser profile yet. Finish browsing and save to add these websites to the profile.",
-          )}
-          placement="top"
-          hoist
-          ><sl-icon
-            class="inline-block align-middle"
-            name="info-circle"
-          ></sl-icon
-        ></btrix-popover>
-      </h4>
+      <div
+        class="flex min-h-10 justify-between border-b p-1 leading-tight text-neutral-700"
+      >
+        <div class="flex items-center gap-1.5 px-2">
+          <h4>${msg("New Sites")}</h4>
+          <btrix-popover
+            content=${msg(
+              "Websites that are not in the browser profile yet. Finish browsing and save to add these websites to the profile.",
+            )}
+            placement="top"
+            hoist
+            ><sl-icon
+              class="inline-block align-middle"
+              name="info-circle"
+            ></sl-icon
+          ></btrix-popover>
+        </div>
+      </div>
       <ul>
         ${origins.map((url) => this.renderOriginItem(url))}
       </ul>
@@ -488,7 +511,7 @@ export class ProfileBrowser extends BtrixElement {
     return html`<li
       class="border-t-neutral-100${iframeSrc
         ? " hover:bg-cyan-50/50 hover:text-cyan-700"
-        : ""} flex items-center justify-between border-t p-2 first:border-t-0"
+        : ""} flex items-center justify-between border-t px-3 py-2 first:border-t-0"
       role=${iframeSrc ? "button" : "listitem"}
       title=${msg(str`Go to ${url}`)}
       @click=${() => (iframeSrc ? this.navigateBrowser({ url }) : {})}
@@ -501,6 +524,8 @@ export class ProfileBrowser extends BtrixElement {
   }
 
   private onClickReload() {
+    this.showOriginSidebar = false;
+
     this.dispatchEvent(new CustomEvent("btrix-browser-reload"));
   }
 

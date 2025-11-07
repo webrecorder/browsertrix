@@ -466,7 +466,7 @@ export class Org extends BtrixElement {
     const org = this.org;
     const proxies = this.proxiesTask.value;
     const crawlerChannels = this.crawlerChannelsTask.value;
-    const showBrowserProfileDialog = org && proxies && crawlerChannels;
+    const crawlingDefaultsReady = org && proxies && crawlerChannels;
 
     return html`
       <div
@@ -489,18 +489,11 @@ export class Org extends BtrixElement {
           }}
         ></btrix-file-uploader>
 
-        ${showBrowserProfileDialog
+        ${crawlingDefaultsReady
           ? html`<btrix-profile-settings-dialog
               .proxyServers=${proxies.servers}
               .crawlerChannels=${crawlerChannels}
-              defaultProxyId=${ifDefined(
-                org.crawlingDefaults?.proxyId ||
-                  proxies.default_proxy_id ||
-                  undefined,
-              )}
-              defaultCrawlerChannel=${ifDefined(
-                org.crawlingDefaults?.crawlerChannel || undefined,
-              )}
+              defaultProxyId=${ifDefined(proxies.default_proxy_id || undefined)}
               ?open=${this.openDialogName === "browser-profile"}
               @sl-hide=${() => (this.openDialogName = undefined)}
             >

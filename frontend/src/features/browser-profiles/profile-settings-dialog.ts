@@ -61,6 +61,17 @@ export class ProfileSettingsDialog extends BtrixElement {
   @queryAsync("#browserProfileForm")
   private readonly form!: Promise<HTMLFormElement>;
 
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    if (this.org?.crawlingDefaults) {
+      if (!this.defaultProxyId)
+        this.defaultProxyId = this.org.crawlingDefaults.proxyId;
+      if (!this.defaultCrawlerChannel)
+        this.defaultCrawlerChannel = this.org.crawlingDefaults.crawlerChannel;
+    }
+  }
+
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("defaultProxyId") && this.defaultProxyId) {
       this.proxyId = this.proxyId || this.defaultProxyId;
@@ -85,8 +96,9 @@ export class ProfileSettingsDialog extends BtrixElement {
       .open=${this.open}
       @sl-initial-focus=${async (e: CustomEvent) => {
         const nameInput = (await this.form).querySelector<SlInput>(
-          'sl-input[name="url"]',
+          "btrix-url-input",
         );
+
         if (nameInput) {
           e.preventDefault();
           nameInput.focus();

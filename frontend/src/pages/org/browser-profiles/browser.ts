@@ -4,13 +4,16 @@ import { html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import capitalize from "lodash/fp/capitalize";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
+import {
+  badges,
+  badgesSkeleton,
+} from "@/features/browser-profiles/templates/badges";
 import { page } from "@/layouts/page";
 import { type Breadcrumb } from "@/layouts/pageHeader";
 import { OrgTab } from "@/routes";
@@ -97,35 +100,16 @@ export class BrowserProfilesBrowserPage extends BtrixElement {
       ];
     }
 
-    const badges = (profile: {
-      crawlerChannel?: string;
-      proxyId?: string | null;
-    }) => {
-      return html`<div class="flex flex-wrap gap-3 whitespace-nowrap ">
-        ${when(
-          profile.crawlerChannel,
-          (channel) =>
-            html`<btrix-badge class="font-monostyle">
-              ${capitalize(channel)} ${msg("Channel")}</btrix-badge
-            >`,
-        )}
-        ${when(
-          profile.proxyId,
-          (proxy) =>
-            html`<btrix-badge class="font-monostyle">
-              ${proxy} ${msg("Proxy")}</btrix-badge
-            >`,
-        )}
-      </div> `;
-    };
-    const badgesSkeleton = () =>
-      html`<sl-skeleton class="h-4 w-12"></sl-skeleton>`;
-
     const header = {
       breadcrumbs,
       title: this.profileId ? profile?.name : msg("New Browser Profile"),
       secondary: when(
-        this.profileId ? profile : this.config,
+        this.profileId
+          ? {
+              ...profile,
+              ...this.config,
+            }
+          : this.config,
         badges,
         badgesSkeleton,
       ),
@@ -364,10 +348,10 @@ export class BrowserProfilesBrowserPage extends BtrixElement {
     );
   }
 
-  private async onSubmit(event: SubmitEvent) {
-    event.preventDefault();
+  private async onSubmit(e: SubmitEvent) {
+    e.preventDefault();
 
-    const formData = new FormData(event.target as HTMLFormElement);
+    const formData = new FormData(e.target as HTMLFormElement);
     const params = {
       name: formData.get("name") as string,
       description: formData.get("description") as string,

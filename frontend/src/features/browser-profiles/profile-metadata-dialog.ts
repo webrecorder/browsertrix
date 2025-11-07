@@ -115,7 +115,9 @@ export class ProfileMetadataDialog extends BtrixElement {
       .label=${msg("Edit Metadata")}
       .open=${this.open}
       @sl-show=${() => (this.isDialogVisible = true)}
-      @sl-after-show=${() => {
+      @sl-initial-focus=${async () => {
+        await this.updateComplete;
+
         switch (this.autofocusOn) {
           case "name":
             this.nameInput?.focus();
