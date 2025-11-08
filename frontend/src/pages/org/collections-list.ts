@@ -550,7 +550,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
 
   private readonly renderItem = (col: Collection) => html`
     <btrix-table-row
-      class="cursor-pointer select-none whitespace-nowrap rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
+      class="cursor-pointer select-none whitespace-nowrap rounded border shadow transition-all duration-fast focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
     >
       <btrix-table-cell class="p-3">
         ${choose(col.access, [
@@ -563,7 +563,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
                 ].label}
               >
                 <sl-icon
-                  class="inline-block align-middle text-neutral-600"
+                  class="inline-block align-middle text-base text-neutral-600"
                   name=${SelectCollectionAccess.Options[
                     CollectionAccess.Private
                   ].icon}
@@ -580,7 +580,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
                 ].label}
               >
                 <sl-icon
-                  class="inline-block align-middle text-neutral-600"
+                  class="inline-block align-middle text-base text-neutral-600"
                   name=${SelectCollectionAccess.Options[
                     CollectionAccess.Unlisted
                   ].icon}
@@ -597,7 +597,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
                 ].label}
               >
                 <sl-icon
-                  class="inline-block align-middle text-success-600"
+                  class="inline-block align-middle text-base text-success-600"
                   name=${SelectCollectionAccess.Options[CollectionAccess.Public]
                     .icon}
                 ></sl-icon>

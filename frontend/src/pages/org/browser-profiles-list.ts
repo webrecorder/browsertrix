@@ -1,7 +1,6 @@
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import clsx from "clsx";
-import { css, nothing, type PropertyValues } from "lit";
+import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -12,13 +11,11 @@ import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
-import {
-  SortDirection,
-  type SortValues,
-} from "@/components/ui/table/table-header-cell";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
-import { pageHeader } from "@/layouts/pageHeader";
+import { emptyMessage } from "@/layouts/emptyMessage";
+import { page } from "@/layouts/page";
+import { OrgTab } from "@/routes";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -26,9 +23,7 @@ import type {
 } from "@/types/api";
 import type { Browser } from "@/types/browser";
 import { isApiError } from "@/utils/api";
-import { html } from "@/utils/LiteElement";
 import { isArchivingDisabled } from "@/utils/orgs";
-import { tw } from "@/utils/tailwind";
 
 const SORT_DIRECTIONS = ["asc", "desc"] as const;
 type SortDirection = (typeof SORT_DIRECTIONS)[number];
@@ -47,7 +42,7 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
   url: {
-    label: msg("Visited Sites"),
+    label: msg("Starting URL"),
     defaultDirection: "asc",
   },
   modified: {
@@ -61,6 +56,14 @@ const DEFAULT_SORT_BY = {
   direction: sortableFields.modified.defaultDirection || "desc",
 } as const satisfies SortBy;
 const INITIAL_PAGE_SIZE = 20;
+
+const columnsCss = [
+  "min-content", // Status
+  "[clickable-start] minmax(min-content, 1fr)", // Name
+  "minmax(max-content, 1fr)", // Visited sites
+  "minmax(min-content, 22ch)", // Last modified
+  "[clickable-end] min-content", // Actions
+].join(" ");
 
 @customElement("btrix-browser-profiles-list")
 @localized()
@@ -107,14 +110,6 @@ export class BrowserProfilesList extends BtrixElement {
     return this.appState.isCrawler;
   }
 
-  get browserProfiles() {
-    return this.profilesTask.value;
-  }
-
-  get isLoading() {
-    return !this.browserProfiles;
-  }
-
   private readonly profilesTask = new Task(this, {
     task: async ([pagination, orderBy], { signal }) => {
       return this.getProfiles(
@@ -128,38 +123,11 @@ export class BrowserProfilesList extends BtrixElement {
     args: () => [this.pagination, this.orderBy] as const,
   });
 
-  static styles = css`
-    btrix-table {
-      --btrix-table-grid-template-columns: [clickable-start] minmax(30ch, 50ch)
-        minmax(30ch, 40ch) repeat(2, 1fr) [clickable-end] min-content;
-      --btrix-table-cell-gap: var(--sl-spacing-x-small);
-      --btrix-table-cell-padding-x: var(--sl-spacing-small);
-    }
-
-    btrix-table-body btrix-table-row:nth-of-type(n + 2) {
-      --btrix-border-top: 1px solid var(--sl-panel-border-color);
-    }
-
-    btrix-table-body btrix-table-row:first-of-type {
-      --btrix-border-radius-top: var(--sl-border-radius-medium);
-    }
-
-    btrix-table-body btrix-table-row:last-of-type {
-      --btrix-border-radius-bottom: var(--sl-border-radius-medium);
-    }
-
-    btrix-table-row {
-      border-top: var(--btrix-border-top, 0);
-      border-radius: var(--btrix-border-radius-top, 0)
-        var(--btrix-border-radius-to, 0) var(--btrix-border-radius-bottom, 0)
-        var(--btrix-border-radius-bottom, 0);
-      height: 2.5rem;
-    }
-  `;
-
   render() {
-    return html`${pageHeader({
+    return page(
+      {
         title: msg("Browser Profiles"),
+        border: false,
         actions: this.isCrawler
           ? html`
               <sl-button
@@ -179,204 +147,221 @@ export class BrowserProfilesList extends BtrixElement {
               </sl-button>
             `
           : undefined,
-        classNames: tw`mb-3`,
-      })}
-      <div class="pb-1">${this.renderTable()}</div>`;
+      },
+      this.renderPage,
+    );
   }
 
-  private renderTable() {
-    const headerCells = [
-      {
-        sortBy: "name",
-        sortDirection: 1,
-        className: "pl-3",
-        label: msg("Name"),
-      },
-      { sortBy: "url", sortDirection: 1, label: msg("Visited URLs") },
-      { sortBy: "created", sortDirection: -1, label: msg("Created On") },
-      { sortBy: "modified", sortDirection: -1, label: msg("Last Updated") },
-    ];
-    const sortProps: Record<
-      SortValues,
-      { name: string; label: string; className: string }
-    > = {
-      none: {
-        name: "arrow-down-up",
-        label: msg("Sortable"),
-        className: tw`text-xs opacity-0 hover:opacity-100 group-hover:opacity-100`,
-      },
-      ascending: {
-        name: "sort-up-alt",
-        label: msg("Ascending"),
-        className: tw`text-base`,
-      },
-      descending: {
-        name: "sort-down",
-        label: msg("Descending"),
-        className: tw`text-base`,
-      },
-    };
-
-    const getSortIcon = (sortValue: SortValues) => {
-      const { name, label, className } = sortProps[sortValue];
-      return html`
-        <sl-icon
-          class=${clsx(tw`ml-1 text-neutral-900 transition-opacity`, className)}
-          name=${name}
-          label=${label}
-        ></sl-icon>
-      `;
-    };
-
+  private readonly renderPage = () => {
     return html`
-      <btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
-        <btrix-table>
-          <btrix-table-head class="mb-2">
-            ${headerCells.map(({ sortBy, sortDirection, label, className }) => {
-              const isSorting = sortBy === this.orderBy.value.field;
-              const sortValue =
-                (isSorting &&
-                  (this.orderBy.value.direction === "asc"
-                    ? "ascending"
-                    : "descending")) ||
-                "none";
-              // TODO implement sort render logic in table-header-cell
-              return html`
-                <btrix-table-header-cell
-                  class="${className} group cursor-pointer rounded transition-colors hover:bg-primary-50"
-                  ariaSort=${sortValue}
-                  @click=${() => {
-                    if (isSorting) {
-                      this.orderBy.setValue({
-                        field: sortBy,
-                        direction: sortDirection === 1 ? "desc" : "asc",
-                      });
-                    } else {
-                      this.orderBy.setValue({
-                        field: sortBy as SortField,
-                        direction: sortDirection === 1 ? "asc" : "desc",
-                      });
-                    }
-                  }}
-                >
-                  ${label} ${getSortIcon(sortValue)}
-                </btrix-table-header-cell>
-              `;
-            })}
-            <btrix-table-header-cell>
-              <span class="sr-only">${msg("Row Actions")}</span>
-            </btrix-table-header-cell>
-          </btrix-table-head>
-          <btrix-table-body
-            class=${clsx(
-              "relative rounded border",
-              this.browserProfiles == null && this.isLoading && tw`min-h-48`,
-            )}
-          >
-            ${when(this.browserProfiles, ({ total, items }) =>
-              total ? html` ${items.map(this.renderItem)} ` : nothing,
-            )}
-            ${when(this.isLoading, this.renderLoading)}
-          </btrix-table-body>
-        </btrix-table>
-      </btrix-overflow-scroll>
-      ${when(this.browserProfiles, ({ total, page, pageSize }) =>
-        total
-          ? html`
-              <footer class="mt-6 flex justify-center">
-                <btrix-pagination
-                  page=${page}
-                  totalCount=${total}
-                  size=${pageSize}
-                  @page-change=${async (e: PageChangeEvent) => {
-                    this.pagination = {
-                      ...this.pagination,
-                      page: e.detail.page,
-                    };
-                  }}
-                ></btrix-pagination>
-              </footer>
-            `
-          : html`
-              <div class="border-b border-t py-5">
-                <p class="text-0-500 text-center">
-                  ${msg("No browser profiles yet.")}
-                </p>
-              </div>
-            `,
+      <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
+        ${this.renderControls()}
+      </div>
+
+      ${when(
+        this.profilesTask.value,
+        ({ items, total, page, pageSize }) => html`
+          ${total
+            ? html`
+                ${this.renderTable(items)}
+                ${when(
+                  total > pageSize,
+                  () => html`
+                    <footer class="mt-6 flex justify-center">
+                      <btrix-pagination
+                        page=${page}
+                        totalCount=${total}
+                        size=${pageSize}
+                        @page-change=${async (e: PageChangeEvent) => {
+                          this.pagination = {
+                            ...this.pagination,
+                            page: e.detail.page,
+                          };
+                          await this.updateComplete;
+
+                          // Scroll to top of list
+                          // TODO once deep-linking is implemented, scroll to top of pushstate
+                          this.scrollIntoView({ behavior: "smooth" });
+                        }}
+                      ></btrix-pagination>
+                    </footer>
+                  `,
+                )}
+              `
+            : this.renderEmpty()}
+        `,
       )}
+    `;
+  };
+
+  private renderEmpty() {
+    const message = msg("Your org doesn’t have any browser profiles yet.");
+
+    if (this.isCrawler) {
+      return emptyMessage({
+        message,
+        detail: msg(
+          "Browser profiles let you crawl pages behind paywalls and logins.",
+        ),
+        actions: html`
+          <sl-button
+            @click=${() => {
+              this.dispatchEvent(
+                new CustomEvent<SelectNewDialogEvent["detail"]>(
+                  "select-new-dialog",
+                  {
+                    detail: "browser-profile",
+                  },
+                ),
+              );
+            }}
+          >
+            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+            ${msg("Create Browser Profile")}
+          </sl-button>
+        `,
+      });
+    }
+
+    return emptyMessage({ message });
+  }
+
+  private renderControls() {
+    return html`
+      <div class="flex items-center">
+        <label
+          class="mr-2 whitespace-nowrap text-sm text-neutral-500"
+          for="sort-select"
+        >
+          ${msg("Sort by:")}
+        </label>
+        ${this.renderSortControl()}
+      </div>
     `;
   }
 
-  private readonly renderLoading = () =>
-    html`<div
-      class="absolute left-0 top-0 z-10 flex h-full w-full items-center justify-center bg-white/50 text-3xl"
-    >
-      <sl-spinner></sl-spinner>
-    </div>`;
+  private renderSortControl() {
+    const options = Object.entries(sortableFields).map(
+      ([value, { label }]) => html`
+        <sl-option value=${value}>${label}</sl-option>
+      `,
+    );
+    return html`
+      <sl-select
+        id="sort-select"
+        class="md:min-w-[9.2rem]"
+        size="small"
+        pill
+        value=${this.orderBy.value.field}
+        @sl-change=${(e: Event) => {
+          const field = (e.target as HTMLSelectElement).value as SortField;
+          this.orderBy.setValue({
+            field: field,
+            direction:
+              sortableFields[field].defaultDirection ||
+              this.orderBy.value.direction,
+          });
+        }}
+      >
+        ${options}
+      </sl-select>
+      <sl-tooltip
+        content=${this.orderBy.value.direction === "asc"
+          ? msg("Sort in descending order")
+          : msg("Sort in ascending order")}
+      >
+        <sl-icon-button
+          name=${this.orderBy.value.direction === "asc"
+            ? "sort-up-alt"
+            : "sort-down"}
+          class="text-base"
+          label=${this.orderBy.value.direction === "asc"
+            ? msg("Sort Descending")
+            : msg("Sort Ascending")}
+          @click=${() => {
+            this.orderBy.setValue({
+              ...this.orderBy.value,
+              direction:
+                this.orderBy.value.direction === "asc" ? "desc" : "asc",
+            });
+          }}
+        ></sl-icon-button>
+      </sl-tooltip>
+    `;
+  }
+
+  private readonly renderTable = (profiles: Profile[]) => {
+    return html`<btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
+      <btrix-table
+        style="--btrix-table-grid-template-columns: ${columnsCss}"
+        class="whitespace-nowrap [--btrix-table-cell-gap:var(--sl-spacing-x-small)] [--btrix-table-cell-padding-x:var(--sl-spacing-small)]"
+      >
+        <btrix-table-head class="mb-2">
+          <btrix-table-header-cell class="pr-0">
+            <span class="sr-only">${msg("Status")}</span>
+          </btrix-table-header-cell>
+          <btrix-table-header-cell> ${msg("Name")} </btrix-table-header-cell>
+          <btrix-table-header-cell>
+            ${msg("Visited Sites")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell>
+            ${msg("Last Modified")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell>
+            <span class="sr-only">${msg("Row actions")}</span>
+          </btrix-table-header-cell>
+        </btrix-table-head>
+        <btrix-table-body
+          class="divide-y rounded border [--btrix-table-cell-padding-y:var(--sl-spacing-2x-small)]"
+        >
+          ${profiles.map(this.renderItem)}
+        </btrix-table-body>
+      </btrix-table>
+    </btrix-overflow-scroll>`;
+  };
 
   private readonly renderItem = (data: Profile) => {
+    const startingUrl = data.origins[0];
+    const otherOrigins = data.origins.slice(1);
+
     return html`
       <btrix-table-row
-        class="cursor-pointer select-none transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
+        class="h-10 transition-colors duration-fast focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
-        <btrix-table-cell
-          class="flex-col items-center justify-center pl-3"
-          rowClickTarget="a"
-        >
+        <btrix-table-cell class="pr-0">
+          <sl-tooltip content=${data.inUse ? msg("In Use") : msg("Not in Use")}>
+            <sl-icon
+              name=${data.inUse ? "check-circle" : "dash-circle"}
+              class="${data.inUse
+                ? "text-primary"
+                : "text-neutral-400"} text-base"
+            ></sl-icon>
+          </sl-tooltip>
+        </btrix-table-cell>
+        <btrix-table-cell rowClickTarget="a">
           <a
-            class="flex items-center gap-3"
-            href=${`${this.navigate.orgBasePath}/browser-profiles/profile/${data.id}`}
+            href="${this.navigate
+              .orgBasePath}/${OrgTab.BrowserProfiles}/profile/${data.id}"
             @click=${this.navigate.link}
+            class="truncate"
+            >${data.name}</a
           >
-            <span class="truncate">${data.name}</span>
-          </a>
         </btrix-table-cell>
         <btrix-table-cell>
-          <div class="truncate">${data.origins[0]}</div>
-          ${data.origins.length > 1
-            ? html`<btrix-popover placement="top">
-                <span slot="content" class="break-words"
-                  >${data.origins.slice(1).join(", ")}</span
+          <btrix-code language="url" value=${startingUrl} noWrap></btrix-code>
+          ${otherOrigins.length
+            ? html`<btrix-popover placement="right" hoist>
+                <btrix-badge
+                  >+${this.localize.number(otherOrigins.length)}</btrix-badge
                 >
-                <btrix-badge class="ml-2">
-                  ${msg(str`+${data.origins.length - 1}`)}
-                </btrix-badge>
+                <ul slot="content">
+                  ${otherOrigins.map((url) => html`<li>${url}</li>`)}
+                </ul>
               </btrix-popover>`
             : nothing}
         </btrix-table-cell>
-        <btrix-table-cell class="whitespace-nowrap tabular-nums">
-          <sl-tooltip
-            content=${msg(str`By ${data.createdByName}`)}
-            ?disabled=${!data.createdByName}
-          >
-            <btrix-format-date
-              date=${data.created}
-              month="2-digit"
-              day="2-digit"
-              year="numeric"
-              hour="2-digit"
-              minute="2-digit"
-            ></btrix-format-date>
-          </sl-tooltip>
-        </btrix-table-cell>
-        <btrix-table-cell class="whitespace-nowrap tabular-nums">
-          <sl-tooltip
-            content=${msg(str`By ${data.modifiedByName || data.createdByName}`)}
-            ?disabled=${!data.createdByName}
-          >
-            <btrix-format-date
-              date=${
-                // NOTE older profiles may not have "modified" data
-                data.modified || data.created
-              }
-              month="2-digit"
-              day="2-digit"
-              year="numeric"
-              hour="2-digit"
-              minute="2-digit"
-            ></btrix-format-date>
-          </sl-tooltip>
+        <btrix-table-cell>
+          ${this.localize.relativeDate(data.modified || data.created)}
         </btrix-table-cell>
         <btrix-table-cell class="p-0">
           ${this.renderActions(data)}

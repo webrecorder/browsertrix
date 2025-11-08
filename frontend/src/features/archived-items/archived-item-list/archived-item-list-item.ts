@@ -107,7 +107,7 @@ export class ArchivedItemListItem extends BtrixElement {
     return html`
       <btrix-table-row
         class=${this.href || this.checkbox
-          ? "cursor-pointer select-none transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50"
+          ? "cursor-pointer select-none transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50 duration-fast"
           : ""}
       >
         ${this.checkbox
