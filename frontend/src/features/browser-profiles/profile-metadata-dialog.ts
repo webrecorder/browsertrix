@@ -174,13 +174,16 @@ export class ProfileMetadataDialog extends BtrixElement {
           @sl-input=${this.validateDescriptionMax.validate}
         ></sl-textarea>
 
-        <btrix-tag-input
-          name="tags"
-          .initialTags=${[]}
-          .tagOptions=${[]}
-          @tag-input=${console.log}
-          @tags-change=${console.log}
-        ></btrix-tag-input>
+        ${
+          // <btrix-tag-input
+          // name="tags"
+          // .initialTags=${[]}
+          // .tagOptions=${[]}
+          // @tag-input=${console.log}
+          // @tags-change=${console.log}
+          // ></btrix-tag-input>
+          undefined
+        }
       </form>
       <div slot="footer" class="flex justify-between">
         <sl-button form="crawlDetailsForm" type="reset" size="small"

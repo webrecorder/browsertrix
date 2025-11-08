@@ -37,8 +37,8 @@ import { emptyMessage } from "@/layouts/emptyMessage";
 import { labelWithIcon } from "@/layouts/labelWithIcon";
 import { page } from "@/layouts/page";
 import { panel, panelBody } from "@/layouts/panel";
-import { OrgTab } from "@/routes";
-import { stringFor } from "@/strings/ui";
+import { OrgTab, WorkflowTab } from "@/routes";
+import { noData, stringFor } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Profile, Workflow } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
@@ -434,9 +434,12 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                 : none,
             )}
           </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Tags")}>
-            ${this.renderDetail(() => html`${none}`)}
-          </btrix-desc-list-item>
+          ${
+            // <btrix-desc-list-item label=${msg("Tags")}>
+            //   ${this.renderDetail(() => html`${none}`)}
+            // </btrix-desc-list-item>
+            undefined
+          }
         </btrix-desc-list>
         <sl-divider class="my-5"></sl-divider>
         <btrix-desc-list>
@@ -459,16 +462,29 @@ export class BrowserProfilesProfilePage extends BtrixElement {
               ),
             )}
           </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Modification Reason")}>
-            ${this.renderDetail((profile) => {
-              const userName = profile.modifiedByName || profile.createdByName;
-              if (userName) {
-                return `${msg("Updated by")} ${userName}`;
-              }
+          ${when(this.profile, (profile) =>
+            profile.modified
+              ? html`<btrix-desc-list-item label=${msg("Modified By")}>
+                  ${this.renderDetail((profile) => {
+                    if (
+                      profile.modifiedCrawlDate &&
+                      (!profile.modified ||
+                        profile.modifiedCrawlDate >= profile.modified)
+                    ) {
+                      return msg("Automatic update from crawl");
+                    }
 
-              return stringFor.notApplicable;
-            })}
-          </btrix-desc-list-item>
+                    if (profile.modifiedByName) {
+                      return profile.modifiedByName;
+                    }
+
+                    return noData;
+                  })}
+                </btrix-desc-list-item>`
+              : html`<btrix-desc-list-item label=${msg("Created By")}>
+                  ${profile.createdByName || noData}
+                </btrix-desc-list-item>`,
+          )}
           <btrix-desc-list-item label=${msg("Backup Status")}>
             ${this.renderDetail((profile) => {
               const isBackedUp =
@@ -505,8 +521,22 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                         ? `${this.localize.number(this.workflowsTask.value.total)} ${pluralOf("workflows", this.workflowsTask.value.total)}`
                         : html`<sl-skeleton></sl-skeleton>`}
                     </btrix-desc-list-item>
-                    <btrix-desc-list-item label=${msg("Modified By Use")}>
-                      ${msg("No")}
+                    <btrix-desc-list-item
+                      label=${msg("Last Modified by Crawl")}
+                    >
+                      ${profile.modifiedCrawlId && profile.modifiedCrawlDate
+                        ? html`
+                            ${this.localize.relativeDate(
+                              profile.modifiedCrawlDate,
+                            )}
+
+                            <btrix-link
+                              href="${this.navigate
+                                .orgBasePath}/${OrgTab.Workflows}/${profile.modifiedCrawlCid}/${WorkflowTab.Crawls}/${profile.modifiedCrawlId}"
+                              >${msg("View Crawl")}</btrix-link
+                            >
+                          `
+                        : msg("No")}
                     </btrix-desc-list-item>
                   </btrix-desc-list>
                 </div>
