@@ -61,7 +61,6 @@ import "./browser-profiles";
 
 import(/* webpackChunkName: "org" */ "./archived-item-qa/archived-item-qa");
 import(/* webpackChunkName: "org" */ "./workflows-new");
-import(/* webpackChunkName: "org" */ "./browser-profiles-new");
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
