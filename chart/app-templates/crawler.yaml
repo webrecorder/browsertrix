@@ -143,6 +143,9 @@ spec:
       {% elif profile_filename %}
         - --profile
         - "@{{ profile_filename }}"
+      {% if save_profile %}
+        - --saveProfile
+      {% endif %}
       {% endif %}
       {% if proxy_id %}
         - --proxyServer

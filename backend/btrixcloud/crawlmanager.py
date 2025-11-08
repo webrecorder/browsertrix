@@ -36,8 +36,8 @@ class CrawlManager(K8sAPI):
         image_pull_policy: str,
         baseprofile: str = "",
         profile_filename: str = "",
-        proxy_id: str = "",
         profileid: str = "",
+        proxy_id: str = "",
     ) -> str:
         """run browser for profile creation"""
 
@@ -54,6 +54,7 @@ class CrawlManager(K8sAPI):
             "storage_name": str(storage),
             "base_profile": baseprofile or "",
             "profile_filename": profile_filename or "",
+            "profileid": profileid,
             "idle_timeout": os.environ.get("IDLE_TIMEOUT", "60"),
             "url": url,
             "vnc_password": secrets.token_hex(16),
@@ -61,7 +62,6 @@ class CrawlManager(K8sAPI):
             "crawler_image": crawler_image,
             "image_pull_policy": image_pull_policy,
             "proxy_id": proxy_id or DEFAULT_PROXY_ID,
-            "profileid": profileid,
         }
 
         data = self.templates.env.get_template("profile_job.yaml").render(params)
@@ -280,6 +280,7 @@ class CrawlManager(K8sAPI):
         warc_prefix: str,
         storage_filename: str,
         profile_filename: str,
+        profileid: str,
         is_single_page: bool,
         seed_file_url: str,
     ) -> str:
@@ -305,6 +306,7 @@ class CrawlManager(K8sAPI):
             warc_prefix=warc_prefix,
             storage_filename=storage_filename,
             profile_filename=profile_filename,
+            profileid=profileid,
             proxy_id=crawlconfig.proxyId or DEFAULT_PROXY_ID,
             is_single_page=is_single_page,
             seed_file_url=seed_file_url,

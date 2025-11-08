@@ -221,21 +221,6 @@ class CrawlConfigOps:
         """sanitize string for use in wacz filename"""
         return self._file_rx.sub("-", string.lower())
 
-    async def get_profile_filename(
-        self, profileid: Optional[UUID], org: Organization
-    ) -> str:
-        """lookup filename from profileid"""
-        if not profileid:
-            return ""
-
-        profile_filename, _ = await self.profiles.get_profile_storage_path_and_proxy(
-            profileid, org
-        )
-        if not profile_filename:
-            raise HTTPException(status_code=400, detail="invalid_profile_id")
-
-        return profile_filename
-
     # pylint: disable=invalid-name, too-many-branches, too-many-statements, too-many-locals
     async def add_crawl_config(
         self,
@@ -1183,7 +1168,16 @@ class CrawlConfigOps:
 
         await self.check_if_too_many_waiting_crawls(org)
 
-        profile_filename = await self.get_profile_filename(crawlconfig.profileid, org)
+        profile_filename, profile_proxy_id = (
+            await self.profiles.get_profile_filename_and_proxy(
+                crawlconfig.profileid, org
+            )
+        )
+        if crawlconfig.profileid and not profile_filename:
+            raise HTTPException(status_code=400, detail="invalid_profile_id")
+
+        save_profile_id = self.get_save_profile_id(profile_proxy_id, crawlconfig)
+
         storage_filename = (
             crawlconfig.crawlFilenameTemplate or self.default_filename_template
         )
@@ -1213,6 +1207,7 @@ class CrawlConfigOps:
                 warc_prefix=self.get_warc_prefix(org, crawlconfig),
                 storage_filename=storage_filename,
                 profile_filename=profile_filename or "",
+                profileid=save_profile_id,
                 is_single_page=self.is_single_page(crawlconfig.config),
                 seed_file_url=seed_file_url,
             )
@@ -1223,6 +1218,25 @@ class CrawlConfigOps:
             # pylint: disable=raise-missing-from
             print(traceback.format_exc())
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
+
+    def get_save_profile_id(
+        self, profile_proxy_id: str, crawlconfig: CrawlConfig
+    ) -> str:
+        """return profile id if profile should be auto-saved, or empty str if not"""
+        # if no profile, nothing to save
+        if not crawlconfig.profileid:
+            return ""
+
+        # if no proxies, allow saving
+        if not crawlconfig.proxyId and not profile_proxy_id:
+            return str(crawlconfig.profileid)
+
+        # if proxy ids match, allow saving
+        if crawlconfig.proxyId == profile_proxy_id:
+            return str(crawlconfig.profileid)
+
+        # otherwise, don't save
+        return ""
 
     async def check_if_too_many_waiting_crawls(self, org: Organization):
         """if max concurrent crawls are set, limit number of queued crawls to X concurrent limit

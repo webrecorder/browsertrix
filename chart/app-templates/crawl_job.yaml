@@ -22,6 +22,7 @@ spec:
   browserWindows: {{ browser_windows }}
 
   profile_filename: "{{ profile_filename }}"
+  profileId: "{{ profileid }}"
   storage_filename: "{{ storage_filename }}"
 
   maxCrawlSize: {{ max_crawl_size if not qa_source else 0 }}

@@ -146,7 +146,9 @@ class CrawlOperator(BaseOperator):
         status = CrawlStatus(**data.parent.get("status", {}))
         status.last_state = status.state
 
-        spec = data.parent.get("spec", {})  # spec is the data from crawl_job.yaml
+        spec: dict[str, str] = data.parent.get(
+            "spec", {}
+        )  # spec is the data from crawl_job.yaml
         crawl_id = spec["id"]
         cid = spec["cid"]
         oid = spec["oid"]
@@ -181,11 +183,12 @@ class CrawlOperator(BaseOperator):
             storage=StorageRef(spec["storageName"]),
             crawler_channel=spec.get("crawlerChannel", "default"),
             proxy_id=spec.get("proxyId"),
+            profileid=spec.get("profileId"),
             scale=spec.get("scale", 1),
             browser_windows=spec.get("browserWindows", 1),
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
-            paused_at=str_to_date(spec.get("pausedAt")),
+            paused_at=str_to_date(spec.get("pausedAt") or ""),
             timeout=spec.get("timeout") or 0,
             max_crawl_size=int(spec.get("maxCrawlSize") or 0),
             scheduled=spec.get("manual") != "1",
@@ -400,6 +403,7 @@ class CrawlOperator(BaseOperator):
                     status,
                     data.children,
                     is_paused,
+                    crawl.profileid is not None,
                 )
             )
 
@@ -520,6 +524,7 @@ class CrawlOperator(BaseOperator):
         status: CrawlStatus,
         children,
         is_paused: bool,
+        has_profile: bool,
     ):
         name = f"crawl-{params['id']}-{i}"
         has_pod = name in children[POD]
@@ -565,6 +570,7 @@ class CrawlOperator(BaseOperator):
         params["cpu"] = pod_info.newCpu or cpu
         params["memory"] = pod_info.newMemory or memory
         params["workers"] = workers
+        params["save_profile"] = has_profile and (i == 0)
         if self.k8s.enable_auto_resize:
             params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
         else:
@@ -1460,7 +1466,14 @@ class CrawlOperator(BaseOperator):
         sizes = await redis.hgetall(f"{crawl_id}:size")
         archive_size = sum(int(x) for x in sizes.values())
 
-        stats = CrawlStats(found=pages_found, done=pages_done, size=archive_size)
+        profile_update = await redis.get(f"{crawl_id}:profileUploaded")
+
+        stats = CrawlStats(
+            found=pages_found,
+            done=pages_done,
+            size=archive_size,
+            profile_update=profile_update,
+        )
         return stats, sizes
 
     async def update_crawl_state(
@@ -1653,7 +1666,7 @@ class CrawlOperator(BaseOperator):
 
         # Regular Crawl Finished
         if not crawl.is_qa:
-            self.run_task(self.do_crawl_finished_tasks(crawl, status, state))
+            self.run_task(self.do_crawl_finished_tasks(crawl, status, state, stats))
 
         # QA Run Finished
         else:
@@ -1667,6 +1680,7 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         state: TYPE_NON_RUNNING_STATES,
+        stats: Optional[CrawlStats],
     ) -> None:
         """Run tasks after crawl completes in asyncio.task coroutine."""
         await self.crawl_config_ops.stats_recompute_last(
@@ -1682,6 +1696,15 @@ class CrawlOperator(BaseOperator):
             await self.coll_ops.add_successful_crawl_to_collections(
                 crawl.id, crawl.cid, crawl.oid
             )
+
+            if stats and stats.profile_update and crawl.profileid:
+                await self.crawl_config_ops.profiles.update_profile_from_crawl_upload(
+                    crawl.oid,
+                    UUID(crawl.profileid),
+                    crawl.cid,
+                    crawl.id,
+                    stats.profile_update,
+                )
 
         if state in FAILED_STATES:
             await self.crawl_ops.delete_crawl_files(crawl.id, crawl.oid)
