@@ -264,7 +264,7 @@ export class BrowserProfilesList extends BtrixElement {
 
   private renderControls() {
     return html`
-      <div class="flex flex-wrap items-center justify-between">
+      <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="flex flex-wrap items-center gap-2">
           <span class="whitespace-nowrap text-neutral-500">
             ${msg("Filter by:")}
