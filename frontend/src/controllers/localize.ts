@@ -1,9 +1,11 @@
 import { LocalizeController as SlLocalizeController } from "@shoelace-style/localize";
 import { html } from "lit";
+import { ifDefined } from "lit/directives/if-defined.js";
 import type { Options as PrettyMsOptions } from "pretty-ms";
 
 import localize from "@/utils/localize";
 import roundDuration from "@/utils/round-duration";
+import { tw } from "@/utils/tailwind";
 
 export class LocalizeController extends SlLocalizeController {
   /**
@@ -21,7 +23,7 @@ export class LocalizeController extends SlLocalizeController {
    */
   readonly relativeDate = (
     dateStr: string,
-    { prefix }: { prefix?: string } = {},
+    { prefix, capitalize }: { prefix?: string; capitalize?: boolean } = {},
   ) => {
     const date = new Date(dateStr);
     const diff = new Date().getTime() - date.getTime();
@@ -51,7 +53,11 @@ export class LocalizeController extends SlLocalizeController {
                 day: "numeric",
               })
             : seconds > 60
-              ? html`<sl-relative-time sync date=${dateStr}></sl-relative-time>`
+              ? html`<sl-relative-time
+                  class=${ifDefined(capitalize ? tw`capitalize` : undefined)}
+                  sync
+                  date=${dateStr}
+                ></sl-relative-time>`
               : `<${this.relativeTime(-1, "minute", { style: "narrow" })}`}
         </span>
       </sl-tooltip>

@@ -66,7 +66,7 @@ const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const columnsCss = [
   "min-content", // Status
   "[clickable-start] minmax(min-content, 1fr)", // Name
-  "minmax(max-content, 1fr)", // Visited sites
+  "minmax(max-content, 1fr)", // Origins
   "minmax(min-content, 22ch)", // Last modified
   "[clickable-end] min-content", // Actions
 ].join(" ");
@@ -356,9 +356,9 @@ export class BrowserProfilesList extends BtrixElement {
           <btrix-table-header-cell class="pr-0">
             <span class="sr-only">${msg("Status")}</span>
           </btrix-table-header-cell>
-          <btrix-table-header-cell> ${msg("Name")} </btrix-table-header-cell>
+          <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
           <btrix-table-header-cell>
-            ${msg("Visited Sites")}
+            ${msg("Configured Sites")}
           </btrix-table-header-cell>
           <btrix-table-header-cell>
             ${msg("Last Modified")}
@@ -417,7 +417,9 @@ export class BrowserProfilesList extends BtrixElement {
             : nothing}
         </btrix-table-cell>
         <btrix-table-cell>
-          ${this.localize.relativeDate(data.modified || data.created)}
+          ${this.localize.relativeDate(data.modified || data.created, {
+            capitalize: true,
+          })}
         </btrix-table-cell>
         <btrix-table-cell class="p-0">
           ${this.renderActions(data)}

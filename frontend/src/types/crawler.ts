@@ -127,9 +127,14 @@ export type Profile = {
   name: string;
   description: string;
   created: string;
-  createdByName: string | null;
+  createdBy: string | null; // User ID
+  createdByName: string | null; // User Name
   modified: string | null;
-  modifiedByName: string | null;
+  modifiedBy: string | null; // User ID
+  modifiedByName: string | null; // User Name
+  modifiedCrawlDate: string | null;
+  modifiedCrawlId: string | null;
+  modifiedCrawlCid: string | null;
   origins: string[];
   profileId: string;
   baseProfileName: string;
@@ -142,7 +147,7 @@ export type Profile = {
     size: number;
     replicas: ProfileReplica[] | null;
   };
-  crawlerChannel?: string;
+  crawlerChannel?: CrawlerChannelImage | AnyString;
   proxyId?: string;
 };
 
