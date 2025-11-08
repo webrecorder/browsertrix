@@ -22,6 +22,7 @@ import type {
   APISortQuery,
 } from "@/types/api";
 import type { Browser } from "@/types/browser";
+import { SortDirection } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { isArchivingDisabled } from "@/utils/orgs";
 
@@ -115,12 +116,16 @@ export class BrowserProfilesList extends BtrixElement {
       return this.getProfiles(
         {
           ...pagination,
-          ...orderBy,
+          sortBy: orderBy.field,
+          sortDirection:
+            orderBy.direction === "desc"
+              ? SortDirection.Descending
+              : SortDirection.Ascending,
         },
         signal,
       );
     },
-    args: () => [this.pagination, this.orderBy] as const,
+    args: () => [this.pagination, this.orderBy.value] as const,
   });
 
   render() {
