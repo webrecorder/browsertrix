@@ -256,7 +256,7 @@ export class BrowserProfilesBrowserPage extends BtrixElement {
               }
             }}
           >
-            ${msg(this.profileId ? "Save Profile" : "Finish Browsing")}
+            ${this.profileId ? msg("Save Profile") : msg("Finish Browsing")}
           </sl-button>
         </btrix-popover>
       </div>

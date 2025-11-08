@@ -6,16 +6,15 @@ import capitalize from "lodash/fp/capitalize";
 import { CrawlerChannelImage, type Profile } from "@/types/crawler";
 
 export const usageBadge = (inUse: boolean) =>
-  html`<btrix-badge
-    variant=${inUse ? "cyan" : "neutral"}
-    class="font-monostyle"
-  >
-    <sl-icon
-      name=${inUse ? "check-circle" : "dash-circle"}
-      class="mr-1.5"
-    ></sl-icon>
-    ${inUse ? msg("In Use") : msg("Not In Use")}
-  </btrix-badge>`;
+  html`<sl-tooltip content=${msg("Crawl Workflow Usage")}>
+    <btrix-badge variant=${inUse ? "cyan" : "neutral"} class="font-monostyle">
+      <sl-icon
+        name=${inUse ? "check-circle" : "dash-circle"}
+        class="mr-1.5"
+      ></sl-icon>
+      ${inUse ? msg("In Use") : msg("Not In Use")}
+    </btrix-badge>
+  </sl-tooltip>`;
 
 export const badges = (
   profile: Partial<Pick<Profile, "inUse" | "crawlerChannel" | "proxyId">>,

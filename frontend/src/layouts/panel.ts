@@ -53,9 +53,7 @@ export function panel({
 } & Parameters<typeof panelHeader>[0]) {
   return html`<section id=${ifDefined(id)} class=${ifDefined(className)}>
     ${panelHeader({ heading, actions })}
-    <sl-divider
-      class=${clsx(tw`mb-4 lg:hidden`, actions ? tw`-mt-1` : tw`mt-4`)}
-    ></sl-divider>
+    <sl-divider class="mb-4 mt-0 lg:hidden"></sl-divider>
     ${body}
   </section>`;
 }

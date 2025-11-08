@@ -56,6 +56,13 @@ const rowCss = css`
   .row {
     display: grid;
     grid-template-columns: 1fr;
+    position: relative;
+  }
+
+  .action {
+    position: absolute;
+    top: 0;
+    right: 0;
   }
 
   @media only screen and (min-width: ${mediumBreakpointCss}) {
@@ -67,6 +74,10 @@ const rowCss = css`
     .row {
       grid-template-columns: var(--btrix-workflow-list-columns);
       white-space: nowrap;
+    }
+
+    .action {
+      position: relative;
     }
   }
 

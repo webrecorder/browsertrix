@@ -280,8 +280,8 @@ export class BrowserProfilesProfilePage extends BtrixElement {
 
   private readonly renderPage = () => {
     return html`
-      <div class="mt-1 grid grid-cols-7 gap-7">
-        <div class="col-span-full flex flex-col gap-7 lg:col-span-5">
+      <div class="mt-2 grid grid-cols-7 gap-7">
+        <div class="col-span-full flex flex-col gap-7 lg:col-span-5 lg:gap-10">
           ${this.renderProfile()} ${this.renderUsage()}
         </div>
 
@@ -300,7 +300,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
       this.browserIdTask.value;
 
     return panel({
-      heading: msg("Visited Sites"),
+      heading: msg("Configured Sites"),
       actions: this.appState.isCrawler
         ? html`<sl-tooltip content=${msg("Configure Profile")}>
             <sl-icon-button
@@ -351,12 +351,16 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     const origins = (profile: Profile) =>
       profile.origins.map(
         (origin) => html`
-          <li class="flex items-center gap-2">
+          <li class="flex items-center gap-1">
             <div
               class="flex flex-1 items-center gap-2 overflow-hidden border-r"
             >
               <div class="border-r p-1">
-                <btrix-copy-button .value=${origin} placement="left">
+                <btrix-copy-button
+                  content=${msg("Copy URL")}
+                  .value=${origin}
+                  placement="left"
+                >
                 </btrix-copy-button>
               </div>
               <btrix-code
@@ -488,7 +492,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
       html`<sl-skeleton class="h-36" effect="sheen"></sl-skeleton>`;
 
     return panel({
-      heading: msg("Usage"),
+      heading: msg("Related Workflows"),
       body: when(
         this.profile,
         (profile) =>
@@ -561,7 +565,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     const failedNotLoggedInState = "failed_not_logged_in" satisfies CrawlState;
 
     return html`
-      <div class="mb-3 rounded-lg border bg-neutral-50 px-6 py-3">
+      <div class="mb-3 rounded-lg border bg-neutral-50 px-5 py-3">
         <div class="flex flex-wrap items-center gap-2">
           <span class="whitespace-nowrap text-sm text-neutral-500">
             ${msg("Filter by:")}
