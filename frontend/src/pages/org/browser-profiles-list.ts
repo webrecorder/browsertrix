@@ -10,6 +10,10 @@ import type { Profile } from "./types";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type {
+  BtrixFilterChipChangeEvent,
+  FilterChip,
+} from "@/components/ui/filter-chip";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
@@ -22,7 +26,7 @@ import type {
   APISortQuery,
 } from "@/types/api";
 import type { Browser } from "@/types/browser";
-import { SortDirection } from "@/types/utils";
+import { SortDirection as SortDirectionEnum } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { isArchivingDisabled } from "@/utils/orgs";
 
@@ -57,6 +61,7 @@ const DEFAULT_SORT_BY = {
   direction: sortableFields.modified.defaultDirection || "desc",
 } as const satisfies SortBy;
 const INITIAL_PAGE_SIZE = 20;
+const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 
 const columnsCss = [
   "min-content", // Status
@@ -107,25 +112,51 @@ export class BrowserProfilesList extends BtrixElement {
     },
   );
 
+  private readonly filterByCurrentUser = new SearchParamsValue<boolean>(
+    this,
+    (value, params) => {
+      if (value) {
+        params.set("mine", "true");
+      } else {
+        params.delete("mine");
+      }
+      return params;
+    },
+    (params) => params.get("mine") === "true",
+    {
+      initial: (initialValue) =>
+        window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
+          "true" ||
+        initialValue ||
+        false,
+    },
+  );
+
   get isCrawler() {
     return this.appState.isCrawler;
   }
 
   private readonly profilesTask = new Task(this, {
-    task: async ([pagination, orderBy], { signal }) => {
+    task: async ([pagination, orderBy, filterByCurrentUser], { signal }) => {
       return this.getProfiles(
         {
           ...pagination,
+          userid: filterByCurrentUser ? this.userInfo?.id : undefined,
           sortBy: orderBy.field,
           sortDirection:
             orderBy.direction === "desc"
-              ? SortDirection.Descending
-              : SortDirection.Ascending,
+              ? SortDirectionEnum.Descending
+              : SortDirectionEnum.Ascending,
         },
         signal,
       );
     },
-    args: () => [this.pagination, this.orderBy.value] as const,
+    args: () =>
+      [
+        this.pagination,
+        this.orderBy.value,
+        this.filterByCurrentUser.value,
+      ] as const,
   });
 
   render() {
@@ -233,15 +264,35 @@ export class BrowserProfilesList extends BtrixElement {
 
   private renderControls() {
     return html`
-      <div class="flex items-center">
-        <label
-          class="mr-2 whitespace-nowrap text-sm text-neutral-500"
-          for="sort-select"
-        >
-          ${msg("Sort by:")}
-        </label>
-        ${this.renderSortControl()}
+      <div class="flex flex-wrap items-center justify-between">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="whitespace-nowrap text-neutral-500">
+            ${msg("Filter by:")}
+          </span>
+          ${this.renderFilterControl()}
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <label class="whitespace-nowrap text-neutral-500" for="sort-select">
+            ${msg("Sort by:")}
+          </label>
+          ${this.renderSortControl()}
+        </div>
       </div>
+    `;
+  }
+
+  private renderFilterControl() {
+    return html`
+      <btrix-filter-chip
+        ?checked=${this.filterByCurrentUser.value}
+        @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
+          const { checked } = e.target as FilterChip;
+          this.filterByCurrentUser.setValue(Boolean(checked));
+        }}
+      >
+        ${msg("Mine")}
+      </btrix-filter-chip>
     `;
   }
 
@@ -497,7 +548,7 @@ export class BrowserProfilesList extends BtrixElement {
   }
 
   private async getProfiles(
-    params: APIPaginationQuery & APISortQuery,
+    params: { userid?: string } & APIPaginationQuery & APISortQuery,
     signal: AbortSignal,
   ) {
     const query = queryString.stringify(
