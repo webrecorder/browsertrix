@@ -11,7 +11,7 @@ from fastapi import HTTPException
 from .utils import dt_now, date_to_str, scale_from_browser_windows
 from .k8sapi import K8sAPI
 
-from .models import StorageRef, CrawlConfig, BgJobType
+from .models import StorageRef, CrawlConfig, BgJobType, ProfileBrowserMetadata
 
 
 # ============================================================================
@@ -25,13 +25,14 @@ DEFAULT_NAMESPACE: str = os.environ.get("DEFAULT_NAMESPACE", "default")
 class CrawlManager(K8sAPI):
     """abstract crawl manager"""
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-locals
     async def run_profile_browser(
         self,
         userid: str,
         oid: str,
         url: str,
         storage: StorageRef,
+        crawler_channel: str,
         crawler_image: str,
         image_pull_policy: str,
         baseprofile: str = "",
@@ -59,6 +60,7 @@ class CrawlManager(K8sAPI):
             "url": url,
             "vnc_password": secrets.token_hex(16),
             "expire_time": date_to_str(dt_now() + timedelta(seconds=30)),
+            "crawler_channel": crawler_channel,
             "crawler_image": crawler_image,
             "image_pull_policy": image_pull_policy,
             "proxy_id": proxy_id or DEFAULT_PROXY_ID,
@@ -420,20 +422,17 @@ class CrawlManager(K8sAPI):
                 name=storage_secret, namespace=self.namespace, body=crawl_secret
             )
 
-    async def get_profile_browser_metadata(self, browserid: str) -> dict[str, str]:
-        """get browser profile labels"""
-        try:
-            browser = await self.get_profile_browser(browserid)
-
-        # pylint: disable=bare-except
-        except:
-            return {}
+    async def get_profile_browser_metadata(
+        self, browserid: str
+    ) -> ProfileBrowserMetadata:
+        """get browser profile metadata from labels"""
+        browser = await self.get_profile_browser(browserid)
 
         metadata = browser["metadata"]["labels"]
 
         metadata["committing"] = browser.get("spec", {}).get("committing")
 
-        return metadata
+        return ProfileBrowserMetadata(**metadata)
 
     async def keep_alive_profile_browser(self, browserid: str, committing="") -> None:
         """update profile browser to not expire"""

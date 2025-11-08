@@ -2456,6 +2456,25 @@ class Profile(BaseMongoModel):
 
 
 # ============================================================================
+class ProfileBrowserMetadata(BaseModel):
+    """Profile metadata stored in ProfileJob labels"""
+
+    browser: str
+
+    oid: str = Field(alias="btrix.org")
+    userid: UUID = Field(alias="btrix.user")
+    baseprofile: Optional[UUID] = Field(alias="btrix.baseprofile", default=None)
+    storage: str = Field(alias="btrix.storage")
+
+    profileid: UUID
+
+    proxyid: str = ""
+    crawlerChannel: str
+
+    committing: Optional[str] = None
+
+
+# ============================================================================
 class UrlIn(BaseModel):
     """Request to set url"""
 
@@ -2485,17 +2504,14 @@ class ProfileCreate(BaseModel):
     browserid: str
     name: str
     description: Optional[str] = ""
-    crawlerChannel: str = "default"
-    proxyId: Optional[str] = None
 
 
 # ============================================================================
-class ProfileUpdate(BaseModel):
+class ProfileUpdate(ProfileCreate):
     """Update existing profile with new browser profile or metadata only"""
 
-    browserid: Optional[str] = ""
-    name: str
-    description: Optional[str] = ""
+    # browserid optional if only updating metadata
+    browserid: str = ""
 
 
 # ============================================================================
