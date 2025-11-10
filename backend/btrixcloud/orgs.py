@@ -557,9 +557,15 @@ class OrgOps:
 
         org = Organization.from_dict(org_data)
         if update.quotas:
-            # don't change gifted minutes here
+            # don't change gifted or extra minutes here
             update.quotas.giftedExecMinutes = None
-            await self.update_quotas(org, update.quotas)
+            update.quotas.extraExecMinutes = None
+            await self.update_quotas(
+                org,
+                update.quotas,
+                mode="set",
+                context=f"subscription_change:{update.planId}",
+            )
 
         return org
 
