@@ -1150,6 +1150,7 @@ class CrawlConfigOps:
 
     async def get_crawl_config_tag_counts(self, org):
         """get distinct tags from all crawl configs for this org"""
+        # pylint: disable=duplicate-code
         tags = await self.crawl_configs.aggregate(
             [
                 {"$match": {"oid": org.id}},
