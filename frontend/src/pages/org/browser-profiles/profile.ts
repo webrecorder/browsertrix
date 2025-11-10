@@ -49,6 +49,7 @@ import { isNotEqual } from "@/utils/is-not-equal";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
+import type { SectionsEnum } from "@/utils/workflow";
 
 const INITIAL_PAGE_SIZE = 5;
 const WORKFLOW_PAGE_QUERY = "workflowsPage";
@@ -302,13 +303,13 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     return panel({
       heading: msg("Configured Sites"),
       actions: this.appState.isCrawler
-        ? html`<sl-tooltip content=${msg("Configure Profile")}>
-            <sl-icon-button
-              class="text-base"
-              name="gear"
-              @click=${() => (this.openDialog = "config")}
-            ></sl-icon-button>
-          </sl-tooltip>`
+        ? html`<sl-button
+            size="small"
+            @click=${() => (this.openDialog = "config")}
+          >
+            <sl-icon name="gear" slot="prefix"></sl-icon>
+            ${msg("Configure Profile")}
+          </sl-button>`
         : undefined,
       body: html`${this.renderOrigins()}
 
@@ -351,36 +352,36 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     const origins = (profile: Profile) =>
       profile.origins.map(
         (origin) => html`
-          <li class="flex items-center gap-1">
-            <div
-              class="flex flex-1 items-center gap-2 overflow-hidden border-r"
-            >
-              <div class="border-r p-1">
-                <btrix-copy-button
-                  content=${msg("Copy URL")}
-                  .value=${origin}
-                  placement="left"
-                >
-                </btrix-copy-button>
-              </div>
-              <btrix-code
-                class="block flex-1 truncate"
-                language="url"
-                value=${origin}
-                nowrap
-              ></btrix-code>
-            </div>
+          <li class="flex items-center gap-2">
+            <sl-tooltip placement="left" content=${msg("View in Profile")}>
+              <button
+                class="flex min-h-8 flex-1 items-center overflow-hidden border-r text-left transition-colors duration-fast hover:bg-cyan-50/50"
+                @click=${() => {
+                  this.initialNavigateUrl = origin;
+                  this.openBrowser();
+                }}
+              >
+                <sl-icon
+                  name="window-fullscreen"
+                  class="mx-3 block text-neutral-500"
+                ></sl-icon>
+
+                <btrix-code
+                  class="block flex-1 truncate"
+                  language="url"
+                  value=${origin}
+                  nowrap
+                ></btrix-code>
+              </button>
+            </sl-tooltip>
 
             <div class="flex items-center gap-1">
-              <sl-tooltip placement="left" content=${msg("View in Profile")}>
-                <sl-icon-button
-                  name="window-fullscreen"
-                  @click=${() => {
-                    this.initialNavigateUrl = origin;
-                    this.openBrowser();
-                  }}
-                ></sl-icon-button>
-              </sl-tooltip>
+              <btrix-copy-button
+                content=${msg("Copy URL")}
+                .value=${origin}
+                placement="left"
+              >
+              </btrix-copy-button>
               <sl-tooltip placement="right" content=${msg("Open in New Tab")}>
                 <sl-icon-button
                   name="arrow-up-right"
@@ -555,33 +556,44 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                   message: msg(
                     "This profile is not in use by any crawl workflows.",
                   ),
-                  actions: html`<sl-button
-                    size="small"
-                    @click=${() => {
-                      this.navigate.to(
-                        `${this.navigate.orgBasePath}/${OrgTab.Workflows}/new`,
-                        settingsForDuplicate({
-                          workflow: {
-                            profileid: this.profileId,
-                            proxyId: profile.proxyId,
-                            crawlerChannel: profile.crawlerChannel,
-                          },
-                        }),
-                      );
+                  actions: html`<div class="flex gap-2">
+                    <sl-button
+                      size="small"
+                      href="${this.navigate.orgBasePath}/${OrgTab.Workflows}"
+                      @click=${this.navigate.link}
+                    >
+                      <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
+                      ${msg("Manage Workflows")}
+                    </sl-button>
+                    <sl-button
+                      size="small"
+                      @click=${() => {
+                        this.navigate.to(
+                          `${this.navigate.orgBasePath}/${OrgTab.Workflows}/new#${"browserSettings" satisfies SectionsEnum}`,
+                          settingsForDuplicate({
+                            workflow: {
+                              profileid: this.profileId,
+                              proxyId: profile.proxyId,
+                              crawlerChannel: profile.crawlerChannel,
+                            },
+                          }),
+                        );
 
-                      this.notify.toast({
-                        message: msg(
-                          "Copied browser settings to new workflow.",
-                        ),
-                        variant: "success",
-                        icon: "check2-circle",
-                        id: "workflow-copied-status",
-                      });
-                    }}
-                  >
-                    <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                    ${msg("Create Workflow Using Profile")}</sl-button
-                  >`,
+                        this.notify.toast({
+                          message: msg(
+                            "Copied browser settings to new workflow.",
+                          ),
+                          variant: "success",
+                          icon: "check2-circle",
+                          id: "workflow-copied-status",
+                          duration: 8000,
+                        });
+                      }}
+                    >
+                      <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                      ${msg("New Workflow with Profile")}</sl-button
+                    >
+                  </div>`,
                 }),
               }),
         workflowListSkeleton,
