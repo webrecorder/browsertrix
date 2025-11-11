@@ -1,7 +1,7 @@
 import pytest
 import requests
 import time
-import datetime
+from datetime import datetime, timezone
 
 
 HOST_PREFIX = "http://127.0.0.1:30870"
@@ -313,7 +313,7 @@ def error_crawl_id(admin_auth_headers, default_org_id):
 
 @pytest.fixture(scope="session")
 def org_with_quotas(admin_auth_headers):
-    name = "Quota Org " + datetime.datetime.utcnow().isoformat()
+    name = "Quota Org " + datetime.now(timezone.utc).isoformat()
     r = requests.post(
         f"{API_PREFIX}/orgs/create", headers=admin_auth_headers, json={"name": name}
     )
