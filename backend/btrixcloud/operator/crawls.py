@@ -1421,9 +1421,19 @@ class CrawlOperator(BaseOperator):
     ) -> Optional[StopReason]:
         """check if crawl is stopping and set reason"""
         # if user requested stop, then enter stopping phase
+        print(
+            f"Debugging is_crawl_stopping - status.stopReason: {status.stopReason}, paused_at: {crawl.paused_at}",
+            flush=True,
+        )
+
         if crawl.stopping:
             return "stopped_by_user"
 
+        # TODO: This is source of bug where status.stopReason is sometimes None while
+        # crawl.paused_at is (still?) set after pausing due to storage quota (maybe
+        # execution time quota too?), which results in state being incorrectly set
+        # to "paused"
+        # We still need something like this for manual pauses, however
         if crawl.paused_at and status.stopReason not in PAUSED_STATES:
             return "paused"
 
@@ -1610,6 +1620,11 @@ class CrawlOperator(BaseOperator):
                 else:
                     paused_state = "paused"
 
+                print(
+                    f"status.stopReason: {status.stopReason}, paused_state: {paused_state}",
+                    flush=True,
+                )
+
                 await redis.delete(f"{crawl.id}:paused")
                 await self.set_state(
                     paused_state,
@@ -1618,15 +1633,18 @@ class CrawlOperator(BaseOperator):
                     allowed_from=RUNNING_AND_WAITING_STATES,
                 )
 
-                # Add size of paused crawl uploaded WACZ to org so that
-                # the org knows it's over quota
-                # TODO: Make sure we don't double-count the storage if the
-                # crawl is resumed or stopped and completes
-                # TODO: Make sure we remove this size if crawl is canceled
-                # if paused_state == "paused_storage_quota_reached":
-                #     await self.org_ops.inc_org_bytes_stored(
-                #         crawl.oid, stats.size, "crawl"
-                #     )
+                # Add size of uploaded WACZ from paused crawl to org so that
+                # the org knows it's over its storage quota
+                # TODO: This is reached several times, so make it idempotent
+                # TODO: Should this be status.filesAddedSize or stats.size?
+                if paused_state == "paused_storage_quota_reached":
+                    print(
+                        f"Crawl paused for storage quota, adding size to org. status.filesAddedSize: {status.filesAddedSize}, stats.size: {stats.size}",
+                        flush=True,
+                    )
+                    # await self.org_ops.inc_org_bytes_stored(
+                    #     crawl.oid, status.filesAddedSize, "crawl"
+                    # )
 
                 return status
 
@@ -1712,6 +1730,13 @@ class CrawlOperator(BaseOperator):
 
         if state in SUCCESSFUL_STATES:
             await self.inc_crawl_complete_stats(crawl, finished)
+        else:
+            # TODO: Remove any already uploaded WACZ files (e.g. from
+            # paused crawls) from org storage count
+            # await self.org_ops.inc_org_bytes_stored(
+            #     crawl.oid, -status.filesAddedSize, "crawl"
+            # )
+            pass
 
         # Regular Crawl Finished
         if not crawl.is_qa:
@@ -1738,6 +1763,8 @@ class CrawlOperator(BaseOperator):
 
         if state in SUCCESSFUL_STATES and crawl.oid:
             await self.page_ops.set_archived_item_page_counts(crawl.id)
+            # TODO: Make sure WACZs from paused crawls that have already been
+            # added here aren't double-counted
             await self.org_ops.inc_org_bytes_stored(
                 crawl.oid, status.filesAddedSize, "crawl"
             )
