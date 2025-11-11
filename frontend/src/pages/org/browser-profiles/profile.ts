@@ -633,7 +633,10 @@ export class BrowserProfilesProfilePage extends BtrixElement {
   private readonly renderWorkflows = (
     workflows: APIPaginatedList<Workflow>,
   ) => {
-    const failedNotLoggedInState = "failed_not_logged_in" satisfies CrawlState;
+    const failedStates = [
+      "failed",
+      "failed_not_logged_in",
+    ] satisfies CrawlState[];
 
     return html`
       <div class="mb-3 rounded-lg border bg-neutral-50 px-5 py-3">
@@ -643,19 +646,19 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           </span>
 
           <btrix-filter-chip
-            ?checked=${this.workflowParams.lastCrawlState?.includes(
-              failedNotLoggedInState,
+            ?checked=${this.workflowParams.lastCrawlState?.some((state) =>
+              (failedStates as CrawlState[]).includes(state),
             )}
             @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
               const { checked } = e.target as FilterChip;
 
               this.workflowParams = {
                 ...this.workflowParams,
-                lastCrawlState: checked ? [failedNotLoggedInState] : undefined,
+                lastCrawlState: checked ? failedStates : undefined,
               };
             }}
           >
-            ${CrawlStatus.getContent({ state: failedNotLoggedInState }).label}
+            ${CrawlStatus.getContent({ state: "failed" }).label}
           </btrix-filter-chip>
         </div>
       </div>
