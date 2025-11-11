@@ -212,6 +212,8 @@ def test_commit_browser_to_existing_profile(
         url="https://example-com.webrecorder.net",
     )
 
+    time.sleep(10)
+
     # Commit new browser to existing profile
     while True:
         r = requests.patch(
