@@ -1,6 +1,16 @@
 """Profile Management"""
 
-from typing import Optional, TYPE_CHECKING, Any, cast, Dict, List, Tuple, Union
+from typing import (
+    Optional,
+    TYPE_CHECKING,
+    Any,
+    cast,
+    Dict,
+    List,
+    Tuple,
+    Union,
+    Annotated,
+)
 from uuid import UUID, uuid4
 import os
 import asyncio
@@ -8,7 +18,7 @@ import json
 
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException, Query
 from starlette.requests import Headers
 from pymongo import ReturnDocument
 import aiohttp
@@ -35,6 +45,7 @@ from .models import (
     ProfileBrowserGetUrlResponse,
     ProfileBrowserMetadata,
     TagsResponse,
+    ListFilterType,
 )
 from .utils import dt_now, str_to_date
 
@@ -425,6 +436,8 @@ class ProfileOps:
         self,
         org: Organization,
         userid: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
+        tag_match: Optional[ListFilterType] = ListFilterType.AND,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: str = "modified",
@@ -437,9 +450,12 @@ class ProfileOps:
         page = page - 1
         skip = page_size * page
 
-        match_query = {"oid": org.id}
+        match_query: Dict[str, Any] = {"oid": org.id}
         if userid:
             match_query["userid"] = userid
+        if tags:
+            query_type = "$all" if tag_match == ListFilterType.AND else "$in"
+            match_query["tags"] = {query_type: tags}
 
         aggregate: List[Dict[str, Any]] = [{"$match": match_query}]
 
@@ -684,6 +700,15 @@ def init_profiles_api(
     async def list_profiles(
         org: Organization = Depends(org_crawl_dep),
         userid: Optional[UUID] = None,
+        tag: Annotated[Optional[List[str]], Query(title="Tags")] = None,
+        tag_match: Annotated[
+            Optional[ListFilterType],
+            Query(
+                alias="tagMatch",
+                title="Tag Match Type",
+                description='Defaults to `"and"` if omitted',
+            ),
+        ] = ListFilterType.AND,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: str = "modified",
@@ -692,6 +717,8 @@ def init_profiles_api(
         profiles, total = await ops.list_profiles(
             org,
             userid,
+            tags=tag,
+            tag_match=tag_match,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,

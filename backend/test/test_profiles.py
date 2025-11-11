@@ -154,6 +154,56 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             time.sleep(1)
 
 
+def test_list_profiles_filter_by_tag(
+    admin_auth_headers, default_org_id, profile_id, profile_2_id
+):
+    # Test multiple tags with implicit and explicit AND tagMatch
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tag=profile,old-webrecorder",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == profile_id
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tag=profile,old-webrecorder&tagMatch=and",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == profile_id
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tag=old-webrecorder,specs-webrecorder&tagMatch=and",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 0
+
+    # Test single tag
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tag=specs-webrecorder",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == profile_2_id
+
+    # Test multiple tags with explicit OR tagMatch
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tag=profile,old-webrecorder&tagMatch=or",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+
+
 def test_update_profile_metadata(crawler_auth_headers, default_org_id, profile_id):
     # Get original created/modified times
     r = requests.get(
