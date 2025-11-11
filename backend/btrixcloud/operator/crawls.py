@@ -1444,10 +1444,12 @@ class CrawlOperator(BaseOperator):
         # pause crawl if current running crawl sizes reach storage quota
         org = crawl.org
 
+        # pause crawl if org is set read-only
         if org.readOnly:
             await self.pause_crawl(crawl, org)
             return "paused_org_readonly"
 
+        # pause crawl if storage quota is reached
         if org.quotas.storageQuota:
             active_crawls_total_size = await self.crawl_ops.get_active_crawls_size(
                 crawl.oid
@@ -1456,7 +1458,7 @@ class CrawlOperator(BaseOperator):
                 await self.pause_crawl(crawl, org)
                 return "paused_storage_quota_reached"
 
-        # gracefully stop crawl is execution time quota is reached
+        # pause crawl if execution time quota is reached
         if self.org_ops.exec_mins_quota_reached(org):
             await self.pause_crawl(crawl, org)
             return "paused_time_quota_reached"
