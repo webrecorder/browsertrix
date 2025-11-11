@@ -413,12 +413,9 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                 : none,
             )}
           </btrix-desc-list-item>
-          ${
-            // <btrix-desc-list-item label=${msg("Tags")}>
-            //   ${this.renderDetail(() => html`${none}`)}
-            // </btrix-desc-list-item>
-            undefined
-          }
+          <btrix-desc-list-item label=${msg("Tags")}>
+            ${this.renderDetail(() => html`${none}`)}
+          </btrix-desc-list-item>
         </btrix-desc-list>
         <sl-divider class="my-5"></sl-divider>
         <btrix-desc-list>
