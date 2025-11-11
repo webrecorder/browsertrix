@@ -1,7 +1,7 @@
-import { localized, msg, str } from "@lit/localize";
-import clsx from "clsx";
-import { css, nothing, type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
+import { html, nothing } from "lit";
+import { customElement, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
@@ -10,91 +10,160 @@ import type { Profile } from "./types";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type {
+  BtrixFilterChipChangeEvent,
+  FilterChip,
+} from "@/components/ui/filter-chip";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
-import {
-  SortDirection,
-  type SortValues,
-} from "@/components/ui/table/table-header-cell";
 import { ClipboardController } from "@/controllers/clipboard";
-import { pageHeader } from "@/layouts/pageHeader";
+import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { emptyMessage } from "@/layouts/emptyMessage";
+import { page } from "@/layouts/page";
+import { OrgTab } from "@/routes";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
 import type { Browser } from "@/types/browser";
+import { SortDirection as SortDirectionEnum } from "@/types/utils";
 import { isApiError } from "@/utils/api";
-import { html } from "@/utils/LiteElement";
 import { isArchivingDisabled } from "@/utils/orgs";
-import { tw } from "@/utils/tailwind";
 
+const SORT_DIRECTIONS = ["asc", "desc"] as const;
+type SortDirection = (typeof SORT_DIRECTIONS)[number];
+type SortField = "name" | "url" | "modified";
+type SortBy = {
+  field: SortField;
+  direction: SortDirection;
+};
+
+const sortableFields: Record<
+  SortField,
+  { label: string; defaultDirection?: SortDirection }
+> = {
+  name: {
+    label: msg("Name"),
+    defaultDirection: "desc",
+  },
+  url: {
+    label: msg("Starting URL"),
+    defaultDirection: "asc",
+  },
+  modified: {
+    label: msg("Last Modified"),
+    defaultDirection: "desc",
+  },
+};
+
+const DEFAULT_SORT_BY = {
+  field: "modified",
+  direction: sortableFields.modified.defaultDirection || "desc",
+} as const satisfies SortBy;
 const INITIAL_PAGE_SIZE = 20;
+const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 
-/**
- * Usage:
- * ```ts
- * <btrix-browser-profiles-list
- * ></btrix-browser-profiles-list>
- * ```
- */
+const columnsCss = [
+  "min-content", // Status
+  "[clickable-start] minmax(min-content, 1fr)", // Name
+  "minmax(max-content, 1fr)", // Origins
+  "minmax(min-content, 22ch)", // Last modified
+  "[clickable-end] min-content", // Actions
+].join(" ");
+
 @customElement("btrix-browser-profiles-list")
 @localized()
 export class BrowserProfilesList extends BtrixElement {
-  @property({ type: Boolean })
-  isCrawler = false;
-
   @state()
-  browserProfiles?: APIPaginatedList<Profile>;
-
-  @state()
-  sort: Required<APISortQuery> = {
-    sortBy: "modified",
-    sortDirection: -1,
+  private pagination: Required<APIPaginationQuery> = {
+    page: parsePage(new URLSearchParams(location.search).get("page")),
+    pageSize: INITIAL_PAGE_SIZE,
   };
 
-  @state()
-  private isLoading = true;
+  private readonly orderBy = new SearchParamsValue<SortBy>(
+    this,
+    (value, params) => {
+      if (value.field === DEFAULT_SORT_BY.field) {
+        params.delete("sortBy");
+      } else {
+        params.set("sortBy", value.field);
+      }
+      if (value.direction === sortableFields[value.field].defaultDirection) {
+        params.delete("sortDir");
+      } else {
+        params.set("sortDir", value.direction);
+      }
+      return params;
+    },
+    (params) => {
+      const field = params.get("sortBy") as SortBy["field"] | null;
+      if (!field) {
+        return DEFAULT_SORT_BY;
+      }
+      let direction = params.get("sortDir");
+      if (
+        !direction ||
+        (SORT_DIRECTIONS as readonly string[]).includes(direction)
+      ) {
+        direction =
+          sortableFields[field].defaultDirection || DEFAULT_SORT_BY.direction;
+      }
+      return { field, direction: direction as SortDirection };
+    },
+  );
 
-  static styles = css`
-    btrix-table {
-      --btrix-table-grid-template-columns: [clickable-start] minmax(30ch, 50ch)
-        minmax(30ch, 40ch) repeat(2, 1fr) [clickable-end] min-content;
-      --btrix-table-cell-gap: var(--sl-spacing-x-small);
-      --btrix-table-cell-padding-x: var(--sl-spacing-small);
-    }
+  private readonly filterByCurrentUser = new SearchParamsValue<boolean>(
+    this,
+    (value, params) => {
+      if (value) {
+        params.set("mine", "true");
+      } else {
+        params.delete("mine");
+      }
+      return params;
+    },
+    (params) => params.get("mine") === "true",
+    {
+      initial: (initialValue) =>
+        window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
+          "true" ||
+        initialValue ||
+        false,
+    },
+  );
 
-    btrix-table-body btrix-table-row:nth-of-type(n + 2) {
-      --btrix-border-top: 1px solid var(--sl-panel-border-color);
-    }
-
-    btrix-table-body btrix-table-row:first-of-type {
-      --btrix-border-radius-top: var(--sl-border-radius-medium);
-    }
-
-    btrix-table-body btrix-table-row:last-of-type {
-      --btrix-border-radius-bottom: var(--sl-border-radius-medium);
-    }
-
-    btrix-table-row {
-      border-top: var(--btrix-border-top, 0);
-      border-radius: var(--btrix-border-radius-top, 0)
-        var(--btrix-border-radius-to, 0) var(--btrix-border-radius-bottom, 0)
-        var(--btrix-border-radius-bottom, 0);
-      height: 2.5rem;
-    }
-  `;
-
-  protected willUpdate(
-    changedProperties: PropertyValues<this> & Map<string, unknown>,
-  ) {
-    if (changedProperties.has("sort")) {
-      void this.fetchBrowserProfiles();
-    }
+  get isCrawler() {
+    return this.appState.isCrawler;
   }
 
+  private readonly profilesTask = new Task(this, {
+    task: async ([pagination, orderBy, filterByCurrentUser], { signal }) => {
+      return this.getProfiles(
+        {
+          ...pagination,
+          userid: filterByCurrentUser ? this.userInfo?.id : undefined,
+          sortBy: orderBy.field,
+          sortDirection:
+            orderBy.direction === "desc"
+              ? SortDirectionEnum.Descending
+              : SortDirectionEnum.Ascending,
+        },
+        signal,
+      );
+    },
+    args: () =>
+      [
+        this.pagination,
+        this.orderBy.value,
+        this.filterByCurrentUser.value,
+      ] as const,
+  });
+
   render() {
-    return html`${pageHeader({
+    return page(
+      {
         title: msg("Browser Profiles"),
+        border: false,
         actions: this.isCrawler
           ? html`
               <sl-button
@@ -114,198 +183,243 @@ export class BrowserProfilesList extends BtrixElement {
               </sl-button>
             `
           : undefined,
-        classNames: tw`mb-3`,
-      })}
-      <div class="pb-1">${this.renderTable()}</div>`;
+      },
+      this.renderPage,
+    );
   }
 
-  private renderTable() {
-    const headerCells = [
-      {
-        sortBy: "name",
-        sortDirection: 1,
-        className: "pl-3",
-        label: msg("Name"),
-      },
-      { sortBy: "url", sortDirection: 1, label: msg("Visited URLs") },
-      { sortBy: "created", sortDirection: -1, label: msg("Created On") },
-      { sortBy: "modified", sortDirection: -1, label: msg("Last Updated") },
-    ];
-    const sortProps: Record<
-      SortValues,
-      { name: string; label: string; className: string }
-    > = {
-      none: {
-        name: "arrow-down-up",
-        label: msg("Sortable"),
-        className: tw`text-xs opacity-0 hover:opacity-100 group-hover:opacity-100`,
-      },
-      ascending: {
-        name: "sort-up-alt",
-        label: msg("Ascending"),
-        className: tw`text-base`,
-      },
-      descending: {
-        name: "sort-down",
-        label: msg("Descending"),
-        className: tw`text-base`,
-      },
-    };
-
-    const getSortIcon = (sortValue: SortValues) => {
-      const { name, label, className } = sortProps[sortValue];
-      return html`
-        <sl-icon
-          class=${clsx(tw`ml-1 text-neutral-900 transition-opacity`, className)}
-          name=${name}
-          label=${label}
-        ></sl-icon>
-      `;
-    };
-
+  private readonly renderPage = () => {
     return html`
-      <btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
-        <btrix-table>
-          <btrix-table-head class="mb-2">
-            ${headerCells.map(({ sortBy, sortDirection, label, className }) => {
-              const isSorting = sortBy === this.sort.sortBy;
-              const sortValue =
-                (isSorting && SortDirection.get(this.sort.sortDirection)) ||
-                "none";
-              // TODO implement sort render logic in table-header-cell
-              return html`
-                <btrix-table-header-cell
-                  class="${className} group cursor-pointer rounded transition-colors hover:bg-primary-50"
-                  ariaSort=${sortValue}
-                  @click=${() => {
-                    if (isSorting) {
-                      this.sort = {
-                        ...this.sort,
-                        sortDirection: this.sort.sortDirection * -1,
-                      };
-                    } else {
-                      this.sort = {
-                        sortBy,
-                        sortDirection,
-                      };
-                    }
-                  }}
-                >
-                  ${label} ${getSortIcon(sortValue)}
-                </btrix-table-header-cell>
-              `;
-            })}
-            <btrix-table-header-cell>
-              <span class="sr-only">${msg("Row Actions")}</span>
-            </btrix-table-header-cell>
-          </btrix-table-head>
-          <btrix-table-body
-            class=${clsx(
-              "relative rounded border",
-              this.browserProfiles == null && this.isLoading && tw`min-h-48`,
-            )}
-          >
-            ${when(this.browserProfiles, ({ total, items }) =>
-              total ? html` ${items.map(this.renderItem)} ` : nothing,
-            )}
-            ${when(this.isLoading, this.renderLoading)}
-          </btrix-table-body>
-        </btrix-table>
-      </btrix-overflow-scroll>
-      ${when(this.browserProfiles, ({ total, page, pageSize }) =>
-        total
-          ? html`
-              <footer class="mt-6 flex justify-center">
-                <btrix-pagination
-                  page=${page}
-                  totalCount=${total}
-                  size=${pageSize}
-                  @page-change=${async (e: PageChangeEvent) => {
-                    void this.fetchBrowserProfiles({ page: e.detail.page });
-                  }}
-                ></btrix-pagination>
-              </footer>
-            `
-          : html`
-              <div class="border-b border-t py-5">
-                <p class="text-0-500 text-center">
-                  ${msg("No browser profiles yet.")}
-                </p>
-              </div>
-            `,
+      <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
+        ${this.renderControls()}
+      </div>
+
+      ${when(
+        this.profilesTask.value,
+        ({ items, total, page, pageSize }) => html`
+          ${total
+            ? html`
+                ${this.renderTable(items)}
+                ${when(
+                  total > pageSize,
+                  () => html`
+                    <footer class="mt-6 flex justify-center">
+                      <btrix-pagination
+                        page=${page}
+                        totalCount=${total}
+                        size=${pageSize}
+                        @page-change=${async (e: PageChangeEvent) => {
+                          this.pagination = {
+                            ...this.pagination,
+                            page: e.detail.page,
+                          };
+                          await this.updateComplete;
+
+                          // Scroll to top of list
+                          // TODO once deep-linking is implemented, scroll to top of pushstate
+                          this.scrollIntoView({ behavior: "smooth" });
+                        }}
+                      ></btrix-pagination>
+                    </footer>
+                  `,
+                )}
+              `
+            : this.renderEmpty()}
+        `,
       )}
+    `;
+  };
+
+  private renderEmpty() {
+    const message = msg("Your org doesn’t have any browser profiles yet.");
+
+    if (this.isCrawler) {
+      return emptyMessage({
+        message,
+        detail: msg(
+          "Browser profiles let you crawl pages behind paywalls and logins.",
+        ),
+        actions: html`
+          <sl-button
+            @click=${() => {
+              this.dispatchEvent(
+                new CustomEvent<SelectNewDialogEvent["detail"]>(
+                  "select-new-dialog",
+                  {
+                    detail: "browser-profile",
+                  },
+                ),
+              );
+            }}
+          >
+            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+            ${msg("Create Browser Profile")}
+          </sl-button>
+        `,
+      });
+    }
+
+    return emptyMessage({ message });
+  }
+
+  private renderControls() {
+    return html`
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="whitespace-nowrap text-neutral-500">
+            ${msg("Filter by:")}
+          </span>
+          ${this.renderFilterControl()}
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <label class="whitespace-nowrap text-neutral-500" for="sort-select">
+            ${msg("Sort by:")}
+          </label>
+          ${this.renderSortControl()}
+        </div>
+      </div>
     `;
   }
 
-  private readonly renderLoading = () =>
-    html`<div
-      class="absolute left-0 top-0 z-10 flex h-full w-full items-center justify-center bg-white/50 text-3xl"
-    >
-      <sl-spinner></sl-spinner>
-    </div>`;
+  private renderFilterControl() {
+    return html`
+      <btrix-filter-chip
+        ?checked=${this.filterByCurrentUser.value}
+        @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
+          const { checked } = e.target as FilterChip;
+          this.filterByCurrentUser.setValue(Boolean(checked));
+        }}
+      >
+        ${msg("Mine")}
+      </btrix-filter-chip>
+    `;
+  }
+
+  private renderSortControl() {
+    const options = Object.entries(sortableFields).map(
+      ([value, { label }]) => html`
+        <sl-option value=${value}>${label}</sl-option>
+      `,
+    );
+    return html`
+      <sl-select
+        id="sort-select"
+        class="md:min-w-[9.2rem]"
+        size="small"
+        pill
+        value=${this.orderBy.value.field}
+        @sl-change=${(e: Event) => {
+          const field = (e.target as HTMLSelectElement).value as SortField;
+          this.orderBy.setValue({
+            field: field,
+            direction:
+              sortableFields[field].defaultDirection ||
+              this.orderBy.value.direction,
+          });
+        }}
+      >
+        ${options}
+      </sl-select>
+      <sl-tooltip
+        content=${this.orderBy.value.direction === "asc"
+          ? msg("Sort in descending order")
+          : msg("Sort in ascending order")}
+      >
+        <sl-icon-button
+          name=${this.orderBy.value.direction === "asc"
+            ? "sort-up-alt"
+            : "sort-down"}
+          class="text-base"
+          label=${this.orderBy.value.direction === "asc"
+            ? msg("Sort Descending")
+            : msg("Sort Ascending")}
+          @click=${() => {
+            this.orderBy.setValue({
+              ...this.orderBy.value,
+              direction:
+                this.orderBy.value.direction === "asc" ? "desc" : "asc",
+            });
+          }}
+        ></sl-icon-button>
+      </sl-tooltip>
+    `;
+  }
+
+  private readonly renderTable = (profiles: Profile[]) => {
+    return html`<btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
+      <btrix-table
+        style="--btrix-table-grid-template-columns: ${columnsCss}"
+        class="whitespace-nowrap [--btrix-table-cell-gap:var(--sl-spacing-x-small)] [--btrix-table-cell-padding-x:var(--sl-spacing-small)]"
+      >
+        <btrix-table-head class="mb-2">
+          <btrix-table-header-cell class="pr-0">
+            <span class="sr-only">${msg("Status")}</span>
+          </btrix-table-header-cell>
+          <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
+          <btrix-table-header-cell>
+            ${msg("Configured Sites")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell>
+            ${msg("Last Modified")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell>
+            <span class="sr-only">${msg("Row actions")}</span>
+          </btrix-table-header-cell>
+        </btrix-table-head>
+        <btrix-table-body
+          class="divide-y rounded border [--btrix-table-cell-padding-y:var(--sl-spacing-2x-small)]"
+        >
+          ${profiles.map(this.renderItem)}
+        </btrix-table-body>
+      </btrix-table>
+    </btrix-overflow-scroll>`;
+  };
 
   private readonly renderItem = (data: Profile) => {
+    const startingUrl = data.origins[0];
+    const otherOrigins = data.origins.slice(1);
+
     return html`
       <btrix-table-row
-        class="cursor-pointer select-none transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
+        class="h-10 transition-colors duration-fast focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
-        <btrix-table-cell
-          class="flex-col items-center justify-center pl-3"
-          rowClickTarget="a"
-        >
+        <btrix-table-cell class="pr-0">
+          <sl-tooltip content=${data.inUse ? msg("In Use") : msg("Not in Use")}>
+            <sl-icon
+              name=${data.inUse ? "check-circle" : "dash-circle"}
+              class="${data.inUse
+                ? "text-primary"
+                : "text-neutral-400"} text-base"
+            ></sl-icon>
+          </sl-tooltip>
+        </btrix-table-cell>
+        <btrix-table-cell rowClickTarget="a">
           <a
-            class="flex items-center gap-3"
-            href=${`${this.navigate.orgBasePath}/browser-profiles/profile/${data.id}`}
+            href="${this.navigate
+              .orgBasePath}/${OrgTab.BrowserProfiles}/profile/${data.id}"
             @click=${this.navigate.link}
+            class="truncate"
+            >${data.name}</a
           >
-            <span class="truncate">${data.name}</span>
-          </a>
         </btrix-table-cell>
         <btrix-table-cell>
-          <div class="truncate">${data.origins[0]}</div>
-          ${data.origins.length > 1
-            ? html`<btrix-popover placement="top">
-                <span slot="content" class="break-words"
-                  >${data.origins.slice(1).join(", ")}</span
+          <btrix-code language="url" value=${startingUrl} noWrap></btrix-code>
+          ${otherOrigins.length
+            ? html`<btrix-popover placement="right" hoist>
+                <btrix-badge
+                  >+${this.localize.number(otherOrigins.length)}</btrix-badge
                 >
-                <btrix-badge class="ml-2">
-                  ${msg(str`+${data.origins.length - 1}`)}
-                </btrix-badge>
+                <ul slot="content">
+                  ${otherOrigins.map((url) => html`<li>${url}</li>`)}
+                </ul>
               </btrix-popover>`
             : nothing}
         </btrix-table-cell>
-        <btrix-table-cell class="whitespace-nowrap tabular-nums">
-          <sl-tooltip
-            content=${msg(str`By ${data.createdByName}`)}
-            ?disabled=${!data.createdByName}
-          >
-            <btrix-format-date
-              date=${data.created}
-              month="2-digit"
-              day="2-digit"
-              year="numeric"
-              hour="2-digit"
-              minute="2-digit"
-            ></btrix-format-date>
-          </sl-tooltip>
-        </btrix-table-cell>
-        <btrix-table-cell class="whitespace-nowrap tabular-nums">
-          <sl-tooltip
-            content=${msg(str`By ${data.modifiedByName || data.createdByName}`)}
-            ?disabled=${!data.createdByName}
-          >
-            <btrix-format-date
-              date=${
-                // NOTE older profiles may not have "modified" data
-                data.modified || data.created
-              }
-              month="2-digit"
-              day="2-digit"
-              year="numeric"
-              hour="2-digit"
-              minute="2-digit"
-            ></btrix-format-date>
-          </sl-tooltip>
+        <btrix-table-cell>
+          ${this.localize.relativeDate(data.modified || data.created, {
+            capitalize: true,
+          })}
         </btrix-table-cell>
         <btrix-table-cell class="p-0">
           ${this.renderActions(data)}
@@ -397,7 +511,10 @@ export class BrowserProfilesList extends BtrixElement {
         id: "browser-profile-deleted-status",
       });
 
-      void this.fetchBrowserProfiles();
+      this.pagination = {
+        ...this.pagination,
+        page: 1,
+      };
     } catch (e) {
       let message = msg(
         html`Sorry, couldn't delete browser profile at this time.`,
@@ -432,43 +549,13 @@ export class BrowserProfilesList extends BtrixElement {
     });
   }
 
-  /**
-   * Fetch browser profiles and update internal state
-   */
-  private async fetchBrowserProfiles(
-    params?: APIPaginationQuery,
-  ): Promise<void> {
-    try {
-      this.isLoading = true;
-      const data = await this.getProfiles({
-        page:
-          params?.page ||
-          this.browserProfiles?.page ||
-          parsePage(new URLSearchParams(location.search).get("page")),
-        pageSize:
-          params?.pageSize ||
-          this.browserProfiles?.pageSize ||
-          INITIAL_PAGE_SIZE,
-      });
-
-      this.browserProfiles = data;
-    } catch (e) {
-      this.notify.toast({
-        message: msg("Sorry, couldn't retrieve browser profiles at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "browser-profile-status",
-      });
-    } finally {
-      this.isLoading = false;
-    }
-  }
-
-  private async getProfiles(params: APIPaginationQuery) {
+  private async getProfiles(
+    params: { userid?: string } & APIPaginationQuery & APISortQuery,
+    signal: AbortSignal,
+  ) {
     const query = queryString.stringify(
       {
         ...params,
-        ...this.sort,
       },
       {
         arrayFormat: "comma",
@@ -477,6 +564,7 @@ export class BrowserProfilesList extends BtrixElement {
 
     const data = await this.api.fetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles?${query}`,
+      { signal },
     );
 
     return data;
