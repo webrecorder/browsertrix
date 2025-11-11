@@ -1603,9 +1603,9 @@ class CrawlOperator(BaseOperator):
                 paused_state: TYPE_PAUSED_STATES
                 if status.stopReason == "paused_storage_quota_reached":
                     paused_state = "paused_storage_quota_reached"
-                if status.stopReason == "paused_time_quota_reached":
+                elif status.stopReason == "paused_time_quota_reached":
                     paused_state = "paused_time_quota_reached"
-                if status.stopReason == "paused_org_readoly":
+                elif status.stopReason == "paused_org_readoly":
                     paused_state = "paused_org_readonly"
                 else:
                     paused_state = "paused"
@@ -1617,6 +1617,17 @@ class CrawlOperator(BaseOperator):
                     crawl,
                     allowed_from=RUNNING_AND_WAITING_STATES,
                 )
+
+                # Add size of paused crawl uploaded WACZ to org so that
+                # the org knows it's over quota
+                # TODO: Make sure we don't double-count the storage if the
+                # crawl is resumed or stopped and completes
+                # TODO: Make sure we remove this size if crawl is canceled
+                # if paused_state == "paused_storage_quota_reached":
+                #     await self.org_ops.inc_org_bytes_stored(
+                #         crawl.oid, stats.size, "crawl"
+                #     )
+
                 return status
 
         # if at least one is done according to redis, consider crawl successful
