@@ -234,6 +234,11 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                 ${msg("Duplicate Profile")}
               </sl-menu-item>
               <sl-divider></sl-divider>
+              <sl-menu-item @click=${this.newWorkflow}>
+                <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
+                ${msg("New Workflow with Profile")}
+              </sl-menu-item>
+              <sl-divider></sl-divider>
             `,
           )}
           <sl-menu-item
@@ -594,34 +599,10 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                       <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
                       ${msg("Manage Workflows")}
                     </sl-button>
-                    <sl-button
-                      size="small"
-                      @click=${() => {
-                        this.navigate.to(
-                          `${this.navigate.orgBasePath}/${OrgTab.Workflows}/new#${"browserSettings" satisfies SectionsEnum}`,
-                          settingsForDuplicate({
-                            workflow: {
-                              profileid: this.profileId,
-                              proxyId: profile.proxyId,
-                              crawlerChannel: profile.crawlerChannel,
-                            },
-                          }),
-                        );
-
-                        this.notify.toast({
-                          message: msg(
-                            "Copied browser settings to new workflow.",
-                          ),
-                          variant: "success",
-                          icon: "check2-circle",
-                          id: "workflow-copied-status",
-                          duration: 8000,
-                        });
-                      }}
-                    >
+                    <sl-button size="small" @click=${this.newWorkflow}>
                       <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                      ${msg("New Workflow with Profile")}</sl-button
-                    >
+                      ${msg("New Workflow with Profile")}
+                    </sl-button>
                   </div>`,
                 }),
               }),
@@ -754,6 +735,27 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     return this.profile?.origins[0];
   }
 
+  private readonly newWorkflow = () => {
+    this.navigate.to(
+      `${this.navigate.orgBasePath}/${OrgTab.Workflows}/new#${"browserSettings" satisfies SectionsEnum}`,
+      settingsForDuplicate({
+        workflow: {
+          profileid: this.profileId,
+          proxyId: this.profile?.proxyId,
+          crawlerChannel: this.profile?.crawlerChannel,
+        },
+      }),
+    );
+
+    this.notify.toast({
+      message: msg("Copied browser settings to new workflow."),
+      variant: "success",
+      icon: "check2-circle",
+      id: "workflow-copied-status",
+      duration: 8000,
+    });
+  };
+
   private readonly openBrowser = async (url?: string) => {
     if (!url) {
       url = await this.getFirstBrowserUrl();
@@ -828,20 +830,6 @@ export class BrowserProfilesProfilePage extends BtrixElement {
         id: "browser-profile-status",
       });
     }
-  }
-
-  private async createBrowser(
-    params: { url: string; profileId: string },
-    signal?: AbortSignal,
-  ) {
-    return this.api.fetch<{ browserid: string }>(
-      `/orgs/${this.orgId}/profiles/browser`,
-      {
-        method: "POST",
-        body: JSON.stringify(params),
-        signal,
-      },
-    );
   }
 
   private async getWorkflows(

@@ -83,7 +83,7 @@ import type {
 import { infoCol, inputCol } from "@/layouts/columns";
 import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
 import { panel } from "@/layouts/panel";
-import { WorkflowTab } from "@/routes";
+import { OrgTab, WorkflowTab } from "@/routes";
 import { infoTextFor } from "@/strings/crawl-workflows/infoText";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
@@ -3137,10 +3137,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async onReset() {
+    const fromBrowserProfile =
+      !this.initialSeeds &&
+      !this.initialSeedFile &&
+      this.initialWorkflow?.profileid;
+
     this.navigate.to(
-      `${this.navigate.orgBasePath}/workflows${this.configId ? `/${this.configId}/${WorkflowTab.Settings}` : ""}`,
+      fromBrowserProfile
+        ? `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${fromBrowserProfile}`
+        : `${this.navigate.orgBasePath}/${OrgTab.Workflows}${this.configId ? `/${this.configId}/${WorkflowTab.Settings}` : ""}`,
     );
-    // this.initializeEditor();
   }
 
   private validateUrlList(
