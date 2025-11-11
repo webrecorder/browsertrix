@@ -17,6 +17,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import queryString from "query-string";
 import { isFocusable } from "tabbable";
 
 import type { BtrixChangeTagFilterEvent, Tag, Tags, TagType } from "./types";
@@ -29,10 +30,11 @@ import { tw } from "@/utils/tailwind";
 const MAX_TAGS_IN_LABEL = 5;
 const apiPathForTagType: Record<TagType, string> = {
   workflow: "crawlconfigs",
+  "workflow-crawl": "crawls",
   "archived-item": "all-crawls",
-  crawl: "crawls",
-  profile: "profiles",
+  "archived-item-crawl": "crawls",
   upload: "uploads",
+  profile: "profiles",
 };
 
 /**
@@ -100,8 +102,16 @@ export class TagFilter extends BtrixElement {
         return;
       }
 
+      let query = "";
+
+      if (tagType === "workflow-crawl") {
+        query = queryString.stringify({
+          onlySuccessful: false,
+        });
+      }
+
       const { tags } = await this.api.fetch<Tags>(
-        `/orgs/${this.orgId}/${apiPathForTagType[tagType]}/tagCounts`,
+        `/orgs/${this.orgId}/${apiPathForTagType[tagType]}/tagCounts${query && `?${query}`}`,
         { signal },
       );
 

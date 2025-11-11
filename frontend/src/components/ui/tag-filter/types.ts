@@ -2,8 +2,9 @@ import type { BtrixChangeEvent } from "@/events/btrix-change";
 
 export type TagType =
   | "workflow"
+  | "workflow-crawl"
   | "archived-item"
-  | "crawl"
+  | "archived-item-crawl"
   | "upload"
   | "profile";
 

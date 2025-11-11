@@ -496,11 +496,9 @@ export class OrgCrawls extends BtrixElement {
           ></btrix-crawl-state-filter>
 
           <btrix-tag-filter
-            tagType="crawl"
+            tagType="workflow-crawl"
             .tags=${this.filterByTags.value}
             .type=${this.filterByTagsType.value}
-            itemType="crawl"
-            includeNotSuccessful
             @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
               this.filterByTags.setValue(e.detail.value?.tags || []);
               this.filterByTagsType.setValue(e.detail.value?.type || "or");
