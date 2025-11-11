@@ -97,6 +97,8 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     task: async ([profileId], { signal }) => {
       const profile = await this.getProfile(profileId, signal);
 
+      this.updatedProfileParams = undefined;
+
       return profile;
     },
     args: () => [this.profileId] as const,
