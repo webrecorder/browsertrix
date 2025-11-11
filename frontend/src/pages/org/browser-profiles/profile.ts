@@ -220,7 +220,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                 @click=${menuItemClick(() => void this.openBrowser())}
               >
                 <sl-icon slot="prefix" name="gear"></sl-icon>
-                ${msg("Configure Profile")}
+                ${msg("Edit Configuration")}
               </sl-menu-item>
               <sl-menu-item
                 ?disabled=${archivingDisabled || !this.profile}
@@ -286,7 +286,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     return panel({
       heading: msg("Configured Sites"),
       actions: isCrawler
-        ? html`<sl-tooltip content=${msg("Configure")}>
+        ? html`<sl-tooltip content=${msg("Edit Configuration")}>
             <sl-icon-button
               name="gear"
               class="text-base"
@@ -438,6 +438,13 @@ export class BrowserProfilesProfilePage extends BtrixElement {
 
   private renderOverview() {
     const none = html`<span class="text-neutral-400">${stringFor.none}</span>`;
+    const profile = this.profile;
+    const modifiedByAnyDate = profile
+      ? [profile.modifiedCrawlDate, profile.modified, profile.created].reduce(
+          (a, b) => (b && a && b > a ? b : a),
+          profile.created,
+        )
+      : null;
 
     return panel({
       heading: msg("Overview"),
@@ -487,35 +494,67 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           </btrix-desc-list-item>
           <btrix-desc-list-item label=${msg("Last Modified")}>
             ${this.renderDetail((profile) =>
-              this.localize.relativeDate(
-                // NOTE older profiles may not have "modified" data
-                profile.modified || profile.created,
-              ),
+              this.localize.relativeDate(modifiedByAnyDate || profile.created),
             )}
           </btrix-desc-list-item>
-          ${when(this.profile, (profile) =>
-            profile.modified
-              ? html`<btrix-desc-list-item label=${msg("Modified By")}>
-                  ${this.renderDetail((profile) => {
-                    if (
-                      profile.modifiedCrawlDate &&
-                      (!profile.modified ||
-                        profile.modifiedCrawlDate >= profile.modified)
-                    ) {
-                      return msg("Automatic update from crawl");
-                    }
+          <btrix-desc-list-item label=${msg("Last Modified By")}>
+            ${this.renderDetail((profile) => {
+              let modifier: string | TemplateResult =
+                profile.createdByName || msg("User");
 
-                    if (profile.modifiedByName) {
-                      return profile.modifiedByName;
-                    }
+              switch (modifiedByAnyDate) {
+                case profile.modifiedCrawlDate:
+                  modifier = html`
+                    <btrix-link
+                      href="${this.navigate
+                        .orgBasePath}/${OrgTab.Workflows}/${profile.modifiedCrawlCid}/${WorkflowTab.Crawls}/${profile.modifiedCrawlId}"
+                      >${msg("Workflow Crawl")}</btrix-link
+                    >
+                  `;
+                  break;
+                case profile.modified:
+                  modifier = profile.modifiedByName || modifier;
+                  break;
+                default:
+                  break;
+              }
 
-                    return noData;
-                  })}
-                </btrix-desc-list-item>`
-              : html`<btrix-desc-list-item label=${msg("Created By")}>
-                  ${profile.createdByName || noData}
-                </btrix-desc-list-item>`,
+              return modifier;
+            })}
+          </btrix-desc-list-item>
+          ${when(
+            this.profile,
+            (profile) =>
+              modifiedByAnyDate === profile.modifiedCrawlDate
+                ? html`<btrix-desc-list-item label=${msg("Last Saved By")}>
+                    ${profile.modifiedByName}
+                    <span class="inline-flex"
+                      >(${this.localize.relativeDate(
+                        profile.modified || profile.created,
+                      )})</span
+                    >
+                  </btrix-desc-list-item>`
+                : html`<btrix-desc-list-item label=${msg("Date Saved")}>
+                    ${this.localize.date(profile.created, {
+                      dateStyle: "medium",
+                    })}
+                  </btrix-desc-list-item>`,
+            () =>
+              html`<btrix-desc-list-item role="none">
+                <sl-skeleton slot="label" class="w-32"></sl-skeleton>
+                <sl-skeleton class="w-32"></sl-skeleton>
+              </btrix-desc-list-item>`,
           )}
+
+          <btrix-desc-list-item label=${msg("Date Created")}>
+            ${this.renderDetail((profile) =>
+              profile.created
+                ? this.localize.date(profile.created, {
+                    dateStyle: "medium",
+                  })
+                : noData,
+            )}
+          </btrix-desc-list-item>
           <btrix-desc-list-item label=${msg("Backup Status")}>
             ${this.renderDetail((profile) => {
               const isBackedUp =
@@ -552,22 +591,29 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                         ? `${this.localize.number(this.workflowsTask.value.total)} ${pluralOf("workflows", this.workflowsTask.value.total)}`
                         : html`<sl-skeleton></sl-skeleton>`}
                     </btrix-desc-list-item>
-                    <btrix-desc-list-item
-                      label=${msg("Last Modified by Crawl")}
-                    >
+                    <btrix-desc-list-item label=${msg("Modified by Crawl")}>
                       ${profile.modifiedCrawlId && profile.modifiedCrawlDate
                         ? html`
-                            ${this.localize.relativeDate(
-                              profile.modifiedCrawlDate,
-                            )}
-
-                            <btrix-link
-                              href="${this.navigate
-                                .orgBasePath}/${OrgTab.Workflows}/${profile.modifiedCrawlCid}/${WorkflowTab.Crawls}/${profile.modifiedCrawlId}"
-                              >${msg("View Crawl")}</btrix-link
-                            >
+                            <div class="flex items-center gap-1.5">
+                              ${this.localize.relativeDate(
+                                profile.modifiedCrawlDate,
+                              )}
+                              <sl-tooltip
+                                content=${msg("Open Crawl in New Tab")}
+                                placement="bottom"
+                                hoist
+                              >
+                                <sl-icon-button
+                                  name="arrow-up-right"
+                                  class="part-[base]:p-1"
+                                  href="${this.navigate
+                                    .orgBasePath}/${OrgTab.Workflows}/${profile.modifiedCrawlCid}/${WorkflowTab.Crawls}/${profile.modifiedCrawlId}"
+                                  target="_blank"
+                                ></sl-icon-button>
+                              </sl-tooltip>
+                            </div>
                           `
-                        : msg("No")}
+                        : msg("Never")}
                     </btrix-desc-list-item>
                   </btrix-desc-list>
                 </div>
@@ -720,7 +766,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     when(
       this.profile,
       render,
-      () => html`<sl-skeleton effect="sheen"></sl-skeleton>`,
+      () => html`<sl-skeleton class="w-32"></sl-skeleton>`,
     );
 
   private async getFirstBrowserUrl() {

@@ -32,7 +32,7 @@ import { isArchivingDisabled } from "@/utils/orgs";
 
 const SORT_DIRECTIONS = ["asc", "desc"] as const;
 type SortDirection = (typeof SORT_DIRECTIONS)[number];
-type SortField = "name" | "url" | "modified";
+type SortField = "name" | "url" | "modified" | "created";
 type SortBy = {
   field: SortField;
   direction: SortDirection;
@@ -51,7 +51,11 @@ const sortableFields: Record<
     defaultDirection: "asc",
   },
   modified: {
-    label: msg("Last Modified"),
+    label: msg("Modified By User"),
+    defaultDirection: "desc",
+  },
+  created: {
+    label: msg("Date Created"),
     defaultDirection: "desc",
   },
 };
@@ -403,6 +407,11 @@ export class BrowserProfilesList extends BtrixElement {
   };
 
   private readonly renderItem = (data: Profile) => {
+    const modifiedByAnyDate =
+      [data.modifiedCrawlDate, data.modified, data.created].reduce(
+        (a, b) => (b && a && b > a ? b : a),
+        data.created,
+      ) || data.created;
     const startingUrl = data.origins[0];
     const otherOrigins = data.origins.slice(1);
 
@@ -443,9 +452,7 @@ export class BrowserProfilesList extends BtrixElement {
             : nothing}
         </btrix-table-cell>
         <btrix-table-cell>
-          ${this.localize.relativeDate(data.modified || data.created, {
-            capitalize: true,
-          })}
+          ${this.localize.relativeDate(modifiedByAnyDate)}
         </btrix-table-cell>
         <btrix-table-cell class="p-0">
           ${this.renderActions(data)}
