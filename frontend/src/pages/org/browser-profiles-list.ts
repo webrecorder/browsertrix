@@ -75,6 +75,12 @@ const columnsCss = [
 @localized()
 export class BrowserProfilesList extends BtrixElement {
   @state()
+  private selectedProfile?: Profile;
+
+  @state()
+  private openDialog?: "duplicate";
+
+  @state()
   private pagination: Required<APIPaginationQuery> = {
     page: parsePage(new URLSearchParams(location.search).get("page")),
     pageSize: INITIAL_PAGE_SIZE,
@@ -227,7 +233,27 @@ export class BrowserProfilesList extends BtrixElement {
             : this.renderEmpty()}
         `,
       )}
+      ${when(this.selectedProfile, this.renderDuplicateDialog)}
     `;
+  };
+
+  private readonly renderDuplicateDialog = (profile: Profile) => {
+    return html`<btrix-profile-browser-dialog
+      .profile=${profile}
+      .config=${{
+        url: profile.origins[0],
+        name: `${profile.name} ${msg("Copy")}`,
+        crawlerChannel: profile.crawlerChannel,
+        proxyId: profile.proxyId,
+      }}
+      ?open=${this.openDialog === "duplicate"}
+      duplicating
+      @sl-after-hide=${() => {
+        this.selectedProfile = undefined;
+        this.openDialog = undefined;
+      }}
+    >
+    </btrix-profile-browser-dialog>`;
   };
 
   private renderEmpty() {
@@ -464,34 +490,9 @@ export class BrowserProfilesList extends BtrixElement {
   }
 
   private async duplicateProfile(profile: Profile) {
-    const url = profile.origins[0];
-
-    try {
-      const data = await this.createBrowser({ url });
-
-      this.notify.toast({
-        message: msg("Starting up browser..."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-
-      this.navigate.to(
-        `${this.navigate.orgBasePath}/browser-profiles/profile/browser/${
-          data.browserid
-        }?${queryString.stringify({
-          url,
-          name: `${profile.name} ${msg("Copy")}`,
-          crawlerChannel: profile.crawlerChannel,
-          proxyId: profile.proxyId,
-        })}`,
-      );
-    } catch (e) {
-      this.notify.toast({
-        message: msg("Sorry, couldn't create browser profile at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
+    this.selectedProfile = profile;
+    await this.updateComplete;
+    this.openDialog = "duplicate";
   }
 
   private async deleteProfile(profile: Profile) {

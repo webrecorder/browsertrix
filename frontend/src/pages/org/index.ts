@@ -489,14 +489,14 @@ export class Org extends BtrixElement {
         ></btrix-file-uploader>
 
         ${crawlingDefaultsReady
-          ? html`<btrix-profile-settings-dialog
+          ? html`<btrix-new-browser-profile-dialog
               .proxyServers=${proxies.servers}
               .crawlerChannels=${crawlerChannels}
               defaultProxyId=${ifDefined(proxies.default_proxy_id || undefined)}
               ?open=${this.openDialogName === "browser-profile"}
               @sl-hide=${() => (this.openDialogName = undefined)}
             >
-            </btrix-profile-settings-dialog>`
+            </btrix-new-browser-profile-dialog>`
           : nothing}
 
         <btrix-collection-create-dialog
@@ -634,19 +634,6 @@ export class Org extends BtrixElement {
 
   private readonly renderBrowserProfiles = () => {
     const params = this.params as OrgParams["browser-profiles"];
-
-    if (params.browserId) {
-      return html`<btrix-browser-profiles-browser-page
-        .profileId=${params.profileId}
-        .browserId=${params.browserId}
-        .config=${{
-          url: params.url || "",
-          name: params.name,
-          crawlerChannel: params.crawlerChannel,
-          proxyId: params.proxyId,
-        }}
-      ></btrix-browser-profiles-browser-page>`;
-    }
 
     if (params.profileId) {
       return html`<btrix-browser-profiles-profile-page

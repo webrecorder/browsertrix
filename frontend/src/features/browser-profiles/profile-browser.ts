@@ -1,6 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import { Task } from "@lit/task";
-import clsx from "clsx";
+import { Task, TaskStatus } from "@lit/task";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
@@ -9,7 +8,6 @@ import { when } from "lit/directives/when.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { isApiError, type APIError } from "@/utils/api";
-import { tw } from "@/utils/tailwind";
 
 const POLL_INTERVAL_SECONDS = 2;
 const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];
@@ -48,6 +46,7 @@ const isPolling = (value: unknown): value is number => {
  * @fires btrix-browser-connection-change
  * @cssPart base
  * @cssPart browser
+ * @cssPart iframe
  */
 @customElement("btrix-profile-browser")
 @localized()
@@ -57,9 +56,6 @@ export class ProfileBrowser extends BtrixElement {
 
   @property({ type: String })
   initialNavigateUrl?: string;
-
-  @property({ type: Boolean })
-  readOnly = false;
 
   @property({ type: Boolean })
   hideControls = false;
@@ -130,7 +126,7 @@ export class ProfileBrowser extends BtrixElement {
       }
 
       if (this.initialNavigateUrl) {
-        await this.navigateBrowser({ url: this.initialNavigateUrl });
+        await this.navigateBrowser({ url: this.initialNavigateUrl }, signal);
       }
 
       window.addEventListener("beforeunload", this.onBeforeUnload);
@@ -214,9 +210,8 @@ export class ProfileBrowser extends BtrixElement {
   }
 
   private readonly onBeforeUnload = (e: BeforeUnloadEvent) => {
-    if (!this.readOnly) {
-      e.preventDefault();
-    }
+    console.log("e", e);
+    // e.preventDefault();
   };
 
   private readonly onBrowserError = async () => {
@@ -268,31 +263,32 @@ export class ProfileBrowser extends BtrixElement {
     const browserLoading = () =>
       cache(
         html`<div
-          class=${clsx(
-            tw`flex w-full flex-col items-center justify-center gap-5`,
-            this.isFullscreen ? tw`h-full` : tw`aspect-4/3`,
-          )}
+          class="flex size-full flex-col items-center justify-center gap-5"
         >
-          <p class="text-neutral-600">
+          <p class="text-neutral-200">
             ${msg("Loading interactive browser...")}
           </p>
           <sl-progress-bar
-            class="w-20 [--height:.5rem]"
+            class="w-20 [--height:.5rem] [--indicator-color:var(--sl-color-primary-400)] [--track-color:rgba(255,255,255,0.1)]"
             indeterminate
           ></sl-progress-bar>
         </div>`,
       );
 
     return html`
-      <div id="interactiveBrowser" class="flex size-full flex-col" part="base">
-        ${when(!this.hideControls, this.renderControlBar)}
+      <div
+        id="interactiveBrowser"
+        class="flex size-full flex-col bg-[##282828]"
+        part="base"
+      >
+        ${this.renderControlBar()}
         <div
           id="iframeWrapper"
           class="${this.isFullscreen
             ? "w-screen h-screen"
             : this.hideControls
               ? ""
-              : "border-t"} relative flex-1 overflow-hidden bg-neutral-50"
+              : "border-t"} relative flex-1 overflow-hidden"
           aria-live="polite"
           part="browser"
         >
@@ -300,7 +296,7 @@ export class ProfileBrowser extends BtrixElement {
             initial: browserLoading,
             pending: browserLoading,
             error: () => html`
-              <div class="flex aspect-4/3 w-full items-center justify-center">
+              <div class="flex w-full items-center justify-center">
                 <btrix-alert variant="danger">
                   <p>
                     ${msg(
@@ -342,7 +338,16 @@ export class ProfileBrowser extends BtrixElement {
                     ),
                   )}
                 `,
-                () => emptyMessage({ message: msg("No visited sites yet.") }),
+                () =>
+                  this.browserTask.status === TaskStatus.PENDING
+                    ? emptyMessage({
+                        message: msg(
+                          "Sites will be shown here once the browser is done loading.",
+                        ),
+                      })
+                    : emptyMessage({
+                        message: msg("No sites configured yet."),
+                      }),
               )}
             </div>
           </div>
@@ -367,6 +372,8 @@ export class ProfileBrowser extends BtrixElement {
         </div>
       `;
     }
+
+    if (this.hideControls) return;
 
     return html`
       <div class="flex items-center justify-between">
@@ -404,13 +411,11 @@ export class ProfileBrowser extends BtrixElement {
         browser.url,
         (url) => html`
           <iframe
-            class=${clsx(
-              tw`w-full`,
-              this.isFullscreen ? tw`h-full` : tw`aspect-4/3`,
-            )}
+            class="size-full"
             src=${url}
             @load=${() => void this.onIframeLoad(url)}
             aria-labelledby="profileBrowserLabel"
+            part="iframe"
           ></iframe>
         `,
       )}
@@ -435,7 +440,7 @@ export class ProfileBrowser extends BtrixElement {
 
   private renderSidebarButton() {
     return html`
-      <sl-tooltip content=${msg("Toggle Visited Sites")}>
+      <sl-tooltip content=${msg("Toggle Sites")}>
         <sl-icon-button
           name="layout-sidebar-reverse"
           class="${this.showOriginSidebar ? "text-blue-600" : ""}"
@@ -452,7 +457,7 @@ export class ProfileBrowser extends BtrixElement {
         class="flex min-h-10 justify-between border-b p-1 leading-tight text-neutral-700"
       >
         <div class="flex items-center gap-1.5 px-2">
-          <h4>${msg("Visited Sites")}</h4>
+          <h4>${msg("Saved Sites")}</h4>
           <btrix-popover
             content=${msg("Websites in the browser profile")}
             placement="top"
@@ -541,12 +546,16 @@ export class ProfileBrowser extends BtrixElement {
   /**
    * Navigate to URL in temporary browser
    **/
-  private async navigateBrowser({ url }: { url: string }) {
+  private async navigateBrowser(
+    { url }: { url: string },
+    signal?: AbortSignal,
+  ) {
     const data = this.api.fetch(
       `/orgs/${this.orgId}/profiles/browser/${this.browserId}/navigate`,
       {
         method: "POST",
         body: JSON.stringify({ url }),
+        signal,
       },
     );
 
@@ -569,7 +578,7 @@ export class ProfileBrowser extends BtrixElement {
   /**
    * Enter fullscreen mode
    */
-  private async enterFullscreen() {
+  public async enterFullscreen() {
     try {
       await this.interactiveBrowser?.requestFullscreen({
         // Hide browser navigation controls

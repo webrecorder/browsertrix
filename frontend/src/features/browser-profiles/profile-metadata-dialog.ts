@@ -7,14 +7,10 @@ import { customElement, property, query, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import type { ProfileUpdatedEvent } from "@/features/browser-profiles/types";
 import type { Profile } from "@/types/crawler";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
-
-export type ProfileUpdatedEvent = CustomEvent<{
-  name: Profile["name"];
-  description: Profile["description"];
-}>;
 
 /**
  * @fires btrix-updated
