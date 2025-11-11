@@ -21,6 +21,7 @@ import {
   type Pagination,
 } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
+import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import {
   Action,
@@ -33,7 +34,6 @@ import {
   WorkflowSearch,
   type SearchFields,
 } from "@/features/crawl-workflows/workflow-search";
-import type { BtrixChangeWorkflowTagFilterEvent } from "@/features/crawl-workflows/workflow-tag-filter";
 import { WorkflowTab } from "@/routes";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -554,14 +554,15 @@ export class WorkflowsList extends BtrixElement {
         }}
       ></btrix-workflow-schedule-filter>
 
-      <btrix-workflow-tag-filter
+      <btrix-tag-filter
+        tagType="workflow"
         .tags=${this.filterByTags.value}
         .type=${this.filterByTagsType.value}
-        @btrix-change=${(e: BtrixChangeWorkflowTagFilterEvent) => {
+        @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
           this.filterByTags.setValue(e.detail.value?.tags || []);
           this.filterByTagsType.setValue(e.detail.value?.type || "or");
         }}
-      ></btrix-workflow-tag-filter>
+      ></btrix-tag-filter>
 
       <btrix-workflow-profile-filter
         .profiles=${this.filterByProfiles.value}

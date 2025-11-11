@@ -29,6 +29,7 @@ import { tw } from "@/utils/tailwind";
 const MAX_TAGS_IN_LABEL = 5;
 const apiPathForTagType: Record<TagType, string> = {
   workflow: "crawlconfigs",
+  "archived-item": "all-crawls",
   crawl: "crawls",
   profile: "profiles",
   upload: "uploads",
