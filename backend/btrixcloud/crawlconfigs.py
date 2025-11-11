@@ -53,6 +53,7 @@ from .models import (
     ListFilterType,
     ScopeType,
     Seed,
+    Profile,
 )
 from .utils import (
     dt_now,
@@ -197,6 +198,14 @@ class CrawlConfigOps:
 
         await self.crawl_configs.create_index(
             [("oid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
+        )
+
+        await self.crawl_configs.create_index(
+            [
+                ("oid", pymongo.ASCENDING),
+                ("inactive", pymongo.ASCENDING),
+                ("profileid", pymongo.ASCENDING),
+            ]
         )
 
         await self.crawl_configs.create_index(
@@ -834,9 +843,36 @@ class CrawlConfigOps:
     async def is_profile_in_use(self, profileid: UUID, org: Organization) -> bool:
         """return true/false if any active workflows exist with given profile"""
         res = await self.crawl_configs.find_one(
-            {"profileid": profileid, "inactive": {"$ne": True}, "oid": org.id}
+            {"oid": org.id, "inactive": {"$ne": True}, "profileid": profileid}
         )
         return res is not None
+
+    async def mark_profiles_in_use(self, profiles: List[Profile], org: Organization):
+        """mark which profiles are in use by querying and grouping crawlconfigs"""
+        profile_ids = [profile.id for profile in profiles]
+        cursor = self.crawl_configs.aggregate(
+            [
+                {
+                    "$match": {
+                        "oid": org.id,
+                        "inactive": {"$ne": True},
+                        "profileid": {"$in": profile_ids},
+                    }
+                },
+                {"$group": {"_id": "$profileid", "count": {"$sum": 1}}},
+            ]
+        )
+        results = await cursor.to_list()
+        in_use = set()
+        for res in results:
+            if res.get("count") > 0:
+                in_use.add(res.get("_id"))
+
+        for profile in profiles:
+            if profile.id in in_use:
+                profile.inUse = True
+
+        return profiles
 
     async def get_running_crawl(self, cid: UUID) -> Optional[CrawlOut]:
         """Return the id of currently running crawl for this config, if any"""

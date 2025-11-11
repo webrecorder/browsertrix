@@ -33,6 +33,7 @@ from .models import (
     SuccessResponseStorageQuota,
     ProfilePingResponse,
     ProfileBrowserGetUrlResponse,
+    ProfileBrowserMetadata,
 )
 from .utils import dt_now, str_to_date
 
@@ -130,6 +131,7 @@ class ProfileOps:
             str(org.id),
             url=str(profile_launch.url),
             storage=org.storage,
+            crawler_channel=profile_launch.crawlerChannel,
             crawler_image=crawler_image,
             image_pull_policy=image_pull_policy,
             baseprofile=prev_profile_id,
@@ -172,11 +174,20 @@ class ProfileOps:
         params["url"] = url
         return params
 
-    async def ping_profile_browser(self, browserid: str) -> dict[str, Any]:
+    async def ping_profile_browser(
+        self, metadata: ProfileBrowserMetadata, org: Organization
+    ) -> dict[str, Any]:
         """ping profile browser to keep it running"""
-        data = await self._send_browser_req(browserid, "/ping")
+        data = await self._send_browser_req(metadata.browser, "/ping")
+        origins = data.get("origins") or []
 
-        return {"success": True, "origins": data.get("origins") or []}
+        if metadata.baseprofile:
+            base = await self.get_profile(metadata.baseprofile, org)
+            for origin in base.origins:
+                if origin not in origins:
+                    origins.append(origin)
+
+        return {"success": True, "origins": origins}
 
     async def navigate_profile_browser(
         self, browserid: str, urlin: UrlIn
@@ -190,21 +201,19 @@ class ProfileOps:
 
     async def commit_to_profile(
         self,
-        metadata: dict,
+        metadata: ProfileBrowserMetadata,
         browser_commit: ProfileCreate,
         org: Organization,
         user: User,
         existing_profile: Optional[Profile] = None,
     ) -> dict[str, Any]:
         """commit to profile async, returning if committed, or waiting"""
-        profileid = metadata.get("profileid")
-        if not profileid:
+        if not metadata.profileid:
             raise HTTPException(status_code=400, detail="browser_not_valid")
 
         self.orgs.can_write_data(org, include_time=False)
 
-        committing = metadata.get("committing")
-        if not committing:
+        if not metadata.committing:
             self._run_task(
                 self.do_commit_to_profile(
                     metadata=metadata,
@@ -215,11 +224,11 @@ class ProfileOps:
                 )
             )
 
-        if committing == "done":
+        if metadata.committing == "done":
             await self.crawl_manager.delete_profile_browser(browser_commit.browserid)
             return {
                 "added": True,
-                "id": profileid,
+                "id": str(metadata.profileid),
                 "storageQuotaReached": self.orgs.storage_quota_reached(org),
             }
 
@@ -227,7 +236,7 @@ class ProfileOps:
 
     async def do_commit_to_profile(
         self,
-        metadata: dict,
+        metadata: ProfileBrowserMetadata,
         browser_commit: ProfileCreate,
         org: Organization,
         user: User,
@@ -238,6 +247,8 @@ class ProfileOps:
         try:
             now = dt_now()
 
+            origins = []
+
             if existing_profile:
                 profileid = existing_profile.id
                 created = existing_profile.created
@@ -246,8 +257,11 @@ class ProfileOps:
                 prev_file_size = (
                     existing_profile.resource.size if existing_profile.resource else 0
                 )
+
+                origins = existing_profile.origins
+
             else:
-                profileid = UUID(metadata["profileid"])
+                profileid = metadata.profileid
                 created = now
                 created_by = user.id
                 created_by_name = user.name if user.name else user.email
@@ -275,10 +289,15 @@ class ProfileOps:
                 storage=org.storage,
             )
 
-            baseid = metadata.get("btrix.baseprofile")
-            if baseid:
-                print("baseid", baseid)
-                baseid = UUID(baseid)
+            baseid = metadata.baseprofile
+
+            if origins:
+                for origin in data["origins"]:
+                    if origin not in origins:
+                        origins.append(origin)
+
+            else:
+                origins = data["origins"]
 
             profile = Profile(
                 id=profileid,
@@ -290,13 +309,13 @@ class ProfileOps:
                 modified=now,
                 modifiedBy=user.id,
                 modifiedByName=user.name if user.name else user.email,
-                origins=data["origins"],
+                origins=origins,
                 resource=profile_file,
-                userid=UUID(metadata.get("btrix.user")),
+                userid=metadata.userid,
                 oid=org.id,
                 baseid=baseid,
-                crawlerChannel=browser_commit.crawlerChannel,
-                proxyId=browser_commit.proxyId,
+                crawlerChannel=metadata.crawlerChannel,
+                proxyId=metadata.proxyid,
             )
 
             await self.profiles.find_one_and_update(
@@ -455,6 +474,9 @@ class ProfileOps:
             total = 0
 
         profiles = [Profile.from_dict(res) for res in items]
+
+        profiles = await self.crawlconfigs.mark_profiles_in_use(profiles, org)
+
         return profiles, total
 
     async def get_profile(self, profileid: UUID, org: Organization) -> Profile:
@@ -611,14 +633,26 @@ def init_profiles_api(
     org_crawl_dep = org_ops.org_crawl_dep
 
     async def browser_get_metadata(
-        browserid: str, org: Organization = Depends(org_crawl_dep)
-    ):
+        browserid: str, org: Organization
+    ) -> ProfileBrowserMetadata:
         # if await ops.redis.hget(f"br:{browserid}", "org") != str(org.id):
-        metadata = await crawl_manager.get_profile_browser_metadata(browserid)
-        if metadata.get("btrix.org") != str(org.id):
+        metadata = None
+        try:
+            metadata = await crawl_manager.get_profile_browser_metadata(browserid)
+        # pylint: disable=raise-missing-from
+        except Exception as e:
+            print(e)
+            raise HTTPException(status_code=400, detail="invalid_profile_browser")
+
+        if metadata.oid != str(org.id):
             raise HTTPException(status_code=404, detail="no_such_browser")
 
         return metadata
+
+    async def browser_metadata_dep(
+        browserid: str, org: Organization = Depends(org_crawl_dep)
+    ):
+        return await browser_get_metadata(browserid, org)
 
     async def browser_dep(browserid: str, org: Organization = Depends(org_crawl_dep)):
         await browser_get_metadata(browserid, org)
@@ -673,8 +707,6 @@ def init_profiles_api(
                     browserid=browser_commit.browserid,
                     name=browser_commit.name,
                     description=browser_commit.description or profile.description,
-                    crawlerChannel=profile.crawlerChannel,
-                    proxyId=profile.proxyId,
                 ),
                 org=org,
                 user=user,
@@ -707,8 +739,11 @@ def init_profiles_api(
         return await ops.create_new_browser(org, user, profile_launch)
 
     @router.post("/browser/{browserid}/ping", response_model=ProfilePingResponse)
-    async def ping_profile_browser(browserid: str = Depends(browser_dep)):
-        return await ops.ping_profile_browser(browserid)
+    async def ping_profile_browser(
+        metadata: ProfileBrowserMetadata = Depends(browser_metadata_dep),
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return await ops.ping_profile_browser(metadata, org)
 
     @router.post("/browser/{browserid}/navigate", response_model=SuccessResponse)
     async def navigate_profile_browser(
