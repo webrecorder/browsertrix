@@ -206,7 +206,10 @@ def test_commit_browser_to_existing_profile(
     original_modified = data["modified"]
 
     prepare_browser_for_profile_commit(
-        profile_browser_3_id, admin_auth_headers, default_org_id
+        profile_browser_3_id,
+        admin_auth_headers,
+        default_org_id,
+        url="https://example-com.webrecorder.net",
     )
 
     # Commit new browser to existing profile
@@ -242,6 +245,11 @@ def test_commit_browser_to_existing_profile(
     assert data["created"] == original_created
     assert data["createdBy"]
     assert data["createdByName"] == "admin"
+
+    assert data.get("origins") == [
+        "https://old.webrecorder.net",
+        "https://example-com.webrecorder.net",
+    ]
 
 
 @pytest.mark.parametrize(

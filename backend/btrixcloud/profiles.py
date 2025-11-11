@@ -247,6 +247,8 @@ class ProfileOps:
         try:
             now = dt_now()
 
+            origins = []
+
             if existing_profile:
                 profileid = existing_profile.id
                 created = existing_profile.created
@@ -255,6 +257,9 @@ class ProfileOps:
                 prev_file_size = (
                     existing_profile.resource.size if existing_profile.resource else 0
                 )
+
+                origins = existing_profile.origins
+
             else:
                 profileid = metadata.profileid
                 created = now
@@ -286,6 +291,14 @@ class ProfileOps:
 
             baseid = metadata.baseprofile
 
+            if origins:
+                for origin in data["origins"]:
+                    if origin not in origins:
+                        origins.append(origin)
+
+            else:
+                origins = data["origins"]
+
             profile = Profile(
                 id=profileid,
                 name=browser_commit.name,
@@ -296,7 +309,7 @@ class ProfileOps:
                 modified=now,
                 modifiedBy=user.id,
                 modifiedByName=user.name if user.name else user.email,
-                origins=data["origins"],
+                origins=origins,
                 resource=profile_file,
                 userid=metadata.userid,
                 oid=org.id,

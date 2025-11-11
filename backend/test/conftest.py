@@ -708,7 +708,10 @@ PROFILE_2_DESC = "Second profile used to test list endpoint"
 
 
 def prepare_browser_for_profile_commit(
-    browser_id: str, headers: Dict[str, str], oid: UUID
+    browser_id: str,
+    headers: Dict[str, str],
+    oid: UUID,
+    url="https://old.webrecorder.net/tools",
 ) -> None:
     # Ping to make sure it doesn't expire
     r = requests.post(
@@ -738,7 +741,7 @@ def prepare_browser_for_profile_commit(
     r = requests.post(
         f"{API_PREFIX}/orgs/{oid}/profiles/browser/{browser_id}/navigate",
         headers=headers,
-        json={"url": "https://old.webrecorder.net/tools"},
+        json={"url": url},
     )
     assert r.status_code == 200
     assert r.json()["success"]
