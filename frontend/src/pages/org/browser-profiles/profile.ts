@@ -124,22 +124,18 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           content: this.profile?.name,
         },
       ],
-      title: html`${this.profile?.name ??
-      html`<sl-skeleton
-        class="inline-block h-6 w-36"
-        effect="sheen"
-      ></sl-skeleton>`}
-      ${when(
+      title: this.profile?.name,
+      suffix: when(
         this.profile && this.appState.isCrawler,
         () =>
           html`<sl-tooltip content=${msg("Edit Name")} placement="right">
             <sl-icon-button
-              class="ml-1 text-base"
+              class="ml-1 hidden text-base md:block"
               name="pencil"
               @click=${() => (this.openDialog = "metadata-name")}
             ></sl-icon-button>
           </sl-tooltip>`,
-      )} `,
+      ),
       secondary: when(this.profile, badges, badgesSkeleton),
       actions: this.renderActions(),
     } satisfies Parameters<typeof page>[0];
