@@ -173,11 +173,22 @@ export class BrowserProfilesList extends BtrixElement {
   }
 
   private readonly profilesTask = new Task(this, {
-    task: async ([pagination, orderBy, filterByCurrentUser], { signal }) => {
+    task: async (
+      [
+        pagination,
+        orderBy,
+        filterByCurrentUser,
+        filterByTags,
+        filterByTagsType,
+      ],
+      { signal },
+    ) => {
       return this.getProfiles(
         {
           ...pagination,
           userid: filterByCurrentUser ? this.userInfo?.id : undefined,
+          tags: filterByTags,
+          tagMatch: filterByTagsType,
           sortBy: orderBy.field,
           sortDirection:
             orderBy.direction === "desc"
@@ -192,6 +203,8 @@ export class BrowserProfilesList extends BtrixElement {
         this.pagination,
         this.orderBy.value,
         this.filterByCurrentUser.value,
+        this.filterByTags.value,
+        this.filterByTagsType.value,
       ] as const,
   });
 
@@ -593,7 +606,12 @@ export class BrowserProfilesList extends BtrixElement {
   }
 
   private async getProfiles(
-    params: { userid?: string } & APIPaginationQuery & APISortQuery,
+    params: {
+      userid?: string;
+      tags?: string[];
+      tagMatch?: string;
+    } & APIPaginationQuery &
+      APISortQuery,
     signal: AbortSignal,
   ) {
     const query = queryString.stringify(
