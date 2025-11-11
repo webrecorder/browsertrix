@@ -15,6 +15,7 @@ import type {
   FilterChip,
 } from "@/components/ui/filter-chip";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { emptyMessage } from "@/layouts/emptyMessage";
@@ -120,6 +121,31 @@ export class BrowserProfilesList extends BtrixElement {
       }
       return { field, direction: direction as SortDirection };
     },
+  );
+
+  private readonly filterByTags = new SearchParamsValue<string[] | undefined>(
+    this,
+    (value, params) => {
+      params.delete("tags");
+      value?.forEach((v) => {
+        params.append("tags", v);
+      });
+      return params;
+    },
+    (params) => params.getAll("tags"),
+  );
+
+  private readonly filterByTagsType = new SearchParamsValue<"and" | "or">(
+    this,
+    (value, params) => {
+      if (value === "and") {
+        params.set("tagsType", value);
+      } else {
+        params.delete("tagsType");
+      }
+      return params;
+    },
+    (params) => (params.get("tagsType") === "and" ? "and" : "or"),
   );
 
   private readonly filterByCurrentUser = new SearchParamsValue<boolean>(
@@ -299,7 +325,7 @@ export class BrowserProfilesList extends BtrixElement {
           <span class="whitespace-nowrap text-neutral-500">
             ${msg("Filter by:")}
           </span>
-          ${this.renderFilterControl()}
+          ${this.renderFilterControls()}
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
@@ -312,8 +338,18 @@ export class BrowserProfilesList extends BtrixElement {
     `;
   }
 
-  private renderFilterControl() {
+  private renderFilterControls() {
     return html`
+      <btrix-tag-filter
+        tagType="profile"
+        .tags=${this.filterByTags.value}
+        .type=${this.filterByTagsType.value}
+        @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
+          this.filterByTags.setValue(e.detail.value?.tags);
+          this.filterByTagsType.setValue(e.detail.value?.type || "or");
+        }}
+      ></btrix-tag-filter>
+
       <btrix-filter-chip
         ?checked=${this.filterByCurrentUser.value}
         @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
