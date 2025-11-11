@@ -56,9 +56,10 @@ export class ProfileBrowserDialog extends BtrixElement {
     task: async ([open, config, profile], { signal }) => {
       if (!open || !config) return null;
 
-      if (this.browserIdTask.value) {
+      const browserId = this.browserIdTask.value;
+      if (browserId && browserId !== this.#savedBrowserId) {
         // Delete previously created and unused browser
-        void this.deleteBrowser(this.browserIdTask.value, signal);
+        void this.deleteBrowser(browserId, signal);
       }
 
       const { browserid } = await this.createBrowser(

@@ -210,8 +210,7 @@ export class ProfileBrowser extends BtrixElement {
   }
 
   private readonly onBeforeUnload = (e: BeforeUnloadEvent) => {
-    console.log("e", e);
-    // e.preventDefault();
+    e.preventDefault();
   };
 
   private readonly onBrowserError = async () => {
@@ -260,14 +259,39 @@ export class ProfileBrowser extends BtrixElement {
   }
 
   render() {
+    const loadingMsgChangeDelay = 8000;
     const browserLoading = () =>
       cache(
         html`<div
           class="flex size-full flex-col items-center justify-center gap-5"
         >
-          <p class="text-neutral-200">
-            ${msg("Loading interactive browser...")}
-          </p>
+          <div
+            class="relative min-h-5 w-full max-w-prose leading-none text-neutral-200"
+          >
+            <sl-animation
+              name="fadeOut"
+              iterations="1"
+              delay=${loadingMsgChangeDelay}
+              play
+              fill="both"
+            >
+              <p class="absolute min-h-5 w-full text-center">
+                ${msg("Loading interactive browser...")}
+              </p>
+            </sl-animation>
+            <sl-animation
+              name="fadeIn"
+              iterations="1"
+              delay=${loadingMsgChangeDelay}
+              play
+              fill="both"
+            >
+              <p class="absolute min-h-5 w-full text-center">
+                ${msg("Browser is still warming up...")}
+              </p>
+            </sl-animation>
+          </div>
+
           <sl-progress-bar
             class="w-20 [--height:.5rem] [--indicator-color:var(--sl-color-primary-400)] [--track-color:rgba(255,255,255,0.1)]"
             indeterminate
