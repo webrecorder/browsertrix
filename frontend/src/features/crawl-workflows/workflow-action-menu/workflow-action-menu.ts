@@ -10,6 +10,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
 import { WorkflowTab } from "@/routes";
 import type { Crawl, ListWorkflow, Workflow } from "@/types/crawler";
+import { PAUSED_STATES } from "@/types/crawlState";
 import { isNotFailed, isSuccessfullyFinished } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
 
@@ -41,7 +42,9 @@ export class WorkflowActionMenu extends BtrixElement {
 
     const canCrawl = this.appState.isCrawler;
     const archivingDisabled = isArchivingDisabled(this.org, true);
-    const paused = workflow.lastCrawlState === "paused";
+    const paused = (PAUSED_STATES as readonly string[]).includes(
+      workflow.lastCrawlState || "",
+    );
     const crawling =
       workflow.isCrawlRunning &&
       !workflow.lastCrawlStopping &&
