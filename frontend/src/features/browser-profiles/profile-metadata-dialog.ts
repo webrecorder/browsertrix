@@ -63,7 +63,6 @@ export class ProfileMetadataDialog extends BtrixElement {
       };
 
       const tags = this.tagInput?.getTags();
-      console.log("tags:", tags);
 
       const params = { ...formValues, tags };
 
