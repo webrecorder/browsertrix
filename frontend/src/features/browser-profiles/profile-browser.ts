@@ -8,6 +8,11 @@ import { when } from "lit/directives/when.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { isApiError, type APIError } from "@/utils/api";
+import { tw } from "@/utils/tailwind";
+
+// Matches background of embedded browser
+// TODO See if this can be configurable via API
+export const bgClass = tw`bg-[#282828]`;
 
 const POLL_INTERVAL_SECONDS = 2;
 const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];
@@ -259,7 +264,7 @@ export class ProfileBrowser extends BtrixElement {
   }
 
   render() {
-    const loadingMsgChangeDelay = 8000;
+    const loadingMsgChangeDelay = 10000;
     const browserLoading = () =>
       cache(
         html`<div
@@ -302,7 +307,7 @@ export class ProfileBrowser extends BtrixElement {
     return html`
       <div
         id="interactiveBrowser"
-        class="flex size-full flex-col bg-[##282828]"
+        class="${bgClass} flex size-full flex-col"
         part="base"
       >
         ${this.renderControlBar()}

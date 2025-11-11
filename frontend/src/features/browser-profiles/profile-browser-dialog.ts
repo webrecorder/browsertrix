@@ -10,9 +10,10 @@ import { badges } from "./templates/badges";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
-import type {
-  BrowserConnectionChange,
-  ProfileBrowser,
+import {
+  bgClass,
+  type BrowserConnectionChange,
+  type ProfileBrowser,
 } from "@/features/browser-profiles/profile-browser";
 import type {
   CreateBrowserOptions,
@@ -222,7 +223,7 @@ export class ProfileBrowserDialog extends BtrixElement {
         </div>
       </header>
 
-      <div class="size-full bg-[#282828]" aria-labelledby="title">
+      <div class="${bgClass} size-full" aria-labelledby="title">
         ${this.browserIdTask.render({
           complete: (browserId) =>
             browserId
