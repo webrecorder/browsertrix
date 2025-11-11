@@ -182,8 +182,6 @@ export class ProfileMetadataDialog extends BtrixElement {
         <btrix-tag-input
           name="tags"
           .initialTags=${this.profile.tags}
-          @tag-input=${console.log}
-          @tags-change=${console.log}
         ></btrix-tag-input>
       </form>
       <div slot="footer" class="flex justify-between">
