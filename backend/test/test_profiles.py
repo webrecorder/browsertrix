@@ -104,6 +104,7 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert profile_2["modified"]
             assert profile_2["modifiedBy"]
             assert profile_2["modifiedByName"] == "admin"
+            assert profile_2["inUse"] == False
             assert not profile_2["baseid"]
             resource = profile_2["resource"]
             assert resource
@@ -129,6 +130,7 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert profile_1["modified"]
             assert profile_1["modifiedBy"]
             assert profile_1["modifiedByName"] == "admin"
+            assert profile_1["inUse"] == True
             assert not profile_1["baseid"]
             resource = profile_1["resource"]
             assert resource
