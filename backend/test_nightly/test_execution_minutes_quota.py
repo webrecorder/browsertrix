@@ -15,6 +15,8 @@ GIFTED_MINS_QUOTA = 3
 GIFTED_SECS_QUOTA = GIFTED_MINS_QUOTA * 60
 EXTRA_MINS_QUOTA = 5
 EXTRA_SECS_QUOTA = EXTRA_MINS_QUOTA * 60
+EXTRA_MINS_ADDED_QUOTA = 7
+EXTRA_SECS_ADDED_QUOTA = EXTRA_MINS_ADDED_QUOTA * 60
 
 
 def test_set_execution_mins_quota(org_with_quotas, admin_auth_headers):
@@ -102,6 +104,43 @@ def test_set_execution_mins_extra_quotas(org_with_quotas, admin_auth_headers):
     for update in data["quotaUpdates"]:
         assert update["modified"]
         assert update["update"]
+
+
+def test_add_execution_mins_extra_quotas(
+    org_with_quotas, admin_auth_headers, preshared_secret_auth_headers
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{org_with_quotas}/quotas/add",
+        headers=preshared_secret_auth_headers,
+        json={
+            "extraExecMinutes": EXTRA_MINS_ADDED_QUOTA,
+            "context": "test context 123",
+        },
+    )
+    data = r.json()
+    assert data.get("updated") == True
+
+    # Ensure org data looks as we expect
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{org_with_quotas}",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    assert (
+        data["extraExecSecondsAvailable"] == EXTRA_SECS_QUOTA + EXTRA_SECS_ADDED_QUOTA
+    )
+    assert data["giftedExecSecondsAvailable"] == GIFTED_SECS_QUOTA
+    assert data["extraExecSeconds"] == {}
+    assert data["giftedExecSeconds"] == {}
+    assert (
+        get_total_exec_seconds(data["crawlExecSeconds"])
+        >= EXEC_SECS_QUOTA + EXTRA_SECS_ADDED_QUOTA
+    )
+    assert len(data["quotaUpdates"])
+    for update in data["quotaUpdates"]:
+        assert update["modified"]
+        assert update["update"]
+    assert data["quotaUpdates"][-1]["context"] == "test context 123"
 
 
 @pytest.mark.timeout(1200)
