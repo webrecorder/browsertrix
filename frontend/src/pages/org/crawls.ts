@@ -267,6 +267,10 @@ export class OrgCrawls extends BtrixElement {
       ],
       { signal },
     ) => {
+      if (this.getArchivedItemsTimeout) {
+        window.clearTimeout(this.getArchivedItemsTimeout);
+      }
+
       try {
         const data = await this.getCrawls(
           {
@@ -279,10 +283,6 @@ export class OrgCrawls extends BtrixElement {
           },
           signal,
         );
-
-        if (this.getArchivedItemsTimeout) {
-          window.clearTimeout(this.getArchivedItemsTimeout);
-        }
 
         this.getArchivedItemsTimeout = window.setTimeout(() => {
           void this.crawlsTask.run();
@@ -501,7 +501,7 @@ export class OrgCrawls extends BtrixElement {
             itemType="crawl"
             includeNotSuccessful
             @btrix-change=${(e: BtrixChangeWorkflowTagFilterEvent) => {
-              this.filterByTags.setValue(e.detail.value?.tags);
+              this.filterByTags.setValue(e.detail.value?.tags || []);
               this.filterByTagsType.setValue(e.detail.value?.type || "or");
             }}
           ></btrix-archived-item-tag-filter>

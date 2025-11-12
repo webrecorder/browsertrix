@@ -315,6 +315,10 @@ export class WorkflowsList extends BtrixElement {
       ],
       { signal },
     ) => {
+      if (this.getWorkflowsTimeout) {
+        window.clearTimeout(this.getWorkflowsTimeout);
+      }
+
       try {
         const data = await this.getWorkflows(
           {
@@ -328,10 +332,6 @@ export class WorkflowsList extends BtrixElement {
           },
           signal,
         );
-
-        if (this.getWorkflowsTimeout) {
-          window.clearTimeout(this.getWorkflowsTimeout);
-        }
 
         this.getWorkflowsTimeout = window.setTimeout(() => {
           void this.workflowsTask.run();
@@ -558,7 +558,7 @@ export class WorkflowsList extends BtrixElement {
         .tags=${this.filterByTags.value}
         .type=${this.filterByTagsType.value}
         @btrix-change=${(e: BtrixChangeWorkflowTagFilterEvent) => {
-          this.filterByTags.setValue(e.detail.value?.tags);
+          this.filterByTags.setValue(e.detail.value?.tags || []);
           this.filterByTagsType.setValue(e.detail.value?.type || "or");
         }}
       ></btrix-workflow-tag-filter>
