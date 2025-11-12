@@ -176,7 +176,10 @@ export class ProfileBrowserDialog extends BtrixElement {
                 .join(" — ")}
             </h2>
             ${when(
-              creatingNew ? this.config : this.profile || this.config,
+              (this.profile || this.config) && {
+                ...this.profile,
+                ...this.config,
+              },
               badges,
             )}
           </div>

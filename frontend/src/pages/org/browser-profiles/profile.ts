@@ -86,12 +86,16 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     | "metadata"
     | "metadata-name"
     | "metadata-description"
-    | "add-site"
+    | "start-browser"
+    | "start-browser-add-site"
     | "browser"
     | "duplicate";
 
   @state()
-  private initialNavigateUrl?: string;
+  private browserLoadUrl?: string;
+
+  @state()
+  private browserLoadCrawlerChannel?: Profile["crawlerChannel"];
 
   private get profile() {
     return this.profileTask.value;
@@ -146,15 +150,16 @@ export class BrowserProfilesProfilePage extends BtrixElement {
 
       <btrix-profile-browser-dialog
         .profile=${this.profile}
-        .config=${this.initialNavigateUrl
+        .config=${this.browserLoadUrl
           ? {
-              url: this.initialNavigateUrl,
+              url: this.browserLoadUrl,
               name:
                 duplicating && this.profile
                   ? `${this.profile.name} ${msg("Copy")}`
                   : undefined,
               crawlerChannel:
-                (duplicating && this.profile?.crawlerChannel) || undefined,
+                (duplicating && this.profile?.crawlerChannel) ||
+                this.browserLoadCrawlerChannel,
               proxyId: (duplicating && this.profile?.proxyId) || undefined,
             }
           : undefined}
@@ -163,10 +168,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
         @btrix-updated=${duplicating
           ? undefined
           : () => void this.profileTask.run()}
-        @sl-after-hide=${() => {
-          this.initialNavigateUrl = undefined;
-          this.openDialog = undefined;
-        }}
+        @sl-after-hide=${this.closeBrowser}
       >
       </btrix-profile-browser-dialog>
 
@@ -217,10 +219,12 @@ export class BrowserProfilesProfilePage extends BtrixElement {
               </sl-menu-item>
               <sl-menu-item
                 ?disabled=${archivingDisabled}
-                @click=${menuItemClick(() => void this.openBrowser())}
+                @click=${menuItemClick(
+                  () => (this.openDialog = "start-browser"),
+                )}
               >
                 <sl-icon slot="prefix" name="gear"></sl-icon>
-                ${msg("Edit Configuration")}
+                ${msg("Configure Profile")}
               </sl-menu-item>
               <sl-menu-item
                 ?disabled=${archivingDisabled || !this.profile}
@@ -286,11 +290,11 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     return panel({
       heading: msg("Configured Sites"),
       actions: isCrawler
-        ? html`<sl-tooltip content=${msg("Edit Configuration")}>
+        ? html`<sl-tooltip content=${msg("Configure Profile")}>
             <sl-icon-button
               name="gear"
               class="text-base"
-              @click=${() => void this.openBrowser()}
+              @click=${() => (this.openDialog = "start-browser")}
               ?disabled=${archivingDisabled}
             ></sl-icon-button>
           </sl-tooltip>`
@@ -302,25 +306,49 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           <sl-button
             size="small"
             class="mt-3"
-            @click=${() => (this.openDialog = "add-site")}
+            @click=${() => (this.openDialog = "start-browser-add-site")}
           >
             <sl-icon slot="prefix" name="plus-square"></sl-icon>
             ${msg("Add Site")}</sl-button
           >
         `,
       )}
-      ${this.renderAddSiteDialog()} `,
+      ${this.renderStartBrowserDialog()} `,
     });
   }
 
-  private renderAddSiteDialog() {
+  private renderStartBrowserDialog() {
+    const fields = (profile: Profile) => {
+      const value = this.openDialog === "start-browser" && profile.origins[0];
+
+      return html`
+        <btrix-url-input
+          name="starting-url"
+          label=${value ? msg("Load URL") : msg("New Site URL")}
+          value=${value || ""}
+          required
+        ></btrix-url-input>
+
+        ${when(
+          this.orgCrawlerChannels && this.orgCrawlerChannels.length > 1,
+          () => html`
+            <div class="mt-4">
+              <btrix-select-crawler .crawlerChannel=${profile.crawlerChannel}>
+              </btrix-select-crawler>
+            </div>
+          `,
+        )}
+      `;
+    };
     return html`<btrix-dialog
-      .label=${msg("Add Site to Profile")}
-      ?open=${this.openDialog === "add-site"}
+      .label=${msg("Configure Profile")}
+      ?open=${this.openDialog?.startsWith("start-browser")}
       @sl-initial-focus=${async (e: CustomEvent) => {
-        const dialog = e.target as Dialog;
-        await this.updateComplete;
-        dialog.querySelector<UrlInput>("btrix-url-input")?.focus();
+        if (this.openDialog === "start-browser-add-site") {
+          const dialog = e.target as Dialog;
+          await this.updateComplete;
+          dialog.querySelector<UrlInput>("btrix-url-input")?.focus();
+        }
       }}
       @sl-after-hide=${async (e: CustomEvent) => {
         const dialog = e.target as Dialog;
@@ -336,7 +364,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           input.setCustomValidity("");
         }
 
-        if (this.openDialog === "add-site") {
+        if (this.openDialog?.startsWith("start-browser")) {
           this.openDialog = undefined;
         }
       }}
@@ -351,15 +379,12 @@ export class BrowserProfilesProfilePage extends BtrixElement {
 
           const values = serialize(form);
           const url = values["starting-url"] as string;
+          const crawlerChannel = values["crawlerChannel"] as string | undefined;
 
-          void this.openBrowser(url);
+          void this.openBrowser({ url, crawlerChannel });
         }}
       >
-        <btrix-url-input
-          name="starting-url"
-          label=${msg("Site URL")}
-          required
-        ></btrix-url-input>
+        ${when(this.profileTask.value, fields)}
       </form>
       <div slot="footer" class="flex justify-between">
         <sl-button size="small" @click=${() => (this.openDialog = undefined)}
@@ -390,7 +415,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           <li class="flex items-center gap-2">
             <button
               class="flex h-8 flex-1 items-center overflow-hidden border-r text-left transition-colors duration-fast hover:bg-cyan-50/50"
-              @click=${() => void this.openBrowser(origin)}
+              @click=${() => void this.openBrowser({ url: origin })}
             >
               <sl-tooltip placement="left" content=${msg("View")}>
                 <sl-icon name="window-fullscreen" class="mx-2 block"></sl-icon>
@@ -798,11 +823,17 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     });
   };
 
-  private readonly openBrowser = async (url?: string) => {
+  private readonly openBrowser = async (opts: {
+    url?: string;
+    crawlerChannel?: string;
+  }) => {
+    let { url } = opts;
+
     if (!url) {
       url = await this.getFirstBrowserUrl();
     }
-    this.initialNavigateUrl = url;
+    this.browserLoadUrl = url;
+    this.browserLoadCrawlerChannel = opts.crawlerChannel;
     this.openDialog = "browser";
   };
 
@@ -813,8 +844,14 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     );
   }
 
+  private readonly closeBrowser = () => {
+    this.browserLoadUrl = undefined;
+    this.browserLoadCrawlerChannel = undefined;
+    this.openDialog = undefined;
+  };
+
   private async duplicateProfile() {
-    this.initialNavigateUrl = await this.getFirstBrowserUrl();
+    this.browserLoadUrl = await this.getFirstBrowserUrl();
     this.openDialog = "duplicate";
   }
 
