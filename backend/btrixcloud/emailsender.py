@@ -20,6 +20,7 @@ from .models import (
     Organization,
     InvitePending,
     Subscription,
+    TYPE_AUTO_PAUSED_STATES,
 )
 from .utils import is_bool, get_origin
 
@@ -248,5 +249,33 @@ class EmailSender:
             org_url=org_url,
             trial_end_date=trial_end_date.isoformat(),
             behavior_on_trial_end=behavior_on_trial_end,
+            support_email=self.support_email,
+        )
+
+    async def send_crawl_auto_paused(
+        self,
+        user_name: str,
+        receiver_email: str,
+        paused_reason: TYPE_AUTO_PAUSED_STATES,
+        paused_expiry: datetime,
+        cid: UUID,
+        org: Organization,
+        headers=None,
+    ):
+        """Send email indicating crawl was paused due to quota or disabled crawling"""
+
+        origin = get_origin(headers)
+        org_url = f"{origin}/orgs/{org.slug}"
+        workflow_url = f"{org_url}/workflows/{cid}/latest"
+
+        await self._send_encrypted(
+            receiver_email,
+            "crawlAutoPaused",
+            org_name=org.name,
+            user_name=user_name,
+            paused_reason=paused_reason,
+            paused_expiry=paused_expiry.isoformat(),
+            org_url=org_url,
+            workflow_url=workflow_url,
             support_email=self.support_email,
         )
