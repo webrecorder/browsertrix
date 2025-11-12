@@ -425,7 +425,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           <btrix-desc-list-item label=${msg("Tags")}>
             ${this.renderDetail((profile) =>
               profile.tags.length
-                ? html`<div class="mt-1 flex flex-wrap gap-x-2 gap-y-1">
+                ? html`<div class="mt-1 flex flex-wrap gap-1.5">
                     ${profile.tags.map(
                       (tag) => html`<btrix-tag>${tag}</btrix-tag>`,
                     )}
