@@ -11,13 +11,13 @@ import queryString from "query-string";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { FileRemoveEvent } from "@/components/ui/file-list";
 import type { BtrixFileChangeEvent } from "@/components/ui/file-list/events";
+import type { TagCount, TagCounts } from "@/components/ui/tag-filter/types";
 import type {
   TagInputEvent,
   Tags,
   TagsChangeEvent,
 } from "@/components/ui/tag-input";
 import { type CollectionsChangeEvent } from "@/features/collections/collections-add";
-import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
 import { APIError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 
@@ -71,7 +71,7 @@ export class FileUploader extends BtrixElement {
   private collectionIds: string[] = [];
 
   @state()
-  private tagOptions: WorkflowTag[] = [];
+  private tagOptions: TagCount[] = [];
 
   @state()
   private tagsToSave: Tags = [];
@@ -86,7 +86,7 @@ export class FileUploader extends BtrixElement {
   private readonly form!: Promise<HTMLFormElement>;
 
   // For fuzzy search:
-  private readonly fuse = new Fuse<WorkflowTag>([], {
+  private readonly fuse = new Fuse<TagCount>([], {
     keys: ["tag"],
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
@@ -362,7 +362,7 @@ export class FileUploader extends BtrixElement {
 
   private async fetchTags() {
     try {
-      const { tags } = await this.api.fetch<WorkflowTags>(
+      const { tags } = await this.api.fetch<TagCounts>(
         `/orgs/${this.orgId}/crawlconfigs/tagCounts`,
       );
 

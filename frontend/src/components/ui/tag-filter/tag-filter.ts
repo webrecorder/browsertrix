@@ -20,7 +20,12 @@ import { repeat } from "lit/directives/repeat.js";
 import queryString from "query-string";
 import { isFocusable } from "tabbable";
 
-import type { BtrixChangeTagFilterEvent, Tag, Tags, TagType } from "./types";
+import type {
+  BtrixChangeTagFilterEvent,
+  TagCount,
+  TagCounts,
+  TagType,
+} from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { stopProp } from "@/utils/events";
@@ -58,7 +63,7 @@ export class TagFilter extends BtrixElement {
   @queryAll("sl-checkbox")
   private readonly checkboxes!: NodeListOf<SlCheckbox>;
 
-  private readonly fuse = new Fuse<Tag>([], {
+  private readonly fuse = new Fuse<TagCount>([], {
     keys: ["tag"],
   });
 
@@ -110,7 +115,7 @@ export class TagFilter extends BtrixElement {
         });
       }
 
-      const { tags } = await this.api.fetch<Tags>(
+      const { tags } = await this.api.fetch<TagCounts>(
         `/orgs/${this.orgId}/${apiPathForTagType[tagType]}/tagCounts${query && `?${query}`}`,
         { signal },
       );
@@ -289,8 +294,8 @@ export class TagFilter extends BtrixElement {
     `;
   }
 
-  private renderList(opts: { item: Tag }[]) {
-    const tag = (tag: Tag) => {
+  private renderList(opts: { item: TagCount }[]) {
+    const tag = (tag: TagCount) => {
       const checked = this.selected.get(tag.tag) === true;
 
       return html`

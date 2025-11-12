@@ -8,13 +8,13 @@ export type TagType =
   | "upload"
   | "profile";
 
-export type Tag = {
+export type TagCount = {
   tag: string;
   count: number;
 };
 
-export type Tags = {
-  tags: Tag[];
+export type TagCounts = {
+  tags: TagCount[];
 };
 
 export type ChangeTagEventDetails =

@@ -7,6 +7,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { TagCount, TagCounts } from "@/components/ui/tag-filter/types";
 import type {
   TagInputEvent,
   Tags,
@@ -17,7 +18,6 @@ import type {
   CollectionsChangeEvent,
 } from "@/features/collections/collections-add";
 import type { ArchivedItem } from "@/types/crawler";
-import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
 import { isSuccessfullyFinished } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
 
@@ -54,7 +54,7 @@ export class CrawlMetadataEditor extends BtrixElement {
   private includeName = false;
 
   @state()
-  private tagOptions: WorkflowTag[] = [];
+  private tagOptions: TagCount[] = [];
 
   @state()
   private tagsToSave: Tags = [];
@@ -69,7 +69,7 @@ export class CrawlMetadataEditor extends BtrixElement {
   public readonly collectionInput?: CollectionsAdd | null;
 
   // For fuzzy search:
-  private readonly fuse = new Fuse<WorkflowTag>([], {
+  private readonly fuse = new Fuse<TagCount>([], {
     keys: ["tag"],
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
@@ -191,7 +191,7 @@ export class CrawlMetadataEditor extends BtrixElement {
   private async fetchTags() {
     if (!this.crawl) return;
     try {
-      const { tags } = await this.api.fetch<WorkflowTags>(
+      const { tags } = await this.api.fetch<TagCounts>(
         `/orgs/${this.crawl.oid}/crawlconfigs/tagCounts`,
       );
 
