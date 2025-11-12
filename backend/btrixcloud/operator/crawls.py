@@ -1467,6 +1467,8 @@ class CrawlOperator(BaseOperator):
             active_crawls_total_size = await self.crawl_ops.get_active_crawls_size(
                 crawl.oid
             )
+            # TODO: Make sure this doesn't double-count paused crawl WACZs
+            # that have already been added to org storage
             if self.org_ops.storage_quota_reached(org, active_crawls_total_size):
                 await self.pause_crawl(crawl, org)
                 return "paused_storage_quota_reached"
@@ -1764,7 +1766,14 @@ class CrawlOperator(BaseOperator):
                 )
 
         if state in FAILED_STATES:
-            await self.crawl_ops.delete_failed_crawl_files(crawl.id, crawl.oid)
+            deleted_file_size = await self.crawl_ops.delete_failed_crawl_files(
+                crawl.id, crawl.oid
+            )
+            # Ensure we decrement org storage for any files that were already stored
+            # (e.g. when crawl was paused)
+            await self.org_ops.inc_org_bytes_stored(
+                crawl.oid, -deleted_file_size, "crawl"
+            )
             await self.page_ops.delete_crawl_pages(crawl.id, crawl.oid)
 
         await self.event_webhook_ops.create_crawl_finished_notification(
