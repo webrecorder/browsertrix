@@ -180,7 +180,7 @@ export class BrowserProfilesList extends BtrixElement {
 
   private clearFilters() {
     this.filterByCurrentUser.setValue(false);
-    this.filterByTags.setValue(undefined);
+    this.filterByTags.setValue([]);
   }
 
   private readonly profilesTask = new Task(this, {
@@ -221,15 +221,22 @@ export class BrowserProfilesList extends BtrixElement {
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (
-      changedProperties.has("orderBy.setValue") ||
-      changedProperties.has("filterByCurrentUser.setValue") ||
-      changedProperties.has("filterByTags.setValue") ||
-      changedProperties.has("filterByTagsType.setValue")
+      changedProperties.has("orderBy.internalValue") ||
+      changedProperties.has("filterByCurrentUser.internalValue") ||
+      changedProperties.has("filterByTags.internalValue") ||
+      changedProperties.has("filterByTagsType.internalValue")
     ) {
       this.pagination = {
         ...this.pagination,
         page: 1,
       };
+    }
+
+    if (changedProperties.has("filterByCurrentUser.internalValue")) {
+      window.sessionStorage.setItem(
+        FILTER_BY_CURRENT_USER_STORAGE_KEY,
+        this.filterByCurrentUser.value.toString(),
+      );
     }
   }
 
@@ -393,7 +400,7 @@ export class BrowserProfilesList extends BtrixElement {
         .tags=${this.filterByTags.value}
         .type=${this.filterByTagsType.value}
         @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
-          this.filterByTags.setValue(e.detail.value?.tags);
+          this.filterByTags.setValue(e.detail.value?.tags || []);
           this.filterByTagsType.setValue(e.detail.value?.type || "or");
         }}
       ></btrix-tag-filter>
