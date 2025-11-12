@@ -1529,6 +1529,8 @@ class CrawlOperator(BaseOperator):
         stats, sizes = await self.get_redis_crawl_stats(redis, crawl.id)
 
         # need to add size of previously completed WACZ files as well!
+        # TODO: This seems to be making the crawls seem larger than they
+        # are in the frontend - need to untangle that
         stats.size += status.filesAddedSize
 
         # update status
