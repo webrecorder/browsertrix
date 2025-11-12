@@ -371,12 +371,12 @@ export class CrawlsList extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
-      changedProperties.has("filterByCurrentUser.value") ||
-      changedProperties.has("filterBy.value") ||
-      changedProperties.has("orderBy.value") ||
+      changedProperties.has("filterByCurrentUser.internalValue") ||
+      changedProperties.has("filterBy.internalValue") ||
+      changedProperties.has("orderBy.internalValue") ||
       changedProperties.has("itemType") ||
-      changedProperties.has("filterByTags.value") ||
-      changedProperties.has("filterByTagsType.value")
+      changedProperties.has("filterByTags.internalValue") ||
+      changedProperties.has("filterByTagsType.internalValue")
     ) {
       if (
         changedProperties.has("itemType") &&

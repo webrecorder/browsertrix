@@ -340,11 +340,11 @@ export class OrgCrawls extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
-      changedProperties.has("filterByCurrentUser.value") ||
-      changedProperties.has("filterBy.value") ||
-      changedProperties.has("orderBy.value") ||
-      changedProperties.has("filterByTags.value") ||
-      changedProperties.has("filterByTagsType.value")
+      changedProperties.has("filterByCurrentUser.internalValue") ||
+      changedProperties.has("filterBy.internalValue") ||
+      changedProperties.has("orderBy.internalValue") ||
+      changedProperties.has("filterByTags.internalValue") ||
+      changedProperties.has("filterByTagsType.internalValue")
     ) {
       this.paginationElement?.setPage(1, { dispatch: true, replace: true });
 

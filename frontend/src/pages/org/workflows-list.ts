@@ -369,13 +369,13 @@ export class WorkflowsList extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
-      changedProperties.has("filterByCurrentUser.setValue") ||
-      changedProperties.has("filterByTags.setValue") ||
-      changedProperties.has("filterByTagsType.setValue") ||
-      changedProperties.has("filterByProfiles.setValue") ||
-      changedProperties.has("filterByScheduled.setValue") ||
-      changedProperties.has("filterBy.setValue") ||
-      changedProperties.has("orderBy.setValue")
+      changedProperties.has("filterByCurrentUser.internalValue") ||
+      changedProperties.has("filterByTags.internalValue") ||
+      changedProperties.has("filterByTagsType.internalValue") ||
+      changedProperties.has("filterByProfiles.internalValue") ||
+      changedProperties.has("filterByScheduled.internalValue") ||
+      changedProperties.has("filterBy.internalValue") ||
+      changedProperties.has("orderBy.internalValue")
     ) {
       this.pagination = {
         ...this.pagination,
