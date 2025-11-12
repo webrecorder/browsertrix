@@ -1407,6 +1407,8 @@ class CrawlOperator(BaseOperator):
             crawl.db_crawl_id, crawl.is_qa, crawl_file, filecomplete.size
         )
 
+        await self.org_ops.inc_org_bytes_stored(crawl.oid, filecomplete.size, "crawl")
+
         # no replicas for QA for now
         if crawl.is_qa:
             return True
@@ -1429,11 +1431,12 @@ class CrawlOperator(BaseOperator):
         if crawl.stopping:
             return "stopped_by_user"
 
-        # TODO: This is source of bug where status.stopReason is sometimes None while
-        # crawl.paused_at is (still?) set after pausing due to storage quota (maybe
-        # execution time quota too?), which results in state being incorrectly set
-        # to "paused"
+        # TODO: This is the source of a bug where status.stopReason is sometimes None
+        # while crawl.paused_at is set after pausing due to quotas being reached,
+        # which results in state being incorrectly set to "paused"
         # We still need something like this for manual pauses, however
+        # The real question is: why is status.stopReason sometimes None at the start
+        # the crawl sync in the first place??
         if crawl.paused_at and status.stopReason not in PAUSED_STATES:
             return "paused"
 
@@ -1636,19 +1639,6 @@ class CrawlOperator(BaseOperator):
                         org=crawl.org,
                     )
 
-                # Add size of uploaded WACZ from paused crawl to org so that
-                # the org knows it's over its storage quota
-                # TODO: This is reached several times, so make it idempotent
-                # TODO: Should this be status.filesAddedSize or stats.size?
-                if paused_state == "paused_storage_quota_reached":
-                    print(
-                        f"Crawl paused for storage quota, adding size to org. status.filesAddedSize: {status.filesAddedSize}, stats.size: {stats.size}",
-                        flush=True,
-                    )
-                    # await self.org_ops.inc_org_bytes_stored(
-                    #     crawl.oid, status.filesAddedSize, "crawl"
-                    # )
-
                 return status
 
         # if at least one is done according to redis, consider crawl successful
@@ -1733,13 +1723,6 @@ class CrawlOperator(BaseOperator):
 
         if state in SUCCESSFUL_STATES:
             await self.inc_crawl_complete_stats(crawl, finished)
-        else:
-            # TODO: Remove any already uploaded WACZ files (e.g. from
-            # paused crawls) from org storage count
-            # await self.org_ops.inc_org_bytes_stored(
-            #     crawl.oid, -status.filesAddedSize, "crawl"
-            # )
-            pass
 
         # Regular Crawl Finished
         if not crawl.is_qa:
@@ -1766,11 +1749,6 @@ class CrawlOperator(BaseOperator):
 
         if state in SUCCESSFUL_STATES and crawl.oid:
             await self.page_ops.set_archived_item_page_counts(crawl.id)
-            # TODO: Make sure WACZs from paused crawls that have already been
-            # added here aren't double-counted
-            await self.org_ops.inc_org_bytes_stored(
-                crawl.oid, status.filesAddedSize, "crawl"
-            )
             await self.org_ops.set_last_crawl_finished(crawl.oid)
             await self.coll_ops.add_successful_crawl_to_collections(
                 crawl.id, crawl.cid, crawl.oid
