@@ -297,6 +297,7 @@ export class WorkflowsList extends BtrixElement {
     this.filterByCurrentUser.setValue(false);
     this.filterByTags.setValue(undefined);
     this.filterByProfiles.setValue([]);
+    this.filterByTagsType.setValue("or");
   }
 
   private getWorkflowsTimeout?: number;

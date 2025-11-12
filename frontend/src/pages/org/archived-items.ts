@@ -279,7 +279,8 @@ export class CrawlsList extends BtrixElement {
       state: undefined,
     });
     this.filterByCurrentUser.setValue(false);
-    this.filterByTags.setValue(undefined);
+    this.filterByTags.setValue([]);
+    this.filterByTagsType.setValue("or");
   }
 
   private readonly archivedItemsTask = new Task(this, {

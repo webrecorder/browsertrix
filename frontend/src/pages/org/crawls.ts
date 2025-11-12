@@ -251,7 +251,8 @@ export class OrgCrawls extends BtrixElement {
       state: undefined,
     });
     this.filterByCurrentUser.setValue(false);
-    this.filterByTags.setValue(undefined);
+    this.filterByTags.setValue([]);
+    this.filterByTagsType.setValue("or");
   }
 
   private readonly crawlsTask = new Task(this, {
