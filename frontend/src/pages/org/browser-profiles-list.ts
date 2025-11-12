@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import { html, nothing } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -26,7 +26,6 @@ import type {
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import type { Browser } from "@/types/browser";
 import { SortDirection as SortDirectionEnum } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { isArchivingDisabled } from "@/utils/orgs";
@@ -168,8 +167,20 @@ export class BrowserProfilesList extends BtrixElement {
     },
   );
 
+  private get hasFiltersSet() {
+    return [
+      this.filterByCurrentUser.value || undefined,
+      this.filterByTags.value?.length || undefined,
+    ].some((v) => v !== undefined);
+  }
+
   get isCrawler() {
     return this.appState.isCrawler;
+  }
+
+  private clearFilters() {
+    this.filterByCurrentUser.setValue(false);
+    this.filterByTags.setValue(undefined);
   }
 
   private readonly profilesTask = new Task(this, {
@@ -187,7 +198,7 @@ export class BrowserProfilesList extends BtrixElement {
         {
           ...pagination,
           userid: filterByCurrentUser ? this.userInfo?.id : undefined,
-          tags: filterByTags,
+          tag: filterByTags,
           tagMatch: filterByTagsType,
           sortBy: orderBy.field,
           sortDirection:
@@ -207,6 +218,20 @@ export class BrowserProfilesList extends BtrixElement {
         this.filterByTagsType.value,
       ] as const,
   });
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (
+      changedProperties.has("orderBy.setValue") ||
+      changedProperties.has("filterByCurrentUser.setValue") ||
+      changedProperties.has("filterByTags.setValue") ||
+      changedProperties.has("filterByTagsType.setValue")
+    ) {
+      this.pagination = {
+        ...this.pagination,
+        page: 1,
+      };
+    }
+  }
 
   render() {
     return page(
@@ -300,6 +325,16 @@ export class BrowserProfilesList extends BtrixElement {
   };
 
   private renderEmpty() {
+    if (this.hasFiltersSet) {
+      return emptyMessage({
+        message: msg("No matching profiles found."),
+        actions: html`<sl-button size="small" @click=${this.clearFilters}>
+          <sl-icon slot="prefix" name="x-lg"></sl-icon>
+          ${msg("Create filters")}
+        </sl-button>`,
+      });
+    }
+
     const message = msg("Your org doesn’t have any browser profiles yet.");
 
     if (this.isCrawler) {
@@ -372,6 +407,21 @@ export class BrowserProfilesList extends BtrixElement {
       >
         ${msg("Mine")}
       </btrix-filter-chip>
+
+      ${when(
+        this.hasFiltersSet,
+        () => html`
+          <sl-button
+            class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
+            size="small"
+            variant="text"
+            @click=${this.clearFilters}
+          >
+            <sl-icon slot="prefix" name="x-lg"></sl-icon>
+            ${msg("Clear All")}
+          </sl-button>
+        `,
+      )}
     `;
   }
 
@@ -594,21 +644,10 @@ export class BrowserProfilesList extends BtrixElement {
     }
   }
 
-  private async createBrowser({ url }: { url: string }) {
-    const params = {
-      url,
-    };
-
-    return this.api.fetch<Browser>(`/orgs/${this.orgId}/profiles/browser`, {
-      method: "POST",
-      body: JSON.stringify(params),
-    });
-  }
-
   private async getProfiles(
     params: {
       userid?: string;
-      tags?: string[];
+      tag?: string[];
       tagMatch?: string;
     } & APIPaginationQuery &
       APISortQuery,
@@ -619,7 +658,7 @@ export class BrowserProfilesList extends BtrixElement {
         ...params,
       },
       {
-        arrayFormat: "comma",
+        arrayFormat: "none", // For tags
       },
     );
 
