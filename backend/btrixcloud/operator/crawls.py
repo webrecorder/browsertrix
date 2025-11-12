@@ -1628,6 +1628,14 @@ class CrawlOperator(BaseOperator):
                     allowed_from=RUNNING_AND_WAITING_STATES,
                 )
 
+                # TODO: This is reached several times, so make it idempotent
+                if paused_state != "paused":
+                    await self.crawl_ops.notify_org_admins_of_auto_paused_crawl(
+                        paused_reason=paused_state,
+                        cid=crawl.cid,
+                        org=crawl.org,
+                    )
+
                 # Add size of uploaded WACZ from paused crawl to org so that
                 # the org knows it's over its storage quota
                 # TODO: This is reached several times, so make it idempotent

@@ -237,11 +237,17 @@ TYPE_RUNNING_STATES = Literal[
 ]
 RUNNING_STATES = get_args(TYPE_RUNNING_STATES)
 
-TYPE_PAUSED_STATES = Literal[
-    "paused",
+TYPE_MANUALLY_PAUSED_STATES = Literal["paused"]
+
+TYPE_AUTO_PAUSED_STATES = Literal[
     "paused_storage_quota_reached",
     "paused_time_quota_reached",
     "paused_org_readonly",
+]
+
+TYPE_PAUSED_STATES = Literal[
+    TYPE_MANUALLY_PAUSED_STATES,
+    TYPE_AUTO_PAUSED_STATES,
 ]
 PAUSED_STATES = get_args(TYPE_PAUSED_STATES)
 
