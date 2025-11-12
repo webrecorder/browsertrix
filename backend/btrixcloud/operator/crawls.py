@@ -200,6 +200,11 @@ class CrawlOperator(BaseOperator):
             seed_file_url=spec.get("seedFileUrl", ""),
         )
 
+        print(
+            f"sync_crawls starting - crawl id: {crawl_id}, paused_at: {crawl.paused_at}, stopReason: {status.stopReason}",
+            flush=True,
+        )
+
         # if finalizing, crawl is being deleted
         if data.finalizing:
             if not status.finished:
@@ -1421,11 +1426,6 @@ class CrawlOperator(BaseOperator):
     ) -> Optional[StopReason]:
         """check if crawl is stopping and set reason"""
         # if user requested stop, then enter stopping phase
-        print(
-            f"Debugging is_crawl_stopping - status.stopReason: {status.stopReason}, paused_at: {crawl.paused_at}",
-            flush=True,
-        )
-
         if crawl.stopping:
             return "stopped_by_user"
 
@@ -1609,7 +1609,7 @@ class CrawlOperator(BaseOperator):
             num_paused = status_count.get("interrupted", 0)
             if (num_paused + num_failed) >= status.scale:
                 # now fully paused!
-                # remove pausing key and set state to paused
+                # remove pausing key and set state to appropriate paused state
                 paused_state: TYPE_PAUSED_STATES
                 if status.stopReason == "paused_storage_quota_reached":
                     paused_state = "paused_storage_quota_reached"
@@ -1619,11 +1619,6 @@ class CrawlOperator(BaseOperator):
                     paused_state = "paused_org_readonly"
                 else:
                     paused_state = "paused"
-
-                print(
-                    f"status.stopReason: {status.stopReason}, paused_state: {paused_state}",
-                    flush=True,
-                )
 
                 await redis.delete(f"{crawl.id}:paused")
                 await self.set_state(
