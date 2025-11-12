@@ -297,6 +297,7 @@ export class WorkflowsList extends BtrixElement {
     this.filterByCurrentUser.setValue(false);
     this.filterByTags.setValue(undefined);
     this.filterByProfiles.setValue([]);
+    this.filterByTagsType.setValue("or");
   }
 
   private getWorkflowsTimeout?: number;
@@ -314,6 +315,10 @@ export class WorkflowsList extends BtrixElement {
       ],
       { signal },
     ) => {
+      if (this.getWorkflowsTimeout) {
+        window.clearTimeout(this.getWorkflowsTimeout);
+      }
+
       try {
         const data = await this.getWorkflows(
           {
@@ -327,10 +332,6 @@ export class WorkflowsList extends BtrixElement {
           },
           signal,
         );
-
-        if (this.getWorkflowsTimeout) {
-          window.clearTimeout(this.getWorkflowsTimeout);
-        }
 
         this.getWorkflowsTimeout = window.setTimeout(() => {
           void this.workflowsTask.run();
@@ -368,13 +369,13 @@ export class WorkflowsList extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
-      changedProperties.has("filterByCurrentUser.setValue") ||
-      changedProperties.has("filterByTags.setValue") ||
-      changedProperties.has("filterByTagsType.setValue") ||
-      changedProperties.has("filterByProfiles.setValue") ||
-      changedProperties.has("filterByScheduled.setValue") ||
-      changedProperties.has("filterBy.setValue") ||
-      changedProperties.has("orderBy.setValue")
+      changedProperties.has("filterByCurrentUser.internalValue") ||
+      changedProperties.has("filterByTags.internalValue") ||
+      changedProperties.has("filterByTagsType.internalValue") ||
+      changedProperties.has("filterByProfiles.internalValue") ||
+      changedProperties.has("filterByScheduled.internalValue") ||
+      changedProperties.has("filterBy.internalValue") ||
+      changedProperties.has("orderBy.internalValue")
     ) {
       this.pagination = {
         ...this.pagination,
@@ -557,7 +558,7 @@ export class WorkflowsList extends BtrixElement {
         .tags=${this.filterByTags.value}
         .type=${this.filterByTagsType.value}
         @btrix-change=${(e: BtrixChangeWorkflowTagFilterEvent) => {
-          this.filterByTags.setValue(e.detail.value?.tags);
+          this.filterByTags.setValue(e.detail.value?.tags || []);
           this.filterByTagsType.setValue(e.detail.value?.type || "or");
         }}
       ></btrix-workflow-tag-filter>

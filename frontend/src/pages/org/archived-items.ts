@@ -279,7 +279,8 @@ export class CrawlsList extends BtrixElement {
       state: undefined,
     });
     this.filterByCurrentUser.setValue(false);
-    this.filterByTags.setValue(undefined);
+    this.filterByTags.setValue([]);
+    this.filterByTagsType.setValue("or");
   }
 
   private readonly archivedItemsTask = new Task(this, {
@@ -295,6 +296,10 @@ export class CrawlsList extends BtrixElement {
       ],
       { signal },
     ) => {
+      if (this.getArchivedItemsTimeout) {
+        window.clearTimeout(this.getArchivedItemsTimeout);
+      }
+
       try {
         const data = await this.getArchivedItems(
           {
@@ -308,10 +313,6 @@ export class CrawlsList extends BtrixElement {
           },
           signal,
         );
-
-        if (this.getArchivedItemsTimeout) {
-          window.clearTimeout(this.getArchivedItemsTimeout);
-        }
 
         this.getArchivedItemsTimeout = window.setTimeout(() => {
           void this.archivedItemsTask.run();
@@ -370,12 +371,12 @@ export class CrawlsList extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
-      changedProperties.has("filterByCurrentUser.value") ||
-      changedProperties.has("filterBy.value") ||
-      changedProperties.has("orderBy.value") ||
+      changedProperties.has("filterByCurrentUser.internalValue") ||
+      changedProperties.has("filterBy.internalValue") ||
+      changedProperties.has("orderBy.internalValue") ||
       changedProperties.has("itemType") ||
-      changedProperties.has("filterByTags.value") ||
-      changedProperties.has("filterByTagsType.value")
+      changedProperties.has("filterByTags.internalValue") ||
+      changedProperties.has("filterByTagsType.internalValue")
     ) {
       if (
         changedProperties.has("itemType") &&
@@ -621,7 +622,7 @@ export class CrawlsList extends BtrixElement {
             .tags=${this.filterByTags.value}
             itemType=${ifDefined(this.itemType || undefined)}
             @btrix-change=${(e: BtrixChangeArchivedItemTagFilterEvent) => {
-              this.filterByTags.setValue(e.detail.value?.tags);
+              this.filterByTags.setValue(e.detail.value?.tags || []);
               this.filterByTagsType.setValue(e.detail.value?.type || "or");
             }}
           ></btrix-archived-item-tag-filter>

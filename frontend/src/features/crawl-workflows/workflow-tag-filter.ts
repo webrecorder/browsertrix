@@ -73,25 +73,6 @@ export class WorkflowTagFilter extends BtrixElement {
     }
   }
 
-  protected updated(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.get("selected") || changedProperties.get("type")) {
-      const selectedTags = Array.from(this.selected.entries())
-        .filter(([_tag, selected]) => selected)
-        .map(([tag]) => tag);
-      this.dispatchEvent(
-        new CustomEvent<
-          BtrixChangeEvent<ChangeWorkflowTagEventDetails>["detail"]
-        >("btrix-change", {
-          detail: {
-            value: selectedTags.length
-              ? { tags: selectedTags, type: this.type }
-              : undefined,
-          },
-        }),
-      );
-    }
-  }
-
   private readonly orgTagsTask = new Task(this, {
     task: async () => {
       const { tags } = await this.api.fetch<WorkflowTags>(
@@ -155,8 +136,8 @@ export class WorkflowTagFilter extends BtrixElement {
                         checkbox.checked = false;
                       });
                       this.selected = new Map();
-
                       this.type = "or";
+                      void this.dispatchChange();
                     }}
                     >${msg("Clear")}</sl-button
                   >`
@@ -172,6 +153,7 @@ export class WorkflowTagFilter extends BtrixElement {
                   this.type = (event.target as HTMLInputElement).value as
                     | "or"
                     | "and";
+                  void this.dispatchChange();
                 }}
                 @sl-after-hide=${stopProp}
               >
@@ -298,6 +280,7 @@ export class WorkflowTagFilter extends BtrixElement {
           const { checked, value } = e.target as SlCheckbox;
 
           this.selected = new Map([...this.selected, [value, checked]]);
+          void this.dispatchChange();
         }}
       >
         ${repeat(
@@ -307,5 +290,24 @@ export class WorkflowTagFilter extends BtrixElement {
         )}
       </ul>
     `;
+  }
+
+  private async dispatchChange() {
+    await this.updateComplete;
+
+    const selectedTags = Array.from(this.selected.entries())
+      .filter(([_tag, selected]) => selected)
+      .map(([tag]) => tag);
+    this.dispatchEvent(
+      new CustomEvent<
+        BtrixChangeEvent<ChangeWorkflowTagEventDetails>["detail"]
+      >("btrix-change", {
+        detail: {
+          value: selectedTags.length
+            ? { tags: selectedTags, type: this.type }
+            : undefined,
+        },
+      }),
+    );
   }
 }

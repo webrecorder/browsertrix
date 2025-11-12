@@ -251,7 +251,8 @@ export class OrgCrawls extends BtrixElement {
       state: undefined,
     });
     this.filterByCurrentUser.setValue(false);
-    this.filterByTags.setValue(undefined);
+    this.filterByTags.setValue([]);
+    this.filterByTagsType.setValue("or");
   }
 
   private readonly crawlsTask = new Task(this, {
@@ -266,6 +267,10 @@ export class OrgCrawls extends BtrixElement {
       ],
       { signal },
     ) => {
+      if (this.getArchivedItemsTimeout) {
+        window.clearTimeout(this.getArchivedItemsTimeout);
+      }
+
       try {
         const data = await this.getCrawls(
           {
@@ -278,10 +283,6 @@ export class OrgCrawls extends BtrixElement {
           },
           signal,
         );
-
-        if (this.getArchivedItemsTimeout) {
-          window.clearTimeout(this.getArchivedItemsTimeout);
-        }
 
         this.getArchivedItemsTimeout = window.setTimeout(() => {
           void this.crawlsTask.run();
@@ -339,11 +340,11 @@ export class OrgCrawls extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
-      changedProperties.has("filterByCurrentUser.value") ||
-      changedProperties.has("filterBy.value") ||
-      changedProperties.has("orderBy.value") ||
-      changedProperties.has("filterByTags.value") ||
-      changedProperties.has("filterByTagsType.value")
+      changedProperties.has("filterByCurrentUser.internalValue") ||
+      changedProperties.has("filterBy.internalValue") ||
+      changedProperties.has("orderBy.internalValue") ||
+      changedProperties.has("filterByTags.internalValue") ||
+      changedProperties.has("filterByTagsType.internalValue")
     ) {
       this.paginationElement?.setPage(1, { dispatch: true, replace: true });
 
@@ -500,7 +501,7 @@ export class OrgCrawls extends BtrixElement {
             itemType="crawl"
             includeNotSuccessful
             @btrix-change=${(e: BtrixChangeWorkflowTagFilterEvent) => {
-              this.filterByTags.setValue(e.detail.value?.tags);
+              this.filterByTags.setValue(e.detail.value?.tags || []);
               this.filterByTagsType.setValue(e.detail.value?.type || "or");
             }}
           ></btrix-archived-item-tag-filter>
