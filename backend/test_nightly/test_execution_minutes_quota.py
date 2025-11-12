@@ -16,8 +16,6 @@ GIFTED_SECS_QUOTA = GIFTED_MINS_QUOTA * 60
 EXTRA_MINS_QUOTA = 5
 EXTRA_SECS_QUOTA = EXTRA_MINS_QUOTA * 60
 
-config_id = None
-
 
 def test_set_execution_mins_quota(org_with_quotas, admin_auth_headers):
     r = requests.post(
@@ -31,7 +29,6 @@ def test_set_execution_mins_quota(org_with_quotas, admin_auth_headers):
 
 def test_crawl_paused_when_quota_reached(org_with_quotas, admin_auth_headers):
     # Run crawl
-    global config_id
     crawl_id, config_id = run_crawl(org_with_quotas, admin_auth_headers)
     time.sleep(1)
 
@@ -112,12 +109,8 @@ def test_crawl_paused_when_quota_reached_with_extra(
     org_with_quotas, admin_auth_headers
 ):
     # Run crawl
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{org_with_quotas}/crawlconfigs/{config_id}/run",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    crawl_id = r.json()["started"]
+    crawl_id, config_id = run_crawl(org_with_quotas, admin_auth_headers)
+    time.sleep(1)
 
     while get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers) in (
         "starting",
