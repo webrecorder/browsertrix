@@ -430,7 +430,7 @@ class BaseCrawlOps:
         """Delete crawl files for failed crawl"""
         crawl = await self.get_base_crawl(crawl_id)
         org = await self.orgs.get_org_by_id(oid)
-        await self._delete_crawl_files(crawl, org)
+        deleted_size = await self._delete_crawl_files(crawl, org)
         await self.crawls.find_one_and_update(
             {"_id": crawl_id, "oid": oid},
             {
@@ -441,6 +441,7 @@ class BaseCrawlOps:
                 }
             },
         )
+        return deleted_size
 
     async def delete_all_crawl_qa_files(self, crawl_id: str, org: Organization):
         """Delete files for all qa runs in a crawl"""
