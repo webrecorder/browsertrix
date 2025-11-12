@@ -67,8 +67,8 @@ class OA2BearerOrQuery(OAuth2PasswordBearer):
 
     async def __call__(
         self,
-        request: Request | None = None,
-        websocket: WebSocket | None = None,
+        request: Request = None,  # type: ignore
+        websocket: WebSocket = None,  # type: ignore
     ) -> str:
         param = None
         exc = None
