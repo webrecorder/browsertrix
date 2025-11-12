@@ -9,6 +9,7 @@ import contextlib
 import urllib.parse
 from datetime import datetime
 from uuid import UUID
+import asyncio
 
 from typing import (
     Annotated,
@@ -79,6 +80,8 @@ from .models import (
     MatchCrawlQueueResponse,
     CrawlLogLine,
     TagsResponse,
+    TYPE_AUTO_PAUSED_STATES,
+    UserRole,
 )
 
 
@@ -93,7 +96,12 @@ class CrawlOps(BaseCrawlOps):
 
     crawl_manager: CrawlManager
 
-    def __init__(self, crawl_manager: CrawlManager, log_ops: CrawlLogOps, *args):
+    def __init__(
+        self,
+        crawl_manager: CrawlManager,
+        log_ops: CrawlLogOps,
+        *args,
+    ):
         super().__init__(*args)
         self.crawl_manager = crawl_manager
         self.log_ops = log_ops
@@ -1197,6 +1205,25 @@ class CrawlOps(BaseCrawlOps):
             qa_run_id=qa_run_id,
         )
 
+    async def notify_org_admins_of_auto_paused_crawl(
+        self,
+        paused_reason: TYPE_AUTO_PAUSED_STATES,
+        cid: UUID,
+        org: Organization,
+    ):
+        """Send email to all org admins about automatically paused crawl"""
+        users = await self.orgs.get_users_for_org(org, UserRole.OWNER)
+        workflow = await self.crawl_configs.get_crawl_config(cid)
+
+        await asyncio.gather(
+            *[
+                self.user_manager.email.send_crawl_auto_paused(
+                    user.email, paused_reason, workflow.lastCrawlPausedExpiry, cid, org
+                )
+                for user in users
+            ]
+        )
+
 
 # ============================================================================
 async def recompute_crawl_file_count_and_size(crawls, crawl_id: str):
@@ -1219,7 +1246,11 @@ async def recompute_crawl_file_count_and_size(crawls, crawl_id: str):
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
 def init_crawls_api(
-    crawl_manager: CrawlManager, crawl_log_ops: CrawlLogOps, app, user_dep, *args
+    crawl_manager: CrawlManager,
+    crawl_log_ops: CrawlLogOps,
+    app,
+    user_dep,
+    *args,
 ):
     """API for crawl management, including crawl done callback"""
     # pylint: disable=invalid-name, duplicate-code
