@@ -252,22 +252,25 @@ class CrawlConfigOps:
         if self.is_single_page(config_in.config):
             config_in.browserWindows = 1
 
+        proxy_id = config_in.proxyId
+
         profileid = None
         if isinstance(config_in.profileid, UUID):
             profileid = config_in.profileid
 
-        # ensure profile is valid, if provided
+        # ensure profile is valid, get proxy_id from profile
         if profileid:
-            await self.profiles.get_profile(profileid, org)
+            profile = await self.profiles.get_profile(profileid, org)
+            proxy_id = profile.proxyId
         else:
             if config_in.config and config_in.config.failOnContentCheck:
                 raise HTTPException(
                     status_code=400, detail="fail_on_content_check_requires_profile"
                 )
 
-        # ensure proxyId is valid and available for org
-        if config_in.proxyId:
-            if not self.can_org_use_proxy(org, config_in.proxyId):
+        # ensure proxy_id is valid and available for org
+        if proxy_id:
+            if not self.can_org_use_proxy(org, proxy_id):
                 raise HTTPException(status_code=404, detail="proxy_not_found")
 
         if config_in.config.exclude:
@@ -336,7 +339,7 @@ class CrawlConfigOps:
             profileid=profileid,
             crawlerChannel=config_in.crawlerChannel,
             crawlFilenameTemplate=config_in.crawlFilenameTemplate,
-            proxyId=config_in.proxyId,
+            proxyId=proxy_id,
             firstSeed=first_seed,
             seedCount=seed_count,
             shareable=config_in.shareable,
@@ -620,6 +623,8 @@ class CrawlConfigOps:
             last_rev = ConfigRevision(**orig_dict)
             last_rev = await self.config_revs.insert_one(last_rev.to_dict())
 
+        proxy_id = update.proxyId
+
         # set update query
         query = update.dict(exclude_unset=True)
         query["modifiedBy"] = user.id
@@ -631,8 +636,12 @@ class CrawlConfigOps:
             query["profileid"] = None
         # else, ensure its a valid profile
         elif update.profileid:
-            await self.profiles.get_profile(cast(UUID, update.profileid), org)
+            profile = await self.profiles.get_profile(cast(UUID, update.profileid), org)
             query["profileid"] = update.profileid
+            proxy_id = profile.proxyId
+
+        if proxy_id is not None:
+            query["proxyId"] = proxy_id
 
         if update.config is not None:
             query["config"] = update.config.dict()
@@ -1200,20 +1209,21 @@ class CrawlConfigOps:
         if await self.get_running_crawl(crawlconfig.id):
             raise HTTPException(status_code=400, detail="crawl_already_running")
 
-        if crawlconfig.proxyId and not self.can_org_use_proxy(org, crawlconfig.proxyId):
-            raise HTTPException(status_code=404, detail="proxy_not_found")
-
         await self.check_if_too_many_waiting_crawls(org)
 
-        profile_filename, profile_proxy_id = (
-            await self.profiles.get_profile_filename_and_proxy(
-                crawlconfig.profileid, org
+        if crawlconfig.profileid:
+            profile_filename, crawlconfig.proxyId, _ = (
+                await self.profiles.get_profile_filename_proxy_channel(
+                    crawlconfig.profileid, org
+                )
             )
-        )
-        if crawlconfig.profileid and not profile_filename:
-            raise HTTPException(status_code=400, detail="invalid_profile_id")
+            if not profile_filename:
+                raise HTTPException(status_code=400, detail="invalid_profile_id")
+        else:
+            profile_filename = ""
 
-        save_profile_id = self.get_save_profile_id(profile_proxy_id, crawlconfig)
+        if crawlconfig.proxyId and not self.can_org_use_proxy(org, crawlconfig.proxyId):
+            raise HTTPException(status_code=404, detail="proxy_not_found")
 
         storage_filename = (
             crawlconfig.crawlFilenameTemplate or self.default_filename_template
@@ -1244,7 +1254,7 @@ class CrawlConfigOps:
                 warc_prefix=self.get_warc_prefix(org, crawlconfig),
                 storage_filename=storage_filename,
                 profile_filename=profile_filename or "",
-                profileid=save_profile_id,
+                profileid=str(crawlconfig.profileid) if crawlconfig.profileid else "",
                 is_single_page=self.is_single_page(crawlconfig.config),
                 seed_file_url=seed_file_url,
             )
@@ -1255,25 +1265,6 @@ class CrawlConfigOps:
             # pylint: disable=raise-missing-from
             print(traceback.format_exc())
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
-
-    def get_save_profile_id(
-        self, profile_proxy_id: str, crawlconfig: CrawlConfig
-    ) -> str:
-        """return profile id if profile should be auto-saved, or empty str if not"""
-        # if no profile, nothing to save
-        if not crawlconfig.profileid:
-            return ""
-
-        # if no proxies, allow saving
-        if not crawlconfig.proxyId and not profile_proxy_id:
-            return str(crawlconfig.profileid)
-
-        # if proxy ids match, allow saving
-        if crawlconfig.proxyId == profile_proxy_id:
-            return str(crawlconfig.profileid)
-
-        # otherwise, don't save
-        return ""
 
     async def check_if_too_many_waiting_crawls(self, org: Organization):
         """if max concurrent crawls are set, limit number of queued crawls to X concurrent limit
