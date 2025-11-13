@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import { html, nothing } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -15,6 +15,7 @@ import type {
   FilterChip,
 } from "@/components/ui/filter-chip";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { emptyMessage } from "@/layouts/emptyMessage";
@@ -25,7 +26,6 @@ import type {
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import type { Browser } from "@/types/browser";
 import { SortDirection as SortDirectionEnum } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { isArchivingDisabled } from "@/utils/orgs";
@@ -66,12 +66,14 @@ const DEFAULT_SORT_BY = {
 } as const satisfies SortBy;
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
+const MAX_TAGS = 3;
 
 const columnsCss = [
   "min-content", // Status
   "[clickable-start] minmax(min-content, 1fr)", // Name
+  "minmax(max-content, 1fr)", // Tags
   "minmax(max-content, 1fr)", // Origins
-  "minmax(min-content, 22ch)", // Last modified
+  "minmax(min-content, 20ch)", // Last modified
   "[clickable-end] min-content", // Actions
 ].join(" ");
 
@@ -122,6 +124,31 @@ export class BrowserProfilesList extends BtrixElement {
     },
   );
 
+  private readonly filterByTags = new SearchParamsValue<string[] | undefined>(
+    this,
+    (value, params) => {
+      params.delete("tags");
+      value?.forEach((v) => {
+        params.append("tags", v);
+      });
+      return params;
+    },
+    (params) => params.getAll("tags"),
+  );
+
+  private readonly filterByTagsType = new SearchParamsValue<"and" | "or">(
+    this,
+    (value, params) => {
+      if (value === "and") {
+        params.set("tagsType", value);
+      } else {
+        params.delete("tagsType");
+      }
+      return params;
+    },
+    (params) => (params.get("tagsType") === "and" ? "and" : "or"),
+  );
+
   private readonly filterByCurrentUser = new SearchParamsValue<boolean>(
     this,
     (value, params) => {
@@ -142,16 +169,39 @@ export class BrowserProfilesList extends BtrixElement {
     },
   );
 
+  private get hasFiltersSet() {
+    return [
+      this.filterByCurrentUser.value || undefined,
+      this.filterByTags.value?.length || undefined,
+    ].some((v) => v !== undefined);
+  }
+
   get isCrawler() {
     return this.appState.isCrawler;
   }
 
+  private clearFilters() {
+    this.filterByCurrentUser.setValue(false);
+    this.filterByTags.setValue([]);
+  }
+
   private readonly profilesTask = new Task(this, {
-    task: async ([pagination, orderBy, filterByCurrentUser], { signal }) => {
+    task: async (
+      [
+        pagination,
+        orderBy,
+        filterByCurrentUser,
+        filterByTags,
+        filterByTagsType,
+      ],
+      { signal },
+    ) => {
       return this.getProfiles(
         {
           ...pagination,
           userid: filterByCurrentUser ? this.userInfo?.id : undefined,
+          tags: filterByTags,
+          tagMatch: filterByTagsType,
           sortBy: orderBy.field,
           sortDirection:
             orderBy.direction === "desc"
@@ -166,8 +216,31 @@ export class BrowserProfilesList extends BtrixElement {
         this.pagination,
         this.orderBy.value,
         this.filterByCurrentUser.value,
+        this.filterByTags.value,
+        this.filterByTagsType.value,
       ] as const,
   });
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (
+      changedProperties.has("orderBy.internalValue") ||
+      changedProperties.has("filterByCurrentUser.internalValue") ||
+      changedProperties.has("filterByTags.internalValue") ||
+      changedProperties.has("filterByTagsType.internalValue")
+    ) {
+      this.pagination = {
+        ...this.pagination,
+        page: 1,
+      };
+    }
+
+    if (changedProperties.has("filterByCurrentUser.internalValue")) {
+      window.sessionStorage.setItem(
+        FILTER_BY_CURRENT_USER_STORAGE_KEY,
+        this.filterByCurrentUser.value.toString(),
+      );
+    }
+  }
 
   render() {
     return page(
@@ -261,6 +334,16 @@ export class BrowserProfilesList extends BtrixElement {
   };
 
   private renderEmpty() {
+    if (this.hasFiltersSet) {
+      return emptyMessage({
+        message: msg("No matching profiles found."),
+        actions: html`<sl-button size="small" @click=${this.clearFilters}>
+          <sl-icon slot="prefix" name="x-lg"></sl-icon>
+          ${msg("Create filters")}
+        </sl-button>`,
+      });
+    }
+
     const message = msg("Your org doesn’t have any browser profiles yet.");
 
     if (this.isCrawler) {
@@ -299,7 +382,7 @@ export class BrowserProfilesList extends BtrixElement {
           <span class="whitespace-nowrap text-neutral-500">
             ${msg("Filter by:")}
           </span>
-          ${this.renderFilterControl()}
+          ${this.renderFilterControls()}
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
@@ -312,8 +395,18 @@ export class BrowserProfilesList extends BtrixElement {
     `;
   }
 
-  private renderFilterControl() {
+  private renderFilterControls() {
     return html`
+      <btrix-tag-filter
+        tagType="profile"
+        .tags=${this.filterByTags.value}
+        .type=${this.filterByTagsType.value}
+        @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
+          this.filterByTags.setValue(e.detail.value?.tags || []);
+          this.filterByTagsType.setValue(e.detail.value?.type || "or");
+        }}
+      ></btrix-tag-filter>
+
       <btrix-filter-chip
         ?checked=${this.filterByCurrentUser.value}
         @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
@@ -323,6 +416,21 @@ export class BrowserProfilesList extends BtrixElement {
       >
         ${msg("Mine")}
       </btrix-filter-chip>
+
+      ${when(
+        this.hasFiltersSet,
+        () => html`
+          <sl-button
+            class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
+            size="small"
+            variant="text"
+            @click=${this.clearFilters}
+          >
+            <sl-icon slot="prefix" name="x-lg"></sl-icon>
+            ${msg("Clear All")}
+          </sl-button>
+        `,
+      )}
     `;
   }
 
@@ -387,6 +495,7 @@ export class BrowserProfilesList extends BtrixElement {
             <span class="sr-only">${msg("Status")}</span>
           </btrix-table-header-cell>
           <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
+          <btrix-table-header-cell> ${msg("Tags")} </btrix-table-header-cell>
           <btrix-table-header-cell>
             ${msg("Configured Sites")}
           </btrix-table-header-cell>
@@ -414,6 +523,8 @@ export class BrowserProfilesList extends BtrixElement {
       ) || data.created;
     const startingUrl = data.origins[0];
     const otherOrigins = data.origins.slice(1);
+    const firstTags = data.tags.slice(0, MAX_TAGS);
+    const otherTags = data.tags.slice(MAX_TAGS);
 
     return html`
       <btrix-table-row
@@ -437,6 +548,21 @@ export class BrowserProfilesList extends BtrixElement {
             class="truncate"
             >${data.name}</a
           >
+        </btrix-table-cell>
+        <btrix-table-cell>
+          <div class="flex flex-wrap gap-1.5">
+            ${firstTags.map((tag) => html`<btrix-tag>${tag}</btrix-tag>`)}
+          </div>
+          ${otherTags.length
+            ? html`<btrix-popover placement="right" hoist>
+                <btrix-badge
+                  >+${this.localize.number(otherTags.length)}</btrix-badge
+                >
+                <div slot="content" class="flex flex-wrap gap-1.5">
+                  ${otherTags.map((tag) => html`<btrix-tag>${tag}</btrix-tag>`)}
+                </div>
+              </btrix-popover>`
+            : nothing}
         </btrix-table-cell>
         <btrix-table-cell>
           <btrix-code language="url" value=${startingUrl} noWrap></btrix-code>
@@ -545,19 +671,13 @@ export class BrowserProfilesList extends BtrixElement {
     }
   }
 
-  private async createBrowser({ url }: { url: string }) {
-    const params = {
-      url,
-    };
-
-    return this.api.fetch<Browser>(`/orgs/${this.orgId}/profiles/browser`, {
-      method: "POST",
-      body: JSON.stringify(params),
-    });
-  }
-
   private async getProfiles(
-    params: { userid?: string } & APIPaginationQuery & APISortQuery,
+    params: {
+      userid?: string;
+      tags?: string[];
+      tagMatch?: string;
+    } & APIPaginationQuery &
+      APISortQuery,
     signal: AbortSignal,
   ) {
     const query = queryString.stringify(
@@ -565,7 +685,7 @@ export class BrowserProfilesList extends BtrixElement {
         ...params,
       },
       {
-        arrayFormat: "comma",
+        arrayFormat: "none", // For tags
       },
     );
 

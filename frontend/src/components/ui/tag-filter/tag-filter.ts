@@ -17,30 +17,40 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import queryString from "query-string";
 import { isFocusable } from "tabbable";
 
+import type {
+  BtrixChangeTagFilterEvent,
+  TagCount,
+  TagCounts,
+  TagType,
+} from "./types";
+
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { BtrixChangeEvent } from "@/events/btrix-change";
-import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
 import { stopProp } from "@/utils/events";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 const MAX_TAGS_IN_LABEL = 5;
-
-type ChangeWorkflowTagEventDetails =
-  | { tags: string[]; type: "and" | "or" }
-  | undefined;
-
-export type BtrixChangeWorkflowTagFilterEvent =
-  BtrixChangeEvent<ChangeWorkflowTagEventDetails>;
+const apiPathForTagType: Record<TagType, string> = {
+  workflow: "crawlconfigs",
+  "workflow-crawl": "crawls",
+  "archived-item": "all-crawls",
+  "archived-item-crawl": "crawls",
+  upload: "uploads",
+  profile: "profiles",
+};
 
 /**
  * @fires btrix-change
  */
-@customElement("btrix-workflow-tag-filter")
+@customElement("btrix-tag-filter")
 @localized()
-export class WorkflowTagFilter extends BtrixElement {
+export class TagFilter extends BtrixElement {
+  @property({ type: String })
+  tagType?: TagType;
+
   @property({ type: Array })
   tags?: string[];
 
@@ -53,7 +63,7 @@ export class WorkflowTagFilter extends BtrixElement {
   @queryAll("sl-checkbox")
   private readonly checkboxes!: NodeListOf<SlCheckbox>;
 
-  private readonly fuse = new Fuse<WorkflowTag>([], {
+  private readonly fuse = new Fuse<TagCount>([], {
     keys: ["tag"],
   });
 
@@ -74,9 +84,23 @@ export class WorkflowTagFilter extends BtrixElement {
   }
 
   private readonly orgTagsTask = new Task(this, {
-    task: async () => {
-      const { tags } = await this.api.fetch<WorkflowTags>(
-        `/orgs/${this.orgId}/crawlconfigs/tagCounts`,
+    task: async ([tagType], { signal }) => {
+      if (!tagType) {
+        console.debug("no tagType");
+        return;
+      }
+
+      let query = "";
+
+      if (tagType === "workflow-crawl") {
+        query = queryString.stringify({
+          onlySuccessful: false,
+        });
+      }
+
+      const { tags } = await this.api.fetch<TagCounts>(
+        `/orgs/${this.orgId}/${apiPathForTagType[tagType]}/tagCounts${query && `?${query}`}`,
+        { signal },
       );
 
       this.fuse.setCollection(tags);
@@ -84,7 +108,7 @@ export class WorkflowTagFilter extends BtrixElement {
       // Match fuse shape
       return tags.map((item) => ({ item }));
     },
-    args: () => [] as const,
+    args: () => [this.tagType] as const,
   });
 
   render() {
@@ -175,6 +199,8 @@ export class WorkflowTagFilter extends BtrixElement {
 
           ${this.orgTagsTask.render({
             complete: (tags) => {
+              if (!tags) return;
+
               let options = tags;
 
               if (tags.length && this.searchString) {
@@ -252,8 +278,8 @@ export class WorkflowTagFilter extends BtrixElement {
     `;
   }
 
-  private renderList(opts: { item: WorkflowTag }[]) {
-    const tag = (tag: WorkflowTag) => {
+  private renderList(opts: { item: TagCount }[]) {
+    const tag = (tag: TagCount) => {
       const checked = this.selected.get(tag.tag) === true;
 
       return html`
@@ -299,9 +325,7 @@ export class WorkflowTagFilter extends BtrixElement {
       .filter(([_tag, selected]) => selected)
       .map(([tag]) => tag);
     this.dispatchEvent(
-      new CustomEvent<
-        BtrixChangeEvent<ChangeWorkflowTagEventDetails>["detail"]
-      >("btrix-change", {
+      new CustomEvent<BtrixChangeTagFilterEvent["detail"]>("btrix-change", {
         detail: {
           value: selectedTags.length
             ? { tags: selectedTags, type: this.type }

@@ -126,6 +126,7 @@ export type Profile = {
   id: string;
   name: string;
   description: string;
+  tags: string[];
   created: string;
   createdBy: string | null; // User ID
   createdByName: string | null; // User Name
