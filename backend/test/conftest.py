@@ -669,7 +669,7 @@ def profile_browser_5_id(admin_auth_headers, default_org_id):
 def _create_profile_browser(
     headers: Dict[str, str],
     oid: UUID,
-    url: str = "https://old.webrecorder.net",
+    url="https://old.webrecorder.net",
     baseprofile="",
 ):
     data = {"url": url}
