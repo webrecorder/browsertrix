@@ -379,6 +379,20 @@ class CrawlOps(BaseCrawlOps):
 
         return results[0].get("totalSum") or 0
 
+    async def get_active_crawls_uploaded_wacz_size(self, oid: UUID) -> int:
+        """get size of all waczs already uploaded for (e.g. previously or currently paused) crawls"""
+        cursor = self.crawls.aggregate(
+            [
+                {"$match": {"state": {"$in": RUNNING_AND_WAITING_STATES}, "oid": oid}},
+                {"$group": {"_id": None, "totalSum": {"$sum": "$fileSize"}}},
+            ]
+        )
+        results = await cursor.to_list(length=1)
+        if not results:
+            return 0
+
+        return results[0].get("totalSum") or 0
+
     async def delete_crawls(
         self,
         org: Organization,

@@ -200,11 +200,6 @@ class CrawlOperator(BaseOperator):
             seed_file_url=spec.get("seedFileUrl", ""),
         )
 
-        print(
-            f"sync_crawls starting - crawl id: {crawl_id}, paused_at: {crawl.paused_at}, stopReason: {status.stopReason}",
-            flush=True,
-        )
-
         # if finalizing, crawl is being deleted
         if data.finalizing:
             if not status.finished:
@@ -1455,12 +1450,28 @@ class CrawlOperator(BaseOperator):
 
         # pause crawl if storage quota is reached
         if org.quotas.storageQuota:
+            # Make sure to account for already-uploaded WACZs from active crawls
+            # that are or previously were paused, which are already accounted for
+            # in the org storage stats
             active_crawls_total_size = await self.crawl_ops.get_active_crawls_size(
                 crawl.oid
             )
-            # TODO: Make sure this doesn't double-count paused crawl WACZs
-            # that have already been added to org storage
-            if self.org_ops.storage_quota_reached(org, active_crawls_total_size):
+            print(f"Active crawls total size: {active_crawls_total_size}", flush=True)
+            already_uploaded_size = (
+                await self.crawl_ops.get_active_crawls_uploaded_wacz_size(crawl.oid)
+            )
+            print(
+                f"Active crawls already uploaded size: {already_uploaded_size}",
+                flush=True,
+            )
+            active_crawls_not_uploaded_size = (
+                active_crawls_total_size - already_uploaded_size
+            )
+            print(
+                f"Active crawls not yet uploaded size: {active_crawls_not_uploaded_size}",
+                flush=True,
+            )
+            if self.org_ops.storage_quota_reached(org, active_crawls_not_uploaded_size):
                 await self.pause_crawl(crawl, org)
                 return "paused_storage_quota_reached"
 
@@ -1523,8 +1534,6 @@ class CrawlOperator(BaseOperator):
         stats, sizes = await self.get_redis_crawl_stats(redis, crawl.id)
 
         # need to add size of previously completed WACZ files as well!
-        # TODO: This seems to be making the crawls seem larger than they
-        # are in the frontend - need to untangle that
         stats.size += status.filesAddedSize
 
         # update status
