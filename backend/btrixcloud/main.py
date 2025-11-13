@@ -332,7 +332,7 @@ def main() -> None:
             title="Browsertrix API",
             swagger_favicon_url="/favicon.ico",
             swagger_js_url="/docs/api-assets/swagger-ui-bundle.js",
-            swagger_css_url="/docs/api-assets/swagger-ui.css"
+            swagger_css_url="/docs/api-assets/swagger-ui.css",
         )
 
     @app_root.get(API_PREFIX + "/redoc", include_in_schema=False)
