@@ -42,6 +42,11 @@ export class UrlInput extends SlInput {
     this.addEventListener("sl-change", this.onChange);
   }
 
+  setCustomValidity(message: string): void {
+    super.setCustomValidity(message);
+    if (!this.hideHelpText) this.helpText = message;
+  }
+
   disconnectedCallback(): void {
     super.disconnectedCallback();
 
@@ -61,7 +66,6 @@ export class UrlInput extends SlInput {
 
     if (value && !validURL(value)) {
       const text = msg("Please enter a valid URL.");
-      if (!this.hideHelpText) this.helpText = text;
       this.setCustomValidity(text);
     } else if (
       value &&

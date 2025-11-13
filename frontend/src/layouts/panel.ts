@@ -1,7 +1,10 @@
+import clsx from "clsx";
 import { html, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { pageHeading } from "./page";
+
+import { tw } from "@/utils/tailwind";
 
 export function panelHeader({
   heading,
@@ -20,8 +23,18 @@ export function panelHeader({
   `;
 }
 
-export function panelBody({ content }: { content: TemplateResult }) {
-  return html`<div class="lg:rounded-lg lg:border lg:p-4">${content}</div>`;
+export function panelBody({
+  content,
+  classNames,
+}: {
+  content: TemplateResult;
+  classNames?: typeof tw | string;
+}) {
+  return html`<div
+    class=${clsx(tw`lg:rounded-lg lg:border lg:p-4`, classNames)}
+  >
+    ${content}
+  </div>`;
 }
 
 /**
@@ -39,6 +52,8 @@ export function panel({
   className?: string;
 } & Parameters<typeof panelHeader>[0]) {
   return html`<section id=${ifDefined(id)} class=${ifDefined(className)}>
-    ${panelHeader({ heading, actions })} ${body}
+    ${panelHeader({ heading, actions })}
+    <sl-divider class="mb-4 mt-0 lg:hidden"></sl-divider>
+    ${body}
   </section>`;
 }

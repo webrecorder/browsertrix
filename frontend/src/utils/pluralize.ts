@@ -299,6 +299,58 @@ const plurals = {
       id: "changes.plural.other",
     }),
   },
+  workflows: {
+    zero: msg("workflows", {
+      desc: 'plural form of "workflow" for zero workflows',
+      id: "workflows.plural.zero",
+    }),
+    one: msg("workflow", {
+      desc: 'singular form for "workflow"',
+      id: "workflows.plural.one",
+    }),
+    two: msg("workflows", {
+      desc: 'plural form of "workflow" for two workflows',
+      id: "workflows.plural.two",
+    }),
+    few: msg("workflows", {
+      desc: 'plural form of "workflow" for few workflows',
+      id: "workflows.plural.few",
+    }),
+    many: msg("workflows", {
+      desc: 'plural form of "workflow" for many workflows',
+      id: "workflows.plural.many",
+    }),
+    other: msg("workflows", {
+      desc: 'plural form of "workflow" for multiple/other workflows',
+      id: "workflows.plural.other",
+    }),
+  },
+  domains: {
+    zero: msg("domains", {
+      desc: 'plural form of "domain" for zero domains',
+      id: "domains.plural.zero",
+    }),
+    one: msg("domain", {
+      desc: 'singular form for "domain"',
+      id: "domains.plural.one",
+    }),
+    two: msg("domains", {
+      desc: 'plural form of "domain" for two domains',
+      id: "domains.plural.two",
+    }),
+    few: msg("domains", {
+      desc: 'plural form of "domain" for few domains',
+      id: "domains.plural.few",
+    }),
+    many: msg("domains", {
+      desc: 'plural form of "domain" for many domains',
+      id: "domains.plural.many",
+    }),
+    other: msg("domains", {
+      desc: 'plural form of "domain" for multiple/other domains',
+      id: "domains.plural.other",
+    }),
+  },
 };
 
 export const pluralOf = (word: keyof typeof plurals, count: number) => {

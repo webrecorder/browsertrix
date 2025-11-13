@@ -37,9 +37,10 @@ export class LocalizeController extends SlLocalizeController {
           year: "numeric",
           month: "long",
           day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
+          hour: "numeric",
+          minute: "numeric",
           timeZoneName: "short",
+          weekday: "long",
         })}
         hoist
         placement="bottom"
