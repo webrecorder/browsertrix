@@ -77,7 +77,9 @@ export class SelectCrawler extends LiteElement {
           ${msg("Version:")}
           ${selectedCrawler
             ? html`
-                <span class="font-monospace">${selectedCrawler.image}</span>
+                <span class="font-monospace leading-tight"
+                  >${selectedCrawler.image}</span
+                >
               `
             : nothing}
         </div>

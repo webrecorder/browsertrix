@@ -63,17 +63,6 @@ export class NewBrowserProfileDialog extends BtrixElement {
   @queryAsync("#browserProfileForm")
   private readonly form!: Promise<HTMLFormElement>;
 
-  connectedCallback(): void {
-    super.connectedCallback();
-
-    if (this.org?.crawlingDefaults) {
-      if (!this.defaultProxyId)
-        this.defaultProxyId = this.org.crawlingDefaults.proxyId;
-      if (!this.defaultCrawlerChannel)
-        this.defaultCrawlerChannel = this.org.crawlingDefaults.crawlerChannel;
-    }
-  }
-
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("defaultProxyId") && this.defaultProxyId) {
       this.proxyId = this.proxyId || this.defaultProxyId;
