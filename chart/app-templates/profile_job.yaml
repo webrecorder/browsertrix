@@ -12,6 +12,8 @@ metadata:
     {%- endif %}
     btrix.storage: "{{ storage_name }}"
     profileid: {{ profileid }}
+    proxyid: "{{ proxy_id }}"
+    crawlerChannel: "{{ crawler_channel }}"
 
 spec:
   selector:

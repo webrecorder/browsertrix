@@ -88,6 +88,7 @@ import { AnalyticsTrackEvent } from "@/trackEvents";
 import { APIErrorDetail } from "@/types/api";
 import {
   Behavior,
+  CrawlerChannelImage,
   ScopeType,
   type Seed,
   type WorkflowParams,
@@ -3228,7 +3229,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         clickSelector:
           this.formState.clickSelector || DEFAULT_AUTOCLICK_SELECTOR,
       },
-      crawlerChannel: this.formState.crawlerChannel || "default",
+      crawlerChannel:
+        this.formState.crawlerChannel || CrawlerChannelImage.Default,
       proxyId: this.formState.proxyId,
     };
 

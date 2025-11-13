@@ -238,7 +238,6 @@ export class FileUploader extends BtrixElement {
       <div class="mt-4">
         <btrix-collections-add
           .initialCollections=${this.collectionIds}
-          .configId=${"temp"}
           label=${msg("Add to Collection")}
           @collections-change=${(e: CollectionsChangeEvent) =>
             (this.collectionIds = e.detail.collections)}

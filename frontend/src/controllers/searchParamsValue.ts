@@ -99,16 +99,16 @@ export class SearchParamsValue<T> implements ReactiveController {
     const oldValue = this.#value;
     this.#value = value;
     this.#searchParams.update((params) => this.#encoder(value, params));
-    this.#host.requestUpdate(this.#getPropertyName("setValue"), oldValue);
+    this.#host.requestUpdate(this.#getPropertyName("internalValue"), oldValue);
   }
   // Little bit hacky/metaprogramming-y, but this lets us auto-detect property
   // name from the host element's properties without needing to repeat the name
   // in a string passed into options in order to have `requestUpdate` be called
   // with the correct property name. Ideally, eventually we'd use a decorator,
   // which would allow us to avoid this hacky approach — though that might make
-  // differentiating between internally-triggered ("setValue") and
+  // differentiating between internally-triggered ("internalValue") and
   // externally-triggered ("value") updates a bit more complex.
-  #getPropertyName(type: "value" | "setValue"): PropertyKey | undefined {
+  #getPropertyName(type: "value" | "internalValue"): PropertyKey | undefined {
     // Use explicit property name if provided
     if (this.#options.propertyKey)
       return `${this.#options.propertyKey.toString()}.${type}`;

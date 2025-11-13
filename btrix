@@ -35,23 +35,26 @@
 # Run nightly backend tests
 
 
-bootstrap(){
+buildImages(){
     echo "Building backend..."
     ./scripts/build-backend.sh
 
+    echo "Building emails..."
+    ./scripts/build-emails.sh
+
     echo "Building frontend..."
     ./scripts/build-frontend.sh
+}
+
+bootstrap(){
+    buildImages
 
     echo "Installing..."
     helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
 }
 
 bootstrapMicrok8s(){
-    echo "Building backend..."
-    ./scripts/build-backend.sh
-
-    echo "Building frontend..."
-    ./scripts/build-frontend.sh
+    buildImages
 
     echo "Installing..."
     microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
@@ -97,17 +100,17 @@ resetMicrok8s(){
     microk8s kubectl delete configmap -n crawlers -l btrix.crawlconfig
 }
 
-runTests() {
+runTests(){
     echo "Running backend tests..."
     python3 -m pytest backend/test/test_*.py
 }
 
-runNightlyTests() {
+runNightlyTests(){
     echo "Running nightly backend tests..."
     python3 -m pytest backend/test_nightly/test_*.py
 }
 
-setupLocalConfig() {
+setupLocalConfig(){
     if [ -f ./chart/local.yaml ]; then
         echo "Local config file already exists at ./chart/local.yaml"
         exit 1

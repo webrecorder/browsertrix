@@ -2,7 +2,7 @@
 
 import os
 import traceback
-from typing import Optional
+from typing import Optional, List, Any
 
 import yaml
 
@@ -10,6 +10,7 @@ from kubernetes_asyncio import client, config
 from kubernetes_asyncio.stream import WsApiClient
 from kubernetes_asyncio.client.api_client import ApiClient
 from kubernetes_asyncio.client.api import custom_objects_api
+from kubernetes_asyncio.client.models import V1CronJob
 from kubernetes_asyncio.utils import create_from_dict
 from kubernetes_asyncio.client.exceptions import ApiException
 
@@ -95,6 +96,7 @@ class K8sAPI:
         warc_prefix: Optional[str] = "",
         storage_filename: str = "",
         profile_filename: str = "",
+        profileid: str = "",
         qa_source: str = "",
         proxy_id: str = "",
         is_single_page: bool = False,
@@ -121,6 +123,7 @@ class K8sAPI:
             "warc_prefix": warc_prefix,
             "storage_filename": storage_filename,
             "profile_filename": profile_filename,
+            "profileid": profileid,
             "qa_source": qa_source,
             "proxy_id": proxy_id,
             "is_single_page": "1" if is_single_page else "0",
@@ -146,6 +149,7 @@ class K8sAPI:
         warc_prefix: Optional[str] = "",
         storage_filename: str = "",
         profile_filename: str = "",
+        profileid: str = "",
         qa_source: str = "",
         proxy_id: str = "",
         is_single_page: bool = False,
@@ -167,6 +171,7 @@ class K8sAPI:
             warc_prefix=warc_prefix or "",
             storage_filename=storage_filename,
             profile_filename=profile_filename,
+            profileid=profileid,
             qa_source=qa_source,
             proxy_id=proxy_id,
             is_single_page=is_single_page,
@@ -380,3 +385,50 @@ class K8sAPI:
             print(f"Send Signal Error: {exc}", flush=True)
 
         return signaled
+
+    async def delete_cron_job_by_name(self, name: str) -> None:
+        """Delete cron job by name"""
+        await self.batch_api.delete_namespaced_cron_job(
+            name=name,
+            namespace=self.namespace,
+        )
+
+    async def list_cron_jobs(self, label: str = "") -> List[V1CronJob]:
+        """Return list of all cron jobs, optionally filtered by label"""
+        resp = await self.batch_api.list_namespaced_cron_job(
+            namespace=self.namespace,
+            label_selector=label,
+        )
+        return resp.items
+
+    async def list_crawl_jobs(self, label: str = "") -> List[dict[str, Any]]:
+        """Return list of all crawl jobs, optionally filtered by label)"""
+        resp = await self.custom_api.list_namespaced_custom_object(
+            group="btrix.cloud",
+            version="v1",
+            namespace=self.namespace,
+            plural="crawljobs",
+            label_selector=label,
+        )
+        return resp.get("items", [])
+
+    async def _delete_cron_jobs(self, label: str) -> None:
+        """Delete namespaced cron jobs (e.g. crawl configs, bg jobs)"""
+        await self.batch_api.delete_collection_namespaced_cron_job(
+            namespace=self.namespace,
+            label_selector=label,
+        )
+
+    async def _delete_custom_objects(
+        self, label: str, plural: str = "crawljobs"
+    ) -> None:
+        """Delete custom objects (e.g. crawl jobs, profile browser jobs)"""
+        await self.custom_api.delete_collection_namespaced_custom_object(
+            group="btrix.cloud",
+            version="v1",
+            namespace=self.namespace,
+            label_selector=label,
+            plural=plural,
+            grace_period_seconds=0,
+            propagation_policy="Background",
+        )

@@ -74,7 +74,7 @@ export class DescList extends LitElement {
     dl {
       display: grid;
       margin: 0;
-      gap: 1rem;
+      gap: var(--sl-spacing-medium);
     }
 
     .vertical {
@@ -92,9 +92,9 @@ export class DescList extends LitElement {
     .horizontal ::slotted(btrix-desc-list-item) {
       position: relative;
       display: inline-block;
-      flex: 1 0 0;
+      flex: 1 1 auto;
       min-width: min-content;
-      padding-top: var(--sl-spacing-x-small);
+      padding: var(--sl-spacing-x-small) var(--sl-spacing-medium) 0;
     }
 
     .horizontal ::slotted(btrix-desc-list-item)::before {

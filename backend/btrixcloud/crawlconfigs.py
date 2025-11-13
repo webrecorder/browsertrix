@@ -21,11 +21,12 @@ import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
+    TYPE_ALL_CRAWL_STATES,
     CrawlConfigIn,
     ConfigRevision,
     CrawlConfig,
     CrawlConfigOut,
-    CrawlConfigTags,
+    TagsResponse,
     CrawlOut,
     CrawlOutWithResources,
     UpdateCrawlConfig,
@@ -52,6 +53,7 @@ from .models import (
     ListFilterType,
     ScopeType,
     Seed,
+    Profile,
 )
 from .utils import (
     dt_now,
@@ -147,6 +149,8 @@ class CrawlConfigOps:
             minutes=int(os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", "10080"))
         )
 
+        self.crawl_queue_limit_scale = int(os.environ.get("CRAWL_QUEUE_LIMIT_SCALE", 0))
+
         self.router = APIRouter(
             prefix="/crawlconfigs",
             tags=["crawlconfigs"],
@@ -197,6 +201,14 @@ class CrawlConfigOps:
         )
 
         await self.crawl_configs.create_index(
+            [
+                ("oid", pymongo.ASCENDING),
+                ("inactive", pymongo.ASCENDING),
+                ("profileid", pymongo.ASCENDING),
+            ]
+        )
+
+        await self.crawl_configs.create_index(
             [("lastRun", pymongo.DESCENDING), ("modified", pymongo.DESCENDING)]
         )
 
@@ -217,21 +229,6 @@ class CrawlConfigOps:
     def sanitize(self, string=""):
         """sanitize string for use in wacz filename"""
         return self._file_rx.sub("-", string.lower())
-
-    async def get_profile_filename(
-        self, profileid: Optional[UUID], org: Organization
-    ) -> str:
-        """lookup filename from profileid"""
-        if not profileid:
-            return ""
-
-        profile_filename, _ = await self.profiles.get_profile_storage_path_and_proxy(
-            profileid, org
-        )
-        if not profile_filename:
-            raise HTTPException(status_code=400, detail="invalid_profile_id")
-
-        return profile_filename
 
     # pylint: disable=invalid-name, too-many-branches, too-many-statements, too-many-locals
     async def add_crawl_config(
@@ -732,6 +729,7 @@ class CrawlConfigOps:
         description: Optional[str] = None,
         tags: Optional[List[str]] = None,
         tag_match: Optional[ListFilterType] = ListFilterType.AND,
+        last_crawl_state: list[TYPE_ALL_CRAWL_STATES] | None = None,
         schedule: Optional[bool] = None,
         is_crawl_running: Optional[bool] = None,
         sort_by: str = "lastRun",
@@ -772,6 +770,9 @@ class CrawlConfigOps:
 
         if is_crawl_running is not None:
             match_query["isCrawlRunning"] = is_crawl_running
+
+        if last_crawl_state:
+            match_query["lastCrawlState"] = {"$in": last_crawl_state}
 
         # pylint: disable=duplicate-code
         aggregate: List[Dict[str, Union[object, str, int]]] = [
@@ -842,9 +843,36 @@ class CrawlConfigOps:
     async def is_profile_in_use(self, profileid: UUID, org: Organization) -> bool:
         """return true/false if any active workflows exist with given profile"""
         res = await self.crawl_configs.find_one(
-            {"profileid": profileid, "inactive": {"$ne": True}, "oid": org.id}
+            {"oid": org.id, "inactive": {"$ne": True}, "profileid": profileid}
         )
         return res is not None
+
+    async def mark_profiles_in_use(self, profiles: List[Profile], org: Organization):
+        """mark which profiles are in use by querying and grouping crawlconfigs"""
+        profile_ids = [profile.id for profile in profiles]
+        cursor = self.crawl_configs.aggregate(
+            [
+                {
+                    "$match": {
+                        "oid": org.id,
+                        "inactive": {"$ne": True},
+                        "profileid": {"$in": profile_ids},
+                    }
+                },
+                {"$group": {"_id": "$profileid", "count": {"$sum": 1}}},
+            ]
+        )
+        results = await cursor.to_list()
+        in_use = set()
+        for res in results:
+            if res.get("count") > 0:
+                in_use.add(res.get("_id"))
+
+        for profile in profiles:
+            if profile.id in in_use:
+                profile.inUse = True
+
+        return profiles
 
     async def get_running_crawl(self, cid: UUID) -> Optional[CrawlOut]:
         """Return the id of currently running crawl for this config, if any"""
@@ -1174,7 +1202,18 @@ class CrawlConfigOps:
         if crawlconfig.proxyId and not self.can_org_use_proxy(org, crawlconfig.proxyId):
             raise HTTPException(status_code=404, detail="proxy_not_found")
 
-        profile_filename = await self.get_profile_filename(crawlconfig.profileid, org)
+        await self.check_if_too_many_waiting_crawls(org)
+
+        profile_filename, profile_proxy_id = (
+            await self.profiles.get_profile_filename_and_proxy(
+                crawlconfig.profileid, org
+            )
+        )
+        if crawlconfig.profileid and not profile_filename:
+            raise HTTPException(status_code=400, detail="invalid_profile_id")
+
+        save_profile_id = self.get_save_profile_id(profile_proxy_id, crawlconfig)
+
         storage_filename = (
             crawlconfig.crawlFilenameTemplate or self.default_filename_template
         )
@@ -1204,6 +1243,7 @@ class CrawlConfigOps:
                 warc_prefix=self.get_warc_prefix(org, crawlconfig),
                 storage_filename=storage_filename,
                 profile_filename=profile_filename or "",
+                profileid=save_profile_id,
                 is_single_page=self.is_single_page(crawlconfig.config),
                 seed_file_url=seed_file_url,
             )
@@ -1214,6 +1254,40 @@ class CrawlConfigOps:
             # pylint: disable=raise-missing-from
             print(traceback.format_exc())
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
+
+    def get_save_profile_id(
+        self, profile_proxy_id: str, crawlconfig: CrawlConfig
+    ) -> str:
+        """return profile id if profile should be auto-saved, or empty str if not"""
+        # if no profile, nothing to save
+        if not crawlconfig.profileid:
+            return ""
+
+        # if no proxies, allow saving
+        if not crawlconfig.proxyId and not profile_proxy_id:
+            return str(crawlconfig.profileid)
+
+        # if proxy ids match, allow saving
+        if crawlconfig.proxyId == profile_proxy_id:
+            return str(crawlconfig.profileid)
+
+        # otherwise, don't save
+        return ""
+
+    async def check_if_too_many_waiting_crawls(self, org: Organization):
+        """if max concurrent crawls are set, limit number of queued crawls to X concurrent limit
+        return 429 if at limit"""
+        max_concur = org.quotas.maxConcurrentCrawls
+        if not max_concur or not self.crawl_queue_limit_scale:
+            return
+
+        num_waiting = await self.crawls.count_documents(
+            {"oid": org.id, "state": "waiting_org_limit"}
+        )
+        if num_waiting < max_concur * self.crawl_queue_limit_scale:
+            return
+
+        raise HTTPException(status_code=429, detail="slow_down_too_many_crawls_queued")
 
     async def set_config_current_crawl_info(
         self, cid: UUID, crawl_id: str, crawl_start: datetime, user: User
@@ -1567,6 +1641,10 @@ def init_crawl_config_api(
                 description='Defaults to `"and"` if omitted',
             ),
         ] = ListFilterType.AND,
+        last_crawl_state: Annotated[
+            list[TYPE_ALL_CRAWL_STATES] | None,
+            Query(alias="lastCrawlState", title="Last Crawl State"),
+        ] = None,
         schedule: Optional[bool] = None,
         is_crawl_running: Annotated[
             Optional[bool], Query(alias="isCrawlRunning", title="Is Crawl Running")
@@ -1596,6 +1674,7 @@ def init_crawl_config_api(
             description=description,
             tags=tag,
             tag_match=tag_match,
+            last_crawl_state=last_crawl_state,
             schedule=schedule,
             is_crawl_running=is_crawl_running,
             page_size=page_size,
@@ -1612,7 +1691,7 @@ def init_crawl_config_api(
         """
         return await ops.get_crawl_config_tags(org)
 
-    @router.get("/tagCounts", response_model=CrawlConfigTags)
+    @router.get("/tagCounts", response_model=TagsResponse)
     async def get_crawl_config_tag_counts(org: Organization = Depends(org_viewer_dep)):
         return {"tags": await ops.get_crawl_config_tag_counts(org)}
 

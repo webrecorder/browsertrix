@@ -28,6 +28,7 @@ from .models import (
     AddedResponseIdQuota,
     FilePreparer,
     MIN_UPLOAD_PART_SIZE,
+    TagsResponse,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now
@@ -361,6 +362,19 @@ def init_uploads_api(app, user_dep, *args):
             type_="upload",
         )
         return paginated_format(uploads, total, page, pageSize)
+
+    @app.get(
+        "/orgs/{oid}/uploads/tagCounts",
+        tags=["uploads"],
+        response_model=TagsResponse,
+    )
+    async def get_uploads_tag_counts(
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        tags = await ops.get_all_crawls_tag_counts(
+            org, only_successful=False, type_="upload"
+        )
+        return {"tags": tags}
 
     @app.get(
         "/orgs/{oid}/uploads/{crawlid}",

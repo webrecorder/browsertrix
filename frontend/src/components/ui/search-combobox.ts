@@ -102,13 +102,14 @@ export class SearchCombobox<T> extends LitElement {
           this.searchResultsOpen = false;
           const item = e.detail.item as SlMenuItem;
           const key = item.dataset["key"];
-          this.searchByValue = item.value;
+          const value = item.value;
+          this.searchByValue = value;
           await this.updateComplete;
           this.dispatchEvent(
             new CustomEvent<SelectEventDetail<T>>("btrix-select", {
               detail: {
                 key: key ?? null,
-                value: item.value as T,
+                value: value as T,
               },
             }),
           );

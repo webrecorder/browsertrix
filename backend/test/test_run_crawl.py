@@ -64,7 +64,7 @@ def test_create_new_config(admin_auth_headers, default_org_id):
     assert data["storageQuotaReached"] is False
 
 
-def test_start_crawl(admin_auth_headers, default_org_id):
+def test_start_crawl(admin_auth_headers, default_org_id, profile_id):
     # Start crawl.
     crawl_data = {
         "runNow": True,
@@ -77,6 +77,7 @@ def test_start_crawl(admin_auth_headers, default_org_id):
             # limit now set via 'max_pages_per_crawl' global limit
             # "limit": 1,
         },
+        "profileid": profile_id,
     }
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",

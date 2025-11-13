@@ -33,6 +33,12 @@ crawler_extract_full_text: to-warc
 # if set, each workflow can have a lower limit, but not higher
 max_pages_per_crawl: 50000
 
+# set limit for how many crawls can be queued at once,
+# calculated as scale multiplier applied to concurrent crawl limit
+# if 0, no limit to concurrent crawl queue
+# if >0, scale to get max queue from concurrent crawl limit
+# crawl_queue_limit_scale: 0
+
 # default template for generate wacz files
 # supports following interpolated vars:
 # @ts - current timestamp
@@ -100,7 +106,7 @@ replica_deletion_delay_days: 0
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.19.4"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.20.0"
 backend_pull_policy: "IfNotPresent"
 
 backend_password_secret: "PASSWORD!"
@@ -165,7 +171,7 @@ cleanup_files_after_minutes: 1440
 
 # Emails Image
 # =========================================
-emails_image: "docker.io/webrecorder/browsertrix-emails:1.19.4"
+emails_image: "docker.io/webrecorder/browsertrix-emails:1.20.0"
 emails_pull_policy: "IfNotPresent"
 
 emails_cpu: "10m"
@@ -179,7 +185,7 @@ local_emails_port: 30872
 
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.19.4"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.20.0"
 frontend_pull_policy: "IfNotPresent"
 
 frontend_cpu: "10m"

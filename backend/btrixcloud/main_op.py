@@ -44,6 +44,7 @@ def main():
         crawl_log_ops,
         _,
         _,
+        _,
     ) = init_ops()
 
     return init_operator_api(

@@ -5,7 +5,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import capitalize from "lodash/fp/capitalize";
 
-import type { CrawlerChannel } from "@/pages/org/types";
+import { CrawlerChannelImage, type CrawlerChannel } from "@/pages/org/types";
 import LiteElement from "@/utils/LiteElement";
 
 type SelectCrawlerChangeDetail = {
@@ -131,11 +131,11 @@ export class SelectCrawler extends LiteElement {
     }
 
     if (!this.selectedCrawler) {
-      this.crawlerChannel = "default";
+      this.crawlerChannel = CrawlerChannelImage.Default;
       this.dispatchEvent(
         new CustomEvent("on-change", {
           detail: {
-            value: "default",
+            value: CrawlerChannelImage.Default,
           },
         }),
       );

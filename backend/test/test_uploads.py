@@ -1065,6 +1065,104 @@ def test_clear_all_presigned_urls(
     assert r.json()["success"]
 
 
+def test_all_crawls_tag_counts(crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/tagCounts",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json() == {
+        "tags": [
+            {"tag": "wr-test-1", "count": 3},
+            {"tag": "wr-test-2", "count": 2},
+            {"tag": "all-crawls", "count": 1},
+            {"tag": "behaviors", "count": 1},
+            {"tag": "four", "count": 1},
+            {"tag": "qa", "count": 1},
+            {"tag": "three", "count": 1},
+            {"tag": "wr-test-1-updated-again", "count": 1},
+            {"tag": "wr-test-2-updated-again", "count": 1},
+        ]
+    }
+
+
+def test_all_crawls_tag_counts_including_failed(
+    crawler_auth_headers, default_org_id, canceled_crawl_id
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/tagCounts?onlySuccessful=false",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json() == {
+        "tags": [
+            {"tag": "wr-test-1", "count": 3},
+            {"tag": "wr-test-2", "count": 2},
+            {"tag": "all-crawls", "count": 1},
+            {"tag": "behaviors", "count": 1},
+            {"tag": "canceled", "count": 1},
+            {"tag": "four", "count": 1},
+            {"tag": "qa", "count": 1},
+            {"tag": "three", "count": 1},
+            {"tag": "wr-test-1-updated-again", "count": 1},
+            {"tag": "wr-test-2-updated-again", "count": 1},
+        ]
+    }
+
+
+def test_crawls_tag_counts(crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/tagCounts",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json() == {
+        "tags": [
+            {"tag": "wr-test-1", "count": 3},
+            {"tag": "wr-test-2", "count": 2},
+            {"tag": "all-crawls", "count": 1},
+            {"tag": "behaviors", "count": 1},
+            {"tag": "qa", "count": 1},
+        ]
+    }
+
+
+def test_crawls_tag_counts_including_failed(
+    crawler_auth_headers, default_org_id, canceled_crawl_id
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/tagCounts?onlySuccessful=false",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json() == {
+        "tags": [
+            {"tag": "wr-test-1", "count": 3},
+            {"tag": "wr-test-2", "count": 2},
+            {"tag": "all-crawls", "count": 1},
+            {"tag": "behaviors", "count": 1},
+            {"tag": "canceled", "count": 1},
+            {"tag": "qa", "count": 1},
+        ]
+    }
+
+
+def test_uploads_tag_counts(crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/tagCounts",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json() == {
+        "tags": [
+            {"tag": "four", "count": 1},
+            {"tag": "three", "count": 1},
+            {"tag": "wr-test-1-updated-again", "count": 1},
+            {"tag": "wr-test-2-updated-again", "count": 1},
+        ]
+    }
+
+
 def test_delete_form_upload_and_crawls_from_all_crawls(
     admin_auth_headers,
     crawler_auth_headers,

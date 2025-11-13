@@ -17,10 +17,12 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import queryString from "query-string";
 import { isFocusable } from "tabbable";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
+import type { ArchivedItem } from "@/types/crawler";
 import { type WorkflowTag, type WorkflowTags } from "@/types/workflow";
 import { stopProp } from "@/utils/events";
 import { isNotEqual } from "@/utils/is-not-equal";
@@ -43,6 +45,12 @@ export type BtrixChangeArchivedItemTagFilterEvent =
 export class ArchivedItemTagFilter extends BtrixElement {
   @property({ type: Array })
   tags?: string[];
+
+  @property({ type: String })
+  itemType?: ArchivedItem["type"];
+
+  @property({ type: Boolean })
+  includeNotSuccessful = false;
 
   @state()
   private searchString = "";
@@ -73,29 +81,16 @@ export class ArchivedItemTagFilter extends BtrixElement {
     }
   }
 
-  protected updated(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("selected") || changedProperties.has("type")) {
-      const selectedTags = Array.from(this.selected.entries())
-        .filter(([_tag, selected]) => selected)
-        .map(([tag]) => tag);
-      this.dispatchEvent(
-        new CustomEvent<
-          BtrixChangeEvent<ChangeArchivedItemTagEventDetails>["detail"]
-        >("btrix-change", {
-          detail: {
-            value: selectedTags.length
-              ? { tags: selectedTags, type: this.type }
-              : undefined,
-          },
-        }),
-      );
-    }
-  }
-
   private readonly orgTagsTask = new Task(this, {
-    task: async () => {
+    task: async ([itemType], { signal }) => {
+      const query = queryString.stringify({
+        onlySuccessful: !this.includeNotSuccessful,
+        crawlType: itemType,
+      });
+
       const { tags } = await this.api.fetch<WorkflowTags>(
-        `/orgs/${this.orgId}/all-crawls/tagCounts`,
+        `/orgs/${this.orgId}/all-crawls/tagCounts?${query}`,
+        { signal },
       );
 
       this.fuse.setCollection(tags);
@@ -103,7 +98,7 @@ export class ArchivedItemTagFilter extends BtrixElement {
       // Match fuse shape
       return tags.map((item) => ({ item }));
     },
-    args: () => [] as const,
+    args: () => [this.itemType] as const,
   });
 
   render() {
@@ -157,15 +152,7 @@ export class ArchivedItemTagFilter extends BtrixElement {
 
                       this.type = "or";
 
-                      this.dispatchEvent(
-                        new CustomEvent<
-                          BtrixChangeEvent<ChangeArchivedItemTagEventDetails>["detail"]
-                        >("btrix-change", {
-                          detail: {
-                            value: undefined,
-                          },
-                        }),
-                      );
+                      void this.dispatchChange();
                     }}
                     >${msg("Clear")}</sl-button
                   >`
@@ -181,6 +168,7 @@ export class ArchivedItemTagFilter extends BtrixElement {
                   this.type = (event.target as HTMLInputElement).value as
                     | "or"
                     | "and";
+                  void this.dispatchChange();
                 }}
                 @sl-after-hide=${stopProp}
               >
@@ -307,6 +295,7 @@ export class ArchivedItemTagFilter extends BtrixElement {
           const { checked, value } = e.target as SlCheckbox;
 
           this.selected = new Map([...this.selected, [value, checked]]);
+          void this.dispatchChange();
         }}
       >
         ${repeat(
@@ -316,5 +305,24 @@ export class ArchivedItemTagFilter extends BtrixElement {
         )}
       </ul>
     `;
+  }
+
+  private async dispatchChange() {
+    await this.updateComplete;
+
+    const selectedTags = Array.from(this.selected.entries())
+      .filter(([_tag, selected]) => selected)
+      .map(([tag]) => tag);
+    this.dispatchEvent(
+      new CustomEvent<
+        BtrixChangeEvent<ChangeArchivedItemTagEventDetails>["detail"]
+      >("btrix-change", {
+        detail: {
+          value: selectedTags.length
+            ? { tags: selectedTags, type: this.type }
+            : undefined,
+        },
+      }),
+    );
   }
 }

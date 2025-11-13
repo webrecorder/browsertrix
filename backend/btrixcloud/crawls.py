@@ -78,6 +78,7 @@ from .models import (
     CrawlQueueResponse,
     MatchCrawlQueueResponse,
     CrawlLogLine,
+    TagsResponse,
 )
 
 
@@ -121,7 +122,13 @@ class CrawlOps(BaseCrawlOps):
         await self.crawls.create_index(
             [("type", pymongo.HASHED), ("fileSize", pymongo.DESCENDING)]
         )
-
+        await self.crawls.create_index(
+            [
+                ("state", pymongo.ASCENDING),
+                ("oid", pymongo.ASCENDING),
+                ("started", pymongo.ASCENDING),
+            ]
+        )
         await self.crawls.create_index([("finished", pymongo.DESCENDING)])
         await self.crawls.create_index([("oid", pymongo.HASHED)])
         await self.crawls.create_index([("cid", pymongo.HASHED)])
@@ -291,6 +298,8 @@ class CrawlOps(BaseCrawlOps):
                 "qaRunCount",
                 "lastQAState",
                 "lastQAStarted",
+                "crawlExecSeconds",
+                "pageCount",
             ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
@@ -335,6 +344,32 @@ class CrawlOps(BaseCrawlOps):
             crawls.append(crawl)
 
         return crawls, total
+
+    async def get_active_crawls(self, oid: UUID, limit: int) -> list[str]:
+        """get list of waiting crawls, sorted from earliest to latest"""
+        res = (
+            self.crawls.find(
+                {"state": {"$in": RUNNING_AND_WAITING_STATES}, "oid": oid}, {"_id": 1}
+            )
+            .sort({"started": 1})
+            .limit(limit)
+        )
+        res_list = await res.to_list()
+        return [res["_id"] for res in res_list]
+
+    async def get_active_crawls_size(self, oid: UUID) -> int:
+        """get size of all active (running, waiting, paused) crawls"""
+        cursor = self.crawls.aggregate(
+            [
+                {"$match": {"state": {"$in": RUNNING_AND_WAITING_STATES}, "oid": oid}},
+                {"$group": {"_id": None, "totalSum": {"$sum": "$stats.size"}}},
+            ]
+        )
+        results = await cursor.to_list(length=1)
+        if not results:
+            return 0
+
+        return results[0].get("totalSum") or 0
 
     async def delete_crawls(
         self,
@@ -1354,6 +1389,20 @@ def init_crawls_api(
         return DeletedCountResponseQuota(
             deleted=count, storageQuotaReached=quota_reached
         )
+
+    @app.get(
+        "/orgs/{oid}/crawls/tagCounts",
+        tags=["crawls"],
+        response_model=TagsResponse,
+    )
+    async def get_crawls_tag_counts(
+        org: Organization = Depends(org_viewer_dep),
+        onlySuccessful: bool = True,
+    ):
+        tags = await ops.get_all_crawls_tag_counts(
+            org, only_successful=onlySuccessful, type_="crawl"
+        )
+        return {"tags": tags}
 
     @app.get("/orgs/all/crawls/stats", tags=["crawls"], response_model=bytes)
     async def get_all_orgs_crawl_stats(

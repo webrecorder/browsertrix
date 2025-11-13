@@ -25,7 +25,7 @@ import pymongo
 
 from .models import (
     SUCCESSFUL_STATES,
-    CrawlConfigTags,
+    TagsResponse,
     CrawlFile,
     CrawlFileOut,
     BaseCrawl,
@@ -984,13 +984,22 @@ class BaseCrawlOps:
 
         return last_crawl_finished
 
-    async def get_all_crawls_tag_counts(self, org: Organization):
-        """get distinct tags from all archived items for this org"""
+    async def get_all_crawls_tag_counts(
+        self,
+        org: Organization,
+        only_successful: bool = True,
+        type_: Optional[str] = None,
+    ):
+        """get distinct tags from archived items for this org"""
+        match_query: Dict[str, Any] = {"oid": org.id}
+        if only_successful:
+            match_query["state"] = {"$in": SUCCESSFUL_STATES}
+        if type_ in ("crawl", "upload"):
+            match_query["type"] = type_
+
         tags = await self.crawls.aggregate(
             [
-                # Match only against the states of archived items that might be
-                # displayed in the frontend
-                {"$match": {"oid": org.id, "state": {"$in": SUCCESSFUL_STATES}}},
+                {"$match": match_query},
                 {"$unwind": "$tags"},
                 {"$group": {"_id": "$tags", "count": {"$sum": 1}}},
                 {"$project": {"tag": "$_id", "count": "$count", "_id": 0}},
@@ -1094,10 +1103,20 @@ def init_base_crawls_api(app, user_dep, *args):
     @app.get(
         "/orgs/{oid}/all-crawls/tagCounts",
         tags=["all-crawls"],
-        response_model=CrawlConfigTags,
+        response_model=TagsResponse,
     )
-    async def get_all_crawls_tag_counts(org: Organization = Depends(org_viewer_dep)):
-        return {"tags": await ops.get_all_crawls_tag_counts(org)}
+    async def get_all_crawls_tag_counts(
+        org: Organization = Depends(org_viewer_dep),
+        onlySuccessful: bool = True,
+        crawlType: Optional[str] = None,
+    ):
+        if crawlType and crawlType not in ("crawl", "upload"):
+            raise HTTPException(status_code=400, detail="invalid_crawl_type")
+
+        tags = await ops.get_all_crawls_tag_counts(
+            org, only_successful=onlySuccessful, type_=crawlType
+        )
+        return {"tags": tags}
 
     @app.get(
         "/orgs/{oid}/all-crawls/{crawl_id}",

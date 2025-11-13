@@ -12,7 +12,7 @@ import { type Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
 import { pageBack, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
-import { WorkflowTab } from "@/routes";
+import { OrgTab, WorkflowTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import type {
   ArchivedItem,
@@ -52,10 +52,11 @@ type SectionName = (typeof SECTIONS)[number];
 const POLL_INTERVAL_SECONDS = 5;
 
 /**
- * Usage:
- * ```ts
- * <btrix-archived-item-detail></btrix-archived-item-detail>
- * ```
+ * Detail page for an archived item (crawl or upload) or crawl run.
+ *
+ * Note: The component name is somewhat misleading, since this component
+ * can also be used to display crawl runs that did not result in a
+ * definitive archived item.
  */
 @customElement("btrix-archived-item-detail")
 @localized()
@@ -103,7 +104,7 @@ export class ArchivedItemDetail extends BtrixElement {
   activeTab: SectionName = "overview";
 
   @state()
-  private openDialogName?: "scale" | "metadata" | "exclusions";
+  private openDialogName?: "scale" | "metadata" | "exclusions" | "delete";
 
   @state()
   mostRecentNonFailedQARun?: QARun;
@@ -135,7 +136,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private get listUrl(): string {
     let path = "items";
     if (this.workflowId) {
-      path = `workflows/crawl/${this.workflowId}/${WorkflowTab.Crawls}`;
+      path = `${OrgTab.Workflows}/${this.workflowId}/${WorkflowTab.Crawls}`;
     } else if (this.collectionId) {
       path = `collections/view/${this.collectionId}/items`;
     } else if (this.item?.type === "upload") {
@@ -304,6 +305,7 @@ export class ArchivedItemDetail extends BtrixElement {
 
   render() {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
+    const isSuccess = this.item && isSuccessfullyFinished(this.item);
     let sectionContent: string | TemplateResult<1> = "";
 
     switch (this.activeTab) {
@@ -415,7 +417,12 @@ export class ArchivedItemDetail extends BtrixElement {
                 tw`rounded-lg border p-4`,
               ])}
             </div>
-            <div class="col-span-1 row-span-1 flex flex-col">
+            <div
+              class=${clsx(
+                tw`col-span-1 flex flex-col`,
+                isSuccess ? tw`row-span-1` : tw`row-span-2`,
+              )}
+            >
               ${this.renderPanel(
                 html`
                   ${this.renderTitle(msg("Metadata"))}
@@ -426,7 +433,7 @@ export class ArchivedItemDetail extends BtrixElement {
                         class="text-base"
                         name="pencil"
                         @click=${() => this.openMetadataEditor("metadata")}
-                        label=${msg("Edit Archived Item")}
+                        label=${msg("Edit Metadata")}
                       ></sl-icon-button>
                     `,
                   )}
@@ -435,26 +442,32 @@ export class ArchivedItemDetail extends BtrixElement {
                 [tw`rounded-lg border p-4`],
               )}
             </div>
-            <div class="col-span-1 row-span-1 flex flex-col">
-              ${this.renderPanel(
-                html`
-                  ${this.renderTitle(msg("Collections"))}
-                  ${when(
-                    this.isCrawler,
-                    () => html`
-                      <sl-icon-button
-                        class="text-base"
-                        name="pencil"
-                        @click=${() => this.openMetadataEditor("collections")}
-                        label=${msg("Edit Archived Item")}
-                      ></sl-icon-button>
+            ${when(
+              isSuccess,
+              () => html`
+                <div class="col-span-1 row-span-1 flex flex-col">
+                  ${this.renderPanel(
+                    html`
+                      ${this.renderTitle(msg("Collections"))}
+                      ${when(
+                        this.isCrawler && isSuccess,
+                        () => html`
+                          <sl-icon-button
+                            class="text-base"
+                            name="pencil"
+                            @click=${() =>
+                              this.openMetadataEditor("collections")}
+                            label=${msg("Edit Collections")}
+                          ></sl-icon-button>
+                        `,
+                      )}
                     `,
+                    this.renderCollections(),
+                    [tw`rounded-lg border p-4`],
                   )}
-                `,
-                this.renderCollections(),
-                [tw`rounded-lg border p-4`],
-              )}
-            </div>
+                </div>
+              `,
+            )}
           </div>
         `;
         break;
@@ -485,6 +498,23 @@ export class ArchivedItemDetail extends BtrixElement {
         @request-close=${() => (this.openDialogName = undefined)}
         @updated=${() => void this.fetchCrawl()}
       ></btrix-item-metadata-editor>
+
+      <btrix-delete-item-dialog
+        .item=${this.item}
+        ?open=${this.openDialogName === "delete"}
+        @sl-hide=${() => (this.openDialogName = undefined)}
+        @btrix-confirm=${() => {
+          this.openDialogName = undefined;
+          void this.deleteCrawl();
+        }}
+      >
+        ${this.item?.finished && isCrawl(this.item)
+          ? html`<strong slot="name" class="font-semibold"
+              >${renderName(this.item)}
+              (${this.localize.date(this.item.finished)})</strong
+            >`
+          : nothing}
+      </btrix-delete-item-dialog>
     `;
   }
 
@@ -495,7 +525,7 @@ export class ArchivedItemDetail extends BtrixElement {
       breadcrumbs.push(
         {
           href: `${this.navigate.orgBasePath}/workflows`,
-          content: msg("Crawl Workflows"),
+          content: msg("Workflows"),
         },
         {
           href: `${this.navigate.orgBasePath}/workflows/${this.item?.cid}`,
@@ -663,6 +693,9 @@ export class ArchivedItemDetail extends BtrixElement {
     if (!this.item) return;
 
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
+    const isSuccess = isSuccessfullyFinished(this.item);
+    const isCrawlType = this.itemType === "crawl";
+    const isWorkflowCrawl = this.item.cid === this.workflowId;
 
     return html`
       <sl-dropdown placement="bottom-end" distance="4" hoist>
@@ -675,16 +708,16 @@ export class ArchivedItemDetail extends BtrixElement {
             () => html`
               <sl-menu-item @click=${this.openMetadataEditor}>
                 <sl-icon name="pencil" slot="prefix"></sl-icon>
-                ${msg("Edit Archived Item")}
+                ${isSuccess ? msg("Edit Archived Item") : msg("Edit Metadata")}
               </sl-menu-item>
               <sl-divider></sl-divider>
             `,
           )}
           ${when(
-            isSuccessfullyFinished(this.item),
+            isSuccess,
             () => html`
               ${when(
-                this.itemType === "crawl",
+                isCrawlType,
                 () => html`
                   <btrix-menu-item-link href=${this.reviewUrl}>
                     <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
@@ -710,7 +743,7 @@ export class ArchivedItemDetail extends BtrixElement {
             `,
           )}
           ${when(
-            this.itemType === "crawl",
+            isCrawlType,
             () => html`
               <sl-menu-item
                 @click=${() =>
@@ -737,7 +770,7 @@ export class ArchivedItemDetail extends BtrixElement {
               )}
           >
             <sl-icon name="copy" slot="prefix"></sl-icon>
-            ${msg("Copy Item ID")}
+            ${msg("Copy ID")}
           </sl-menu-item>
           <sl-menu-item
             @click=${() =>
@@ -752,11 +785,21 @@ export class ArchivedItemDetail extends BtrixElement {
             () => html`
               <sl-divider></sl-divider>
               <sl-menu-item
-                style="--sl-color-neutral-700: var(--danger)"
-                @click=${() => void this.deleteCrawl()}
+                class="menu-item-danger"
+                @click=${() => {
+                  if (isSuccess) {
+                    this.openDialogName = "delete";
+                  } else {
+                    void this.deleteCrawl();
+                  }
+                }}
               >
                 <sl-icon name="trash3" slot="prefix"></sl-icon>
-                ${msg("Delete Item")}
+                ${isWorkflowCrawl
+                  ? msg("Delete Crawl")
+                  : isSuccess
+                    ? msg("Delete Archived Item")
+                    : msg("Delete Item")}
               </sl-menu-item>
             `,
           )}
@@ -840,40 +883,40 @@ export class ArchivedItemDetail extends BtrixElement {
               `
             : html`<sl-skeleton class="mb-[3px] h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
-        ${when(this.item, () =>
-          this.item!.type === "upload"
+        ${when(this.item, (item) =>
+          item.type === "upload"
             ? html`
                 <btrix-desc-list-item label=${msg("Uploaded")}>
                   ${this.formattedFinishedDate}
                 </btrix-desc-list-item>
               `
             : html`
-                <btrix-desc-list-item label=${msg("Start Time")}>
+                <btrix-desc-list-item label=${msg("Date Started")}>
                   <btrix-format-date
-                    date=${this.item!.started}
-                    month="2-digit"
-                    day="2-digit"
-                    year="numeric"
-                    hour="numeric"
-                    minute="numeric"
-                    time-zone-name="short"
+                    date=${item.started}
+                    dateStyle="long"
+                    timeStyle="long"
                   ></btrix-format-date>
                 </btrix-desc-list-item>
-                <btrix-desc-list-item label=${msg("Finish Time")}>
-                  ${this.item!.finished
-                    ? this.formattedFinishedDate
+                <btrix-desc-list-item label=${msg("Date Finished")}>
+                  ${item.finished
+                    ? html`<btrix-format-date
+                        date=${item.finished}
+                        dateStyle="long"
+                        timeStyle="long"
+                      ></btrix-format-date>`
                     : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Run Duration")}>
-                  ${this.item!.finished
+                  ${item.finished
                     ? html`${this.localize.humanizeDuration(
-                        new Date(this.item!.finished).valueOf() -
-                          new Date(this.item!.started).valueOf(),
+                        new Date(item.finished).valueOf() -
+                          new Date(item.started).valueOf(),
                       )}`
                     : html`
                         <span class="text-violet-600">
                           <btrix-relative-duration
-                            value=${this.item!.started}
+                            value=${item.started}
                             unitCount="3"
                             tickSeconds="1"
                           ></btrix-relative-duration>
@@ -881,22 +924,19 @@ export class ArchivedItemDetail extends BtrixElement {
                       `}
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Execution Time")}>
-                  ${this.item!.finished
+                  ${item.finished
                     ? html`<span
-                        >${humanizeExecutionSeconds(
-                          this.item!.crawlExecSeconds,
-                          { displaySeconds: true },
-                        )}</span
+                        >${humanizeExecutionSeconds(item.crawlExecSeconds, {
+                          displaySeconds: true,
+                        })}</span
                       >`
                     : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Initiator")}>
-                  ${this.item!.manual
+                  ${item.manual
                     ? msg(
                         html`Manual start by
-                          <span
-                            >${this.item!.userName || this.item!.userid}</span
-                          >`,
+                          <span>${item.userName || item.userid}</span>`,
                       )
                     : msg(html`Scheduled start`)}
                 </btrix-desc-list-item>
@@ -910,13 +950,11 @@ export class ArchivedItemDetail extends BtrixElement {
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Size")}>
           ${this.item
-            ? html`${this.item.fileSize
-                ? this.localize.bytes(this.item.fileSize || 0)
-                : html`<span class="text-0-400">${msg("Unknown")}</span>`}`
+            ? this.localize.bytes(this.item.fileSize || 0)
             : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         ${this.renderCrawlChannelVersion()}
-        <btrix-desc-list-item label=${msg("Archived Item ID")}>
+        <btrix-desc-list-item label=${msg("ID")}>
           ${this.item
             ? html`<btrix-copy-field
                 value="${this.item.id}"
@@ -933,8 +971,9 @@ export class ArchivedItemDetail extends BtrixElement {
     }
 
     const text =
-      capitalize(this.item.crawlerChannel || "default") +
-      (this.item.image ? ` (${this.item.image})` : "");
+      (this.item.crawlerChannel
+        ? capitalize(this.item.crawlerChannel)
+        : msg("Default")) + (this.item.image ? ` (${this.item.image})` : "");
 
     return html` <btrix-desc-list-item
       label=${msg("Crawler Channel (Exact Crawler Version)")}
@@ -1347,14 +1386,7 @@ export class ArchivedItemDetail extends BtrixElement {
     return !formEl.querySelector("[data-invalid]");
   }
 
-  // TODO replace with in-page dialog
   private async deleteCrawl() {
-    if (
-      !window.confirm(msg(str`Are you sure you want to delete this crawl?`))
-    ) {
-      return;
-    }
-
     try {
       const _data = await this.api.fetch(
         `/orgs/${this.item!.oid}/${

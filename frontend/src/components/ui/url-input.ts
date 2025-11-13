@@ -19,6 +19,7 @@ export function validURL(url: string) {
  * @attr {String} name
  * @attr {String} label
  * @attr {String} value
+ * @attr {String} autocomplete
  * @attr {Boolean} required
  */
 @customElement("btrix-url-input")

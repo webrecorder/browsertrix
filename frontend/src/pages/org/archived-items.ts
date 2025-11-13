@@ -32,7 +32,9 @@ import { isApiError } from "@/utils/api";
 import {
   finishedCrawlStates,
   isActive,
+  isCrawl,
   isSuccessfullyFinished,
+  renderName,
 } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
@@ -100,10 +102,9 @@ type FilterBy = {
 };
 
 /**
- * Usage:
- * ```ts
- * <btrix-archived-items></btrix-archived-items>
- * ```
+ * An archived item can be any replayable crawl (i.e. crawl with WACZ files)
+ * or an uploaded WACZ. Users can view, search, and filter archived items
+ * from this page.
  */
 @customElement("btrix-archived-items")
 @localized()
@@ -278,7 +279,8 @@ export class CrawlsList extends BtrixElement {
       state: undefined,
     });
     this.filterByCurrentUser.setValue(false);
-    this.filterByTags.setValue(undefined);
+    this.filterByTags.setValue([]);
+    this.filterByTagsType.setValue("or");
   }
 
   private readonly archivedItemsTask = new Task(this, {
@@ -294,6 +296,10 @@ export class CrawlsList extends BtrixElement {
       ],
       { signal },
     ) => {
+      if (this.getArchivedItemsTimeout) {
+        window.clearTimeout(this.getArchivedItemsTimeout);
+      }
+
       try {
         const data = await this.getArchivedItems(
           {
@@ -307,10 +313,6 @@ export class CrawlsList extends BtrixElement {
           },
           signal,
         );
-
-        if (this.getArchivedItemsTimeout) {
-          window.clearTimeout(this.getArchivedItemsTimeout);
-        }
 
         this.getArchivedItemsTimeout = window.setTimeout(() => {
           void this.archivedItemsTask.run();
@@ -369,12 +371,12 @@ export class CrawlsList extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
-      changedProperties.has("filterByCurrentUser.value") ||
-      changedProperties.has("filterBy.value") ||
-      changedProperties.has("orderBy.value") ||
+      changedProperties.has("filterByCurrentUser.internalValue") ||
+      changedProperties.has("filterBy.internalValue") ||
+      changedProperties.has("orderBy.internalValue") ||
       changedProperties.has("itemType") ||
-      changedProperties.has("filterByTags.value") ||
-      changedProperties.has("filterByTagsType.value")
+      changedProperties.has("filterByTags.internalValue") ||
+      changedProperties.has("filterByTagsType.internalValue")
     ) {
       if (
         changedProperties.has("itemType") &&
@@ -414,17 +416,18 @@ export class CrawlsList extends BtrixElement {
     }[] = [
       {
         itemType: null,
-        label: msg("All"),
+        icon: "file-zip-fill",
+        label: msg("All Items"),
       },
       {
         itemType: "crawl",
         icon: "gear-wide-connected",
-        label: msg("Crawls"),
+        label: msg("Crawled Items"),
       },
       {
         itemType: "upload",
         icon: "upload",
-        label: msg("Uploads"),
+        label: msg("Uploaded Items"),
       },
     ];
 
@@ -457,8 +460,7 @@ export class CrawlsList extends BtrixElement {
             ${listTypes.map(({ label, itemType, icon }) => {
               const isSelected = itemType === this.itemType;
               return html` <btrix-navigation-button
-                .active=${isSelected}
-                aria-selected="${isSelected}"
+                ?active=${isSelected}
                 href=${`${this.navigate.orgBasePath}/items${
                   itemType ? `/${itemType}` : ""
                 }`}
@@ -568,44 +570,30 @@ export class CrawlsList extends BtrixElement {
         `
       : nothing}
 
-    <btrix-dialog
-      .label=${msg("Delete Archived Item?")}
-      .open=${this.isDeletingItem}
+    <btrix-delete-item-dialog
+      .item=${this.itemToDelete || undefined}
+      ?open=${this.isDeletingItem}
       @sl-after-hide=${() => (this.isDeletingItem = false)}
+      @btrix-confirm=${async () => {
+        this.isDeletingItem = false;
+        if (this.itemToDelete) {
+          await this.deleteItem(this.itemToDelete);
+        }
+      }}
     >
-      ${msg("This item will be removed from any Collection it is a part of.")}
-      ${when(this.itemToDelete?.type === "crawl", () =>
-        msg(
-          "All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow.",
-        ),
-      )}
-      <div slot="footer" class="flex justify-between">
-        <sl-button size="small" .autofocus=${true}>${msg("Cancel")}</sl-button>
-        <sl-button
-          size="small"
-          variant="danger"
-          @click=${async () => {
-            this.isDeletingItem = false;
-            if (this.itemToDelete) {
-              await this.deleteItem(this.itemToDelete);
-            }
-          }}
-          >${msg(
-            str`Delete ${
-              this.itemToDelete?.type === "upload"
-                ? msg("Upload")
-                : msg("Crawl")
-            }`,
-          )}</sl-button
-        >
-      </div>
-    </btrix-dialog>
+      ${this.itemToDelete?.finished && isCrawl(this.itemToDelete)
+        ? html`<strong slot="name" class="font-semibold"
+            >${renderName(this.itemToDelete)}
+            (${this.localize.date(this.itemToDelete.finished)})</strong
+          >`
+        : nothing}
+    </btrix-delete-item-dialog>
   `;
 
   private renderControls() {
     return html`
       <div class="flex flex-wrap items-center gap-2 md:gap-4">
-        <div class="grow basis-1/2">${this.renderSearch()}</div>
+        <div class="grow basis-2/3">${this.renderSearch()}</div>
 
         <div class="flex items-center">
           <label
@@ -632,8 +620,9 @@ export class CrawlsList extends BtrixElement {
 
           <btrix-archived-item-tag-filter
             .tags=${this.filterByTags.value}
+            itemType=${ifDefined(this.itemType || undefined)}
             @btrix-change=${(e: BtrixChangeArchivedItemTagFilterEvent) => {
-              this.filterByTags.setValue(e.detail.value?.tags);
+              this.filterByTags.setValue(e.detail.value?.tags || []);
               this.filterByTagsType.setValue(e.detail.value?.type || "or");
             }}
           ></btrix-archived-item-tag-filter>
@@ -758,7 +747,6 @@ export class CrawlsList extends BtrixElement {
     <btrix-archived-item-list-item
       href=${`${this.navigate.orgBasePath}/${item.type === "crawl" ? `workflows/${item.cid}/crawls` : `items/${item.type}`}/${item.id}`}
       .item=${item}
-      ?showStatus=${this.itemType !== null}
     >
       <btrix-table-cell slot="actionCell" class="p-0">
         <btrix-overflow-dropdown>
@@ -849,7 +837,7 @@ export class CrawlsList extends BtrixElement {
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
+            class="menu-item-danger"
             @click=${() => this.confirmDeleteItem(item)}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>

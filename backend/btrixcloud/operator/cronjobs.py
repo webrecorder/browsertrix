@@ -52,7 +52,7 @@ class CronJobOperator(BaseOperator):
             status=status,
         )
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-return-statements
     async def make_new_crawljob(
         self,
         cid: UUID,
@@ -125,8 +125,17 @@ class CronJobOperator(BaseOperator):
             )
             print("Scheduled Crawl Created: " + crawl_id)
 
-        profile_filename = await self.crawl_config_ops.get_profile_filename(
-            crawlconfig.profileid, org
+        profile_filename, profile_proxy_id = (
+            await self.crawl_config_ops.profiles.get_profile_filename_and_proxy(
+                crawlconfig.profileid, org
+            )
+        )
+        if crawlconfig.profileid and not profile_filename:
+            print(f"error: missing profile {crawlconfig.profileid}")
+            return self.get_finished_response(metadata)
+
+        save_profile_id = self.crawl_config_ops.get_save_profile_id(
+            profile_proxy_id, crawlconfig
         )
 
         crawl_id, crawljob = self.k8s.new_crawl_job_yaml(
@@ -144,6 +153,7 @@ class CronJobOperator(BaseOperator):
             warc_prefix=warc_prefix,
             storage_filename=self.crawl_config_ops.default_filename_template,
             profile_filename=profile_filename or "",
+            profileid=save_profile_id,
             proxy_id=crawlconfig.proxyId or "",
             is_single_page=self.crawl_config_ops.is_single_page(crawlconfig.config),
         )

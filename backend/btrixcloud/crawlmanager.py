@@ -11,7 +11,7 @@ from fastapi import HTTPException
 from .utils import dt_now, date_to_str, scale_from_browser_windows
 from .k8sapi import K8sAPI
 
-from .models import StorageRef, CrawlConfig, BgJobType
+from .models import StorageRef, CrawlConfig, BgJobType, ProfileBrowserMetadata
 
 
 # ============================================================================
@@ -25,19 +25,20 @@ DEFAULT_NAMESPACE: str = os.environ.get("DEFAULT_NAMESPACE", "default")
 class CrawlManager(K8sAPI):
     """abstract crawl manager"""
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-locals
     async def run_profile_browser(
         self,
         userid: str,
         oid: str,
         url: str,
         storage: StorageRef,
+        crawler_channel: str,
         crawler_image: str,
         image_pull_policy: str,
         baseprofile: str = "",
         profile_filename: str = "",
-        proxy_id: str = "",
         profileid: str = "",
+        proxy_id: str = "",
     ) -> str:
         """run browser for profile creation"""
 
@@ -54,14 +55,15 @@ class CrawlManager(K8sAPI):
             "storage_name": str(storage),
             "base_profile": baseprofile or "",
             "profile_filename": profile_filename or "",
+            "profileid": profileid,
             "idle_timeout": os.environ.get("IDLE_TIMEOUT", "60"),
             "url": url,
             "vnc_password": secrets.token_hex(16),
             "expire_time": date_to_str(dt_now() + timedelta(seconds=30)),
+            "crawler_channel": crawler_channel,
             "crawler_image": crawler_image,
             "image_pull_policy": image_pull_policy,
             "proxy_id": proxy_id or DEFAULT_PROXY_ID,
-            "profileid": profileid,
         }
 
         data = self.templates.env.get_template("profile_job.yaml").render(params)
@@ -231,16 +233,29 @@ class CrawlManager(K8sAPI):
             )
             if cron_job:
                 print(
-                    "Cron job to clean up used seed files already exists",
+                    "Cron job to clean up unused seed files already exists",
                     flush=True,
                 )
+
+                if cron_job.spec.schedule != job_schedule:
+                    cron_job.spec.schedule = job_schedule
+
+                    await self.batch_api.patch_namespaced_cron_job(
+                        name=cron_job.metadata.name,
+                        namespace=DEFAULT_NAMESPACE,
+                        body=cron_job,
+                    )
+                    print(
+                        f"Cron job to clean up unused seed files updated, schedule: {job_schedule}",
+                        flush=True,
+                    )
                 return
         # pylint: disable=broad-exception-caught
         except Exception:
             pass
 
         print(
-            f"Creating cron job to clean up used seed files, schedule: {job_schedule}",
+            f"Creating cron job to clean up unused seed files, schedule: {job_schedule}",
             flush=True,
         )
 
@@ -267,6 +282,7 @@ class CrawlManager(K8sAPI):
         warc_prefix: str,
         storage_filename: str,
         profile_filename: str,
+        profileid: str,
         is_single_page: bool,
         seed_file_url: str,
     ) -> str:
@@ -292,6 +308,7 @@ class CrawlManager(K8sAPI):
             warc_prefix=warc_prefix,
             storage_filename=storage_filename,
             profile_filename=profile_filename,
+            profileid=profileid,
             proxy_id=crawlconfig.proxyId or DEFAULT_PROXY_ID,
             is_single_page=is_single_page,
             seed_file_url=seed_file_url,
@@ -405,20 +422,17 @@ class CrawlManager(K8sAPI):
                 name=storage_secret, namespace=self.namespace, body=crawl_secret
             )
 
-    async def get_profile_browser_metadata(self, browserid: str) -> dict[str, str]:
-        """get browser profile labels"""
-        try:
-            browser = await self.get_profile_browser(browserid)
-
-        # pylint: disable=bare-except
-        except:
-            return {}
+    async def get_profile_browser_metadata(
+        self, browserid: str
+    ) -> ProfileBrowserMetadata:
+        """get browser profile metadata from labels"""
+        browser = await self.get_profile_browser(browserid)
 
         metadata = browser["metadata"]["labels"]
 
         metadata["committing"] = browser.get("spec", {}).get("committing")
 
-        return metadata
+        return ProfileBrowserMetadata(**metadata)
 
     async def keep_alive_profile_browser(self, browserid: str, committing="") -> None:
         """update profile browser to not expire"""
@@ -476,7 +490,7 @@ class CrawlManager(K8sAPI):
         await self._delete_cron_jobs(f"btrix.org={oid_str},role=cron-job")
 
     async def delete_bg_job_cron_jobs_for_org(self, oid_str: str) -> None:
-        """Delete all background cron jobsf or org"""
+        """Delete all background cron jobs for given org"""
         await self._delete_cron_jobs(f"btrix.org={oid_str},role=cron-background-job")
 
     async def delete_crawl_jobs_for_org(self, oid_str: str) -> None:
@@ -486,28 +500,6 @@ class CrawlManager(K8sAPI):
     async def delete_profile_jobs_for_org(self, oid_str: str) -> None:
         """Delete all browser profile jobs for given org"""
         await self._delete_custom_objects(f"btrix.org={oid_str}", plural="profilejobs")
-
-    # ========================================================================
-    # Internal Methods
-    async def _delete_cron_jobs(self, label) -> None:
-        """Delete namespaced cron jobs (e.g. crawl configs, bg jobs)"""
-
-        await self.batch_api.delete_collection_namespaced_cron_job(
-            namespace=self.namespace,
-            label_selector=label,
-        )
-
-    async def _delete_custom_objects(self, label, plural="crawljobs") -> None:
-        """Delete custom objects (e.g. crawl jobs, profile browser jobs)"""
-        await self.custom_api.delete_collection_namespaced_custom_object(
-            group="btrix.cloud",
-            version="v1",
-            namespace=self.namespace,
-            label_selector=label,
-            plural=plural,
-            grace_period_seconds=0,
-            propagation_policy="Background",
-        )
 
     async def update_scheduled_job(
         self, crawlconfig: CrawlConfig, userid: Optional[str] = None

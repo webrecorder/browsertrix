@@ -284,6 +284,8 @@ class CrawlStats(BaseModel):
     done: int = 0
     size: int = 0
 
+    profile_update: Optional[str] = ""
+
 
 # ============================================================================
 
@@ -603,18 +605,18 @@ class CrawlConfigAddedResponse(BaseModel):
 
 
 # ============================================================================
-class CrawlConfigTagCount(BaseModel):
-    """Response model for crawlconfig tag count"""
+class TagCount(BaseModel):
+    """Response model for crawlconfig/crawl tag count"""
 
     tag: str
     count: int
 
 
 # ============================================================================
-class CrawlConfigTags(BaseModel):
-    """Response model for crawlconfig tags"""
+class TagsResponse(BaseModel):
+    """Response model for crawlconfig/crawl tags"""
 
-    tags: List[CrawlConfigTagCount]
+    tags: List[TagCount]
 
 
 # ============================================================================
@@ -2442,11 +2444,34 @@ class Profile(BaseMongoModel):
     modifiedBy: Optional[UUID] = None
     modifiedByName: Optional[str] = None
 
+    modifiedCrawlDate: Optional[datetime] = None
+    modifiedCrawlId: Optional[str] = None
+    modifiedCrawlCid: Optional[UUID] = None
+
     baseid: Optional[UUID] = None
     crawlerChannel: Optional[str] = None
     proxyId: Optional[str] = None
 
     inUse: bool = False
+
+
+# ============================================================================
+class ProfileBrowserMetadata(BaseModel):
+    """Profile metadata stored in ProfileJob labels"""
+
+    browser: str
+
+    oid: str = Field(alias="btrix.org")
+    userid: UUID = Field(alias="btrix.user")
+    baseprofile: Optional[UUID] = Field(alias="btrix.baseprofile", default=None)
+    storage: str = Field(alias="btrix.storage")
+
+    profileid: UUID
+
+    proxyid: str = ""
+    crawlerChannel: str
+
+    committing: Optional[str] = None
 
 
 # ============================================================================
@@ -2479,17 +2504,14 @@ class ProfileCreate(BaseModel):
     browserid: str
     name: str
     description: Optional[str] = ""
-    crawlerChannel: str = "default"
-    proxyId: Optional[str] = None
 
 
 # ============================================================================
-class ProfileUpdate(BaseModel):
+class ProfileUpdate(ProfileCreate):
     """Update existing profile with new browser profile or metadata only"""
 
-    browserid: Optional[str] = ""
-    name: str
-    description: Optional[str] = ""
+    # browserid optional if only updating metadata
+    browserid: str = ""
 
 
 # ============================================================================

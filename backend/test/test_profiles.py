@@ -104,6 +104,7 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert profile_2["modified"]
             assert profile_2["modifiedBy"]
             assert profile_2["modifiedByName"] == "admin"
+            assert profile_2["inUse"] == False
             assert not profile_2["baseid"]
             resource = profile_2["resource"]
             assert resource
@@ -129,6 +130,7 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert profile_1["modified"]
             assert profile_1["modifiedBy"]
             assert profile_1["modifiedByName"] == "admin"
+            assert profile_1["inUse"] == True
             assert not profile_1["baseid"]
             resource = profile_1["resource"]
             assert resource
@@ -206,8 +208,13 @@ def test_commit_browser_to_existing_profile(
     original_modified = data["modified"]
 
     prepare_browser_for_profile_commit(
-        profile_browser_3_id, admin_auth_headers, default_org_id
+        profile_browser_3_id,
+        admin_auth_headers,
+        default_org_id,
+        url="https://example-com.webrecorder.net",
     )
+
+    time.sleep(10)
 
     # Commit new browser to existing profile
     while True:
@@ -242,6 +249,11 @@ def test_commit_browser_to_existing_profile(
     assert data["created"] == original_created
     assert data["createdBy"]
     assert data["createdByName"] == "admin"
+
+    assert data.get("origins") == [
+        "https://old.webrecorder.net",
+        "https://example-com.webrecorder.net",
+    ]
 
 
 @pytest.mark.parametrize(

@@ -18,7 +18,7 @@ import type {
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
-import { type CheckboxChangeEventDetail } from "@/features/archived-items/archived-item-list";
+import type { ArchivedItemCheckedEvent } from "@/features/archived-items/archived-item-list/types";
 import type {
   FilterBy,
   FilterChangeEventDetail,
@@ -368,7 +368,7 @@ export class CollectionItemsDialog extends BtrixElement {
           </div>
         </btrix-section-heading>
       </header>
-      <section class="flex-1 px-3 pb-3 pt-2">
+      <section class="flex-1 overflow-hidden px-3 pb-3 pt-2">
         <btrix-archived-item-list listType="upload">
           <btrix-table-header-cell slot="checkboxCell" class="pr-0">
             <span class="sr-only">${msg("In Collection?")}</span>
@@ -534,12 +534,10 @@ export class CollectionItemsDialog extends BtrixElement {
         checkbox
         showStatus
         ?checked=${isInCollection}
-        @btrix-checkbox-change=${(
-          e: CustomEvent<CheckboxChangeEventDetail>,
-        ) => {
+        @btrix-change=${(e: ArchivedItemCheckedEvent) => {
           this.selection = {
             ...this.selection,
-            [item.id]: e.detail.checked,
+            [item.id]: e.detail.value.checked,
           };
         }}
       >

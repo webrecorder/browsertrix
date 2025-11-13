@@ -9,6 +9,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { none, notSpecified } from "@/layouts/empty";
 import {
   Behavior,
+  CrawlerChannelImage,
   type CrawlConfig,
   type Seed,
   type SeedConfig,
@@ -257,8 +258,9 @@ export class ConfigDetails extends BtrixElement {
           )}
           ${this.renderSetting(
             msg("Crawler Channel (Exact Crawler Version)"),
-            capitalize(crawlConfig?.crawlerChannel || "default") +
-              (crawlConfig?.image ? ` (${crawlConfig.image})` : ""),
+            capitalize(
+              crawlConfig?.crawlerChannel || CrawlerChannelImage.Default,
+            ) + (crawlConfig?.image ? ` (${crawlConfig.image})` : ""),
           )}
           ${this.renderSetting(
             msg("Block Ads by Domain"),
