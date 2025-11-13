@@ -128,7 +128,7 @@ export function pageHeader({
         classNames,
       )}
     >
-      <div class="flex flex-1 flex-col gap-2">
+      <div class="flex min-w-72 flex-1 flex-col gap-2">
         <div class="flex flex-wrap items-center gap-2.5">
           ${prefix}${pageTitle(title)}${suffix}
         </div>

@@ -122,6 +122,12 @@
 }
 
 @layer components {
+  sl-skeleton {
+    --border-radius: var(--sl-border-radius-small);
+    --color: var(--sl-color-neutral-50);
+    --sheen-color: var(--sl-color-neutral-100);
+  }
+
   sl-avatar::part(base) {
     transition: var(--sl-transition-x-fast) background-color;
   }

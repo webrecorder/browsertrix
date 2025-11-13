@@ -10,6 +10,10 @@ import {
  * <sl-dialog> with custom CSS
  *
  * Usage: see https://shoelace.style/components/dialog
+ *
+ * @attr label
+ * @attr open
+ * @attr noHeader
  */
 @customElement("btrix-dialog")
 export class Dialog extends SlDialog {
@@ -27,8 +31,7 @@ export class Dialog extends SlDialog {
       }
 
       .dialog__header {
-        background-color: var(--sl-color-neutral-50);
-        border-bottom: 1px solid var(--sl-color-neutral-100);
+        border-bottom: 1px solid var(--sl-panel-border-color);
       }
 
       .dialog__title {
@@ -50,7 +53,7 @@ export class Dialog extends SlDialog {
       .dialog__footer {
         padding-top: var(--sl-spacing-small);
         padding-bottom: var(--sl-spacing-small);
-        border-top: 1px solid var(--sl-color-neutral-100);
+        border-top: 1px solid var(--sl-panel-border-color);
       }
     `,
   ];

@@ -521,6 +521,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         this.isCrawler,
         () =>
           emptyMessage({
+            classNames: tw`border-y`,
             message,
             detail: msg(
               "Collections let you easily organize, replay, and share multiple crawls.",
@@ -542,6 +543,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           }),
         () =>
           emptyMessage({
+            classNames: tw`border-y`,
             message,
           }),
       )}

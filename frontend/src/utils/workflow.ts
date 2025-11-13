@@ -7,7 +7,7 @@ import { z } from "zod";
 import { getAppSettings, type AppSettings } from "./app";
 
 import type { Tags } from "@/components/ui/tag-input";
-import type { UserGuideEventMap } from "@/index";
+import type { BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import {
   Behavior,
   CrawlerChannelImage,
@@ -73,12 +73,12 @@ export const workflowTabToGuideHash: Record<SectionsEnum, GuideHash> = {
 
 export function makeUserGuideEvent(
   section: SectionsEnum,
-): UserGuideEventMap["btrix-user-guide-show"] {
+): BtrixUserGuideShowEvent {
   const userGuideHash =
     (workflowTabToGuideHash[section] as GuideHash | undefined) ||
     GuideHash.Scope;
 
-  return new CustomEvent<UserGuideEventMap["btrix-user-guide-show"]["detail"]>(
+  return new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
     "btrix-user-guide-show",
     {
       detail: {

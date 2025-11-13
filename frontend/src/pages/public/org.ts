@@ -176,7 +176,7 @@ export class PublicOrg extends BtrixElement {
                   class="flex items-center gap-1.5 text-pretty text-neutral-700"
                 >
                   <sl-icon
-                    name="globe2"
+                    name="globe"
                     class="size-4 text-stone-400"
                     label=${msg("Website")}
                   ></sl-icon>

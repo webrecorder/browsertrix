@@ -160,7 +160,7 @@ export class Dashboard extends BtrixElement {
                 class="flex items-center gap-1.5 text-pretty text-neutral-700"
               >
                 <sl-icon
-                  name="globe2"
+                  name="globe"
                   class="size-4 text-stone-400"
                   label=${msg("Website")}
                 ></sl-icon>
@@ -300,9 +300,7 @@ export class Dashboard extends BtrixElement {
                   ? this.renderMiscStorage(metrics)
                   : nothing}
 
-                <sl-divider
-                  style="--spacing:var(--sl-spacing-small)"
-                ></sl-divider>
+                <sl-divider class="my-4"></sl-divider>
                 ${this.renderStat({
                   value: metrics.archivedItemCount,
                   singleLabel: msg("Archived Item"),
@@ -364,9 +362,7 @@ export class Dashboard extends BtrixElement {
                     class: tw`text-violet-600`,
                   },
                 })}
-                <sl-divider
-                  style="--spacing:var(--sl-spacing-small)"
-                ></sl-divider>
+                <sl-divider class="my-4"></sl-divider>
                 ${this.renderStat({
                   value: metrics.crawlPageCount,
                   singleLabel: msg("Page Crawled"),

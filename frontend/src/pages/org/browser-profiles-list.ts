@@ -32,7 +32,7 @@ import { isArchivingDisabled } from "@/utils/orgs";
 
 const SORT_DIRECTIONS = ["asc", "desc"] as const;
 type SortDirection = (typeof SORT_DIRECTIONS)[number];
-type SortField = "name" | "url" | "modified";
+type SortField = "name" | "url" | "modified" | "created";
 type SortBy = {
   field: SortField;
   direction: SortDirection;
@@ -51,7 +51,11 @@ const sortableFields: Record<
     defaultDirection: "asc",
   },
   modified: {
-    label: msg("Last Modified"),
+    label: msg("Modified By User"),
+    defaultDirection: "desc",
+  },
+  created: {
+    label: msg("Date Created"),
     defaultDirection: "desc",
   },
 };
@@ -74,6 +78,12 @@ const columnsCss = [
 @customElement("btrix-browser-profiles-list")
 @localized()
 export class BrowserProfilesList extends BtrixElement {
+  @state()
+  private selectedProfile?: Profile;
+
+  @state()
+  private openDialog?: "duplicate";
+
   @state()
   private pagination: Required<APIPaginationQuery> = {
     page: parsePage(new URLSearchParams(location.search).get("page")),
@@ -227,7 +237,27 @@ export class BrowserProfilesList extends BtrixElement {
             : this.renderEmpty()}
         `,
       )}
+      ${when(this.selectedProfile, this.renderDuplicateDialog)}
     `;
+  };
+
+  private readonly renderDuplicateDialog = (profile: Profile) => {
+    return html`<btrix-profile-browser-dialog
+      .profile=${profile}
+      .config=${{
+        url: profile.origins[0],
+        name: `${profile.name} ${msg("Copy")}`,
+        crawlerChannel: profile.crawlerChannel,
+        proxyId: profile.proxyId,
+      }}
+      ?open=${this.openDialog === "duplicate"}
+      duplicating
+      @sl-after-hide=${() => {
+        this.selectedProfile = undefined;
+        this.openDialog = undefined;
+      }}
+    >
+    </btrix-profile-browser-dialog>`;
   };
 
   private renderEmpty() {
@@ -377,6 +407,11 @@ export class BrowserProfilesList extends BtrixElement {
   };
 
   private readonly renderItem = (data: Profile) => {
+    const modifiedByAnyDate =
+      [data.modifiedCrawlDate, data.modified, data.created].reduce(
+        (a, b) => (b && a && b > a ? b : a),
+        data.created,
+      ) || data.created;
     const startingUrl = data.origins[0];
     const otherOrigins = data.origins.slice(1);
 
@@ -417,9 +452,7 @@ export class BrowserProfilesList extends BtrixElement {
             : nothing}
         </btrix-table-cell>
         <btrix-table-cell>
-          ${this.localize.relativeDate(data.modified || data.created, {
-            capitalize: true,
-          })}
+          ${this.localize.relativeDate(modifiedByAnyDate)}
         </btrix-table-cell>
         <btrix-table-cell class="p-0">
           ${this.renderActions(data)}
@@ -464,35 +497,9 @@ export class BrowserProfilesList extends BtrixElement {
   }
 
   private async duplicateProfile(profile: Profile) {
-    const url = profile.origins[0];
-
-    try {
-      const data = await this.createBrowser({ url });
-
-      this.notify.toast({
-        message: msg("Starting up browser with selected profile..."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-
-      this.navigate.to(
-        `${this.navigate.orgBasePath}/browser-profiles/profile/browser/${
-          data.browserid
-        }?${queryString.stringify({
-          url,
-          name: profile.name,
-          description: profile.description,
-          profileId: profile.id,
-          crawlerChannel: profile.crawlerChannel,
-        })}`,
-      );
-    } catch (e) {
-      this.notify.toast({
-        message: msg("Sorry, couldn't create browser profile at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
+    this.selectedProfile = profile;
+    await this.updateComplete;
+    this.openDialog = "duplicate";
   }
 
   private async deleteProfile(profile: Profile) {

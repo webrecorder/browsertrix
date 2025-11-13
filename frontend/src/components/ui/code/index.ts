@@ -71,7 +71,7 @@ export class Code extends TailwindElement {
   language: Language = Language.XML;
 
   @property({ type: Boolean })
-  wrap = true;
+  noWrap = false;
 
   async connectedCallback() {
     const languageFn = (await langaugeFiles[this.language]).default;
@@ -94,7 +94,7 @@ export class Code extends TailwindElement {
       part="base"
       class=${clsx(
         tw`font-monospace m-0 text-neutral-600`,
-        this.wrap ? tw`whitespace-pre-wrap` : tw`whitespace-nowrap`,
+        this.noWrap ? tw`whitespace-nowrap` : tw`whitespace-pre-wrap`,
       )}
     ><code>${staticHtml`${unsafeStatic(htmlStr)}`}</code></pre>`;
   }
