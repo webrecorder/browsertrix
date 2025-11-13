@@ -25,3 +25,7 @@ export const billingPortalSchema = z.object({
   portalUrl: z.string().url(),
 });
 export type BillingPortal = z.infer<typeof billingPortalSchema>;
+export const billingAddonCheckoutSchema = z.object({
+  checkoutUrl: z.string().url(),
+});
+export type BillingAddonCheckout = z.infer<typeof billingAddonCheckoutSchema>;

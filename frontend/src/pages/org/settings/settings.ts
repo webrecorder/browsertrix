@@ -26,6 +26,7 @@ import { tw } from "@/utils/tailwind";
 import "./components/general";
 import "./components/billing";
 import "./components/crawling-defaults";
+import "./components/billing-addon-link";
 
 const styles = unsafeCSS(stylesheet);
 

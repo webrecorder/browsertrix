@@ -12,11 +12,10 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { columns } from "@/layouts/columns";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
-import { humanizeSeconds } from "@/utils/executionTimeFormatter";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
-const linkClassList = tw`transition-color text-primary hover:text-primary-500`;
+const linkClassList = tw`text-primary transition-colors hover:text-primary-600`;
 const manageLinkClasslist = clsx(
   linkClassList,
   tw`flex cursor-pointer items-center gap-2 p-2 text-sm font-semibold leading-none`,
@@ -95,7 +94,12 @@ export class OrgSettingsBilling extends BtrixElement {
         ${columns([
           [
             html`
-              <div class="mt-5 rounded-lg border px-4 pb-4">
+              <div
+                class=${clsx(
+                  tw`mt-5 rounded-lg border px-4`,
+                  !this.org?.subscription && tw`pb-4`,
+                )}
+              >
                 <div
                   class="mb-3 flex items-center justify-between border-b py-2"
                 >
@@ -187,12 +191,30 @@ export class OrgSettingsBilling extends BtrixElement {
                 </h5>
                 ${when(
                   this.org,
-                  (org) => this.renderQuotas(org.quotas),
+                  (org) => this.renderMonthlyQuotas(org.quotas),
                   () =>
                     html` <sl-skeleton class="mb-2"></sl-skeleton>
                       <sl-skeleton class="mb-2"></sl-skeleton>
                       <sl-skeleton class="mb-2"></sl-skeleton>
                       <sl-skeleton class="mb-2"></sl-skeleton>`,
+                )}
+                ${when(
+                  this.org?.quotas.extraExecMinutes ||
+                    this.org?.quotas.giftedExecMinutes,
+                  () =>
+                    html` <h5
+                        class="mb-2 mt-4 text-xs leading-none text-neutral-500"
+                      >
+                        ${msg("Add-ons")}
+                      </h5>
+                      ${this.renderExtraQuotas(this.org!.quotas)}`,
+                )}
+                ${when(
+                  this.org?.subscription,
+                  () =>
+                    html`<btrix-org-settings-billing-addon-link
+                      class="mt-3 flex items-center border-t py-2"
+                    ></btrix-org-settings-billing-addon-link>`,
                 )}
               </div>
             `,
@@ -343,15 +365,14 @@ export class OrgSettingsBilling extends BtrixElement {
       : nothing}`;
   };
 
-  private readonly renderQuotas = (quotas: OrgQuotas) => {
+  private readonly renderMonthlyQuotas = (quotas: OrgQuotas) => {
     const maxExecMinutesPerMonth =
       quotas.maxExecMinutesPerMonth &&
-      humanizeSeconds(
-        quotas.maxExecMinutesPerMonth * 60,
-        this.localize.lang(),
-        undefined,
-        "long",
-      );
+      this.localize.number(quotas.maxExecMinutesPerMonth, {
+        style: "unit",
+        unit: "minute",
+        unitDisplay: "long",
+      });
     const maxPagesPerCrawl =
       quotas.maxPagesPerCrawl &&
       `${this.localize.number(quotas.maxPagesPerCrawl)} ${pluralOf("pages", quotas.maxPagesPerCrawl)}`;
@@ -368,7 +389,7 @@ export class OrgSettingsBilling extends BtrixElement {
       <ul class="leading-relaxed text-neutral-700">
         <li>
           ${msg(
-            str`${maxExecMinutesPerMonth || msg("Unlimited minutes")} of crawling time`,
+            str`${maxExecMinutesPerMonth || msg("Unlimited minutes")} of execution time`,
           )}
         </li>
         <li>${msg(str`${storageBytesText} of disk space`)}</li>
@@ -376,6 +397,37 @@ export class OrgSettingsBilling extends BtrixElement {
           ${msg(str`${maxPagesPerCrawl || msg("Unlimited pages")} per crawl`)}
         </li>
         <li>${maxConcurrentCrawls || msg("Unlimited concurrent crawls")}</li>
+      </ul>
+    `;
+  };
+
+  private readonly renderExtraQuotas = (quotas: OrgQuotas) => {
+    const extraExecMinutes = quotas.extraExecMinutes
+      ? this.localize.number(quotas.extraExecMinutes, {
+          style: "unit",
+          unit: "minute",
+          unitDisplay: "long",
+        })
+      : null;
+
+    const giftedExecMinutes = quotas.giftedExecMinutes
+      ? this.localize.number(quotas.giftedExecMinutes, {
+          style: "unit",
+          unit: "minute",
+          unitDisplay: "long",
+        })
+      : null;
+
+    return html`
+      <ul class="leading-relaxed text-neutral-700">
+        ${extraExecMinutes &&
+        html`<li>
+          ${msg(str`${extraExecMinutes} of add-on execution time`)}
+        </li>`}
+        ${giftedExecMinutes &&
+        html`<li>
+          ${msg(str`${giftedExecMinutes} of gifted execution time`)}
+        </li>`}
       </ul>
     `;
   };

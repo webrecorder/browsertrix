@@ -13,6 +13,8 @@ ADMIN_PW = "PASSW0RD!"
 CRAWLER_USERNAME = "crawlernightly@example.com"
 CRAWLER_PW = "crawlerPASSWORD!"
 
+PRESHARED_SECRET_PW = "PASSWORD!"
+
 
 @pytest.fixture(scope="session")
 def admin_auth_headers():
@@ -31,6 +33,11 @@ def admin_auth_headers():
         except:
             print("Waiting for admin_auth_headers")
             time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def preshared_secret_auth_headers():
+    return {"Authorization": f"Bearer {PRESHARED_SECRET_PW}"}
 
 
 @pytest.fixture(scope="session")
