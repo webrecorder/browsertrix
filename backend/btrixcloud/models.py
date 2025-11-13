@@ -2454,6 +2454,8 @@ class Profile(BaseMongoModel):
 
     inUse: bool = False
 
+    tags: Optional[List[str]] = []
+
 
 # ============================================================================
 class ProfileBrowserMetadata(BaseModel):
@@ -2504,6 +2506,7 @@ class ProfileCreate(BaseModel):
     browserid: str
     name: str
     description: Optional[str] = ""
+    tags: Optional[List[str]] = []
 
 
 # ============================================================================

@@ -1,6 +1,16 @@
 """Profile Management"""
 
-from typing import Optional, TYPE_CHECKING, Any, cast, Dict, List, Tuple
+from typing import (
+    Optional,
+    TYPE_CHECKING,
+    Any,
+    cast,
+    Dict,
+    List,
+    Tuple,
+    Union,
+    Annotated,
+)
 from uuid import UUID, uuid4
 import os
 import asyncio
@@ -8,7 +18,7 @@ import json
 
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException, Query
 from starlette.requests import Headers
 from pymongo import ReturnDocument
 import aiohttp
@@ -34,6 +44,8 @@ from .models import (
     ProfilePingResponse,
     ProfileBrowserGetUrlResponse,
     ProfileBrowserMetadata,
+    TagsResponse,
+    ListFilterType,
 )
 from .utils import dt_now, str_to_date
 
@@ -303,6 +315,7 @@ class ProfileOps:
                 id=profileid,
                 name=browser_commit.name,
                 description=browser_commit.description,
+                tags=browser_commit.tags,
                 created=created,
                 createdBy=created_by,
                 createdByName=created_by_name,
@@ -354,6 +367,9 @@ class ProfileOps:
 
         if update.description is not None:
             query["description"] = update.description
+
+        if update.tags is not None:
+            query["tags"] = update.tags
 
         if not await self.profiles.find_one_and_update(
             {"_id": profileid}, {"$set": query}
@@ -420,6 +436,8 @@ class ProfileOps:
         self,
         org: Organization,
         userid: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
+        tag_match: Optional[ListFilterType] = ListFilterType.AND,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: str = "modified",
@@ -432,9 +450,12 @@ class ProfileOps:
         page = page - 1
         skip = page_size * page
 
-        match_query = {"oid": org.id}
+        match_query: Dict[str, Any] = {"oid": org.id}
         if userid:
             match_query["userid"] = userid
+        if tags:
+            query_type = "$all" if tag_match == ListFilterType.AND else "$in"
+            match_query["tags"] = {query_type: tags}
 
         aggregate: List[Dict[str, Any]] = [{"$match": match_query}]
 
@@ -608,6 +629,22 @@ class ProfileOps:
 
         return total_size
 
+    async def get_profile_tag_counts(
+        self, org: Organization
+    ) -> list[dict[str, Union[str, int]]]:
+        """get distinct tags from all profiles for this org, sorted by count"""
+        # pylint: disable=duplicate-code
+        tags = await self.profiles.aggregate(
+            [
+                {"$match": {"oid": org.id}},
+                {"$unwind": "$tags"},
+                {"$group": {"_id": "$tags", "count": {"$sum": 1}}},
+                {"$project": {"tag": "$_id", "count": "$count", "_id": 0}},
+                {"$sort": {"count": -1, "tag": 1}},
+            ]
+        ).to_list()
+        return tags
+
     def _run_task(self, func) -> None:
         """add bg tasks to set to avoid premature garbage collection"""
         task = asyncio.create_task(func)
@@ -630,6 +667,7 @@ def init_profiles_api(
 
     router = ops.router
 
+    org_viewer_dep = org_ops.org_viewer_dep
     org_crawl_dep = org_ops.org_crawl_dep
 
     async def browser_get_metadata(
@@ -662,6 +700,15 @@ def init_profiles_api(
     async def list_profiles(
         org: Organization = Depends(org_crawl_dep),
         userid: Optional[UUID] = None,
+        tags: Annotated[Optional[List[str]], Query(title="Tags")] = None,
+        tag_match: Annotated[
+            Optional[ListFilterType],
+            Query(
+                alias="tagMatch",
+                title="Tag Match Type",
+                description='Defaults to `"and"` if omitted',
+            ),
+        ] = ListFilterType.AND,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: str = "modified",
@@ -670,6 +717,8 @@ def init_profiles_api(
         profiles, total = await ops.list_profiles(
             org,
             userid,
+            tags=tags,
+            tag_match=tag_match,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
@@ -689,6 +738,10 @@ def init_profiles_api(
             browser_commit=browser_commit, org=org, user=user, metadata=metadata
         )
 
+    @router.get("/tagCounts", response_model=TagsResponse)
+    async def get_profile_tag_counts(org: Organization = Depends(org_viewer_dep)):
+        return {"tags": await ops.get_profile_tag_counts(org)}
+
     @router.patch("/{profileid}", response_model=UpdatedResponse)
     async def commit_browser_to_existing(
         browser_commit: ProfileUpdate,
@@ -707,6 +760,7 @@ def init_profiles_api(
                     browserid=browser_commit.browserid,
                     name=browser_commit.name,
                     description=browser_commit.description or profile.description,
+                    tags=browser_commit.tags or profile.tags,
                 ),
                 org=org,
                 user=user,

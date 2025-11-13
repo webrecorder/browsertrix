@@ -699,12 +699,15 @@ def echo_server():
 
 PROFILE_NAME = "Test profile"
 PROFILE_DESC = "Profile used for backend tests"
+PROFILE_TAGS = ["profile", "old-webrecorder"]
 
 PROFILE_NAME_UPDATED = "Updated test profile"
 PROFILE_DESC_UPDATED = "Updated profile used for backend tests"
+PROFILE_TAGS_UPDATED = ["profile", "profile-updated", "old-webrecorder"]
 
 PROFILE_2_NAME = "Second test profile"
 PROFILE_2_DESC = "Second profile used to test list endpoint"
+PROFILE_2_TAGS = ["profile", "specs-webrecorder"]
 
 
 def prepare_browser_for_profile_commit(
@@ -782,6 +785,7 @@ def profile_id(admin_auth_headers, default_org_id, profile_browser_id):
                     "browserid": profile_browser_id,
                     "name": PROFILE_NAME,
                     "description": PROFILE_DESC,
+                    "tags": PROFILE_TAGS,
                 },
                 timeout=10,
             )
@@ -873,6 +877,7 @@ def profile_2_id(admin_auth_headers, default_org_id, profile_browser_2_id):
                     "browserid": profile_browser_2_id,
                     "name": PROFILE_2_NAME,
                     "description": PROFILE_2_DESC,
+                    "tags": PROFILE_2_TAGS,
                 },
                 timeout=10,
             )

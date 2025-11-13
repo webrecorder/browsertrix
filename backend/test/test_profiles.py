@@ -9,10 +9,13 @@ from .conftest import (
     API_PREFIX,
     PROFILE_NAME,
     PROFILE_DESC,
+    PROFILE_TAGS,
     PROFILE_NAME_UPDATED,
     PROFILE_DESC_UPDATED,
     PROFILE_2_NAME,
     PROFILE_2_DESC,
+    PROFILE_2_TAGS,
+    PROFILE_TAGS_UPDATED,
     prepare_browser_for_profile_commit,
 )
 
@@ -36,6 +39,7 @@ def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_con
             assert data["id"] == profile_id
             assert data["name"] == PROFILE_NAME
             assert data["description"] == PROFILE_DESC
+            assert data["tags"] == PROFILE_TAGS
             assert data["userid"]
             assert data["oid"] == default_org_id
             assert data.get("origins") or data.get("origins") == []
@@ -95,6 +99,7 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert profile_2["id"] == profile_2_id
             assert profile_2["name"] == PROFILE_2_NAME
             assert profile_2["description"] == PROFILE_2_DESC
+            assert profile_2["tags"] == PROFILE_2_TAGS
             assert profile_2["userid"]
             assert profile_2["oid"] == default_org_id
             assert profile_2.get("origins") or data.get("origins") == []
@@ -121,6 +126,7 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert profile_1["id"] == profile_id
             assert profile_1["name"] == PROFILE_NAME
             assert profile_1["description"] == PROFILE_DESC
+            assert profile_1["tags"] == PROFILE_TAGS
             assert profile_1["userid"]
             assert profile_1["oid"] == default_org_id
             assert profile_1.get("origins") or data.get("origins") == []
@@ -148,6 +154,56 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             time.sleep(1)
 
 
+def test_list_profiles_filter_by_tag(
+    admin_auth_headers, default_org_id, profile_id, profile_2_id
+):
+    # Test multiple tags with implicit and explicit AND tagMatch
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tags=profile&tags=old-webrecorder",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == profile_id
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tags=profile&tags=old-webrecorder&tagMatch=and",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == profile_id
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tags=old-webrecorder&tags=specs-webrecorder&tagMatch=and",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 0
+
+    # Test single tag
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tags=specs-webrecorder",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == profile_2_id
+
+    # Test multiple tags with explicit OR tagMatch
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tags=profile&tags=old-webrecorder&tagMatch=or",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+
+
 def test_update_profile_metadata(crawler_auth_headers, default_org_id, profile_id):
     # Get original created/modified times
     r = requests.get(
@@ -166,6 +222,7 @@ def test_update_profile_metadata(crawler_auth_headers, default_org_id, profile_i
         json={
             "name": PROFILE_NAME_UPDATED,
             "description": PROFILE_DESC_UPDATED,
+            "tags": PROFILE_TAGS_UPDATED,
         },
     )
     assert r.status_code == 200
@@ -183,6 +240,7 @@ def test_update_profile_metadata(crawler_auth_headers, default_org_id, profile_i
     assert data["id"] == profile_id
     assert data["name"] == PROFILE_NAME_UPDATED
     assert data["description"] == PROFILE_DESC_UPDATED
+    assert data["tags"] == PROFILE_TAGS_UPDATED
 
     # Ensure modified was updated but created was not
     assert data["modified"] > original_modified
@@ -225,6 +283,7 @@ def test_commit_browser_to_existing_profile(
                 "browserid": profile_browser_3_id,
                 "name": PROFILE_NAME_UPDATED,
                 "description": PROFILE_DESC_UPDATED,
+                "tags": PROFILE_TAGS_UPDATED,
             },
         )
         assert r.status_code == 200
@@ -315,6 +374,23 @@ def test_sort_profiles(
             if time.monotonic() - start_time > time_limit:
                 raise
             time.sleep(1)
+
+
+def test_profile_tag_counts(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles/tagCounts",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data == {
+        "tags": [
+            {"tag": "profile", "count": 2},
+            {"tag": "old-webrecorder", "count": 1},
+            {"tag": "profile-updated", "count": 1},
+            {"tag": "specs-webrecorder", "count": 1},
+        ]
+    }
 
 
 def test_delete_profile(admin_auth_headers, default_org_id, profile_2_id):

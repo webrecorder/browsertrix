@@ -149,7 +149,7 @@ def test_get_configs_filter_multiple_tags_or(admin_auth_headers, default_org_id)
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
-        params={"tag": ["tag-1", "tag-3"], "tagMatch": "or"},
+        params={"tags": ["tag-1", "tag-3"], "tagMatch": "or"},
     )
     assert r.status_code == 200
     data = r.json()
@@ -162,10 +162,25 @@ def test_get_configs_filter_multiple_tags_and(admin_auth_headers, default_org_id
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
-        params={"tag": ["tag-1", "tag-2"], "tagMatch": "and"},
+        params={"tags": ["tag-1", "tag-2"], "tagMatch": "and"},
     )
     assert r.status_code == 200
     data = r.json()
 
     assert len(data["items"]) == 1
     assert data["items"][0]["id"] == new_cid_1
+
+
+def test_get_configs_filter_multiple_tags_deprecated_field(
+    admin_auth_headers, default_org_id
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
+        headers=admin_auth_headers,
+        params={"tag": ["tag-1", "tag-3"], "tagMatch": "or"},
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert len(data["items"]) == 2
+    assert {item["id"] for item in data["items"]} == {new_cid_1, new_cid_2}
