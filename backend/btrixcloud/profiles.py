@@ -700,7 +700,7 @@ def init_profiles_api(
     async def list_profiles(
         org: Organization = Depends(org_crawl_dep),
         userid: Optional[UUID] = None,
-        tag: Annotated[Optional[List[str]], Query(title="Tags")] = None,
+        tags: Annotated[Optional[List[str]], Query(title="Tags")] = None,
         tag_match: Annotated[
             Optional[ListFilterType],
             Query(
@@ -717,7 +717,7 @@ def init_profiles_api(
         profiles, total = await ops.list_profiles(
             org,
             userid,
-            tags=tag,
+            tags=tags,
             tag_match=tag_match,
             page_size=pageSize,
             page=page,

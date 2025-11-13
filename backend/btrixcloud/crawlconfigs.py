@@ -1633,7 +1633,10 @@ def init_crawl_config_api(
         ] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        tag: Annotated[Optional[List[str]], Query(title="Tags")] = None,
+        tag: Annotated[
+            Optional[List[str]], Query(title="Tags", deprecated=True)
+        ] = None,
+        tags: Annotated[Optional[List[str]], Query(title="Tags")] = None,
         tag_match: Annotated[
             Optional[ListFilterType],
             Query(
@@ -1665,6 +1668,10 @@ def init_crawl_config_api(
         if description:
             description = urllib.parse.unquote(description)
 
+        # check deprecated 'tag' if 'tags' not provided
+        if tag and not tags:
+            tags = tag
+
         crawl_configs, total = await ops.get_crawl_configs(
             org,
             created_by=user_id,
@@ -1673,7 +1680,7 @@ def init_crawl_config_api(
             first_seed=first_seed,
             name=name,
             description=description,
-            tags=tag,
+            tags=tags,
             tag_match=tag_match,
             last_crawl_state=last_crawl_state,
             schedule=schedule,
