@@ -7,6 +7,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import type { TagInput } from "@/components/ui/tag-input";
 import type { ProfileUpdatedEvent } from "@/features/browser-profiles/types";
 import type { Profile } from "@/types/crawler";
 import { isApiError } from "@/utils/api";
@@ -42,6 +43,9 @@ export class ProfileMetadataDialog extends BtrixElement {
   @query(`sl-textarea[name="description"]`)
   private readonly descriptionInput?: SlTextarea | null;
 
+  @query(`btrix-tag-input`)
+  private readonly tagInput?: TagInput | null;
+
   private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(500);
 
@@ -53,10 +57,14 @@ export class ProfileMetadataDialog extends BtrixElement {
         return;
       }
 
-      const params = serialize(this.form) as {
+      const formValues = serialize(this.form) as {
         name: string;
         description: string;
       };
+
+      const tags = this.tagInput?.getTags();
+
+      const params = { ...formValues, tags };
 
       try {
         await this.api.fetch<{ updated: boolean }>(
@@ -170,16 +178,10 @@ export class ProfileMetadataDialog extends BtrixElement {
           @sl-input=${this.validateDescriptionMax.validate}
         ></sl-textarea>
 
-        ${
-          // <btrix-tag-input
-          // name="tags"
-          // .initialTags=${[]}
-          // .tagOptions=${[]}
-          // @tag-input=${console.log}
-          // @tags-change=${console.log}
-          // ></btrix-tag-input>
-          undefined
-        }
+        <btrix-tag-input
+          name="tags"
+          .initialTags=${this.profile.tags}
+        ></btrix-tag-input>
       </form>
       <div slot="footer" class="flex justify-between">
         <sl-button form="crawlDetailsForm" type="reset" size="small"

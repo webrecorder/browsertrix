@@ -40,7 +40,7 @@ export const Checked: Story = {
 
 /**
  * A filter can have multiple options.
- * See `<btrix-workflow-tag-filter>` for a more complex example.
+ * See `<btrix-tag-filter>` for a more complex example.
  */
 export const SelectFilter: Story = {
   args: {

@@ -150,6 +150,10 @@ export class TagInput extends LitElement {
   @query("sl-popup")
   private readonly combobox!: SlPopup;
 
+  public getTags() {
+    return this.tags;
+  }
+
   connectedCallback() {
     if (this.initialTags) {
       this.tags = this.initialTags;

@@ -10,6 +10,5 @@ import("./workflow-editor");
 import("./workflow-list");
 import("./workflow-schedule-filter");
 import("./workflow-search");
-import("./workflow-tag-filter");
 import("./workflow-profile-filter");
 import("./workflow-last-crawl-state-filter");

@@ -54,6 +54,7 @@ import type { SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
 import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
 import type { SyntaxInput } from "@/components/ui/syntax-input";
 import type { TabListTab } from "@/components/ui/tab-list";
+import type { TagCount, TagCounts } from "@/components/ui/tag-filter/types";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { validURL } from "@/components/ui/url-input";
@@ -101,8 +102,6 @@ import type { UnderlyingFunction } from "@/types/utils";
 import {
   NewWorkflowOnlyScopeType,
   type StorageSeedFile,
-  type WorkflowTag,
-  type WorkflowTags,
 } from "@/types/workflow";
 import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
@@ -299,7 +298,7 @@ export class WorkflowEditor extends BtrixElement {
   initialSeedFile?: StorageSeedFile;
 
   @state()
-  private tagOptions: WorkflowTag[] = [];
+  private tagOptions: TagCount[] = [];
 
   @state()
   private isSubmitting = false;
@@ -337,7 +336,7 @@ export class WorkflowEditor extends BtrixElement {
   });
 
   // For fuzzy search:
-  private readonly fuse = new Fuse<WorkflowTag>([], {
+  private readonly fuse = new Fuse<TagCount>([], {
     keys: ["tag"],
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
@@ -3197,7 +3196,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async fetchTags() {
     this.tagOptions = [];
     try {
-      const { tags } = await this.api.fetch<WorkflowTags>(
+      const { tags } = await this.api.fetch<TagCounts>(
         `/orgs/${this.orgId}/crawlconfigs/tagCounts`,
       );
 

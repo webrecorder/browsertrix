@@ -20,6 +20,7 @@ import {
   badges,
   badgesSkeleton,
 } from "@/features/browser-profiles/templates/badges";
+import type { ProfileUpdatedEvent } from "@/features/browser-profiles/types";
 import type { WorkflowColumnName } from "@/features/crawl-workflows/workflow-list";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { labelWithIcon } from "@/layouts/labelWithIcon";
@@ -80,13 +81,23 @@ export class BrowserProfilesProfilePage extends BtrixElement {
   @state()
   private browserLoadCrawlerChannel?: Profile["crawlerChannel"];
 
+  /**
+   * Render updated fields before refreshing data from API
+   */
+  @state()
+  private updatedProfileParams?: ProfileUpdatedEvent["detail"];
+
   private get profile() {
-    return this.profileTask.value;
+    return this.profileTask.value
+      ? { ...this.profileTask.value, ...this.updatedProfileParams }
+      : undefined;
   }
 
   private readonly profileTask = new Task(this, {
     task: async ([profileId], { signal }) => {
       const profile = await this.getProfile(profileId, signal);
+
+      this.updatedProfileParams = undefined;
 
       return profile;
     },
@@ -148,15 +159,13 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           : undefined}
         ?open=${this.openDialog === "browser" || duplicating}
         ?duplicating=${duplicating}
-        @btrix-updated=${duplicating
-          ? undefined
-          : () => void this.profileTask.run()}
+        @btrix-updated=${duplicating ? undefined : this.onUpdated}
         @sl-after-hide=${this.closeBrowser}
       >
       </btrix-profile-browser-dialog>
 
       ${when(
-        this.profile,
+        this.profileTask.value,
         (profile) =>
           html`<btrix-profile-metadata-dialog
             .profile=${profile}
@@ -169,8 +178,8 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                   : undefined,
             )}
             @sl-after-hide=${() => (this.openDialog = undefined)}
-            @btrix-updated=${() => {
-              void this.profileTask.run();
+            @btrix-updated=${(e: ProfileUpdatedEvent) => {
+              void this.onUpdated(e);
               this.openDialog = undefined;
             }}
           >
@@ -413,12 +422,17 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                 : none,
             )}
           </btrix-desc-list-item>
-          ${
-            // <btrix-desc-list-item label=${msg("Tags")}>
-            //   ${this.renderDetail(() => html`${none}`)}
-            // </btrix-desc-list-item>
-            undefined
-          }
+          <btrix-desc-list-item label=${msg("Tags")}>
+            ${this.renderDetail((profile) =>
+              profile.tags.length
+                ? html`<div class="mt-1 flex flex-wrap gap-1.5">
+                    ${profile.tags.map(
+                      (tag) => html`<btrix-tag>${tag}</btrix-tag>`,
+                    )}
+                  </div>`
+                : none,
+            )}
+          </btrix-desc-list-item>
         </btrix-desc-list>
         <sl-divider class="my-5"></sl-divider>
         <btrix-desc-list>
@@ -711,12 +725,17 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     );
 
   private async getFirstBrowserUrl() {
-    if (!this.profile) {
+    if (!this.profileTask.value) {
       await this.profileTask.taskComplete;
     }
 
-    return this.profile?.origins[0];
+    return this.profileTask.value?.origins[0];
   }
+
+  private readonly onUpdated = async (e: ProfileUpdatedEvent) => {
+    this.updatedProfileParams = e.detail;
+    void this.profileTask.run();
+  };
 
   private readonly newWorkflow = () => {
     this.navigate.to(
