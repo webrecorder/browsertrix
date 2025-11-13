@@ -139,7 +139,7 @@ export class WorkflowActionMenu extends BtrixElement {
                   ${msg("Edit Browser Windows")}
                 </sl-menu-item>
                 <sl-menu-item
-                  data-action=${Action.EditBrowserWindows}
+                  data-action=${Action.EditExclusions}
                   ?disabled=${!crawling && !paused}
                 >
                   <sl-icon name="table" slot="prefix"></sl-icon>
