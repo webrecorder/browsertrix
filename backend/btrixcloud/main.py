@@ -331,6 +331,8 @@ def main() -> None:
             openapi_url=OPENAPI_URL,
             title="Browsertrix API",
             swagger_favicon_url="/favicon.ico",
+            swagger_js_url="/docs/api-assets/swagger-ui-bundle.js",
+            swagger_css_url="/docs/api-assets/swagger-ui.css"
         )
 
     @app_root.get(API_PREFIX + "/redoc", include_in_schema=False)
@@ -338,6 +340,7 @@ def main() -> None:
         return get_redoc_html(
             openapi_url=OPENAPI_URL,
             title="Browsertrix API",
+            redoc_js_url="/docs/api-assets/redoc.standalone.js",
             redoc_favicon_url="/favicon.ico",
         )
 
