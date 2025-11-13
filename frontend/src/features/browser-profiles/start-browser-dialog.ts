@@ -27,6 +27,8 @@ import type { Profile } from "@/types/crawler";
 type StartBrowserEventDetail = {
   url?: string;
   crawlerChannel?: Profile["crawlerChannel"];
+  proxyId?: Profile["proxyId"];
+  replaceBrowser: boolean;
 };
 
 export type BtrixStartBrowserEvent = CustomEvent<StartBrowserEventDetail>;
@@ -52,10 +54,13 @@ export class StartBrowserDialog extends BtrixElement {
   startUrl?: string;
 
   @property({ type: Boolean })
+  replaceable = false;
+
+  @property({ type: Boolean })
   open = false;
 
   @state()
-  resetProfile = false;
+  replaceBrowser = false;
 
   @query("btrix-dialog")
   private readonly dialog?: Dialog | null;
@@ -90,7 +95,7 @@ export class StartBrowserDialog extends BtrixElement {
           }
         }
 
-        void this.dialog?.hide();
+        this.replaceBrowser = false;
       }}
     >
       <form
@@ -107,7 +112,11 @@ export class StartBrowserDialog extends BtrixElement {
 
           this.dispatchEvent(
             new CustomEvent<StartBrowserEventDetail>("btrix-start-browser", {
-              detail: { url, crawlerChannel },
+              detail: {
+                url,
+                crawlerChannel,
+                replaceBrowser: this.replaceBrowser,
+              },
             }),
           );
         }}
@@ -133,30 +142,8 @@ export class StartBrowserDialog extends BtrixElement {
             </div>
           `,
         )}
-
-        <sl-checkbox
-          class="mt-4"
-          @sl-change=${(e: SlChangeEvent) =>
-            (this.resetProfile = (e.target as SlCheckbox).checked)}
-        >
-          ${msg("Reset configured sites")}
-          ${when(
-            this.resetProfile,
-            () => html`
-              <div slot="help-text">
-                <sl-icon
-                  class="mr-0.5 align-[-.175em]"
-                  name="exclamation-triangle"
-                ></sl-icon>
-                ${msg(
-                  "All previously configured site data and browsing activity will be removed.",
-                )}
-              </div>
-            `,
-          )}
-        </sl-checkbox>
-
-        ${when(this.resetProfile && this.profile, this.renderProxy)}
+        ${when(this.replaceable, this.renderReplaceControl)}
+        ${when(this.replaceBrowser && this.profile, this.renderProxy)}
       </form>
       <div slot="footer" class="flex justify-between">
         <sl-button size="small" @click=${() => void this.dialog?.hide()}
@@ -174,20 +161,46 @@ export class StartBrowserDialog extends BtrixElement {
     </btrix-dialog>`;
   }
 
+  private readonly renderReplaceControl = () => {
+    return html`<sl-checkbox
+      class="mt-4"
+      @sl-change=${(e: SlChangeEvent) =>
+        (this.replaceBrowser = (e.target as SlCheckbox).checked)}
+    >
+      ${msg("Reset configured sites")}
+      ${when(
+        this.replaceBrowser,
+        () => html`
+          <div slot="help-text">
+            <sl-icon
+              class="mr-0.5 align-[-.175em]"
+              name="exclamation-triangle"
+            ></sl-icon>
+            ${msg(
+              "All previously configured site data and browsing activity will be removed.",
+            )}
+          </div>
+        `,
+      )}
+    </sl-checkbox>`;
+  };
+
   private readonly renderProxy = (profile: Profile) => {
     if (!this.orgProxies?.servers.length) return;
 
     return html`
-      <btrix-select-crawler-proxy
-        defaultProxyId=${ifDefined(
-          this.org?.crawlingDefaults?.profileid ||
-            this.orgProxies.default_proxy_id ||
-            undefined,
-        )}
-        .proxyServers=${this.orgProxies.servers}
-        .proxyId=${profile.proxyId || ""}
-      >
-      </btrix-select-crawler-proxy>
+      <div class="mt-4">
+        <btrix-select-crawler-proxy
+          defaultProxyId=${ifDefined(
+            this.org?.crawlingDefaults?.profileid ||
+              this.orgProxies.default_proxy_id ||
+              undefined,
+          )}
+          .proxyServers=${this.orgProxies.servers}
+          .proxyId=${profile.proxyId || ""}
+        >
+        </btrix-select-crawler-proxy>
+      </div>
     `;
   };
 }

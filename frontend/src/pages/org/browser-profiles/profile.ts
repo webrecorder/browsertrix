@@ -15,6 +15,7 @@ import type {
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import type { ProfileBrowserDialog } from "@/features/browser-profiles/profile-browser-dialog";
 import type { BtrixStartBrowserEvent } from "@/features/browser-profiles/start-browser-dialog";
 import {
   badges,
@@ -29,7 +30,11 @@ import { panel, panelBody } from "@/layouts/panel";
 import { OrgTab, WorkflowTab } from "@/routes";
 import { noData, stringFor } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { Profile, Workflow } from "@/types/crawler";
+import {
+  CrawlerChannelImage,
+  type Profile,
+  type Workflow,
+} from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { SortDirection } from "@/types/utils";
 import { isApiError } from "@/utils/api";
@@ -76,10 +81,12 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     | "duplicate";
 
   @state()
-  private browserLoadUrl?: string;
-
-  @state()
-  private browserLoadCrawlerChannel?: Profile["crawlerChannel"];
+  private browserLoadParams: {
+    url?: string;
+    crawlerChannel?: Profile["crawlerChannel"];
+    proxyId?: Profile["proxyId"];
+    replaceBrowser?: boolean;
+  } = {};
 
   /**
    * Render updated fields before refreshing data from API
@@ -139,24 +146,43 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     } satisfies Parameters<typeof page>[0];
 
     const duplicating = this.openDialog === "duplicate";
+    const browserLoadUrl = this.browserLoadParams.url;
+    const browserLoadCrawlerChannel =
+      this.browserLoadParams.crawlerChannel || CrawlerChannelImage.Default;
+
+    // Custom config will take precedence over profile data
+    let config: ProfileBrowserDialog["config"] = undefined;
+
+    if (browserLoadUrl) {
+      config = {
+        url: browserLoadUrl,
+        profileId: this.profileId,
+        crawlerChannel: browserLoadCrawlerChannel,
+      };
+
+      if (duplicating) {
+        config = {
+          ...config,
+          name: `${this.profile?.name || browserLoadUrl} ${msg("Copy")}`,
+          crawlerChannel: this.profile?.crawlerChannel,
+          proxyId: this.profile?.proxyId,
+        };
+      } else if (this.browserLoadParams.replaceBrowser) {
+        config = {
+          ...config,
+          // Don't specify profile ID if replacing browser instance
+          profileId: undefined,
+          // Allow specifying new proxy
+          proxyId: this.browserLoadParams.proxyId,
+        };
+      }
+    }
 
     return html`${page(header, this.renderPage)}
 
       <btrix-profile-browser-dialog
         .profile=${this.profile}
-        .config=${this.browserLoadUrl
-          ? {
-              url: this.browserLoadUrl,
-              name:
-                duplicating && this.profile
-                  ? `${this.profile.name} ${msg("Copy")}`
-                  : undefined,
-              crawlerChannel:
-                (duplicating && this.profile?.crawlerChannel) ||
-                this.browserLoadCrawlerChannel,
-              proxyId: (duplicating && this.profile?.proxyId) || undefined,
-            }
-          : undefined}
+        .config=${config}
         ?open=${this.openDialog === "browser" || duplicating}
         ?duplicating=${duplicating}
         @btrix-updated=${duplicating ? undefined : this.onUpdated}
@@ -311,6 +337,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           <btrix-start-browser-dialog
             .profile=${profile}
             ?open=${Boolean(this.openDialog?.startsWith("start-browser"))}
+            ?replaceable=${this.openDialog === "start-browser"}
             startUrl=${ifDefined(
               this.openDialog === "start-browser"
                 ? profile.origins[0]
@@ -758,17 +785,19 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     });
   };
 
-  private readonly openBrowser = async (opts: {
-    url?: string;
-    crawlerChannel?: string;
-  }) => {
+  private readonly openBrowser = async (
+    opts: BrowserProfilesProfilePage["browserLoadParams"],
+  ) => {
     let { url } = opts;
 
     if (!url) {
       url = await this.getFirstBrowserUrl();
     }
-    this.browserLoadUrl = url;
-    this.browserLoadCrawlerChannel = opts.crawlerChannel;
+
+    this.browserLoadParams = {
+      ...opts,
+      url,
+    };
     this.openDialog = "browser";
   };
 
@@ -780,13 +809,15 @@ export class BrowserProfilesProfilePage extends BtrixElement {
   }
 
   private readonly closeBrowser = () => {
-    this.browserLoadUrl = undefined;
-    this.browserLoadCrawlerChannel = undefined;
+    this.browserLoadParams = {};
     this.openDialog = undefined;
   };
 
   private async duplicateProfile() {
-    this.browserLoadUrl = await this.getFirstBrowserUrl();
+    this.browserLoadParams = {
+      ...this.browserLoadParams,
+      url: await this.getFirstBrowserUrl(),
+    };
     this.openDialog = "duplicate";
   }
 

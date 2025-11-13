@@ -102,7 +102,7 @@ export class SelectCrawlerProxy extends BtrixElement {
           ? html`
               <div slot="help-text">
                 ${msg("Description:")}
-                <span class="font-monospace"
+                <span class="font-monospace leading-tight"
                   >${this.selectedProxy.description || ""}</span
                 >
               </div>
@@ -112,7 +112,7 @@ export class SelectCrawlerProxy extends BtrixElement {
           ? html`
               <div slot="help-text">
                 ${msg("Description:")}
-                <span class="font-monospace"
+                <span class="font-monospace leading-tight"
                   >${this.defaultProxy.description || ""}</span
                 >
               </div>

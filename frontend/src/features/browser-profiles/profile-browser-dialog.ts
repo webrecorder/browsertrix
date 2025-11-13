@@ -54,7 +54,7 @@ export class ProfileBrowserDialog extends BtrixElement {
   #savedBrowserId?: string;
 
   private readonly browserIdTask = new Task(this, {
-    task: async ([open, config, profile], { signal }) => {
+    task: async ([open, config], { signal }) => {
       if (!open || !config) return null;
 
       const browserId = this.browserIdTask.value;
@@ -63,14 +63,11 @@ export class ProfileBrowserDialog extends BtrixElement {
         void this.deleteBrowser(browserId, signal);
       }
 
-      const { browserid } = await this.createBrowser(
-        { profileId: profile?.id, ...config },
-        signal,
-      );
+      const { browserid } = await this.createBrowser(config, signal);
 
       return browserid;
     },
-    args: () => [this.open, this.config, this.profile] as const,
+    args: () => [this.open, this.config] as const,
   });
 
   disconnectedCallback(): void {
