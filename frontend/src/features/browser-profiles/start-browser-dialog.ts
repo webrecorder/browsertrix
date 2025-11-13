@@ -1,9 +1,14 @@
 import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
-import type { SlButton } from "@shoelace-style/shoelace";
+import type {
+  SlButton,
+  SlChangeEvent,
+  SlCheckbox,
+} from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -13,6 +18,10 @@ import {
   orgCrawlerChannelsContext,
   type OrgCrawlerChannelsContext,
 } from "@/context/org-crawler-channels";
+import {
+  orgProxiesContext,
+  type OrgProxiesContext,
+} from "@/context/org-proxies";
 import type { Profile } from "@/types/crawler";
 
 type StartBrowserEventDetail = {
@@ -30,6 +39,9 @@ export type BtrixStartBrowserEvent = CustomEvent<StartBrowserEventDetail>;
 @customElement("btrix-start-browser-dialog")
 @localized()
 export class StartBrowserDialog extends BtrixElement {
+  @consume({ context: orgProxiesContext, subscribe: true })
+  private readonly orgProxies?: OrgProxiesContext;
+
   @consume({ context: orgCrawlerChannelsContext, subscribe: true })
   private readonly orgCrawlerChannels?: OrgCrawlerChannelsContext;
 
@@ -41,6 +53,9 @@ export class StartBrowserDialog extends BtrixElement {
 
   @property({ type: Boolean })
   open = false;
+
+  @state()
+  resetProfile = false;
 
   @query("btrix-dialog")
   private readonly dialog?: Dialog | null;
@@ -87,7 +102,7 @@ export class StartBrowserDialog extends BtrixElement {
           if (!form.checkValidity()) return;
 
           const values = serialize(form);
-          const url = values["starting-url"] as string;
+          const url = values["startingUrl"] as string;
           const crawlerChannel = values["crawlerChannel"] as string | undefined;
 
           this.dispatchEvent(
@@ -98,23 +113,50 @@ export class StartBrowserDialog extends BtrixElement {
         }}
       >
         <btrix-url-input
-          name="starting-url"
+          name="startingUrl"
           label=${this.startUrl ? msg("Load URL") : msg("New Site URL")}
           .value=${this.startUrl || ""}
           required
         ></btrix-url-input>
 
         ${when(
-          this.orgCrawlerChannels && this.orgCrawlerChannels.length > 1,
-          () => html`
+          this.orgCrawlerChannels &&
+            this.orgCrawlerChannels.length > 1 &&
+            this.profile,
+          (profile) => html`
             <div class="mt-4">
               <btrix-select-crawler
-                .crawlerChannel=${this.profile?.crawlerChannel}
+                .crawlerChannel=${profile.crawlerChannel ||
+                this.org?.crawlingDefaults?.crawlerChannel}
               >
               </btrix-select-crawler>
             </div>
           `,
         )}
+
+        <sl-checkbox
+          class="mt-4"
+          @sl-change=${(e: SlChangeEvent) =>
+            (this.resetProfile = (e.target as SlCheckbox).checked)}
+        >
+          ${msg("Reset configured sites")}
+          ${when(
+            this.resetProfile,
+            () => html`
+              <div slot="help-text">
+                <sl-icon
+                  class="mr-0.5 align-[-.175em]"
+                  name="exclamation-triangle"
+                ></sl-icon>
+                ${msg(
+                  "All previously configured site data and browsing activity will be removed.",
+                )}
+              </div>
+            `,
+          )}
+        </sl-checkbox>
+
+        ${when(this.resetProfile && this.profile, this.renderProxy)}
       </form>
       <div slot="footer" class="flex justify-between">
         <sl-button size="small" @click=${() => void this.dialog?.hide()}
@@ -131,4 +173,21 @@ export class StartBrowserDialog extends BtrixElement {
       </div>
     </btrix-dialog>`;
   }
+
+  private readonly renderProxy = (profile: Profile) => {
+    if (!this.orgProxies?.servers.length) return;
+
+    return html`
+      <btrix-select-crawler-proxy
+        defaultProxyId=${ifDefined(
+          this.org?.crawlingDefaults?.profileid ||
+            this.orgProxies.default_proxy_id ||
+            undefined,
+        )}
+        .proxyServers=${this.orgProxies.servers}
+        .proxyId=${profile.proxyId || ""}
+      >
+      </btrix-select-crawler-proxy>
+    `;
+  };
 }
