@@ -200,7 +200,7 @@ export class BrowserProfilesList extends BtrixElement {
         {
           ...pagination,
           userid: filterByCurrentUser ? this.userInfo?.id : undefined,
-          tag: filterByTags,
+          tags: filterByTags,
           tagMatch: filterByTagsType,
           sortBy: orderBy.field,
           sortDirection:
@@ -674,7 +674,7 @@ export class BrowserProfilesList extends BtrixElement {
   private async getProfiles(
     params: {
       userid?: string;
-      tag?: string[];
+      tags?: string[];
       tagMatch?: string;
     } & APIPaginationQuery &
       APISortQuery,
