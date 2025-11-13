@@ -159,7 +159,7 @@ def test_list_profiles_filter_by_tag(
 ):
     # Test multiple tags with implicit and explicit AND tagMatch
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tag=profile&tag=old-webrecorder",
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tags=profile&tags=old-webrecorder",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -168,7 +168,7 @@ def test_list_profiles_filter_by_tag(
     assert data["items"][0]["id"] == profile_id
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tag=profile&tag=old-webrecorder&tagMatch=and",
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tags=profile&tags=old-webrecorder&tagMatch=and",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -177,7 +177,7 @@ def test_list_profiles_filter_by_tag(
     assert data["items"][0]["id"] == profile_id
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tag=old-webrecorder&tag=specs-webrecorder&tagMatch=and",
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tags=old-webrecorder&tags=specs-webrecorder&tagMatch=and",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -186,7 +186,7 @@ def test_list_profiles_filter_by_tag(
 
     # Test single tag
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tag=specs-webrecorder",
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tags=specs-webrecorder",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -196,7 +196,7 @@ def test_list_profiles_filter_by_tag(
 
     # Test multiple tags with explicit OR tagMatch
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tag=profile&tag=old-webrecorder&tagMatch=or",
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?tags=profile&tags=old-webrecorder&tagMatch=or",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
