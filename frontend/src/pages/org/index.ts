@@ -54,14 +54,13 @@ import "./archived-item-detail";
 import "./archived-items";
 import "./collections-list";
 import "./collection-detail";
-import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./settings/settings";
 import "./dashboard";
+import "./browser-profiles";
 
 import(/* webpackChunkName: "org" */ "./archived-item-qa/archived-item-qa");
 import(/* webpackChunkName: "org" */ "./workflows-new");
-import(/* webpackChunkName: "org" */ "./browser-profiles-new");
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -86,15 +85,12 @@ export type OrgParams = {
     qaTab?: QATab;
   };
   [OrgTab.BrowserProfiles]: {
-    browserProfileId?: string;
+    profileId?: string;
     browserId?: string;
     new?: ResourceName;
     name?: string;
     url?: string;
-    description?: string;
     crawlerChannel?: string;
-    profileId?: string;
-    navigateUrl?: string;
     proxyId?: string;
   };
   [OrgTab.Collections]: ArchivedItemPageParams & {
@@ -469,7 +465,7 @@ export class Org extends BtrixElement {
     const org = this.org;
     const proxies = this.proxiesTask.value;
     const crawlerChannels = this.crawlerChannelsTask.value;
-    const showBrowserProfileDialog = org && proxies && crawlerChannels;
+    const crawlingDefaultsReady = org && proxies && crawlerChannels;
 
     return html`
       <div
@@ -492,18 +488,11 @@ export class Org extends BtrixElement {
           }}
         ></btrix-file-uploader>
 
-        ${showBrowserProfileDialog
+        ${crawlingDefaultsReady
           ? html`<btrix-new-browser-profile-dialog
               .proxyServers=${proxies.servers}
               .crawlerChannels=${crawlerChannels}
-              defaultProxyId=${ifDefined(
-                org.crawlingDefaults?.proxyId ||
-                  proxies.default_proxy_id ||
-                  undefined,
-              )}
-              defaultCrawlerChannel=${ifDefined(
-                org.crawlingDefaults?.crawlerChannel || undefined,
-              )}
+              defaultProxyId=${ifDefined(proxies.default_proxy_id || undefined)}
               ?open=${this.openDialogName === "browser-profile"}
               @sl-hide=${() => (this.openDialogName = undefined)}
             >
@@ -646,26 +635,10 @@ export class Org extends BtrixElement {
   private readonly renderBrowserProfiles = () => {
     const params = this.params as OrgParams["browser-profiles"];
 
-    if (params.browserProfileId) {
-      return html`<btrix-browser-profiles-detail
-        profileId=${params.browserProfileId}
-        ?isCrawler=${this.appState.isCrawler}
-      ></btrix-browser-profiles-detail>`;
-    }
-
-    if (params.browserId) {
-      return html`<btrix-browser-profiles-new
-        .browserId=${params.browserId}
-        .browserParams=${{
-          name: params.name || "",
-          url: params.url || "",
-          description: params.description,
-          crawlerChannel: params.crawlerChannel,
-          profileId: params.profileId,
-          navigateUrl: params.navigateUrl,
-          proxyId: params.proxyId ?? null,
-        }}
-      ></btrix-browser-profiles-new>`;
+    if (params.profileId) {
+      return html`<btrix-browser-profiles-profile-page
+        .profileId=${params.profileId}
+      ></btrix-browser-profiles-profile-page>`;
     }
 
     return html`<btrix-browser-profiles-list

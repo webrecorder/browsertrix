@@ -46,7 +46,7 @@ export const ROUTES = {
     `(/${OrgTab.Workflows}(/${WorkflowTab.Crawls})(/${CommonTab.New})(/:workflowId(/:workflowTab)(/${WorkflowTab.Crawls}${archivedItemPath})))`,
     `(/${OrgTab.Items}(/:itemType(${archivedItemPath})))`,
     `(/${OrgTab.Collections}(/${CommonTab.New})(/${CommonTab.View}/:collectionId(/:collectionTab)))`,
-    `(/${OrgTab.BrowserProfiles}(/profile(/browser/:browserId)(/:browserProfileId)))`,
+    `(/${OrgTab.BrowserProfiles}(/profile(/:profileId)(/browser/:browserId)))`,
     `(/${OrgTab.Settings}(/:settingsTab))`,
   ].join(""),
   publicOrgs: `/${RouteNamespace.PublicOrgs}(/)`,

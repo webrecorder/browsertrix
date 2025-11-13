@@ -16,6 +16,9 @@ export class TableHeaderCell extends TableCell {
   @property({ type: String, reflect: true, noAccessor: true })
   role = "columnheader";
 
+  @property({ type: String, reflect: true, noAccessor: true })
+  scope?: "row" | "col";
+
   @property({ type: String, reflect: true })
   ariaSort: SortValues = "none";
 

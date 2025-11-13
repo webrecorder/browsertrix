@@ -71,6 +71,7 @@ import {
   type IntersectEvent,
 } from "@/controllers/observable";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
+import type { BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type { CustomBehaviorsTable } from "@/features/crawl-workflows/custom-behaviors-table";
@@ -79,11 +80,10 @@ import type {
   ExclusionChangeEvent,
   QueueExclusionTable,
 } from "@/features/crawl-workflows/queue-exclusion-table";
-import type { UserGuideEventMap } from "@/index";
 import { infoCol, inputCol } from "@/layouts/columns";
 import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
 import { panel } from "@/layouts/panel";
-import { WorkflowTab } from "@/routes";
+import { OrgTab, WorkflowTab } from "@/routes";
 import { infoTextFor } from "@/strings/crawl-workflows/infoText";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
@@ -486,7 +486,19 @@ export class WorkflowEditor extends BtrixElement {
         (changedProperties.get("progressState") as ProgressState | undefined)
           ?.activeTab
     ) {
-      window.location.hash = this.progressState.activeTab;
+      const prevActiveTab = (
+        changedProperties.get("progressState") as ProgressState | undefined
+      )?.activeTab;
+
+      if (this.progressState.activeTab !== prevActiveTab) {
+        if (prevActiveTab) {
+          window.location.hash = this.progressState.activeTab;
+        } else {
+          const url = new URL(window.location.href);
+          url.hash = this.progressState.activeTab;
+          window.location.replace(url);
+        }
+      }
     }
     const prevFormState = changedProperties.get("formState") as
       | FormState
@@ -2430,7 +2442,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         e.preventDefault();
 
         this.dispatchEvent(
-          new CustomEvent<UserGuideEventMap["btrix-user-guide-show"]["detail"]>(
+          new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
             "btrix-user-guide-show",
             {
               detail: { path },
@@ -2821,7 +2833,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
       if (this.appState.userGuideOpen) {
         this.dispatchEvent(
-          new CustomEvent<UserGuideEventMap["btrix-user-guide-show"]["detail"]>(
+          new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
             "btrix-user-guide-show",
             {
               detail: {
@@ -3125,10 +3137,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async onReset() {
+    const fromBrowserProfile =
+      !this.initialSeeds &&
+      !this.initialSeedFile &&
+      this.initialWorkflow?.profileid;
+
     this.navigate.to(
-      `${this.navigate.orgBasePath}/workflows${this.configId ? `/${this.configId}/${WorkflowTab.Settings}` : ""}`,
+      fromBrowserProfile
+        ? `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${fromBrowserProfile}`
+        : `${this.navigate.orgBasePath}/${OrgTab.Workflows}${this.configId ? `/${this.configId}/${WorkflowTab.Settings}` : ""}`,
     );
-    // this.initializeEditor();
   }
 
   private validateUrlList(

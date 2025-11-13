@@ -32,6 +32,21 @@ import { humanizeSchedule } from "@/utils/cron";
 import { srOnly, truncate } from "@/utils/css";
 import { pluralOf } from "@/utils/pluralize";
 
+export type WorkflowColumnName =
+  | "name"
+  | "latest-crawl"
+  | "total-crawls"
+  | "modified"
+  | "actions";
+
+const columnWidths = {
+  name: "minmax(18rem, 1fr)",
+  "latest-crawl": "minmax(15rem, 18rem)",
+  "total-crawls": "minmax(6rem, 9rem)",
+  modified: "minmax(12rem, 15rem)",
+  actions: "3rem",
+} as const satisfies Record<WorkflowColumnName, string>;
+
 // postcss-lit-disable-next-line
 const mediumBreakpointCss = css`30rem`;
 // postcss-lit-disable-next-line
@@ -41,6 +56,13 @@ const rowCss = css`
   .row {
     display: grid;
     grid-template-columns: 1fr;
+    position: relative;
+  }
+
+  .action {
+    position: absolute;
+    top: 0;
+    right: 0;
   }
 
   @media only screen and (min-width: ${mediumBreakpointCss}) {
@@ -50,7 +72,12 @@ const rowCss = css`
   }
   @media only screen and (min-width: ${largeBreakpointCss}) {
     .row {
-      grid-template-columns: 1fr 17rem 10rem 11rem 3rem;
+      grid-template-columns: var(--btrix-workflow-list-columns);
+      white-space: nowrap;
+    }
+
+    .action {
+      position: relative;
     }
   }
 
@@ -231,33 +258,27 @@ export class WorkflowListItem extends BtrixElement {
   @property({ type: Object })
   workflow?: ListWorkflow;
 
+  /**
+   * Limit columns displayed
+   * @TODO Convert to btrix-data-grid to make columns configurable
+   */
+  @property({ type: Array })
+  columns?: WorkflowColumnName[];
+
   @query(".row")
   row!: HTMLElement;
 
   @query("btrix-overflow-dropdown")
   dropdownMenu!: OverflowDropdown;
 
-  render() {
-    return html`<div
-      class="item row"
-      role="button"
-      @click=${async (e: MouseEvent) => {
-        if (e.target === this.dropdownMenu) {
-          return;
-        }
-        e.preventDefault();
-        await this.updateComplete;
-        const failedStates = ["failed", "failed_not_logged_in"];
-        const href = `/orgs/${this.orgSlugState}/workflows/${this.workflow?.id}/${failedStates.includes(this.workflow?.lastCrawlState || "") ? WorkflowTab.Logs : WorkflowTab.LatestCrawl}`;
-        this.navigate.to(href);
-      }}
-    >
-      <div class="col">
+  private readonly columnTemplate = {
+    name: () =>
+      html`<div class="col">
         <div class="detail url items-center truncate">
           ${when(this.workflow?.shareable, ShareableNotice)}
           ${this.safeRender(this.renderName)}
         </div>
-        <div class="desc">
+        <div class="desc truncate">
           ${this.safeRender((workflow) => {
             if (workflow.schedule) {
               return humanizeSchedule(workflow.schedule, {
@@ -270,9 +291,11 @@ export class WorkflowListItem extends BtrixElement {
             return msg("---");
           })}
         </div>
-      </div>
-      <div class="col">${this.safeRender(this.renderLatestCrawl)}</div>
-      <div class="col">
+      </div>`,
+    "latest-crawl": () =>
+      html`<div class="col">${this.safeRender(this.renderLatestCrawl)}</div>`,
+    "total-crawls": () =>
+      html`<div class="col">
         <div class="detail">
           ${this.safeRender((workflow) => {
             if (
@@ -316,9 +339,11 @@ export class WorkflowListItem extends BtrixElement {
               `${this.localize.number(workflow.crawlCount, { notation: "compact" })} ${pluralOf("crawls", workflow.crawlCount)}`,
           )}
         </div>
-      </div>
-      <div class="col">${this.safeRender(this.renderModifiedBy)}</div>
-      <div class="col action">
+      </div>`,
+    modified: () =>
+      html`<div class="col">${this.safeRender(this.renderModifiedBy)}</div>`,
+    actions: () =>
+      html`<div class="col action">
         <btrix-overflow-dropdown>
           <slot
             name="menu"
@@ -329,7 +354,27 @@ export class WorkflowListItem extends BtrixElement {
             }}
           ></slot>
         </btrix-overflow-dropdown>
-      </div>
+      </div>`,
+  } satisfies Record<WorkflowColumnName, () => TemplateResult>;
+
+  render() {
+    return html`<div
+      class="item row"
+      role="button"
+      @click=${async (e: MouseEvent) => {
+        if (e.target === this.dropdownMenu) {
+          return;
+        }
+        e.preventDefault();
+        await this.updateComplete;
+        const failedStates = ["failed", "failed_not_logged_in"];
+        const href = `/orgs/${this.orgSlugState}/workflows/${this.workflow?.id}/${failedStates.includes(this.workflow?.lastCrawlState || "") ? WorkflowTab.Logs : WorkflowTab.LatestCrawl}`;
+        this.navigate.to(href);
+      }}
+    >
+      ${this.columns
+        ? this.columns.map((col) => this.columnTemplate[col]())
+        : Object.values(this.columnTemplate).map((render) => render())}
     </div>`;
   }
 
@@ -551,18 +596,41 @@ export class WorkflowList extends LitElement {
     `,
   ];
 
+  /**
+   * Limit columns displayed
+   * * @TODO Convert to btrix-data-grid to make columns configurable
+   */
+  @property({ type: Array, noAccessor: true })
+  columns?: WorkflowColumnName[];
+
   @queryAssignedElements({ selector: "btrix-workflow-list-item" })
-  listItems!: HTMLElement[];
+  listItems!: WorkflowListItem[];
+
+  static ColumnTemplate = {
+    name: html`<div class="col">${msg(html`Name & Schedule`)}</div>`,
+    "latest-crawl": html`<div class="col">${msg("Latest Crawl")}</div>`,
+    "total-crawls": html`<div class="col">${msg("Total Size")}</div>`,
+    modified: html`<div class="col">${msg("Last Modified")}</div>`,
+    actions: html`<div class="col action">
+      <span class="srOnly">${msg("Actions")}</span>
+    </div>`,
+  } satisfies Record<WorkflowColumnName, TemplateResult>;
+
+  connectedCallback(): void {
+    this.style.setProperty(
+      "--btrix-workflow-list-columns",
+      this.columns?.map((col) => columnWidths[col]).join(" ") ||
+        Object.values(columnWidths).join(" "),
+    );
+
+    super.connectedCallback();
+  }
 
   render() {
-    return html` <div class="listHeader row">
-        <div class="col">${msg(html`Name & Schedule`)}</div>
-        <div class="col">${msg("Latest Crawl")}</div>
-        <div class="col">${msg("Total Size")}</div>
-        <div class="col">${msg("Last Modified")}</div>
-        <div class="col action">
-          <span class="srOnly">${msg("Actions")}</span>
-        </div>
+    return html`<div class="listHeader row">
+        ${this.columns
+          ? this.columns.map((col) => WorkflowList.ColumnTemplate[col])
+          : Object.values(WorkflowList.ColumnTemplate)}
       </div>
       <div class="list" role="list">
         <slot @slotchange=${this.handleSlotchange}></slot>
@@ -573,6 +641,12 @@ export class WorkflowList extends LitElement {
     this.listItems.map((el) => {
       if (!el.attributes.getNamedItem("role")) {
         el.setAttribute("role", "listitem");
+      }
+
+      if (this.columns) {
+        if (!el["columns"]) {
+          el["columns"] = this.columns;
+        }
       }
     });
   }
