@@ -1431,15 +1431,6 @@ class CrawlOperator(BaseOperator):
         if crawl.stopping:
             return "stopped_by_user"
 
-        # TODO: This is the source of a bug where status.stopReason is sometimes None
-        # while crawl.paused_at is set after pausing due to quotas being reached,
-        # which results in state being incorrectly set to "paused"
-        # We still need something like this for manual pauses, however
-        # The real question is: why is status.stopReason sometimes None at the start
-        # the crawl sync in the first place??
-        if crawl.paused_at and status.stopReason not in PAUSED_STATES:
-            return "paused"
-
         # check timeout if timeout time exceeds elapsed time
         if crawl.timeout:
             elapsed = status.elapsedCrawlTime
@@ -1477,6 +1468,9 @@ class CrawlOperator(BaseOperator):
         if self.org_ops.exec_mins_quota_reached(org):
             await self.pause_crawl(crawl, org)
             return "paused_time_quota_reached"
+
+        if crawl.paused_at and status.stopReason not in PAUSED_STATES:
+            return "paused"
 
         return None
 
