@@ -1,8 +1,6 @@
-import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import type { SlButton, SlMenuItem } from "@shoelace-style/shoelace";
-import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import type { SlMenuItem } from "@shoelace-style/shoelace";
 import { html, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -10,23 +8,14 @@ import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { Dialog } from "@/components/ui/dialog";
 import type {
   BtrixFilterChipChangeEvent,
   FilterChip,
 } from "@/components/ui/filter-chip";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
-import type { UrlInput } from "@/components/ui/url-input";
-import {
-  orgCrawlerChannelsContext,
-  type OrgCrawlerChannelsContext,
-} from "@/context/org-crawler-channels";
-import {
-  orgProxiesContext,
-  type OrgProxiesContext,
-} from "@/context/org-proxies";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import type { BtrixStartBrowserEvent } from "@/features/browser-profiles/start-browser-dialog";
 import {
   badges,
   badgesSkeleton,
@@ -62,12 +51,6 @@ const workflowColumns = [
 @customElement("btrix-browser-profiles-profile-page")
 @localized()
 export class BrowserProfilesProfilePage extends BtrixElement {
-  @consume({ context: orgProxiesContext, subscribe: true })
-  private readonly orgProxies?: OrgProxiesContext;
-
-  @consume({ context: orgCrawlerChannelsContext, subscribe: true })
-  private readonly orgCrawlerChannels?: OrgCrawlerChannelsContext;
-
   @property({ type: String })
   profileId = "";
 
@@ -313,96 +296,29 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           >
         `,
       )}
-      ${this.renderStartBrowserDialog()} `,
+      ${when(
+        this.profileTask.value,
+        (profile) => html`
+          <btrix-start-browser-dialog
+            .profile=${profile}
+            ?open=${Boolean(this.openDialog?.startsWith("start-browser"))}
+            startUrl=${ifDefined(
+              this.openDialog === "start-browser"
+                ? profile.origins[0]
+                : undefined,
+            )}
+            @btrix-start-browser=${(e: BtrixStartBrowserEvent) => {
+              void this.openBrowser(e.detail);
+            }}
+            @sl-after-hide=${() => {
+              if (this.openDialog?.startsWith("start-browser")) {
+                this.openDialog = undefined;
+              }
+            }}
+          ></btrix-start-browser-dialog>
+        `,
+      )} `,
     });
-  }
-
-  private renderStartBrowserDialog() {
-    const fields = (profile: Profile) => {
-      const value = this.openDialog === "start-browser" && profile.origins[0];
-
-      return html`
-        <btrix-url-input
-          name="starting-url"
-          label=${value ? msg("Load URL") : msg("New Site URL")}
-          value=${value || ""}
-          required
-        ></btrix-url-input>
-
-        ${when(
-          this.orgCrawlerChannels && this.orgCrawlerChannels.length > 1,
-          () => html`
-            <div class="mt-4">
-              <btrix-select-crawler .crawlerChannel=${profile.crawlerChannel}>
-              </btrix-select-crawler>
-            </div>
-          `,
-        )}
-      `;
-    };
-    return html`<btrix-dialog
-      .label=${msg("Configure Profile")}
-      ?open=${this.openDialog?.startsWith("start-browser")}
-      @sl-initial-focus=${async (e: CustomEvent) => {
-        if (this.openDialog === "start-browser-add-site") {
-          const dialog = e.target as Dialog;
-          await this.updateComplete;
-          dialog.querySelector<UrlInput>("btrix-url-input")?.focus();
-        }
-      }}
-      @sl-after-hide=${async (e: CustomEvent) => {
-        const dialog = e.target as Dialog;
-        const form = dialog.querySelector<HTMLFormElement>("form");
-        const input = dialog.querySelector<UrlInput>("btrix-url-input");
-
-        if (form) {
-          form.reset();
-        }
-
-        if (input) {
-          input.value = "";
-          input.setCustomValidity("");
-        }
-
-        if (this.openDialog?.startsWith("start-browser")) {
-          this.openDialog = undefined;
-        }
-      }}
-    >
-      <form
-        @submit=${async (e: SubmitEvent) => {
-          e.preventDefault();
-
-          const form = e.target as HTMLFormElement;
-
-          if (!form.checkValidity()) return;
-
-          const values = serialize(form);
-          const url = values["starting-url"] as string;
-          const crawlerChannel = values["crawlerChannel"] as string | undefined;
-
-          void this.openBrowser({ url, crawlerChannel });
-        }}
-      >
-        ${when(this.profileTask.value, fields)}
-      </form>
-      <div slot="footer" class="flex justify-between">
-        <sl-button size="small" @click=${() => (this.openDialog = undefined)}
-          >${msg("Cancel")}</sl-button
-        >
-        <sl-button
-          variant="success"
-          size="small"
-          @click=${(e: MouseEvent) => {
-            const button = e.target as SlButton;
-            const dialog = button.closest<Dialog>("btrix-dialog");
-            dialog?.submit();
-          }}
-        >
-          ${msg("Start Browser")}
-        </sl-button>
-      </div>
-    </btrix-dialog>`;
   }
 
   private renderOrigins() {
