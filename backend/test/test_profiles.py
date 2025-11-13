@@ -315,6 +315,51 @@ def test_commit_browser_to_existing_profile(
     ]
 
 
+def test_commit_reset_browser_to_existing_profile(
+    admin_auth_headers, default_org_id, profile_browser_5_id, profile_id
+):
+    prepare_browser_for_profile_commit(
+        profile_browser_5_id,
+        admin_auth_headers,
+        default_org_id,
+        url="https://example-com.webrecorder.net",
+    )
+
+    time.sleep(10)
+
+    # Commit new browser to existing profile
+    while True:
+        r = requests.patch(
+            f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
+            headers=admin_auth_headers,
+            json={
+                "browserid": profile_browser_5_id,
+                "name": PROFILE_NAME_UPDATED,
+                "description": PROFILE_DESC_UPDATED,
+                "tags": PROFILE_TAGS_UPDATED,
+            },
+        )
+        assert r.status_code == 200
+        if r.json().get("detail") == "waiting_for_browser":
+            time.sleep(5)
+            continue
+
+        break
+
+    assert r.json()["updated"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data.get("origins") == [
+        "https://example-com.webrecorder.net",
+    ]
+
+
 @pytest.mark.parametrize(
     "sort_by,sort_direction,profile_1_index,profile_2_index",
     [

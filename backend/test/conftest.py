@@ -650,8 +650,10 @@ def profile_browser_2_id(admin_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="session")
-def profile_browser_3_id(admin_auth_headers, default_org_id):
-    return _create_profile_browser(admin_auth_headers, default_org_id)
+def profile_browser_3_id(admin_auth_headers, default_org_id, profile_id):
+    return _create_profile_browser(
+        admin_auth_headers, default_org_id, baseprofile=profile_id
+    )
 
 
 @pytest.fixture(scope="session")
@@ -659,13 +661,25 @@ def profile_browser_4_id(admin_auth_headers, default_org_id):
     return _create_profile_browser(admin_auth_headers, default_org_id)
 
 
+@pytest.fixture(scope="session")
+def profile_browser_5_id(admin_auth_headers, default_org_id):
+    return _create_profile_browser(admin_auth_headers, default_org_id)
+
+
 def _create_profile_browser(
-    headers: Dict[str, str], oid: UUID, url: str = "https://old.webrecorder.net"
+    headers: Dict[str, str],
+    oid: UUID,
+    url: str = "https://old.webrecorder.net",
+    baseprofile="",
 ):
+    data = {"url": url}
+    if baseprofile:
+        data["profileId"] = baseprofile
+
     r = requests.post(
         f"{API_PREFIX}/orgs/{oid}/profiles/browser",
         headers=headers,
-        json={"url": url},
+        json=data,
     )
     assert r.status_code == 200
     browser_id = r.json()["browserid"]
