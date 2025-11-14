@@ -26,6 +26,7 @@ page_id = None
 # newly started crawl for this test suite
 # (not using the fixture to be able to test running crawl)
 admin_crawl_id = None
+admin_config_id = None
 
 seed_file_crawl_id = None
 
@@ -88,6 +89,9 @@ def test_start_crawl(admin_auth_headers, default_org_id, profile_id):
 
     global admin_crawl_id
     admin_crawl_id = data["run_now_job"]
+
+    global admin_config_id
+    admin_config_id = data["id"]
 
 
 def test_wait_for_running(admin_auth_headers, default_org_id):
@@ -361,6 +365,25 @@ def test_crawls_include_file_error_page_counts(admin_auth_headers, default_org_i
     data = r.json()
     assert data["filePageCount"] >= 0
     assert data["errorPageCount"] >= 0
+
+
+def test_profile_updated_by_crawl(admin_auth_headers, default_org_id, profile_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == profile_id
+    assert data["oid"] == default_org_id
+
+    assert data["modifiedCrawlId"] == admin_crawl_id
+    assert data["modifiedCrawlCid"] == admin_config_id
+
+    assert data["modifiedCrawlDate"] >= data["modified"]
+
+    assert data["createdByName"] == "admin"
+    assert data["modifiedByName"] == "admin"
 
 
 def test_download_wacz():
