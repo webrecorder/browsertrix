@@ -272,7 +272,7 @@ class ProfileOps:
 
                 # only set origins from existing profile if browser
                 # actually launched with that profile (eg. not a reset)
-                if profileid and metadata.baseprofile == profileid:
+                if metadata.baseprofile == profileid:
                     origins = existing_profile.origins
 
             else:

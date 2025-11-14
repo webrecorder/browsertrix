@@ -708,10 +708,7 @@ PROFILE_2_TAGS = ["profile", "specs-webrecorder"]
 
 
 def prepare_browser_for_profile_commit(
-    browser_id: str,
-    headers: Dict[str, str],
-    oid: UUID,
-    url="https://old.webrecorder.net/tools",
+    browser_id: str, headers: Dict[str, str], oid: UUID, url=None
 ) -> None:
     # Ping to make sure it doesn't expire
     r = requests.post(
@@ -737,14 +734,15 @@ def prepare_browser_for_profile_commit(
     assert data["scale"]
     assert data["oid"] == oid
 
-    # Navigate to new URL
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{oid}/profiles/browser/{browser_id}/navigate",
-        headers=headers,
-        json={"url": url},
-    )
-    assert r.status_code == 200
-    assert r.json()["success"]
+    # Navigate to new URL, if provided
+    if url:
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{oid}/profiles/browser/{browser_id}/navigate",
+            headers=headers,
+            json={"url": url},
+        )
+        assert r.status_code == 200
+        assert r.json()["success"]
 
     # Ping browser until ready
     max_attempts = 20
@@ -767,7 +765,10 @@ def prepare_browser_for_profile_commit(
 @pytest.fixture(scope="session")
 def profile_id(admin_auth_headers, default_org_id, profile_browser_id):
     prepare_browser_for_profile_commit(
-        profile_browser_id, admin_auth_headers, default_org_id
+        profile_browser_id,
+        admin_auth_headers,
+        default_org_id,
+        url="https://old.webrecorder.net/tools",
     )
 
     # Create profile
@@ -859,7 +860,10 @@ def profile_config_id(admin_auth_headers, default_org_id, profile_id):
 @pytest.fixture(scope="session")
 def profile_2_id(admin_auth_headers, default_org_id, profile_browser_2_id):
     prepare_browser_for_profile_commit(
-        profile_browser_2_id, admin_auth_headers, default_org_id
+        profile_browser_2_id,
+        admin_auth_headers,
+        default_org_id,
+        url="https://old.webrecorder.net/tools",
     )
 
     # Create profile

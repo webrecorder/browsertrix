@@ -266,16 +266,20 @@ def test_commit_browser_to_existing_profile(
     original_created = data["created"]
     original_modified = data["modified"]
 
+    url = "https://example-com.webrecorder.net/"
+
     # create browser with existing profile
     browser_id = create_profile_browser(
-        admin_auth_headers, default_org_id, baseprofile=profile_id
+        admin_auth_headers,
+        default_org_id,
+        url=url,
+        baseprofile=profile_id,
     )
 
     prepare_browser_for_profile_commit(
         browser_id,
         admin_auth_headers,
         default_org_id,
-        url="https://example-com.webrecorder.net",
     )
 
     time.sleep(10)
@@ -324,14 +328,13 @@ def test_commit_browser_to_existing_profile(
 def test_commit_reset_browser_to_existing_profile(
     admin_auth_headers, default_org_id, profile_id
 ):
+    url = "https://example-com.webrecorder.net/"
+
     # create new browser w/o existing profile to reset
-    browser_id = create_profile_browser(admin_auth_headers, default_org_id)
+    browser_id = create_profile_browser(admin_auth_headers, default_org_id, url=url)
 
     prepare_browser_for_profile_commit(
-        browser_id,
-        admin_auth_headers,
-        default_org_id,
-        url="https://example-com.webrecorder.net",
+        browser_id, admin_auth_headers, default_org_id, url=url
     )
 
     time.sleep(10)
