@@ -426,7 +426,8 @@ class CrawlOperator(BaseOperator):
         params["name"] = name
         params["cpu"] = pod_info.newCpu or params.get("redis_cpu")
         params["memory"] = pod_info.newMemory or params.get("redis_memory")
-        params["no_pvc"] = crawl.is_single_page
+        # remove optimization as it can cause unintended consequences in case of crash
+        #params["no_pvc"] = crawl.is_single_page
 
         restart_reason = None
         if has_pod:
