@@ -639,34 +639,17 @@ def url_list_config_id(crawler_auth_headers, default_org_id):
 
 @pytest.fixture(scope="session")
 def profile_browser_id(admin_auth_headers, default_org_id):
-    return _create_profile_browser(admin_auth_headers, default_org_id)
+    return create_profile_browser(admin_auth_headers, default_org_id)
 
 
 @pytest.fixture(scope="session")
 def profile_browser_2_id(admin_auth_headers, default_org_id):
-    return _create_profile_browser(
+    return create_profile_browser(
         admin_auth_headers, default_org_id, "https://specs.webrecorder.net"
     )
 
 
-@pytest.fixture(scope="session")
-def profile_browser_3_id(admin_auth_headers, default_org_id, profile_id):
-    return _create_profile_browser(
-        admin_auth_headers, default_org_id, baseprofile=profile_id
-    )
-
-
-@pytest.fixture(scope="session")
-def profile_browser_4_id(admin_auth_headers, default_org_id):
-    return _create_profile_browser(admin_auth_headers, default_org_id)
-
-
-@pytest.fixture(scope="session")
-def profile_browser_5_id(admin_auth_headers, default_org_id):
-    return _create_profile_browser(admin_auth_headers, default_org_id)
-
-
-def _create_profile_browser(
+def create_profile_browser(
     headers: Dict[str, str],
     oid: UUID,
     url="https://old.webrecorder.net",
