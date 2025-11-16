@@ -279,14 +279,14 @@ spec:
     kind: CrawlJob
     name: crawljob-{{ id }}
   updatePolicy:
-    updateMode: "Auto"
+    updateMode: "InPlaceOrRecreate"
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
     - containerName: "crawler"
       minAllowed:
-        cpu: "{{ cpu }}"
-        memory: "{{ memory }}"
+        cpu: "{{ cpu / 2.0 }}"
+        memory: "{{ memory / 2 }}"
       maxAllowed:
       {% if cpu_limit %}
         cpu: "{{ cpu_limit }}"

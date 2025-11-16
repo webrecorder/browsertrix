@@ -433,14 +433,9 @@ class CrawlOperator(BaseOperator):
 
         pod_info = status.podStatus[name]
         params["name"] = name
-<<<<<<< HEAD
         params["obj_type"] = "crawl"
-        params["cpu"] = pod_info.newCpu or params.get("redis_cpu")
-        params["memory"] = pod_info.newMemory or params.get("redis_memory")
-=======
         params["cpu"] = params.get("redis_cpu")
         params["memory"] = params.get("redis_memory")
->>>>>>> db943172f (support vpa for resizing:)
         params["no_pvc"] = crawl.is_single_page
 
         restart_reason = None
@@ -751,7 +746,6 @@ class CrawlOperator(BaseOperator):
 
     def get_related(self, _data: MCBaseRequest):
         """return objects related to crawl pods"""
-<<<<<<< HEAD
         related_resources = [
             {
                 "apiVersion": "v1",
@@ -779,18 +773,6 @@ class CrawlOperator(BaseOperator):
                 }
             )
 
-        if self.k8s.enable_auto_resize:
-            related_resources.append(
-                {
-                    "apiVersion": METRICS_API,
-                    "resource": "pods",
-                    "labelSelector": {"matchLabels": {"crawl": crawl_id}},
-                }
-            )
-
-=======
-        related_resources = []
->>>>>>> db943172f (support vpa for resizing:)
         return {"relatedResources": related_resources}
 
     async def can_start_new(
@@ -1414,13 +1396,8 @@ class CrawlOperator(BaseOperator):
         return None
 
     async def get_redis_crawl_stats(
-<<<<<<< HEAD
         self, redis: Redis, crawl_id: str, status: CrawlStatus
     ) -> tuple[OpCrawlStats, dict[str, Any]]:
-=======
-        self, redis: Redis, crawl_id: str
-    ) -> tuple[CrawlStats, dict[str, int]]:
->>>>>>> db943172f (support vpa for resizing:)
         """get page stats"""
         pipe = redis.pipeline(transaction=False)
         pipe.get(f"{crawl_id}:d")
@@ -1433,14 +1410,8 @@ class CrawlOperator(BaseOperator):
 
         results = await pipe.execute()
 
-<<<<<<< HEAD
         pages_done = int(results[0] or 0)
         pages_found = int(results[1] or 0) - int(results[2] or 0) - int(results[3] or 0)
-=======
-        sizes = await redis.hgetall(f"{crawl_id}:size")
-        int_sizes = {k: int(v) for k, v in sizes.items()}
-        archive_size = sum(int_sizes.values())
->>>>>>> db943172f (support vpa for resizing:)
 
         sizes = results[4]
 
@@ -1466,10 +1437,11 @@ class CrawlOperator(BaseOperator):
         return stats, sizes
 
     def handle_resize_pvc_storage(
-        self, status: CrawlStatus, sizes: dict[str, int], data: MCSyncData
+        self, status: CrawlStatus, sizes: dict[str, str], data: MCSyncData
     ):
         """check if pvc storage may need to be resized, and if so, update newStorage to indicate"""
-        for key, used_storage in sizes.items():
+        for key, used in sizes.items():
+            used_storage = int(used)
             if used_storage > 0 and status.podStatus:
                 pod_info = status.podStatus[key]
 
@@ -1483,6 +1455,10 @@ class CrawlOperator(BaseOperator):
                     # pylint: disable=bare-except
                     except:
                         continue
+
+                # out of storage
+                if pod_info and pod_info.isNewExit and pod_info.exitCode == 3:
+                    used_storage = allocated_storage
 
                 if (
                     status.state == "running"
@@ -1512,13 +1488,10 @@ class CrawlOperator(BaseOperator):
 
         pending_size = stats.size
 
-<<<<<<< HEAD
-=======
         # check if pvcs need to be resized
         self.handle_resize_pvc_storage(status, sizes, data)
 
         # need to add size of previously completed WACZ files as well!
->>>>>>> db943172f (support vpa for resizing:)
         stats.size += status.filesAddedSize
 
         total_size = stats.size
@@ -1535,40 +1508,6 @@ class CrawlOperator(BaseOperator):
             crawl.db_crawl_id, crawl.is_qa, stats, pending_size
         )
 
-<<<<<<< HEAD
-        for key, str_value in sizes.items():
-            increase_storage = False
-            pod_info = None
-            value = int(str_value)
-            if value > 0 and status.podStatus:
-                pod_info = status.podStatus[key]
-                pod_info.used.storage = value
-
-                if (
-                    status.state == "running"
-                    and self.min_avail_storage_ratio
-                    and pod_info.allocated.storage
-                    and pod_info.used.storage * self.min_avail_storage_ratio
-                    > pod_info.allocated.storage
-                ):
-                    increase_storage = True
-
-            # out of storage
-            if pod_info and pod_info.isNewExit and pod_info.exitCode == 3:
-                pod_info.used.storage = pod_info.allocated.storage
-                increase_storage = True
-
-            if pod_info and increase_storage:
-                new_storage = math.ceil(
-                    pod_info.used.storage * self.min_avail_storage_ratio / 1_000_000_000
-                )
-                pod_info.newStorage = f"{new_storage}Gi"
-                print(
-                    f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
-                )
-
-=======
->>>>>>> db943172f (support vpa for resizing:)
         # check if no longer paused, clear paused stopping state
         if status.stopReason in PAUSED_STATES and not crawl.paused_at:
             status.stopReason = None
