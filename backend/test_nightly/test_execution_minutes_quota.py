@@ -108,48 +108,6 @@ def test_set_execution_mins_extra_quotas(org_with_quotas, admin_auth_headers):
         assert update["update"]
 
 
-def test_add_execution_mins_extra_quotas(
-    org_with_quotas, admin_auth_headers, preshared_secret_auth_headers
-):
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{org_with_quotas}/quotas/add",
-        headers=preshared_secret_auth_headers,
-        json={
-            "extraExecMinutes": EXTRA_MINS_ADDED_QUOTA,
-            "context": "test context 123",
-        },
-    )
-    data = r.json()
-    assert data.get("updated") == True
-
-    # Ensure org data looks as we expect
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{org_with_quotas}",
-        headers=admin_auth_headers,
-    )
-    data = r.json()
-    assert (
-        data["extraExecSecondsAvailable"] == EXTRA_SECS_QUOTA + EXTRA_SECS_ADDED_QUOTA
-    )
-    assert data["giftedExecSecondsAvailable"] == GIFTED_SECS_QUOTA
-    assert data["extraExecSeconds"] == {}
-    assert data["giftedExecSeconds"] == {}
-    assert len(data["quotaUpdates"])
-    for update in data["quotaUpdates"]:
-        assert update["modified"]
-        assert update["update"]
-    assert data["quotaUpdates"][-1]["context"] == "test context 123"
-
-    # Reset back to previous value
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{org_with_quotas}/quotas",
-        headers=admin_auth_headers,
-        json={
-            "extraExecMinutes": EXTRA_MINS_QUOTA,
-        },
-    )
-
-
 @pytest.mark.timeout(1200)
 def test_crawl_stopped_when_quota_reached_with_extra(
     org_with_quotas, admin_auth_headers
@@ -238,3 +196,36 @@ def test_unset_execution_mins_quota(org_with_quotas, admin_auth_headers):
     )
     data = r.json()
     assert data.get("updated") == True
+
+
+def test_add_execution_mins_extra_quotas(
+    org_with_quotas, admin_auth_headers, preshared_secret_auth_headers
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{org_with_quotas}/quotas/add",
+        headers=preshared_secret_auth_headers,
+        json={
+            "extraExecMinutes": EXTRA_MINS_ADDED_QUOTA,
+            "context": "test context 123",
+        },
+    )
+    data = r.json()
+    assert data.get("updated") == True
+
+    # Ensure org data looks as we expect
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{org_with_quotas}",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    assert (
+        data["extraExecSecondsAvailable"] == EXTRA_SECS_QUOTA + EXTRA_SECS_ADDED_QUOTA
+    )
+    assert data["giftedExecSecondsAvailable"] == GIFTED_SECS_QUOTA
+    assert data["extraExecSeconds"] == {}
+    assert data["giftedExecSeconds"] == {}
+    assert len(data["quotaUpdates"])
+    for update in data["quotaUpdates"]:
+        assert update["modified"]
+        assert update["update"]
+    assert data["quotaUpdates"][-1]["context"] == "test context 123"
