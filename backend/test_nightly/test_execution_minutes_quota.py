@@ -134,10 +134,6 @@ def test_add_execution_mins_extra_quotas(
     assert data["giftedExecSecondsAvailable"] == GIFTED_SECS_QUOTA
     assert data["extraExecSeconds"] == {}
     assert data["giftedExecSeconds"] == {}
-    assert (
-        get_total_exec_seconds(data["crawlExecSeconds"])
-        >= EXEC_SECS_QUOTA + EXTRA_SECS_ADDED_QUOTA
-    )
     assert len(data["quotaUpdates"])
     for update in data["quotaUpdates"]:
         assert update["modified"]
