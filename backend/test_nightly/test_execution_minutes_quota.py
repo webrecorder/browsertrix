@@ -141,6 +141,15 @@ def test_add_execution_mins_extra_quotas(
         assert update["update"]
     assert data["quotaUpdates"][-1]["context"] == "test context 123"
 
+    # Reset back to previous value
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{org_with_quotas}/quotas",
+        headers=admin_auth_headers,
+        json={
+            "extraExecMinutes": EXTRA_MINS_QUOTA,
+        },
+    )
+
 
 @pytest.mark.timeout(1200)
 def test_crawl_paused_when_quota_reached_with_extra(
