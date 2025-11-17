@@ -527,7 +527,6 @@ def test_download_wacz_crawls_as_single_wacz(
 def test_update_crawl(
     admin_auth_headers,
     default_org_id,
-    curr_admin_crawl_id,
 ):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
@@ -1356,7 +1355,6 @@ def test_delete_crawls_org_owner(
     admin_auth_headers,
     crawler_auth_headers,
     default_org_id,
-    curr_admin_crawl_id,
     crawler_crawl_id,
     wr_specs_crawl_id,
 ):
