@@ -430,7 +430,7 @@ def test_verify_wacz():
     ],
 )
 def test_download_wacz_crawls(
-    admin_auth_headers, default_org_id, curr_admin_crawl_id, type_path
+    admin_auth_headers, default_org_id, type_path
 ):
     with TemporaryFile() as fh:
         with requests.get(
@@ -471,7 +471,7 @@ def test_download_wacz_crawls(
     ],
 )
 def test_download_wacz_crawls_as_single_wacz(
-    admin_auth_headers, default_org_id, curr_admin_crawl_id, type_path
+    admin_auth_headers, default_org_id, type_path
 ):
     with TemporaryFile() as fh:
         with requests.get(
