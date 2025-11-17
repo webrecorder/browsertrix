@@ -99,6 +99,11 @@ jobs:
         with:
           version: 3.10.2
 
+      - name: Create Secret
+        run: sudo microk8s kubectl create secret generic btrix-subs-app-secret \
+          --from-literal=BTRIX_SUBS_APP_URL=${{ env.ECHO_SERVER_HOST_URL }} \
+          --from-literal=BTRIX_SUBS_APP_KEY=TEST_PRESHARED_SECRET_PASSWORD
+
       - name: Start Cluster with Helm
         run: |
           helm upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml -f ./chart/test/test-nightly-addons.yaml btrix ./chart/
