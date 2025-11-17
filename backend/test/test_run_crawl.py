@@ -25,8 +25,8 @@ page_id = None
 
 # newly started crawl for this test suite
 # (not using the fixture to be able to test running crawl)
-admin_crawl_id = None
-admin_config_id = None
+curr_admin_crawl_id = None
+curr_admin_config_id = None
 
 seed_file_crawl_id = None
 
@@ -87,17 +87,17 @@ def test_start_crawl(admin_auth_headers, default_org_id, profile_id):
     )
     data = r.json()
 
-    global admin_crawl_id
-    admin_crawl_id = data["run_now_job"]
+    global curr_admin_crawl_id
+    curr_admin_crawl_id = data["run_now_job"]
 
-    global admin_config_id
-    admin_config_id = data["id"]
+    global curr_admin_config_id
+    curr_admin_config_id = data["id"]
 
 
 def test_wait_for_running(admin_auth_headers, default_org_id):
     while True:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/replay.json",
             headers=admin_auth_headers,
         )
         data = r.json()
@@ -109,14 +109,14 @@ def test_wait_for_running(admin_auth_headers, default_org_id):
 def test_crawl_queue(admin_auth_headers, default_org_id):
     # 422 - requires offset and count
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/queue",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/queue",
         headers=admin_auth_headers,
     )
     assert r.status_code == 422
 
     while True:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/queue?offset=0&count=20",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/queue?offset=0&count=20",
             headers=admin_auth_headers,
         )
         assert r.status_code == 200
@@ -131,13 +131,13 @@ def test_crawl_queue(admin_auth_headers, default_org_id):
 def test_crawl_queue_match(admin_auth_headers, default_org_id):
     # 422, regex required
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/queueMatchAll",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/queueMatchAll",
         headers=admin_auth_headers,
     )
     assert r.status_code == 422
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/queueMatchAll?regex=webrecorder&offset=0",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/queueMatchAll?regex=webrecorder&offset=0",
         headers=admin_auth_headers,
     )
 
@@ -149,7 +149,7 @@ def test_crawl_queue_match(admin_auth_headers, default_org_id):
 
 def test_add_exclusion(admin_auth_headers, default_org_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/exclusions?regex=test",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/exclusions?regex=test",
         headers=admin_auth_headers,
     )
     assert r.json()["success"] == True
@@ -157,7 +157,7 @@ def test_add_exclusion(admin_auth_headers, default_org_id):
 
 def test_add_invalid_exclusion(admin_auth_headers, default_org_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/exclusions?regex=[",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/exclusions?regex=[",
         headers=admin_auth_headers,
     )
     assert r.status_code == 400
@@ -166,7 +166,7 @@ def test_add_invalid_exclusion(admin_auth_headers, default_org_id):
 
 def test_remove_exclusion(admin_auth_headers, default_org_id):
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/exclusions?regex=test",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/exclusions?regex=test",
         headers=admin_auth_headers,
     )
     assert r.json()["success"] == True
@@ -177,7 +177,7 @@ def test_wait_for_complete(admin_auth_headers, default_org_id):
     data = None
     while True:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/replay.json",
             headers=admin_auth_headers,
         )
         data = r.json()
@@ -193,7 +193,7 @@ def test_wait_for_complete(admin_auth_headers, default_org_id):
 
     assert len(data["initialPages"]) == 4
     assert data["pagesQueryUrl"].endswith(
-        f"/orgs/{default_org_id}/crawls/{admin_crawl_id}/pagesSearch"
+        f"/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/pagesSearch"
     )
     assert data["downloadUrl"] is None
 
@@ -215,21 +215,21 @@ def test_queue_and_exclusions_error_crawl_not_running(
     admin_auth_headers, default_org_id
 ):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/queue?offset=0&count=20",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/queue?offset=0&count=20",
         headers=admin_auth_headers,
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "crawl_not_running"
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/queueMatchAll?regex=webrecorder&offset=0",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/queueMatchAll?regex=webrecorder&offset=0",
         headers=admin_auth_headers,
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "crawl_not_running"
 
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/exclusions?regex=test2",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/exclusions?regex=test2",
         headers=admin_auth_headers,
     )
     assert r.status_code == 400
@@ -238,7 +238,7 @@ def test_queue_and_exclusions_error_crawl_not_running(
 
 def test_crawl_info(admin_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
         headers=admin_auth_headers,
     )
     data = r.json()
@@ -252,7 +252,7 @@ def test_crawl_info(admin_auth_headers, default_org_id):
 
 def test_crawls_include_seed_info(admin_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
         headers=admin_auth_headers,
     )
     data = r.json()
@@ -284,7 +284,7 @@ def test_crawls_include_seed_info(admin_auth_headers, default_org_id):
 
 def test_crawl_seeds_endpoint(admin_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/seeds",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/seeds",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -298,7 +298,7 @@ def test_crawl_seeds_endpoint(admin_auth_headers, default_org_id):
 def test_crawls_exclude_errors(admin_auth_headers, default_org_id):
     # Get endpoint
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -307,7 +307,7 @@ def test_crawls_exclude_errors(admin_auth_headers, default_org_id):
 
     # replay.json endpoint
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/replay.json",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -328,7 +328,7 @@ def test_crawls_exclude_errors(admin_auth_headers, default_org_id):
 def test_crawls_exclude_full_seeds(admin_auth_headers, default_org_id):
     # Get endpoint
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -338,7 +338,7 @@ def test_crawls_exclude_full_seeds(admin_auth_headers, default_org_id):
 
     # replay.json endpoint
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/replay.json",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -359,7 +359,7 @@ def test_crawls_exclude_full_seeds(admin_auth_headers, default_org_id):
 
 def test_crawls_include_file_error_page_counts(admin_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/replay.json",
         headers=admin_auth_headers,
     )
     data = r.json()
@@ -377,8 +377,8 @@ def test_profile_updated_by_crawl(admin_auth_headers, default_org_id, profile_id
     assert data["id"] == profile_id
     assert data["oid"] == default_org_id
 
-    assert data["modifiedCrawlId"] == admin_crawl_id
-    assert data["modifiedCrawlCid"] == admin_config_id
+    assert data["modifiedCrawlId"] == curr_admin_crawl_id
+    assert data["modifiedCrawlCid"] == curr_admin_config_id
 
     assert data["modifiedCrawlDate"] >= data["modified"]
 
@@ -430,11 +430,11 @@ def test_verify_wacz():
     ],
 )
 def test_download_wacz_crawls(
-    admin_auth_headers, default_org_id, admin_crawl_id, type_path
+    admin_auth_headers, default_org_id, curr_admin_crawl_id, type_path
 ):
     with TemporaryFile() as fh:
         with requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/{type_path}/{admin_crawl_id}/download",
+            f"{API_PREFIX}/orgs/{default_org_id}/{type_path}/{curr_admin_crawl_id}/download",
             headers=admin_auth_headers,
             stream=True,
         ) as r:
@@ -471,11 +471,11 @@ def test_download_wacz_crawls(
     ],
 )
 def test_download_wacz_crawls_as_single_wacz(
-    admin_auth_headers, default_org_id, admin_crawl_id, type_path
+    admin_auth_headers, default_org_id, curr_admin_crawl_id, type_path
 ):
     with TemporaryFile() as fh:
         with requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/{type_path}/{admin_crawl_id}/download?preferSingleWACZ=true",
+            f"{API_PREFIX}/orgs/{default_org_id}/{type_path}/{curr_admin_crawl_id}/download?preferSingleWACZ=true",
             headers=admin_auth_headers,
             stream=True,
         ) as r:
@@ -527,10 +527,10 @@ def test_download_wacz_crawls_as_single_wacz(
 def test_update_crawl(
     admin_auth_headers,
     default_org_id,
-    admin_crawl_id,
+    curr_admin_crawl_id,
 ):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -552,7 +552,7 @@ def test_update_crawl(
     UPDATED_NAME = "Updated crawl name"
     UPDATED_COLLECTION_IDS = [new_coll_id]
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
         headers=admin_auth_headers,
         json={
             "tags": UPDATED_TAGS,
@@ -567,7 +567,7 @@ def test_update_crawl(
 
     # Verify update was successful
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -580,7 +580,7 @@ def test_update_crawl(
 
     # Update reviewStatus and verify
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
         headers=admin_auth_headers,
         json={
             "reviewStatus": 5,
@@ -591,7 +591,7 @@ def test_update_crawl(
     assert data["updated"]
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -604,7 +604,7 @@ def test_update_crawl(
     )
     assert r.status_code == 200
     crawls = r.json()["items"]
-    assert crawls[0]["id"] == admin_crawl_id
+    assert crawls[0]["id"] == curr_admin_crawl_id
     assert crawls[0]["reviewStatus"] == 5
 
     r = requests.get(
@@ -613,7 +613,7 @@ def test_update_crawl(
     )
     assert r.status_code == 200
     crawls = r.json()["items"]
-    assert crawls[-1]["id"] == admin_crawl_id
+    assert crawls[-1]["id"] == curr_admin_crawl_id
     assert crawls[-1]["reviewStatus"] == 5
 
     # Test sorting on reviewStatus for all-crawls
@@ -623,7 +623,7 @@ def test_update_crawl(
     )
     assert r.status_code == 200
     crawls = r.json()["items"]
-    assert crawls[0]["id"] == admin_crawl_id
+    assert crawls[0]["id"] == curr_admin_crawl_id
     assert crawls[0]["reviewStatus"] == 5
 
     r = requests.get(
@@ -632,12 +632,12 @@ def test_update_crawl(
     )
     assert r.status_code == 200
     crawls = r.json()["items"]
-    assert crawls[-1]["id"] == admin_crawl_id
+    assert crawls[-1]["id"] == curr_admin_crawl_id
     assert crawls[-1]["reviewStatus"] == 5
 
     # Try to update to invalid reviewStatus
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
         headers=admin_auth_headers,
         json={
             "reviewStatus": "invalid",
@@ -646,7 +646,7 @@ def test_update_crawl(
     assert r.status_code == 422
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -654,14 +654,14 @@ def test_update_crawl(
 
     # Verify deleting works as well
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
         headers=admin_auth_headers,
         json={"tags": [], "description": None},
     )
     assert r.status_code == 200
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -1292,7 +1292,7 @@ def test_delete_crawls_crawler(crawler_auth_headers, default_org_id, crawler_cra
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
         headers=crawler_auth_headers,
-        json={"crawl_ids": [admin_crawl_id]},
+        json={"crawl_ids": [curr_admin_crawl_id]},
     )
     assert r.status_code == 403
     data = r.json()
@@ -1356,7 +1356,7 @@ def test_delete_crawls_org_owner(
     admin_auth_headers,
     crawler_auth_headers,
     default_org_id,
-    admin_crawl_id,
+    curr_admin_crawl_id,
     crawler_crawl_id,
     wr_specs_crawl_id,
 ):
@@ -1364,7 +1364,7 @@ def test_delete_crawls_org_owner(
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
         headers=admin_auth_headers,
-        json={"crawl_ids": [admin_crawl_id]},
+        json={"crawl_ids": [curr_admin_crawl_id]},
     )
     assert r.status_code == 200
     data = r.json()
@@ -1372,7 +1372,7 @@ def test_delete_crawls_org_owner(
     assert data["storageQuotaReached"] is False
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 404
