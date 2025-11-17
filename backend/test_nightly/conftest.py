@@ -13,7 +13,7 @@ ADMIN_PW = "PASSW0RD!"
 CRAWLER_USERNAME = "crawlernightly@example.com"
 CRAWLER_PW = "crawlerPASSWORD!"
 
-PRESHARED_SECRET_PW = "PASSWORD!"
+PRESHARED_SECRET_PW = "TEST_PRESHARED_SECRET_PASSWORD"
 
 
 @pytest.fixture(scope="session")
