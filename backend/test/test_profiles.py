@@ -17,6 +17,7 @@ from .conftest import (
     PROFILE_2_TAGS,
     PROFILE_TAGS_UPDATED,
     prepare_browser_for_profile_commit,
+    create_profile_browser,
 )
 
 
@@ -253,7 +254,7 @@ def test_update_profile_metadata(crawler_auth_headers, default_org_id, profile_i
 
 
 def test_commit_browser_to_existing_profile(
-    admin_auth_headers, default_org_id, profile_browser_3_id, profile_id
+    admin_auth_headers, default_org_id, profile_id
 ):
     # Get original modified time
     r = requests.get(
@@ -265,11 +266,20 @@ def test_commit_browser_to_existing_profile(
     original_created = data["created"]
     original_modified = data["modified"]
 
-    prepare_browser_for_profile_commit(
-        profile_browser_3_id,
+    url = "https://example-com.webrecorder.net/"
+
+    # create browser with existing profile
+    browser_id = create_profile_browser(
         admin_auth_headers,
         default_org_id,
-        url="https://example-com.webrecorder.net",
+        url=url,
+        baseprofile=profile_id,
+    )
+
+    prepare_browser_for_profile_commit(
+        browser_id,
+        admin_auth_headers,
+        default_org_id,
     )
 
     time.sleep(10)
@@ -280,7 +290,7 @@ def test_commit_browser_to_existing_profile(
             f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
             headers=admin_auth_headers,
             json={
-                "browserid": profile_browser_3_id,
+                "browserid": browser_id,
                 "name": PROFILE_NAME_UPDATED,
                 "description": PROFILE_DESC_UPDATED,
                 "tags": PROFILE_TAGS_UPDATED,
@@ -311,6 +321,53 @@ def test_commit_browser_to_existing_profile(
 
     assert data.get("origins") == [
         "https://old.webrecorder.net",
+        "https://example-com.webrecorder.net",
+    ]
+
+
+def test_commit_reset_browser_to_existing_profile(
+    admin_auth_headers, default_org_id, profile_id
+):
+    url = "https://example-com.webrecorder.net/"
+
+    # create new browser w/o existing profile to reset
+    browser_id = create_profile_browser(admin_auth_headers, default_org_id, url=url)
+
+    prepare_browser_for_profile_commit(
+        browser_id, admin_auth_headers, default_org_id, url=url
+    )
+
+    time.sleep(10)
+
+    # Commit new browser to existing profile
+    while True:
+        r = requests.patch(
+            f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
+            headers=admin_auth_headers,
+            json={
+                "browserid": browser_id,
+                "name": PROFILE_NAME_UPDATED,
+                "description": PROFILE_DESC_UPDATED,
+                "tags": PROFILE_TAGS_UPDATED,
+            },
+        )
+        assert r.status_code == 200
+        if r.json().get("detail") == "waiting_for_browser":
+            time.sleep(5)
+            continue
+
+        break
+
+    assert r.json()["updated"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data.get("origins") == [
         "https://example-com.webrecorder.net",
     ]
 
@@ -419,9 +476,7 @@ def test_delete_profile(admin_auth_headers, default_org_id, profile_2_id):
     assert r.json()["detail"] == "profile_not_found"
 
 
-def test_create_profile_read_only_org(
-    admin_auth_headers, default_org_id, profile_browser_4_id
-):
+def test_create_profile_read_only_org(admin_auth_headers, default_org_id):
     # Set org to read-only
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/read-only",
@@ -430,9 +485,9 @@ def test_create_profile_read_only_org(
     )
     assert r.json()["updated"]
 
-    prepare_browser_for_profile_commit(
-        profile_browser_4_id, admin_auth_headers, default_org_id
-    )
+    browser_id = create_profile_browser(admin_auth_headers, default_org_id)
+
+    prepare_browser_for_profile_commit(browser_id, admin_auth_headers, default_org_id)
 
     # Try to create profile, verify we get 403 forbidden
     start_time = time.monotonic()
@@ -443,7 +498,7 @@ def test_create_profile_read_only_org(
                 f"{API_PREFIX}/orgs/{default_org_id}/profiles",
                 headers=admin_auth_headers,
                 json={
-                    "browserid": profile_browser_4_id,
+                    "browserid": browser_id,
                     "name": "uncreatable",
                     "description": "because org is read-only",
                 },

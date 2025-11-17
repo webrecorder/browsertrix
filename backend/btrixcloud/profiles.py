@@ -270,7 +270,10 @@ class ProfileOps:
                     existing_profile.resource.size if existing_profile.resource else 0
                 )
 
-                origins = existing_profile.origins
+                # only set origins from existing profile if browser
+                # actually launched with that profile (eg. not a reset)
+                if metadata.baseprofile == profileid:
+                    origins = existing_profile.origins
 
             else:
                 profileid = metadata.profileid
