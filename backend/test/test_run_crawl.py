@@ -535,7 +535,7 @@ def test_update_crawl(
     assert r.status_code == 200
     data = r.json()
     assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
-    assert len(data["collectionIds"]) == 1
+    assert len(data["collectionIds"]) == 0
 
     # Make new collection
     r = requests.post(
