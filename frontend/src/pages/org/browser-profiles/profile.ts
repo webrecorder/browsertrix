@@ -242,7 +242,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                 )}
               >
                 <sl-icon slot="prefix" name="gear"></sl-icon>
-                ${msg("Configure Profile")}
+                ${msg("Configure Sites")}
               </sl-menu-item>
               <sl-menu-item
                 ?disabled=${archivingDisabled || !this.profile}
@@ -307,16 +307,6 @@ export class BrowserProfilesProfilePage extends BtrixElement {
 
     return panel({
       heading: msg("Configured Sites"),
-      actions: isCrawler
-        ? html`<sl-tooltip content=${msg("Configure Profile")}>
-            <sl-icon-button
-              name="gear"
-              class="text-base"
-              @click=${() => (this.openDialog = "start-browser")}
-              ?disabled=${archivingDisabled}
-            ></sl-icon-button>
-          </sl-tooltip>`
-        : undefined,
       body: html`${this.renderOrigins()}
       ${when(
         isCrawler,
@@ -325,6 +315,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
             size="small"
             class="mt-3"
             @click=${() => (this.openDialog = "start-browser-add-site")}
+            ?disabled=${archivingDisabled}
           >
             <sl-icon slot="prefix" name="plus-square"></sl-icon>
             ${msg("Add Site")}</sl-button
@@ -337,7 +328,6 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           <btrix-start-browser-dialog
             .profile=${profile}
             ?open=${Boolean(this.openDialog?.startsWith("start-browser"))}
-            ?replaceable=${this.openDialog === "start-browser"}
             startUrl=${ifDefined(
               this.openDialog === "start-browser"
                 ? profile.origins[0]

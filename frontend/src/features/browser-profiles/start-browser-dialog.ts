@@ -6,12 +6,13 @@ import type {
   SlCheckbox,
 } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { Details } from "@/components/ui/details";
 import type { Dialog } from "@/components/ui/dialog";
 import type { UrlInput } from "@/components/ui/url-input";
 import {
@@ -54,9 +55,6 @@ export class StartBrowserDialog extends BtrixElement {
   startUrl?: string;
 
   @property({ type: Boolean })
-  replaceable = false;
-
-  @property({ type: Boolean })
   open = false;
 
   @state()
@@ -68,12 +66,23 @@ export class StartBrowserDialog extends BtrixElement {
   @query("form")
   private readonly form?: HTMLFormElement | null;
 
+  @query("btrix-details")
+  private readonly details?: Details | null;
+
   @query("#submit-button")
   private readonly submitButton?: SlButton | null;
 
   render() {
+    const profile = this.profile;
+    const channels = this.orgCrawlerChannels;
+    const proxies = this.orgProxies;
+    const proxyServers = proxies?.servers;
+    const showChannels = channels && channels.length > 1 && profile;
+    const showProxies =
+      this.replaceBrowser && proxies && proxyServers?.length && profile;
+
     return html`<btrix-dialog
-      .label=${msg("Configure Profile")}
+      .label=${msg("Configure Sites")}
       ?open=${this.open}
       @sl-initial-focus=${async () => {
         await this.updateComplete;
@@ -123,27 +132,69 @@ export class StartBrowserDialog extends BtrixElement {
       >
         <btrix-url-input
           name="startingUrl"
-          label=${this.startUrl ? msg("Load URL") : msg("New Site URL")}
+          label=${msg("Site URL")}
           .value=${this.startUrl || ""}
           required
-        ></btrix-url-input>
+        >
+        </btrix-url-input>
+
+        <sl-checkbox
+          class="mt-4"
+          @sl-change=${(e: SlChangeEvent) =>
+            (this.replaceBrowser = (e.target as SlCheckbox).checked)}
+        >
+          ${msg("Replace configured sites")}
+          ${when(
+            this.replaceBrowser,
+            () => html`
+              <div slot="help-text">
+                <sl-icon
+                  class="mr-0.5 align-[-.175em]"
+                  name="exclamation-triangle"
+                ></sl-icon>
+                ${msg(
+                  "All previously configured site data and browsing activity will be removed.",
+                )}
+              </div>
+            `,
+          )}
+        </sl-checkbox>
 
         ${when(
-          this.orgCrawlerChannels &&
-            this.orgCrawlerChannels.length > 1 &&
-            this.profile,
-          (profile) => html`
-            <div class="mt-4">
-              <btrix-select-crawler
-                .crawlerChannel=${profile.crawlerChannel ||
-                this.org?.crawlingDefaults?.crawlerChannel}
-              >
-              </btrix-select-crawler>
-            </div>
+          this.open && (showChannels || showProxies),
+          () => html`
+            <btrix-details
+              class="mt-4"
+              ?open=${this.details?.open || this.replaceBrowser}
+            >
+              <span slot="title">${msg("Crawler Settings")}</span>
+
+              ${showChannels
+                ? html`<div class="mt-4">
+                    <btrix-select-crawler
+                      .crawlerChannel=${profile.crawlerChannel ||
+                      this.org?.crawlingDefaults?.crawlerChannel}
+                    >
+                    </btrix-select-crawler>
+                  </div>`
+                : nothing}
+              ${showProxies
+                ? html`<div class="mt-4">
+                    <btrix-select-crawler-proxy
+                      defaultProxyId=${ifDefined(
+                        this.org?.crawlingDefaults?.profileid ||
+                          proxies.default_proxy_id ||
+                          undefined,
+                      )}
+                      .proxyServers=${proxyServers}
+                      .proxyId=${profile.proxyId || ""}
+                    >
+                    </btrix-select-crawler-proxy>
+                  </div>`
+                : nothing}
+            </btrix-details>
           `,
         )}
-        ${when(this.replaceable, this.renderReplaceControl)}
-        ${when(this.replaceBrowser && this.profile, this.renderProxy)}
       </form>
       <div slot="footer" class="flex justify-between">
         <sl-button size="small" @click=${() => void this.dialog?.hide()}
@@ -160,47 +211,4 @@ export class StartBrowserDialog extends BtrixElement {
       </div>
     </btrix-dialog>`;
   }
-
-  private readonly renderReplaceControl = () => {
-    return html`<sl-checkbox
-      class="mt-4"
-      @sl-change=${(e: SlChangeEvent) =>
-        (this.replaceBrowser = (e.target as SlCheckbox).checked)}
-    >
-      ${msg("Reset configured sites")}
-      ${when(
-        this.replaceBrowser,
-        () => html`
-          <div slot="help-text">
-            <sl-icon
-              class="mr-0.5 align-[-.175em]"
-              name="exclamation-triangle"
-            ></sl-icon>
-            ${msg(
-              "All previously configured site data and browsing activity will be removed.",
-            )}
-          </div>
-        `,
-      )}
-    </sl-checkbox>`;
-  };
-
-  private readonly renderProxy = (profile: Profile) => {
-    if (!this.orgProxies?.servers.length) return;
-
-    return html`
-      <div class="mt-4">
-        <btrix-select-crawler-proxy
-          defaultProxyId=${ifDefined(
-            this.org?.crawlingDefaults?.profileid ||
-              this.orgProxies.default_proxy_id ||
-              undefined,
-          )}
-          .proxyServers=${this.orgProxies.servers}
-          .proxyId=${profile.proxyId || ""}
-        >
-        </btrix-select-crawler-proxy>
-      </div>
-    `;
-  };
 }

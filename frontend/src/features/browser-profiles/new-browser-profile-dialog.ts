@@ -80,9 +80,14 @@ export class NewBrowserProfileDialog extends BtrixElement {
   }
 
   render() {
+    const channels = this.crawlerChannels;
+    const proxyServers = this.proxyServers;
+    const showChannels = channels && channels.length > 1;
+    const showProxies = proxyServers?.length;
+
     return html`
       <btrix-dialog
-        .label=${msg("Configure New Profile")}
+        .label=${msg("New Browser Profile")}
         .open=${this.open}
         @sl-initial-focus=${async (e: CustomEvent) => {
           const nameInput = (await this.form).querySelector<SlInput>(
@@ -108,31 +113,6 @@ export class NewBrowserProfileDialog extends BtrixElement {
           >
           </btrix-url-input>
 
-          ${this.crawlerChannels && this.crawlerChannels.length > 1
-            ? html`<div class="mt-4">
-                <btrix-select-crawler
-                  .crawlerChannel=${this.crawlerChannel}
-                  @on-change=${(e: SelectCrawlerChangeEvent) =>
-                    (this.crawlerChannel = e.detail.value!)}
-                ></btrix-select-crawler>
-              </div>`
-            : nothing}
-          ${this.proxyServers?.length
-            ? html`
-                <div class="mt-4">
-                  <btrix-select-crawler-proxy
-                    defaultProxyId=${ifDefined(
-                      this.defaultProxyId || undefined,
-                    )}
-                    .proxyServers=${this.proxyServers}
-                    .proxyId="${this.proxyId || ""}"
-                    @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
-                      (this.proxyId = e.detail.value)}
-                  ></btrix-select-crawler-proxy>
-                </div>
-              `
-            : nothing}
-
           <sl-input
             class="mt-4"
             label=${msg("Profile Name")}
@@ -144,7 +124,41 @@ export class NewBrowserProfileDialog extends BtrixElement {
           >
           </sl-input>
 
-          <input class="invisible size-0" type="submit" />
+          ${when(
+            showChannels || showProxies,
+            () => html`
+              <btrix-details class="mt-4" open>
+                <span slot="title">${msg("Crawler Settings")}</span>
+
+                ${showChannels
+                  ? html`<div class="mt-4">
+                      <btrix-select-crawler
+                        .crawlerChannel=${this.crawlerChannel}
+                        @on-change=${(e: SelectCrawlerChangeEvent) =>
+                          (this.crawlerChannel = e.detail.value!)}
+                      ></btrix-select-crawler>
+                    </div>`
+                  : nothing}
+                ${showProxies
+                  ? html`
+                      <div class="mt-4">
+                        <btrix-select-crawler-proxy
+                          defaultProxyId=${ifDefined(
+                            this.defaultProxyId || undefined,
+                          )}
+                          .proxyServers=${proxyServers}
+                          .proxyId="${this.proxyId || ""}"
+                          @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
+                            (this.proxyId = e.detail.value)}
+                        ></btrix-select-crawler-proxy>
+                      </div>
+                    `
+                  : nothing}
+              </btrix-details>
+            `,
+          )}
+
+          <input class="invisible block size-0" type="submit" />
         </form>
         <div slot="footer" class="flex justify-between">
           <sl-button
