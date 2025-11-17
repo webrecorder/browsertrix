@@ -1,13 +1,12 @@
 import math
-import requests
 import time
-import pytest
-
 from typing import Dict
+
+import pytest
+import requests
 
 from .conftest import API_PREFIX
 from .utils import get_crawl_status
-
 
 EXEC_MINS_QUOTA = 1
 EXEC_SECS_QUOTA = EXEC_MINS_QUOTA * 60
@@ -141,6 +140,15 @@ def test_add_execution_mins_extra_quotas(
         assert update["modified"]
         assert update["update"]
     assert data["quotaUpdates"][-1]["context"] == "test context 123"
+
+    # Reset back to previous value
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{org_with_quotas}/quotas",
+        headers=admin_auth_headers,
+        json={
+            "extraExecMinutes": EXTRA_MINS_QUOTA,
+        },
+    )
 
 
 @pytest.mark.timeout(1200)
