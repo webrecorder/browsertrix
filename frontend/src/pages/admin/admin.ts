@@ -113,7 +113,7 @@ export class Admin extends BtrixElement {
             ${this.renderInvite()}
           </section>
         </div>
-        <section class="min-w-0">
+        <section class="grid min-w-0 grid-rows-[auto_1fr]">
           <header class="mb-3 flex items-center justify-between border-b pb-3">
             <h2 class="text-lg font-medium">${msg("All Organizations")}</h2>
             <sl-button
@@ -129,6 +129,7 @@ export class Admin extends BtrixElement {
             .orgList=${this.orgList}
             @update-quotas=${this.onUpdateOrgQuotas}
             @update-proxies=${this.onUpdateOrgProxies}
+            class="grid grid-rows-[auto_auto_1fr]"
           ></btrix-orgs-list>
         </section>
       </div>

@@ -247,9 +247,9 @@ export class OrgsList extends BtrixElement {
         </sl-radio-group>
       </btrix-overflow-scroll>
       <btrix-overflow-scroll
-        class="-mx-3 [--btrix-overflow-scroll-scrim-color:theme(colors.neutral.50)] part-[content]:px-3"
+        class="-mx-3 [--btrix-overflow-scroll-scrim-color:theme(colors.neutral.50)] part-[content]:min-h-full part-[content]:px-3"
       >
-        <btrix-table class="block">
+        <btrix-table class="block min-h-96">
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Status")}</span>
