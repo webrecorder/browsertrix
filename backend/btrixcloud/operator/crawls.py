@@ -1535,6 +1535,10 @@ class CrawlOperator(BaseOperator):
         stats, sizes = await self.get_redis_crawl_stats(redis, crawl.id)
 
         # need to add size of previously completed WACZ files as well!
+        # TODO: This sometimes results in the crawl's stats.size being
+        # twice as large as expected when pausing crawls, as stats.size
+        # is not necessarily decremented once WACZ files are uploaded
+        # This then can have a downstream effects on the storage quota check
         stats.size += status.filesAddedSize
 
         # update status
