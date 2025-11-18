@@ -372,14 +372,21 @@ class BaseCrawlOps:
             size += crawl_size
 
             cid = crawl.cid
+            successful = crawl.state in SUCCESSFUL_STATES
             if cid:
                 if cids_to_update.get(cid):
                     cids_to_update[cid]["inc"] += 1
                     cids_to_update[cid]["size"] += crawl_size
+                    if successful:
+                        cids_to_update[cid]["successful"] += 1
                 else:
                     cids_to_update[cid] = {}
                     cids_to_update[cid]["inc"] = 1
                     cids_to_update[cid]["size"] = crawl_size
+                    if successful:
+                        cids_to_update[cid]["successful"] = 1
+                    else:
+                        cids_to_update[cid]["successful"] = 0
 
             if type_ == "crawl":
                 asyncio.create_task(
@@ -890,7 +897,10 @@ class BaseCrawlOps:
             for cid, cid_dict in cids_to_update.items():
                 cid_size = cid_dict["size"]
                 cid_inc = cid_dict["inc"]
-                await self.crawl_configs.stats_recompute_last(cid, -cid_size, -cid_inc)
+                cid_successful = cid_dict["successful"]
+                await self.crawl_configs.stats_recompute_last(
+                    cid, -cid_size, -cid_inc, -cid_successful
+                )
 
         if uploads_length:
             upload_delete_list = DeleteCrawlList(crawl_ids=uploads)

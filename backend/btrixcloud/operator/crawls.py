@@ -1753,11 +1753,10 @@ class CrawlOperator(BaseOperator):
         stats: Optional[OpCrawlStats],
     ) -> None:
         """Run tasks after crawl completes in asyncio.task coroutine."""
-        await self.crawl_config_ops.stats_recompute_last(
-            crawl.cid, status.filesAddedSize, 1
-        )
-
         if state in SUCCESSFUL_STATES and crawl.oid:
+            await self.crawl_config_ops.stats_recompute_last(
+                crawl.cid, status.filesAddedSize, 1, 1
+            )
             await self.page_ops.set_archived_item_page_counts(crawl.id)
             await self.org_ops.set_last_crawl_finished(crawl.oid)
             await self.coll_ops.add_successful_crawl_to_collections(
@@ -1774,6 +1773,7 @@ class CrawlOperator(BaseOperator):
                 )
 
         if state in FAILED_STATES:
+            await self.crawl_config_ops.stats_recompute_last(crawl.cid, 0, 1, 0)
             await self.crawl_ops.delete_failed_crawl_files(crawl.id, crawl.oid)
             await self.page_ops.delete_crawl_pages(crawl.id, crawl.oid)
 
