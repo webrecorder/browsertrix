@@ -257,3 +257,6 @@ class CrawlStatus(BaseModel):
 
     # last state
     last_state: TYPE_ALL_CRAWL_STATES = Field(default="starting", exclude=True)
+
+    # email sent to org admins because crawl was auto-paused
+    autoPausedEmailsSent: bool = False
