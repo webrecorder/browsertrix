@@ -8,13 +8,7 @@ import type {
 } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html, nothing, type PropertyValues } from "lit";
-import {
-  customElement,
-  property,
-  query,
-  queryAsync,
-  state,
-} from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
@@ -82,10 +76,10 @@ export class StartBrowserDialog extends BtrixElement {
   @query("btrix-details")
   private readonly details?: Details | null;
 
-  @queryAsync(`[name=${PRIMARY_SITE_FIELD_NAME}]`)
+  @query(`[name=${PRIMARY_SITE_FIELD_NAME}]`)
   private readonly primarySiteInput?: SlSelect | null;
 
-  @queryAsync(`[name=${URL_FORM_FIELD_NAME}]`)
+  @query(`[name=${URL_FORM_FIELD_NAME}]`)
   private readonly urlInput?: UrlInput | null;
 
   @query("#submit-button")
@@ -127,18 +121,18 @@ export class StartBrowserDialog extends BtrixElement {
       @sl-after-hide=${async () => {
         if (this.form) {
           this.form.reset();
-
-          const input = this.form.querySelector<UrlInput>("btrix-url-input");
-          if (input) {
-            input.value = "";
-            input.setCustomValidity("");
-          }
         }
 
         this.replaceBrowser = false;
       }}
     >
       <form
+        @reset=${() => {
+          if (this.urlInput) {
+            this.urlInput.value = "";
+            this.urlInput.setCustomValidity("");
+          }
+        }}
         @submit=${async (e: SubmitEvent) => {
           e.preventDefault();
 
@@ -247,7 +241,10 @@ export class StartBrowserDialog extends BtrixElement {
           this.loadUrl = (e.target as SlSelect).value as string;
 
           await this.updateComplete;
-          (await this.urlInput)?.focus();
+
+          if (this.open) {
+            this.urlInput?.focus();
+          }
         }}
       >
         <sl-menu-label>${msg("Saved Sites")}</sl-menu-label>
@@ -264,18 +261,22 @@ export class StartBrowserDialog extends BtrixElement {
           label=${msg("URL to Load")}
           .value=${this.loadUrl || ""}
           required
-          @sl-change=${async (e: SlChangeEvent) => {
+          @sl-change=${(e: SlChangeEvent) => {
             const value = (e.target as UrlInput).value;
-            const origin = new URL(value).origin;
+            let origin = "";
 
-            const primarySiteInput = await this.primarySiteInput;
+            try {
+              origin = new URL(value).origin;
+            } catch {
+              // Not a valid URL
+            }
 
-            if (primarySiteInput) {
+            if (origin && this.primarySiteInput) {
               const savedSite = profile.origins.find(
                 (url) => new URL(url).origin === origin,
               );
 
-              primarySiteInput.value = savedSite || "";
+              this.primarySiteInput.value = savedSite || "";
             }
           }}
           help-text=${msg(

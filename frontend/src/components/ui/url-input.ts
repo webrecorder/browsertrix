@@ -33,6 +33,9 @@ export class UrlInput extends SlInput {
   @property({ type: Boolean })
   hideHelpText = false;
 
+  // Store initial help text for when custom validity message is reset
+  #helpText?: string;
+
   constructor() {
     super();
 
@@ -42,9 +45,15 @@ export class UrlInput extends SlInput {
     this.addEventListener("sl-change", this.onChange);
   }
 
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    this.#helpText = this.helpText;
+  }
+
   setCustomValidity(message: string): void {
     super.setCustomValidity(message);
-    if (!this.hideHelpText) this.helpText = message;
+    if (!this.hideHelpText) this.helpText = message || this.#helpText || "";
   }
 
   disconnectedCallback(): void {
@@ -57,7 +66,7 @@ export class UrlInput extends SlInput {
   private readonly onInput = () => {
     if (!this.checkValidity() && validURL(this.value)) {
       this.setCustomValidity("");
-      if (!this.hideHelpText) this.helpText = "";
+      if (!this.hideHelpText) this.helpText = this.#helpText || "";
     }
   };
 
