@@ -639,6 +639,9 @@ class CrawlConfigOps:
             profile = await self.profiles.get_profile(cast(UUID, update.profileid), org)
             query["profileid"] = update.profileid
             proxy_id = profile.proxyId
+        # don't change the proxy if profile is set, as it should match the profile proxy
+        elif orig_crawl_config.profileid:
+            proxy_id = None
 
         if proxy_id is not None:
             query["proxyId"] = proxy_id
