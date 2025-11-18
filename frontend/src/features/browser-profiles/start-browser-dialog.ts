@@ -268,15 +268,14 @@ export class StartBrowserDialog extends BtrixElement {
             const value = (e.target as UrlInput).value;
             const origin = new URL(value).origin;
 
-            const savedSite = profile.origins.find(
-              (url) => new URL(url).origin === origin,
-            );
+            const primarySiteInput = await this.primarySiteInput;
 
-            if (savedSite) {
-              const primarySiteInput = await this.primarySiteInput;
-              if (primarySiteInput) {
-                primarySiteInput.value = savedSite;
-              }
+            if (primarySiteInput) {
+              const savedSite = profile.origins.find(
+                (url) => new URL(url).origin === origin,
+              );
+
+              primarySiteInput.value = savedSite || "";
             }
           }}
           help-text=${msg(
