@@ -426,11 +426,21 @@ class BaseCrawlOps:
 
         return size
 
-    async def delete_crawl_files(self, crawl_id: str, oid: UUID):
-        """Delete crawl files"""
+    async def delete_failed_crawl_files(self, crawl_id: str, oid: UUID):
+        """Delete crawl files for failed crawl"""
         crawl = await self.get_base_crawl(crawl_id)
         org = await self.orgs.get_org_by_id(oid)
-        return await self._delete_crawl_files(crawl, org)
+        await self._delete_crawl_files(crawl, org)
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "oid": oid},
+            {
+                "$set": {
+                    "files": [],
+                    "fileCount": 0,
+                    "fileSize": 0,
+                }
+            },
+        )
 
     async def delete_all_crawl_qa_files(self, crawl_id: str, org: Organization):
         """Delete files for all qa runs in a crawl"""

@@ -1707,7 +1707,7 @@ class CrawlOperator(BaseOperator):
                 )
 
         if state in FAILED_STATES:
-            await self.crawl_ops.delete_crawl_files(crawl.id, crawl.oid)
+            await self.crawl_ops.delete_failed_crawl_files(crawl.id, crawl.oid)
             await self.page_ops.delete_crawl_pages(crawl.id, crawl.oid)
 
         await self.event_webhook_ops.create_crawl_finished_notification(
