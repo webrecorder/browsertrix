@@ -1,8 +1,8 @@
 import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
-import { html, nothing } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { html, nothing, type PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import capitalize from "lodash/fp/capitalize";
 
@@ -51,6 +51,15 @@ export class SelectCrawler extends LiteElement {
   @property({ type: String })
   crawlerChannel?: CrawlerChannel["id"];
 
+  @state()
+  public value: CrawlerChannel["id"] = "";
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("crawlerChannel")) {
+      this.value = this.crawlerChannel || "";
+    }
+  }
+
   render() {
     const selectedCrawler = this.getSelectedChannel();
 
@@ -58,7 +67,7 @@ export class SelectCrawler extends LiteElement {
       <sl-select
         name="crawlerChannel"
         label=${msg("Crawler Release Channel")}
-        value=${selectedCrawler?.id || ""}
+        value=${this.value}
         placeholder=${msg("Latest")}
         size=${ifDefined(this.size)}
         hoist
@@ -88,10 +97,12 @@ export class SelectCrawler extends LiteElement {
   }
 
   private getSelectedChannel() {
-    if (!this.crawlerChannels || !this.crawlerChannel) return null;
+    const channelId = this.value;
 
-    if (this.crawlerChannel) {
-      return this.crawlerChannels.find(({ id }) => id === this.crawlerChannel);
+    if (!this.crawlerChannels || !channelId) return null;
+
+    if (channelId) {
+      return this.crawlerChannels.find(({ id }) => id === channelId);
     }
 
     return (
@@ -104,9 +115,10 @@ export class SelectCrawler extends LiteElement {
   private onChange(e: Event) {
     this.stopProp(e);
 
-    const selectedCrawler = this.crawlerChannels?.find(
-      ({ id }) => id === (e.target as SlSelect).value,
-    );
+    const { value } = e.target as SlSelect;
+
+    this.value = value as string;
+    const selectedCrawler = this.getSelectedChannel();
 
     this.dispatchEvent(
       new CustomEvent<SelectCrawlerChangeDetail>("on-change", {
