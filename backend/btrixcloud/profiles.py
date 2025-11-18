@@ -112,9 +112,12 @@ class ProfileOps:
         prev_profile_path = ""
         prev_profile_id = ""
         prev_proxy_id = ""
+        prev_channel = ""
         if profile_launch.profileId:
-            prev_profile_path, prev_proxy_id = (
-                await self.get_profile_filename_and_proxy(profile_launch.profileId, org)
+            prev_profile_path, prev_proxy_id, prev_channel = (
+                await self.get_profile_filename_proxy_channel(
+                    profile_launch.profileId, org
+                )
             )
 
             if not prev_profile_path:
@@ -122,14 +125,14 @@ class ProfileOps:
 
             prev_profile_id = str(profile_launch.profileId)
 
-        crawler_image = self.crawlconfigs.get_channel_crawler_image(
-            profile_launch.crawlerChannel
-        )
+        crawler_channel = profile_launch.crawlerChannel or prev_channel
+
+        crawler_image = self.crawlconfigs.get_channel_crawler_image(crawler_channel)
         if not crawler_image:
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
         image_pull_policy = self.crawlconfigs.get_channel_crawler_image_pull_policy(
-            profile_launch.crawlerChannel
+            crawler_channel
         )
 
         # use either specified proxyId or if none, use proxyId from existing profile
@@ -515,23 +518,23 @@ class ProfileOps:
         profile.inUse = await self.crawlconfigs.is_profile_in_use(profileid, org)
         return profile
 
-    async def get_profile_filename_and_proxy(
+    async def get_profile_filename_proxy_channel(
         self, profileid: Optional[UUID], org: Organization
-    ) -> tuple[str, str]:
+    ) -> tuple[str, str, str]:
         """return profile path filename (relative path) for given profile id and org"""
         if not profileid:
-            return "", ""
+            return "", "", ""
 
         try:
             profile = await self.get_profile(profileid, org)
             storage_path = profile.resource.filename if profile.resource else ""
             storage_path = storage_path.lstrip(f"{org.id}/")
-            return storage_path, profile.proxyId or ""
+            return storage_path, profile.proxyId or "", profile.crawlerChannel or ""
         # pylint: disable=bare-except
         except:
             pass
 
-        return "", ""
+        return "", "", ""
 
     async def get_profile_name(self, profileid: UUID, org: Organization) -> str:
         """return profile for given profile id and org"""
