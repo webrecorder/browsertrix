@@ -920,7 +920,9 @@ class CrawlConfigOps:
 
         return None
 
-    async def stats_recompute_last(self, cid: UUID, size: int, inc_crawls: int = 1):
+    async def stats_recompute_last(
+        self, cid: UUID, size: int, inc_crawls: int = 1, inc_successful: int = 1
+    ):
         """recompute stats by incrementing size counter and number of crawls"""
         update_query: dict[str, object] = {}
 
@@ -977,7 +979,7 @@ class CrawlConfigOps:
                 "$inc": {
                     "totalSize": size,
                     "crawlCount": inc_crawls,
-                    "crawlSuccessfulCount": inc_crawls,
+                    "crawlSuccessfulCount": inc_successful,
                 },
             },
         )
