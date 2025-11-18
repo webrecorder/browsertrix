@@ -261,7 +261,7 @@ export class StartBrowserDialog extends BtrixElement {
       <div class="mt-4">
         <btrix-url-input
           name=${URL_FORM_FIELD_NAME}
-          label=${msg("Site URL")}
+          label=${msg("URL to Load")}
           .value=${this.loadUrl || ""}
           required
           @sl-change=${async (e: SlChangeEvent) => {
