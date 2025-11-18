@@ -241,8 +241,12 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                   () => (this.openDialog = "start-browser"),
                 )}
               >
-                <sl-icon slot="prefix" name="gear"></sl-icon>
-                ${msg("Configure Sites")}
+                <sl-icon
+                  slot="prefix"
+                  name="window-gear"
+                  library="app"
+                ></sl-icon>
+                ${msg("Load Profile")}
               </sl-menu-item>
               <sl-menu-item
                 ?disabled=${archivingDisabled || !this.profile}
@@ -303,32 +307,29 @@ export class BrowserProfilesProfilePage extends BtrixElement {
 
   private renderProfile() {
     const archivingDisabled = isArchivingDisabled(this.org);
-    const isCrawler = this.appState.isCrawler;
 
     return panel({
       heading: msg("Configured Sites"),
+      actions: this.appState.isCrawler
+        ? html`
+            <sl-button
+              size="small"
+              @click=${() => (this.openDialog = "start-browser-add-site")}
+              ?disabled=${archivingDisabled}
+            >
+              <sl-icon slot="prefix" name="window-gear" library="app"></sl-icon>
+              ${msg("Load New URL")}</sl-button
+            >
+          `
+        : undefined,
       body: html`${this.renderOrigins()}
-      ${when(
-        isCrawler,
-        () => html`
-          <sl-button
-            size="small"
-            class="mt-3"
-            @click=${() => (this.openDialog = "start-browser-add-site")}
-            ?disabled=${archivingDisabled}
-          >
-            <sl-icon slot="prefix" name="plus-square"></sl-icon>
-            ${msg("Add Site")}</sl-button
-          >
-        `,
-      )}
       ${when(
         this.profileTask.value,
         (profile) => html`
           <btrix-start-browser-dialog
             .profile=${profile}
             ?open=${Boolean(this.openDialog?.startsWith("start-browser"))}
-            startUrl=${ifDefined(
+            initialUrl=${ifDefined(
               this.openDialog === "start-browser"
                 ? profile.origins[0]
                 : undefined,
@@ -359,8 +360,8 @@ export class BrowserProfilesProfilePage extends BtrixElement {
               class="flex h-8 flex-1 items-center overflow-hidden border-r text-left transition-colors duration-fast hover:bg-cyan-50/50"
               @click=${() => void this.openBrowser({ url: origin })}
             >
-              <sl-tooltip placement="left" content=${msg("Load Site")}>
-                <sl-icon name="window-fullscreen" class="mx-2 block"></sl-icon>
+              <sl-tooltip placement="left" content=${msg("Load URL")}>
+                <sl-icon name="window" class="mx-2 block"></sl-icon>
               </sl-tooltip>
               <btrix-code
                 class="block flex-1 truncate"
@@ -601,6 +602,10 @@ export class BrowserProfilesProfilePage extends BtrixElement {
               `
             : panelBody({
                 content: emptyMessage({
+                  icon: {
+                    name: "file-code-fill",
+                    label: "Workflow",
+                  },
                   message: msg(
                     "This profile is not in use by any crawl workflows.",
                   ),

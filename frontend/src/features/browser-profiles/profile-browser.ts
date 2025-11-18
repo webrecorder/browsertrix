@@ -9,6 +9,7 @@ import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { emptyMessage } from "@/layouts/emptyMessage";
+import type { Profile } from "@/types/crawler";
 import { isApiError, type APIError } from "@/utils/api";
 import { tw } from "@/utils/tailwind";
 
@@ -63,6 +64,9 @@ export class ProfileBrowser extends BtrixElement {
 
   @property({ type: String })
   initialNavigateUrl?: string;
+
+  @property({ type: Array })
+  initialOrigins?: Profile["origins"];
 
   @property({ type: Boolean })
   hideControls = false;
@@ -357,36 +361,60 @@ export class ProfileBrowser extends BtrixElement {
             <div
               class="flex-1 overflow-auto rounded-lg border bg-white shadow-lg"
             >
+              ${this.renderOriginsList(
+                {
+                  heading: msg("Saved Sites"),
+                  popoverContent: msg(
+                    "Sites that are configured in the profile.",
+                  ),
+                },
+                this.initialOrigins,
+              )}
               ${when(
                 this.originsTask.value,
-                (origins) => html`
-                  ${this.renderOrigins(origins)}
-                  ${this.renderNewOrigins(
-                    origins.filter(
-                      (url: string) =>
-                        !origins.includes(url) &&
-                        !origins.includes(url.replace(/\/$/, "")),
-                    ),
-                  )}
-                `,
+                (origins) =>
+                  this.renderOriginsList(
+                    {
+                      heading: msg("New Sites"),
+                      popoverContent: `${msg(
+                        "Sites that are not in the browser profile yet.",
+                      )} ${msg(
+                        "Finish browsing and save to include data and browsing activity from these sites to the profile.",
+                      )}`,
+                    },
+                    this.initialOrigins
+                      ? origins.filter(
+                          (url: string) =>
+                            !this.initialOrigins?.includes(url) &&
+                            !this.initialOrigins?.includes(
+                              url.replace(/\/$/, ""),
+                            ),
+                        )
+                      : origins,
+                  ),
                 () =>
-                  html`<div class="p-3 text-center">
-                    ${typeof this.browserTask.value !== "number" &&
-                    this.browserTask.value?.id
-                      ? emptyMessage({
-                          icon: { name: "slash-circle", label: msg("None") },
-                          message: msg("No sites configured yet."),
-                        })
-                      : emptyMessage({
-                          icon: {
-                            name: "hourglass-split",
-                            label: msg("Waiting"),
-                          },
-                          message: msg(
-                            "Sites will be shown here once the browser is done loading.",
-                          ),
-                        })}
-                  </div>`,
+                  this.initialOrigins
+                    ? undefined
+                    : html`<div class="p-3 text-center">
+                        ${typeof this.browserTask.value !== "number" &&
+                        this.browserTask.value?.id
+                          ? emptyMessage({
+                              icon: {
+                                name: "slash-circle",
+                                label: msg("None"),
+                              },
+                              message: msg("No sites configured yet."),
+                            })
+                          : emptyMessage({
+                              icon: {
+                                name: "hourglass-split",
+                                label: msg("Waiting"),
+                              },
+                              message: msg(
+                                "Sites will be shown here once the browser is done loading.",
+                              ),
+                            })}
+                      </div>`,
               )}
             </div>
           </div>
@@ -490,17 +518,19 @@ export class ProfileBrowser extends BtrixElement {
     `;
   }
 
-  private renderOrigins(origins: string[]) {
+  private renderOriginsList(
+    { heading, popoverContent }: { heading: string; popoverContent: string },
+    origins?: string[],
+  ) {
+    if (!origins?.length) return;
+
     return html`
       <header
         class="flex min-h-10 justify-between border-b p-1 leading-tight text-neutral-700"
       >
         <div class="flex items-center gap-1.5 px-2">
-          <h4>${msg("Saved Sites")}</h4>
-          <btrix-popover
-            content=${msg("Sites with data saved in the profile.")}
-            placement="top"
-            hoist
+          <h4>${heading}</h4>
+          <btrix-popover content=${popoverContent} placement="top" hoist
             ><sl-icon
               class="inline-block align-middle"
               name="info-circle"
@@ -514,36 +544,6 @@ export class ProfileBrowser extends BtrixElement {
         >
         </sl-icon-button>
       </header>
-      <ul>
-        ${origins.map((url) => this.renderOriginItem(url))}
-      </ul>
-    `;
-  }
-
-  private renderNewOrigins(origins: string[]) {
-    if (!origins.length) return;
-
-    return html`
-      <div
-        class="flex min-h-10 justify-between border-b p-1 leading-tight text-neutral-700"
-      >
-        <div class="flex items-center gap-1.5 px-2">
-          <h4>${msg("New Sites")}</h4>
-          <btrix-popover
-            content="${msg(
-              "Sites that are not in the browser profile yet.",
-            )} ${msg(
-              "Finish browsing and save to include data and browsing activity from these sites to the profile.",
-            )}"
-            placement="top"
-            hoist
-            ><sl-icon
-              class="inline-block align-middle"
-              name="info-circle"
-            ></sl-icon
-          ></btrix-popover>
-        </div>
-      </div>
       <ul>
         ${origins.map((url) => this.renderOriginItem(url))}
       </ul>

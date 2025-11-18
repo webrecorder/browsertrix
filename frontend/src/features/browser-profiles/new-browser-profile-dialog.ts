@@ -105,10 +105,13 @@ export class NewBrowserProfileDialog extends BtrixElement {
           @submit=${this.onSubmit}
         >
           <btrix-url-input
-            label=${msg("Site URL")}
+            label=${msg("Primary Site URL")}
             name="profile-url"
             placeholder=${msg("https://example.com")}
             value=${ifDefined(this.defaultUrl)}
+            help-text=${msg(
+              "The first page of the site to load, like a login page.",
+            )}
             required
           >
           </btrix-url-input>
@@ -186,7 +189,7 @@ export class NewBrowserProfileDialog extends BtrixElement {
           html` <btrix-profile-browser-dialog
             .config=${{
               url,
-              name: this.name || new URL(url).origin.slice(0, 50),
+              name: this.name || new URL(url).hostname.slice(0, 50),
               crawlerChannel: this.crawlerChannel,
               proxyId: this.proxyId ?? undefined,
             }}

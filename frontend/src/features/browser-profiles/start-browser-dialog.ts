@@ -7,7 +7,7 @@ import type {
   SlSelect,
 } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html, nothing } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import {
   customElement,
   property,
@@ -41,6 +41,7 @@ type StartBrowserEventDetail = {
 
 export type BtrixStartBrowserEvent = CustomEvent<StartBrowserEventDetail>;
 
+const PRIMARY_SITE_FIELD_NAME = "primarySite";
 const URL_FORM_FIELD_NAME = "startingUrl";
 
 /**
@@ -61,13 +62,13 @@ export class StartBrowserDialog extends BtrixElement {
   profile?: Profile;
 
   @property({ type: String })
-  startUrl?: string;
+  initialUrl?: string;
 
   @property({ type: Boolean })
   open = false;
 
   @state()
-  addSite = false;
+  loadUrl?: string;
 
   @state()
   replaceBrowser = false;
@@ -81,11 +82,26 @@ export class StartBrowserDialog extends BtrixElement {
   @query("btrix-details")
   private readonly details?: Details | null;
 
+  @queryAsync(`[name=${PRIMARY_SITE_FIELD_NAME}]`)
+  private readonly primarySiteInput?: SlSelect | null;
+
   @queryAsync(`[name=${URL_FORM_FIELD_NAME}]`)
-  private readonly urlInput?: UrlInput | SlSelect | null;
+  private readonly urlInput?: UrlInput | null;
 
   @query("#submit-button")
   private readonly submitButton?: SlButton | null;
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("initialUrl")) {
+      this.loadUrl = this.initialUrl;
+    }
+  }
+
+  protected firstUpdated(): void {
+    if (this.loadUrl === undefined) {
+      this.loadUrl = this.initialUrl;
+    }
+  }
 
   render() {
     const profile = this.profile;
@@ -97,14 +113,12 @@ export class StartBrowserDialog extends BtrixElement {
       this.replaceBrowser && proxies && proxyServers?.length && profile;
 
     return html`<btrix-dialog
-      .label=${this.startUrl
-        ? msg("Configure Sites in Profile")
-        : msg("Add Site to Profile")}
+      .label=${msg("Load Profile")}
       ?open=${this.open}
       @sl-initial-focus=${async () => {
         await this.updateComplete;
 
-        if (this.startUrl) {
+        if (this.initialUrl) {
           this.submitButton?.focus();
         } else {
           this.dialog?.querySelector<UrlInput>("btrix-url-input")?.focus();
@@ -154,7 +168,7 @@ export class StartBrowserDialog extends BtrixElement {
           @sl-change=${(e: SlChangeEvent) =>
             (this.replaceBrowser = (e.target as SlCheckbox).checked)}
         >
-          ${msg("Replace saved sites")}
+          ${msg("Reset previous configuration on save")}
           ${when(
             this.replaceBrowser,
             () => html`
@@ -164,7 +178,7 @@ export class StartBrowserDialog extends BtrixElement {
                   name="exclamation-triangle"
                 ></sl-icon>
                 ${msg(
-                  "Data and browsing activity of all previously configured sites will be removed.",
+                  "Data and browsing activity of all previously saved sites will be removed upon saving this browser profile session.",
                 )}
               </div>
             `,
@@ -224,44 +238,52 @@ export class StartBrowserDialog extends BtrixElement {
   }
 
   private readonly renderUrl = (profile: Profile) => {
-    const startUrl = this.startUrl;
-    const showNew = this.addSite || !startUrl;
-    const urlInput = html`<btrix-url-input
-      name=${URL_FORM_FIELD_NAME}
-      label=${showNew ? msg("New Site URL") : msg("Site URL")}
-      .value=${showNew ? "" : startUrl}
-      required
-    >
-    </btrix-url-input>`;
+    return html`<sl-select
+        name=${PRIMARY_SITE_FIELD_NAME}
+        label=${msg("Primary Site")}
+        value=${this.initialUrl || ""}
+        hoist
+        @sl-change=${async (e: SlChangeEvent) => {
+          this.loadUrl = (e.target as SlSelect).value as string;
 
-    if (this.startUrl && profile.origins.length > 1) {
-      return html`<sl-select
-          name=${ifDefined(this.addSite ? undefined : URL_FORM_FIELD_NAME)}
-          label=${msg("Site")}
-          value=${this.startUrl}
-          hoist
+          await this.updateComplete;
+          (await this.urlInput)?.focus();
+        }}
+      >
+        <sl-menu-label>${msg("Saved Sites")}</sl-menu-label>
+        ${profile.origins.map(
+          (url) => html` <sl-option value=${url}>${url}</sl-option> `,
+        )}
+        <sl-divider></sl-divider>
+        <sl-option value="">${msg("New Site")}</sl-option>
+      </sl-select>
+
+      <div class="mt-4">
+        <btrix-url-input
+          name=${URL_FORM_FIELD_NAME}
+          label=${msg("Site URL")}
+          .value=${this.loadUrl || ""}
+          required
           @sl-change=${async (e: SlChangeEvent) => {
-            const { value } = e.target as SlSelect;
-            this.addSite = !value;
+            const value = (e.target as UrlInput).value;
+            const origin = new URL(value).origin;
 
-            await this.updateComplete;
-            (await this.urlInput)?.focus();
+            const savedSite = profile.origins.find(
+              (url) => new URL(url).origin === origin,
+            );
+
+            if (savedSite) {
+              const primarySiteInput = await this.primarySiteInput;
+              if (primarySiteInput) {
+                primarySiteInput.value = savedSite;
+              }
+            }
           }}
-        >
-          <sl-menu-label>${msg("Saved Sites")}</sl-menu-label>
-          ${profile.origins.map(
-            (url) => html` <sl-option value=${url}>${url}</sl-option> `,
+          help-text=${msg(
+            "The first page of the site to load, like a login page.",
           )}
-          <sl-divider></sl-divider>
-          <sl-option>${msg("Add New Site")}</sl-option>
-        </sl-select>
-
-        ${when(
-          this.addSite,
-          () => html`<div class="mt-4">${urlInput}</div>`,
-        )} `;
-    }
-
-    return urlInput;
+        >
+        </btrix-url-input>
+      </div> `;
   };
 }

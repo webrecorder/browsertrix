@@ -167,7 +167,7 @@ export class ProfileBrowserDialog extends BtrixElement {
             </sl-icon-button>
           </div>
           <div class="w-full overflow-hidden px-3">
-            <div class="mb-2 flex min-w-80 items-center md:h-7">
+            <div class="mb-2 flex min-w-80 items-center md:h-6">
               <h2
                 id="title"
                 class="text-base font-medium leading-none md:truncate"
@@ -177,7 +177,10 @@ export class ProfileBrowserDialog extends BtrixElement {
               ${when(
                 this.config?.url,
                 (url) => html`
-                  <sl-divider class="hidden md:block" vertical></sl-divider>
+                  <sl-divider
+                    class="hidden [--spacing:var(--sl-spacing-small)] md:block"
+                    vertical
+                  ></sl-divider>
                   <btrix-code
                     class="mt-px hidden w-40 flex-1 md:block"
                     language="url"
@@ -219,7 +222,7 @@ export class ProfileBrowserDialog extends BtrixElement {
             isCrawler,
             () => html`
               <btrix-popover
-                content=${msg("Save disabled during load")}
+                content=${msg("Save disabled during load.")}
                 ?disabled=${this.isBrowserLoaded}
               >
                 <div class="border-l pl-6 pr-3">
@@ -246,6 +249,7 @@ export class ProfileBrowserDialog extends BtrixElement {
               ? html`<btrix-profile-browser
                   browserId=${browserId}
                   initialNavigateUrl=${ifDefined(this.config?.url)}
+                  .initialOrigins=${this.profile?.origins}
                   @btrix-browser-load=${this.onBrowserLoad}
                   @btrix-browser-reload=${this.onBrowserReload}
                   @btrix-browser-error=${this.onBrowserError}
