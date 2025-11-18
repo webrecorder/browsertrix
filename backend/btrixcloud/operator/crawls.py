@@ -22,6 +22,7 @@ from btrixcloud.models import (
     TYPE_RUNNING_STATES,
     TYPE_ALL_CRAWL_STATES,
     TYPE_PAUSED_STATES,
+    AUTO_PAUSED_STATES,
     RUNNING_STATES,
     WAITING_STATES,
     RUNNING_AND_STARTING_ONLY,
@@ -1638,13 +1639,16 @@ class CrawlOperator(BaseOperator):
                     allowed_from=RUNNING_AND_WAITING_STATES,
                 )
 
-                # TODO: This is reached several times, so make it idempotent
-                if paused_state != "paused":
+                if (
+                    paused_state in AUTO_PAUSED_STATES
+                    and not status.autoPausedEmailsSent
+                ):
                     await self.crawl_ops.notify_org_admins_of_auto_paused_crawl(
                         paused_reason=paused_state,
                         cid=crawl.cid,
                         org=crawl.org,
                     )
+                    status.autoPausedEmailsSent = True
 
                 return status
 

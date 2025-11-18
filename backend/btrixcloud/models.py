@@ -244,6 +244,7 @@ TYPE_AUTO_PAUSED_STATES = Literal[
     "paused_time_quota_reached",
     "paused_org_readonly",
 ]
+AUTO_PAUSED_STATES = get_args(TYPE_AUTO_PAUSED_STATES)
 
 TYPE_PAUSED_STATES = Literal[
     TYPE_MANUALLY_PAUSED_STATES,
