@@ -248,7 +248,7 @@ export class StartBrowserDialog extends BtrixElement {
             (await this.urlInput)?.focus();
           }}
         >
-          <sl-menu-label>${msg("Configured Sites")}</sl-menu-label>
+          <sl-menu-label>${msg("Saved Sites")}</sl-menu-label>
           ${profile.origins.map(
             (url) => html` <sl-option value=${url}>${url}</sl-option> `,
           )}

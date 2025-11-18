@@ -496,7 +496,7 @@ export class ProfileBrowser extends BtrixElement {
         class="flex min-h-10 justify-between border-b p-1 leading-tight text-neutral-700"
       >
         <div class="flex items-center gap-1.5 px-2">
-          <h4>${msg("Configured Sites")}</h4>
+          <h4>${msg("Saved Sites")}</h4>
           <btrix-popover
             content=${msg("Sites with data saved in the profile.")}
             placement="top"
