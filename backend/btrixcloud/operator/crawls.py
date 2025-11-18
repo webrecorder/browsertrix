@@ -1771,14 +1771,7 @@ class CrawlOperator(BaseOperator):
                 )
 
         if state in FAILED_STATES:
-            deleted_file_size = await self.crawl_ops.delete_failed_crawl_files(
-                crawl.id, crawl.oid
-            )
-            # Ensure we decrement org storage for any files that were already stored
-            # (e.g. when crawl was paused)
-            await self.org_ops.inc_org_bytes_stored(
-                crawl.oid, -deleted_file_size, "crawl"
-            )
+            await self.crawl_ops.delete_failed_crawl_files(crawl.id, crawl.oid)
             await self.page_ops.delete_crawl_pages(crawl.id, crawl.oid)
 
         await self.event_webhook_ops.create_crawl_finished_notification(
