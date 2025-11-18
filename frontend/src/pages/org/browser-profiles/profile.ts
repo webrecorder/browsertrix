@@ -669,6 +669,17 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                 (workflow) =>
                   html`<btrix-workflow-list-item .workflow=${workflow}>
                     <sl-menu slot="menu">
+                      <sl-menu-item
+                        @click=${() =>
+                          void this.openBrowser({ url: workflow.firstSeed })}
+                      >
+                        <sl-icon
+                          slot="prefix"
+                          name="window-fullscreen"
+                        ></sl-icon>
+                        ${msg("Load Crawl Start URL")}
+                      </sl-menu-item>
+                      <sl-divider></sl-divider>
                       ${when(
                         this.appState.isCrawler,
                         () => html`
@@ -679,19 +690,8 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                             <sl-icon name="gear" slot="prefix"></sl-icon>
                             ${msg("Edit Workflow Settings")}
                           </btrix-menu-item-link>
-                          <sl-divider></sl-divider>
                         `,
                       )}
-                      <btrix-menu-item-link
-                        href="${this.navigate
-                          .orgBasePath}/${OrgTab.Workflows}/${workflow.id}"
-                      >
-                        <sl-icon
-                          name="arrow-return-right"
-                          slot="prefix"
-                        ></sl-icon>
-                        ${msg("Go to Workflow")}
-                      </btrix-menu-item-link>
                     </sl-menu>
                   </btrix-workflow-list-item>`,
               )}
