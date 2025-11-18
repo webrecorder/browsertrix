@@ -4,10 +4,17 @@ import type {
   SlButton,
   SlChangeEvent,
   SlCheckbox,
+  SlSelect,
 } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html, nothing } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  query,
+  queryAsync,
+  state,
+} from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
@@ -34,6 +41,8 @@ type StartBrowserEventDetail = {
 
 export type BtrixStartBrowserEvent = CustomEvent<StartBrowserEventDetail>;
 
+const URL_FORM_FIELD_NAME = "startingUrl";
+
 /**
  * Start browser with specified profile and additional configuration.
  *
@@ -58,6 +67,9 @@ export class StartBrowserDialog extends BtrixElement {
   open = false;
 
   @state()
+  addSite = false;
+
+  @state()
   replaceBrowser = false;
 
   @query("btrix-dialog")
@@ -68,6 +80,9 @@ export class StartBrowserDialog extends BtrixElement {
 
   @query("btrix-details")
   private readonly details?: Details | null;
+
+  @queryAsync(`[name=${URL_FORM_FIELD_NAME}]`)
+  private readonly urlInput?: UrlInput | SlSelect | null;
 
   @query("#submit-button")
   private readonly submitButton?: SlButton | null;
@@ -82,7 +97,9 @@ export class StartBrowserDialog extends BtrixElement {
       this.replaceBrowser && proxies && proxyServers?.length && profile;
 
     return html`<btrix-dialog
-      .label=${msg("Configure Sites")}
+      .label=${this.startUrl
+        ? msg("Configure Sites in Profile")
+        : msg("Add Site to Profile")}
       ?open=${this.open}
       @sl-initial-focus=${async () => {
         await this.updateComplete;
@@ -116,7 +133,7 @@ export class StartBrowserDialog extends BtrixElement {
           if (!form.checkValidity()) return;
 
           const values = serialize(form);
-          const url = values["startingUrl"] as string;
+          const url = values[URL_FORM_FIELD_NAME] as string;
           const crawlerChannel = values["crawlerChannel"] as string | undefined;
 
           this.dispatchEvent(
@@ -130,20 +147,14 @@ export class StartBrowserDialog extends BtrixElement {
           );
         }}
       >
-        <btrix-url-input
-          name="startingUrl"
-          label=${msg("Site URL")}
-          .value=${this.startUrl || ""}
-          required
-        >
-        </btrix-url-input>
+        ${when(this.profile, this.renderUrl)}
 
         <sl-checkbox
           class="mt-4"
           @sl-change=${(e: SlChangeEvent) =>
             (this.replaceBrowser = (e.target as SlCheckbox).checked)}
         >
-          ${msg("Replace previously configured sites")}
+          ${msg("Replace saved sites")}
           ${when(
             this.replaceBrowser,
             () => html`
@@ -153,7 +164,7 @@ export class StartBrowserDialog extends BtrixElement {
                   name="exclamation-triangle"
                 ></sl-icon>
                 ${msg(
-                  "All previously configured site data and browsing activity will be removed.",
+                  "Data and browsing activity of all previously configured sites will be removed.",
                 )}
               </div>
             `,
@@ -211,4 +222,44 @@ export class StartBrowserDialog extends BtrixElement {
       </div>
     </btrix-dialog>`;
   }
+
+  private readonly renderUrl = (profile: Profile) => {
+    const urlInput = html`<btrix-url-input
+      name=${URL_FORM_FIELD_NAME}
+      label=${msg("New Site URL")}
+      .value=${this.addSite || !this.startUrl ? "" : this.startUrl}
+      required
+    >
+    </btrix-url-input>`;
+
+    if (this.startUrl && profile.origins.length > 1) {
+      return html`<sl-select
+          name=${ifDefined(this.addSite ? undefined : URL_FORM_FIELD_NAME)}
+          label=${msg("Site")}
+          value=${this.startUrl}
+          hoist
+          @sl-change=${async (e: SlChangeEvent) => {
+            const { value } = e.target as SlSelect;
+            this.addSite = !value;
+
+            await this.updateComplete;
+            (await this.urlInput)?.focus();
+          }}
+        >
+          <sl-menu-label>${msg("Configured Sites")}</sl-menu-label>
+          ${profile.origins.map(
+            (url) => html` <sl-option value=${url}>${url}</sl-option> `,
+          )}
+          <sl-divider></sl-divider>
+          <sl-option>${msg("Add New Site")}</sl-option>
+        </sl-select>
+
+        ${when(
+          this.addSite,
+          () => html`<div class="mt-4">${urlInput}</div>`,
+        )} `;
+    }
+
+    return urlInput;
+  };
 }
