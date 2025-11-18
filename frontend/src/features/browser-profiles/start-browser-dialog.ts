@@ -224,10 +224,12 @@ export class StartBrowserDialog extends BtrixElement {
   }
 
   private readonly renderUrl = (profile: Profile) => {
+    const startUrl = this.startUrl;
+    const showNew = this.addSite || !startUrl;
     const urlInput = html`<btrix-url-input
       name=${URL_FORM_FIELD_NAME}
-      label=${msg("New Site URL")}
-      .value=${this.addSite || !this.startUrl ? "" : this.startUrl}
+      label=${showNew ? msg("New Site URL") : msg("Site URL")}
+      .value=${showNew ? "" : startUrl}
       required
     >
     </btrix-url-input>`;
