@@ -563,7 +563,7 @@ def custom_behaviors_crawl_id(admin_auth_headers, default_org_id):
 def canceled_crawl_id(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
-        "name": "Canceled crawl",
+        "name": "Canceled Crawl",
         "tags": ["canceled"],
         "config": {
             "seeds": [{"url": "https://old.webrecorder.net/"}],
