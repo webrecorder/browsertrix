@@ -143,7 +143,7 @@ export class StartBrowserDialog extends BtrixElement {
           @sl-change=${(e: SlChangeEvent) =>
             (this.replaceBrowser = (e.target as SlCheckbox).checked)}
         >
-          ${msg("Replace configured sites")}
+          ${msg("Replace previously configured sites")}
           ${when(
             this.replaceBrowser,
             () => html`

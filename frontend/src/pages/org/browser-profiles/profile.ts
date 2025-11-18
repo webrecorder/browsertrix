@@ -359,7 +359,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
               class="flex h-8 flex-1 items-center overflow-hidden border-r text-left transition-colors duration-fast hover:bg-cyan-50/50"
               @click=${() => void this.openBrowser({ url: origin })}
             >
-              <sl-tooltip placement="left" content=${msg("View")}>
+              <sl-tooltip placement="left" content=${msg("Load Site")}>
                 <sl-icon name="window-fullscreen" class="mx-2 block"></sl-icon>
               </sl-tooltip>
               <btrix-code

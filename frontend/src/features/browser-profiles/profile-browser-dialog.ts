@@ -148,7 +148,7 @@ export class ProfileBrowserDialog extends BtrixElement {
       @sl-after-hide=${() => this.closeBrowser()}
     >
       <header class="flex flex-wrap items-center gap-3 p-3">
-        <div class="flex min-w-80 flex-1 items-center gap-3">
+        <div class="flex flex-1 items-center gap-3">
           <div class="border-r pr-3">
             <sl-icon-button
               name="x-lg"
@@ -166,12 +166,28 @@ export class ProfileBrowserDialog extends BtrixElement {
             >
             </sl-icon-button>
           </div>
-          <div class="px-3">
-            <h2 id="title" class="mb-2 text-base font-medium leading-none">
-              ${[this.config?.name || this.profile?.name, this.config?.url]
-                .filter((v) => v)
-                .join(" — ")}
-            </h2>
+          <div class="w-full overflow-hidden px-3">
+            <div class="mb-2 flex min-w-80 items-center md:h-7">
+              <h2
+                id="title"
+                class="text-base font-medium leading-none md:truncate"
+              >
+                ${this.config?.name || this.profile?.name}
+              </h2>
+              ${when(
+                this.config?.url,
+                (url) => html`
+                  <sl-divider class="hidden md:block" vertical></sl-divider>
+                  <btrix-code
+                    class="mt-px hidden w-40 flex-1 md:block"
+                    language="url"
+                    value=${url}
+                    truncate
+                    noWrap
+                  ></btrix-code>
+                `,
+              )}
+            </div>
             ${when(
               (this.profile || this.config) && {
                 ...this.profile,
@@ -181,7 +197,7 @@ export class ProfileBrowserDialog extends BtrixElement {
             )}
           </div>
         </div>
-        <div class="flex flex-1 items-center justify-end gap-3">
+        <div class="flex flex-1 items-center justify-end gap-3 md:grow-0">
           <div class="flex items-center gap-2">
             <sl-tooltip content=${msg("Enter Fullscreen")}>
               <sl-icon-button
@@ -190,7 +206,7 @@ export class ProfileBrowserDialog extends BtrixElement {
                 @click=${() => void this.profileBrowser?.enterFullscreen()}
               ></sl-icon-button>
             </sl-tooltip>
-            <sl-tooltip content=${msg("Toggle Sites")}>
+            <sl-tooltip content=${msg("Toggle Site List")}>
               <sl-icon-button
                 class="text-base"
                 name="layout-sidebar-reverse"

@@ -1,8 +1,10 @@
-import { localized, msg, str } from "@lit/localize";
-import { Task, TaskStatus } from "@lit/task";
+import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
+import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -368,15 +370,23 @@ export class ProfileBrowser extends BtrixElement {
                   )}
                 `,
                 () =>
-                  this.browserTask.status === TaskStatus.PENDING
-                    ? emptyMessage({
-                        message: msg(
-                          "Sites will be shown here once the browser is done loading.",
-                        ),
-                      })
-                    : emptyMessage({
-                        message: msg("No sites configured yet."),
-                      }),
+                  html`<div class="p-3 text-center">
+                    ${typeof this.browserTask.value !== "number" &&
+                    this.browserTask.value?.id
+                      ? emptyMessage({
+                          icon: { name: "slash-circle", label: msg("None") },
+                          message: msg("No sites configured yet."),
+                        })
+                      : emptyMessage({
+                          icon: {
+                            name: "hourglass-split",
+                            label: msg("Waiting"),
+                          },
+                          message: msg(
+                            "Sites will be shown here once the browser is done loading.",
+                          ),
+                        })}
+                  </div>`,
               )}
             </div>
           </div>
@@ -469,7 +479,7 @@ export class ProfileBrowser extends BtrixElement {
 
   private renderSidebarButton() {
     return html`
-      <sl-tooltip content=${msg("Toggle Sites")}>
+      <sl-tooltip content=${msg("Toggle Site List")}>
         <sl-icon-button
           name="layout-sidebar-reverse"
           class="${this.showOriginSidebar ? "text-blue-600" : ""}"
@@ -486,9 +496,9 @@ export class ProfileBrowser extends BtrixElement {
         class="flex min-h-10 justify-between border-b p-1 leading-tight text-neutral-700"
       >
         <div class="flex items-center gap-1.5 px-2">
-          <h4>${msg("Saved Sites")}</h4>
+          <h4>${msg("Configured Sites")}</h4>
           <btrix-popover
-            content=${msg("Websites in the browser profile")}
+            content=${msg("Sites with data saved in the profile.")}
             placement="top"
             hoist
             ><sl-icon
@@ -520,9 +530,11 @@ export class ProfileBrowser extends BtrixElement {
         <div class="flex items-center gap-1.5 px-2">
           <h4>${msg("New Sites")}</h4>
           <btrix-popover
-            content=${msg(
-              "Websites that are not in the browser profile yet. Finish browsing and save to add these websites to the profile.",
-            )}
+            content="${msg(
+              "Sites that are not in the browser profile yet.",
+            )} ${msg(
+              "Finish browsing and save to include data and browsing activity from these sites to the profile.",
+            )}"
             placement="top"
             hoist
             ><sl-icon
@@ -542,18 +554,32 @@ export class ProfileBrowser extends BtrixElement {
     const iframeSrc =
       !isPolling(this.browserTask.value) && this.browserTask.value?.url;
 
-    return html`<li
-      class="border-t-neutral-100${iframeSrc
-        ? " hover:bg-cyan-50/50 hover:text-cyan-700"
-        : ""} flex items-center justify-between border-t px-3 py-2 first:border-t-0"
-      role=${iframeSrc ? "button" : "listitem"}
-      title=${msg(str`Go to ${url}`)}
-      @click=${() => (iframeSrc ? this.navigateBrowser({ url }) : {})}
-    >
-      <div class="w-full truncate text-sm">${url}</div>
-      ${iframeSrc
-        ? html`<sl-icon name="play-btn" class="text-lg"></sl-icon>`
-        : ""}
+    return html`<li class="border-t-neutral-100">
+      <div
+        class=${clsx(
+          iframeSrc &&
+            tw`text-neutral-700 transition-colors duration-fast hover:bg-cyan-50/50 hover:text-cyan-700`,
+          tw`flex items-center justify-between gap-2 border-t px-3 py-2 first:border-t-0`,
+        )}
+        role=${ifDefined(iframeSrc ? "button" : undefined)}
+        @click=${iframeSrc
+          ? () => void this.navigateBrowser({ url })
+          : undefined}
+      >
+        ${iframeSrc
+          ? html`<sl-tooltip content=${msg("Load Site")} placement="left">
+              <sl-icon name="arrow-left-circle" class="text-lg"></sl-icon>
+            </sl-tooltip>`
+          : ""}
+
+        <btrix-code
+          class="w-full"
+          language="url"
+          value=${url.replace(/\/$/, "")}
+          truncate
+          nowrap
+        ></btrix-code>
+      </div>
     </li>`;
   }
 
