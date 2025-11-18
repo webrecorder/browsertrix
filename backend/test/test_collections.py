@@ -1762,6 +1762,33 @@ def test_get_public_collection_slug_redirect(admin_auth_headers, default_org_id)
     assert r.status_code == 404
 
 
+def test_create_collection_with_failed_crawl(
+    admin_auth_headers, default_org_id, canceled_crawl_id
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=admin_auth_headers,
+        json={
+            "crawlIds": [canceled_crawl_id],
+            "name": "Should get rejected",
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_failed_crawl"
+
+
+def test_add_failed_crawl_to_collection(
+    admin_auth_headers, default_org_id, canceled_crawl_id
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_coll_id}/add",
+        json={"crawlIds": [canceled_crawl_id]},
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_failed_crawl"
+
+
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
     # Delete second collection
     r = requests.delete(
