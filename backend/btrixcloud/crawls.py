@@ -1227,12 +1227,17 @@ class CrawlOps(BaseCrawlOps):
     ):
         """Send email to all org admins about automatically paused crawl"""
         users = await self.orgs.get_users_for_org(org, UserRole.OWNER)
-        workflow = await self.crawl_configs.get_crawl_config(cid)
+        workflow = await self.crawl_configs.get_crawl_config_out(cid, org)
 
         await asyncio.gather(
             *[
                 self.user_manager.email.send_crawl_auto_paused(
-                    user.email, paused_reason, workflow.lastCrawlPausedExpiry, cid, org
+                    user.name,
+                    user.email,
+                    paused_reason,
+                    workflow.lastCrawlPausedExpiry,
+                    cid,
+                    org,
                 )
                 for user in users
             ]
