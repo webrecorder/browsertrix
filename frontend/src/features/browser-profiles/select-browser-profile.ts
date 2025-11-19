@@ -7,6 +7,7 @@ import orderBy from "lodash/fp/orderBy";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Profile } from "@/pages/org/types";
+import { OrgTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 
 type SelectBrowserProfileChangeDetail = {
@@ -101,15 +102,11 @@ export class SelectBrowserProfile extends BtrixElement {
           ${this.selectedProfile
             ? html`
                 <span>
-                  ${msg("Last updated")}
-                  <btrix-format-date
-                    .date=${this.selectedProfile.modified}
-                    month="2-digit"
-                    day="2-digit"
-                    year="numeric"
-                    hour="2-digit"
-                    minute="2-digit"
-                  ></btrix-format-date>
+                  ${msg("Last modified")}
+                  ${this.localize.relativeDate(
+                    this.selectedProfile.modified ||
+                      this.selectedProfile.created,
+                  )}
                 </span>
                 ${this.selectedProfile.proxyId
                   ? html` <span>
@@ -117,25 +114,25 @@ export class SelectBrowserProfile extends BtrixElement {
                       <b>${this.selectedProfile.proxyId}</b>
                     </span>`
                   : ``}
-                <a
-                  class="flex items-center gap-1 text-blue-500 hover:text-blue-600"
-                  href=${`${this.navigate.orgBasePath}/browser-profiles/profile/${this.selectedProfile.id}`}
+                <btrix-link
+                  href="${this.navigate
+                    .orgBasePath}/${OrgTab.BrowserProfiles}/profile/${this
+                    .selectedProfile.id}"
                   target="_blank"
                 >
-                  ${msg("Check Profile")}
-                  <sl-icon name="box-arrow-up-right"></sl-icon>
-                </a>
+                  ${msg("View Browser Profile")}
+                </btrix-link>
               `
             : this.browserProfiles
               ? html`
-                  <a
-                    class="ml-auto flex items-center gap-1 text-blue-500 hover:text-blue-600"
-                    href=${`${this.navigate.orgBasePath}/browser-profiles`}
+                  <btrix-link
+                    class="ml-auto"
+                    href="${this.navigate
+                      .orgBasePath}/${OrgTab.BrowserProfiles}"
                     target="_blank"
                   >
-                    ${msg("View Profiles")}
-                    <sl-icon name="box-arrow-up-right"></sl-icon>
-                  </a>
+                    ${msg("View Browser Profiles")}
+                  </btrix-link>
                 `
               : nothing}
         </div>
