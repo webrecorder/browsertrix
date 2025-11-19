@@ -338,6 +338,18 @@ export class ArchivedItemQA extends BtrixElement {
     }
   }
 
+  protected updated(changedProperties: PropertyValues): void {
+    if (
+      changedProperties.has("crawlData") &&
+      this.crawlData?.replayUrl &&
+      this.crawlData.replayUrl !==
+        (changedProperties.get("crawlData") as QATypes.ReplayData | undefined)
+          ?.replayUrl
+    ) {
+      this.showReplayPageLoadingDialog();
+    }
+  }
+
   private async initItem() {
     void this.fetchCrawl();
     await this.fetchQARuns();
@@ -1038,6 +1050,8 @@ export class ArchivedItemQA extends BtrixElement {
     return html`
       <div
         class="replayContainer ${tw`h-full min-h-96 [contain:paint] lg:min-h-0`}"
+        @sl-show=${this.disableScrollLock}
+        @sl-after-hide=${this.enableScrollLock}
       >
         <div
           class=${tw`relative h-full overflow-hidden rounded-b-lg border-x border-b bg-slate-100 p-4 shadow-inner`}
@@ -1111,7 +1125,6 @@ export class ArchivedItemQA extends BtrixElement {
         </div>
         <btrix-dialog
           class="loadingPageDialog"
-          ?open=${this.tab === "replay"}
           no-header
           @sl-request-close=${(e: SlRequestCloseEvent) => e.preventDefault()}
         >
@@ -1130,6 +1143,16 @@ export class ArchivedItemQA extends BtrixElement {
       </div>
     `;
   }
+
+  private readonly disableScrollLock = (e: CustomEvent) => {
+    e.stopPropagation();
+    document.documentElement.classList.add("disable-scroll-lock");
+  };
+
+  private readonly enableScrollLock = (e: CustomEvent) => {
+    e.stopPropagation();
+    document.documentElement.classList.remove("disable-scroll-lock");
+  };
 
   private readonly renderRWP = (rwpId: string, { qa }: { qa: boolean }) => {
     if (!rwpId) return;
