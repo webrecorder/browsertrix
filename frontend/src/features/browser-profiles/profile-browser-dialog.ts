@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import clsx from "clsx";
-import { html, nothing } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -45,6 +45,9 @@ export class ProfileBrowserDialog extends BtrixElement {
   @state()
   private isBrowserLoaded = false;
 
+  @state()
+  private showConfirmation = false;
+
   @query("btrix-dialog")
   private readonly dialog?: Dialog | null;
 
@@ -69,6 +72,17 @@ export class ProfileBrowserDialog extends BtrixElement {
     },
     args: () => [this.open, this.config] as const,
   });
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("open")) {
+      if (!this.open) {
+        this.showConfirmation = false;
+        this.isBrowserLoaded = false;
+        this.#savedBrowserId = undefined;
+        this.browserIdTask.abort();
+      }
+    }
+  }
 
   disconnectedCallback(): void {
     const browserId = this.browserIdTask.value;
@@ -218,14 +232,31 @@ export class ProfileBrowserDialog extends BtrixElement {
             </sl-tooltip>
           </div>
 
-          ${when(
-            isCrawler,
-            () => html`
-              <btrix-popover
-                content=${msg("Save disabled during load.")}
-                ?disabled=${this.isBrowserLoaded}
-              >
-                <div class="border-l pl-6 pr-3">
+          <div class="flex gap-3 border-l pl-6 pr-3">
+            ${when(
+              isCrawler,
+              () => html`
+                <btrix-popover
+                  ?open=${this.showConfirmation}
+                  trigger="manual"
+                  content=${msg(
+                    "Are you sure you want to exit without saving?",
+                  )}
+                >
+                  <sl-button
+                    size="small"
+                    @click=${this.showConfirmation || !this.isBrowserLoaded
+                      ? () => void this.dialog?.hide()
+                      : () => (this.showConfirmation = true)}
+                  >
+                    ${this.showConfirmation ? msg("Yes, Exit") : msg("Exit")}
+                  </sl-button>
+                </btrix-popover>
+
+                <btrix-popover
+                  content=${msg("Save disabled during load.")}
+                  ?disabled=${this.isBrowserLoaded}
+                >
                   <sl-button
                     size="small"
                     variant="primary"
@@ -235,10 +266,19 @@ export class ProfileBrowserDialog extends BtrixElement {
                   >
                     ${creatingNew ? msg("Create Profile") : msg("Save Profile")}
                   </sl-button>
-                </div>
-              </btrix-popover>
-            `,
-          )}
+                </btrix-popover>
+              `,
+              () => html`
+                <sl-button
+                  size="small"
+                  variant="primary"
+                  @click=${() => void this.dialog?.hide()}
+                >
+                  ${msg("Exit")}
+                </sl-button>
+              `,
+            )}
+          </div>
         </div>
       </header>
 

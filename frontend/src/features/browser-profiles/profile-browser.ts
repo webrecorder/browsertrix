@@ -331,7 +331,7 @@ export class ProfileBrowser extends BtrixElement {
             initial: browserLoading,
             pending: browserLoading,
             error: () => html`
-              <div class="flex w-full items-center justify-center">
+              <div class="flex size-full items-center justify-center">
                 <btrix-alert variant="danger">
                   <p>
                     ${msg(
