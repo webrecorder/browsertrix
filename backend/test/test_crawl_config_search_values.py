@@ -124,3 +124,17 @@ def test_get_search_values_3(admin_auth_headers, default_org_id):
     assert sorted(data["firstSeeds"]) == sorted(
         ["https://old.webrecorder.net/", FIRST_SEED_1_URL, FIRST_SEED_2_URL]
     )
+
+
+def test_get_search_values_filter_profiles(
+    admin_auth_headers, default_org_id, profile_id, profile_config_id
+):
+    """Test profile_ids filter"""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/search-values?profileIds={profile_id}",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    assert data["names"] == ["Profile Test Crawl"]
+    assert data["descriptions"] == ["Crawl using browser profile"]
+    assert data["firstSeeds"] == ["https://old.webrecorder.net/"]

@@ -4,7 +4,17 @@ Crawl Config API handling
 
 # pylint: disable=too-many-lines
 
-from typing import List, Optional, TYPE_CHECKING, cast, Dict, Tuple, Annotated, Union
+from typing import (
+    List,
+    Optional,
+    TYPE_CHECKING,
+    cast,
+    Dict,
+    Tuple,
+    Annotated,
+    Union,
+    Any,
+)
 
 import asyncio
 import json
@@ -1174,12 +1184,18 @@ class CrawlConfigOps:
         ).to_list()
         return tags
 
-    async def get_crawl_config_search_values(self, org):
+    async def get_crawl_config_search_values(
+        self, org, profile_ids: Optional[List[UUID]] = None
+    ):
         """List unique names, first seeds, and descriptions from all workflows in org"""
-        names = await self.crawl_configs.distinct("name", {"oid": org.id})
-        descriptions = await self.crawl_configs.distinct("description", {"oid": org.id})
-        workflow_ids = await self.crawl_configs.distinct("_id", {"oid": org.id})
-        first_seeds = await self.crawl_configs.distinct("firstSeed", {"oid": org.id})
+        query: Dict[str, Any] = {"oid": org.id}
+        if profile_ids:
+            query["profileid"] = {"$in": profile_ids}
+
+        names = await self.crawl_configs.distinct("name", query)
+        descriptions = await self.crawl_configs.distinct("description", query)
+        workflow_ids = await self.crawl_configs.distinct("_id", query)
+        first_seeds = await self.crawl_configs.distinct("firstSeed", query)
 
         # Remove empty strings
         names = [name for name in names if name]
@@ -1700,8 +1716,11 @@ def init_crawl_config_api(
     @router.get("/search-values", response_model=CrawlConfigSearchValues)
     async def get_crawl_config_search_values(
         org: Organization = Depends(org_viewer_dep),
+        profile_ids: Annotated[
+            Optional[List[UUID]], Query(alias="profileIds", title="Profile IDs")
+        ] = None,
     ):
-        return await ops.get_crawl_config_search_values(org)
+        return await ops.get_crawl_config_search_values(org, profile_ids)
 
     @router.get("/crawler-channels", response_model=CrawlerChannels)
     async def get_crawler_channels(
