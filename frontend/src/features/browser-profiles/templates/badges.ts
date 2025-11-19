@@ -1,12 +1,15 @@
 import { msg } from "@lit/localize";
 import { html, nothing } from "lit";
 import { when } from "lit/directives/when.js";
-import capitalize from "lodash/fp/capitalize";
 
-import { CrawlerChannelImage, type Profile } from "@/types/crawler";
+import { type Profile } from "@/types/crawler";
 
 export const usageBadge = (inUse: boolean) =>
-  html`<sl-tooltip content=${msg("Crawl Workflow Usage")}>
+  html`<sl-tooltip
+    content="${msg("Crawl Workflow Usage")}: ${inUse
+      ? msg("In Use")
+      : msg("Not In Use")}"
+  >
     <btrix-badge variant=${inUse ? "cyan" : "neutral"} class="font-monostyle">
       <sl-icon
         name=${inUse ? "check-circle" : "dash-circle"}
@@ -16,32 +19,25 @@ export const usageBadge = (inUse: boolean) =>
     </btrix-badge>
   </sl-tooltip>`;
 
-export const channelBadge = (channel: CrawlerChannelImage | AnyString) =>
-  html`<sl-tooltip content=${msg("Crawler Release Channel")}>
-    <btrix-badge
-      variant=${channel === CrawlerChannelImage.Default ? "neutral" : "blue"}
-      class="font-monostyle"
-    >
-      <sl-icon name="boxes" class="mr-1.5"></sl-icon>
-      ${capitalize(channel)}
-    </btrix-badge>
-  </sl-tooltip>`;
-
-export const proxyBadge = (proxy: string) =>
-  html`<sl-tooltip content=${msg("Crawler Proxy Server")}>
-    <btrix-badge variant="blue" class="font-monostyle">
-      <sl-icon name="globe2" class="mr-1.5"></sl-icon>
-      ${proxy}
-    </btrix-badge>
-  </sl-tooltip>`;
-
 export const badges = (
   profile: Partial<Pick<Profile, "inUse" | "crawlerChannel" | "proxyId">>,
 ) => {
   return html`<div class="flex flex-wrap gap-3 whitespace-nowrap">
     ${profile.inUse === undefined ? nothing : usageBadge(profile.inUse)}
-    ${when(profile.crawlerChannel, channelBadge)}
-    ${when(profile.proxyId, proxyBadge)}
+    ${when(
+      profile.crawlerChannel,
+      (channelImage) => html`
+        <btrix-crawler-channel-badge
+          channelId=${channelImage}
+        ></btrix-crawler-channel-badge>
+      `,
+    )}
+    ${when(
+      profile.proxyId,
+      (proxyId) => html`
+        <btrix-proxy-badge proxyId=${proxyId}></btrix-proxy-badge>
+      `,
+    )}
   </div> `;
 };
 

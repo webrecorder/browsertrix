@@ -10,8 +10,6 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import orderBy from "lodash/fp/orderBy";
 
-import { channelBadge, proxyBadge } from "./templates/badges";
-
 import { BtrixElement } from "@/classes/BtrixElement";
 import { none } from "@/layouts/empty";
 import { pageHeading } from "@/layouts/page";
@@ -178,15 +176,16 @@ export class SelectBrowserProfile extends BtrixElement {
                 : none}
             </btrix-desc-list-item>
             <btrix-desc-list-item label=${msg("Crawler Channel")}>
-              ${channelBadge(
-                profile.crawlerChannel || CrawlerChannelImage.Default,
-              )}
+              <btrix-crawler-channel-badge
+                channelId=${profile.crawlerChannel ||
+                CrawlerChannelImage.Default}
+              ></btrix-crawler-channel-badge>
             </btrix-desc-list-item>
             ${when(
               profile.proxyId,
-              (proxy) => html`
+              (proxyId) => html`
                 <btrix-desc-list-item label=${msg("Proxy")}>
-                  ${proxyBadge(proxy)}
+                  <btrix-proxy-badge proxyId=${proxyId}></btrix-proxy-badge>
                 </btrix-desc-list-item>
               `,
             )}
