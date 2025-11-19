@@ -1,14 +1,20 @@
 import { localized, msg } from "@lit/localize";
-import { type SlSelect } from "@shoelace-style/shoelace";
+import type { SlDrawer, SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import orderBy from "lodash/fp/orderBy";
 
+import { channelBadge, proxyBadge } from "./templates/badges";
+
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { Profile } from "@/pages/org/types";
+import { none } from "@/layouts/empty";
+import { pageHeading } from "@/layouts/page";
+import { CrawlerChannelImage, type Profile } from "@/pages/org/types";
 import { OrgTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
+import { AppStateService } from "@/utils/state";
 
 type SelectBrowserProfileChangeDetail = {
   value: Profile | undefined;
@@ -43,6 +49,9 @@ export class SelectBrowserProfile extends BtrixElement {
 
   @state()
   private browserProfiles?: Profile[];
+
+  @query("sl-drawer")
+  private readonly drawer?: SlDrawer | null;
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("profileId")) {
@@ -84,15 +93,13 @@ export class SelectBrowserProfile extends BtrixElement {
             <sl-option value=${profile.id}>
               ${profile.name}
               <div slot="suffix">
-                <div class="text-xs">
-                  <btrix-format-date
-                    .date=${profile.modified}
-                    month="2-digit"
-                    day="2-digit"
-                    year="numeric"
-                  ></btrix-format-date>
-                </div></div
-            ></sl-option>
+                <btrix-format-date
+                  class="text-xs"
+                  .date=${profile.modified || profile.created}
+                  dateStyle="medium"
+                ></btrix-format-date>
+              </div>
+            </sl-option>
           `,
         )}
         ${this.browserProfiles && !this.browserProfiles.length
@@ -101,27 +108,19 @@ export class SelectBrowserProfile extends BtrixElement {
         <div slot="help-text" class="flex justify-between">
           ${this.selectedProfile
             ? html`
+                <button
+                  class="text-blue-500 transition-colors duration-fast hover:text-blue-600"
+                  @click=${() => void this.drawer?.show()}
+                >
+                  ${msg("View Details")}
+                </button>
                 <span>
-                  ${msg("Last modified")}
+                  ${msg("Last saved")}
                   ${this.localize.relativeDate(
                     this.selectedProfile.modified ||
                       this.selectedProfile.created,
                   )}
                 </span>
-                ${this.selectedProfile.proxyId
-                  ? html` <span>
-                      ${msg("Using proxy: ")}
-                      <b>${this.selectedProfile.proxyId}</b>
-                    </span>`
-                  : ``}
-                <btrix-link
-                  href="${this.navigate
-                    .orgBasePath}/${OrgTab.BrowserProfiles}/profile/${this
-                    .selectedProfile.id}"
-                  target="_blank"
-                >
-                  ${msg("View Browser Profile")}
-                </btrix-link>
               `
             : this.browserProfiles
               ? html`
@@ -143,19 +142,108 @@ export class SelectBrowserProfile extends BtrixElement {
   }
 
   private renderSelectedProfileInfo() {
-    if (!this.selectedProfile?.description) return;
+    const profileContent = (profile: Profile) => {
+      const modifiedByAnyDate = [
+        profile.modifiedCrawlDate,
+        profile.modified,
+        profile.created,
+      ].reduce((a, b) => (b && a && b > a ? b : a), profile.created);
 
-    return html`<div class="my-2 rounded border pl-1">
-      <btrix-details style="--margin-bottom: 0; --border-bottom: 0;">
-        <div slot="title" class="text-xs leading-normal text-neutral-600">
-          ${msg("Description")}
-        </div>
-        <!-- display: inline -->
-        <div class="whitespace-pre-line p-3 text-xs leading-normal"
-          >${this.selectedProfile.description}</div
-        >
-      </btrix-details>
-    </div>`;
+      return html`${pageHeading({ content: msg("Overview"), level: 3 })}
+        <section class="mt-5">
+          <btrix-desc-list>
+            <btrix-desc-list-item label=${msg("Description")}>
+              ${profile.description
+                ? html`
+                    <!-- display: inline -->
+                    <div
+                      class="text-balanced whitespace-pre-line font-sans leading-relaxed text-neutral-600"
+                      >${profile.description}</div
+                    >
+                  `
+                : none}
+            </btrix-desc-list-item>
+            <btrix-desc-list-item label=${msg("Tags")}>
+              ${profile.tags.length
+                ? html`<div class="mt-1 flex flex-wrap gap-1.5">
+                    ${profile.tags.map(
+                      (tag) => html`<btrix-tag>${tag}</btrix-tag>`,
+                    )}
+                  </div>`
+                : none}
+            </btrix-desc-list-item>
+            <btrix-desc-list-item label=${msg("Crawler Channel")}>
+              ${channelBadge(
+                profile.crawlerChannel || CrawlerChannelImage.Default,
+              )}
+            </btrix-desc-list-item>
+            ${when(
+              profile.proxyId,
+              (proxy) => html`
+                <btrix-desc-list-item label=${msg("Proxy")}>
+                  ${proxyBadge(proxy)}
+                </btrix-desc-list-item>
+              `,
+            )}
+            <btrix-desc-list-item label=${msg("Last Modified")}>
+              ${this.localize.relativeDate(
+                modifiedByAnyDate || profile.created,
+              )}
+            </btrix-desc-list-item>
+          </btrix-desc-list>
+        </section>
+
+        <sl-divider class="my-5"></sl-divider>
+
+        ${pageHeading({ content: msg("Configured Sites"), level: 3 })}
+        <section class="mt-5">
+          ${profile.origins.length
+            ? html`<ul class="divide-y rounded-lg border">
+                ${profile.origins.map(
+                  (origin) => html`
+                    <li class="px-2 py-1">
+                      <btrix-code
+                        language="url"
+                        value=${origin}
+                        noWrap
+                        truncate
+                      ></btrix-code>
+                    </li>
+                  `,
+                )}
+              </ul>`
+            : none}
+        </section>
+
+        <div slot="footer" class="text-left">
+          <btrix-link
+            class="text-xs"
+            href="${this.navigate
+              .orgBasePath}/${OrgTab.BrowserProfiles}/profile/${profile.id}"
+            target="_blank"
+          >
+            ${msg("View More")}
+          </btrix-link>
+        </div> `;
+    };
+
+    return html` <sl-drawer
+      class="[--body-spacing:var(--sl-spacing-medium)] [--footer-spacing:var(--sl-spacing-x-small)_var(--sl-spacing-medium)] [--header-spacing:var(--sl-spacing-medium)]  part-[header]:[border-bottom:1px_solid_var(--sl-panel-border-color)]"
+      @sl-show=${() => {
+        // Hide any other open panels
+        AppStateService.updateUserGuideOpen(false);
+      }}
+    >
+      <span slot="label" class="flex gap-3">
+        <sl-icon
+          class="flex-shrink-0 text-base"
+          name="window-fullscreen"
+        ></sl-icon>
+        <span class="leading-4">${this.selectedProfile?.name}</span>
+      </span>
+
+      ${when(this.selectedProfile, profileContent)}
+    </sl-drawer>`;
   }
 
   private renderNoProfiles() {

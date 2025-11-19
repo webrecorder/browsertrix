@@ -25,7 +25,7 @@ export class Link extends BtrixElement {
     return html`
       <a
         class=${clsx(
-          "group inline-flex items-center gap-1 transition-colors",
+          "group inline-flex items-center gap-1 transition-colors duration-fast",
           {
             primary: "text-primary-500 hover:text-primary-600",
             neutral: "text-blue-500 hover:text-blue-600",
@@ -42,7 +42,7 @@ export class Link extends BtrixElement {
         <sl-icon
           slot="suffix"
           name="arrow-right"
-          class="size-4 transition-transform group-hover:translate-x-1"
+          class="size-4 transition-transform duration-fast group-hover:translate-x-1"
         ></sl-icon
       ></a>
     `;

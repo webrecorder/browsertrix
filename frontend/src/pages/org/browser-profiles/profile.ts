@@ -364,10 +364,11 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                 <sl-icon name="window" class="mx-2 block"></sl-icon>
               </sl-tooltip>
               <btrix-code
-                class="block flex-1 truncate"
+                class="block flex-1"
                 language="url"
                 value=${origin}
-                nowrap
+                noWrap
+                truncate
               ></btrix-code>
             </button>
 
