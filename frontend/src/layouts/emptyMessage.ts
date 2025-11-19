@@ -7,15 +7,24 @@ export function emptyMessage({
   message,
   detail,
   actions,
+  icon,
   classNames,
 }: {
   message: TemplateResult | string;
   detail?: TemplateResult | string;
   actions?: TemplateResult;
+  icon?: { name: string; label: string };
   classNames?: typeof tw | string;
 }) {
   return html`
     <div class=${clsx(tw`flex flex-col items-center gap-5 py-9`, classNames)}>
+      ${icon
+        ? html`<sl-icon
+            name=${icon.name}
+            label=${icon.label}
+            class=${tw`text-2xl text-neutral-300 antialiased`}
+          ></sl-icon>`
+        : nothing}
       <p
         class=${clsx(
           tw`-mb-px max-w-prose text-pretty`,

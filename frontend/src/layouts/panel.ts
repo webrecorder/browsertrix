@@ -14,7 +14,7 @@ export function panelHeader({
   actions?: TemplateResult;
 }) {
   return html`
-    <header class="mb-3 flex min-h-8 items-baseline justify-between">
+    <header class="mb-3 flex min-h-8 items-center justify-between">
       ${typeof heading === "string"
         ? pageHeading({ content: heading })
         : pageHeading(heading)}

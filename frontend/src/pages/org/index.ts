@@ -492,7 +492,14 @@ export class Org extends BtrixElement {
           ? html`<btrix-new-browser-profile-dialog
               .proxyServers=${proxies.servers}
               .crawlerChannels=${crawlerChannels}
-              defaultProxyId=${ifDefined(proxies.default_proxy_id || undefined)}
+              defaultProxyId=${ifDefined(
+                org.crawlingDefaults?.profileid ||
+                  proxies.default_proxy_id ||
+                  undefined,
+              )}
+              defaultCrawlerChannel=${ifDefined(
+                org.crawlingDefaults?.crawlerChannel,
+              )}
               ?open=${this.openDialogName === "browser-profile"}
               @sl-hide=${() => (this.openDialogName = undefined)}
             >
