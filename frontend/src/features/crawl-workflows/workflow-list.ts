@@ -25,7 +25,7 @@ import { ShareableNotice } from "./templates/shareable-notice";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
-import { WorkflowTab } from "@/routes";
+import { OrgTab, WorkflowTab } from "@/routes";
 import { noData } from "@/strings/ui";
 import type { ListWorkflow } from "@/types/crawler";
 import { humanizeSchedule } from "@/utils/cron";
@@ -40,15 +40,15 @@ export type WorkflowColumnName =
   | "actions";
 
 const columnWidths = {
-  name: "minmax(18rem, 1fr)",
+  // TODO Consolidate with table.stylesheet.css
+  // https://github.com/webrecorder/browsertrix/issues/3001
+  name: "[clickable-start] minmax(18rem, 1fr)",
   "latest-crawl": "minmax(15rem, 18rem)",
   "total-crawls": "minmax(6rem, 9rem)",
   modified: "minmax(12rem, 15rem)",
-  actions: "3rem",
+  actions: "[clickable-end] 3rem",
 } as const satisfies Record<WorkflowColumnName, string>;
 
-// postcss-lit-disable-next-line
-const mediumBreakpointCss = css`30rem`;
 // postcss-lit-disable-next-line
 const largeBreakpointCss = css`60rem`;
 // postcss-lit-disable-next-line
@@ -65,11 +65,6 @@ const rowCss = css`
     right: 0;
   }
 
-  @media only screen and (min-width: ${mediumBreakpointCss}) {
-    .row {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
   @media only screen and (min-width: ${largeBreakpointCss}) {
     .row {
       grid-template-columns: var(--btrix-workflow-list-columns);
@@ -252,6 +247,43 @@ export class WorkflowListItem extends BtrixElement {
           border-left: 1px solid var(--sl-panel-border-color);
         }
       }
+
+      /*
+       * TODO Consolidate with table.stylesheet.css
+       * https://github.com/webrecorder/browsertrix/issues/3001
+       */
+      .rowClickTarget--cell {
+        display: grid;
+        grid-template-columns: subgrid;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .rowClickTarget {
+        max-width: 100%;
+      }
+
+      .col sl-tooltip > *,
+      .col btrix-popover > *,
+      .col btrix-overflow-dropdown {
+        /* Place above .rowClickTarget::after overlay */
+        z-index: 10;
+        position: relative;
+      }
+
+      .rowClickTarget::after {
+        content: "";
+        display: block;
+        position: absolute;
+        inset: 0;
+        grid-column: clickable-start / clickable-end;
+      }
+
+      .rowClickTarget:focus-visible {
+        outline: var(--sl-focus-ring);
+        outline-offset: -0.25rem;
+        border-radius: 0.5rem;
+      }
     `,
   ];
 
@@ -271,13 +303,18 @@ export class WorkflowListItem extends BtrixElement {
   @query("btrix-overflow-dropdown")
   dropdownMenu!: OverflowDropdown;
 
+  @query("a")
+  private readonly anchor?: HTMLAnchorElement | null;
+
   private readonly columnTemplate = {
-    name: () =>
-      html`<div class="col">
-        <div class="detail url items-center truncate">
+    name: () => {
+      const href = `/orgs/${this.orgSlugState}/${OrgTab.Workflows}/${this.workflow?.id}/${this.workflow?.lastCrawlState?.startsWith("failed") ? WorkflowTab.Logs : WorkflowTab.LatestCrawl}`;
+
+      return html`<div class="col rowClickTarget--cell">
+        <a class="detail url rowClickTarget items-center truncate" href=${href}>
           ${when(this.workflow?.shareable, ShareableNotice)}
           ${this.safeRender(this.renderName)}
-        </div>
+        </a>
         <div class="desc truncate">
           ${this.safeRender((workflow) => {
             if (workflow.schedule) {
@@ -291,7 +328,8 @@ export class WorkflowListItem extends BtrixElement {
             return msg("---");
           })}
         </div>
-      </div>`,
+      </div>`;
+    },
     "latest-crawl": () =>
       html`<div class="col">${this.safeRender(this.renderLatestCrawl)}</div>`,
     "total-crawls": () =>
@@ -358,20 +396,7 @@ export class WorkflowListItem extends BtrixElement {
   } satisfies Record<WorkflowColumnName, () => TemplateResult>;
 
   render() {
-    return html`<div
-      class="item row"
-      role="button"
-      @click=${async (e: MouseEvent) => {
-        if (e.target === this.dropdownMenu) {
-          return;
-        }
-        e.preventDefault();
-        await this.updateComplete;
-        const failedStates = ["failed", "failed_not_logged_in"];
-        const href = `/orgs/${this.orgSlugState}/workflows/${this.workflow?.id}/${failedStates.includes(this.workflow?.lastCrawlState || "") ? WorkflowTab.Logs : WorkflowTab.LatestCrawl}`;
-        this.navigate.to(href);
-      }}
-    >
+    return html`<div class="item row">
       ${this.columns
         ? this.columns.map((col) => this.columnTemplate[col]())
         : Object.values(this.columnTemplate).map((render) => render())}
@@ -480,7 +505,7 @@ export class WorkflowListItem extends BtrixElement {
 
     return html`
       <sl-tooltip hoist placement="bottom" ?disabled=${!tooltipContent}>
-        <div>
+        <div class="w-max" @click=${this.redirectEventToAnchor}>
           <div class="detail">${status}</div>
           <div class="desc duration">${duration}</div>
         </div>
@@ -495,7 +520,7 @@ export class WorkflowListItem extends BtrixElement {
 
     return html`
       <sl-tooltip hoist placement="bottom">
-        <div>
+        <div class="w-max" @click=${this.redirectEventToAnchor}>
           <div class="detail truncate">
             ${workflow.modifiedByName
               ? html`<btrix-user-chip
@@ -547,6 +572,19 @@ export class WorkflowListItem extends BtrixElement {
       <span class="primaryUrl truncate">${workflow.firstSeed}</span
       >${nameSuffix}
     `;
+  };
+
+  /*
+   * TODO Remove when refactored to `btrix-table`
+   * https://github.com/webrecorder/browsertrix/issues/3001
+   */
+  private readonly redirectEventToAnchor = (e: MouseEvent) => {
+    if (!e.defaultPrevented) {
+      const newEvent = new MouseEvent(e.type, e);
+      e.stopPropagation();
+
+      this.anchor?.dispatchEvent(newEvent);
+    }
   };
 }
 
