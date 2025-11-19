@@ -564,7 +564,7 @@ export class BrowserProfilesList extends BtrixElement {
             : nothing}
         </btrix-table-cell>
         <btrix-table-cell>
-          ${this.localize.relativeDate(modifiedByAnyDate)}
+          ${this.localize.relativeDate(modifiedByAnyDate, { capitalize: true })}
         </btrix-table-cell>
         <btrix-table-cell class="p-0">
           ${this.renderActions(data)}

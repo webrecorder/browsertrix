@@ -1987,10 +1987,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${inputCol(html`
         <btrix-select-browser-profile
           .profileId=${this.formState.browserProfile?.id}
-          @on-change=${(e: SelectBrowserProfileChangeEvent) =>
+          @on-change=${(e: SelectBrowserProfileChangeEvent) => {
+            const profile = e.detail.value;
+
             this.updateFormState({
-              browserProfile: e.detail.value ?? null,
-            })}
+              browserProfile: profile ?? null,
+              proxyId: profile?.proxyId ?? null,
+            });
+          }}
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(infoTextFor["browserProfile"])}
@@ -2003,11 +2007,24 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 )}
                 .proxyServers=${proxies.servers}
                 .proxyId="${this.formState.proxyId || ""}"
+                ?disabled=${!!this.formState.browserProfile}
                 @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
                   this.updateFormState({
                     proxyId: e.detail.value,
                   })}
               ></btrix-select-crawler-proxy>
+              ${when(
+                this.formState.browserProfile,
+                () => html`
+                  <div class="form-help-text">
+                    <sl-icon
+                      class="mr-0.5 align-[-.175em]"
+                      name="info-circle"
+                    ></sl-icon>
+                    ${msg("Using proxy from browser profile.")}
+                  </div>
+                `,
+              )}
             `),
             this.renderHelpTextCol(infoTextFor["proxyId"]),
           ]

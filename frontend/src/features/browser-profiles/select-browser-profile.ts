@@ -1,5 +1,9 @@
 import { localized, msg } from "@lit/localize";
-import type { SlDrawer, SlSelect } from "@shoelace-style/shoelace";
+import type {
+  SlChangeEvent,
+  SlDrawer,
+  SlSelect,
+} from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -119,6 +123,7 @@ export class SelectBrowserProfile extends BtrixElement {
                   ${this.localize.relativeDate(
                     this.selectedProfile.modified ||
                       this.selectedProfile.created,
+                    { capitalize: true },
                   )}
                 </span>
               `
@@ -188,6 +193,7 @@ export class SelectBrowserProfile extends BtrixElement {
             <btrix-desc-list-item label=${msg("Last Modified")}>
               ${this.localize.relativeDate(
                 modifiedByAnyDate || profile.created,
+                { capitalize: true },
               )}
             </btrix-desc-list-item>
           </btrix-desc-list>
@@ -279,7 +285,7 @@ export class SelectBrowserProfile extends BtrixElement {
     `;
   }
 
-  private async onChange(e: Event) {
+  private async onChange(e: SlChangeEvent) {
     this.selectedProfile = this.browserProfiles?.find(
       ({ id }) => id === (e.target as SlSelect | null)?.value,
     );

@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
-import { html } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
@@ -49,6 +49,12 @@ export class SelectCrawlerProxy extends BtrixElement {
   @property({ type: String })
   size?: SlSelect["size"];
 
+  @property({ type: String })
+  helpText?: string;
+
+  @property({ type: Boolean })
+  disabled?: boolean;
+
   @state()
   private selectedProxy?: Proxy;
 
@@ -57,6 +63,18 @@ export class SelectCrawlerProxy extends BtrixElement {
 
   public get value() {
     return this.selectedProxy?.id || "";
+  }
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("proxyId")) {
+      if (this.proxyId) {
+        this.selectedProxy = this.proxyServers.find(
+          ({ id }) => id === this.proxyId,
+        );
+      } else if (changedProperties.get("proxyId")) {
+        this.selectedProxy = undefined;
+      }
+    }
   }
 
   protected firstUpdated() {
@@ -82,6 +100,7 @@ export class SelectCrawlerProxy extends BtrixElement {
           : msg("No Proxy")}
         hoist
         clearable
+        ?disabled=${this.disabled}
         size=${ifDefined(this.size)}
         @sl-change=${this.onChange}
         @sl-hide=${this.stopProp}
