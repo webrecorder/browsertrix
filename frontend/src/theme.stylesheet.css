@@ -237,9 +237,14 @@
   }
 
   /* Adjust menu item hover and focus styles */
-  sl-menu-item,
+  sl-option:not([aria-selected="true"]):not(:disabled),
+  sl-menu-item:not([disabled]),
   btrix-menu-item-link {
     @apply part-[base]:text-neutral-700 part-[base]:hover:bg-cyan-50/50 part-[base]:hover:text-cyan-700 part-[base]:focus-visible:bg-cyan-50/50;
+  }
+
+  sl-option[aria-selected="true"] {
+    @apply part-[base]:bg-cyan-50 part-[base]:text-cyan-700;
   }
 
   /* Add menu item variants */

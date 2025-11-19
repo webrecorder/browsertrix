@@ -1,5 +1,6 @@
 import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
 import type {
   SlButton,
   SlChangeEvent,
@@ -11,6 +12,7 @@ import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Details } from "@/components/ui/details";
@@ -26,6 +28,7 @@ import {
   type OrgProxiesContext,
 } from "@/context/org-proxies";
 import type { Profile } from "@/types/crawler";
+import type { WorkflowSearchValues } from "@/types/workflow";
 
 type StartBrowserEventDetail = {
   url?: string;
@@ -88,6 +91,48 @@ export class StartBrowserDialog extends BtrixElement {
 
   @query("#submit-button")
   private readonly submitButton?: SlButton | null;
+
+  // Get unique origins from workflow first seeds/crawl start URLs
+  private readonly workflowOrigins = new Task(this, {
+    task: async ([profile], { signal }) => {
+      if (!profile) return null;
+
+      const query = queryString.stringify({ profileIds: profile.id });
+
+      try {
+        const { firstSeeds } = await this.api.fetch<WorkflowSearchValues>(
+          `/orgs/${this.orgId}/crawlconfigs/search-values?${query}`,
+          { signal },
+        );
+
+        const profileUrls = profile.origins.map((origin) => new URL(origin));
+        const originMap: { [url: string]: boolean } = {};
+
+        firstSeeds.forEach((seed) => {
+          const seedUrl = new URL(seed);
+
+          // Only check domain names without www
+          if (
+            profileUrls.some((url) => {
+              return (
+                seedUrl.hostname.replace(/^www\./, "") ===
+                url.hostname.replace(/^www\./, "")
+              );
+            })
+          ) {
+            return;
+          }
+
+          originMap[seedUrl.origin] = true;
+        });
+
+        return Object.keys(originMap);
+      } catch (e) {
+        console.debug(e);
+      }
+    },
+    args: () => [this.profile] as const,
+  });
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("initialUrl")) {
@@ -238,6 +283,15 @@ export class StartBrowserDialog extends BtrixElement {
   }
 
   private readonly renderUrl = (profile: Profile) => {
+    const option = (url: string) =>
+      html`<sl-option
+        class="part-[label]:overflow-hidden"
+        value=${url}
+        title=${url}
+      >
+        <div class="truncate">${url}</div>
+      </sl-option>`;
+
     return html`<sl-select
         name=${PRIMARY_SITE_FIELD_NAME}
         label=${msg("Primary Site")}
@@ -253,12 +307,21 @@ export class StartBrowserDialog extends BtrixElement {
           }
         }}
       >
-        <sl-menu-label>${msg("Saved Sites")}</sl-menu-label>
-        ${profile.origins.map(
-          (url) => html` <sl-option value=${url}>${url}</sl-option> `,
-        )}
-        <sl-divider></sl-divider>
         <sl-option value="">${msg("New Site")}</sl-option>
+        <sl-divider></sl-divider>
+        <sl-menu-label>${msg("Saved Sites")}</sl-menu-label>
+        ${profile.origins.map(option)}
+        ${when(this.workflowOrigins.value, (seeds) =>
+          seeds.length
+            ? html`
+                <sl-divider></sl-divider>
+                <sl-menu-label
+                  >${msg("Suggestions from Related Workflows")}</sl-menu-label
+                >
+                ${seeds.map(option)}
+              `
+            : nothing,
+        )}
       </sl-select>
 
       <div class="mt-4">
