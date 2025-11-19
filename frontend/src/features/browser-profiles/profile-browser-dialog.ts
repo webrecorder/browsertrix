@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import clsx from "clsx";
-import { html, nothing } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -45,6 +45,9 @@ export class ProfileBrowserDialog extends BtrixElement {
   @state()
   private isBrowserLoaded = false;
 
+  @state()
+  private showConfirmation = false;
+
   @query("btrix-dialog")
   private readonly dialog?: Dialog | null;
 
@@ -54,7 +57,7 @@ export class ProfileBrowserDialog extends BtrixElement {
   #savedBrowserId?: string;
 
   private readonly browserIdTask = new Task(this, {
-    task: async ([open, config, profile], { signal }) => {
+    task: async ([open, config], { signal }) => {
       if (!open || !config) return null;
 
       const browserId = this.browserIdTask.value;
@@ -63,15 +66,23 @@ export class ProfileBrowserDialog extends BtrixElement {
         void this.deleteBrowser(browserId, signal);
       }
 
-      const { browserid } = await this.createBrowser(
-        { profileId: profile?.id, ...config },
-        signal,
-      );
+      const { browserid } = await this.createBrowser(config, signal);
 
       return browserid;
     },
-    args: () => [this.open, this.config, this.profile] as const,
+    args: () => [this.open, this.config] as const,
   });
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("open")) {
+      if (!this.open) {
+        this.showConfirmation = false;
+        this.isBrowserLoaded = false;
+        this.#savedBrowserId = undefined;
+        this.browserIdTask.abort();
+      }
+    }
+  }
 
   disconnectedCallback(): void {
     const browserId = this.browserIdTask.value;
@@ -151,7 +162,7 @@ export class ProfileBrowserDialog extends BtrixElement {
       @sl-after-hide=${() => this.closeBrowser()}
     >
       <header class="flex flex-wrap items-center gap-3 p-3">
-        <div class="flex min-w-80 flex-1 items-center gap-3">
+        <div class="flex flex-1 items-center gap-3">
           <div class="border-r pr-3">
             <sl-icon-button
               name="x-lg"
@@ -169,12 +180,31 @@ export class ProfileBrowserDialog extends BtrixElement {
             >
             </sl-icon-button>
           </div>
-          <div class="px-3">
-            <h2 id="title" class="mb-2 text-base font-medium leading-none">
-              ${[this.config?.name || this.profile?.name, this.config?.url]
-                .filter((v) => v)
-                .join(" — ")}
-            </h2>
+          <div class="w-full overflow-hidden px-3">
+            <div class="mb-2 flex min-w-80 items-center md:h-6">
+              <h2
+                id="title"
+                class="text-base font-medium leading-none md:truncate"
+              >
+                ${this.config?.name || this.profile?.name}
+              </h2>
+              ${when(
+                this.config?.url,
+                (url) => html`
+                  <sl-divider
+                    class="hidden [--spacing:var(--sl-spacing-small)] md:block"
+                    vertical
+                  ></sl-divider>
+                  <btrix-code
+                    class="mt-px hidden w-40 flex-1 md:block"
+                    language="url"
+                    value=${url}
+                    truncate
+                    noWrap
+                  ></btrix-code>
+                `,
+              )}
+            </div>
             ${when(
               (this.profile || this.config) && {
                 ...this.profile,
@@ -184,7 +214,7 @@ export class ProfileBrowserDialog extends BtrixElement {
             )}
           </div>
         </div>
-        <div class="flex flex-1 items-center justify-end gap-3">
+        <div class="flex flex-1 items-center justify-end gap-3 md:grow-0">
           <div class="flex items-center gap-2">
             <sl-tooltip content=${msg("Enter Fullscreen")}>
               <sl-icon-button
@@ -193,7 +223,7 @@ export class ProfileBrowserDialog extends BtrixElement {
                 @click=${() => void this.profileBrowser?.enterFullscreen()}
               ></sl-icon-button>
             </sl-tooltip>
-            <sl-tooltip content=${msg("Toggle Sites")}>
+            <sl-tooltip content=${msg("Toggle Site List")}>
               <sl-icon-button
                 class="text-base"
                 name="layout-sidebar-reverse"
@@ -202,14 +232,31 @@ export class ProfileBrowserDialog extends BtrixElement {
             </sl-tooltip>
           </div>
 
-          ${when(
-            isCrawler,
-            () => html`
-              <btrix-popover
-                content=${msg("Save disabled during load")}
-                ?disabled=${this.isBrowserLoaded}
-              >
-                <div class="border-l pl-6 pr-3">
+          <div class="flex gap-3 border-l pl-6 pr-3">
+            ${when(
+              isCrawler,
+              () => html`
+                <btrix-popover
+                  ?open=${this.showConfirmation}
+                  trigger="manual"
+                  content=${msg(
+                    "Are you sure you want to exit without saving?",
+                  )}
+                >
+                  <sl-button
+                    size="small"
+                    @click=${this.showConfirmation || !this.isBrowserLoaded
+                      ? () => void this.dialog?.hide()
+                      : () => (this.showConfirmation = true)}
+                  >
+                    ${this.showConfirmation ? msg("Yes, Exit") : msg("Exit")}
+                  </sl-button>
+                </btrix-popover>
+
+                <btrix-popover
+                  content=${msg("Save disabled during load.")}
+                  ?disabled=${this.isBrowserLoaded}
+                >
                   <sl-button
                     size="small"
                     variant="primary"
@@ -219,10 +266,19 @@ export class ProfileBrowserDialog extends BtrixElement {
                   >
                     ${creatingNew ? msg("Create Profile") : msg("Save Profile")}
                   </sl-button>
-                </div>
-              </btrix-popover>
-            `,
-          )}
+                </btrix-popover>
+              `,
+              () => html`
+                <sl-button
+                  size="small"
+                  variant="primary"
+                  @click=${() => void this.dialog?.hide()}
+                >
+                  ${msg("Exit")}
+                </sl-button>
+              `,
+            )}
+          </div>
         </div>
       </header>
 
@@ -233,6 +289,7 @@ export class ProfileBrowserDialog extends BtrixElement {
               ? html`<btrix-profile-browser
                   browserId=${browserId}
                   initialNavigateUrl=${ifDefined(this.config?.url)}
+                  .initialOrigins=${this.profile?.origins}
                   @btrix-browser-load=${this.onBrowserLoad}
                   @btrix-browser-reload=${this.onBrowserReload}
                   @btrix-browser-error=${this.onBrowserError}

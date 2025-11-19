@@ -282,8 +282,12 @@
   }
 
   /* TODO tailwind sets border-width: 0, see if this can be fixed in tw */
-  sl-divider {
-    border-top-width: var(--sl-panel-border-width);
+  sl-divider:not([vertical]) {
+    border-top: solid var(--width) var(--color);
+  }
+
+  sl-divider[vertical] {
+    border-left: solid var(--width) var(--color);
   }
 
   /* Add more spacing between radio options */

@@ -42,7 +42,7 @@ export function page(
       class="mx-auto box-border flex min-h-full w-full max-w-screen-desktop flex-1 flex-col gap-3 lg:px-10 lg:pb-10"
     >
       ${header.breadcrumbs ? html` ${pageNav(header.breadcrumbs)} ` : nothing}
-      ${header.title ? pageHeader(header) : nothing}
+      ${pageHeader(header)}
       ${header.title
         ? html`<main class="flex flex-1 flex-col">${render()}</main>`
         : render()}

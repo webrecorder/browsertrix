@@ -47,7 +47,7 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
   url: {
-    label: msg("Starting URL"),
+    label: msg("Primary Site"),
     defaultDirection: "asc",
   },
   modified: {
