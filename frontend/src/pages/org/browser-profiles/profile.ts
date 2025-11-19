@@ -602,10 +602,6 @@ export class BrowserProfilesProfilePage extends BtrixElement {
               `
             : panelBody({
                 content: emptyMessage({
-                  icon: {
-                    name: "file-code-fill",
-                    label: "Workflow",
-                  },
                   message: msg(
                     "This profile is not in use by any crawl workflows.",
                   ),
