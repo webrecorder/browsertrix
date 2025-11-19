@@ -15,6 +15,7 @@ import { when } from "lit/directives/when.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Details } from "@/components/ui/details";
 import type { Dialog } from "@/components/ui/dialog";
+import type { SelectCrawlerProxy } from "@/components/ui/select-crawler-proxy";
 import type { UrlInput } from "@/components/ui/url-input";
 import {
   orgCrawlerChannelsContext,
@@ -82,6 +83,9 @@ export class StartBrowserDialog extends BtrixElement {
   @query(`[name=${URL_FORM_FIELD_NAME}]`)
   private readonly urlInput?: UrlInput | null;
 
+  @query("btrix-select-crawler-proxy")
+  private readonly selectCrawlerProxy?: SelectCrawlerProxy | null;
+
   @query("#submit-button")
   private readonly submitButton?: SlButton | null;
 
@@ -143,12 +147,14 @@ export class StartBrowserDialog extends BtrixElement {
           const values = serialize(form);
           const url = values[URL_FORM_FIELD_NAME] as string;
           const crawlerChannel = values["crawlerChannel"] as string | undefined;
+          const proxyId = this.selectCrawlerProxy?.value;
 
           this.dispatchEvent(
             new CustomEvent<StartBrowserEventDetail>("btrix-start-browser", {
               detail: {
                 url,
                 crawlerChannel,
+                proxyId: this.replaceBrowser ? proxyId : undefined,
                 replaceBrowser: this.replaceBrowser,
               },
             }),
