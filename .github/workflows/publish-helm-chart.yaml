@@ -52,7 +52,7 @@ jobs:
 
           allowUpdates: true
           artifactErrorsFailBuild: true
-          artifacts: .chart-out/browsertrix-v${{ env.version }}.tgz,.chart-out/btrix-proxies-0.1.0.tgz
+          artifacts: .chart-out/browsertrix-v${{ env.version }}.tgz,.chart-out/btrix-proxies-*
           draft: true
           generateReleaseNotes: true
           name: Browsertrix v${{ env.version }}
