@@ -338,6 +338,7 @@ class CrawlOperator(BaseOperator):
         if pull_policy:
             params["crawler_image_pull_policy"] = pull_policy
 
+        proxy = None
         if crawl.proxy_id and not crawl.is_qa:
             proxy = self.crawl_config_ops.get_crawler_proxy(crawl.proxy_id)
             if proxy:
@@ -345,6 +346,10 @@ class CrawlOperator(BaseOperator):
                 params["proxy_url"] = proxy.url
                 params["proxy_ssh_private_key"] = proxy.has_private_key
                 params["proxy_ssh_host_public_key"] = proxy.has_host_public_key
+
+        params["add_proxies"] = proxy or (
+            not crawl.is_qa and data.related[CMAP].get("has-proxy-match-hosts")
+        )
 
         params["storage_filename"] = spec["storage_filename"]
         params["restart_time"] = spec.get("restartTime")
@@ -741,7 +746,14 @@ class CrawlOperator(BaseOperator):
 
     def get_related(self, data: MCBaseRequest):
         """return objects related to crawl pods"""
-        related_resources = []
+        related_resources = [
+            {
+                "apiVersion": "v1",
+                "resource": "configmaps",
+                "labelSelector": {"matchLabels": {"role": "has-proxy-match-hosts"}},
+            }
+        ]
+
         if self.k8s.enable_auto_resize:
             spec = data.parent.get("spec", {})
             crawl_id = spec["id"]
