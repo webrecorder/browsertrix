@@ -1,6 +1,11 @@
 name: Publish Docs
 on:
   workflow_dispatch:
+    inputs:
+      docs_source_url:
+        description: 'URL of Browsertrix Deployment to copy API docs from'
+        required: false
+        default: 'https://app.browsertrix.com'
 
   release:
     types: [published]
@@ -24,7 +29,7 @@ jobs:
       - name: Copy Docs Files
         run: frontend/docs/copy-api-docs.sh
         env:
-          DOCS_SOURCE_URL: https://app.browsertrix.com
+          DOCS_SOURCE_URL: ${{ github.event.inputs.docs_source_url || 'https://app.browsertrix.com' }}
           ENABLE_ANALYTICS: true
 
       - name: Build Docs
