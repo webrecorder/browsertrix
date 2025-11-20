@@ -58,7 +58,7 @@ export class Tag extends SLTag {
 
       .tag__content {
         display: inline-block;
-        max-width: ${TAG_MAX_CHARACTERS}ch;
+        max-width: ${TAG_MAX_CHARACTERS + 2}ch;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
