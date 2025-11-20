@@ -746,7 +746,7 @@ export class WorkflowEditor extends BtrixElement {
         </div>
 
         <p
-          class="cursor-default px-4 py-3 text-neutral-700"
+          class="w-full cursor-default px-4 py-3 text-neutral-700"
           slot="summary"
           @click=${(e: MouseEvent) => {
             // Decrease click target size of details header
