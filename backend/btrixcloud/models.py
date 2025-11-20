@@ -2431,6 +2431,8 @@ class ProfileFile(BaseFile):
 class Profile(BaseMongoModel):
     """Browser profile"""
 
+    id: UUID
+
     name: str
     description: Optional[str] = ""
 

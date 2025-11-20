@@ -363,7 +363,7 @@ class ProfileOps:
                 and metadata.proxyid != prev_proxy_id
             ):
                 await self.crawlconfigs.update_config_proxies_to_match_profile(
-                    profileid, metadata.proxyid, org
+                    profile.id, metadata.proxyid, org
                 )
 
         # pylint: disable=broad-except
