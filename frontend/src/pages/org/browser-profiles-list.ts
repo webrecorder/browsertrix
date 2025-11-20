@@ -66,12 +66,11 @@ const DEFAULT_SORT_BY = {
 } as const satisfies SortBy;
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
-const MAX_TAGS = 3;
 
 const columnsCss = [
   "min-content", // Status
   "[clickable-start] minmax(min-content, 1fr)", // Name
-  "minmax(max-content, 1fr)", // Tags
+  "30ch", // Tags
   "minmax(max-content, 1fr)", // Origins
   "minmax(min-content, 20ch)", // Last modified
   "[clickable-end] min-content", // Actions
@@ -523,8 +522,6 @@ export class BrowserProfilesList extends BtrixElement {
       ) || data.created;
     const startingUrl = data.origins[0];
     const otherOrigins = data.origins.slice(1);
-    const firstTags = data.tags.slice(0, MAX_TAGS);
-    const otherTags = data.tags.slice(MAX_TAGS);
 
     return html`
       <btrix-table-row
@@ -550,19 +547,12 @@ export class BrowserProfilesList extends BtrixElement {
           >
         </btrix-table-cell>
         <btrix-table-cell>
-          <div class="flex flex-wrap gap-1.5">
-            ${firstTags.map((tag) => html`<btrix-tag>${tag}</btrix-tag>`)}
-          </div>
-          ${otherTags.length
-            ? html`<btrix-popover placement="right" hoist>
-                <btrix-badge
-                  >+${this.localize.number(otherTags.length)}</btrix-badge
-                >
-                <div slot="content" class="flex flex-wrap gap-1.5">
-                  ${otherTags.map((tag) => html`<btrix-tag>${tag}</btrix-tag>`)}
-                </div>
-              </btrix-popover>`
-            : nothing}
+          <btrix-contained-tags
+            class="relative hover:z-[2]"
+            maxTags=${data.tags.length}
+          >
+            ${data.tags.map((tag) => html`<btrix-tag>${tag}</btrix-tag>`)}
+          </btrix-contained-tags>
         </btrix-table-cell>
         <btrix-table-cell>
           <btrix-code language="url" value=${startingUrl} noWrap></btrix-code>

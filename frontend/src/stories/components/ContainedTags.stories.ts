@@ -14,6 +14,9 @@ const meta = {
 export default meta;
 type Story = StoryObj<RenderProps>;
 
+/**
+ * Resize your browser window to see the remaining tags update.
+ */
 export const Basic: Story = {
   args: {
     content: html`<btrix-tag>Social Media</btrix-tag>

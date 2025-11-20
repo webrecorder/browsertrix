@@ -13,19 +13,21 @@ import type { Popover } from "./popover";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { Tag } from "@/components/ui/tag";
+import type { UnderlyingFunction } from "@/types/utils";
 import localize from "@/utils/localize";
 import { tw } from "@/utils/tailwind";
 
 /**
  * Displays all the tags that can be contained to one line.
  * Overflowing tags are displayed in a popover.
+ *
+ * @cssproperty width
  */
 @customElement("btrix-contained-tags")
 export class ContainedTags extends TailwindElement {
   static styles = css`
     :host {
-      display: contents;
-      --internal-width: 100%;
+      --width: 100%;
     }
   `;
 
@@ -50,7 +52,6 @@ export class ContainedTags extends TailwindElement {
   public remainder?: number;
 
   #popoverContent?: HTMLElement;
-  #resized = false;
 
   disconnectedCallback(): void {
     this.debouncedCalculate.cancel();
@@ -60,21 +61,14 @@ export class ContainedTags extends TailwindElement {
   render() {
     return html`
       <sl-resize-observer
-        @sl-resize=${() => {
-          if (!this.#resized) {
-            // Don't debounce first resize
-            this.calculate();
-            this.#resized = true;
-            return;
-          }
-
-          this.debouncedCalculate();
-        }}
+        @sl-resize=${this.debouncedCalculate as UnderlyingFunction<
+          typeof this.calculate
+        >}
       >
-        <div class="flex gap-2">
+        <div class="flex items-center gap-2">
           <div
             id="container"
-            class="flex h-6 w-[var(--internal-width)] flex-wrap gap-x-1.5 overflow-hidden"
+            class="flex h-6 w-[var(--width)] flex-wrap gap-x-1.5 overflow-hidden contain-content"
           >
             <slot
               @slotchange=${() => {
@@ -84,7 +78,7 @@ export class ContainedTags extends TailwindElement {
             ></slot>
           </div>
 
-          <btrix-popover hoist>
+          <btrix-popover hoist placement="right">
             <btrix-badge
               class=${clsx(!this.remainder && tw`invisible`)}
               aria-hidden=${this.remainder ? "false" : "true"}
@@ -103,7 +97,7 @@ export class ContainedTags extends TailwindElement {
     const containerTop = containerRect.top;
 
     // Reset width
-    this.style.setProperty("--internal-width", "100%");
+    this.style.setProperty("--width", "100%");
 
     const idx = this.tags.findIndex(
       (el) => el.getBoundingClientRect().top > containerTop,
@@ -118,7 +112,7 @@ export class ContainedTags extends TailwindElement {
 
       // Decrease width of container to match end of last visible tag
       this.style.setProperty(
-        "--internal-width",
+        "--width",
         `${rect.left - containerRect.left + rect.width}px`,
       );
     }
@@ -127,7 +121,12 @@ export class ContainedTags extends TailwindElement {
     const remaining = this.tags.slice(idx);
     const popoverContent = document.createElement("div");
 
-    popoverContent.classList.add(tw`flex`, tw`flex-wrap`, tw`gap-1.5`);
+    popoverContent.classList.add(
+      tw`flex`,
+      tw`flex-wrap`,
+      tw`gap-1.5`,
+      tw`z-50`,
+    );
     popoverContent.setAttribute("slot", "content");
 
     remaining.forEach((el) => {
