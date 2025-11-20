@@ -644,8 +644,8 @@ export class WorkflowEditor extends BtrixElement {
         class=${clsx(
           tw`part-[base]:rounded-lg part-[base]:border part-[base]:transition-shadow part-[base]:focus:shadow`,
           tw`part-[content]:pb-8 part-[content]:[border-top:solid_1px_var(--sl-panel-border-color)]`,
-          tw`part-[header]:text-neutral-500 part-[header]:hover:text-blue-400`,
-          tw`part-[summary-icon]:[rotate:none]`,
+          tw`part-[header]:p-0 part-[header]:text-neutral-500 part-[header]:hover:text-blue-400`,
+          tw`part-[summary-icon]:mx-4 part-[summary-icon]:[rotate:none]`,
           hasError &&
             tw`part-[header]:cursor-default part-[summary-icon]:cursor-not-allowed part-[summary-icon]:text-neutral-400`,
         )}
@@ -745,7 +745,17 @@ export class WorkflowEditor extends BtrixElement {
           )}
         </div>
 
-        <p class="text-neutral-700" slot="summary">${desc}</p>
+        <p
+          class="cursor-default px-4 py-3 text-neutral-700"
+          slot="summary"
+          @click=${(e: MouseEvent) => {
+            // Decrease click target size of details header
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          ${desc}
+        </p>
         <div class="grid grid-cols-5 gap-5">${render.bind(this)()}</div>
       </sl-details>`;
     };
