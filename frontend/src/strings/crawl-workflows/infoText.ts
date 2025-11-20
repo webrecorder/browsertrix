@@ -63,9 +63,9 @@ export const infoTextFor = {
   ),
   lang: msg(`Websites that observe the browser’s language setting may serve
   content in that language if available.`),
-  proxyId: msg(
-    `Choose a proxy to crawl through. If using a browser profile, the profile proxy will be used instead.`,
-  ),
+  proxyId: `${msg(
+    `Choose a proxy to crawl through.`,
+  )} ${msg("If using a browser profile, the profile proxy will be used instead.")}`,
   selectLinks: msg(
     html`Customize how URLs are extracted from a page. The crawler will use the
       specified
