@@ -122,12 +122,6 @@
 }
 
 @layer components {
-  sl-skeleton {
-    --border-radius: var(--sl-border-radius-small);
-    --color: var(--sl-color-neutral-50);
-    --sheen-color: var(--sl-color-neutral-100);
-  }
-
   sl-avatar::part(base) {
     transition: var(--sl-transition-x-fast) background-color;
   }
@@ -217,19 +211,6 @@
     line-height: 1.5;
   }
 
-  /* Place suffix before clear button */
-  sl-select::part(suffix) {
-    order: 1;
-  }
-
-  sl-select::part(clear-button) {
-    order: 2;
-  }
-
-  sl-select::part(expand-icon) {
-    @apply order-last;
-  }
-
   /* Align left edge with prefix icon */
   sl-menu sl-menu-label::part(base) {
     padding-left: 25px;
@@ -250,14 +231,9 @@
   }
 
   /* Adjust menu item hover and focus styles */
-  sl-option:not([aria-selected="true"]):not(:disabled),
-  sl-menu-item:not([disabled]),
+  sl-menu-item,
   btrix-menu-item-link {
     @apply part-[base]:text-neutral-700 part-[base]:hover:bg-cyan-50/50 part-[base]:hover:text-cyan-700 part-[base]:focus-visible:bg-cyan-50/50;
-  }
-
-  sl-option[aria-selected="true"] {
-    @apply part-[base]:bg-cyan-50 part-[base]:text-cyan-700;
   }
 
   /* Add menu item variants */
@@ -300,12 +276,8 @@
   }
 
   /* TODO tailwind sets border-width: 0, see if this can be fixed in tw */
-  sl-divider:not([vertical]) {
-    border-top: solid var(--width) var(--color);
-  }
-
-  sl-divider[vertical] {
-    border-left: solid var(--width) var(--color);
+  sl-divider {
+    border-top-width: var(--sl-panel-border-width);
   }
 
   /* Add more spacing between radio options */
