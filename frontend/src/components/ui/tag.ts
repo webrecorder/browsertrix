@@ -3,6 +3,8 @@ import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
+export const TAG_MAX_CHARACTERS = 40;
+
 /**
  * Customized <sl-tag>
  *
@@ -55,7 +57,8 @@ export class Tag extends SLTag {
       }
 
       .tag__content {
-        max-width: 100%;
+        display: inline-block;
+        max-width: ${TAG_MAX_CHARACTERS}ch;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
