@@ -1,6 +1,8 @@
-import { css, html, nothing } from "lit";
+import clsx from "clsx";
+import { css, html } from "lit";
 import {
   customElement,
+  property,
   query,
   queryAssignedElements,
   state,
@@ -11,23 +13,29 @@ import type { Popover } from "./popover";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { Tag } from "@/components/ui/tag";
-import type { UnderlyingFunction } from "@/types/utils";
 import localize from "@/utils/localize";
 import { tw } from "@/utils/tailwind";
 
 /**
  * Displays all the tags that can be contained to one line.
- * Other tags are displayed in a popover.
+ * Overflowing tags are displayed in a popover.
  */
 @customElement("btrix-contained-tags")
 export class ContainedTags extends TailwindElement {
   static styles = css`
     :host {
-      /* display: contents; */
-      outline: 2px solid red;
-      --width: 100%;
+      display: contents;
+      --internal-width: 100%;
     }
   `;
+
+  /**
+   * Maximum number of possible tags.
+   * This number is used to preserve space for the remainder badge
+   * when calculating width after line clamping.
+   */
+  @property({ type: Number })
+  maxTags = 100;
 
   @query("#container")
   private readonly container?: HTMLElement | null;
@@ -42,44 +50,66 @@ export class ContainedTags extends TailwindElement {
   public remainder?: number;
 
   #popoverContent?: HTMLElement;
+  #resized = false;
+
+  disconnectedCallback(): void {
+    this.debouncedCalculate.cancel();
+    super.disconnectedCallback();
+  }
 
   render() {
     return html`
       <sl-resize-observer
-        @sl-resize=${this.debouncedCalculate as UnderlyingFunction<
-          typeof this.calculate
-        >}
+        @sl-resize=${() => {
+          if (!this.#resized) {
+            // Don't debounce first resize
+            this.calculate();
+            this.#resized = true;
+            return;
+          }
+
+          this.debouncedCalculate();
+        }}
       >
         <div class="flex gap-2">
           <div
             id="container"
-            class="flex h-6 w-[var(--width)] max-w-[calc(100%-4ch)] flex-wrap gap-x-1.5 overflow-hidden outline"
+            class="flex h-6 w-[var(--internal-width)] flex-wrap gap-x-1.5 overflow-hidden"
           >
-            <slot @slotchange=${this.calculate}></slot>
+            <slot
+              @slotchange=${() => {
+                this.debouncedCalculate.cancel();
+                this.calculate();
+              }}
+            ></slot>
           </div>
 
-          ${this.remainder
-            ? html`<btrix-popover hoist>
-                <btrix-badge>+${localize.number(this.remainder)}</btrix-badge>
-              </btrix-popover>`
-            : nothing}
+          <btrix-popover hoist>
+            <btrix-badge
+              class=${clsx(!this.remainder && tw`invisible`)}
+              aria-hidden=${this.remainder ? "false" : "true"}
+              >+${localize.number(this.remainder || this.maxTags)}</btrix-badge
+            >
+          </btrix-popover>
         </div>
       </sl-resize-observer>
     `;
   }
 
-  private readonly calculate = async () => {
+  private readonly calculate = () => {
     if (!this.tags.length || !this.container) return;
 
     const containerRect = this.container.getBoundingClientRect();
     const containerTop = containerRect.top;
 
     // Reset width
-    this.style.setProperty("--width", "100%");
+    this.style.setProperty("--internal-width", "100%");
 
     const idx = this.tags.findIndex(
       (el) => el.getBoundingClientRect().top > containerTop,
     );
+
+    if (idx === -1) return;
 
     const lastVisible = this.tags[idx - 1];
 
@@ -88,7 +118,7 @@ export class ContainedTags extends TailwindElement {
 
       // Decrease width of container to match end of last visible tag
       this.style.setProperty(
-        "--width",
+        "--internal-width",
         `${rect.left - containerRect.left + rect.width}px`,
       );
     }
@@ -105,8 +135,6 @@ export class ContainedTags extends TailwindElement {
     });
 
     this.remainder = remaining.length;
-
-    await this.updateComplete;
 
     if (this.#popoverContent) {
       this.remainderPopover?.removeChild(this.#popoverContent);
