@@ -264,6 +264,8 @@ class ProfileOps:
 
             origins = []
 
+            prev_proxy_id = ""
+
             if existing_profile:
                 profileid = existing_profile.id
                 created = existing_profile.created
@@ -272,6 +274,8 @@ class ProfileOps:
                 prev_file_size = (
                     existing_profile.resource.size if existing_profile.resource else 0
                 )
+
+                prev_proxy_id = existing_profile.proxyId or ""
 
                 # only set origins from existing profile if browser
                 # actually launched with that profile (eg. not a reset)
@@ -352,6 +356,15 @@ class ProfileOps:
             await self.crawl_manager.keep_alive_profile_browser(
                 browser_commit.browserid, committing="done"
             )
+
+            if (
+                existing_profile
+                and metadata.proxyid
+                and metadata.proxyid != prev_proxy_id
+            ):
+                await self.crawlconfigs.update_config_proxies_to_match_profile(
+                    profileid, metadata.proxyid, org
+                )
 
         # pylint: disable=broad-except
         except Exception as e:

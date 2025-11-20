@@ -626,12 +626,7 @@ class CrawlConfigOps:
             )
 
         if changed:
-            orig_dict = orig_crawl_config.dict(exclude_unset=True, exclude_none=True)
-            orig_dict["cid"] = orig_dict.pop("id", cid)
-            orig_dict["id"] = uuid4()
-
-            last_rev = ConfigRevision(**orig_dict)
-            last_rev = await self.config_revs.insert_one(last_rev.to_dict())
+            await self.add_config_revision(orig_crawl_config)
 
         proxy_id = update.proxyId
 
@@ -1516,6 +1511,39 @@ class CrawlConfigOps:
             await self._validate_behavior_url(url)
 
         return {"success": True}
+
+    async def add_config_revision(self, orig_crawl_config: CrawlConfig):
+        """Add config to revision history"""
+        orig_dict = orig_crawl_config.dict(exclude_unset=True, exclude_none=True)
+        orig_dict["cid"] = orig_dict.pop("id")
+        orig_dict["id"] = uuid4()
+
+        last_rev = ConfigRevision(**orig_dict)
+        await self.config_revs.insert_one(last_rev.to_dict())
+
+    async def update_config_proxies_to_match_profile(
+        self, profile_id: UUID, proxy_id: str, org: Organization
+    ):
+        """Update proxy for multiple workflows, adding revision history for each"""
+        async for config_raw in self.crawl_configs.find(
+            {"profileid": profile_id, "oid": org.id}
+        ):
+            crawlconfig = CrawlConfig.from_dict(config_raw)
+
+            if crawlconfig.proxyId == proxy_id:
+                continue
+
+            await self.add_config_revision(crawlconfig)
+            await self.crawl_configs.find_one_and_update(
+                {"_id": crawlconfig.id},
+                {
+                    "$set": {
+                        "proxyId": proxy_id,
+                        "modifiedProfileDate": dt_now(),
+                        "modifiedProfileId": profile_id,
+                    }
+                },
+            )
 
 
 # ============================================================================

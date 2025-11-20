@@ -496,6 +496,9 @@ class CrawlConfigAdditional(BaseModel):
     lastCrawlState: Optional[str] = None
     lastCrawlSize: Optional[int] = None
 
+    modifiedProfileDate: Optional[datetime] = None
+    modifiedProfileId: Optional[UUID] = None
+
     lastRun: Optional[datetime] = None
 
     isCrawlRunning: Optional[bool] = False
