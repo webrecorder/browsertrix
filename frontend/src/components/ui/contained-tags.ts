@@ -80,6 +80,7 @@ export class ContainedTags extends TailwindElement {
 
           <btrix-popover hoist placement="right">
             <btrix-badge
+              variant="blue"
               class=${clsx(!this.remainder && tw`invisible`)}
               aria-hidden=${this.remainder ? "false" : "true"}
               >+${localize.number(this.remainder || this.maxTags)}</btrix-badge
