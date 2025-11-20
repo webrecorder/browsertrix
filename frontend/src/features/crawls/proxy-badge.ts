@@ -29,7 +29,7 @@ export class ProxyBadge extends TailwindElement {
         : ""}"
       hoist
     >
-      <btrix-badge variant="blue" class="font-monostyle">
+      <btrix-badge variant="blue" class="font-monostyle whitespace-nowrap">
         <sl-icon name="globe2" class="mr-1.5"></sl-icon>
         ${proxy?.label || this.proxyId}
       </btrix-badge>

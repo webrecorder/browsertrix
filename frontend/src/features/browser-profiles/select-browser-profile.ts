@@ -1,26 +1,37 @@
 import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
 import type {
   SlChangeEvent,
   SlDrawer,
   SlSelect,
 } from "@shoelace-style/shoelace";
-import { html, nothing, type PropertyValues } from "lit";
+import clsx from "clsx";
+import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import orderBy from "lodash/fp/orderBy";
+import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { none } from "@/layouts/empty";
 import { pageHeading } from "@/layouts/page";
 import { CrawlerChannelImage, type Profile } from "@/pages/org/types";
 import { OrgTab } from "@/routes";
-import type { APIPaginatedList } from "@/types/api";
+import type {
+  APIPaginatedList,
+  APIPaginationQuery,
+  APISortQuery,
+} from "@/types/api";
+import { SortDirection } from "@/types/utils";
 import { AppStateService } from "@/utils/state";
+import { tw } from "@/utils/tailwind";
 
 type SelectBrowserProfileChangeDetail = {
   value: Profile | undefined;
 };
+
+// TODO Paginate results
+const INITIAL_PAGE_SIZE = 1000;
 
 export type SelectBrowserProfileChangeEvent =
   CustomEvent<SelectBrowserProfileChangeDetail>;
@@ -47,68 +58,132 @@ export class SelectBrowserProfile extends BtrixElement {
   profileId?: string;
 
   @state()
-  private selectedProfile?: Profile;
+  selectedProfile?: Profile;
 
-  @state()
-  private browserProfiles?: Profile[];
+  @query("sl-select")
+  private readonly select?: SlSelect | null;
 
   @query("sl-drawer")
   private readonly drawer?: SlDrawer | null;
 
-  willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("profileId")) {
-      void this.updateSelectedProfile();
-    }
+  public get value() {
+    return this.select?.value as string;
   }
 
-  firstUpdated() {
-    void this.updateSelectedProfile();
+  private readonly profilesTask = new Task(this, {
+    task: async (_args, { signal }) => {
+      return this.getProfiles(
+        {
+          sortBy: "name",
+          sortDirection: SortDirection.Ascending,
+          pageSize: INITIAL_PAGE_SIZE,
+        },
+        signal,
+      );
+    },
+    args: () => [] as const,
+  });
+
+  private readonly selectedProfileTask = new Task(this, {
+    task: async ([profileId, profiles], { signal }) => {
+      if (!profileId || !profiles || signal.aborted) return;
+
+      this.selectedProfile = this.findProfileById(profileId);
+    },
+    args: () => [this.profileId, this.profilesTask.value] as const,
+  });
+
+  private findProfileById(profileId?: string) {
+    if (!profileId) return;
+    return this.profilesTask.value?.items.find(({ id }) => id === profileId);
   }
 
   render() {
+    const selectedProfile = this.selectedProfile;
+    const browserProfiles = this.profilesTask.value;
+
     return html`
       <sl-select
-        name="profileid"
         label=${msg("Browser Profile")}
-        value=${this.selectedProfile?.id || ""}
-        placeholder=${this.browserProfiles
+        value=${selectedProfile?.id || ""}
+        placeholder=${browserProfiles
           ? msg("No custom profile")
           : msg("Loading")}
         size=${ifDefined(this.size)}
         hoist
+        clearable
         @sl-change=${this.onChange}
-        @sl-focus=${() => {
-          // Refetch to keep list up to date
-          void this.fetchBrowserProfiles();
-        }}
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
       >
-        ${this.browserProfiles
+        ${when(
+          selectedProfile?.proxyId,
+          (proxyId) => html`
+            <btrix-proxy-badge
+              slot="suffix"
+              proxyId=${proxyId}
+            ></btrix-proxy-badge>
+          `,
+        )}
+        ${browserProfiles
           ? html`
               <sl-option value="">${msg("No custom profile")}</sl-option>
-              <sl-divider></sl-divider>
+              ${browserProfiles.items.length
+                ? html`
+                    <sl-divider></sl-divider>
+                    <sl-menu-label>${msg("Saved Profiles")}</sl-menu-label>
+                  `
+                : nothing}
             `
           : html` <sl-spinner slot="prefix"></sl-spinner> `}
-        ${this.browserProfiles?.map(
-          (profile) => html`
-            <sl-option value=${profile.id}>
-              ${profile.name}
-              <div slot="suffix">
-                <btrix-format-date
-                  class="text-xs"
-                  .date=${profile.modified || profile.created}
-                  dateStyle="medium"
-                ></btrix-format-date>
+        ${browserProfiles?.items.map(
+          (profile, i) => html`
+            <sl-option
+              value=${profile.id}
+              class=${clsx(
+                tw`part-[base]:flex-wrap`,
+                tw`part-[prefix]:order-2`,
+                tw`part-[label]:order-1 part-[label]:basis-1/2 part-[label]:overflow-hidden`,
+                tw`part-[suffix]:order-3 part-[suffix]:basis-full part-[suffix]:overflow-hidden`,
+                i && tw`border-t`,
+              )}
+            >
+              <span class="font-medium">${profile.name}</span>
+              <span
+                class="whitespace-nowrap text-xs text-neutral-500"
+                slot="prefix"
+              >
+                ${this.localize.relativeDate(
+                  profile.modified || profile.created,
+                  { capitalize: true },
+                )}
+              </span>
+              <div
+                slot="suffix"
+                class="flex w-full items-center justify-between gap-1.5 overflow-hidden pl-2.5 pt-0.5"
+              >
+                <btrix-code
+                  class="w-0 flex-1 text-xs"
+                  language="url"
+                  value=${profile.origins[0]}
+                  noWrap
+                  truncate
+                ></btrix-code>
+                ${when(
+                  profile.proxyId,
+                  (proxyId) => html`
+                    <btrix-proxy-badge proxyId=${proxyId}></btrix-proxy-badge>
+                  `,
+                )}
               </div>
             </sl-option>
           `,
         )}
-        ${this.browserProfiles && !this.browserProfiles.length
+        ${browserProfiles && !browserProfiles.total
           ? this.renderNoProfiles()
           : ""}
         <div slot="help-text" class="flex justify-between">
-          ${this.selectedProfile
+          ${selectedProfile
             ? html`
                 <button
                   class="text-blue-500 transition-colors duration-fast hover:text-blue-600"
@@ -119,13 +194,12 @@ export class SelectBrowserProfile extends BtrixElement {
                 <span>
                   ${msg("Last saved")}
                   ${this.localize.relativeDate(
-                    this.selectedProfile.modified ||
-                      this.selectedProfile.created,
+                    selectedProfile.modified || selectedProfile.created,
                     { capitalize: true },
                   )}
                 </span>
               `
-            : this.browserProfiles
+            : browserProfiles
               ? html`
                   <btrix-link
                     class="ml-auto"
@@ -140,7 +214,9 @@ export class SelectBrowserProfile extends BtrixElement {
         </div>
       </sl-select>
 
-      ${this.browserProfiles?.length ? this.renderSelectedProfileInfo() : ""}
+      ${browserProfiles || selectedProfile
+        ? this.renderSelectedProfileInfo()
+        : ""}
     `;
   }
 
@@ -285,9 +361,8 @@ export class SelectBrowserProfile extends BtrixElement {
   }
 
   private async onChange(e: SlChangeEvent) {
-    this.selectedProfile = this.browserProfiles?.find(
-      ({ id }) => id === (e.target as SlSelect | null)?.value,
-    );
+    const profileId = (e.target as SlSelect | null)?.value as string;
+    this.selectedProfile = this.findProfileById(profileId);
 
     await this.updateComplete;
 
@@ -300,43 +375,30 @@ export class SelectBrowserProfile extends BtrixElement {
     );
   }
 
-  private async updateSelectedProfile() {
-    await this.fetchBrowserProfiles();
-    await this.updateComplete;
-
-    if (this.profileId && !this.selectedProfile) {
-      this.selectedProfile = this.browserProfiles?.find(
-        ({ id }) => id === this.profileId,
-      );
-    }
-  }
-
-  /**
-   * Fetch browser profiles and update internal state
-   */
-  private async fetchBrowserProfiles(): Promise<void> {
-    try {
-      const data = await this.getProfiles();
-
-      this.browserProfiles = orderBy(["name", "modified"])(["asc", "desc"])(
-        data,
-      ) as Profile[];
-    } catch (e) {
-      this.notify.toast({
-        message: msg("Sorry, couldn't retrieve browser profiles at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "browser-profile-status",
-      });
-    }
-  }
-
-  private async getProfiles() {
-    const data = await this.api.fetch<APIPaginatedList<Profile>>(
-      `/orgs/${this.orgId}/profiles`,
+  private async getProfiles(
+    params: {
+      userid?: string;
+      tags?: string[];
+      tagMatch?: string;
+    } & APIPaginationQuery &
+      APISortQuery,
+    signal: AbortSignal,
+  ) {
+    const query = queryString.stringify(
+      {
+        ...params,
+      },
+      {
+        arrayFormat: "none", // For tags
+      },
     );
 
-    return data.items;
+    const data = await this.api.fetch<APIPaginatedList<Profile>>(
+      `/orgs/${this.orgId}/profiles?${query}`,
+      { signal },
+    );
+
+    return data;
   }
 
   /**

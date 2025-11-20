@@ -217,6 +217,19 @@
     line-height: 1.5;
   }
 
+  /* Place suffix before clear button */
+  sl-select::part(suffix) {
+    order: 1;
+  }
+
+  sl-select::part(clear-button) {
+    order: 2;
+  }
+
+  sl-select::part(expand-icon) {
+    @apply order-last;
+  }
+
   /* Align left edge with prefix icon */
   sl-menu sl-menu-label::part(base) {
     padding-left: 25px;

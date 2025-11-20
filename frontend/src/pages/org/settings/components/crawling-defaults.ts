@@ -20,6 +20,7 @@ import {
   orgProxiesContext,
   type OrgProxiesContext,
 } from "@/context/org-proxies";
+import type { SelectBrowserProfile } from "@/features/browser-profiles/select-browser-profile";
 import type { CustomBehaviorsTable } from "@/features/crawl-workflows/custom-behaviors-table";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
 import { columns, type Cols } from "@/layouts/columns";
@@ -78,6 +79,9 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
 
   @query("btrix-language-select")
   languageSelect?: LanguageSelect | null;
+
+  @query("btrix-select-browser-profile")
+  browserProfileSelect?: SelectBrowserProfile | null;
 
   @query("btrix-select-crawler-proxy")
   proxySelect?: SelectCrawlerProxy | null;
@@ -362,7 +366,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       behaviorTimeout: parseNumber(values.behaviorTimeoutSeconds),
       pageExtraDelay: parseNumber(values.pageExtraDelaySeconds),
       blockAds: values.blockAds === "on",
-      profileid: values.profileid,
+      profileid: this.browserProfileSelect?.value || undefined,
       crawlerChannel: values.crawlerChannel,
       proxyId: this.proxySelect?.value || undefined,
       userAgent: values.userAgent,
