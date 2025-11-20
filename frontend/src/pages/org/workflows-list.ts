@@ -38,7 +38,7 @@ import { WorkflowTab } from "@/routes";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
-import { type StorageSeedFile } from "@/types/workflow";
+import type { StorageSeedFile, WorkflowSearchValues } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { renderName } from "@/utils/crawler";
@@ -994,12 +994,7 @@ export class WorkflowsList extends BtrixElement {
 
   private async fetchConfigSearchValues() {
     try {
-      const data: {
-        crawlIds: string[];
-        names: string[];
-        descriptions: string[];
-        firstSeeds: string[];
-      } = await this.api.fetch(
+      const data = await this.api.fetch<WorkflowSearchValues>(
         `/orgs/${this.orgId}/crawlconfigs/search-values`,
       );
 

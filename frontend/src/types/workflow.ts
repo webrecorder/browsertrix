@@ -16,3 +16,10 @@ export type StorageSeedFile = StorageFile & {
   firstSeed: string;
   seedCount: number;
 };
+
+export type WorkflowSearchValues = {
+  crawlIds: string[];
+  names: string[];
+  descriptions: string[];
+  firstSeeds: string[];
+};
