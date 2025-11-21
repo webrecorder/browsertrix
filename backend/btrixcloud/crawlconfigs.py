@@ -1423,7 +1423,7 @@ class CrawlConfigOps:
 
     def assert_can_org_use_proxy(self, org: Organization, proxy: str):
         """assert that proxy can be used or throw error"""
-        if self.can_org_use_proxy(org, proxy):
+        if not self.can_org_use_proxy(org, proxy):
             raise HTTPException(status_code=400, detail="proxy_not_found")
 
     def get_warc_prefix(self, org: Organization, crawlconfig: CrawlConfig) -> str:
