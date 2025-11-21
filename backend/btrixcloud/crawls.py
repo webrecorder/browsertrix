@@ -340,20 +340,6 @@ class CrawlOps(BaseCrawlOps):
         if sort_by in ["qaRunCount", "lastQAState", "lastQAStarted"]:
             aggregate.extend([{"$sort": {sort_by: sort_direction}}])
 
-        aggregate.extend(
-            [
-                {
-                    "$facet": {
-                        "items": [
-                            {"$skip": skip},
-                            {"$limit": page_size},
-                        ],
-                        "total": [{"$count": "count"}],
-                    }
-                },
-            ]
-        )
-
         unset = [
             "lastQARun",
             "qaActiveArray",
@@ -368,6 +354,20 @@ class CrawlOps(BaseCrawlOps):
             unset.append("files")
 
         aggregate.extend([{"$unset": unset}])
+
+        aggregate.extend(
+            [
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
+            ]
+        )
 
         # Get total
         cursor = self.crawls.aggregate(aggregate)

@@ -846,6 +846,8 @@ class CrawlConfigOps:
 
             aggregate.extend([{"$sort": sort_query}])
 
+        aggregate.extend([{"$unset": ["config"]}])
+
         aggregate.extend(
             [
                 {
@@ -859,7 +861,6 @@ class CrawlConfigOps:
                 },
             ]
         )
-        aggregate.extend([{"$unset": ["config"]}])
 
         cursor = self.crawl_configs.aggregate(
             aggregate, collation=case_insensitive_collation
