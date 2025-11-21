@@ -224,18 +224,21 @@ class CrawlConfigOps:
 
         await self.crawl_configs.create_index(
             [
+                ("oid", pymongo.HASHED),
+                ("inactive", pymongo.ASCENDING),
+                ("isCrawlRunning", pymongo.DESCENDING),
+                ("lastRun", pymongo.DESCENDING),
+                ("modified", pymongo.DESCENDING),
+            ]
+            collation=case_insensitive_collation
+        )
+
+        await self.crawl_configs.create_index(
+            [
                 ("oid", pymongo.ASCENDING),
                 ("inactive", pymongo.ASCENDING),
                 ("profileid", pymongo.ASCENDING),
             ]
-        )
-
-        await self.crawl_configs.create_index(
-            [("lastRun", pymongo.DESCENDING), ("modified", pymongo.DESCENDING)]
-        )
-
-        await self.crawl_configs.create_index(
-            [("name", pymongo.ASCENDING), ("firstSeed", pymongo.ASCENDING)]
         )
 
         await self.config_revs.create_index([("cid", pymongo.HASHED)])
@@ -484,7 +487,7 @@ class CrawlConfigOps:
     async def inc_crawl_count(self, cid: UUID) -> None:
         """inc crawl count for config"""
         await self.crawl_configs.find_one_and_update(
-            {"_id": cid, "inactive": {"$ne": True}},
+            {"_id": cid, "inactive": False},
             {"$inc": {"crawlAttemptCount": 1}},
         )
 
@@ -688,7 +691,7 @@ class CrawlConfigOps:
 
         # update in db
         result = await self.crawl_configs.find_one_and_update(
-            {"_id": cid, "inactive": {"$ne": True}},
+            {"_id": cid, "inactive": False},
             {"$set": query, "$inc": {"rev": 1}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
@@ -779,7 +782,7 @@ class CrawlConfigOps:
         page = page - 1
         skip = page * page_size
 
-        match_query = {"oid": org.id, "inactive": {"$ne": True}}
+        match_query = {"oid": org.id, "inactive": False}
 
         if tags:
             query_type = "$all" if tag_match == ListFilterType.AND else "$in"
@@ -815,7 +818,6 @@ class CrawlConfigOps:
         # pylint: disable=duplicate-code
         aggregate: List[Dict[str, Union[object, str, int]]] = [
             {"$match": match_query},
-            {"$unset": ["config"]},
         ]
 
         if first_seed:
@@ -857,6 +859,7 @@ class CrawlConfigOps:
                 },
             ]
         )
+        aggregate.extend([{"$unset": ["config"]}])
 
         cursor = self.crawl_configs.aggregate(
             aggregate, collation=case_insensitive_collation
@@ -883,7 +886,7 @@ class CrawlConfigOps:
     async def is_profile_in_use(self, profileid: UUID, org: Organization) -> bool:
         """return true/false if any active workflows exist with given profile"""
         res = await self.crawl_configs.find_one(
-            {"oid": org.id, "inactive": {"$ne": True}, "profileid": profileid}
+            {"oid": org.id, "inactive": False, "profileid": profileid}
         )
         return res is not None
 
@@ -895,7 +898,7 @@ class CrawlConfigOps:
                 {
                     "$match": {
                         "oid": org.id,
-                        "inactive": {"$ne": True},
+                        "inactive": False,
                         "profileid": {"$in": profile_ids},
                     }
                 },
@@ -960,7 +963,7 @@ class CrawlConfigOps:
             match_query = {
                 "cid": cid,
                 "finished": {"$ne": None},
-                "inactive": {"$ne": True},
+                "inactive": False,
             }
             last_crawl = await self.crawls.find_one(
                 match_query, sort=[("finished", pymongo.DESCENDING)]
@@ -999,7 +1002,7 @@ class CrawlConfigOps:
                 update_query["isCrawlRunning"] = False
 
         result = await self.crawl_configs.find_one_and_update(
-            {"_id": cid, "inactive": {"$ne": True}},
+            {"_id": cid, "inactive": False},
             {
                 "$set": update_query,
                 "$inc": {
@@ -1064,7 +1067,7 @@ class CrawlConfigOps:
         if oid:
             query["oid"] = oid
         if active_only:
-            query["inactive"] = {"$ne": True}
+            query["inactive"] = False
 
         res = await self.crawl_configs.find_one(query)
         if not res:
@@ -1126,7 +1129,7 @@ class CrawlConfigOps:
 
         else:
             if not await self.crawl_configs.find_one_and_update(
-                {"_id": crawlconfig.id, "inactive": {"$ne": True}},
+                {"_id": crawlconfig.id, "inactive": False},
                 {"$set": query},
             ):
                 raise HTTPException(status_code=404, detail="failed_to_deactivate")
@@ -1323,7 +1326,7 @@ class CrawlConfigOps:
     ):
         """Set current crawl info in config when crawl begins"""
         result = await self.crawl_configs.find_one_and_update(
-            {"_id": cid, "inactive": {"$ne": True}},
+            {"_id": cid, "inactive": False},
             {
                 "$set": {
                     "lastCrawlId": crawl_id,
@@ -1458,7 +1461,7 @@ class CrawlConfigOps:
 
     async def re_add_all_scheduled_cron_jobs(self):
         """Re-add all scheduled workflow cronjobs"""
-        match_query = {"schedule": {"$nin": ["", None]}, "inactive": {"$ne": True}}
+        match_query = {"schedule": {"$nin": ["", None]}, "inactive": False}
         async for config_dict in self.crawl_configs.find(match_query):
             config = CrawlConfig.from_dict(config_dict)
             try:
@@ -1601,7 +1604,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
                 update_query["lastRun"] = last_crawl_finished
 
     result = await crawl_configs.find_one_and_update(
-        {"_id": cid, "inactive": {"$ne": True}},
+        {"_id": cid, "inactive": False},
         {"$set": update_query},
         return_document=pymongo.ReturnDocument.AFTER,
     )

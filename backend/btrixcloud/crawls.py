@@ -108,19 +108,45 @@ class CrawlOps(BaseCrawlOps):
         await self.crawls.create_index([("type", pymongo.HASHED)])
 
         await self.crawls.create_index(
-            [("type", pymongo.HASHED), ("finished", pymongo.DESCENDING)]
-        )
-        await self.crawls.create_index(
             [("type", pymongo.HASHED), ("oid", pymongo.DESCENDING)]
         )
         await self.crawls.create_index(
+            [
+                ("type", pymongo.HASHED),
+                ("oid", pymongo.DESCENDING),
+                ("started", pymongo.DESCENDING),
+            ]
+        )
+        await self.crawls.create_index(
+            [
+                ("type", pymongo.HASHED),
+                ("oid", pymongo.DESCENDING),
+                ("finished", pymongo.DESCENDING),
+            ]
+        )
+        await self.crawls.create_index(
+            [
+                ("type", pymongo.HASHED),
+                ("oid", pymongo.DESCENDING),
+                ("crawlExecSeconds", pymongo.DESCENDING),
+            ]
+        )
+        await self.crawls.create_index(
+            [
+                ("type", pymongo.HASHED),
+                ("oid", pymongo.DESCENDING),
+                ("pageCount", pymongo.DESCENDING),
+            ]
+        )
+        await self.crawls.create_index(
+            [
+                ("type", pymongo.HASHED),
+                ("oid", pymongo.DESCENDING),
+                ("fileSize", pymongo.DESCENDING),
+            ]
+        )
+        await self.crawls.create_index(
             [("type", pymongo.HASHED), ("cid", pymongo.DESCENDING)]
-        )
-        await self.crawls.create_index(
-            [("type", pymongo.HASHED), ("state", pymongo.DESCENDING)]
-        )
-        await self.crawls.create_index(
-            [("type", pymongo.HASHED), ("fileSize", pymongo.DESCENDING)]
         )
         await self.crawls.create_index(
             [
@@ -129,11 +155,20 @@ class CrawlOps(BaseCrawlOps):
                 ("started", pymongo.ASCENDING),
             ]
         )
-        await self.crawls.create_index([("finished", pymongo.DESCENDING)])
-        await self.crawls.create_index([("oid", pymongo.HASHED)])
-        await self.crawls.create_index([("cid", pymongo.HASHED)])
-        await self.crawls.create_index([("state", pymongo.HASHED)])
-        await self.crawls.create_index([("fileSize", pymongo.DESCENDING)])
+        await self.crawls.create_index(
+            [("oid", pymongo.DESCENDING), ("started", pymongo.DESCENDING)]
+        )
+        await self.crawls.create_index(
+            [("oid", pymongo.DESCENDING), ("fileSize", pymongo.DESCENDING)]
+        )
+        await self.crawls.create_index(
+            [("oid", pymongo.DESCENDING), ("reviewStatus", pymongo.DESCENDING)]
+        )
+        # await self.crawls.create_index([("finished", pymongo.DESCENDING)])
+        # await self.crawls.create_index([("oid", pymongo.HASHED)])
+        # await self.crawls.create_index([("cid", pymongo.HASHED)])
+        # await self.crawls.create_index([("state", pymongo.HASHED)])
+        # await self.crawls.create_index([("fileSize", pymongo.DESCENDING)])
 
     async def get_crawl(
         self,
@@ -184,7 +219,7 @@ class CrawlOps(BaseCrawlOps):
 
         oid = org.id if org else None
 
-        query: dict[str, object] = {"type": {"$in": ["crawl", None]}}
+        query: dict[str, object] = {"type": "crawl"}
         if oid:
             query["oid"] = oid
 
@@ -209,84 +244,20 @@ class CrawlOps(BaseCrawlOps):
         if crawl_id:
             query["_id"] = crawl_id
 
-        # pylint: disable=duplicate-code
-        aggregate = [
-            {"$match": query},
-            {"$unset": ["errors", "behaviorLogs", "config"]},
-            {"$set": {"activeQAStats": "$qa.stats"}},
-            {
-                "$set": {
-                    "qaFinishedArray": {
-                        "$map": {
-                            "input": {"$objectToArray": "$qaFinished"},
-                            "in": "$$this.v",
-                        }
-                    }
-                }
-            },
-            # Add active QA run to array if exists prior to sorting, taking care not to
-            # pass null to $concatArrays so that our result isn't null
-            {
-                "$set": {
-                    "qaActiveArray": {"$cond": [{"$ne": ["$qa", None]}, ["$qa"], []]}
-                }
-            },
-            {
-                "$set": {
-                    "qaArray": {"$concatArrays": ["$qaFinishedArray", "$qaActiveArray"]}
-                }
-            },
-            {
-                "$set": {
-                    "sortedQARuns": {
-                        "$sortArray": {
-                            "input": "$qaArray",
-                            "sortBy": {"started": -1},
-                        }
-                    }
-                }
-            },
-            {"$set": {"lastQARun": {"$arrayElemAt": ["$sortedQARuns", 0]}}},
-            {"$set": {"lastQAState": "$lastQARun.state"}},
-            {"$set": {"lastQAStarted": "$lastQARun.started"}},
-            {
-                "$set": {
-                    "qaRunCount": {
-                        "$size": {
-                            "$cond": [
-                                {"$isArray": "$qaArray"},
-                                "$qaArray",
-                                [],
-                            ]
-                        }
-                    }
-                }
-            },
-            {
-                "$unset": [
-                    "lastQARun",
-                    "qaActiveArray",
-                    "qaFinishedArray",
-                    "qaArray",
-                    "sortedQARuns",
-                ]
-            },
-        ]
-
-        if not resources:
-            aggregate.extend([{"$unset": ["files"]}])
-
         if name:
-            aggregate.extend([{"$match": {"name": name}}])
+            query["name"] = name
 
         if description:
-            aggregate.extend([{"$match": {"description": description}}])
+            query["description"] = description
 
         if first_seed:
-            aggregate.extend([{"$match": {"firstSeed": first_seed}}])
+            query["firstSeed"] = first_seed
 
         if collection_id:
-            aggregate.extend([{"$match": {"collectionIds": {"$in": [collection_id]}}}])
+            query["collectionIds"] = {"$in": [collection_id]}
+
+        # pylint: disable=duplicate-code
+        aggregate: list[dict[str, dict | list]] = [{"$match": query}]
 
         if sort_by:
             if sort_by not in (
@@ -305,6 +276,68 @@ class CrawlOps(BaseCrawlOps):
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
+            if sort_by not in ["qaRunCount", "lastQAState", "lastQAStarted"]:
+                aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+
+        aggregate.extend(
+            [
+                {"$set": {"activeQAStats": "$qa.stats"}},
+                {
+                    "$set": {
+                        "qaFinishedArray": {
+                            "$map": {
+                                "input": {"$objectToArray": "$qaFinished"},
+                                "in": "$$this.v",
+                            }
+                        }
+                    }
+                },
+                # Add active QA run to array if exists prior to sorting, taking care not to
+                # pass null to $concatArrays so that our result isn't null
+                {
+                    "$set": {
+                        "qaActiveArray": {
+                            "$cond": [{"$ne": ["$qa", None]}, ["$qa"], []]
+                        }
+                    }
+                },
+                {
+                    "$set": {
+                        "qaArray": {
+                            "$concatArrays": ["$qaFinishedArray", "$qaActiveArray"]
+                        }
+                    }
+                },
+                {
+                    "$set": {
+                        "sortedQARuns": {
+                            "$sortArray": {
+                                "input": "$qaArray",
+                                "sortBy": {"started": -1},
+                            }
+                        }
+                    }
+                },
+                {"$set": {"lastQARun": {"$arrayElemAt": ["$sortedQARuns", 0]}}},
+                {"$set": {"lastQAState": "$lastQARun.state"}},
+                {"$set": {"lastQAStarted": "$lastQARun.started"}},
+                {
+                    "$set": {
+                        "qaRunCount": {
+                            "$size": {
+                                "$cond": [
+                                    {"$isArray": "$qaArray"},
+                                    "$qaArray",
+                                    [],
+                                ]
+                            }
+                        }
+                    }
+                },
+            ]
+        )
+
+        if sort_by in ["qaRunCount", "lastQAState", "lastQAStarted"]:
             aggregate.extend([{"$sort": {sort_by: sort_direction}}])
 
         aggregate.extend(
@@ -320,6 +353,21 @@ class CrawlOps(BaseCrawlOps):
                 },
             ]
         )
+
+        unset = [
+            "lastQARun",
+            "qaActiveArray",
+            "qaFinishedArray",
+            "qaArray",
+            "sortedQARuns",
+            "errors",
+            "behaviorLogs",
+            "config",
+        ]
+        if not resources:
+            unset.append("files")
+
+        aggregate.extend([{"$unset": unset}])
 
         # Get total
         cursor = self.crawls.aggregate(aggregate)
