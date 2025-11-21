@@ -35,7 +35,7 @@ else:
     ) = PageOps = BackgroundJobOps = FileUploadOps = CrawlLogOps = CrawlManager = object
 
 
-CURR_DB_VERSION = "0052"
+CURR_DB_VERSION = "0054"
 
 
 # ============================================================================

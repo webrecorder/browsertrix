@@ -464,9 +464,11 @@ class BaseCrawlOps:
                 raise HTTPException(status_code=400, detail="missing_org")
 
         if hasattr(crawl, "profileid") and crawl.profileid:
-            crawl.profileName = await self.crawl_configs.profiles.get_profile_name(
+            profile = await self.crawl_configs.profiles.get_profile(
                 crawl.profileid, org
             )
+            if profile:
+                crawl.profileName = profile.name
 
         if (
             files
