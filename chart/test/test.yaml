@@ -16,6 +16,12 @@ operator_resync_seconds: 3
 
 qa_scale: 2
 
+# lower storage sizes
+redis_storage: "100Mi"
+profile_browser_workdir_size: "100Mi"
+crawler_storage: "1Gi"
+
+
 # for testing only
 crawler_extra_cpu_per_browser: 300m
 
