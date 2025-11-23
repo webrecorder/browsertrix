@@ -1300,6 +1300,10 @@ class OrgOps:
             if not workflow.get("crawlerChannel"):
                 workflow["crawlerChannel"] = "default"
 
+            # Ensure proxyId is unset if profile is set
+            if workflow.get("profileid"):
+                workflow["proxyId"] = None
+
             crawl_config = CrawlConfig.from_dict(workflow)
             await self.crawl_configs_db.insert_one(crawl_config.to_dict())
 
