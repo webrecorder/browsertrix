@@ -19,7 +19,7 @@ qa_scale: 2
 # lower storage sizes
 redis_storage: "100Mi"
 profile_browser_workdir_size: "100Mi"
-crawler_storage: "1Gi"
+crawler_storage: "500Mi"
 
 
 # for testing only

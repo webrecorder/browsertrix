@@ -20,6 +20,11 @@ jobs:
     outputs:
       matches: ${{ steps.filter.outputs.matches }}
     steps:
+      - uses: mathio/gha-cleanup@v1
+        with:
+          remove-browsers: true
+          verbose: true
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2 # important, to fetch previous commit
