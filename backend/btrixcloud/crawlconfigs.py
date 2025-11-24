@@ -599,7 +599,9 @@ class CrawlConfigOps:
         )
 
         # either unsetting profile or no profile set on current config
-        no_profile = update.profileid == "" or not orig_crawl_config.profileid
+        no_profile = update.profileid == "" or (
+            update.profileid is None and not orig_crawl_config.profileid
+        )
 
         changed = changed or (
             no_profile
