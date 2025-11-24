@@ -1082,7 +1082,7 @@ def test_update_profile(crawler_auth_headers, default_org_id, profile_id, profil
             headers=crawler_auth_headers,
         )
         assert r.status_code == 200
-        return r.json()
+        return r.json()["profileid"]
 
     def update_profile(profileid):
         r = requests.patch(
