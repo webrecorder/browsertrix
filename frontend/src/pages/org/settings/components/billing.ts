@@ -11,7 +11,7 @@ import capitalize from "lodash/fp/capitalize";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { columns } from "@/layouts/columns";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
-import type { OrgData, OrgQuotas } from "@/types/org";
+import type { Metrics, OrgData, OrgQuotas } from "@/types/org";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -77,11 +77,27 @@ export class OrgSettingsBilling extends BtrixElement {
         console.debug(e);
 
         throw new Error(
-          msg("Sorry, couldn't retrieve current plan at this time."),
+          msg("Sorry, couldn’t retrieve current plan at this time."),
         );
       }
     },
     args: () => [this.appState] as const,
+  });
+
+  private readonly metrics = new Task(this, {
+    task: async ([orgId]) => {
+      const metrics = await this.api.fetch<Metrics | undefined>(
+        `/orgs/${orgId}/metrics`,
+      );
+      if (!metrics) {
+        throw new Error("Missing metrics");
+      }
+
+      console.debug(metrics);
+
+      return metrics;
+    },
+    args: () => [this.org?.id] as const,
   });
 
   render() {
@@ -278,6 +294,35 @@ export class OrgSettingsBilling extends BtrixElement {
             `,
           ],
         ])}
+      </section>
+      <section class="mt-7">
+        <header>
+          <h3 class="mb-2 text-lg font-medium">${msg("Usage")}</h3>
+        </header>
+        <h4 class="mb-2 mt-4 text-xs leading-none text-neutral-500">
+          ${msg("Execution minutes")}
+        </h4>
+        ${this.metrics.render({
+          initial: () => html` <sl-skeleton></sl-skeleton> `,
+          complete: (metrics) =>
+            html`<btrix-execution-minute-meter
+              .metrics=${metrics}
+            ></btrix-execution-minute-meter>`,
+          pending: () => html` <sl-skeleton></sl-skeleton> `,
+          error: () => html` <sl-skeleton></sl-skeleton> `,
+        })}
+        <h4 class="mb-2 mt-4 text-xs leading-none text-neutral-500">
+          ${msg("Storage")}
+        </h4>
+        ${this.metrics.render({
+          initial: () => html` <sl-skeleton></sl-skeleton> `,
+          complete: (metrics) =>
+            html`<btrix-storage-meter
+              .metrics=${metrics}
+            ></btrix-storage-meter>`,
+          pending: () => html` <sl-skeleton></sl-skeleton> `,
+          error: () => html` <sl-skeleton></sl-skeleton> `,
+        })}
       </section>
       <section class="mt-7">
         <header>

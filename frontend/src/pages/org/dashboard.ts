@@ -17,40 +17,19 @@ import type { SelectNewDialogEvent } from ".";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type CollectionSavedEvent } from "@/features/collections/collection-edit-dialog";
+import { colors } from "@/features/meters/colors";
 import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
 import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
+import { type Metrics } from "@/types/org";
 import { SortDirection } from "@/types/utils";
-import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
 import { timeoutCache } from "@/utils/timeoutCache";
 import { toShortUrl } from "@/utils/url-helpers";
 import { cached } from "@/utils/weakCache";
-
-type Metrics = {
-  storageUsedBytes: number;
-  storageUsedCrawls: number;
-  storageUsedUploads: number;
-  storageUsedProfiles: number;
-  storageUsedSeedFiles: number;
-  storageUsedThumbnails: number;
-  storageQuotaBytes: number;
-  archivedItemCount: number;
-  crawlCount: number;
-  uploadCount: number;
-  pageCount: number;
-  crawlPageCount: number;
-  uploadPageCount: number;
-  profileCount: number;
-  workflowsRunningCount: number;
-  maxConcurrentCrawls: number;
-  workflowsQueuedCount: number;
-  collectionsCount: number;
-  publicCollectionsCount: number;
-};
 
 enum CollectionGridView {
   All = "all",
@@ -79,16 +58,6 @@ export class Dashboard extends BtrixElement {
 
   // Used for busting cache when updating visible collection
   cacheBust = 0;
-
-  private readonly colors = {
-    default: tw`text-neutral-600`,
-    crawls: tw`text-lime-500`,
-    uploads: tw`text-sky-500`,
-    archivedItems: tw`text-primary-500`,
-    browserProfiles: tw`text-orange-500`,
-    runningTime: tw`text-blue-600`,
-    misc: tw`text-gray-400`,
-  };
 
   private readonly collections = new Task(this, {
     task: cached(
@@ -262,7 +231,7 @@ export class Dashboard extends BtrixElement {
 
                   iconProps: {
                     name: "gear-wide-connected",
-                    class: this.colors.crawls,
+                    class: colors.crawls,
                   },
                   button: {
                     url: "/items/crawl",
@@ -276,7 +245,7 @@ export class Dashboard extends BtrixElement {
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
 
-                  iconProps: { name: "upload", class: this.colors.uploads },
+                  iconProps: { name: "upload", class: colors.uploads },
                   button: {
                     url: "/items/upload",
                   },
@@ -290,7 +259,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Browser Profiles"),
                   iconProps: {
                     name: "window-fullscreen",
-                    class: this.colors.browserProfiles,
+                    class: colors.browserProfiles,
                   },
                   button: {
                     url: "/browser-profiles",
@@ -307,7 +276,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Archived Items"),
                   iconProps: {
                     name: "file-zip-fill",
-                    class: this.colors.archivedItems,
+                    class: colors.archivedItems,
                   },
                   button: {
                     url: "/items",
@@ -369,7 +338,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Pages Crawled"),
                   iconProps: {
                     name: "file-richtext-fill",
-                    class: this.colors.crawls,
+                    class: colors.crawls,
                   },
                 })}
                 ${this.renderStat({
@@ -378,7 +347,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Pages Uploaded"),
                   iconProps: {
                     name: "file-richtext-fill",
-                    class: this.colors.uploads,
+                    class: colors.uploads,
                   },
                 })}
                 ${this.renderStat({
@@ -560,7 +529,7 @@ export class Dashboard extends BtrixElement {
       <div class="mb-2 flex items-center gap-2 last:mb-0">
         <dt class="mr-auto flex items-center tabular-nums">
           <sl-icon
-            class=${clsx(tw`mr-2 text-base`, this.colors.misc)}
+            class=${clsx(tw`mr-2 text-base`, colors.misc)}
             name="box2"
           ></sl-icon>
           ${msg("Miscellaneous")}
@@ -621,360 +590,15 @@ export class Dashboard extends BtrixElement {
   }
 
   private renderStorageMeter(metrics: Metrics) {
-    const hasQuota = Boolean(metrics.storageQuotaBytes);
-    const isStorageFull =
-      hasQuota && metrics.storageUsedBytes >= metrics.storageQuotaBytes;
-    const misc = metrics.storageUsedSeedFiles + metrics.storageUsedThumbnails;
-
-    const renderBar = (
-      value: number,
-      label: string,
-      colorClassname: string,
-    ) => html`
-      <btrix-meter-bar
-        value=${(value / metrics.storageUsedBytes) * 100}
-        style="--background-color:var(--sl-color-${colorClassname.replace(
-          "text-",
-          "",
-        )})"
-      >
-        <header class="font-medium leading-none">${label}</header>
-        <hr class="my-2" />
-        <p>
-          ${this.localize.bytes(value, {
-            unitDisplay: "narrow",
-          })}
-          <br />
-          ${this.renderPercentage(value / metrics.storageUsedBytes)}
-        </p>
-      </btrix-meter-bar>
-    `;
-    return html`
-      <div class="mb-1 font-semibold">
-        ${when(
-          isStorageFull,
-          () => html`
-            <div class="flex items-center gap-2">
-              <sl-icon class="text-danger" name="x-octagon"></sl-icon>
-              <span>${msg("Storage is Full")}</span>
-            </div>
-          `,
-          () =>
-            hasQuota
-              ? html`
-                  ${this.localize.bytes(
-                    metrics.storageQuotaBytes - metrics.storageUsedBytes,
-                  )}
-                  ${msg("available")}
-                `
-              : "",
-        )}
-      </div>
-      ${when(
-        hasQuota,
-        () => html`
-          <div class="mb-2">
-            <btrix-meter
-              value=${metrics.storageUsedBytes}
-              max=${ifDefined(metrics.storageQuotaBytes || undefined)}
-              valueText=${msg("gigabyte")}
-            >
-              ${when(metrics.storageUsedCrawls, () =>
-                renderBar(
-                  metrics.storageUsedCrawls,
-                  msg("Crawls"),
-                  this.colors.crawls,
-                ),
-              )}
-              ${when(metrics.storageUsedUploads, () =>
-                renderBar(
-                  metrics.storageUsedUploads,
-                  msg("Uploads"),
-                  this.colors.uploads,
-                ),
-              )}
-              ${when(metrics.storageUsedProfiles, () =>
-                renderBar(
-                  metrics.storageUsedProfiles,
-                  msg("Profiles"),
-                  this.colors.browserProfiles,
-                ),
-              )}
-              ${when(misc, () =>
-                renderBar(misc, msg("Miscellaneous"), this.colors.misc),
-              )}
-              <div slot="available" class="flex-1">
-                <btrix-popover placement="top" class="text-center">
-                  <div slot="content">
-                    <header class="font-medium leading-none">
-                      ${msg("Available")}
-                    </header>
-                    <hr class="my-2" />
-                    <p>
-                      ${this.renderPercentage(
-                        (metrics.storageQuotaBytes - metrics.storageUsedBytes) /
-                          metrics.storageQuotaBytes,
-                      )}
-                    </p>
-                  </div>
-                  <div class="h-full w-full"></div>
-                </btrix-popover>
-              </div>
-              <span slot="valueLabel"
-                >${this.localize.bytes(metrics.storageUsedBytes, {
-                  unitDisplay: "narrow",
-                })}</span
-              >
-              <span slot="maxLabel"
-                >${this.localize.bytes(metrics.storageQuotaBytes, {
-                  unitDisplay: "narrow",
-                })}</span
-              >
-            </btrix-meter>
-          </div>
-        `,
-      )}
-    `;
+    return html`<btrix-storage-meter
+      .metrics=${metrics}
+    ></btrix-storage-meter>`;
   }
 
-  private renderCrawlingMeter(_metrics: Metrics) {
-    if (!this.org) return;
-
-    let quotaSeconds = 0;
-
-    if (this.org.quotas.maxExecMinutesPerMonth) {
-      quotaSeconds = this.org.quotas.maxExecMinutesPerMonth * 60;
-    }
-
-    let quotaSecondsAllTypes = quotaSeconds;
-
-    let quotaSecondsExtra = 0;
-    if (this.org.extraExecSecondsAvailable) {
-      quotaSecondsExtra = this.org.extraExecSecondsAvailable;
-      quotaSecondsAllTypes += this.org.extraExecSecondsAvailable;
-    }
-
-    let quotaSecondsGifted = 0;
-    if (this.org.giftedExecSecondsAvailable) {
-      quotaSecondsGifted = this.org.giftedExecSecondsAvailable;
-      quotaSecondsAllTypes += this.org.giftedExecSecondsAvailable;
-    }
-
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = String(now.getUTCMonth() + 1).padStart(2, "0");
-    const currentPeriod = `${currentYear}-${currentMonth}`;
-
-    let usageSeconds = 0;
-    if (this.org.monthlyExecSeconds) {
-      const actualUsage = this.org.monthlyExecSeconds[currentPeriod];
-      if (actualUsage) {
-        usageSeconds = actualUsage;
-      }
-    }
-
-    if (usageSeconds > quotaSeconds) {
-      usageSeconds = quotaSeconds;
-    }
-
-    let usageSecondsAllTypes = 0;
-    if (this.org.monthlyExecSeconds) {
-      const actualUsage = this.org.monthlyExecSeconds[currentPeriod];
-      if (actualUsage) {
-        usageSecondsAllTypes = actualUsage;
-      }
-    }
-
-    let usageSecondsExtra = 0;
-    if (this.org.extraExecSeconds) {
-      const actualUsageExtra = this.org.extraExecSeconds[currentPeriod];
-      if (actualUsageExtra) {
-        usageSecondsExtra = actualUsageExtra;
-      }
-    }
-    const maxExecSecsExtra = this.org.quotas.extraExecMinutes * 60;
-    // Cap usage at quota for display purposes
-    if (usageSecondsExtra > maxExecSecsExtra) {
-      usageSecondsExtra = maxExecSecsExtra;
-    }
-    if (usageSecondsExtra) {
-      // Quota for extra = this month's usage + remaining available
-      quotaSecondsAllTypes += usageSecondsExtra;
-      quotaSecondsExtra += usageSecondsExtra;
-    }
-
-    let usageSecondsGifted = 0;
-    if (this.org.giftedExecSeconds) {
-      const actualUsageGifted = this.org.giftedExecSeconds[currentPeriod];
-      if (actualUsageGifted) {
-        usageSecondsGifted = actualUsageGifted;
-      }
-    }
-    const maxExecSecsGifted = this.org.quotas.giftedExecMinutes * 60;
-    // Cap usage at quota for display purposes
-    if (usageSecondsGifted > maxExecSecsGifted) {
-      usageSecondsGifted = maxExecSecsGifted;
-    }
-    if (usageSecondsGifted) {
-      // Quota for gifted = this month's usage + remaining available
-      quotaSecondsAllTypes += usageSecondsGifted;
-      quotaSecondsGifted += usageSecondsGifted;
-    }
-
-    const hasQuota = Boolean(quotaSecondsAllTypes);
-    const isReached = hasQuota && usageSecondsAllTypes >= quotaSecondsAllTypes;
-
-    const maxTotalTime = quotaSeconds + quotaSecondsExtra + quotaSecondsGifted;
-    if (isReached) {
-      usageSecondsAllTypes = maxTotalTime;
-      quotaSecondsAllTypes = maxTotalTime;
-    }
-
-    const hasExtra =
-      usageSecondsExtra ||
-      this.org.extraExecSecondsAvailable ||
-      usageSecondsGifted ||
-      this.org.giftedExecSecondsAvailable;
-
-    const renderBar = (
-      /** Time in Seconds */
-      used: number,
-      quota: number,
-      label: string,
-      color: string,
-      divided = true,
-    ) => {
-      if (divided) {
-        return html` <btrix-divided-meter-bar
-          value=${(used / quotaSecondsAllTypes) * 100}
-          quota=${(quota / quotaSecondsAllTypes) * 100}
-          style="--background-color:var(--sl-color-${color}-500); --quota-background-color:var(--sl-color-${color}-100)"
-        >
-          <header class="font-medium leading-none">${label}</header>
-          <hr class="my-2" />
-          <p>
-            ${humanizeExecutionSeconds(used, { displaySeconds: true })}
-            ${msg("of")}
-            <br />
-            ${humanizeExecutionSeconds(quota, { displaySeconds: true })}
-          </p>
-        </btrix-divided-meter-bar>`;
-      } else {
-        return html`<btrix-meter-bar
-          value=${100}
-          style="--background-color:var(--sl-color-${color}-500);"
-        >
-          <header class="font-medium leading-none">${label}</header>
-          <hr class="my-2" />
-          <p>
-            ${humanizeExecutionSeconds(used, { displaySeconds: true })}
-            <br />
-            ${this.renderPercentage(used / quota)}
-          </p>
-        </btrix-meter-bar>`;
-      }
-    };
-    return html`
-      <div class="mb-1 font-semibold">
-        ${when(
-          isReached,
-          () => html`
-            <div class="flex items-center gap-2">
-              <sl-icon class="text-danger" name="x-octagon"></sl-icon>
-              <span>${msg("Execution Minutes Quota Reached")}</span>
-            </div>
-          `,
-          () =>
-            hasQuota && this.org
-              ? html`
-                  <span class="inline-flex items-center">
-                    ${humanizeExecutionSeconds(
-                      quotaSeconds -
-                        usageSeconds +
-                        this.org.extraExecSecondsAvailable +
-                        this.org.giftedExecSecondsAvailable,
-                      { style: "short", round: "down" },
-                    )}
-                    <span class="ml-1">${msg("remaining")}</span>
-                  </span>
-                `
-              : "",
-        )}
-      </div>
-      ${when(
-        hasQuota && this.org,
-        (org) => html`
-          <div class="mb-2">
-            <btrix-meter
-              value=${org.giftedExecSecondsAvailable ||
-              org.extraExecSecondsAvailable ||
-              isReached
-                ? quotaSecondsAllTypes
-                : usageSeconds}
-              max=${quotaSecondsAllTypes}
-              valueText=${msg("time")}
-            >
-              ${when(usageSeconds || quotaSeconds, () =>
-                renderBar(
-                  usageSeconds > quotaSeconds ? quotaSeconds : usageSeconds,
-                  hasExtra ? quotaSeconds : quotaSecondsAllTypes,
-                  msg("Monthly Execution Time Used"),
-                  "lime",
-                  hasExtra ? true : false,
-                ),
-              )}
-              ${when(usageSecondsGifted || org.giftedExecSecondsAvailable, () =>
-                renderBar(
-                  usageSecondsGifted > quotaSecondsGifted
-                    ? quotaSecondsGifted
-                    : usageSecondsGifted,
-                  quotaSecondsGifted,
-                  msg("Gifted Execution Time Used"),
-                  "blue",
-                ),
-              )}
-              ${when(usageSecondsExtra || org.extraExecSecondsAvailable, () =>
-                renderBar(
-                  usageSecondsExtra > quotaSecondsExtra
-                    ? quotaSecondsExtra
-                    : usageSecondsExtra,
-                  quotaSecondsExtra,
-                  msg("Extra Execution Time Used"),
-                  "violet",
-                ),
-              )}
-              <div slot="available" class="flex-1">
-                <btrix-popover placement="top" class="text-center">
-                  <div slot="content">
-                    <div>${msg("Monthly Execution Time Remaining")}</div>
-                    <div class="text-xs opacity-80">
-                      ${humanizeExecutionSeconds(quotaSeconds - usageSeconds, {
-                        displaySeconds: true,
-                      })}
-                      |
-                      ${this.renderPercentage(
-                        (quotaSeconds - usageSeconds) / quotaSeconds,
-                      )}
-                    </div>
-                  </div>
-                  <div class="h-full w-full"></div>
-                </btrix-popover>
-              </div>
-              <span slot="valueLabel">
-                ${humanizeExecutionSeconds(usageSecondsAllTypes, {
-                  style: "short",
-                })}
-              </span>
-              <span slot="maxLabel">
-                ${humanizeExecutionSeconds(quotaSecondsAllTypes, {
-                  style: "short",
-                })}
-              </span>
-            </btrix-meter>
-          </div>
-        `,
-      )}
-    `;
+  private renderCrawlingMeter(metrics: Metrics) {
+    return html`<btrix-execution-minute-meter
+      .metrics=${metrics}
+    ></btrix-execution-minute-meter>`;
   }
 
   private renderCard(
@@ -1058,12 +682,6 @@ export class Dashboard extends BtrixElement {
     <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
     <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
   `;
-
-  private renderPercentage(ratio: number) {
-    const percent = ratio * 100;
-    if (percent < 1) return `<1%`;
-    return `${percent.toFixed(2)}%`;
-  }
 
   private async fetchMetrics() {
     try {
