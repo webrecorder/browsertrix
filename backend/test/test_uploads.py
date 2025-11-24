@@ -1260,7 +1260,9 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
 
             if count + 1 == MAX_ATTEMPTS:
                 assert data["storageUsedBytes"] == org_bytes - total_size
-                assert data["storageUsedCrawls"] == org_crawl_bytes - combined_crawl_size
+                assert (
+                    data["storageUsedCrawls"] == org_crawl_bytes - combined_crawl_size
+                )
                 assert data["storageUsedUploads"] == org_upload_bytes - upload_size
         except:
             pass
