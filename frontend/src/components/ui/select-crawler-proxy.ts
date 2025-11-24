@@ -137,6 +137,7 @@ export class SelectCrawlerProxy extends BtrixElement {
               </div>
             `
           : ``}
+        <slot name="help-text" slot="help-text"></slot>
       </sl-select>
     `;
   }
