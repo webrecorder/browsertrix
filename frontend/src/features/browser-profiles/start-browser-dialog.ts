@@ -233,6 +233,7 @@ export class StartBrowserDialog extends BtrixElement {
         ${showProxies
           ? html`<div class="mt-4">
               <btrix-select-crawler-proxy
+                .label=${msg("Proxy Server")}
                 defaultProxyId=${ifDefined(
                   this.org?.crawlingDefaults?.profileid ||
                     proxies.default_proxy_id ||
@@ -246,7 +247,7 @@ export class StartBrowserDialog extends BtrixElement {
           : nothing}
         ${this.open && showChannels
           ? html`<btrix-details class="mt-4" ?open=${this.details?.open}>
-              <span slot="title">${msg("Crawler Settings")}</span>
+              <span slot="title">${msg("Browser Session Settings")}</span>
               <div class="mt-4">
                 <btrix-select-crawler
                   .crawlerChannel=${profile.crawlerChannel ||

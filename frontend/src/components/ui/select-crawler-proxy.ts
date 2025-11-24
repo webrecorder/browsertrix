@@ -47,6 +47,9 @@ export class SelectCrawlerProxy extends BtrixElement {
   proxyId: string | null = null;
 
   @property({ type: String })
+  label?: string;
+
+  @property({ type: String })
   size?: SlSelect["size"];
 
   @property({ type: String })
@@ -93,7 +96,7 @@ export class SelectCrawlerProxy extends BtrixElement {
     return html`
       <sl-select
         name="proxyId"
-        label=${msg("Crawler Proxy Server")}
+        label=${this.label || msg("Crawler Proxy Server")}
         value=${this.selectedProxy?.id || ""}
         placeholder=${this.defaultProxy
           ? `${msg(`Default Proxy:`)} ${this.defaultProxy.label}`

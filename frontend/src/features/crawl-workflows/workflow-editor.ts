@@ -745,17 +745,7 @@ export class WorkflowEditor extends BtrixElement {
           )}
         </div>
 
-        <p
-          class="cursor-text select-text text-neutral-700"
-          slot="summary"
-          @click=${(e: MouseEvent) => {
-            // Decrease click target size of details header
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-        >
-          ${desc}
-        </p>
+        <p class="text-neutral-700" slot="summary">${desc}</p>
         <div class="grid grid-cols-5 gap-5">${render.bind(this)()}</div>
       </sl-details>`;
     };
@@ -2003,16 +1993,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
     if (!this.formState.lang) throw new Error("missing formstate.lang");
 
     const proxies = this.proxies;
-    const selectedProfile = this.profileTask.value;
+    const profile = this.profileTask.value;
     const selectedProxyId =
       this.formState.browserProfile?.proxyId ||
-      selectedProfile?.proxyId ||
+      profile?.proxyId ||
       this.formState.proxyId;
 
     return html`
       ${inputCol(html`
         <btrix-select-browser-profile
           .profileId=${this.formState.browserProfile?.id}
+          .profileName=${this.formState.browserProfile?.name}
           @on-change=${(e: SelectBrowserProfileChangeEvent) => {
             const profile = e.detail.value;
 

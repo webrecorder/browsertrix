@@ -66,6 +66,7 @@ export type WorkflowParams = {
   schedule: string;
   browserWindows: number;
   profileid: string | null;
+  profileName?: string | null;
   config: SeedConfig;
   tags: string[];
   crawlTimeout: number | null;

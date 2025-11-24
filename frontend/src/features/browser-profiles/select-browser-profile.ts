@@ -59,6 +59,9 @@ export class SelectBrowserProfile extends BtrixElement {
   @property({ type: String })
   profileId?: string;
 
+  @property({ type: String })
+  profileName?: string;
+
   @state()
   selectedProfile?: Profile;
 
@@ -103,11 +106,12 @@ export class SelectBrowserProfile extends BtrixElement {
   render() {
     const selectedProfile = this.selectedProfile;
     const browserProfiles = this.profilesTask.value;
+    const loading = !browserProfiles && !this.profileName;
 
     return html`
       <sl-select
         label=${msg("Browser Profile")}
-        value=${selectedProfile?.id || ""}
+        value=${this.profileId || selectedProfile?.id || ""}
         placeholder=${browserProfiles
           ? msg("No custom profile")
           : msg("Loading")}
@@ -118,15 +122,7 @@ export class SelectBrowserProfile extends BtrixElement {
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
       >
-        ${when(
-          selectedProfile?.proxyId,
-          (proxyId) => html`
-            <btrix-proxy-badge
-              slot="suffix"
-              proxyId=${proxyId}
-            ></btrix-proxy-badge>
-          `,
-        )}
+        ${loading ? html`<sl-spinner slot="prefix"></sl-spinner>` : nothing}
         ${browserProfiles
           ? html`
               <sl-option value="">${msg("No custom profile")}</sl-option>
@@ -137,7 +133,11 @@ export class SelectBrowserProfile extends BtrixElement {
                   `
                 : nothing}
             `
-          : html` <sl-spinner slot="prefix"></sl-spinner> `}
+          : this.profileName
+            ? html`<sl-option value=${ifDefined(this.profileId)}>
+                ${this.profileName}
+              </sl-option>`
+            : nothing}
         ${browserProfiles?.items.map(
           (profile, i) => html`
             <btrix-popover
