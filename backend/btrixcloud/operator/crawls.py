@@ -1539,16 +1539,27 @@ class CrawlOperator(BaseOperator):
         print(f"status.stopReason: {status.stopReason}", flush=True)
 
         print(f"stats.size initial: {stats.size}", flush=True)
+        print(f"status.filesAdded: {status.filesAdded}", flush=True)
         print(f"status.filesAddedSize: {status.filesAddedSize}", flush=True)
 
         # need to add size of previously completed WACZ files as well!
-        # TODO: This sometimes results in the crawl's stats.size being
-        # twice as large as expected when pausing crawls, as stats.size
-        # is not necessarily decremented once WACZ files are uploaded
-        # This then can have a downstream effects on the storage quota check
-        stats.size += status.filesAddedSize
-
-        print(f"stats.size after adding filesAddedSize: {stats.size}", flush=True)
+        # TODO: Fix this so that it works as expected with pausing
+        # - The if clause here is close to a solution except it still results
+        # in pauses after the first showing a smaller-than-expected size
+        # because it no longer counts files added previous to resuming the crawl.
+        # - Kind of seems like what we need here is either a way of still adding
+        # files added prior to the current pause without double-adding files
+        # that are currently being uploaded.
+        # - Another way to do that might be to have the crawler decrement the size
+        # of a crawl by the amount of WACZs that are uploaded, so that this here
+        # in the operator can stay simpler?
+        if status.stopReason not in PAUSED_STATES:
+            stats.size += status.filesAddedSize
+            print(f"stats.size after adding filesAddedSize: {stats.size}", flush=True)
+        else:
+            print(
+                "not adding filesAddedSize to stats.size, crawl is pausing", flush=True
+            )
 
         # update status
         status.pagesDone = stats.done
