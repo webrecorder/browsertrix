@@ -1074,6 +1074,47 @@ def test_shareable_workflow(admin_auth_headers, default_org_id, admin_crawl_id):
         assert page["url"]
 
 
+def test_update_profile(
+    crawler_auth_headers, default_org_id, profile_2_config_id, profile_id, profile_2_id
+):
+
+    # Add profile
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{profile_2_config_id}/",
+        headers=crawler_auth_headers,
+        json={"profileid": profile_2_id},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["settings_changed"] == True
+    assert data["metadata_changed"] == False
+    assert data["profileid"] == profile_2_id
+
+    # Add different profile
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{profile_2_config_id}/",
+        headers=crawler_auth_headers,
+        json={"profileid": profile_id},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["settings_changed"] == True
+    assert data["metadata_changed"] == False
+    assert data["profileid"] == profile_id
+
+    # Remove profile
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{profile_2_config_id}/",
+        headers=crawler_auth_headers,
+        json={"profileid": ""},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["settings_changed"] == True
+    assert data["metadata_changed"] == False
+    assert data["profileid"] == ""
+
+
 def test_add_crawl_config_fail_on_content_check_no_profile(
     crawler_auth_headers, default_org_id, sample_crawl_data
 ):
