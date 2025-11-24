@@ -1,15 +1,14 @@
 import clsx from "clsx";
-import { css, html } from "lit";
+import { css, html, type PropertyValues } from "lit";
 import {
   customElement,
   property,
   query,
-  queryAssignedElements,
+  queryAll,
   state,
 } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import debounce from "lodash/fp/debounce";
-
-import type { Popover } from "./popover";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { Tag } from "@/components/ui/tag";
@@ -31,60 +30,75 @@ export class TagContainer extends TailwindElement {
     }
   `;
 
-  /**
-   * Maximum number of possible tags.
-   * This number is used to preserve space for the remainder badge
-   * when calculating width after line clamping.
-   */
-  @property({ type: Number })
-  maxTags = 100;
+  @property({ type: Array })
+  tags: string[] = [];
 
   @query("#container")
   private readonly container?: HTMLElement | null;
 
-  @query("btrix-popover")
-  private readonly remainderPopover?: Popover | null;
-
-  @queryAssignedElements()
-  private readonly tags!: Tag[];
+  @queryAll("btrix-tag")
+  private readonly tagNodes!: NodeListOf<Tag>;
 
   @state()
-  public remainder?: number;
-
-  #popoverContent?: HTMLElement;
+  private displayLimit?: number;
 
   disconnectedCallback(): void {
     this.debouncedCalculate.cancel();
     super.disconnectedCallback();
   }
 
+  protected updated(changedProperties: PropertyValues): void {
+    if (changedProperties.get("tags")) {
+      this.debouncedCalculate.cancel();
+      this.calculate();
+    }
+  }
+
   render() {
+    const maxTags = this.tags.length;
+    const displayLimit = this.displayLimit;
+    const remainder = displayLimit && maxTags - displayLimit;
+
     return html`
       <sl-resize-observer
         @sl-resize=${this.debouncedCalculate as UnderlyingFunction<
           typeof this.calculate
         >}
       >
-        <div class="flex items-center gap-2">
+        <div class="flex items-center">
           <div
             id="container"
             class="flex h-6 w-[var(--width)] flex-wrap gap-x-1.5 overflow-hidden contain-content"
           >
-            <slot
-              @slotchange=${() => {
-                this.debouncedCalculate.cancel();
-                this.calculate();
-              }}
-            ></slot>
+            ${this.tags.map(
+              (tag, i) =>
+                html`<btrix-tag
+                  aria-hidden=${ifDefined(
+                    displayLimit === undefined
+                      ? undefined
+                      : i > displayLimit - 1
+                        ? "true"
+                        : "false",
+                  )}
+                  >${tag}</btrix-tag
+                >`,
+            )}
           </div>
 
           <btrix-popover hoist placement="right">
             <btrix-badge
-              variant="blue"
-              class=${clsx(!this.remainder && tw`invisible`)}
-              aria-hidden=${this.remainder ? "false" : "true"}
-              >+${localize.number(this.remainder || this.maxTags)}</btrix-badge
+              variant="text"
+              size="large"
+              class=${clsx(!remainder && tw`invisible`)}
+              aria-hidden=${remainder ? "false" : "true"}
+              tabIndex="0"
+              >+${localize.number(remainder || maxTags)}</btrix-badge
             >
+            <div slot="content" class="z-50 flex flex-wrap gap-1.5">
+              ${this.tags
+                .slice(displayLimit)
+                .map((tag) => html`<btrix-tag>${tag}</btrix-tag>`)}
+            </div>
           </btrix-popover>
         </div>
       </sl-resize-observer>
@@ -92,25 +106,23 @@ export class TagContainer extends TailwindElement {
   }
 
   private readonly calculate = () => {
-    if (!this.tags.length || !this.container) return;
+    const tagNodes = Array.from(this.tagNodes);
+
+    if (!tagNodes.length || !this.container) return;
 
     const containerRect = this.container.getBoundingClientRect();
     const containerTop = containerRect.top;
 
     // Reset width
     this.style.setProperty("--width", "100%");
-
-    const idx = this.tags.findIndex(
+    const idx = tagNodes.findIndex(
       (el) => el.getBoundingClientRect().top > containerTop,
     );
 
     if (idx === -1) return;
-
-    const lastVisible = this.tags[idx - 1];
-
+    const lastVisible = tagNodes[idx - 1];
     if (lastVisible as unknown) {
       const rect = lastVisible.getBoundingClientRect();
-
       // Decrease width of container to match end of last visible tag
       this.style.setProperty(
         "--width",
@@ -118,31 +130,7 @@ export class TagContainer extends TailwindElement {
       );
     }
 
-    // Clone remaining elements into popover
-    const remaining = this.tags.slice(idx);
-    const popoverContent = document.createElement("div");
-
-    popoverContent.classList.add(
-      tw`flex`,
-      tw`flex-wrap`,
-      tw`gap-1.5`,
-      tw`z-50`,
-    );
-    popoverContent.setAttribute("slot", "content");
-
-    remaining.forEach((el) => {
-      popoverContent.appendChild(el.cloneNode(true));
-    });
-
-    this.remainder = remaining.length;
-
-    if (this.#popoverContent) {
-      this.remainderPopover?.removeChild(this.#popoverContent);
-    }
-    if (this.remainder) {
-      this.remainderPopover?.appendChild(popoverContent);
-    }
-    this.#popoverContent = popoverContent;
+    this.displayLimit = idx;
   };
 
   private readonly debouncedCalculate = debounce(50)(this.calculate);

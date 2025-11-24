@@ -1,11 +1,11 @@
-import { html, type TemplateResult } from "lit";
+import { html } from "lit";
 
 import type { TagContainer } from "@/components/ui/tag-container";
 
 import "@/components/ui/tag-container";
 
-export type RenderProps = TagContainer & { content: TemplateResult };
+export type RenderProps = TagContainer;
 
-export const renderComponent = ({ content }: Partial<RenderProps>) => {
-  return html`<btrix-tag-container>${content}</btrix-tag-container>`;
+export const renderComponent = ({ tags }: Partial<RenderProps>) => {
+  return html`<btrix-tag-container .tags=${tags || []}></btrix-tag-container>`;
 };

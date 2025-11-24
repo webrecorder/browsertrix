@@ -547,18 +547,14 @@ export class BrowserProfilesList extends BtrixElement {
           >
         </btrix-table-cell>
         <btrix-table-cell>
-          <btrix-tag-container
-            class="relative hover:z-[2]"
-            maxTags=${data.tags.length}
-          >
-            ${data.tags.map((tag) => html`<btrix-tag>${tag}</btrix-tag>`)}
+          <btrix-tag-container class="relative hover:z-[2]" .tags=${data.tags}>
           </btrix-tag-container>
         </btrix-table-cell>
-        <btrix-table-cell>
+        <btrix-table-cell class="[--btrix-table-cell-gap:0]">
           <btrix-code language="url" value=${startingUrl} noWrap></btrix-code>
           ${otherOrigins.length
             ? html`<btrix-popover placement="right" hoist>
-                <btrix-badge
+                <btrix-badge variant="text" size="large"
                   >+${this.localize.number(otherOrigins.length)}</btrix-badge
                 >
                 <ul slot="content">
