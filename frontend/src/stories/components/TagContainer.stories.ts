@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/web-components";
 import { html } from "lit";
 
-import { renderComponent, type RenderProps } from "./ContainedTags";
+import { renderComponent, type RenderProps } from "./TagContainer";
 
 const meta = {
-  title: "Components/Contained Tags",
+  title: "Components/Tag Container",
   component: "btrix-contain-with-remainder",
   tags: ["autodocs"],
   render: renderComponent,

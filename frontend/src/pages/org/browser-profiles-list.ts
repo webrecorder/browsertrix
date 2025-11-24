@@ -547,12 +547,12 @@ export class BrowserProfilesList extends BtrixElement {
           >
         </btrix-table-cell>
         <btrix-table-cell>
-          <btrix-contained-tags
+          <btrix-tag-container
             class="relative hover:z-[2]"
             maxTags=${data.tags.length}
           >
             ${data.tags.map((tag) => html`<btrix-tag>${tag}</btrix-tag>`)}
-          </btrix-contained-tags>
+          </btrix-tag-container>
         </btrix-table-cell>
         <btrix-table-cell>
           <btrix-code language="url" value=${startingUrl} noWrap></btrix-code>

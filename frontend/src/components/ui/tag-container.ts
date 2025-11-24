@@ -23,8 +23,8 @@ import { tw } from "@/utils/tailwind";
  *
  * @cssproperty width
  */
-@customElement("btrix-contained-tags")
-export class ContainedTags extends TailwindElement {
+@customElement("btrix-tag-container")
+export class TagContainer extends TailwindElement {
   static styles = css`
     :host {
       --width: 100%;
