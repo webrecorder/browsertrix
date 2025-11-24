@@ -1086,9 +1086,21 @@ def test_update_profile(
     )
     assert r.status_code == 200
     data = r.json()
+    assert data["profileid"] == profile_2_id
     assert data["settings_changed"] == True
     assert data["metadata_changed"] == False
+
+    # Same profile
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{profile_2_config_id}/",
+        headers=crawler_auth_headers,
+        json={"profileid": profile_2_id},
+    )
+    assert r.status_code == 200
+    data = r.json()
     assert data["profileid"] == profile_2_id
+    assert data["settings_changed"] == False
+    assert data["metadata_changed"] == False
 
     # Add different profile
     r = requests.patch(
@@ -1098,9 +1110,9 @@ def test_update_profile(
     )
     assert r.status_code == 200
     data = r.json()
+    assert data["profileid"] == profile_id
     assert data["settings_changed"] == True
     assert data["metadata_changed"] == False
-    assert data["profileid"] == profile_id
 
     # Remove profile
     r = requests.patch(
@@ -1110,9 +1122,21 @@ def test_update_profile(
     )
     assert r.status_code == 200
     data = r.json()
+    assert data["profileid"] == ""
     assert data["settings_changed"] == True
     assert data["metadata_changed"] == False
+
+    # No change
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{profile_2_config_id}/",
+        headers=crawler_auth_headers,
+        json={"profileid": ""},
+    )
+    assert r.status_code == 200
+    data = r.json()
     assert data["profileid"] == ""
+    assert data["settings_changed"] == False
+    assert data["metadata_changed"] == False
 
 
 def test_add_crawl_config_fail_on_content_check_no_profile(

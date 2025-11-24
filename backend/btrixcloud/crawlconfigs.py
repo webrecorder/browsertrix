@@ -594,7 +594,7 @@ class CrawlConfigOps:
         changed = changed or (
             update.profileid is not None
             and update.profileid != orig_crawl_config.profileid
-            and ((not update.profileid) != (not orig_crawl_config.profileid))
+            and not (update.profileid == "" and not orig_crawl_config.profileid)
         )
 
         # either unsetting profile or no profile set on current config
@@ -606,7 +606,7 @@ class CrawlConfigOps:
             no_profile
             and update.proxyId is not None
             and orig_crawl_config.proxyId != update.proxyId
-            and ((not update.proxyId) != (not orig_crawl_config.proxyId))
+            and not (update.proxyId == "" and not orig_crawl_config.proxyId)
         )
 
         metadata_changed = self.check_attr_changed(orig_crawl_config, update, "name")
