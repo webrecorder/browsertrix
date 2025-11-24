@@ -23,7 +23,6 @@ class Migration(BaseMigration):
         """
         crawl_configs = self.mdb["crawl_configs"]
 
-        # Set non-public collections to private
         try:
             await crawl_configs.update_many(
                 {"profileid": {"$ne": None}, "proxyId": {"$ne": None}},
