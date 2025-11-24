@@ -66,32 +66,32 @@ export class DividedMeterBar extends TailwindElement {
     }
 
     .rightBorderRadius {
-      border-radius: 0 var(--sl-border-radius-medium)
-        var(--sl-border-radius-medium) 0;
+      border-top-right-radius: var(--sl-border-radius-medium);
+      border-bottom-right-radius: var(--sl-border-radius-medium);
     }
 
     .quotaBar {
       height: 1rem;
       background-color: var(--quota-background-color, var(--sl-color-blue-100));
       min-width: 4px;
-      box-shadow: inset 0px 1px 1px 0px rgba(0, 0, 0, 0.25);
     }
   `;
 
   render() {
-    return html`<btrix-popover placement="top">
+    return html`<btrix-floating-popover placement="top">
       <div slot="content"><slot></slot></div>
-      <div class="quotaBar" style="width:${this.quota}%">
+      <div class="quotaBar" style="width:${this.quota}%" part="quotaBar">
         ${when(this.value, () => {
           return html`<div
             class="bar ${classMap({
               rightBorderRadius: this.value < this.quota,
             })}"
+            part="bar"
             style="width:${(this.value / this.quota) * 100}%"
           ></div>`;
         })}
       </div>
-    </btrix-popover>`;
+    </btrix-floating-popover>`;
   }
 }
 
@@ -145,7 +145,21 @@ export class Meter extends TailwindElement {
       height: 1rem;
       border-radius: var(--sl-border-radius-medium);
       background-color: var(--sl-color-neutral-100);
-      box-shadow: inset 0px 1px 1px 0px rgba(0, 0, 0, 0.25);
+      box-shadow: inset 0 0 0 1px var(--sl-color-neutral-300);
+      position: relative;
+    }
+
+    .track::before {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: var(--sl-border-radius-medium);
+      content: "";
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+      z-index: 1;
+      pointer-events: none;
     }
 
     .valueBar {
@@ -153,6 +167,36 @@ export class Meter extends TailwindElement {
       border-radius: var(--sl-border-radius-medium);
       overflow: hidden;
       transition: 400ms width;
+      position: relative;
+    }
+
+    .valueBar::before {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: var(--sl-border-radius-medium);
+      content: "";
+      box-shadow: inset 0 0 0 1px var(--sl-color-neutral-500);
+      mix-blend-mode: color-burn;
+      pointer-events: none;
+    }
+
+    .track:hover > * {
+      opacity: 0.5;
+    }
+
+    .track:hover > *:hover {
+      opacity: 1;
+    }
+
+    .valueBar:hover ::slotted(*) {
+      opacity: 0.5;
+    }
+
+    .valueBar:hover ::slotted(*):hover {
+      opacity: 1;
     }
 
     .labels {
@@ -161,8 +205,8 @@ export class Meter extends TailwindElement {
       white-space: nowrap;
       color: var(--sl-color-neutral-500);
       font-size: var(--sl-font-size-x-small);
-      font-family: var(--font-monostyle-family);
-      font-variation-settings: var(--font-monostyle-variation);
+      /*font-family: var(--font-monostyle-family);*/
+      /*font-variation-settings: var(--font-monostyle-variation);*/
       line-height: 1;
       margin-top: var(--sl-spacing-x-small);
     }
@@ -182,6 +226,12 @@ export class Meter extends TailwindElement {
 
     .maxText {
       display: inline-flex;
+    }
+
+    ::slotted(*) ::slotted(*) {
+      border-top-left-radius: var(--sl-border-radius-medium);
+      border-bottom-left-radius: var(--sl-border-radius-medium);
+      transform: scale(30);
     }
   `;
 
