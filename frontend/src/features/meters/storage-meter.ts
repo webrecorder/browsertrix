@@ -118,7 +118,7 @@ export class StorageMeter extends BtrixElement {
                 renderBar(misc, msg("Miscellaneous"), colors.misc),
               )}
               <div slot="available" class="flex-1">
-                <btrix-popover placement="top" class="text-center">
+                <btrix-floating-popover placement="top" class="text-center">
                   <div slot="content">
                     <header
                       class="flex justify-between gap-4 font-medium leading-none"
@@ -135,7 +135,7 @@ export class StorageMeter extends BtrixElement {
                     </header>
                   </div>
                   <div class="h-full w-full"></div>
-                </btrix-popover>
+                </btrix-floating-popover>
               </div>
               <span slot="valueLabel"
                 >${this.localize.bytes(metrics.storageUsedBytes, {

@@ -1,8 +1,23 @@
 import { type VirtualElement } from "@shoelace-style/shoelace/dist/components/popup/popup.component.js";
 import SlTooltip from "@shoelace-style/shoelace/dist/components/tooltip/tooltip.component.js";
 import slTooltipStyles from "@shoelace-style/shoelace/dist/components/tooltip/tooltip.styles.js";
-import { css } from "lit";
+import { css, html, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { classMap } from "lit/directives/class-map.js";
+
+export function parseDuration(delay: number | string) {
+  delay = delay.toString().toLowerCase();
+
+  if (delay.indexOf("ms") > -1) {
+    return parseFloat(delay);
+  }
+
+  if (delay.indexOf("s") > -1) {
+    return parseFloat(delay) * 1000;
+  }
+
+  return parseFloat(delay);
+}
 
 // import { watch } from "@shoelace-style/shoelace/dist/utilities/";
 
@@ -25,13 +40,35 @@ export class FloatingPopover extends SlTooltip {
   @property({ type: String, reflect: true })
   placement: SlTooltip["placement"] = "bottom";
 
+  // @property({ type: Number, reflect: true })
+  // distance: SlTooltip["distance"] = 16;
+
+  @property({ type: String, reflect: true })
+  lock: "x" | "y" | "x y" | "" = "y";
+
   clientX: number | null = 0;
   clientY: number | null = 0;
 
+  isHovered = false;
+
+  private get slottedChildren() {
+    const slot = this.shadowRoot!.querySelector("slot");
+    return slot?.assignedElements({ flatten: true });
+  }
+
   get anchor(): VirtualElement {
+    let originalRect: DOMRect | undefined;
+    if (this.lock !== "") {
+      originalRect = this.slottedChildren?.[0].getBoundingClientRect();
+    }
     return {
       getBoundingClientRect: () => {
-        return new DOMRect(this.clientX ?? 0, this.clientY ?? 0, 0, 0);
+        return new DOMRect(
+          (this.hasLock("x") ? originalRect?.x : this.clientX) ?? 0,
+          (this.hasLock("y") ? originalRect?.y : this.clientY) ?? 0,
+          0,
+          0,
+        );
       },
     };
   }
@@ -80,58 +117,59 @@ export class FloatingPopover extends SlTooltip {
     `,
   ];
 
-  // override render() {
-  //   return html`
-  //     <sl-popup
-  //       part="base"
-  //       exportparts="
-  //             popup:base__popup,
-  //             arrow:base__arrow
-  //           "
-  //       class=${classMap({
-  //         tooltip: true,
-  //         "tooltip--open": this.open,
-  //       })}
-  //       placement=${this.placement}
-  //       distance=${this.distance}
-  //       skidding=${this.skidding}
-  //       strategy=${this.hoist ? "fixed" : "absolute"}
-  //       flip
-  //       shift
-  //       arrow
-  //       .anchor=${this.anchor}
-  //     >
-  //       ${""}
-  //       <slot slot="anchor" aria-describedby="tooltip"></slot>
+  constructor() {
+    super();
+    this.addEventListener("mouseover", this._handleMouseOver);
+    this.addEventListener("mouseout", this._handleMouseOut);
+  }
 
-  //       ${""}
-  //       <div
-  //         part="body"
-  //         id="tooltip"
-  //         class="tooltip__body"
-  //         role="tooltip"
-  //         aria-live=${this.open ? "polite" : "off"}
-  //       >
-  //         <slot name="content">${this.content}</slot>
-  //       </div>
-  //     </sl-popup>
-  //   `;
-  // }
+  override render() {
+    return html`
+      <sl-popup
+        part="base"
+        exportparts="
+              popup:base__popup,
+              arrow:base__arrow
+            "
+        class=${classMap({
+          tooltip: true,
+          "tooltip--open": this.open,
+        })}
+        placement=${this.placement}
+        distance=${this.distance}
+        skidding=${this.skidding}
+        strategy=${this.hoist ? "fixed" : "absolute"}
+        flip
+        shift
+        arrow
+        .anchor=${this.anchor}
+      >
+        ${""}
+        <slot slot="anchor" aria-describedby="tooltip"></slot>
+
+        ${""}
+        <div
+          part="body"
+          id="tooltip"
+          class="tooltip__body"
+          role="tooltip"
+          aria-live=${this.open ? "polite" : "off"}
+        >
+          <slot name="content">${this.content}</slot>
+        </div>
+      </sl-popup>
+    `;
+  }
 
   connectedCallback(): void {
     super.connectedCallback();
-    this.addEventListener("mouseenter", this.handleMouseEnter);
-    this.addEventListener("mouseleave", this.handleMouseLeave);
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     document.body.removeEventListener("mousemove", this.handleMouseMove);
-    this.removeEventListener("mouseenter", this.handleMouseEnter);
-    this.removeEventListener("mouseleave", this.handleMouseLeave);
   }
 
-  @watch(["content", "distance", "hoist", "placement", "skidding"])
   async handleOptionsChange() {
     if (this.hasUpdated) {
       await this.updateComplete;
@@ -139,25 +177,67 @@ export class FloatingPopover extends SlTooltip {
     }
   }
 
-  handleMouseMove(event: MouseEvent) {
-    this.clientX = event.clientX;
-    this.clientY = event.clientY;
-
-    console.log("mousemove", this.clientX, this.clientY, this.popup);
-    // this.querySelector("sl-popup").reposition();
+  hasChanged(changedProps: PropertyValues<this>) {
+    if (
+      (
+        [
+          "content",
+          "distance",
+          "hoist",
+          "placement",
+          "skidding",
+        ] as (keyof FloatingPopover)[]
+      ).some(changedProps.has)
+    ) {
+      void this.handleOptionsChange();
+    }
   }
 
-  handleMouseLeave() {
-    document.body.removeEventListener("mousemove", this.handleMouseMove);
+  handleMouseMove = (event: MouseEvent) => {
+    if (this.isHovered) {
+      this.clientX = event.clientX;
+      this.clientY = event.clientY;
+      this.popup.reposition();
+    }
+  };
 
-    this.open = false;
-  }
+  private readonly _handleMouseOver = (event: MouseEvent) => {
+    if (this._hasTrigger("hover")) {
+      this.isHovered = true;
+      this.clientX = event.clientX;
+      this.clientY = event.clientY;
+      document.body.addEventListener("mousemove", this.handleMouseMove);
+      const delay = parseDuration(
+        getComputedStyle(this).getPropertyValue("--show-delay"),
+      );
+      // @ts-expect-error need to access SlTooltip's hoverTimeout
+      clearTimeout(this.hoverTimeout as number | undefined);
+      // @ts-expect-error need to access SlTooltip's hoverTimeout
+      this.hoverTimeout = window.setTimeout(async () => this.show(), delay);
+    }
+  };
 
-  handleMouseEnter(event: MouseEvent) {
-    document.body.addEventListener("mousemove", this.handleMouseMove);
-    this.clientX = event.clientX;
-    this.clientY = event.clientY;
+  private readonly _handleMouseOut = () => {
+    if (this._hasTrigger("hover")) {
+      this.isHovered = false;
+      document.body.removeEventListener("mousemove", this.handleMouseMove);
+      const delay = parseDuration(
+        getComputedStyle(this).getPropertyValue("--hide-delay"),
+      );
+      // @ts-expect-error need to access SlTooltip's hoverTimeout
+      clearTimeout(this.hoverTimeout as number | undefined);
+      // @ts-expect-error need to access SlTooltip's hoverTimeout
+      this.hoverTimeout = window.setTimeout(async () => this.hide(), delay);
+    }
+  };
 
-    this.open = true;
-  }
+  private readonly _hasTrigger = (triggerType: string) => {
+    const triggers = this.trigger.split(" ");
+    return triggers.includes(triggerType);
+  };
+
+  private readonly hasLock = (lockType: "x" | "y") => {
+    const locks = this.lock.split(" ");
+    return locks.includes(lockType);
+  };
 }
