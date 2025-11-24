@@ -20,11 +20,6 @@ jobs:
     outputs:
       matches: ${{ steps.filter.outputs.matches }}
     steps:
-      - uses: mathio/gha-cleanup@v1
-        with:
-          remove-browsers: true
-          verbose: true
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2 # important, to fetch previous commit
@@ -50,6 +45,13 @@ jobs:
     needs: paths-filter
     if: needs.paths-filter.outputs.matches == 'true'
     steps:
+      - name: Initial Disk Cleanup
+        uses: mathio/gha-cleanup@v1
+        with:
+          remove-browsers: true
+          verbose: true
+
+
       - name: Create k3d Cluster
         uses: AbsaOSS/k3d-action@v2
         with:
