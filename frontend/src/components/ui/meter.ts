@@ -38,10 +38,10 @@ export class MeterBar extends TailwindElement {
     if (this.value <= 0) {
       return;
     }
-    return html`<btrix-popover placement="top">
+    return html`<btrix-floating-popover placement="top">
       <div slot="content"><slot></slot></div>
       <div class="bar" style="width:${this.value}%"></div>
-    </btrix-popover>`;
+    </btrix-floating-popover>`;
   }
 }
 
@@ -157,8 +157,7 @@ export class Meter extends TailwindElement {
       height: 100%;
       border-radius: var(--sl-border-radius-medium);
       content: "";
-      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
-      z-index: 1;
+      box-shadow: inset 0 0 0 1px var(--sl-panel-border-color);
       pointer-events: none;
     }
 
