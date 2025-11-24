@@ -264,10 +264,9 @@ export class WorkflowListItem extends BtrixElement {
       }
 
       .col sl-tooltip > *,
-      .col btrix-popover > *,
-      .col btrix-overflow-dropdown {
+      .col btrix-popover > * {
         /* Place above .rowClickTarget::after overlay */
-        z-index: 10;
+        z-index: 2;
         position: relative;
       }
 
