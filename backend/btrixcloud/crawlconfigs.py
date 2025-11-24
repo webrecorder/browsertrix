@@ -276,8 +276,7 @@ class CrawlConfigOps:
                 )
 
         # ensure proxy_id is valid and available for org
-        if proxy_id:
-            self.assert_can_org_use_proxy(org, proxy_id)
+        self.assert_can_org_use_proxy(org, proxy_id)
 
         if config_in.config.exclude:
             exclude = config_in.config.exclude
@@ -650,7 +649,8 @@ class CrawlConfigOps:
             query["profileid"] = None
         # else, ensure its a valid profile
         elif update.profileid:
-            await self.profiles.get_profile(cast(UUID, update.profileid), org)
+            profile = await self.profiles.get_profile(cast(UUID, update.profileid), org)
+            self.assert_can_org_use_proxy(org, profile.proxyId)
             query["profileid"] = update.profileid
 
         if no_profile:
@@ -1246,8 +1246,7 @@ class CrawlConfigOps:
         else:
             profile_filename = ""
 
-        if crawlconfig.proxyId:
-            self.assert_can_org_use_proxy(org, crawlconfig.proxyId)
+        self.assert_can_org_use_proxy(org, crawlconfig.proxyId)
 
         storage_filename = (
             crawlconfig.crawlFilenameTemplate or self.default_filename_template
