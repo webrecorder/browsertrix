@@ -53,11 +53,11 @@ export class Code extends TailwindElement {
     }
 
     .hljs-path {
-      color: var(--sl-color-blue-900);
+      color: var(--sl-color-sky-600);
     }
 
     .hljs-domain {
-      color: var(--sl-color-blue-600);
+      color: var(--sl-color-sky-700);
     }
 
     .hljs-string {

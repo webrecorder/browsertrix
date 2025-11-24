@@ -16,6 +16,7 @@ import("./combobox");
 import("./config-details");
 import("./copy-button");
 import("./copy-field");
+import("./tag-container");
 import("./data-grid");
 import("./details");
 import("./file-input");

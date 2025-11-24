@@ -16,6 +16,8 @@ import {
 import { customElement, property, query, state } from "lit/decorators.js";
 import debounce from "lodash/fp/debounce";
 
+import { TAG_MAX_CHARACTERS } from "./tag";
+
 import type { UnderlyingFunction } from "@/types/utils";
 import { type WorkflowTag } from "@/types/workflow";
 import { dropdown } from "@/utils/css";
@@ -234,6 +236,7 @@ export class TagInput extends LitElement {
               role="combobox"
               aria-controls="dropdown"
               aria-expanded="${this.dropdownIsOpen === true}"
+              maxlength=${TAG_MAX_CHARACTERS}
             />
             <div
               id="dropdown"
