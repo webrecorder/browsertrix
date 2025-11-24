@@ -500,6 +500,10 @@
     height: var(--btrix-overflow-scrim-width);
     --tw-gradient-from: var(--btrix-overflow-scroll-scrim-color, white);
   }
+
+  .sl-scroll-lock.disable-scroll-lock body {
+    overflow: auto !important;
+  }
 }
 
 /* Following styles won't work with layers */
@@ -514,17 +518,3 @@
 [class*=" hover\:text-"]::part(base):hover {
   color: inherit;
 }
-
-/* Fix scrollbar gutter not actually */
-html {
-  overflow: auto;
-  scrollbar-gutter: stable;
-}
-
-body.sl-scroll-lock {
-  scrollbar-gutter: auto !important;
-}
-/* Leave document scrollable now for replay.ts embedded dialogs */
-/* html:has(body.sl-scroll-lock) {
-  overflow: hidden;
-} */
