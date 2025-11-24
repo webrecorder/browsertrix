@@ -116,7 +116,7 @@ export class UsageHistoryTable extends BtrixElement {
       if (org.quotas.maxExecMinutesPerMonth) {
         maxMonthlySeconds = org.quotas.maxExecMinutesPerMonth * 60;
       }
-      if (monthlySecondsUsed > maxMonthlySeconds) {
+      if (maxMonthlySeconds !== 0 && monthlySecondsUsed > maxMonthlySeconds) {
         monthlySecondsUsed = maxMonthlySeconds;
       }
 
@@ -125,7 +125,7 @@ export class UsageHistoryTable extends BtrixElement {
       if (org.quotas.extraExecMinutes) {
         maxExtraSeconds = org.quotas.extraExecMinutes * 60;
       }
-      if (extraSecondsUsed > maxExtraSeconds) {
+      if (maxExtraSeconds !== 0 && extraSecondsUsed > maxExtraSeconds) {
         extraSecondsUsed = maxExtraSeconds;
       }
 
@@ -134,14 +134,16 @@ export class UsageHistoryTable extends BtrixElement {
       if (org.quotas.giftedExecMinutes) {
         maxGiftedSeconds = org.quotas.giftedExecMinutes * 60;
       }
-      if (giftedSecondsUsed > maxGiftedSeconds) {
+      if (maxGiftedSeconds !== 0 && giftedSecondsUsed > maxGiftedSeconds) {
         giftedSecondsUsed = maxGiftedSeconds;
       }
 
       let totalSecondsUsed = org.crawlExecSeconds?.[mY] || 0;
       const totalMaxQuota =
-        maxMonthlySeconds + maxExtraSeconds + maxGiftedSeconds;
-      if (totalSecondsUsed > totalMaxQuota) {
+        maxMonthlySeconds !== 0
+          ? maxMonthlySeconds + maxExtraSeconds + maxGiftedSeconds
+          : 0;
+      if (totalMaxQuota !== 0 && totalSecondsUsed > totalMaxQuota) {
         totalSecondsUsed = totalMaxQuota;
       }
 
