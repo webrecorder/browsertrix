@@ -1994,11 +1994,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
     if (!this.formState.lang) throw new Error("missing formstate.lang");
 
     const proxies = this.proxies;
-    const profile = this.profileTask.value;
-    const selectedProxyId =
+    const profileProxyId =
       this.formState.browserProfile?.proxyId ||
-      profile?.proxyId ||
-      this.formState.proxyId;
+      (this.formState.browserProfile?.id && this.formState.proxyId);
 
     const priorityOrigins = () => {
       if (!this.formState.urlList && !this.formState.primarySeedUrl) {
@@ -2050,25 +2048,29 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   proxies.default_proxy_id ?? undefined,
                 )}
                 .proxyServers=${proxies.servers}
-                .proxyId=${selectedProxyId || ""}
-                ?disabled=${!!this.formState.browserProfile}
+                .proxyId=${profileProxyId || this.formState.proxyId || ""}
+                .profileProxyId=${profileProxyId}
+                title=${ifDefined(
+                  this.formState.browserProfile
+                    ? msg("Disabled by browser profile")
+                    : undefined,
+                )}
                 @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
                   this.updateFormState({
                     proxyId: e.detail.value,
                   })}
-              ></btrix-select-crawler-proxy>
-              ${when(
-                this.formState.browserProfile,
-                () => html`
-                  <div class="form-help-text">
-                    <sl-icon
-                      class="mr-0.5 align-[-.175em]"
-                      name="info-circle"
-                    ></sl-icon>
-                    ${msg("Using browser profile proxy settings.")}
-                  </div>
-                `,
-              )}
+              >
+                ${when(
+                  profileProxyId,
+                  () => html`
+                    <span
+                      slot="suffix"
+                      class="whitespace-nowrap text-neutral-1000"
+                      >${msg("Same as browser profile")}</span
+                    >
+                  `,
+                )}
+              </btrix-select-crawler-proxy>
             `),
             this.renderHelpTextCol(infoTextFor["proxyId"]),
           ]

@@ -40,6 +40,9 @@ export class SelectCrawlerProxy extends BtrixElement {
   @property({ type: String })
   defaultProxyId: string | null = null;
 
+  @property({ type: String })
+  profileProxyId?: string | null = null;
+
   @property({ type: Array })
   proxyServers: Proxy[] = [];
 
@@ -51,6 +54,9 @@ export class SelectCrawlerProxy extends BtrixElement {
 
   @property({ type: String })
   size?: SlSelect["size"];
+
+  @property({ type: String })
+  placeholder?: string;
 
   @property({ type: String })
   helpText?: string;
@@ -103,12 +109,14 @@ export class SelectCrawlerProxy extends BtrixElement {
           : msg("No Proxy")}
         hoist
         clearable
-        ?disabled=${this.disabled}
+        ?disabled=${this.disabled ?? Boolean(this.profileProxyId)}
         size=${ifDefined(this.size)}
         @sl-change=${this.onChange}
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
       >
+        <slot name="prefix" slot="prefix"></slot>
+        <slot name="suffix" slot="suffix"></slot>
         ${this.proxyServers.map(
           (server) =>
             html` <sl-option value=${server.id}>
