@@ -309,7 +309,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     const archivingDisabled = isArchivingDisabled(this.org);
 
     return panel({
-      heading: msg("Configured Sites"),
+      heading: msg("Saved Sites"),
       actions: this.appState.isCrawler
         ? html`
             <sl-button

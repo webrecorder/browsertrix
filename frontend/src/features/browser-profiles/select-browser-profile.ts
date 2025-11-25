@@ -267,7 +267,7 @@ export class SelectBrowserProfile extends BtrixElement {
 
         <sl-divider class="my-5"></sl-divider>
 
-        ${pageHeading({ content: msg("Configured Sites"), level: 3 })}
+        ${pageHeading({ content: msg("Saved Sites"), level: 3 })}
         <section class="mt-5">
           ${profile.origins.length
             ? html`<ul class="divide-y rounded-lg border">

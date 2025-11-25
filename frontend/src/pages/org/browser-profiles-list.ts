@@ -497,7 +497,7 @@ export class BrowserProfilesList extends BtrixElement {
           <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
           <btrix-table-header-cell> ${msg("Tags")} </btrix-table-header-cell>
           <btrix-table-header-cell>
-            ${msg("Configured Sites")}
+            ${msg("Saved Sites")}
           </btrix-table-header-cell>
           <btrix-table-header-cell>
             ${msg("Last Modified")}
