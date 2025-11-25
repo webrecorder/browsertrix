@@ -370,7 +370,7 @@ class CrawlOps(BaseCrawlOps):
         cursor = self.crawls.aggregate(
             [
                 {"$match": {"state": {"$in": RUNNING_AND_WAITING_STATES}, "oid": oid}},
-                {"$group": {"_id": None, "totalSum": {"$sum": "pendingSize"}}},
+                {"$group": {"_id": None, "totalSum": {"$sum": "$pendingSize"}}},
             ]
         )
         results = await cursor.to_list(length=1)
