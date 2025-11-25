@@ -304,8 +304,6 @@ class CrawlStats(BaseModel):
     done: int = 0
     size: int = 0
 
-    profile_update: Optional[str] = ""
-
 
 # ============================================================================
 
@@ -907,6 +905,7 @@ class CrawlOut(BaseMongoModel):
 
     fileSize: int = 0
     fileCount: int = 0
+    pendingSize: int = 0
 
     tags: Optional[List[str]] = []
 
@@ -1090,6 +1089,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     qa: Optional[QARun] = None
     qaFinished: Optional[Dict[str, QARun]] = {}
+
+    pendingSize: int = 0
 
 
 # ============================================================================
