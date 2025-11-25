@@ -270,9 +270,6 @@ class CrawlStatus(BaseModel):
     # don't include in status, use by metacontroller
     resync_after: Optional[int] = Field(default=None, exclude=True)
 
-    # track size of files just added on this sync
-    just_added_size: int = Field(default=0, exclude=True)
-
     # last state
     last_state: TYPE_ALL_CRAWL_STATES = Field(default="starting", exclude=True)
 
