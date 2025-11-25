@@ -265,13 +265,10 @@ class CrawlConfigOps:
         proxy_id = config_in.proxyId
 
         profileid = None
+        # ensure profile is valid, get proxy_id from profile
         if isinstance(config_in.profileid, UUID):
             profileid = config_in.profileid
-
-        # ensure profile is valid, get proxy_id from profile
-        if profileid:
-            profile = await self.profiles.get_profile(profileid, org)
-            proxy_id = profile.proxyId
+            proxy_id = None
         else:
             if config_in.config and config_in.config.failOnContentCheck:
                 raise HTTPException(
@@ -279,9 +276,7 @@ class CrawlConfigOps:
                 )
 
         # ensure proxy_id is valid and available for org
-        if proxy_id:
-            if not self.can_org_use_proxy(org, proxy_id):
-                raise HTTPException(status_code=404, detail="proxy_not_found")
+        self.assert_can_org_use_proxy(org, proxy_id)
 
         if config_in.config.exclude:
             exclude = config_in.config.exclude
@@ -599,10 +594,20 @@ class CrawlConfigOps:
         changed = changed or (
             update.profileid is not None
             and update.profileid != orig_crawl_config.profileid
-            and ((not update.profileid) != (not orig_crawl_config.profileid))
+            and not (update.profileid == "" and not orig_crawl_config.profileid)
         )
 
-        changed = changed or (orig_crawl_config.proxyId != update.proxyId)
+        # either unsetting profile or no profile set on current config
+        no_profile = update.profileid == "" or (
+            update.profileid is None and not orig_crawl_config.profileid
+        )
+
+        changed = changed or (
+            no_profile
+            and update.proxyId is not None
+            and orig_crawl_config.proxyId != update.proxyId
+            and not (update.proxyId == "" and not orig_crawl_config.proxyId)
+        )
 
         metadata_changed = self.check_attr_changed(orig_crawl_config, update, "name")
         metadata_changed = metadata_changed or self.check_attr_changed(
@@ -633,8 +638,6 @@ class CrawlConfigOps:
             last_rev = ConfigRevision(**orig_dict)
             last_rev = await self.config_revs.insert_one(last_rev.to_dict())
 
-        proxy_id = update.proxyId
-
         # set update query
         query = update.dict(exclude_unset=True)
         query["modifiedBy"] = user.id
@@ -647,14 +650,15 @@ class CrawlConfigOps:
         # else, ensure its a valid profile
         elif update.profileid:
             profile = await self.profiles.get_profile(cast(UUID, update.profileid), org)
+            self.assert_can_org_use_proxy(org, profile.proxyId)
             query["profileid"] = update.profileid
-            proxy_id = profile.proxyId
-        # don't change the proxy if profile is set, as it should match the profile proxy
-        elif orig_crawl_config.profileid:
-            proxy_id = None
 
-        if proxy_id is not None:
-            query["proxyId"] = proxy_id
+        if no_profile:
+            if update.proxyId == "":
+                query["proxyId"] = None
+            elif update.proxyId:
+                self.assert_can_org_use_proxy(org, update.proxyId)
+                query["proxyId"] = update.proxyId
 
         if update.config is not None:
             query["config"] = update.config.dict()
@@ -1025,9 +1029,10 @@ class CrawlConfigOps:
             await self._add_running_curr_crawl_stats(crawlconfig)
 
         if crawlconfig.profileid:
-            crawlconfig.profileName = await self.profiles.get_profile_name(
-                crawlconfig.profileid, org
-            )
+            profile = await self.profiles.get_profile(crawlconfig.profileid, org)
+            if profile:
+                crawlconfig.profileName = profile.name
+                crawlconfig.proxyId = profile.proxyId
 
         crawlconfig.config.seeds = None
 
@@ -1241,8 +1246,7 @@ class CrawlConfigOps:
         else:
             profile_filename = ""
 
-        if crawlconfig.proxyId and not self.can_org_use_proxy(org, crawlconfig.proxyId):
-            raise HTTPException(status_code=404, detail="proxy_not_found")
+        self.assert_can_org_use_proxy(org, crawlconfig.proxyId)
 
         storage_filename = (
             crawlconfig.crawlFilenameTemplate or self.default_filename_template
@@ -1417,6 +1421,11 @@ class CrawlConfigOps:
         return (
             _proxy.shared and org.allowSharedProxies
         ) or _proxy.id in org.allowedProxies
+
+    def assert_can_org_use_proxy(self, org: Organization, proxy: Optional[str]):
+        """assert that proxy can be used or throw error"""
+        if proxy and not self.can_org_use_proxy(org, proxy):
+            raise HTTPException(status_code=400, detail="proxy_not_found")
 
     def get_warc_prefix(self, org: Organization, crawlconfig: CrawlConfig) -> str:
         """Generate WARC prefix slug from org slug, name or url
