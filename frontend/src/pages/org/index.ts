@@ -493,7 +493,7 @@ export class Org extends BtrixElement {
               .proxyServers=${proxies.servers}
               .crawlerChannels=${crawlerChannels}
               defaultProxyId=${ifDefined(
-                org.crawlingDefaults?.profileid ||
+                org.crawlingDefaults?.proxyId ||
                   proxies.default_proxy_id ||
                   undefined,
               )}
