@@ -1,7 +1,8 @@
 import { consume } from "@lit/context";
-import { localized, msg } from "@lit/localize";
+import { localized } from "@lit/localize";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import {
@@ -23,16 +24,15 @@ export class ProxyBadge extends TailwindElement {
 
     const proxy = this.orgProxies.servers.find(({ id }) => id === this.proxyId);
 
-    return html`<sl-tooltip
-      content="${msg("Crawler Proxy Server")}${proxy
-        ? `: ${proxy.description}`
-        : ""}"
+    return html`<btrix-popover
+      content=${ifDefined(proxy?.description || undefined)}
+      ?disabled=${!proxy?.description}
       hoist
     >
       <btrix-badge variant="blue" class="font-monostyle whitespace-nowrap">
         <sl-icon name="globe2" class="mr-1.5"></sl-icon>
         ${proxy?.label || this.proxyId}
       </btrix-badge>
-    </sl-tooltip>`;
+    </btrix-popover>`;
   }
 }

@@ -1,7 +1,8 @@
 import { consume } from "@lit/context";
-import { localized, msg } from "@lit/localize";
+import { localized } from "@lit/localize";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import {
@@ -26,10 +27,9 @@ export class CrawlerChannelBadge extends TailwindElement {
       ({ id }) => id === this.channelId,
     );
 
-    return html`<sl-tooltip
-      content="${msg("Crawler Release Channel")}${crawlerChannel
-        ? `: ${crawlerChannel.image}`
-        : ""}"
+    return html`<btrix-popover
+      content=${ifDefined(crawlerChannel?.image)}
+      ?disabled=${!crawlerChannel?.image}
       hoist
     >
       <btrix-badge
@@ -41,6 +41,6 @@ export class CrawlerChannelBadge extends TailwindElement {
         <sl-icon name="boxes" class="mr-1.5"></sl-icon>
         <span class="capitalize">${this.channelId}</span>
       </btrix-badge>
-    </sl-tooltip>`;
+    </btrix-popover>`;
   }
 }

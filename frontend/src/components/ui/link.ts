@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
@@ -18,6 +18,9 @@ export class Link extends BtrixElement {
 
   @property({ type: String })
   variant: "primary" | "neutral" = "neutral";
+
+  @property({ type: Boolean })
+  hideIcon = false;
 
   render() {
     if (!this.href) return;
@@ -39,12 +42,16 @@ export class Link extends BtrixElement {
           : this.navigate.link}
       >
         <slot></slot>
-        <sl-icon
-          slot="suffix"
-          name="arrow-right"
-          class="size-4 transition-transform duration-fast group-hover:translate-x-1"
-        ></sl-icon
-      ></a>
+        ${this.hideIcon
+          ? nothing
+          : html`
+              <sl-icon
+                slot="suffix"
+                name="arrow-right"
+                class="size-4 transition-transform duration-fast group-hover:translate-x-1"
+              ></sl-icon>
+            `}
+      </a>
     `;
   }
 }

@@ -6,9 +6,9 @@ import { type Profile } from "@/types/crawler";
 
 export const usageBadge = (inUse: boolean) =>
   html`<sl-tooltip
-    content="${msg("Crawl Workflow Usage")}: ${inUse
-      ? msg("In Use")
-      : msg("Not In Use")}"
+    content=${inUse
+      ? msg("In Use by Crawl Workflow")
+      : msg("Not In Use by Crawl Workflow")}
   >
     <btrix-badge variant=${inUse ? "cyan" : "neutral"} class="font-monostyle">
       <sl-icon
