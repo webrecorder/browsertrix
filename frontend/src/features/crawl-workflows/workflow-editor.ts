@@ -34,6 +34,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
+import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { map } from "lit/directives/map.js";
 import { when } from "lit/directives/when.js";
@@ -1999,11 +2000,37 @@ https://archiveweb.page/images/${"logo.svg"}`}
       profile?.proxyId ||
       this.formState.proxyId;
 
+    const priorityOrigins = () => {
+      if (!this.formState.urlList && !this.formState.primarySeedUrl) {
+        return [];
+      }
+
+      const crawlUrls = urlListToArray(this.formState.urlList);
+
+      if (this.formState.primarySeedUrl) {
+        crawlUrls.unshift(this.formState.primarySeedUrl);
+      }
+
+      return crawlUrls
+        .map((url) => {
+          try {
+            return new URL(url).hostname.replace(/^www\./, "");
+          } catch {
+            return "";
+          }
+        })
+        .filter((url) => url);
+    };
+
     return html`
       ${inputCol(html`
         <btrix-select-browser-profile
           .profileId=${this.formState.browserProfile?.id}
           .profileName=${this.formState.browserProfile?.name}
+          .suggestOrigins=${guard(
+            [this.formState.primarySeedUrl, this.formState.urlList],
+            priorityOrigins,
+          )}
           @on-change=${(e: SelectBrowserProfileChangeEvent) => {
             const profile = e.detail.value;
 

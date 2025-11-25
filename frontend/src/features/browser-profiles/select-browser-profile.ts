@@ -25,6 +25,7 @@ import type {
   APISortQuery,
 } from "@/types/api";
 import { SortDirection } from "@/types/utils";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
@@ -61,6 +62,12 @@ export class SelectBrowserProfile extends BtrixElement {
 
   @property({ type: String })
   profileName?: string;
+
+  /**
+   * List of origins to match to prioritize profile options
+   */
+  @property({ type: Array, hasChanged: isNotEqual })
+  suggestOrigins?: string[];
 
   @state()
   selectedProfile?: Profile;
@@ -123,50 +130,7 @@ export class SelectBrowserProfile extends BtrixElement {
         @sl-after-hide=${this.stopProp}
       >
         ${loading ? html`<sl-spinner slot="prefix"></sl-spinner>` : nothing}
-        ${browserProfiles
-          ? html`
-              <sl-option value="">${msg("No custom profile")}</sl-option>
-              ${browserProfiles.items.length
-                ? html`
-                    <sl-divider></sl-divider>
-                    <sl-menu-label>${msg("Saved Profiles")}</sl-menu-label>
-                  `
-                : nothing}
-            `
-          : this.profileName
-            ? html`<sl-option value=${ifDefined(this.profileId)}>
-                ${this.profileName}
-              </sl-option>`
-            : nothing}
-        ${browserProfiles?.items.map(
-          (profile, i) => html`
-            <btrix-popover
-              class="part-[body]:w-64"
-              placement="left"
-              trigger="hover"
-              hoist
-            >
-              <div slot="content">${this.renderOverview(profile)}</div>
-
-              <sl-option
-                value=${profile.id}
-                class=${clsx(
-                  tw`part-[base]:flex-wrap`,
-                  tw`part-[label]:basis-1/2 part-[label]:overflow-hidden`,
-                  tw`part-[suffix]:basis-full part-[suffix]:overflow-hidden`,
-                  i && tw`border-t`,
-                )}
-              >
-                <span class="font-medium">${profile.name}</span>
-                <div slot="suffix" class="w-full pl-2.5 pt-0.5">
-                  ${originsWithRemainder(profile.origins, {
-                    disablePopover: true,
-                  })}
-                </div>
-              </sl-option>
-            </btrix-popover>
-          `,
-        )}
+        ${this.renderProfileOptions()}
         ${browserProfiles && !browserProfiles.total
           ? this.renderNoProfiles()
           : ""}
@@ -205,6 +169,94 @@ export class SelectBrowserProfile extends BtrixElement {
       ${browserProfiles || selectedProfile
         ? this.renderSelectedProfileInfo()
         : ""}
+    `;
+  }
+
+  private renderProfileOptions() {
+    const browserProfiles = this.profilesTask.value;
+
+    if (!browserProfiles) {
+      if (this.profileName) {
+        return html`<sl-option value=${ifDefined(this.profileId)}>
+          ${this.profileName}
+        </sl-option>`;
+      }
+
+      return;
+    }
+
+    const option = (profile: Profile, i: number) => html`
+      <btrix-popover
+        class="part-[body]:w-64"
+        placement="left"
+        trigger="hover"
+        hoist
+      >
+        <div slot="content">${this.renderOverview(profile)}</div>
+
+        <sl-option
+          value=${profile.id}
+          class=${clsx(
+            tw`part-[base]:flex-wrap`,
+            tw`part-[label]:basis-1/2 part-[label]:overflow-hidden`,
+            tw`part-[suffix]:basis-full part-[suffix]:overflow-hidden`,
+            i && tw`border-t`,
+          )}
+        >
+          <span class="font-medium">${profile.name}</span>
+          <div slot="suffix" class="w-full pl-2.5 pt-0.5">
+            ${originsWithRemainder(profile.origins, {
+              disablePopover: true,
+            })}
+          </div>
+        </sl-option>
+      </btrix-popover>
+    `;
+
+    const profiles = browserProfiles.items;
+    const priorityOrigins = this.suggestOrigins;
+    const suggestions: Profile[] = [];
+    let rest: Profile[] = [];
+
+    if (priorityOrigins?.length) {
+      profiles.forEach((profile) => {
+        const { origins } = profile;
+        if (
+          origins.some((origin) =>
+            priorityOrigins.includes(
+              new URL(origin).hostname.replace(/^www\./, ""),
+            ),
+          )
+        ) {
+          suggestions.push(profile);
+        } else {
+          rest.push(profile);
+        }
+      });
+    } else {
+      rest = profiles;
+    }
+
+    return html`
+      <sl-option value="">${msg("No custom profile")}</sl-option>
+      ${suggestions.length
+        ? html`
+            <sl-divider></sl-divider>
+            <sl-menu-label> ${msg("Suggested Profiles")} </sl-menu-label>
+            ${suggestions.map(option)}
+          `
+        : nothing}
+      ${rest.length
+        ? html`
+            <sl-divider></sl-divider>
+            <sl-menu-label
+              >${suggestions.length
+                ? msg("Other Saved Profiles")
+                : msg("Saved Profiles")}</sl-menu-label
+            >
+            ${rest.map(option)}
+          `
+        : nothing}
     `;
   }
 

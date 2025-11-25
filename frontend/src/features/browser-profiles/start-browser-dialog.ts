@@ -310,7 +310,7 @@ export class StartBrowserDialog extends BtrixElement {
                 <sl-menu-label
                   >${msg("Suggestions from Related Workflows")}</sl-menu-label
                 >
-                ${seeds.map(option)}
+                ${seeds.slice(0, 10).map(option)}
               `
             : nothing,
         )}
