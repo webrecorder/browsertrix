@@ -450,6 +450,16 @@ def test_profile_tag_counts(admin_auth_headers, default_org_id):
     }
 
 
+def test_profile_search_values(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles/search-values",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert sorted(data["names"]) == sorted([PROFILE_NAME_UPDATED, PROFILE_2_NAME])
+
+
 def test_delete_profile(admin_auth_headers, default_org_id, profile_2_id):
     # Delete second profile
     r = requests.delete(

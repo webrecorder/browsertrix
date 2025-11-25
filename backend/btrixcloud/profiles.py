@@ -46,6 +46,7 @@ from .models import (
     ProfileBrowserMetadata,
     TagsResponse,
     ListFilterType,
+    ProfileSearchValuesResponse,
 )
 from .utils import dt_now, str_to_date
 
@@ -651,6 +652,13 @@ class ProfileOps:
         ).to_list()
         return tags
 
+    async def get_profile_search_values(self, org: Organization):
+        """Return profile names for use in search"""
+        names = await self.profiles.distinct("name", {"oid": org.id})
+        # Remove empty strings
+        names = [name for name in names if name]
+        return {"names": names}
+
     def _run_task(self, func) -> None:
         """add bg tasks to set to avoid premature garbage collection"""
         task = asyncio.create_task(func)
@@ -747,6 +755,15 @@ def init_profiles_api(
     @router.get("/tagCounts", response_model=TagsResponse)
     async def get_profile_tag_counts(org: Organization = Depends(org_viewer_dep)):
         return {"tags": await ops.get_profile_tag_counts(org)}
+
+    @router.get(
+        "/search-values",
+        response_model=ProfileSearchValuesResponse,
+    )
+    async def get_collection_search_values(
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        return await ops.get_profile_search_values(org)
 
     @router.patch("/{profileid}", response_model=UpdatedResponse)
     async def commit_browser_to_existing(
