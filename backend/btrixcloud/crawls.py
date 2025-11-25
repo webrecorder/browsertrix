@@ -370,21 +370,7 @@ class CrawlOps(BaseCrawlOps):
         cursor = self.crawls.aggregate(
             [
                 {"$match": {"state": {"$in": RUNNING_AND_WAITING_STATES}, "oid": oid}},
-                {"$group": {"_id": None, "totalSum": {"$sum": "$stats.size"}}},
-            ]
-        )
-        results = await cursor.to_list(length=1)
-        if not results:
-            return 0
-
-        return results[0].get("totalSum") or 0
-
-    async def get_active_crawls_uploaded_wacz_size(self, oid: UUID) -> int:
-        """get size of all waczs already uploaded for running/paused crawls"""
-        cursor = self.crawls.aggregate(
-            [
-                {"$match": {"state": {"$in": RUNNING_AND_WAITING_STATES}, "oid": oid}},
-                {"$group": {"_id": None, "totalSum": {"$sum": "$fileSize"}}},
+                {"$group": {"_id": None, "totalSum": {"$sum": "pendingSize"}}},
             ]
         )
         results = await cursor.to_list(length=1)
@@ -669,14 +655,16 @@ class CrawlOps(BaseCrawlOps):
         return res is not None
 
     async def update_running_crawl_stats(
-        self, crawl_id: str, is_qa: bool, stats: CrawlStats
+        self, crawl_id: str, is_qa: bool, stats: CrawlStats, pending_size: int
     ) -> bool:
         """update running crawl stats"""
         prefix = "" if not is_qa else "qa."
         query = {"_id": crawl_id, "type": "crawl", f"{prefix}state": "running"}
-        res = await self.crawls.find_one_and_update(
-            query, {"$set": {f"{prefix}stats": stats.dict()}}
-        )
+        update: dict[str, dict | int] = {f"{prefix}stats": stats.dict()}
+        if not is_qa:
+            update["pendingSize"] = pending_size
+
+        res = await self.crawls.find_one_and_update(query, {"$set": update})
         return res is not None
 
     async def inc_crawl_exec_time(
