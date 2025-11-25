@@ -840,6 +840,12 @@ class BaseCrawlOps:
         crawls: list[str] = []
         uploads: list[str] = []
 
+        async def recompute(cids_to_update):
+            for cid, cid_dict in cids_to_update.items():
+                cid_size = cid_dict["size"]
+                cid_inc = cid_dict["inc"]
+                await self.crawl_configs.stats_recompute_last(cid, -cid_size, -cid_inc)
+
         for crawl_id in delete_list.crawl_ids:
             crawl = await self.get_base_crawl(crawl_id, org)
             if crawl.type == "crawl":
@@ -864,10 +870,7 @@ class BaseCrawlOps:
             )
             deleted_count += deleted
 
-            for cid, cid_dict in cids_to_update.items():
-                cid_size = cid_dict["size"]
-                cid_inc = cid_dict["inc"]
-                await self.crawl_configs.stats_recompute_last(cid, -cid_size, -cid_inc)
+            asyncio.create_task(recompute(cids_to_update))
 
         if uploads_length:
             upload_delete_list = DeleteCrawlList(crawl_ids=uploads)
