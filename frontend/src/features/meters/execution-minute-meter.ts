@@ -131,7 +131,7 @@ export class ExecutionMinuteMeter extends BtrixElement {
         const available = humanizeExecutionSeconds(secondsAvailable, {
           style: "short",
         });
-        return html` <btrix-divided-meter-bar
+        return html` <btrix-meter-bar
           value=${(secondsUsed / quotaSecondsAllTypes) * 100}
           quota=${(secondsAvailable / quotaSecondsAllTypes) * 100}
           style="--background-color:var(--sl-color-${color}-500); --quota-background-color:var(--sl-color-${color}-100)"
@@ -146,10 +146,10 @@ export class ExecutionMinuteMeter extends BtrixElement {
           </header>
           <hr class="my-2" />
           <p>${msg(html`${used} used of ${available} available`)}</p>
-        </btrix-divided-meter-bar>`;
+        </btrix-meter-bar>`;
       } else {
         return html`<btrix-meter-bar
-          value=${100}
+          .value=${(secondsUsed / secondsAvailable) * 100}
           style="--background-color:var(--sl-color-${color}-500);"
         >
           <header class="flex justify-between gap-4 font-medium leading-none">
@@ -165,6 +165,7 @@ export class ExecutionMinuteMeter extends BtrixElement {
         </btrix-meter-bar>`;
       }
     };
+
     return html`
       <div class="mb-1 font-semibold">
         ${when(
