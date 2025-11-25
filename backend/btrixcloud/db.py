@@ -33,7 +33,9 @@ if TYPE_CHECKING:
 else:
     UserManager = OrgOps = CrawlConfigOps = CrawlOps = CollectionOps = InviteOps = (
         StorageOps
-    ) = PageOps = BackgroundJobOps = FileUploadOps = CrawlLogOps = CrawlManager = object
+    ) = PageOps = BackgroundJobOps = FileUploadOps = CrawlLogOps = CrawlManager = (
+        ProfileOps
+    ) = object
 
 
 CURR_DB_VERSION = "0054"
