@@ -47,7 +47,7 @@ from .models import (
     TagsResponse,
     ListFilterType,
 )
-from .utils import dt_now, str_to_date
+from .utils import dt_now, str_to_date, case_insensitive_collation
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -107,9 +107,6 @@ class ProfileOps:
 
     async def init_index(self):
         """init lookup index"""
-        case_insensitive_collation = pymongo.collation.Collation(
-            locale="en", strength=1
-        )
         await self.profiles.create_index(
             [("oid", pymongo.ASCENDING), ("name", pymongo.ASCENDING)],
             collation=case_insensitive_collation,
