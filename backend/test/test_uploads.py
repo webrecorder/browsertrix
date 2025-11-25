@@ -565,7 +565,7 @@ def test_get_all_crawls_by_name(
     assert items[0]["id"] == upload_id_2
     assert items[0]["name"] == "test2.wacz"
 
-    crawl_name = "Crawler User Test Crawl"
+    crawl_name = "crawler User Test Crawl"
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?name={crawl_name}",
         headers=admin_auth_headers,
@@ -825,7 +825,7 @@ def test_all_crawls_search_values(
 
     assert len(data["names"]) == 8
     expected_names = [
-        "Crawler User Test Crawl",
+        "crawler User Test Crawl",
         "Custom Behavior Logs",
         "My Upload Updated",
         "test2.wacz",
@@ -854,7 +854,7 @@ def test_all_crawls_search_values(
         "Admin Test Crawl",
         "All Crawls Test Crawl",
         "Crawler User Crawl for Testing QA",
-        "Crawler User Test Crawl",
+        "crawler User Test Crawl",
         "Custom Behavior Logs",
     ]
     for expected_name in expected_names:

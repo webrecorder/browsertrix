@@ -207,7 +207,7 @@ def _crawler_create_config_only(crawler_auth_headers, default_org_id):
     # Start crawl.
     crawl_data = {
         "runNow": False,
-        "name": "Crawler User Test Crawl",
+        "name": "crawler User Test Crawl",
         "description": "crawler test crawl",
         "config": {
             "seeds": [{"url": "https://old.webrecorder.net/"}],
@@ -232,7 +232,7 @@ def crawler_crawl_id(crawler_auth_headers, default_org_id):
     # Start crawl.
     crawl_data = {
         "runNow": True,
-        "name": "Crawler User Test Crawl",
+        "name": "crawler User Test Crawl",
         "description": "crawler test crawl",
         "tags": ["wr-test-2"],
         "config": {"seeds": [{"url": "https://old.webrecorder.net/"}], "limit": 3},
@@ -702,7 +702,7 @@ PROFILE_NAME_UPDATED = "Updated test profile"
 PROFILE_DESC_UPDATED = "Updated profile used for backend tests"
 PROFILE_TAGS_UPDATED = ["profile", "profile-updated", "old-webrecorder"]
 
-PROFILE_2_NAME = "Second test profile"
+PROFILE_2_NAME = "second test profile"
 PROFILE_2_DESC = "Second profile used to test list endpoint"
 PROFILE_2_TAGS = ["profile", "specs-webrecorder"]
 
