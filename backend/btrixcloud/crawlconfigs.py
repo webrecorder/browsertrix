@@ -221,6 +221,11 @@ class CrawlConfigOps:
         )
 
         await self.crawl_configs.create_index(
+            [("oid", pymongo.ASCENDING), ("firstSeed", pymongo.ASCENDING)],
+            collation=case_insensitive_collation,
+        )
+
+        await self.crawl_configs.create_index(
             [
                 ("oid", pymongo.ASCENDING),
                 ("inactive", pymongo.ASCENDING),
