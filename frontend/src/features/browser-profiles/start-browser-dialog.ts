@@ -223,7 +223,7 @@ export class StartBrowserDialog extends BtrixElement {
                   name="exclamation-triangle"
                 ></sl-icon>
                 ${msg(
-                  "Data, proxy settings, and browsing activity of all previously saved sites will be removed upon saving this browser profile session.",
+                  "Data and browsing activity of all previously saved sites will be removed upon saving this browser profile session.",
                 )}
               </div>
             `,
