@@ -1093,6 +1093,9 @@ def test_update_profile(crawler_auth_headers, default_org_id, profile_id, profil
         assert r.status_code == 200
         return r.json()
 
+    # No profile to start
+    assert get_profile() == None
+
     # Add profile
     data = update_profile(profile_2_id)
     assert data["settings_changed"] == True
@@ -1115,13 +1118,13 @@ def test_update_profile(crawler_auth_headers, default_org_id, profile_id, profil
     data = update_profile("")
     assert data["settings_changed"] == True
     assert data["metadata_changed"] == False
-    assert get_profile() == ""
+    assert get_profile() == None
 
     # No change
     data = update_profile("")
     assert data["settings_changed"] == False
     assert data["metadata_changed"] == False
-    assert get_profile() == ""
+    assert get_profile() == None
 
 
 def test_add_crawl_config_fail_on_content_check_no_profile(

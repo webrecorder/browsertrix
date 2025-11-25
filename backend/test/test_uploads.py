@@ -1225,12 +1225,21 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
     assert r.json()["detail"] == "not_allowed"
 
     # Delete mixed type archived items
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
-        headers=admin_auth_headers,
-        json={"crawl_ids": crawls_to_delete},
-    )
-    data = r.json()
+    count = 0
+    data = {}
+    while count < MAX_ATTEMPTS:
+        try:
+            r = requests.post(
+                f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
+                headers=admin_auth_headers,
+                json={"crawl_ids": crawls_to_delete},
+            )
+            data = r.json()
+            break
+        except:
+            time.sleep(5)
+            count += 1
+
     assert data["deleted"]
     assert data["storageQuotaReached"] is False
 
