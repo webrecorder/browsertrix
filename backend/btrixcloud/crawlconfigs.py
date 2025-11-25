@@ -211,7 +211,13 @@ class CrawlConfigOps:
         )
 
         await self.crawl_configs.create_index(
-            [("oid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
+            [("oid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)],
+            collation=case_insensitive_collation,
+        )
+
+        await self.crawl_configs.create_index(
+            [("oid", pymongo.ASCENDING), ("name", pymongo.ASCENDING)],
+            collation=case_insensitive_collation,
         )
 
         await self.crawl_configs.create_index(
@@ -850,7 +856,9 @@ class CrawlConfigOps:
             ]
         )
 
-        cursor = self.crawl_configs.aggregate(aggregate)
+        cursor = self.crawl_configs.aggregate(
+            aggregate, collation=pymongo.collation.Collation(locale="en")
+        )
         results = await cursor.to_list(length=1)
         result = results[0]
         items = result["items"]
