@@ -1459,7 +1459,7 @@ class CrawlOperator(BaseOperator):
 
         # pause crawl if org is set read-only
         if org.readOnly:
-            return await self.request_pause_crawl("paused_org_readonly", crawl)
+            return self.request_pause_crawl("paused_org_readonly", crawl)
 
         # pause crawl if storage quota is reached
         if org.quotas.storageQuota:
@@ -1471,28 +1471,28 @@ class CrawlOperator(BaseOperator):
             )
 
             if self.org_ops.storage_quota_reached(org, active_crawls_total_size):
-                return await self.request_pause_crawl(
-                    "paused_storage_quota_reached", crawl
-                )
+                return self.request_pause_crawl("paused_storage_quota_reached", crawl)
 
         # pause crawl if execution time quota is reached
         if self.org_ops.exec_mins_quota_reached(org):
-            return await self.request_pause_crawl("paused_time_quota_reached", crawl)
+            return self.request_pause_crawl("paused_time_quota_reached", crawl)
 
         if crawl.paused_at and status.stopReason not in PAUSED_STATES:
             return "paused"
 
         return None
 
-    async def request_pause_crawl(
+    def request_pause_crawl(
         self, reason: StopReason, crawl: CrawlSpec
     ) -> Optional[StopReason]:
-        """Pause crawl and update crawl spec"""
+        """Request crawl to be paused asynchronously, equivalent of user clicking 'pause' button
+        if crawl is paused, then use the specified reason instead of default paused state
+        """
         if crawl.paused_at:
             return reason
 
         print(f"request pause for {reason}")
-        await self.crawl_ops.pause_crawl(crawl.id, crawl.org, pause=True)
+        self.run_task(self.crawl_ops.pause_crawl(crawl.id, crawl.org, pause=True))
         return None
 
     async def get_redis_crawl_stats(
