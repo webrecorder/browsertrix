@@ -30,7 +30,7 @@ jobs:
         module: ${{fromJSON(needs.collect-test-modules.outputs.matrix)}}
       fail-fast: false
     steps:
-       - name: Initial Disk Cleanup
+      - name: Initial Disk Cleanup
         uses: mathio/gha-cleanup@v1
         with:
           remove-browsers: true
