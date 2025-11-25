@@ -396,8 +396,8 @@ class CrawlOperator(BaseOperator):
         if status.pagesFound < status.desiredScale:
             status.desiredScale = max(1, status.pagesFound)
 
-        # paused and shut down pods if size is <= 4096 (empty dir)
-        # paused_at is set state is a valid paused state
+        # paused and shut down pods if size is <= 4096 (empty dir),
+        # paused_at is set, and state is a valid paused state
         is_paused = (
             bool(crawl.paused_at)
             and status.sizePending <= 4096
@@ -1463,14 +1463,11 @@ class CrawlOperator(BaseOperator):
 
         # pause crawl if storage quota is reached
         if org.quotas.storageQuota:
-            # Make sure to account for already-uploaded WACZs from active crawls
-            # that are or previously were paused, which are already accounted for
-            # in the org storage stats
-            active_crawls_total_size = await self.crawl_ops.get_active_crawls_size(
-                crawl.oid
+            # include not-yet-uploaded pending data from all active crawls
+            active_crawls_pending_size = (
+                await self.crawl_ops.get_active_crawls_pending_size(crawl.oid)
             )
-
-            if self.org_ops.storage_quota_reached(org, active_crawls_total_size):
+            if self.org_ops.storage_quota_reached(org, active_crawls_pending_size):
                 return self.request_pause_crawl("paused_storage_quota_reached", crawl)
 
         # pause crawl if execution time quota is reached
