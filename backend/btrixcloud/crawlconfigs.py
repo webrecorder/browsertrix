@@ -202,6 +202,10 @@ class CrawlConfigOps:
 
     async def init_index(self):
         """init index for crawlconfigs db collection"""
+        case_insensitive_collation = pymongo.collation.Collation(
+            locale="en", strength=1
+        )
+
         await self.crawl_configs.create_index(
             [("oid", pymongo.HASHED), ("inactive", pymongo.ASCENDING)]
         )

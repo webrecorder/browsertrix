@@ -12,7 +12,6 @@ import os
 import asyncio
 import pymongo
 import aiohttp
-from pymongo.collation import Collation
 from fastapi import Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
 from starlette.requests import Request
@@ -104,7 +103,9 @@ class CollectionOps:
 
     async def init_index(self):
         """init lookup index"""
-        case_insensitive_collation = Collation(locale="en", strength=1)
+        case_insensitive_collation = pymongo.collation.Collation(
+            locale="en", strength=1
+        )
         await self.collections.create_index(
             [("oid", pymongo.ASCENDING), ("name", pymongo.ASCENDING)],
             unique=True,
