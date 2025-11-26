@@ -150,6 +150,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       <div class="contents">
         ${pageHeader({
           title: msg("Collections"),
+          border: false,
           actions: this.isCrawler
             ? html` <sl-button
                 variant="primary"
@@ -163,7 +164,6 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
                 ${msg("New Collection")}
               </sl-button>`
             : nothing,
-          classNames: tw`border-b-transparent`,
         })}
       </div>
 
@@ -384,7 +384,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       >
         <sl-input
           size="small"
-          placeholder=${msg("Search by Name")}
+          placeholder=${msg("Search by name")}
           clearable
           @sl-clear=${() => {
             this.searchResultsOpen = false;

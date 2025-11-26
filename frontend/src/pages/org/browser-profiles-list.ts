@@ -411,7 +411,7 @@ export class BrowserProfilesList extends BtrixElement {
         .searchKeys=${SEARCH_KEYS}
         .searchOptions=${this.searchOptionsTask.value || []}
         .keyLabels=${{}}
-        placeholder=${msg("Search browser profiles by name")}
+        placeholder=${msg("Search by name")}
         @btrix-select=${(e: CustomEvent) => {
           const { key, value } = e.detail;
           this.filterBy.setValue({
