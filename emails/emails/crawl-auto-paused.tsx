@@ -8,7 +8,6 @@ import {
   formatRelativeDateToParts,
   offsetDays,
 } from "../lib/date.js";
-import { Warning } from "../components/warning.js";
 
 import { z } from "zod";
 import { trimTrailingSlash } from "../lib/url.js";
@@ -35,9 +34,7 @@ export const CrawlAutoPausedEmail = ({
   org_url,
   support_email
 }: CrawlAutoPausedEmailProps) => {
-  const date = formatDate(paused_expiry);
   const daysLeft = differenceInDays(new Date(paused_expiry));
-  const relative = formatRelativeDate(daysLeft, "days");
   const relativeParts = formatRelativeDateToParts(daysLeft, "days");
   return (
     <Template
@@ -104,7 +101,7 @@ export const CrawlAutoPausedEmail = ({
       </Text>
 
       <Text className="text-base text-stone-700">
-        The crawl will be stopped gracefully if it isn't resumed{" "}
+        The crawl will be stopped gracefully if it isn’t resumed{" "}
         {relativeParts.map((part, index) =>
           part.value !== "in " ? (
             <strong key={part.value + index} className="text-stone-900">
@@ -121,7 +118,7 @@ export const CrawlAutoPausedEmail = ({
         <>
           <Text className="text-base text-stone-700">
             In order to resume your crawl, you will need to free up storage
-            space by either deleting archived items from your organization or
+            space. You can delete archived items from your organization, or
             upgrade your subscription to one with more storage space from your
             organization’s{" "}
             <Link
@@ -138,8 +135,8 @@ export const CrawlAutoPausedEmail = ({
         <Text className="text-base text-stone-700">
           In order to resume your crawl, you will need to either wait until your
           monthly execution time quota resets, upgrade your subscription to one
-          with a higher monthly execution time quota, or purchase additional one-off
-          execution minutes from your organization's{" "}
+          with a higher monthly execution time quota, or purchase additional
+          one-off execution minutes from your organization’s{" "}
           <Link
             className="text-cyan-600 font-bold"
             href={`${org_url}/settings/billing`}
