@@ -2540,6 +2540,13 @@ class ProfileBrowserGetUrlResponse(BaseModel):
 
 
 # ============================================================================
+class ProfileSearchValuesResponse(BaseModel):
+    """Response model for profiles search values"""
+
+    names: List[str]
+
+
+# ============================================================================
 
 ### USERS ###
 

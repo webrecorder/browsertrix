@@ -46,6 +46,7 @@ from .models import (
     ProfileBrowserMetadata,
     TagsResponse,
     ListFilterType,
+    ProfileSearchValuesResponse,
 )
 from .utils import dt_now, str_to_date
 
@@ -444,6 +445,7 @@ class ProfileOps:
         userid: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
         tag_match: Optional[ListFilterType] = ListFilterType.AND,
+        name: Optional[str] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: str = "modified",
@@ -462,6 +464,8 @@ class ProfileOps:
         if tags:
             query_type = "$all" if tag_match == ListFilterType.AND else "$in"
             match_query["tags"] = {query_type: tags}
+        if name:
+            match_query["name"] = name
 
         aggregate: List[Dict[str, Any]] = [{"$match": match_query}]
 
@@ -651,6 +655,13 @@ class ProfileOps:
         ).to_list()
         return tags
 
+    async def get_profile_search_values(self, org: Organization):
+        """Return profile names for use in search"""
+        names = await self.profiles.distinct("name", {"oid": org.id})
+        # Remove empty strings
+        names = [name for name in names if name]
+        return {"names": names}
+
     def _run_task(self, func) -> None:
         """add bg tasks to set to avoid premature garbage collection"""
         task = asyncio.create_task(func)
@@ -715,6 +726,7 @@ def init_profiles_api(
                 description='Defaults to `"and"` if omitted',
             ),
         ] = ListFilterType.AND,
+        name: Optional[str] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: str = "modified",
@@ -725,6 +737,7 @@ def init_profiles_api(
             userid,
             tags=tags,
             tag_match=tag_match,
+            name=name,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
@@ -747,6 +760,15 @@ def init_profiles_api(
     @router.get("/tagCounts", response_model=TagsResponse)
     async def get_profile_tag_counts(org: Organization = Depends(org_viewer_dep)):
         return {"tags": await ops.get_profile_tag_counts(org)}
+
+    @router.get(
+        "/search-values",
+        response_model=ProfileSearchValuesResponse,
+    )
+    async def get_collection_search_values(
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        return await ops.get_profile_search_values(org)
 
     @router.patch("/{profileid}", response_model=UpdatedResponse)
     async def commit_browser_to_existing(
