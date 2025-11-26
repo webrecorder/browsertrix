@@ -190,6 +190,7 @@ export class BrowserProfilesList extends BtrixElement {
   private get hasFiltersSet() {
     const filterBy = this.filterBy.value;
     return (
+      filterBy.name ||
       filterBy.tags?.length ||
       filterBy.tagsType !== DEFAULT_TAGS_TYPE ||
       filterBy.mine
