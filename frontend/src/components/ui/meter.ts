@@ -18,9 +18,17 @@ export class MeterBar extends TailwindElement {
   @property({ type: Number })
   value = 0;
 
+  @property({ type: String })
+  placement: "top" | "bottom" = "top";
+
   updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("value")) {
       this.style.width = `${this.value}%`;
+      if (this.value <= 0) {
+        this.style.display = "none";
+      } else {
+        this.style.display = "";
+      }
     }
   }
 
@@ -28,11 +36,14 @@ export class MeterBar extends TailwindElement {
   static styles = css`
     :host {
       display: block;
+      --background-color: var(--background-color, var(--sl-color-blue-500));
+      overflow: hidden;
+      transition: box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .bar {
       height: 1rem;
-      background-color: var(--background-color, var(--sl-color-blue-500));
+      background-color: var(--background-color);
       min-width: 4px;
       transition: 400ms width;
     }
@@ -42,7 +53,7 @@ export class MeterBar extends TailwindElement {
     if (this.value <= 0) {
       return;
     }
-    return html`<btrix-floating-popover placement="top">
+    return html`<btrix-floating-popover placement=${this.placement}>
       <div slot="content"><slot></slot></div>
       <div class="bar" part="bar"></div>
     </btrix-floating-popover>`;
@@ -121,6 +132,9 @@ export class Meter extends TailwindElement {
   @property({ type: String })
   valueText?: string;
 
+  @property({ type: Boolean })
+  hasBackground = false;
+
   @query(".labels")
   private readonly labels?: HTMLElement;
 
@@ -153,27 +167,33 @@ export class Meter extends TailwindElement {
       position: relative;
     }
 
-    .track::before {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border-radius: var(--sl-border-radius-medium);
-      content: "";
-      box-shadow: inset 0 0 0 1px var(--sl-panel-border-color);
-      pointer-events: none;
+    .valueBar {
+      box-shadow: var(--sl-shadow-medium);
     }
 
-    .valueBar {
+    .valueBar:after,
+    .track:after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      right: 0;
+      width: 1px;
+      height: 6px;
+      background-color: var(--sl-color-neutral-400);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .valueBar,
+    .background {
       display: flex;
       border-radius: var(--sl-border-radius-medium);
-      overflow: hidden;
       transition: 400ms width;
       position: relative;
     }
 
-    .valueBar::before {
+    .valueBar::before,
+    .background::before {
       position: absolute;
       top: 0;
       left: 0;
@@ -186,14 +206,16 @@ export class Meter extends TailwindElement {
       pointer-events: none;
     }
 
+    .valueBar::before {
+      z-index: 2;
+    }
+
     .labels {
       display: flex;
       text-align: right;
       white-space: nowrap;
       color: var(--sl-color-neutral-500);
       font-size: var(--sl-font-size-x-small);
-      /*font-family: var(--font-monostyle-family);*/
-      /*font-variation-settings: var(--font-monostyle-variation);*/
       line-height: 1;
       margin-top: var(--sl-spacing-x-small);
     }
@@ -215,19 +237,38 @@ export class Meter extends TailwindElement {
       display: inline-flex;
     }
 
-    .valueBar ::slotted(btrix-meter-bar),
-    .valueBar ::slotted(btrix-divided-meter-bar) {
-      transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    .valueBar ::slotted(btrix-meter-bar) {
+      position: relative;
     }
 
-    .valueBar:hover ::slotted(btrix-meter-bar),
-    .valueBar:hover ::slotted(btrix-divided-meter-bar) {
+    .valueBar ::slotted(btrix-meter-bar):after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--sl-color-neutral-100);
+      opacity: 0;
+      transition-property: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+    }
+
+    .valueBar:hover ::slotted(btrix-meter-bar:not(:hover)):after {
       opacity: 0.5;
     }
 
-    .valueBar:hover ::slotted(btrix-meter-bar:hover),
-    .valueBar:hover ::slotted(btrix-divided-meter-bar:hover) {
-      opacity: 1;
+    .valueBar:hover ::slotted(btrix-meter-bar:hover) {
+      --darkened-background-color: color-mix(
+        in srgb,
+        var(--background-color) 100%,
+        rgb(0 0 0 / 0.5) 50%
+      );
+      box-shadow:
+        0 0 0 1px var(--background-color),
+        0 1px 3px 0 var(--darkened-background-color),
+        0 1px 2px -1px var(--darkened-background-color);
+      z-index: 1;
     }
 
     .background {
@@ -235,13 +276,21 @@ export class Meter extends TailwindElement {
       top: 0;
       left: 0;
       width: 100%;
-      height: 100%;
+      height: 1rem;
+      border-radius: var(--sl-border-radius-medium);
+      overflow: hidden;
     }
 
-    /*.valueBar ::slotted(btrix-meter-bar:not(:first-of-type)),
-    .valueBar ::slotted(btrix-divided-meter-bar:not(:first-of-type)) {
-      border-left: 1px solid white !important;
-    }*/
+    .valueBar ::slotted(btrix-meter-bar:first-of-type),
+    .valueBar ::slotted(btrix-meter-bar:first-of-type):after {
+      border-top-left-radius: var(--sl-border-radius-medium);
+      border-bottom-left-radius: var(--sl-border-radius-medium);
+    }
+    .valueBar ::slotted(btrix-meter-bar:last-of-type),
+    .valueBar ::slotted(btrix-meter-bar:last-of-type):after {
+      border-top-right-radius: var(--sl-border-radius-medium);
+      border-bottom-right-radius: var(--sl-border-radius-medium);
+    }
   `;
 
   @queryAssignedElements({ selector: "btrix-meter-bar" })
@@ -283,13 +332,15 @@ export class Meter extends TailwindElement {
           >}
         >
           <div class="track">
+            ${this.hasBackground
+              ? html`<div class="background">
+                  <slot name="background"></slot>
+                </div>`
+              : null}
             <div class="valueBar" style="width:${barWidth}">
               <slot @slotchange=${this.handleSlotchange}></slot>
             </div>
             ${this.value < max ? html`<slot name="available"></slot>` : ""}
-          </div>
-          <div class="background">
-            <slot name="background"></slot>
           </div>
         </sl-resize-observer>
         <div class="labels">
