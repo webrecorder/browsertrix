@@ -205,6 +205,20 @@ def test_list_profiles_filter_by_tag(
     assert data["total"] == 2
 
 
+def test_list_profiles_filter_by_name(admin_auth_headers, default_org_id, profile_2_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles?name={PROFILE_2_NAME}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+
+    profile = data["items"][0]
+    assert profile["id"] == profile_2_id
+    assert profile["name"] == PROFILE_2_NAME
+
+
 def test_update_profile_metadata(crawler_auth_headers, default_org_id, profile_id):
     # Get original created/modified times
     r = requests.get(

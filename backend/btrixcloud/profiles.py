@@ -445,6 +445,7 @@ class ProfileOps:
         userid: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
         tag_match: Optional[ListFilterType] = ListFilterType.AND,
+        name: Optional[str] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: str = "modified",
@@ -463,6 +464,8 @@ class ProfileOps:
         if tags:
             query_type = "$all" if tag_match == ListFilterType.AND else "$in"
             match_query["tags"] = {query_type: tags}
+        if name:
+            match_query["name"] = name
 
         aggregate: List[Dict[str, Any]] = [{"$match": match_query}]
 
@@ -723,6 +726,7 @@ def init_profiles_api(
                 description='Defaults to `"and"` if omitted',
             ),
         ] = ListFilterType.AND,
+        name: Optional[str] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: str = "modified",
@@ -733,6 +737,7 @@ def init_profiles_api(
             userid,
             tags=tags,
             tag_match=tag_match,
+            name=name,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
