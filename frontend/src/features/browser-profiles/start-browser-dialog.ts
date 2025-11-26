@@ -230,41 +230,33 @@ export class StartBrowserDialog extends BtrixElement {
           )}
         </sl-checkbox>
 
-        ${when(
-          this.open && (showChannels || showProxies),
-          () => html`
-            <btrix-details
-              class="mt-4"
-              ?open=${this.details?.open || this.replaceBrowser}
-            >
-              <span slot="title">${msg("Crawler Settings")}</span>
-
-              ${showChannels
-                ? html`<div class="mt-4">
-                    <btrix-select-crawler
-                      .crawlerChannel=${profile.crawlerChannel ||
-                      this.org?.crawlingDefaults?.crawlerChannel}
-                    >
-                    </btrix-select-crawler>
-                  </div>`
-                : nothing}
-              ${showProxies
-                ? html`<div class="mt-4">
-                    <btrix-select-crawler-proxy
-                      defaultProxyId=${ifDefined(
-                        this.org?.crawlingDefaults?.profileid ||
-                          proxies.default_proxy_id ||
-                          undefined,
-                      )}
-                      .proxyServers=${proxyServers}
-                      .proxyId=${profile.proxyId || ""}
-                    >
-                    </btrix-select-crawler-proxy>
-                  </div>`
-                : nothing}
-            </btrix-details>
-          `,
-        )}
+        ${showProxies
+          ? html`<div class="mt-4">
+              <btrix-select-crawler-proxy
+                .label=${msg("Proxy Server")}
+                defaultProxyId=${ifDefined(
+                  this.org?.crawlingDefaults?.profileid ||
+                    proxies.default_proxy_id ||
+                    undefined,
+                )}
+                .proxyServers=${proxyServers}
+                .proxyId=${profile.proxyId || ""}
+              >
+              </btrix-select-crawler-proxy>
+            </div>`
+          : nothing}
+        ${this.open && showChannels
+          ? html`<btrix-details class="mt-4" ?open=${this.details?.open}>
+              <span slot="title">${msg("Browser Session Settings")}</span>
+              <div class="mt-4">
+                <btrix-select-crawler
+                  .crawlerChannel=${profile.crawlerChannel ||
+                  this.org?.crawlingDefaults?.crawlerChannel}
+                >
+                </btrix-select-crawler>
+              </div>
+            </btrix-details>`
+          : nothing}
       </form>
       <div slot="footer" class="flex justify-between">
         <sl-button size="small" @click=${() => void this.dialog?.hide()}
@@ -318,7 +310,7 @@ export class StartBrowserDialog extends BtrixElement {
                 <sl-menu-label
                   >${msg("Suggestions from Related Workflows")}</sl-menu-label
                 >
-                ${seeds.map(option)}
+                ${seeds.slice(0, 10).map(option)}
               `
             : nothing,
         )}

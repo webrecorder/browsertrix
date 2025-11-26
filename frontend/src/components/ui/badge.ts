@@ -14,7 +14,8 @@ export type BadgeVariant =
   | "cyan"
   | "blue"
   | "high-contrast"
-  | "text";
+  | "text"
+  | "text-neutral";
 
 /**
  * Show numeric value in a label
@@ -66,6 +67,7 @@ export class Badge extends TailwindElement {
                   cyan: tw`bg-cyan-50 text-cyan-600 ring-cyan-600`,
                   blue: tw`bg-blue-50 text-blue-600 ring-blue-600`,
                   text: tw`text-blue-500 ring-blue-600`,
+                  "text-neutral": tw`text-neutral-500 ring-neutral-600`,
                 }[this.variant],
               ]
             : {
@@ -78,6 +80,7 @@ export class Badge extends TailwindElement {
                 cyan: tw`bg-cyan-50 text-cyan-600`,
                 blue: tw`bg-blue-50 text-blue-600`,
                 text: tw`text-blue-500`,
+                "text-neutral": tw`text-neutral-500`,
               }[this.variant],
           this.pill
             ? [

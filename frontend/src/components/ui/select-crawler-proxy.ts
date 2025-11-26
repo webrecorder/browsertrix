@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
-import { html } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
@@ -40,6 +40,9 @@ export class SelectCrawlerProxy extends BtrixElement {
   @property({ type: String })
   defaultProxyId: string | null = null;
 
+  @property({ type: String })
+  profileProxyId?: string | null = null;
+
   @property({ type: Array })
   proxyServers: Proxy[] = [];
 
@@ -47,7 +50,19 @@ export class SelectCrawlerProxy extends BtrixElement {
   proxyId: string | null = null;
 
   @property({ type: String })
+  label?: string;
+
+  @property({ type: String })
   size?: SlSelect["size"];
+
+  @property({ type: String })
+  placeholder?: string;
+
+  @property({ type: String })
+  helpText?: string;
+
+  @property({ type: Boolean })
+  disabled?: boolean;
 
   @state()
   private selectedProxy?: Proxy;
@@ -57,6 +72,18 @@ export class SelectCrawlerProxy extends BtrixElement {
 
   public get value() {
     return this.selectedProxy?.id || "";
+  }
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("proxyId")) {
+      if (this.proxyId) {
+        this.selectedProxy = this.proxyServers.find(
+          ({ id }) => id === this.proxyId,
+        );
+      } else if (changedProperties.get("proxyId")) {
+        this.selectedProxy = undefined;
+      }
+    }
   }
 
   protected firstUpdated() {
@@ -75,18 +102,21 @@ export class SelectCrawlerProxy extends BtrixElement {
     return html`
       <sl-select
         name="proxyId"
-        label=${msg("Crawler Proxy Server")}
+        label=${this.label || msg("Crawler Proxy Server")}
         value=${this.selectedProxy?.id || ""}
         placeholder=${this.defaultProxy
           ? `${msg(`Default Proxy:`)} ${this.defaultProxy.label}`
           : msg("No Proxy")}
         hoist
         clearable
+        ?disabled=${this.disabled ?? Boolean(this.profileProxyId)}
         size=${ifDefined(this.size)}
         @sl-change=${this.onChange}
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
       >
+        <slot name="prefix" slot="prefix"></slot>
+        <slot name="suffix" slot="suffix"></slot>
         ${this.proxyServers.map(
           (server) =>
             html` <sl-option value=${server.id}>
@@ -118,6 +148,7 @@ export class SelectCrawlerProxy extends BtrixElement {
               </div>
             `
           : ``}
+        <slot name="help-text" slot="help-text"></slot>
       </sl-select>
     `;
   }

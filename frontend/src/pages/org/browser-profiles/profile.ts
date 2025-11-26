@@ -309,7 +309,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
     const archivingDisabled = isArchivingDisabled(this.org);
 
     return panel({
-      heading: msg("Configured Sites"),
+      heading: msg("Saved Sites"),
       actions: this.appState.isCrawler
         ? html`
             <sl-button
@@ -364,10 +364,11 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                 <sl-icon name="window" class="mx-2 block"></sl-icon>
               </sl-tooltip>
               <btrix-code
-                class="block flex-1 truncate"
+                class="block flex-1"
                 language="url"
                 value=${origin}
-                nowrap
+                noWrap
+                truncate
               ></btrix-code>
             </button>
 
@@ -467,7 +468,9 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           </btrix-desc-list-item>
           <btrix-desc-list-item label=${msg("Last Modified")}>
             ${this.renderDetail((profile) =>
-              this.localize.relativeDate(modifiedByAnyDate || profile.created),
+              this.localize.relativeDate(modifiedByAnyDate || profile.created, {
+                capitalize: true,
+              }),
             )}
           </btrix-desc-list-item>
           <btrix-desc-list-item label=${msg("Last Modified By")}>

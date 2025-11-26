@@ -383,7 +383,10 @@ export function getInitialFormState(params: {
     jobName: params.initialWorkflow.name || defaultFormState.jobName,
     description: params.initialWorkflow.description,
     browserProfile: params.initialWorkflow.profileid
-      ? ({ id: params.initialWorkflow.profileid } as Profile)
+      ? ({
+          id: params.initialWorkflow.profileid,
+          name: params.initialWorkflow.profileName,
+        } as Profile)
       : defaultFormState.browserProfile,
     scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
     exclusions: seedsConfig.exclude?.length === 0 ? [""] : seedsConfig.exclude,

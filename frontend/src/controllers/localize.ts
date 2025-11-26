@@ -55,7 +55,11 @@ export class LocalizeController extends SlLocalizeController {
               })
             : seconds > 60
               ? html`<sl-relative-time
-                  class=${ifDefined(capitalize ? tw`capitalize` : undefined)}
+                  class=${ifDefined(
+                    capitalize
+                      ? tw`inline-block first-letter:capitalize`
+                      : undefined,
+                  )}
                   sync
                   date=${dateStr}
                 ></sl-relative-time>`

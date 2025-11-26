@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import { html, nothing, type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -18,6 +18,7 @@ import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { originsWithRemainder } from "@/features/browser-profiles/templates/origins-with-remainder";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { page } from "@/layouts/page";
 import { OrgTab } from "@/routes";
@@ -71,7 +72,7 @@ const columnsCss = [
   "min-content", // Status
   "[clickable-start] minmax(min-content, 1fr)", // Name
   "30ch", // Tags
-  "minmax(max-content, 1fr)", // Origins
+  "40ch", // Origins
   "minmax(min-content, 20ch)", // Last modified
   "[clickable-end] min-content", // Actions
 ].join(" ");
@@ -496,7 +497,7 @@ export class BrowserProfilesList extends BtrixElement {
           <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
           <btrix-table-header-cell> ${msg("Tags")} </btrix-table-header-cell>
           <btrix-table-header-cell>
-            ${msg("Configured Sites")}
+            ${msg("Saved Sites")}
           </btrix-table-header-cell>
           <btrix-table-header-cell>
             ${msg("Last Modified")}
@@ -520,8 +521,6 @@ export class BrowserProfilesList extends BtrixElement {
         (a, b) => (b && a && b > a ? b : a),
         data.created,
       ) || data.created;
-    const startingUrl = data.origins[0];
-    const otherOrigins = data.origins.slice(1);
 
     return html`
       <btrix-table-row
@@ -550,21 +549,11 @@ export class BrowserProfilesList extends BtrixElement {
           <btrix-tag-container class="relative hover:z-[2]" .tags=${data.tags}>
           </btrix-tag-container>
         </btrix-table-cell>
-        <btrix-table-cell class="[--btrix-table-cell-gap:0]">
-          <btrix-code language="url" value=${startingUrl} noWrap></btrix-code>
-          ${otherOrigins.length
-            ? html`<btrix-popover placement="right" hoist>
-                <btrix-badge variant="text" size="large"
-                  >+${this.localize.number(otherOrigins.length)}</btrix-badge
-                >
-                <ul slot="content">
-                  ${otherOrigins.map((url) => html`<li>${url}</li>`)}
-                </ul>
-              </btrix-popover>`
-            : nothing}
+        <btrix-table-cell>
+          ${originsWithRemainder(data.origins)}
         </btrix-table-cell>
         <btrix-table-cell>
-          ${this.localize.relativeDate(modifiedByAnyDate)}
+          ${this.localize.relativeDate(modifiedByAnyDate, { capitalize: true })}
         </btrix-table-cell>
         <btrix-table-cell class="p-0">
           ${this.renderActions(data)}

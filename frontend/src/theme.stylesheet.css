@@ -240,7 +240,7 @@
   sl-option:not([aria-selected="true"]):not(:disabled),
   sl-menu-item:not([disabled]),
   btrix-menu-item-link {
-    @apply part-[base]:text-neutral-700 part-[base]:hover:bg-cyan-50/50 part-[base]:hover:text-cyan-700 part-[base]:focus-visible:bg-cyan-50/50;
+    @apply part-[base]:bg-white part-[base]:text-neutral-700 part-[base]:hover:bg-cyan-50/50 part-[base]:hover:text-cyan-700 part-[base]:focus:text-cyan-700 part-[base]:focus-visible:bg-cyan-50/50;
   }
 
   sl-option[aria-selected="true"] {
@@ -411,12 +411,14 @@
   .font-monostyle {
     @apply font-mono;
     font-variation-settings: var(--font-monostyle-variation);
+    font-size: 95%;
   }
 
   /* Actually monospaced font */
   .font-monospace {
     @apply font-mono;
     font-variation-settings: var(--font-monospace-variation);
+    font-size: 95%;
   }
 
   .truncate {
@@ -526,6 +528,11 @@
 .sl-toast-stack {
   bottom: 0;
   top: auto;
+}
+
+html {
+  /* Fixes sl-input components resizing when sl-scroll-lock is removed */
+  scrollbar-gutter: stable;
 }
 
 /* Ensure buttons in shadow dom inherit hover color */

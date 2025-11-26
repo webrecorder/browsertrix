@@ -1,5 +1,6 @@
 import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import type {
   SlBlurEvent,
   SlChangeEvent,
@@ -33,6 +34,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
+import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { map } from "lit/directives/map.js";
 import { when } from "lit/directives/when.js";
@@ -95,6 +97,7 @@ import {
   Behavior,
   CrawlerChannelImage,
   ScopeType,
+  type Profile,
   type Seed,
   type WorkflowParams,
 } from "@/types/crawler";
@@ -418,6 +421,15 @@ export class WorkflowEditor extends BtrixElement {
   // CSS parser should ideally match the parser used in browsertrix-crawler.
   // https://github.com/webrecorder/browsertrix-crawler/blob/v1.5.8/package.json#L23
   private readonly cssParser = createParser();
+
+  private readonly profileTask = new Task(this, {
+    task: async ([formState], { signal }) => {
+      if (!formState.browserProfile) return;
+
+      return this.getProfile(formState.browserProfile.id, signal);
+    },
+    args: () => [this.formState] as const,
+  });
 
   connectedCallback(): void {
     this.initializeEditor();
@@ -1982,15 +1994,49 @@ https://archiveweb.page/images/${"logo.svg"}`}
     if (!this.formState.lang) throw new Error("missing formstate.lang");
 
     const proxies = this.proxies;
+    const profileProxyId =
+      this.formState.browserProfile?.proxyId ||
+      (this.formState.browserProfile?.id && this.formState.proxyId);
+
+    const priorityOrigins = () => {
+      if (!this.formState.urlList && !this.formState.primarySeedUrl) {
+        return [];
+      }
+
+      const crawlUrls = urlListToArray(this.formState.urlList);
+
+      if (this.formState.primarySeedUrl) {
+        crawlUrls.unshift(this.formState.primarySeedUrl);
+      }
+
+      return crawlUrls
+        .map((url) => {
+          try {
+            return new URL(url).hostname.replace(/^www\./, "");
+          } catch {
+            return "";
+          }
+        })
+        .filter((url) => url);
+    };
 
     return html`
       ${inputCol(html`
         <btrix-select-browser-profile
           .profileId=${this.formState.browserProfile?.id}
-          @on-change=${(e: SelectBrowserProfileChangeEvent) =>
+          .profileName=${this.formState.browserProfile?.name}
+          .suggestOrigins=${guard(
+            [this.formState.primarySeedUrl, this.formState.urlList],
+            priorityOrigins,
+          )}
+          @on-change=${(e: SelectBrowserProfileChangeEvent) => {
+            const profile = e.detail.value;
+
             this.updateFormState({
-              browserProfile: e.detail.value ?? null,
-            })}
+              browserProfile: profile ?? null,
+              proxyId: profile?.proxyId ?? null,
+            });
+          }}
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(infoTextFor["browserProfile"])}
@@ -2002,12 +2048,24 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   proxies.default_proxy_id ?? undefined,
                 )}
                 .proxyServers=${proxies.servers}
-                .proxyId="${this.formState.proxyId || ""}"
+                .proxyId=${profileProxyId || this.formState.proxyId || ""}
+                .profileProxyId=${profileProxyId}
                 @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
                   this.updateFormState({
                     proxyId: e.detail.value,
                   })}
-              ></btrix-select-crawler-proxy>
+              >
+                ${when(
+                  profileProxyId,
+                  () => html`
+                    <span
+                      slot="suffix"
+                      class="whitespace-nowrap text-neutral-1000"
+                      >${msg("Set by profile")}</span
+                    >
+                  `,
+                )}
+              </btrix-select-crawler-proxy>
             `),
             this.renderHelpTextCol(infoTextFor["proxyId"]),
           ]
@@ -3253,7 +3311,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       },
       crawlerChannel:
         this.formState.crawlerChannel || CrawlerChannelImage.Default,
-      proxyId: this.formState.proxyId,
+      proxyId: this.formState.browserProfile?.proxyId || this.formState.proxyId,
     };
 
     return config;
@@ -3409,5 +3467,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
     } catch (e) {
       console.debug(e);
     }
+  }
+
+  private async getProfile(profileId: string, signal: AbortSignal) {
+    const data = await this.api.fetch<Profile>(
+      `/orgs/${this.orgId}/profiles/${profileId}`,
+      { signal },
+    );
+
+    return data;
   }
 }
