@@ -19,11 +19,12 @@ export function parseDuration(delay: number | string) {
   return parseFloat(delay);
 }
 
-// import { watch } from "@shoelace-style/shoelace/dist/utilities/";
-
 /**
  * Floating popovers are used to show labels and additional details in data visualizations.
  * They're hidden until hover, and follow the cursor within the anchor element.
+ *
+ * Importantly, they are not interactive and do not respond to user input via keyboard.
+ * Their content will not be accessible to screen readers or other assistive technologies.
  *
  * @attr {String} content
  * @attr {String} placement
@@ -39,9 +40,6 @@ export class FloatingPopover extends SlTooltip {
 
   @property({ type: String, reflect: true })
   placement: SlTooltip["placement"] = "bottom";
-
-  // @property({ type: Number, reflect: true })
-  // distance: SlTooltip["distance"] = 16;
 
   @property({ type: String, reflect: true })
   lock: "x" | "y" | "x y" | "" = "y";
@@ -89,6 +87,10 @@ export class FloatingPopover extends SlTooltip {
       .tooltip__body {
         border: var(--btrix-border);
         box-shadow: var(--sl-shadow-small), var(--sl-shadow-large);
+      }
+
+      ::part(popup) {
+        pointer-events: none;
       }
 
       ::part(arrow) {
