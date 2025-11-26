@@ -72,6 +72,7 @@ from .utils import (
     validate_language_code,
     is_url,
     browser_windows_from_scale,
+    case_insensitive_collation,
 )
 
 if TYPE_CHECKING:
@@ -207,7 +208,18 @@ class CrawlConfigOps:
         )
 
         await self.crawl_configs.create_index(
-            [("oid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
+            [("oid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)],
+            collation=case_insensitive_collation,
+        )
+
+        await self.crawl_configs.create_index(
+            [("oid", pymongo.ASCENDING), ("name", pymongo.ASCENDING)],
+            collation=case_insensitive_collation,
+        )
+
+        await self.crawl_configs.create_index(
+            [("oid", pymongo.ASCENDING), ("firstSeed", pymongo.ASCENDING)],
+            collation=case_insensitive_collation,
         )
 
         await self.crawl_configs.create_index(
@@ -846,7 +858,9 @@ class CrawlConfigOps:
             ]
         )
 
-        cursor = self.crawl_configs.aggregate(aggregate)
+        cursor = self.crawl_configs.aggregate(
+            aggregate, collation=case_insensitive_collation
+        )
         results = await cursor.to_list(length=1)
         result = results[0]
         items = result["items"]

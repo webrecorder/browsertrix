@@ -16,7 +16,6 @@ from typing import Optional, TYPE_CHECKING, Dict, Callable, List, AsyncGenerator
 
 from pydantic import ValidationError
 from pymongo import ReturnDocument
-from pymongo.collation import Collation
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -93,6 +92,7 @@ from .utils import (
     validate_language_code,
     JSONSerializer,
     browser_windows_from_scale,
+    case_insensitive_collation,
 )
 
 if TYPE_CHECKING:
@@ -189,7 +189,6 @@ class OrgOps:
 
     async def init_index(self) -> None:
         """init lookup index"""
-        case_insensitive_collation = Collation(locale="en", strength=1)
         while True:
             try:
                 await self.orgs.create_index(

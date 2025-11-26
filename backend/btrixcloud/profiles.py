@@ -20,7 +20,7 @@ from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Request, HTTPException, Query
 from starlette.requests import Headers
-from pymongo import ReturnDocument
+import pymongo
 import aiohttp
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
@@ -48,7 +48,7 @@ from .models import (
     ListFilterType,
     ProfileSearchValuesResponse,
 )
-from .utils import dt_now, str_to_date
+from .utils import dt_now, str_to_date, case_insensitive_collation
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -105,6 +105,26 @@ class ProfileOps:
     def set_crawlconfigs(self, crawlconfigs):
         """set crawlconfigs ops"""
         self.crawlconfigs = crawlconfigs
+
+    async def init_index(self):
+        """init lookup index"""
+        await self.profiles.create_index(
+            [("oid", pymongo.ASCENDING), ("name", pymongo.ASCENDING)],
+            collation=case_insensitive_collation,
+        )
+
+        await self.profiles.create_index(
+            [("oid", pymongo.ASCENDING), ("url", pymongo.ASCENDING)],
+            collation=case_insensitive_collation,
+        )
+
+        await self.profiles.create_index(
+            [("oid", pymongo.ASCENDING), ("created", pymongo.ASCENDING)]
+        )
+
+        await self.profiles.create_index(
+            [("oid", pymongo.ASCENDING), ("modified", pymongo.ASCENDING)]
+        )
 
     async def create_new_browser(
         self, org: Organization, user: User, profile_launch: ProfileLaunchBrowserIn
@@ -415,7 +435,7 @@ class ProfileOps:
                     "modifiedCrawlCid": cid,
                 }
             },
-            return_document=ReturnDocument.BEFORE,
+            return_document=pymongo.ReturnDocument.BEFORE,
         )
         if not res:
             return False
@@ -494,7 +514,9 @@ class ProfileOps:
             ]
         )
 
-        cursor = self.profiles.aggregate(aggregate)
+        cursor = self.profiles.aggregate(
+            aggregate, collation=case_insensitive_collation
+        )
         results = await cursor.to_list(length=1)
         result = results[0]
         items = result["items"]

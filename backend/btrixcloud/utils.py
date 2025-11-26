@@ -18,6 +18,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from iso639 import is_language
+from pymongo.collation import Collation
 from pymongo.errors import DuplicateKeyError
 from slugify import slugify
 
@@ -25,6 +26,8 @@ from slugify import slugify
 default_origin = os.environ.get("APP_ORIGIN", "")
 
 browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
+
+case_insensitive_collation = Collation(locale="en", strength=1)
 
 
 class JSONSerializer(json.JSONEncoder):

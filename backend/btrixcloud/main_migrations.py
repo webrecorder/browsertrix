@@ -29,7 +29,7 @@ async def main() -> int:
         _,
         page_ops,
         coll_ops,
-        _,
+        profile_ops,
         storage_ops,
         background_job_ops,
         _,
@@ -55,6 +55,7 @@ async def main() -> int:
         background_job_ops,
         file_ops,
         crawl_log_ops,
+        profile_ops,
         crawl_manager,
     )
 

@@ -42,7 +42,7 @@ def test_get_configs_by_first_seed(
 
 
 def test_get_configs_by_name(crawler_auth_headers, default_org_id, crawler_crawl_id):
-    name = "Crawler User Test Crawl"
+    name = "crawler User Test Crawl"
     encoded_name = urllib.parse.quote(name)
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?name={encoded_name}",
@@ -150,7 +150,7 @@ def test_get_crawls_by_first_seed(
 
 
 def test_get_crawls_by_name(crawler_auth_headers, default_org_id, crawler_crawl_id):
-    name = "Crawler User Test Crawl"
+    name = "crawler User Test Crawl"
     encoded_name = urllib.parse.quote(name)
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls?name={encoded_name}",
@@ -571,6 +571,42 @@ def test_sort_crawl_configs(
         elif last_updated_time and config_last_updated:
             assert config_last_updated >= last_updated_time
         last_updated_time = config_last_updated
+
+    # Sort by name, ascending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=name&sortDirection=1",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+    last_name = None
+    for config in items:
+        assert config["createdByName"]
+        assert config["modifiedByName"]
+        config_last_name = config.get("name")
+        if not config_last_name:
+            continue
+        elif last_name and config_last_name:
+            assert config_last_name.lower() >= last_name.lower()
+        last_name = config_last_name
+
+    # Sort by name, descending
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=name&sortDirection=-1",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    items = data["items"]
+    last_name = None
+    for config in items:
+        assert config["createdByName"]
+        assert config["modifiedByName"]
+        config_last_name = config.get("name")
+        if not config_last_name:
+            continue
+        elif last_name and config_last_name:
+            assert config_last_name.lower() <= last_name.lower()
+        last_name = config_last_name
 
     # Invalid sort value
     r = requests.get(
