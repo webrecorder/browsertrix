@@ -74,7 +74,7 @@ const SEARCH_KEYS = ["name"] as const;
 const DEFAULT_TAGS_TYPE = "or";
 
 type FilterBy = {
-  name?: string | null;
+  name?: string;
   tags?: string[];
   tagsType?: "and" | "or";
   mine?: boolean;
@@ -170,7 +170,7 @@ export class BrowserProfilesList extends BtrixElement {
       return params;
     },
     (params) => ({
-      name: params.get("name") ?? undefined,
+      name: params.get("name") || undefined,
       tags: params.getAll("tags"),
       tagsType: params.get("tagsType") === "and" ? "and" : "or",
       mine: params.get("mine") === "true",
@@ -410,6 +410,7 @@ export class BrowserProfilesList extends BtrixElement {
       <btrix-search-combobox
         .searchKeys=${SEARCH_KEYS}
         .searchOptions=${this.searchOptionsTask.value || []}
+        .searchByValue=${this.filterBy.value["name"] || ""}
         placeholder=${msg("Search by name")}
         @btrix-select=${(e: CustomEvent) => {
           const { key, value } = e.detail;
