@@ -5,11 +5,8 @@ import startCase from "lodash/fp/startCase";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { labelWithIcon } from "@/layouts/labelWithIcon";
-import {
-  PAUSED_STATES,
-  RUNNING_STATES,
-  type CrawlState,
-} from "@/types/crawlState";
+import { RUNNING_STATES, type CrawlState } from "@/types/crawlState";
+import { isPaused } from "@/utils/crawler";
 import { animatePulse } from "@/utils/css";
 
 type CrawlType = "crawl" | "qa";
@@ -377,10 +374,7 @@ export class CrawlStatus extends TailwindElement {
     ) {
       return "pausing";
     }
-    if (
-      !this.shouldPause &&
-      (PAUSED_STATES as readonly string[]).includes(this.state || "")
-    ) {
+    if (!this.shouldPause && isPaused(this.state || "")) {
       return "resuming";
     }
     return this.state;

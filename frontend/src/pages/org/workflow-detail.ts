@@ -32,13 +32,14 @@ import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import { PAUSED_STATES, type CrawlState } from "@/types/crawlState";
+import { type CrawlState } from "@/types/crawlState";
 import { type StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import {
   DEFAULT_MAX_SCALE,
   isActive,
+  isPaused,
   isSkipped,
   isSuccessfullyFinished,
   renderName,
@@ -367,9 +368,7 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private get isPaused() {
-    return (PAUSED_STATES as readonly string[]).includes(
-      this.workflow?.lastCrawlState || "",
-    );
+    return isPaused(this.workflow?.lastCrawlState || "");
   }
 
   private get isResuming() {
@@ -920,9 +919,8 @@ export class WorkflowDetail extends BtrixElement {
 
     return (
       this.workflow.lastCrawlShouldPause ===
-        !(PAUSED_STATES as readonly string[]).includes(
-          this.workflow.lastCrawlState || "",
-        ) || isLoading(this.pauseResumeTask)
+        !isPaused(this.workflow.lastCrawlState || "") ||
+      isLoading(this.pauseResumeTask)
     );
   }
 
