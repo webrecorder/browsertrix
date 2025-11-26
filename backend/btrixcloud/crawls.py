@@ -1220,6 +1220,9 @@ class CrawlOps(BaseCrawlOps):
         org: Organization,
     ):
         """Send email to all org admins about automatically paused crawl"""
+        if await self.get_auto_paused_emails_sent(crawl_id, org):
+            return
+
         users = await self.orgs.get_users_for_org(org, UserRole.OWNER)
         workflow = await self.crawl_configs.get_crawl_config_out(cid, org)
 
