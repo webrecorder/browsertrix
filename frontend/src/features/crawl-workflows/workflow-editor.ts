@@ -2050,11 +2050,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 .proxyServers=${proxies.servers}
                 .proxyId=${profileProxyId || this.formState.proxyId || ""}
                 .profileProxyId=${profileProxyId}
-                title=${ifDefined(
-                  this.formState.browserProfile
-                    ? msg("Disabled by browser profile")
-                    : undefined,
-                )}
                 @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
                   this.updateFormState({
                     proxyId: e.detail.value,
@@ -2066,7 +2061,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                     <span
                       slot="suffix"
                       class="whitespace-nowrap text-neutral-1000"
-                      >${msg("Same as browser profile")}</span
+                      >${msg("Set by profile")}</span
                     >
                   `,
                 )}
