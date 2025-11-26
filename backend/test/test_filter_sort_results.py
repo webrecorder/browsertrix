@@ -587,7 +587,7 @@ def test_sort_crawl_configs(
         if not config_last_name:
             continue
         elif last_name and config_last_name:
-            assert config_last_name.lower() <= last_name.lower()
+            assert config_last_name.lower() >= last_name.lower()
         last_name = config_last_name
 
     # Sort by name, descending
@@ -605,7 +605,7 @@ def test_sort_crawl_configs(
         if not config_last_name:
             continue
         elif last_name and config_last_name:
-            assert config_last_name.lower() >= last_name.lower()
+            assert config_last_name.lower() <= last_name.lower()
         last_name = config_last_name
 
     # Invalid sort value
