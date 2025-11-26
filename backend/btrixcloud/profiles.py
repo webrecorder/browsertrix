@@ -511,7 +511,7 @@ class ProfileOps:
         )
 
         cursor = self.profiles.aggregate(
-            aggregate, collation=pymongo.collation.Collation(locale="en")
+            aggregate, collation=case_insensitive_collation
         )
         results = await cursor.to_list(length=1)
         result = results[0]
