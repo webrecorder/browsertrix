@@ -47,7 +47,7 @@ const sortableFields: Record<
 > = {
   name: {
     label: msg("Name"),
-    defaultDirection: "desc",
+    defaultDirection: "asc",
   },
   url: {
     label: msg("Primary Site"),
@@ -410,7 +410,6 @@ export class BrowserProfilesList extends BtrixElement {
       <btrix-search-combobox
         .searchKeys=${SEARCH_KEYS}
         .searchOptions=${this.searchOptionsTask.value || []}
-        .keyLabels=${{}}
         placeholder=${msg("Search by name")}
         @btrix-select=${(e: CustomEvent) => {
           const { key, value } = e.detail;
