@@ -838,6 +838,11 @@ class CrawlOps(BaseCrawlOps):
         if pause and not paused_at:
             paused_at = dt_now()
 
+        if not pause:
+            # If unpausing, unset autoPausedEmailsSent so that we will send
+            # emails again if quota is reached
+            await self.set_auto_paused_emails_sent(crawl_id, org, False)
+
         try:
             result = await self.crawl_manager.pause_resume_crawl(
                 crawl_id, paused_at=paused_at
@@ -1210,6 +1215,7 @@ class CrawlOps(BaseCrawlOps):
     async def notify_org_admins_of_auto_paused_crawl(
         self,
         paused_reason: TYPE_AUTO_PAUSED_STATES,
+        crawl_id: str,
         cid: UUID,
         org: Organization,
     ):
@@ -1230,6 +1236,29 @@ class CrawlOps(BaseCrawlOps):
                 for user in users
             ]
         )
+
+        await self.set_auto_paused_emails_sent(crawl_id, org)
+
+    async def set_auto_paused_emails_sent(
+        self, crawl_id: str, org: Organization, emails_sent: bool = True
+    ):
+        """Set if auto-paused emails already sent"""
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "oid": org.id, "type": "crawl"},
+            {"$set": {"autoPausedEmailsSent": emails_sent}},
+        )
+
+    async def get_auto_paused_emails_sent(
+        self, crawl_id: str, org: Organization
+    ) -> bool:
+        """Return whether auto-paused emails already sent for crawl"""
+        res = await self.crawls.find_one(
+            {"_id": crawl_id, "oid": org.id, "type": "crawl"},
+            projection=["autoPausedEmailsSent"],
+        )
+        if res:
+            return res.get("autoPausedEmailsSent", False)
+        return False
 
 
 # ============================================================================

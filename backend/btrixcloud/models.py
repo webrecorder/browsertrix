@@ -1092,6 +1092,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     pendingSize: int = 0
 
+    autoPausedEmailsSent: bool = False
+
 
 # ============================================================================
 class CrawlCompleteIn(BaseModel):

@@ -1654,13 +1654,18 @@ class CrawlOperator(BaseOperator):
                     allowed_from=RUNNING_AND_WAITING_STATES,
                 )
 
-                if paused_state != "paused" and not status.autoPausedEmailsSent:
+                if (
+                    paused_state != "paused"
+                    and not await self.crawl_ops.get_auto_paused_emails_sent(
+                        crawl.id, crawl.org
+                    )
+                ):
                     await self.crawl_ops.notify_org_admins_of_auto_paused_crawl(
                         paused_reason=paused_state,
+                        crawl_id=crawl.id,
                         cid=crawl.cid,
                         org=crawl.org,
                     )
-                    status.autoPausedEmailsSent = True
 
                 return status
 
