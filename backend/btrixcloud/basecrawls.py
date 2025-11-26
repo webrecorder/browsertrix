@@ -44,7 +44,6 @@ from .models import (
     UpdatedResponse,
     DeletedResponseQuota,
     CrawlSearchValuesResponse,
-    FAILED_STATES,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now, get_origin, date_to_str
@@ -617,11 +616,18 @@ class BaseCrawlOps:
     async def validate_all_crawls_successful(
         self, crawl_ids: List[str], org: Organization
     ):
-        """Validate that crawls in list exist and did not fail or else raise exception"""
-        for crawl_id in crawl_ids:
-            crawl = await self.get_base_crawl(crawl_id, org)
-            if crawl.state in FAILED_STATES:
-                raise HTTPException(status_code=400, detail="invalid_failed_crawl")
+        """Validate that crawls in list exist and have a succesful state, or throw"""
+        count = self.crawls.count_documents(
+            {
+                "_id": {"$in": crawl_ids},
+                "oid": org.id,
+                "state": {"$in": SUCCESSFUL_STATES},
+            }
+        )
+        if count != len(crawl_ids):
+            raise HTTPException(
+                status_code=400, detail="invalid_failed_or_unfinished_crawl"
+            )
 
     async def add_to_collection(
         self, crawl_ids: List[str], collection_id: UUID, org: Organization
