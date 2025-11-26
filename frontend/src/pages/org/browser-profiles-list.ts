@@ -3,6 +3,7 @@ import { Task } from "@lit/task";
 import { html, type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import omit from "lodash/fp/omit";
 import queryString from "query-string";
 
 import type { Profile } from "./types";
@@ -20,7 +21,7 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { originsWithRemainder } from "@/features/browser-profiles/templates/origins-with-remainder";
 import { emptyMessage } from "@/layouts/emptyMessage";
-import { page } from "@/layouts/page";
+import { pageHeader } from "@/layouts/pageHeader";
 import { OrgTab } from "@/routes";
 import type {
   APIPaginatedList,
@@ -30,6 +31,7 @@ import type {
 import { SortDirection as SortDirectionEnum } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { toSearchItem, type SearchValues } from "@/utils/searchValues";
 
 const SORT_DIRECTIONS = ["asc", "desc"] as const;
 type SortDirection = (typeof SORT_DIRECTIONS)[number];
@@ -67,6 +69,11 @@ const DEFAULT_SORT_BY = {
 } as const satisfies SortBy;
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
+const SEARCH_KEYS = ["name"] as const;
+
+type FilterBy = {
+  name?: string;
+};
 
 const columnsCss = [
   "min-content", // Status
@@ -169,6 +176,32 @@ export class BrowserProfilesList extends BtrixElement {
     },
   );
 
+  private readonly filterBy = new SearchParamsValue<FilterBy>(
+    this,
+    (value, params) => {
+      const keys = ["name", "firstSeed", "state"] as (keyof FilterBy)[];
+      keys.forEach((key) => {
+        if (value[key] == null) {
+          params.delete(key);
+        } else {
+          switch (key) {
+            case "name":
+              params.set(key, value[key]);
+              break;
+            default:
+              break;
+          }
+        }
+      });
+      return params;
+    },
+    (params) => {
+      return {
+        name: params.get("name") ?? undefined,
+      };
+    },
+  );
+
   private get hasFiltersSet() {
     return [
       this.filterByCurrentUser.value || undefined,
@@ -221,6 +254,15 @@ export class BrowserProfilesList extends BtrixElement {
       ] as const,
   });
 
+  private readonly searchOptionsTask = new Task(this, {
+    task: async (_args, { signal }) => {
+      const data = await this.getSearchValues(signal);
+
+      return [...data.names.map(toSearchItem("name"))];
+    },
+    args: () => [] as const,
+  });
+
   protected willUpdate(changedProperties: PropertyValues): void {
     if (
       changedProperties.has("orderBy.internalValue") ||
@@ -243,8 +285,8 @@ export class BrowserProfilesList extends BtrixElement {
   }
 
   render() {
-    return page(
-      {
+    return html`
+      ${pageHeader({
         title: msg("Browser Profiles"),
         border: false,
         actions: this.isCrawler
@@ -266,9 +308,9 @@ export class BrowserProfilesList extends BtrixElement {
               </sl-button>
             `
           : undefined,
-      },
-      this.renderPage,
-    );
+      })}
+      ${this.renderPage()}
+    `;
   }
 
   private readonly renderPage = () => {
@@ -377,21 +419,49 @@ export class BrowserProfilesList extends BtrixElement {
 
   private renderControls() {
     return html`
-      <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex flex-wrap items-center gap-2 md:gap-4">
+        <div class="grow basis-2/3">${this.renderSearch()}</div>
+
+        <div class="flex items-center">
+          <label
+            class="mr-2 whitespace-nowrap text-sm text-neutral-500"
+            for="sort-select"
+          >
+            ${msg("Sort by:")}
+          </label>
+          ${this.renderSortControl()}
+        </div>
+
         <div class="flex flex-wrap items-center gap-2">
           <span class="whitespace-nowrap text-neutral-500">
             ${msg("Filter by:")}
           </span>
           ${this.renderFilterControls()}
         </div>
-
-        <div class="flex flex-wrap items-center gap-2">
-          <label class="whitespace-nowrap text-neutral-500" for="sort-select">
-            ${msg("Sort by:")}
-          </label>
-          ${this.renderSortControl()}
-        </div>
       </div>
+    `;
+  }
+
+  private renderSearch() {
+    return html`
+      <btrix-search-combobox
+        .searchKeys=${SEARCH_KEYS}
+        .searchOptions=${this.searchOptionsTask.value || []}
+        .keyLabels=${{}}
+        placeholder=${msg("Search browser profiles by name")}
+        @btrix-select=${(e: CustomEvent) => {
+          const { key, value } = e.detail;
+          this.filterBy.setValue({
+            ...this.filterBy.value,
+            [key]: value,
+          });
+        }}
+        @btrix-clear=${() => {
+          const otherFilters = omit(SEARCH_KEYS, this.filterBy.value);
+          this.filterBy.setValue(otherFilters);
+        }}
+      >
+      </btrix-search-combobox>
     `;
   }
 
@@ -670,5 +740,14 @@ export class BrowserProfilesList extends BtrixElement {
     );
 
     return data;
+  }
+
+  private async getSearchValues(signal: AbortSignal) {
+    return this.api.fetch<SearchValues>(
+      `/orgs/${this.orgId}/profiles/search-values`,
+      {
+        signal,
+      },
+    );
   }
 }
