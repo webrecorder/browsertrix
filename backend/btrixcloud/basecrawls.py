@@ -617,14 +617,17 @@ class BaseCrawlOps:
         self, crawl_ids: List[str], org: Organization
     ):
         """Validate that crawls in list exist and have a succesful state, or throw"""
+        # convert to set to remove any duplicates
+        crawl_id_set = set(crawl_ids)
+
         count = self.crawls.count_documents(
             {
-                "_id": {"$in": crawl_ids},
+                "_id": {"$in": crawl_id_set},
                 "oid": org.id,
                 "state": {"$in": SUCCESSFUL_STATES},
             }
         )
-        if count != len(crawl_ids):
+        if count != len(crawl_id_set):
             raise HTTPException(
                 status_code=400, detail="invalid_failed_or_unfinished_crawl"
             )
