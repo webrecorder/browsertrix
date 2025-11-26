@@ -68,11 +68,16 @@ const DEFAULT_SORT_BY = {
   direction: sortableFields.modified.defaultDirection || "desc",
 } as const satisfies SortBy;
 const INITIAL_PAGE_SIZE = 20;
-const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
+const FILTER_BY_CURRENT_USER_STORAGE_KEY =
+  "btrix.filterByCurrentUser.browserProfiles";
 const SEARCH_KEYS = ["name"] as const;
+const DEFAULT_TAGS_TYPE = "or";
 
 type FilterBy = {
-  name?: string;
+  name?: string | null;
+  tags?: string[];
+  tagsType?: "and" | "or";
+  mine?: boolean;
 };
 
 const columnsCss = [
@@ -131,82 +136,64 @@ export class BrowserProfilesList extends BtrixElement {
     },
   );
 
-  private readonly filterByTags = new SearchParamsValue<string[] | undefined>(
-    this,
-    (value, params) => {
-      params.delete("tags");
-      value?.forEach((v) => {
-        params.append("tags", v);
-      });
-      return params;
-    },
-    (params) => params.getAll("tags"),
-  );
-
-  private readonly filterByTagsType = new SearchParamsValue<"and" | "or">(
-    this,
-    (value, params) => {
-      if (value === "and") {
-        params.set("tagsType", value);
-      } else {
-        params.delete("tagsType");
-      }
-      return params;
-    },
-    (params) => (params.get("tagsType") === "and" ? "and" : "or"),
-  );
-
-  private readonly filterByCurrentUser = new SearchParamsValue<boolean>(
-    this,
-    (value, params) => {
-      if (value) {
-        params.set("mine", "true");
-      } else {
-        params.delete("mine");
-      }
-      return params;
-    },
-    (params) => params.get("mine") === "true",
-    {
-      initial: (initialValue) =>
-        window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
-          "true" ||
-        initialValue ||
-        false,
-    },
-  );
-
   private readonly filterBy = new SearchParamsValue<FilterBy>(
     this,
     (value, params) => {
-      const keys = ["name", "firstSeed", "state"] as (keyof FilterBy)[];
-      keys.forEach((key) => {
-        if (value[key] == null) {
-          params.delete(key);
-        } else {
-          switch (key) {
-            case "name":
-              params.set(key, value[key]);
-              break;
-            default:
-              break;
-          }
-        }
-      });
+      if ("name" in value && value["name"]) {
+        params.set("name", value["name"]);
+      } else {
+        params.delete("name");
+      }
+      if ("tags" in value) {
+        params.delete("tags");
+        value["tags"]?.forEach((v) => {
+          params.append("tags", v);
+        });
+      } else {
+        params.delete("tags");
+      }
+      if ("tagsType" in value && value["tagsType"] === "and") {
+        params.set("tagsType", value["tagsType"]);
+      } else {
+        params.delete("tagsType");
+      }
+      if ("mine" in value && value["mine"]) {
+        params.set("mine", "true");
+        window.sessionStorage.setItem(
+          FILTER_BY_CURRENT_USER_STORAGE_KEY,
+          "true",
+        );
+      } else {
+        params.delete("mine");
+        window.sessionStorage.removeItem(FILTER_BY_CURRENT_USER_STORAGE_KEY);
+      }
       return params;
     },
-    (params) => {
-      return {
-        name: params.get("name") ?? undefined,
-      };
+    (params) => ({
+      name: params.get("name") ?? undefined,
+      tags: params.getAll("tags"),
+      tagsType: params.get("tagsType") === "and" ? "and" : "or",
+      mine: params.get("mine") === "true",
+    }),
+    {
+      initial: (initialValue) => ({
+        ...initialValue,
+        mine:
+          window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
+            "true" ||
+          initialValue?.["mine"] ||
+          false,
+      }),
     },
   );
 
   private get hasFiltersSet() {
-    return [
-      this.filterByCurrentUser.value || undefined,
-      this.filterByTags.value?.length || undefined,
-    ].some((v) => v !== undefined);
+    const filterBy = this.filterBy.value;
+    return (
+      filterBy.tags?.length ||
+      filterBy.tagsType !== DEFAULT_TAGS_TYPE ||
+      filterBy.mine !== undefined
+    );
   }
 
   get isCrawler() {
@@ -214,27 +201,17 @@ export class BrowserProfilesList extends BtrixElement {
   }
 
   private clearFilters() {
-    this.filterByCurrentUser.setValue(false);
-    this.filterByTags.setValue([]);
+    this.filterBy.setValue({});
   }
 
   private readonly profilesTask = new Task(this, {
-    task: async (
-      [
-        pagination,
-        orderBy,
-        filterByCurrentUser,
-        filterByTags,
-        filterByTagsType,
-      ],
-      { signal },
-    ) => {
+    task: async ([pagination, orderBy, filterBy], { signal }) => {
       return this.getProfiles(
         {
           ...pagination,
-          userid: filterByCurrentUser ? this.userInfo?.id : undefined,
-          tags: filterByTags,
-          tagMatch: filterByTagsType,
+          userid: filterBy.mine ? this.userInfo?.id : undefined,
+          tags: filterBy.tags,
+          tagMatch: filterBy.tagsType,
           sortBy: orderBy.field,
           sortDirection:
             orderBy.direction === "desc"
@@ -245,13 +222,7 @@ export class BrowserProfilesList extends BtrixElement {
       );
     },
     args: () =>
-      [
-        this.pagination,
-        this.orderBy.value,
-        this.filterByCurrentUser.value,
-        this.filterByTags.value,
-        this.filterByTagsType.value,
-      ] as const,
+      [this.pagination, this.orderBy.value, this.filterBy.value] as const,
   });
 
   private readonly searchOptionsTask = new Task(this, {
@@ -266,21 +237,12 @@ export class BrowserProfilesList extends BtrixElement {
   protected willUpdate(changedProperties: PropertyValues): void {
     if (
       changedProperties.has("orderBy.internalValue") ||
-      changedProperties.has("filterByCurrentUser.internalValue") ||
-      changedProperties.has("filterByTags.internalValue") ||
-      changedProperties.has("filterByTagsType.internalValue")
+      changedProperties.has("filterBy.internalValue")
     ) {
       this.pagination = {
         ...this.pagination,
         page: 1,
       };
-    }
-
-    if (changedProperties.has("filterByCurrentUser.internalValue")) {
-      window.sessionStorage.setItem(
-        FILTER_BY_CURRENT_USER_STORAGE_KEY,
-        this.filterByCurrentUser.value.toString(),
-      );
     }
   }
 
@@ -466,22 +428,30 @@ export class BrowserProfilesList extends BtrixElement {
   }
 
   private renderFilterControls() {
+    const filterBy = this.filterBy.value;
+
     return html`
       <btrix-tag-filter
         tagType="profile"
-        .tags=${this.filterByTags.value}
-        .type=${this.filterByTagsType.value}
+        .tags=${filterBy.tags}
+        .type=${filterBy.tagsType || DEFAULT_TAGS_TYPE}
         @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
-          this.filterByTags.setValue(e.detail.value?.tags || []);
-          this.filterByTagsType.setValue(e.detail.value?.type || "or");
+          this.filterBy.setValue({
+            ...this.filterBy.value,
+            tags: e.detail.value?.tags || [],
+            tagsType: e.detail.value?.type || DEFAULT_TAGS_TYPE,
+          });
         }}
       ></btrix-tag-filter>
 
       <btrix-filter-chip
-        ?checked=${this.filterByCurrentUser.value}
+        ?checked=${filterBy.mine}
         @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
           const { checked } = e.target as FilterChip;
-          this.filterByCurrentUser.setValue(Boolean(checked));
+          this.filterBy.setValue({
+            ...this.filterBy.value,
+            mine: checked,
+          });
         }}
       >
         ${msg("Mine")}
