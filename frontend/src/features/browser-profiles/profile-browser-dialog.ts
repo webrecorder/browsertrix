@@ -29,7 +29,6 @@ enum BrowserStatus {
   Initial,
   Pending,
   Ready,
-  Complete,
   Error,
 }
 
@@ -53,6 +52,9 @@ export class ProfileBrowserDialog extends BtrixElement {
 
   @state()
   private browserStatus = BrowserStatus.Initial;
+
+  @state()
+  private originsLoaded = false;
 
   @state()
   private showConfirmation = false;
@@ -151,7 +153,8 @@ export class ProfileBrowserDialog extends BtrixElement {
   render() {
     const isCrawler = this.appState.isCrawler;
     const creatingNew = this.duplicating || !this.profile;
-    const incomplete = this.browserStatus !== BrowserStatus.Complete;
+    const incomplete =
+      this.browserStatus !== BrowserStatus.Ready || !this.originsLoaded;
     const saving = this.saveProfileTask.status === TaskStatus.PENDING;
 
     return html`<btrix-dialog
@@ -341,7 +344,7 @@ export class ProfileBrowserDialog extends BtrixElement {
     e: CustomEvent<BrowserOriginsChange>,
   ) => {
     if (e.detail.origins.length) {
-      this.browserStatus = BrowserStatus.Complete;
+      this.originsLoaded = true;
     }
   };
 
