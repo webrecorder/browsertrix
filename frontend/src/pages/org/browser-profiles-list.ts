@@ -2,6 +2,7 @@ import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html, type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
+import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
@@ -509,7 +510,7 @@ export class BrowserProfilesList extends BtrixElement {
         <btrix-table-body
           class="divide-y rounded border [--btrix-table-cell-padding-y:var(--sl-spacing-2x-small)]"
         >
-          ${profiles.map(this.renderItem)}
+          ${repeat(profiles, ({ id }) => id, this.renderItem)}
         </btrix-table-body>
       </btrix-table>
     </btrix-overflow-scroll>`;
