@@ -123,8 +123,8 @@ export function pageHeader({
   return html`
     <header
       class=${clsx(
-        tw`mt-5 flex flex-row flex-wrap gap-3`,
-        border && tw`border-b pb-3`,
+        tw`mt-5 flex flex-row flex-wrap gap-3 pb-3`,
+        border && tw`border-b`,
         classNames,
       )}
     >
