@@ -5,6 +5,7 @@
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@cheap-glitch/mi-cron": "^1.0.1",
+    "@floating-ui/dom": "^1.7.4",
     "@formatjs/intl-durationformat": "^0.6.4",
     "@formatjs/intl-localematcher": "^0.5.9",
     "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
@@ -174,7 +175,8 @@
     "**/playwright": "1.49.0",
     "**/lit": "~3.2.0",
     "**/@web/dev-server-core": "^0.7.5",
-    "**/koa": "^2.16.1"
+    "**/koa": "^2.16.1",
+    "**/@floating-ui/dom": "^1.7.4"
   },
   "browserslist": [
     "defaults"

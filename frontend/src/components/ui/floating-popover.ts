@@ -19,6 +19,81 @@ export function parseDuration(delay: number | string) {
   return parseFloat(delay);
 }
 
+function createVirtualElement(
+  domElement: Element | null | undefined,
+  data: {
+    axis: "x" | "y" | "both";
+    openEventType: Event["type"];
+    pointerType: string | undefined;
+    x: number | null;
+    y: number | null;
+  },
+): VirtualElement {
+  let offsetX: number | null = null;
+  let offsetY: number | null = null;
+  let isAutoUpdateEvent = false;
+
+  return {
+    contextElement: domElement || undefined,
+    getBoundingClientRect() {
+      const domRect = domElement?.getBoundingClientRect() || {
+        width: 0,
+        height: 0,
+        x: 0,
+        y: 0,
+      };
+
+      const isXAxis = data.axis === "x" || data.axis === "both";
+      const isYAxis = data.axis === "y" || data.axis === "both";
+      const canTrackCursorOnAutoUpdate =
+        ["mouseenter", "mousemove"].includes(data.openEventType || "") &&
+        data.pointerType !== "touch";
+
+      let width = domRect.width;
+      let height = domRect.height;
+      let x = domRect.x;
+      let y = domRect.y;
+
+      if (offsetX == null && data.x && isXAxis) {
+        offsetX = domRect.x - data.x;
+      }
+
+      if (offsetY == null && data.y && isYAxis) {
+        offsetY = domRect.y - data.y;
+      }
+
+      x -= offsetX || 0;
+      y -= offsetY || 0;
+      width = 0;
+      height = 0;
+
+      if (!isAutoUpdateEvent || canTrackCursorOnAutoUpdate) {
+        width = data.axis === "y" ? domRect.width : 0;
+        height = data.axis === "x" ? domRect.height : 0;
+        x = isXAxis && data.x != null ? data.x : x;
+        y = isYAxis && data.y != null ? data.y : y;
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      } else if (isAutoUpdateEvent && !canTrackCursorOnAutoUpdate) {
+        height = data.axis === "x" ? domRect.height : height;
+        width = data.axis === "y" ? domRect.width : width;
+      }
+
+      isAutoUpdateEvent = true;
+
+      return {
+        width,
+        height,
+        x,
+        y,
+        top: y,
+        right: x + width,
+        bottom: y + height,
+        left: x,
+      } as DOMRect;
+    },
+  };
+}
+
 /**
  * Floating popovers are used to show labels and additional details in data visualizations.
  * They're hidden until hover, and follow the cursor within the anchor element.
@@ -58,6 +133,13 @@ export class FloatingPopover extends SlTooltip {
     let originalRect: DOMRect | undefined;
     if (this.lock !== "") {
       originalRect = this.slottedChildren?.[0].getBoundingClientRect();
+      return createVirtualElement(this.slottedChildren?.[0], {
+        axis: this.lock === "x y" ? "both" : this.lock,
+        x: (this.hasLock("x") ? originalRect?.x : this.clientX) ?? 0,
+        y: (this.hasLock("y") ? originalRect?.y : this.clientY) ?? 0,
+        pointerType: "mouse",
+        openEventType: "mousemove",
+      });
     }
     return {
       getBoundingClientRect: () => {
@@ -68,6 +150,7 @@ export class FloatingPopover extends SlTooltip {
           0,
         );
       },
+      // contextElement: this.lock !== "" ? this.slottedChildren?.[0] : undefined,
     };
   }
 
