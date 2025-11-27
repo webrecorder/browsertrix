@@ -826,7 +826,7 @@ def test_all_crawls_search_values(
     assert len(data["names"]) == 9
     expected_names = [
         "crawler User Test Crawl",
-        "Canceled Crawl",
+        "Canceled crawl",
         "Custom Behavior Logs",
         "My Upload Updated",
         "test2.wacz",
@@ -854,7 +854,7 @@ def test_all_crawls_search_values(
     expected_names = [
         "Admin Test Crawl",
         "All Crawls Test Crawl",
-        "Canceled Crawl",
+        "Canceled crawl",
         "Crawler User Crawl for Testing QA",
         "crawler User Test Crawl",
         "Custom Behavior Logs",

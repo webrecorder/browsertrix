@@ -620,7 +620,7 @@ class BaseCrawlOps:
         # convert to set to remove any duplicates
         crawl_id_set = set(crawl_ids)
 
-        count = self.crawls.count_documents(
+        count = await self.crawls.count_documents(
             {
                 "_id": {"$in": crawl_id_set},
                 "oid": org.id,
