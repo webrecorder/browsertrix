@@ -266,7 +266,7 @@ export class ProfileBrowserDialog extends BtrixElement {
                 </btrix-popover>
 
                 <btrix-popover
-                  content=${msg("Save disabled during load.")}
+                  content=${msg("Disabled until page is finished loading")}
                   ?disabled=${!incomplete}
                 >
                   <sl-button
