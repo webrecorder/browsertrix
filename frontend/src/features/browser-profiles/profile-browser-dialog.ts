@@ -13,6 +13,7 @@ import type { Dialog } from "@/components/ui/dialog";
 import {
   bgClass,
   type BrowserConnectionChange,
+  type BrowserOriginsChange,
   type ProfileBrowser,
 } from "@/features/browser-profiles/profile-browser";
 import type {
@@ -23,6 +24,14 @@ import { OrgTab } from "@/routes";
 import type { Profile } from "@/types/crawler";
 import { isApiError } from "@/utils/api";
 import { tw } from "@/utils/tailwind";
+
+enum BrowserStatus {
+  Initial,
+  Pending,
+  Ready,
+  Complete,
+  Error,
+}
 
 /**
  * @fires btrix-updated
@@ -43,7 +52,7 @@ export class ProfileBrowserDialog extends BtrixElement {
   open = false;
 
   @state()
-  private isBrowserLoaded = false;
+  private browserStatus = BrowserStatus.Initial;
 
   @state()
   private showConfirmation = false;
@@ -77,7 +86,7 @@ export class ProfileBrowserDialog extends BtrixElement {
     if (changedProperties.has("open")) {
       if (!this.open) {
         this.showConfirmation = false;
-        this.isBrowserLoaded = false;
+        this.browserStatus = BrowserStatus.Initial;
         this.#savedBrowserId = undefined;
         this.browserIdTask.abort();
       }
@@ -142,6 +151,7 @@ export class ProfileBrowserDialog extends BtrixElement {
   render() {
     const isCrawler = this.appState.isCrawler;
     const creatingNew = this.duplicating || !this.profile;
+    const incomplete = this.browserStatus !== BrowserStatus.Complete;
     const saving = this.saveProfileTask.status === TaskStatus.PENDING;
 
     return html`<btrix-dialog
@@ -245,7 +255,9 @@ export class ProfileBrowserDialog extends BtrixElement {
                 >
                   <sl-button
                     size="small"
-                    @click=${this.showConfirmation || !this.isBrowserLoaded
+                    @click=${this.showConfirmation ||
+                    this.browserStatus < BrowserStatus.Ready ||
+                    this.browserStatus === BrowserStatus.Error
                       ? () => void this.dialog?.hide()
                       : () => (this.showConfirmation = true)}
                   >
@@ -254,13 +266,13 @@ export class ProfileBrowserDialog extends BtrixElement {
                 </btrix-popover>
 
                 <btrix-popover
-                  content=${msg("Save disabled during load.")}
-                  ?disabled=${this.isBrowserLoaded}
+                  content=${msg("Disabled until page is finished loading")}
+                  ?disabled=${!incomplete}
                 >
                   <sl-button
                     size="small"
                     variant="primary"
-                    ?disabled=${!this.isBrowserLoaded || saving}
+                    ?disabled=${incomplete || saving}
                     ?loading=${saving}
                     @click=${() => void this.submit()}
                   >
@@ -289,12 +301,16 @@ export class ProfileBrowserDialog extends BtrixElement {
               ? html`<btrix-profile-browser
                   browserId=${browserId}
                   initialNavigateUrl=${ifDefined(this.config?.url)}
-                  .initialOrigins=${this.profile?.origins}
+                  .initialOrigins=${this.config?.profileId
+                    ? this.profile?.origins
+                    : // Profile is being replaced if ID is not specified
+                      undefined}
                   @btrix-browser-load=${this.onBrowserLoad}
                   @btrix-browser-reload=${this.onBrowserReload}
                   @btrix-browser-error=${this.onBrowserError}
                   @btrix-browser-connection-change=${this
                     .onBrowserConnectionChange}
+                  @btrix-browser-origins-change=${this.onBrowserOriginsChange}
                   hideControls
                   tabindex="0"
                   .autofocus=${true}
@@ -306,25 +322,35 @@ export class ProfileBrowserDialog extends BtrixElement {
   }
 
   private readonly closeBrowser = () => {
-    this.isBrowserLoaded = false;
+    this.browserStatus = BrowserStatus.Initial;
   };
 
   private readonly onBrowserLoad = () => {
-    this.isBrowserLoaded = true;
+    this.browserStatus = BrowserStatus.Ready;
   };
 
   private readonly onBrowserReload = () => {
-    this.isBrowserLoaded = false;
+    this.browserStatus = BrowserStatus.Pending;
   };
 
   private readonly onBrowserError = () => {
-    this.isBrowserLoaded = false;
+    this.browserStatus = BrowserStatus.Error;
+  };
+
+  private readonly onBrowserOriginsChange = (
+    e: CustomEvent<BrowserOriginsChange>,
+  ) => {
+    if (e.detail.origins.length) {
+      this.browserStatus = BrowserStatus.Complete;
+    }
   };
 
   private readonly onBrowserConnectionChange = (
     e: CustomEvent<BrowserConnectionChange>,
   ) => {
-    this.isBrowserLoaded = e.detail.connected;
+    this.browserStatus = e.detail.connected
+      ? BrowserStatus.Pending
+      : BrowserStatus.Initial;
   };
 
   private async submit() {

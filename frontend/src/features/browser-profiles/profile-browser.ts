@@ -11,6 +11,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import type { Profile } from "@/types/crawler";
 import { isApiError, type APIError } from "@/utils/api";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 // Matches background of embedded browser
@@ -30,6 +31,9 @@ export type BrowserNotAvailableError = {
 };
 export type BrowserConnectionChange = {
   connected: boolean;
+};
+export type BrowserOriginsChange = {
+  origins: string[];
 };
 
 const isPolling = (value: unknown): value is number => {
@@ -52,6 +56,7 @@ const isPolling = (value: unknown): value is number => {
  * @fires btrix-browser-error
  * @fires btrix-browser-reload
  * @fires btrix-browser-connection-change
+ * @fires btrix-browser-origins-change Origins list has changed
  * @cssPart base
  * @cssPart browser
  * @cssPart iframe
@@ -166,9 +171,24 @@ export class ProfileBrowser extends BtrixElement {
       if (!browser || isPolling(browser)) return;
 
       try {
-        const data = await this.pingBrowser(browser.id, signal);
+        const { origins } = await this.pingBrowser(browser.id, signal);
 
-        return data.origins;
+        if (
+          this.originsTask.value &&
+          origins &&
+          isNotEqual(this.originsTask.value, origins)
+        ) {
+          this.dispatchEvent(
+            new CustomEvent<BrowserOriginsChange>(
+              "btrix-browser-origins-change",
+              {
+                detail: { origins },
+              },
+            ),
+          );
+        }
+
+        return origins || [];
       } catch (err) {
         if (isApiError(err) && err.details === "no_such_browser") {
           void this.onBrowserError();
