@@ -394,13 +394,21 @@ export class BrowserProfilesProfilePage extends BtrixElement {
 
     return when(
       this.profile,
-      (profile) => html`
-        <div class="relative">
-          <ul class="divide-y rounded-lg border bg-white shadow-sm">
-            ${origins(profile)}
-          </ul>
-        </div>
-      `,
+      (profile) =>
+        profile.origins.length
+          ? html`
+              <div class="relative">
+                <ul class="divide-y rounded-lg border bg-white shadow-sm">
+                  ${origins(profile)}
+                </ul>
+              </div>
+            `
+          : panelBody({
+              content: emptyMessage({
+                message: msg("No saved sites yet"),
+                detail: msg("Load a new URL to configure this profile."),
+              }),
+            }),
       originsSkeleton,
     );
   }
