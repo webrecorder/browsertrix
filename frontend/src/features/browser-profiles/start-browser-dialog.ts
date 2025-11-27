@@ -300,9 +300,15 @@ export class StartBrowserDialog extends BtrixElement {
         }}
       >
         <sl-option value="">${msg("New Site")}</sl-option>
-        <sl-divider></sl-divider>
-        <sl-menu-label>${msg("Saved Sites")}</sl-menu-label>
-        ${profile.origins.map(option)}
+
+        ${when(
+          profile.origins.length,
+          () => html`
+            <sl-divider></sl-divider>
+            <sl-menu-label>${msg("Saved Sites")}</sl-menu-label>
+            ${profile.origins.map(option)}
+          `,
+        )}
         ${when(this.workflowOrigins.value, (seeds) =>
           seeds.length
             ? html`
