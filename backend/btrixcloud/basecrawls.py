@@ -622,7 +622,7 @@ class BaseCrawlOps:
 
         count = await self.crawls.count_documents(
             {
-                "_id": {"$in": crawl_id_set},
+                "_id": {"$in": list(crawl_id_set)},
                 "oid": org.id,
                 "state": {"$in": SUCCESSFUL_STATES},
             }
