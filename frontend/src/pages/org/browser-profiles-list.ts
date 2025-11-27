@@ -521,6 +521,9 @@ export class BrowserProfilesList extends BtrixElement {
         (a, b) => (b && a && b > a ? b : a),
         data.created,
       ) || data.created;
+    const none = html`<sl-tooltip hoist content=${msg("None")}>
+      <sl-icon name="slash" class="text-base text-neutral-400"></sl-icon>
+    </sl-tooltip>`;
 
     return html`
       <btrix-table-row
@@ -550,7 +553,7 @@ export class BrowserProfilesList extends BtrixElement {
           </btrix-tag-container>
         </btrix-table-cell>
         <btrix-table-cell>
-          ${originsWithRemainder(data.origins)}
+          ${data.origins.length ? originsWithRemainder(data.origins) : none}
         </btrix-table-cell>
         <btrix-table-cell>
           ${this.localize.relativeDate(modifiedByAnyDate, { capitalize: true })}
