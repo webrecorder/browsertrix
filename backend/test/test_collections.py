@@ -1774,7 +1774,7 @@ def test_create_collection_with_failed_crawl(
         },
     )
     assert r.status_code == 400
-    assert r.json()["detail"] == "invalid_failed_crawl"
+    assert r.json()["detail"] == "invalid_failed_or_unfinished_crawl"
 
 
 def test_add_failed_crawl_to_collection(
@@ -1786,7 +1786,7 @@ def test_add_failed_crawl_to_collection(
         headers=admin_auth_headers,
     )
     assert r.status_code == 400
-    assert r.json()["detail"] == "invalid_failed_crawl"
+    assert r.json()["detail"] == "invalid_failed_or_unfinished_crawl"
 
 
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
