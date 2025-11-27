@@ -154,7 +154,7 @@ export class ProfileBrowserDialog extends BtrixElement {
     const isCrawler = this.appState.isCrawler;
     const creatingNew = this.duplicating || !this.profile;
     const incomplete =
-      this.browserStatus !== BrowserStatus.Ready || !this.originsLoaded;
+      !this.originsLoaded || this.browserStatus !== BrowserStatus.Ready;
     const saving = this.saveProfileTask.status === TaskStatus.PENDING;
 
     return html`<btrix-dialog
