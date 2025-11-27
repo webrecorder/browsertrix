@@ -376,6 +376,8 @@ class RawCrawlConfig(BaseModel):
 
     saveStorage: Optional[bool] = False
 
+    robots: Optional[bool] = False
+
 
 # ============================================================================
 class CrawlConfigIn(BaseModel):

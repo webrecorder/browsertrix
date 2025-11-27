@@ -476,6 +476,10 @@ export class ConfigDetails extends BtrixElement {
         Boolean(config.extraHops),
       )}
       ${this.renderSetting(
+        msg("Skip Pages Disallowed By Robots.txt"),
+        Boolean(config.robots),
+      )}
+      ${this.renderSetting(
         msg("Fail Crawl If Not Logged In"),
         Boolean(config.failOnContentCheck),
       )}
@@ -548,6 +552,10 @@ export class ConfigDetails extends BtrixElement {
       ${this.renderSetting(
         msg("Include Any Linked Page (“one hop out”)"),
         Boolean(primarySeedConfig?.extraHops ?? config.extraHops),
+      )}
+      ${this.renderSetting(
+        msg("Skip Pages Disallowed By Robots.txt"),
+        Boolean(config.robots),
       )}
       ${this.renderSetting(
         msg("Check For Sitemap"),
