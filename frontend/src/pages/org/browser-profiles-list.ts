@@ -192,7 +192,7 @@ export class BrowserProfilesList extends BtrixElement {
     return (
       filterBy.name ||
       filterBy.tags?.length ||
-      filterBy.tagsType !== DEFAULT_TAGS_TYPE ||
+      (filterBy.tagsType ?? DEFAULT_TAGS_TYPE) !== DEFAULT_TAGS_TYPE ||
       filterBy.mine
     );
   }
