@@ -173,11 +173,7 @@ export class ProfileBrowser extends BtrixElement {
       try {
         const { origins } = await this.pingBrowser(browser.id, signal);
 
-        if (
-          this.originsTask.value &&
-          origins &&
-          isNotEqual(this.originsTask.value, origins)
-        ) {
+        if (origins && isNotEqual(this.originsTask.value, origins)) {
           this.dispatchEvent(
             new CustomEvent<BrowserOriginsChange>(
               "btrix-browser-origins-change",
