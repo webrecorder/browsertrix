@@ -102,8 +102,8 @@ def test_ensure_crawl_and_admin_user_crawls(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls",
         headers=crawler_auth_headers,
     )
-    assert len(r.json()["items"]) == 2
-    assert r.json()["total"] == 2
+    assert len(r.json()["items"]) == 3
+    assert r.json()["total"] == 3
 
 
 def test_get_crawl_job_by_user(
@@ -212,9 +212,9 @@ def test_sort_crawls(
         headers=crawler_auth_headers,
     )
     data = r.json()
-    assert data["total"] == 2
+    assert data["total"] == 3
     items = data["items"]
-    assert len(items) == 2
+    assert len(items) == 3
 
     last_created = None
     for crawl in items:
@@ -362,9 +362,9 @@ def test_sort_crawl_configs(
         headers=crawler_auth_headers,
     )
     data = r.json()
-    assert data["total"] == 17
+    assert data["total"] == 18
     items = data["items"]
-    assert len(items) == 17
+    assert len(items) == 18
 
     last_created = None
     for config in items:

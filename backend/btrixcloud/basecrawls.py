@@ -613,6 +613,25 @@ class BaseCrawlOps:
 
         return resources, pages_optimized
 
+    async def validate_all_crawls_successful(
+        self, crawl_ids: List[str], org: Organization
+    ):
+        """Validate that crawls in list exist and have a succesful state, or throw"""
+        # convert to set to remove any duplicates
+        crawl_id_set = set(crawl_ids)
+
+        count = await self.crawls.count_documents(
+            {
+                "_id": {"$in": list(crawl_id_set)},
+                "oid": org.id,
+                "state": {"$in": SUCCESSFUL_STATES},
+            }
+        )
+        if count != len(crawl_id_set):
+            raise HTTPException(
+                status_code=400, detail="invalid_failed_or_unfinished_crawl"
+            )
+
     async def add_to_collection(
         self, crawl_ids: List[str], collection_id: UUID, org: Organization
     ):
