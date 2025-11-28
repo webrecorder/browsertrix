@@ -224,21 +224,21 @@ class CrawlConfigOps:
 
         await self.crawl_configs.create_index(
             [
+                ("oid", pymongo.ASCENDING),
+                ("inactive", pymongo.ASCENDING),
+                ("profileid", pymongo.ASCENDING),
+            ]
+        )
+
+        await self.crawl_configs.create_index(
+            [
                 ("oid", pymongo.HASHED),
                 ("inactive", pymongo.ASCENDING),
                 ("isCrawlRunning", pymongo.DESCENDING),
                 ("lastRun", pymongo.DESCENDING),
                 ("modified", pymongo.DESCENDING),
-            ]
-            collation=case_insensitive_collation
-        )
-
-        await self.crawl_configs.create_index(
-            [
-                ("oid", pymongo.ASCENDING),
-                ("inactive", pymongo.ASCENDING),
-                ("profileid", pymongo.ASCENDING),
-            ]
+            ],
+            collation=case_insensitive_collation,
         )
 
         await self.config_revs.create_index([("cid", pymongo.HASHED)])
