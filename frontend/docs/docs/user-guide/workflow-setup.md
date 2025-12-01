@@ -321,7 +321,7 @@ Sets the browser's language setting. Useful for crawling websites that detect th
 Automatically start crawls periodically on a daily, weekly, or monthly schedule.
 
 !!! tip "Tip: Scheduling crawl workflows with logged-in browser profiles"
-    Some websites will log users out after a set period of time. When crawling with a custom [browser profile](browser-profiles/browser-profiles-overview.md) that is logged into a website, we recommend checking the profile before crawling to ensure it is still logged in.
+    Some websites will log users out after a set period of time. When crawling with a custom [browser profile](browser-profiles/browser-profiles-overview.md) that is logged into a website, we recommend [checking the profile](./browser-profiles/configure-sites.md#saved-sites) before crawling to ensure it is still logged in.
 
     This can cause issues with scheduled crawl workflows — which will run even if the selected browser profile has been logged out.
 
