@@ -33,7 +33,7 @@ export class StorageMeter extends BtrixElement {
       colorClassname: string,
     ) => {
       const percentageOfUsed = renderPercentage(
-        value / metrics.storageUsedBytes,
+        metrics.storageUsedBytes === 0 ? 0 : value / metrics.storageUsedBytes,
       );
       const percentageOfAvailable = renderPercentage(
         value / metrics.storageQuotaBytes,
