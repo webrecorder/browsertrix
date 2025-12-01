@@ -1571,7 +1571,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
 
             total_size += crawl_size
 
-            if res["state"] not in FAILED_STATES:
+            if res["state"] in SUCCESSFUL_STATES:
                 successful_count += 1
 
             last_crawl = res
