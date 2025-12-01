@@ -184,6 +184,11 @@ export class Meter extends TailwindElement {
       z-index: -1;
     }
 
+    .valueBar[data-empty]::after {
+      right: unset;
+      left: 0;
+    }
+
     .valueBar,
     .background {
       display: flex;
@@ -337,7 +342,11 @@ export class Meter extends TailwindElement {
                   <slot name="background"></slot>
                 </div>`
               : null}
-            <div class="valueBar" style="width:${barWidth}">
+            <div
+              class="valueBar"
+              style="width:${barWidth}"
+              ?data-empty=${this.value === 0}
+            >
               <slot @slotchange=${this.handleSlotchange}></slot>
             </div>
             ${this.value < max ? html`<slot name="available"></slot>` : ""}
