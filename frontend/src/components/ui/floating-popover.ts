@@ -19,7 +19,7 @@ export function parseDuration(delay: number | string) {
   return parseFloat(delay);
 }
 
-function createVirtualElement(
+function _createVirtualElement(
   domElement: Element | null | undefined,
   data: {
     axis: "x" | "y" | "both";
@@ -133,13 +133,13 @@ export class FloatingPopover extends SlTooltip {
     let originalRect: DOMRect | undefined;
     if (this.lock !== "") {
       originalRect = this.slottedChildren?.[0].getBoundingClientRect();
-      return createVirtualElement(this.slottedChildren?.[0], {
-        axis: this.lock === "x y" ? "both" : this.lock,
-        x: (this.hasLock("x") ? originalRect?.x : this.clientX) ?? 0,
-        y: (this.hasLock("y") ? originalRect?.y : this.clientY) ?? 0,
-        pointerType: "mouse",
-        openEventType: "mousemove",
-      });
+      // return createVirtualElement(this.slottedChildren?.[0], {
+      //   axis: this.lock === "x y" ? "both" : this.lock,
+      //   x: (this.hasLock("x") ? originalRect?.x : this.clientX) ?? 0,
+      //   y: (this.hasLock("y") ? originalRect?.y : this.clientY) ?? 0,
+      //   pointerType: "mouse",
+      //   openEventType: "mousemove",
+      // });
     }
     return {
       getBoundingClientRect: () => {
