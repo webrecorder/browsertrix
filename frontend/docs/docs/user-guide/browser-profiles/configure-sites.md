@@ -28,7 +28,7 @@ The embedded browser used to configure profiles is the same browser behind Brows
 
     The [Ublock Origin filter syntax](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax) can be used for more specificity over what in-page resources should be blocked.
 
-    All browser setting related blocking features can be used in addition with the [_Block Ads by Domain_](workflow-setup.md#block-ads-by-domain) crawler setting.
+    All browser setting related blocking features can be used in addition with the [_Block Ads by Domain_](../workflow-setup.md#block-ads-by-domain) crawler setting.
 
 ## Saving the Profile
 

@@ -20,7 +20,7 @@ Depending on your organization settings, additional settings may be available:
 
     !!! tip "Implication for crawl workflows using proxies"
     
-        When a browser profile is added to a crawl workflow, the browser profile’s proxy setting will take precedence over the crawl workflow’s [_Crawler Proxy Server_](../workflow-setup.md#proxy) setting. This prevents potential crawl failures that result from conflicting proxies.
+        When a browser profile is added to a crawl workflow, the browser profile’s proxy setting will take precedence over the crawl workflow’s [_Crawler Proxy Server_](../workflow-setup.md#crawler-proxy-server) setting. This prevents potential crawl failures that result from conflicting proxies.
 
 ### Crawler Release Channel
 
