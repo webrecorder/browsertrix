@@ -46,7 +46,6 @@ from .models import (
     PaginatedSeedResponse,
     PaginatedConfigRevisionResponse,
     SUCCESSFUL_STATES,
-    FAILED_STATES,
     CrawlerChannel,
     CrawlerChannels,
     StartedResponse,
