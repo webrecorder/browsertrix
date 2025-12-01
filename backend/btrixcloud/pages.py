@@ -1434,6 +1434,11 @@ def init_pages_api(
         tags=["pages", "collections"],
         response_model=EmptyResponse,
     )
+    @app.options(
+        "/orgs/{oid}/crawlconfigs/{cid}/public/pagesSearch",
+        tags=["pages", "crawlconfigs"],
+        response_model=EmptyResponse,
+    )
     async def get_replay_preflight(response: Response):
         response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
         response.headers["Access-Control-Allow-Origin"] = "*"
