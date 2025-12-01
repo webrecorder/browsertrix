@@ -1044,9 +1044,8 @@ class CrawlConfigOps:
 
         if crawlconfig.profileid:
             profile = await self.profiles.get_profile(crawlconfig.profileid, org)
-            if profile:
-                crawlconfig.profileName = profile.name
-                crawlconfig.proxyId = profile.proxyId
+            crawlconfig.profileName = profile.name
+            crawlconfig.proxyId = profile.proxyId
 
         crawlconfig.config.seeds = None
 
