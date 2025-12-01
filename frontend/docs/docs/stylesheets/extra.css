@@ -134,10 +134,20 @@ h5 {
 }
 
 .md-typeset h1,
-h2,
-h3 {
-  font-weight: 650 !important;
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4 {
+  font-weight: 600;
   font-variation-settings: "OPSZ" 35;
+}
+
+.md-typeset h3 {
+  font-size: 1.125em;
+}
+
+.md-typeset h4,
+.md-typeset h5 {
+  font-size: 0.875em;
 }
 
 .md-typeset {

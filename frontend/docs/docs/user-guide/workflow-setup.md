@@ -262,7 +262,7 @@ Configure the browser used to visit URLs during the crawl.
 
 ### Browser Profile
 
-Sets the [_Browser Profile_](browser-profiles.md) to be used for this crawl.
+Sets the [_Browser Profile_](browser-profiles/browser-profiles-overview.md) to be used for this crawl.
 
 ### Browser Windows
 
@@ -317,7 +317,7 @@ Sets the proxy server that [Browsertrix Crawler](https://github.com/webrecorder/
 Automatically start crawls periodically on a daily, weekly, or monthly schedule.
 
 !!! tip "Tip: Scheduling crawl workflows with logged-in browser profiles"
-    Some websites will log users out after a set period of time. When crawling with a custom [browser profile](browser-profiles.md) that is logged into a website, we recommend checking the profile before crawling to ensure it is still logged in.
+    Some websites will log users out after a set period of time. When crawling with a custom [browser profile](browser-profiles/browser-profiles-overview.md) that is logged into a website, we recommend checking the profile before crawling to ensure it is still logged in.
 
     This can cause issues with scheduled crawl workflows — which will run even if the selected browser profile has been logged out.
 

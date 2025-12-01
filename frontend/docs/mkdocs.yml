@@ -70,7 +70,10 @@ nav:
         - user-guide/quality-assurance.md
         - user-guide/qa-review.md
       - Browser Profiles:
-          - user-guide/browser-profiles.md
+          - user-guide/browser-profiles/browser-profiles-overview.md
+          - user-guide/browser-profiles/create-browser-profile.md
+          - user-guide/browser-profiles/configure-sites.md
+          - user-guide/browser-profiles/edit-browser-profile.md
       - Org Settings:
           - user-guide/org-settings.md
           - user-guide/org-members.md
@@ -147,3 +150,4 @@ plugins:
   - redirects:
       redirect_maps:
         "user-guide/collections.md": "user-guide/collection.md"
+        "user-guide/browser-profiles.md": "user-guide/browser-profiles/browser-profiles-overview.md"
