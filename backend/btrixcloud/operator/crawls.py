@@ -1460,7 +1460,7 @@ class CrawlOperator(BaseOperator):
 
     async def get_redis_crawl_stats(
         self, redis: Redis, crawl_id: str
-    ) -> tuple[CrawlStats, dict[str, Any]]:
+    ) -> tuple[CrawlStats, dict[str, str]]:
         """get page stats"""
         try:
             # crawler >0.9.0, done key is a value
@@ -1513,9 +1513,10 @@ class CrawlOperator(BaseOperator):
             crawl.db_crawl_id, crawl.is_qa, stats
         )
 
-        for key, value in sizes.items():
+        for key, str_value in sizes.items():
             increase_storage = False
-            value = int(value)
+            pod_info = None
+            value = int(str_value)
             if value > 0 and status.podStatus:
                 pod_info = status.podStatus[key]
                 pod_info.used.storage = value
@@ -1530,11 +1531,11 @@ class CrawlOperator(BaseOperator):
                     increase_storage = True
 
             # out of storage
-            if pod_info.isNewExit and pod_info.exitCode == 3:
+            if pod_info and pod_info.isNewExit and pod_info.exitCode == 3:
                 pod_info.used.storage = pod_info.allocated.storage
                 increase_storage = True
 
-            if increase_storage:
+            if pod_info and increase_storage:
                 new_storage = math.ceil(
                     pod_info.used.storage * self.min_avail_storage_ratio / 1_000_000_000
                 )
