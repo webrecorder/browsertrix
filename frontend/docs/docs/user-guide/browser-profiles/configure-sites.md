@@ -12,7 +12,7 @@ To crawl content as a logged in user, load the website you intend to archive in 
 
 ### Hide Popups
 
-Websites may prompt users for a number of reasons before displaying the rest of the page, such as for age verification, informed consent requirements, or geographical location. Configure a browser profile to accept, dismiss, or otherwise hide these dialogs so that the content behind them is visible to the crawler.
+Load the website you intend to archive in the embedded browser and accept or otherwise dismiss the prompt. If the developers of the website have built the site in such a way that the result of your interaction is saved, the popup should remain hidden at crawl time. This can be confirmed by exiting the embedded browser session and then loading the site again.
 
 ### Customize the Crawling Browser
 
