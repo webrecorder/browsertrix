@@ -26,9 +26,9 @@ The embedded browser used to configure profiles is the same browser behind Brows
 
     _Custom Filters_ can also be useful for blocking sites with resources that aren't blocked by one of the existing lists. We use this at Webrecorder to block our web analytics script while crawling our own website by adding `stats.browsertrix.com` to the filter list. In this example, `browsertrix.com` will still load, but Brave will block any communication to `stats.browsertrix.com` and our analytics won't register a page view as a result. While lots of common analytics tools may already be blocked in an existing blocklist, this one likely isn't because we run it ourselves!
 
-    The [Ublock Origin filter syntax](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax) can be used for more specificity over what in-page resources should be blocked.
+    The [uBlock Origin filter syntax](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax) can be used for more specificity over what in-page resources should be blocked.
 
-    All browser setting related blocking features can be used in addition with the [_Block Ads by Domain_](../workflow-setup.md#block-ads-by-domain) crawler setting.
+    All of the browser's ad blocking and privacy features can be used in combination with the [_Block Ads by Domain_](../workflow-setup.md#block-ads-by-domain) crawler setting.
 
 ## Saving the Profile
 

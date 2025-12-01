@@ -6,7 +6,7 @@ Browser profiles are saved instances of a web browsing session that can be used 
 
 ### Social Media Sign In
 
-Pre-configure a social media site to be logged in so that the crawler can access to content that can only be viewed by logged-in users.
+Pre-configure a social media site to be logged in so that the crawler can access content that can only be viewed by logged-in users.
 
 !!! tip "Best Practices: Use an account created specifically for archiving a website"
 
