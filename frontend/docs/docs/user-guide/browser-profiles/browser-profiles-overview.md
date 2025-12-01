@@ -4,7 +4,7 @@ Browser profiles are saved instances of a web browsing session that can be used 
 
 ## Common Use Cases
 
-### Social Media
+### Social Media Sign In
 
 Pre-configure a social media site to be logged in so that the crawler can access to content that can only be viewed by logged-in users.
 
