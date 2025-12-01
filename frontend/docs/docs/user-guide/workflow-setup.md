@@ -264,7 +264,7 @@ Configure the browser used to visit URLs during the crawl.
 
 Sets the [_Browser Profile_](browser-profiles/browser-profiles-overview.md) to be used for this crawl.
 
-### Crawler Proxy Server¶
+### Crawler Proxy Server
 
 !!! Info "This setting will be shown if the organization supports multiple proxies."
 
