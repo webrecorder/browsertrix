@@ -41,3 +41,15 @@ When finished, press the _Save Profile_ button to return to the profile's detail
 ## Edit Browser Profile Metadata
 
 To edit the name, description, and tags, select _Edit Metadata_ from the action menu on the browser profile page.
+
+: ### Name
+
+: A custom name for the browser profile.
+
+: ### Description
+
+: A short description of the browser profile.
+
+: ### Tags
+
+: Tag the browser profile with additional metadata like category or keywords. Tags are displayed on the browser profiles list page.
