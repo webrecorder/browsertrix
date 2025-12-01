@@ -131,6 +131,8 @@ async def update_and_prepare_db(
         crawl_manager,
     ):
         await drop_indexes(mdb)
+    elif os.environ.get("MONGO_DB_DROP_INDEXES"):
+        await drop_indexes(mdb)
 
     await create_indexes(
         org_ops,

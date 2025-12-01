@@ -526,6 +526,9 @@ signer_memory: "50Mi"
 # see backend/btrixcloud/migrations/ for list of available migrations
 # rerun_from_migration:
 
+# if set, will force mongodb to drop indexes on startup
+# mongo_drop_indexes: 1
+
 # scale for certain migration background jobs
 # migration_jobs_scale: 1
 
