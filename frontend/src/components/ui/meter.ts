@@ -39,13 +39,13 @@ export class MeterBar extends TailwindElement {
       --background-color: var(--background-color, var(--sl-color-blue-500));
       overflow: hidden;
       transition: box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      min-width: 4px;
+      transition: 400ms width;
     }
 
     .bar {
       height: 1rem;
       background-color: var(--background-color);
-      min-width: 4px;
-      transition: 400ms width;
     }
   `;
 
