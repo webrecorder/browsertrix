@@ -554,7 +554,7 @@ export class ConfigDetails extends BtrixElement {
         Boolean(primarySeedConfig?.extraHops ?? config.extraHops),
       )}
       ${this.renderSetting(
-        msg("Skip Pages Disallowed By Robots.txt"),
+        msg("Skip Pages Disallowed by robots.txt"),
         Boolean(config.robots),
       )}
       ${this.renderSetting(
