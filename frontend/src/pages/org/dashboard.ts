@@ -17,7 +17,7 @@ import type { SelectNewDialogEvent } from ".";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type CollectionSavedEvent } from "@/features/collections/collection-edit-dialog";
-import { colors } from "@/features/meters/colors";
+import { storageColorClasses } from "@/features/meters/storage/colors";
 import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
@@ -231,7 +231,7 @@ export class Dashboard extends BtrixElement {
 
                   iconProps: {
                     name: "gear-wide-connected",
-                    class: colors.crawls,
+                    class: storageColorClasses.crawls,
                   },
                   button: {
                     url: "/items/crawl",
@@ -245,7 +245,10 @@ export class Dashboard extends BtrixElement {
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
 
-                  iconProps: { name: "upload", class: colors.uploads },
+                  iconProps: {
+                    name: "upload",
+                    class: storageColorClasses.uploads,
+                  },
                   button: {
                     url: "/items/upload",
                   },
@@ -259,7 +262,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Browser Profiles"),
                   iconProps: {
                     name: "window-fullscreen",
-                    class: colors.browserProfiles,
+                    class: storageColorClasses.browserProfiles,
                   },
                   button: {
                     url: "/browser-profiles",
@@ -276,7 +279,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Archived Items"),
                   iconProps: {
                     name: "file-zip-fill",
-                    class: colors.archivedItems,
+                    class: storageColorClasses.archivedItems,
                   },
                   button: {
                     url: "/items",
@@ -338,7 +341,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Pages Crawled"),
                   iconProps: {
                     name: "file-richtext-fill",
-                    class: colors.crawls,
+                    class: storageColorClasses.crawls,
                   },
                 })}
                 ${this.renderStat({
@@ -347,7 +350,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Pages Uploaded"),
                   iconProps: {
                     name: "file-richtext-fill",
-                    class: colors.uploads,
+                    class: storageColorClasses.uploads,
                   },
                 })}
                 ${this.renderStat({
@@ -529,7 +532,7 @@ export class Dashboard extends BtrixElement {
       <div class="mb-2 flex items-center gap-2 last:mb-0">
         <dt class="mr-auto flex items-center tabular-nums">
           <sl-icon
-            class=${clsx(tw`mr-2 text-base`, colors.misc)}
+            class=${clsx(tw`mr-2 text-base`, storageColorClasses.misc)}
             name="box2"
           ></sl-icon>
           ${msg("Miscellaneous")}

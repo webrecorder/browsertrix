@@ -60,56 +60,6 @@ export class MeterBar extends TailwindElement {
   }
 }
 
-// @customElement("btrix-divided-meter-bar")
-// export class DividedMeterBar extends TailwindElement {
-//   /* Percentage of value / max */
-//   @property({ type: Number })
-//   value = 0;
-
-//   @property({ type: Number })
-//   quota = 0;
-
-//   static styles = css`
-//     :host {
-//       display: contents;
-//     }
-
-//     .bar {
-//       height: 1rem;
-//       background-color: var(--background-color, var(--sl-color-blue-400));
-//       min-width: 4px;
-//     }
-
-//     .rightBorderRadius {
-//       border-top-right-radius: var(--sl-border-radius-medium);
-//       border-bottom-right-radius: var(--sl-border-radius-medium);
-//     }
-
-//     .quotaBar {
-//       height: 1rem;
-//       background-color: var(--quota-background-color, var(--sl-color-blue-100));
-//       min-width: 4px;
-//     }
-//   `;
-
-//   render() {
-//     return html`<btrix-floating-popover placement="top">
-//       <div slot="content"><slot></slot></div>
-//       <div class="quotaBar" style="width:${this.quota}%" part="quotaBar">
-//         ${when(this.value, () => {
-//           return html`<div
-//             class="bar ${classMap({
-//               rightBorderRadius: this.value < this.quota,
-//             })}"
-//             part="bar"
-//             style="width:${(this.value / this.quota) * 100}%"
-//           ></div>`;
-//         })}
-//       </div>
-//     </btrix-floating-popover>`;
-//   }
-// }
-
 /**
  * Show scalar value within a range
  *
@@ -244,6 +194,11 @@ export class Meter extends TailwindElement {
 
     .valueBar ::slotted(btrix-meter-bar) {
       position: relative;
+      --darkened-background-color: color-mix(
+        in srgb,
+        var(--background-color) 100%,
+        rgb(0 0 0 / 0.5) 50%
+      );
     }
 
     .valueBar ::slotted(btrix-meter-bar):after {
@@ -264,11 +219,6 @@ export class Meter extends TailwindElement {
     }
 
     .valueBar:hover ::slotted(btrix-meter-bar:hover) {
-      --darkened-background-color: color-mix(
-        in srgb,
-        var(--background-color) 100%,
-        rgb(0 0 0 / 0.5) 50%
-      );
       box-shadow:
         0 0 0 1px var(--background-color),
         0 1px 3px 0 var(--darkened-background-color),

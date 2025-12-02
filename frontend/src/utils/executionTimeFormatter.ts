@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { html, nothing } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 
@@ -15,9 +16,15 @@ import localize from "./localize";
  */
 export function humanizeSeconds(
   seconds: number,
-  locale?: string,
-  displaySeconds = false,
-  unitDisplay: "narrow" | "short" | "long" = "narrow",
+  {
+    locale,
+    displaySeconds = false,
+    unitDisplay = "narrow",
+  }: {
+    locale?: string;
+    displaySeconds?: boolean;
+    unitDisplay?: "narrow" | "short" | "long";
+  } = {},
 ) {
   if (seconds < 0) {
     throw new Error("humanizeSeconds in unimplemented for negative times");
@@ -92,47 +99,60 @@ export const humanizeExecutionSeconds = (
     round = "up",
   } = options || {};
   const locale = localize.activeLanguage;
-  const minutes =
-    round === "down" ? Math.floor(seconds / 60) : Math.ceil(seconds / 60);
-
-  const compactMinuteFormatter = new Intl.NumberFormat(locale, {
-    notation: "compact",
+  if (displaySeconds && seconds < 60) {
+    return localize.number(seconds, {
+      style: "unit",
+      unit: "second",
+      unitDisplay: style,
+    });
+  }
+  return localize.number(seconds / 60, {
     style: "unit",
     unit: "minute",
     unitDisplay: style,
+    maximumFractionDigits: displaySeconds ? 2 : 0,
   });
+  // const minutes =
+  //   round === "down" ? Math.floor(seconds / 60) : Math.ceil(seconds / 60);
 
-  const longMinuteFormatter = new Intl.NumberFormat(locale, {
-    style: "unit",
-    unit: "minute",
-    unitDisplay: "long",
-    maximumFractionDigits: 0,
-  });
+  // const compactMinuteFormatter = new Intl.NumberFormat(locale, {
+  //   notation: "compact",
+  //   style: "unit",
+  //   unit: "minute",
+  //   unitDisplay: style,
+  // });
 
-  const details = humanizeSeconds(seconds, locale, displaySeconds);
-  const compactMinutes = compactMinuteFormatter.format(minutes);
-  const fullMinutes = longMinuteFormatter.format(minutes);
+  // const longMinuteFormatter = new Intl.NumberFormat(locale, {
+  //   style: "unit",
+  //   unit: "minute",
+  //   unitDisplay: "long",
+  //   maximumFractionDigits: 0,
+  // });
 
-  // if the time is less than an hour and lines up exactly on the minute, don't render the details.
-  const detailsRelevant = displaySeconds
-    ? seconds % 60 !== 0
-    : Math.floor(seconds / 60) === 0 && seconds % 60 !== 0;
-  const formattedDetails =
-    detailsRelevant || seconds > 3600 ? `\u00a0(${details})` : nothing;
-  const prefix = detailsRelevant && seconds < 60 ? "<" : "";
+  // const details = humanizeSeconds(seconds, locale, displaySeconds);
+  // const compactMinutes = compactMinuteFormatter.format(minutes);
+  // const fullMinutes = longMinuteFormatter.format(minutes);
 
-  switch (style) {
-    case "long":
-      return html`<span
-        title="${ifDefined(
-          fullMinutes !== compactMinutes ? fullMinutes : undefined,
-        )}"
-        >${prefix}${compactMinutes}${formattedDetails}</span
-      >`;
-    case "short":
-      return html`<span
-        title="${longMinuteFormatter.format(minutes)}${formattedDetails}"
-        >${prefix}${compactMinutes}</span
-      >`;
-  }
+  // // if the time is less than an hour and lines up exactly on the minute, don't render the details.
+  // const detailsRelevant = displaySeconds
+  //   ? seconds % 60 !== 0
+  //   : Math.floor(seconds / 60) === 0 && seconds % 60 !== 0;
+  // const formattedDetails =
+  //   detailsRelevant || seconds > 3600 ? `\u00a0(${details})` : nothing;
+  // const prefix = detailsRelevant && seconds < 60 ? "<" : "";
+
+  // switch (style) {
+  //   case "long":
+  //     return html`<span
+  //       title="${ifDefined(
+  //         fullMinutes !== compactMinutes ? fullMinutes : undefined,
+  //       )}"
+  //       >${prefix}${compactMinutes}${formattedDetails}</span
+  //     >`;
+  //   case "short":
+  //     return html`<span
+  //       title="${longMinuteFormatter.format(minutes)}${formattedDetails}"
+  //       >${prefix}${compactMinutes}</span
+  //     >`;
+  // }
 };
