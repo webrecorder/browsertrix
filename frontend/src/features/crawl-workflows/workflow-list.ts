@@ -25,15 +25,30 @@ import { ShareableNotice } from "./templates/shareable-notice";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
-import { WorkflowTab } from "@/routes";
+import { OrgTab, WorkflowTab } from "@/routes";
 import { noData } from "@/strings/ui";
 import type { ListWorkflow } from "@/types/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { srOnly, truncate } from "@/utils/css";
 import { pluralOf } from "@/utils/pluralize";
 
-// postcss-lit-disable-next-line
-const mediumBreakpointCss = css`30rem`;
+export type WorkflowColumnName =
+  | "name"
+  | "latest-crawl"
+  | "total-crawls"
+  | "modified"
+  | "actions";
+
+const columnWidths = {
+  // TODO Consolidate with table.stylesheet.css
+  // https://github.com/webrecorder/browsertrix/issues/3001
+  name: "[clickable-start] minmax(18rem, 1fr)",
+  "latest-crawl": "minmax(15rem, 18rem)",
+  "total-crawls": "minmax(6rem, 9rem)",
+  modified: "minmax(12rem, 15rem)",
+  actions: "[clickable-end] 3rem",
+} as const satisfies Record<WorkflowColumnName, string>;
+
 // postcss-lit-disable-next-line
 const largeBreakpointCss = css`60rem`;
 // postcss-lit-disable-next-line
@@ -41,16 +56,23 @@ const rowCss = css`
   .row {
     display: grid;
     grid-template-columns: 1fr;
+    position: relative;
   }
 
-  @media only screen and (min-width: ${mediumBreakpointCss}) {
-    .row {
-      grid-template-columns: repeat(2, 1fr);
-    }
+  .action {
+    position: absolute;
+    top: 0;
+    right: 0;
   }
+
   @media only screen and (min-width: ${largeBreakpointCss}) {
     .row {
-      grid-template-columns: 1fr 17rem 10rem 11rem 3rem;
+      grid-template-columns: var(--btrix-workflow-list-columns);
+      white-space: nowrap;
+    }
+
+    .action {
+      position: relative;
     }
   }
 
@@ -225,11 +247,54 @@ export class WorkflowListItem extends BtrixElement {
           border-left: 1px solid var(--sl-panel-border-color);
         }
       }
+
+      /*
+       * TODO Consolidate with table.stylesheet.css
+       * https://github.com/webrecorder/browsertrix/issues/3001
+       */
+      .rowClickTarget--cell {
+        display: grid;
+        grid-template-columns: subgrid;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .rowClickTarget {
+        max-width: 100%;
+      }
+
+      .col sl-tooltip > *,
+      .col btrix-popover > * {
+        /* Place above .rowClickTarget::after overlay */
+        z-index: 2;
+        position: relative;
+      }
+
+      .rowClickTarget::after {
+        content: "";
+        display: block;
+        position: absolute;
+        inset: 0;
+        grid-column: clickable-start / clickable-end;
+      }
+
+      .rowClickTarget:focus-visible {
+        outline: var(--sl-focus-ring);
+        outline-offset: -0.25rem;
+        border-radius: 0.5rem;
+      }
     `,
   ];
 
   @property({ type: Object })
   workflow?: ListWorkflow;
+
+  /**
+   * Limit columns displayed
+   * @TODO Convert to btrix-data-grid to make columns configurable
+   */
+  @property({ type: Array })
+  columns?: WorkflowColumnName[];
 
   @query(".row")
   row!: HTMLElement;
@@ -237,27 +302,19 @@ export class WorkflowListItem extends BtrixElement {
   @query("btrix-overflow-dropdown")
   dropdownMenu!: OverflowDropdown;
 
-  render() {
-    return html`<div
-      class="item row"
-      role="button"
-      @click=${async (e: MouseEvent) => {
-        if (e.target === this.dropdownMenu) {
-          return;
-        }
-        e.preventDefault();
-        await this.updateComplete;
-        const failedStates = ["failed", "failed_not_logged_in"];
-        const href = `/orgs/${this.orgSlugState}/workflows/${this.workflow?.id}/${failedStates.includes(this.workflow?.lastCrawlState || "") ? WorkflowTab.Logs : WorkflowTab.LatestCrawl}`;
-        this.navigate.to(href);
-      }}
-    >
-      <div class="col">
-        <div class="detail url items-center truncate">
+  @query("a")
+  private readonly anchor?: HTMLAnchorElement | null;
+
+  private readonly columnTemplate = {
+    name: () => {
+      const href = `/orgs/${this.orgSlugState}/${OrgTab.Workflows}/${this.workflow?.id}/${this.workflow?.lastCrawlState?.startsWith("failed") ? WorkflowTab.Logs : WorkflowTab.LatestCrawl}`;
+
+      return html`<div class="col rowClickTarget--cell">
+        <a class="detail url rowClickTarget items-center truncate" href=${href}>
           ${when(this.workflow?.shareable, ShareableNotice)}
           ${this.safeRender(this.renderName)}
-        </div>
-        <div class="desc">
+        </a>
+        <div class="desc truncate">
           ${this.safeRender((workflow) => {
             if (workflow.schedule) {
               return humanizeSchedule(workflow.schedule, {
@@ -270,9 +327,12 @@ export class WorkflowListItem extends BtrixElement {
             return msg("---");
           })}
         </div>
-      </div>
-      <div class="col">${this.safeRender(this.renderLatestCrawl)}</div>
-      <div class="col">
+      </div>`;
+    },
+    "latest-crawl": () =>
+      html`<div class="col">${this.safeRender(this.renderLatestCrawl)}</div>`,
+    "total-crawls": () =>
+      html`<div class="col">
         <div class="detail">
           ${this.safeRender((workflow) => {
             if (
@@ -316,9 +376,11 @@ export class WorkflowListItem extends BtrixElement {
               `${this.localize.number(workflow.crawlCount, { notation: "compact" })} ${pluralOf("crawls", workflow.crawlCount)}`,
           )}
         </div>
-      </div>
-      <div class="col">${this.safeRender(this.renderModifiedBy)}</div>
-      <div class="col action">
+      </div>`,
+    modified: () =>
+      html`<div class="col">${this.safeRender(this.renderModifiedBy)}</div>`,
+    actions: () =>
+      html`<div class="col action">
         <btrix-overflow-dropdown>
           <slot
             name="menu"
@@ -329,7 +391,14 @@ export class WorkflowListItem extends BtrixElement {
             }}
           ></slot>
         </btrix-overflow-dropdown>
-      </div>
+      </div>`,
+  } satisfies Record<WorkflowColumnName, () => TemplateResult>;
+
+  render() {
+    return html`<div class="item row">
+      ${this.columns
+        ? this.columns.map((col) => this.columnTemplate[col]())
+        : Object.values(this.columnTemplate).map((render) => render())}
     </div>`;
   }
 
@@ -435,7 +504,7 @@ export class WorkflowListItem extends BtrixElement {
 
     return html`
       <sl-tooltip hoist placement="bottom" ?disabled=${!tooltipContent}>
-        <div>
+        <div class="w-max" @click=${this.redirectEventToAnchor}>
           <div class="detail">${status}</div>
           <div class="desc duration">${duration}</div>
         </div>
@@ -450,7 +519,7 @@ export class WorkflowListItem extends BtrixElement {
 
     return html`
       <sl-tooltip hoist placement="bottom">
-        <div>
+        <div class="w-max" @click=${this.redirectEventToAnchor}>
           <div class="detail truncate">
             ${workflow.modifiedByName
               ? html`<btrix-user-chip
@@ -503,6 +572,19 @@ export class WorkflowListItem extends BtrixElement {
       >${nameSuffix}
     `;
   };
+
+  /*
+   * TODO Remove when refactored to `btrix-table`
+   * https://github.com/webrecorder/browsertrix/issues/3001
+   */
+  private readonly redirectEventToAnchor = (e: MouseEvent) => {
+    if (!e.defaultPrevented) {
+      const newEvent = new MouseEvent(e.type, e);
+      e.stopPropagation();
+
+      this.anchor?.dispatchEvent(newEvent);
+    }
+  };
 }
 
 @customElement("btrix-workflow-list")
@@ -551,18 +633,41 @@ export class WorkflowList extends LitElement {
     `,
   ];
 
+  /**
+   * Limit columns displayed
+   * * @TODO Convert to btrix-data-grid to make columns configurable
+   */
+  @property({ type: Array, noAccessor: true })
+  columns?: WorkflowColumnName[];
+
   @queryAssignedElements({ selector: "btrix-workflow-list-item" })
-  listItems!: HTMLElement[];
+  listItems!: WorkflowListItem[];
+
+  static ColumnTemplate = {
+    name: html`<div class="col">${msg(html`Name & Schedule`)}</div>`,
+    "latest-crawl": html`<div class="col">${msg("Latest Crawl")}</div>`,
+    "total-crawls": html`<div class="col">${msg("Total Size")}</div>`,
+    modified: html`<div class="col">${msg("Last Modified")}</div>`,
+    actions: html`<div class="col action">
+      <span class="srOnly">${msg("Actions")}</span>
+    </div>`,
+  } satisfies Record<WorkflowColumnName, TemplateResult>;
+
+  connectedCallback(): void {
+    this.style.setProperty(
+      "--btrix-workflow-list-columns",
+      this.columns?.map((col) => columnWidths[col]).join(" ") ||
+        Object.values(columnWidths).join(" "),
+    );
+
+    super.connectedCallback();
+  }
 
   render() {
-    return html` <div class="listHeader row">
-        <div class="col">${msg(html`Name & Schedule`)}</div>
-        <div class="col">${msg("Latest Crawl")}</div>
-        <div class="col">${msg("Total Size")}</div>
-        <div class="col">${msg("Last Modified")}</div>
-        <div class="col action">
-          <span class="srOnly">${msg("Actions")}</span>
-        </div>
+    return html`<div class="listHeader row">
+        ${this.columns
+          ? this.columns.map((col) => WorkflowList.ColumnTemplate[col])
+          : Object.values(WorkflowList.ColumnTemplate)}
       </div>
       <div class="list" role="list">
         <slot @slotchange=${this.handleSlotchange}></slot>
@@ -573,6 +678,12 @@ export class WorkflowList extends LitElement {
     this.listItems.map((el) => {
       if (!el.attributes.getNamedItem("role")) {
         el.setAttribute("role", "listitem");
+      }
+
+      if (this.columns) {
+        if (!el["columns"]) {
+          el["columns"] = this.columns;
+        }
       }
     });
   }

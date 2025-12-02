@@ -1,5 +1,6 @@
 import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import type {
   SlBlurEvent,
   SlChangeEvent,
@@ -33,6 +34,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
+import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { map } from "lit/directives/map.js";
 import { when } from "lit/directives/when.js";
@@ -50,23 +52,29 @@ import {
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixFileChangeEvent } from "@/components/ui/file-list/events";
-import type {
-  SelectCrawlerChangeEvent,
-  SelectCrawlerUpdateEvent,
-} from "@/components/ui/select-crawler";
+import type { SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
 import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
 import type { SyntaxInput } from "@/components/ui/syntax-input";
 import type { TabListTab } from "@/components/ui/tab-list";
+import type { TagCount, TagCounts } from "@/components/ui/tag-filter/types";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { validURL } from "@/components/ui/url-input";
 import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
-import { proxiesContext, type ProxiesContext } from "@/context/org";
+import {
+  orgCrawlerChannelsContext,
+  type OrgCrawlerChannelsContext,
+} from "@/context/org-crawler-channels";
+import {
+  orgProxiesContext,
+  type OrgProxiesContext,
+} from "@/context/org-proxies";
 import {
   ObservableController,
   type IntersectEvent,
 } from "@/controllers/observable";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
+import type { BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type { CustomBehaviorsTable } from "@/features/crawl-workflows/custom-behaviors-table";
@@ -75,11 +83,10 @@ import type {
   ExclusionChangeEvent,
   QueueExclusionTable,
 } from "@/features/crawl-workflows/queue-exclusion-table";
-import type { UserGuideEventMap } from "@/index";
 import { infoCol, inputCol } from "@/layouts/columns";
 import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
 import { panel } from "@/layouts/panel";
-import { WorkflowTab } from "@/routes";
+import { OrgTab, WorkflowTab } from "@/routes";
 import { infoTextFor } from "@/strings/crawl-workflows/infoText";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
@@ -90,6 +97,7 @@ import {
   Behavior,
   CrawlerChannelImage,
   ScopeType,
+  type Profile,
   type Seed,
   type WorkflowParams,
 } from "@/types/crawler";
@@ -97,8 +105,6 @@ import type { UnderlyingFunction } from "@/types/utils";
 import {
   NewWorkflowOnlyScopeType,
   type StorageSeedFile,
-  type WorkflowTag,
-  type WorkflowTags,
 } from "@/types/workflow";
 import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
@@ -263,8 +269,11 @@ export class WorkflowEditor extends BtrixElement {
     }
   `;
 
-  @consume({ context: proxiesContext, subscribe: true })
-  private readonly proxies?: ProxiesContext;
+  @consume({ context: orgProxiesContext, subscribe: true })
+  private readonly proxies?: OrgProxiesContext;
+
+  @consume({ context: orgCrawlerChannelsContext, subscribe: true })
+  private readonly crawlerChannels?: OrgCrawlerChannelsContext;
 
   @consume({ context: docsUrlContext })
   private readonly docsUrl?: DocsUrlContext;
@@ -292,10 +301,7 @@ export class WorkflowEditor extends BtrixElement {
   initialSeedFile?: StorageSeedFile;
 
   @state()
-  private showCrawlerChannels = false;
-
-  @state()
-  private tagOptions: WorkflowTag[] = [];
+  private tagOptions: TagCount[] = [];
 
   @state()
   private isSubmitting = false;
@@ -333,7 +339,7 @@ export class WorkflowEditor extends BtrixElement {
   });
 
   // For fuzzy search:
-  private readonly fuse = new Fuse<WorkflowTag>([], {
+  private readonly fuse = new Fuse<TagCount>([], {
     keys: ["tag"],
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
@@ -416,6 +422,15 @@ export class WorkflowEditor extends BtrixElement {
   // https://github.com/webrecorder/browsertrix-crawler/blob/v1.5.8/package.json#L23
   private readonly cssParser = createParser();
 
+  private readonly profileTask = new Task(this, {
+    task: async ([formState], { signal }) => {
+      if (!formState.browserProfile) return;
+
+      return this.getProfile(formState.browserProfile.id, signal);
+    },
+    args: () => [this.formState] as const,
+  });
+
   connectedCallback(): void {
     this.initializeEditor();
     super.connectedCallback();
@@ -482,7 +497,19 @@ export class WorkflowEditor extends BtrixElement {
         (changedProperties.get("progressState") as ProgressState | undefined)
           ?.activeTab
     ) {
-      window.location.hash = this.progressState.activeTab;
+      const prevActiveTab = (
+        changedProperties.get("progressState") as ProgressState | undefined
+      )?.activeTab;
+
+      if (this.progressState.activeTab !== prevActiveTab) {
+        if (prevActiveTab) {
+          window.location.hash = this.progressState.activeTab;
+        } else {
+          const url = new URL(window.location.href);
+          url.hash = this.progressState.activeTab;
+          window.location.replace(url);
+        }
+      }
     }
     const prevFormState = changedProperties.get("formState") as
       | FormState
@@ -1965,31 +1992,80 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private renderBrowserSettings() {
     if (!this.formState.lang) throw new Error("missing formstate.lang");
+
+    const proxies = this.proxies;
+    const profileProxyId =
+      this.formState.browserProfile?.proxyId ||
+      (this.formState.browserProfile?.id && this.formState.proxyId);
+
+    const priorityOrigins = () => {
+      if (!this.formState.urlList && !this.formState.primarySeedUrl) {
+        return [];
+      }
+
+      const crawlUrls = urlListToArray(this.formState.urlList);
+
+      if (this.formState.primarySeedUrl) {
+        crawlUrls.unshift(this.formState.primarySeedUrl);
+      }
+
+      return crawlUrls
+        .map((url) => {
+          try {
+            return new URL(url).hostname.replace(/^www\./, "");
+          } catch {
+            return "";
+          }
+        })
+        .filter((url) => url);
+    };
+
     return html`
       ${inputCol(html`
         <btrix-select-browser-profile
           .profileId=${this.formState.browserProfile?.id}
-          @on-change=${(e: SelectBrowserProfileChangeEvent) =>
+          .profileName=${this.formState.browserProfile?.name}
+          .suggestOrigins=${guard(
+            [this.formState.primarySeedUrl, this.formState.urlList],
+            priorityOrigins,
+          )}
+          @on-change=${(e: SelectBrowserProfileChangeEvent) => {
+            const profile = e.detail.value;
+
             this.updateFormState({
-              browserProfile: e.detail.value ?? null,
-            })}
+              browserProfile: profile ?? null,
+              proxyId: profile?.proxyId ?? null,
+            });
+          }}
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(infoTextFor["browserProfile"])}
-      ${this.proxies?.servers.length
+      ${proxies?.servers.length
         ? [
             inputCol(html`
               <btrix-select-crawler-proxy
                 defaultProxyId=${ifDefined(
-                  this.proxies.default_proxy_id ?? undefined,
+                  proxies.default_proxy_id ?? undefined,
                 )}
-                .proxyServers=${this.proxies.servers}
-                .proxyId="${this.formState.proxyId || ""}"
+                .proxyServers=${proxies.servers}
+                .proxyId=${profileProxyId || this.formState.proxyId || ""}
+                .profileProxyId=${profileProxyId}
                 @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
                   this.updateFormState({
                     proxyId: e.detail.value,
                   })}
-              ></btrix-select-crawler-proxy>
+              >
+                ${when(
+                  profileProxyId,
+                  () => html`
+                    <span
+                      slot="suffix"
+                      class="whitespace-nowrap text-neutral-1000"
+                      >${msg("Set by profile")}</span
+                    >
+                  `,
+                )}
+              </btrix-select-crawler-proxy>
             `),
             this.renderHelpTextCol(infoTextFor["proxyId"]),
           ]
@@ -2022,20 +2098,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
           content: msg("See caveats"),
         })}.`,
       )}
-      ${inputCol(html`
-        <btrix-select-crawler
-          .crawlerChannel=${this.formState.crawlerChannel}
-          @on-change=${(e: SelectCrawlerChangeEvent) =>
-            this.updateFormState({
-              crawlerChannel: e.detail.value,
-            })}
-          @on-update=${(e: SelectCrawlerUpdateEvent) =>
-            (this.showCrawlerChannels = e.detail.show)}
-        ></btrix-select-crawler>
-      `)}
-      ${this.showCrawlerChannels
-        ? this.renderHelpTextCol(infoTextFor["crawlerChannel"])
-        : html``}
+      ${when(this.crawlerChannels && this.crawlerChannels.length > 1, () => [
+        inputCol(html`
+          <btrix-select-crawler
+            .crawlerChannel=${this.formState.crawlerChannel}
+            @on-change=${(e: SelectCrawlerChangeEvent) =>
+              this.updateFormState({
+                crawlerChannel: e.detail.value,
+              })}
+          ></btrix-select-crawler>
+        `),
+        this.renderHelpTextCol(infoTextFor["crawlerChannel"]),
+      ])}
       ${inputCol(html`
         <sl-checkbox name="blockAds" ?checked=${this.formState.blockAds}>
           ${msg("Block ads by domain")}
@@ -2425,7 +2499,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         e.preventDefault();
 
         this.dispatchEvent(
-          new CustomEvent<UserGuideEventMap["btrix-user-guide-show"]["detail"]>(
+          new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
             "btrix-user-guide-show",
             {
               detail: { path },
@@ -2816,7 +2890,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
       if (this.appState.userGuideOpen) {
         this.dispatchEvent(
-          new CustomEvent<UserGuideEventMap["btrix-user-guide-show"]["detail"]>(
+          new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
             "btrix-user-guide-show",
             {
               detail: {
@@ -3120,10 +3194,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async onReset() {
+    const fromBrowserProfile =
+      !this.initialSeeds &&
+      !this.initialSeedFile &&
+      this.initialWorkflow?.profileid;
+
     this.navigate.to(
-      `${this.navigate.orgBasePath}/workflows${this.configId ? `/${this.configId}/${WorkflowTab.Settings}` : ""}`,
+      fromBrowserProfile
+        ? `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${fromBrowserProfile}`
+        : `${this.navigate.orgBasePath}/${OrgTab.Workflows}${this.configId ? `/${this.configId}/${WorkflowTab.Settings}` : ""}`,
     );
-    // this.initializeEditor();
   }
 
   private validateUrlList(
@@ -3174,7 +3254,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async fetchTags() {
     this.tagOptions = [];
     try {
-      const { tags } = await this.api.fetch<WorkflowTags>(
+      const { tags } = await this.api.fetch<TagCounts>(
         `/orgs/${this.orgId}/crawlconfigs/tagCounts`,
       );
 
@@ -3231,7 +3311,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       },
       crawlerChannel:
         this.formState.crawlerChannel || CrawlerChannelImage.Default,
-      proxyId: this.formState.proxyId,
+      proxyId: this.formState.browserProfile?.proxyId || this.formState.proxyId,
     };
 
     return config;
@@ -3387,5 +3467,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
     } catch (e) {
       console.debug(e);
     }
+  }
+
+  private async getProfile(profileId: string, signal: AbortSignal) {
+    const data = await this.api.fetch<Profile>(
+      `/orgs/${this.orgId}/profiles/${profileId}`,
+      { signal },
+    );
+
+    return data;
   }
 }

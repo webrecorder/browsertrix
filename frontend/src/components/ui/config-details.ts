@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import ISO6391 from "iso-639-1";
 import { html, nothing, type TemplateResult } from "lit";
@@ -6,6 +7,10 @@ import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import {
+  orgProxiesContext,
+  type OrgProxiesContext,
+} from "@/context/org-proxies";
 import { none, notSpecified } from "@/layouts/empty";
 import {
   Behavior,
@@ -36,6 +41,9 @@ import { getServerDefaults } from "@/utils/workflow";
 @customElement("btrix-config-details")
 @localized()
 export class ConfigDetails extends BtrixElement {
+  @consume({ context: orgProxiesContext, subscribe: true })
+  private readonly orgProxies?: OrgProxiesContext;
+
   @property({ type: Object })
   crawlConfig?: CrawlConfig;
 
@@ -235,16 +243,16 @@ export class ConfigDetails extends BtrixElement {
             msg("Browser Profile"),
             when(
               crawlConfig?.profileid,
-              () =>
-                html`<a
-                  class="text-blue-500 hover:text-blue-600"
+              () => html`
+                <btrix-link
                   href=${`${this.navigate.orgBasePath}/browser-profiles/profile/${
                     crawlConfig!.profileid
                   }`}
-                  @click=${this.navigate.link}
+                  hideIcon
                 >
                   ${crawlConfig?.profileName}
-                </a>`,
+                </btrix-link>
+              `,
               () =>
                 crawlConfig?.profileName ||
                 html`<span class="text-neutral-400"
@@ -252,12 +260,20 @@ export class ConfigDetails extends BtrixElement {
                 >`,
             ),
           )}
+          ${crawlConfig?.proxyId
+            ? this.renderSetting(
+                msg("Crawler Proxy Server"),
+                this.orgProxies?.servers.find(
+                  ({ id }) => id === crawlConfig.proxyId,
+                )?.label || capitalize(crawlConfig.proxyId),
+              )
+            : nothing}
           ${this.renderSetting(
             msg("Browser Windows"),
             crawlConfig?.browserWindows ? `${crawlConfig.browserWindows}` : "",
           )}
           ${this.renderSetting(
-            msg("Crawler Channel (Exact Crawler Version)"),
+            `${msg("Crawler Channel")} ${crawlConfig?.image ? msg("(Exact Crawler Version)") : ""}`.trim(),
             capitalize(
               crawlConfig?.crawlerChannel || CrawlerChannelImage.Default,
             ) + (crawlConfig?.image ? ` (${crawlConfig.image})` : ""),
@@ -283,9 +299,6 @@ export class ConfigDetails extends BtrixElement {
                 msg("Language"),
                 ISO6391.getName(seedsConfig.lang),
               )
-            : nothing}
-          ${crawlConfig?.proxyId
-            ? this.renderSetting(msg("Proxy"), capitalize(crawlConfig.proxyId))
             : nothing}
         `,
       })}

@@ -20,10 +20,10 @@ import {
   type PageChangeEvent,
   type Pagination,
 } from "@/components/ui/pagination";
+import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
-import { type BtrixChangeArchivedItemTagFilterEvent } from "@/features/archived-items/archived-item-tag-filter";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -618,14 +618,18 @@ export class CrawlsList extends BtrixElement {
             }}
           ></btrix-archived-item-state-filter>
 
-          <btrix-archived-item-tag-filter
+          <btrix-tag-filter
+            tagType=${this.itemType === "crawl"
+              ? "archived-item-crawl"
+              : this.itemType === "upload"
+                ? "upload"
+                : "archived-item"}
             .tags=${this.filterByTags.value}
-            itemType=${ifDefined(this.itemType || undefined)}
-            @btrix-change=${(e: BtrixChangeArchivedItemTagFilterEvent) => {
+            @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
               this.filterByTags.setValue(e.detail.value?.tags || []);
               this.filterByTagsType.setValue(e.detail.value?.type || "or");
             }}
-          ></btrix-archived-item-tag-filter>
+          ></btrix-tag-filter>
 
           ${this.userInfo?.id
             ? html`<btrix-filter-chip

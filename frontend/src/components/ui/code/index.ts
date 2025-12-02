@@ -3,6 +3,7 @@ import type { LanguageFn } from "highlight.js";
 import hljs from "highlight.js/lib/core";
 import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -52,11 +53,11 @@ export class Code extends TailwindElement {
     }
 
     .hljs-path {
-      color: var(--sl-color-blue-900);
+      color: var(--sl-color-sky-600);
     }
 
     .hljs-domain {
-      color: var(--sl-color-blue-600);
+      color: var(--sl-color-sky-700);
     }
 
     .hljs-string {
@@ -71,7 +72,10 @@ export class Code extends TailwindElement {
   language: Language = Language.XML;
 
   @property({ type: Boolean })
-  wrap = true;
+  noWrap = false;
+
+  @property({ type: Boolean })
+  truncate = false;
 
   async connectedCallback() {
     const languageFn = (await langaugeFiles[this.language]).default;
@@ -94,8 +98,11 @@ export class Code extends TailwindElement {
       part="base"
       class=${clsx(
         tw`font-monospace m-0 text-neutral-600`,
-        this.wrap ? tw`whitespace-pre-wrap` : tw`whitespace-nowrap`,
+        this.noWrap ? tw`whitespace-nowrap` : tw`whitespace-pre-wrap`,
+        this.truncate && tw`truncate`,
       )}
-    ><code>${staticHtml`${unsafeStatic(htmlStr)}`}</code></pre>`;
+    ><code title=${ifDefined(
+      this.truncate ? this.value : undefined,
+    )}>${staticHtml`${unsafeStatic(htmlStr)}`}</code></pre>`;
   }
 }

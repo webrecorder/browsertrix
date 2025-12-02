@@ -38,7 +38,7 @@ export const infoTextFor = {
     msg(`Choose a custom profile to make use of saved cookies and logged-in
   accounts. Note that websites may log profiles out after a period of time.`),
   crawlerChannel: msg(
-    `Choose a Browsertrix Crawler Release Channel. If available, other versions may provide new/experimental crawling features.`,
+    `Choose a Browsertrix Crawler release channel. If available, other versions may provide new or experimental crawling features.`,
   ),
   blockAds: msg(
     html`Blocks advertising content from being loaded. Uses

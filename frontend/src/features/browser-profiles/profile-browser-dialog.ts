@@ -1,0 +1,496 @@
+import { localized, msg } from "@lit/localize";
+import { Task, TaskStatus } from "@lit/task";
+import clsx from "clsx";
+import { html, nothing, type PropertyValues } from "lit";
+import { customElement, property, query, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
+
+import { badges } from "./templates/badges";
+
+import { BtrixElement } from "@/classes/BtrixElement";
+import type { Dialog } from "@/components/ui/dialog";
+import {
+  bgClass,
+  type BrowserConnectionChange,
+  type BrowserOriginsChange,
+  type ProfileBrowser,
+} from "@/features/browser-profiles/profile-browser";
+import type {
+  CreateBrowserOptions,
+  ProfileUpdatedEvent,
+} from "@/features/browser-profiles/types";
+import { OrgTab } from "@/routes";
+import type { Profile } from "@/types/crawler";
+import { isApiError } from "@/utils/api";
+import { tw } from "@/utils/tailwind";
+
+enum BrowserStatus {
+  Initial,
+  Pending,
+  Ready,
+  Error,
+}
+
+/**
+ * @fires btrix-updated
+ */
+@customElement("btrix-profile-browser-dialog")
+@localized()
+export class ProfileBrowserDialog extends BtrixElement {
+  @property({ type: Object })
+  profile?: Profile;
+
+  @property({ type: Object })
+  config?: CreateBrowserOptions & { name?: string };
+
+  @property({ type: Boolean })
+  duplicating = false;
+
+  @property({ type: Boolean })
+  open = false;
+
+  @state()
+  private browserStatus = BrowserStatus.Initial;
+
+  @state()
+  private originsLoaded = false;
+
+  @state()
+  private showConfirmation = false;
+
+  @query("btrix-dialog")
+  private readonly dialog?: Dialog | null;
+
+  @query("btrix-profile-browser")
+  private readonly profileBrowser?: ProfileBrowser | null;
+
+  #savedBrowserId?: string;
+
+  private readonly browserIdTask = new Task(this, {
+    task: async ([open, config], { signal }) => {
+      if (!open || !config) return null;
+
+      const browserId = this.browserIdTask.value;
+      if (browserId && browserId !== this.#savedBrowserId) {
+        // Delete previously created and unused browser
+        void this.deleteBrowser(browserId, signal);
+      }
+
+      const { browserid } = await this.createBrowser(config, signal);
+
+      return browserid;
+    },
+    args: () => [this.open, this.config] as const,
+  });
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("open")) {
+      if (!this.open) {
+        this.showConfirmation = false;
+        this.browserStatus = BrowserStatus.Initial;
+        this.#savedBrowserId = undefined;
+        this.browserIdTask.abort();
+      }
+    }
+  }
+
+  disconnectedCallback(): void {
+    const browserId = this.browserIdTask.value;
+
+    if (browserId && browserId !== this.#savedBrowserId) {
+      void this.deleteBrowser(browserId);
+    }
+
+    super.disconnectedCallback();
+  }
+
+  private readonly saveProfileTask = new Task(this, {
+    autoRun: false,
+    task: async ([browserId, config], { signal }) => {
+      if (!browserId || !config) return;
+
+      try {
+        const data = await this.saveProfile(
+          {
+            browserId,
+            name:
+              config.name ||
+              this.profile?.name ||
+              new URL(config.url).origin.slice(0, 50),
+          },
+          signal,
+        );
+
+        this.#savedBrowserId = browserId;
+
+        this.dispatchEvent(
+          new CustomEvent<ProfileUpdatedEvent["detail"]>("btrix-updated"),
+        );
+
+        return data;
+      } catch (err) {
+        let message = msg("Sorry, couldn't save browser profile at this time.");
+
+        if (isApiError(err) && err.statusCode === 403) {
+          if (err.details === "storage_quota_reached") {
+            message = msg(
+              "Your org does not have enough storage to save this browser profile.",
+            );
+          } else {
+            message = msg(
+              "You do not have permission to update browser profiles.",
+            );
+          }
+        }
+
+        throw message;
+      }
+    },
+    args: () => [this.browserIdTask.value, this.config] as const,
+  });
+
+  render() {
+    const isCrawler = this.appState.isCrawler;
+    const creatingNew = this.duplicating || !this.profile;
+    const incomplete =
+      !this.originsLoaded || this.browserStatus !== BrowserStatus.Ready;
+    const saving = this.saveProfileTask.status === TaskStatus.PENDING;
+
+    return html`<btrix-dialog
+      class=${clsx(
+        tw`[--body-spacing:0]`,
+        tw`part-[panel]:h-screen part-[panel]:max-h-full part-[panel]:w-screen part-[panel]:max-w-full part-[panel]:rounded-none`,
+        tw`part-[body]:flex part-[body]:flex-col`,
+      )}
+      .open=${this.open}
+      no-header
+      @sl-show=${() => {
+        // Hide viewport scrollbar when full screen dialog is open
+        document.documentElement.classList.add(tw`overflow-hidden`);
+      }}
+      @sl-hide=${() => {
+        document.documentElement.classList.remove(tw`overflow-hidden`);
+      }}
+      @sl-after-hide=${() => this.closeBrowser()}
+    >
+      <header class="flex flex-wrap items-center gap-3 p-3">
+        <div class="flex flex-1 items-center gap-3">
+          <div class="border-r pr-3">
+            <sl-icon-button
+              name="x-lg"
+              class="text-base"
+              label=${msg("Close")}
+              @click=${() => {
+                this.saveProfileTask.abort();
+
+                if (this.browserIdTask.value) {
+                  void this.deleteBrowser(this.browserIdTask.value);
+                }
+
+                void this.dialog?.hide();
+              }}
+            >
+            </sl-icon-button>
+          </div>
+          <div class="w-full overflow-hidden px-3">
+            <div class="mb-2 flex min-w-80 items-center md:h-6">
+              <h2
+                id="title"
+                class="text-base font-medium leading-none md:truncate"
+              >
+                ${this.config?.name || this.profile?.name}
+              </h2>
+              ${when(
+                this.config?.url,
+                (url) => html`
+                  <sl-divider
+                    class="hidden [--spacing:var(--sl-spacing-small)] md:block"
+                    vertical
+                  ></sl-divider>
+                  <btrix-code
+                    class="mt-px hidden w-40 flex-1 md:block"
+                    language="url"
+                    value=${url}
+                    truncate
+                    noWrap
+                  ></btrix-code>
+                `,
+              )}
+            </div>
+            ${when(
+              (this.profile || this.config) && {
+                ...this.profile,
+                ...this.config,
+              },
+              badges,
+            )}
+          </div>
+        </div>
+        <div class="flex flex-1 items-center justify-end gap-3 md:grow-0">
+          <div class="flex items-center gap-2">
+            <sl-tooltip content=${msg("Enter Fullscreen")}>
+              <sl-icon-button
+                class="text-base"
+                name="arrows-fullscreen"
+                @click=${() => void this.profileBrowser?.enterFullscreen()}
+              ></sl-icon-button>
+            </sl-tooltip>
+            <sl-tooltip content=${msg("Toggle Site List")}>
+              <sl-icon-button
+                class="text-base"
+                name="layout-sidebar-reverse"
+                @click=${() => this.profileBrowser?.toggleOrigins()}
+              ></sl-icon-button>
+            </sl-tooltip>
+          </div>
+
+          <div class="flex gap-3 border-l pl-6 pr-3">
+            ${when(
+              isCrawler,
+              () => html`
+                <btrix-popover
+                  ?open=${this.showConfirmation}
+                  trigger="manual"
+                  content=${msg(
+                    "Are you sure you want to exit without saving?",
+                  )}
+                >
+                  <sl-button
+                    size="small"
+                    @click=${this.showConfirmation ||
+                    this.browserStatus < BrowserStatus.Ready ||
+                    this.browserStatus === BrowserStatus.Error
+                      ? () => void this.dialog?.hide()
+                      : () => (this.showConfirmation = true)}
+                  >
+                    ${this.showConfirmation ? msg("Yes, Exit") : msg("Exit")}
+                  </sl-button>
+                </btrix-popover>
+
+                <btrix-popover
+                  content=${msg("Disabled until page is finished loading")}
+                  ?disabled=${!incomplete}
+                >
+                  <sl-button
+                    size="small"
+                    variant="primary"
+                    ?disabled=${incomplete || saving}
+                    ?loading=${saving}
+                    @click=${() => void this.submit()}
+                  >
+                    ${creatingNew ? msg("Create Profile") : msg("Save Profile")}
+                  </sl-button>
+                </btrix-popover>
+              `,
+              () => html`
+                <sl-button
+                  size="small"
+                  variant="primary"
+                  @click=${() => void this.dialog?.hide()}
+                >
+                  ${msg("Exit")}
+                </sl-button>
+              `,
+            )}
+          </div>
+        </div>
+      </header>
+
+      <div class="${bgClass} size-full" aria-labelledby="title">
+        ${this.browserIdTask.render({
+          complete: (browserId) =>
+            browserId
+              ? html`<btrix-profile-browser
+                  browserId=${browserId}
+                  initialNavigateUrl=${ifDefined(this.config?.url)}
+                  .initialOrigins=${this.config?.profileId
+                    ? this.profile?.origins
+                    : // Profile is being replaced if ID is not specified
+                      undefined}
+                  @btrix-browser-load=${this.onBrowserLoad}
+                  @btrix-browser-reload=${this.onBrowserReload}
+                  @btrix-browser-error=${this.onBrowserError}
+                  @btrix-browser-connection-change=${this
+                    .onBrowserConnectionChange}
+                  @btrix-browser-origins-change=${this.onBrowserOriginsChange}
+                  hideControls
+                  tabindex="0"
+                  .autofocus=${true}
+                ></btrix-profile-browser>`
+              : nothing,
+        })}
+      </div>
+    </btrix-dialog>`;
+  }
+
+  private readonly closeBrowser = () => {
+    this.browserStatus = BrowserStatus.Initial;
+  };
+
+  private readonly onBrowserLoad = () => {
+    this.browserStatus = BrowserStatus.Ready;
+  };
+
+  private readonly onBrowserReload = () => {
+    this.browserStatus = BrowserStatus.Pending;
+  };
+
+  private readonly onBrowserError = () => {
+    this.browserStatus = BrowserStatus.Error;
+  };
+
+  private readonly onBrowserOriginsChange = (
+    e: CustomEvent<BrowserOriginsChange>,
+  ) => {
+    if (e.detail.origins.length) {
+      this.originsLoaded = true;
+    }
+  };
+
+  private readonly onBrowserConnectionChange = (
+    e: CustomEvent<BrowserConnectionChange>,
+  ) => {
+    this.browserStatus = e.detail.connected
+      ? BrowserStatus.Pending
+      : BrowserStatus.Initial;
+  };
+
+  private async submit() {
+    this.notify.toast({
+      message: msg("Saving profile..."),
+      variant: "primary",
+      icon: "info-circle",
+      id: "browser-profile-save-status",
+      duration: Infinity,
+    });
+
+    try {
+      const dialog = this.dialog;
+
+      await this.saveProfileTask.run();
+
+      if (this.saveProfileTask.value?.id) {
+        void dialog?.hide();
+        this.navigate.to(
+          `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${this.saveProfileTask.value.id}`,
+        );
+      } else {
+        await dialog?.hide();
+      }
+
+      this.notify.toast({
+        message: msg("Successfully saved browser profile."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "browser-profile-save-status",
+      });
+    } catch (err) {
+      if (typeof err === "string") {
+        this.notify.toast({
+          message: err,
+          variant: "danger",
+          icon: "exclamation-octagon",
+          id: "browser-profile-save-status",
+        });
+      } else {
+        console.debug(err);
+      }
+    }
+  }
+
+  private async saveProfile(
+    params: { browserId: string; name: string },
+    signal: AbortSignal,
+  ) {
+    const profileId = !this.duplicating && this.profile?.id;
+    const payload = {
+      browserid: params.browserId,
+      name: params.name,
+    };
+
+    let data: { id?: string; updated?: boolean; detail?: string } | undefined;
+    let retriesLeft = 300;
+
+    while (retriesLeft > 0) {
+      if (profileId) {
+        data = await this.api.fetch<{
+          updated?: boolean;
+          detail?: string;
+        }>(`/orgs/${this.orgId}/profiles/${profileId}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+          signal,
+        });
+
+        if (data.updated !== undefined) {
+          break;
+        }
+      } else {
+        data = await this.api.fetch<{ id?: string; detail?: string }>(
+          `/orgs/${this.orgId}/profiles`,
+          {
+            method: "POST",
+            body: JSON.stringify(payload),
+            signal,
+          },
+        );
+      }
+
+      if (data.id) {
+        break;
+      }
+      if (data.detail === "waiting_for_browser") {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      } else {
+        throw new Error("unknown response");
+      }
+
+      retriesLeft -= 1;
+    }
+
+    if (!retriesLeft) {
+      throw new Error("too many retries waiting for browser");
+    }
+
+    if (!data) {
+      throw new Error("unknown response");
+    }
+
+    return data;
+  }
+
+  private async createBrowser(
+    params: CreateBrowserOptions,
+    signal?: AbortSignal,
+  ) {
+    return this.api.fetch<{ browserid: string }>(
+      `/orgs/${this.orgId}/profiles/browser`,
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+        signal,
+      },
+    );
+  }
+
+  private async deleteBrowser(browserId: string, signal?: AbortSignal) {
+    try {
+      const data = await this.api.fetch(
+        `/orgs/${this.orgId}/profiles/browser/${browserId}`,
+        {
+          method: "DELETE",
+          signal,
+        },
+      );
+
+      return data;
+    } catch (err) {
+      if (isApiError(err) && err.statusCode === 404) {
+        // Safe to ignore, since unloaded browser will have already been deleted
+      } else {
+        console.debug(err);
+      }
+    }
+  }
+}

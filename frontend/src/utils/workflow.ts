@@ -7,7 +7,7 @@ import { z } from "zod";
 import { getAppSettings, type AppSettings } from "./app";
 
 import type { Tags } from "@/components/ui/tag-input";
-import type { UserGuideEventMap } from "@/index";
+import type { BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import {
   Behavior,
   CrawlerChannelImage,
@@ -73,12 +73,12 @@ export const workflowTabToGuideHash: Record<SectionsEnum, GuideHash> = {
 
 export function makeUserGuideEvent(
   section: SectionsEnum,
-): UserGuideEventMap["btrix-user-guide-show"] {
+): BtrixUserGuideShowEvent {
   const userGuideHash =
     (workflowTabToGuideHash[section] as GuideHash | undefined) ||
     GuideHash.Scope;
 
-  return new CustomEvent<UserGuideEventMap["btrix-user-guide-show"]["detail"]>(
+  return new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
     "btrix-user-guide-show",
     {
       detail: {
@@ -383,7 +383,10 @@ export function getInitialFormState(params: {
     jobName: params.initialWorkflow.name || defaultFormState.jobName,
     description: params.initialWorkflow.description,
     browserProfile: params.initialWorkflow.profileid
-      ? ({ id: params.initialWorkflow.profileid } as Profile)
+      ? ({
+          id: params.initialWorkflow.profileid,
+          name: params.initialWorkflow.profileName,
+        } as Profile)
       : defaultFormState.browserProfile,
     scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
     exclusions: seedsConfig.exclude?.length === 0 ? [""] : seedsConfig.exclude,

@@ -16,7 +16,7 @@ import {
 } from "@/types/workflow";
 
 export type DuplicateWorkflowSettings = {
-  workflow: WorkflowParams;
+  workflow: Partial<WorkflowParams>;
   scopeType?: ScopeType | NewWorkflowOnlyScopeType;
   seeds?: Seed[];
   seedFile?: StorageSeedFile;
@@ -27,11 +27,11 @@ export function settingsForDuplicate({
   seeds,
   seedFile,
 }: {
-  workflow: Workflow;
+  workflow: Partial<Workflow>;
   seeds?: APIPaginatedList<Seed>;
   seedFile?: StorageSeedFile;
 }): DuplicateWorkflowSettings {
-  const workflowParams: WorkflowParams = {
+  const workflowParams: Partial<WorkflowParams> = {
     ...workflow,
     name: workflow.name ? msg(str`${workflow.name} Copy`) : "",
   };
@@ -42,7 +42,7 @@ export function settingsForDuplicate({
     scopeType:
       seedFile || (seedItems?.length && seedItems.length > 1)
         ? NewWorkflowOnlyScopeType.PageList
-        : workflowParams.config.scopeType,
+        : workflowParams.config?.scopeType,
     workflow: workflowParams,
     seeds: seedItems,
     seedFile,

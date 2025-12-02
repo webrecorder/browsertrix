@@ -1,5 +1,6 @@
 import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
@@ -17,7 +18,14 @@ import type {
 } from "./settings/settings";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { proxiesContext, type ProxiesContext } from "@/context/org";
+import {
+  orgCrawlerChannelsContext,
+  type OrgCrawlerChannelsContext,
+} from "@/context/org-crawler-channels";
+import {
+  orgProxiesContext,
+  type OrgProxiesContext,
+} from "@/context/org-proxies";
 import { SearchOrgContextController } from "@/context/search-org/SearchOrgContextController";
 import { searchOrgContextKey } from "@/context/search-org/types";
 import type { QuotaUpdateDetail } from "@/controllers/api";
@@ -25,7 +33,10 @@ import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { CommonTab, OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
-import type { ProxiesAPIResponse } from "@/types/crawler";
+import type {
+  CrawlerChannelsAPIResponse,
+  ProxiesAPIResponse,
+} from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
@@ -43,14 +54,13 @@ import "./archived-item-detail";
 import "./archived-items";
 import "./collections-list";
 import "./collection-detail";
-import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./settings/settings";
 import "./dashboard";
+import "./browser-profiles";
 
 import(/* webpackChunkName: "org" */ "./archived-item-qa/archived-item-qa");
 import(/* webpackChunkName: "org" */ "./workflows-new");
-import(/* webpackChunkName: "org" */ "./browser-profiles-new");
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -75,15 +85,12 @@ export type OrgParams = {
     qaTab?: QATab;
   };
   [OrgTab.BrowserProfiles]: {
-    browserProfileId?: string;
+    profileId?: string;
     browserId?: string;
     new?: ResourceName;
     name?: string;
     url?: string;
-    description?: string;
     crawlerChannel?: string;
-    profileId?: string;
-    navigateUrl?: string;
     proxyId?: string;
   };
   [OrgTab.Collections]: ArchivedItemPageParams & {
@@ -101,9 +108,11 @@ const UUID_REGEX =
 @localized()
 @needLogin
 export class Org extends BtrixElement {
-  @provide({ context: proxiesContext })
-  @state()
-  proxies: ProxiesContext = null;
+  @provide({ context: orgProxiesContext })
+  proxies: OrgProxiesContext = null;
+
+  @provide({ context: orgCrawlerChannelsContext })
+  crawlerChannels: OrgCrawlerChannelsContext = null;
 
   @property({ type: Object })
   viewStateData?: ViewState["data"];
@@ -128,6 +137,21 @@ export class Org extends BtrixElement {
   private isCreateDialogVisible = false;
 
   private readonly [searchOrgContextKey] = new SearchOrgContextController(this);
+
+  private readonly proxiesTask = new Task(this, {
+    task: async ([id], { signal }) => {
+      return (this.proxies = await this.getOrgProxies(id, signal));
+    },
+    args: () => [this.orgId] as const,
+  });
+
+  private readonly crawlerChannelsTask = new Task(this, {
+    task: async ([id], { signal }) => {
+      const { channels } = await this.getOrgCrawlerChannels(id, signal);
+      return (this.crawlerChannels = channels);
+    },
+    args: () => [this.orgId] as const,
+  });
 
   connectedCallback() {
     if (
@@ -167,7 +191,7 @@ export class Org extends BtrixElement {
     ) {
       if (this.userOrg) {
         void this.updateOrg();
-        void this.updateOrgProxies();
+        this.updateOrgProxies();
       } else {
         // Couldn't find org with slug, redirect to first org
         const org = this.userInfo.orgs[0] as UserOrg | undefined;
@@ -185,6 +209,16 @@ export class Org extends BtrixElement {
       // Get most up to date org data
       void this.updateOrg();
       void this[searchOrgContextKey].refresh();
+
+      // Refresh crawler configs for form data
+      if (
+        this.appState.isCrawler &&
+        [OrgTab.Workflows, OrgTab.BrowserProfiles, OrgTab.Settings].includes(
+          this.orgTab as OrgTab,
+        )
+      ) {
+        this.updateOrgProxies();
+      }
     }
     if (changedProperties.has("openDialogName")) {
       // Sync URL to create dialog
@@ -236,12 +270,8 @@ export class Org extends BtrixElement {
     }
   }
 
-  private async updateOrgProxies() {
-    try {
-      this.proxies = await this.getOrgProxies(this.orgId);
-    } catch (e) {
-      console.debug(e);
-    }
+  private updateOrgProxies() {
+    void this.proxiesTask.run();
   }
 
   async firstUpdated() {
@@ -262,8 +292,6 @@ export class Org extends BtrixElement {
     // Sync URL to create dialog
     const dialogName = this.getDialogName();
     if (dialogName) this.openDialog(dialogName);
-
-    void this.updateOrgProxies();
   }
 
   private getDialogName() {
@@ -433,6 +461,12 @@ export class Org extends BtrixElement {
     if (!this.isCreateDialogVisible) {
       return;
     }
+
+    const org = this.org;
+    const proxies = this.proxiesTask.value;
+    const crawlerChannels = this.crawlerChannelsTask.value;
+    const crawlingDefaultsReady = org && proxies && crawlerChannels;
+
     return html`
       <div
         @sl-hide=${(e: CustomEvent) => {
@@ -454,27 +488,23 @@ export class Org extends BtrixElement {
           }}
         ></btrix-file-uploader>
 
-        ${when(this.org, (org) =>
-          when(
-            this.proxies,
-            (proxies) => html`
-              <btrix-new-browser-profile-dialog
-                .proxyServers=${proxies.servers}
-                defaultProxyId=${ifDefined(
-                  org.crawlingDefaults?.proxyId ||
-                    proxies.default_proxy_id ||
-                    undefined,
-                )}
-                defaultCrawlerChannel=${ifDefined(
-                  org.crawlingDefaults?.crawlerChannel || undefined,
-                )}
-                ?open=${this.openDialogName === "browser-profile"}
-                @sl-hide=${() => (this.openDialogName = undefined)}
-              >
-              </btrix-new-browser-profile-dialog>
-            `,
-          ),
-        )}
+        ${crawlingDefaultsReady
+          ? html`<btrix-new-browser-profile-dialog
+              .proxyServers=${proxies.servers}
+              .crawlerChannels=${crawlerChannels}
+              defaultProxyId=${ifDefined(
+                org.crawlingDefaults?.proxyId ||
+                  proxies.default_proxy_id ||
+                  undefined,
+              )}
+              defaultCrawlerChannel=${ifDefined(
+                org.crawlingDefaults?.crawlerChannel,
+              )}
+              ?open=${this.openDialogName === "browser-profile"}
+              @sl-hide=${() => (this.openDialogName = undefined)}
+            >
+            </btrix-new-browser-profile-dialog>`
+          : nothing}
 
         <btrix-collection-create-dialog
           ?open=${this.openDialogName === "collection"}
@@ -612,26 +642,10 @@ export class Org extends BtrixElement {
   private readonly renderBrowserProfiles = () => {
     const params = this.params as OrgParams["browser-profiles"];
 
-    if (params.browserProfileId) {
-      return html`<btrix-browser-profiles-detail
-        profileId=${params.browserProfileId}
-        ?isCrawler=${this.appState.isCrawler}
-      ></btrix-browser-profiles-detail>`;
-    }
-
-    if (params.browserId) {
-      return html`<btrix-browser-profiles-new
-        .browserId=${params.browserId}
-        .browserParams=${{
-          name: params.name || "",
-          url: params.url || "",
-          description: params.description,
-          crawlerChannel: params.crawlerChannel,
-          profileId: params.profileId,
-          navigateUrl: params.navigateUrl,
-          proxyId: params.proxyId ?? null,
-        }}
-      ></btrix-browser-profiles-new>`;
+    if (params.profileId) {
+      return html`<btrix-browser-profiles-profile-page
+        .profileId=${params.profileId}
+      ></btrix-browser-profiles-profile-page>`;
     }
 
     return html`<btrix-browser-profiles-list
@@ -700,9 +714,20 @@ export class Org extends BtrixElement {
     return data;
   }
 
-  private async getOrgProxies(orgId: string): Promise<ProxiesAPIResponse> {
+  private async getOrgProxies(
+    orgId: string,
+    signal?: AbortSignal,
+  ): Promise<ProxiesAPIResponse> {
     return this.api.fetch<ProxiesAPIResponse>(
       `/orgs/${orgId}/crawlconfigs/crawler-proxies`,
+      { signal },
+    );
+  }
+
+  private async getOrgCrawlerChannels(orgId: string, signal?: AbortSignal) {
+    return this.api.fetch<CrawlerChannelsAPIResponse>(
+      `/orgs/${orgId}/crawlconfigs/crawler-channels`,
+      { signal },
     );
   }
 

@@ -21,6 +21,7 @@ import {
   type Pagination,
 } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
+import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import {
   Action,
@@ -33,12 +34,11 @@ import {
   WorkflowSearch,
   type SearchFields,
 } from "@/features/crawl-workflows/workflow-search";
-import type { BtrixChangeWorkflowTagFilterEvent } from "@/features/crawl-workflows/workflow-tag-filter";
 import { WorkflowTab } from "@/routes";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
-import { type StorageSeedFile } from "@/types/workflow";
+import type { StorageSeedFile, WorkflowSearchValues } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { renderName } from "@/utils/crawler";
@@ -554,14 +554,15 @@ export class WorkflowsList extends BtrixElement {
         }}
       ></btrix-workflow-schedule-filter>
 
-      <btrix-workflow-tag-filter
+      <btrix-tag-filter
+        tagType="workflow"
         .tags=${this.filterByTags.value}
         .type=${this.filterByTagsType.value}
-        @btrix-change=${(e: BtrixChangeWorkflowTagFilterEvent) => {
+        @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
           this.filterByTags.setValue(e.detail.value?.tags || []);
           this.filterByTagsType.setValue(e.detail.value?.type || "or");
         }}
-      ></btrix-workflow-tag-filter>
+      ></btrix-tag-filter>
 
       <btrix-workflow-profile-filter
         .profiles=${this.filterByProfiles.value}
@@ -993,12 +994,7 @@ export class WorkflowsList extends BtrixElement {
 
   private async fetchConfigSearchValues() {
     try {
-      const data: {
-        crawlIds: string[];
-        names: string[];
-        descriptions: string[];
-        firstSeeds: string[];
-      } = await this.api.fetch(
+      const data = await this.api.fetch<WorkflowSearchValues>(
         `/orgs/${this.orgId}/crawlconfigs/search-values`,
       );
 

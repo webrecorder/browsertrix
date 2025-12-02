@@ -249,7 +249,7 @@ export class CollectionEdit extends BtrixElement {
                         })}
                         ${this.renderTab({
                           panel: "sharing",
-                          icon: "globe2",
+                          icon: "globe",
                           string: msg("Sharing"),
                         })}
 

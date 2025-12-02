@@ -21,6 +21,7 @@ import "./pages";
 
 import { docsUrlContext } from "./context/docs-url";
 import { viewStateContext } from "./context/view-state";
+import type { BtrixUserGuideShowEvent } from "./events/btrix-user-guide-show";
 import { OrgTab, RouteNamespace } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
 import { pageView, type AnalyticsTrackProps } from "./utils/analytics";
@@ -62,10 +63,6 @@ export type APIUser = {
   is_superuser: boolean;
   orgs: UserOrg[];
 };
-
-export interface UserGuideEventMap {
-  "btrix-user-guide-show": CustomEvent<{ path?: string }>;
-}
 
 @customElement("browsertrix-app")
 @localized()
@@ -169,7 +166,7 @@ export class App extends BtrixElement {
   private attachUserGuideListeners() {
     this.addEventListener(
       "btrix-user-guide-show",
-      (e: UserGuideEventMap["btrix-user-guide-show"]) => {
+      (e: BtrixUserGuideShowEvent) => {
         e.stopPropagation();
         void this.showUserGuide(e.detail.path);
       },

@@ -127,6 +127,7 @@ export class DescList extends LitElement {
         vertical: !this.horizontal,
         horizontal: this.horizontal,
       })}
+      part="base"
     >
       <slot></slot>
     </dl>`;

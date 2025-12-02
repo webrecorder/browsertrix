@@ -1,5 +1,6 @@
 import type { StorageFile } from "./storage";
 
+import type { TagCount, TagCounts } from "@/components/ui/tag-filter/types";
 import { ScopeType } from "@/types/crawler";
 
 export enum NewWorkflowOnlyScopeType {
@@ -8,16 +9,17 @@ export enum NewWorkflowOnlyScopeType {
 
 export const WorkflowScopeType = { ...ScopeType, ...NewWorkflowOnlyScopeType };
 
-export type WorkflowTag = {
-  tag: string;
-  count: number;
-};
-
-export type WorkflowTags = {
-  tags: WorkflowTag[];
-};
+export type WorkflowTag = TagCount;
+export type WorkflowTags = TagCounts;
 
 export type StorageSeedFile = StorageFile & {
   firstSeed: string;
   seedCount: number;
+};
+
+export type WorkflowSearchValues = {
+  crawlIds: string[];
+  names: string[];
+  descriptions: string[];
+  firstSeeds: string[];
 };

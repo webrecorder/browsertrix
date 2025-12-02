@@ -1,10 +1,15 @@
+import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
-import { html, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import capitalize from "lodash/fp/capitalize";
 
+import {
+  orgCrawlerChannelsContext,
+  type OrgCrawlerChannelsContext,
+} from "@/context/org-crawler-channels";
 import { CrawlerChannelImage, type CrawlerChannel } from "@/pages/org/types";
 import LiteElement from "@/utils/LiteElement";
 
@@ -20,12 +25,10 @@ type SelectCrawlerUpdateDetail = {
 
 export type SelectCrawlerUpdateEvent = CustomEvent<SelectCrawlerUpdateDetail>;
 
-type CrawlerChannelsAPIResponse = {
-  channels: CrawlerChannel[];
-};
-
 /**
  * Crawler channel select dropdown
+ *
+ * @TODO Convert to form control
  *
  * Usage example:
  * ```ts
@@ -34,53 +37,44 @@ type CrawlerChannelsAPIResponse = {
  * ></btrix-select-crawler>
  * ```
  *
- * @event on-change
+ * @fires on-change
  */
 @customElement("btrix-select-crawler")
 @localized()
 export class SelectCrawler extends LiteElement {
+  @consume({ context: orgCrawlerChannelsContext, subscribe: true })
+  private readonly crawlerChannels?: OrgCrawlerChannelsContext;
+
   @property({ type: String })
   size?: SlSelect["size"];
 
   @property({ type: String })
-  crawlerChannel?: string;
+  crawlerChannel?: CrawlerChannel["id"];
 
   @state()
-  private selectedCrawler?: CrawlerChannel;
+  public value: CrawlerChannel["id"] = "";
 
-  @state()
-  private crawlerChannels?: CrawlerChannel[];
-
-  willUpdate(changedProperties: PropertyValues<this>) {
+  protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("crawlerChannel")) {
-      void this.updateSelectedCrawlerChannel();
+      this.value = this.crawlerChannel || "";
     }
-  }
-
-  protected firstUpdated() {
-    void this.updateSelectedCrawlerChannel();
   }
 
   render() {
-    if (this.crawlerChannels && this.crawlerChannels.length < 2) {
-      return html``;
-    }
+    const selectedCrawler = this.getSelectedChannel();
 
     return html`
       <sl-select
         name="crawlerChannel"
         label=${msg("Crawler Release Channel")}
-        value=${this.selectedCrawler?.id || ""}
+        value=${this.value}
         placeholder=${msg("Latest")}
         size=${ifDefined(this.size)}
         hoist
         @sl-change=${this.onChange}
-        @sl-focus=${() => {
-          // Refetch to keep list up to date
-          void this.fetchCrawlerChannels();
-        }}
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
+        ?disabled=${!this.crawlerChannels || this.crawlerChannels.length === 1}
       >
         ${this.crawlerChannels?.map(
           (crawler) =>
@@ -88,97 +82,51 @@ export class SelectCrawler extends LiteElement {
               ${capitalize(crawler.id)}
             </sl-option>`,
         )}
-        ${this.selectedCrawler
-          ? html`
-              <div slot="help-text">
-                ${msg("Version:")}
-                <span class="font-monospace"
-                  >${this.selectedCrawler.image}</span
+        <div slot="help-text">
+          ${msg("Version:")}
+          ${selectedCrawler
+            ? html`
+                <span class="font-monospace leading-tight"
+                  >${selectedCrawler.image}</span
                 >
-              </div>
-            `
-          : ``}
+              `
+            : nothing}
+        </div>
       </sl-select>
     `;
+  }
+
+  private getSelectedChannel() {
+    const channelId = this.value;
+
+    if (!this.crawlerChannels || !channelId) return null;
+
+    if (channelId) {
+      return this.crawlerChannels.find(({ id }) => id === channelId);
+    }
+
+    return (
+      this.crawlerChannels.find(
+        ({ id }) => id === CrawlerChannelImage.Default,
+      ) ?? null
+    );
   }
 
   private onChange(e: Event) {
     this.stopProp(e);
 
-    this.selectedCrawler = this.crawlerChannels?.find(
-      ({ id }) => id === (e.target as SlSelect).value,
-    );
+    const { value } = e.target as SlSelect;
+
+    this.value = value as string;
+    const selectedCrawler = this.getSelectedChannel();
 
     this.dispatchEvent(
       new CustomEvent<SelectCrawlerChangeDetail>("on-change", {
         detail: {
-          value: this.selectedCrawler?.id,
+          value: selectedCrawler?.id,
         },
       }),
     );
-  }
-
-  private async updateSelectedCrawlerChannel() {
-    await this.fetchCrawlerChannels();
-    await this.updateComplete;
-
-    if (!this.crawlerChannels) return;
-
-    if (this.crawlerChannel && !this.selectedCrawler) {
-      this.selectedCrawler = this.crawlerChannels.find(
-        ({ id }) => id === this.crawlerChannel,
-      );
-    }
-
-    if (!this.selectedCrawler) {
-      this.crawlerChannel = CrawlerChannelImage.Default;
-      this.dispatchEvent(
-        new CustomEvent("on-change", {
-          detail: {
-            value: CrawlerChannelImage.Default,
-          },
-        }),
-      );
-      this.selectedCrawler = this.crawlerChannels.find(
-        ({ id }) => id === this.crawlerChannel,
-      );
-    }
-
-    await this.updateComplete;
-
-    this.dispatchEvent(
-      new CustomEvent<SelectCrawlerUpdateDetail>("on-update", {
-        detail: {
-          show: this.crawlerChannels.length > 1,
-        },
-      }),
-    );
-  }
-
-  /**
-   * Fetch crawler channels and update internal state
-   */
-  private async fetchCrawlerChannels(): Promise<void> {
-    try {
-      const channels = await this.getCrawlerChannels();
-      this.crawlerChannels = channels;
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't retrieve crawler channels at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "crawler-channel-retrieve-error",
-      });
-    }
-  }
-
-  private async getCrawlerChannels(): Promise<CrawlerChannel[]> {
-    const data: CrawlerChannelsAPIResponse =
-      await this.apiFetch<CrawlerChannelsAPIResponse>(
-        `/orgs/${this.orgId}/crawlconfigs/crawler-channels`,
-      );
-
-    return data.channels;
   }
 
   /**

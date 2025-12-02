@@ -150,6 +150,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       <div class="contents">
         ${pageHeader({
           title: msg("Collections"),
+          border: false,
           actions: this.isCrawler
             ? html` <sl-button
                 variant="primary"
@@ -163,7 +164,6 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
                 ${msg("New Collection")}
               </sl-button>`
             : nothing,
-          classNames: tw`border-b-transparent`,
         })}
       </div>
 
@@ -384,7 +384,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       >
         <sl-input
           size="small"
-          placeholder=${msg("Search by Name")}
+          placeholder=${msg("Search by name")}
           clearable
           @sl-clear=${() => {
             this.searchResultsOpen = false;
@@ -521,6 +521,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         this.isCrawler,
         () =>
           emptyMessage({
+            classNames: tw`border-y`,
             message,
             detail: msg(
               "Collections let you easily organize, replay, and share multiple crawls.",
@@ -542,6 +543,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           }),
         () =>
           emptyMessage({
+            classNames: tw`border-y`,
             message,
           }),
       )}
@@ -550,7 +552,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
 
   private readonly renderItem = (col: Collection) => html`
     <btrix-table-row
-      class="cursor-pointer select-none whitespace-nowrap rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
+      class="cursor-pointer select-none whitespace-nowrap rounded border shadow transition-all duration-fast focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
     >
       <btrix-table-cell class="p-3">
         ${choose(col.access, [
@@ -563,7 +565,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
                 ].label}
               >
                 <sl-icon
-                  class="inline-block align-middle text-neutral-600"
+                  class="inline-block align-middle text-base text-neutral-600"
                   name=${SelectCollectionAccess.Options[
                     CollectionAccess.Private
                   ].icon}
@@ -580,7 +582,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
                 ].label}
               >
                 <sl-icon
-                  class="inline-block align-middle text-neutral-600"
+                  class="inline-block align-middle text-base text-neutral-600"
                   name=${SelectCollectionAccess.Options[
                     CollectionAccess.Unlisted
                   ].icon}
@@ -597,7 +599,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
                 ].label}
               >
                 <sl-icon
-                  class="inline-block align-middle text-success-600"
+                  class="inline-block align-middle text-base text-success-600"
                   name=${SelectCollectionAccess.Options[CollectionAccess.Public]
                     .icon}
                 ></sl-icon>

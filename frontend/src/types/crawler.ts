@@ -66,6 +66,7 @@ export type WorkflowParams = {
   schedule: string;
   browserWindows: number;
   profileid: string | null;
+  profileName?: string | null;
   config: SeedConfig;
   tags: string[];
   crawlTimeout: number | null;
@@ -126,10 +127,16 @@ export type Profile = {
   id: string;
   name: string;
   description: string;
+  tags: string[];
   created: string;
-  createdByName: string | null;
+  createdBy: string | null; // User ID
+  createdByName: string | null; // User Name
   modified: string | null;
-  modifiedByName: string | null;
+  modifiedBy: string | null; // User ID
+  modifiedByName: string | null; // User Name
+  modifiedCrawlDate: string | null;
+  modifiedCrawlId: string | null;
+  modifiedCrawlCid: string | null;
   origins: string[];
   profileId: string;
   baseProfileName: string;
@@ -142,7 +149,7 @@ export type Profile = {
     size: number;
     replicas: ProfileReplica[] | null;
   };
-  crawlerChannel?: string;
+  crawlerChannel?: CrawlerChannelImage | AnyString;
   proxyId?: string;
 };
 
@@ -210,7 +217,7 @@ export type Upload = ArchivedItemBase & {
 };
 
 export type CrawlerChannel = {
-  id: string;
+  id: CrawlerChannelImage | AnyString;
   image: string;
 };
 
@@ -225,6 +232,10 @@ export type Proxy = {
 export type ProxiesAPIResponse = {
   default_proxy_id: string | null;
   servers: Proxy[];
+};
+
+export type CrawlerChannelsAPIResponse = {
+  channels: CrawlerChannel[];
 };
 
 export type ArchivedItem = Crawl | Upload;

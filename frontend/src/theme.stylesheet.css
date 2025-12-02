@@ -122,6 +122,12 @@
 }
 
 @layer components {
+  sl-skeleton {
+    --border-radius: var(--sl-border-radius-small);
+    --color: var(--sl-color-neutral-50);
+    --sheen-color: var(--sl-color-neutral-100);
+  }
+
   sl-avatar::part(base) {
     transition: var(--sl-transition-x-fast) background-color;
   }
@@ -231,9 +237,14 @@
   }
 
   /* Adjust menu item hover and focus styles */
-  sl-menu-item,
+  sl-option:not([aria-selected="true"]):not(:disabled),
+  sl-menu-item:not([disabled]),
   btrix-menu-item-link {
-    @apply part-[base]:text-neutral-700 part-[base]:hover:bg-cyan-50/50 part-[base]:hover:text-cyan-700 part-[base]:focus-visible:bg-cyan-50/50;
+    @apply part-[base]:bg-white part-[base]:text-neutral-700 part-[base]:hover:bg-cyan-50/50 part-[base]:hover:text-cyan-700 part-[base]:focus:text-cyan-700 part-[base]:focus-visible:bg-cyan-50/50;
+  }
+
+  sl-option[aria-selected="true"] {
+    @apply part-[base]:bg-cyan-50 part-[base]:text-cyan-700;
   }
 
   /* Add menu item variants */
@@ -276,8 +287,12 @@
   }
 
   /* TODO tailwind sets border-width: 0, see if this can be fixed in tw */
-  sl-divider {
-    border-top-width: var(--sl-panel-border-width);
+  sl-divider:not([vertical]) {
+    border-top: solid var(--width) var(--color);
+  }
+
+  sl-divider[vertical] {
+    border-left: solid var(--width) var(--color);
   }
 
   /* Add more spacing between radio options */
@@ -396,12 +411,14 @@
   .font-monostyle {
     @apply font-mono;
     font-variation-settings: var(--font-monostyle-variation);
+    font-size: 95%;
   }
 
   /* Actually monospaced font */
   .font-monospace {
     @apply font-mono;
     font-variation-settings: var(--font-monospace-variation);
+    font-size: 95%;
   }
 
   .truncate {
@@ -511,6 +528,11 @@
 .sl-toast-stack {
   bottom: 0;
   top: auto;
+}
+
+html {
+  /* Fixes sl-input components resizing when sl-scroll-lock is removed */
+  scrollbar-gutter: stable;
 }
 
 /* Ensure buttons in shadow dom inherit hover color */
