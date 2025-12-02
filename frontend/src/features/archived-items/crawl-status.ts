@@ -95,6 +95,7 @@ export class CrawlStatus extends TailwindElement {
 
       case "waiting_capacity":
       case "waiting_org_limit":
+      case "waiting_dedupe_index":
         color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="hourglass-split"
@@ -106,7 +107,9 @@ export class CrawlStatus extends TailwindElement {
         reason =
           originalState === "waiting_capacity"
             ? msg("At Capacity")
-            : msg("At Crawl Limit");
+            : originalState === "waiting_dedupe_index"
+              ? msg("Updating Dedupe Index")
+              : msg("At Crawl Limit");
         break;
 
       case "running":
