@@ -348,7 +348,7 @@ class CrawlOperator(BaseOperator):
                 params["proxy_ssh_host_public_key"] = proxy.has_host_public_key
 
         params["add_proxies"] = proxy or (
-            not crawl.is_qa and data.related[CMAP].get("has-proxy-match-hosts")
+            not crawl.is_qa and data.related.get(CMAP, {}).get("has-proxy-match-hosts")
         )
 
         params["storage_filename"] = spec["storage_filename"]
