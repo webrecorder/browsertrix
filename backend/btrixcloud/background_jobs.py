@@ -538,14 +538,11 @@ class BackgroundJobOps:
         org = None
         if job.oid:
             org = await self.org_ops.get_org_by_id(job.oid)
-        await asyncio.get_event_loop().run_in_executor(
-            None,
-            self.email.send_background_job_failed,
-            job,
-            finished,
-            superuser.email,
-            org,
+        task = asyncio.create_task(
+            self.email.send_background_job_failed(job, finished, superuser.email, org)
         )
+        bg_tasks.add(task)
+        task.add_done_callback(bg_tasks.discard)
 
     async def get_background_job(
         self, job_id: str, oid: Optional[UUID] = None
