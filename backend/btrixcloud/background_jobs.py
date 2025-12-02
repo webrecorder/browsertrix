@@ -515,7 +515,15 @@ class BackgroundJobOps:
             )
             await self.jobs.insert_one(cleanup_job.to_dict())
             if not success:
-                await self._send_bg_job_failure_email(cleanup_job, finished)
+                try:
+                    await self._send_bg_job_failure_email(cleanup_job, finished)
+                # pylint: disable=broad-exception-caught
+                except Exception as err:
+                    print(
+                        f"Error sending bg job failure email for job {cleanup_job.id}: {err}",
+                        flush=True,
+                    )
+
             return
 
         job = await self.get_background_job(job_id)
@@ -532,7 +540,14 @@ class BackgroundJobOps:
             await self.handle_delete_replica_job_finished(cast(DeleteReplicaJob, job))
 
         if not success:
-            await self._send_bg_job_failure_email(job, finished)
+            try:
+                await self._send_bg_job_failure_email(job, finished)
+            # pylint: disable=broad-exception-caught
+            except Exception as err:
+                print(
+                    f"Error sending bg job failure email for job {job.id}: {err}",
+                    flush=True,
+                )
 
         await self.jobs.find_one_and_update(
             {"_id": job_id, "oid": oid},
