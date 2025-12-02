@@ -1,9 +1,6 @@
-import { msg } from "@lit/localize";
 import { html, type TemplateResult } from "lit";
-import { when } from "lit/directives/when.js";
 
 import { tooltipContent } from "@/features/meters/utils/tooltip";
-import { renderPercentage } from "@/strings/numbers";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
 export type RenderBarProps = {
@@ -31,18 +28,6 @@ export const renderBar = ({
 }: RenderBarProps) => {
   if (value === 0) return;
   availableSeconds ??= quotaSeconds;
-  const used = humanizeExecutionSeconds(usedSeconds, {
-    fractional: true,
-  });
-  const available = humanizeExecutionSeconds(availableSeconds, {
-    fractional: true,
-  });
-  const usedOrAvailable = highlight === "used" ? msg("used") : msg("available");
-  const percentageOfUsed = renderPercentage(
-    totalQuotaSeconds === 0 || value === 0
-      ? 0
-      : usedSeconds / totalQuotaSeconds,
-  );
   return html`<btrix-meter-bar
     .value=${value * 100}
     style="--background-color:var(--sl-color-${color});"
@@ -61,16 +46,7 @@ export const renderBar = ({
           round: highlight === "used" ? "up" : "down",
         },
       ),
-      content: when(
-        usedSeconds !== 0,
-        () => html`
-          ${content ??
-          html` <p>${msg(html`${used} of ${available} ${usedOrAvailable}`)}</p>
-            <p>
-              ${msg(html`${percentageOfUsed} of all remaining execution time`)}
-            </p>`}
-        `,
-      ),
+      content,
     })}
   </btrix-meter-bar>`;
 };
