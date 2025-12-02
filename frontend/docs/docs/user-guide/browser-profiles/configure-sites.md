@@ -24,7 +24,7 @@ The embedded browser used to configure profiles is the same browser behind Brows
 ??? example "Example: Blocking page resources with Brave's Shields"
     Whereas the crawler's scoping settings can be used to define which pages should be crawled, Brave's [Shields](https://brave.com/shields/) feature can block resources on pages from being loaded. By default, Shields will block [EasyList's cookie list](https://easylist.to/) but it can be set to block a number of other included lists under Brave `Settings > Shields > Filter Lists`.
 
-    _Custom Filters_ can also be useful for blocking sites with resources that aren't blocked by one of the existing lists. We use this at Webrecorder to block our web analytics script while crawling our own website by adding `stats.browsertrix.com` to the filter list. In this example, `browsertrix.com` will still load, but Brave will block any communication to `stats.browsertrix.com` and our analytics won't register a page view as a result. While lots of common analytics tools may already be blocked in an existing blocklist, this one likely isn't because we run it ourselves!
+    _Custom Filters_ can also be useful for blocking sites with resources that aren't included in one of the known block lists.
 
     The [uBlock Origin filter syntax](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax) can be used for more specificity over what in-page resources should be blocked.
 
