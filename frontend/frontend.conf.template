@@ -151,7 +151,7 @@ server {
       proxy_pass http://browser-$browserid.browser$fqdn_suffix:9223/vnc/;
       proxy_set_header Host "localhost";
 
-      add_header Content-Security-Policy "frame-ancestors 'self' localhost:*";
+      add_header Content-Security-Policy "frame-ancestors 'self' http://localhost:*";
     }
 
     location = /access_check_profiles {
