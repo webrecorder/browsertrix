@@ -39,6 +39,8 @@ server {
       root   /usr/share/nginx/html;
       index  index.html index.htm;
       try_files $uri /index.html;
+
+      add_header Content-Security-Policy "frame-ancestors 'self'";
     }
 
     location ~* /docs/(.*)$ {
@@ -148,6 +150,8 @@ server {
 
       proxy_pass http://browser-$browserid.browser$fqdn_suffix:9223/vnc/;
       proxy_set_header Host "localhost";
+
+      add_header Content-Security-Policy "frame-ancestors 'self' localhost:*";
     }
 
     location = /access_check_profiles {
