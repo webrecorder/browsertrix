@@ -173,11 +173,17 @@ export class UsageHistoryTable extends BtrixElement {
 
   private readonly renderSecondsForField =
     (field: `${Field}`) =>
-    ({ item }: { item: GridItem<Field> }) => html`
-      ${item[field]
-        ? field === Field.ElapsedTime
-          ? humanizeSeconds(+item[field], { displaySeconds: true })
-          : humanizeExecutionSeconds(+item[field])
-        : noData}
-    `;
+    ({ item }: { item: GridItem<Field> }) => {
+      if (!item[field]) return html`${noData}`;
+
+      if (field === Field.ElapsedTime)
+        return html`${humanizeSeconds(+item[field], { displaySeconds: true })}`;
+
+      if (field === Field.BillableExecutionTime)
+        return html`${humanizeExecutionSeconds(+item[field])}`;
+
+      return html`${humanizeExecutionSeconds(+item[field], {
+        fractional: true,
+      })}`;
+    };
 }
