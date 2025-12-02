@@ -183,7 +183,7 @@ export class UsageHistoryTable extends BtrixElement {
         return html`${humanizeExecutionSeconds(+item[field])}`;
 
       return html`${humanizeExecutionSeconds(+item[field], {
-        fractional: true,
+        displaySeconds: true,
       })}`;
     };
 }

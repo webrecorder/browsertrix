@@ -1,3 +1,6 @@
+import { html, nothing } from "lit";
+import { ifDefined } from "lit/directives/if-defined.js";
+
 import localize from "./localize";
 
 /**
@@ -16,17 +19,22 @@ export function humanizeSeconds(
     locale,
     displaySeconds = false,
     unitDisplay = "narrow",
+    maxUnit = "hour",
   }: {
     locale?: string;
     displaySeconds?: boolean;
     unitDisplay?: "narrow" | "short" | "long";
+    maxUnit?: "hour" | "minute";
   } = {},
 ) {
   if (seconds < 0) {
     throw new Error("humanizeSeconds in unimplemented for negative times");
   }
-  const hours = Math.floor(seconds / 3600);
-  seconds -= hours * 3600;
+  let hours = 0;
+  if (maxUnit === "hour") {
+    hours = Math.floor(seconds / 3600);
+    seconds -= hours * 3600;
+  }
   // If displaying seconds, round minutes down, otherwise round up
   const minutes = displaySeconds
     ? Math.floor(seconds / 60)
@@ -82,7 +90,7 @@ export const humanizeExecutionSeconds = (
     /**
      * @default false
      */
-    fractional?: boolean;
+    displaySeconds?: boolean;
     /**
      * @default "up"
      */
@@ -91,17 +99,61 @@ export const humanizeExecutionSeconds = (
 ) => {
   const {
     style = "long",
-    fractional = seconds < 60 || (options?.style ?? "long") === "long",
+    displaySeconds = seconds < 60,
     round = "up",
   } = options || {};
-  let minutes = seconds / 60;
-  if (!fractional) {
-    minutes = round === "down" ? Math.floor(minutes) : Math.ceil(minutes);
-  }
-  return localize.number(minutes, {
+  const locale = localize.activeLanguage;
+  const minutes =
+    round === "down" ? Math.floor(seconds / 60) : Math.ceil(seconds / 60);
+
+  const compactMinuteFormatter = new Intl.NumberFormat(locale, {
+    notation: "compact",
     style: "unit",
     unit: "minute",
     unitDisplay: style,
-    maximumFractionDigits: fractional ? 2 : 0,
   });
+
+  const longMinuteFormatter = new Intl.NumberFormat(locale, {
+    style: "unit",
+    unit: "minute",
+    unitDisplay: "long",
+    maximumFractionDigits: 0,
+  });
+
+  if (seconds === 0) {
+    return longMinuteFormatter.format(0);
+  }
+
+  const details = humanizeSeconds(seconds, {
+    locale,
+    displaySeconds,
+    maxUnit: "minute",
+  });
+  const compactMinutes = compactMinuteFormatter.format(minutes);
+  const fullMinutes = longMinuteFormatter.format(minutes);
+
+  // if the time is less than an hour and lines up exactly on the minute, don't render the details.
+  const detailsRelevant = displaySeconds
+    ? seconds % 60 !== 0
+    : Math.floor(seconds / 60) === 0 && seconds % 60 !== 0;
+  const formattedDetails =
+    detailsRelevant || seconds > 3600 ? details : nothing;
+  const prefix =
+    (!displaySeconds && seconds < 60) || (displaySeconds && seconds < 1)
+      ? "<"
+      : "";
+
+  switch (style) {
+    case "long":
+      return html`<span
+        title="${ifDefined(
+          fullMinutes !== compactMinutes ? fullMinutes : undefined,
+        )}"
+        >${prefix}${detailsRelevant ? formattedDetails : compactMinutes}</span
+      >`;
+    case "short":
+      return html`<span title="${longMinuteFormatter.format(minutes)}"
+        >${prefix}${compactMinutes}</span
+      >`;
+  }
 };

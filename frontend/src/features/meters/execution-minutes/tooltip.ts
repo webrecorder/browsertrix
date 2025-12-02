@@ -24,7 +24,7 @@ export const tooltipRow = (
     <span
       >${humanizeExecutionSeconds(value, {
         round: "down",
-        fractional: true,
+        displaySeconds: true,
       })}</span
     >
   </p>
