@@ -10,7 +10,7 @@ Pre-configure a social media site to be logged in so that the crawler can access
 
 !!! tip "Best Practices: Use an account created specifically for archiving a website"
 
-    We recommend creating dedicated accounts for archiving pages that are behind a login wall but otherwise public. Login walls are commonly used by social media platforms.
+    We recommend creating dedicated accounts for archiving pages that require user registration but are otherwise public. This practice is sometimes referred to as a login wall. Login walls are commonly used by social media platforms.
 
     Although dedicated accounts are not required to benefit from browser profiles, they can address the following potential issues:
 
