@@ -1,2 +1,2 @@
-import "./execution-minute-meter";
-import "./storage-meter";
+import "./execution-minutes/execution-minute-meter";
+import "./storage/storage-meter";

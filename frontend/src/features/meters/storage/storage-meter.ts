@@ -4,9 +4,12 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
-import { colors } from "./colors";
+import { storageColors } from "./colors";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { type Color } from "@/features/meters/utils/colors";
+import { renderLegendColor } from "@/features/meters/utils/legend";
+import { tooltipContent } from "@/features/meters/utils/tooltip";
 import { renderPercentage } from "@/strings/numbers";
 import { type Metrics } from "@/types/org";
 
@@ -29,8 +32,8 @@ export class StorageMeter extends BtrixElement {
 
     const renderBar = (
       value: number,
-      label: string,
-      colorClassname: string,
+      title: string,
+      colors: { primary: Color; border: Color },
     ) => {
       const percentageOfUsed = renderPercentage(
         metrics.storageUsedBytes === 0 ? 0 : value / metrics.storageUsedBytes,
@@ -41,25 +44,19 @@ export class StorageMeter extends BtrixElement {
       return html`
         <btrix-meter-bar
           value=${(value / metrics.storageUsedBytes) * 100}
-          style="--background-color:var(--sl-color-${colorClassname.replace(
-            "text-",
-            "",
-          )})"
+          style="--background-color:var(--sl-color-${colors.primary})"
         >
-          <header class="flex justify-between gap-4 font-medium leading-none">
-            <span>${label}</span>
-            <span
-              >${this.localize.bytes(value, {
-                unitDisplay: "narrow",
-              })}</span
-            >
-          </header>
-          <hr class="my-2" />
-          <p>
-            ${msg(html`${percentageOfUsed} of used storage`)}
-            <br />
-            ${msg(html`${percentageOfAvailable} of available storage`)}
-          </p>
+          ${tooltipContent({
+            title: html`${renderLegendColor(colors)}${title}`,
+            value: this.localize.bytes(value, {
+              unitDisplay: "narrow",
+            }),
+            content: html`<p>
+              ${msg(html`${percentageOfUsed} of used storage`)}
+              <br />
+              ${msg(html`${percentageOfAvailable} of available storage`)}
+            </p>`,
+          })}
         </btrix-meter-bar>
       `;
     };
@@ -97,25 +94,25 @@ export class StorageMeter extends BtrixElement {
                 renderBar(
                   metrics.storageUsedCrawls,
                   msg("Crawls"),
-                  colors.crawls,
+                  storageColors.crawls,
                 ),
               )}
               ${when(metrics.storageUsedUploads, () =>
                 renderBar(
                   metrics.storageUsedUploads,
                   msg("Uploads"),
-                  colors.uploads,
+                  storageColors.uploads,
                 ),
               )}
               ${when(metrics.storageUsedProfiles, () =>
                 renderBar(
                   metrics.storageUsedProfiles,
                   msg("Profiles"),
-                  colors.browserProfiles,
+                  storageColors.browserProfiles,
                 ),
               )}
               ${when(misc, () =>
-                renderBar(misc, msg("Miscellaneous"), colors.misc),
+                renderBar(misc, msg("Miscellaneous"), storageColors.misc),
               )}
               <div slot="available" class="flex-1">
                 <btrix-floating-popover placement="top" class="text-center">

@@ -5,7 +5,10 @@ import { customElement } from "lit/decorators.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { GridColumn, GridItem } from "@/components/ui/data-grid/types";
 import { noData } from "@/strings/ui";
-import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import {
+  humanizeExecutionSeconds,
+  humanizeSeconds,
+} from "@/utils/executionTimeFormatter";
 
 enum Field {
   Month = "month",
@@ -171,6 +174,10 @@ export class UsageHistoryTable extends BtrixElement {
   private readonly renderSecondsForField =
     (field: `${Field}`) =>
     ({ item }: { item: GridItem<Field> }) => html`
-      ${item[field] ? humanizeExecutionSeconds(+item[field]) : noData}
+      ${item[field]
+        ? field === Field.ElapsedTime
+          ? humanizeSeconds(+item[field], { displaySeconds: true })
+          : humanizeExecutionSeconds(+item[field])
+        : noData}
     `;
 }
