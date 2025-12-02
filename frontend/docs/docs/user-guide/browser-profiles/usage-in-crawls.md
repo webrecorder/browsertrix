@@ -1,6 +1,6 @@
 # Usage in Crawls
 
-To use a browser profile, choose the browser profile in the crawl workflow’s [_Browser Settings_]((../workflow-setup.md#browser-settings)). The next workflow run will use the browser profile when crawling.
+To use a browser profile, choose the browser profile in the crawl workflow’s [_Browser Settings_](../workflow-setup.md#browser-settings). The next workflow run will use the browser profile when crawling.
 
 To view a list of crawl workflows that use a specific browser profile, filter the crawl workflows list (**Crawling** > **Workflows**) using _Browser Profile_ filter, or go to a browser profile’s detail page to view its _Related Workflows_ section.
 
