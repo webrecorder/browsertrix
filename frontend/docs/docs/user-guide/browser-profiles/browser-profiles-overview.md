@@ -10,9 +10,9 @@ Pre-configure a social media site to be logged in so that the crawler can access
 
 !!! tip "Best Practices: Use an account created specifically for archiving a website"
 
-    We recommend creating dedicated accounts for archiving pages that require user registration but are otherwise public. This practice is sometimes referred to as a login wall. Login walls are commonly used by social media platforms.
+    Websites may require user registration to view content at URLs that are otherwise public. This practice is sometimes referred to as a login wall. Login walls are commonly used by social media and publishing platforms.
 
-    Although dedicated accounts are not required to benefit from browser profiles, they can address the following potential issues:
+    We recommend creating dedicated accounts when archiving any website that requires a user account. Although dedicated accounts are not required to benefit from browser profiles, they can address the following potential issues:
 
     - While usernames and passwords are never saved by Browsertrix, the private tokens that enable access to logged in content _are_ stored. Thus, anyone with access to your Browsertrix account, intentional or malicious, may be able to access the logged in content.
 
