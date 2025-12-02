@@ -10,6 +10,10 @@ The embedded browser is used during the process of [creating a new browser profi
 
 To crawl content as a logged in user, load the website you intend to archive in the embedded browser and sign in as you would on any other browser. Once the account has been logged in, confirm by accessing a page on the site that the crawler should have access to. You may need to periodically log in again as websites may log users out after a certain period of time.
 
+!!! tip "Tip: Crawl regularly to stay logged in"
+
+    Regularly running crawl workflows that use a browser profile can help to reduce the frequency with which logouts occur on some websites. Data such as cookies and sessions may be refreshed during crawling, and Browsertrix will automatically update the browser profile with this data when each crawl successfully finishes.
+
 ### Hide Popups
 
 Load the website you intend to archive in the embedded browser and accept or otherwise dismiss the prompt. If the developers of the website have built the site in such a way that the result of your interaction is saved, the popup should remain hidden at crawl time. This can be confirmed by exiting the embedded browser session and then loading the site again.

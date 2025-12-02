@@ -320,15 +320,15 @@ Sets the browser's language setting. Useful for crawling websites that detect th
 
 Automatically start crawls periodically on a daily, weekly, or monthly schedule.
 
-!!! tip "Tip: Scheduling crawl workflows with logged-in browser profiles"
-    Some websites will log users out after a set period of time. When crawling with a custom [browser profile](browser-profiles/browser-profiles-overview.md) that is logged into a website, we recommend [checking the profile](./browser-profiles/configure-sites.md#saved-sites) before crawling to ensure it is still logged in.
-
-    This can cause issues with scheduled crawl workflows — which will run even if the selected browser profile has been logged out.
-
 ### Crawl Schedule Type
 
 #### Run on a Recurring Basis
 :   When selected, additional configuration options for instructing the system when to run the crawl will be shown. If a crawl is already running when the schedule is set to activate it, the scheduled crawl will not run.
+
+    !!! tip "Tip: Scheduling crawl workflows with logged-in browser profiles"
+        Some websites will log users out after a set period of time. This can cause issues with scheduled crawl workflows—which will run even if the [selected browser profile](./browser-profiles/browser-profiles-overview.md) has been logged out.
+    
+        For some websites, a short schedule frequency can help keep the browser profile logged in by regularly and [automatically refreshing the login session](./browser-profiles/usage-in-crawls.md#effects-of-crawling). A separate crawl workflow could be created for this purpose. We recommend manually [checking the profile](./browser-profiles/configure-sites.md#saved-sites) periodically to ensure that it is still logged in.
 
 #### No Schedule
 :   When selected, the configuration options that have been set will be saved but the system will not do anything with them unless manually instructed.

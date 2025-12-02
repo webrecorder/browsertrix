@@ -1,8 +1,12 @@
 # Edit Browser Profile
 
-Sometimes websites will log users out by expiring cookies or login sessions after a period of time. In these cases, the browser profile may not behave as expected at crawl time and will need to be reconfigured.
+Sometimes websites will log users out by expiring cookies or login sessions after a period of time. Although running crawls on a regular basis can help keep websites logged in for longer, most websites will log users out after an extended period of time, be it a week or 30 days. In this case, the browser profile may not behave as expected at crawl time and will need to be reconfigured.
 
 To check or update the profile, go to the browser profile page and select _Load Profile_ from the action menu.
+
+!!! tip "Tip: Fail crawls early to identify logged-out profiles"
+
+    Enabling [_Fail Crawl If Not Logged In_](../workflow-setup.md#fail-crawl-if-not-logged-in) on a workflow can help identify which profiles need attention and prevent adding unwanted logged-out content to a collection.
 
 ## Load / Edit Profile Settings
 
