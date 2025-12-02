@@ -32,10 +32,10 @@ export const renderBar = ({
   if (value === 0) return;
   availableSeconds ??= quotaSeconds;
   const used = humanizeExecutionSeconds(usedSeconds, {
-    displaySeconds: true,
+    fractional: true,
   });
   const available = humanizeExecutionSeconds(availableSeconds, {
-    displaySeconds: true,
+    fractional: true,
   });
   const usedOrAvailable = highlight === "used" ? msg("used") : msg("available");
   const percentageOfUsed = renderPercentage(
@@ -57,7 +57,7 @@ export const renderBar = ({
           totalAvailable: totalQuotaSeconds,
         }[highlight],
         {
-          displaySeconds: true,
+          fractional: true,
           round: highlight === "used" ? "up" : "down",
         },
       ),
