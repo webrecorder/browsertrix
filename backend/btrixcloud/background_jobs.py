@@ -81,10 +81,20 @@ class BackgroundJobOps:
             responses={404: {"description": "Not found"}},
         )
 
+        # to avoid background tasks being garbage collected
+        # see: https://stackoverflow.com/a/74059981
+        self.bg_tasks = set()
+
     def set_ops(self, base_crawl_ops: BaseCrawlOps, profile_ops: ProfileOps) -> None:
         """basecrawlops and profileops for updating files"""
         self.base_crawl_ops = base_crawl_ops
         self.profile_ops = profile_ops
+
+    def _run_task(self, func) -> None:
+        """add bg tasks to set to avoid premature garbage collection"""
+        task = asyncio.create_task(func)
+        self.bg_tasks.add(task)
+        task.add_done_callback(self.bg_tasks.discard)
 
     def strip_bucket(self, endpoint_url: str) -> tuple[str, str]:
         """split the endpoint_url into the origin and return rest of endpoint as bucket path"""
@@ -538,11 +548,10 @@ class BackgroundJobOps:
         org = None
         if job.oid:
             org = await self.org_ops.get_org_by_id(job.oid)
-        task = asyncio.create_task(
+
+        self._run_task(
             self.email.send_background_job_failed(job, finished, superuser.email, org)
         )
-        bg_tasks.add(task)
-        task.add_done_callback(bg_tasks.discard)
 
     async def get_background_job(
         self, job_id: str, oid: Optional[UUID] = None
@@ -777,11 +786,8 @@ class BackgroundJobOps:
         Keep track of tasks in set to prevent them from being garbage collected
         See: https://stackoverflow.com/a/74059981
         """
-        bg_tasks = set()
         async for job in self.jobs.find({"oid": org.id, "success": False}):
-            task = asyncio.create_task(self.retry_background_job(job["_id"], org))
-            bg_tasks.add(task)
-            task.add_done_callback(bg_tasks.discard)
+            self._run_task(self.retry_background_job(job["_id"], org))
         return {"success": True}
 
     async def retry_all_failed_background_jobs(
@@ -792,14 +798,11 @@ class BackgroundJobOps:
         Keep track of tasks in set to prevent them from being garbage collected
         See: https://stackoverflow.com/a/74059981
         """
-        bg_tasks = set()
         async for job in self.jobs.find({"success": False}):
             org = None
             if job.get("oid"):
                 org = await self.org_ops.get_org_by_id(job["oid"])
-            task = asyncio.create_task(self.retry_background_job(job["_id"], org))
-            bg_tasks.add(task)
-            task.add_done_callback(bg_tasks.discard)
+            self._run_task(self.retry_background_job(job["_id"], org))
         return {"success": True}
 
 
