@@ -39,17 +39,6 @@ export class ExecutionMinuteMeter extends BtrixElement {
     const currentMonth = String(now.getUTCMonth() + 1).padStart(2, "0");
     const currentPeriod = `${currentYear}-${currentMonth}`;
 
-    /** Quotas in seconds */
-    const quotas = {
-      monthly: this.org.quotas.maxExecMinutesPerMonth * 60,
-      extra: this.org.extraExecSecondsAvailable,
-      gifted: this.org.giftedExecSecondsAvailable,
-      total:
-        this.org.quotas.maxExecMinutesPerMonth * 60 +
-        this.org.extraExecSecondsAvailable +
-        this.org.giftedExecSecondsAvailable,
-    };
-
     /** Usages in seconds */
     const usage = {
       monthly: this.org.monthlyExecSeconds?.[currentPeriod] ?? 0,
@@ -60,6 +49,37 @@ export class ExecutionMinuteMeter extends BtrixElement {
         (this.org.extraExecSeconds?.[currentPeriod] ?? 0) +
         (this.org.giftedExecSeconds?.[currentPeriod] ?? 0),
     };
+
+    /** Quotas in seconds */
+    const quotas = {
+      monthly: this.org.quotas.maxExecMinutesPerMonth * 60,
+      extra: this.org.extraExecSecondsAvailable + usage.extra,
+      gifted: this.org.giftedExecSecondsAvailable + usage.gifted,
+      total:
+        this.org.quotas.maxExecMinutesPerMonth * 60 +
+        this.org.extraExecSecondsAvailable +
+        usage.extra +
+        this.org.giftedExecSecondsAvailable +
+        usage.gifted,
+    };
+
+    if (Math.abs(quotas.extra - this.org.quotas.extraExecMinutes * 60) > 0) {
+      console.debug("WARN extra minutes doesn't match quotas", {
+        quota: quotas.extra,
+        usage: usage.extra,
+        available: this.org.extraExecSecondsAvailable,
+        expected: this.org.quotas.extraExecMinutes * 60,
+      });
+    }
+
+    if (Math.abs(quotas.gifted - this.org.quotas.giftedExecMinutes * 60) > 0) {
+      console.debug("WARN gifted minutes doesn't match quotas", {
+        quota: quotas.gifted,
+        usage: usage.gifted,
+        available: this.org.giftedExecSecondsAvailable,
+        expected: this.org.quotas.giftedExecMinutes * 60,
+      });
+    }
 
     /** Width values in reference to the total width of the value bar (usage.total) */
     const usedValues = {
@@ -79,15 +99,36 @@ export class ExecutionMinuteMeter extends BtrixElement {
     const hasQuota = quotas.monthly > 0;
     const isReached = hasQuota && usage.total >= quotas.total;
 
-    const backgroundTooltipContent = (currentBucket: Bucket) =>
-      html`${EXEC_MINUTE_ORDER.filter(
-          (bucket) => backgroundValues[bucket] > 0,
-        ).map((bucket) =>
+    const foregroundTooltipContent = (currentBucket: Bucket) => {
+      const rows = EXEC_MINUTE_ORDER.filter((bucket) => usedValues[bucket] > 0);
+      if (rows.length < 2) return;
+      return html`${rows.map((bucket) =>
           tooltipRow(
             {
               monthly: msg("Monthly"),
               extra: msg("Extra"),
               gifted: msg("Gifted"),
+            }[bucket],
+            usage[bucket],
+            bucket === currentBucket,
+            executionMinuteColors[bucket].foreground,
+          ),
+        )}
+        <hr class="my-2" />
+        ${tooltipRow(msg("All used execution time"), usage.total)}`;
+    };
+
+    const backgroundTooltipContent = (currentBucket: Bucket) => {
+      const rows = EXEC_MINUTE_ORDER.filter(
+        (bucket) => backgroundValues[bucket] > 0,
+      );
+      if (rows.length < 2) return;
+      return html`${rows.map((bucket) =>
+          tooltipRow(
+            {
+              monthly: msg("Monthly Remaining"),
+              extra: msg("Extra Remaining"),
+              gifted: msg("Gifted Remaining"),
             }[bucket],
             quotas[bucket] - usage[bucket],
             bucket === currentBucket,
@@ -99,6 +140,7 @@ export class ExecutionMinuteMeter extends BtrixElement {
           msg("All remaining execution time"),
           quotas.total - usage.total,
         )}`;
+    };
 
     const foregroundBarConfig = (bucket: Bucket): RenderBarProps => ({
       value: usedValues[bucket],
@@ -108,12 +150,13 @@ export class ExecutionMinuteMeter extends BtrixElement {
       title: html`${renderLegendColor(
         executionMinuteColors[bucket].foreground,
       )}${{
-        monthly: msg("Monthly Execution Time"),
-        extra: msg("Extra Execution Time"),
-        gifted: msg("Gifted Execution Time"),
+        monthly: msg("Used Monthly Execution Time"),
+        extra: msg("Used Extra Execution Time"),
+        gifted: msg("Used Gifted Execution Time"),
       }[bucket]}`,
       color: executionMinuteColors[bucket].foreground.primary,
       highlight: "used",
+      content: foregroundTooltipContent(bucket),
     });
 
     const firstBackgroundBar =

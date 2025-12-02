@@ -7,7 +7,7 @@ export const tooltipContent = ({
 }: {
   title: string | TemplateResult;
   value: string | TemplateResult;
-  content: string | TemplateResult;
+  content: string | TemplateResult | undefined;
 }) =>
   html`<header class="flex justify-between gap-4 font-medium leading-none">
       <span>${title}</span>
