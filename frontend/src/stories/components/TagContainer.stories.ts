@@ -4,7 +4,7 @@ import { renderComponent, type RenderProps } from "./TagContainer";
 
 const meta = {
   title: "Components/Tag Container",
-  component: "btrix-contain-with-remainder",
+  component: "btrix-tag-container",
   tags: ["autodocs"],
   render: renderComponent,
   argTypes: {},
