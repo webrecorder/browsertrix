@@ -362,6 +362,8 @@ class RawCrawlConfig(BaseModel):
     combineWARC: Optional[bool] = None
 
     useSitemap: Optional[bool] = False
+    useRobots: Optional[bool] = False
+
     failOnFailedSeed: Optional[bool] = False
     failOnContentCheck: Optional[bool] = False
 
@@ -375,8 +377,6 @@ class RawCrawlConfig(BaseModel):
     clickSelector: str = "a"
 
     saveStorage: Optional[bool] = False
-
-    robots: Optional[bool] = False
 
 
 # ============================================================================

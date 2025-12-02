@@ -184,7 +184,7 @@ export type FormState = {
   selectLinks: string[];
   clickSelector: string;
   saveStorage: WorkflowParams["config"]["saveStorage"];
-  robots: WorkflowParams["config"]["robots"];
+  useRobots: WorkflowParams["config"]["useRobots"];
 };
 
 export type FormStateField = keyof FormState;
@@ -247,7 +247,7 @@ export const getDefaultFormState = (): FormState => ({
   clickSelector: DEFAULT_AUTOCLICK_SELECTOR,
   customBehavior: false,
   saveStorage: false,
-  robots: false,
+  useRobots: false,
 });
 
 export const mapSeedToUrl = (arr: Seed[]) =>
@@ -421,7 +421,7 @@ export function getInitialFormState(params: {
       params.initialWorkflow.crawlerChannel || defaultFormState.crawlerChannel,
     proxyId: params.initialWorkflow.proxyId || defaultFormState.proxyId,
     saveStorage: params.initialWorkflow.config.saveStorage,
-    robots: params.initialWorkflow.config.robots,
+    useRobots: params.initialWorkflow.config.useRobots,
     ...formState,
   };
 }

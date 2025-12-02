@@ -477,7 +477,7 @@ export class ConfigDetails extends BtrixElement {
       )}
       ${this.renderSetting(
         msg("Skip Pages Disallowed by robots.txt"),
-        Boolean(config.robots),
+        Boolean(config.useRobots),
       )}
       ${this.renderSetting(
         msg("Fail Crawl If Not Logged In"),
@@ -555,7 +555,7 @@ export class ConfigDetails extends BtrixElement {
       )}
       ${this.renderSetting(
         msg("Skip Pages Disallowed by robots.txt"),
-        Boolean(config.robots),
+        Boolean(config.useRobots),
       )}
       ${this.renderSetting(
         msg("Check For Sitemap"),

@@ -55,7 +55,7 @@ export type SeedConfig = Expand<
     customBehaviors: string[];
     clickSelector: string;
     saveStorage?: boolean;
-    robots?: boolean;
+    useRobots?: boolean;
   }
 >;
 

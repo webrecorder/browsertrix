@@ -85,7 +85,7 @@ export const infoTextFor = {
   saveStorage: msg(
     `Include data from the browser's local and session storage in the web archive.`,
   ),
-  robots: msg(
+  useRobots: msg(
     `Check for a robots.txt file for each host and skip any disallowed pages.`,
   ),
 } as const satisfies Partial<Record<Field, string | TemplateResult>>;

@@ -1064,11 +1064,11 @@ export class WorkflowEditor extends BtrixElement {
       `)}
       ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
       ${inputCol(html`
-        <sl-checkbox name="robots" ?checked=${this.formState.robots}>
+        <sl-checkbox name="useRobots" ?checked=${this.formState.useRobots}>
           ${msg("Skip pages disallowed by robots.txt")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(infoTextFor["robots"], false)}
+      ${this.renderHelpTextCol(infoTextFor["useRobots"], false)}
       ${inputCol(html`
         <sl-checkbox
           name="failOnContentCheck"
@@ -1587,11 +1587,11 @@ https://example.net`}
       `)}
       ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
       ${inputCol(html`
-        <sl-checkbox name="robots" ?checked=${this.formState.robots}>
+        <sl-checkbox name="useRobots" ?checked=${this.formState.useRobots}>
           ${msg("Skip pages disallowed by robots.txt")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(infoTextFor["robots"], false)}
+      ${this.renderHelpTextCol(infoTextFor["useRobots"], false)}
       ${inputCol(html`
         <sl-checkbox name="useSitemap" ?checked=${this.formState.useSitemap}>
           ${msg("Check for sitemap")}
@@ -3355,7 +3355,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     | "failOnFailedSeed"
     | "failOnContentCheck"
     | "saveStorage"
-    | "robots"
+    | "useRobots"
   > {
     const jsonSeeds = this.formState.seedListFormat === SeedListFormat.JSON;
 
@@ -3375,7 +3375,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       failOnFailedSeed: this.formState.failOnFailedSeed,
       failOnContentCheck: this.formState.failOnContentCheck,
       saveStorage: this.formState.saveStorage,
-      robots: this.formState.robots,
+      useRobots: this.formState.useRobots,
     };
 
     return config;
@@ -3389,7 +3389,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     | "failOnFailedSeed"
     | "failOnContentCheck"
     | "saveStorage"
-    | "robots"
+    | "useRobots"
   > {
     const primarySeedUrl = this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeUrlList
@@ -3422,7 +3422,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       failOnFailedSeed: false,
       failOnContentCheck: this.formState.failOnContentCheck,
       saveStorage: this.formState.saveStorage,
-      robots: this.formState.robots,
+      useRobots: this.formState.useRobots,
     };
     return config;
   }
