@@ -937,7 +937,7 @@ export class ArchivedItemDetail extends BtrixElement {
                   ${item.finished
                     ? html`<span
                         >${humanizeExecutionSeconds(item.crawlExecSeconds, {
-                          fractional: true,
+                          displaySeconds: true,
                         })}</span
                       >`
                     : html`<span class="text-0-400">${msg("Pending")}</span>`}

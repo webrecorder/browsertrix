@@ -58,15 +58,15 @@ describe("formatHours", () => {
   });
 });
 
-describe.skip("humanizeExecutionSeconds", () => {
+describe("humanizeExecutionSeconds", () => {
   it("formats a given time in billable minutes", async () => {
     const parentNode = document.createElement("div");
     const el = await fixture(humanizeExecutionSeconds(1_234_567_890), {
       parentNode,
     });
     expect(el.getAttribute("title")).to.equal("20,576,132 minutes");
-    expect(el.textContent?.trim()).to.equal("21M minutes\u00a0(342,935h 32m)");
-    expect(parentNode.innerText).to.equal("21M minutes\u00a0(342,935h 32m)");
+    expect(el.textContent?.trim()).to.equal("21M minutes");
+    expect(parentNode.innerText).to.equal("21M minutes");
   });
 
   it("shows a short version when set", async () => {
@@ -77,9 +77,7 @@ describe.skip("humanizeExecutionSeconds", () => {
         parentNode,
       },
     );
-    expect(el.getAttribute("title")).to.equal(
-      "20,576,132 minutes\u00a0(342,935h 32m)",
-    );
+    expect(el.getAttribute("title")).to.equal("20,576,132 minutes");
     expect(el.textContent?.trim()).to.equal("21M min");
     expect(parentNode.innerText).to.equal("21M min");
   });
@@ -102,7 +100,7 @@ describe.skip("humanizeExecutionSeconds", () => {
   it("formats times correctly with seconds when time lines up to a minute", async () => {
     const parentNode = document.createElement("div");
     const el = await fixture(
-      humanizeExecutionSeconds(120, { fractional: true }),
+      humanizeExecutionSeconds(120, { displaySeconds: true }),
       {
         parentNode,
       },
@@ -114,26 +112,25 @@ describe.skip("humanizeExecutionSeconds", () => {
     const parentNode = document.createElement("div");
     const el = await fixture(
       humanizeExecutionSeconds(24, {
-        fractional: true,
+        displaySeconds: true,
       }),
       {
         parentNode,
       },
     );
-    expect(el.textContent?.trim()).to.equal("<1 minute\u00a0(0m 24s)");
-    expect(parentNode.innerText).to.equal("<1 minute\u00a0(0m 24s)");
+    expect(el.textContent?.trim()).to.equal("0m 24s");
+    expect(parentNode.innerText).to.equal("0m 24s");
   });
   it("formats zero seconds", async () => {
     const parentNode = document.createElement("div");
-    const el = await fixture(
+    await fixture(
       humanizeExecutionSeconds(0, {
-        fractional: true,
+        displaySeconds: true,
       }),
       {
         parentNode,
       },
     );
-    expect(el.textContent?.trim()).to.equal("0 minutes");
     expect(parentNode.innerText).to.equal("0 minutes");
   });
 });

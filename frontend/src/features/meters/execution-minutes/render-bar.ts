@@ -42,7 +42,7 @@ export const renderBar = ({
           totalAvailable: totalQuotaSeconds,
         }[highlight],
         {
-          fractional: true,
+          displaySeconds: true,
           round: highlight === "used" ? "up" : "down",
         },
       ),
