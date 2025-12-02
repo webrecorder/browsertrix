@@ -31,7 +31,7 @@ After running your first crawl, check out the following to learn more about Brow
 
 - A detailed list of [crawl workflow setup](workflow-setup.md) options.
 - Adding [exclusions](workflow-setup.md#exclude-pages) to limit your crawl's scope and evading crawler traps by [editing exclusion rules while crawling](running-crawl.md#live-exclusion-editing).
-- Best practices for crawling with [browser profiles](browser-profiles.md) to capture content only available when logged in to a website.
+- Best practices for crawling with [browser profiles](browser-profiles/browser-profiles-overview.md) to capture content only available when logged in to a website.
 - Managing archived items, including [uploading previously archived content](archived-items.md#uploading-web-archives).
 - Organizing and combining archived items with [collections](collection.md) for sharing and export.
 - [Invite collaborators](org-members.md) to your org.

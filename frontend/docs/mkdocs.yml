@@ -30,7 +30,7 @@ theme:
       note: bootstrap/pencil-fill
       abstract: bootstrap/file-earmark-text-fill
       info: bootstrap/info-circle-fill
-      tip: bootstrap/exclamation-circle-fill
+      tip: bootstrap/lightbulb-fill
       success: bootstrap/check-circle-fill
       question: bootstrap/question-circle-fill
       warning: bootstrap/exclamation-diamond-fill
@@ -70,7 +70,11 @@ nav:
         - user-guide/quality-assurance.md
         - user-guide/qa-review.md
       - Browser Profiles:
-          - user-guide/browser-profiles.md
+          - user-guide/browser-profiles/browser-profiles-overview.md
+          - user-guide/browser-profiles/create-browser-profile.md
+          - user-guide/browser-profiles/configure-sites.md
+          - user-guide/browser-profiles/usage-in-crawls.md
+          - user-guide/browser-profiles/edit-browser-profile.md
       - Org Settings:
           - user-guide/org-settings.md
           - user-guide/org-members.md
@@ -147,3 +151,4 @@ plugins:
   - redirects:
       redirect_maps:
         "user-guide/collections.md": "user-guide/collection.md"
+        "user-guide/browser-profiles.md": "user-guide/browser-profiles/browser-profiles-overview.md"

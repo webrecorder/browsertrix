@@ -262,7 +262,15 @@ Configure the browser used to visit URLs during the crawl.
 
 ### Browser Profile
 
-Sets the [_Browser Profile_](browser-profiles.md) to be used for this crawl.
+Sets the [_Browser Profile_](browser-profiles/browser-profiles-overview.md) to be used for this crawl.
+
+### Crawler Proxy Server
+
+!!! Info "This setting will be shown if the organization supports multiple proxies."
+
+Sets the proxy server that [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) will direct traffic through while crawling. When a proxy is selected, crawled websites will see traffic as coming from the IP address of the proxy rather than where Browsertrix Crawler is deployed.
+
+If a _Browser Profile_ is specified, this field will be disabled and the proxy settings of the browser profile will be used when crawling. This prevents potential crawl failures that result from conflicting proxies.
 
 ### Browser Windows
 
@@ -275,9 +283,9 @@ There are some trade-offs:
 
 ### Crawler Release Channel
 
-Sets the release channel of [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) to be used for this crawl. Crawls started by this workflow will use the latest crawler version from the selected release channel. Generally "Default" will be the most stable, however others may have newer features (or bugs)!
+!!! Info "This setting will be shown if the organization supports multiple release channels."
 
-This setting will only be shown if multiple different release channels are available for use.
+Sets the release channel of [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler). Crawls of this workflow will use the latest crawler version from the selected release channel. Generally reserved for advanced use cases, such as enabling experimental features that may not have been fully tested yet.
 
 ### Block Ads by Domain
 
@@ -308,23 +316,19 @@ Sets the browser's [user agent](https://developer.mozilla.org/en-US/docs/Web/HTT
 
 Sets the browser's language setting. Useful for crawling websites that detect the browser's language setting and serve content accordingly.
 
-### Proxy
-
-Sets the proxy server that [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) will direct traffic through while crawling. When a proxy is selected, crawled websites will see traffic as coming from the IP address of the proxy rather than where the Browsertrix Crawler node is deployed.
-
 ## Scheduling
 
 Automatically start crawls periodically on a daily, weekly, or monthly schedule.
-
-!!! tip "Tip: Scheduling crawl workflows with logged-in browser profiles"
-    Some websites will log users out after a set period of time. When crawling with a custom [browser profile](browser-profiles.md) that is logged into a website, we recommend checking the profile before crawling to ensure it is still logged in.
-
-    This can cause issues with scheduled crawl workflows — which will run even if the selected browser profile has been logged out.
 
 ### Crawl Schedule Type
 
 #### Run on a Recurring Basis
 :   When selected, additional configuration options for instructing the system when to run the crawl will be shown. If a crawl is already running when the schedule is set to activate it, the scheduled crawl will not run.
+
+    !!! tip "Tip: Scheduling crawl workflows with logged-in browser profiles"
+        Some websites will log users out after a set period of time. This can cause issues with scheduled crawl workflows—which will run even if the [selected browser profile](./browser-profiles/browser-profiles-overview.md) has been logged out.
+    
+        For some websites, a short schedule frequency can help keep the browser profile logged in by regularly and [automatically refreshing the login session](./browser-profiles/usage-in-crawls.md#effects-of-crawling). A separate crawl workflow could be created for this purpose. We recommend manually [checking the profile](./browser-profiles/configure-sites.md#saved-sites) periodically to ensure that it is still logged in.
 
 #### No Schedule
 :   When selected, the configuration options that have been set will be saved but the system will not do anything with them unless manually instructed.
