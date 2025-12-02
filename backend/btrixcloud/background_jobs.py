@@ -523,7 +523,6 @@ class BackgroundJobOps:
                         f"Error sending bg job failure email for job {cleanup_job.id}: {err}",
                         flush=True,
                     )
-
             return
 
         job = await self.get_background_job(job_id)
@@ -539,6 +538,11 @@ class BackgroundJobOps:
         if job_type == BgJobType.DELETE_REPLICA:
             await self.handle_delete_replica_job_finished(cast(DeleteReplicaJob, job))
 
+        await self.jobs.find_one_and_update(
+            {"_id": job_id, "oid": oid},
+            {"$set": {"success": success, "finished": finished}},
+        )
+
         if not success:
             try:
                 await self._send_bg_job_failure_email(job, finished)
@@ -548,11 +552,6 @@ class BackgroundJobOps:
                     f"Error sending bg job failure email for job {job.id}: {err}",
                     flush=True,
                 )
-
-        await self.jobs.find_one_and_update(
-            {"_id": job_id, "oid": oid},
-            {"$set": {"success": success, "finished": finished}},
-        )
 
     async def _send_bg_job_failure_email(self, job: BackgroundJob, finished: datetime):
         print(
