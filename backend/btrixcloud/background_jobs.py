@@ -101,7 +101,7 @@ class BackgroundJobOps:
         parts = urlsplit(endpoint_url)
         return parts.scheme + "://" + parts.netloc + "/", parts.path[1:]
 
-    async def handle_replica_job_finished(self, job: CreateReplicaJob) -> None:
+    async def handle_replica_job_succeeded(self, job: CreateReplicaJob) -> None:
         """Update replicas in corresponding file objects, based on type"""
         res = None
         if job.object_type in ("crawl", "upload"):
@@ -534,7 +534,7 @@ class BackgroundJobOps:
             raise HTTPException(status_code=400, detail="invalid_job_type")
 
         if success and job_type == BgJobType.CREATE_REPLICA:
-            await self.handle_replica_job_finished(cast(CreateReplicaJob, job))
+            await self.handle_replica_job_succeeded(cast(CreateReplicaJob, job))
 
         if job_type == BgJobType.DELETE_REPLICA:
             await self.handle_delete_replica_job_finished(cast(DeleteReplicaJob, job))
