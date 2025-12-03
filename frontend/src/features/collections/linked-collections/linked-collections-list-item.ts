@@ -45,9 +45,7 @@ export class LinkedCollectionsListItem extends TailwindElement {
       >
         <div class="w-0 flex-1 truncate">${item.name}</div>
         ${dedupeEnabled
-          ? html`<btrix-badge variant="primary">
-              ${msg("Dedupe Source")}
-            </btrix-badge>`
+          ? html`<btrix-dedupe-source-badge></btrix-dedupe-source-badge>`
           : nothing}
       </div>`,
     ];

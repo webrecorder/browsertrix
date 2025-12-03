@@ -6,6 +6,8 @@ import { renderComponent, type RenderProps } from "./Badge";
 
 import "@/features/crawls/crawler-channel-badge";
 import "@/features/crawls/proxy-badge";
+import "@/features/dedupe/dedupe-badge";
+import "@/features/dedupe/dedupe-source-badge";
 
 const meta = {
   title: "Components/Badge",
@@ -129,5 +131,8 @@ export const FeatureBadges: Story = {
     <btrix-crawler-channel-badge
       channelId="default"
     ></btrix-crawler-channel-badge>
+    <btrix-dedupe-badge></btrix-dedupe-badge>
+    <btrix-dedupe-badge requiredByCrawls></btrix-dedupe-badge>
+    <btrix-dedupe-source-badge></btrix-dedupe-source-badge>
   `,
 };

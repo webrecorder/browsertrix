@@ -207,6 +207,8 @@ export type Crawl = ArchivedItemBase &
     browserWindows: number;
     shouldPause: boolean | null;
     resources?: (StorageFile & { numReplicas: number })[];
+    requiresCrawls: boolean;
+    requiredByCrawls: boolean;
   };
 
 export type Upload = ArchivedItemBase & {

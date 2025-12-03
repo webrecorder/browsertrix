@@ -11,7 +11,12 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
-import { pageBack, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import {
+  pageBack,
+  pageHeader,
+  pageNav,
+  type Breadcrumb,
+} from "@/layouts/pageHeader";
 import { OrgTab, WorkflowTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import type {
@@ -411,7 +416,9 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       default:
         sectionContent = html`
-          <div class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:grid-rows-2">
+          <div
+            class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:grid-rows-[auto_1fr]"
+          >
             <div class="col-span-1 row-span-1 flex flex-col lg:row-span-2">
               ${this.renderPanel(msg("Overview"), this.renderOverview(), [
                 tw`rounded-lg border p-4`,
@@ -673,20 +680,56 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderHeader() {
-    return html`
-      <header class="mb-3 flex flex-wrap gap-2 border-b pb-3">
-        <btrix-detail-page-title .item=${this.item}></btrix-detail-page-title>
-        <div class="ml-auto flex flex-wrap justify-end gap-2">
-          ${this.isCrawler
-            ? this.item
-              ? this.renderMenu()
-              : html`<sl-skeleton
-                  class="h-8 w-24 [--border-radius:theme(borderRadius.sm)]"
-                ></sl-skeleton>`
-            : nothing}
-        </div>
-      </header>
-    `;
+    const badgesSkeleton = () =>
+      html`<sl-skeleton class="h-4 w-12"></sl-skeleton>`;
+
+    const badges = (item: ArchivedItem) => {
+      return html`<div class="flex flex-wrap gap-3 whitespace-nowrap">
+        ${isCrawl(item)
+          ? html`<btrix-badge class="font-monostyle">
+                <sl-icon class="mr-1.5" name="gear-wide-connected"></sl-icon>
+                ${msg("Crawl")}</btrix-badge
+              >
+              <btrix-popover
+                content=${ifDefined(
+                  item.reviewStatus
+                    ? `${msg("QA Rating")}: ${item.reviewStatus}`
+                    : undefined,
+                )}
+                ?disabled=${!item.reviewStatus}
+              >
+                <btrix-badge
+                  variant=${item.reviewStatus ? "cyan" : "neutral"}
+                  class="font-monostyle"
+                >
+                  <sl-icon class="mr-1.5" name="clipboard2-data"></sl-icon>
+                  ${item.reviewStatus
+                    ? msg("Reviewed")
+                    : msg("No Review")}</btrix-badge
+                >
+              </btrix-popover>
+              ${item.requiresCrawls || item.requiredByCrawls
+                ? html`<btrix-dedupe-badge
+                    ?requiredByCrawls=${item.requiredByCrawls}
+                  ></btrix-dedupe-badge>`
+                : nothing} `
+          : html`<btrix-badge class="font-monostyle">
+              <sl-icon class="mr-1.5" name="upload"></sl-icon>
+              ${msg("Uploaded")}</btrix-badge
+            >`}
+      </div>`;
+    };
+    return pageHeader({
+      title: this.item ? renderName(this.item) : undefined,
+      secondary: when(this.item, badges, badgesSkeleton),
+      actions: this.isCrawler
+        ? this.item
+          ? this.renderMenu()
+          : html`<sl-skeleton
+              class="h-8 w-24 [--border-radius:theme(borderRadius.sm)]"
+            ></sl-skeleton>`
+        : undefined,
+    });
   }
 
   private renderMenu() {
