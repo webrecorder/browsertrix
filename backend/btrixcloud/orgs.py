@@ -641,9 +641,9 @@ class OrgOps:
         computed_quotas = {}
 
         if mode == "add":
-            update[0]["$set"]["quotaUpdates"]["$concatArrays"][1][0]["context"] = (
-                context
-            )
+            update[0]["$set"]["quotaUpdates"]["$concatArrays"][1][0][
+                "context"
+            ] = context
             for field, value in quotas.model_dump().items():
                 if field == "context":
                     continue
