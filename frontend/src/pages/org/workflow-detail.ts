@@ -764,9 +764,7 @@ export class WorkflowDetail extends BtrixElement {
                   <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                   ${msg("Item")}
                   ${latestCrawl.fileSize
-                    ? html` <btrix-badge
-                        slot="suffix"
-                        class="font-monostyle text-xs text-neutral-500"
+                    ? html` <btrix-badge slot="suffix"
                         >${this.localize.bytes(
                           latestCrawl.fileSize,
                         )}</btrix-badge

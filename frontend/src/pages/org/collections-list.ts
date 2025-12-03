@@ -689,9 +689,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Collection")}
-            <btrix-badge
-              slot="suffix"
-              class="font-monostyle text-xs text-neutral-500"
+            <btrix-badge slot="suffix"
               >${this.localize.bytes(col.totalSize)}</btrix-badge
             >
           </btrix-menu-item-link>

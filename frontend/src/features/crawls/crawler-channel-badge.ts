@@ -36,7 +36,6 @@ export class CrawlerChannelBadge extends TailwindElement {
         variant=${this.channelId === CrawlerChannelImage.Default
           ? "neutral"
           : "blue"}
-        class="font-monostyle"
       >
         <sl-icon name="boxes" class="mr-1.5"></sl-icon>
         <span class="capitalize">${this.channelId}</span>
