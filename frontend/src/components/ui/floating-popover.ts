@@ -147,10 +147,8 @@ export class FloatingPopover extends SlTooltip {
         arrow
         .anchor=${this.anchor}
       >
-        ${""}
         <slot slot="anchor" aria-describedby="tooltip"></slot>
 
-        ${""}
         <div
           part="body"
           id="tooltip"
