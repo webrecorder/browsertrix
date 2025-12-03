@@ -515,14 +515,7 @@ class BackgroundJobOps:
             )
             await self.jobs.insert_one(cleanup_job.to_dict())
             if not success:
-                try:
-                    await self._send_bg_job_failure_email(cleanup_job, finished)
-                # pylint: disable=broad-exception-caught
-                except Exception as err:
-                    print(
-                        f"Error sending bg job failure email for job {cleanup_job.id}: {err}",
-                        flush=True,
-                    )
+                await self._send_bg_job_failure_email(cleanup_job, finished)
             return
 
         job = await self.get_background_job(job_id)
@@ -544,28 +537,30 @@ class BackgroundJobOps:
         )
 
         if not success:
-            try:
-                await self._send_bg_job_failure_email(job, finished)
-            # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Error sending bg job failure email for job {job.id}: {err}",
-                    flush=True,
-                )
+            await self._send_bg_job_failure_email(job, finished)
 
     async def _send_bg_job_failure_email(self, job: BackgroundJob, finished: datetime):
         print(
             f"Background job {job.id} failed, sending email to superuser",
             flush=True,
         )
-        superuser = await self.user_manager.get_superuser()
-        org = None
-        if job.oid:
-            org = await self.org_ops.get_org_by_id(job.oid)
+        try:
+            superuser = await self.user_manager.get_superuser()
+            org = None
+            if job.oid:
+                org = await self.org_ops.get_org_by_id(job.oid)
 
-        self._run_task(
-            self.email.send_background_job_failed(job, finished, superuser.email, org)
-        )
+            self._run_task(
+                self.email.send_background_job_failed(
+                    job, finished, superuser.email, org
+                )
+            )
+        # pylint: disable=broad-exception-caught
+        except Exception as err:
+            print(
+                f"Error sending bg job failure email for job {job.id}: {err}",
+                flush=True,
+            )
 
     async def get_background_job(
         self, job_id: str, oid: Optional[UUID] = None
