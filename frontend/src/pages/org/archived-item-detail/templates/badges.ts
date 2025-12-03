@@ -48,7 +48,13 @@ const qaReviewBadge = (reviewStatus: ArchivedItem["reviewStatus"]) => html`
 export const badges = (item: ArchivedItem) => {
   return html`<div class="flex flex-wrap gap-3 whitespace-nowrap">
     ${itemTypeBadge(item.type)}
-    ${isCrawl(item) ? html`${qaReviewBadge(item.reviewStatus)}` : nothing}
+    ${isCrawl(item)
+      ? html`${qaReviewBadge(item.reviewStatus)}
+          <btrix-dedupe-badge
+            .dependencies=${item.requiresCrawls}
+            .dependents=${item.requiredByCrawls}
+          ></btrix-dedupe-badge>`
+      : nothing}
     ${collectionBadge(item.collectionIds.length > 0)}
   </div>`;
 };
