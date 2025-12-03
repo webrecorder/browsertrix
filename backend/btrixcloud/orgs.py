@@ -641,9 +641,9 @@ class OrgOps:
         computed_quotas = {}
 
         if mode == "add":
-            update[0]["$set"]["quotaUpdates"]["$concatArrays"][1][0][
-                "context"
-            ] = context
+            update[0]["$set"]["quotaUpdates"]["$concatArrays"][1][0]["context"] = (
+                context
+            )
             for field, value in quotas.model_dump().items():
                 if field == "context":
                     continue
@@ -1665,7 +1665,7 @@ def init_orgs_api(
 
     router = APIRouter(
         prefix="/orgs/{oid}",
-        dependencies=[Depends(org_or_shared_secret_dep)],
+        dependencies=[Depends(org_dep)],
         responses={404: {"description": "Not found"}},
     )
 
