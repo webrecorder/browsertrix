@@ -64,10 +64,10 @@ export class Badge extends TailwindElement {
                 tw`mx-px ring-1`,
                 {
                   success: tw`bg-success-50 text-success-700 ring-success-400`,
-                  warning: tw`bg-warning-600 text-warning-600 ring-warning-600`,
-                  danger: tw`bg-danger-500 text-danger-500 ring-danger-500`,
+                  warning: tw`bg-warning-50 text-warning-600 ring-warning-600`,
+                  danger: tw`bg-danger-50 text-danger-500 ring-danger-500`,
                   neutral: tw`bg-neutral-100 text-neutral-600 ring-neutral-300`,
-                  "high-contrast": tw`bg-neutral-600 text-neutral-0 ring-neutral-0`,
+                  "high-contrast": tw`bg-neutral-0 text-neutral-700 ring-neutral-600`,
                   primary: tw`bg-white text-primary ring-primary`,
                   cyan: tw`bg-cyan-50 text-cyan-600 ring-cyan-600`,
                   blue: tw`bg-blue-50 text-blue-600 ring-blue-600`,
