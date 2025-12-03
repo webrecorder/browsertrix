@@ -1399,18 +1399,6 @@ class CrawlOperator(BaseOperator):
             crawl.db_crawl_id, crawl.is_qa, crawl_file, filecomplete.size
         )
 
-        # no replicas for QA for now
-        if crawl.is_qa:
-            return True
-
-        try:
-            await self.background_job_ops.create_replica_jobs(
-                crawl.oid, crawl_file, crawl.id, "crawl"
-            )
-        # pylint: disable=broad-except
-        except Exception as exc:
-            print("Replicate Exception", exc, flush=True)
-
         return True
 
     async def is_crawl_stopping(
@@ -1718,6 +1706,8 @@ class CrawlOperator(BaseOperator):
                     crawl.id,
                     stats.profile_update,
                 )
+
+            await self.crawl_ops.replicate_crawl_files(crawl.id, crawl.org, "crawl")
 
         if state in FAILED_STATES:
             await self.crawl_ops.delete_failed_crawl_files(crawl.id, crawl.oid)
