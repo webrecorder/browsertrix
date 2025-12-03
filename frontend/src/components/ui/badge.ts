@@ -20,12 +20,8 @@ export type BadgeVariant =
   | "text-neutral";
 
 /**
- * Show numeric value in a label
- *
- * Usage example:
- * ```ts
- * <btrix-badge aria-describedby="text">10</btrix-badge>
- * ```
+ * Badges are compact, non-interactive displays of contextual information.
+ * They are a unobtrusive way of drawing attention to dynamic data like statuses or counts.
  */
 @customElement("btrix-badge")
 export class Badge extends TailwindElement {
@@ -44,6 +40,12 @@ export class Badge extends TailwindElement {
   @property({ type: String, reflect: true })
   role: string | null = "status";
 
+  /**
+   * Style as normal text and not data
+   */
+  @property({ type: Boolean })
+  asLabel = false;
+
   static styles = css`
     :host {
       display: inline-flex;
@@ -55,6 +57,7 @@ export class Badge extends TailwindElement {
       <span
         class=${clsx(
           tw`inline-flex min-h-4 items-center justify-center whitespace-nowrap align-[1px] leading-none`,
+          !this.asLabel && tw`font-monostyle`,
           this.size === "medium" && tw`text-xs`,
           this.outline
             ? [

@@ -20,9 +20,11 @@ export class ProxyBadge extends TailwindElement {
   proxyId?: string;
 
   render() {
-    if (!this.proxyId || !this.orgProxies) return;
+    if (!this.proxyId) return;
 
-    const proxy = this.orgProxies.servers.find(({ id }) => id === this.proxyId);
+    const proxy = this.orgProxies?.servers.find(
+      ({ id }) => id === this.proxyId,
+    );
 
     return html`<btrix-popover
       content=${ifDefined(proxy?.description || undefined)}
