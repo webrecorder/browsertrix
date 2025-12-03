@@ -1102,7 +1102,7 @@ def init_base_crawls_api(app, user_dep, *args):
             ),
         ] = ListFilterType.AND,
         collectionId: Optional[UUID] = None,
-        crawlType: Optional[str] = None,
+        crawlType: Optional[TYPE_CRAWL_TYPES] = None,
         cid: Optional[UUID] = None,
         sortBy: Optional[str] = "finished",
         sortDirection: int = -1,
@@ -1152,7 +1152,7 @@ def init_base_crawls_api(app, user_dep, *args):
     )
     async def get_all_crawls_search_values(
         org: Organization = Depends(org_viewer_dep),
-        crawlType: Optional[str] = None,
+        crawlType: Optional[TYPE_CRAWL_TYPES] = None,
     ):
         if crawlType and crawlType not in CRAWL_TYPES:
             raise HTTPException(status_code=400, detail="invalid_crawl_type")
@@ -1167,7 +1167,7 @@ def init_base_crawls_api(app, user_dep, *args):
     async def get_all_crawls_tag_counts(
         org: Organization = Depends(org_viewer_dep),
         onlySuccessful: bool = True,
-        crawlType: Optional[str] = None,
+        crawlType: Optional[TYPE_CRAWL_TYPES] = None,
     ):
         if crawlType and crawlType not in CRAWL_TYPES:
             raise HTTPException(status_code=400, detail="invalid_crawl_type")
