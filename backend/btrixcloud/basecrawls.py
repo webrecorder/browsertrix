@@ -44,6 +44,8 @@ from .models import (
     UpdatedResponse,
     DeletedResponseQuota,
     CrawlSearchValuesResponse,
+    TYPE_CRAWL_TYPES,
+    CRAWL_TYPES,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now, get_origin, date_to_str
@@ -109,7 +111,7 @@ class BaseCrawlOps:
         self,
         crawlid: str,
         org: Optional[Organization] = None,
-        type_: Optional[str] = None,
+        type_: Optional[TYPE_CRAWL_TYPES] = None,
         project: Optional[dict[str, bool]] = None,
     ) -> Dict[str, Any]:
         """Get data for single crawl"""
@@ -153,7 +155,7 @@ class BaseCrawlOps:
         self,
         crawlid: str,
         org: Optional[Organization] = None,
-        type_: Optional[str] = None,
+        type_: Optional[TYPE_CRAWL_TYPES] = None,
     ) -> BaseCrawl:
         """Get crawl data for internal use"""
         res = await self.get_crawl_raw(crawlid, org, type_)
@@ -163,7 +165,7 @@ class BaseCrawlOps:
         self,
         crawlid: str,
         org: Optional[Organization] = None,
-        type_: Optional[str] = None,
+        type_: Optional[TYPE_CRAWL_TYPES] = None,
         skip_resources=False,
         headers: Optional[dict] = None,
         cid: Optional[UUID] = None,
@@ -310,6 +312,29 @@ class BaseCrawlOps:
             {"userid": userid}, {"$set": {"userName": updated_name}}
         )
 
+    async def replicate_crawl_files(
+        self, crawl_id: str, org: Organization, type_: TYPE_CRAWL_TYPES
+    ):
+        """Replicate crawl files to configured replica locations"""
+        try:
+            crawl = await self.get_base_crawl(crawl_id, org, type_)
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            print(
+                f"Not replicating files for crawl {crawl_id}: crawl not found",
+                flush=True,
+            )
+            return
+
+        for crawl_file in crawl.files:
+            try:
+                await self.background_job_ops.create_replica_jobs(
+                    crawl.oid, crawl_file, crawl.id, type_
+                )
+            # pylint: disable=broad-exception-caught
+            except Exception as exc:
+                print("Replicate Exception", exc, flush=True)
+
     async def add_crawl_file_replica(
         self, crawl_id: str, filename: str, ref: StorageRef
     ) -> dict[str, object]:
@@ -330,7 +355,7 @@ class BaseCrawlOps:
         self,
         org: Organization,
         delete_list: DeleteCrawlList,
-        type_: str,
+        type_: TYPE_CRAWL_TYPES,
         user: Optional[User] = None,
     ) -> tuple[int, dict[UUID, dict[str, int]], bool]:
         """Delete a list of crawls by id for given org"""
@@ -683,7 +708,7 @@ class BaseCrawlOps:
         collection_id: Optional[UUID] = None,
         states: Optional[List[str]] = None,
         first_seed: Optional[str] = None,
-        type_: Optional[str] = None,
+        type_: Optional[TYPE_CRAWL_TYPES] = None,
         cid: Optional[UUID] = None,
         cls_type: Type[Union[CrawlOut, CrawlOutWithResources]] = CrawlOut,
         page_size: int = DEFAULT_PAGE_SIZE,
@@ -915,7 +940,7 @@ class BaseCrawlOps:
         return {"deleted": True, "storageQuotaReached": quota_reached}
 
     async def get_all_crawl_search_values(
-        self, org: Organization, type_: Optional[str] = None
+        self, org: Organization, type_: Optional[TYPE_CRAWL_TYPES] = None
     ):
         """List unique names, first seeds, and descriptions from all captures in org"""
         match_query: dict[str, object] = {"oid": org.id}
@@ -987,7 +1012,7 @@ class BaseCrawlOps:
         )
 
     async def calculate_org_crawl_file_storage(
-        self, oid: UUID, type_: Optional[str] = None
+        self, oid: UUID, type_: Optional[TYPE_CRAWL_TYPES] = None
     ) -> Tuple[int, int, int]:
         """Calculate and return total size of crawl files in org.
 
@@ -1033,13 +1058,13 @@ class BaseCrawlOps:
         self,
         org: Organization,
         only_successful: bool = True,
-        type_: Optional[str] = None,
+        type_: Optional[TYPE_CRAWL_TYPES] = None,
     ):
         """get distinct tags from archived items for this org"""
         match_query: Dict[str, Any] = {"oid": org.id}
         if only_successful:
             match_query["state"] = {"$in": SUCCESSFUL_STATES}
-        if type_ in ("crawl", "upload"):
+        if type_ in CRAWL_TYPES:
             match_query["type"] = type_
 
         tags = await self.crawls.aggregate(
@@ -1088,7 +1113,7 @@ def init_base_crawls_api(app, user_dep, *args):
             ),
         ] = ListFilterType.AND,
         collectionId: Optional[UUID] = None,
-        crawlType: Optional[str] = None,
+        crawlType: Optional[TYPE_CRAWL_TYPES] = None,
         cid: Optional[UUID] = None,
         sortBy: Optional[str] = "finished",
         sortDirection: int = -1,
@@ -1109,7 +1134,7 @@ def init_base_crawls_api(app, user_dep, *args):
         if description:
             description = urllib.parse.unquote(description)
 
-        if crawlType and crawlType not in ("crawl", "upload"):
+        if crawlType and crawlType not in CRAWL_TYPES:
             raise HTTPException(status_code=400, detail="invalid_crawl_type")
 
         crawls, total = await ops.list_all_base_crawls(
@@ -1138,9 +1163,9 @@ def init_base_crawls_api(app, user_dep, *args):
     )
     async def get_all_crawls_search_values(
         org: Organization = Depends(org_viewer_dep),
-        crawlType: Optional[str] = None,
+        crawlType: Optional[TYPE_CRAWL_TYPES] = None,
     ):
-        if crawlType and crawlType not in ("crawl", "upload"):
+        if crawlType and crawlType not in CRAWL_TYPES:
             raise HTTPException(status_code=400, detail="invalid_crawl_type")
 
         return await ops.get_all_crawl_search_values(org, type_=crawlType)
@@ -1153,9 +1178,9 @@ def init_base_crawls_api(app, user_dep, *args):
     async def get_all_crawls_tag_counts(
         org: Organization = Depends(org_viewer_dep),
         onlySuccessful: bool = True,
-        crawlType: Optional[str] = None,
+        crawlType: Optional[TYPE_CRAWL_TYPES] = None,
     ):
-        if crawlType and crawlType not in ("crawl", "upload"):
+        if crawlType and crawlType not in CRAWL_TYPES:
             raise HTTPException(status_code=400, detail="invalid_crawl_type")
 
         tags = await ops.get_all_crawls_tag_counts(
