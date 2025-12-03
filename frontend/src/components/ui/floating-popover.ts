@@ -65,8 +65,8 @@ export class FloatingPopover extends SlTooltip {
         return new DOMRect(
           (this.hasLock("x") ? originalRect?.x : this.clientX) ?? 0,
           (this.hasLock("y") ? originalRect?.y : this.clientY) ?? 0,
-          0,
-          0,
+          this.hasLock("x") ? originalRect?.width : 0,
+          this.hasLock("y") ? originalRect?.height : 0,
         );
       },
     };
