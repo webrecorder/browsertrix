@@ -16,7 +16,7 @@ export const schema = z.object({
     replica_storage: z.object({
       name: z.string(),
       custom: z.boolean(),
-    }),
+    }).optional(),
   }),
   finished: z.coerce.date(),
 });
