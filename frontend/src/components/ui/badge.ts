@@ -21,7 +21,7 @@ export type BadgeVariant =
 
 /**
  * Badges are compact, non-interactive displays of contextual information.
- * They are a unobtrusive way of drawing attention to dynamic data like statuses or counts.
+ * They are an unobtrusive way of drawing attention to dynamic data like statuses or counts.
  */
 @customElement("btrix-badge")
 export class Badge extends TailwindElement {
