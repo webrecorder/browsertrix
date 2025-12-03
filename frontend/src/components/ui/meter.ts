@@ -162,7 +162,7 @@ export class Meter extends TailwindElement {
     }
 
     .valueBar::before {
-      z-index: 2;
+      z-index: 1;
     }
 
     .labels {
@@ -194,10 +194,15 @@ export class Meter extends TailwindElement {
 
     .valueBar ::slotted(btrix-meter-bar) {
       position: relative;
-      --darkened-background-color: color-mix(
-        in srgb,
-        var(--background-color) 100%,
-        rgb(0 0 0 / 0.5) 50%
+      transition-property: box-shadow, opacity;
+      transition-duration: 150ms;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 1px;
+      --darkened-background-color-1: oklch(
+        from var(--background-color) calc(l - 0.2) c h
+      );
+      --darkened-background-color-2: oklch(
+        from var(--background-color) calc(l - 0.1) calc(c + 0.1) h / 0.5
       );
     }
 
@@ -210,7 +215,9 @@ export class Meter extends TailwindElement {
       height: 100%;
       background-color: var(--sl-color-neutral-100);
       opacity: 0;
-      transition-property: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      transition-property: opacity;
+      transition-duration: 150ms;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
       pointer-events: none;
     }
 
@@ -220,9 +227,9 @@ export class Meter extends TailwindElement {
 
     .valueBar:hover ::slotted(btrix-meter-bar:hover) {
       box-shadow:
-        0 0 0 1px var(--background-color),
-        0 1px 3px 0 var(--darkened-background-color),
-        0 1px 2px -1px var(--darkened-background-color);
+        0 0 0 1px var(--darkened-background-color-1),
+        0 1px 3px 0 var(--darkened-background-color-2),
+        0 1px 2px -1px var(--darkened-background-color-2);
       z-index: 1;
     }
 
@@ -237,12 +244,14 @@ export class Meter extends TailwindElement {
     }
 
     .valueBar ::slotted(btrix-meter-bar:first-of-type),
-    .valueBar ::slotted(btrix-meter-bar:first-of-type):after {
+    .valueBar ::slotted(btrix-meter-bar:first-of-type):after,
+    .valueBar:hover ::slotted(btrix-meter-bar:first-of-type) {
       border-top-left-radius: var(--sl-border-radius-medium);
       border-bottom-left-radius: var(--sl-border-radius-medium);
     }
     .valueBar ::slotted(btrix-meter-bar:last-of-type),
-    .valueBar ::slotted(btrix-meter-bar:last-of-type):after {
+    .valueBar ::slotted(btrix-meter-bar:last-of-type):after,
+    .valueBar:hover ::slotted(btrix-meter-bar:last-of-type) {
       border-top-right-radius: var(--sl-border-radius-medium);
       border-bottom-right-radius: var(--sl-border-radius-medium);
     }
