@@ -640,7 +640,7 @@ class OrgOps:
             }
         ]
 
-        computed_quotas = {}
+        computed_quotas: dict[str, Any] = {}
 
         if mode == "add":
             update[0]["$set"]["quotaUpdates"]["$concatArrays"][1][0][
