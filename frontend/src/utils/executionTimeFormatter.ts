@@ -15,15 +15,26 @@ import localize from "./localize";
  */
 export function humanizeSeconds(
   seconds: number,
-  locale?: string,
-  displaySeconds = false,
-  unitDisplay: "narrow" | "short" | "long" = "narrow",
+  {
+    locale,
+    displaySeconds = false,
+    unitDisplay = "narrow",
+    maxUnit = "hour",
+  }: {
+    locale?: string;
+    displaySeconds?: boolean;
+    unitDisplay?: "narrow" | "short" | "long";
+    maxUnit?: "hour" | "minute";
+  } = {},
 ) {
   if (seconds < 0) {
     throw new Error("humanizeSeconds in unimplemented for negative times");
   }
-  const hours = Math.floor(seconds / 3600);
-  seconds -= hours * 3600;
+  let hours = 0;
+  if (maxUnit === "hour") {
+    hours = Math.floor(seconds / 3600);
+    seconds -= hours * 3600;
+  }
   // If displaying seconds, round minutes down, otherwise round up
   const minutes = displaySeconds
     ? Math.floor(seconds / 60)
@@ -109,7 +120,15 @@ export const humanizeExecutionSeconds = (
     maximumFractionDigits: 0,
   });
 
-  const details = humanizeSeconds(seconds, locale, displaySeconds);
+  if (seconds === 0) {
+    return longMinuteFormatter.format(0);
+  }
+
+  const details = humanizeSeconds(seconds, {
+    locale,
+    displaySeconds,
+    maxUnit: "minute",
+  });
   const compactMinutes = compactMinuteFormatter.format(minutes);
   const fullMinutes = longMinuteFormatter.format(minutes);
 
@@ -118,8 +137,11 @@ export const humanizeExecutionSeconds = (
     ? seconds % 60 !== 0
     : Math.floor(seconds / 60) === 0 && seconds % 60 !== 0;
   const formattedDetails =
-    detailsRelevant || seconds > 3600 ? `\u00a0(${details})` : nothing;
-  const prefix = detailsRelevant && seconds < 60 ? "<" : "";
+    detailsRelevant || seconds > 3600 ? details : nothing;
+  const prefix =
+    (!displaySeconds && seconds < 60) || (displaySeconds && seconds < 1)
+      ? "<"
+      : "";
 
   switch (style) {
     case "long":
@@ -127,11 +149,10 @@ export const humanizeExecutionSeconds = (
         title="${ifDefined(
           fullMinutes !== compactMinutes ? fullMinutes : undefined,
         )}"
-        >${prefix}${compactMinutes}${formattedDetails}</span
+        >${prefix}${detailsRelevant ? formattedDetails : compactMinutes}</span
       >`;
     case "short":
-      return html`<span
-        title="${longMinuteFormatter.format(minutes)}${formattedDetails}"
+      return html`<span title="${longMinuteFormatter.format(minutes)}"
         >${prefix}${compactMinutes}</span
       >`;
   }

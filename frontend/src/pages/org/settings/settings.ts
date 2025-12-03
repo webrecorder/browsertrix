@@ -91,7 +91,7 @@ export class OrgSettings extends BtrixElement {
     return {
       information: msg("General"),
       members: msg("Members"),
-      billing: msg("Billing"),
+      billing: msg("Billing & Usage"),
       "crawling-defaults": msg("Crawling Defaults"),
     };
   }
