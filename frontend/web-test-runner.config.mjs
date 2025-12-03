@@ -31,15 +31,8 @@ glob.sync("./src/assets/**/*").forEach((filepath) => {
 });
 
 export default {
-  nodeResolve: {
-    exportConditions: ["browser", "import", "module", "default"],
-  },
+  nodeResolve: true,
   rootDir: process.cwd(),
-  moduleTypes: {
-    // Explicitly ignore declaration files
-    "**/*.d.ts": "js",
-    "**/*.d.mts": "js",
-  },
   browsers: [
     playwrightLauncher({
       product: "chromium",
@@ -79,9 +72,9 @@ export default {
         "node_modules/parse-ms/**/*",
         "node_modules/regex-colorize/**/*",
         "node_modules/@formatjs/intl-durationformat/**/*",
+        "node_modules/@floating-ui/**/*",
       ],
     }),
-
     importMapsPlugin({
       inject: {
         importMap: {
@@ -95,36 +88,6 @@ export default {
             ),
             "@shoelace-style/shoelace/dist/themes/light.css": fileURLToPath(
               new URL("./src/__mocks__/_empty.js", import.meta.url),
-            ),
-            "@floating-ui/core": fileURLToPath(
-              new URL(
-                "./node_modules/@floating-ui/core/dist/floating-ui.core.esm.js",
-                import.meta.url,
-              ),
-            ),
-            "@floating-ui/dom": fileURLToPath(
-              new URL(
-                "./node_modules/@floating-ui/dom/dist/floating-ui.dom.esm.js",
-                import.meta.url,
-              ),
-            ),
-            "@floating-ui/utils": fileURLToPath(
-              new URL(
-                "./node_modules/@floating-ui/utils/dist/floating-ui.utils.esm.js",
-                import.meta.url,
-              ),
-            ),
-            "@floating-ui/utils/dom": fileURLToPath(
-              new URL(
-                "./node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.esm.js",
-                import.meta.url,
-              ),
-            ),
-            "@floating-ui/utils/react": fileURLToPath(
-              new URL(
-                "./node_modules/@floating-ui/utils/dist/floating-ui.utils.react.esm.js",
-                import.meta.url,
-              ),
             ),
           },
         },
