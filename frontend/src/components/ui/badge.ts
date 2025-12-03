@@ -13,6 +13,8 @@ export type BadgeVariant =
   | "primary"
   | "cyan"
   | "blue"
+  | "violet"
+  | "orange"
   | "high-contrast"
   | "text"
   | "text-neutral";
@@ -52,7 +54,7 @@ export class Badge extends TailwindElement {
     return html`
       <span
         class=${clsx(
-          tw`inline-flex min-h-4 items-center justify-center align-[1px] leading-none`,
+          tw`inline-flex min-h-4 items-center justify-center whitespace-nowrap align-[1px] leading-none`,
           this.size === "medium" && tw`text-xs`,
           this.outline
             ? [
@@ -67,6 +69,8 @@ export class Badge extends TailwindElement {
                   cyan: tw`bg-cyan-50 text-cyan-600 ring-cyan-600`,
                   blue: tw`bg-blue-50 text-blue-600 ring-blue-600`,
                   text: tw`text-blue-500 ring-blue-600`,
+                  violet: tw`bg-violet-50 text-violet-600 ring-violet-600`,
+                  orange: tw`bg-orange-50 text-orange-600 ring-orange-600`,
                   "text-neutral": tw`text-neutral-500 ring-neutral-600`,
                 }[this.variant],
               ]
@@ -79,6 +83,8 @@ export class Badge extends TailwindElement {
                 primary: tw`bg-primary text-neutral-0`,
                 cyan: tw`bg-cyan-50 text-cyan-600`,
                 blue: tw`bg-blue-50 text-blue-600`,
+                violet: tw`bg-violet-50 text-violet-600`,
+                orange: tw`bg-orange-50 text-orange-600`,
                 text: tw`text-blue-500`,
                 "text-neutral": tw`text-neutral-500`,
               }[this.variant],
