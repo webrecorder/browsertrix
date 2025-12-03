@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { html } from "lit";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import { renderLegendColor } from "@/features/meters/utils/legend";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
@@ -13,12 +14,12 @@ export const tooltipRow = (
 ) => html`
   <p
     class=${clsx(
-      "flex justify-between gap-4",
+      tw`flex justify-between gap-4`,
       highlight &&
         tw`-mx-1.5 rounded bg-white px-1.5 shadow-sm ring-1 ring-stone-800/5`,
     )}
   >
-    <span class=${highlight ? "font-semibold" : ""}
+    <span class=${ifDefined(highlight ? tw`font-semibold` : undefined)}
       >${color ? renderLegendColor(color) : null}${title}</span
     >
     <span
