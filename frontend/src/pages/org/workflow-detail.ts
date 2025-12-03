@@ -683,7 +683,12 @@ export class WorkflowDetail extends BtrixElement {
       <header
         class="mb-2 flex h-7 items-end justify-between text-lg font-medium"
       >
-        <h3>${this.tabLabels[tab]}</h3>
+        <div class="flex items-center gap-2">
+          <h3>${this.tabLabels[tab]}</h3>
+          ${tab === WorkflowTab.LatestCrawl
+            ? this.renderDedupeBadge()
+            : nothing}
+        </div>
         <div class="flex items-center gap-2">${this.renderPanelAction()}</div>
       </header>
 
@@ -1385,6 +1390,17 @@ export class WorkflowDetail extends BtrixElement {
         </btrix-tab-group-panel>
       </btrix-tab-group>
     `;
+  };
+
+  private readonly renderDedupeBadge = () => {
+    const latestCrawl = this.latestCrawlTask.value;
+
+    if (!latestCrawl) return;
+
+    return html`<btrix-dedupe-badge
+      .dependencies=${latestCrawl.requiresCrawls}
+      .dependents=${latestCrawl.requiredByCrawls}
+    ></btrix-dedupe-badge>`;
   };
 
   private readonly renderPausedNotice = (
