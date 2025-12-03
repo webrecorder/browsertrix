@@ -625,8 +625,7 @@ def test_get_all_crawls_by_type(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?crawlType=invalid",
         headers=admin_auth_headers,
     )
-    assert r.status_code == 400
-    assert r.json()["detail"] == "invalid_crawl_type"
+    assert r.status_code == 422
 
 
 def test_get_all_crawls_by_user(
@@ -892,8 +891,7 @@ def test_all_crawls_search_values(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/search-values?crawlType=invalid",
         headers=admin_auth_headers,
     )
-    assert r.status_code == 400
-    assert r.json()["detail"] == "invalid_crawl_type"
+    assert r.status_code == 422
 
 
 def test_get_upload_from_all_crawls(admin_auth_headers, default_org_id, upload_id_2):
