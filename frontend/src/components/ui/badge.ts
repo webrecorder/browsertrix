@@ -97,7 +97,7 @@ export class Badge extends TailwindElement {
               }[this.variant],
           this.pill
             ? [
-                tw`min-w-[1.125rem] rounded-full px-1.5`,
+                tw`min-w-[1.125rem] rounded-full px-2`,
                 this.size === "large" && tw`py-0.5`,
               ]
             : [tw`rounded`, this.size === "large" ? tw`px-2.5 py-1` : tw`px-2`],
