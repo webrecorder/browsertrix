@@ -1610,7 +1610,7 @@ def init_orgs_api(
 
     router = APIRouter(
         prefix="/orgs/{oid}",
-        dependencies=[Depends(org_or_shared_secret_dep)],
+        dependencies=[Depends(org_dep)],
         responses={404: {"description": "Not found"}},
     )
 
