@@ -197,7 +197,7 @@ class EmailSender:
         await self._send_encrypted(
             receiver_email,
             "failedBgJob",
-            job=job,
+            job=job.model_dump(mode="json"),
             org=str(org.id) if org else None,
             finished=finished.isoformat(),
         )
