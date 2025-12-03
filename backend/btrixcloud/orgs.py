@@ -699,6 +699,8 @@ class OrgOps:
 
         # Inc org available fields for extra/gifted execution time as needed
         for extra_or_gifted in ["extra", "gifted"]:
+            if not computed_quotas[f"{extra_or_gifted}ExecMinutes"]:
+                continue
             previous_mins = {
                 "$cond": {
                     "if": {
