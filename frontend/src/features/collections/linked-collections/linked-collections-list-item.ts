@@ -39,6 +39,8 @@ export class LinkedCollectionsListItem extends TailwindElement {
     const actual = isActualCollection(item);
     const dedupeEnabled = this.dedupeSource;
 
+    console.log(dedupeEnabled);
+
     const content = [
       html`<div
         class="inline-flex flex-1 items-center gap-2 p-1.5 leading-none"

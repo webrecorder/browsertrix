@@ -12,7 +12,7 @@ export class DedupeSourceBadge extends TailwindElement {
       content=${msg("This collection is used as a deduplication source.")}
       hoist
     >
-      <btrix-badge variant="primary" class="font-monostyle">
+      <btrix-badge variant="orange" outline>
         <sl-icon
           class="mr-1.5"
           name="file-earmark-scan"

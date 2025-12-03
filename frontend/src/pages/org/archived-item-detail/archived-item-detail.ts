@@ -686,7 +686,7 @@ export class ArchivedItemDetail extends BtrixElement {
     const badges = (item: ArchivedItem) => {
       return html`<div class="flex flex-wrap gap-3 whitespace-nowrap">
         ${isCrawl(item)
-          ? html`<btrix-badge class="font-monostyle">
+          ? html`<btrix-badge>
                 <sl-icon class="mr-1.5" name="gear-wide-connected"></sl-icon>
                 ${msg("Crawl")}</btrix-badge
               >
@@ -698,22 +698,18 @@ export class ArchivedItemDetail extends BtrixElement {
                 )}
                 ?disabled=${!item.reviewStatus}
               >
-                <btrix-badge
-                  variant=${item.reviewStatus ? "cyan" : "neutral"}
-                  class="font-monostyle"
-                >
+                <btrix-badge variant=${item.reviewStatus ? "cyan" : "neutral"}>
                   <sl-icon class="mr-1.5" name="clipboard2-data"></sl-icon>
                   ${item.reviewStatus
                     ? msg("Reviewed")
                     : msg("No Review")}</btrix-badge
                 >
               </btrix-popover>
-              ${item.requiresCrawls || item.requiredByCrawls
-                ? html`<btrix-dedupe-badge
-                    ?requiredByCrawls=${item.requiredByCrawls}
-                  ></btrix-dedupe-badge>`
-                : nothing} `
-          : html`<btrix-badge class="font-monostyle">
+              <btrix-dedupe-badge
+                .dependencies=${item.requiresCrawls}
+                .dependents=${item.requiredByCrawls}
+              ></btrix-dedupe-badge>`
+          : html`<btrix-badge>
               <sl-icon class="mr-1.5" name="upload"></sl-icon>
               ${msg("Uploaded")}</btrix-badge
             >`}

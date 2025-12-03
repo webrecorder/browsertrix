@@ -6,8 +6,8 @@ import { renderComponent, type RenderProps } from "./Badge";
 
 import "@/features/crawls/crawler-channel-badge";
 import "@/features/crawls/proxy-badge";
-import "@/features/dedupe/dedupe-badge";
-import "@/features/dedupe/dedupe-source-badge";
+import "@/features/collections/dedupe-badge";
+import "@/features/collections/dedupe-source-badge";
 
 const meta = {
   title: "Components/Badge",
@@ -34,6 +34,7 @@ const variants = [
   "danger",
   "neutral",
   "primary",
+  "lime",
   "cyan",
   "blue",
   "violet",
@@ -131,8 +132,10 @@ export const FeatureBadges: Story = {
     <btrix-crawler-channel-badge
       channelId="default"
     ></btrix-crawler-channel-badge>
-    <btrix-dedupe-badge></btrix-dedupe-badge>
-    <btrix-dedupe-badge requiredByCrawls></btrix-dedupe-badge>
     <btrix-dedupe-source-badge></btrix-dedupe-source-badge>
+    <btrix-dedupe-badge
+      .dependencies=${["crawl1"]}
+      .dependents=${["crawl1"]}
+    ></btrix-dedupe-badge>
   `,
 };

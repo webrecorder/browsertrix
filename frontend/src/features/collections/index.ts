@@ -7,6 +7,8 @@ import("./collection-edit-dialog");
 import("./collection-create-dialog");
 import("./collection-initial-view-dialog");
 import("./collection-workflow-list");
+import("./dedupe-badge");
+import("./dedupe-source-badge");
 import("./linked-collections");
 import("./select-collection-access");
 import("./select-collection-page");

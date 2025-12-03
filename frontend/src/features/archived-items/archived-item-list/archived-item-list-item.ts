@@ -1,5 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlCheckbox, SlHideEvent } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { css, html, nothing } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -9,8 +10,9 @@ import type { ArchivedItemCheckedEvent } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ReviewStatus, type ArchivedItem, type Crawl } from "@/types/crawler";
-import { renderName } from "@/utils/crawler";
+import { isCrawl, renderName } from "@/utils/crawler";
 import localize from "@/utils/localize";
+import { tw } from "@/utils/tailwind";
 
 /**
  * @slot actionCell - Action cell
@@ -82,14 +84,14 @@ export class ArchivedItemListItem extends BtrixElement {
       content=${msg("Not applicable")}
     >
       <sl-icon
-        name="slash"
+        name="slash-lg"
         class="text-base text-neutral-400"
         label=${msg("Not applicable")}
       ></sl-icon>
     </sl-tooltip>`;
     const none = html`<sl-tooltip hoist content=${msg("None")}>
       <sl-icon
-        name="slash"
+        name="dash-lg"
         class="text-base text-neutral-400"
         label=${msg("None")}
       ></sl-icon>
@@ -103,6 +105,9 @@ export class ArchivedItemListItem extends BtrixElement {
     const qaStatus = CrawlStatus.getContent({
       state: lastQAState || undefined,
     });
+    const dedupeDependent =
+      isCrawl(this.item) &&
+      (this.item.requiredByCrawls.length || this.item.requiresCrawls.length);
 
     return html`
       <btrix-table-row
@@ -149,7 +154,7 @@ export class ArchivedItemListItem extends BtrixElement {
                   hoist
                 >
                   <sl-icon
-                    class="text-inherit"
+                    class="size-4 text-base"
                     style="color: ${crawlStatus.cssColor}"
                     name=${typeIcon}
                     label=${typeLabel}
@@ -157,30 +162,19 @@ export class ArchivedItemListItem extends BtrixElement {
                 </sl-tooltip>
               `}
           <sl-tooltip
+            content=${dedupeDependent
+              ? msg("Deduplication Dependent")
+              : msg("No Dependencies")}
             hoist
-            content=${activeQAStats
-              ? msg(
-                  str`QA Analysis: ${qaStatus.label} (${activeProgress}% finished)`,
-                )
-              : msg(
-                  str`QA Analysis: ${isUpload ? "Not Applicable" : qaStatus.label || msg("None")}`,
-                )}
           >
-            ${activeQAStats
-              ? html`
-                  <sl-progress-ring
-                    value="${activeProgress}"
-                    style="color: ${qaStatus.cssColor};"
-                  ></sl-progress-ring>
-                `
-              : html`
-                  <sl-icon
-                    class="text-base"
-                    style="color: ${qaStatus.cssColor}"
-                    name=${isUpload ? "slash" : "microscope"}
-                    library=${isUpload ? "default" : "app"}
-                  ></sl-icon>
-                `}
+            <sl-icon
+              class=${clsx(
+                tw`size-4 text-base`,
+                dedupeDependent ? tw`text-orange-600` : tw`text-neutral-400`,
+              )}
+              name=${dedupeDependent ? "file-earmark-scan3" : "file-earmark"}
+              library=${dedupeDependent ? "app" : "default"}
+            ></sl-icon>
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell
@@ -281,22 +275,34 @@ export class ArchivedItemListItem extends BtrixElement {
         <btrix-table-cell class="tabular-nums">
           ${isUpload
             ? notApplicable
-            : lastQAStarted && qaRunCount
-              ? html`
-                  <sl-tooltip
-                    hoist
-                    content=${msg(
-                      str`Last run started on ${localize.date(lastQAStarted)}`,
-                    )}
-                  >
-                    <div class="min-w-4">
-                      ${this.localize.number(qaRunCount, {
-                        notation: "compact",
-                      })}
-                    </div>
-                  </sl-tooltip>
-                `
-              : none}
+            : activeQAStats
+              ? html`<sl-tooltip
+                  content="${msg(
+                    "QA Analysis in Progress",
+                  )}: ${qaStatus.label} (${activeProgress}% ${msg("finished")})"
+                  hoist
+                >
+                  <sl-progress-ring
+                    value="${activeProgress}"
+                    style="color: ${qaStatus.cssColor};"
+                  ></sl-progress-ring>
+                </sl-tooltip>`
+              : lastQAStarted && qaRunCount
+                ? html`
+                    <sl-tooltip
+                      hoist
+                      content=${msg(
+                        str`Last run started on ${localize.date(lastQAStarted)}`,
+                      )}
+                    >
+                      <div class="min-w-4">
+                        ${this.localize.number(qaRunCount, {
+                          notation: "compact",
+                        })}
+                      </div>
+                    </sl-tooltip>
+                  `
+                : none}
         </btrix-table-cell>
         <btrix-table-cell>
           ${isUpload

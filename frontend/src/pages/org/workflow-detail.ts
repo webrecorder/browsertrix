@@ -1395,14 +1395,11 @@ export class WorkflowDetail extends BtrixElement {
   private readonly renderDedupeBadge = () => {
     const latestCrawl = this.latestCrawlTask.value;
 
-    if (
-      !latestCrawl ||
-      (!latestCrawl.requiredByCrawls && !latestCrawl.requiresCrawls)
-    )
-      return;
+    if (!latestCrawl) return;
 
     return html`<btrix-dedupe-badge
-      ?requiredByCrawls=${latestCrawl.requiredByCrawls}
+      .dependencies=${latestCrawl.requiresCrawls}
+      .dependents=${latestCrawl.requiredByCrawls}
     ></btrix-dedupe-badge>`;
   };
 
