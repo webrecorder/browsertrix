@@ -65,16 +65,23 @@ export class StorageMeter extends BtrixElement {
             value: this.localize.bytes(values[key], {
               unitDisplay: "narrow",
             }),
-            content: html`${nonZeroValues.map((type) =>
-                tooltipRow(
-                  titles[type],
-                  values[type],
-                  type === key,
-                  colors[type],
-                ),
-              )}
-              <hr class="my-2" />
-              ${tooltipRow(msg("All used storage"), metrics.storageUsedBytes)}`,
+            content:
+              nonZeroValues.length > 1
+                ? html`<hr class="my-2" />
+                    ${nonZeroValues.map((type) =>
+                      tooltipRow(
+                        titles[type],
+                        values[type],
+                        type === key,
+                        colors[type],
+                      ),
+                    )}
+                    <hr class="my-2" />
+                    ${tooltipRow(
+                      msg("All used storage"),
+                      metrics.storageUsedBytes,
+                    )}`
+                : undefined,
           })}
         </btrix-meter-bar>
       `;
