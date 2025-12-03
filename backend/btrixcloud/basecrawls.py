@@ -1134,9 +1134,6 @@ def init_base_crawls_api(app, user_dep, *args):
         if description:
             description = urllib.parse.unquote(description)
 
-        if crawlType and crawlType not in CRAWL_TYPES:
-            raise HTTPException(status_code=400, detail="invalid_crawl_type")
-
         crawls, total = await ops.list_all_base_crawls(
             org,
             userid=userid,
@@ -1165,9 +1162,6 @@ def init_base_crawls_api(app, user_dep, *args):
         org: Organization = Depends(org_viewer_dep),
         crawlType: Optional[TYPE_CRAWL_TYPES] = None,
     ):
-        if crawlType and crawlType not in CRAWL_TYPES:
-            raise HTTPException(status_code=400, detail="invalid_crawl_type")
-
         return await ops.get_all_crawl_search_values(org, type_=crawlType)
 
     @app.get(
@@ -1180,9 +1174,6 @@ def init_base_crawls_api(app, user_dep, *args):
         onlySuccessful: bool = True,
         crawlType: Optional[TYPE_CRAWL_TYPES] = None,
     ):
-        if crawlType and crawlType not in CRAWL_TYPES:
-            raise HTTPException(status_code=400, detail="invalid_crawl_type")
-
         tags = await ops.get_all_crawls_tag_counts(
             org, only_successful=onlySuccessful, type_=crawlType
         )
