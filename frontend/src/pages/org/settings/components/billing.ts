@@ -108,6 +108,16 @@ export class OrgSettingsBilling extends BtrixElement {
       str`Click “${this.portalUrlLabel}” to view plan details, payment methods, and billing information.`,
     );
 
+    const meterPendingExecutionTime = html`
+      <sl-skeleton class="mb-2 mt-[9px] h-4 w-24"></sl-skeleton>
+      <sl-skeleton class="mb-9 h-4"></sl-skeleton>
+    `;
+
+    const meterPendingStorage = html`
+      <sl-skeleton class="mb-2 mt-[9px] h-4 w-24"></sl-skeleton>
+      <sl-skeleton class="mb-12 h-4"></sl-skeleton>
+    `;
+
     return html`
       <section class="-mt-5">
         ${columns([
@@ -310,12 +320,12 @@ export class OrgSettingsBilling extends BtrixElement {
           hasExecutionMinuteQuota(this.org),
           () =>
             this.metrics.render({
-              initial: () => html` <sl-skeleton></sl-skeleton> `,
+              initial: () => meterPendingExecutionTime,
               complete: (metrics) =>
                 html` <btrix-execution-minute-meter
                   .metrics=${metrics}
                 ></btrix-execution-minute-meter>`,
-              pending: () => html` <sl-skeleton></sl-skeleton> `,
+              pending: () => meterPendingExecutionTime,
             }),
           () => {
             if (!this.org?.crawlExecSeconds)
@@ -343,7 +353,7 @@ export class OrgSettingsBilling extends BtrixElement {
           hasStorageQuota(this.org),
           () =>
             this.metrics.render({
-              initial: () => html` <sl-skeleton></sl-skeleton> `,
+              initial: () => meterPendingStorage,
               complete: (metrics) =>
                 when(
                   metrics.storageQuotaBytes,
@@ -352,8 +362,7 @@ export class OrgSettingsBilling extends BtrixElement {
                       .metrics=${metrics}
                     ></btrix-storage-meter>`,
                 ),
-              pending: () => html` <sl-skeleton></sl-skeleton> `,
-              error: () => html` <sl-skeleton></sl-skeleton> `,
+              pending: () => meterPendingStorage,
             }),
           () => {
             if (!this.org?.bytesStored)
