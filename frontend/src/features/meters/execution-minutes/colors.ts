@@ -9,8 +9,8 @@ export const executionMinuteColors = {
       border: "lime-700",
     },
     background: {
-      primary: "lime-100",
-      border: "lime-400",
+      primary: "neutral-100",
+      border: "neutral-300",
     },
   },
   gifted: {
@@ -20,7 +20,7 @@ export const executionMinuteColors = {
     },
     background: {
       primary: "blue-100",
-      border: "blue-400",
+      border: "blue-300",
     },
   },
   extra: {
@@ -30,7 +30,7 @@ export const executionMinuteColors = {
     },
     background: {
       primary: "violet-100",
-      border: "violet-400",
+      border: "violet-300",
     },
   },
 } satisfies Record<
