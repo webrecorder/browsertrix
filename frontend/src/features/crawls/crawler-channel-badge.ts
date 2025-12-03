@@ -21,9 +21,9 @@ export class CrawlerChannelBadge extends TailwindElement {
   channelId?: CrawlerChannelImage | AnyString;
 
   render() {
-    if (!this.channelId || !this.crawlerChannels) return;
+    if (!this.channelId) return;
 
-    const crawlerChannel = this.crawlerChannels.find(
+    const crawlerChannel = this.crawlerChannels?.find(
       ({ id }) => id === this.channelId,
     );
 
@@ -36,7 +36,6 @@ export class CrawlerChannelBadge extends TailwindElement {
         variant=${this.channelId === CrawlerChannelImage.Default
           ? "neutral"
           : "blue"}
-        class="font-monostyle whitespace-nowrap"
       >
         <sl-icon name="boxes" class="mr-1.5"></sl-icon>
         <span class="capitalize">${this.channelId}</span>

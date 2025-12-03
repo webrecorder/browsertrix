@@ -658,9 +658,7 @@ export class OrgCrawls extends BtrixElement {
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Item")}
             ${crawl.fileSize
-              ? html` <btrix-badge
-                  slot="suffix"
-                  class="font-monostyle text-xs text-neutral-500"
+              ? html` <btrix-badge slot="suffix"
                   >${this.localize.bytes(crawl.fileSize)}</btrix-badge
                 >`
               : nothing}

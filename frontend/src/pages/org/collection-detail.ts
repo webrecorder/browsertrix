@@ -562,9 +562,7 @@ export class CollectionDetail extends BtrixElement {
             ${when(
               this.collection,
               (collection) => html`
-                <btrix-badge
-                  slot="suffix"
-                  class="font-monostyle text-xs text-neutral-500"
+                <btrix-badge slot="suffix"
                   >${this.localize.bytes(
                     collection.totalSize || 0,
                   )}</btrix-badge

@@ -20,16 +20,18 @@ export class ProxyBadge extends TailwindElement {
   proxyId?: string;
 
   render() {
-    if (!this.proxyId || !this.orgProxies) return;
+    if (!this.proxyId) return;
 
-    const proxy = this.orgProxies.servers.find(({ id }) => id === this.proxyId);
+    const proxy = this.orgProxies?.servers.find(
+      ({ id }) => id === this.proxyId,
+    );
 
     return html`<btrix-popover
       content=${ifDefined(proxy?.description || undefined)}
       ?disabled=${!proxy?.description}
       hoist
     >
-      <btrix-badge variant="blue" class="font-monostyle whitespace-nowrap">
+      <btrix-badge variant="violet" class="font-monostyle">
         <sl-icon name="globe2" class="mr-1.5"></sl-icon>
         ${proxy?.label || this.proxyId}
       </btrix-badge>

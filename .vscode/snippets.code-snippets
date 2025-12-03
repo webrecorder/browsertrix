@@ -1,7 +1,10 @@
 {
   "Btrix Component": {
     "scope": "javascript,typescript",
-    "prefix": ["component", "@customElement"],
+    "prefix": [
+      "component",
+      "@customElement"
+    ],
     "isFileTemplate": true,
     "body": [
       "import { localized } from \"@lit/localize\";",
@@ -22,7 +25,10 @@
   },
   "Btrix Component Test": {
     "scope": "javascript,typescript",
-    "prefix": ["test","describe"],
+    "prefix": [
+      "test",
+      "describe"
+    ],
     "isFileTemplate": true,
     "body": [
       "import { expect, fixture } from \"@open-wc/testing\";",
@@ -54,5 +60,60 @@
       ""
     ],
     "description": "Unit test for custom component that extends `BtrixComponent`"
+  },
+  "Btrix Storybook Component Render": {
+    "scope": "javascript,typescript",
+    "prefix": [
+      "renderComponent",
+      "component"
+    ],
+    "isFileTemplate": true,
+    "body": [
+      "import { html } from \"lit\";",
+      "import { ifDefined } from \"lit/directives/if-defined.js\";",
+      "",
+      "import type { ${1:Component} } from \"@/${2:directory}/${3:component}\";",
+      "",
+      "import \"@/${2:directory}/${3:component}\";",
+      "",
+      "export type RenderProps = ${1:Component};",
+      "",
+      "export const renderComponent = (props: Partial<RenderProps>) => {",
+      "  return html`<btrix-${3:component} ${4:property}=${ifDefined(props.${4:property})}></btrix-${3:component}>`;",
+      "};"
+    ],
+    "description": "Component render for Storybook stories"
+  },
+  "Btrix Storybook Component Story": {
+    "scope": "javascript,typescript",
+    "prefix": [
+      "story",
+      "stories",
+      "doc"
+    ],
+    "isFileTemplate": true,
+    "body": [
+      "import type { Meta, StoryObj } from \"@storybook/web-components\";",
+      "",
+      "import { renderComponent, type RenderProps } from \"./${TM_FILENAME_BASE/\\.stories(.*)/$1/}\";",
+      "",
+      "const meta = {",
+      "  title: \"Components/${TM_FILENAME_BASE/\\.stories(.*)/$1/}\",",
+      "  component: \"btrix-${2:component}\",",
+      "  tags: [\"autodocs\"],",
+      "  decorators: [],",
+      "  render: renderComponent,",
+      "  argTypes: {},",
+      "  args: {},",
+      "} satisfies Meta<RenderProps>;",
+      "",
+      "export default meta;",
+      "type Story = StoryObj<RenderProps>;",
+      "",
+      "export const Basic: Story = {",
+      "  args: {},",
+      "};"
+    ],
+    "description": "Stories for component in Storybook"
   }
 }
