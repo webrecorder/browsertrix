@@ -102,7 +102,8 @@ export class ExecutionMinuteMeter extends BtrixElement {
     const foregroundTooltipContent = (currentBucket: Bucket) => {
       const rows = EXEC_MINUTE_ORDER.filter((bucket) => usedValues[bucket] > 0);
       if (rows.length < 2) return;
-      return html`${rows.map((bucket) =>
+      return html`<hr class="my-2" />
+        ${rows.map((bucket) =>
           tooltipRow(
             {
               monthly: msg("Monthly"),
@@ -123,7 +124,8 @@ export class ExecutionMinuteMeter extends BtrixElement {
         (bucket) => backgroundValues[bucket] > 0,
       );
       if (rows.length < 2) return;
-      return html`${rows.map((bucket) =>
+      return html`<hr class="my-2" />
+        ${rows.map((bucket) =>
           tooltipRow(
             {
               monthly: msg("Monthly Remaining"),

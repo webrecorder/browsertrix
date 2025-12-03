@@ -13,5 +13,4 @@ export const tooltipContent = ({
       <span>${title}</span>
       <span>${value}</span>
     </header>
-    <hr class="my-2" />
     ${content}`;
