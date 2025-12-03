@@ -56,9 +56,13 @@ export class Badge extends TailwindElement {
     return html`
       <span
         class=${clsx(
-          tw`inline-flex min-h-4 items-center justify-center whitespace-nowrap align-[1px] leading-none`,
-          !this.asLabel && tw`font-monostyle`,
-          this.size === "medium" && tw`text-xs`,
+          tw`inline-flex min-h-4 items-center justify-center whitespace-nowrap leading-none`,
+          this.asLabel
+            ? [this.size === "medium" && tw`text-xs`]
+            : [
+                tw`font-mono [font-variation-settings:var(--font-monostyle-variation)]`,
+                this.size === "medium" && tw`text-xs`,
+              ],
           this.outline
             ? [
                 tw`mx-px ring-1`,
@@ -93,8 +97,8 @@ export class Badge extends TailwindElement {
               }[this.variant],
           this.pill
             ? [
-                tw`min-w-[1.125rem] rounded-full`,
-                this.size === "large" ? tw`px-1.5 py-0.5` : tw`px-1`,
+                tw`min-w-[1.125rem] rounded-full px-1.5`,
+                this.size === "large" && tw`py-0.5`,
               ]
             : [tw`rounded`, this.size === "large" ? tw`px-2.5 py-1` : tw`px-2`],
         )}
