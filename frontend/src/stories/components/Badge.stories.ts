@@ -34,6 +34,7 @@ const variants = [
   "primary",
   "lime",
   "cyan",
+  "sky",
   "blue",
   "violet",
   "orange",

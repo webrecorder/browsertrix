@@ -8,14 +8,14 @@ export const usageBadge = (inUse: boolean) =>
   html`<sl-tooltip
     content=${inUse
       ? msg("In Use by Crawl Workflow")
-      : msg("Not In Use by Crawl Workflow")}
+      : msg("Not in Use by Crawl Workflow")}
   >
     <btrix-badge variant=${inUse ? "cyan" : "neutral"}>
       <sl-icon
         name=${inUse ? "check-circle" : "dash-circle"}
         class="mr-1.5"
       ></sl-icon>
-      ${inUse ? msg("In Use") : msg("Not In Use")}
+      ${inUse ? msg("In Use") : msg("Not in Use")}
     </btrix-badge>
   </sl-tooltip>`;
 
