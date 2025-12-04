@@ -81,17 +81,27 @@ class BackgroundJobOps:
             responses={404: {"description": "Not found"}},
         )
 
+        # to avoid background tasks being garbage collected
+        # see: https://stackoverflow.com/a/74059981
+        self.bg_tasks = set()
+
     def set_ops(self, base_crawl_ops: BaseCrawlOps, profile_ops: ProfileOps) -> None:
         """basecrawlops and profileops for updating files"""
         self.base_crawl_ops = base_crawl_ops
         self.profile_ops = profile_ops
+
+    def _run_task(self, func) -> None:
+        """add bg tasks to set to avoid premature garbage collection"""
+        task = asyncio.create_task(func)
+        self.bg_tasks.add(task)
+        task.add_done_callback(self.bg_tasks.discard)
 
     def strip_bucket(self, endpoint_url: str) -> tuple[str, str]:
         """split the endpoint_url into the origin and return rest of endpoint as bucket path"""
         parts = urlsplit(endpoint_url)
         return parts.scheme + "://" + parts.netloc + "/", parts.path[1:]
 
-    async def handle_replica_job_finished(self, job: CreateReplicaJob) -> None:
+    async def handle_replica_job_succeeded(self, job: CreateReplicaJob) -> None:
         """Update replicas in corresponding file objects, based on type"""
         res = None
         if job.object_type in ("crawl", "upload"):
@@ -516,36 +526,41 @@ class BackgroundJobOps:
             raise HTTPException(status_code=400, detail="invalid_job_type")
 
         if success and job_type == BgJobType.CREATE_REPLICA:
-            await self.handle_replica_job_finished(cast(CreateReplicaJob, job))
+            await self.handle_replica_job_succeeded(cast(CreateReplicaJob, job))
 
         if job_type == BgJobType.DELETE_REPLICA:
             await self.handle_delete_replica_job_finished(cast(DeleteReplicaJob, job))
-
-        if not success:
-            await self._send_bg_job_failure_email(job, finished)
 
         await self.jobs.find_one_and_update(
             {"_id": job_id, "oid": oid},
             {"$set": {"success": success, "finished": finished}},
         )
 
+        if not success:
+            await self._send_bg_job_failure_email(job, finished)
+
     async def _send_bg_job_failure_email(self, job: BackgroundJob, finished: datetime):
         print(
             f"Background job {job.id} failed, sending email to superuser",
             flush=True,
         )
-        superuser = await self.user_manager.get_superuser()
-        org = None
-        if job.oid:
-            org = await self.org_ops.get_org_by_id(job.oid)
-        await asyncio.get_event_loop().run_in_executor(
-            None,
-            self.email.send_background_job_failed,
-            job,
-            finished,
-            superuser.email,
-            org,
-        )
+        try:
+            superuser = await self.user_manager.get_superuser()
+            org = None
+            if job.oid:
+                org = await self.org_ops.get_org_by_id(job.oid)
+
+            self._run_task(
+                self.email.send_background_job_failed(
+                    job, finished, superuser.email, org
+                )
+            )
+        # pylint: disable=broad-exception-caught
+        except Exception as err:
+            print(
+                f"Error sending bg job failure email for job {job.id}: {err}",
+                flush=True,
+            )
 
     async def get_background_job(
         self, job_id: str, oid: Optional[UUID] = None
@@ -780,11 +795,8 @@ class BackgroundJobOps:
         Keep track of tasks in set to prevent them from being garbage collected
         See: https://stackoverflow.com/a/74059981
         """
-        bg_tasks = set()
         async for job in self.jobs.find({"oid": org.id, "success": False}):
-            task = asyncio.create_task(self.retry_background_job(job["_id"], org))
-            bg_tasks.add(task)
-            task.add_done_callback(bg_tasks.discard)
+            self._run_task(self.retry_background_job(job["_id"], org))
         return {"success": True}
 
     async def retry_all_failed_background_jobs(
@@ -795,14 +807,11 @@ class BackgroundJobOps:
         Keep track of tasks in set to prevent them from being garbage collected
         See: https://stackoverflow.com/a/74059981
         """
-        bg_tasks = set()
         async for job in self.jobs.find({"success": False}):
             org = None
             if job.get("oid"):
                 org = await self.org_ops.get_org_by_id(job["oid"])
-            task = asyncio.create_task(self.retry_background_job(job["_id"], org))
-            bg_tasks.add(task)
-            task.add_done_callback(bg_tasks.discard)
+            self._run_task(self.retry_background_job(job["_id"], org))
         return {"success": True}
 
 

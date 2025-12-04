@@ -43,7 +43,7 @@ class BgJobOperator(BaseOperator):
         success = status.get("succeeded") == spec.get("parallelism")
         if not success:
             print(
-                "Succeeded: {status.get('succeeded')}, Num Pods: {spec.get('parallelism')}"
+                f"Succeeded: {status.get('succeeded')}, Num Pods: {spec.get('parallelism')}"
             )
         start_time = status.get("startTime")
         completion_time = status.get("completionTime")
@@ -75,10 +75,6 @@ class BgJobOperator(BaseOperator):
                 finished=finished,
                 oid=org_id,
             )
-            # print(
-            #    f"{job_type} background job completed: success: {success}, {job_id}",
-            #    flush=True,
-            # )
 
         # pylint: disable=broad-except
         except Exception:

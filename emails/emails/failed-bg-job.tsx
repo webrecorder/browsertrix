@@ -13,7 +13,10 @@ export const schema = z.object({
     object_type: z.string().optional(),
     object_id: z.string().optional(),
     file_path: z.string().optional(),
-    replica_storage: z.string().optional(),
+    replica_storage: z.object({
+      name: z.string(),
+      custom: z.boolean(),
+    }).optional(),
   }),
   finished: z.coerce.date(),
 });
@@ -84,9 +87,9 @@ export const FailedBgJobEmail = ({
             <Code>{job.file_path}</Code>
           </DataRow>
         )}
-        {job.replica_storage && (
+        {job.replica_storage && job.replica_storage.name && (
           <DataRow label="Replica Storage">
-            <Code>{job.replica_storage}</Code>
+            <Code>{job.replica_storage.name}</Code>
           </DataRow>
         )}
       </table>
@@ -104,7 +107,7 @@ FailedBgJobEmail.PreviewProps = {
     object_type: "object_type",
     object_id: "object_id",
     file_path: "file_path",
-    replica_storage: "replica_storage",
+    replica_storage: {name: "replica_storage", custom: false},
   },
   finished: new Date(),
 } satisfies FailedBgJobEmailProps;
