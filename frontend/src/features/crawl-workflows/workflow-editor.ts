@@ -3522,7 +3522,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       maxCrawlSize: this.formState.maxCrawlSizeGB * BYTES_PER_GB,
       tags: this.formState.tags,
       autoAddCollections: this.formState.autoAddCollections,
-      dedupeCollId: this.formState.dedupeCollectionId || "",
+      dedupeCollId: this.formState.dedupeCollectionId || null,
       config: {
         ...(isPageScopeType(this.formState.scopeType)
           ? this.parseUrlListConfig(uploadParams)
