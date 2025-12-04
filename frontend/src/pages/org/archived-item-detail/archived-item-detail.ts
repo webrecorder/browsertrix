@@ -880,12 +880,17 @@ export class ArchivedItemDetail extends BtrixElement {
       <btrix-desc-list>
         <btrix-desc-list-item label=${msg("Status")}>
           ${this.item
-            ? html`
-                <btrix-crawl-status
-                  state=${this.item.state}
-                  type=${this.item.type}
-                ></btrix-crawl-status>
-              `
+            ? isCrawl(this.item)
+              ? html`
+                  <btrix-crawl-status
+                    state=${this.item.state}
+                  ></btrix-crawl-status>
+                `
+              : html`
+                  <btrix-upload-status
+                    state=${this.item.state}
+                  ></btrix-upload-status>
+                `
             : html`<sl-skeleton class="mb-[3px] h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         ${when(this.item, (item) =>
