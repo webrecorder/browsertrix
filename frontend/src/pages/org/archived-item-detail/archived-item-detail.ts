@@ -13,6 +13,9 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
+import { dedupeFilesNotice } from "@/features/archived-items/templates/dedupe-files-notice";
+import { dedupeQANotice } from "@/features/archived-items/templates/dedupe-qa-notice";
+import { dedupeReplayNotice } from "@/features/archived-items/templates/dedupe-replay-notice";
 import {
   pageBack,
   pageHeader,
@@ -313,6 +316,8 @@ export class ArchivedItemDetail extends BtrixElement {
   render() {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
     const isSuccess = this.item && isSuccessfullyFinished(this.item);
+    const dedupeDependent =
+      this.item && isCrawl(this.item) && this.item.requiresCrawls.length;
 
     let sectionContent: string | TemplateResult<1> = "";
 
@@ -327,20 +332,22 @@ export class ArchivedItemDetail extends BtrixElement {
               html`${this.tabLabels.qa} <btrix-beta-badge></btrix-beta-badge>`,
             )}
             <div class="ml-auto flex flex-wrap justify-end gap-2">
-              ${when(this.qaRuns, this.renderQAHeader)}
+              ${when(!dedupeDependent && this.qaRuns, this.renderQAHeader)}
             </div> `,
-          html`
-            <btrix-archived-item-detail-qa
-              .crawlId=${this.itemId}
-              .workflowId=${this.workflowId}
-              .crawl=${this.item}
-              .qaRuns=${this.qaRuns}
-              .qaRunId=${this.qaRunId}
-              .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
-              .mostRecentSuccessQARun=${this.mostRecentSuccessQARun}
-              @btrix-qa-runs-update=${() => void this.fetchQARuns()}
-            ></btrix-archived-item-detail-qa>
-          `,
+          dedupeDependent
+            ? dedupeQANotice()
+            : html`
+                <btrix-archived-item-detail-qa
+                  .crawlId=${this.itemId}
+                  .workflowId=${this.workflowId}
+                  .crawl=${this.item}
+                  .qaRuns=${this.qaRuns}
+                  .qaRunId=${this.qaRunId}
+                  .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
+                  .mostRecentSuccessQARun=${this.mostRecentSuccessQARun}
+                  @btrix-qa-runs-update=${() => void this.fetchQARuns()}
+                ></btrix-archived-item-detail-qa>
+              `,
         );
         break;
       }
@@ -348,7 +355,6 @@ export class ArchivedItemDetail extends BtrixElement {
         sectionContent = this.renderPanel(
           this.tabLabels.replay,
           this.renderReplay(),
-          [tw`overflow-hidden rounded-lg border`],
         );
         break;
       case "files":
@@ -838,6 +844,16 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderReplay() {
+    const dedupeDependent =
+      this.item && isCrawl(this.item) && this.item.requiresCrawls.length;
+
+    return html`
+      ${dedupeDependent ? dedupeReplayNotice() : nothing}
+      <div class="overflow-hidden rounded-lg border">${this.renderRWP()}</div>
+    `;
+  }
+
+  private renderRWP() {
     if (!this.item) return;
     const replaySource = `/api/orgs/${this.item.oid}/${
       this.item.type === "upload" ? "uploads" : "crawls"
@@ -1061,7 +1077,11 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderFiles() {
+    const dedupeDependent =
+      this.item && isCrawl(this.item) && this.item.requiresCrawls.length;
+
     return html`
+      ${this.hasFiles && dedupeDependent ? dedupeFilesNotice() : nothing}
       ${this.hasFiles
         ? html`
             <ul class="rounded-lg border text-sm">
