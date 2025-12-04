@@ -63,7 +63,7 @@ export class ArchivedItemList extends TailwindElement {
       {
         cssCol: "min-content",
         cell: html`<btrix-table-header-cell>
-          <span class="sr-only">${msg("Status")}</span>
+          ${msg("Status")}
         </btrix-table-header-cell>`,
       },
       {
