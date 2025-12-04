@@ -1536,15 +1536,6 @@ class CrawlOperator(BaseOperator):
 
         total_size = stats.size
 
-        print(f"pending size: {pending_size}", flush=True)
-        print(f"status.filesAdded: {status.filesAdded}", flush=True)
-        print(f"status.filesAddedSize: {status.filesAddedSize}", flush=True)
-        print(f"total: {total_size}", flush=True)
-        print(
-            f"org quota: {crawl.org.bytesStored + stats.size} <= {crawl.org.quotas.storageQuota}",
-            flush=True,
-        )
-
         # update status
         status.pagesDone = stats.done
         status.pagesFound = stats.found
