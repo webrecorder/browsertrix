@@ -117,8 +117,61 @@ DEL_ITEMS = 1000
 
 
 # ============================================================================
+# base class for dealing with quotas
+class BaseOrgs:
+    # pylint: disable=invalid-name
+    def storage_quota_reached(self, org: Organization, extra_bytes: int = 0) -> bool:
+        """Return boolean indicating if storage quota is met or exceeded."""
+        if not org.quotas.storageQuota:
+            return False
+
+        if (org.bytesStored + extra_bytes) >= org.quotas.storageQuota:
+            return True
+
+        return False
+
+    def exec_mins_quota_reached(self, org: Organization) -> bool:
+        """Return bool for if execution minutes quota is reached"""
+        monthly_quota = org.quotas.maxExecMinutesPerMonth
+
+        # if none of the 3 quotas set, then no quotas, always return false
+        if (
+            not monthly_quota
+            and not org.quotas.giftedExecMinutes
+            and not org.quotas.extraExecMinutes
+        ):
+            return False
+
+        # otherwise, a '0' value for any is considered a quota
+
+        # gifted minutes available
+        if org.quotas.giftedExecMinutes > 0 and org.giftedExecSecondsAvailable > 0:
+            return False
+
+        # exec minutes available
+        if org.quotas.extraExecMinutes > 0 and org.extraExecSecondsAvailable > 0:
+            return False
+
+        if monthly_quota:
+            monthly_exec_seconds = self.get_monthly_crawl_exec_seconds(org)
+            monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
+            if monthly_exec_minutes < monthly_quota:
+                return False
+
+        return True
+
+    def get_monthly_crawl_exec_seconds(self, org: Organization) -> int:
+        """Return monthlyExecSeconds for current month"""
+        yymm = dt_now().strftime("%Y-%m")
+        try:
+            return org.monthlyExecSeconds[yymm]
+        except KeyError:
+            return 0
+
+
+# ============================================================================
 # pylint: disable=too-many-public-methods, too-many-instance-attributes, too-many-locals, too-many-arguments
-class OrgOps:
+class OrgOps(BaseOrgs):
     """Organization API operations"""
 
     invites: InviteOps
@@ -809,55 +862,6 @@ class OrgOps:
 
         if include_time and self.exec_mins_quota_reached(org):
             raise HTTPException(status_code=403, detail="exec_minutes_quota_reached")
-
-    # pylint: disable=invalid-name
-    def storage_quota_reached(self, org: Organization, extra_bytes: int = 0) -> bool:
-        """Return boolean indicating if storage quota is met or exceeded."""
-        if not org.quotas.storageQuota:
-            return False
-
-        if (org.bytesStored + extra_bytes) >= org.quotas.storageQuota:
-            return True
-
-        return False
-
-    def exec_mins_quota_reached(self, org: Organization) -> bool:
-        """Return bool for if execution minutes quota is reached"""
-        monthly_quota = org.quotas.maxExecMinutesPerMonth
-
-        # if none of the 3 quotas set, then no quotas, always return false
-        if (
-            not monthly_quota
-            and not org.quotas.giftedExecMinutes
-            and not org.quotas.extraExecMinutes
-        ):
-            return False
-
-        # otherwise, a '0' value for any is considered a quota
-
-        # gifted minutes available
-        if org.quotas.giftedExecMinutes > 0 and org.giftedExecSecondsAvailable > 0:
-            return False
-
-        # exec minutes available
-        if org.quotas.extraExecMinutes > 0 and org.extraExecSecondsAvailable > 0:
-            return False
-
-        if monthly_quota:
-            monthly_exec_seconds = self.get_monthly_crawl_exec_seconds(org)
-            monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
-            if monthly_exec_minutes < monthly_quota:
-                return False
-
-        return True
-
-    def get_monthly_crawl_exec_seconds(self, org: Organization) -> int:
-        """Return monthlyExecSeconds for current month"""
-        yymm = dt_now().strftime("%Y-%m")
-        try:
-            return org.monthlyExecSeconds[yymm]
-        except KeyError:
-            return 0
 
     async def set_origin(self, org: Organization, request: Request) -> None:
         """Get origin from request and store in db for use in event webhooks"""
