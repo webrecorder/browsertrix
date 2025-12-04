@@ -362,6 +362,8 @@ class RawCrawlConfig(BaseModel):
     combineWARC: Optional[bool] = None
 
     useSitemap: Optional[bool] = False
+    useRobots: Optional[bool] = False
+
     failOnFailedSeed: Optional[bool] = False
     failOnContentCheck: Optional[bool] = False
 

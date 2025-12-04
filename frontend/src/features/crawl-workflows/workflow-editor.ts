@@ -1064,6 +1064,12 @@ export class WorkflowEditor extends BtrixElement {
       `)}
       ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
       ${inputCol(html`
+        <sl-checkbox name="useRobots" ?checked=${this.formState.useRobots}>
+          ${msg("Skip pages disallowed by robots.txt")}
+        </sl-checkbox>
+      `)}
+      ${this.renderHelpTextCol(infoTextFor["useRobots"], false)}
+      ${inputCol(html`
         <sl-checkbox
           name="failOnContentCheck"
           ?checked=${this.formState.failOnContentCheck &&
@@ -1580,6 +1586,12 @@ https://example.net`}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
+      ${inputCol(html`
+        <sl-checkbox name="useRobots" ?checked=${this.formState.useRobots}>
+          ${msg("Skip pages disallowed by robots.txt")}
+        </sl-checkbox>
+      `)}
+      ${this.renderHelpTextCol(infoTextFor["useRobots"], false)}
       ${inputCol(html`
         <sl-checkbox name="useSitemap" ?checked=${this.formState.useSitemap}>
           ${msg("Check for sitemap")}
@@ -3343,6 +3355,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     | "failOnFailedSeed"
     | "failOnContentCheck"
     | "saveStorage"
+    | "useRobots"
   > {
     const jsonSeeds = this.formState.seedListFormat === SeedListFormat.JSON;
 
@@ -3362,6 +3375,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       failOnFailedSeed: this.formState.failOnFailedSeed,
       failOnContentCheck: this.formState.failOnContentCheck,
       saveStorage: this.formState.saveStorage,
+      useRobots: this.formState.useRobots,
     };
 
     return config;
@@ -3375,6 +3389,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     | "failOnFailedSeed"
     | "failOnContentCheck"
     | "saveStorage"
+    | "useRobots"
   > {
     const primarySeedUrl = this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeUrlList
@@ -3407,6 +3422,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       failOnFailedSeed: false,
       failOnContentCheck: this.formState.failOnContentCheck,
       saveStorage: this.formState.saveStorage,
+      useRobots: this.formState.useRobots,
     };
     return config;
   }

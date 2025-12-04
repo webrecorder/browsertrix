@@ -97,6 +97,10 @@ Refer to a specific [_Crawl Scope_ option](#crawl-scope-options) for details on 
 
     **These credentials WILL BE WRITTEN into the archive.** We recommend exercising caution and only archiving with dedicated archival accounts, changing your password or deleting the account when finished.
 
+### Skip Pages Disallowed By Robots.txt
+
+When enabled, the crawler will check for a [Robots Exclusion Protocol](https://www.rfc-editor.org/rfc/rfc9309.html) file at /robots.txt for each host encountered during crawling and skip any pages that are disallowed by the rules found therein.
+
 ### Include Any Linked Page
 
 When enabled, the crawler will visit all the links it finds within each URL defined in the [URL input field](#crawl-start-url-urls-to-crawl) under _Crawl Scope_.
