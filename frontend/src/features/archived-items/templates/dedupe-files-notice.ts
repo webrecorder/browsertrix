@@ -2,9 +2,9 @@ import { msg } from "@lit/localize";
 import { html } from "lit";
 import { when } from "lit/directives/when.js";
 
-export function dedupeReplayNotice({ href }: { href?: string } = {}) {
+export function dedupeFilesNotice({ href }: { href?: string } = {}) {
   return html`<btrix-alert
-    class="sticky top-2 z-50 part-[base]:mb-5"
+    class="sticky top-2 z-50 part-[base]:mb-3"
     variant="warning"
   >
     <div class="mb-2 flex justify-between">
@@ -18,7 +18,7 @@ export function dedupeReplayNotice({ href }: { href?: string } = {}) {
     <div class="text-pretty text-warning-800">
       <p>
         ${msg(
-          "Replay for this crawl may contain incomplete or missing pages due to its dependency of the deduplication source.",
+          "Files may contain incomplete or missing content due to deduplication.",
         )}
       </p>
       ${when(
@@ -26,7 +26,7 @@ export function dedupeReplayNotice({ href }: { href?: string } = {}) {
         (href) =>
           html` <p class="my-2">
               ${msg(
-                "Replay the collection to view the complete and deduplicated crawl.",
+                "Download the complete and deduplicated files in the collection.",
               )}
             </p>
             <btrix-link

@@ -20,7 +20,7 @@ import type { Alert } from "@/components/ui/alert";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
-import { dedupeReplayNotice } from "@/features/collections/templates/dedupe-replay-notice";
+import { dedupeReplayNotice } from "@/features/archived-items/templates/dedupe-replay-notice";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { ShareableNotice } from "@/features/crawl-workflows/templates/shareable-notice";
 import {
