@@ -419,7 +419,7 @@ class CrawlConfigIn(BaseModel):
     proxyId: Optional[str] = None
 
     autoAddCollections: Optional[List[UUID]] = []
-    dedupeCollId: Optional[UUID] = None
+    dedupeCollId: Union[UUID, EmptyStr, None] = None
 
     tags: Optional[List[str]] = []
 
