@@ -1408,10 +1408,6 @@ class CrawlOperator(BaseOperator):
         await redis.incr("filesAddedSize", filecomplete.size)
         await redis.incr("filesAdded")
 
-        # sizes = await redis.hkeys(f"{crawl.id}:size")
-        # for size in sizes:
-        #    await redis.hmset(f"{crawl.id}:size", {size: 0 for size in sizes})
-
         await self.crawl_ops.add_crawl_file(
             crawl.db_crawl_id, crawl.is_qa, crawl_file, filecomplete.size
         )
