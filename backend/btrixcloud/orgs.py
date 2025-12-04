@@ -823,13 +823,24 @@ class OrgOps:
 
     def exec_mins_quota_reached(self, org: Organization) -> bool:
         """Return bool for if execution minutes quota is reached"""
+        monthly_quota = org.quotas.maxExecMinutesPerMonth
+
+        # if none of the 3 quotas set, then no quotas, always return false
+        if (
+            not monthly_quota
+            and not org.quotas.giftedExecMinutes
+            and not org.quotas.extraExecMinutes
+        ):
+            return False
+
+        # gifted minutes available
         if org.quotas.giftedExecMinutes > 0 and org.giftedExecSecondsAvailable > 0:
             return False
 
+        # exec minutes available
         if org.quotas.extraExecMinutes > 0 and org.extraExecSecondsAvailable > 0:
             return False
 
-        monthly_quota = org.quotas.maxExecMinutesPerMonth
         if monthly_quota:
             monthly_exec_seconds = self.get_monthly_crawl_exec_seconds(org)
             monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
