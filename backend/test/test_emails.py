@@ -200,9 +200,8 @@ async def test_send_password_reset(email_sender, capsys):
 @pytest.mark.asyncio
 async def test_send_background_job_failed(email_sender, sample_org, capsys):
     """Test sending background job failure notification"""
-    # Create a mock job
     job = CreateReplicaJob(
-        id=uuid.uuid4(),
+        id="fake-create-replica-job",
         oid=sample_org.id,
         success=False,
         started=dt_now(),
