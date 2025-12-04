@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import { html } from "lit";
+import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -21,6 +21,12 @@ export const dedupeLabelFor = {
 @customElement("btrix-dedupe-badge")
 @localized()
 export class DedupeBadge extends TailwindElement {
+  static styles = css`
+    :host {
+      display: contents;
+    }
+  `;
+
   @property({ type: Array })
   dependents?: string[] = [];
 

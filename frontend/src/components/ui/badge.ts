@@ -84,7 +84,7 @@ export class Badge extends TailwindElement {
                 }[this.variant],
               ]
             : {
-                success: tw`bg-success-500 text-neutral-0`,
+                success: tw`bg-success-600 text-neutral-0`,
                 warning: tw`bg-warning-600 text-neutral-0`,
                 danger: tw`bg-danger-500 text-neutral-0`,
                 neutral: tw`bg-neutral-100 text-neutral-600`,

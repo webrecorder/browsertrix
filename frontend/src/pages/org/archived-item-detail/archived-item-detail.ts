@@ -11,6 +11,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
+import { dedupeReplayNotice } from "@/features/collections/templates/dedupe-replay-notice";
 import {
   pageBack,
   pageHeader,
@@ -345,7 +346,6 @@ export class ArchivedItemDetail extends BtrixElement {
         sectionContent = this.renderPanel(
           this.tabLabels.replay,
           this.renderReplay(),
-          [tw`overflow-hidden rounded-lg border`],
         );
         break;
       case "files":
@@ -690,6 +690,10 @@ export class ArchivedItemDetail extends BtrixElement {
                 <sl-icon class="mr-1.5" name="gear-wide-connected"></sl-icon>
                 ${msg("Crawl")}</btrix-badge
               >
+              <btrix-dedupe-badge
+                .dependencies=${item.requiresCrawls}
+                .dependents=${item.requiredByCrawls}
+              ></btrix-dedupe-badge>
               <btrix-popover
                 content=${ifDefined(
                   item.reviewStatus
@@ -704,11 +708,7 @@ export class ArchivedItemDetail extends BtrixElement {
                     ? msg("Reviewed")
                     : msg("No Review")}</btrix-badge
                 >
-              </btrix-popover>
-              <btrix-dedupe-badge
-                .dependencies=${item.requiresCrawls}
-                .dependents=${item.requiredByCrawls}
-              ></btrix-dedupe-badge>`
+              </btrix-popover>`
           : html`<btrix-badge>
               <sl-icon class="mr-1.5" name="upload"></sl-icon>
               ${msg("Uploaded")}</btrix-badge
@@ -870,6 +870,16 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderReplay() {
+    const dedupeDependent =
+      this.item && isCrawl(this.item) && this.item.requiresCrawls.length;
+
+    return html`
+      ${dedupeDependent ? dedupeReplayNotice() : nothing}
+      <div class="overflow-hidden rounded-lg border">${this.renderRWP()}</div>
+    `;
+  }
+
+  private renderRWP() {
     if (!this.item) return;
     const replaySource = `/api/orgs/${this.item.oid}/${
       this.item.type === "upload" ? "uploads" : "crawls"
