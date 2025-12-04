@@ -10,7 +10,14 @@ import aiohttp
 import pytest
 
 from btrixcloud.emailsender import EmailSender
-from btrixcloud.models import Organization, InvitePending, EmailStr, StorageRef
+from btrixcloud.models import (
+    Organization,
+    InvitePending,
+    EmailStr,
+    StorageRef,
+    CreateReplicaJob,
+)
+from btrixcloud.utils import dt_now
 
 EMAILS_HOST_PREFIX = (
     os.environ.get("EMAIL_TEMPLATE_ENDPOINT") or "http://127.0.0.1:30872"
@@ -194,16 +201,19 @@ async def test_send_password_reset(email_sender, capsys):
 async def test_send_background_job_failed(email_sender, sample_org, capsys):
     """Test sending background job failure notification"""
     # Create a mock job
-    job = {
-        "id": str(uuid.uuid4()),
-        "type": "create_replica",
-        "crawl_id": "test_crawl_123",
-        "started": datetime.now().isoformat(),
-    }
-    finished = datetime.now()
+    job = CreateReplicaJob(
+        id=uuid.uuid4(),
+        oid=sample_org.id,
+        success=False,
+        started=dt_now(),
+        file_path="path/to/file.wacz",
+        object_type="crawl",
+        object_id="sample-crawl-id",
+        replica_storage=StorageRef(name="test-storage"),
+    )
 
     await email_sender.send_background_job_failed(
-        job=job, finished=finished, receiver_email="admin@example.com", org=sample_org
+        job=job, finished=dt_now(), receiver_email="admin@example.com", org=sample_org
     )
 
     # Check log output
