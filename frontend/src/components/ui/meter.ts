@@ -5,9 +5,7 @@ import {
   query,
   queryAssignedElements,
 } from "lit/decorators.js";
-import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -20,17 +18,34 @@ export class MeterBar extends TailwindElement {
   @property({ type: Number })
   value = 0;
 
+  @property({ type: String })
+  placement: "top" | "bottom" = "top";
+
+  updated(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("value")) {
+      this.style.width = `${this.value}%`;
+      if (this.value <= 0) {
+        this.style.display = "none";
+      } else {
+        this.style.display = "";
+      }
+    }
+  }
+
   // postcss-lit-disable-next-line
   static styles = css`
     :host {
-      display: contents;
+      display: block;
+      --background-color: var(--background-color, var(--sl-color-blue-500));
+      overflow: hidden;
+      transition: box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      min-width: 4px;
+      transition: 400ms width;
     }
 
     .bar {
       height: 1rem;
-      background-color: var(--background-color, var(--sl-color-blue-500));
-      min-width: 4px;
-      transition: 400ms width;
+      background-color: var(--background-color);
     }
   `;
 
@@ -38,60 +53,10 @@ export class MeterBar extends TailwindElement {
     if (this.value <= 0) {
       return;
     }
-    return html`<btrix-popover placement="top">
+    return html`<btrix-floating-popover placement=${this.placement}>
       <div slot="content"><slot></slot></div>
-      <div class="bar" style="width:${this.value}%"></div>
-    </btrix-popover>`;
-  }
-}
-
-@customElement("btrix-divided-meter-bar")
-export class DividedMeterBar extends TailwindElement {
-  /* Percentage of value / max */
-  @property({ type: Number })
-  value = 0;
-
-  @property({ type: Number })
-  quota = 0;
-
-  static styles = css`
-    :host {
-      display: contents;
-    }
-
-    .bar {
-      height: 1rem;
-      background-color: var(--background-color, var(--sl-color-blue-400));
-      min-width: 4px;
-    }
-
-    .rightBorderRadius {
-      border-radius: 0 var(--sl-border-radius-medium)
-        var(--sl-border-radius-medium) 0;
-    }
-
-    .quotaBar {
-      height: 1rem;
-      background-color: var(--quota-background-color, var(--sl-color-blue-100));
-      min-width: 4px;
-      box-shadow: inset 0px 1px 1px 0px rgba(0, 0, 0, 0.25);
-    }
-  `;
-
-  render() {
-    return html`<btrix-popover placement="top">
-      <div slot="content"><slot></slot></div>
-      <div class="quotaBar" style="width:${this.quota}%">
-        ${when(this.value, () => {
-          return html`<div
-            class="bar ${classMap({
-              rightBorderRadius: this.value < this.quota,
-            })}"
-            style="width:${(this.value / this.quota) * 100}%"
-          ></div>`;
-        })}
-      </div>
-    </btrix-popover>`;
+      <div class="bar" part="bar"></div>
+    </btrix-floating-popover>`;
   }
 }
 
@@ -116,6 +81,9 @@ export class Meter extends TailwindElement {
 
   @property({ type: String })
   valueText?: string;
+
+  @property({ type: Boolean })
+  hasBackground = false;
 
   @query(".labels")
   private readonly labels?: HTMLElement;
@@ -145,14 +113,56 @@ export class Meter extends TailwindElement {
       height: 1rem;
       border-radius: var(--sl-border-radius-medium);
       background-color: var(--sl-color-neutral-100);
-      box-shadow: inset 0px 1px 1px 0px rgba(0, 0, 0, 0.25);
+      box-shadow: inset 0 0 0 1px var(--sl-color-neutral-300);
+      position: relative;
     }
 
     .valueBar {
+      box-shadow: var(--sl-shadow-medium);
+    }
+
+    .valueBar:after,
+    .track:after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      right: 0;
+      width: 1px;
+      height: 6px;
+      background-color: var(--sl-color-neutral-400);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .valueBar[data-empty]::after {
+      right: unset;
+      left: 0;
+    }
+
+    .valueBar,
+    .background {
       display: flex;
       border-radius: var(--sl-border-radius-medium);
-      overflow: hidden;
       transition: 400ms width;
+      position: relative;
+    }
+
+    .valueBar::before,
+    .background::before {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: var(--sl-border-radius-medium);
+      content: "";
+      box-shadow: inset 0 0 0 1px var(--sl-color-neutral-500);
+      mix-blend-mode: color-burn;
+      pointer-events: none;
+    }
+
+    .valueBar::before {
+      z-index: 1;
     }
 
     .labels {
@@ -161,8 +171,6 @@ export class Meter extends TailwindElement {
       white-space: nowrap;
       color: var(--sl-color-neutral-500);
       font-size: var(--sl-font-size-x-small);
-      font-family: var(--font-monostyle-family);
-      font-variation-settings: var(--font-monostyle-variation);
       line-height: 1;
       margin-top: var(--sl-spacing-x-small);
     }
@@ -182,6 +190,70 @@ export class Meter extends TailwindElement {
 
     .maxText {
       display: inline-flex;
+    }
+
+    .valueBar ::slotted(btrix-meter-bar) {
+      position: relative;
+      transition-property: box-shadow, opacity;
+      transition-duration: 150ms;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 1px;
+      --darkened-background-color-1: oklch(
+        from var(--background-color) calc(l - 0.2) c h
+      );
+      --darkened-background-color-2: oklch(
+        from var(--background-color) calc(l - 0.1) calc(c + 0.1) h / 0.5
+      );
+    }
+
+    .valueBar ::slotted(btrix-meter-bar):after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--sl-color-neutral-100);
+      opacity: 0;
+      transition-property: opacity;
+      transition-duration: 150ms;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+    }
+
+    .valueBar:hover ::slotted(btrix-meter-bar:not(:hover)):after {
+      opacity: 0.5;
+    }
+
+    .valueBar:hover ::slotted(btrix-meter-bar:hover) {
+      box-shadow:
+        0 0 0 1px var(--darkened-background-color-1),
+        0 1px 3px 0 var(--darkened-background-color-2),
+        0 1px 2px -1px var(--darkened-background-color-2);
+      z-index: 1;
+    }
+
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 1rem;
+      border-radius: var(--sl-border-radius-medium);
+      overflow: hidden;
+    }
+
+    .valueBar ::slotted(btrix-meter-bar:first-of-type),
+    .valueBar ::slotted(btrix-meter-bar:first-of-type):after,
+    .valueBar:hover ::slotted(btrix-meter-bar:first-of-type) {
+      border-top-left-radius: var(--sl-border-radius-medium);
+      border-bottom-left-radius: var(--sl-border-radius-medium);
+    }
+    .valueBar ::slotted(btrix-meter-bar:last-of-type),
+    .valueBar ::slotted(btrix-meter-bar:last-of-type):after,
+    .valueBar:hover ::slotted(btrix-meter-bar:last-of-type) {
+      border-top-right-radius: var(--sl-border-radius-medium);
+      border-bottom-right-radius: var(--sl-border-radius-medium);
     }
   `;
 
@@ -224,7 +296,16 @@ export class Meter extends TailwindElement {
           >}
         >
           <div class="track">
-            <div class="valueBar" style="width:${barWidth}">
+            ${this.hasBackground
+              ? html`<div class="background">
+                  <slot name="background"></slot>
+                </div>`
+              : null}
+            <div
+              class="valueBar"
+              style="width:${barWidth}"
+              ?data-empty=${this.value === 0}
+            >
               <slot @slotchange=${this.handleSlotchange}></slot>
             </div>
             ${this.value < max ? html`<slot name="available"></slot>` : ""}
