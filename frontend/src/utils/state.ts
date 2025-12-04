@@ -35,11 +35,17 @@ export function makeAppStateService() {
     @options(persist(window.localStorage))
     userPreferences: UserPreferences | null = null;
 
-    // TODO persist here
+    // TODO persist here instead of in AuthService
     auth: Auth | null = null;
 
+    // Store logged-in flag in local storage so that tabs know whether to
+    // check auth again when focused.
+    // This can get out of sync with `auth` if any other tabs log in/out.
+    @options(persist(window.localStorage))
+    loggedIn: boolean | null = null;
+
     // Store user's org slug preference in local storage in order to redirect
-    // to the most recently visited org on next log in
+    // to the most recently visited org on next log in.
     // TODO move to `userPreferences`
     @options(persist(window.localStorage))
     orgSlug: string | null = null;
@@ -96,11 +102,13 @@ export function makeAppStateService() {
       appState.settings = settings;
     }
 
+    @transaction()
     @unlock()
     updateAuth(authState: AppState["auth"]) {
       authSchema.nullable().parse(authState);
 
       appState.auth = authState;
+      appState.loggedIn = Boolean(authState);
     }
 
     @transaction()
@@ -181,6 +189,7 @@ export function makeAppStateService() {
 
     private _resetUser() {
       appState.auth = null;
+      appState.loggedIn = null;
       appState.userInfo = null;
       appState.userPreferences = null;
       appState.orgSlug = null;
