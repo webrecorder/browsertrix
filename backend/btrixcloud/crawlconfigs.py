@@ -333,13 +333,15 @@ class CrawlConfigOps:
 
             first_seed = seeds[0].url
 
+        dedupe_coll_id = None
         # the dedupe collection id must also be in auto add collections
         if isinstance(config_in.dedupeCollId, UUID):
+            dedupe_coll_id = config_in.dedupeCollId
             if config_in.autoAddCollections is None:
                 config_in.autoAddCollections = []
 
-            if config_in.dedupeCollId not in config_in.autoAddCollections:
-                config_in.autoAddCollections.append(config_in.dedupeCollId)
+            if dedupe_coll_id not in config_in.autoAddCollections:
+                config_in.autoAddCollections.append(dedupe_coll_id)
 
         now = dt_now()
         crawlconfig = CrawlConfig(
@@ -368,7 +370,7 @@ class CrawlConfigOps:
             firstSeed=first_seed,
             seedCount=seed_count,
             shareable=config_in.shareable,
-            dedupeCollId=config_in.dedupeCollId,
+            dedupeCollId=dedupe_coll_id,
         )
 
         if config_in.runNow:
@@ -385,8 +387,8 @@ class CrawlConfigOps:
         storage_quota_reached = False
         exec_mins_quota_reached = False
 
-        if isinstance(config_in.dedupeCollId, UUID):
-            await self.coll_ops.enable_dedupe_index(config_in.dedupeCollId)
+        if dedupe_coll_id:
+            await self.coll_ops.enable_dedupe_index(dedupe_coll_id)
 
         if config_in.runNow:
             try:
