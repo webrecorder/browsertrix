@@ -833,6 +833,8 @@ class OrgOps:
         ):
             return False
 
+        # otherwise, a '0' value for any is considered a quota
+
         # gifted minutes available
         if org.quotas.giftedExecMinutes > 0 and org.giftedExecSecondsAvailable > 0:
             return False
@@ -844,10 +846,10 @@ class OrgOps:
         if monthly_quota:
             monthly_exec_seconds = self.get_monthly_crawl_exec_seconds(org)
             monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
-            if monthly_exec_minutes >= monthly_quota:
-                return True
+            if monthly_exec_minutes < monthly_quota:
+                return False
 
-        return False
+        return True
 
     def get_monthly_crawl_exec_seconds(self, org: Organization) -> int:
         """Return monthlyExecSeconds for current month"""
@@ -907,8 +909,8 @@ class OrgOps:
 
         if (
             not monthly_quota_secs
-            and not org.giftedExecSecondsAvailable
-            and not org.extraExecSecondsAvailable
+            and not org.quotas.extraExecMinutes
+            and not org.quotas.giftedExecMinutes
         ):
             return
 
