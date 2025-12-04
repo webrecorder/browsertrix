@@ -481,7 +481,7 @@ export class OrgSettingsBilling extends BtrixElement {
     return html`
       <ul class="leading-relaxed text-neutral-700">
         <li>
-          ${quotas.maxExecMinutesPerMonth
+          ${hasExecutionMinuteQuota(this.org)
             ? msg(str`${maxExecMinutesPerMonth} of execution time`)
             : msg("Unlimited execution time")}
         </li>
