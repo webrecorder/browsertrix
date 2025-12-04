@@ -20,6 +20,7 @@ import type { Alert } from "@/components/ui/alert";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { dedupeReplayNotice } from "@/features/archived-items/templates/dedupe-replay-notice";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { ShareableNotice } from "@/features/crawl-workflows/templates/shareable-notice";
 import {
@@ -29,7 +30,7 @@ import {
 import type { BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
 import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
-import { WorkflowTab } from "@/routes";
+import { CommonTab, OrgTab, WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
@@ -1731,6 +1732,16 @@ export class WorkflowDetail extends BtrixElement {
     }
 
     return html`
+      ${when(this.latestCrawlTask.value, (crawl) =>
+        crawl.requiresCrawls.length
+          ? dedupeReplayNotice({
+              href: this.workflow?.dedupeCollId
+                ? `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${this.workflow.dedupeCollId}`
+                : undefined,
+            })
+          : nothing,
+      )}
+
       <div class="aspect-video overflow-hidden rounded-lg border">
         ${guard([this.lastCrawlId], () =>
           when(this.latestCrawlTask.value, this.renderReplay),

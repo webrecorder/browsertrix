@@ -39,8 +39,6 @@ export class LinkedCollectionsListItem extends TailwindElement {
     const actual = isActualCollection(item);
     const dedupeEnabled = this.dedupeSource;
 
-    console.log(dedupeEnabled);
-
     const content = [
       html`<div
         class="inline-flex flex-1 items-center gap-2 p-1.5 leading-none"
@@ -54,12 +52,9 @@ export class LinkedCollectionsListItem extends TailwindElement {
 
     if (actual) {
       content.push(
-        html`<div class="flex-none last:mr-1.5">
-          <btrix-badge variant="cyan"
-            >${item.crawlCount}
-            ${pluralOf("items", item.crawlCount)}</btrix-badge
-          >
-        </div>`,
+        html`<btrix-badge class="flex-none last:mr-1.5"
+          >${item.crawlCount} ${pluralOf("items", item.crawlCount)}</btrix-badge
+        >`,
       );
     }
 
