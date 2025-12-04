@@ -5,7 +5,7 @@ import type {
   SlMenuItem,
   SlRadioGroup,
 } from "@shoelace-style/shoelace";
-import { html, nothing, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
@@ -25,7 +25,7 @@ import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
 import { metadata } from "@/strings/collections/metadata";
-import { noData } from "@/strings/ui";
+import { stringFor } from "@/strings/ui";
 import { monthYearDateRange } from "@/strings/utils";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
@@ -176,14 +176,20 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
               >
                 ${this.renderControls()}
               </div>
-              <btrix-overflow-scroll class="-mx-3 pb-1 part-[content]:px-3">
-                ${guard(
-                  [this.collections, this.listView, this.collectionRefreshing],
-                  this.listView === ListView.List
-                    ? this.renderList
-                    : this.renderGrid,
-                )}
-              </btrix-overflow-scroll>
+              <div class="lg:mx-2">
+                <btrix-overflow-scroll class="-mx-3 pb-1 part-[content]:px-3">
+                  ${guard(
+                    [
+                      this.collections,
+                      this.listView,
+                      this.collectionRefreshing,
+                    ],
+                    this.listView === ListView.List
+                      ? this.renderList
+                      : this.renderGrid,
+                  )}
+                </btrix-overflow-scroll>
+              </div>
               ${when(this.listView === ListView.List, () =>
                 when(
                   (this.collections &&
@@ -485,7 +491,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       return html`
         <btrix-table
           class="[--btrix-table-column-gap:var(--sl-spacing-small)]"
-          style="--btrix-table-grid-template-columns: min-content [clickable-start] minmax(min-content, 60ch) repeat(5, 1fr) [clickable-end] min-content"
+          style="--btrix-table-grid-template-columns: min-content [clickable-start] minmax(min-content, 60ch) repeat(4, 1fr) [clickable-end] min-content"
         >
           <btrix-table-head class="mb-2 mt-1 whitespace-nowrap">
             <btrix-table-header-cell>
@@ -502,9 +508,6 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Total Size")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Deduplication")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Last Modified")}
@@ -556,113 +559,125 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     `;
   };
 
-  private readonly renderItem = (col: Collection) => html`
-    <btrix-table-row
-      class="cursor-pointer select-none whitespace-nowrap rounded border shadow transition-all duration-fast focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
-    >
-      <btrix-table-cell class="p-3">
-        ${choose(col.access, [
-          [
-            CollectionAccess.Private,
-            () => html`
-              <sl-tooltip
-                content=${SelectCollectionAccess.Options[
-                  CollectionAccess.Private
-                ].label}
-              >
-                <sl-icon
-                  class="inline-block align-middle text-base text-neutral-600"
-                  name=${SelectCollectionAccess.Options[
+  private readonly renderItem = (col: Collection) => {
+    const detail = (content: TemplateResult | string) =>
+      html`<div
+        class="mt-1 font-mono text-xs leading-none text-neutral-500 [font-variation-settings:var(--font-monostyle-variation)]"
+      >
+        ${content}
+      </div>`;
+    const noData = html`<sl-tooltip hoist content=${stringFor.none}>
+      <sl-icon name="dash-lg" class="text-base text-neutral-400"></sl-icon>
+    </sl-tooltip>`;
+
+    return html`
+      <btrix-table-row
+        class="cursor-pointer select-none whitespace-nowrap rounded border shadow-sm transition-all duration-fast focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
+      >
+        <btrix-table-cell class="py-3 pl-4 pr-1">
+          ${choose(col.access, [
+            [
+              CollectionAccess.Private,
+              () => html`
+                <sl-tooltip
+                  content=${SelectCollectionAccess.Options[
                     CollectionAccess.Private
-                  ].icon}
-                ></sl-icon>
-              </sl-tooltip>
-            `,
-          ],
-          [
-            CollectionAccess.Unlisted,
-            () => html`
-              <sl-tooltip
-                content=${SelectCollectionAccess.Options[
-                  CollectionAccess.Unlisted
-                ].label}
-              >
-                <sl-icon
-                  class="inline-block align-middle text-base text-neutral-600"
-                  name=${SelectCollectionAccess.Options[
+                  ].label}
+                >
+                  <sl-icon
+                    class="inline-block size-4 align-middle text-base text-neutral-600"
+                    name=${SelectCollectionAccess.Options[
+                      CollectionAccess.Private
+                    ].icon}
+                  ></sl-icon>
+                </sl-tooltip>
+              `,
+            ],
+            [
+              CollectionAccess.Unlisted,
+              () => html`
+                <sl-tooltip
+                  content=${SelectCollectionAccess.Options[
                     CollectionAccess.Unlisted
-                  ].icon}
-                ></sl-icon>
-              </sl-tooltip>
-            `,
-          ],
-          [
-            CollectionAccess.Public,
-            () => html`
-              <sl-tooltip
-                content=${SelectCollectionAccess.Options[
-                  CollectionAccess.Public
-                ].label}
-              >
-                <sl-icon
-                  class="inline-block align-middle text-base text-success-600"
-                  name=${SelectCollectionAccess.Options[CollectionAccess.Public]
-                    .icon}
-                ></sl-icon>
-              </sl-tooltip>
-            `,
-          ],
-        ])}
-      </btrix-table-cell>
-      <btrix-table-cell rowClickTarget="a">
-        <a
-          class="block truncate py-2.5"
-          href=${`${this.navigate.orgBasePath}/collections/view/${col.id}`}
-          @click=${this.navigate.link}
-        >
-          <div class="mb-0.5 truncate">${col.name}</div>
-          <div class="font-monostyle text-xs leading-4 text-neutral-500">
-            ${monthYearDateRange(col.dateEarliest, col.dateLatest)}
+                  ].label}
+                >
+                  <sl-icon
+                    class="inline-block align-middle text-base text-neutral-600"
+                    name=${SelectCollectionAccess.Options[
+                      CollectionAccess.Unlisted
+                    ].icon}
+                  ></sl-icon>
+                </sl-tooltip>
+              `,
+            ],
+            [
+              CollectionAccess.Public,
+              () => html`
+                <sl-tooltip
+                  content=${SelectCollectionAccess.Options[
+                    CollectionAccess.Public
+                  ].label}
+                >
+                  <sl-icon
+                    class="inline-block align-middle text-base text-success-600"
+                    name=${SelectCollectionAccess.Options[
+                      CollectionAccess.Public
+                    ].icon}
+                  ></sl-icon>
+                </sl-tooltip>
+              `,
+            ],
+          ])}
+        </btrix-table-cell>
+        <btrix-table-cell rowClickTarget="a">
+          <a
+            class="block truncate py-3"
+            href=${`${this.navigate.orgBasePath}/collections/view/${col.id}`}
+            @click=${this.navigate.link}
+          >
+            <div class="truncate">${col.name}</div>
+            ${col.dateEarliest && col.dateLatest
+              ? detail(monthYearDateRange(col.dateEarliest, col.dateLatest))
+              : nothing}
+          </a>
+        </btrix-table-cell>
+        <btrix-table-cell>
+          <div>
+            <div>
+              ${col.crawlCount
+                ? html`${this.localize.number(col.crawlCount, {
+                    notation: "compact",
+                  })}
+                  ${pluralOf("items", col.crawlCount)}`
+                : noData}
+            </div>
+
+            ${col.hasDedupeIndex ? detail(html`TODO Dedupe`) : nothing}
           </div>
-        </a>
-      </btrix-table-cell>
-      <btrix-table-cell>
-        ${this.localize.number(col.crawlCount, { notation: "compact" })}
-        ${pluralOf("items", col.crawlCount)}
-      </btrix-table-cell>
-      <btrix-table-cell>
-        ${col.crawlCount
-          ? html`${this.localize.number(col.pageCount, { notation: "compact" })}
-            ${pluralOf("pages", col.pageCount)}`
-          : noData}
-      </btrix-table-cell>
-      <btrix-table-cell>
-        ${col.crawlCount ? this.localize.bytes(col.totalSize || 0) : noData}
-      </btrix-table-cell>
-      <btrix-table-cell>
-        ${col.hasDedupeIndex
-          ? html`<sl-tooltip content=${msg("Deduplication Source")}>
-              <btrix-badge variant="primary">${msg("Source")}</btrix-badge>
-            </sl-tooltip>`
-          : noData}
-      </btrix-table-cell>
-      <btrix-table-cell class="flex-col items-start justify-center gap-0.5">
-        <btrix-format-date
-          date=${col.modified}
-          dateStyle="medium"
-        ></btrix-format-date>
-        <div class="font-monostyle text-xs leading-4 text-neutral-500">
+        </btrix-table-cell>
+        <btrix-table-cell>
+          ${col.crawlCount
+            ? html`${this.localize.number(col.pageCount, {
+                notation: "compact",
+              })}
+              ${pluralOf("pages", col.pageCount)}`
+            : noData}
+        </btrix-table-cell>
+        <btrix-table-cell>
+          ${col.crawlCount ? this.localize.bytes(col.totalSize || 0) : noData}
+        </btrix-table-cell>
+        <btrix-table-cell class="flex-col items-start justify-center gap-0.5">
           <btrix-format-date
             date=${col.modified}
-            timeStyle="medium"
+            dateStyle="medium"
           ></btrix-format-date>
-        </div>
-      </btrix-table-cell>
-      <btrix-table-cell class="p-0">
-        ${this.isCrawler ? this.renderActions(col) : ""}
-      </btrix-table-cell>
-    </btrix-table-row>
-  `;
+        </btrix-table-cell>
+        <btrix-table-cell class="p-0">
+          ${this.isCrawler ? this.renderActions(col) : ""}
+        </btrix-table-cell>
+      </btrix-table-row>
+    `;
+  };
 
   private readonly renderActions = (
     col: Collection,
