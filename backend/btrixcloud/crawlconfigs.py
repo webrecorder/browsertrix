@@ -33,7 +33,6 @@ from motor.motor_asyncio import (
     AsyncIOMotorDatabase,
 )
 import pymongo
-from pymongo.results import InsertOneResult
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
@@ -91,9 +90,11 @@ if TYPE_CHECKING:
     from .file_uploads import FileUploadOps
     from .storages import StorageOps
 else:
-    OrgOps = CrawlManager = UserManager = ProfileOps = CrawlOps = CollectionOps = (
-        FileUploadOps
-    ) = StorageOps = object
+    OrgOps = (
+        CrawlManager
+    ) = (
+        UserManager
+    ) = ProfileOps = CrawlOps = CollectionOps = FileUploadOps = StorageOps = object
 
 
 ALLOWED_SORT_KEYS = (
@@ -186,9 +187,9 @@ class CrawlConfigOps:
                 channels.append(channel)
                 self.crawler_images_map[channel.id] = channel.image
                 if channel.imagePullPolicy:
-                    self.crawler_image_pull_policy_map[channel.id] = (
-                        channel.imagePullPolicy
-                    )
+                    self.crawler_image_pull_policy_map[
+                        channel.id
+                    ] = channel.imagePullPolicy
 
             self.crawler_channels = CrawlerChannels(channels=channels)
 
