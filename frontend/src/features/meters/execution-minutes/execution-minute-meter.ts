@@ -96,7 +96,10 @@ export class ExecutionMinuteMeter extends BtrixElement {
       total: usage.total / quotas.total,
     };
 
-    const hasQuota = quotas.monthly > 0;
+    const hasQuota =
+      this.org.quotas.maxExecMinutesPerMonth > 0 ||
+      this.org.quotas.extraExecMinutes > 0 ||
+      this.org.quotas.giftedExecMinutes > 0;
     const isReached = hasQuota && usage.total >= quotas.total;
 
     const foregroundTooltipContent = (currentBucket: Bucket) => {
