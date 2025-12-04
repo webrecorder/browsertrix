@@ -10,7 +10,7 @@ export const usageBadge = (inUse: boolean) =>
       ? msg("In Use by Crawl Workflow")
       : msg("Not In Use by Crawl Workflow")}
   >
-    <btrix-badge variant=${inUse ? "cyan" : "neutral"} class="font-monostyle">
+    <btrix-badge variant=${inUse ? "cyan" : "neutral"}>
       <sl-icon
         name=${inUse ? "check-circle" : "dash-circle"}
         class="mr-1.5"

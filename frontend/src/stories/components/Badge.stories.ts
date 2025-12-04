@@ -32,6 +32,7 @@ const variants = [
   "danger",
   "neutral",
   "primary",
+  "lime",
   "cyan",
   "blue",
   "violet",
