@@ -49,10 +49,8 @@ const qaReviewBadge = (reviewStatus: ArchivedItem["reviewStatus"]) => html`
 export const badges = (item: ArchivedItem) => {
   return html`<div class="flex flex-wrap gap-3 whitespace-nowrap">
     ${itemTypeBadge(item.type)}
-    ${isCrawl(item)
-      ? html` ${qaReviewBadge(item.reviewStatus)}
-        ${collectionBadge(item.collectionIds.length > 0)}`
-      : nothing}
+    ${isCrawl(item) ? html`${qaReviewBadge(item.reviewStatus)}` : nothing}
+    ${collectionBadge(item.collectionIds.length > 0)}
   </div>`;
 };
 
