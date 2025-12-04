@@ -35,7 +35,7 @@ const iconFor = (status: Required<ArchivedItem["reviewStatus"]>) => {
       ></sl-icon>`;
     default:
       return html`
-        <sl-icon name="slash-circle" class=${tw`text-neutral-400`}></sl-icon>
+        <sl-icon name="dash-circle" class=${tw`text-neutral-400`}></sl-icon>
       `;
   }
 };
@@ -53,7 +53,9 @@ const labelFor = (severity: Required<ArchivedItem["reviewStatus"]>) => {
     case ReviewStatus.Excellent:
       return msg("Excellent");
     default:
-      return html`<span class=${tw`text-neutral-400`}> ${msg("None")} </span>`;
+      return html`<span class=${tw`text-neutral-400`}>
+        ${msg("No Review")}
+      </span>`;
   }
 };
 

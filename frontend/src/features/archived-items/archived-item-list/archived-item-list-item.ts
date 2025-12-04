@@ -10,7 +10,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ReviewStatus, type ArchivedItem, type Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
-import localize from "@/utils/localize";
+import { pluralOf } from "@/utils/pluralize";
 
 /**
  * @slot actionCell - Action cell
@@ -69,6 +69,14 @@ export class ArchivedItemListItem extends BtrixElement {
     const crawlStatus = isUpload
       ? CrawlStatus.getContent({ state: "complete" })
       : CrawlStatus.getContent(this.item as Crawl);
+    const pageCount = isUpload
+      ? this.item.pageCount
+        ? +this.item.pageCount
+        : 0
+      : this.item.stats?.done
+        ? +this.item.stats.done
+        : 0;
+    const pluralOfPageCount = pluralOf("pages", pageCount);
     let typeLabel = msg("Crawl");
     let typeIcon = "gear-wide-connected";
 
@@ -79,23 +87,12 @@ export class ArchivedItemListItem extends BtrixElement {
 
     const notApplicable = html`<sl-tooltip
       hoist
-      content=${msg("Not applicable")}
+      content=${msg("Not Applicable")}
     >
-      <sl-icon
-        name="slash"
-        class="text-base text-neutral-400"
-        label=${msg("Not applicable")}
-      ></sl-icon>
-    </sl-tooltip>`;
-    const none = html`<sl-tooltip hoist content=${msg("None")}>
-      <sl-icon
-        name="slash"
-        class="text-base text-neutral-400"
-        label=${msg("None")}
-      ></sl-icon>
+      <sl-icon name="slash-lg" class="text-base text-neutral-300"></sl-icon>
     </sl-tooltip>`;
 
-    const { activeQAStats, lastQAState, lastQAStarted, qaRunCount } = this.item;
+    const { activeQAStats, lastQAState } = this.item;
     const activeProgress = activeQAStats?.found
       ? Math.round((100 * activeQAStats.done) / activeQAStats.found)
       : 0;
@@ -175,9 +172,13 @@ export class ArchivedItemListItem extends BtrixElement {
                 `
               : html`
                   <sl-icon
-                    class="text-base"
-                    style="color: ${qaStatus.cssColor}"
-                    name=${isUpload ? "slash" : "microscope"}
+                    class="text-base text-neutral-300"
+                    style=${ifDefined(
+                      lastQAState === "complete"
+                        ? "color: ${qaStatus.cssColor}"
+                        : undefined,
+                    )}
+                    name=${isUpload ? "slash-lg" : "microscope"}
                     library=${isUpload ? "default" : "app"}
                   ></sl-icon>
                 `}
@@ -240,63 +241,24 @@ export class ArchivedItemListItem extends BtrixElement {
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="tabular-nums">
-          ${isUpload
-            ? html`<sl-tooltip
-                hoist
-                @click=${this.onTooltipClick}
-                content=${msg(
+          <sl-tooltip
+            hoist
+            @click=${this.onTooltipClick}
+            content="${isUpload
+              ? this.localize.number(pageCount)
+              : msg(
                   str`${this.localize.number(
-                    this.item.pageCount ? +this.item.pageCount : 0,
-                  )}`,
-                )}
-              >
-                <div class="min-w-4">
-                  ${this.localize.number(
-                    this.item.pageCount ? +this.item.pageCount : 0,
-                    {
-                      notation: "compact",
-                    },
-                  )}
-                </div>
-              </sl-tooltip>`
-            : html`<sl-tooltip
-                hoist
-                @click=${this.onTooltipClick}
-                content=${msg(
-                  str`${this.localize.number(
-                    this.item.stats?.done ? +this.item.stats.done : 0,
+                    pageCount,
                   )} crawled, ${this.localize.number(this.item.stats?.found ? +this.item.stats.found : 0)} found`,
-                )}
-              >
-                <div class="min-w-4">
-                  ${this.localize.number(
-                    this.item.stats?.done ? +this.item.stats.done : 0,
-                    {
-                      notation: "compact",
-                    },
-                  )}
-                </div>
-              </sl-tooltip>`}
-        </btrix-table-cell>
-        <btrix-table-cell class="tabular-nums">
-          ${isUpload
-            ? notApplicable
-            : lastQAStarted && qaRunCount
-              ? html`
-                  <sl-tooltip
-                    hoist
-                    content=${msg(
-                      str`Last run started on ${localize.date(lastQAStarted)}`,
-                    )}
-                  >
-                    <div class="min-w-4">
-                      ${this.localize.number(qaRunCount, {
-                        notation: "compact",
-                      })}
-                    </div>
-                  </sl-tooltip>
-                `
-              : none}
+                )} ${pluralOfPageCount}"
+          >
+            <div class="min-w-4">
+              ${this.localize.number(pageCount, {
+                notation: "compact",
+              })}
+              ${pluralOfPageCount}
+            </div>
+          </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell>
           ${isUpload

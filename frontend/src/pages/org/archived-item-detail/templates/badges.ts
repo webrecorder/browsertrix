@@ -5,7 +5,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import type { ArchivedItem } from "@/types/crawler";
 import { isCrawl } from "@/utils/crawler";
 
-const itemTypeBadge = (itemType: ArchivedItem["type"]) => {
+export const itemTypeBadge = (itemType: ArchivedItem["type"]) => {
   const upload = itemType === "upload";
 
   return html`<sl-tooltip
@@ -16,7 +16,7 @@ const itemTypeBadge = (itemType: ArchivedItem["type"]) => {
         class="mr-1.5"
         name=${upload ? "upload" : "gear-wide-connected"}
       ></sl-icon>
-      ${upload ? msg("Uploaded") : msg("Crawl")}</btrix-badge
+      ${upload ? msg("Upload") : msg("Crawl")}</btrix-badge
     >
   </sl-tooltip>`;
 };
