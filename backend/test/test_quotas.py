@@ -23,21 +23,6 @@ def get_org(quotas: OrgQuotas, monthly=None, **kwargs):
     )
 
 
-# fields
-#    storageQuota: int = 0
-#    maxExecMinutesPerMonth: int = 0
-
-#    extraExecMinutes: int = 0
-#    extraExecMinutes: int = 0
-
-#    monthlyExecSeconds: Dict[str, int] = {}
-#    extraExecSeconds: Dict[str, int] = {}
-#    extraExecSeconds: Dict[str, int] = {}
-
-#    extraExecSecondsAvailable: int = 0
-#    extraExecSecondsAvailable: int = 0
-
-
 def test_quotas_no_quotas():
     org = get_org(OrgQuotas())
     assert orgs.exec_mins_quota_reached(org) == False
@@ -167,3 +152,29 @@ def test_all_exec_quotas():
         giftedExecSecondsAvailable=0,
     )
     assert orgs.exec_mins_quota_reached(org) == True
+
+
+def test_storage_quotas():
+    # quota not reached: no quota
+    org = get_org(OrgQuotas(storageQuota=0), bytesStored=99999)
+    assert orgs.storage_quota_reached(org) == False
+
+    # quota not reached: < quota
+    org = get_org(OrgQuotas(storageQuota=100000), bytesStored=99999)
+    assert orgs.storage_quota_reached(org) == False
+
+    # quota not reached: < quota with extra bytes
+    org = get_org(OrgQuotas(storageQuota=100000), bytesStored=50000)
+    assert orgs.storage_quota_reached(org, 20000) == False
+
+    # quota reached: == quota
+    org = get_org(OrgQuotas(storageQuota=100000), bytesStored=100000)
+    assert orgs.storage_quota_reached(org) == True
+
+    # quota reached: > quota
+    org = get_org(OrgQuotas(storageQuota=100000), bytesStored=120000)
+    assert orgs.storage_quota_reached(org) == True
+
+    # quota reached: > quota with extra bytes
+    org = get_org(OrgQuotas(storageQuota=100000), bytesStored=50000)
+    assert orgs.storage_quota_reached(org, 60000) == True

@@ -117,18 +117,19 @@ DEL_ITEMS = 1000
 
 
 # ============================================================================
-# base class for dealing with quotas
 class BaseOrgs:
+    """Base Organization operations not requing db access (eg. quotas)"""
+
     # pylint: disable=invalid-name
     def storage_quota_reached(self, org: Organization, extra_bytes: int = 0) -> bool:
         """Return boolean indicating if storage quota is met or exceeded."""
         if not org.quotas.storageQuota:
             return False
 
-        if (org.bytesStored + extra_bytes) >= org.quotas.storageQuota:
-            return True
+        if (org.bytesStored + extra_bytes) < org.quotas.storageQuota:
+            return False
 
-        return False
+        return True
 
     def exec_mins_quota_reached(self, org: Organization) -> bool:
         """Return bool for if execution minutes quota is reached"""
@@ -142,7 +143,8 @@ class BaseOrgs:
         ):
             return False
 
-        # otherwise, a '0' value for any is considered a quota
+        # otherwise, a '0' value for any is considered a quota of no minutes
+        # for that category
 
         # gifted minutes available
         if org.quotas.giftedExecMinutes > 0 and org.giftedExecSecondsAvailable > 0:
