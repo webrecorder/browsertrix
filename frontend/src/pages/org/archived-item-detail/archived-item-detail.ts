@@ -7,11 +7,18 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 
+import { badges, badgesSkeleton } from "./templates/badges";
+
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
-import { pageBack, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import {
+  pageBack,
+  pageHeader,
+  pageNav,
+  type Breadcrumb,
+} from "@/layouts/pageHeader";
 import { OrgTab, WorkflowTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import type {
@@ -37,7 +44,7 @@ import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
 
-import "./ui/qa";
+import "./templates/qa";
 
 const SECTIONS = [
   "overview",
@@ -306,6 +313,7 @@ export class ArchivedItemDetail extends BtrixElement {
   render() {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
     const isSuccess = this.item && isSuccessfullyFinished(this.item);
+
     let sectionContent: string | TemplateResult<1> = "";
 
     switch (this.activeTab) {
@@ -411,7 +419,9 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       default:
         sectionContent = html`
-          <div class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:grid-rows-2">
+          <div
+            class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:grid-rows-[auto_1fr]"
+          >
             <div class="col-span-1 row-span-1 flex flex-col lg:row-span-2">
               ${this.renderPanel(msg("Overview"), this.renderOverview(), [
                 tw`rounded-lg border p-4`,
@@ -673,20 +683,17 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderHeader() {
-    return html`
-      <header class="mb-3 flex flex-wrap gap-2 border-b pb-3">
-        <btrix-detail-page-title .item=${this.item}></btrix-detail-page-title>
-        <div class="ml-auto flex flex-wrap justify-end gap-2">
-          ${this.isCrawler
-            ? this.item
-              ? this.renderMenu()
-              : html`<sl-skeleton
-                  class="h-8 w-24 [--border-radius:theme(borderRadius.sm)]"
-                ></sl-skeleton>`
-            : nothing}
-        </div>
-      </header>
-    `;
+    return pageHeader({
+      title: this.item ? renderName(this.item) : undefined,
+      secondary: when(this.item, badges, badgesSkeleton),
+      actions: this.isCrawler
+        ? this.item
+          ? this.renderMenu()
+          : html`<sl-skeleton
+              class="h-8 w-24 [--border-radius:theme(borderRadius.sm)]"
+            ></sl-skeleton>`
+        : undefined,
+    });
   }
 
   private renderMenu() {
@@ -873,12 +880,17 @@ export class ArchivedItemDetail extends BtrixElement {
       <btrix-desc-list>
         <btrix-desc-list-item label=${msg("Status")}>
           ${this.item
-            ? html`
-                <btrix-crawl-status
-                  state=${this.item.state}
-                  type=${this.item.type}
-                ></btrix-crawl-status>
-              `
+            ? isCrawl(this.item)
+              ? html`
+                  <btrix-crawl-status
+                    state=${this.item.state}
+                  ></btrix-crawl-status>
+                `
+              : html`
+                  <btrix-upload-status
+                    state=${this.item.state}
+                  ></btrix-upload-status>
+                `
             : html`<sl-skeleton class="mb-[3px] h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         ${when(this.item, (item) =>

@@ -25,7 +25,7 @@ import type { ProfileUpdatedEvent } from "@/features/browser-profiles/types";
 import type { WorkflowColumnName } from "@/features/crawl-workflows/workflow-list";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { labelWithIcon } from "@/layouts/labelWithIcon";
-import { page } from "@/layouts/page";
+import { pageHeader, pageNav } from "@/layouts/pageHeader";
 import { panel, panelBody } from "@/layouts/panel";
 import { OrgTab, WorkflowTab } from "@/routes";
 import { noData, stringFor } from "@/strings/ui";
@@ -119,16 +119,16 @@ export class BrowserProfilesProfilePage extends BtrixElement {
   });
 
   render() {
+    const breadcrumbs = [
+      {
+        href: `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}`,
+        content: msg("Browser Profiles"),
+      },
+      {
+        content: this.profile?.name,
+      },
+    ];
     const header = {
-      breadcrumbs: [
-        {
-          href: `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}`,
-          content: msg("Browser Profiles"),
-        },
-        {
-          content: this.profile?.name,
-        },
-      ],
       title: this.profile?.name,
       suffix: when(
         this.profile && this.appState.isCrawler,
@@ -143,7 +143,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
       ),
       secondary: when(this.profile, badges, badgesSkeleton),
       actions: this.renderActions(),
-    } satisfies Parameters<typeof page>[0];
+    } satisfies Parameters<typeof pageHeader>[0];
 
     const duplicating = this.openDialog === "duplicate";
     const browserLoadUrl = this.browserLoadParams.url;
@@ -178,7 +178,9 @@ export class BrowserProfilesProfilePage extends BtrixElement {
       }
     }
 
-    return html`${page(header, this.renderPage)}
+    return html`
+      <div class="mb-7">${pageNav(breadcrumbs)}</div>
+      ${pageHeader(header)} ${this.renderPage()}
 
       <btrix-profile-browser-dialog
         .profile=${this.profile}
@@ -210,7 +212,8 @@ export class BrowserProfilesProfilePage extends BtrixElement {
             }}
           >
           </btrix-profile-metadata-dialog> `,
-      )} `;
+      )}
+    `;
   }
 
   private renderActions() {
@@ -293,7 +296,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
 
   private readonly renderPage = () => {
     return html`
-      <div class="mt-2 grid grid-cols-7 gap-7">
+      <div class="mt-3 grid grid-cols-7 gap-7">
         <div class="col-span-full flex flex-col gap-7 lg:col-span-5 lg:gap-10">
           ${this.renderProfile()} ${this.renderUsage()}
         </div>
