@@ -39,6 +39,7 @@ import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplica
 import {
   DEFAULT_MAX_SCALE,
   isActive,
+  isPaused,
   isSkipped,
   isSuccessfullyFinished,
   renderName,
@@ -367,7 +368,7 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private get isPaused() {
-    return this.workflow?.lastCrawlState === "paused";
+    return isPaused(this.workflow?.lastCrawlState || "");
   }
 
   private get isResuming() {
@@ -916,7 +917,7 @@ export class WorkflowDetail extends BtrixElement {
 
     return (
       this.workflow.lastCrawlShouldPause ===
-        (this.workflow.lastCrawlState !== "paused") ||
+        !isPaused(this.workflow.lastCrawlState || "") ||
       isLoading(this.pauseResumeTask)
     );
   }

@@ -6,7 +6,12 @@ from uuid import UUID
 from typing import Optional, DefaultDict, Literal, Annotated, Any
 from pydantic import BaseModel, Field
 from kubernetes.utils import parse_quantity
-from btrixcloud.models import StorageRef, TYPE_ALL_CRAWL_STATES, Organization
+from btrixcloud.models import (
+    StorageRef,
+    TYPE_ALL_CRAWL_STATES,
+    Organization,
+    CrawlStats,
+)
 
 
 BTRIX_API = "btrix.cloud/v1"
@@ -25,6 +30,9 @@ StopReason = Literal[
     "stopped_storage_quota_reached",
     "stopped_time_quota_reached",
     "stopped_org_readonly",
+    "paused_storage_quota_reached",
+    "paused_time_quota_reached",
+    "paused_org_readonly",
 ]
 
 
@@ -201,6 +209,13 @@ class PodInfo(BaseModel):
 
 
 # ============================================================================
+class OpCrawlStats(CrawlStats):
+    """crawl stats + internal profile update"""
+
+    profile_update: Optional[str] = ""
+
+
+# ============================================================================
 # pylint: disable=invalid-name
 class CrawlStatus(BaseModel):
     """status from k8s CrawlJob object"""
@@ -211,6 +226,9 @@ class CrawlStatus(BaseModel):
     size: int = 0
     # human readable size string
     sizeHuman: str = ""
+
+    # pending size (not uploaded)
+    sizePending: int = 0
 
     # actual observed scale (number of pods active)
     scale: int = 0

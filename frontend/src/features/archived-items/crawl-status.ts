@@ -6,6 +6,7 @@ import startCase from "lodash/fp/startCase";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { labelWithIcon } from "@/layouts/labelWithIcon";
 import { RUNNING_STATES, type CrawlState } from "@/types/crawlState";
+import { isPaused } from "@/utils/crawler";
 import { animatePulse } from "@/utils/css";
 
 type CrawlType = "crawl" | "qa";
@@ -168,6 +169,36 @@ export class CrawlStatus extends TailwindElement {
           style="color: ${color}"
         ></sl-icon>`;
         label = msg("Paused");
+        break;
+
+      case "paused_storage_quota_reached":
+        color = "var(--sl-color-neutral-500)";
+        icon = html`<sl-icon
+          name="pause-circle"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Paused: Storage Quota Reached");
+        break;
+
+      case "paused_time_quota_reached":
+        color = "var(--sl-color-neutral-500)";
+        icon = html`<sl-icon
+          name="pause-circle"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Paused: Time Quota Reached");
+        break;
+
+      case "paused_org_readonly":
+        color = "var(--sl-color-neutral-500)";
+        icon = html`<sl-icon
+          name="pause-circle"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Paused: Crawling Disabled");
         break;
 
       case "pending-wait":
@@ -343,7 +374,7 @@ export class CrawlStatus extends TailwindElement {
     ) {
       return "pausing";
     }
-    if (!this.shouldPause && this.state === "paused") {
+    if (!this.shouldPause && isPaused(this.state || "")) {
       return "resuming";
     }
     return this.state;

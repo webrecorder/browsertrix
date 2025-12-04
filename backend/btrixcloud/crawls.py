@@ -9,6 +9,7 @@ import contextlib
 import urllib.parse
 from datetime import datetime
 from uuid import UUID
+import asyncio
 
 from typing import (
     Annotated,
@@ -79,6 +80,8 @@ from .models import (
     MatchCrawlQueueResponse,
     CrawlLogLine,
     TagsResponse,
+    TYPE_AUTO_PAUSED_STATES,
+    UserRole,
 )
 
 
@@ -93,7 +96,12 @@ class CrawlOps(BaseCrawlOps):
 
     crawl_manager: CrawlManager
 
-    def __init__(self, crawl_manager: CrawlManager, log_ops: CrawlLogOps, *args):
+    def __init__(
+        self,
+        crawl_manager: CrawlManager,
+        log_ops: CrawlLogOps,
+        *args,
+    ):
         super().__init__(*args)
         self.crawl_manager = crawl_manager
         self.log_ops = log_ops
@@ -357,12 +365,12 @@ class CrawlOps(BaseCrawlOps):
         res_list = await res.to_list()
         return [res["_id"] for res in res_list]
 
-    async def get_active_crawls_size(self, oid: UUID) -> int:
-        """get size of all active (running, waiting, paused) crawls"""
+    async def get_active_crawls_pending_size(self, oid: UUID) -> int:
+        """get pending size of all active (running, waiting, paused) crawls"""
         cursor = self.crawls.aggregate(
             [
                 {"$match": {"state": {"$in": RUNNING_AND_WAITING_STATES}, "oid": oid}},
-                {"$group": {"_id": None, "totalSum": {"$sum": "$stats.size"}}},
+                {"$group": {"_id": None, "totalSum": {"$sum": "$pendingSize"}}},
             ]
         )
         results = await cursor.to_list(length=1)
@@ -647,14 +655,16 @@ class CrawlOps(BaseCrawlOps):
         return res is not None
 
     async def update_running_crawl_stats(
-        self, crawl_id: str, is_qa: bool, stats: CrawlStats
+        self, crawl_id: str, is_qa: bool, stats: CrawlStats, pending_size: int
     ) -> bool:
         """update running crawl stats"""
         prefix = "" if not is_qa else "qa."
         query = {"_id": crawl_id, "type": "crawl", f"{prefix}state": "running"}
-        res = await self.crawls.find_one_and_update(
-            query, {"$set": {f"{prefix}stats": stats.dict()}}
-        )
+        update: dict[str, dict | int] = {f"{prefix}stats": stats.dict()}
+        if not is_qa:
+            update["pendingSize"] = pending_size
+
+        res = await self.crawls.find_one_and_update(query, {"$set": update})
         return res is not None
 
     async def inc_crawl_exec_time(
@@ -812,7 +822,11 @@ class CrawlOps(BaseCrawlOps):
         return crawls_data
 
     async def pause_crawl(
-        self, crawl_id: str, org: Organization, pause: bool
+        self,
+        crawl_id: str,
+        org: Organization,
+        pause: bool,
+        paused_at: Optional[datetime] = None,
     ) -> Dict[str, bool]:
         """pause or resume a crawl temporarily"""
         crawl = await self.get_base_crawl(crawl_id, org)
@@ -821,10 +835,13 @@ class CrawlOps(BaseCrawlOps):
 
         result = None
 
-        if pause:
+        if pause and not paused_at:
             paused_at = dt_now()
-        else:
-            paused_at = None
+
+        if not pause:
+            # If unpausing, unset autoPausedEmailsSent so that we will send
+            # emails again if quota is reached
+            await self.set_auto_paused_emails_sent(crawl_id, org, False)
 
         try:
             result = await self.crawl_manager.pause_resume_crawl(
@@ -1195,6 +1212,57 @@ class CrawlOps(BaseCrawlOps):
             qa_run_id=qa_run_id,
         )
 
+    async def notify_org_admins_of_auto_paused_crawl(
+        self,
+        paused_reason: TYPE_AUTO_PAUSED_STATES,
+        crawl_id: str,
+        cid: UUID,
+        org: Organization,
+    ):
+        """Send email to all org admins about automatically paused crawl"""
+        if await self.get_auto_paused_emails_sent(crawl_id, org):
+            return
+
+        users = await self.orgs.get_users_for_org(org, UserRole.OWNER)
+        workflow = await self.crawl_configs.get_crawl_config_out(cid, org)
+
+        await asyncio.gather(
+            *[
+                self.user_manager.email.send_crawl_auto_paused(
+                    user.name,
+                    user.email,
+                    paused_reason,
+                    workflow.lastCrawlPausedExpiry,
+                    cid,
+                    org,
+                )
+                for user in users
+            ]
+        )
+
+        await self.set_auto_paused_emails_sent(crawl_id, org)
+
+    async def set_auto_paused_emails_sent(
+        self, crawl_id: str, org: Organization, emails_sent: bool = True
+    ):
+        """Set if auto-paused emails already sent"""
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "oid": org.id, "type": "crawl"},
+            {"$set": {"autoPausedEmailsSent": emails_sent}},
+        )
+
+    async def get_auto_paused_emails_sent(
+        self, crawl_id: str, org: Organization
+    ) -> bool:
+        """Return whether auto-paused emails already sent for crawl"""
+        res = await self.crawls.find_one(
+            {"_id": crawl_id, "oid": org.id, "type": "crawl"},
+            projection=["autoPausedEmailsSent"],
+        )
+        if res:
+            return res.get("autoPausedEmailsSent", False)
+        return False
+
 
 # ============================================================================
 async def recompute_crawl_file_count_and_size(crawls, crawl_id: str):
@@ -1217,7 +1285,11 @@ async def recompute_crawl_file_count_and_size(crawls, crawl_id: str):
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
 def init_crawls_api(
-    crawl_manager: CrawlManager, crawl_log_ops: CrawlLogOps, app, user_dep, *args
+    crawl_manager: CrawlManager,
+    crawl_log_ops: CrawlLogOps,
+    app,
+    user_dep,
+    *args,
 ):
     """API for crawl management, including crawl done callback"""
     # pylint: disable=invalid-name, duplicate-code
