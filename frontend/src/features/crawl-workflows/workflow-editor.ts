@@ -3522,7 +3522,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       maxCrawlSize: this.formState.maxCrawlSizeGB * BYTES_PER_GB,
       tags: this.formState.tags,
       autoAddCollections: this.formState.autoAddCollections,
-      dedupeCollId: this.formState.dedupeCollectionId || null,
+      dedupeCollId:
+        this.formState.dedupeCollectionId ||
+        // PATCH will ignore `null` and empty string will break POST
+        (this.initialWorkflow?.dedupeCollId && this.configId ? "" : null),
       config: {
         ...(isPageScopeType(this.formState.scopeType)
           ? this.parseUrlListConfig(uploadParams)
