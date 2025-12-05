@@ -24,7 +24,7 @@ from typing import (
     Any,
 )
 
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from motor.motor_asyncio import AsyncIOMotorClientSession, AsyncIOMotorDatabase
 from pydantic import ValidationError
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -33,6 +33,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 import json_stream
 from aiostream import stream
+
+from backend.btrixcloud.db import TransactionDecorator, with_transaction
 
 from .models import (
     SUCCESSFUL_STATES,
@@ -659,12 +661,14 @@ class OrgOps(BaseOrgs):
             },
         )
 
+    @with_transaction
     async def update_quotas(
         self,
         org: Organization,
         quotas: OrgQuotasIn,
         mode: Literal["set", "add"],
         sub_event_id: str | None = None,
+        session: AsyncIOMotorClientSession | None = None,
     ) -> None:
         """update organization quotas"""
 
