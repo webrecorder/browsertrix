@@ -115,3 +115,25 @@ export const publicOrgCollectionsSchema = z.object({
   collections: z.array(publicCollectionSchema),
 });
 export type PublicOrgCollections = z.infer<typeof publicOrgCollectionsSchema>;
+
+export type Metrics = {
+  storageUsedBytes: number;
+  storageUsedCrawls: number;
+  storageUsedUploads: number;
+  storageUsedProfiles: number;
+  storageUsedSeedFiles: number;
+  storageUsedThumbnails: number;
+  storageQuotaBytes: number;
+  archivedItemCount: number;
+  crawlCount: number;
+  uploadCount: number;
+  pageCount: number;
+  crawlPageCount: number;
+  uploadPageCount: number;
+  profileCount: number;
+  workflowsRunningCount: number;
+  maxConcurrentCrawls: number;
+  workflowsQueuedCount: number;
+  collectionsCount: number;
+  publicCollectionsCount: number;
+};

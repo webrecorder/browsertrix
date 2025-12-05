@@ -334,6 +334,16 @@ def test_get_billing_portal_url(admin_auth_headers, echo_server):
     assert r.json() == {"portalUrl": "https://portal.example.com/path/"}
 
 
+def test_get_addon_minutes_checkout_url(admin_auth_headers, echo_server):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{new_subs_oid}/checkout/execution-minutes",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+
+    assert r.json() == {"checkoutUrl": "https://checkout.example.com/path/"}
+
+
 def test_cancel_sub_and_delete_org(admin_auth_headers):
     # cancel, resulting in org deletion
     r = requests.post(
@@ -498,6 +508,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "planId": "basic2",
             "futureCancelDate": None,
             "quotas": {
+                "context": None,
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
                 "extraExecMinutes": None,
@@ -566,6 +577,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "planId": "basic2",
             "futureCancelDate": None,
             "quotas": {
+                "context": None,
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
                 "extraExecMinutes": None,
@@ -627,6 +639,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "planId": "basic2",
             "futureCancelDate": None,
             "quotas": {
+                "context": None,
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
                 "extraExecMinutes": None,
@@ -662,6 +675,7 @@ def test_subscription_events_log_filter_plan_id(admin_auth_headers):
             "planId": "basic2",
             "futureCancelDate": None,
             "quotas": {
+                "context": None,
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
                 "extraExecMinutes": None,
@@ -713,6 +727,7 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
             "planId": "basic2",
             "futureCancelDate": None,
             "quotas": {
+                "context": None,
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
                 "extraExecMinutes": None,

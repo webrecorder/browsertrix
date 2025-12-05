@@ -1882,6 +1882,8 @@ class OrgQuotasIn(BaseModel):
     extraExecMinutes: Optional[int] = None
     giftedExecMinutes: Optional[int] = None
 
+    context: str | None = None
+
 
 # ============================================================================
 class Plan(BaseModel):
@@ -2006,6 +2008,30 @@ class SubscriptionPortalUrlResponse(BaseModel):
 
 
 # ============================================================================
+class AddonMinutesPricing(BaseModel):
+    """Addon minutes pricing"""
+
+    value: float
+    currency: str
+
+
+# ============================================================================
+class CheckoutAddonMinutesRequest(BaseModel):
+    """Request for additional minutes checkout session"""
+
+    orgId: str
+    subId: str
+    minutes: int | None = None
+    return_url: str
+
+
+class CheckoutAddonMinutesResponse(BaseModel):
+    """Response for additional minutes checkout session"""
+
+    checkoutUrl: str
+
+
+# ============================================================================
 class Subscription(BaseModel):
     """subscription data"""
 
@@ -2083,6 +2109,7 @@ class OrgQuotaUpdate(BaseModel):
 
     modified: datetime
     update: OrgQuotas
+    context: str | None = None
 
 
 # ============================================================================
