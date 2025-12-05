@@ -1052,6 +1052,8 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private renderCollections() {
     const noneText = html`<span class="text-neutral-300">${msg("None")}</span>`;
+    const dedupeId = this.item && isCrawl(this.item) && this.item.dedupeCollId;
+
     return html`
       <btrix-desc-list>
         <btrix-desc-list-item label=${msg("Included In")}>
@@ -1064,6 +1066,7 @@ export class ArchivedItemDetail extends BtrixElement {
                   <btrix-linked-collections-list
                     class="mt-1 block"
                     .collections=${item.collections}
+                    dedupeId=${ifDefined(dedupeId || undefined)}
                     baseUrl="${this.navigate.orgBasePath}/collections/view"
                   ></btrix-linked-collections-list>
                 `,

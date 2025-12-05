@@ -1,18 +1,18 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlCheckbox, SlHideEvent } from "@shoelace-style/shoelace";
-import clsx from "clsx";
 import { css, html, nothing } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+
+import { dedupeStatusIcon } from "../templates/dedupe-status-icon";
 
 import type { ArchivedItemCheckedEvent } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ReviewStatus, type ArchivedItem, type Crawl } from "@/types/crawler";
-import { isCrawl, renderName } from "@/utils/crawler";
+import { renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
-import { tw } from "@/utils/tailwind";
 
 /**
  * @slot actionCell - Action cell
@@ -102,9 +102,6 @@ export class ArchivedItemListItem extends BtrixElement {
     const qaStatus = CrawlStatus.getContent({
       state: lastQAState || undefined,
     });
-    const dedupeDependent =
-      isCrawl(this.item) &&
-      (this.item.requiredByCrawls.length || this.item.requiresCrawls.length);
 
     return html`
       <btrix-table-row
@@ -159,21 +156,6 @@ export class ArchivedItemListItem extends BtrixElement {
                 </sl-tooltip>
               `}
           <sl-tooltip
-            content=${dedupeDependent
-              ? msg("Deduplication Dependent")
-              : msg("No Dependencies")}
-            hoist
-          >
-            <sl-icon
-              class=${clsx(
-                tw`size-4 text-base`,
-                dedupeDependent ? tw`text-orange-600` : tw`text-neutral-400`,
-              )}
-              name=${dedupeDependent ? "file-earmark-scan3" : "file-earmark"}
-              library=${dedupeDependent ? "app" : "default"}
-            ></sl-icon>
-          </sl-tooltip>
-          <sl-tooltip
             hoist
             content=${activeQAStats
               ? msg(
@@ -203,6 +185,7 @@ export class ArchivedItemListItem extends BtrixElement {
                   ></sl-icon>
                 `}
           </sl-tooltip>
+          ${dedupeStatusIcon(this.item)}
         </btrix-table-cell>
         <btrix-table-cell
           rowClickTarget=${ifDefined(
