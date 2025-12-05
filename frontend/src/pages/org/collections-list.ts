@@ -81,6 +81,10 @@ enum ListView {
   Grid = "grid",
 }
 
+const noData = html`<sl-tooltip hoist content=${stringFor.none}>
+  <sl-icon name="dash-lg" class="text-base text-neutral-400"></sl-icon>
+</sl-tooltip>`;
+
 @customElement("btrix-collections-list")
 @localized()
 export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
@@ -490,7 +494,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     if (this.collections?.items.length) {
       return html`
         <btrix-table
-          class="[--btrix-table-column-gap:var(--sl-spacing-small)]"
+          class="mb-1 [--btrix-table-column-gap:var(--sl-spacing-small)]"
           style="--btrix-table-grid-template-columns: min-content [clickable-start] minmax(min-content, 60ch) repeat(4, 1fr) [clickable-end] min-content"
         >
           <btrix-table-head class="mb-2 mt-1 whitespace-nowrap">
@@ -498,7 +502,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
               <span class="sr-only">${msg("Collection Access")}</span>
             </btrix-table-header-cell>
             <btrix-table-header-cell>
-              ${msg(html`Name & Collection Period`)}
+              ${msg(html`Name & Details`)}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Archived Items")}
@@ -562,17 +566,14 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   private readonly renderItem = (col: Collection) => {
     const detail = (content: TemplateResult | string) =>
       html`<div
-        class="mt-1 font-mono text-xs leading-none text-neutral-500 [font-variation-settings:var(--font-monostyle-variation)]"
+        class="${tw`[&>sl-icon]:text-sm`} flex items-center gap-1.5 font-mono text-xs leading-none text-neutral-500 [font-variation-settings:var(--font-monostyle-variation)]"
       >
         ${content}
       </div>`;
-    const noData = html`<sl-tooltip hoist content=${stringFor.none}>
-      <sl-icon name="dash-lg" class="text-base text-neutral-400"></sl-icon>
-    </sl-tooltip>`;
 
     return html`
       <btrix-table-row
-        class="cursor-pointer select-none whitespace-nowrap rounded border shadow-sm transition-all duration-fast focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
+        class="cursor-pointer select-none whitespace-nowrap rounded border shadow-sm transition-all duration-fast focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
         <btrix-table-cell class="py-3 pl-4 pr-1">
           ${choose(col.access, [
@@ -636,24 +637,42 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
             @click=${this.navigate.link}
           >
             <div class="truncate">${col.name}</div>
-            ${col.dateEarliest && col.dateLatest
-              ? detail(monthYearDateRange(col.dateEarliest, col.dateLatest))
+            ${(col.dateEarliest && col.dateLatest) || col.hasDedupeIndex
+              ? html`
+                  <div class="mt-1 flex gap-3">
+                    ${col.dateEarliest && col.dateLatest
+                      ? detail(html`
+                          <sl-icon
+                            name="calendar4-range"
+                            label=${msg("Date range")}
+                          ></sl-icon>
+                          ${monthYearDateRange(
+                            col.dateEarliest,
+                            col.dateLatest,
+                          )}
+                        `)
+                      : nothing}
+                    ${col.hasDedupeIndex
+                      ? detail(html`
+                          <sl-icon
+                            name="stack"
+                            label=${msg("Deduplication")}
+                          ></sl-icon>
+                          ${msg("Dedupe source")}
+                        `)
+                      : nothing}
+                  </div>
+                `
               : nothing}
           </a>
         </btrix-table-cell>
         <btrix-table-cell>
-          <div>
-            <div>
-              ${col.crawlCount
-                ? html`${this.localize.number(col.crawlCount, {
-                    notation: "compact",
-                  })}
-                  ${pluralOf("items", col.crawlCount)}`
-                : noData}
-            </div>
-
-            ${col.hasDedupeIndex ? detail(html`TODO Dedupe`) : nothing}
-          </div>
+          ${col.crawlCount
+            ? html`${this.localize.number(col.crawlCount, {
+                notation: "compact",
+              })}
+              ${pluralOf("items", col.crawlCount)}`
+            : noData}
         </btrix-table-cell>
         <btrix-table-cell>
           ${col.crawlCount

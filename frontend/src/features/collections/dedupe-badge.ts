@@ -7,9 +7,9 @@ import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 export const dedupeIconFor = {
-  dependent: "file-earmark-scan3",
-  dependency: "file-earmark-scan2",
-  both: "file-earmark-scan3",
+  dependent: "layers-half",
+  dependency: "layers-half",
+  both: "layers-fill",
 } as const;
 
 export const dedupeLabelFor = {
@@ -69,8 +69,8 @@ export class DedupeBadge extends TailwindElement {
     }
 
     return html`<btrix-popover content=${tooltip} hoist>
-      <btrix-badge variant="orange" outline>
-        <sl-icon class="mr-1.5" name=${icon} library="app"></sl-icon>
+      <btrix-badge variant="orange">
+        <sl-icon class="mr-1.5" name=${icon}></sl-icon>
         ${text}
       </btrix-badge>
     </btrix-popover>`;

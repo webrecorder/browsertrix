@@ -19,12 +19,8 @@ export class DedupeSourceBadge extends TailwindElement {
       hoist
     >
       <btrix-badge variant="orange" outline>
-        <sl-icon
-          class="mr-1.5"
-          name="file-earmark-scan"
-          library="app"
-        ></sl-icon>
-        ${msg("Dedupe")}
+        <sl-icon class="mr-1.5" name="stack"></sl-icon>
+        ${msg("Source")}
       </btrix-badge>
     </btrix-popover>`;
   }
