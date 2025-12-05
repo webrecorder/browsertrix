@@ -14,12 +14,12 @@ from tempfile import NamedTemporaryFile
 
 from typing import (
     Awaitable,
+    Literal,
     Optional,
     TYPE_CHECKING,
     Dict,
     Callable,
     List,
-    Literal,
     AsyncGenerator,
     Any,
 )
@@ -627,74 +627,133 @@ class OrgOps:
 
         quotas.context = None
 
-        previous_extra_mins = (
-            org.quotas.extraExecMinutes
-            if (org.quotas and org.quotas.extraExecMinutes)
-            else 0
-        )
-        previous_gifted_mins = (
-            org.quotas.giftedExecMinutes
-            if (org.quotas and org.quotas.giftedExecMinutes)
-            else 0
-        )
+        update: list[dict[str, Any]] = [
+            {
+                "$set": {
+                    "quotaUpdates": {
+                        "$concatArrays": [
+                            "$quotaUpdates",
+                            [{"modified": dt_now(), "update": {}}],
+                        ]
+                    },
+                }
+            }
+        ]
+
+        computed_quotas: dict[str, Any] = {}
 
         if mode == "add":
-            increment_update: dict[str, Any] = {
-                "$inc": {},
-            }
-
-            for field, value in quotas.model_dump(
-                exclude_unset=True, exclude_defaults=True, exclude_none=True
-            ).items():
-                if field == "context" or value is None:
+            update[0]["$set"]["quotaUpdates"]["$concatArrays"][1][0][
+                "context"
+            ] = context
+            for field, value in quotas.model_dump().items():
+                if field == "context":
                     continue
-                inc = max(value, -org.quotas.model_dump().get(field, 0))
-                increment_update["$inc"][f"quotas.{field}"] = inc
+                if value is None:
+                    # set value of field in pushed update to current value in `quotas`
+                    update[0]["$set"]["quotaUpdates"]["$concatArrays"][1][0]["update"][
+                        field
+                    ] = f"$quotas.{field}"
+                    computed_quotas[field] = f"$quotas.{field}"
+                    continue
+                new_value = {
+                    "$add": [
+                        {
+                            "$cond": {
+                                "if": {
+                                    "$gt": [
+                                        {"$multiply": [f"$quotas.{field}", -1]},
+                                        value,
+                                    ]
+                                },
+                                "then": {"$multiply": [f"$quotas.{field}", -1]},
+                                "else": value,
+                            }
+                        },
+                        f"$quotas.{field}",
+                    ]
+                }
+                # set value of field in pushed update to current value in quotas + increment
+                update[0]["$set"][f"quotas.{field}"] = new_value
+                update[0]["$set"]["quotaUpdates"]["$concatArrays"][1][0]["update"][
+                    field
+                ] = new_value
+                computed_quotas[field] = new_value
 
-            updated_org = await self.orgs.find_one_and_update(
-                {"_id": org.id},
-                increment_update,
-                projection={"quotas": True},
-                return_document=ReturnDocument.AFTER,
-            )
-            quotas = OrgQuotasIn(**updated_org["quotas"])
-
-        update: dict[str, dict[str, dict[str, Any] | int]] = {
-            "$push": {
-                "quotaUpdates": OrgQuotaUpdate(
-                    modified=dt_now(),
-                    update=OrgQuotas(
-                        **quotas.model_dump(
-                            exclude_unset=True, exclude_defaults=True, exclude_none=True
-                        )
-                    ),
-                    context=context,
-                ).model_dump()
-            },
-            "$inc": {},
-            "$set": {},
-        }
-
-        if mode == "set":
+        elif mode == "set":
             increment_update = quotas.model_dump(
                 exclude_unset=True, exclude_defaults=True, exclude_none=True
             )
-            update["$set"]["quotas"] = increment_update
+            for field, value in increment_update.items():
+                update[0]["$set"][f"quotas.{field}"] = value
+                computed_quotas[field] = value
+            update[0]["$set"]["quotaUpdates"]["$concatArrays"][1][0] = OrgQuotaUpdate(
+                modified=dt_now(),
+                update=OrgQuotas(
+                    **quotas.model_dump(
+                        exclude_unset=True, exclude_defaults=True, exclude_none=True
+                    )
+                ),
+                context=context,
+            ).model_dump()
 
         # Inc org available fields for extra/gifted execution time as needed
-        if quotas.extraExecMinutes is not None:
-            extra_secs_diff = (quotas.extraExecMinutes - previous_extra_mins) * 60
-            if org.extraExecSecondsAvailable + extra_secs_diff <= 0:
-                update["$set"]["extraExecSecondsAvailable"] = 0
-            else:
-                update["$inc"]["extraExecSecondsAvailable"] = extra_secs_diff
+        for extra_or_gifted in ["extra", "gifted"]:
+            if f"{extra_or_gifted}ExecMinutes" not in computed_quotas:
+                continue
+            previous_mins = {
+                "$cond": {
+                    "if": {
+                        "$or": [
+                            {"$ne": [f"$quotas.{extra_or_gifted}ExecMinutes", 0]},
+                            {"$ne": [f"$quotas.{extra_or_gifted}ExecMinutes", None]},
+                        ]
+                    },
+                    "then": f"$quotas.{extra_or_gifted}ExecMinutes",
+                    "else": 0,
+                }
+            }
 
-        if quotas.giftedExecMinutes is not None:
-            gifted_secs_diff = (quotas.giftedExecMinutes - previous_gifted_mins) * 60
-            if org.giftedExecSecondsAvailable + gifted_secs_diff <= 0:
-                update["$set"]["giftedExecSecondsAvailable"] = 0
-            else:
-                update["$inc"]["giftedExecSecondsAvailable"] = gifted_secs_diff
+            secs_diff = {
+                "$multiply": [
+                    {
+                        "$subtract": [
+                            computed_quotas[f"{extra_or_gifted}ExecMinutes"],
+                            previous_mins,
+                        ]
+                    },
+                    60,
+                ]
+            }
+
+            update[0]["$set"][f"{extra_or_gifted}ExecSecondsAvailable"] = {
+                "$cond": {
+                    "if": {"$ne": [f"${extra_or_gifted}ExecSecondsAvailable", None]},
+                    "then": {
+                        "$cond": {
+                            "if": {
+                                "$lte": [
+                                    {
+                                        "$add": [
+                                            f"${extra_or_gifted}ExecSecondsAvailable",
+                                            secs_diff,
+                                        ]
+                                    },
+                                    0,
+                                ]
+                            },
+                            "then": 0,
+                            "else": {
+                                "$add": [
+                                    f"${extra_or_gifted}ExecSecondsAvailable",
+                                    secs_diff,
+                                ]
+                            },
+                        }
+                    },
+                    "else": f"${extra_or_gifted}ExecSecondsAvailable",
+                }
+            }
 
         await self.orgs.find_one_and_update({"_id": org.id}, update)
 
