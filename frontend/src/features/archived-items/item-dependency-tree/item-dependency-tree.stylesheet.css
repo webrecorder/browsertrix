@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  sl-tree {
+    --indent-guide-width: 1px;
+  }
+
+  /* Reset selected style */
+  sl-tree-item::part(item--selected) {
+    border-inline-start-color: transparent;
+    background: transparent;
+  }
+
+  sl-tree-item:nth-of-type(n + 2),
+  .item-dependency-tree--dependency:first-of-type {
+    @apply mt-1.5;
+  }
+
+  sl-tree > sl-tree-item > .item-dependency-tree--item {
+    @apply shadow-sm;
+  }
+
+  sl-tree-item::part(label) {
+    @apply w-full;
+  }
+
+  sl-tree-item::part(children)::before {
+    bottom: 1rem;
+  }
+
+  .item-dependency-tree--row {
+    grid-template-columns: 1rem 1fr 12rem repeat(2, 6rem) 2rem;
+    @apply grid w-full items-center gap-2 pl-2;
+  }
+
+  .item-dependency-tree--item {
+    @apply rounded border;
+  }
+
+  .item-dependency-tree--dependency::part(indentation) {
+    @apply w-3;
+  }
+
+  .item-dependency-tree--dependency::part(base)::before {
+    content: "";
+    width: 1.75rem;
+    left: calc(var(--indent-size) - 1.5px);
+    top: calc(1rem - var(--indent-guide-width));
+    height: var(--sl-border-radius-medium);
+    border-left: var(--indent-guide-width) var(--indent-guide-style)
+      var(--indent-guide-color);
+    border-bottom: var(--indent-guide-width) var(--indent-guide-style)
+      var(--indent-guide-color);
+
+    @apply absolute rounded-bl;
+  }
+
+  .item-dependency-tree--dependency::part(label) {
+    @apply relative;
+  }
+}

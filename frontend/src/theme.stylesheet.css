@@ -424,14 +424,12 @@
   .font-monostyle {
     @apply font-mono;
     font-variation-settings: var(--font-monostyle-variation);
-    font-size: 95%;
   }
 
   /* Actually monospaced font */
   .font-monospace {
     @apply font-mono;
     font-variation-settings: var(--font-monospace-variation);
-    font-size: 95%;
   }
 
   .truncate {

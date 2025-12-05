@@ -48,6 +48,7 @@ export enum Tab {
   Replay = "replay",
   About = "about",
   Items = "items",
+  Dedupe = "dedupe",
 }
 
 @customElement("btrix-collection-detail")
@@ -110,6 +111,10 @@ export class CollectionDetail extends BtrixElement {
     [Tab.About]: {
       icon: { name: "info-square-fill", library: "default" },
       text: msg("About"),
+    },
+    [Tab.Dedupe]: {
+      icon: { name: "stack", library: "default" },
+      text: msg("Deduplication"),
     },
   };
 
@@ -296,6 +301,7 @@ export class CollectionDetail extends BtrixElement {
           () => guard([this.archivedItems], this.renderArchivedItems),
         ],
         [Tab.About, () => this.renderAbout()],
+        [Tab.Dedupe, () => this.renderDedupe()],
       ])}
 
       <btrix-dialog
@@ -740,6 +746,19 @@ export class CollectionDetail extends BtrixElement {
           <div class="mt-5">${metadata}</div>
         </section>
       </div>
+    `;
+  }
+
+  private renderDedupe() {
+    return html`
+      ${when(
+        this.archivedItems?.items,
+        (items) => html`
+          <btrix-item-dependency-tree
+            .items=${items}
+          ></btrix-item-dependency-tree>
+        `,
+      )}
     `;
   }
 

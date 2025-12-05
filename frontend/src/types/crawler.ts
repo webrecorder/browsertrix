@@ -76,7 +76,7 @@ export type WorkflowParams = {
   autoAddCollections: string[];
   crawlerChannel: string;
   proxyId: string | null;
-  dedupeCollId: string | null;
+  dedupeCollId?: string | null;
 };
 
 export type CrawlConfig = WorkflowParams & {
@@ -198,10 +198,12 @@ type ArchivedItemBase = {
 };
 
 export type Crawl = ArchivedItemBase &
-  CrawlConfig & {
+  Omit<
+    CrawlConfig,
+    "autoAddCollections" | "schedule" | "crawlTimeout" | "maxCrawlSize"
+  > & {
     type: "crawl";
     cid: string;
-    schedule: string;
     manual: boolean;
     scale: number;
     browserWindows: number;
@@ -210,6 +212,8 @@ export type Crawl = ArchivedItemBase &
     requiresCrawls: string[];
     requiredByCrawls: string[];
   };
+
+export type ListCrawl = Omit<Crawl, "config">;
 
 export type Upload = ArchivedItemBase & {
   type: "upload";
