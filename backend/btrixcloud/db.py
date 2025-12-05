@@ -8,7 +8,7 @@ import urllib
 import asyncio
 from uuid import UUID, uuid4
 
-from typing import Optional, Union, TypeVar, Type, TYPE_CHECKING
+from typing import Any, Coroutine, Optional, Union, TypeVar, Type, TYPE_CHECKING
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pydantic import BaseModel
@@ -31,11 +31,23 @@ if TYPE_CHECKING:
     from .crawlmanager import CrawlManager
     from .profiles import ProfileOps
 else:
-    UserManager = OrgOps = CrawlConfigOps = CrawlOps = CollectionOps = InviteOps = (
+    UserManager = (
+        OrgOps
+    ) = (
+        CrawlConfigOps
+    ) = (
+        CrawlOps
+    ) = (
+        CollectionOps
+    ) = (
+        InviteOps
+    ) = (
         StorageOps
-    ) = PageOps = BackgroundJobOps = FileUploadOps = CrawlLogOps = CrawlManager = (
-        ProfileOps
-    ) = object
+    ) = (
+        PageOps
+    ) = (
+        BackgroundJobOps
+    ) = FileUploadOps = CrawlLogOps = CrawlManager = ProfileOps = object
 
 
 CURR_DB_VERSION = "0054"
@@ -57,7 +69,8 @@ def resolve_db_url() -> str:
 
 
 # ============================================================================
-def init_db() -> tuple[AsyncIOMotorClient, AsyncIOMotorDatabase]:
+# TODO: properly type the third item in the tuple
+def init_db() -> tuple[AsyncIOMotorClient, AsyncIOMotorDatabase, Any]:
     """initialize the mongodb connector"""
 
     db_url = resolve_db_url()
@@ -72,7 +85,21 @@ def init_db() -> tuple[AsyncIOMotorClient, AsyncIOMotorDatabase]:
 
     mdb = client["browsertrixcloud"]
 
-    return client, mdb
+    # TODO: properly type `func` here
+    def with_transaction(func: Any):
+        async def wrapper(*args, **kwargs):
+            try:
+                async with await client.start_session() as session:
+                    async with session.start_transaction():
+                        result = await func(*args, **kwargs, session=session)
+                        return result
+            except Exception as e:
+                print(f"Transaction failed: {str(e)}")
+                raise e
+
+        return wrapper
+
+    return client, mdb, with_transaction
 
 
 # ============================================================================
