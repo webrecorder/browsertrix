@@ -4,11 +4,18 @@ Browsertrix API Mongo DB initialization
 
 import importlib.util
 import os
-import urllib
+import urllib.parse
 import asyncio
 from uuid import UUID, uuid4
 
-from typing import Any, Coroutine, Optional, Union, TypeVar, Type, TYPE_CHECKING
+from typing import (
+    Callable,
+    Awaitable,
+    Optional,
+    TypeVar,
+    Union,
+    TYPE_CHECKING,
+)
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pydantic import BaseModel
@@ -17,6 +24,7 @@ from pymongo.errors import InvalidName
 from .migrations import BaseMigration
 
 if TYPE_CHECKING:
+    from motor.motor_asyncio import AsyncIOMotorClientSession
     from .users import UserManager
     from .orgs import OrgOps
     from .crawlconfigs import CrawlConfigOps
@@ -31,6 +39,7 @@ if TYPE_CHECKING:
     from .crawlmanager import CrawlManager
     from .profiles import ProfileOps
 else:
+    AsyncIOMotorClientSession = object
     UserManager = (
         OrgOps
     ) = (
@@ -54,6 +63,8 @@ CURR_DB_VERSION = "0054"
 
 
 # ============================================================================
+
+
 def resolve_db_url() -> str:
     """get the mongo db url, either from MONGO_DB_URL or
     from separate username, password and host settings"""
@@ -69,8 +80,9 @@ def resolve_db_url() -> str:
 
 
 # ============================================================================
-# TODO: properly type the third item in the tuple
-def init_db() -> tuple[AsyncIOMotorClient, AsyncIOMotorDatabase, Any]:
+type TransactionDecorator[**P, T] = Callable[[Callable[P, Awaitable[T]]], Callable[P, Awaitable[T]]]
+
+def init_db() -> tuple[AsyncIOMotorClient, AsyncIOMotorDatabase, TransactionDecorator]:
     """initialize the mongodb connector"""
 
     db_url = resolve_db_url()
@@ -85,8 +97,14 @@ def init_db() -> tuple[AsyncIOMotorClient, AsyncIOMotorDatabase, Any]:
 
     mdb = client["browsertrixcloud"]
 
-    # TODO: properly type `func` here
-    def with_transaction(func: Any):
+    # Transaction decorator
+    # Usage Example:
+    # ```python
+    # @with_transaction
+    # async def transaction(document_1: dict, document_2: dict, session: AsyncIOMotorClientSession | None = None):
+    #     ...
+    # ```
+    def with_transaction[**P, T](func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
         async def wrapper(*args, **kwargs):
             try:
                 async with await client.start_session() as session:
