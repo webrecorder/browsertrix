@@ -7,5 +7,6 @@ import "./crawl-workflows";
 import "./org";
 import "./qa";
 import "./users";
+import "./meters";
 
 import("./admin");

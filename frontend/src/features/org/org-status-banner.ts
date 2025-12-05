@@ -261,13 +261,25 @@ export class OrgStatusBanner extends BtrixElement {
         }),
       },
       {
-        test: () => !readOnly && !!execMinutesQuotaReached,
+        test: () => !readOnly && !!execMinutesQuotaReached && !subscription,
         content: () => ({
           title: msg(
             str`Your org has reached its monthly execution minutes limit`,
           ),
           detail: msg(
             str`Contact ${this.appState.settings?.salesEmail || msg("Browsertrix host administrator")} to purchase additional monthly execution minutes or upgrade your plan.`,
+          ),
+        }),
+      },
+      {
+        test: () => !readOnly && !!execMinutesQuotaReached && !!subscription,
+        content: () => ({
+          title: msg(
+            str`Your org has reached its monthly execution minutes limit`,
+          ),
+          detail: msg(
+            html`Purchase additional monthly execution minutes or upgrade your
+            plan from ${billingTabLink}.`,
           ),
         }),
       },
