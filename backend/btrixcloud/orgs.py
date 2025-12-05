@@ -14,6 +14,7 @@ from tempfile import NamedTemporaryFile
 
 from typing import Optional, TYPE_CHECKING, Dict, Callable, List, AsyncGenerator, Any
 
+from motor.motor_asyncio import AsyncIOMotorClientSession
 from pydantic import ValidationError
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -1455,10 +1456,12 @@ class OrgOps(BaseOrgs):
     async def recalculate_storage(self, org: Organization) -> dict[str, bool]:
         """Recalculate org storage use"""
         try:
-            total_crawl_size, crawl_size, upload_size = (
-                await self.base_crawl_ops.calculate_org_crawl_file_storage(
-                    org.id,
-                )
+            (
+                total_crawl_size,
+                crawl_size,
+                upload_size,
+            ) = await self.base_crawl_ops.calculate_org_crawl_file_storage(
+                org.id,
             )
             profile_size = await self.profile_ops.calculate_org_profile_file_storage(
                 org.id
@@ -1501,11 +1504,19 @@ class OrgOps(BaseOrgs):
             {"$set": {"lastCrawlFinished": last_crawl_finished}},
         )
 
-    async def inc_org_bytes_stored_field(self, oid: UUID, field: str, size: int):
+    async def inc_org_bytes_stored_field(
+        self,
+        oid: UUID,
+        field: str,
+        size: int,
+        session: AsyncIOMotorClientSession | None = None,
+    ):
         """Increment specific org bytesStored* field"""
         try:
             await self.orgs.find_one_and_update(
-                {"_id": oid}, {"$inc": {field: size, "bytesStored": size}}
+                {"_id": oid},
+                {"$inc": {field: size, "bytesStored": size}},
+                session=session,
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
