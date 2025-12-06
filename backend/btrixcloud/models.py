@@ -1973,18 +1973,37 @@ class SubscriptionCancel(BaseModel):
 
 
 # ============================================================================
+class SubscriptionCancelOut(SubscriptionCancel, SubscriptionEventOut):
+    """Output model for subscription cancellation event"""
+
+    type: Literal["cancel"] = "cancel"
+
+
+# ============================================================================
+class SubscriptionAddMinutes(BaseModel):
+    """Represents a purchase of additional minutes"""
+
+    oid: UUID
+    minutes: int
+    total_price: float
+    currency: str
+
+    context: str
+
+
+# ============================================================================
+class SubscriptionAddMinutesOut(SubscriptionAddMinutes, SubscriptionEventOut):
+    """SubscriptionAddMinutes output model"""
+
+    type: Literal["add-minutes"] = "add-minutes"
+
+
+# ============================================================================
 class SubscriptionTrialEndReminder(BaseModel):
     """Email reminder that subscription will end soon"""
 
     subId: str
     behavior_on_trial_end: Literal["cancel", "continue", "read-only"]
-
-
-# ============================================================================
-class SubscriptionCancelOut(SubscriptionCancel, SubscriptionEventOut):
-    """Output model for subscription cancellation event"""
-
-    type: Literal["cancel"] = "cancel"
 
 
 # ============================================================================
