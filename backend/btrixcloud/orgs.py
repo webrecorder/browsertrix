@@ -625,8 +625,6 @@ class OrgOps:
     ) -> None:
         """update organization quotas"""
 
-        quotas.context = None
-
         previous_extra_mins = (
             org.quotas.extraExecMinutes
             if (org.quotas and org.quotas.extraExecMinutes)
@@ -1700,7 +1698,7 @@ def init_orgs_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        await ops.update_quotas(org, quotas, mode="set", context=quotas.context)
+        await ops.update_quotas(org, quotas, mode="set")
 
         return {"updated": True}
 

@@ -1857,8 +1857,6 @@ class OrgQuotasIn(BaseModel):
     extraExecMinutes: Optional[int] = None
     giftedExecMinutes: Optional[int] = None
 
-    context: str | None = None
-
 
 # ============================================================================
 class Plan(BaseModel):
@@ -2103,7 +2101,6 @@ class OrgQuotaUpdate(BaseModel):
 
     modified: datetime
     update: OrgQuotas
-    context: str | None = None
 
 
 # ============================================================================
