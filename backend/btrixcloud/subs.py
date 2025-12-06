@@ -23,16 +23,19 @@ from .models import (
     SubscriptionImport,
     SubscriptionUpdate,
     SubscriptionCancel,
+    SubscriptionAddMinutes,
     SubscriptionCreateOut,
     SubscriptionImportOut,
     SubscriptionUpdateOut,
     SubscriptionCancelOut,
+    SubscriptionAddMinutesOut,
     Subscription,
     SubscriptionPortalUrlRequest,
     SubscriptionPortalUrlResponse,
     SubscriptionCanceledResponse,
     SubscriptionTrialEndReminder,
     Organization,
+    OrgQuotasIn,
     InviteToOrgRequest,
     InviteAddedResponse,
     User,
@@ -228,6 +231,18 @@ class SubOps:
 
         return SuccessResponse(success=True)
 
+    async def add_sub_minutes(self, add_min: SubscriptionAddMinutes):
+        """add extra minutes for subscription"""
+        org = await self.org_ops.get_org_by_id(add_min.oid)
+        quotas = OrgQuotasIn(extraExecMinutes=add_min.minutes)
+        await self.org_ops.update_quotas(
+            org, quotas, mode="add", context=add_min.context
+        )
+
+        await self.add_sub_event("add-minutes", add_min, add_min.oid)
+
+        return {"updated": True}
+
     async def add_sub_event(
         self,
         type_: str,
@@ -236,6 +251,7 @@ class SubOps:
             SubscriptionImport,
             SubscriptionUpdate,
             SubscriptionCancel,
+            SubscriptionAddMinutes,
         ],
         oid: UUID,
     ) -> None:
@@ -251,6 +267,7 @@ class SubOps:
         SubscriptionImportOut,
         SubscriptionUpdateOut,
         SubscriptionCancelOut,
+        SubscriptionAddMinutesOut,
     ]:
         """convert dict to propert background job type"""
         if data["type"] == "create":
@@ -259,6 +276,9 @@ class SubOps:
             return SubscriptionImportOut(**data)
         if data["type"] == "update":
             return SubscriptionUpdateOut(**data)
+        if data["type"] == "add-minutes":
+            return SubscriptionAddMinutesOut(**data)
+
         return SubscriptionCancelOut(**data)
 
     # pylint: disable=too-many-arguments
@@ -279,6 +299,7 @@ class SubOps:
                 SubscriptionImportOut,
                 SubscriptionUpdateOut,
                 SubscriptionCancelOut,
+                SubscriptionAddMinutesOut,
             ]
         ],
         int,
@@ -514,6 +535,15 @@ def init_subs_api(
         reminder: SubscriptionTrialEndReminder,
     ):
         return await ops.send_trial_end_reminder(reminder)
+
+    @app.post(
+        "/subscriptions/add-minutes",
+        tags=["subscriptions"],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
+        response_model=UpdatedResponse,
+    )
+    async def add_sub_minutes(add_min: SubscriptionAddMinutes):
+        return await ops.add_sub_minutes(add_min)
 
     assert org_ops.router
 

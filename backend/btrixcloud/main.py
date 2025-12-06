@@ -181,7 +181,6 @@ def main() -> None:
         crawl_manager,
         invites,
         current_active_user,
-        shared_secret_or_superuser,
     )
 
     init_subs_api(app, mdb, org_ops, user_manager, shared_secret_or_superuser)
