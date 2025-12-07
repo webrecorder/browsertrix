@@ -922,7 +922,7 @@ def test_subscription_add_minutes(admin_auth_headers):
         f"{API_PREFIX}/subscriptions/add-minutes",
         headers=admin_auth_headers,
         json={
-            "oid": str(new_subs_oid),
+            "oid": str(new_subs_oid_2),
             "minutes": 75,
             "total_price": 350,
             "currency": "usd",
@@ -930,12 +930,11 @@ def test_subscription_add_minutes(admin_auth_headers):
         },
     )
 
-    print(r.json())
     assert r.status_code == 200
     assert r.json() == {"updated": True}
 
     r = requests.post(
-        f"{API_PREFIX}/orgs/{new_subs_oid}",
+        f"{API_PREFIX}/orgs/{new_subs_oid_2}",
         headers=admin_auth_headers,
     )
 
@@ -947,8 +946,8 @@ def test_subscription_add_minutes(admin_auth_headers):
     assert last_update["type"] == "add-minutes"
     assert last_update["context"] == "addon"
     assert last_update["update"] == {
-        "maxPagesPerCrawl": 50,
-        "storageQuota": 500000,
+        "maxPagesPerCrawl": 100,
+        "storageQuota": 1000000,
         "extraExecMinutes": 75,  # only this value updated from previous
         "giftedExecMinutes": 0,
         "maxConcurrentCrawls": 1,
