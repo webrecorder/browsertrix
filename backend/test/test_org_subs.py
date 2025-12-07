@@ -922,7 +922,7 @@ def test_subscription_add_minutes(admin_auth_headers):
         f"{API_PREFIX}/subscriptions/add-minutes",
         headers=admin_auth_headers,
         json={
-            "oid": new_subs_oid,
+            "oid": str(new_subs_oid),
             "minutes": 75,
             "total_price": 350,
             "currency": "usd",
@@ -930,6 +930,7 @@ def test_subscription_add_minutes(admin_auth_headers):
         },
     )
 
+    print(r.json())
     assert r.status_code == 200
     assert r.json() == {"updated": True}
 
