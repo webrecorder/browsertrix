@@ -1854,6 +1854,8 @@ ACTIVE = "active"
 REASON_PAUSED = "subscriptionPaused"
 REASON_CANCELED = "subscriptionCanceled"
 
+SubscriptionEventType = Literal["create", "import", "update", "cancel", "add-minutes"]
+
 
 # ============================================================================
 class OrgQuotas(BaseModel):
@@ -1906,6 +1908,7 @@ class SubscriptionEventOut(BaseModel):
 
     oid: UUID
     timestamp: datetime
+    type: SubscriptionEventType
 
 
 # ============================================================================
