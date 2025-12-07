@@ -278,8 +278,10 @@ class SubOps:
             return SubscriptionUpdateOut(**data)
         if data["type"] == "add-minutes":
             return SubscriptionAddMinutesOut(**data)
+        if data["type"] == "cancel":
+            return SubscriptionCancelOut(**data)
 
-        return SubscriptionCancelOut(**data)
+        raise HTTPException(status_code=500, detail="unknown sub event")
 
     # pylint: disable=too-many-arguments
     async def list_sub_events(
