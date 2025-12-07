@@ -2000,6 +2000,24 @@ class SubscriptionAddMinutesOut(SubscriptionAddMinutes, SubscriptionEventOut):
 
 
 # ============================================================================
+SubscriptionEventAny = Union[
+    SubscriptionCreate,
+    SubscriptionUpdate,
+    SubscriptionCancel,
+    SubscriptionImport,
+    SubscriptionAddMinutes,
+]
+
+SubscriptionEventAnyOut = Union[
+    SubscriptionCreateOut,
+    SubscriptionUpdateOut,
+    SubscriptionCancelOut,
+    SubscriptionImportOut,
+    SubscriptionAddMinutesOut,
+]
+
+
+# ============================================================================
 class SubscriptionTrialEndReminder(BaseModel):
     """Email reminder that subscription will end soon"""
 
@@ -3171,14 +3189,7 @@ class PaginatedProfileResponse(PaginatedResponse):
 class PaginatedSubscriptionEventResponse(PaginatedResponse):
     """Response model for paginated subscription events"""
 
-    items: List[
-        Union[
-            SubscriptionCreateOut,
-            SubscriptionUpdateOut,
-            SubscriptionCancelOut,
-            SubscriptionImportOut,
-        ]
-    ]
+    items: List[SubscriptionEventAnyOut]
 
 
 # ============================================================================
