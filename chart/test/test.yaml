@@ -16,6 +16,9 @@ operator_resync_seconds: 3
 
 qa_scale: 2
 
+backend_memory: "500Mi"
+
+
 # lower storage sizes
 redis_storage: "100Mi"
 profile_browser_workdir_size: "100Mi"
