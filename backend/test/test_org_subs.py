@@ -959,9 +959,7 @@ def test_subscription_add_minutes(admin_auth_headers):
     assert r.status_code == 200
     quota_updates = r.json()["quotaUpdates"]
     assert len(quota_updates)
-    last_update = quota_updates[len(quota_updates) - 1]
-
-    print(last_update)
+    last_update = quota_updates[-1]
     assert last_update["context"] == "addon"
     assert last_update["update"] == {
         "maxPagesPerCrawl": 100,
