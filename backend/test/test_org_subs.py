@@ -933,7 +933,25 @@ def test_subscription_add_minutes(admin_auth_headers):
     assert r.status_code == 200
     assert r.json() == {"updated": True}
 
-    r = requests.post(
+    # get event from log
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?oid={new_subs_oid_2}&type=add-minutes",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data["items"]) == 1
+    event = data["items"][0]
+
+    assert event["type"] == "add-minutes"
+    assert event["oid"] == new_subs_oid_2
+    assert event["minutes"] == 75
+    assert event["total_price"] == 350
+    assert event["currency"] == "usd"
+    assert event["context"] == "addon"
+
+    # check org quota updates for corresponding entry
+    r = requests.get(
         f"{API_PREFIX}/orgs/{new_subs_oid_2}",
         headers=admin_auth_headers,
     )
