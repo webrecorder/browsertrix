@@ -2,7 +2,7 @@
 Subscription API handling
 """
 
-from typing import Awaitable, Callable, Union, Any, Optional, Tuple, List, Annotated
+from typing import Awaitable, Callable, Any, Optional, Tuple, List, Annotated
 import os
 import asyncio
 from uuid import UUID
@@ -24,11 +24,13 @@ from .models import (
     SubscriptionUpdate,
     SubscriptionCancel,
     SubscriptionAddMinutes,
+    SubscriptionEventAny,
     SubscriptionCreateOut,
     SubscriptionImportOut,
     SubscriptionUpdateOut,
     SubscriptionCancelOut,
     SubscriptionAddMinutesOut,
+    SubscriptionEventAnyOut,
     SubscriptionEventType,
     Subscription,
     SubscriptionPortalUrlRequest,
@@ -247,13 +249,7 @@ class SubOps:
     async def add_sub_event(
         self,
         type_: SubscriptionEventType,
-        event: Union[
-            SubscriptionCreate,
-            SubscriptionImport,
-            SubscriptionUpdate,
-            SubscriptionCancel,
-            SubscriptionAddMinutes,
-        ],
+        event: SubscriptionEventAny,
         oid: UUID,
     ) -> None:
         """add a subscription event to the db"""
@@ -263,13 +259,9 @@ class SubOps:
         data["oid"] = oid
         await self.subs.insert_one(data)
 
-    def _get_sub_by_type_from_data(self, data: dict[str, object]) -> Union[
-        SubscriptionCreateOut,
-        SubscriptionImportOut,
-        SubscriptionUpdateOut,
-        SubscriptionCancelOut,
-        SubscriptionAddMinutesOut,
-    ]:
+    def _get_sub_by_type_from_data(
+        self, data: dict[str, object]
+    ) -> SubscriptionEventAnyOut:
         """convert dict to propert background job type"""
         if data["type"] == "create":
             return SubscriptionCreateOut(**data)
@@ -277,10 +269,10 @@ class SubOps:
             return SubscriptionImportOut(**data)
         if data["type"] == "update":
             return SubscriptionUpdateOut(**data)
-        if data["type"] == "add-minutes":
-            return SubscriptionAddMinutesOut(**data)
         if data["type"] == "cancel":
             return SubscriptionCancelOut(**data)
+        if data["type"] == "add-minutes":
+            return SubscriptionAddMinutesOut(**data)
 
         raise HTTPException(status_code=500, detail="unknown sub event")
 
@@ -297,15 +289,7 @@ class SubOps:
         sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
     ) -> Tuple[
-        List[
-            Union[
-                SubscriptionCreateOut,
-                SubscriptionImportOut,
-                SubscriptionUpdateOut,
-                SubscriptionCancelOut,
-                SubscriptionAddMinutesOut,
-            ]
-        ],
+        List[SubscriptionEventAnyOut],
         int,
     ]:
         """list subscription events"""
