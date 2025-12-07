@@ -915,3 +915,41 @@ def test_subscription_events_log_filter_sort(admin_auth_headers):
             assert last_id >= cancel_date
         if cancel_date:
             last_date = cancel_date
+
+
+def test_subscription_add_minutes(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/add-minutes",
+        headers=admin_auth_headers,
+        json={
+            "oid": new_subs_oid,
+            "minutes": 75,
+            "total_price": 350,
+            "currency": "usd",
+            "context": "addon",
+        },
+    )
+
+    assert r.status_code == 200
+    assert r.json() == {"updated": True}
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{new_subs_oid}",
+        headers=admin_auth_headers,
+    )
+
+    assert r.status_code == 200
+    quota_updates = r.json()["quotaUpdates"]
+    assert len(quota_updates)
+    last_update = quota_updates[len(quota_updates) - 1]
+
+    assert last_update["type"] == "add-minutes"
+    assert last_update["context"] == "addon"
+    assert last_update["update"] == {
+        "maxPagesPerCrawl": 50,
+        "storageQuota": 500000,
+        "extraExecMinutes": 75,  # only this value updated from previous
+        "giftedExecMinutes": 0,
+        "maxConcurrentCrawls": 1,
+        "maxExecMinutesPerMonth": 1000,
+    }
