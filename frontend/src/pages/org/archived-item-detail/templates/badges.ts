@@ -8,17 +8,14 @@ import { isCrawl } from "@/utils/crawler";
 export const itemTypeBadge = (itemType: ArchivedItem["type"]) => {
   const upload = itemType === "upload";
 
-  return html`<sl-tooltip
-    content=${upload ? msg("Uploaded Item") : msg("Crawled Item")}
-  >
-    <btrix-badge variant=${upload ? "sky" : "lime"}>
-      <sl-icon
-        class="mr-1.5"
-        name=${upload ? "upload" : "gear-wide-connected"}
-      ></sl-icon>
-      ${upload ? msg("Upload") : msg("Crawl")}</btrix-badge
-    >
-  </sl-tooltip>`;
+  return html`<btrix-badge>
+    <sl-icon
+      class="mr-1.5"
+      name=${upload ? "upload" : "gear-wide-connected"}
+      label=${upload ? msg("Upload") : msg("Crawl")}
+    ></sl-icon>
+    ${upload ? msg("Upload") : msg("Crawl")}</btrix-badge
+  >`;
 };
 
 const collectionBadge = (inCollection: boolean) =>
