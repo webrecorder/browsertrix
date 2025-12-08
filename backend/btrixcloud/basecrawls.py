@@ -676,7 +676,6 @@ class BaseCrawlOps:
         self,
         org: Optional[Organization] = None,
         userid: Optional[UUID] = None,
-        ids: Optional[List[str]] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         tags: list[str] | None = None,
@@ -789,9 +788,6 @@ class BaseCrawlOps:
 
         if not resources:
             aggregate.extend([{"$unset": ["files"]}])
-
-        if ids:
-            aggregate.extend([{"$match": {"id": {"$in": ids}}}])
 
         if name:
             aggregate.extend([{"$match": {"name": name}}])
