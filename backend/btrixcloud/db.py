@@ -9,11 +9,7 @@ import asyncio
 from uuid import UUID, uuid4
 
 from typing import (
-    Any,
-    Awaitable,
-    Callable,
     Optional,
-    Protocol,
     Type,
     TypeVar,
     Union,
@@ -27,7 +23,6 @@ from pymongo.errors import InvalidName
 from .migrations import BaseMigration
 
 if TYPE_CHECKING:
-    from motor.motor_asyncio import AsyncIOMotorClientSession
     from .users import UserManager
     from .orgs import OrgOps
     from .crawlconfigs import CrawlConfigOps
@@ -42,7 +37,6 @@ if TYPE_CHECKING:
     from .crawlmanager import CrawlManager
     from .profiles import ProfileOps
 else:
-    AsyncIOMotorClientSession = object
     UserManager = (
         OrgOps
     ) = (
@@ -83,20 +77,6 @@ def resolve_db_url() -> str:
 
 
 # ============================================================================
-class TransactionCallable(Protocol):
-    """Protocol for functions that can be used with @with_transaction decorator.
-
-    These functions must accept a 'session' keyword parameter (typically with a
-    default value of None) that will be injected by the decorator.
-    """
-    def __call__(self, *args: Any, session: AsyncIOMotorClientSession | None = None, **kwargs: Any) -> Awaitable[Any]:
-        ...
-
-type TransactionDecorator = Callable[[TransactionCallable], Callable[..., Awaitable[Any]]]
-
-with_transaction: TransactionDecorator
-
-
 def init_db() -> tuple[AsyncIOMotorClient, AsyncIOMotorDatabase]:
     """initialize the mongodb connector"""
 
@@ -111,35 +91,6 @@ def init_db() -> tuple[AsyncIOMotorClient, AsyncIOMotorDatabase]:
     )
 
     mdb = client["browsertrixcloud"]
-
-    def with_transaction_decorator(func: TransactionCallable) -> Callable[..., Awaitable[Any]]:
-        """
-        # Transaction decorator
-
-        Usage Example:
-        ```python
-        @with_transaction
-        async def do_something(my_str: str, session: AsyncIOMotorClientSession | None = None):
-            result_1 = await my_collection.insert_one({"name": my_str}, session=session)
-            result_2 = await my_collection.update_one({"name": my_str}, {"$set": {"age": 25}}, session=session)
-            return result_1, result_2
-        ```
-        """
-
-        async def wrapper(*args, **kwargs):
-            try:
-                async with await client.start_session() as session:
-                    async with session.start_transaction():
-                        result = await func(*args, **kwargs, session=session)
-                        return result
-            except Exception as e:
-                print(f"Transaction failed: {str(e)}")
-                # [TODO] emma 2025-12-05: maybe implement retries?
-                raise e
-
-        return wrapper
-
-    with_transaction = with_transaction_decorator
 
     return client, mdb
 
