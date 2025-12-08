@@ -2504,6 +2504,36 @@ class FeatureFlagStats(BaseModel):
 # ============================================================================
 # ORGS
 # ============================================================================
+
+# Org field filters by access type
+ORG_ADMIN_EXCLUDE_FIELDS = ["storage"]
+
+ORG_CRAWLER_EXCLUDE_FIELDS = [
+    *ORG_ADMIN_EXCLUDE_FIELDS,
+    "users",
+    "quotaUpdates",
+    "webhookUrls",
+    "readOnlyReason",
+    "subscription",
+    "note",
+]
+
+ORG_VIEWER_EXCLUDE_FIELDS = [
+    *ORG_CRAWLER_EXCLUDE_FIELDS,
+    "usage",
+    "crawlExecSeconds",
+    "qaUsage",
+    "qaCrawlExecSeconds",
+    "monthlyExecSeconds",
+    "extraExecSeconds",
+    "giftedExecSeconds",
+    "quotas",
+    "allowSharedProxies",
+    "crawlingDefaults",
+]
+
+
+# ============================================================================
 class OrgReadOnlyOnCancel(BaseModel):
     """Make org readOnly on subscription cancellation instead of deleting"""
 
@@ -2731,15 +2761,13 @@ class Organization(BaseMongoModel):
     async def serialize_for_user(self, user: User, user_manager) -> OrgOut:
         """Serialize result based on current user access"""
 
-        exclude = {"storage"}
+        exclude = ORG_ADMIN_EXCLUDE_FIELDS
 
         if not self.is_owner(user):
-            exclude.add("users")
-            exclude.add("note")
+            exclude = ORG_CRAWLER_EXCLUDE_FIELDS
 
         if not self.is_crawler(user):
-            exclude.add("usage")
-            exclude.add("crawlExecSeconds")
+            exclude = ORG_VIEWER_EXCLUDE_FIELDS
 
         result = self.to_dict(
             exclude_unset=True,
