@@ -625,8 +625,6 @@ class OrgOps:
     ) -> None:
         """update organization quotas"""
 
-        quotas.context = None
-
         previous_extra_mins = (
             org.quotas.extraExecMinutes
             if (org.quotas and org.quotas.extraExecMinutes)
@@ -1546,7 +1544,6 @@ def init_orgs_api(
     crawl_manager: CrawlManager,
     invites: InviteOps,
     user_dep: Callable[[str], Awaitable[User]],
-    superuser_or_shared_secret_dep: Callable[[str], Awaitable[User]],
 ):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
@@ -1701,20 +1698,7 @@ def init_orgs_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        await ops.update_quotas(org, quotas, mode="set", context=quotas.context)
-
-        return {"updated": True}
-
-    @app.post(
-        "/orgs/{oid}/quotas/add", tags=["organizations"], response_model=UpdatedResponse
-    )
-    async def update_quotas_add(
-        oid: UUID,
-        quotas: OrgQuotasIn,
-        _user: User = Depends(superuser_or_shared_secret_dep),
-    ):
-        org = await ops.get_org_by_id(oid)
-        await ops.update_quotas(org, quotas, mode="add", context=quotas.context)
+        await ops.update_quotas(org, quotas, mode="set")
 
         return {"updated": True}
 

@@ -508,7 +508,6 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "planId": "basic2",
             "futureCancelDate": None,
             "quotas": {
-                "context": None,
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
                 "extraExecMinutes": None,
@@ -577,7 +576,6 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "planId": "basic2",
             "futureCancelDate": None,
             "quotas": {
-                "context": None,
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
                 "extraExecMinutes": None,
@@ -639,7 +637,6 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "planId": "basic2",
             "futureCancelDate": None,
             "quotas": {
-                "context": None,
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
                 "extraExecMinutes": None,
@@ -675,7 +672,6 @@ def test_subscription_events_log_filter_plan_id(admin_auth_headers):
             "planId": "basic2",
             "futureCancelDate": None,
             "quotas": {
-                "context": None,
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
                 "extraExecMinutes": None,
@@ -727,7 +723,6 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
             "planId": "basic2",
             "futureCancelDate": None,
             "quotas": {
-                "context": None,
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
                 "extraExecMinutes": None,
@@ -767,7 +762,7 @@ def test_subscription_events_log_filter_sort(admin_auth_headers):
 
     last_id = None
     for event in events:
-        sub_id = event["subId"]
+        sub_id = event.get("subId")
         if last_id:
             assert last_id <= sub_id
         last_id = sub_id
@@ -783,7 +778,7 @@ def test_subscription_events_log_filter_sort(admin_auth_headers):
 
     last_id = None
     for event in events:
-        sub_id = event["subId"]
+        sub_id = event.get("subId")
         if last_id:
             assert last_id >= sub_id
         last_id = sub_id
@@ -920,3 +915,57 @@ def test_subscription_events_log_filter_sort(admin_auth_headers):
             assert last_id >= cancel_date
         if cancel_date:
             last_date = cancel_date
+
+
+def test_subscription_add_minutes(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/add-minutes",
+        headers=admin_auth_headers,
+        json={
+            "oid": str(new_subs_oid_2),
+            "minutes": 75,
+            "total_price": 350,
+            "currency": "usd",
+            "context": "addon",
+        },
+    )
+
+    assert r.status_code == 200
+    assert r.json() == {"updated": True}
+
+    # get event from log
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?oid={new_subs_oid_2}&type=add-minutes",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data["items"]) == 1
+    event = data["items"][0]
+
+    assert event["type"] == "add-minutes"
+    assert event["oid"] == new_subs_oid_2
+    assert event["minutes"] == 75
+    assert event["total_price"] == 350
+    assert event["currency"] == "usd"
+    assert event["context"] == "addon"
+
+    # check org quota updates for corresponding entry
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{new_subs_oid_2}",
+        headers=admin_auth_headers,
+    )
+
+    assert r.status_code == 200
+    quota_updates = r.json()["quotaUpdates"]
+    assert len(quota_updates)
+    last_update = quota_updates[-1]
+    assert last_update["context"] == "addon"
+    assert last_update["update"] == {
+        "maxPagesPerCrawl": 100,
+        "storageQuota": 1000000,
+        "extraExecMinutes": 75,  # only this value updated from previous
+        "giftedExecMinutes": 0,
+        "maxConcurrentCrawls": 1,
+        "maxExecMinutesPerMonth": 1000,
+    }

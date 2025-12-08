@@ -2,13 +2,13 @@
 Subscription API handling
 """
 
-from typing import Awaitable, Callable, Union, Any, Optional, Tuple, List
+from typing import Awaitable, Callable, Any, Optional, Tuple, List, Annotated
 import os
 import asyncio
 from uuid import UUID
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 import aiohttp
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -23,16 +23,22 @@ from .models import (
     SubscriptionImport,
     SubscriptionUpdate,
     SubscriptionCancel,
+    SubscriptionAddMinutes,
+    SubscriptionEventAny,
     SubscriptionCreateOut,
     SubscriptionImportOut,
     SubscriptionUpdateOut,
     SubscriptionCancelOut,
+    SubscriptionAddMinutesOut,
+    SubscriptionEventAnyOut,
+    SubscriptionEventType,
     Subscription,
     SubscriptionPortalUrlRequest,
     SubscriptionPortalUrlResponse,
     SubscriptionCanceledResponse,
     SubscriptionTrialEndReminder,
     Organization,
+    OrgQuotasIn,
     InviteToOrgRequest,
     InviteAddedResponse,
     User,
@@ -228,15 +234,22 @@ class SubOps:
 
         return SuccessResponse(success=True)
 
+    async def add_sub_minutes(self, add_min: SubscriptionAddMinutes):
+        """add extra minutes for subscription"""
+        org = await self.org_ops.get_org_by_id(add_min.oid)
+        quotas = OrgQuotasIn(extraExecMinutes=add_min.minutes)
+        await self.org_ops.update_quotas(
+            org, quotas, mode="add", context=add_min.context
+        )
+
+        await self.add_sub_event("add-minutes", add_min, add_min.oid)
+
+        return {"updated": True}
+
     async def add_sub_event(
         self,
-        type_: str,
-        event: Union[
-            SubscriptionCreate,
-            SubscriptionImport,
-            SubscriptionUpdate,
-            SubscriptionCancel,
-        ],
+        type_: SubscriptionEventType,
+        event: SubscriptionEventAny,
         oid: UUID,
     ) -> None:
         """add a subscription event to the db"""
@@ -246,12 +259,9 @@ class SubOps:
         data["oid"] = oid
         await self.subs.insert_one(data)
 
-    def _get_sub_by_type_from_data(self, data: dict[str, object]) -> Union[
-        SubscriptionCreateOut,
-        SubscriptionImportOut,
-        SubscriptionUpdateOut,
-        SubscriptionCancelOut,
-    ]:
+    def _get_sub_by_type_from_data(
+        self, data: dict[str, object]
+    ) -> SubscriptionEventAnyOut:
         """convert dict to propert background job type"""
         if data["type"] == "create":
             return SubscriptionCreateOut(**data)
@@ -259,7 +269,12 @@ class SubOps:
             return SubscriptionImportOut(**data)
         if data["type"] == "update":
             return SubscriptionUpdateOut(**data)
-        return SubscriptionCancelOut(**data)
+        if data["type"] == "cancel":
+            return SubscriptionCancelOut(**data)
+        if data["type"] == "add-minutes":
+            return SubscriptionAddMinutesOut(**data)
+
+        raise HTTPException(status_code=500, detail="unknown sub event")
 
     # pylint: disable=too-many-arguments
     async def list_sub_events(
@@ -268,19 +283,13 @@ class SubOps:
         sub_id: Optional[str] = None,
         oid: Optional[UUID] = None,
         plan_id: Optional[str] = None,
+        type_: Optional[SubscriptionEventType] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
     ) -> Tuple[
-        List[
-            Union[
-                SubscriptionCreateOut,
-                SubscriptionImportOut,
-                SubscriptionUpdateOut,
-                SubscriptionCancelOut,
-            ]
-        ],
+        List[SubscriptionEventAnyOut],
         int,
     ]:
         """list subscription events"""
@@ -298,6 +307,8 @@ class SubOps:
             query["planId"] = plan_id
         if oid:
             query["oid"] = oid
+        if type_:
+            query["type"] = type_
 
         aggregate = [{"$match": query}]
 
@@ -515,6 +526,15 @@ def init_subs_api(
     ):
         return await ops.send_trial_end_reminder(reminder)
 
+    @app.post(
+        "/subscriptions/add-minutes",
+        tags=["subscriptions"],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
+        response_model=UpdatedResponse,
+    )
+    async def add_sub_minutes(add_min: SubscriptionAddMinutes):
+        return await ops.add_sub_minutes(add_min)
+
     assert org_ops.router
 
     @app.get(
@@ -540,6 +560,7 @@ def init_subs_api(
         subId: Optional[str] = None,
         oid: Optional[UUID] = None,
         planId: Optional[str] = None,
+        type_: Annotated[Optional[SubscriptionEventType], Query(alias="type")] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: Optional[str] = "timestamp",
@@ -551,6 +572,7 @@ def init_subs_api(
             oid=oid,
             plan_id=planId,
             page_size=pageSize,
+            type_=type_,
             page=page,
             sort_by=sortBy,
             sort_direction=sortDirection,
