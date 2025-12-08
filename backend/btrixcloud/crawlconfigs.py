@@ -814,6 +814,7 @@ class CrawlConfigOps:
         description: Optional[str] = None,
         tags: Optional[List[str]] = None,
         tag_match: Optional[ListFilterType] = ListFilterType.AND,
+        dedupe_coll_id: Optional[UUID] = None,
         last_crawl_state: list[TYPE_ALL_CRAWL_STATES] | None = None,
         schedule: Optional[bool] = None,
         is_crawl_running: Optional[bool] = None,
@@ -867,6 +868,9 @@ class CrawlConfigOps:
 
         if first_seed:
             aggregate.extend([{"$match": {"firstSeed": first_seed}}])
+
+        if dedupe_coll_id:
+            aggregate.extend([{"$match": {"dedupeCollId": first_seed}}])
 
         if sort_by:
             if sort_by not in ALLOWED_SORT_KEYS:
@@ -1728,6 +1732,10 @@ def init_crawl_config_api(
                 description='Defaults to `"and"` if omitted',
             ),
         ] = ListFilterType.AND,
+        dedupe_coll_id: Annotated[
+            Optional[UUID],
+            Query(alias="dedupeCollId", title="Deduplication Source Collection"),
+        ] = None,
         last_crawl_state: Annotated[
             list[TYPE_ALL_CRAWL_STATES] | None,
             Query(alias="lastCrawlState", title="Last Crawl State"),
@@ -1765,6 +1773,7 @@ def init_crawl_config_api(
             description=description,
             tags=tags,
             tag_match=tag_match,
+            dedupe_coll_id=dedupe_coll_id,
             last_crawl_state=last_crawl_state,
             schedule=schedule,
             is_crawl_running=is_crawl_running,
