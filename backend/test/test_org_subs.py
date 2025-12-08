@@ -924,9 +924,9 @@ def test_subscription_add_minutes(admin_auth_headers):
         json={
             "oid": str(new_subs_oid_2),
             "minutes": 75,
-            "total_price": 350,
+            "totalPrice": 350,
             "currency": "usd",
-            "context": "addon",
+            "paymentId": "789",
         },
     )
 
@@ -946,9 +946,9 @@ def test_subscription_add_minutes(admin_auth_headers):
     assert event["type"] == "add-minutes"
     assert event["oid"] == new_subs_oid_2
     assert event["minutes"] == 75
-    assert event["total_price"] == 350
+    assert event["totalPrice"] == 350
     assert event["currency"] == "usd"
-    assert event["context"] == "addon"
+    assert event["paymentId"] == "789"
 
     # check org quota updates for corresponding entry
     r = requests.get(
@@ -960,7 +960,7 @@ def test_subscription_add_minutes(admin_auth_headers):
     quota_updates = r.json()["quotaUpdates"]
     assert len(quota_updates)
     last_update = quota_updates[-1]
-    assert last_update["context"] == "addon"
+    assert "subEventId" not in last_update
     assert last_update["update"] == {
         "maxPagesPerCrawl": 100,
         "storageQuota": 1000000,

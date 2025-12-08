@@ -127,7 +127,18 @@ class SubOps:
                 status_code=404, detail="org_for_subscription_not_found"
             )
 
-        await self.add_sub_event("update", update, org.id)
+        sub_event_id = await self.add_sub_event("update", update, org.id)
+
+        if update.quotas:
+            # don't change gifted or extra minutes here
+            update.quotas.giftedExecMinutes = None
+            update.quotas.extraExecMinutes = None
+            await self.org_ops.update_quotas(
+                org,
+                update.quotas,
+                mode="set",
+                sub_event_id=sub_event_id,
+            )
 
         if update.futureCancelDate and self.should_send_cancel_email(org, update):
             asyncio.create_task(self.send_cancel_emails(update.futureCancelDate, org))
@@ -238,12 +249,8 @@ class SubOps:
         """add extra minutes for subscription"""
         org = await self.org_ops.get_org_by_id(add_min.oid)
         quotas = OrgQuotasIn(extraExecMinutes=add_min.minutes)
-        await self.org_ops.update_quotas(
-            org, quotas, mode="add", context=add_min.context
-        )
-
-        await self.add_sub_event("add-minutes", add_min, add_min.oid)
-
+        event_id = await self.add_sub_event("add-minutes", add_min, add_min.oid)
+        await self.org_ops.update_quotas(org, quotas, mode="add", sub_event_id=event_id)
         return {"updated": True}
 
     async def add_sub_event(
@@ -251,13 +258,14 @@ class SubOps:
         type_: SubscriptionEventType,
         event: SubscriptionEventAny,
         oid: UUID,
-    ) -> None:
+    ) -> str:
         """add a subscription event to the db"""
         data = event.dict(exclude_unset=True)
         data["type"] = type_
         data["timestamp"] = dt_now()
         data["oid"] = oid
-        await self.subs.insert_one(data)
+        res = await self.subs.insert_one(data)
+        return str(res.inserted_id)
 
     def _get_sub_by_type_from_data(
         self, data: dict[str, object]

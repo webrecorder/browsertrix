@@ -610,19 +610,7 @@ class OrgOps(BaseOrgs):
         if not org_data:
             return None
 
-        org = Organization.from_dict(org_data)
-        if update.quotas:
-            # don't change gifted or extra minutes here
-            update.quotas.giftedExecMinutes = None
-            update.quotas.extraExecMinutes = None
-            await self.update_quotas(
-                org,
-                update.quotas,
-                mode="set",
-                context=f"subscription_change:{update.planId}",
-            )
-
-        return org
+        return Organization.from_dict(org_data)
 
     async def cancel_subscription_data(
         self, cancel: SubscriptionCancel
@@ -676,7 +664,7 @@ class OrgOps(BaseOrgs):
         org: Organization,
         quotas: OrgQuotasIn,
         mode: Literal["set", "add"],
-        context: str | None = None,
+        sub_event_id: str | None = None,
     ) -> None:
         """update organization quotas"""
 
@@ -721,7 +709,7 @@ class OrgOps(BaseOrgs):
                             exclude_unset=True, exclude_defaults=True, exclude_none=True
                         )
                     ),
-                    context=context,
+                    subEventId=sub_event_id,
                 ).model_dump()
             },
             "$inc": {},

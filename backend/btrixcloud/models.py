@@ -1986,10 +1986,9 @@ class SubscriptionAddMinutes(BaseModel):
 
     oid: UUID
     minutes: int
-    total_price: float
+    totalPrice: float
     currency: str
-
-    context: str
+    paymentId: str
 
 
 # ============================================================================
@@ -2147,7 +2146,15 @@ class OrgQuotaUpdate(BaseModel):
 
     modified: datetime
     update: OrgQuotas
-    context: str | None = None
+    subEventId: str | None = None
+
+
+# ============================================================================
+class OrgQuotaUpdateOut(BaseModel):
+    """Organization quota update output for admins"""
+
+    modified: datetime
+    update: OrgQuotas
 
 
 # ============================================================================
@@ -2224,7 +2231,7 @@ class OrgOut(BaseMongoModel):
     giftedExecSecondsAvailable: int = 0
 
     quotas: OrgQuotas = OrgQuotas()
-    quotaUpdates: Optional[List[OrgQuotaUpdate]] = []
+    quotaUpdates: Optional[List[OrgQuotaUpdateOut]] = []
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 
