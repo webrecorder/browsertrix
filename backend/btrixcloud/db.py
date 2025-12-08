@@ -37,31 +37,17 @@ if TYPE_CHECKING:
     from .crawlmanager import CrawlManager
     from .profiles import ProfileOps
 else:
-    UserManager = (
-        OrgOps
-    ) = (
-        CrawlConfigOps
-    ) = (
-        CrawlOps
-    ) = (
-        CollectionOps
-    ) = (
-        InviteOps
-    ) = (
+    UserManager = OrgOps = CrawlConfigOps = CrawlOps = CollectionOps = InviteOps = (
         StorageOps
-    ) = (
-        PageOps
-    ) = (
-        BackgroundJobOps
-    ) = FileUploadOps = CrawlLogOps = CrawlManager = ProfileOps = object
+    ) = PageOps = BackgroundJobOps = FileUploadOps = CrawlLogOps = CrawlManager = (
+        ProfileOps
+    ) = object
 
 
 CURR_DB_VERSION = "0054"
 
 
 # ============================================================================
-
-
 def resolve_db_url() -> str:
     """get the mongo db url, either from MONGO_DB_URL or
     from separate username, password and host settings"""

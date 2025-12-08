@@ -38,8 +38,6 @@ from fastapi.responses import StreamingResponse
 import json_stream
 from aiostream import stream
 
-from backend.btrixcloud.db import TransactionDecorator, with_transaction
-
 from .models import (
     SUCCESSFUL_STATES,
     RUNNING_STATES,
