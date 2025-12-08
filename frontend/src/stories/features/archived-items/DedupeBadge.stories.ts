@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from "@storybook/web-components";
 import { renderComponent, type RenderProps } from "./DedupeBadge";
 
 const meta = {
-  title: "Features/Dedupe Badge",
+  title: "Features/Archived Items/Dedupe Badge",
   component: "btrix-dedupe-badge",
   tags: ["autodocs"],
   decorators: [],
