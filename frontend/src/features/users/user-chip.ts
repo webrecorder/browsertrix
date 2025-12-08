@@ -20,6 +20,7 @@ export class UserChip extends BtrixElement {
       class="max-w-full part-[base]:justify-start part-[base]:truncate"
       pill
       outline
+      asLabel
       size="large"
       .role=${null}
     >

@@ -11,7 +11,9 @@ export type BadgeVariant =
   | "danger"
   | "neutral"
   | "primary"
+  | "lime"
   | "cyan"
+  | "sky"
   | "blue"
   | "violet"
   | "orange"
@@ -73,7 +75,9 @@ export class Badge extends TailwindElement {
                   neutral: tw`bg-neutral-100 text-neutral-600 ring-neutral-300`,
                   "high-contrast": tw`bg-neutral-0 text-neutral-700 ring-neutral-600`,
                   primary: tw`bg-white text-primary ring-primary`,
+                  lime: tw`bg-lime-50 text-lime-600 ring-lime-600`,
                   cyan: tw`bg-cyan-50 text-cyan-600 ring-cyan-600`,
+                  sky: tw`bg-sky-50 text-sky-700 ring-sky-700`,
                   blue: tw`bg-blue-50 text-blue-600 ring-blue-600`,
                   text: tw`text-blue-500 ring-blue-600`,
                   violet: tw`bg-violet-50 text-violet-600 ring-violet-600`,
@@ -82,13 +86,15 @@ export class Badge extends TailwindElement {
                 }[this.variant],
               ]
             : {
-                success: tw`bg-success-500 text-neutral-0`,
+                success: tw`bg-success-600 text-neutral-0`,
                 warning: tw`bg-warning-600 text-neutral-0`,
                 danger: tw`bg-danger-500 text-neutral-0`,
                 neutral: tw`bg-neutral-100 text-neutral-600`,
                 "high-contrast": tw`bg-neutral-600 text-neutral-0`,
                 primary: tw`bg-primary text-neutral-0`,
+                lime: tw`bg-lime-50 text-lime-600`,
                 cyan: tw`bg-cyan-50 text-cyan-600`,
+                sky: tw`bg-sky-50 text-sky-700`,
                 blue: tw`bg-blue-50 text-blue-600`,
                 violet: tw`bg-violet-50 text-violet-600`,
                 orange: tw`bg-orange-50 text-orange-600`,

@@ -12,16 +12,14 @@ export function labelWithIcon({
   hideLabel?: boolean;
 }) {
   if (label && hideLabel) {
-    return html`<div class="flex items-center">
-      <sl-tooltip
-        content=${label}
-        @sl-hide=${(e: Event) => e.stopPropagation()}
-        @sl-after-hide=${(e: Event) => e.stopPropagation()}
-        hoist
-      >
-        <div>${icon}</div>
-      </sl-tooltip>
-    </div>`;
+    return html`<sl-tooltip
+      content=${label}
+      @sl-hide=${(e: Event) => e.stopPropagation()}
+      @sl-after-hide=${(e: Event) => e.stopPropagation()}
+      hoist
+    >
+      <div class="flex size-4 items-center justify-center">${icon}</div>
+    </sl-tooltip>`;
   }
 
   return html`<div

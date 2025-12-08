@@ -73,33 +73,27 @@ export class ArchivedItemList extends TailwindElement {
         </btrix-table-header-cell>`,
       },
       {
-        cssCol: "1fr",
+        cssCol: "minmax(min-content, 1fr)",
         cell: html`<btrix-table-header-cell>
           ${msg("Date Created")}
         </btrix-table-header-cell>`,
       },
       {
-        cssCol: "1fr",
+        cssCol: "minmax(min-content, 1fr)",
         cell: html`<btrix-table-header-cell>
           ${msg("Size")}
         </btrix-table-header-cell>`,
       },
       {
-        cssCol: "1fr",
+        cssCol: "minmax(min-content, 1fr)",
         cell: html`<btrix-table-header-cell>
           ${msg("Pages")}
         </btrix-table-header-cell>`,
       },
       {
-        cssCol: "1fr",
+        cssCol: "minmax(min-content, 1fr)",
         cell: html`<btrix-table-header-cell>
-          ${msg("QA Analysis Runs")}
-        </btrix-table-header-cell>`,
-      },
-      {
-        cssCol: "1fr",
-        cell: html`<btrix-table-header-cell>
-          ${msg("QA Rating")}
+          ${msg("QA Review")}
         </btrix-table-header-cell>`,
       },
     ];
