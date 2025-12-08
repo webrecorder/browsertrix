@@ -1732,7 +1732,9 @@ def init_crawl_config_api(
                 description='Defaults to `"and"` if omitted',
             ),
         ] = ListFilterType.AND,
-        dedupeCollId: Optional[UUID] = None,
+        dedupe_coll_id: Annotated[
+            Optional[UUID], Query(alias="dedupeCollId", title="Deduplication Source Collection")
+        ] = None,
         last_crawl_state: Annotated[
             list[TYPE_ALL_CRAWL_STATES] | None,
             Query(alias="lastCrawlState", title="Last Crawl State"),
@@ -1770,7 +1772,7 @@ def init_crawl_config_api(
             description=description,
             tags=tags,
             tag_match=tag_match,
-            dedupe_coll_id=dedupeCollId,
+            dedupe_coll_id=dedupe_coll_id,
             last_crawl_state=last_crawl_state,
             schedule=schedule,
             is_crawl_running=is_crawl_running,
