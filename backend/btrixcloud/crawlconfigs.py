@@ -1733,7 +1733,8 @@ def init_crawl_config_api(
             ),
         ] = ListFilterType.AND,
         dedupe_coll_id: Annotated[
-            Optional[UUID], Query(alias="dedupeCollId", title="Deduplication Source Collection")
+            Optional[UUID],
+            Query(alias="dedupeCollId", title="Deduplication Source Collection"),
         ] = None,
         last_crawl_state: Annotated[
             list[TYPE_ALL_CRAWL_STATES] | None,
