@@ -881,7 +881,7 @@ class CrawlConfigOps:
             aggregate.extend([{"$match": {"firstSeed": first_seed}}])
 
         if dedupe_coll_id:
-            aggregate.extend([{"$match": {"dedupeCollId": first_seed}}])
+            aggregate.extend([{"$match": {"dedupeCollId": dedupe_coll_id}}])
 
         if sort_by:
             if sort_by not in ALLOWED_SORT_KEYS:
