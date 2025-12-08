@@ -2,7 +2,8 @@ import { msg } from "@lit/localize";
 import { html, nothing } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 
-import type { ArchivedItem } from "@/types/crawler";
+import { iconFor, labelFor, variantFor } from "@/features/qa/review-status";
+import { type ArchivedItem } from "@/types/crawler";
 import { isCrawl } from "@/utils/crawler";
 
 export const itemTypeBadge = (itemType: ArchivedItem["type"]) => {
@@ -30,17 +31,18 @@ const collectionBadge = (inCollection: boolean) =>
   </sl-tooltip>`;
 
 const qaReviewBadge = (reviewStatus: ArchivedItem["reviewStatus"]) => html`
-  <btrix-popover
-    content=${ifDefined(
-      reviewStatus ? `${msg("QA Rating")}: ${reviewStatus}` : undefined,
-    )}
+  <sl-tooltip
+    content=${ifDefined(reviewStatus ? msg("QA Rating") : undefined)}
     ?disabled=${!reviewStatus}
   >
-    <btrix-badge variant=${reviewStatus ? "cyan" : "neutral"}>
-      <sl-icon class="mr-1.5" name="clipboard2-data"></sl-icon>
-      ${reviewStatus ? msg("Reviewed") : msg("No Review")}</btrix-badge
+    <btrix-badge variant=${variantFor(reviewStatus)} outline>
+      <sl-icon
+        class="mr-1.5"
+        name=${reviewStatus ? iconFor(reviewStatus).name : "clipboard2-data"}
+      ></sl-icon>
+      ${labelFor(reviewStatus)}</btrix-badge
     >
-  </btrix-popover>
+  </sl-tooltip>
 `;
 
 export const badges = (item: ArchivedItem) => {
