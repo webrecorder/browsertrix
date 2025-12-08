@@ -7,9 +7,9 @@ import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 export const dedupeIconFor = {
-  dependent: "layers-half",
+  dependent: "layers-fill",
   dependency: "layers-half",
-  both: "layers-fill",
+  both: "layers-half",
 } as const;
 
 export const dedupeLabelFor = {
