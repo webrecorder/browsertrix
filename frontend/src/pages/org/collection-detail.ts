@@ -1,5 +1,6 @@
 import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -23,7 +24,10 @@ import {
   metadataColumn,
   metadataItemWithCollection,
 } from "@/layouts/collections/metadataColumn";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
+import { panel, panelBody } from "@/layouts/panel";
+import { OrgTab } from "@/routes";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -34,7 +38,7 @@ import {
   type Collection,
   type PublicCollection,
 } from "@/types/collection";
-import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
+import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
@@ -129,6 +133,16 @@ export class CollectionDetail extends BtrixElement {
   private get isCrawler() {
     return this.appState.isCrawler;
   }
+
+  private readonly dedupeWorkflowsTask = new Task(this, {
+    task: async ([collectionId], { signal }) => {
+      return this.api.fetch<APIPaginatedList<Workflow>>(
+        `/orgs/${this.orgId}/crawlconfigs?dedupeCollId=${collectionId}`,
+        { signal },
+      );
+    },
+    args: () => [this.collectionId] as const,
+  });
 
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
@@ -750,16 +764,90 @@ export class CollectionDetail extends BtrixElement {
   }
 
   private renderDedupe() {
-    return html`
-      ${when(
-        this.archivedItems?.items,
-        (items) => html`
-          <btrix-item-dependency-tree
-            .items=${items}
-          ></btrix-item-dependency-tree>
+    if (!this.collection) return;
+
+    if (this.collection.hasDedupeIndex) {
+      return html`
+        <div class="grid grid-cols-7 gap-7 border-t pt-3">
+          <div class="col-span-full lg:col-span-5">
+            ${this.renderDedupeWorkflows()}
+          </div>
+          <div class="sticky top-3 col-span-full self-start lg:col-span-2">
+            ${this.renderDedupeOverview()}
+          </div>
+        </div>
+      `;
+    }
+
+    return panelBody({
+      content: emptyMessage({
+        message: msg("Deduplication is not enabled"),
+        detail: msg(
+          "Deduplication can help recover storage space and reduce crawl time.",
+        ),
+        actions: html`
+          <sl-button
+            size="small"
+            href="${this.navigate.orgBasePath}/${OrgTab.Workflows}"
+            @click=${this.navigate.link}
+          >
+            <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
+            ${msg("Enable in Workflows")}
+          </sl-button>
         `,
-      )}
-    `;
+      }),
+    });
+  }
+
+  private renderDedupeWorkflows() {
+    const loading = () =>
+      html`<sl-skeleton effect="sheen" class="h-9"></sl-skeleton>`;
+    return panel({
+      heading: msg("Crawl Workflows"),
+      body: html`${this.dedupeWorkflowsTask.render({
+        initial: loading,
+        pending: loading,
+        complete: ({ items }) =>
+          items.length
+            ? html`
+                <btrix-dedupe-workflows
+                  .workflows=${items}
+                ></btrix-dedupe-workflows>
+              `
+            : panelBody({
+                content: emptyMessage({
+                  message: msg("No crawls added."),
+                }),
+              }),
+      })}`,
+    });
+  }
+
+  private renderDedupeOverview() {
+    return panel({
+      heading: msg("Overview"),
+      body: panelBody({
+        content: html`<btrix-desc-list>
+          <btrix-desc-list-item label=${msg("Total Indexed Crawls")}>
+            ${this.localize.number(
+              // TODO
+              0,
+            )}
+            ${pluralOf(
+              "crawls",
+              // TODO
+              0,
+            )}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Dedupe Index Size")}>
+            ${this.localize.bytes(
+              // TODO
+              0,
+            )}
+          </btrix-desc-list-item>
+        </btrix-desc-list>`,
+      }),
+    });
   }
 
   private renderDescriptionForm() {
@@ -1022,7 +1110,17 @@ export class CollectionDetail extends BtrixElement {
   private async fetchArchivedItems(params?: APIPaginationQuery): Promise<void> {
     this.cancelInProgressGetArchivedItems();
     try {
-      this.archivedItems = await this.getArchivedItems(params);
+      this.archivedItems = await this.getArchivedItems({
+        ...params,
+        page:
+          params?.page ||
+          this.archivedItems?.page ||
+          parsePage(new URLSearchParams(location.search).get("page")),
+        pageSize:
+          params?.pageSize ||
+          this.archivedItems?.pageSize ||
+          INITIAL_ITEMS_PAGE_SIZE,
+      });
     } catch (e) {
       if ((e as Error).name === "AbortError") {
         console.debug("Fetch web captures aborted to throttle");
@@ -1044,31 +1142,28 @@ export class CollectionDetail extends BtrixElement {
     }
   }
 
-  private async getArchivedItems(
+  private async getArchivedItems<T extends "crawl" | "upload">(
     params?: Partial<{
+      crawlType: T;
       state: CrawlState[];
     }> &
       APIPaginationQuery &
       APISortQuery,
+    signal?: AbortSignal,
   ) {
     const query = queryString.stringify(
-      {
-        ...params,
-        page:
-          params?.page ||
-          this.archivedItems?.page ||
-          parsePage(new URLSearchParams(location.search).get("page")),
-        pageSize:
-          params?.pageSize ||
-          this.archivedItems?.pageSize ||
-          INITIAL_ITEMS_PAGE_SIZE,
-      },
+      { ...params },
       {
         arrayFormat: "comma",
       },
     );
-    const data = await this.api.fetch<APIPaginatedList<Crawl | Upload>>(
+    const data = await this.api.fetch<
+      APIPaginatedList<
+        T extends "crawl" ? Crawl : T extends "upload" ? Upload : Crawl | Upload
+      >
+    >(
       `/orgs/${this.orgId}/all-crawls?collectionId=${this.collectionId}&${query}`,
+      { signal },
     );
 
     return data;

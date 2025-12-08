@@ -26,8 +26,8 @@ import { OrgTab, WorkflowTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import type {
   ArchivedItem,
-  Crawl,
   CrawlConfig,
+  CrawlReplay,
   Seed,
   Workflow,
 } from "@/types/crawler";
@@ -37,6 +37,7 @@ import { isApiError } from "@/utils/api";
 import {
   isActive,
   isCrawl,
+  isCrawlReplay,
   isNotFailed,
   isSuccessfullyFinished,
   renderName,
@@ -187,7 +188,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private readonly seedFileTask = new Task(this, {
     task: async ([item], { signal }) => {
       if (!item) return;
-      if (!isCrawl(item)) return;
+      if (!isCrawlReplay(item)) return;
       if (!item.config.seedFileId) return null;
 
       return await this.getSeedFile(item.config.seedFileId, signal);
@@ -1328,11 +1329,11 @@ export class ArchivedItemDetail extends BtrixElement {
     }
   }
 
-  private async getCrawl(): Promise<Crawl> {
+  private async getCrawl() {
     const apiPath = `/orgs/${this.orgId}/${
       this.itemType === "upload" ? "uploads" : "crawls"
     }/${this.itemId}/replay.json`;
-    return this.api.fetch<Crawl>(apiPath);
+    return this.api.fetch<CrawlReplay>(apiPath);
   }
 
   private async getSeeds() {

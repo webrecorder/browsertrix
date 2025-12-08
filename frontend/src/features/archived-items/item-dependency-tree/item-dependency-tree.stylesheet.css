@@ -5,6 +5,7 @@
 @layer components {
   sl-tree {
     --indent-guide-width: 1px;
+    --indent-guide-color: var(--sl-color-neutral-300);
   }
 
   /* Reset selected style */
@@ -14,12 +15,8 @@
   }
 
   sl-tree-item:nth-of-type(n + 2),
-  .item-dependency-tree--dependency:first-of-type {
+  sl-tree-item > sl-tree-item:first-of-type {
     @apply mt-1.5;
-  }
-
-  sl-tree > sl-tree-item > .item-dependency-tree--item {
-    @apply shadow-sm;
   }
 
   sl-tree-item::part(label) {
@@ -31,12 +28,13 @@
   }
 
   .item-dependency-tree--row {
-    grid-template-columns: 1rem 1fr 12rem repeat(2, 6rem) 2rem;
+    grid-template-columns:
+      1rem repeat(2, minmax(11rem, 1fr)) minmax(10rem, 1fr) minmax(5rem, 1fr) minmax(
+        4rem,
+        1fr
+      )
+      2rem;
     @apply grid w-full items-center gap-2 pl-2;
-  }
-
-  .item-dependency-tree--item {
-    @apply rounded border;
   }
 
   .item-dependency-tree--dependency::part(indentation) {
@@ -54,10 +52,18 @@
     border-bottom: var(--indent-guide-width) var(--indent-guide-style)
       var(--indent-guide-color);
 
-    @apply absolute rounded-bl;
+    @apply absolute rounded-bl-lg;
   }
 
   .item-dependency-tree--dependency::part(label) {
-    @apply relative;
+    @apply relative text-neutral-500;
+  }
+
+  .item-dependency-tree--content {
+    @apply rounded border bg-neutral-0;
+  }
+
+  .item-dependency-tree--content sl-icon {
+    @apply text-neutral-500;
   }
 }
