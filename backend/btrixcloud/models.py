@@ -2125,6 +2125,14 @@ class OrgQuotaUpdate(BaseModel):
 
 
 # ============================================================================
+class OrgQuotaUpdateOut(BaseModel):
+    """Organization quota update output for admins"""
+
+    modified: datetime
+    update: OrgQuotas
+
+
+# ============================================================================
 class OrgReadOnlyUpdate(BaseModel):
     """Organization readonly update"""
 
@@ -2198,7 +2206,7 @@ class OrgOut(BaseMongoModel):
     giftedExecSecondsAvailable: int = 0
 
     quotas: OrgQuotas = OrgQuotas()
-    quotaUpdates: Optional[List[OrgQuotaUpdate]] = []
+    quotaUpdates: Optional[List[OrgQuotaUpdateOut]] = []
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 

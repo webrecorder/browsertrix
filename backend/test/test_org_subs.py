@@ -960,7 +960,7 @@ def test_subscription_add_minutes(admin_auth_headers):
     quota_updates = r.json()["quotaUpdates"]
     assert len(quota_updates)
     last_update = quota_updates[-1]
-    assert last_update["subEventId"]
+    assert "subEventId" not in last_update
     assert last_update["update"] == {
         "maxPagesPerCrawl": 100,
         "storageQuota": 1000000,
