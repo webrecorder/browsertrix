@@ -35,7 +35,7 @@ const qaReviewBadge = (reviewStatus: ArchivedItem["reviewStatus"]) => html`
     content=${ifDefined(reviewStatus ? msg("QA Rating") : undefined)}
     ?disabled=${!reviewStatus}
   >
-    <btrix-badge variant=${variantFor(reviewStatus)} outline>
+    <btrix-badge variant=${variantFor(reviewStatus)} ?outline=${!!reviewStatus}>
       <sl-icon
         class="mr-1.5"
         name=${reviewStatus ? iconFor(reviewStatus).name : "clipboard2-data"}
