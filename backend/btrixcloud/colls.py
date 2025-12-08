@@ -539,6 +539,7 @@ class CollectionOps:
         sort_direction: int = 1,
         name: Optional[str] = None,
         name_prefix: Optional[str] = None,
+        has_dedupe_index: Optional[bool] = None,
         access: Optional[str] = None,
         headers: Optional[dict] = None,
     ):
@@ -555,6 +556,9 @@ class CollectionOps:
         elif name_prefix:
             regex_pattern = f"^{name_prefix}"
             match_query["name"] = {"$regex": regex_pattern, "$options": "i"}
+
+        if has_dedupe_index is not None:
+            match_query["hasDedupeIndex"] = has_dedupe_index
 
         if public_colls_out:
             match_query["access"] = CollAccessType.PUBLIC
@@ -1123,6 +1127,7 @@ def init_collections_api(
         sortDirection: int = 1,
         name: Optional[str] = None,
         namePrefix: Optional[str] = None,
+        hasDedupeIndex: Optional[bool] = None,
         access: Optional[str] = None,
     ):
         # pylint: disable=duplicate-code
@@ -1134,6 +1139,7 @@ def init_collections_api(
             sort_direction=sortDirection,
             name=name,
             name_prefix=namePrefix,
+            has_dedupe_index=hasDedupeIndex,
             access=access,
             headers=dict(request.headers),
         )
