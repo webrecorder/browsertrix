@@ -1961,10 +1961,9 @@ class SubscriptionAddMinutes(BaseModel):
 
     oid: UUID
     minutes: int
-    total_price: float
+    totalPrice: float
     currency: str
-
-    context: str
+    paymentId: str
 
 
 # ============================================================================
@@ -2122,7 +2121,7 @@ class OrgQuotaUpdate(BaseModel):
 
     modified: datetime
     update: OrgQuotas
-    context: str | None = None
+    subEventId: str | None = None
 
 
 # ============================================================================
