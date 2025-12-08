@@ -178,6 +178,7 @@ class CrawlOps(BaseCrawlOps):
         tags: list[str] | None = None,
         tag_match: ListFilterType | None = ListFilterType.AND,
         collection_id: Optional[UUID] = None,
+        crawl_ids: Optional[List[UUID]] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: Optional[str] = None,
@@ -216,6 +217,8 @@ class CrawlOps(BaseCrawlOps):
 
         if crawl_id:
             query["_id"] = crawl_id
+        elif crawl_ids:
+            query["_id"] = {"$in": crawl_ids}
 
         # pylint: disable=duplicate-code
         aggregate = [
@@ -1333,6 +1336,9 @@ def init_crawls_api(
         name: Optional[str] = None,
         description: Optional[str] = None,
         collectionId: Optional[UUID] = None,
+        crawl_ids: Annotated[
+            Optional[List[UUID]], Query(alias="crawlIds", title="Crawl IDs")
+        ] = None,
         sortBy: Optional[str] = None,
         sortDirection: int = -1,
         runningOnly: Optional[bool] = True,
@@ -1363,6 +1369,7 @@ def init_crawls_api(
             name=name,
             description=description,
             collection_id=collectionId,
+            crawl_ids=crawl_ids,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
