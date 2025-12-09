@@ -12,7 +12,7 @@ import { OrgTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import type { Crawl, ListWorkflow } from "@/types/crawler";
 import { SortDirection } from "@/types/utils";
-import { renderName } from "@/utils/crawler";
+import { finishedCrawlStates, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -38,10 +38,10 @@ export class DedupeWorkflows extends BtrixElement {
         if (!this.workflowCrawlsMap.get(id)) {
           this.workflowCrawlsMap.set(
             id,
-            crawlSuccessfulCount
+            crawlSuccessfulCount && dedupeCollId
               ? this.getCrawls({
                   workflowId: id,
-                  dedupeCollId: dedupeCollId || undefined,
+                  dedupeCollId,
                 })
               : Promise.resolve(undefined),
           );
@@ -74,7 +74,7 @@ export class DedupeWorkflows extends BtrixElement {
     const content = () => html`
       <div class="max-h-96 overflow-y-auto">
         <div
-          class="font-monostyle min-h-4 border-t pb-1 pl-8 pt-2.5 text-xs leading-none text-neutral-500"
+          class="font-monostyle min-h-4 border-t pl-8 pt-3 text-xs leading-none text-neutral-500"
         >
           ${until(
             this.workflowCrawlsMap
@@ -89,12 +89,12 @@ export class DedupeWorkflows extends BtrixElement {
 
         ${until(
           this.workflowCrawlsMap.get(workflow.id)?.then(this.renderCrawls),
-          html`<div class="ml-3 flex flex-col gap-1.5">
+          html`<div class="m-3 flex flex-col gap-1.5">
             ${Array.from({ length: totalCrawls }).map(
               () => html`
                 <sl-skeleton
                   effect="sheen"
-                  class="h-8 [--color:var(--sl-color-neutral-100)]"
+                  class="h-6 [--color:var(--sl-color-neutral-100)]"
                 ></sl-skeleton>
               `,
             )}
@@ -117,10 +117,12 @@ export class DedupeWorkflows extends BtrixElement {
           if (!this.workflowCrawlsMap.get(workflow.id)) {
             this.workflowCrawlsMap.set(
               workflow.id,
-              this.getCrawls({
-                workflowId: workflow.id,
-                dedupeCollId: workflow.dedupeCollId || undefined,
-              }),
+              workflow.dedupeCollId
+                ? this.getCrawls({
+                    workflowId: workflow.id,
+                    dedupeCollId: workflow.dedupeCollId,
+                  })
+                : Promise.resolve(undefined),
             );
             this.workflowCrawlsMap = new Map(this.workflowCrawlsMap);
           }
@@ -187,32 +189,38 @@ export class DedupeWorkflows extends BtrixElement {
   };
 
   private readonly renderCrawls = (crawls?: APIPaginatedList<Crawl>) => {
-    if (crawls?.items.length) {
-      return html`<btrix-item-dependency-tree
-        .items=${crawls.items}
-      ></btrix-item-dependency-tree>`;
-    }
-
-    return html`<p class="mx-1.5 text-xs text-neutral-600">
-      ${msg("No crawls found.")}
-    </p>`;
+    return html`<div class=${clsx(crawls?.items.length ? tw`mt-1` : tw`mt-2`)}>
+      ${when(
+        crawls?.items,
+        (items) =>
+          html`<btrix-item-dependency-tree
+            .items=${items}
+          ></btrix-item-dependency-tree>`,
+      )}
+    </div>`;
   };
 
   private async getCrawls({
     workflowId,
     ...params
   }: {
-    workflowId?: string;
-    dedupeCollId?: string;
+    workflowId: string;
+    dedupeCollId: string;
   }) {
-    const query = queryString.stringify({
-      cid: workflowId,
-      collectionId: params.dedupeCollId,
-      pageSize: INITIAL_PAGE_SIZE,
-      sortBy: "started",
-      sortDirection: SortDirection.Descending,
-      ...params,
-    });
+    const query = queryString.stringify(
+      {
+        cid: workflowId,
+        collectionId: params.dedupeCollId,
+        pageSize: INITIAL_PAGE_SIZE,
+        sortBy: "started",
+        sortDirection: SortDirection.Descending,
+        state: finishedCrawlStates,
+        ...params,
+      },
+      {
+        arrayFormat: "comma",
+      },
+    );
 
     try {
       return await this.api.fetch<APIPaginatedList<Crawl>>(
