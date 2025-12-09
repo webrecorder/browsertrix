@@ -702,17 +702,13 @@ class OrgOps(BaseOrgs):
                         "$inc": {},
                     }
 
-                    if mode == "set":
-                        increment_update = quotas.model_dump(
-                            exclude_unset=True, exclude_defaults=True, exclude_none=True
-                        )
-                    ),
-                    subEventId=sub_event_id,
-                ).model_dump()
-            },
-            "$inc": {},
-            "$set": {},
-        }
+                    for field, value in quotas.model_dump(
+                        exclude_unset=True, exclude_defaults=True, exclude_none=True
+                    ).items():
+                        if value is None:
+                            continue
+                        inc = max(value, -org.quotas.model_dump().get(field, 0))
+                        increment_update["$inc"][f"quotas.{field}"] = inc
 
                     updated_org = await self.orgs.find_one_and_update(
                         {"_id": org.id},
@@ -734,7 +730,7 @@ class OrgOps(BaseOrgs):
                                     exclude_none=True,
                                 )
                             ),
-                            context=context,
+                            subEventId=sub_event_id,
                         ).model_dump()
                     },
                     "$inc": {},
