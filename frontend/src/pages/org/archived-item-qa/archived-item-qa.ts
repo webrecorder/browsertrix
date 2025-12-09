@@ -22,6 +22,7 @@ import { renderText, renderTextDiff } from "./ui/text";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import { dedupeQANotice } from "@/features/archived-items/templates/dedupe-qa-notice";
 import { isQaPage } from "@/features/qa/page-list/helpers/page";
 import {
   type QaFilterChangeDetail,
@@ -43,6 +44,7 @@ import type { ArchivedItemQAPage, QARun } from "@/types/qa";
 import { SortDirection as APISortDirection } from "@/types/utils";
 import {
   isActive,
+  isCrawlReplay,
   isSuccessfullyFinished,
   renderName,
   type finishedCrawlStates,
@@ -429,11 +431,16 @@ export class ArchivedItemQA extends BtrixElement {
     const searchParams = new URLSearchParams(window.location.search);
     const itemName = this.item ? renderName(this.item) : nothing;
     const [prevPage, currentPage, nextPage] = this.getPageListSliceByCurrent();
+    const hasDependencies = Boolean(
+      this.item && isCrawlReplay(this.item) && this.item.requiresCrawls.length,
+    );
 
     return html`
       ${this.renderHidden()}
 
       <div class="mb-4 flex items-center">${this.renderBackLink()}</div>
+
+      ${when(hasDependencies, dedupeQANotice)}
 
       <article class="qa-grid grid min-h-screen gap-x-6 gap-y-0 lg:snap-start">
         <header
@@ -451,6 +458,7 @@ export class ArchivedItemQA extends BtrixElement {
               variant="success"
               size="small"
               @click=${() => void this.reviewDialog?.show()}
+              ?disabled=${hasDependencies}
             >
               <sl-icon slot="prefix" name="patch-check"></sl-icon>
               ${msg("Finish Review")}
@@ -464,7 +472,10 @@ export class ArchivedItemQA extends BtrixElement {
                 aria-label=${msg("More options")}
               ></sl-button>
               <sl-menu>
-                <sl-menu-item @click=${() => void this.reviewDialog?.show()}>
+                <sl-menu-item
+                  @click=${() => void this.reviewDialog?.show()}
+                  ?disabled=${hasDependencies}
+                >
                   <sl-icon slot="prefix" name="patch-check-fill"></sl-icon>
                   ${msg("Rate Crawl")}
                 </sl-menu-item>
@@ -505,6 +516,7 @@ export class ArchivedItemQA extends BtrixElement {
               .itemId=${this.itemId}
               .pageId=${this.itemPageId}
               .page=${this.page}
+              ?disabled=${hasDependencies}
               @btrix-show-comments=${() => void this.commentDialog?.show()}
               @btrix-update-page-approval=${this.onUpdatePageApproval}
             ></btrix-page-qa-approval>
@@ -597,7 +609,8 @@ export class ArchivedItemQA extends BtrixElement {
                     size="small"
                     variant="primary"
                     @click=${() => void this.startQARun()}
-                    ?disabled=${isArchivingDisabled(this.org, true)}
+                    ?disabled=${isArchivingDisabled(this.org, true) ||
+                    hasDependencies}
                   >
                     <sl-icon
                       slot="prefix"
