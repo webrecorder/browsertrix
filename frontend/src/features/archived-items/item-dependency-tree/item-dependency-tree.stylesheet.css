@@ -8,15 +8,15 @@
     --indent-guide-color: var(--sl-color-neutral-300);
   }
 
-  /* Reset selected style */
+  /* Reset selected styles */
   sl-tree-item::part(item--selected) {
     border-inline-start-color: transparent;
     background: transparent;
   }
 
-  sl-tree-item:nth-of-type(n + 2),
-  sl-tree-item > sl-tree-item:first-of-type {
-    @apply mt-1.5;
+  /* Account for invisible border-inline-start width */
+  sl-tree {
+    margin-left: -3px;
   }
 
   sl-tree-item::part(label) {
@@ -29,12 +29,12 @@
 
   .item-dependency-tree--row {
     grid-template-columns:
-      1rem repeat(2, minmax(11rem, 1fr)) minmax(10rem, 1fr) minmax(5rem, 1fr) minmax(
-        4rem,
-        1fr
+      1rem minmax(10rem, 1fr) repeat(2, minmax(11rem, 1fr)) repeat(
+        2,
+        minmax(5rem, 1fr)
       )
       2rem;
-    @apply grid w-full items-center gap-2 pl-2;
+    @apply grid w-full items-center gap-2;
   }
 
   .item-dependency-tree--dependency::part(indentation) {
@@ -43,9 +43,9 @@
 
   .item-dependency-tree--dependency::part(base)::before {
     content: "";
-    width: 1.75rem;
+    width: 1.25rem;
     left: calc(var(--indent-size) - 1.5px);
-    top: calc(1rem - var(--indent-guide-width));
+    top: calc(1.25rem - var(--indent-guide-width));
     height: var(--sl-border-radius-medium);
     border-left: var(--indent-guide-width) var(--indent-guide-style)
       var(--indent-guide-color);
@@ -56,14 +56,22 @@
   }
 
   .item-dependency-tree--dependency::part(label) {
-    @apply relative text-neutral-500;
+    @apply relative;
   }
 
   .item-dependency-tree--content {
-    @apply rounded border bg-neutral-0;
+    @apply h-9;
   }
 
-  .item-dependency-tree--content sl-icon {
+  .item-dependency-tree--detail {
+    @apply flex items-center gap-1.5 truncate;
+  }
+
+  .item-dependency-tree--detail sl-icon {
     @apply text-neutral-500;
+  }
+
+  .item-dependency-tree--purgeable .item-dependency-tree--detail {
+    @apply opacity-75;
   }
 }

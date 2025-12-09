@@ -1,7 +1,8 @@
 import { localized, msg } from "@lit/localize";
+import type { SlTree, SlTreeItem } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing, unsafeCSS, type PropertyValues } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, query } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { until } from "lit/directives/until.js";
 
@@ -25,10 +26,20 @@ export class ItemDependencyTree extends BtrixElement {
   @property({ type: Array })
   items?: Crawl[];
 
+  @query("sl-tree")
+  private readonly tree?: SlTree | null;
+
+  private readonly timerIds: number[] = [];
+
   private readonly dependenciesMap = new Map<
     string,
     Crawl | Promise<Crawl | undefined>
   >();
+
+  disconnectedCallback(): void {
+    this.timerIds.forEach(window.clearTimeout);
+    super.disconnectedCallback();
+  }
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("items") && this.items) {
@@ -36,10 +47,13 @@ export class ItemDependencyTree extends BtrixElement {
 
       this.items.forEach((item) => {
         item.requiresCrawls.forEach((id) => {
-          if (itemsMap.get(id)) {
-            this.dependenciesMap.set(id, item);
-          } else {
-            this.dependenciesMap.set(id, this.getCrawl(id));
+          if (!this.dependenciesMap.get(id)) {
+            const cachedItem = itemsMap.get(id);
+            if (cachedItem) {
+              this.dependenciesMap.set(id, cachedItem);
+            } else {
+              this.dependenciesMap.set(id, this.getCrawl(id));
+            }
           }
         });
       });
@@ -50,7 +64,7 @@ export class ItemDependencyTree extends BtrixElement {
     if (!this.items?.length) return;
 
     return html`
-      <sl-tree class="-ml-2 min-w-[50rem]" selection="leaf">
+      <sl-tree class="divide-y" selection="leaf">
         ${repeat(this.items, ({ id }) => id, this.renderItem)}
       </sl-tree>
     `;
@@ -60,13 +74,15 @@ export class ItemDependencyTree extends BtrixElement {
     const hasDependencies = item.requiresCrawls.length;
     return html`
       <sl-tree-item
-        class=${clsx(!hasDependencies && tw`part-[base]:cursor-default`)}
+        id=${item.id}
+        class=${clsx(
+          !hasDependencies &&
+            tw`transition-colors duration-slow part-[base]:cursor-default`,
+        )}
       >
         ${this.renderContent(item)}
         ${hasDependencies
-          ? html`
-              ${repeat(item.requiresCrawls, (id) => id, this.renderDependency)}
-            `
+          ? item.requiresCrawls.map(this.renderDependency)
           : nothing}
       </sl-tree-item>
     `;
@@ -109,7 +125,30 @@ export class ItemDependencyTree extends BtrixElement {
     `;
     const item = this.dependenciesMap.get(id);
 
-    return html`<sl-tree-item class="item-dependency-tree--dependency">
+    return html`<sl-tree-item
+      class="item-dependency-tree--dependency"
+      @click=${() => {
+        const item = this.tree?.querySelector<SlTreeItem>(`#${id}`);
+        // Highlight item
+        const classes = [tw`bg-cyan-50`];
+
+        if (item) {
+          item.scrollIntoView({ behavior: "smooth" });
+          item.focus();
+          item.classList.add(...classes);
+          const removeHighlight = () => item.classList.remove(...classes);
+
+          item.addEventListener("click", removeHighlight, { once: true });
+
+          this.timerIds.push(
+            window.setTimeout(() => {
+              removeHighlight();
+              item.removeEventListener("click", removeHighlight);
+            }, 2000),
+          );
+        }
+      }}
+    >
       ${item
         ? until(
             Promise.resolve(item).then((item) =>
@@ -122,39 +161,41 @@ export class ItemDependencyTree extends BtrixElement {
   };
 
   private readonly renderContent = (item: Crawl) => {
+    const purgeable =
+      !item.dedupeCollId || !item.collectionIds.includes(item.dedupeCollId);
+    const status = () => {
+      let icon = "check-circle";
+      let variant = tw`text-cyan-500`;
+      let tooltip = "In Collection";
+
+      if (purgeable) {
+        icon = "trash2";
+        variant = tw`text-neutral-500`;
+        tooltip = msg("Purgeable");
+      }
+
+      return html`<sl-tooltip content=${tooltip} hoist placement="left">
+        <sl-icon name=${icon} class=${clsx(variant, tw`text-base`)}></sl-icon>
+      </sl-tooltip>`;
+    };
+
+    const date = (value: string) =>
+      this.localize.date(value, {
+        month: "2-digit",
+        year: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
     return html`<div
-      class="item-dependency-tree--row item-dependency-tree--content"
+      class=${clsx(
+        "item-dependency-tree--row item-dependency-tree--content",
+        purgeable && tw`item-dependency-tree--purgeable`,
+      )}
     >
-      <btrix-crawl-status
-        state=${item.state}
-        ?stopping=${item.stopping}
-        ?shouldPause=${item.shouldPause}
-        hideLabel
-        hoist
-      ></btrix-crawl-status>
-      <div class="flex items-center gap-1.5 truncate">
-        <sl-tooltip content=${msg("Date Started")} hoist>
-          <sl-icon name="hourglass-top"></sl-icon>
-        </sl-tooltip>
-        ${item.finished
-          ? this.localize.date(item.started, {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })
-          : noData}
-      </div>
-      <div class="flex items-center gap-1.5 truncate">
-        <sl-tooltip content=${msg("Date Finished")} hoist>
-          <sl-icon name="hourglass-bottom"></sl-icon>
-        </sl-tooltip>
-        ${item.finished
-          ? this.localize.date(item.finished, {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })
-          : noData}
-      </div>
-      <div class="flex items-center gap-1.5 truncate">
+      ${status()}
+      <div class="item-dependency-tree--detail">
         <sl-tooltip content=${msg("Dedupe Dependencies")} hoist>
           <sl-icon name=${dedupeIconFor.dependent}></sl-icon>
         </sl-tooltip>
@@ -163,7 +204,19 @@ export class ItemDependencyTree extends BtrixElement {
           ${pluralOf("dependencies", item.requiresCrawls.length)}</span
         >
       </div>
-      <div class="flex items-center gap-1.5 truncate">
+      <div class="item-dependency-tree--detail">
+        <sl-tooltip content=${msg("Date Started")} hoist>
+          <sl-icon name="hourglass-top"></sl-icon>
+        </sl-tooltip>
+        ${date(item.started)}
+      </div>
+      <div class="item-dependency-tree--detail">
+        <sl-tooltip content=${msg("Date Finished")} hoist>
+          <sl-icon name="hourglass-bottom"></sl-icon>
+        </sl-tooltip>
+        ${item.finished ? date(item.finished) : noData}
+      </div>
+      <div class="item-dependency-tree--detail">
         <sl-tooltip content=${msg("Pages")} hoist>
           <sl-icon name="window-stack"></sl-icon>
         </sl-tooltip>
@@ -172,7 +225,9 @@ export class ItemDependencyTree extends BtrixElement {
           ${pluralOf("pages", item.pageCount || 0)}</span
         >
       </div>
-      <div class="flex items-center gap-1.5 truncate">
+      <div
+        class="item-dependency-tree--detail flex items-center gap-1.5 truncate"
+      >
         <sl-tooltip content=${msg("Size")} hoist>
           <sl-icon name="file-earmark-binary"></sl-icon>
         </sl-tooltip>
@@ -188,21 +243,15 @@ export class ItemDependencyTree extends BtrixElement {
   };
 
   private renderLink(href: string) {
-    return html`<sl-tooltip
-      placement="right"
-      content=${msg("Open in New Tab")}
-      hoist
+    return html`<sl-icon-button
+      name="link"
+      href=${href}
+      label=${msg("Visit Link")}
+      @click=${(e: MouseEvent) => {
+        e.stopPropagation();
+      }}
     >
-      <sl-icon-button
-        name="arrow-up-right"
-        href=${href}
-        target="_blank"
-        @click=${(e: MouseEvent) => {
-          e.stopPropagation();
-        }}
-      >
-      </sl-icon-button>
-    </sl-tooltip>`;
+    </sl-icon-button>`;
   }
 
   private async getCrawl(id: string) {

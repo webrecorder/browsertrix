@@ -11,6 +11,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { OrgTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import type { Crawl, ListWorkflow } from "@/types/crawler";
+import { SortDirection } from "@/types/utils";
 import { renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
@@ -52,7 +53,7 @@ export class DedupeWorkflows extends BtrixElement {
       <div
         class="${gridColsCss} mx-px mb-2 grid gap-3 pl-8 pr-1 text-xs leading-none text-neutral-600"
       >
-        <div>${msg("Name")}</div>
+        <div>${msg("Workflow Name")}</div>
         <div>${msg("Crawl Runs")}</div>
         <div>${msg("Total Size")}</div>
         <div>
@@ -69,17 +70,17 @@ export class DedupeWorkflows extends BtrixElement {
     const totalCrawls = workflow.crawlSuccessfulCount;
     // TOOD Virtualize scroll
     const content = () => html`
-      <div
-        class="max-h-96 overflow-y-auto border-t bg-neutral-50 py-3 pl-1 pr-3"
-      >
-        <div class="mb-3 ml-1.5 text-xs leading-none text-neutral-500">
+      <div class="max-h-96 overflow-y-auto">
+        <div
+          class="border-t pb-1 pl-8 pt-3 text-xs leading-none text-neutral-500"
+        >
           ${msg("Indexed Crawls")}
           ${until(
             this.workflowCrawlsMap
               .get(workflow.id)
               ?.then(
                 (crawls) =>
-                  html`<btrix-badge class="ml-1" outline>
+                  html`<btrix-badge class="ml-1">
                     ${this.localize.number(crawls?.total || 0)}
                   </btrix-badge>`,
               ),
@@ -105,9 +106,9 @@ export class DedupeWorkflows extends BtrixElement {
     return html`
       <sl-details
         class=${clsx(
-          tw`part-[summary-icon]:order-first part-[summary-icon]:ml-1 part-[summary-icon]:mr-2.5`,
+          tw`part-[summary-icon]:order-first part-[summary-icon]:ml-2 part-[summary-icon]:mr-2.5`,
           tw`part-[base]:rounded-none part-[base]:border-0`,
-          tw`part-[header]:p-1`,
+          tw`part-[header]:h-10 part-[header]:p-0`,
           tw`part-[content]:p-0`,
           !totalCrawls &&
             tw`part-[summary-icon]:invisible part-[header]:cursor-default part-[base]:opacity-100`,
@@ -151,9 +152,32 @@ export class DedupeWorkflows extends BtrixElement {
             ${this.localize.bytes(workflow.totalSize ? +workflow.totalSize : 0)}
           </div>
           <div>
-            ${this.renderLink(
-              `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${workflow.id}`,
-            )}
+            <btrix-overflow-dropdown
+              @click=${(e: MouseEvent) => e.stopPropagation()}
+            >
+              <sl-menu>
+                ${when(
+                  this.appState.isCrawler,
+                  () => html`
+                    <btrix-menu-item-link
+                      href="${this.navigate
+                        .orgBasePath}/${OrgTab.Workflows}/${workflow.id}?edit"
+                    >
+                      <sl-icon name="gear" slot="prefix"></sl-icon>
+                      ${msg("Edit Workflow Settings")}
+                    </btrix-menu-item-link>
+                    <sl-divider></sl-divider>
+                  `,
+                )}
+                <btrix-menu-item-link
+                  href="${this.navigate
+                    .orgBasePath}/${OrgTab.Workflows}/${workflow.id}"
+                >
+                  <sl-icon slot="prefix" name="arrow-return-right"></sl-icon>
+                  ${msg("Go to Workflow")}
+                </btrix-menu-item-link>
+              </sl-menu>
+            </btrix-overflow-dropdown>
           </div>
         </div>
 
@@ -174,24 +198,6 @@ export class DedupeWorkflows extends BtrixElement {
     </p>`;
   };
 
-  private renderLink(href: string) {
-    return html`<sl-tooltip
-      placement="right"
-      content=${msg("Open in New Tab")}
-      hoist
-    >
-      <sl-icon-button
-        name="arrow-up-right"
-        href=${href}
-        target="_blank"
-        @click=${(e: MouseEvent) => {
-          e.stopPropagation();
-        }}
-      >
-      </sl-icon-button>
-    </sl-tooltip>`;
-  }
-
   private async getCrawls({
     workflowId,
     ...params
@@ -201,7 +207,10 @@ export class DedupeWorkflows extends BtrixElement {
   }) {
     const query = queryString.stringify({
       cid: workflowId,
+      // collectionId: params.dedupeCollId,
       pageSize: INITIAL_PAGE_SIZE,
+      sortBy: "started",
+      sortDirection: SortDirection.Descending,
       ...params,
     });
 

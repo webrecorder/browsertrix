@@ -6,6 +6,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
+import queryString from "query-string";
 
 import { badges, badgesSkeleton } from "./templates/badges";
 
@@ -16,22 +17,26 @@ import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadat
 import { dedupeFilesNotice } from "@/features/archived-items/templates/dedupe-files-notice";
 import { dedupeQANotice } from "@/features/archived-items/templates/dedupe-qa-notice";
 import { dedupeReplayNotice } from "@/features/archived-items/templates/dedupe-replay-notice";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import {
   pageBack,
   pageHeader,
   pageNav,
   type Breadcrumb,
 } from "@/layouts/pageHeader";
-import { OrgTab, WorkflowTab } from "@/routes";
+import { panelBody } from "@/layouts/panel";
+import { CommonTab, OrgTab, WorkflowTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import type {
   ArchivedItem,
+  Crawl,
   CrawlConfig,
   CrawlReplay,
   Seed,
   Workflow,
 } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
+import { SortDirection } from "@/types/utils";
 import type { StorageSeedFile } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import {
@@ -57,6 +62,7 @@ const SECTIONS = [
   "files",
   "logs",
   "config",
+  "dependencies",
 ] as const;
 type SectionName = (typeof SECTIONS)[number];
 
@@ -142,6 +148,7 @@ export class ArchivedItemDetail extends BtrixElement {
     files: msg("WACZ Files"),
     logs: msg("Logs"),
     config: msg("Crawl Settings"),
+    dependencies: msg("Dependencies"),
   };
 
   private get listUrl(): string {
@@ -192,6 +199,40 @@ export class ArchivedItemDetail extends BtrixElement {
       if (!item.config.seedFileId) return null;
 
       return await this.getSeedFile(item.config.seedFileId, signal);
+    },
+    args: () => [this.item] as const,
+  });
+
+  private readonly dependenciesTask = new Task(this, {
+    task: async ([item], { signal }) => {
+      if (!item) return;
+      if (!isCrawlReplay(item)) return;
+
+      const { requiresCrawls } = item;
+
+      if (!requiresCrawls.length) {
+        return [];
+      }
+
+      const query = queryString.stringify(
+        {
+          // crawlIds: item.requiresCrawls,
+          cid: item.cid,
+          sortBy: "started",
+          sortDirection: SortDirection.Descending,
+        },
+        {
+          arrayFormat: "comma",
+        },
+      );
+
+      const data = await this.api.fetch<APIPaginatedList<Crawl>>(
+        `/orgs/${this.orgId}/crawls?${query}`,
+        { signal },
+      );
+
+      // TODO Use crawl_ids filter
+      return data.items.filter((item) => requiresCrawls.includes(item.id));
     },
     args: () => [this.item] as const,
   });
@@ -335,20 +376,19 @@ export class ArchivedItemDetail extends BtrixElement {
             <div class="ml-auto flex flex-wrap justify-end gap-2">
               ${when(!dedupeDependent && this.qaRuns, this.renderQAHeader)}
             </div> `,
-          dedupeDependent
-            ? dedupeQANotice()
-            : html`
-                <btrix-archived-item-detail-qa
-                  .crawlId=${this.itemId}
-                  .workflowId=${this.workflowId}
-                  .crawl=${this.item}
-                  .qaRuns=${this.qaRuns}
-                  .qaRunId=${this.qaRunId}
-                  .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
-                  .mostRecentSuccessQARun=${this.mostRecentSuccessQARun}
-                  @btrix-qa-runs-update=${() => void this.fetchQARuns()}
-                ></btrix-archived-item-detail-qa>
-              `,
+          html`
+            ${dedupeDependent ? dedupeQANotice() : nothing}
+            <btrix-archived-item-detail-qa
+              .crawlId=${this.itemId}
+              .workflowId=${this.workflowId}
+              .crawl=${this.item}
+              .qaRuns=${this.qaRuns}
+              .qaRunId=${this.qaRunId}
+              .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
+              .mostRecentSuccessQARun=${this.mostRecentSuccessQARun}
+              @btrix-qa-runs-update=${() => void this.fetchQARuns()}
+            ></btrix-archived-item-detail-qa>
+          `,
         );
         break;
       }
@@ -424,6 +464,12 @@ export class ArchivedItemDetail extends BtrixElement {
           [tw`rounded-lg border p-4`],
         );
         break;
+      case "dependencies":
+        sectionContent = this.renderPanel(
+          html` ${this.renderTitle(msg("Dependencies"))} `,
+          this.renderDependencies(),
+        );
+        break;
       default:
         sectionContent = html`
           <div
@@ -480,7 +526,6 @@ export class ArchivedItemDetail extends BtrixElement {
                       )}
                     `,
                     this.renderCollections(),
-                    [tw`rounded-lg border p-4`],
                   )}
                 </div>
               `,
@@ -683,6 +728,15 @@ export class ArchivedItemDetail extends BtrixElement {
               iconLibrary: "default",
               icon: "file-code-fill",
             })}
+            ${this.item &&
+            isCrawlReplay(this.item) &&
+            this.item.requiresCrawls.length
+              ? renderNavItem({
+                  section: "dependencies",
+                  iconLibrary: "default",
+                  icon: "layers-fill",
+                })
+              : nothing}
           `,
         )}
       </nav>
@@ -845,11 +899,18 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderReplay() {
-    const dedupeDependent =
-      this.item && isCrawl(this.item) && this.item.requiresCrawls.length;
+    const dedupeCollId =
+      this.item &&
+      isCrawl(this.item) &&
+      this.item.requiresCrawls.length &&
+      this.item.dedupeCollId;
 
     return html`
-      ${dedupeDependent ? dedupeReplayNotice() : nothing}
+      ${dedupeCollId
+        ? dedupeReplayNotice({
+            href: `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${dedupeCollId}`,
+          })
+        : nothing}
       <div class="overflow-hidden rounded-lg border">${this.renderRWP()}</div>
     `;
   }
@@ -1052,40 +1113,85 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderCollections() {
-    const noneText = html`<span class="text-neutral-300">${msg("None")}</span>`;
     const dedupeId = this.item && isCrawl(this.item) && this.item.dedupeCollId;
 
     return html`
-      <btrix-desc-list>
-        <btrix-desc-list-item label=${msg("Included In")}>
-          ${when(
-            this.item,
-            (item) =>
-              when(
-                item.collections.length,
-                () => html`
-                  <btrix-linked-collections-list
-                    class="mt-1 block"
-                    .collections=${item.collections}
-                    dedupeId=${ifDefined(dedupeId || undefined)}
-                    baseUrl="${this.navigate.orgBasePath}/collections/view"
-                  ></btrix-linked-collections-list>
-                `,
-                () => noneText,
-              ),
-            () => html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`,
-          )}
-        </btrix-desc-list-item>
-      </btrix-desc-list>
+      ${when(
+        this.item,
+        (item) =>
+          when(
+            item.collections.length,
+            () => html`
+              <btrix-linked-collections-list
+                class="mt-1 block"
+                .collections=${item.collections}
+                dedupeId=${ifDefined(dedupeId || undefined)}
+                baseUrl="${this.navigate.orgBasePath}/collections/view"
+              ></btrix-linked-collections-list>
+            `,
+            () =>
+              panelBody({
+                content: emptyMessage({
+                  message: msg("This item is not included in any collections."),
+                }),
+              }),
+          ),
+        () => html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`,
+      )}
+    `;
+  }
+
+  private renderDependencies() {
+    if (!this.item) return;
+
+    if (!isCrawlReplay(this.item) || !this.item.dedupeCollId) {
+      return panelBody({
+        content: emptyMessage({
+          message: msg("Crawl dependencies are not applicable for this item."),
+        }),
+      });
+    }
+
+    const noDeps = panelBody({
+      content: emptyMessage({
+        message: msg("This crawl doesn't have any dependencies."),
+      }),
+    });
+
+    if (!this.item.requiresCrawls.length) {
+      return noDeps;
+    }
+
+    return html`
+      ${this.dependenciesTask.render({
+        complete: (items) =>
+          items
+            ? html`<div class="font-monostyle mb-3 text-xs text-neutral-600">
+                  ${this.localize.number(items.length)}
+                  ${pluralOf("dependencies", items.length)}
+                </div>
+                <div class="rounded border">
+                  <btrix-item-dependency-tree .items=${items}>
+                  </btrix-item-dependency-tree>
+                </div>`
+            : noDeps,
+      })}
     `;
   }
 
   private renderFiles() {
-    const dedupeDependent =
-      this.item && isCrawl(this.item) && this.item.requiresCrawls.length;
+    const dedupeCollId =
+      this.item &&
+      isCrawl(this.item) &&
+      this.item.requiresCrawls.length &&
+      this.item.dedupeCollId;
 
     return html`
-      ${this.hasFiles && dedupeDependent ? dedupeFilesNotice() : nothing}
+      ${this.hasFiles && dedupeCollId
+        ? dedupeFilesNotice({
+            href: `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${dedupeCollId}`,
+          })
+        : nothing}
       ${this.hasFiles
         ? html`
             <ul class="rounded-lg border text-sm">

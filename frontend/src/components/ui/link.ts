@@ -34,7 +34,7 @@ export class Link extends BtrixElement {
           "group inline-flex items-center gap-1 transition-colors duration-fast",
           {
             primary: "text-primary-500 hover:text-primary-600",
-            warning: "text-warning-700 hover:text-warning-800",
+            warning: "text-warning-800 hover:text-warning-700",
             neutral: "text-blue-500 hover:text-blue-600",
           }[this.variant],
         )}
