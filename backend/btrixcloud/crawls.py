@@ -1343,9 +1343,7 @@ def init_crawls_api(
         name: Optional[str] = None,
         description: Optional[str] = None,
         collectionId: Optional[UUID] = None,
-        crawl_ids: Annotated[
-            Optional[List[UUID]], Query(alias="crawlIds", title="Crawl IDs")
-        ] = None,
+        ids: Optional[List[UUID]] = None,
         sortBy: Optional[str] = None,
         sortDirection: int = -1,
         runningOnly: Optional[bool] = True,
@@ -1376,7 +1374,7 @@ def init_crawls_api(
             name=name,
             description=description,
             collection_id=collectionId,
-            crawl_ids=crawl_ids,
+            crawl_ids=ids,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
@@ -1407,6 +1405,7 @@ def init_crawls_api(
             ),
         ] = ListFilterType.AND,
         collectionId: Optional[UUID] = None,
+        ids: Optional[List[UUID]] = None,
         sortBy: Optional[str] = None,
         sortDirection: int = -1,
     ):
@@ -1438,6 +1437,7 @@ def init_crawls_api(
             tags=tags,
             tag_match=tag_match,
             collection_id=collectionId,
+            crawl_ids=ids,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
