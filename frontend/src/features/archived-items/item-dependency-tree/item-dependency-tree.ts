@@ -22,6 +22,10 @@ import { tw } from "@/utils/tailwind";
 
 const styles = unsafeCSS(stylesheet);
 
+// FIXME Sometimes the API returns circular dependencies
+const dependenciesWithoutSelf = (item: Crawl) =>
+  item.requiresCrawls.filter((id) => id !== item.id);
+
 @customElement("btrix-item-dependency-tree")
 @localized()
 export class ItemDependencyTree extends BtrixElement {
@@ -51,7 +55,7 @@ export class ItemDependencyTree extends BtrixElement {
       const newIds: string[] = [];
 
       items.forEach((item) => {
-        item.requiresCrawls.forEach((id) => {
+        dependenciesWithoutSelf(item).forEach((id) => {
           if (!this.dependenciesMap.get(id)) {
             const cachedItem = itemsMap.get(id);
             if (cachedItem) {
@@ -125,7 +129,9 @@ export class ItemDependencyTree extends BtrixElement {
   }
 
   private readonly renderItem = (item: Crawl) => {
-    const hasDependencies = item.requiresCrawls.length;
+    const dependencies = dependenciesWithoutSelf(item);
+    const hasDependencies = dependencies.length;
+
     return html`
       <sl-tree-item
         id=${item.id}
@@ -135,9 +141,7 @@ export class ItemDependencyTree extends BtrixElement {
         )}
       >
         ${this.renderContent(item)}
-        ${hasDependencies
-          ? item.requiresCrawls.map(this.renderDependency)
-          : nothing}
+        ${hasDependencies ? dependencies.map(this.renderDependency) : nothing}
       </sl-tree-item>
     `;
   };
@@ -166,14 +170,15 @@ export class ItemDependencyTree extends BtrixElement {
       </div>
     `;
     const noItem = () => html`
-      <div
-        class="inline-flex h-8 w-full items-center gap-2 rounded bg-neutral-200 px-2"
-      >
-        <btrix-badge variant="warning"
-          >${msg("Missing Dependency")}</btrix-badge
-        >
+      <div class="inline-flex h-9 w-full items-center gap-2">
+        <sl-tooltip content=${msg("Missing Dependency")} hoist>
+          <sl-icon
+            name="question-diamond"
+            class="text-base text-warning"
+          ></sl-icon>
+        </sl-tooltip>
         <div class="font-monostyle text-xs text-neutral-600">
-          ${msg("Cannot find dependency with ID")} <code>${id}</code>
+          ${msg("Missing item with ID")} <code>${id}</code>
         </div>
       </div>
     `;
@@ -215,6 +220,7 @@ export class ItemDependencyTree extends BtrixElement {
   };
 
   private readonly renderContent = (item: Crawl) => {
+    const dependencies = dependenciesWithoutSelf(item);
     const purgeable =
       !item.dedupeCollId || !item.collectionIds.includes(item.dedupeCollId);
     const status = () => {
@@ -223,9 +229,9 @@ export class ItemDependencyTree extends BtrixElement {
       let tooltip = "In Same Collection";
 
       if (purgeable) {
-        icon = "trash2";
-        variant = tw`text-neutral-500`;
-        tooltip = msg("Purgeable");
+        icon = "dash-circle";
+        variant = tw`text-neutral-400`;
+        tooltip = msg("Not in Collection");
       }
 
       return html`<sl-tooltip content=${tooltip} hoist placement="left">
@@ -255,10 +261,10 @@ export class ItemDependencyTree extends BtrixElement {
           <sl-icon name=${dedupeIconFor.dependent}></sl-icon>
         </sl-tooltip>
         <span
-          >${this.localize.number(item.requiresCrawls.length)}
+          >${this.localize.number(dependencies.length)}
           ${pluralOf(
             this.showHeader ? "items" : "dependencies",
-            item.requiresCrawls.length,
+            dependencies.length,
           )}</span
         >
       </div>
@@ -289,10 +295,7 @@ export class ItemDependencyTree extends BtrixElement {
         <sl-tooltip content=${msg("Size")} hoist>
           <sl-icon name="file-earmark-binary"></sl-icon>
         </sl-tooltip>
-        <sl-format-bytes
-          value=${item.fileSize || 0}
-          display="short"
-        ></sl-format-bytes>
+        ${this.localize.bytes(item.fileSize || 0, { unitDisplay: "short" })}
       </div>
       ${this.renderLink(
         `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}#${"overview" as ArchivedItemSectionName}`,
