@@ -1,10 +1,12 @@
 import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
 import type { SlTree, SlTreeItem } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import { html, nothing, unsafeCSS, type PropertyValues } from "lit";
+import { html, nothing, unsafeCSS } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { until } from "lit/directives/until.js";
+import queryString from "query-string";
 
 import stylesheet from "./item-dependency-tree.stylesheet.css";
 
@@ -12,6 +14,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { dedupeIconFor } from "@/features/collections/dedupe-badge";
 import { OrgTab, WorkflowTab } from "@/routes";
 import { noData } from "@/strings/ui";
+import type { APIPaginatedList } from "@/types/api";
 import type { Crawl } from "@/types/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
@@ -36,28 +39,55 @@ export class ItemDependencyTree extends BtrixElement {
     Crawl | Promise<Crawl | undefined>
   >();
 
-  disconnectedCallback(): void {
-    this.timerIds.forEach(window.clearTimeout);
-    super.disconnectedCallback();
-  }
+  private readonly dependenciesTask = new Task(this, {
+    task: async ([items], { signal }) => {
+      if (!items?.length) return;
 
-  protected willUpdate(changedProperties: PropertyValues): void {
-    if (changedProperties.has("items") && this.items) {
-      const itemsMap = new Map(this.items.map((item) => [item.id, item]));
+      const itemsMap = new Map(items.map((item) => [item.id, item]));
+      const newIds: string[] = [];
 
-      this.items.forEach((item) => {
+      items.forEach((item) => {
         item.requiresCrawls.forEach((id) => {
           if (!this.dependenciesMap.get(id)) {
             const cachedItem = itemsMap.get(id);
             if (cachedItem) {
               this.dependenciesMap.set(id, cachedItem);
             } else {
-              this.dependenciesMap.set(id, this.getCrawl(id));
+              newIds.push(id);
             }
           }
         });
       });
-    }
+
+      const query = queryString.stringify(
+        {
+          ids: newIds,
+        },
+        {
+          arrayFormat: "none",
+        },
+      );
+
+      const request = this.api.fetch<APIPaginatedList<Crawl>>(
+        `/orgs/${this.orgId}/crawls?${query}`,
+        { signal },
+      );
+
+      newIds.forEach((id) => {
+        this.dependenciesMap.set(
+          id,
+          request.then(({ items }) => items.find((item) => item.id === id)),
+        );
+      });
+
+      return request;
+    },
+    args: () => [this.items] as const,
+  });
+
+  disconnectedCallback(): void {
+    this.timerIds.forEach(window.clearTimeout);
+    super.disconnectedCallback();
   }
 
   render() {
@@ -252,13 +282,5 @@ export class ItemDependencyTree extends BtrixElement {
       }}
     >
     </sl-icon-button>`;
-  }
-
-  private async getCrawl(id: string) {
-    try {
-      return await this.api.fetch<Crawl>(`/orgs/${this.orgId}/crawls/${id}`);
-    } catch (err) {
-      console.debug(err);
-    }
   }
 }

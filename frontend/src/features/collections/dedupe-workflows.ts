@@ -34,14 +34,16 @@ export class DedupeWorkflows extends BtrixElement {
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("workflows") && this.workflows) {
       // Preload crawls
-      this.workflows.forEach(({ id, dedupeCollId }) => {
+      this.workflows.forEach(({ id, dedupeCollId, crawlSuccessfulCount }) => {
         if (!this.workflowCrawlsMap.get(id)) {
           this.workflowCrawlsMap.set(
             id,
-            this.getCrawls({
-              workflowId: id,
-              dedupeCollId: dedupeCollId || undefined,
-            }),
+            crawlSuccessfulCount
+              ? this.getCrawls({
+                  workflowId: id,
+                  dedupeCollId: dedupeCollId || undefined,
+                })
+              : Promise.resolve(undefined),
           );
         }
       });
@@ -72,17 +74,15 @@ export class DedupeWorkflows extends BtrixElement {
     const content = () => html`
       <div class="max-h-96 overflow-y-auto">
         <div
-          class="border-t pb-1 pl-8 pt-3 text-xs leading-none text-neutral-500"
+          class="font-monostyle min-h-4 border-t pb-1 pl-8 pt-2.5 text-xs leading-none text-neutral-500"
         >
-          ${msg("Indexed Crawls")}
           ${until(
             this.workflowCrawlsMap
               .get(workflow.id)
               ?.then(
                 (crawls) =>
-                  html`<btrix-badge class="ml-1">
-                    ${this.localize.number(crawls?.total || 0)}
-                  </btrix-badge>`,
+                  html`${this.localize.number(crawls?.total || 0)}
+                  ${msg("indexed")} ${pluralOf("crawls", crawls?.total || 0)}`,
               ),
           )}
         </div>
@@ -207,7 +207,7 @@ export class DedupeWorkflows extends BtrixElement {
   }) {
     const query = queryString.stringify({
       cid: workflowId,
-      // collectionId: params.dedupeCollId,
+      collectionId: params.dedupeCollId,
       pageSize: INITIAL_PAGE_SIZE,
       sortBy: "started",
       sortDirection: SortDirection.Descending,

@@ -13,6 +13,7 @@ import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ReviewStatus, type ArchivedItem, type Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
+import { tw } from "@/utils/tailwind";
 
 /**
  * @slot actionCell - Action cell
@@ -106,7 +107,7 @@ export class ArchivedItemListItem extends BtrixElement {
     return html`
       <btrix-table-row
         class=${this.href || this.checkbox
-          ? "cursor-pointer select-none transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50 duration-fast"
+          ? tw`cursor-pointer select-none whitespace-nowrap transition-colors duration-fast focus-within:bg-neutral-50 hover:bg-neutral-50`
           : ""}
       >
         ${this.checkbox
