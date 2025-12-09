@@ -1,10 +1,20 @@
 import { msg } from "@lit/localize";
-import { html, nothing } from "lit";
+import { html } from "lit";
 import { when } from "lit/directives/when.js";
 
-export function dedupeReplayNotice({ href }: { href?: string } = {}) {
+import { tw } from "@/utils/tailwind";
+
+export function dedupeReplayNotice({
+  dependenciesHref,
+  collectionHref,
+  topClass,
+}: {
+  dependenciesHref?: string;
+  collectionHref?: string;
+  topClass?: string;
+} = {}) {
   return html`<btrix-alert
-    class="sticky top-2 z-50 part-[base]:mb-3"
+    class="${topClass || tw`top-2`} sticky z-10 part-[base]:mb-3"
     variant="warning"
   >
     <div class="mb-2 flex justify-between">
@@ -15,13 +25,13 @@ export function dedupeReplayNotice({ href }: { href?: string } = {}) {
         </strong>
       </span>
       ${when(
-        href,
+        dependenciesHref,
         (href) =>
           html`<btrix-link
             class="part-[base]:font-medium"
             variant="warning"
             href=${href}
-            >${msg("Go to Collection")}</btrix-link
+            >${msg("View Dependencies")}</btrix-link
           >`,
       )}
     </div>
@@ -31,13 +41,22 @@ export function dedupeReplayNotice({ href }: { href?: string } = {}) {
           "Replay for this crawl may contain incomplete or missing pages due to its dependency of the deduplication source.",
         )}
       </p>
-      ${href
-        ? html`<p>
+      ${when(
+        collectionHref,
+        (href) => html`
+          <p>
             ${msg(
-              "Go to the collection to replay the complete and deduplicated crawl.",
+              "View the collection to replay the complete and deduplicated crawl.",
             )}
-          </p>`
-        : nothing}
+            <btrix-link
+              class="part-[base]:font-medium"
+              variant="warning"
+              href=${href}
+              >${msg("Go to Collection")}</btrix-link
+            >
+          </p>
+        `,
+      )}
     </div>
   </btrix-alert>`;
 }
