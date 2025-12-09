@@ -1,10 +1,13 @@
 import { msg } from "@lit/localize";
-import { html, nothing } from "lit";
+import { html } from "lit";
 import { when } from "lit/directives/when.js";
 
-export function dedupeFilesNotice({ href }: { href?: string } = {}) {
+export function dedupeFilesNotice({
+  dependenciesHref,
+  collectionHref,
+}: { dependenciesHref?: string; collectionHref?: string } = {}) {
   return html`<btrix-alert
-    class="sticky top-2 z-50 part-[base]:mb-3"
+    class="sticky top-2 z-10 part-[base]:mb-3"
     variant="warning"
   >
     <div class="mb-2 flex justify-between">
@@ -15,13 +18,13 @@ export function dedupeFilesNotice({ href }: { href?: string } = {}) {
         </strong>
       </span>
       ${when(
-        href,
+        dependenciesHref,
         (href) =>
           html`<btrix-link
             class="part-[base]:font-medium"
             variant="warning"
             href=${href}
-            >${msg("Go to Collection")}</btrix-link
+            >${msg("View Dependencies")}</btrix-link
           >`,
       )}
     </div>
@@ -31,15 +34,23 @@ export function dedupeFilesNotice({ href }: { href?: string } = {}) {
           "Files may contain incomplete or missing content due to deduplication.",
         )}
       </p>
-      ${href
-        ? html`
-            <p>
-              ${msg(
-                "Go to the collection to download the complete and deduplicated items.",
-              )}
-            </p>
-          `
-        : nothing}
+
+      ${when(
+        collectionHref,
+        (href) => html`
+          <p>
+            ${msg(
+              "Download the collection for complete and deduplicated files.",
+            )}
+            <btrix-link
+              class="part-[base]:font-medium"
+              variant="warning"
+              href=${href}
+              >${msg("Go to Collection")}</btrix-link
+            >
+          </p>
+        `,
+      )}
     </div>
   </btrix-alert>`;
 }

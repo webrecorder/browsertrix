@@ -13,6 +13,7 @@ import omitBy from "lodash/fp/omitBy";
 import isNil from "lodash/isNil";
 import queryString from "query-string";
 
+import type { ArchivedItemSectionName } from "./archived-item-detail/archived-item-detail";
 import type { Crawl, CrawlLog, Seed, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -1735,7 +1736,9 @@ export class WorkflowDetail extends BtrixElement {
       ${when(this.latestCrawlTask.value, (crawl) =>
         crawl.requiresCrawls.length
           ? dedupeReplayNotice({
-              href: this.workflow?.dedupeCollId
+              topClass: tw`top-12`, // Sticky below tabs
+              dependenciesHref: `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${crawl.cid}/${WorkflowTab.Crawls}/${crawl.id}#${"dependencies" satisfies ArchivedItemSectionName}`,
+              collectionHref: this.workflow?.dedupeCollId
                 ? `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${this.workflow.dedupeCollId}`
                 : undefined,
             })

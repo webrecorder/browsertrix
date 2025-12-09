@@ -440,7 +440,7 @@ export class ArchivedItemQA extends BtrixElement {
 
       <div class="mb-4 flex items-center">${this.renderBackLink()}</div>
 
-      ${when(hasDependencies, dedupeQANotice)}
+      ${when(hasDependencies, () => dedupeQANotice())}
 
       <article class="qa-grid grid min-h-screen gap-x-6 gap-y-0 lg:snap-start">
         <header

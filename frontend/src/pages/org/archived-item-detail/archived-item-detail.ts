@@ -68,6 +68,8 @@ type SectionName = (typeof SECTIONS)[number];
 
 const POLL_INTERVAL_SECONDS = 5;
 
+export type { SectionName as ArchivedItemSectionName };
+
 /**
  * Detail page for an archived item (crawl or upload) or crawl run.
  *
@@ -167,6 +169,10 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private get reviewUrl(): string {
     return `${new URL(window.location.href).pathname}/review/screenshots${this.mostRecentSuccessQARun ? `?qaRunId=${this.mostRecentSuccessQARun.id}` : ""}`;
+  }
+
+  private get dependenciesUrl(): string {
+    return `${new URL(window.location.href).pathname}${window.location.search}#${"dependencies" satisfies SectionName}`;
   }
 
   private timerId?: number;
@@ -368,7 +374,11 @@ export class ArchivedItemDetail extends BtrixElement {
               ${when(!dedupeDependent && this.qaRuns, this.renderQAHeader)}
             </div> `,
           html`
-            ${dedupeDependent ? dedupeQANotice() : nothing}
+            ${dedupeDependent
+              ? dedupeQANotice({
+                  dependenciesHref: this.dependenciesUrl,
+                })
+              : nothing}
             <btrix-archived-item-detail-qa
               .crawlId=${this.itemId}
               .workflowId=${this.workflowId}
@@ -899,7 +909,8 @@ export class ArchivedItemDetail extends BtrixElement {
     return html`
       ${dedupeCollId
         ? dedupeReplayNotice({
-            href: `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${dedupeCollId}`,
+            dependenciesHref: this.dependenciesUrl,
+            collectionHref: `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${dedupeCollId}`,
           })
         : nothing}
       <div class="overflow-hidden rounded-lg border">${this.renderRWP()}</div>
@@ -1135,7 +1146,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderDependencies() {
     if (!this.item) return;
 
-    if (!isCrawlReplay(this.item) || !this.item.dedupeCollId) {
+    if (!isCrawlReplay(this.item)) {
       return panelBody({
         content: emptyMessage({
           message: msg("Crawl dependencies are not applicable for this item."),
@@ -1180,7 +1191,8 @@ export class ArchivedItemDetail extends BtrixElement {
     return html`
       ${this.hasFiles && dedupeCollId
         ? dedupeFilesNotice({
-            href: `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${dedupeCollId}`,
+            dependenciesHref: this.dependenciesUrl,
+            collectionHref: `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${dedupeCollId}`,
           })
         : nothing}
       ${this.hasFiles

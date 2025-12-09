@@ -1,9 +1,12 @@
 import { msg } from "@lit/localize";
 import { html } from "lit";
+import { when } from "lit/directives/when.js";
 
-export function dedupeQANotice() {
+export function dedupeQANotice({
+  dependenciesHref,
+}: { dependenciesHref?: string } = {}) {
   return html`<btrix-alert
-    class="sticky top-2 z-50 part-[base]:mb-3"
+    class="sticky top-2 z-10 part-[base]:mb-3"
     variant="warning"
   >
     <div class="mb-2 flex justify-between">
@@ -13,6 +16,16 @@ export function dedupeQANotice() {
           ${msg("This crawl is dependent on other crawls.")}
         </strong>
       </span>
+      ${when(
+        dependenciesHref,
+        (href) =>
+          html`<btrix-link
+            class="part-[base]:font-medium"
+            variant="warning"
+            href=${href}
+            >${msg("View Dependencies")}</btrix-link
+          >`,
+      )}
     </div>
     <div class="text-pretty text-warning-800">
       <p>

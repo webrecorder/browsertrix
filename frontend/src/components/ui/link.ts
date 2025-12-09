@@ -28,6 +28,11 @@ export class Link extends BtrixElement {
   render() {
     if (!this.href) return;
 
+    const isHashChange = () => {
+      if (!this.href) return;
+      return window.location.pathname.split("#")[0] === this.href.split("#")[0];
+    };
+
     return html`
       <a
         class=${clsx(
@@ -41,7 +46,9 @@ export class Link extends BtrixElement {
         href=${this.href}
         target=${ifDefined(this.target)}
         rel=${ifDefined(this.rel)}
-        @click=${this.target === "_blank" || this.href.startsWith("http")
+        @click=${this.target === "_blank" ||
+        this.href.startsWith("http") ||
+        isHashChange()
           ? () => {}
           : this.navigate.link}
         part="base"
