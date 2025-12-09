@@ -70,5 +70,7 @@ export const badges = (item: ArchivedItem) => {
 };
 
 export const badgesSkeleton = () =>
-  html`<sl-skeleton class="h-4 w-12"></sl-skeleton>
-    <sl-skeleton class="h-4 w-12"></sl-skeleton>`;
+  html`<div class="flex flex-wrap gap-3 whitespace-nowrap">
+    <sl-skeleton class="h-4 w-12"></sl-skeleton>
+    <sl-skeleton class="h-4 w-12"></sl-skeleton>
+  </div>`;

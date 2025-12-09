@@ -145,8 +145,13 @@ export class CollectionDetail extends BtrixElement {
 
   private readonly dedupeWorkflowsTask = new Task(this, {
     task: async ([collectionId], { signal }) => {
+      const query = queryString.stringify({
+        dedupeCollId: collectionId,
+        sortBy: "name",
+      });
+
       return this.api.fetch<APIPaginatedList<Workflow>>(
-        `/orgs/${this.orgId}/crawlconfigs?dedupeCollId=${collectionId}`,
+        `/orgs/${this.orgId}/crawlconfigs?${query}`,
         { signal },
       );
     },
@@ -877,7 +882,7 @@ export class CollectionDetail extends BtrixElement {
     const loading = () =>
       html`<sl-skeleton effect="sheen" class="h-9"></sl-skeleton>`;
     return panel({
-      heading: msg("Crawls"),
+      heading: msg("Workflows"),
       body: html`${this.dedupeWorkflowsTask.render({
         initial: loading,
         pending: loading,
@@ -901,6 +906,12 @@ export class CollectionDetail extends BtrixElement {
     return panel({
       heading: msg("Overview"),
       body: html`<btrix-desc-list>
+        <btrix-desc-list-item label=${msg("Dedupe Status")}>
+          ${this.collection?.hasDedupeIndex ? msg("Enabled") : msg("Disabled")}
+        </btrix-desc-list-item>
+
+        ${
+          /**
         <btrix-desc-list-item label=${msg("Total Indexed URLs")}>
           ${this.localize.number(
             // TODO
@@ -918,6 +929,8 @@ export class CollectionDetail extends BtrixElement {
             0,
           )}
         </btrix-desc-list-item>
+        */ ""
+        }
       </btrix-desc-list>`,
     });
   }

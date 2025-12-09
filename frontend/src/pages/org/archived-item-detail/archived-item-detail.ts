@@ -236,6 +236,9 @@ export class ArchivedItemDetail extends BtrixElement {
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("itemId") && this.itemId) {
+      if (changedProperties.get("itemId")) {
+        this.resetItem();
+      }
       void this.fetchCrawl();
       if (this.itemType === "crawl") {
         void this.fetchSeeds();
@@ -248,8 +251,11 @@ export class ArchivedItemDetail extends BtrixElement {
     }
     if (
       (changedProperties.has("workflowId") && this.workflowId) ||
-      (changedProperties.has("item") && this.item?.cid)
+      (!this.workflowId && changedProperties.has("item") && this.item?.cid)
     ) {
+      if (changedProperties.get("workflowId")) {
+        this.workflow = undefined;
+      }
       void this.fetchWorkflow();
     }
     if (changedProperties.has("qaRuns")) {
@@ -307,6 +313,22 @@ export class ArchivedItemDetail extends BtrixElement {
         }
       }
     }
+  }
+
+  private resetItem() {
+    const hashValue = window.location.hash.slice(1);
+    if (SECTIONS.includes(hashValue as (typeof SECTIONS)[number])) {
+      this.activeTab = hashValue as SectionName;
+    } else {
+      this.activeTab = "overview";
+    }
+
+    this.item = undefined;
+    this.seeds = undefined;
+    this.isRunActive = false;
+    this.qaRuns = undefined;
+    this.mostRecentNonFailedQARun = undefined;
+    this.mostRecentSuccessQARun = undefined;
   }
 
   connectedCallback(): void {
@@ -1133,9 +1155,9 @@ export class ArchivedItemDetail extends BtrixElement {
             `,
             () =>
               panelBody({
-                content: emptyMessage({
-                  message: msg("This item is not included in any collections."),
-                }),
+                content: html`<p class="text-xs text-neutral-500">
+                  ${msg("This item is not included in any collections.")}
+                </p>`,
               }),
           ),
         () => html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`,
@@ -1168,14 +1190,16 @@ export class ArchivedItemDetail extends BtrixElement {
       ${this.dependenciesTask.render({
         complete: (deps) =>
           deps
-            ? html`<div class="font-monostyle mb-3 text-xs text-neutral-600">
-                  ${this.localize.number(deps.total)}
-                  ${pluralOf("dependencies", deps.total)}
+            ? html`<div
+                  class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 p-3"
+                >
+                  <div class="text-neutral-500">
+                    ${this.localize.number(deps.total)}
+                    ${pluralOf("dependencies", deps.total)}
+                  </div>
                 </div>
-                <div class="rounded border">
-                  <btrix-item-dependency-tree .items=${deps.items}>
-                  </btrix-item-dependency-tree>
-                </div>`
+                <btrix-item-dependency-tree .items=${deps.items} showHeader>
+                </btrix-item-dependency-tree>`
             : noDeps,
       })}
     `;
