@@ -678,62 +678,28 @@ class OrgOps(BaseOrgs):
     ) -> None:
         """update organization quotas"""
 
-        async with await self.dbclient.start_session() as session:
+        async with await self.dbclient.start_session(
+            causal_consistency=True
+        ) as session:
             try:
-                async with session.start_transaction():
-                    # Re-fetch the organization within the context of the transaction
-                    # so that the operation as a whole is atomic.
-                    org = await self.get_org_by_id(org.id, session=session)
+                # Re-fetch the organization within the session
+                # so that the operation as a whole is atomic.
+                org = await self.get_org_by_id(org.id, session=session)
 
-                    previous_extra_mins = (
-                        org.quotas.extraExecMinutes
-                        if (org.quotas and org.quotas.extraExecMinutes)
-                        else 0
-                    )
-                    previous_gifted_mins = (
-                        org.quotas.giftedExecMinutes
-                        if (org.quotas and org.quotas.giftedExecMinutes)
-                        else 0
-                    )
+                previous_extra_mins = (
+                    org.quotas.extraExecMinutes
+                    if (org.quotas and org.quotas.extraExecMinutes)
+                    else 0
+                )
+                previous_gifted_mins = (
+                    org.quotas.giftedExecMinutes
+                    if (org.quotas and org.quotas.giftedExecMinutes)
+                    else 0
+                )
 
-                    if mode == "add":
-                        increment_update: dict[str, Any] = {
-                            "$inc": {},
-                        }
-
-                        for field, value in quotas.model_dump(
-                            exclude_unset=True, exclude_defaults=True, exclude_none=True
-                        ).items():
-                            if field == "context" or value is None:
-                                continue
-                            inc = max(value, -org.quotas.model_dump().get(field, 0))
-                            increment_update["$inc"][f"quotas.{field}"] = inc
-
-                        updated_org = await self.orgs.find_one_and_update(
-                            {"_id": org.id},
-                            increment_update,
-                            projection={"quotas": True},
-                            return_document=ReturnDocument.AFTER,
-                            session=session,
-                        )
-                        quotas = OrgQuotasIn(**updated_org["quotas"])
-
-                    update: dict[str, dict[str, dict[str, Any] | int]] = {
-                        "$push": {
-                            "quotaUpdates": OrgQuotaUpdate(
-                                modified=dt_now(),
-                                update=OrgQuotas(
-                                    **quotas.model_dump(
-                                        exclude_unset=True,
-                                        exclude_defaults=True,
-                                        exclude_none=True,
-                                    )
-                                ),
-                                context=context,
-                            ).model_dump()
-                        },
+                if mode == "add":
+                    increment_update: dict[str, Any] = {
                         "$inc": {},
-                        "$set": {},
                     }
 
                     if mode == "set":
@@ -748,32 +714,61 @@ class OrgOps(BaseOrgs):
             "$set": {},
         }
 
-                    # Inc org available fields for extra/gifted execution time as needed
-                    if quotas.extraExecMinutes is not None:
-                        extra_secs_diff = (
-                            quotas.extraExecMinutes - previous_extra_mins
-                        ) * 60
-                        if org.extraExecSecondsAvailable + extra_secs_diff <= 0:
-                            update["$set"]["extraExecSecondsAvailable"] = 0
-                        else:
-                            update["$inc"][
-                                "extraExecSecondsAvailable"
-                            ] = extra_secs_diff
-
-                    if quotas.giftedExecMinutes is not None:
-                        gifted_secs_diff = (
-                            quotas.giftedExecMinutes - previous_gifted_mins
-                        ) * 60
-                        if org.giftedExecSecondsAvailable + gifted_secs_diff <= 0:
-                            update["$set"]["giftedExecSecondsAvailable"] = 0
-                        else:
-                            update["$inc"][
-                                "giftedExecSecondsAvailable"
-                            ] = gifted_secs_diff
-
-                    await self.orgs.find_one_and_update(
-                        {"_id": org.id}, update, session=session
+                    updated_org = await self.orgs.find_one_and_update(
+                        {"_id": org.id},
+                        increment_update,
+                        projection={"quotas": True},
+                        return_document=ReturnDocument.AFTER,
+                        session=session,
                     )
+                    quotas = OrgQuotasIn(**updated_org["quotas"])
+
+                update: dict[str, dict[str, dict[str, Any] | int]] = {
+                    "$push": {
+                        "quotaUpdates": OrgQuotaUpdate(
+                            modified=dt_now(),
+                            update=OrgQuotas(
+                                **quotas.model_dump(
+                                    exclude_unset=True,
+                                    exclude_defaults=True,
+                                    exclude_none=True,
+                                )
+                            ),
+                            context=context,
+                        ).model_dump()
+                    },
+                    "$inc": {},
+                    "$set": {},
+                }
+
+                if mode == "set":
+                    increment_update = quotas.model_dump(
+                        exclude_unset=True, exclude_defaults=True, exclude_none=True
+                    )
+                    update["$set"]["quotas"] = increment_update
+
+                # Inc org available fields for extra/gifted execution time as needed
+                if quotas.extraExecMinutes is not None:
+                    extra_secs_diff = (
+                        quotas.extraExecMinutes - previous_extra_mins
+                    ) * 60
+                    if org.extraExecSecondsAvailable + extra_secs_diff <= 0:
+                        update["$set"]["extraExecSecondsAvailable"] = 0
+                    else:
+                        update["$inc"]["extraExecSecondsAvailable"] = extra_secs_diff
+
+                if quotas.giftedExecMinutes is not None:
+                    gifted_secs_diff = (
+                        quotas.giftedExecMinutes - previous_gifted_mins
+                    ) * 60
+                    if org.giftedExecSecondsAvailable + gifted_secs_diff <= 0:
+                        update["$set"]["giftedExecSecondsAvailable"] = 0
+                    else:
+                        update["$inc"]["giftedExecSecondsAvailable"] = gifted_secs_diff
+
+                await self.orgs.find_one_and_update(
+                    {"_id": org.id}, update, session=session
+                )
             except Exception as e:
                 print(f"Error updating organization quotas: {e}")
                 raise HTTPException(status_code=500, detail=str(e)) from e
