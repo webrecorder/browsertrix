@@ -1,5 +1,5 @@
 import { msg } from "@lit/localize";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { when } from "lit/directives/when.js";
 
 export function dedupeFilesNotice({ href }: { href?: string } = {}) {
@@ -14,6 +14,16 @@ export function dedupeFilesNotice({ href }: { href?: string } = {}) {
           ${msg("This crawl is dependent on other crawls.")}
         </strong>
       </span>
+      ${when(
+        href,
+        (href) =>
+          html`<btrix-link
+            class="part-[base]:font-medium"
+            variant="warning"
+            href=${href}
+            >${msg("Go to Collection")}</btrix-link
+          >`,
+      )}
     </div>
     <div class="text-pretty text-warning-800">
       <p>
@@ -21,21 +31,15 @@ export function dedupeFilesNotice({ href }: { href?: string } = {}) {
           "Files may contain incomplete or missing content due to deduplication.",
         )}
       </p>
-      ${when(
-        href,
-        (href) =>
-          html` <p class="my-2">
+      ${href
+        ? html`
+            <p>
               ${msg(
-                "Download the complete and deduplicated files in the collection.",
+                "Go to the collection to download the complete and deduplicated items.",
               )}
             </p>
-            <btrix-link
-              class="part-[base]:font-medium"
-              variant="warning"
-              href=${href}
-              >${msg("Go to Collection")}</btrix-link
-            >`,
-      )}
+          `
+        : nothing}
     </div>
   </btrix-alert>`;
 }

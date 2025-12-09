@@ -61,17 +61,12 @@ export class LinkedCollectionsListItem extends TailwindElement {
     if (this.baseUrl) {
       content.push(
         html`<div class="flex-none">
-          <sl-tooltip
-            placement=${this.removable ? "left" : "right"}
-            content=${msg("Open in New Tab")}
+          <sl-icon-button
+            name="link"
+            href="${this.baseUrl}/${item.id}"
+            label=${msg("Visit Link")}
           >
-            <sl-icon-button
-              name="arrow-up-right"
-              href="${this.baseUrl}/${item.id}"
-              target="_blank"
-            >
-            </sl-icon-button>
-          </sl-tooltip>
+          </sl-icon-button>
         </div>`,
       );
     }

@@ -1,5 +1,5 @@
 import { msg } from "@lit/localize";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { when } from "lit/directives/when.js";
 
 export function dedupeReplayNotice({ href }: { href?: string } = {}) {
@@ -14,6 +14,16 @@ export function dedupeReplayNotice({ href }: { href?: string } = {}) {
           ${msg("This crawl is dependent on other crawls.")}
         </strong>
       </span>
+      ${when(
+        href,
+        (href) =>
+          html`<btrix-link
+            class="part-[base]:font-medium"
+            variant="warning"
+            href=${href}
+            >${msg("Go to Collection")}</btrix-link
+          >`,
+      )}
     </div>
     <div class="text-pretty text-warning-800">
       <p>
@@ -21,21 +31,13 @@ export function dedupeReplayNotice({ href }: { href?: string } = {}) {
           "Replay for this crawl may contain incomplete or missing pages due to its dependency of the deduplication source.",
         )}
       </p>
-      ${when(
-        href,
-        (href) =>
-          html` <p class="my-2">
-              ${msg(
-                "Replay the collection to view the complete and deduplicated crawl.",
-              )}
-            </p>
-            <btrix-link
-              class="part-[base]:font-medium"
-              variant="warning"
-              href=${href}
-              >${msg("Go to Collection")}</btrix-link
-            >`,
-      )}
+      ${href
+        ? html`<p>
+            ${msg(
+              "Go to the collection to replay the complete and deduplicated crawl.",
+            )}
+          </p>`
+        : nothing}
     </div>
   </btrix-alert>`;
 }

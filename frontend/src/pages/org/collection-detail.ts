@@ -803,7 +803,7 @@ export class CollectionDetail extends BtrixElement {
     const loading = () =>
       html`<sl-skeleton effect="sheen" class="h-9"></sl-skeleton>`;
     return panel({
-      heading: msg("Crawl Workflows"),
+      heading: msg("Crawls"),
       body: html`${this.dedupeWorkflowsTask.render({
         initial: loading,
         pending: loading,
@@ -828,13 +828,13 @@ export class CollectionDetail extends BtrixElement {
       heading: msg("Overview"),
       body: panelBody({
         content: html`<btrix-desc-list>
-          <btrix-desc-list-item label=${msg("Total Indexed Crawls")}>
+          <btrix-desc-list-item label=${msg("Total Indexed URLs")}>
             ${this.localize.number(
               // TODO
               0,
             )}
             ${pluralOf(
-              "crawls",
+              "URLs",
               // TODO
               0,
             )}

@@ -27,7 +27,11 @@ import type {
 } from "@/types/api";
 import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
-import { isActive, isSuccessfullyFinished } from "@/utils/crawler";
+import {
+  isActive,
+  isCrawlReplay,
+  isSuccessfullyFinished,
+} from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
@@ -752,6 +756,10 @@ export class ArchivedItemDetailQA extends BtrixElement {
       </div>
       <div class="truncate text-xs leading-4 text-neutral-600">${page.url}</div>
     `;
+    const hasDependencies =
+      this.crawl &&
+      isCrawlReplay(this.crawl) &&
+      this.crawl.requiresCrawls.length;
     return html`
       <btrix-table
         class="-mx-3 overflow-x-auto px-5"
@@ -776,20 +784,24 @@ export class ArchivedItemDetailQA extends BtrixElement {
               <btrix-table-row
                 class=${clsx(
                   idx > 0 && tw`border-t`,
-                  tw`cursor-pointer select-none transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50`,
+                  !hasDependencies &&
+                    tw`cursor-pointer select-none transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50`,
                 )}
               >
                 <btrix-table-cell
                   class="block overflow-hidden"
                   rowClickTarget="a"
                 >
-                  <a
-                    href=${`${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.crawlId}/review/screenshots?qaRunId=${this.mostRecentSuccessQARun?.id || ""}&itemPageId=${page.id}`}
-                    title=${msg(str`Review "${page.title ?? page.url}"`)}
-                    @click=${this.navigate.link}
-                  >
-                    ${pageTitle(page)}
-                  </a>
+                  ${hasDependencies
+                    ? // Disable QA for dependent crawls
+                      pageTitle(page)
+                    : html`<a
+                        href=${`${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.crawlId}/review/screenshots?qaRunId=${this.mostRecentSuccessQARun?.id || ""}&itemPageId=${page.id}`}
+                        title=${msg(str`Review "${page.title ?? page.url}"`)}
+                        @click=${this.navigate.link}
+                      >
+                        ${pageTitle(page)}
+                      </a>`}
                 </btrix-table-cell>
                 <btrix-table-cell
                   >${this.renderApprovalStatus(page)}</btrix-table-cell
