@@ -26,7 +26,7 @@ import {
 } from "@/layouts/collections/metadataColumn";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
-import { panel, panelBody } from "@/layouts/panel";
+import { panel, panelBody, panelHeader } from "@/layouts/panel";
 import { OrgTab } from "@/routes";
 import type {
   APIPaginatedList,
@@ -670,48 +670,50 @@ export class CollectionDetail extends BtrixElement {
     const metadata = metadataColumn(this.collection);
 
     return html`
-      <div class="flex flex-1 flex-col gap-10 lg:flex-row">
-        <section class="flex w-full max-w-4xl flex-col leading-relaxed">
-          <header class="mb-2 flex min-h-8 items-center justify-between">
-            <div class="flex items-center gap-2">
-              <h2 class="text-base font-medium">
-                ${msg("About This Collection")}
-              </h2>
-              <sl-tooltip>
-                <div slot="content">
-                  <p class="mb-3">
-                    ${msg(
-                      html`Describe your collection in long-form rich text (e.g.
-                        <strong>bold</strong> and <em>italicized</em> text.)`,
-                    )}
-                  </p>
-                  <p>
-                    ${msg(
-                      html`If this collection is shareable, this will appear in
-                      the “About This Collection” section of the shared
-                      collection.`,
-                    )}
-                  </p>
-                </div>
-                <sl-icon
-                  name="info-circle"
-                  class="size-4 text-base text-neutral-500 [vertical-align:-.175em]"
-                ></sl-icon>
-              </sl-tooltip>
-            </div>
-            ${when(
-              this.collection?.description && !this.isEditingDescription,
-              () => html`
-                <sl-tooltip content=${msg("Edit Description")}>
+      <div class="grid grid-cols-7 gap-7">
+        <section
+          class="col-span-full flex flex-col leading-relaxed lg:col-span-5"
+        >
+          <header class="flex items-center justify-between">
+            ${panelHeader({
+              heading: msg("Description"),
+            })}
+            ${this.isEditingDescription
+              ? html`
+                  <btrix-popover placement="right-start">
+                    <div slot="content">
+                      <p class="mb-3">
+                        ${msg(
+                          html`Describe your collection in long-form rich text
+                            (e.g. <strong>bold</strong> and
+                            <em>italicized</em> text.)`,
+                        )}
+                      </p>
+                      <p>
+                        ${msg(
+                          html`If this collection is shareable, this will appear
+                          in the “About This Collection” section of the shared
+                          collection.`,
+                        )}
+                      </p>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-neutral-500">
+                      ${msg("Help")}
+                      <sl-icon
+                        name="question-circle"
+                        class="size-4 text-base"
+                      ></sl-icon>
+                    </div>
+                  </btrix-popover>
+                `
+              : html`<sl-tooltip content=${msg("Edit Description")}>
                   <sl-icon-button
                     class="text-base"
                     name="pencil"
                     @click=${() => (this.isEditingDescription = true)}
                   >
                   </sl-icon-button>
-                </sl-tooltip>
-              `,
-            )}
+                </sl-tooltip>`}
           </header>
           ${when(
             this.collection,
@@ -753,11 +755,11 @@ export class CollectionDetail extends BtrixElement {
             this.renderSpinner,
           )}
         </section>
-        <section class="flex-1">
-          <btrix-section-heading>
-            <h2>${msg("Details")}</h2>
-          </btrix-section-heading>
-          <div class="mt-5">${metadata}</div>
+        <section class="col-span-full flex-1 lg:col-span-2">
+          ${panelHeader({
+            heading: msg("Details"),
+          })}
+          <div>${metadata}</div>
         </section>
       </div>
     `;
@@ -768,11 +770,11 @@ export class CollectionDetail extends BtrixElement {
 
     if (this.collection.hasDedupeIndex) {
       return html`
-        <div class="grid grid-cols-7 gap-7 border-t pt-3">
+        <div class="grid grid-cols-7 gap-7">
           <div class="col-span-full lg:col-span-5">
             ${this.renderDedupeWorkflows()}
           </div>
-          <div class="sticky top-3 col-span-full self-start lg:col-span-2">
+          <div class="col-span-full lg:col-span-2">
             ${this.renderDedupeOverview()}
           </div>
         </div>
