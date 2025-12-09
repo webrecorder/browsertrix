@@ -12,6 +12,7 @@ import stylesheet from "./item-dependency-tree.stylesheet.css";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { dedupeIconFor } from "@/features/collections/dedupe-badge";
+import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/archived-item-detail";
 import { OrgTab, WorkflowTab } from "@/routes";
 import { noData } from "@/strings/ui";
 import type { APIPaginatedList } from "@/types/api";
@@ -28,6 +29,9 @@ export class ItemDependencyTree extends BtrixElement {
 
   @property({ type: Array })
   items?: Crawl[];
+
+  @property({ type: Boolean })
+  showHeader = false;
 
   @query("sl-tree")
   private readonly tree?: SlTree | null;
@@ -94,7 +98,27 @@ export class ItemDependencyTree extends BtrixElement {
     if (!this.items?.length) return;
 
     return html`
-      <sl-tree class="divide-y" selection="leaf">
+      ${this.showHeader
+        ? html`<div
+            class="item-dependency-tree--row mb-2 pl-9 text-xs leading-none text-neutral-700"
+          >
+            <div class="col-span-2">${msg("Dependencies")}</div>
+            <div>${msg("Date Started")}</div>
+            <div>${msg("Date Finished")}</div>
+            <div>${msg("Pages")}</div>
+            <div>${msg("Size")}</div>
+            <div>
+              <span class="sr-only">${msg("Actions")}</span>
+            </div>
+          </div>`
+        : nothing}
+      <sl-tree
+        class=${clsx(
+          tw`divide-y overflow-hidden`,
+          this.showHeader && tw`rounded border`,
+        )}
+        selection="leaf"
+      >
         ${repeat(this.items, ({ id }) => id, this.renderItem)}
       </sl-tree>
     `;
@@ -196,7 +220,7 @@ export class ItemDependencyTree extends BtrixElement {
     const status = () => {
       let icon = "check-circle";
       let variant = tw`text-cyan-500`;
-      let tooltip = "In Collection";
+      let tooltip = "In Same Collection";
 
       if (purgeable) {
         icon = "trash2";
@@ -221,7 +245,8 @@ export class ItemDependencyTree extends BtrixElement {
     return html`<div
       class=${clsx(
         "item-dependency-tree--row item-dependency-tree--content",
-        purgeable && tw`item-dependency-tree--purgeable`,
+        purgeable && "item-dependency-tree--purgeable",
+        this.showHeader && "item-dependency-tree--withHeader",
       )}
     >
       ${status()}
@@ -231,7 +256,10 @@ export class ItemDependencyTree extends BtrixElement {
         </sl-tooltip>
         <span
           >${this.localize.number(item.requiresCrawls.length)}
-          ${pluralOf("dependencies", item.requiresCrawls.length)}</span
+          ${pluralOf(
+            this.showHeader ? "items" : "dependencies",
+            item.requiresCrawls.length,
+          )}</span
         >
       </div>
       <div class="item-dependency-tree--detail">
@@ -267,7 +295,7 @@ export class ItemDependencyTree extends BtrixElement {
         ></sl-format-bytes>
       </div>
       ${this.renderLink(
-        `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}`,
+        `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}#${"overview" as ArchivedItemSectionName}`,
       )}
     </div>`;
   };
@@ -277,9 +305,7 @@ export class ItemDependencyTree extends BtrixElement {
       name="link"
       href=${href}
       label=${msg("Visit Link")}
-      @click=${(e: MouseEvent) => {
-        e.stopPropagation();
-      }}
+      @click=${this.navigate.link}
     >
     </sl-icon-button>`;
   }

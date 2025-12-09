@@ -10,6 +10,7 @@ import type {
 import { isActualCollection } from "./utils";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { NavigateController } from "@/controllers/navigate";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -30,6 +31,8 @@ export class LinkedCollectionsListItem extends TailwindElement {
 
   @property({ type: Boolean })
   loading = false;
+
+  private readonly navigate = new NavigateController(this);
 
   render() {
     const item = this.item;
@@ -65,6 +68,7 @@ export class LinkedCollectionsListItem extends TailwindElement {
             name="link"
             href="${this.baseUrl}/${item.id}"
             label=${msg("Visit Link")}
+            @click=${this.navigate.link}
           >
           </sl-icon-button>
         </div>`,

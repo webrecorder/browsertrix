@@ -14,9 +14,8 @@
     background: transparent;
   }
 
-  /* Account for invisible border-inline-start width */
-  sl-tree {
-    margin-left: -3px;
+  sl-tree-item::part(item) {
+    border-inline-start-width: 0;
   }
 
   sl-tree-item::part(label) {
@@ -24,7 +23,8 @@
   }
 
   sl-tree-item::part(children)::before {
-    bottom: 1rem;
+    left: calc(1rem - (var(--indent-guide-width) / 2));
+    bottom: calc(1rem + var(--sl-border-radius-medium));
   }
 
   .item-dependency-tree--row {
@@ -44,8 +44,8 @@
   .item-dependency-tree--dependency::part(base)::before {
     content: "";
     width: 1.25rem;
-    left: calc(var(--indent-size) - 1.5px);
-    top: calc(1.25rem - var(--indent-guide-width));
+    left: calc(1rem - (var(--indent-guide-width) / 2));
+    top: calc(1rem - var(--indent-guide-width));
     height: var(--sl-border-radius-medium);
     border-left: var(--indent-guide-width) var(--indent-guide-style)
       var(--indent-guide-color);
@@ -73,5 +73,9 @@
 
   .item-dependency-tree--purgeable .item-dependency-tree--detail {
     @apply opacity-75;
+  }
+
+  .item-dependency-tree--withHeader .item-dependency-tree--detail sl-icon {
+    @apply hidden;
   }
 }
