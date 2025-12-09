@@ -207,17 +207,11 @@ export class ArchivedItemDetail extends BtrixElement {
     task: async ([item], { signal }) => {
       if (!item) return;
       if (!isCrawlReplay(item)) return;
-
-      const { requiresCrawls } = item;
-
-      if (!requiresCrawls.length) {
-        return [];
-      }
+      if (!item.requiresCrawls.length) return;
 
       const query = queryString.stringify(
         {
-          // crawlIds: item.requiresCrawls,
-          cid: item.cid,
+          ids: item.requiresCrawls,
           sortBy: "started",
           sortDirection: SortDirection.Descending,
         },
@@ -226,13 +220,10 @@ export class ArchivedItemDetail extends BtrixElement {
         },
       );
 
-      const data = await this.api.fetch<APIPaginatedList<Crawl>>(
+      return this.api.fetch<APIPaginatedList<Crawl>>(
         `/orgs/${this.orgId}/crawls?${query}`,
         { signal },
       );
-
-      // TODO Use crawl_ids filter
-      return data.items.filter((item) => requiresCrawls.includes(item.id));
     },
     args: () => [this.item] as const,
   });
@@ -1164,14 +1155,14 @@ export class ArchivedItemDetail extends BtrixElement {
 
     return html`
       ${this.dependenciesTask.render({
-        complete: (items) =>
-          items
+        complete: (deps) =>
+          deps
             ? html`<div class="font-monostyle mb-3 text-xs text-neutral-600">
-                  ${this.localize.number(items.length)}
-                  ${pluralOf("dependencies", items.length)}
+                  ${this.localize.number(deps.total)}
+                  ${pluralOf("dependencies", deps.total)}
                 </div>
                 <div class="rounded border">
-                  <btrix-item-dependency-tree .items=${items}>
+                  <btrix-item-dependency-tree .items=${deps.items}>
                   </btrix-item-dependency-tree>
                 </div>`
             : noDeps,

@@ -40,6 +40,7 @@ import {
 } from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
+import { isCrawl, isCrawlReplay, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { richText } from "@/utils/rich-text";
@@ -71,7 +72,15 @@ export class CollectionDetail extends BtrixElement {
   private archivedItems?: APIPaginatedList<ArchivedItem>;
 
   @state()
-  private openDialogName?: "delete" | "edit" | "replaySettings" | "editItems";
+  private openDialogName?:
+    | "delete"
+    | "edit"
+    | "replaySettings"
+    | "editItems"
+    | "removeItem";
+
+  @state()
+  private itemToRemove?: ArchivedItem;
 
   @state()
   private editTab?: EditDialogTab;
@@ -175,6 +184,10 @@ export class CollectionDetail extends BtrixElement {
   }
 
   render() {
+    const collection_name = html`<strong class="font-semibold"
+      >${this.collection?.name}</strong
+    >`;
+
     return html`
       <div class="mb-7 flex justify-between align-baseline">
         ${this.renderBreadcrumbs()}
@@ -319,14 +332,73 @@ export class CollectionDetail extends BtrixElement {
       ])}
 
       <btrix-dialog
+        .label=${msg("Remove Dependency from Collection?")}
+        .open=${this.openDialogName === "removeItem"}
+        @sl-hide=${() => (this.openDialogName = undefined)}
+        @sl-after-hide=${() => (this.itemToRemove = undefined)}
+      >
+        ${when(this.itemToRemove, (item) => {
+          const archived_item_name = html`<strong class="font-semibold"
+            >${renderName(item)}</strong
+          >`;
+          const dependenciesCount =
+            isCrawlReplay(item) && item.requiredByCrawls.length;
+
+          return html`
+            <p>
+              ${msg(
+                html`Are you sure you want to remove ${archived_item_name} from
+                this collection?`,
+              )}
+            </p>
+            ${when(dependenciesCount, (count) => {
+              const number_of_items = this.localize.number(count);
+              const plural_of_items = pluralOf("items", count);
+
+              return html`
+                <p class="my-2">
+                  ${msg(
+                    html`${number_of_items} ${plural_of_items} depend on this
+                    item.`,
+                  )}
+                </p>
+              `;
+            })}
+            <p class="mt-2">
+              ${msg(
+                "Removing this item may result in incomplete replay and downloads until dependent URLs are crawled again.",
+              )}
+            </p>
+          `;
+        })}
+
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            @click=${() => (this.openDialogName = undefined)}
+            >${msg("Cancel")}</sl-button
+          >
+          <sl-button
+            size="small"
+            variant="danger"
+            @click=${async () => {
+              if (this.itemToRemove) {
+                await this.removeArchivedItem(this.itemToRemove.id);
+              }
+
+              this.openDialogName = undefined;
+            }}
+            >${msg("Remove Item")}</sl-button
+          >
+        </div>
+      </btrix-dialog>
+
+      <btrix-dialog
         .label=${msg("Delete Collection?")}
         .open=${this.openDialogName === "delete"}
         @sl-hide=${() => (this.openDialogName = undefined)}
       >
-        ${msg(
-          html`Are you sure you want to delete
-            <strong>${this.collection?.name}</strong>?`,
-        )}
+        ${msg(html`Are you sure you want to delete ${collection_name}?`)}
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
@@ -828,27 +900,25 @@ export class CollectionDetail extends BtrixElement {
   private renderDedupeOverview() {
     return panel({
       heading: msg("Overview"),
-      body: panelBody({
-        content: html`<btrix-desc-list>
-          <btrix-desc-list-item label=${msg("Total Indexed URLs")}>
-            ${this.localize.number(
-              // TODO
-              0,
-            )}
-            ${pluralOf(
-              "URLs",
-              // TODO
-              0,
-            )}
-          </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Dedupe Index Size")}>
-            ${this.localize.bytes(
-              // TODO
-              0,
-            )}
-          </btrix-desc-list-item>
-        </btrix-desc-list>`,
-      }),
+      body: html`<btrix-desc-list>
+        <btrix-desc-list-item label=${msg("Total Indexed URLs")}>
+          ${this.localize.number(
+            // TODO
+            0,
+          )}
+          ${pluralOf(
+            "URLs",
+            // TODO
+            0,
+          )}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Dedupe Index Size")}>
+          ${this.localize.bytes(
+            // TODO
+            0,
+          )}
+        </btrix-desc-list-item>
+      </btrix-desc-list>`,
     });
   }
 
@@ -966,7 +1036,7 @@ export class CollectionDetail extends BtrixElement {
 
   private readonly renderArchivedItem = (
     item: ArchivedItem,
-    idx: number,
+    _idx: number,
   ) => html`
     <btrix-archived-item-list-item
       href=${`${this.navigate.orgBasePath}/${item.type === "crawl" ? `workflows/${item.cid}/crawls` : `items/${item.type}`}/${item.id}?collectionId=${this.collectionId}`}
@@ -985,7 +1055,14 @@ export class CollectionDetail extends BtrixElement {
                 <sl-menu>
                   <sl-menu-item
                     style="--sl-color-neutral-700: var(--warning)"
-                    @click=${() => void this.removeArchivedItem(item.id, idx)}
+                    @click=${() => {
+                      if (isCrawl(item) && item.requiredByCrawls.length) {
+                        this.itemToRemove = item;
+                        this.openDialogName = "removeItem";
+                      } else {
+                        void this.removeArchivedItem(item.id);
+                      }
+                    }}
                   >
                     <sl-icon name="folder-minus" slot="prefix"></sl-icon>
                     ${msg("Remove from Collection")}
@@ -1171,7 +1248,7 @@ export class CollectionDetail extends BtrixElement {
     return data;
   }
 
-  private async removeArchivedItem(id: string, _pageIndex: number) {
+  private async removeArchivedItem(id: string) {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
