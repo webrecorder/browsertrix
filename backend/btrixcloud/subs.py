@@ -296,10 +296,7 @@ class SubOps:
         page: int = 1,
         sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
-    ) -> Tuple[
-        List[SubscriptionEventAnyOut],
-        int,
-    ]:
+    ) -> Tuple[List[SubscriptionEventAnyOut], int,]:
         """list subscription events"""
         # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
         # Zero-index page for query
@@ -463,6 +460,9 @@ class SubOps:
             # pylint: disable=broad-exception-caught
             except Exception as exc:
                 print("Error fetching checkout url", exc)
+                raise HTTPException(
+                    status_code=500, detail="Error fetching checkout url"
+                ) from exc
 
 
 # pylint: disable=invalid-name,too-many-arguments,too-many-locals
