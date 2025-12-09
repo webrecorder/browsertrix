@@ -11,7 +11,6 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { OrgTab } from "@/routes";
-import { noData } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import { isNotEqual } from "@/utils/is-not-equal";
@@ -74,7 +73,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
       <btrix-overflow-scroll>
         <btrix-table
           class="whitespace-nowrap [--btrix-table-cell-padding-x:var(--sl-spacing-2x-small)]"
-          style="--btrix-table-grid-template-columns: 12ch 40ch repeat(4, 1fr) min-content"
+          style="--btrix-table-grid-template-columns: 15ch 1fr 1fr min-content"
         >
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell>
@@ -83,15 +82,6 @@ export class OrgSettingsDeduplication extends BtrixElement {
             <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Archived Items")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Index Entries")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Index Size")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Purgeable Entries")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Actions")}</span>
@@ -115,9 +105,6 @@ export class OrgSettingsDeduplication extends BtrixElement {
                   <btrix-table-cell
                     >${this.localize.number(item.crawlCount)}</btrix-table-cell
                   >
-                  <btrix-table-cell>${noData}</btrix-table-cell>
-                  <btrix-table-cell>${noData}</btrix-table-cell>
-                  <btrix-table-cell>${noData}</btrix-table-cell>
                   <btrix-table-cell>
                     <sl-tooltip content=${msg("Open in New Tab")}>
                       <sl-icon-button
@@ -128,22 +115,26 @@ export class OrgSettingsDeduplication extends BtrixElement {
                       >
                       </sl-icon-button>
                     </sl-tooltip>
-                    <btrix-overflow-dropdown>
-                      <sl-menu>
-                        <sl-menu-item
-                          class="menu-item-warning"
-                          @click=${() => (this.indexToClear = item)}
-                        >
-                          ${msg("Clear Index")}
-                        </sl-menu-item>
-                        <sl-menu-item
-                          class="menu-item-danger"
-                          @click=${() => (this.indexToDelete = item)}
-                        >
-                          ${msg("Delete Index")}
-                        </sl-menu-item>
-                      </sl-menu>
-                    </btrix-overflow-dropdown>
+                    ${
+                      /**
+                        <btrix-overflow-dropdown>
+                          <sl-menu>
+                            <sl-menu-item
+                              class="menu-item-warning"
+                              @click=${() => (this.indexToClear = item)}
+                            >
+                              ${msg("Clear Index")}
+                            </sl-menu-item>
+                            <sl-menu-item
+                              class="menu-item-danger"
+                              @click=${() => (this.indexToDelete = item)}
+                            >
+                              ${msg("Delete Index")}
+                            </sl-menu-item>
+                          </sl-menu>
+                        </btrix-overflow-dropdown>
+                       */ ""
+                    }
                   </btrix-table-cell>
                 </btrix-table-row>
               `,
