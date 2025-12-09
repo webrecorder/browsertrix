@@ -25,6 +25,7 @@ import {
   type Breadcrumb,
 } from "@/layouts/pageHeader";
 import { panelBody } from "@/layouts/panel";
+import { Tab as CollectionTab } from "@/pages/org/collection-detail";
 import { CommonTab, OrgTab, WorkflowTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import type {
@@ -1176,13 +1177,14 @@ export class ArchivedItemDetail extends BtrixElement {
       });
     }
 
+    const { dedupeCollId, requiresCrawls } = this.item;
     const noDeps = panelBody({
       content: emptyMessage({
         message: msg("This crawl doesn't have any dependencies."),
       }),
     });
 
-    if (!this.item.requiresCrawls.length) {
+    if (!requiresCrawls.length) {
       return noDeps;
     }
 
@@ -1194,8 +1196,20 @@ export class ArchivedItemDetail extends BtrixElement {
                   class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 p-3"
                 >
                   <div class="text-neutral-500">
-                    ${this.localize.number(deps.total)}
-                    ${pluralOf("dependencies", deps.total)}
+                    ${msg("Dependent on")} ${this.localize.number(deps.total)}
+                    ${pluralOf("items", deps.total)}
+                    ${when(
+                      dedupeCollId,
+                      (id) => html`
+                        ${msg("in")}
+                        <btrix-link
+                          href="${this.navigate
+                            .orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${id}/${CollectionTab.Deduplication}"
+                        >
+                          ${msg("deduplication source")}
+                        </btrix-link>
+                      `,
+                    )}
                   </div>
                 </div>
                 <btrix-item-dependency-tree .items=${deps.items} showHeader>

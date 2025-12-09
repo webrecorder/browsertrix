@@ -71,15 +71,11 @@ export const WithoutCrawls: Story = {
   },
 };
 
-export const WithMissingDependency: Story = {
+export const MissingDependency: Story = {
   args: {},
   parameters: {
     msw: {
       handlers: [
-        http.get(/item-storybook-id-non-existent/, async () => {
-          await delay(500);
-          return new HttpResponse(null, { status: 404 });
-        }),
         http.get(/\/crawls$/, async () => {
           await delay(500);
           return HttpResponse.json<APIPaginatedList<Crawl>>({
