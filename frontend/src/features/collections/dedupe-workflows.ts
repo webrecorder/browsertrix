@@ -1,7 +1,9 @@
 import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
 import clsx from "clsx";
-import { html, nothing, type PropertyValues } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
@@ -34,24 +36,30 @@ export class DedupeWorkflows extends BtrixElement {
     Promise<APIPaginatedList<Crawl> | undefined>
   >();
 
-  protected willUpdate(changedProperties: PropertyValues): void {
-    if (changedProperties.has("workflows") && this.workflows) {
+  private readonly workflowCrawlsTask = new Task(this, {
+    task: async ([workflows], { signal }) => {
+      if (!workflows) return;
+
       // Preload crawls
-      this.workflows.forEach(({ id, dedupeCollId, crawlSuccessfulCount }) => {
+      workflows.forEach(({ id, dedupeCollId, crawlSuccessfulCount }) => {
         if (!this.workflowCrawlsMap.get(id)) {
           this.workflowCrawlsMap.set(
             id,
             crawlSuccessfulCount && dedupeCollId
-              ? this.getCrawls({
-                  workflowId: id,
-                  dedupeCollId,
-                })
+              ? this.getCrawls(
+                  {
+                    workflowId: id,
+                    dedupeCollId,
+                  },
+                  signal,
+                )
               : Promise.resolve(undefined),
           );
         }
       });
-    }
-  }
+    },
+    args: () => [this.workflows] as const,
+  });
 
   render() {
     return html`<btrix-overflow-scroll>
@@ -95,7 +103,9 @@ export class DedupeWorkflows extends BtrixElement {
         </div>
 
         ${until(
-          this.workflowCrawlsMap.get(workflow.id)?.then(this.renderCrawls),
+          this.workflowCrawlsMap
+            .get(workflow.id)
+            ?.then((crawls) => this.renderCrawls(workflow, crawls)),
           html`<div class="m-3 flex flex-col gap-1.5">
             ${Array.from({ length: totalCrawls }).map(
               () => html`
@@ -203,29 +213,35 @@ export class DedupeWorkflows extends BtrixElement {
     `;
   };
 
-  private readonly renderCrawls = (crawls?: APIPaginatedList<Crawl>) => {
+  private readonly renderCrawls = (
+    workflow: ListWorkflow,
+    crawls?: APIPaginatedList<Crawl>,
+  ) => {
     return html`<div class=${clsx(crawls?.items.length ? tw`mt-1` : tw`mt-3`)}>
       ${when(
         crawls?.items,
         (items) =>
           html`<btrix-item-dependency-tree
             .items=${items}
+            collectionId=${ifDefined(workflow.dedupeCollId || undefined)}
           ></btrix-item-dependency-tree>`,
       )}
     </div>`;
   };
 
-  private async getCrawls({
-    workflowId,
-    ...params
-  }: {
-    workflowId: string;
-    dedupeCollId: string;
-  }) {
+  private async getCrawls(
+    {
+      workflowId,
+      ...params
+    }: {
+      workflowId: string;
+      dedupeCollId: string;
+    },
+    signal?: AbortSignal,
+  ) {
     const query = queryString.stringify(
       {
         cid: workflowId,
-        collectionId: params.dedupeCollId,
         pageSize: INITIAL_PAGE_SIZE,
         sortBy: "started",
         sortDirection: SortDirection.Descending,
@@ -240,6 +256,7 @@ export class DedupeWorkflows extends BtrixElement {
     try {
       return await this.api.fetch<APIPaginatedList<Crawl>>(
         `/orgs/${this.orgId}/crawls?${query}`,
+        { signal },
       );
     } catch (err) {
       console.debug(err);

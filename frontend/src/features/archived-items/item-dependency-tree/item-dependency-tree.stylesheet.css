@@ -83,7 +83,7 @@
     @apply text-neutral-500;
   }
 
-  .item-dependency-tree--purgeable .item-dependency-tree--detail {
+  .item-dependency-tree--notInCollection .item-dependency-tree--detail {
     @apply opacity-75;
   }
 

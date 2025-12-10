@@ -32,6 +32,9 @@ const dependenciesWithoutSelf = (item: Crawl) =>
 export class ItemDependencyTree extends BtrixElement {
   static styles = styles;
 
+  @property({ type: String })
+  collectionId?: string;
+
   @property({ type: Array })
   items?: Crawl[];
 
@@ -212,17 +215,25 @@ export class ItemDependencyTree extends BtrixElement {
 
   private readonly renderContent = (item: Crawl) => {
     const dependencies = dependenciesWithoutSelf(item);
-    const purgeable =
-      !item.dedupeCollId || !item.collectionIds.includes(item.dedupeCollId);
-    const status = () => {
-      let icon = "check-circle";
-      let variant = tw`text-cyan-500`;
-      let tooltip = "In Same Collection";
+    const collectionId = this.collectionId;
+    const inCollection = collectionId
+      ? item.collectionIds.includes(collectionId)
+      : item.dedupeCollId && item.collectionIds.includes(item.dedupeCollId);
 
-      if (purgeable) {
-        icon = "dash-circle";
-        variant = tw`text-neutral-400`;
-        tooltip = msg("Not in Collection");
+    const status = () => {
+      let icon = "dash-circle";
+      let variant = tw`text-neutral-400`;
+      let tooltip = msg("Not in Collection");
+
+      if (inCollection) {
+        icon = "check-circle";
+        variant = tw`text-cyan-500`;
+
+        if (collectionId) {
+          tooltip = msg("In Same Collection");
+        } else {
+          tooltip = msg("In Collection");
+        }
       }
 
       return html`<sl-tooltip content=${tooltip} hoist placement="left">
@@ -242,7 +253,7 @@ export class ItemDependencyTree extends BtrixElement {
     return html`<div
       class=${clsx(
         "item-dependency-tree--row item-dependency-tree--content",
-        purgeable && "item-dependency-tree--purgeable",
+        !inCollection && "item-dependency-tree--notInCollection",
         this.showHeader && "item-dependency-tree--withHeader",
       )}
     >
