@@ -258,11 +258,57 @@ export class OrgSettingsDeduplication extends BtrixElement {
   }
 
   private async clearIndex(source: DedupeSource) {
-    console.log(source);
+    try {
+      await this.api.fetch(
+        `/orgs/${this.orgId}/collections/${source.id}/dedupe/clear`,
+        {
+          method: "POST",
+        },
+      );
+
+      this.notify.toast({
+        message: msg("Reset deduplication index."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "dedupe-index-update-status",
+      });
+    } catch (err) {
+      console.debug(err);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't reset index at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "dedupe-index-update-status",
+      });
+    }
   }
 
   private async deleteIndex(source: DedupeSource) {
-    console.log(source);
+    try {
+      await this.api.fetch(
+        `/orgs/${this.orgId}/collections/${source.id}/dedupe`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      this.notify.toast({
+        message: msg("Deleted deduplication index."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "dedupe-index-update-status",
+      });
+    } catch (err) {
+      console.debug(err);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't delete index at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "dedupe-index-update-status",
+      });
+    }
   }
 
   private async getCollections(
