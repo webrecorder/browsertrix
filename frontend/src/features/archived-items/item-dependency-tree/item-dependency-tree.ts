@@ -192,23 +192,10 @@ export class ItemDependencyTree extends BtrixElement {
       class="item-dependency-tree--dependency"
       @click=${() => {
         const item = this.tree?.querySelector<SlTreeItem>(`#${id}`);
-        // Highlight item
-        const classes = [tw`bg-cyan-50`];
 
         if (item) {
           item.scrollIntoView({ behavior: "smooth" });
           item.focus();
-          item.classList.add(...classes);
-          const removeHighlight = () => item.classList.remove(...classes);
-
-          item.addEventListener("click", removeHighlight, { once: true });
-
-          this.timerIds.push(
-            window.setTimeout(() => {
-              removeHighlight();
-              item.removeEventListener("click", removeHighlight);
-            }, 2000),
-          );
         }
       }}
     >

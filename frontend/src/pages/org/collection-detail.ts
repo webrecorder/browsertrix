@@ -38,7 +38,7 @@ import {
   type Collection,
   type PublicCollection,
 } from "@/types/collection";
-import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
+import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { SortDirection } from "@/types/utils";
 import { isCrawl, isCrawlReplay, renderName } from "@/utils/crawler";
@@ -95,6 +95,9 @@ export class CollectionDetail extends BtrixElement {
   @state()
   private rwpDoFullReload = false;
 
+  @state()
+  private dedupeCrawlsPage = 1;
+
   @consume({ context: viewStateContext })
   viewState?: ViewStateContext;
 
@@ -144,25 +147,27 @@ export class CollectionDetail extends BtrixElement {
     return this.appState.isCrawler;
   }
 
-  private readonly dedupeWorkflowsTask = new Task(this, {
-    task: async ([collectionId], { signal }) => {
-      const query = queryString.stringify({
-        dedupeCollId: collectionId,
-        sortBy: "name",
-      });
+  // private readonly dedupeWorkflowsTask = new Task(this, {
+  //   task: async ([collectionId], { signal }) => {
+  //     const query = queryString.stringify({
+  //       dedupeCollId: collectionId,
+  //       sortBy: "name",
+  //     });
 
-      return this.api.fetch<APIPaginatedList<Workflow>>(
-        `/orgs/${this.orgId}/crawlconfigs?${query}`,
-        { signal },
-      );
-    },
-    args: () => [this.collectionId] as const,
-  });
+  //     return this.api.fetch<APIPaginatedList<Workflow>>(
+  //       `/orgs/${this.orgId}/crawlconfigs?${query}`,
+  //       { signal },
+  //     );
+  //   },
+  //   args: () => [this.collectionId] as const,
+  // });
 
   private readonly dedupeCrawlsTask = new Task(this, {
-    task: async ([collectionId], { signal }) => {
+    task: async ([collectionId, page], { signal }) => {
       const query = queryString.stringify({
         dedupeCollId: collectionId,
+        page,
+        pageSize: INITIAL_ITEMS_PAGE_SIZE,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
       });
@@ -172,7 +177,7 @@ export class CollectionDetail extends BtrixElement {
         { signal },
       );
     },
-    args: () => [this.collectionId] as const,
+    args: () => [this.collectionId, this.dedupeCrawlsPage] as const,
   });
 
   protected async willUpdate(
@@ -893,51 +898,73 @@ export class CollectionDetail extends BtrixElement {
   private renderDedupeCrawls() {
     const loading = () =>
       html`<sl-skeleton effect="sheen" class="h-9"></sl-skeleton>`;
+    const crawls = (crawls: APIPaginatedList<Crawl>) =>
+      crawls.items.length
+        ? html`
+            <div class="overflow-hidden rounded border">
+              <btrix-item-dependency-tree
+                .items=${crawls.items}
+              ></btrix-item-dependency-tree>
+            </div>
+
+            <footer class="mt-6 flex justify-center">
+              <btrix-pagination
+                page=${crawls.page}
+                totalCount=${crawls.total}
+                size=${crawls.pageSize}
+                @page-change=${async (e: PageChangeEvent) => {
+                  this.dedupeCrawlsPage = e.detail.page;
+
+                  await this.dedupeCrawlsTask.taskComplete;
+
+                  // Scroll to top of list
+                  // TODO once deep-linking is implemented, scroll to top of pushstate
+                  this.scrollIntoView({ behavior: "smooth" });
+                }}
+              ></btrix-pagination>
+            </footer>
+          `
+        : panelBody({
+            content: emptyMessage({
+              message: msg("No crawls found."),
+            }),
+          });
+
     return panel({
       heading: msg("Indexed Crawls"),
       body: html`${this.dedupeCrawlsTask.render({
         initial: loading,
-        pending: loading,
-        complete: ({ items }) =>
-          items.length
-            ? html`
-                <div class="overflow-hidden rounded border">
-                  <btrix-item-dependency-tree
-                    .items=${items}
-                  ></btrix-item-dependency-tree>
-                </div>
-              `
-            : panelBody({
-                content: emptyMessage({
-                  message: msg("No crawls added."),
-                }),
-              }),
+        pending: () =>
+          this.dedupeCrawlsTask.value
+            ? crawls(this.dedupeCrawlsTask.value)
+            : loading(),
+        complete: crawls,
       })}`,
     });
   }
 
   private renderDedupeWorkflows() {
-    const loading = () =>
-      html`<sl-skeleton effect="sheen" class="h-9"></sl-skeleton>`;
-    return panel({
-      heading: msg("Workflows"),
-      body: html`${this.dedupeWorkflowsTask.render({
-        initial: loading,
-        pending: loading,
-        complete: ({ items }) =>
-          items.length
-            ? html`
-                <btrix-dedupe-workflows
-                  .workflows=${items}
-                ></btrix-dedupe-workflows>
-              `
-            : panelBody({
-                content: emptyMessage({
-                  message: msg("No crawls added."),
-                }),
-              }),
-      })}`,
-    });
+    // const loading = () =>
+    //   html`<sl-skeleton effect="sheen" class="h-9"></sl-skeleton>`;
+    // return panel({
+    //   heading: msg("Workflows"),
+    //   body: html`${this.dedupeWorkflowsTask.render({
+    //     initial: loading,
+    //     pending: loading,
+    //     complete: ({ items }) =>
+    //       items.length
+    //         ? html`
+    //             <btrix-dedupe-workflows
+    //               .workflows=${items}
+    //             ></btrix-dedupe-workflows>
+    //           `
+    //         : panelBody({
+    //             content: emptyMessage({
+    //               message: msg("No crawls added."),
+    //             }),
+    //           }),
+    //   })}`,
+    // });
   }
 
   private renderDedupeOverview() {
