@@ -501,16 +501,9 @@ class CrawlManager(K8sAPI):
 
     async def create_coll_index(self, collection: Collection):
         """create collection index"""
-        params = {
-            "id": str(collection.id),
-            "oid": str(collection.oid),
-            "collItemsUpdatedAt": date_to_str(collection.modified or dt_now()),
-        }
-        data = self.templates.env.get_template("coll_index.yaml").render(params)
-
-        await self.create_from_yaml(data)
-
-        return str(collection.id)
+        await self.create_coll_index_direct(
+            str(collection.id), str(collection.oid), collection.modified
+        )
 
     async def update_coll_index(self, coll_id: UUID):
         """force collection index to update"""
