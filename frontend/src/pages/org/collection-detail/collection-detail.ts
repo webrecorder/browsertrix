@@ -1,6 +1,5 @@
 import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
-import { Task } from "@lit/task";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -10,6 +9,8 @@ import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 import type { Embed as ReplayWebPage } from "replaywebpage";
+
+import { Tab } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
@@ -24,10 +25,8 @@ import {
   metadataColumn,
   metadataItemWithCollection,
 } from "@/layouts/collections/metadataColumn";
-import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
-import { panel, panelBody, panelHeader } from "@/layouts/panel";
-import { OrgTab } from "@/routes";
+import { panelHeader } from "@/layouts/panel";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -40,7 +39,6 @@ import {
 } from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
-import { SortDirection } from "@/types/utils";
 import { isCrawl, isCrawlReplay, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
@@ -49,13 +47,6 @@ import { tw } from "@/utils/tailwind";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_ITEMS_PAGE_SIZE = 20;
-
-export enum Tab {
-  Replay = "replay",
-  About = "about",
-  Items = "items",
-  Deduplication = "deduplication",
-}
 
 @customElement("btrix-collection-detail")
 @localized()
@@ -94,9 +85,6 @@ export class CollectionDetail extends BtrixElement {
 
   @state()
   private rwpDoFullReload = false;
-
-  @state()
-  private dedupeCrawlsPage = 1;
 
   @consume({ context: viewStateContext })
   viewState?: ViewStateContext;
@@ -146,39 +134,6 @@ export class CollectionDetail extends BtrixElement {
   private get isCrawler() {
     return this.appState.isCrawler;
   }
-
-  // private readonly dedupeWorkflowsTask = new Task(this, {
-  //   task: async ([collectionId], { signal }) => {
-  //     const query = queryString.stringify({
-  //       dedupeCollId: collectionId,
-  //       sortBy: "name",
-  //     });
-
-  //     return this.api.fetch<APIPaginatedList<Workflow>>(
-  //       `/orgs/${this.orgId}/crawlconfigs?${query}`,
-  //       { signal },
-  //     );
-  //   },
-  //   args: () => [this.collectionId] as const,
-  // });
-
-  private readonly dedupeCrawlsTask = new Task(this, {
-    task: async ([collectionId, page], { signal }) => {
-      const query = queryString.stringify({
-        dedupeCollId: collectionId,
-        page,
-        pageSize: INITIAL_ITEMS_PAGE_SIZE,
-        sortBy: "finished",
-        sortDirection: SortDirection.Descending,
-      });
-
-      return this.api.fetch<APIPaginatedList<Crawl>>(
-        `/orgs/${this.orgId}/crawls?${query}`,
-        { signal },
-      );
-    },
-    args: () => [this.collectionId, this.dedupeCrawlsPage] as const,
-  });
 
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
@@ -355,7 +310,14 @@ export class CollectionDetail extends BtrixElement {
           () => guard([this.archivedItems], this.renderArchivedItems),
         ],
         [Tab.About, () => this.renderAbout()],
-        [Tab.Deduplication, () => this.renderDedupe()],
+        [
+          Tab.Deduplication,
+          () =>
+            html`<btrix-collection-detail-dedupe
+              .collectionId=${this.collectionId}
+              .collection=${this.collection}
+            ></btrix-collection-detail-dedupe> `,
+        ],
       ])}
 
       <btrix-dialog
@@ -862,142 +824,6 @@ export class CollectionDetail extends BtrixElement {
         </section>
       </div>
     `;
-  }
-
-  private renderDedupe() {
-    if (!this.collection) return;
-
-    if (this.collection.hasDedupeIndex) {
-      return html`
-        <div class="grid grid-cols-7 gap-7">
-          <div class="col-span-full">${this.renderDedupeCrawls()}</div>
-        </div>
-      `;
-    }
-
-    return panelBody({
-      content: emptyMessage({
-        message: msg("Deduplication is not enabled"),
-        detail: msg(
-          "Deduplication can help recover storage space and reduce crawl time.",
-        ),
-        actions: html`
-          <sl-button
-            size="small"
-            href="${this.navigate.orgBasePath}/${OrgTab.Workflows}"
-            @click=${this.navigate.link}
-          >
-            <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
-            ${msg("Enable in Workflows")}
-          </sl-button>
-        `,
-      }),
-    });
-  }
-
-  private renderDedupeCrawls() {
-    const loading = () =>
-      html`<sl-skeleton effect="sheen" class="h-9"></sl-skeleton>`;
-    const crawls = (crawls: APIPaginatedList<Crawl>) =>
-      crawls.items.length
-        ? html`
-            <div class="overflow-hidden rounded border">
-              <btrix-item-dependency-tree
-                .items=${crawls.items}
-              ></btrix-item-dependency-tree>
-            </div>
-
-            <footer class="mt-6 flex justify-center">
-              <btrix-pagination
-                page=${crawls.page}
-                totalCount=${crawls.total}
-                size=${crawls.pageSize}
-                @page-change=${async (e: PageChangeEvent) => {
-                  this.dedupeCrawlsPage = e.detail.page;
-
-                  await this.dedupeCrawlsTask.taskComplete;
-
-                  // Scroll to top of list
-                  // TODO once deep-linking is implemented, scroll to top of pushstate
-                  this.scrollIntoView({ behavior: "smooth" });
-                }}
-              ></btrix-pagination>
-            </footer>
-          `
-        : panelBody({
-            content: emptyMessage({
-              message: msg("No crawls found."),
-            }),
-          });
-
-    return panel({
-      heading: msg("Indexed Crawls"),
-      body: html`${this.dedupeCrawlsTask.render({
-        initial: loading,
-        pending: () =>
-          this.dedupeCrawlsTask.value
-            ? crawls(this.dedupeCrawlsTask.value)
-            : loading(),
-        complete: crawls,
-      })}`,
-    });
-  }
-
-  private renderDedupeWorkflows() {
-    // const loading = () =>
-    //   html`<sl-skeleton effect="sheen" class="h-9"></sl-skeleton>`;
-    // return panel({
-    //   heading: msg("Workflows"),
-    //   body: html`${this.dedupeWorkflowsTask.render({
-    //     initial: loading,
-    //     pending: loading,
-    //     complete: ({ items }) =>
-    //       items.length
-    //         ? html`
-    //             <btrix-dedupe-workflows
-    //               .workflows=${items}
-    //             ></btrix-dedupe-workflows>
-    //           `
-    //         : panelBody({
-    //             content: emptyMessage({
-    //               message: msg("No crawls added."),
-    //             }),
-    //           }),
-    //   })}`,
-    // });
-  }
-
-  private renderDedupeOverview() {
-    return panel({
-      heading: msg("Overview"),
-      body: html`<btrix-desc-list>
-        <btrix-desc-list-item label=${msg("Dedupe Status")}>
-          ${this.collection?.hasDedupeIndex ? msg("Enabled") : msg("Disabled")}
-        </btrix-desc-list-item>
-
-        ${
-          /**
-        <btrix-desc-list-item label=${msg("Total Indexed URLs")}>
-          ${this.localize.number(
-            // TODO
-            0,
-          )}
-          ${pluralOf(
-            "URLs",
-            // TODO
-            0,
-          )}
-        </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Dedupe Index Size")}>
-          ${this.localize.bytes(
-            // TODO
-            0,
-          )}
-        </btrix-desc-list-item>
-        */ ""
-        }
-      </btrix-desc-list>`,
-    });
   }
 
   private renderDescriptionForm() {

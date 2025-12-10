@@ -25,7 +25,7 @@ import {
   type Breadcrumb,
 } from "@/layouts/pageHeader";
 import { panelBody } from "@/layouts/panel";
-import { Tab as CollectionTab } from "@/pages/org/collection-detail";
+import { Tab as CollectionTab } from "@/pages/org/collection-detail/types";
 import { CommonTab, OrgTab, WorkflowTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import type {
@@ -1212,7 +1212,11 @@ export class ArchivedItemDetail extends BtrixElement {
                     )}
                   </div>
                 </div>
-                <btrix-item-dependency-tree .items=${deps.items} showHeader>
+                <btrix-item-dependency-tree
+                  .items=${deps.items}
+                  collectionId=${ifDefined(dedupeCollId || undefined)}
+                  showHeader
+                >
                 </btrix-item-dependency-tree>`
             : noDeps,
       })}
