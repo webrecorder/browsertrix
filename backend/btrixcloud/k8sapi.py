@@ -2,6 +2,7 @@
 
 import os
 import traceback
+from datetime import datetime
 from typing import Optional, List, Any
 
 import yaml
@@ -20,7 +21,7 @@ from redis.asyncio.client import Redis
 from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
 
-from .utils import get_templates_dir, dt_now
+from .utils import get_templates_dir, dt_now, date_to_str
 
 
 # ============================================================================
@@ -456,3 +457,21 @@ class K8sAPI:
             grace_period_seconds=0,
             propagation_policy="Background",
         )
+
+    async def create_coll_index_direct(
+        self, coll_id: str, oid: str, modified: Optional[datetime] = None
+    ):
+        """create collection index"""
+        params = {
+            "id": coll_id,
+            "oid": oid,
+            "collItemsUpdatedAt": date_to_str(modified or dt_now()),
+        }
+        data = self.templates.env.get_template("coll_index.yaml").render(params)
+
+        try:
+            await self.create_from_yaml(data)
+
+        except ApiException as e:
+            if e.status != 409:
+                raise e
