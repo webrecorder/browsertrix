@@ -1,9 +1,9 @@
 import { html } from "lit";
 
-import type { DedupeWorkflows } from "@/features/collections/dedupe-workflows";
+import type { DedupeWorkflows } from "@/features/collections/dedupe-workflows/dedupe-workflows";
 import type { Crawl, ListWorkflow } from "@/types/crawler";
 
-import "@/features/collections/dedupe-workflows";
+import "@/features/collections/dedupe-workflows/dedupe-workflows";
 import "@/features/archived-items/item-dependency-tree";
 import "@/features/archived-items/crawl-status";
 
