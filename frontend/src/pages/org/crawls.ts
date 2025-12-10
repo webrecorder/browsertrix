@@ -29,7 +29,7 @@ import {
   type SearchFields,
 } from "@/features/crawl-workflows/workflow-search";
 import { type BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
-import { OrgTab } from "@/routes";
+import { OrgTab, WorkflowTab } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
@@ -619,7 +619,10 @@ export class OrgCrawls extends BtrixElement {
 
   private readonly renderArchivedItem = (crawl: Crawl) => html`
     <btrix-crawl-list-item
-      href=${`${this.navigate.orgBasePath}/${OrgTab.Workflows}/${crawl.cid}/crawls/${crawl.id}`}
+      href="${this.navigate
+        .orgBasePath}/${OrgTab.Workflows}/${crawl.cid}/${isActive(crawl)
+        ? WorkflowTab.LatestCrawl
+        : `${WorkflowTab.Crawls}/${crawl.id}`}"
       .crawl=${crawl}
     >
       <sl-menu slot="menu"> ${this.renderMenuItems(crawl)} </sl-menu>
