@@ -461,7 +461,7 @@ class K8sAPI:
     async def create_coll_index_direct(
         self, coll_id: str, oid: str, modified: Optional[datetime] = None
     ):
-        """create collection index"""
+        """create collection index if doesn't exist"""
         params = {
             "id": coll_id,
             "oid": oid,
@@ -473,5 +473,6 @@ class K8sAPI:
             await self.create_from_yaml(data)
 
         except ApiException as e:
+            # 409 if object already exists, ignore silently
             if e.status != 409:
                 raise e
