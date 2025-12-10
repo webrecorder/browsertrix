@@ -273,7 +273,7 @@ class CrawlOperator(BaseOperator):
                 )
 
         if status.state in ("starting", "waiting_dedupe_index"):
-            if self.is_waiting_for_dedupe_index(crawl, data):
+            if await self.is_waiting_for_dedupe_index(crawl, data):
                 await self.set_state(
                     "waiting_dedupe_index", status, crawl, allowed_from=["starting"]
                 )
@@ -843,22 +843,32 @@ class CrawlOperator(BaseOperator):
 
         return False
 
-    def is_waiting_for_dedupe_index(self, crawl: CrawlSpec, data: MCSyncData) -> bool:
+    async def is_waiting_for_dedupe_index(
+        self, crawl: CrawlSpec, data: MCSyncData
+    ) -> bool:
         """return true if we need to wait for dedupe index to be ready
         before starting the crawl"""
         if not crawl.dedupe_coll_id:
             return False
 
         # index object doesn't exist
-        if not data.related[COLLINDEX]:
-            return False
+        coll_indexes = data.related.get(COLLINDEX, {})
 
-        for index in data.related[COLLINDEX].values():
+        found = False
+
+        for index in coll_indexes.values():
+            found = True
             if index.get("status", {}).get("state") == "ready":
                 return False
 
             # only check first index, should only be one
             break
+
+        # if index not found, create it
+        if not found:
+            await self.k8s.create_coll_index_direct(
+                str(crawl.dedupe_coll_id), str(crawl.oid)
+            )
 
         return True
 
