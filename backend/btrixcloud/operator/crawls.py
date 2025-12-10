@@ -852,8 +852,6 @@ class CrawlOperator(BaseOperator):
         # index object doesn't exist
         coll_indexes = data.related.get(COLLINDEX, {})
 
-        print("COLL", coll_indexes)
-
         found = False
 
         for index in coll_indexes.values():
