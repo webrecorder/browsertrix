@@ -114,41 +114,7 @@ export class CollectionDetailDedupe extends BtrixElement {
     if (!this.collection) return;
 
     if (this.collection.hasDedupeIndex) {
-      return html`
-        <div
-          class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 p-3"
-        >
-          <div class="flex items-center gap-2">
-            <label for="view" class="whitespace-nowrap text-neutral-500"
-              >${msg("View:")}</label
-            >
-            <sl-radio-group
-              id="view"
-              size="small"
-              value=${this.view.value.crawlsView || DEFAULT_CRAWLS_VIEW}
-              @sl-change=${(e: SlChangeEvent) => {
-                this.view.setValue({
-                  crawlsView: (e.target as SlRadioGroup).value as CrawlsView,
-                });
-              }}
-            >
-              <sl-radio-button pill value=${DEFAULT_CRAWLS_VIEW}>
-                ${msg("Crawl Workflows")}
-              </sl-radio-button>
-              <sl-radio-button pill value=${CrawlsView.Crawls}>
-                ${msg("Indexed Crawls")}
-              </sl-radio-button>
-            </sl-radio-group>
-          </div>
-        </div>
-
-        <div class="mx-2">
-          ${choose(this.view.value.crawlsView, [
-            [CrawlsView.Workflows, this.renderDedupeWorkflows],
-            [CrawlsView.Crawls, this.renderDedupeCrawls],
-          ])}
-        </div>
-      `;
+      return this.renderCrawls();
     }
 
     return panelBody({
@@ -171,7 +137,45 @@ export class CollectionDetailDedupe extends BtrixElement {
     });
   }
 
-  private readonly renderDedupeCrawls = () => {
+  private renderCrawls() {
+    return html`
+      <div
+        class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 p-3"
+      >
+        <div class="flex items-center gap-2">
+          <label for="view" class="whitespace-nowrap text-neutral-500"
+            >${msg("View:")}</label
+          >
+          <sl-radio-group
+            id="view"
+            size="small"
+            value=${this.view.value.crawlsView || DEFAULT_CRAWLS_VIEW}
+            @sl-change=${(e: SlChangeEvent) => {
+              this.view.setValue({
+                crawlsView: (e.target as SlRadioGroup).value as CrawlsView,
+              });
+            }}
+          >
+            <sl-radio-button pill value=${DEFAULT_CRAWLS_VIEW}>
+              ${msg("Crawl Workflows")}
+            </sl-radio-button>
+            <sl-radio-button pill value=${CrawlsView.Crawls}>
+              ${msg("Indexed Crawls")}
+            </sl-radio-button>
+          </sl-radio-group>
+        </div>
+      </div>
+
+      <div class="mx-2">
+        ${choose(this.view.value.crawlsView, [
+          [CrawlsView.Workflows, this.renderWorkflowList],
+          [CrawlsView.Crawls, this.renderCrawlList],
+        ])}
+      </div>
+    `;
+  }
+
+  private readonly renderCrawlList = () => {
     const loading = () => html`
       <sl-skeleton effect="sheen" class="h-9"></sl-skeleton>
     `;
@@ -221,7 +225,7 @@ export class CollectionDetailDedupe extends BtrixElement {
     })}`;
   };
 
-  private readonly renderDedupeWorkflows = () => {
+  private readonly renderWorkflowList = () => {
     const loading = () =>
       html`<sl-skeleton effect="sheen" class="h-10"></sl-skeleton>`;
     return html`${this.dedupeWorkflowsTask.render({
