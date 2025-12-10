@@ -9,7 +9,7 @@ import("./collection-initial-view-dialog");
 import("./collection-workflow-list");
 import("./dedupe-badge");
 import("./dedupe-source-badge");
-import("./dedupe-workflows");
+import("./dedupe-workflows/dedupe-workflows");
 import("./linked-collections");
 import("./select-collection-access");
 import("./select-collection-page");

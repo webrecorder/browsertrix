@@ -1,13 +1,15 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import clsx from "clsx";
-import { html, nothing } from "lit";
+import { html, nothing, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
+
+import stylesheet from "./dedupe-workflows.stylesheet.css";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { OrgTab } from "@/routes";
@@ -18,12 +20,15 @@ import { finishedCrawlStates, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
-const gridColsCss = tw`grid-cols-[repeat(2,minmax(12rem,1fr))_12rem_2rem]`;
 const INITIAL_PAGE_SIZE = 1000;
+
+const styles = unsafeCSS(stylesheet);
 
 @customElement("btrix-dedupe-workflows")
 @localized()
 export class DedupeWorkflows extends BtrixElement {
+  static styles = styles;
+
   @property({ type: Array })
   workflows?: ListWorkflow[];
 
@@ -65,7 +70,10 @@ export class DedupeWorkflows extends BtrixElement {
     return html`<btrix-overflow-scroll>
       ${this.showHeader
         ? html`<div
-            class="${gridColsCss} mx-px mb-2 grid gap-3 pl-8 pr-1 text-xs leading-none text-neutral-600"
+            class=${clsx(
+              "component--row",
+              tw`mx-px mb-2 pl-8 pr-1 text-xs leading-none text-neutral-600`,
+            )}
           >
             <div>${msg("Workflow Name")}</div>
             <div>${msg("Crawl Runs")}</div>
@@ -76,7 +84,7 @@ export class DedupeWorkflows extends BtrixElement {
           </div>`
         : nothing}
 
-      <div class="divide-y overflow-hidden rounded border">
+      <div class="divide-y rounded border">
         ${repeat(this.workflows || [], ({ id }) => id, this.renderWorkflow)}
       </div>
     </btrix-overflow-scroll>`;
@@ -86,10 +94,8 @@ export class DedupeWorkflows extends BtrixElement {
     const totalCrawls = workflow.crawlSuccessfulCount;
     // TOOD Virtualize scroll
     const content = () => html`
-      <div class="max-h-96 overflow-y-auto">
-        <div
-          class="min-h-4 border-t pl-3 pt-3 text-xs leading-none text-neutral-500"
-        >
+      <div class="max-h-96 overflow-y-auto border-t">
+        <div class="min-h-4 pl-3 pt-3 text-xs leading-none text-neutral-500">
           ${until(
             this.workflowCrawlsMap
               .get(workflow.id)
@@ -123,10 +129,6 @@ export class DedupeWorkflows extends BtrixElement {
     return html`
       <sl-details
         class=${clsx(
-          tw`part-[summary-icon]:order-first part-[summary-icon]:ml-2 part-[summary-icon]:mr-2.5`,
-          tw`part-[base]:rounded-none part-[base]:border-0`,
-          tw`part-[header]:h-10 part-[header]:p-0`,
-          tw`part-[content]:p-0`,
           !totalCrawls &&
             tw`part-[summary-icon]:invisible part-[header]:cursor-default part-[base]:opacity-100`,
         )}
@@ -146,10 +148,7 @@ export class DedupeWorkflows extends BtrixElement {
         }}
         ?disabled=${!totalCrawls}
       >
-        <div
-          slot="summary"
-          class="${gridColsCss} grid w-full items-center gap-3"
-        >
+        <div slot="summary" class=${clsx("component--row", tw`w-full`)}>
           <div class="flex items-center gap-1.5 truncate">
             <sl-tooltip content=${msg("Workflow Name")} hoist>
               <sl-icon

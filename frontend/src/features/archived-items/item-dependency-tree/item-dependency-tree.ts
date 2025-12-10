@@ -108,7 +108,7 @@ export class ItemDependencyTree extends BtrixElement {
     return html`
       ${this.showHeader
         ? html`<div
-            class="item-dependency-tree--row mb-2 pl-8 text-xs leading-none text-neutral-700"
+            class="component--row mb-2 pl-8 text-xs leading-none text-neutral-700"
           >
             <div>
               <span class="sr-only">${msg("Status")}</span>
@@ -155,7 +155,7 @@ export class ItemDependencyTree extends BtrixElement {
 
   private readonly renderDependency = (id: string) => {
     const skeleton = () => html`
-      <div class="item-dependency-tree--row">
+      <div class="component--row">
         <div>
           <sl-skeleton class="w-4" effect="sheen"></sl-skeleton>
         </div>
@@ -192,7 +192,7 @@ export class ItemDependencyTree extends BtrixElement {
     const item = this.dependenciesMap.get(id);
 
     return html`<sl-tree-item
-      class="item-dependency-tree--dependency"
+      class="component--dependency"
       @click=${() => {
         const item = this.tree?.querySelector<SlTreeItem>(`#${id}`);
 
@@ -252,14 +252,14 @@ export class ItemDependencyTree extends BtrixElement {
 
     return html`<div
       class=${clsx(
-        "item-dependency-tree--row item-dependency-tree--content",
-        !inCollection && "item-dependency-tree--notInCollection",
-        this.showHeader && "item-dependency-tree--withHeader",
+        "component--row component--content",
+        !inCollection && "component--notInCollection",
+        this.showHeader && "component--withHeader",
       )}
     >
       ${status()}
-      <div class="item-dependency-tree--detail">${renderName(item)}</div>
-      <div class="item-dependency-tree--detail">
+      <div class="component--detail">${renderName(item)}</div>
+      <div class="component--detail">
         <sl-tooltip content=${msg("Dedupe Dependencies")} hoist>
           <sl-icon name=${dedupeIconFor.dependent}></sl-icon>
         </sl-tooltip>
@@ -271,21 +271,19 @@ export class ItemDependencyTree extends BtrixElement {
           )}</span
         >
       </div>
-      <div class="item-dependency-tree--detail">
+      <div class="component--detail">
         <sl-tooltip content=${msg("Date Started")} hoist>
           <sl-icon name="hourglass-top"></sl-icon>
         </sl-tooltip>
         ${date(item.started)}
       </div>
-      <div class="item-dependency-tree--detail">
+      <div class="component--detail">
         <sl-tooltip content=${msg("Date Finished")} hoist>
           <sl-icon name="hourglass-bottom"></sl-icon>
         </sl-tooltip>
         ${item.finished ? date(item.finished) : noData}
       </div>
-      <div
-        class="item-dependency-tree--detail flex items-center gap-1.5 truncate"
-      >
+      <div class="component--detail flex items-center gap-1.5 truncate">
         <sl-tooltip content=${msg("Size")} hoist>
           <sl-icon name="file-earmark-binary"></sl-icon>
         </sl-tooltip>

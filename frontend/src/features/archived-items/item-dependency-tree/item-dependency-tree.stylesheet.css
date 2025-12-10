@@ -26,10 +26,10 @@
     @apply bg-cyan-50/50;
   }
 
-  sl-tree-item:hover .item-dependency-tree--detail,
-  sl-tree-item:focus .item-dependency-tree--detail,
-  sl-tree-item:hover .item-dependency-tree--detail sl-icon,
-  sl-tree-item:focus .item-dependency-tree--detail sl-icon {
+  sl-tree-item:hover .component--detail,
+  sl-tree-item:focus .component--detail,
+  sl-tree-item:hover .component--detail sl-icon,
+  sl-tree-item:focus .component--detail sl-icon {
     @apply text-cyan-600;
   }
 
@@ -38,7 +38,7 @@
     bottom: calc(1rem + var(--sl-border-radius-medium));
   }
 
-  .item-dependency-tree--row {
+  .component--row {
     grid-template-columns:
       1rem minmax(16rem, 1fr) minmax(8rem, 12rem) repeat(
         2,
@@ -49,11 +49,11 @@
     @apply grid w-full items-center gap-2;
   }
 
-  .item-dependency-tree--dependency::part(indentation) {
+  .component--dependency::part(indentation) {
     @apply w-3;
   }
 
-  .item-dependency-tree--dependency::part(base)::before {
+  .component--dependency::part(base)::before {
     content: "";
     width: 1.25rem;
     left: calc(1rem - (var(--indent-guide-width) / 2));
@@ -67,27 +67,27 @@
     @apply absolute rounded-bl-lg;
   }
 
-  .item-dependency-tree--dependency::part(label) {
+  .component--dependency::part(label) {
     @apply relative;
   }
 
-  .item-dependency-tree--content {
+  .component--content {
     @apply h-9;
   }
 
-  .item-dependency-tree--detail {
+  .component--detail {
     @apply flex items-center gap-1.5 truncate;
   }
 
-  .item-dependency-tree--detail sl-icon {
+  .component--detail sl-icon {
     @apply text-neutral-500;
   }
 
-  .item-dependency-tree--notInCollection .item-dependency-tree--detail {
+  .component--notInCollection .component--detail {
     @apply opacity-75;
   }
 
-  .item-dependency-tree--withHeader .item-dependency-tree--detail sl-icon {
+  .component--withHeader .component--detail sl-icon {
     @apply hidden;
   }
 }
