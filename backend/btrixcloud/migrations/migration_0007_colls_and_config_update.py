@@ -19,17 +19,28 @@ class Migration(BaseMigration):
     def __init__(self, mdb, **kwargs):
         super().__init__(mdb, migration_version=MIGRATION_VERSION)
 
+        self.crawl_config_ops = kwargs.get("crawl_config_ops")
+
     async def migrate_up(self):
         """Perform migration up."""
         # pylint: disable=duplicate-code
         crawl_configs = self.mdb["crawl_configs"]
         crawls = self.mdb["crawls"]
 
+        if self.crawl_config_ops is None:
+            print(
+                f"Unable to set run migration {MIGRATION_VERSION}, missing crawl_config_ops",
+                flush=True,
+            )
+            return
+
         # Update workflows crawl stats to populate crawlSuccessfulCount
         async for config in crawl_configs.find({"inactive": {"$ne": True}}):
             config_id = config["_id"]
             try:
-                await stats_recompute_all(crawl_configs, crawls, config_id)
+                await stats_recompute_all(
+                    self.crawl_config_ops, crawl_configs, crawls, config_id
+                )
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(f"Unable to update workflow {config_id}: {err}", flush=True)

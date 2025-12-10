@@ -1543,7 +1543,9 @@ class CrawlConfigOps:
 
 # ============================================================================
 # pylint: disable=too-many-locals
-async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
+async def stats_recompute_all(
+    crawl_config_ops: CrawlConfigOps, crawl_configs, crawls, cid: UUID
+):
     """Re-calculate and update crawl statistics for config.
 
     Should only be called when a crawl completes from operator or on migration
@@ -1578,7 +1580,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
 
         # only update last_crawl if no crawls running, otherwise
         # lastCrawl* stats are already for running crawl
-        running_crawl = await crawl_configs.get_running_crawl(cid)
+        running_crawl = await crawl_config_ops.get_running_crawl(cid)
 
         if last_crawl and not running_crawl:
             update_query["totalSize"] = total_size
