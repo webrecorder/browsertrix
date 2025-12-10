@@ -84,7 +84,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
               ${msg("Archived Items")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
-              <span class="sr-only">${msg("Actions")}</span>
+              ${msg("Actions")}
             </btrix-table-header-cell>
           </btrix-table-head>
           <btrix-table-body
@@ -115,26 +115,22 @@ export class OrgSettingsDeduplication extends BtrixElement {
                       >
                       </sl-icon-button>
                     </sl-tooltip>
-                    ${
-                      /**
-                        <btrix-overflow-dropdown>
-                          <sl-menu>
-                            <sl-menu-item
-                              class="menu-item-warning"
-                              @click=${() => (this.indexToClear = item)}
-                            >
-                              ${msg("Clear Index")}
-                            </sl-menu-item>
-                            <sl-menu-item
-                              class="menu-item-danger"
-                              @click=${() => (this.indexToDelete = item)}
-                            >
-                              ${msg("Delete Index")}
-                            </sl-menu-item>
-                          </sl-menu>
-                        </btrix-overflow-dropdown>
-                       */ ""
-                    }
+                    <btrix-overflow-dropdown>
+                      <sl-menu>
+                        <sl-menu-item
+                          class="menu-item-warning"
+                          @click=${() => (this.indexToClear = item)}
+                        >
+                          ${msg("Clear Index")}
+                        </sl-menu-item>
+                        <sl-menu-item
+                          class="menu-item-danger"
+                          @click=${() => (this.indexToDelete = item)}
+                        >
+                          ${msg("Delete Index")}
+                        </sl-menu-item>
+                      </sl-menu>
+                    </btrix-overflow-dropdown>
                   </btrix-table-cell>
                 </btrix-table-row>
               `,
