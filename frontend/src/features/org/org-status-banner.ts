@@ -274,12 +274,11 @@ export class OrgStatusBanner extends BtrixElement {
       {
         test: () => !readOnly && !!execMinutesQuotaReached && !!subscription,
         content: () => ({
-          title: msg(
-            str`Your org has reached its monthly execution minutes limit`,
-          ),
+          title: msg(`Your org is out of execution minutes`),
           detail: msg(
-            html`Purchase additional monthly execution minutes or upgrade your
-            plan from ${billingTabLink}.`,
+            html`Any running crawls have been paused. To resume crawling, you
+            can purchase additional minutes or upgrade your monthly plan from
+            ${billingTabLink}.`,
           ),
         }),
       },
