@@ -5,7 +5,6 @@
 import json
 import os
 import re
-import contextlib
 import urllib.parse
 from datetime import datetime
 from uuid import UUID
@@ -19,7 +18,6 @@ from typing import (
     Union,
     Any,
     Sequence,
-    AsyncIterator,
     Tuple,
 )
 
@@ -151,18 +149,6 @@ class CrawlOps(BaseCrawlOps):
         """Get crawl data for internal use"""
         res = await self.get_crawl_raw(crawlid, org, "crawl")
         return Crawl.from_dict(res)
-
-    @contextlib.asynccontextmanager
-    async def get_redis(self, crawl_id: str) -> AsyncIterator[Redis]:
-        """get redis url for crawl id"""
-        redis_url = self.crawl_manager.get_redis_url(crawl_id)
-
-        redis = await self.crawl_manager.get_redis_client(redis_url)
-
-        try:
-            yield redis
-        finally:
-            await redis.close()
 
     async def list_crawls(
         self,
@@ -488,7 +474,7 @@ class CrawlOps(BaseCrawlOps):
 
         return True
 
-    async def _crawl_queue_len(self, redis, key) -> int:
+    async def _crawl_queue_len(self, redis: Redis, key) -> int:
         try:
             return await redis.zcard(key)
         except exceptions.ResponseError:
@@ -518,7 +504,7 @@ class CrawlOps(BaseCrawlOps):
         results = []
 
         try:
-            async with self.get_redis(crawl_id) as redis:
+            async with self.crawl_manager.with_redis(crawl_id) as redis:
                 total = await self._crawl_queue_len(redis, f"{crawl_id}:q")
                 results = await self._crawl_queue_range(
                     redis, f"{crawl_id}:q", offset, count
@@ -556,7 +542,7 @@ class CrawlOps(BaseCrawlOps):
         matched = []
         step = DEFAULT_RANGE_LIMIT
 
-        async with self.get_redis(crawl_id) as redis:
+        async with self.crawl_manager.with_redis(crawl_id) as redis:
             try:
                 total = await self._crawl_queue_len(redis, f"{crawl_id}:q")
             except exceptions.ConnectionError:
@@ -609,7 +595,7 @@ class CrawlOps(BaseCrawlOps):
 
         browser_windows = crawl.browserWindows or 2
 
-        async with self.get_redis(crawl_id) as redis:
+        async with self.crawl_manager.with_redis(crawl_id) as redis:
             query = {
                 "regex": regex,
                 "type": "addExclusion" if add else "removeExclusion",

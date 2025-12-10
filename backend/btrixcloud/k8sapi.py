@@ -2,8 +2,9 @@
 
 import os
 import traceback
+import contextlib
 from datetime import datetime
-from typing import Optional, List, Any
+from typing import Optional, List, Any, AsyncIterator
 
 import yaml
 
@@ -98,6 +99,18 @@ class K8sAPI:
                 await redis.close()
 
             return None
+
+    @contextlib.asynccontextmanager
+    async def with_redis(self, object_id: str) -> AsyncIterator[Redis]:
+        """get redis url for object id"""
+        redis_url = self.get_redis_url(object_id)
+
+        redis = await self.get_redis_client(redis_url)
+
+        try:
+            yield redis
+        finally:
+            await redis.close()
 
     # pylint: disable=too-many-arguments, too-many-locals
     def new_crawl_job_yaml(

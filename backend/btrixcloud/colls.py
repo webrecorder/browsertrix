@@ -25,6 +25,7 @@ from .models import (
     CollIdName,
     CollectionThumbnailSource,
     UpdateColl,
+    DedupeIndexStats,
     AddRemoveCrawlList,
     BaseCrawl,
     CrawlFileOut,
@@ -702,6 +703,19 @@ class CollectionOps:
             if crawl_id:
                 crawl_ids.append(crawl_id)
         return crawl_ids
+
+    async def get_dedupe_index_stats(
+        self, coll_id: UUID, org: Organization
+    ) -> DedupeIndexStats:
+        """get dedupe index stats"""
+        coll = await self.get_collection(coll_id, org.id)
+        if not coll.hasDedupeIndex:
+            raise HTTPException(status_code=400, detail="no_dedupe_index")
+
+        async with self.crawl_manager.with_redis("coll-" + str(coll_id)) as redis:
+            stats = await redis.hgetall("allcounts")
+            num_unique_urls = await redis.hlen("alldupes")
+            return DedupeIndexStats(**stats, uniqUrls=num_unique_urls)
 
     async def delete_collection(self, coll_id: UUID, org: Organization):
         """Delete collection and remove from associated crawls."""
@@ -1418,5 +1432,16 @@ def init_collections_api(
         org: Organization = Depends(org_crawl_dep),
     ):
         return await colls.delete_thumbnail(coll_id, org)
+
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/dedupe",
+        tags=["collections", "dedupe"],
+        response_model=DedupeIndexStats,
+    )
+    async def get_dedupe_index_stats(
+        coll_id: UUID,
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return await colls.get_dedupe_index_stats(coll_id, org)
 
     return colls

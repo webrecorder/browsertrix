@@ -1767,6 +1767,19 @@ class UpdateCollHomeUrl(BaseModel):
 
 
 # ============================================================================
+class DedupeIndexStats(BaseModel):
+    """stats from collection dedupe index"""
+
+    uniqUrls: int = 0
+    totalUrls: int = 0
+
+    uniqSize: int = 0
+    totalSize: int = 0
+
+    removable: int = 0
+
+
+# ============================================================================
 class AddRemoveCrawlList(BaseModel):
     """Collections to add or remove from collection"""
 
