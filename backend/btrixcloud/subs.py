@@ -296,7 +296,10 @@ class SubOps:
         page: int = 1,
         sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
-    ) -> Tuple[List[SubscriptionEventAnyOut], int,]:
+    ) -> Tuple[
+        List[SubscriptionEventAnyOut],
+        int,
+    ]:
         """list subscription events"""
         # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
         # Zero-index page for query
