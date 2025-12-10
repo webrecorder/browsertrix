@@ -17,6 +17,7 @@ import { OrgTab, WorkflowTab } from "@/routes";
 import { noData } from "@/strings/ui";
 import type { APIPaginatedList } from "@/types/api";
 import type { Crawl } from "@/types/crawler";
+import { renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -104,12 +105,15 @@ export class ItemDependencyTree extends BtrixElement {
     return html`
       ${this.showHeader
         ? html`<div
-            class="item-dependency-tree--row mb-2 pl-9 text-xs leading-none text-neutral-700"
+            class="item-dependency-tree--row mb-2 pl-8 text-xs leading-none text-neutral-700"
           >
-            <div class="col-span-2">${msg("Dependencies")}</div>
+            <div>
+              <span class="sr-only">${msg("Status")}</span>
+            </div>
+            <div>${msg("Name")}</div>
+            <div>${msg("Dependencies")}</div>
             <div>${msg("Date Started")}</div>
             <div>${msg("Date Finished")}</div>
-            <div>${msg("Pages")}</div>
             <div>${msg("Size")}</div>
             <div>
               <span class="sr-only">${msg("Actions")}</span>
@@ -156,10 +160,10 @@ export class ItemDependencyTree extends BtrixElement {
           <sl-skeleton class="w-[24ch]" effect="sheen"></sl-skeleton>
         </div>
         <div>
-          <sl-skeleton class="w-[12ch]" effect="sheen"></sl-skeleton>
+          <sl-skeleton class="w-[24ch]" effect="sheen"></sl-skeleton>
         </div>
         <div>
-          <sl-skeleton class="w-[8ch]" effect="sheen"></sl-skeleton>
+          <sl-skeleton class="w-[12ch]" effect="sheen"></sl-skeleton>
         </div>
         <div>
           <sl-skeleton class="w-[6ch]" effect="sheen"></sl-skeleton>
@@ -256,6 +260,7 @@ export class ItemDependencyTree extends BtrixElement {
       )}
     >
       ${status()}
+      <div class="item-dependency-tree--detail">${renderName(item)}</div>
       <div class="item-dependency-tree--detail">
         <sl-tooltip content=${msg("Dedupe Dependencies")} hoist>
           <sl-icon name=${dedupeIconFor.dependent}></sl-icon>
@@ -279,15 +284,6 @@ export class ItemDependencyTree extends BtrixElement {
           <sl-icon name="hourglass-bottom"></sl-icon>
         </sl-tooltip>
         ${item.finished ? date(item.finished) : noData}
-      </div>
-      <div class="item-dependency-tree--detail">
-        <sl-tooltip content=${msg("Pages")} hoist>
-          <sl-icon name="window-stack"></sl-icon>
-        </sl-tooltip>
-        <span
-          >${this.localize.number(item.pageCount || 0)}
-          ${pluralOf("pages", item.pageCount || 0)}</span
-        >
       </div>
       <div
         class="item-dependency-tree--detail flex items-center gap-1.5 truncate"

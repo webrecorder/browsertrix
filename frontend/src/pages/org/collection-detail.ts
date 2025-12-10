@@ -40,6 +40,7 @@ import {
 } from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
+import { SortDirection } from "@/types/utils";
 import { isCrawl, isCrawlReplay, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
@@ -152,6 +153,22 @@ export class CollectionDetail extends BtrixElement {
 
       return this.api.fetch<APIPaginatedList<Workflow>>(
         `/orgs/${this.orgId}/crawlconfigs?${query}`,
+        { signal },
+      );
+    },
+    args: () => [this.collectionId] as const,
+  });
+
+  private readonly dedupeCrawlsTask = new Task(this, {
+    task: async ([collectionId], { signal }) => {
+      const query = queryString.stringify({
+        dedupeCollId: collectionId,
+        sortBy: "finished",
+        sortDirection: SortDirection.Descending,
+      });
+
+      return this.api.fetch<APIPaginatedList<Crawl>>(
+        `/orgs/${this.orgId}/crawls?${query}`,
         { signal },
       );
     },
@@ -848,12 +865,7 @@ export class CollectionDetail extends BtrixElement {
     if (this.collection.hasDedupeIndex) {
       return html`
         <div class="grid grid-cols-7 gap-7">
-          <div class="col-span-full lg:col-span-5">
-            ${this.renderDedupeWorkflows()}
-          </div>
-          <div class="col-span-full lg:col-span-2">
-            ${this.renderDedupeOverview()}
-          </div>
+          <div class="col-span-full">${this.renderDedupeCrawls()}</div>
         </div>
       `;
     }
@@ -875,6 +887,32 @@ export class CollectionDetail extends BtrixElement {
           </sl-button>
         `,
       }),
+    });
+  }
+
+  private renderDedupeCrawls() {
+    const loading = () =>
+      html`<sl-skeleton effect="sheen" class="h-9"></sl-skeleton>`;
+    return panel({
+      heading: msg("Indexed Crawls"),
+      body: html`${this.dedupeCrawlsTask.render({
+        initial: loading,
+        pending: loading,
+        complete: ({ items }) =>
+          items.length
+            ? html`
+                <div class="overflow-hidden rounded border">
+                  <btrix-item-dependency-tree
+                    .items=${items}
+                  ></btrix-item-dependency-tree>
+                </div>
+              `
+            : panelBody({
+                content: emptyMessage({
+                  message: msg("No crawls added."),
+                }),
+              }),
+      })}`,
     });
   }
 
