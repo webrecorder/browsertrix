@@ -22,6 +22,17 @@
     @apply w-full;
   }
 
+  sl-tree-item:focus {
+    @apply bg-cyan-50/50;
+  }
+
+  sl-tree-item:hover .item-dependency-tree--detail,
+  sl-tree-item:focus .item-dependency-tree--detail,
+  sl-tree-item:hover .item-dependency-tree--detail sl-icon,
+  sl-tree-item:focus .item-dependency-tree--detail sl-icon {
+    @apply text-cyan-600;
+  }
+
   sl-tree-item::part(children)::before {
     left: calc(1rem - (var(--indent-guide-width) / 2));
     bottom: calc(1rem + var(--sl-border-radius-medium));
@@ -29,10 +40,11 @@
 
   .item-dependency-tree--row {
     grid-template-columns:
-      1rem minmax(16rem, 1fr) minmax(8rem, 1fr) repeat(2, minmax(11rem, 1fr)) minmax(
-        6rem,
-        1fr
+      1rem minmax(16rem, 1fr) minmax(8rem, 12rem) repeat(
+        2,
+        minmax(11rem, 13rem)
       )
+      minmax(6rem, 8rem)
       2rem;
     @apply grid w-full items-center gap-2;
   }
