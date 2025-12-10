@@ -121,7 +121,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
                           class="menu-item-warning"
                           @click=${() => (this.indexToClear = item)}
                         >
-                          ${msg("Clear Index")}
+                          ${msg("Reset Index")}
                         </sl-menu-item>
                         <sl-menu-item
                           class="menu-item-danger"
@@ -162,25 +162,24 @@ export class OrgSettingsDeduplication extends BtrixElement {
 
   private renderClearConfirmation() {
     return html`<btrix-dialog
-      label=${msg("Clear Purgeable Items?")}
+      label=${msg("Reset Index?")}
       ?open=${!!this.indexToClear}
     >
       ${when(this.indexToClear, (col) => {
         const collection_name = html`<strong class="font-semibold"
           >${col.name}</strong
         >`;
-        const bytes = "TODO";
+
         return html`
           <p>
             ${msg(
-              html`Are you sure you want to clear ${collection_name} of
-              purgeable items?`,
+              html`Are you sure you want to reset the deduplication index for
+              ${collection_name}?`,
             )}
           </p>
           <p class="mt-3">
             ${msg(
-              html`This will recover ${bytes} of storage space and rebuild the
-              index using archived items currently in the deduplication source.`,
+              "This will clear the index of deleted archived items and rebuild the index using items currently in the deduplication source.",
             )}
           </p>
         `;
@@ -204,7 +203,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
             void this.clearIndex(this.indexToClear);
             this.indexToClear = undefined;
           }}
-          >${msg("Yes, Clear Index")}</sl-button
+          >${msg("Reset Index")}</sl-button
         >
       </div>
     </btrix-dialog>`;
@@ -222,8 +221,8 @@ export class OrgSettingsDeduplication extends BtrixElement {
         return html`
           <p>
             ${msg(
-              html`Are you sure you want to delete the deduplication index and
-              disable deduplication for ${collection_name}?`,
+              html`Are you sure you want to delete the deduplication index for
+              ${collection_name}?`,
             )}
           </p>
           <p class="mt-3">
@@ -252,7 +251,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
             void this.deleteIndex(this.indexToDelete);
             this.indexToDelete = undefined;
           }}
-          >${msg("Yes, Delete Index")}</sl-button
+          >${msg("Delete Index")}</sl-button
         >
       </div>
     </btrix-dialog>`;
@@ -271,7 +270,6 @@ export class OrgSettingsDeduplication extends BtrixElement {
     signal: AbortSignal,
   ) {
     const query = queryString.stringify({
-      pageSize: 2,
       ...params,
       hasDedupeIndex: true,
     });
