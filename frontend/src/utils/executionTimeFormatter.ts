@@ -120,6 +120,20 @@ export const humanizeExecutionSeconds = (
     maximumFractionDigits: 0,
   });
 
+  const compactSecondFormatter = new Intl.NumberFormat(locale, {
+    notation: "compact",
+    style: "unit",
+    unit: "second",
+    unitDisplay: style,
+  });
+
+  const longSecondFormatter = new Intl.NumberFormat(locale, {
+    style: "unit",
+    unit: "second",
+    unitDisplay: "long",
+    maximumFractionDigits: 0,
+  });
+
   if (seconds === 0) {
     return longMinuteFormatter.format(0);
   }
@@ -131,6 +145,8 @@ export const humanizeExecutionSeconds = (
   });
   const compactMinutes = compactMinuteFormatter.format(minutes);
   const fullMinutes = longMinuteFormatter.format(minutes);
+  const compactSeconds = compactSecondFormatter.format(seconds);
+  const fullSeconds = longSecondFormatter.format(seconds);
 
   // if the time is less than an hour and lines up exactly on the minute, don't render the details.
   const detailsRelevant = displaySeconds
@@ -152,8 +168,11 @@ export const humanizeExecutionSeconds = (
         >${prefix}${detailsRelevant ? formattedDetails : compactMinutes}</span
       >`;
     case "short":
-      return html`<span title="${longMinuteFormatter.format(minutes)}"
-        >${prefix}${compactMinutes}</span
+      return html`<span
+        title="${displaySeconds && seconds < 60 ? fullSeconds : fullMinutes}"
+        >${prefix}${displaySeconds && seconds < 60
+          ? compactSeconds
+          : compactMinutes}</span
       >`;
   }
 };

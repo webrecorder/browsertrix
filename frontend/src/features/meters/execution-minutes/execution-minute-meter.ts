@@ -207,6 +207,7 @@ export class ExecutionMinuteMeter extends BtrixElement {
                     ${humanizeExecutionSeconds(quotas.total - usage.total, {
                       style: "short",
                       round: "down",
+                      displaySeconds: true,
                     })}
                     <span class="ml-1">${msg("remaining")}</span>
                   </span>
@@ -237,6 +238,7 @@ export class ExecutionMinuteMeter extends BtrixElement {
               <span slot="valueLabel">
                 ${humanizeExecutionSeconds(usage.total, {
                   style: "short",
+                  round: "down",
                 })}
               </span>
               <span slot="maxLabel">
