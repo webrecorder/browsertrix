@@ -604,7 +604,7 @@ def init_subs_api(
     @org_ops.router.get(
         "/price/execution-minutes",
         tags=["organizations"],
-        response_model=AddonMinutesPricing,
+        response_model=AddonMinutesPricing | None,
     )
     async def get_execution_minutes_price(
         org: Organization = Depends(org_ops.org_owner_dep),
