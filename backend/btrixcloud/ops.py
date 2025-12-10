@@ -56,7 +56,7 @@ def init_ops() -> Tuple[
 
     user_manager = UserManager(mdb, email, invite_ops)
 
-    org_ops = OrgOps(mdb, invite_ops, user_manager, crawl_manager)
+    org_ops = OrgOps(dbclient, mdb, invite_ops, user_manager, crawl_manager)
 
     event_webhook_ops = EventWebhookOps(mdb, org_ops)
 

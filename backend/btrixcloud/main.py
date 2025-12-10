@@ -176,6 +176,7 @@ def main() -> None:
 
     org_ops = init_orgs_api(
         app,
+        dbclient,
         mdb,
         user_manager,
         crawl_manager,

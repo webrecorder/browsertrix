@@ -4,11 +4,17 @@ Browsertrix API Mongo DB initialization
 
 import importlib.util
 import os
-import urllib
+import urllib.parse
 import asyncio
 from uuid import UUID, uuid4
 
-from typing import Optional, Union, TypeVar, Type, TYPE_CHECKING
+from typing import (
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    TYPE_CHECKING,
+)
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pydantic import BaseModel
