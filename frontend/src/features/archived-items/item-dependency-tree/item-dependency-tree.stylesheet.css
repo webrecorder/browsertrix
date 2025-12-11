@@ -39,13 +39,7 @@
   }
 
   .component--row {
-    grid-template-columns:
-      1rem minmax(16rem, 1fr) minmax(8rem, 12rem) repeat(
-        2,
-        minmax(11rem, 13rem)
-      )
-      minmax(6rem, 8rem)
-      2rem;
+    grid-template-columns: 1rem minmax(11rem, 1fr) 7rem repeat(2, 11rem) 5rem 2rem;
     @apply grid w-full items-center gap-2;
   }
 
@@ -80,7 +74,7 @@
   }
 
   .component--detail sl-icon {
-    @apply text-neutral-500;
+    @apply shrink-0 text-neutral-500;
   }
 
   .component--notInCollection .component--detail {

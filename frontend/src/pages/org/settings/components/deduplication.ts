@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import { html, type PropertyValues } from "lit";
+import { html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -11,11 +11,11 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { OrgTab } from "@/routes";
+import { notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { Collection } from "@/types/collection";
+import type { Collection, DedupeSource, DedupeStats } from "@/types/collection";
 import { isNotEqual } from "@/utils/is-not-equal";
-
-type DedupeSource = Collection;
+import { pluralOf } from "@/utils/pluralize";
 
 const INITIAL_PAGE_SIZE = 10;
 
@@ -69,11 +69,20 @@ export class OrgSettingsDeduplication extends BtrixElement {
   }
 
   private readonly renderTable = (sources: APIPaginatedList<DedupeSource>) => {
+    const dedupeStat = (
+      source: DedupeSource,
+      render: (dedupe: DedupeStats) => TemplateResult,
+    ) => {
+      if (source.dedupe) render(source.dedupe);
+
+      return html`<span class="text-neutral-400">${notApplicable}</span>`;
+    };
+
     return html`
       <btrix-overflow-scroll>
         <btrix-table
           class="whitespace-nowrap [--btrix-table-cell-padding-x:var(--sl-spacing-2x-small)]"
-          style="--btrix-table-grid-template-columns: 15ch 1fr 1fr min-content"
+          style="--btrix-table-grid-template-columns: min-content 40ch repeat(3, 1fr) min-content"
         >
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell>
@@ -81,30 +90,61 @@ export class OrgSettingsDeduplication extends BtrixElement {
             </btrix-table-header-cell>
             <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
             <btrix-table-header-cell>
-              ${msg("Archived Items")}
+              ${msg("Total Size")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg("Total URLs")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg("Total Purgeable")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Actions")}
             </btrix-table-header-cell>
           </btrix-table-head>
           <btrix-table-body
-            class="rounded border [--btrix-table-cell-padding:var(--sl-spacing-2x-small)]"
+            class="divide-y rounded border [--btrix-table-cell-padding:var(--sl-spacing-2x-small)] *:first:border-t-0 *:last:rounded-b"
           >
             ${sources.items.map(
               (item) => html`
-                <btrix-table-row
-                  class="border-t first:border-t-0 last:rounded-b hover:bg-neutral-50"
-                >
+                <btrix-table-row>
                   <btrix-table-cell>
                     <btrix-badge class="whitespace-nowrap">
                       <sl-icon name="collection" class="mr-1.5"></sl-icon>
                       ${msg("Collection")}
                     </btrix-badge>
                   </btrix-table-cell>
-                  <btrix-table-cell>${item.name}</btrix-table-cell>
-                  <btrix-table-cell
-                    >${this.localize.number(item.crawlCount)}</btrix-table-cell
-                  >
+                  <btrix-table-cell>
+                    <div class="truncate">
+                      ${item.name}${item.name}${item.name}${item.name}${item.name}${item.name}${item.name}${item.name}${item.name}
+                    </div>
+                  </btrix-table-cell>
+                  <btrix-table-cell>
+                    ${dedupeStat(
+                      item,
+                      (dedupe) => html`
+                        ${this.localize.bytes(dedupe.totalSize)}
+                      `,
+                    )}
+                  </btrix-table-cell>
+                  <btrix-table-cell>
+                    ${dedupeStat(
+                      item,
+                      (dedupe) => html`
+                        ${this.localize.number(dedupe.totalUrls)}
+                        ${pluralOf("URLs", dedupe.totalUrls)}
+                      `,
+                    )}
+                  </btrix-table-cell>
+                  <btrix-table-cell>
+                    ${dedupeStat(
+                      item,
+                      (dedupe) => html`
+                        ${this.localize.number(dedupe.removable)}
+                        ${pluralOf("items", dedupe.removable)}
+                      `,
+                    )}
+                  </btrix-table-cell>
                   <btrix-table-cell>
                     <sl-tooltip content=${msg("Open in New Tab")}>
                       <sl-icon-button
