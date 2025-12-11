@@ -25,6 +25,7 @@ from typing import (
 
 from fastapi import Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
+from motor.motor_asyncio import AsyncIOMotorClientSession
 from redis import asyncio as exceptions
 from redis.asyncio.client import Redis
 import pymongo
@@ -183,6 +184,7 @@ class CrawlOps(BaseCrawlOps):
         sort_by: Optional[str] = None,
         sort_direction: int = -1,
         resources: bool = False,
+        session: AsyncIOMotorClientSession | None = None,
     ):
         """List all finished crawls from the db"""
         # pylint: disable=too-many-locals,too-many-branches,too-many-statements
@@ -330,7 +332,7 @@ class CrawlOps(BaseCrawlOps):
         )
 
         # Get total
-        cursor = self.crawls.aggregate(aggregate)
+        cursor = self.crawls.aggregate(aggregate, session=session)
         results = await cursor.to_list(length=1)
         result = results[0]
         items = result["items"]
