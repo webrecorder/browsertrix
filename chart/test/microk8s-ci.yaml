@@ -14,5 +14,3 @@ frontend_pull_policy: "IfNotPresent"
 crawler_extra_cpu_per_browser: 300m
 
 crawler_extra_memory_per_browser: 256Mi
-
-backend_memory: "350Mi"
