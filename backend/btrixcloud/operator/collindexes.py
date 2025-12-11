@@ -1,26 +1,22 @@
 """Operator handler for CollIndexes"""
 
-from typing import Literal, get_args
 import re
 
 from uuid import UUID
 from pydantic import BaseModel
 
 from btrixcloud.utils import str_to_date
+from btrixcloud.models import TYPE_DEDUPE_INDEX_STATES, DedupeIndexStats
 
 from .models import MCSyncData, POD, JOB, CMAP
 from .baseoperator import BaseOperator
-
-
-TYPE_INDEX_STATES = Literal["initing", "importing", "ready"]
-INDEX_STATES = get_args(TYPE_INDEX_STATES)
 
 
 # ============================================================================
 class CollIndexStatus(BaseModel):
     """CollIndex Status"""
 
-    state: TYPE_INDEX_STATES = "initing"
+    state: TYPE_DEDUPE_INDEX_STATES = "initing"
 
     collLastUpdated: str = ""
 
@@ -108,6 +104,15 @@ class CollIndexOperator(BaseOperator):
             # pylint: disable=broad-exception-caught
             except Exception as e:
                 print(e)
+
+            stats = await redis.hgetall("allcounts")
+            num_unique_urls = await redis.hlen("alldupes")
+            await self.coll_ops.update_dedupe_index_stats(
+                spec.id,
+                DedupeIndexStats(
+                    uniqueUrls=num_unique_urls, state=status.state, **stats
+                ),
+            )
 
         return {
             "status": status.dict(exclude_none=True),
