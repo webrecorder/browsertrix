@@ -2,6 +2,8 @@
 Migration 0055 - Recompute workflow crawl stats
 """
 
+from motor.motor_asyncio import AsyncIOMotorDatabase
+
 from btrixcloud.crawlconfigs import stats_recompute_all
 from btrixcloud.migrations import BaseMigration
 
@@ -13,7 +15,7 @@ class Migration(BaseMigration):
     """Migration class."""
 
     # pylint: disable=unused-argument
-    def __init__(self, mdb, **kwargs):
+    def __init__(self, mdb: AsyncIOMotorDatabase, **kwargs):
         super().__init__(mdb, migration_version=MIGRATION_VERSION)
 
         self.crawl_config_ops = kwargs.get("crawl_config_ops")

@@ -28,6 +28,7 @@ import urllib.parse
 import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 import pymongo
+from motor.motor_asyncio import AsyncIOMotorCollection
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
@@ -1544,8 +1545,11 @@ class CrawlConfigOps:
 # ============================================================================
 # pylint: disable=too-many-locals
 async def stats_recompute_all(
-    crawl_config_ops: CrawlConfigOps, crawl_configs, crawls, cid: UUID
-):
+    crawl_config_ops: CrawlConfigOps,
+    crawl_configs: AsyncIOMotorCollection,
+    crawls: AsyncIOMotorCollection,
+    cid: UUID,
+) -> bool:
     """Re-calculate and update crawl statistics for config.
 
     Should only be called when a crawl completes from operator or on migration
@@ -1624,7 +1628,7 @@ async def stats_recompute_all(
         return_document=pymongo.ReturnDocument.AFTER,
     )
 
-    return result
+    return result is not None
 
 
 # ============================================================================
