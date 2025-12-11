@@ -44,7 +44,7 @@ else:
     ) = object
 
 
-CURR_DB_VERSION = "0054"
+CURR_DB_VERSION = "0055"
 
 
 # ============================================================================
@@ -134,6 +134,7 @@ async def update_and_prepare_db(
         coll_ops,
         file_ops,
         crawl_log_ops,
+        crawl_config_ops,
         crawl_manager,
     ):
         await drop_indexes(mdb)
@@ -170,6 +171,7 @@ async def run_db_migrations(
     coll_ops: CollectionOps,
     file_ops: FileUploadOps,
     crawl_log_ops: CrawlLogOps,
+    crawl_config_ops: CrawlConfigOps,
     crawl_manager: CrawlManager,
 ):
     """Run database migrations."""
@@ -211,6 +213,7 @@ async def run_db_migrations(
                 coll_ops=coll_ops,
                 file_ops=file_ops,
                 crawl_log_ops=crawl_log_ops,
+                crawl_config_ops=crawl_config_ops,
                 crawl_manager=crawl_manager,
             )
             if await migration.run():
