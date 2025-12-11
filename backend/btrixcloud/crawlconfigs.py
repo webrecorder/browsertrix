@@ -1604,7 +1604,7 @@ async def stats_recompute_all(
         if last_crawl_finished:
             update_query["lastRun"] = last_crawl_finished
 
-    elif not last_crawl:
+    elif not last_crawl and not running_crawl:
         # ensure all last crawl data is cleared
         update_query["lastCrawlId"] = None
         update_query["lastCrawlStartTime"] = None
