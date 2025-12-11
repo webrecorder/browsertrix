@@ -4,6 +4,7 @@ import type { SlChangeEvent, SlRadioGroup } from "@shoelace-style/shoelace";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
+import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -13,7 +14,7 @@ import { emptyMessage } from "@/layouts/emptyMessage";
 import { panel, panelBody, panelHeader } from "@/layouts/panel";
 import { OrgTab } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { Collection } from "@/types/collection";
+import type { Collection, DedupeStats } from "@/types/collection";
 import type { Crawl, Workflow } from "@/types/crawler";
 import { SortDirection } from "@/types/utils";
 import { pluralOf } from "@/utils/pluralize";
@@ -66,6 +67,32 @@ export class CollectionDetailDedupe extends BtrixElement {
     },
   );
 
+  private readonly dedupeStatsTask = new Task(this, {
+    task: async ([collectionId]) => {
+      if (!collectionId) return;
+
+      // TODO Actual data
+      return await new Promise<DedupeStats>((resolve) => {
+        setTimeout(() => {
+          resolve({
+            uniqueUrls: 24,
+            totalUrls: 49,
+            uniqueSize: 1234,
+            totalSize: 2345,
+            removable: 2,
+            state: "waiting_dedupe_index",
+          });
+        }, 1000);
+      });
+
+      // return await this.api.fetch<DedupeStats>(
+      //   `/orgs/${this.orgId}/collections/${this.collectionId}/dedupe`,
+      //   { signal },
+      // );
+    },
+    args: () => [this.collectionId] as const,
+  });
+
   private readonly dedupeWorkflowsTask = new Task(this, {
     task: async ([collectionId], { signal }) => {
       if (!collectionId) return;
@@ -75,7 +102,7 @@ export class CollectionDetailDedupe extends BtrixElement {
         sortBy: "name",
       });
 
-      return this.api.fetch<APIPaginatedList<Workflow>>(
+      return await this.api.fetch<APIPaginatedList<Workflow>>(
         `/orgs/${this.orgId}/crawlconfigs?${query}`,
         { signal },
       );
@@ -94,7 +121,7 @@ export class CollectionDetailDedupe extends BtrixElement {
         sortDirection: SortDirection.Descending,
       });
 
-      return this.api.fetch<APIPaginatedList<Crawl>>(
+      return await this.api.fetch<APIPaginatedList<Crawl>>(
         `/orgs/${this.orgId}/crawls?${query}`,
         { signal },
       );
@@ -115,11 +142,18 @@ export class CollectionDetailDedupe extends BtrixElement {
     if (!this.collection) return;
 
     if (this.collection.hasDedupeIndex) {
-      return html` <div class="grid grid-cols-7 gap-3">
-        <section class="col-span-full xl:col-span-5">
+      return html` <div
+        class="grid grid-cols-4 grid-rows-[repeat(2,min-content)] gap-x-3 gap-y-3"
+      >
+        <section class="col-span-full row-span-1 xl:col-span-3">
           ${this.renderStats()}
         </section>
-        <section class="col-span-full xl:col-span-5">
+        <section
+          class="col-span-full row-span-2 xl:col-span-1 xl:border-l xl:pl-5"
+        >
+          ${this.renderOverview()}
+        </section>
+        <section class="col-span-full row-span-1 xl:col-span-3">
           ${panelHeader({ heading: msg("Indexed Crawls") })}
           ${this.renderCrawls()}
         </section>
@@ -147,13 +181,8 @@ export class CollectionDetailDedupe extends BtrixElement {
   }
 
   private renderStats() {
-    const dedupe = {
-      uniqueUrls: 24,
-      totalUrls: 49,
-      uniqueSize: 1234,
-      totalSize: 2345,
-      removable: 2,
-    };
+    const dedupe = this.dedupeStatsTask.value;
+
     const ringStat = (
       ring: Parameters<CollectionDetailDedupe["renderRing"]>[0],
       { format, icon }: { format: (v: number) => string; icon: string },
@@ -174,36 +203,55 @@ export class CollectionDetailDedupe extends BtrixElement {
         <div>${this.renderRing(ring)}</div>
       </div>
     `;
+    const ringSkeleton = () => html`
+      <div class="flex items-center gap-3">
+        <sl-skeleton class="size-9"></sl-skeleton>
+        <div class="flex-1">
+          <sl-skeleton class="mb-1 h-3 w-12"></sl-skeleton>
+          <sl-skeleton class="h-3 w-12"></sl-skeleton>
+        </div>
+        <sl-skeleton
+          class="size-16 part-[indicator]:rounded-full"
+        ></sl-skeleton>
+      </div>
+    `;
+
+    const ringStatWithDedupe = (render: (dedupe: DedupeStats) => unknown) =>
+      when(dedupe, render, ringSkeleton);
 
     return html`
-      <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
         <btrix-card class="col-span-full md:col-span-1">
           <span slot="title">${msg("Deduplicated URLs")}</span>
-          ${ringStat(
-            {
-              unique: dedupe.uniqueUrls,
-              total: dedupe.totalUrls,
-              label: msg("URLs"),
-            },
-            {
-              icon: "link-45deg",
-              format: (v) =>
-                `${this.localize.number(v)} ${pluralOf("URLs", v)}`,
-            },
+          ${ringStatWithDedupe((dedupe) =>
+            ringStat(
+              {
+                unique: dedupe.uniqueUrls,
+                total: dedupe.totalUrls,
+                label: msg("URLs"),
+              },
+              {
+                icon: "link-45deg",
+                format: (v) =>
+                  `${this.localize.number(v)} ${pluralOf("URLs", v)}`,
+              },
+            ),
           )}
         </btrix-card>
         <btrix-card class="col-span-full md:col-span-1">
           <span slot="title">${msg("Deduplicated Size")}</span>
-          ${ringStat(
-            {
-              unique: dedupe.uniqueSize,
-              total: dedupe.totalSize,
-              label: msg("Size"),
-            },
-            {
-              icon: "file-earmark-binary",
-              format: (v) => this.localize.bytes(v),
-            },
+          ${ringStatWithDedupe((dedupe) =>
+            ringStat(
+              {
+                unique: dedupe.uniqueSize,
+                total: dedupe.totalSize,
+                label: msg("Size"),
+              },
+              {
+                icon: "file-earmark-binary",
+                format: (v) => this.localize.bytes(v),
+              },
+            ),
           )}
         </btrix-card>
       </div>
@@ -220,7 +268,6 @@ export class CollectionDetailDedupe extends BtrixElement {
     label: string;
   }) {
     const value = ((total - unique) / total) * 100;
-
     return html`
       <sl-progress-ring
         class="block size-16 [--indicator-color:theme(colors.blue.200)] [--indicator-width:.5rem] [--size:4rem] [--track-color:theme(colors.blue.50)] [--track-width:.5rem]"
@@ -342,35 +389,23 @@ export class CollectionDetailDedupe extends BtrixElement {
     })}`;
   };
 
-  private renderDedupeOverview() {
+  private renderOverview() {
+    const dedupe = this.dedupeStatsTask.value;
+
     return panel({
       heading: msg("Overview"),
       body: html`<btrix-desc-list>
         <btrix-desc-list-item label=${msg("Dedupe Status")}>
-          ${this.collection?.hasDedupeIndex ? msg("Enabled") : msg("Disabled")}
+          ${when(dedupe, (dedupe) => html` ${dedupe.state} `)}
         </btrix-desc-list-item>
-
-        ${
-          /**
-          <btrix-desc-list-item label=${msg("Total Indexed URLs")}>
-            ${this.localize.number(
-              // TODO
-              0,
-            )}
-            ${pluralOf(
-              "URLs",
-              // TODO
-              0,
-            )}
-          </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Dedupe Index Size")}>
-            ${this.localize.bytes(
-              // TODO
-              0,
-            )}
-          </btrix-desc-list-item>
-          */ ""
-        }
+        <btrix-desc-list-item label=${msg("Purgeable Items")}>
+          ${when(
+            dedupe,
+            (dedupe) =>
+              html`${this.localize.number(dedupe.removable)}
+              ${pluralOf("items", dedupe.removable)} `,
+          )}
+        </btrix-desc-list-item>
       </btrix-desc-list>`,
     });
   }

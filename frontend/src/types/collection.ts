@@ -63,6 +63,7 @@ export const dedupeStatsSchema = z.object({
   uniqueSize: z.number(),
   totalSize: z.number(),
   removable: z.number(),
+  state: z.string(),
 });
 export type DedupeStats = z.infer<typeof dedupeStatsSchema>;
 
