@@ -1555,15 +1555,16 @@ async def stats_recompute_all(
 
     match_query = {"cid": cid, "finished": {"$ne": None}}
     count = await crawls.count_documents(match_query)
+
+    update_query["crawlCount"] = count
+
+    total_size = 0
+    successful_count = 0
+
+    last_crawl: Optional[dict[str, object]] = None
+    last_crawl_size = 0
+
     if count:
-        update_query["crawlCount"] = count
-
-        total_size = 0
-        successful_count = 0
-
-        last_crawl: Optional[dict[str, object]] = None
-        last_crawl_size = 0
-
         async for res in crawls.find(match_query).sort("finished", pymongo.ASCENDING):
             files = res.get("files", [])
             crawl_size = 0
@@ -1578,29 +1579,44 @@ async def stats_recompute_all(
             last_crawl = res
             last_crawl_size = crawl_size
 
-        # only update last_crawl if no crawls running, otherwise
-        # lastCrawl* stats are already for running crawl
-        running_crawl = await crawl_config_ops.get_running_crawl(cid)
+    # always update these
+    update_query["crawlSuccessfulCount"] = successful_count
+    update_query["totalSize"] = total_size
 
-        if last_crawl and not running_crawl:
-            update_query["totalSize"] = total_size
-            update_query["crawlSuccessfulCount"] = successful_count
+    # only update last_crawl if no crawls running, otherwise
+    # lastCrawl* stats are already for running crawl
+    running_crawl = await crawl_config_ops.get_running_crawl(cid)
 
-            update_query["lastCrawlId"] = str(last_crawl.get("_id"))
-            update_query["lastCrawlStartTime"] = last_crawl.get("started")
-            update_query["lastStartedBy"] = last_crawl.get("userid")
-            update_query["lastStartedByName"] = last_crawl.get("userName")
-            update_query["lastCrawlState"] = last_crawl.get("state")
-            update_query["lastCrawlSize"] = last_crawl_size
-            update_query["lastCrawlStats"] = last_crawl.get("stats")
-            update_query["lastCrawlStopping"] = False
-            update_query["isCrawlRunning"] = False
+    if last_crawl and not running_crawl:
+        update_query["lastCrawlId"] = str(last_crawl.get("_id"))
+        update_query["lastCrawlStartTime"] = last_crawl.get("started")
+        update_query["lastStartedBy"] = last_crawl.get("userid")
+        update_query["lastStartedByName"] = last_crawl.get("userName")
+        update_query["lastCrawlState"] = last_crawl.get("state")
+        update_query["lastCrawlSize"] = last_crawl_size
+        update_query["lastCrawlStats"] = last_crawl.get("stats")
+        update_query["lastCrawlStopping"] = False
+        update_query["isCrawlRunning"] = False
 
-            last_crawl_finished = last_crawl.get("finished")
-            update_query["lastCrawlTime"] = last_crawl_finished
+        last_crawl_finished = last_crawl.get("finished")
+        update_query["lastCrawlTime"] = last_crawl_finished
 
-            if last_crawl_finished:
-                update_query["lastRun"] = last_crawl_finished
+        if last_crawl_finished:
+            update_query["lastRun"] = last_crawl_finished
+
+    elif not last_crawl:
+        # ensure all last crawl data is cleared
+        update_query["lastCrawlId"] = None
+        update_query["lastCrawlStartTime"] = None
+        update_query["lastStartedBy"] = None
+        update_query["lastStartedByName"] = None
+        update_query["lastCrawlTime"] = None
+        update_query["lastCrawlState"] = None
+        update_query["lastCrawlSize"] = 0
+        update_query["lastCrawlStats"] = None
+        update_query["lastCrawlStopping"] = False
+        update_query["isCrawlRunning"] = False
+        update_query["lastRun"] = None
 
     result = await crawl_configs.find_one_and_update(
         {"_id": cid, "inactive": {"$ne": True}},
