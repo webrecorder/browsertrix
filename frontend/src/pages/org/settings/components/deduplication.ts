@@ -10,6 +10,7 @@ import { loadingPanel } from "../templates/loading-panel";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { Tab } from "@/pages/org/collection-detail/types";
 import { OrgTab } from "@/routes";
 import { notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -115,9 +116,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
                     </btrix-badge>
                   </btrix-table-cell>
                   <btrix-table-cell>
-                    <div class="truncate">
-                      ${item.name}${item.name}${item.name}${item.name}${item.name}${item.name}${item.name}${item.name}${item.name}
-                    </div>
+                    <div class="truncate">${item.name}</div>
                   </btrix-table-cell>
                   <btrix-table-cell>
                     ${dedupeStat(
@@ -146,27 +145,43 @@ export class OrgSettingsDeduplication extends BtrixElement {
                     )}
                   </btrix-table-cell>
                   <btrix-table-cell>
-                    <sl-tooltip content=${msg("Open in New Tab")}>
+                    <sl-tooltip
+                      content=${msg("Open in New Tab")}
+                      placement="left"
+                    >
                       <sl-icon-button
                         name="arrow-up-right"
                         href="${this.navigate
-                          .orgBasePath}/${OrgTab.Collections}/view/${item.id}"
+                          .orgBasePath}/${OrgTab.Collections}/view/${item.id}/${Tab.Deduplication}"
                         target="_blank"
                       >
                       </sl-icon-button>
                     </sl-tooltip>
                     <btrix-overflow-dropdown>
                       <sl-menu>
+                        <btrix-menu-item-link
+                          href="${this.navigate
+                            .orgBasePath}/${OrgTab.Collections}/view/${item.id}"
+                        >
+                          <sl-icon
+                            name="arrow-return-right"
+                            slot="prefix"
+                          ></sl-icon>
+                          ${msg("Go to Collection")}
+                        </btrix-menu-item-link>
+                        <sl-divider></sl-divider>
                         <sl-menu-item
                           class="menu-item-warning"
                           @click=${() => (this.indexToClear = item)}
                         >
+                          <sl-icon slot="prefix" name="arrow-repeat"></sl-icon>
                           ${msg("Reset Index")}
                         </sl-menu-item>
                         <sl-menu-item
                           class="menu-item-danger"
                           @click=${() => (this.indexToDelete = item)}
                         >
+                          <sl-icon slot="prefix" name="trash3"></sl-icon>
                           ${msg("Delete Index")}
                         </sl-menu-item>
                       </sl-menu>
@@ -219,7 +234,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
           </p>
           <p class="mt-3">
             ${msg(
-              "This will clear the index of deleted archived items and rebuild the index using items currently in the deduplication source.",
+              "This will clear the index of purgeable archived items and rebuild the index using items currently in the deduplication source.",
             )}
           </p>
         `;
