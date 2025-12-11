@@ -25,6 +25,7 @@ from .models import (
     CollIdName,
     CollectionThumbnailSource,
     UpdateColl,
+    DedupeIndexStats,
     AddRemoveCrawlList,
     BaseCrawl,
     CrawlFileOut,
@@ -742,6 +743,15 @@ class CollectionOps:
         headers = {"Content-Disposition": f'attachment; filename="{coll.name}.wacz"'}
         return StreamingResponse(
             resp, headers=headers, media_type="application/wacz+zip"
+        )
+
+    async def update_dedupe_index_stats(
+        self, coll_id: UUID, stats: Optional[DedupeIndexStats]
+    ):
+        """update dedupe index stats for specified collection"""
+        self.collections.find_one_and_update(
+            {"_id": coll_id},
+            {"$set": {"dedupeIndex": stats.dict() if stats else None}},
         )
 
     async def recalculate_org_collection_stats(self, org: Organization):

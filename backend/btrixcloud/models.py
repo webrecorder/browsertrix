@@ -1566,6 +1566,9 @@ class CrawlOutWithResources(CrawlOut):
 
 ### COLLECTIONS ###
 
+TYPE_DEDUPE_INDEX_STATES = Literal["initing", "importing", "ready"]
+DEDUPE_INDEX_STATES = get_args(TYPE_DEDUPE_INDEX_STATES)
+
 
 # ============================================================================
 class CollAccessType(str, Enum):
@@ -1599,6 +1602,21 @@ class HostCount(BaseModel):
 
     host: str
     count: int
+
+
+# ============================================================================
+class DedupeIndexStats(BaseModel):
+    """stats from collection dedupe index"""
+
+    state: TYPE_DEDUPE_INDEX_STATES
+
+    uniqueUrls: int = 0
+    totalUrls: int = 0
+
+    uniqueSize: int = 0
+    totalSize: int = 0
+
+    removable: int = 0
 
 
 # ============================================================================
@@ -1641,6 +1659,7 @@ class Collection(BaseMongoModel):
     previousSlugs: List[str] = []
 
     hasDedupeIndex: bool = False
+    dedupeIndex: Optional[DedupeIndexStats] = None
 
 
 # ============================================================================
@@ -1705,6 +1724,7 @@ class CollOut(BaseMongoModel):
 
     topPageHosts: List[HostCount] = []
     hasDedupeIndex: bool = False
+    dedupeIndex: Optional[DedupeIndexStats] = None
 
 
 # ============================================================================
