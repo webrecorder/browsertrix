@@ -79,6 +79,7 @@ def init_db() -> tuple[AsyncIOMotorClient, AsyncIOMotorDatabase]:
 
 # ============================================================================
 async def ensure_feature_version(client: AsyncIOMotorClient):
+    """ensures the minimum feature compatibility version is set"""
     admin = client["admin"]
 
     fcv_status = await admin.command(
