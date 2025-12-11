@@ -40,6 +40,8 @@ else:
 
 CURR_DB_VERSION = "0054"
 
+MIN_DB_VERSION = 7.0
+
 
 # ============================================================================
 def resolve_db_url() -> str:
@@ -73,6 +75,24 @@ def init_db() -> tuple[AsyncIOMotorClient, AsyncIOMotorDatabase]:
     mdb = client["browsertrixcloud"]
 
     return client, mdb
+
+
+# ============================================================================
+async def ensure_feature_version(client: AsyncIOMotorClient):
+    admin = client["admin"]
+
+    fcv_status = await admin.command(
+        {"getParameter": 1, "featureCompatibilityVersion": 1}
+    )
+    version = fcv_status.get("featureCompatibilityVersion", {}).get("version")
+
+    if float(version) < MIN_DB_VERSION:
+        print(f"mongodb: updating feature compatibility {version} -> {MIN_DB_VERSION}")
+        await admin.command(
+            {"setFeatureCompatibilityVersion": str(MIN_DB_VERSION), "confirm": True}
+        )
+    else:
+        print(f"mongodb: feature compatibility {version} >= {MIN_DB_VERSION}")
 
 
 # ============================================================================

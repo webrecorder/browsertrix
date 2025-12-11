@@ -223,7 +223,7 @@ mongo_local: true
 
 mongo_host: "local-mongo"
 
-mongo_image: "docker.io/library/mongo:6.0.5"
+mongo_image: "docker.io/library/mongo:7.0"
 mongo_pull_policy: "IfNotPresent"
 
 mongo_cpu: "12m"

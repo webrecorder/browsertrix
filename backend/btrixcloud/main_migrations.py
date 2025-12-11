@@ -5,7 +5,7 @@ import sys
 import asyncio
 
 from .ops import init_ops
-from .db import update_and_prepare_db
+from .db import update_and_prepare_db, ensure_feature_version
 
 
 # ============================================================================
@@ -38,9 +38,11 @@ async def main() -> int:
         file_ops,
         crawl_log_ops,
         crawl_manager,
-        _,
+        dbclient,
         mdb,
     ) = init_ops()
+
+    await ensure_feature_version(dbclient)
 
     await update_and_prepare_db(
         mdb,
