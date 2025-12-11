@@ -12,8 +12,23 @@ import time
 from uuid import UUID, uuid4
 from tempfile import NamedTemporaryFile
 
-from typing import Optional, TYPE_CHECKING, Dict, Callable, List, AsyncGenerator, Any
+from typing import (
+    Awaitable,
+    Optional,
+    TYPE_CHECKING,
+    Dict,
+    Callable,
+    List,
+    Literal,
+    AsyncGenerator,
+    Any,
+)
 
+from motor.motor_asyncio import (
+    AsyncIOMotorClient,
+    AsyncIOMotorClientSession,
+    AsyncIOMotorDatabase,
+)
 from pydantic import ValidationError
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -191,11 +206,14 @@ class OrgOps(BaseOrgs):
 
     def __init__(
         self,
-        mdb,
+        dbclient: AsyncIOMotorClient,
+        mdb: AsyncIOMotorDatabase,
         invites: InviteOps,
         user_manager: UserManager,
         crawl_manager: CrawlManager,
     ):
+        self.dbclient = dbclient
+
         self.orgs = mdb["organizations"]
         self.crawls_db = mdb["crawls"]
         self.crawl_configs_db = mdb["crawl_configs"]
@@ -373,9 +391,11 @@ class OrgOps(BaseOrgs):
             users.append(User(**user_dict))
         return users
 
-    async def get_org_by_id(self, oid: UUID) -> Organization:
+    async def get_org_by_id(
+        self, oid: UUID, session: AsyncIOMotorClientSession | None = None
+    ) -> Organization:
         """Get an org by id"""
-        res = await self.orgs.find_one({"_id": oid})
+        res = await self.orgs.find_one({"_id": oid}, session=session)
         if not res:
             raise HTTPException(status_code=400, detail="invalid_org_id")
 
@@ -599,13 +619,7 @@ class OrgOps(BaseOrgs):
         if not org_data:
             return None
 
-        org = Organization.from_dict(org_data)
-        if update.quotas:
-            # don't change gifted minutes here
-            update.quotas.giftedExecMinutes = None
-            await self.update_quotas(org, update.quotas)
-
-        return org
+        return Organization.from_dict(org_data)
 
     async def cancel_subscription_data(
         self, cancel: SubscriptionCancel
@@ -654,65 +668,106 @@ class OrgOps(BaseOrgs):
             },
         )
 
-    async def update_quotas(self, org: Organization, quotas: OrgQuotasIn) -> None:
+    async def update_quotas(
+        self,
+        org: Organization,
+        quotas: OrgQuotasIn,
+        mode: Literal["set", "add"],
+        sub_event_id: str | None = None,
+        session: AsyncIOMotorClientSession | None = None,
+    ) -> None:
         """update organization quotas"""
 
-        previous_extra_mins = (
-            org.quotas.extraExecMinutes
-            if (org.quotas and org.quotas.extraExecMinutes)
-            else 0
-        )
-        previous_gifted_mins = (
-            org.quotas.giftedExecMinutes
-            if (org.quotas and org.quotas.giftedExecMinutes)
-            else 0
-        )
+        async with await self.dbclient.start_session(
+            causal_consistency=True
+        ) as session:
+            try:
+                # Re-fetch the organization within the session
+                # so that the operation as a whole is atomic.
+                org = await self.get_org_by_id(org.id, session=session)
 
-        update = quotas.dict(
-            exclude_unset=True, exclude_defaults=True, exclude_none=True
-        )
+                previous_extra_mins = (
+                    org.quotas.extraExecMinutes
+                    if (org.quotas and org.quotas.extraExecMinutes)
+                    else 0
+                )
+                previous_gifted_mins = (
+                    org.quotas.giftedExecMinutes
+                    if (org.quotas and org.quotas.giftedExecMinutes)
+                    else 0
+                )
 
-        quota_updates = []
-        for prev_update in org.quotaUpdates or []:
-            quota_updates.append(prev_update.dict())
-        quota_updates.append(OrgQuotaUpdate(update=update, modified=dt_now()).dict())
+                if mode == "add":
+                    increment_update: dict[str, Any] = {
+                        "$inc": {},
+                    }
 
-        await self.orgs.find_one_and_update(
-            {"_id": org.id},
-            {
-                "$set": {
-                    "quotas": update,
-                    "quotaUpdates": quota_updates,
+                    for field, value in quotas.model_dump(
+                        exclude_unset=True, exclude_defaults=True, exclude_none=True
+                    ).items():
+                        if value is None:
+                            continue
+                        inc = max(value, -org.quotas.model_dump().get(field, 0))
+                        increment_update["$inc"][f"quotas.{field}"] = inc
+
+                    updated_org = await self.orgs.find_one_and_update(
+                        {"_id": org.id},
+                        increment_update,
+                        projection={"quotas": True},
+                        return_document=ReturnDocument.AFTER,
+                        session=session,
+                    )
+                    quotas = OrgQuotasIn(**updated_org["quotas"])
+
+                update: dict[str, dict[str, dict[str, Any] | int]] = {
+                    "$push": {
+                        "quotaUpdates": OrgQuotaUpdate(
+                            modified=dt_now(),
+                            update=OrgQuotas(
+                                **quotas.model_dump(
+                                    exclude_unset=True,
+                                    exclude_defaults=True,
+                                    exclude_none=True,
+                                )
+                            ),
+                            subEventId=sub_event_id,
+                        ).model_dump()
+                    },
+                    "$inc": {},
+                    "$set": {},
                 }
-            },
-        )
 
-        # Inc org available fields for extra/gifted execution time as needed
-        if quotas.extraExecMinutes is not None:
-            extra_secs_diff = (quotas.extraExecMinutes - previous_extra_mins) * 60
-            if org.extraExecSecondsAvailable + extra_secs_diff <= 0:
-                await self.orgs.find_one_and_update(
-                    {"_id": org.id},
-                    {"$set": {"extraExecSecondsAvailable": 0}},
-                )
-            else:
-                await self.orgs.find_one_and_update(
-                    {"_id": org.id},
-                    {"$inc": {"extraExecSecondsAvailable": extra_secs_diff}},
-                )
+                if mode == "set":
+                    increment_update = quotas.model_dump(
+                        exclude_unset=True, exclude_defaults=True, exclude_none=True
+                    )
+                    update["$set"]["quotas"] = increment_update
 
-        if quotas.giftedExecMinutes is not None:
-            gifted_secs_diff = (quotas.giftedExecMinutes - previous_gifted_mins) * 60
-            if org.giftedExecSecondsAvailable + gifted_secs_diff <= 0:
+                # Inc org available fields for extra/gifted execution time as needed
+                if quotas.extraExecMinutes is not None:
+                    extra_secs_diff = (
+                        quotas.extraExecMinutes - previous_extra_mins
+                    ) * 60
+                    if org.extraExecSecondsAvailable + extra_secs_diff <= 0:
+                        update["$set"]["extraExecSecondsAvailable"] = 0
+                    else:
+                        update["$inc"]["extraExecSecondsAvailable"] = extra_secs_diff
+
+                if quotas.giftedExecMinutes is not None:
+                    gifted_secs_diff = (
+                        quotas.giftedExecMinutes - previous_gifted_mins
+                    ) * 60
+                    if org.giftedExecSecondsAvailable + gifted_secs_diff <= 0:
+                        update["$set"]["giftedExecSecondsAvailable"] = 0
+                    else:
+                        update["$inc"]["giftedExecSecondsAvailable"] = gifted_secs_diff
+
                 await self.orgs.find_one_and_update(
-                    {"_id": org.id},
-                    {"$set": {"giftedExecSecondsAvailable": 0}},
+                    {"_id": org.id}, update, session=session
                 )
-            else:
-                await self.orgs.find_one_and_update(
-                    {"_id": org.id},
-                    {"$inc": {"giftedExecSecondsAvailable": gifted_secs_diff}},
-                )
+            except Exception as e:
+                print(f"Error updating organization quotas: {e}")
+                raise HTTPException(status_code=500, detail=str(e)) from e
 
     async def update_event_webhook_urls(
         self, org: Organization, urls: OrgWebhookUrls
@@ -1143,7 +1198,7 @@ class OrgOps(BaseOrgs):
                     yield b"\n"
                 doc_index += 1
 
-            yield f']{"" if skip_closing_comma else ","}\n'.encode("utf-8")
+            yield f"]{'' if skip_closing_comma else ','}\n".encode("utf-8")
 
         async def json_closing_gen() -> AsyncGenerator:
             """Async generator to close JSON document"""
@@ -1455,10 +1510,12 @@ class OrgOps(BaseOrgs):
     async def recalculate_storage(self, org: Organization) -> dict[str, bool]:
         """Recalculate org storage use"""
         try:
-            total_crawl_size, crawl_size, upload_size = (
-                await self.base_crawl_ops.calculate_org_crawl_file_storage(
-                    org.id,
-                )
+            (
+                total_crawl_size,
+                crawl_size,
+                upload_size,
+            ) = await self.base_crawl_ops.calculate_org_crawl_file_storage(
+                org.id,
             )
             profile_size = await self.profile_ops.calculate_org_profile_file_storage(
                 org.id
@@ -1515,17 +1572,18 @@ class OrgOps(BaseOrgs):
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-arguments
 def init_orgs_api(
-    app,
-    mdb,
+    app: APIRouter,
+    dbclient: AsyncIOMotorClient,
+    mdb: AsyncIOMotorDatabase[Any],
     user_manager: UserManager,
     crawl_manager: CrawlManager,
     invites: InviteOps,
-    user_dep: Callable,
+    user_dep: Callable[[str], Awaitable[User]],
 ):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
 
-    ops = OrgOps(mdb, invites, user_manager, crawl_manager)
+    ops = OrgOps(dbclient, mdb, invites, user_manager, crawl_manager)
 
     async def org_dep(oid: UUID, user: User = Depends(user_dep)):
         org = await ops.get_org_for_user_by_id(oid, user)
@@ -1675,7 +1733,7 @@ def init_orgs_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        await ops.update_quotas(org, quotas)
+        await ops.update_quotas(org, quotas, mode="set")
 
         return {"updated": True}
 

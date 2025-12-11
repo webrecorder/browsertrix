@@ -1,13 +1,12 @@
 import math
-import requests
 import time
-import pytest
-
 from typing import Dict
+
+import pytest
+import requests
 
 from .conftest import API_PREFIX
 from .utils import get_crawl_status
-
 
 EXEC_MINS_QUOTA = 1
 EXEC_SECS_QUOTA = EXEC_MINS_QUOTA * 60
@@ -15,6 +14,8 @@ GIFTED_MINS_QUOTA = 3
 GIFTED_SECS_QUOTA = GIFTED_MINS_QUOTA * 60
 EXTRA_MINS_QUOTA = 5
 EXTRA_SECS_QUOTA = EXTRA_MINS_QUOTA * 60
+EXTRA_MINS_ADDED_QUOTA = 7
+EXTRA_SECS_ADDED_QUOTA = EXTRA_MINS_ADDED_QUOTA * 60
 
 
 def test_set_execution_mins_quota(org_with_quotas, admin_auth_headers):

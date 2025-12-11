@@ -1854,6 +1854,8 @@ ACTIVE = "active"
 REASON_PAUSED = "subscriptionPaused"
 REASON_CANCELED = "subscriptionCanceled"
 
+SubscriptionEventType = Literal["create", "import", "update", "cancel", "add-minutes"]
+
 
 # ============================================================================
 class OrgQuotas(BaseModel):
@@ -1906,6 +1908,7 @@ class SubscriptionEventOut(BaseModel):
 
     oid: UUID
     timestamp: datetime
+    type: SubscriptionEventType
 
 
 # ============================================================================
@@ -1971,18 +1974,54 @@ class SubscriptionCancel(BaseModel):
 
 
 # ============================================================================
+class SubscriptionCancelOut(SubscriptionCancel, SubscriptionEventOut):
+    """Output model for subscription cancellation event"""
+
+    type: Literal["cancel"] = "cancel"
+
+
+# ============================================================================
+class SubscriptionAddMinutes(BaseModel):
+    """Represents a purchase of additional minutes"""
+
+    oid: UUID
+    minutes: int
+    totalPrice: float
+    currency: str
+    paymentId: str
+
+
+# ============================================================================
+class SubscriptionAddMinutesOut(SubscriptionAddMinutes, SubscriptionEventOut):
+    """SubscriptionAddMinutes output model"""
+
+    type: Literal["add-minutes"] = "add-minutes"
+
+
+# ============================================================================
+SubscriptionEventAny = Union[
+    SubscriptionCreate,
+    SubscriptionUpdate,
+    SubscriptionCancel,
+    SubscriptionImport,
+    SubscriptionAddMinutes,
+]
+
+SubscriptionEventAnyOut = Union[
+    SubscriptionCreateOut,
+    SubscriptionUpdateOut,
+    SubscriptionCancelOut,
+    SubscriptionImportOut,
+    SubscriptionAddMinutesOut,
+]
+
+
+# ============================================================================
 class SubscriptionTrialEndReminder(BaseModel):
     """Email reminder that subscription will end soon"""
 
     subId: str
     behavior_on_trial_end: Literal["cancel", "continue", "read-only"]
-
-
-# ============================================================================
-class SubscriptionCancelOut(SubscriptionCancel, SubscriptionEventOut):
-    """Output model for subscription cancellation event"""
-
-    type: Literal["cancel"] = "cancel"
 
 
 # ============================================================================
@@ -2003,6 +2042,30 @@ class SubscriptionPortalUrlResponse(BaseModel):
     """Response for subscription update pull"""
 
     portalUrl: str = ""
+
+
+# ============================================================================
+class AddonMinutesPricing(BaseModel):
+    """Addon minutes pricing"""
+
+    value: float
+    currency: str
+
+
+# ============================================================================
+class CheckoutAddonMinutesRequest(BaseModel):
+    """Request for additional minutes checkout session"""
+
+    orgId: str
+    subId: str
+    minutes: int | None = None
+    return_url: str
+
+
+class CheckoutAddonMinutesResponse(BaseModel):
+    """Response for additional minutes checkout session"""
+
+    checkoutUrl: str
 
 
 # ============================================================================
@@ -2083,6 +2146,15 @@ class OrgQuotaUpdate(BaseModel):
 
     modified: datetime
     update: OrgQuotas
+    subEventId: str | None = None
+
+
+# ============================================================================
+class OrgQuotaUpdateOut(BaseModel):
+    """Organization quota update output for admins"""
+
+    modified: datetime
+    update: OrgQuotas
 
 
 # ============================================================================
@@ -2159,7 +2231,7 @@ class OrgOut(BaseMongoModel):
     giftedExecSecondsAvailable: int = 0
 
     quotas: OrgQuotas = OrgQuotas()
-    quotaUpdates: Optional[List[OrgQuotaUpdate]] = []
+    quotaUpdates: Optional[List[OrgQuotaUpdateOut]] = []
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 
@@ -3124,14 +3196,7 @@ class PaginatedProfileResponse(PaginatedResponse):
 class PaginatedSubscriptionEventResponse(PaginatedResponse):
     """Response model for paginated subscription events"""
 
-    items: List[
-        Union[
-            SubscriptionCreateOut,
-            SubscriptionUpdateOut,
-            SubscriptionCancelOut,
-            SubscriptionImportOut,
-        ]
-    ]
+    items: List[SubscriptionEventAnyOut]
 
 
 # ============================================================================

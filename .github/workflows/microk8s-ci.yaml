@@ -17,6 +17,12 @@ jobs:
   btrix-microk8s-test:
     runs-on: ubuntu-latest
     steps:
+      - name: Initial Disk Cleanup
+        uses: mathio/gha-cleanup@v1
+        with:
+          remove-browsers: true
+          verbose: true
+
       - uses: balchua/microk8s-actions@v0.3.1
         with:
           channel: "1.25/stable"
@@ -60,7 +66,7 @@ jobs:
           cache-to: type=gha,scope=frontend,mode=max
 
       - name: Create Secret
-        run: sudo microk8s kubectl create secret generic btrix-subs-app-secret --from-literal=BTRIX_SUBS_APP_URL=${{ env.ECHO_SERVER_HOST_URL }}/portalUrl
+        run: sudo microk8s kubectl create secret generic btrix-subs-app-secret --from-literal=BTRIX_SUBS_APP_URL=${{ env.ECHO_SERVER_HOST_URL }}
 
       - name: Start Cluster with Helm
         run: |

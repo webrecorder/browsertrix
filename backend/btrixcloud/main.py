@@ -172,12 +172,11 @@ def main() -> None:
 
     user_manager = init_user_manager(mdb, email, invites)
 
-    current_active_user, shared_secret_or_active_user = init_users_api(
-        app, user_manager
-    )
+    current_active_user, shared_secret_or_superuser = init_users_api(app, user_manager)
 
     org_ops = init_orgs_api(
         app,
+        dbclient,
         mdb,
         user_manager,
         crawl_manager,
@@ -185,7 +184,7 @@ def main() -> None:
         current_active_user,
     )
 
-    init_subs_api(app, mdb, org_ops, user_manager, shared_secret_or_active_user)
+    init_subs_api(app, mdb, org_ops, user_manager, shared_secret_or_superuser)
 
     event_webhook_ops = init_event_webhooks_api(mdb, org_ops, app_root)
 

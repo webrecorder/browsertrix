@@ -334,6 +334,16 @@ def test_get_billing_portal_url(admin_auth_headers, echo_server):
     assert r.json() == {"portalUrl": "https://portal.example.com/path/"}
 
 
+def test_get_addon_minutes_checkout_url(admin_auth_headers, echo_server):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{new_subs_oid}/checkout/execution-minutes",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+
+    assert r.json() == {"checkoutUrl": "https://checkout.example.com/path/"}
+
+
 def test_cancel_sub_and_delete_org(admin_auth_headers):
     # cancel, resulting in org deletion
     r = requests.post(
@@ -752,7 +762,7 @@ def test_subscription_events_log_filter_sort(admin_auth_headers):
 
     last_id = None
     for event in events:
-        sub_id = event["subId"]
+        sub_id = event.get("subId")
         if last_id:
             assert last_id <= sub_id
         last_id = sub_id
@@ -768,7 +778,7 @@ def test_subscription_events_log_filter_sort(admin_auth_headers):
 
     last_id = None
     for event in events:
-        sub_id = event["subId"]
+        sub_id = event.get("subId")
         if last_id:
             assert last_id >= sub_id
         last_id = sub_id
@@ -905,3 +915,57 @@ def test_subscription_events_log_filter_sort(admin_auth_headers):
             assert last_id >= cancel_date
         if cancel_date:
             last_date = cancel_date
+
+
+def test_subscription_add_minutes(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/add-minutes",
+        headers=admin_auth_headers,
+        json={
+            "oid": str(new_subs_oid_2),
+            "minutes": 75,
+            "totalPrice": 350,
+            "currency": "usd",
+            "paymentId": "789",
+        },
+    )
+
+    assert r.status_code == 200
+    assert r.json() == {"updated": True}
+
+    # get event from log
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?oid={new_subs_oid_2}&type=add-minutes",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data["items"]) == 1
+    event = data["items"][0]
+
+    assert event["type"] == "add-minutes"
+    assert event["oid"] == new_subs_oid_2
+    assert event["minutes"] == 75
+    assert event["totalPrice"] == 350
+    assert event["currency"] == "usd"
+    assert event["paymentId"] == "789"
+
+    # check org quota updates for corresponding entry
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{new_subs_oid_2}",
+        headers=admin_auth_headers,
+    )
+
+    assert r.status_code == 200
+    quota_updates = r.json()["quotaUpdates"]
+    assert len(quota_updates)
+    last_update = quota_updates[-1]
+    assert "subEventId" not in last_update
+    assert last_update["update"] == {
+        "maxPagesPerCrawl": 100,
+        "storageQuota": 1000000,
+        "extraExecMinutes": 75,  # only this value updated from previous
+        "giftedExecMinutes": 0,
+        "maxConcurrentCrawls": 1,
+        "maxExecMinutesPerMonth": 1000,
+    }

@@ -2,6 +2,7 @@
 """
 A web server to record POST requests and return them on a GET request
 """
+
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 
@@ -28,6 +29,14 @@ class EchoServerHTTPRequestHandler(BaseHTTPRequestHandler):
                 json.dumps({"portalUrl": "https://portal.example.com/path/"}).encode(
                     "utf-8"
                 )
+            )
+        elif self.path.endswith("/checkout/additionalMinutes"):
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(
+                json.dumps(
+                    {"checkoutUrl": "https://checkout.example.com/path/"}
+                ).encode("utf-8")
             )
         else:
             self.end_headers()

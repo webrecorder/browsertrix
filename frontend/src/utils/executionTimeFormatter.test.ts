@@ -7,40 +7,52 @@ import {
 
 describe("formatHours", () => {
   it("returns a time in hours and minutes when given a time over an hour", () => {
-    expect(humanizeSeconds(12_345, "en-US")).to.equal("3h 26m");
+    expect(humanizeSeconds(12_345, { locale: "en-US" })).to.equal("3h 26m");
   });
   it("returns 1m when given a time under a minute", () => {
-    expect(humanizeSeconds(24, "en-US")).to.equal("1m");
+    expect(humanizeSeconds(24, { locale: "en-US" })).to.equal("1m");
   });
   it("returns seconds given a time under a minute when not rounding", () => {
-    expect(humanizeSeconds(24, "en-US")).to.equal("1m");
+    expect(humanizeSeconds(24, { locale: "en-US" })).to.equal("1m");
   });
   it("returns 0m and seconds when given a time under a minute with seconds on", () => {
-    expect(humanizeSeconds(24, "en-US", true)).to.equal("0m 24s");
+    expect(
+      humanizeSeconds(24, { locale: "en-US", displaySeconds: true }),
+    ).to.equal("0m 24s");
   });
   it("returns minutes when given a time under an hour", () => {
-    expect(humanizeSeconds(1_234, "en-US")).to.equal("21m");
+    expect(humanizeSeconds(1_234, { locale: "en-US" })).to.equal("21m");
   });
   it("returns just hours when given a time exactly in hours", () => {
-    expect(humanizeSeconds(3_600, "en-US")).to.equal("1h");
-    expect(humanizeSeconds(44_442_000, "en-US")).to.equal("12,345h");
+    expect(humanizeSeconds(3_600, { locale: "en-US" })).to.equal("1h");
+    expect(humanizeSeconds(44_442_000, { locale: "en-US" })).to.equal(
+      "12,345h",
+    );
   });
   it("handles different locales correctly", () => {
-    expect(humanizeSeconds(44_442_000_000, "en-IN")).to.equal("1,23,45,000h");
-    expect(humanizeSeconds(44_442_000_000, "pt-BR")).to.equal("12.345.000 h");
-    expect(humanizeSeconds(44_442_000_000, "de-DE")).to.equal(
+    expect(humanizeSeconds(44_442_000_000, { locale: "en-IN" })).to.equal(
+      "1,23,45,000h",
+    );
+    expect(humanizeSeconds(44_442_000_000, { locale: "pt-BR" })).to.equal(
+      "12.345.000 h",
+    );
+    expect(humanizeSeconds(44_442_000_000, { locale: "de-DE" })).to.equal(
       "12.345.000 Std.",
     );
-    expect(humanizeSeconds(44_442_000_000, "ar-EG")).to.equal("١٢٬٣٤٥٬٠٠٠ س");
+    expect(humanizeSeconds(44_442_000_000, { locale: "ar-EG" })).to.equal(
+      "١٢٬٣٤٥٬٠٠٠ س",
+    );
   });
   it("formats zero time as expected", () => {
-    expect(humanizeSeconds(0, "en-US")).to.equal("0m");
+    expect(humanizeSeconds(0, { locale: "en-US" })).to.equal("0m");
   });
   it("formats zero time as expected", () => {
-    expect(humanizeSeconds(0, "en-US", true)).to.equal("0s");
+    expect(
+      humanizeSeconds(0, { locale: "en-US", displaySeconds: true }),
+    ).to.equal("0s");
   });
   it("formats negative time as expected", () => {
-    expect(() => humanizeSeconds(-100, "en-US")).to.throw(
+    expect(() => humanizeSeconds(-100, { locale: "en-US" })).to.throw(
       "humanizeSeconds in unimplemented for negative times",
     );
   });
@@ -53,8 +65,8 @@ describe("humanizeExecutionSeconds", () => {
       parentNode,
     });
     expect(el.getAttribute("title")).to.equal("20,576,132 minutes");
-    expect(el.textContent?.trim()).to.equal("21M minutes\u00a0(342,935h 32m)");
-    expect(parentNode.innerText).to.equal("21M minutes\u00a0(342,935h 32m)");
+    expect(el.textContent?.trim()).to.equal("21M minutes");
+    expect(parentNode.innerText).to.equal("21M minutes");
   });
 
   it("shows a short version when set", async () => {
@@ -65,9 +77,7 @@ describe("humanizeExecutionSeconds", () => {
         parentNode,
       },
     );
-    expect(el.getAttribute("title")).to.equal(
-      "20,576,132 minutes\u00a0(342,935h 32m)",
-    );
+    expect(el.getAttribute("title")).to.equal("20,576,132 minutes");
     expect(el.textContent?.trim()).to.equal("21M min");
     expect(parentNode.innerText).to.equal("21M min");
   });
@@ -108,12 +118,12 @@ describe("humanizeExecutionSeconds", () => {
         parentNode,
       },
     );
-    expect(el.textContent?.trim()).to.equal("<1 minute\u00a0(0m 24s)");
-    expect(parentNode.innerText).to.equal("<1 minute\u00a0(0m 24s)");
+    expect(el.textContent?.trim()).to.equal("0m 24s");
+    expect(parentNode.innerText).to.equal("0m 24s");
   });
   it("formats zero seconds", async () => {
     const parentNode = document.createElement("div");
-    const el = await fixture(
+    await fixture(
       humanizeExecutionSeconds(0, {
         displaySeconds: true,
       }),
@@ -121,7 +131,6 @@ describe("humanizeExecutionSeconds", () => {
         parentNode,
       },
     );
-    expect(el.textContent?.trim()).to.equal("0 minutes");
     expect(parentNode.innerText).to.equal("0 minutes");
   });
 });

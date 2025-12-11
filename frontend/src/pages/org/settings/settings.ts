@@ -26,6 +26,7 @@ import { tw } from "@/utils/tailwind";
 import "./components/general";
 import "./components/billing";
 import "./components/crawling-defaults";
+import "./components/billing-addon-link";
 
 const styles = unsafeCSS(stylesheet);
 
@@ -90,7 +91,7 @@ export class OrgSettings extends BtrixElement {
     return {
       information: msg("General"),
       members: msg("Members"),
-      billing: msg("Billing"),
+      billing: msg("Billing & Usage"),
       "crawling-defaults": msg("Crawling Defaults"),
     };
   }

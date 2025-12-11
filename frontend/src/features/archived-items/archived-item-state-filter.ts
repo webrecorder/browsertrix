@@ -107,7 +107,7 @@ export class ArchivedItemStateFilter extends BtrixElement {
 
         <div
           slot="dropdown-content"
-          class="flex max-h-[var(--auto-size-available-height)] max-w-[var(--auto-size-available-width)] flex-col overflow-hidden rounded border bg-white text-left"
+          class="flex max-h-[var(--auto-size-available-height)] max-w-[var(--auto-size-available-width)] flex-col overflow-hidden rounded border bg-white text-left shadow-md"
         >
           <header
             class="flex-shrink-0 flex-grow-0 overflow-hidden rounded-t border-b bg-white pb-3"
