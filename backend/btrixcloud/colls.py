@@ -912,7 +912,7 @@ class CollectionOps:
         if coll.dedupeIndex.state != "ready":
             raise HTTPException(status_code=400, detail="dedupe_index_not_ready")
 
-        await self.crawl_manager.update_coll_index(coll_id, True)
+        await self.crawl_manager.update_coll_index(coll_id, is_purge=True)
         return {"success": True}
 
     async def get_org_public_collections(
