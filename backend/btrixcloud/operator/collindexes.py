@@ -1,6 +1,7 @@
 """Operator handler for CollIndexes"""
 
 import re
+import os
 
 from uuid import UUID
 from pydantic import BaseModel
@@ -18,7 +19,7 @@ class CollIndexStatus(BaseModel):
 
     state: TYPE_DEDUPE_INDEX_STATES = "initing"
 
-    collLastUpdated: str = ""
+    updated: str = ""
 
 
 # ============================================================================
@@ -29,6 +30,7 @@ class CollIndexSpec(BaseModel):
     oid: UUID
 
     collItemsUpdatedAt: str = ""
+    purgeRequestedAt: str = ""
 
 
 # ============================================================================
@@ -36,6 +38,7 @@ class CollIndexOperator(BaseOperator):
     """CollIndex Operation"""
 
     shared_params = {}
+    fast_retry: int
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -49,6 +52,8 @@ class CollIndexOperator(BaseOperator):
             self.shared_params.get("dedupe_importer_channel") or "default"
         )
 
+        self.fast_retry = int(os.environ.get("FAST_RETRY_SECS") or 0)
+
     def init_routes(self, app):
         """init routes for this operator"""
 
@@ -60,10 +65,12 @@ class CollIndexOperator(BaseOperator):
         async def mc_finalize_index(data: MCSyncData):
             return await self.sync_index(data)
 
+    # pylint: disable=too-many-locals
     async def sync_index(self, data: MCSyncData):
         """sync CollIndex object with existing state"""
         spec = CollIndexSpec(**data.parent.get("spec", {}))
         status = CollIndexStatus(**data.parent.get("status", {}))
+        resync_after = None
 
         if data.finalizing:
             # allow deletion
@@ -79,27 +86,46 @@ class CollIndexOperator(BaseOperator):
         else:
             status.state = "initing"
 
-        import_ts = self.get_import_ts(spec, status)
+        import_ts, is_purge = self.get_import_or_purge_ts(spec, status)
         if import_ts:
-            import_job_name = f"import-{index_id}-{import_ts}"
-            new_children.extend(await self.load_import_job(index_id, import_job_name))
+            import_job_name = (
+                f"import-{index_id}-{import_ts}"
+                if not is_purge
+                else f"purge-{index_id}-{import_ts}"
+            )
+            new_children.extend(
+                await self.load_import_job(index_id, import_job_name, is_purge)
+            )
             new_children.extend(
                 await self.load_import_configmap(
                     index_id, import_job_name, spec.oid, data.children
                 )
             )
-            status.state = "importing"
+            status.state = "importing" if not is_purge else "purging"
 
         if redis:
-            # attempt to set the last updated from redis when done
+            # attempt to set the last updated from redis when import is finished
             try:
-                last_update_ts = await redis.get("last_update_ts")
-                if last_update_ts:
-                    status.collLastUpdated = last_update_ts
+                # index is now ready if no more child pods
+                if status.state != "ready":
+                    last_update_ts = await redis.get("last_update_ts")
+                    if last_update_ts:
+                        status.updated = last_update_ts
 
-                # index is ready!
-                if not data.children[JOB]:
-                    status.state = "ready"
+                    # index is now ready!
+                    if not data.children[JOB]:
+                        status.state = "ready"
+                        resync_after = self.fast_retry
+
+                # update db stats from redis
+                stats = await redis.hgetall("allcounts")
+                num_unique_urls = await redis.hlen("alldupes")
+                await self.coll_ops.update_dedupe_index_stats(
+                    spec.id,
+                    DedupeIndexStats(
+                        uniqueUrls=num_unique_urls, state=status.state, **stats
+                    ),
+                )
 
             # pylint: disable=broad-exception-caught
             except Exception as e:
@@ -117,20 +143,28 @@ class CollIndexOperator(BaseOperator):
         return {
             "status": status.dict(exclude_none=True),
             "children": new_children,
+            "resyncAfterSeconds": resync_after,
         }
 
-    def get_import_ts(self, spec: CollIndexSpec, status: CollIndexStatus):
-        """return true if a reimport is needed based on last import date"""
+    def get_import_or_purge_ts(self, spec: CollIndexSpec, status: CollIndexStatus):
+        """return true if a reimport or purge is needed based on last import date
+        or purge request data"""
+
+        purge_request_date = str_to_date(spec.purgeRequestedAt)
         coll_update_date = str_to_date(spec.collItemsUpdatedAt)
-        if not coll_update_date:
-            return None
+        last_import_date = str_to_date(status.updated)
 
-        last_import_date = str_to_date(status.collLastUpdated)
-        # do update from 'coll_update_date' timestamp
-        if not last_import_date or coll_update_date >= last_import_date:
-            return re.sub(r"[^0-9]", "", spec.collItemsUpdatedAt)
+        # do a import with purge
+        if purge_request_date:
+            if not last_import_date or purge_request_date >= last_import_date:
+                return re.sub(r"[^0-9]", "", spec.purgeRequestedAt), True
 
-        return None
+        if coll_update_date:
+            # do update from 'coll_update_date' timestamp
+            if not last_import_date or coll_update_date >= last_import_date:
+                return re.sub(r"[^0-9]", "", spec.collItemsUpdatedAt), False
+
+        return None, None
 
     def load_redis(self, index_id: str, name: str):
         """create redis pods from yaml template"""
@@ -141,7 +175,7 @@ class CollIndexOperator(BaseOperator):
 
         return self.load_from_yaml("redis.yaml", params)
 
-    async def load_import_job(self, index_id: str, name: str):
+    async def load_import_job(self, index_id: str, name: str, is_purging: bool):
         """create indexer pods from yaml template"""
         params = {}
         params.update(self.shared_params)
@@ -150,6 +184,7 @@ class CollIndexOperator(BaseOperator):
         params["crawler_image"] = self.crawl_config_ops.get_channel_crawler_image(
             self.dedupe_importer_channel
         )
+        params["is_purging"] = is_purging
 
         params["redis_url"] = self.k8s.get_redis_url("coll-" + index_id)
 
