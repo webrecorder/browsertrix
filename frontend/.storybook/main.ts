@@ -18,6 +18,7 @@ const config: StorybookConfig = {
       to: shoelaceAssetsPublicPath,
     },
     { from: "../src/assets/", to: "/assets" },
+    "../src/__generated__/static",
   ],
   addons: [
     "@storybook/addon-webpack5-compiler-swc",

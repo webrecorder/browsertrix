@@ -170,10 +170,6 @@ export class WorkflowListItem extends BtrixElement {
         box-shadow: var(--sl-shadow-x-small);
       }
 
-      .row:hover {
-        box-shadow: var(--sl-shadow-small);
-      }
-
       .col {
         padding-top: var(--sl-spacing-small);
         padding-bottom: var(--sl-spacing-small);
@@ -196,6 +192,10 @@ export class WorkflowListItem extends BtrixElement {
         font-family: var(--font-monostyle-family);
         font-variation-settings: var(--font-monostyle-variation);
         height: 1rem;
+      }
+
+      .desc > sl-icon {
+        font-size: var(--sl-font-size-small);
       }
 
       .notSpecified {
@@ -314,17 +314,41 @@ export class WorkflowListItem extends BtrixElement {
           ${when(this.workflow?.shareable, ShareableNotice)}
           ${this.safeRender(this.renderName)}
         </a>
-        <div class="desc truncate">
+        <div class="desc mt-px flex gap-3 truncate">
           ${this.safeRender((workflow) => {
+            const badges = [];
             if (workflow.schedule) {
-              return humanizeSchedule(workflow.schedule, {
-                length: "short",
-              });
+              badges.push(html`
+                <div class="flex items-center gap-1.5">
+                  <sl-icon
+                    name="calendar-check"
+                    label=${msg("Schedule")}
+                  ></sl-icon>
+                  ${humanizeSchedule(workflow.schedule, {
+                    length: "short",
+                  })}
+                </div>
+              `);
+            } else if (workflow.lastStartedByName) {
+              badges.push(html`
+                <div class="flex items-center gap-1.5">
+                  <sl-icon
+                    name="caret-right"
+                    label=${msg("Crawl run")}
+                  ></sl-icon>
+                  ${msg("Manual run")}
+                </div>
+              `);
             }
-            if (workflow.lastStartedByName) {
-              return msg(str`Manual run by ${workflow.lastStartedByName}`);
+            if (workflow.dedupeCollId) {
+              badges.push(html`
+                <div class="flex items-center gap-1.5">
+                  <sl-icon name="stack" label=${msg("Deduplication")}></sl-icon>
+                  ${msg("Dedupe enabled")}
+                </div>
+              `);
             }
-            return msg("---");
+            return html`${badges.length ? badges : noData}`;
           })}
         </div>
       </div>`;
@@ -362,18 +386,19 @@ export class WorkflowListItem extends BtrixElement {
                 })}
               </span>`;
             }
-            if (workflow.totalSize) {
-              return this.localize.bytes(+workflow.totalSize, {
+            return this.localize.bytes(
+              workflow.totalSize ? +workflow.totalSize : 0,
+              {
                 unitDisplay: "narrow",
-              });
-            }
-            return notSpecified;
+              },
+            );
           })}
         </div>
         <div class="desc">
-          ${this.safeRender(
-            (workflow) =>
-              `${this.localize.number(workflow.crawlCount, { notation: "compact" })} ${pluralOf("crawls", workflow.crawlCount)}`,
+          ${this.safeRender((workflow) =>
+            workflow.crawlCount
+              ? `${this.localize.number(workflow.crawlCount, { notation: "compact" })} ${pluralOf("crawls", workflow.crawlCount)}`
+              : notSpecified,
           )}
         </div>
       </div>`,
@@ -545,7 +570,9 @@ export class WorkflowListItem extends BtrixElement {
   };
 
   private safeRender(
-    render: (workflow: ListWorkflow) => string | TemplateResult<1>,
+    render: (
+      workflow: ListWorkflow,
+    ) => string | TemplateResult<1> | undefined | void,
   ) {
     if (!this.workflow) {
       return html`<sl-skeleton></sl-skeleton>`;
@@ -644,7 +671,7 @@ export class WorkflowList extends LitElement {
   listItems!: WorkflowListItem[];
 
   static ColumnTemplate = {
-    name: html`<div class="col">${msg(html`Name & Schedule`)}</div>`,
+    name: html`<div class="col">${msg(html`Name & Details`)}</div>`,
     "latest-crawl": html`<div class="col">${msg("Latest Crawl")}</div>`,
     "total-crawls": html`<div class="col">${msg("Total Size")}</div>`,
     modified: html`<div class="col">${msg("Last Modified")}</div>`,
