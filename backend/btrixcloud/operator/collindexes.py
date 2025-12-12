@@ -1,6 +1,7 @@
 """Operator handler for CollIndexes"""
 
 import re
+import os
 
 from uuid import UUID
 from pydantic import BaseModel
@@ -18,7 +19,7 @@ class CollIndexStatus(BaseModel):
 
     state: TYPE_DEDUPE_INDEX_STATES = "initing"
 
-    collLastUpdated: str = ""
+    updated: str = ""
 
 
 # ============================================================================
@@ -37,6 +38,7 @@ class CollIndexOperator(BaseOperator):
     """CollIndex Operation"""
 
     shared_params = {}
+    fast_retry: int
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -50,6 +52,8 @@ class CollIndexOperator(BaseOperator):
             self.shared_params.get("dedupe_importer_channel") or "default"
         )
 
+        self.fast_retry = int(os.environ.get("FAST_RETRY_SECS") or 0)
+
     def init_routes(self, app):
         """init routes for this operator"""
 
@@ -61,10 +65,12 @@ class CollIndexOperator(BaseOperator):
         async def mc_finalize_index(data: MCSyncData):
             return await self.sync_index(data)
 
+    # pylint: disable=too-many-locals
     async def sync_index(self, data: MCSyncData):
         """sync CollIndex object with existing state"""
         spec = CollIndexSpec(**data.parent.get("spec", {}))
         status = CollIndexStatus(**data.parent.get("status", {}))
+        resync_after = None
 
         if data.finalizing:
             # allow deletion
@@ -101,12 +107,15 @@ class CollIndexOperator(BaseOperator):
             # attempt to set the last updated from redis when import is finished
             try:
                 # index is now ready if no more child pods
-                if status.state != "ready" and not data.children[JOB]:
+                if status.state != "ready":
                     last_update_ts = await redis.get("last_update_ts")
                     if last_update_ts:
-                        status.collLastUpdated = last_update_ts
+                        status.updated = last_update_ts
 
-                    status.state = "ready"
+                    # index is now ready!
+                    if not data.children[JOB]:
+                        status.state = "ready"
+                        resync_after = self.fast_retry
 
                 # update db stats from redis
                 stats = await redis.hgetall("allcounts")
@@ -134,6 +143,7 @@ class CollIndexOperator(BaseOperator):
         return {
             "status": status.dict(exclude_none=True),
             "children": new_children,
+            "resyncAfterSeconds": resync_after,
         }
 
     def get_import_or_purge_ts(self, spec: CollIndexSpec, status: CollIndexStatus):
@@ -142,7 +152,7 @@ class CollIndexOperator(BaseOperator):
 
         purge_request_date = str_to_date(spec.purgeRequestedAt)
         coll_update_date = str_to_date(spec.collItemsUpdatedAt)
-        last_import_date = str_to_date(status.collLastUpdated)
+        last_import_date = str_to_date(status.updated)
 
         # do a import with purge
         if purge_request_date:
