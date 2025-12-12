@@ -37,6 +37,9 @@ spec:
             - /tmp/config/config.json
             - --redisDedupeUrl
             - {{ redis_url }}
+          {% if is_purging %}
+            - --removing
+          {% endif %}
 
           volumeMounts:
             - name: config
