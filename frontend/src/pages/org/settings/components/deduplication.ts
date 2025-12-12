@@ -14,7 +14,7 @@ import { Tab } from "@/pages/org/collection-detail/types";
 import { OrgTab } from "@/routes";
 import { notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { Collection, DedupeSource, DedupeStats } from "@/types/collection";
+import type { Collection, DedupeStats } from "@/types/collection";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { pluralOf } from "@/utils/pluralize";
 
@@ -27,10 +27,10 @@ export class OrgSettingsDeduplication extends BtrixElement {
   visible?: boolean;
 
   @state()
-  private indexToClear?: DedupeSource;
+  private indexToClear?: Collection;
 
   @state()
-  private indexToDelete?: DedupeSource;
+  private indexToDelete?: Collection;
 
   @state({ hasChanged: isNotEqual })
   private pagination: Required<APIPaginationQuery> = {
@@ -69,12 +69,12 @@ export class OrgSettingsDeduplication extends BtrixElement {
     `;
   }
 
-  private readonly renderTable = (sources: APIPaginatedList<DedupeSource>) => {
+  private readonly renderTable = (sources: APIPaginatedList<Collection>) => {
     const dedupeStat = (
-      source: DedupeSource,
+      source: Collection,
       render: (dedupe: DedupeStats) => TemplateResult,
     ) => {
-      if (source.dedupe) render(source.dedupe);
+      if (source.dedupeIndex) render(source.dedupeIndex);
 
       return html`<span class="text-neutral-400">${notApplicable}</span>`;
     };
@@ -312,10 +312,10 @@ export class OrgSettingsDeduplication extends BtrixElement {
     </btrix-dialog>`;
   }
 
-  private async clearIndex(source: DedupeSource) {
+  private async clearIndex(source: Collection) {
     try {
       await this.api.fetch(
-        `/orgs/${this.orgId}/collections/${source.id}/dedupe/clear`,
+        `/orgs/${this.orgId}/collections/${source.id}/purgeDedupeIndex`,
         {
           method: "POST",
         },
@@ -339,7 +339,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
     }
   }
 
-  private async deleteIndex(source: DedupeSource) {
+  private async deleteIndex(source: Collection) {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/collections/${source.id}/dedupe`,

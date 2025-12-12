@@ -72,13 +72,14 @@ export const collectionSchema = publicCollectionSchema.extend({
   orgPublicProfile: z.boolean().optional(),
   tags: z.array(z.string()),
   access: z.nativeEnum(CollectionAccess),
+  dedupeIndex: dedupeStatsSchema.optional(),
 });
 export type Collection = z.infer<typeof collectionSchema>;
 
-export const dedupeSourceSchema = collectionSchema.extend({
-  dedupe: dedupeStatsSchema.optional(),
-});
-export type DedupeSource = z.infer<typeof dedupeSourceSchema>;
+// export const dedupeSourceSchema = collectionSchema.extend({
+//   dedupeIndex: dedupeStatsSchema.optional(),
+// });
+// export type DedupeSource = z.infer<typeof dedupeSourceSchema>;
 
 export type CollectionSearchValues = {
   names: string[];

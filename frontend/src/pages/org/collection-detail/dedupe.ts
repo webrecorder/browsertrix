@@ -67,31 +67,31 @@ export class CollectionDetailDedupe extends BtrixElement {
     },
   );
 
-  private readonly dedupeStatsTask = new Task(this, {
-    task: async ([collectionId]) => {
-      if (!collectionId) return;
+  // private readonly dedupeStatsTask = new Task(this, {
+  //   task: async ([collectionId]) => {
+  //     if (!collectionId) return;
 
-      // TODO Actual data
-      return await new Promise<DedupeStats>((resolve) => {
-        setTimeout(() => {
-          resolve({
-            uniqueUrls: 24,
-            totalUrls: 49,
-            uniqueSize: 1234,
-            totalSize: 2345,
-            removable: 2,
-            state: "waiting_dedupe_index",
-          });
-        }, 1000);
-      });
+  //     // TODO Actual data
+  //     return await new Promise<DedupeStats>((resolve) => {
+  //       setTimeout(() => {
+  //         resolve({
+  //           uniqueUrls: 24,
+  //           totalUrls: 49,
+  //           uniqueSize: 1234,
+  //           totalSize: 2345,
+  //           removable: 2,
+  //           state: "waiting_dedupe_index",
+  //         });
+  //       }, 1000);
+  //     });
 
-      // return await this.api.fetch<DedupeStats>(
-      //   `/orgs/${this.orgId}/collections/${this.collectionId}/dedupe`,
-      //   { signal },
-      // );
-    },
-    args: () => [this.collectionId] as const,
-  });
+  //     // return await this.api.fetch<DedupeStats>(
+  //     //   `/orgs/${this.orgId}/collections/${this.collectionId}/dedupe`,
+  //     //   { signal },
+  //     // );
+  //   },
+  //   args: () => [this.collectionId] as const,
+  // });
 
   private readonly dedupeWorkflowsTask = new Task(this, {
     task: async ([collectionId], { signal }) => {
@@ -181,7 +181,7 @@ export class CollectionDetailDedupe extends BtrixElement {
   }
 
   private renderStats() {
-    const dedupe = this.dedupeStatsTask.value;
+    const dedupe = this.collection?.dedupeIndex;
 
     const ringStat = (
       ring: Parameters<CollectionDetailDedupe["renderRing"]>[0],
@@ -390,7 +390,7 @@ export class CollectionDetailDedupe extends BtrixElement {
   };
 
   private renderOverview() {
-    const dedupe = this.dedupeStatsTask.value;
+    const dedupe = this.collection?.dedupeIndex;
 
     return panel({
       heading: msg("Overview"),
