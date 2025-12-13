@@ -86,23 +86,6 @@ class CollIndexOperator(BaseOperator):
         else:
             status.state = "initing"
 
-        import_ts, is_purge = self.get_import_or_purge_ts(spec, status)
-        if import_ts:
-            import_job_name = (
-                f"import-{index_id}-{import_ts}"
-                if not is_purge
-                else f"purge-{index_id}-{import_ts}"
-            )
-            new_children.extend(
-                await self.load_import_job(index_id, import_job_name, is_purge)
-            )
-            new_children.extend(
-                await self.load_import_configmap(
-                    index_id, import_job_name, spec.oid, data.children
-                )
-            )
-            status.state = "importing" if not is_purge else "purging"
-
         if redis:
             # attempt to set the last updated from redis when import is finished
             try:
@@ -139,6 +122,24 @@ class CollIndexOperator(BaseOperator):
                     uniqueUrls=num_unique_urls, state=status.state, **stats
                 ),
             )
+
+        import_ts, is_purge = self.get_import_or_purge_ts(spec, status)
+        if import_ts:
+            import_job_name = (
+                f"import-{index_id}-{import_ts}"
+                if not is_purge
+                else f"purge-{index_id}-{import_ts}"
+            )
+            new_children.extend(
+                await self.load_import_job(index_id, import_job_name, is_purge)
+            )
+            new_children.extend(
+                await self.load_import_configmap(
+                    index_id, import_job_name, spec.oid, data.children
+                )
+            )
+            status.state = "importing" if not is_purge else "purging"
+            resync_after = 0
 
         return {
             "status": status.dict(exclude_none=True),
