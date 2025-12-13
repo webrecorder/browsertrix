@@ -69,30 +69,6 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
 
-      affinity:
-    {% if crawler_node_type %}
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                - key: nodeType
-                  operator: In
-                  values:
-                    - "{{ crawler_node_type }}"
-    {% endif %}
-
-        podAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 10
-              podAffinityTerm:
-                topologyKey: "kubernetes.io/hostname"
-                labelSelector:
-                  matchExpressions:
-                  - key: coll
-                    operator: In
-                    values:
-                    - {{ id }}
-
       tolerations:
         - key: nodeType
           operator: Equal
