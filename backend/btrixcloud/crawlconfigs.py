@@ -498,6 +498,29 @@ class CrawlConfigOps:
 
         return False
 
+    def check_crawlconfig_config_changed(
+        self, crawlconfig: CrawlConfig, update: UpdateCrawlConfig
+    ) -> bool:
+        """check if update config will modify existing crawlconfig.config"""
+        if update.config is None:
+            return False
+
+        orig_raw_config = crawlconfig.config.dict()
+        for key, update_value in update.config.dict(exclude_unset=True).items():
+            orig_value = orig_raw_config.get(key)
+            # For seeds, need to compare list of dicts of full seed objects
+            if key == "seeds":
+                if orig_value is None:
+                    return True
+                orig_seeds = [Seed(**seed).dict() for seed in orig_value]
+                update_seeds = [Seed(**seed).dict() for seed in update_value]
+                if orig_seeds != update_seeds:
+                    return True
+            elif orig_value != update_value:
+                return True
+
+        return False
+
     async def update_crawl_config(
         self, cid: UUID, org: Organization, user: User, update: UpdateCrawlConfig
     ) -> CrawlConfigUpdateResponse:
@@ -577,7 +600,7 @@ class CrawlConfigOps:
         # indicates if any k8s crawl config settings changed
         changed = False
         changed = changed or (
-            self.check_attr_changed(orig_crawl_config, update, "config")
+            self.check_crawlconfig_config_changed(orig_crawl_config, update)
         )
         changed = changed or (
             self.check_attr_changed(orig_crawl_config, update, "crawlTimeout")
