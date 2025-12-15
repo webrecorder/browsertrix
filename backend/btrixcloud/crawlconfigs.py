@@ -673,7 +673,9 @@ class CrawlConfigOps:
                 query["proxyId"] = update.proxyId
 
         if update.config is not None:
-            query["config"] = update.config.dict()
+            query["config"] = RawCrawlConfig(**orig_crawl_config.config.dict()).dict()
+            for key, value in update.config.dict(exclude_unset=True).items():
+                query["config"][key] = value
 
         if update.config and update.config.seedFileId:
             query["firstSeed"] = seed_file.firstSeed

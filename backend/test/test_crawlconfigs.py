@@ -2,7 +2,7 @@ import time
 
 import requests
 
-from .conftest import API_PREFIX
+from .conftest import API_PREFIX, BROWSERTRIX_USER_AGENT
 
 cid = None
 cid_single_page = None
@@ -339,10 +339,16 @@ def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_d
     assert r.status_code == 200
 
     data = r.json()
+    config = data["config"]
 
-    assert data["config"]["scopeType"] == "domain"
-    assert data["config"]["selectLinks"] == ["a[href]->href", "script[src]->src"]
-    assert data["config"]["clickSelector"] == "button"
+    assert config["scopeType"] == "domain"
+    assert config["selectLinks"] == ["a[href]->href", "script[src]->src"]
+    assert config["clickSelector"] == "button"
+
+    # Verify fields set in config originally are unchanged
+    assert config["lang"] == "en"
+    assert config["postLoadDelay"] == 1
+    assert config["userAgent"] == BROWSERTRIX_USER_AGENT
 
 
 def test_update_config_no_changes(
