@@ -696,7 +696,7 @@ class CrawlConfigOps:
                 query["proxyId"] = update.proxyId
 
         if update.config is not None:
-            query["config"] = RawCrawlConfig(**orig_crawl_config.config.dict()).dict()
+            query["config"] = orig_crawl_config.config.dict()
             for key, value in update.config.dict(exclude_unset=True).items():
                 query["config"][key] = value
 
