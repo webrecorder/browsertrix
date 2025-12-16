@@ -346,7 +346,7 @@ def sample_crawl_data():
             # config object
             "lang": "en",
             "postLoadDelay": 1,
-            "userAgent": BROWSERTRIX_USER_AGENT
+            "userAgent": BROWSERTRIX_USER_AGENT,
         },
         "tags": ["tag1", "tag2"],
     }
