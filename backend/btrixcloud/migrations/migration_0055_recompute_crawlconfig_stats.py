@@ -37,12 +37,19 @@ class Migration(BaseMigration):
             )
             return
 
+        count = 0
         async for config in crawl_configs.find({"inactive": {"$ne": True}}):
             config_id = config["_id"]
             try:
                 await stats_recompute_all(
                     self.crawl_config_ops, crawl_configs, crawls, config_id
                 )
+                count += 1
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(f"Unable to update workflow {config_id}: {err}", flush=True)
+
+            if count % 100 == 0:
+                print(f"Migrated {count} workflows")
+
+            print(f"Migrated {count} workflows total, done")
