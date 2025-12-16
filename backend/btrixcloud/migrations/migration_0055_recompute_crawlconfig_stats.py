@@ -52,4 +52,4 @@ class Migration(BaseMigration):
             if count % 100 == 0:
                 print(f"Migrated {count} workflows")
 
-            print(f"Migrated {count} workflows total, done")
+        print(f"Migrated {count} workflows total, done")
