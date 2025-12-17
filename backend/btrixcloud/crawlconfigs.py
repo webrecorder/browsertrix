@@ -650,7 +650,6 @@ class CrawlConfigOps:
             return CrawlConfigUpdateResponse(
                 settings_changed=changed,
                 metadata_changed=metadata_changed,
-                updated=changed or metadata_changed,
             )
 
         if changed:
@@ -742,7 +741,6 @@ class CrawlConfigOps:
             metadata_changed=metadata_changed,
             storageQuotaReached=self.org_ops.storage_quota_reached(org),
             execMinutesQuotaReached=self.org_ops.exec_mins_quota_reached(org),
-            updated=changed or metadata_changed,
         )
 
         if run_now:
