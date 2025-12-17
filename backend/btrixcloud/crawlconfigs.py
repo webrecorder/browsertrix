@@ -576,7 +576,7 @@ class CrawlConfigOps:
 
         merged_raw_config_dict = None
         if update.config:
-            merged_raw_config_dict = orig_crawl_config.config.dict()
+            merged_raw_config_dict = orig_crawl_config.config.dict(exclude_unset=True)
             merged_raw_config_dict.update(update.config.dict(exclude_unset=True))
 
         # indicates if any k8s crawl config settings changed
@@ -584,7 +584,8 @@ class CrawlConfigOps:
 
         changed = (
             merged_raw_config_dict is not None
-            and merged_raw_config_dict != orig_crawl_config.config.dict()
+            and merged_raw_config_dict
+            != orig_crawl_config.config.dict(exclude_unset=True)
         )
 
         changed = changed or (
@@ -647,7 +648,9 @@ class CrawlConfigOps:
 
         if not changed and not metadata_changed and not run_now:
             return CrawlConfigUpdateResponse(
-                settings_changed=changed, metadata_changed=metadata_changed
+                settings_changed=changed,
+                metadata_changed=metadata_changed,
+                updated=changed or metadata_changed,
             )
 
         if changed:
@@ -739,6 +742,7 @@ class CrawlConfigOps:
             metadata_changed=metadata_changed,
             storageQuotaReached=self.org_ops.storage_quota_reached(org),
             execMinutesQuotaReached=self.org_ops.exec_mins_quota_reached(org),
+            updated=changed or metadata_changed,
         )
 
         if run_now:
