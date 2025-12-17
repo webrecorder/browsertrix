@@ -22,6 +22,8 @@ CRAWLER_USERNAME = "CraWleR@example.com"
 CRAWLER_USERNAME_LOWERCASE = "crawler@example.com"
 CRAWLER_PW = "crawlerPASSWORD!"
 
+BROWSERTRIX_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.3 (+Browsertrix)"
+
 _admin_config_id = None
 _crawler_config_id = None
 _auto_add_config_id = None
@@ -339,6 +341,12 @@ def sample_crawl_data():
         "config": {
             "seeds": [{"url": "https://example-com.webrecorder.net/"}],
             "extraHops": 1,
+            # Add some extra config fields so we can ensure they're
+            # not modified when we do a PATCH for other fields in the
+            # config object
+            "lang": "en",
+            "postLoadDelay": 1,
+            "userAgent": BROWSERTRIX_USER_AGENT,
         },
         "tags": ["tag1", "tag2"],
     }

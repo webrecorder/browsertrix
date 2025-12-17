@@ -574,11 +574,20 @@ class CrawlConfigOps:
                         status_code=400, detail="fail_on_content_check_requires_profile"
                     )
 
+        merged_raw_config_dict = None
+        if update.config:
+            merged_raw_config_dict = orig_crawl_config.config.dict(exclude_unset=True)
+            merged_raw_config_dict.update(update.config.dict(exclude_unset=True))
+
         # indicates if any k8s crawl config settings changed
         changed = False
-        changed = changed or (
-            self.check_attr_changed(orig_crawl_config, update, "config")
+
+        changed = (
+            merged_raw_config_dict is not None
+            and merged_raw_config_dict
+            != orig_crawl_config.config.dict(exclude_unset=True)
         )
+
         changed = changed or (
             self.check_attr_changed(orig_crawl_config, update, "crawlTimeout")
         )
@@ -639,7 +648,8 @@ class CrawlConfigOps:
 
         if not changed and not metadata_changed and not run_now:
             return CrawlConfigUpdateResponse(
-                settings_changed=changed, metadata_changed=metadata_changed
+                settings_changed=changed,
+                metadata_changed=metadata_changed,
             )
 
         if changed:
@@ -672,8 +682,8 @@ class CrawlConfigOps:
                 self.assert_can_org_use_proxy(org, update.proxyId)
                 query["proxyId"] = update.proxyId
 
-        if update.config is not None:
-            query["config"] = update.config.dict()
+        if merged_raw_config_dict:
+            query["config"] = merged_raw_config_dict
 
         if update.config and update.config.seedFileId:
             query["firstSeed"] = seed_file.firstSeed
