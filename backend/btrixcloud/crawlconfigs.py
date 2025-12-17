@@ -576,10 +576,8 @@ class CrawlConfigOps:
 
         merged_raw_config_dict = None
         if update.config:
-            merged_raw_config_dict = RawCrawlConfig(
-                **orig_crawl_config.config.dict(),
-                **update.config.dict(exclude_unset=True),
-            ).dict()
+            merged_raw_config_dict = orig_crawl_config.config.model_dump()
+            merged_raw_config_dict.update(update.config.dict(exclude_unset=True))
 
         # indicates if any k8s crawl config settings changed
         changed = False
