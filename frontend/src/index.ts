@@ -27,7 +27,6 @@ import type { UserInfo, UserOrg } from "./types/user";
 import { pageView, type AnalyticsTrackProps } from "./utils/analytics";
 import { type ViewState } from "./utils/APIRouter";
 import AuthService, {
-  type AuthEventDetail,
   type LoggedInEventDetail,
   type NeedLoginEventDetail,
 } from "./utils/AuthService";
@@ -35,7 +34,6 @@ import AuthService, {
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
-import { type Auth } from "@/types/auth";
 import {
   translatedLocales,
   type TranslatedLocaleEnum,
@@ -136,14 +134,13 @@ export class App extends BtrixElement {
   async connectedCallback() {
     let authState: AuthService["authState"] = null;
     try {
-      authState = await AuthService.initSessionStorage();
+      authState = await this.authService.initSessionStorage();
     } catch (e) {
       console.debug(e);
     }
+
     this.syncViewState();
-    if (authState) {
-      this.authService.saveLogin(authState);
-    }
+
     if (authState && !this.userInfo) {
       void this.fetchAndUpdateUserInfo();
     }
@@ -159,8 +156,6 @@ export class App extends BtrixElement {
     window.addEventListener("popstate", () => {
       this.syncViewState();
     });
-
-    this.startSyncBrowserTabs();
   }
 
   private attachUserGuideListeners() {
@@ -1083,6 +1078,7 @@ export class App extends BtrixElement {
 
   private clearUser() {
     this.authService.logout();
+    this.authService.finalize();
     this.authService = new AuthService();
     AppStateService.resetUser();
   }
@@ -1126,26 +1122,6 @@ export class App extends BtrixElement {
         </div>
       `,
     });
-  }
-
-  private startSyncBrowserTabs() {
-    AuthService.broadcastChannel.addEventListener(
-      "message",
-      ({ data }: { data: AuthEventDetail }) => {
-        if (data.name === "auth_storage") {
-          if (data.value !== AuthService.storage.getItem()) {
-            if (data.value) {
-              this.authService.saveLogin(JSON.parse(data.value) as Auth);
-              void this.fetchAndUpdateUserInfo();
-              this.syncViewState();
-            } else {
-              this.clearUser();
-              this.routeTo(urlForName("login"));
-            }
-          }
-        }
-      },
-    );
   }
 
   private clearSelectedOrg() {

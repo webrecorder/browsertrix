@@ -30,6 +30,7 @@ describe("state", () => {
       const mockAuth = null;
       AppStateService.updateAuth(mockAuth);
       expect(AppStateService.appState.auth).to.equal(mockAuth);
+      expect(AppStateService.appState.loggedIn).to.equal(false);
     });
 
     it("updates valid auth", () => {
@@ -40,6 +41,7 @@ describe("state", () => {
       };
       AppStateService.updateAuth(mockAuth);
       expect(AppStateService.appState.auth).to.equal(mockAuth);
+      expect(AppStateService.appState.loggedIn).to.equal(true);
     });
 
     it("does not update invalid auth", () => {
