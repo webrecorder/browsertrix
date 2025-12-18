@@ -96,7 +96,7 @@
     /* Help text */
     --sl-input-help-text-font-size-medium: var(--sl-font-size-x-small);
 
-    --sl-shadow-x-small: 0px 1px 2px rgba(0, 0, 0, 0.15);
+    --sl-shadow-x-small: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 
     /* Transition */
     --sl-transition-x-fast: 100ms;
@@ -263,6 +263,12 @@
     @apply part-[base]:text-success part-[base]:hover:bg-success-50 part-[base]:hover:text-success-700 part-[base]:focus-visible:bg-success-50;
   }
 
+  sl-option.menu-item-warning,
+  sl-menu-item.menu-item-warning,
+  btrix-menu-item-link.menu-item-warning {
+    @apply part-[base]:text-warning part-[base]:hover:bg-warning-50 part-[base]:hover:text-warning-700 part-[base]:focus-visible:bg-warning-50;
+  }
+
   sl-option.menu-item-danger,
   sl-menu-item.menu-item-danger,
   btrix-menu-item-link.menu-item-danger {
@@ -424,14 +430,12 @@
   .font-monostyle {
     @apply font-mono;
     font-variation-settings: var(--font-monostyle-variation);
-    font-size: 95%;
   }
 
   /* Actually monospaced font */
   .font-monospace {
     @apply font-mono;
     font-variation-settings: var(--font-monospace-variation);
-    font-size: 95%;
   }
 
   .truncate {

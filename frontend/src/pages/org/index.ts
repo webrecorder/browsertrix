@@ -9,7 +9,7 @@ import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
 import type { QATab } from "./archived-item-qa/types";
-import type { Tab as CollectionTab } from "./collection-detail";
+import type { Tab as CollectionTab } from "./collection-detail/types";
 import type {
   Member,
   OrgRemoveMemberEvent,
