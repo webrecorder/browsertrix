@@ -505,11 +505,12 @@ class CrawlManager(K8sAPI):
             str(collection.id), str(collection.oid), collection.modified
         )
 
-    async def update_coll_index(self, coll_id: UUID):
+    async def update_coll_index(self, coll_id: UUID, is_purge: bool = False):
         """force collection index to update"""
+        field = "collItemsUpdatedAt" if not is_purge else "purgeRequestedAt"
         return await self.patch_custom_object(
             f"collindex-{coll_id}",
-            {"collItemsUpdatedAt": date_to_str(dt_now())},
+            {field: date_to_str(dt_now())},
             "collindexes",
         )
 
