@@ -903,6 +903,18 @@ class CollectionOps:
             )
             await self.update_crawl_collections(crawl_id, oid)
 
+    async def purge_dedupe_index(self, coll_id: UUID, org: Organization):
+        """purge dedupe index on collection, raise exception if no index or not ready"""
+        coll = await self.get_collection(coll_id, org.id)
+        if not coll.hasDedupeIndex or not coll.dedupeIndex:
+            raise HTTPException(status_code=400, detail="no_dedupe_index_on_collection")
+
+        if coll.dedupeIndex.state != "ready":
+            raise HTTPException(status_code=400, detail="dedupe_index_not_ready")
+
+        await self.crawl_manager.update_coll_index(coll_id, is_purge=True)
+        return {"success": True}
+
     async def get_org_public_collections(
         self,
         org_slug: str,
@@ -1428,5 +1440,16 @@ def init_collections_api(
         org: Organization = Depends(org_crawl_dep),
     ):
         return await colls.delete_thumbnail(coll_id, org)
+
+    @app.post(
+        "/orgs/{oid}/collections/{coll_id}/purgeDedupeIndex",
+        tags=["collections", "dedupe"],
+        response_model=SuccessResponse,
+    )
+    async def purge_dedupe_index(
+        coll_id: UUID,
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return await colls.purge_dedupe_index(coll_id, org)
 
     return colls
