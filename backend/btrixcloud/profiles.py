@@ -446,6 +446,11 @@ class ProfileOps:
             return False
 
         prev_file_size = profile_file.size
+
+        # same hash, profile unchanged, no updates needed
+        if profile_file.hash == hash_:
+            return True
+
         profile_file.size = size
         profile_file.hash = hash_
 
@@ -454,8 +459,11 @@ class ProfileOps:
             org_id, profile_file, str(profileid), "profile"
         )
 
-        # update stats
-        await self.orgs.inc_org_bytes_stored(org_id, size - prev_file_size, "profile")
+        # update size stats, if changed
+        if size != prev_file_size:
+            await self.orgs.inc_org_bytes_stored(
+                org_id, size - prev_file_size, "profile"
+            )
 
         return True
 
