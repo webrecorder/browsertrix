@@ -125,6 +125,16 @@ spec:
           port: {{ .Values.opPort }}
         path: /op/collindexes/finalize
 
+    customize:
+      webhook:
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/collindexes/customize
+
+
+
 ---
 apiVersion: metacontroller.k8s.io/v1alpha1
 kind: DecoratorController
