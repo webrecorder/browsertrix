@@ -184,6 +184,12 @@ class CollIndexOperator(BaseOperator):
         params["crawler_image"] = self.crawl_config_ops.get_channel_crawler_image(
             self.dedupe_importer_channel
         )
+        pull_policy = self.crawl_config_ops.get_channel_crawler_image_pull_policy(
+            self.dedupe_importer_channel
+        )
+        if pull_policy:
+            params["crawler_image_pull_policy"] = pull_policy
+
         params["is_purging"] = is_purging
 
         params["redis_url"] = self.k8s.get_redis_url("coll-" + index_id)

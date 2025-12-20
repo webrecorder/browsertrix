@@ -265,10 +265,7 @@ export class ItemDependencyTree extends BtrixElement {
         </sl-tooltip>
         <span
           >${this.localize.number(dependencies.length)}
-          ${pluralOf(
-            this.showHeader ? "items" : "dependencies",
-            dependencies.length,
-          )}</span
+          ${pluralOf("items", dependencies.length)}</span
         >
       </div>
       <div class="component--detail">
