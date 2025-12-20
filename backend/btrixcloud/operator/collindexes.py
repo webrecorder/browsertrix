@@ -5,11 +5,12 @@ import os
 
 from uuid import UUID
 from pydantic import BaseModel
+from redis.asyncio.client import Redis
 
-from btrixcloud.utils import str_to_date
+from btrixcloud.utils import str_to_date, date_to_str
 from btrixcloud.models import TYPE_DEDUPE_INDEX_STATES, DedupeIndexStats
 
-from .models import MCSyncData, POD, JOB, CMAP
+from .models import MCSyncData, MCBaseRequest, POD, JOB, CMAP, CJS, BTRIX_API
 from .baseoperator import BaseOperator
 
 
@@ -20,6 +21,8 @@ class CollIndexStatus(BaseModel):
     state: TYPE_DEDUPE_INDEX_STATES = "initing"
 
     updated: str = ""
+
+    lastSavedRedis: str = ""
 
 
 # ============================================================================
@@ -46,7 +49,6 @@ class CollIndexOperator(BaseOperator):
         self.shared_params["redis_storage"] = self.shared_params["redis_dedupe_storage"]
         self.shared_params["memory"] = self.shared_params["redis_dedupe_memory"]
         self.shared_params["cpu"] = self.shared_params["redis_cpu"]
-        self.shared_params["init_redis"] = True
         self.shared_params["obj_type"] = "coll"
         self.dedupe_importer_channel = (
             self.shared_params.get("dedupe_importer_channel") or "default"
@@ -65,12 +67,15 @@ class CollIndexOperator(BaseOperator):
         async def mc_finalize_index(data: MCSyncData):
             return await self.sync_index(data)
 
-    # pylint: disable=too-many-locals
+        @app.post("/op/collindexes/customize")
+        async def mc_related(data: MCBaseRequest):
+            return self.get_related(data)
+
+    # pylint: disable=too-many-locals, too-many-branches
     async def sync_index(self, data: MCSyncData):
         """sync CollIndex object with existing state"""
         spec = CollIndexSpec(**data.parent.get("spec", {}))
         status = CollIndexStatus(**data.parent.get("status", {}))
-        resync_after = None
 
         if data.finalizing:
             # allow deletion
@@ -78,14 +83,15 @@ class CollIndexOperator(BaseOperator):
 
         index_id = str(spec.id)
         redis_name = "redis-coll-" + index_id
-        new_children = self.load_redis(index_id, redis_name)
 
+        # get redis if exists
         redis = None
         if redis_name in data.children[POD]:
             redis = await self.k8s.get_redis_connected("coll-" + index_id)
-        else:
-            status.state = "initing"
 
+        new_children = []
+
+        # check if import/purge needed
         import_ts, is_purge = self.get_import_or_purge_ts(spec, status)
         if import_ts:
             import_job_name = (
@@ -103,48 +109,98 @@ class CollIndexOperator(BaseOperator):
             )
             status.state = "importing" if not is_purge else "purging"
 
+        is_active = status.state in ("importing", "purging") or bool(
+            data.related.get(CJS)
+        )
+
         if redis:
-            # attempt to set the last updated from redis when import is finished
+            if not is_active:
+                is_active = await self.handle_redis_save(redis, status)
+            else:
+                await self.handle_redis_update(redis, status, spec.id, data)
+        else:
+            status.state = "initing" if is_active else "idle"
+
+        # load redis pvc and/or redis pod itself
+        new_children.extend(self.load_redis(index_id, redis_name, is_active))
+
+        return {
+            "status": status.dict(exclude_none=True),
+            "children": new_children,
+        }
+
+    async def handle_redis_save(self, redis: Redis, status: CollIndexStatus):
+        """bgsave redis before shutting down, return true if finished saving"""
+        # if have redis but don't need
+        if status.state == "ready":
             try:
-                # index is now ready if no more child pods
-                if status.state != "ready":
-                    last_update_ts = await redis.get("last_update_ts")
-                    if last_update_ts:
-                        status.updated = last_update_ts
+                await redis.bgsave()
+            # pylint: disable=bare-except
+            except:
+                pass
 
-                    # index is now ready!
-                    if not data.children[JOB]:
-                        status.state = "ready"
-                        resync_after = self.fast_retry
+            status.state = "saving"
 
-                # update db stats from redis
-                stats = await redis.hgetall("allcounts")
-                num_unique_urls = await redis.hlen("alldupes")
-                await self.coll_ops.update_dedupe_index_stats(
-                    spec.id,
-                    DedupeIndexStats(
-                        uniqueUrls=num_unique_urls, state=status.state, **stats
-                    ),
-                )
+        last_saved = await redis.lastsave()
+        if last_saved and (
+            not status.lastSavedRedis or last_saved > str_to_date(status.lastSavedRedis)
+        ):
+            status.lastSavedRedis = date_to_str(last_saved)
+            return False
 
-            # pylint: disable=broad-exception-caught
-            except Exception as e:
-                print(e)
+        return True
 
+    async def handle_redis_update(
+        self, redis: Redis, status: CollIndexStatus, coll_id: UUID, data: MCSyncData
+    ):
+        """update stats from ready, return ready if import jobs finished"""
+        # attempt to set the last updated from redis when import is finished
+        try:
+            # index is now ready if no more child pods
+            if status.state != "ready":
+                last_update_ts = await redis.get("last_update_ts")
+                if last_update_ts:
+                    status.updated = last_update_ts
+
+                # index is now ready!
+                if not data.children[JOB]:
+                    status.state = "ready"
+                    # resync_after = self.fast_retry
+
+            # update db stats from redis
             stats = await redis.hgetall("allcounts")
             num_unique_urls = await redis.hlen("alldupes")
             await self.coll_ops.update_dedupe_index_stats(
-                spec.id,
+                coll_id,
                 DedupeIndexStats(
                     uniqueUrls=num_unique_urls, state=status.state, **stats
                 ),
             )
 
-        return {
-            "status": status.dict(exclude_none=True),
-            "children": new_children,
-            "resyncAfterSeconds": resync_after,
-        }
+        # pylint: disable=broad-exception-caught
+        except Exception as e:
+            print(e)
+
+        stats = await redis.hgetall("allcounts")
+        num_unique_urls = await redis.hlen("alldupes")
+        await self.coll_ops.update_dedupe_index_stats(
+            coll_id,
+            DedupeIndexStats(uniqueUrls=num_unique_urls, state=status.state, **stats),
+        )
+
+    def get_related(self, data: MCBaseRequest):
+        """return crawljobs that use this dedupe index"""
+        spec = data.parent.get("spec", {})
+        coll_id = spec.get("id")
+
+        related_resources = [
+            {
+                "apiVersion": BTRIX_API,
+                "resource": "crawljobs",
+                "labelSelector": {"matchLabels": {"dedupe_coll_id": coll_id}},
+            }
+        ]
+        return {"relatedResources": related_resources}
 
     def get_import_or_purge_ts(self, spec: CollIndexSpec, status: CollIndexStatus):
         """return true if a reimport or purge is needed based on last import date
@@ -166,12 +222,13 @@ class CollIndexOperator(BaseOperator):
 
         return None, None
 
-    def load_redis(self, index_id: str, name: str):
+    def load_redis(self, index_id: str, name: str, is_active: bool):
         """create redis pods from yaml template"""
         params = {}
         params.update(self.shared_params)
         params["name"] = name
         params["id"] = index_id
+        params["init_redis"] = is_active
 
         return self.load_from_yaml("redis.yaml", params)
 
