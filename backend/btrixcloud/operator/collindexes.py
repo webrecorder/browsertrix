@@ -202,7 +202,7 @@ class CollIndexOperator(BaseOperator):
         """create configmap for import job, lookup resources only on first init"""
         configmap = children[CMAP].get(name)
         # pylint: disable=duplicate-code
-        if configmap:
+        if configmap and not self.is_configmap_update_needed("config.json", configmap):
             metadata = configmap["metadata"]
             configmap["metadata"] = {
                 "name": metadata["name"],
