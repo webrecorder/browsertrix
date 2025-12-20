@@ -243,8 +243,8 @@ export class CollectionDetailDedupe extends BtrixElement {
           ${ringStatWithDedupe((dedupe) =>
             ringStat(
               {
-                unique: dedupe.uniqueSize,
-                total: dedupe.totalSize,
+                unique: this.collection!.totalSize,
+                total: this.collection!.totalSize + dedupe.sizeSaved,
                 label: msg("Size"),
               },
               {

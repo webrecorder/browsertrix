@@ -122,7 +122,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
                     ${dedupeStat(
                       item,
                       (dedupe) => html`
-                        ${this.localize.bytes(dedupe.totalSize)}
+                        ${this.localize.bytes(dedupe.sizeSaved)}
                       `,
                     )}
                   </btrix-table-cell>

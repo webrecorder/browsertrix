@@ -60,8 +60,7 @@ export type PublicCollection = z.infer<typeof publicCollectionSchema>;
 export const dedupeStatsSchema = z.object({
   uniqueUrls: z.number(),
   totalUrls: z.number(),
-  uniqueSize: z.number(),
-  totalSize: z.number(),
+  sizeSaved: z.number(),
   removable: z.number(),
   state: z.string(),
 });
