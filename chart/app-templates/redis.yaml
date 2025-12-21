@@ -104,7 +104,7 @@ spec:
       image: {{ redis_image }}
       imagePullPolicy: {{ redis_image_pull_policy }}
 
-      args: ["/redis-conf/redis.conf", "--appendonly", "yes"]
+      args: ["/redis-conf/redis.conf", "--appendonly", "{{ 'no' if init_data else 'yes' }}"]
       volumeMounts:
         - name: redis-data
           mountPath: /data
@@ -137,5 +137,54 @@ spec:
             - bash
             - -c
             - "res=$(redis-cli ping); [[ $res = 'PONG' ]]"
+
+{% if init_data %}
+  initContainers:
+    - name: rclone
+      image: rclone/rclone:latest
+      volumeMounts:
+        - name: redis-data
+          mountPath: /data
+
+      env:
+      - name: RCLONE_CONFIG_REMOTE_TYPE
+        value: "s3"
+
+      - name: RCLONE_CONFIG_REMOTE_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_ACCESS_KEY
+
+      - name: RCLONE_CONFIG_REMOTE_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_SECRET_KEY
+
+      - name: RCLONE_CONFIG_REMOTE_REGION
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_REGION
+
+      - name: RCLONE_CONFIG_REMOTE_PROVIDER
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_S3_PROVIDER
+
+      - name: RCLONE_CONFIG_REMOTE_ENDPOINT
+        value: "{{ storage_endpoint }}"
+
+      command: ["rclone", "-vv", "copyto", "--checksum", "remote:{{ remote_file_path }}", "/data/{{ local_file }}"]
+      resources:
+        limits:
+          memory: "200Mi"
+
+        requests:
+          memory: "200Mi"
+          cpu: "50m"
+{% endif %}
 
 {% endif %}
