@@ -2,12 +2,13 @@
 
 import re
 import os
+from urllib.parse import urlsplit
 
 from uuid import UUID
 from pydantic import BaseModel
 from redis.asyncio.client import Redis
 
-from btrixcloud.utils import str_to_date, date_to_str
+from btrixcloud.utils import str_to_date, date_to_str, dt_now
 from btrixcloud.models import TYPE_DEDUPE_INDEX_STATES, DedupeIndexStats
 
 from .models import MCSyncData, MCBaseRequest, POD, JOB, CMAP, CJS, BTRIX_API
@@ -23,6 +24,7 @@ class CollIndexStatus(BaseModel):
     updated: str = ""
 
     lastSavedRedis: str = ""
+    syncUpTime: str = ""
 
 
 # ============================================================================
@@ -83,46 +85,60 @@ class CollIndexOperator(BaseOperator):
 
         index_id = str(spec.id)
         redis_name = "redis-coll-" + index_id
-
-        # get redis if exists
-        redis = None
-        if redis_name in data.children[POD]:
-            redis = await self.k8s.get_redis_connected("coll-" + index_id)
-
         new_children = []
 
-        # check if import/purge needed
-        import_ts, is_purge = self.get_import_or_purge_ts(spec, status)
-        if import_ts:
-            import_job_name = (
-                f"import-{index_id}-{import_ts}"
-                if not is_purge
-                else f"purge-{index_id}-{import_ts}"
-            )
-            new_children.extend(
-                await self.load_import_job(index_id, import_job_name, is_purge)
-            )
-            new_children.extend(
-                await self.load_import_configmap(
-                    index_id, import_job_name, spec.oid, data.children
+        try:
+            # get redis if exists
+            redis = None
+            if redis_name in data.children[POD]:
+                redis = await self.k8s.get_redis_connected("coll-" + index_id)
+
+            # check if import/purge needed
+            import_ts, is_purge = self.get_import_or_purge_ts(spec, status)
+            if import_ts:
+                import_job_name = (
+                    f"import-{index_id}-{import_ts}"
+                    if not is_purge
+                    else f"purge-{index_id}-{import_ts}"
                 )
+                new_children.extend(
+                    await self.load_import_job(index_id, import_job_name, is_purge)
+                )
+                new_children.extend(
+                    await self.load_import_configmap(
+                        index_id, import_job_name, spec.oid, data.children
+                    )
+                )
+                status.state = "importing" if not is_purge else "purging"
+
+            is_active = status.state in ("importing", "purging") or bool(
+                data.related.get(CJS)
             )
-            status.state = "importing" if not is_purge else "purging"
 
-        is_active = status.state in ("importing", "purging") or bool(
-            data.related.get(CJS)
-        )
+            if redis:
+                if not is_active:
+                    is_active = await self.handle_redis_save(redis, status)
+                else:
+                    await self.handle_redis_update(redis, status, spec.id, data)
 
-        if redis:
-            if not is_active:
-                is_active = await self.handle_redis_save(redis, status)
+            elif not is_active and status.state == "saving":
+                if await self.upload_redis_data(
+                    new_children, redis_name, spec, status, data
+                ):
+                    status.state = "idle"
+
             else:
-                await self.handle_redis_update(redis, status, spec.id, data)
-        else:
-            status.state = "initing" if is_active else "idle"
+                status.state = "initing" if is_active else "idle"
 
-        # load redis pvc and/or redis pod itself
-        new_children.extend(self.load_redis(index_id, redis_name, is_active))
+        # pylint: disable=broad-exception-caught
+        except Exception as e:
+            print(e)
+
+            # load redis pvc and/or redis pod itself
+        if status.state != "idle":
+            new_children.extend(
+                await self.load_redis(index_id, redis_name, spec, is_active)
+            )
 
         return {
             "status": status.dict(exclude_none=True),
@@ -161,6 +177,9 @@ class CollIndexOperator(BaseOperator):
                 last_update_ts = await redis.get("last_update_ts")
                 if last_update_ts:
                     status.updated = last_update_ts
+
+                if status.state == "initing":
+                    await redis.config_set("appendonly", "yes")
 
                 # index is now ready!
                 if not data.children[JOB]:
@@ -222,13 +241,22 @@ class CollIndexOperator(BaseOperator):
 
         return None, None
 
-    def load_redis(self, index_id: str, name: str, is_active: bool):
+    async def load_redis(
+        self,
+        index_id: str,
+        name: str,
+        spec: CollIndexSpec,
+        is_active: bool,
+    ):
         """create redis pods from yaml template"""
         params = {}
         params.update(self.shared_params)
         params["name"] = name
         params["id"] = index_id
         params["init_redis"] = is_active
+
+        params["init_data"] = True
+        await self._fill_sync_params(spec, name, False, params)
 
         return self.load_from_yaml("redis.yaml", params)
 
@@ -277,3 +305,62 @@ class CollIndexOperator(BaseOperator):
         params["config"] = replay_list.json()
 
         return self.load_from_yaml("index-import-configmap.yaml", params)
+
+    # pylint: disable=too-many-arguments
+    async def upload_redis_data(
+        self,
+        new_children,
+        redis_name: str,
+        spec: CollIndexSpec,
+        status: CollIndexStatus,
+        data: MCSyncData,
+    ):
+        """create sync job"""
+
+        job = data.children[JOB].get("sync-up-" + str(spec.id))
+        if job and job.get("status", {}).get("succeeded") == 1:
+            status.syncUpTime = date_to_str(dt_now())
+
+        if (
+            status.syncUpTime
+            and status.lastSavedRedis
+            and status.syncUpTime >= status.lastSavedRedis
+        ):
+            return True
+
+        params: dict[str, bool | str] = {}
+
+        await self._fill_sync_params(spec, redis_name, True, params)
+
+        new_children.extend(self.load_from_yaml("sync-local-remote-job.yaml", params))
+
+        return False
+
+    async def _fill_sync_params(
+        self,
+        spec: CollIndexSpec,
+        redis_name: str,
+        is_upload: bool,
+        params: dict[str, bool | str],
+    ):
+        org = await self.coll_ops.orgs.get_org_by_id(spec.oid)
+        oid = str(spec.oid)
+
+        storage_secret = org.storage.get_storage_secret_name(oid)
+        storage_path = org.storage.get_storage_extra_path(oid)
+
+        storage = self.coll_ops.storage_ops.get_org_primary_storage(org)
+
+        parts = urlsplit(storage.endpoint_url)
+        endpoint_url = parts.scheme + "://" + parts.netloc
+
+        params["storage_secret_name"] = storage_secret
+        params["storage_endpoint"] = endpoint_url
+        params["pvc_name"] = redis_name
+        params["id"] = str(spec.id)
+        params["is_upload"] = is_upload
+
+        params["remote_file_path"] = (
+            parts.path[1:] + storage_path + f"dedupe-index/{spec.id}.rdb"
+        )
+        params["local_file"] = "dump.rdb"
