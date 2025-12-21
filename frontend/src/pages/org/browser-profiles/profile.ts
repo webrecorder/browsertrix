@@ -693,10 +693,10 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                         ></sl-icon>
                         ${msg("Load Crawl Start URL")}
                       </sl-menu-item>
-                      <sl-divider></sl-divider>
                       ${when(
                         this.appState.isCrawler,
                         () => html`
+                          <sl-divider></sl-divider>
                           <btrix-menu-item-link
                             href="${this.navigate
                               .orgBasePath}/${OrgTab.Workflows}/${workflow.id}?edit"

@@ -5,6 +5,9 @@ import { ifDefined } from "lit/directives/if-defined.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 
+/**
+ * @cssPart base
+ */
 @customElement("btrix-link")
 export class Link extends BtrixElement {
   @property({ type: String })
@@ -17,7 +20,7 @@ export class Link extends BtrixElement {
   rel?: HTMLAnchorElement["rel"];
 
   @property({ type: String })
-  variant: "primary" | "neutral" = "neutral";
+  variant: "primary" | "warning" | "neutral" = "neutral";
 
   @property({ type: Boolean })
   hideIcon = false;
@@ -25,21 +28,30 @@ export class Link extends BtrixElement {
   render() {
     if (!this.href) return;
 
+    const isHashChange = () => {
+      if (!this.href) return;
+      return window.location.pathname.split("#")[0] === this.href.split("#")[0];
+    };
+
     return html`
       <a
         class=${clsx(
           "group inline-flex items-center gap-1 transition-colors duration-fast",
           {
             primary: "text-primary-500 hover:text-primary-600",
+            warning: "text-warning-800 hover:text-warning-700",
             neutral: "text-blue-500 hover:text-blue-600",
           }[this.variant],
         )}
         href=${this.href}
         target=${ifDefined(this.target)}
         rel=${ifDefined(this.rel)}
-        @click=${this.target === "_blank" || this.href.startsWith("http")
+        @click=${this.target === "_blank" ||
+        this.href.startsWith("http") ||
+        isHashChange()
           ? () => {}
           : this.navigate.link}
+        part="base"
       >
         <slot></slot>
         ${this.hideIcon

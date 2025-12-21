@@ -57,13 +57,28 @@ export const publicCollectionSchema = z.object({
 });
 export type PublicCollection = z.infer<typeof publicCollectionSchema>;
 
+export const dedupeStatsSchema = z.object({
+  uniqueUrls: z.number(),
+  totalUrls: z.number(),
+  sizeSaved: z.number(),
+  removable: z.number(),
+  state: z.string(),
+});
+export type DedupeStats = z.infer<typeof dedupeStatsSchema>;
+
 export const collectionSchema = publicCollectionSchema.extend({
   orgName: z.string().optional(),
   orgPublicProfile: z.boolean().optional(),
   tags: z.array(z.string()),
   access: z.nativeEnum(CollectionAccess),
+  dedupeIndex: dedupeStatsSchema.optional(),
 });
 export type Collection = z.infer<typeof collectionSchema>;
+
+// export const dedupeSourceSchema = collectionSchema.extend({
+//   dedupeIndex: dedupeStatsSchema.optional(),
+// });
+// export type DedupeSource = z.infer<typeof dedupeSourceSchema>;
 
 export type CollectionSearchValues = {
   names: string[];
