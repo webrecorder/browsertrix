@@ -200,11 +200,7 @@ class UploadOps(BaseCrawlOps):
 
         quota_reached = self.orgs.storage_quota_reached(org)
 
-        if uploaded.files:
-            for file in uploaded.files:
-                await self.background_job_ops.create_replica_jobs(
-                    org.id, file, crawl_id, "upload"
-                )
+        await self.replicate_crawl_files(crawl_id, org, "upload")
 
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 

@@ -32,6 +32,7 @@ from .models import (
     User,
     SuccessResponse,
     SuccessResponseId,
+    CRAWL_TYPES,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now
@@ -104,7 +105,7 @@ class BackgroundJobOps:
     async def handle_replica_job_succeeded(self, job: CreateReplicaJob) -> None:
         """Update replicas in corresponding file objects, based on type"""
         res = None
-        if job.object_type in ("crawl", "upload"):
+        if job.object_type in CRAWL_TYPES:
             res = await self.base_crawl_ops.add_crawl_file_replica(
                 job.object_id, job.file_path, job.replica_storage
             )
