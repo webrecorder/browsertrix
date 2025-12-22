@@ -2,12 +2,13 @@
 
 import asyncio
 import os
+import json
 from typing import TYPE_CHECKING, Any
 from kubernetes.utils import parse_quantity
 
 import yaml
 from btrixcloud.k8sapi import K8sAPI
-from btrixcloud.utils import is_bool
+from btrixcloud.utils import is_bool, dt_now, str_to_date
 
 
 if TYPE_CHECKING:
@@ -194,6 +195,22 @@ class BaseOperator:
         task = asyncio.create_task(func)
         self.bg_tasks.add(task)
         task.add_done_callback(self.bg_tasks.discard)
+
+    def is_configmap_update_needed(self, path: str, configmap: dict[str, Any]):
+        """check if any presigned resources in this configmap have expired"""
+        try:
+            now = dt_now()
+            resources = json.loads(configmap["data"][path])["resources"]
+            for resource in resources:
+                expire_at = str_to_date(resource["expireAt"])
+                if expire_at and expire_at <= now:
+                    return True
+
+        # pylint: disable=broad-exception-caught
+        except Exception as e:
+            print(e)
+
+        return False
 
     def load_from_yaml(self, filename, params) -> list[Any]:
         """load and parse k8s template from yaml file"""
