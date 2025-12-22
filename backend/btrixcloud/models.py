@@ -1613,8 +1613,7 @@ class DedupeIndexStats(BaseModel):
     uniqueUrls: int = 0
     totalUrls: int = 0
 
-    uniqueSize: int = 0
-    totalSize: int = 0
+    sizeSaved: int = 0
 
     removable: int = 0
 
