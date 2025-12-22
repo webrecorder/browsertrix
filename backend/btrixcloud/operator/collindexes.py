@@ -184,6 +184,12 @@ class CollIndexOperator(BaseOperator):
         params["crawler_image"] = self.crawl_config_ops.get_channel_crawler_image(
             self.dedupe_importer_channel
         )
+        pull_policy = self.crawl_config_ops.get_channel_crawler_image_pull_policy(
+            self.dedupe_importer_channel
+        )
+        if pull_policy:
+            params["crawler_image_pull_policy"] = pull_policy
+
         params["is_purging"] = is_purging
 
         params["redis_url"] = self.k8s.get_redis_url("coll-" + index_id)
@@ -196,7 +202,7 @@ class CollIndexOperator(BaseOperator):
         """create configmap for import job, lookup resources only on first init"""
         configmap = children[CMAP].get(name)
         # pylint: disable=duplicate-code
-        if configmap:
+        if configmap and not self.is_configmap_update_needed("config.json", configmap):
             metadata = configmap["metadata"]
             configmap["metadata"] = {
                 "name": metadata["name"],
