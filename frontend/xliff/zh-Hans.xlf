@@ -1,174 +1,225 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
   <file target-language="zh-Hans" source-language="en" original="lit-localize-inputs" datatype="plaintext">
     <body>
-      <trans-unit id="s598446c4063cc093">
+      <trans-unit id="s598446c4063cc093" xml:space="preserve">
         <source>Unknown API error</source>
+        <target state="translated">未知的API错误</target>
       </trans-unit>
-      <trans-unit id="scbeafb2ef469257c">
+      <trans-unit id="scbeafb2ef469257c" xml:space="preserve">
         <source>Need login</source>
+        <target state="translated">需要登陆</target>
       </trans-unit>
-      <trans-unit id="sa3ce85ea4e96897c">
+      <trans-unit id="sa3ce85ea4e96897c" xml:space="preserve">
         <source>Storage quota reached</source>
+        <target state="translated">已达到存储配额</target>
       </trans-unit>
-      <trans-unit id="s07018373ca29dfcb">
+      <trans-unit id="s07018373ca29dfcb" xml:space="preserve">
         <source>Monthly execution minutes quota reached</source>
+        <target state="translated">达到每月执行分钟配额</target>
       </trans-unit>
-      <trans-unit id="s0a11c2ffb8309d1a">
+      <trans-unit id="s0a11c2ffb8309d1a" xml:space="preserve">
         <source>Not found</source>
+        <target state="translated">未找到</target>
       </trans-unit>
-      <trans-unit id="s262c31c801cfbcd9">
+      <trans-unit id="s262c31c801cfbcd9" xml:space="preserve">
         <source>Please enter a valid URL.</source>
+        <target state="translated">请输入有效的URL。</target>
       </trans-unit>
       <trans-unit id="s2234e31926485921">
         <source>n/a</source>
       </trans-unit>
-      <trans-unit id="s5c60254028976b28">
+      <trans-unit id="s5c60254028976b28" xml:space="preserve">
         <source>Not specified</source>
+        <target state="translated">未指定</target>
       </trans-unit>
-      <trans-unit id="s669b18c6d2d9c95b">
+      <trans-unit id="s669b18c6d2d9c95b" xml:space="preserve">
         <source>None</source>
+        <target state="translated">无</target>
       </trans-unit>
-      <trans-unit id="h91462413c7440b38">
+      <trans-unit id="h91462413c7440b38" xml:space="preserve">
         <source>Are you sure you want to delete <x id="0" equiv-text="&lt;span&gt;${itemName}"/>?<x id="1" equiv-text="&lt;/span&gt;"/></source>
+        <target state="translated">你确定要删除<x id="0" equiv-text="&lt;span&gt;${itemName}"/>吗？<x id="1" equiv-text="&lt;/span&gt;"/></target>
       </trans-unit>
-      <trans-unit id="sb96d0978e46f4a9c">
+      <trans-unit id="sb96d0978e46f4a9c" xml:space="preserve">
         <source>Behaviors</source>
+        <target state="translated">行为</target>
       </trans-unit>
-      <trans-unit id="s53654e41e7b2114d">
+      <trans-unit id="s53654e41e7b2114d" xml:space="preserve">
         <source>Custom Behaviors</source>
+        <target state="translated">自定义行为</target>
       </trans-unit>
-      <trans-unit id="s30a3d76cd4da93e7">
+      <trans-unit id="s30a3d76cd4da93e7" xml:space="preserve">
         <source>Autoscroll</source>
+        <target state="translated">自动滚动</target>
       </trans-unit>
-      <trans-unit id="s58fd9002de2d2506">
+      <trans-unit id="s58fd9002de2d2506" xml:space="preserve">
         <source>Autoclick</source>
+        <target state="translated">自动点击</target>
       </trans-unit>
-      <trans-unit id="s0187b8012de0ed1d">
+      <trans-unit id="s0187b8012de0ed1d" xml:space="preserve">
         <source>Page Load Limit</source>
+        <target state="translated">页面加载限制</target>
       </trans-unit>
-      <trans-unit id="scc5a8cdbf7cb629f">
+      <trans-unit id="scc5a8cdbf7cb629f" xml:space="preserve">
         <source>Delay After Page Load</source>
+        <target state="translated">页面加载后延迟</target>
       </trans-unit>
-      <trans-unit id="se4a7507398db6097">
+      <trans-unit id="se4a7507398db6097" xml:space="preserve">
         <source>Delay Before Next Page</source>
+        <target state="translated">下一页之前的延迟加载</target>
       </trans-unit>
-      <trans-unit id="s7654bbca59e5b6ab">
+      <trans-unit id="s7654bbca59e5b6ab" xml:space="preserve">
         <source>Link Selectors</source>
+        <target state="translated">链接选择器</target>
       </trans-unit>
-      <trans-unit id="sa131b4e138b3f834">
+      <trans-unit id="sa131b4e138b3f834" xml:space="preserve">
         <source>Click Selector</source>
+        <target state="translated">点击选择器</target>
       </trans-unit>
-      <trans-unit id="s1853eecbad6d4a0e">
+      <trans-unit id="s1853eecbad6d4a0e" xml:space="preserve">
         <source>List of Pages</source>
+        <target state="translated">页面列表</target>
       </trans-unit>
-      <trans-unit id="sce375af3e1ad308f">
+      <trans-unit id="sce375af3e1ad308f" xml:space="preserve">
         <source>Pages in Same Directory</source>
+        <target state="translated">同一目录中的页面</target>
       </trans-unit>
-      <trans-unit id="sd592eeaabdbd5a46">
+      <trans-unit id="sd592eeaabdbd5a46" xml:space="preserve">
         <source>Pages on Same Domain</source>
+        <target state="translated">同一域名上的页面</target>
       </trans-unit>
-      <trans-unit id="s1547ae4dfa1265ea">
+      <trans-unit id="s1547ae4dfa1265ea" xml:space="preserve">
         <source>Pages on Same Domain + Subdomains</source>
+        <target state="translated">同一域名和子域名上的页面</target>
       </trans-unit>
       <trans-unit id="s083f85625c5d739f">
         <source>In-Page Links</source>
       </trans-unit>
-      <trans-unit id="sba3df9981f03cb40">
+      <trans-unit id="sba3df9981f03cb40" xml:space="preserve">
         <source>Single Page</source>
+        <target state="translated">单页</target>
       </trans-unit>
       <trans-unit id="s0558979b981b9057">
         <source>Custom Page Prefix</source>
       </trans-unit>
-      <trans-unit id="sdd8e8047128a2fdc">
+      <trans-unit id="sdd8e8047128a2fdc" xml:space="preserve">
         <source>Any Page</source>
+        <target state="translated">任何页面</target>
       </trans-unit>
-      <trans-unit id="s3c6391ad20986b33">
+      <trans-unit id="s3c6391ad20986b33" xml:space="preserve">
         <source>Tags separated by comma</source>
+        <target state="translated">标签用逗号分隔</target>
       </trans-unit>
-      <trans-unit id="s03aa3cfb08dff960">
+      <trans-unit id="s03aa3cfb08dff960" xml:space="preserve">
         <source>Tags</source>
+        <target state="translated">标签</target>
       </trans-unit>
-      <trans-unit id="s0e3006648a1a80a5">
+      <trans-unit id="s0e3006648a1a80a5" xml:space="preserve">
         <source>Add “<x id="0" equiv-text="${this.inputValue.toLocaleLowerCase()}"/>”</source>
+        <target state="translated">添加 “<x id="0" equiv-text="${this.inputValue.toLocaleLowerCase()}"/>”</target>
       </trans-unit>
-      <trans-unit id="sfff90c46fdba31db">
+      <trans-unit id="sfff90c46fdba31db" xml:space="preserve">
         <source>(unnamed item)</source>
+        <target state="translated">{未命名物品}</target>
       </trans-unit>
-      <trans-unit id="s8265788524ca2260">
+      <trans-unit id="s8265788524ca2260" xml:space="preserve">
         <source><x id="0" equiv-text="${formattedTime}"/> daily</source>
+        <target state="translated"><x id="0" equiv-text="${formattedTime}"/> 每日</target>
       </trans-unit>
-      <trans-unit id="s2acb3777ed86adb6">
+      <trans-unit id="s2acb3777ed86adb6" xml:space="preserve">
         <source>Every <x id="0" equiv-text="${formattedWeekDay}"/></source>
+        <target state="translated">每 <x id="0" equiv-text="${formattedWeekDay}"/></target>
       </trans-unit>
-      <trans-unit id="monthly-interval-ordinal-zero">
+      <trans-unit id="monthly-interval-ordinal-zero" xml:space="preserve">
         <source>Monthly on the zeroth</source>
+        <target state="translated">每月0日</target>
       </trans-unit>
-      <trans-unit id="monthly-interval-ordinal-one">
+      <trans-unit id="monthly-interval-ordinal-one" xml:space="preserve">
         <source>Monthly on the <x id="0" equiv-text="${localize.number(days[0])}"/>st</source>
+        <target state="translated">每月在 <x id="0" equiv-text="${localize.number(days[0])}"/> 日</target>
       </trans-unit>
-      <trans-unit id="monthly-interval-ordinal-two">
+      <trans-unit id="monthly-interval-ordinal-two" xml:space="preserve">
         <source>Monthly on the <x id="0" equiv-text="${localize.number(days[0])}"/>nd</source>
+        <target state="translated">每月 <x id="0" equiv-text="${localize.number(days[0])}"/> 日</target>
       </trans-unit>
-      <trans-unit id="monthly-interval-ordinal-few">
+      <trans-unit id="monthly-interval-ordinal-few" xml:space="preserve">
         <source>Monthly on the <x id="0" equiv-text="${localize.number(days[0])}"/>rd</source>
+        <target state="translated">每月 <x id="0" equiv-text="${localize.number(days[0])}"/> 日</target>
       </trans-unit>
-      <trans-unit id="monthly-interval-ordinal-many">
+      <trans-unit id="monthly-interval-ordinal-many" xml:space="preserve">
         <source>Monthly on the <x id="0" equiv-text="${localize.number(days[0])}"/>th</source>
+        <target state="translated">每月 <x id="0" equiv-text="${localize.number(days[0])}"/> 日</target>
       </trans-unit>
-      <trans-unit id="monthly-interval-ordinal-other">
+      <trans-unit id="monthly-interval-ordinal-other" xml:space="preserve">
         <source>Monthly on the <x id="0" equiv-text="${localize.number(days[0])}"/>th</source>
+        <target state="translated">每月 <x id="0" equiv-text="${localize.number(days[0])}"/> 日</target>
       </trans-unit>
-      <trans-unit id="s2bc963c5c7bac2e1">
+      <trans-unit id="s2bc963c5c7bac2e1" xml:space="preserve">
         <source>Every day at <x id="0" equiv-text="${formattedTime}"/></source>
+        <target state="translated">每天 <x id="0" equiv-text="${formattedTime}"/> 点</target>
       </trans-unit>
-      <trans-unit id="s3fad62920c115d31">
+      <trans-unit id="s3fad62920c115d31" xml:space="preserve">
         <source>Every <x id="0" equiv-text="${formattedWeekDay}"/> at <x id="1" equiv-text="${formattedTime}"/></source>
+        <target state="translated">每 <x id="0" equiv-text="${formattedWeekDay}"/> 日 <x id="1" equiv-text="${formattedTime}"/></target>
       </trans-unit>
-      <trans-unit id="s478f33dea36e1d3f">
+      <trans-unit id="s478f33dea36e1d3f" xml:space="preserve">
         <source>On day <x id="0" equiv-text="${nextDate.getDate()}"/> of the month at <x id="1" equiv-text="${formattedTime}"/></source>
+        <target state="translated">每月 <x id="0" equiv-text="${nextDate.getDate()}"/> 日 <x id="1" equiv-text="${formattedTime}"/> 点</target>
       </trans-unit>
-      <trans-unit id="s44f6ab2c6b3cff23">
+      <trans-unit id="s44f6ab2c6b3cff23" xml:space="preserve">
         <source>Default: Unlimited</source>
+        <target state="translated">默认值：无限制</target>
       </trans-unit>
-      <trans-unit id="sf21761e7f8e0550e">
+      <trans-unit id="sf21761e7f8e0550e" xml:space="preserve">
         <source>Default: <x id="0" equiv-text="${localize.number(value)}"/></source>
+        <target state="translated">默认值：<x id="0" equiv-text="${localize.number(value)}"/></target>
       </trans-unit>
-      <trans-unit id="s7d61376257220dab">
+      <trans-unit id="s7d61376257220dab" xml:space="preserve">
         <source>Scope</source>
+        <target state="translated">范围</target>
       </trans-unit>
       <trans-unit id="sa4b71eadd80c1750">
         <source>Crawl Limits</source>
       </trans-unit>
-      <trans-unit id="s05b81abc9475a254">
+      <trans-unit id="s05b81abc9475a254" xml:space="preserve">
         <source>Page Behavior</source>
+        <target state="translated">页面行为</target>
       </trans-unit>
-      <trans-unit id="s4d34e4682643b600">
+      <trans-unit id="s4d34e4682643b600" xml:space="preserve">
         <source>Browser Settings</source>
+        <target state="translated">浏览器设置</target>
       </trans-unit>
-      <trans-unit id="s27fe8e8cd298d71f">
+      <trans-unit id="s27fe8e8cd298d71f" xml:space="preserve">
         <source>Scheduling</source>
+        <target state="translated">计划</target>
       </trans-unit>
-      <trans-unit id="s3f5390ecd7d14626">
+      <trans-unit id="s3f5390ecd7d14626" xml:space="preserve">
         <source>Collections</source>
+        <target state="translated">收藏</target>
       </trans-unit>
-      <trans-unit id="s252a52330d32b900">
+      <trans-unit id="s252a52330d32b900" xml:space="preserve">
         <source>Metadata</source>
+        <target state="translated">元数据</target>
       </trans-unit>
-      <trans-unit id="se9ef1815463f8000">
+      <trans-unit id="se9ef1815463f8000" xml:space="preserve">
         <source>Unlimited</source>
+        <target state="translated">无限制</target>
       </trans-unit>
-      <trans-unit id="s1ae7988ed93b0a32">
+      <trans-unit id="s1ae7988ed93b0a32" xml:space="preserve">
         <source>0 seconds</source>
+        <target state="translated">0 秒</target>
       </trans-unit>
-      <trans-unit id="sbef1b56d0a7fa38b">
+      <trans-unit id="sbef1b56d0a7fa38b" xml:space="preserve">
         <source>(default)</source>
+        <target state="translated">（默认）</target>
       </trans-unit>
       <trans-unit id="s68eac1025cee6964">
         <source>Crawl Scope</source>
       </trans-unit>
-      <trans-unit id="s4ab09f62524380b9">
+      <trans-unit id="s4ab09f62524380b9" xml:space="preserve">
         <source>Max Pages</source>
+        <target state="translated">最大页面</target>
       </trans-unit>
       <trans-unit id="s2fa63aad5fbcf846">
         <source>Crawl Time Limit</source>
@@ -179,14 +230,16 @@
       <trans-unit id="s69ec09431b9c3946">
         <source>Browser Profile</source>
       </trans-unit>
-      <trans-unit id="sacf95026f82adb10">
+      <trans-unit id="sacf95026f82adb10" xml:space="preserve">
         <source>No custom profile</source>
+        <target state="translated">无自定义配置文件</target>
       </trans-unit>
       <trans-unit id="s237f0a38a4c51a36">
         <source>Crawler Proxy Server</source>
       </trans-unit>
-      <trans-unit id="s63dc27cd73a61aa2">
+      <trans-unit id="s63dc27cd73a61aa2" xml:space="preserve">
         <source>Browser Windows</source>
+        <target state="translated">浏览器窗口</target>
       </trans-unit>
       <trans-unit id="sd301dfbe7e1a5a74">
         <source>Crawler Channel</source>
@@ -194,44 +247,55 @@
       <trans-unit id="s44934f09941e69cd">
         <source>(Exact Crawler Version)</source>
       </trans-unit>
-      <trans-unit id="s38daf2fb241d8bbb">
+      <trans-unit id="s38daf2fb241d8bbb" xml:space="preserve">
         <source>Block Ads by Domain</source>
+        <target state="translated">按域名屏蔽广告</target>
       </trans-unit>
-      <trans-unit id="s0183ffe3a17e202b">
+      <trans-unit id="s0183ffe3a17e202b" xml:space="preserve">
         <source>Save Local and Session Storage</source>
+        <target state="translated">保存本地和会话存储</target>
       </trans-unit>
-      <trans-unit id="s67a7f67e5f3794a3">
+      <trans-unit id="s67a7f67e5f3794a3" xml:space="preserve">
         <source>User Agent</source>
+        <target state="translated">用户代理</target>
       </trans-unit>
-      <trans-unit id="sf9b685a4616f291f">
+      <trans-unit id="sf9b685a4616f291f" xml:space="preserve">
         <source>Browser User Agent (default)</source>
+        <target state="translated">浏览器用户代理（默认）</target>
       </trans-unit>
-      <trans-unit id="sefcf950b3cc4fc3b">
+      <trans-unit id="sefcf950b3cc4fc3b" xml:space="preserve">
         <source>Language</source>
+        <target state="translated">语言</target>
       </trans-unit>
       <trans-unit id="s78a3454dadf068cf">
         <source>Crawl Schedule Type</source>
       </trans-unit>
-      <trans-unit id="s063b2ed6541c9181">
+      <trans-unit id="s063b2ed6541c9181" xml:space="preserve">
         <source>Run on a Recurring Basis</source>
+        <target state="translated">定期运行</target>
       </trans-unit>
-      <trans-unit id="sa348b8b53e07a21b">
+      <trans-unit id="sa348b8b53e07a21b" xml:space="preserve">
         <source>No Schedule</source>
+        <target state="translated">无计划</target>
       </trans-unit>
-      <trans-unit id="s9b8dccb514a0e34c">
+      <trans-unit id="s9b8dccb514a0e34c" xml:space="preserve">
         <source>Schedule</source>
+        <target state="translated">计划</target>
       </trans-unit>
       <trans-unit id="sb710576cfed1c6cb">
         <source>Auto-Add to Collection</source>
       </trans-unit>
-      <trans-unit id="sef49aec68fd1dc66">
+      <trans-unit id="sef49aec68fd1dc66" xml:space="preserve">
         <source>Name</source>
+        <target state="translated">名称</target>
       </trans-unit>
-      <trans-unit id="s63d894b1ddb06289">
+      <trans-unit id="s63d894b1ddb06289" xml:space="preserve">
         <source>Description</source>
+        <target state="translated">描述</target>
       </trans-unit>
-      <trans-unit id="s0921b07ddda1f1b1">
+      <trans-unit id="s0921b07ddda1f1b1" xml:space="preserve">
         <source>Open in New Tab</source>
+        <target state="translated">在新标签页打开</target>
       </trans-unit>
       <trans-unit id="s885a382f1e86363f">
         <source>URLs to Crawl</source>
@@ -239,11 +303,13 @@
       <trans-unit id="sa268e82e7b0bb868">
         <source>URL to Crawl</source>
       </trans-unit>
-      <trans-unit id="s34e90e6353b56f58">
+      <trans-unit id="s34e90e6353b56f58" xml:space="preserve">
         <source>Include Any Linked Page (“one hop out”)</source>
+        <target state="translated">包括任何链接页面（“一旦跳出”）</target>
       </trans-unit>
-      <trans-unit id="sdada41a2285ec806">
+      <trans-unit id="sdada41a2285ec806" xml:space="preserve">
         <source>Skip Pages Disallowed by robots.txt</source>
+        <target state="translated">跳过robots.txt不允许的页面</target>
       </trans-unit>
       <trans-unit id="s0762c8a4062ed6b9">
         <source>Fail Crawl If Not Logged In</source>
@@ -251,56 +317,70 @@
       <trans-unit id="s55c00be19b1b3bcd">
         <source>Crawl Start URL</source>
       </trans-unit>
-      <trans-unit id="s548daf0e6fcc5b75">
+      <trans-unit id="s548daf0e6fcc5b75" xml:space="preserve">
         <source>URL Prefixes in Scope</source>
+        <target state="translated">作用域中的URL前缀</target>
       </trans-unit>
-      <trans-unit id="s1e91c74b6b748a7e">
+      <trans-unit id="s1e91c74b6b748a7e" xml:space="preserve">
         <source>URL Prefix</source>
+        <target state="translated">URL前缀</target>
       </trans-unit>
-      <trans-unit id="s396f09e6ec318187">
+      <trans-unit id="s396f09e6ec318187" xml:space="preserve">
         <source>Max Depth in Scope</source>
+        <target state="translated">范围内的最大深度</target>
       </trans-unit>
-      <trans-unit id="s00952de51c229a2e">
+      <trans-unit id="s00952de51c229a2e" xml:space="preserve">
         <source><x id="0" equiv-text="${primarySeedConfig.depth}"/> hop(s)</source>
+        <target state="translated"><x id="0" equiv-text="${primarySeedConfig.depth}"/> 跳</target>
       </trans-unit>
-      <trans-unit id="s9ecb6da2267389f4">
+      <trans-unit id="s9ecb6da2267389f4" xml:space="preserve">
         <source>Unlimited (default)</source>
+        <target state="translated">无限制（默认）</target>
       </trans-unit>
-      <trans-unit id="sa3a6465ecf8740fb">
+      <trans-unit id="sa3a6465ecf8740fb" xml:space="preserve">
         <source>Check For Sitemap</source>
+        <target state="translated">查看站点地图</target>
       </trans-unit>
       <trans-unit id="s27384f0405fa9799">
         <source>Fail Crawl if Not Logged In</source>
       </trans-unit>
-      <trans-unit id="sebf185d3ee56b47f">
+      <trans-unit id="sebf185d3ee56b47f" xml:space="preserve">
         <source>Additional Page URLs</source>
+        <target state="translated">其他页面URL</target>
       </trans-unit>
-      <trans-unit id="s312a6fda81078718">
+      <trans-unit id="s312a6fda81078718" xml:space="preserve">
         <source>Exclusions</source>
+        <target state="translated">排除</target>
       </trans-unit>
-      <trans-unit id="scb489a1a173ac3f0">
+      <trans-unit id="scb489a1a173ac3f0" xml:space="preserve">
         <source>Yes</source>
+        <target state="translated">是</target>
       </trans-unit>
       <trans-unit id="s09205907b5b56cda">
         <source>No</source>
       </trans-unit>
-      <trans-unit id="s3687049d1af562c4">
+      <trans-unit id="s3687049d1af562c4" xml:space="preserve">
         <source>Copy</source>
+        <target state="translated">复制</target>
       </trans-unit>
-      <trans-unit id="sf4de3bfbfaca12e5">
+      <trans-unit id="sf4de3bfbfaca12e5" xml:space="preserve">
         <source>Copied</source>
+        <target state="translated">已复制</target>
       </trans-unit>
       <trans-unit id="sdccd8f78d52d3a87">
         <source>Copy to clipboard</source>
       </trans-unit>
-      <trans-unit id="sda68b7b6b6da0a83">
+      <trans-unit id="sda68b7b6b6da0a83" xml:space="preserve">
         <source>Contract</source>
+        <target state="translated">合同</target>
       </trans-unit>
-      <trans-unit id="s3b151ca64eb26ec1">
+      <trans-unit id="s3b151ca64eb26ec1" xml:space="preserve">
         <source>Expand</source>
+        <target state="translated">扩展</target>
       </trans-unit>
-      <trans-unit id="sea4f08110bb8f15d">
+      <trans-unit id="sea4f08110bb8f15d" xml:space="preserve">
         <source>Remove</source>
+        <target state="translated">移除</target>
       </trans-unit>
       <trans-unit id="s73f51a3532f29159">
         <source>Expand row</source>
@@ -308,38 +388,48 @@
       <trans-unit id="s77318393dfdb0775">
         <source>Remove row</source>
       </trans-unit>
-      <trans-unit id="sf9aee319a006c9b4">
+      <trans-unit id="sf9aee319a006c9b4" xml:space="preserve">
         <source>Add</source>
+        <target state="translated">添加</target>
       </trans-unit>
-      <trans-unit id="s0d1be7a2c400c080">
+      <trans-unit id="s0d1be7a2c400c080" xml:space="preserve">
         <source>more</source>
+        <target state="translated">更多</target>
       </trans-unit>
-      <trans-unit id="s234f4d8778048245">
+      <trans-unit id="s234f4d8778048245" xml:space="preserve">
         <source>Add More</source>
+        <target state="translated">添加更多</target>
       </trans-unit>
-      <trans-unit id="s2cfa650f5dbfd87a">
+      <trans-unit id="s2cfa650f5dbfd87a" xml:space="preserve">
         <source>Please fill out this field.</source>
+        <target state="translated">请填写此处。</target>
       </trans-unit>
-      <trans-unit id="sb42f58ec1f93133e">
+      <trans-unit id="sb42f58ec1f93133e" xml:space="preserve">
         <source>View File</source>
+        <target state="translated">浏览文件</target>
       </trans-unit>
-      <trans-unit id="scc6256ab113cc5f9">
+      <trans-unit id="scc6256ab113cc5f9" xml:space="preserve">
         <source>Remove File</source>
+        <target state="translated">移除文件</target>
       </trans-unit>
       <trans-unit id="s9d32a8e420569b2a">
         <source>Please choose a file that is not empty.</source>
       </trans-unit>
-      <trans-unit id="sded4cfc4d8910016">
+      <trans-unit id="sded4cfc4d8910016" xml:space="preserve">
         <source>Browser Default</source>
+        <target state="translated">默认浏览器</target>
       </trans-unit>
-      <trans-unit id="sd77c5f8da91d0729">
+      <trans-unit id="sd77c5f8da91d0729" xml:space="preserve">
         <source>Maximum <x id="0" equiv-text="${localize.number(maxLength)}"/> characters</source>
+        <target state="translated">最多 <x id="0" equiv-text="${localize.number(maxLength)}"/> 字</target>
       </trans-unit>
-      <trans-unit id="sa1c466807a6fdfb7">
+      <trans-unit id="sa1c466807a6fdfb7" xml:space="preserve">
         <source><x id="0" equiv-text="${localize.number(overMax)}"/> character over limit</source>
+        <target state="translated"><x id="0" equiv-text="${localize.number(overMax)}"/> 字数超限</target>
       </trans-unit>
-      <trans-unit id="s8b6894f4bfec27c0">
+      <trans-unit id="s8b6894f4bfec27c0" xml:space="preserve">
         <source><x id="0" equiv-text="${localize.number(overMax)}"/> characters over limit</source>
+        <target state="translated"><x id="0" equiv-text="${localize.number(overMax)}"/> 字数超限</target>
       </trans-unit>
       <trans-unit id="se1f5b61904654dba">
         <source>Please shorten this text to <x id="0" equiv-text="${maxLength}"/> or fewer characters.</source>
