@@ -1,0 +1,182 @@
+{{- if .Values.storage_local }}
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: storage-auth
+  namespace: {{ .Release.Namespace }}
+
+type: Opaque
+stringData:
+  {{- with (first .Values.storages) }}
+  ROOT_ACCESS_KEY: "{{ .access_key }}"
+  ROOT_SECRET_KEY: "{{ .secret_key }}"
+  {{- end }}
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: local-storage-pvc
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: 5Gi
+
+  {{- if .Values.volume_storage_class }}
+  storageClassName: {{ .Values.volume_storage_class }}
+  {{- end }}
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: local-storage
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: local-storage
+
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: local-storage
+
+    spec:
+      {{- if .Values.main_node_type }}
+      nodeSelector:
+        nodeType: {{ .Values.main_node_type }}
+      {{- end }}
+
+      volumes:
+        - name: local-storage
+          persistentVolumeClaim:
+            claimName: local-storage-pvc
+
+      initContainers:
+        - name: init-bucket
+          image: {{ .Values.storage_image }}
+          imagePullPolicy: {{ .Values.storage_pull_policy }}
+          command:
+              - sh
+              - -c
+              - |
+                  mkdir -p /data/{{ .Values.storage_local_bucket_name }}
+
+          volumeMounts:
+            - name: local-storage
+              mountPath: /data
+              subPath: storage
+
+          resources:
+            limits:
+              memory: {{ .Values.storage_memory }}
+
+            requests:
+              cpu: {{ .Values.storage_cpu }}
+              memory: {{ .Values.storage_memory }}
+
+      containers:
+        - name: storage
+          image: {{ .Values.storage_image }}
+          imagePullPolicy: {{ .Values.storage_pull_policy }}
+          envFrom:
+            - secretRef:
+                name: storage-auth
+
+          env:
+            - name: VGW_BACKEND
+              value: posix
+
+            - name: VGW_BACKEND_ARG
+              value: /data
+
+          volumeMounts:
+            - name: local-storage
+              mountPath: /data
+              subPath: storage
+
+          resources:
+            limits:
+              memory: {{ .Values.storage_memory }}
+
+            requests:
+              cpu: {{ .Values.storage_cpu }}
+              memory: {{ .Values.storage_memory }}
+
+---
+apiVersion: v1
+kind: Service
+
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: local-storage
+  labels:
+    app: local-storage
+
+spec:
+  {{- if .Values.storage_local_access_port }}
+  type: NodePort
+  {{- end }}
+  selector:
+    app: local-storage
+
+  ports:
+    - protocol: TCP
+      port: {{ .Values.storage_internal_port }}
+      {{- if .Values.storage_local_access_port }}
+      nodePort: {{ .Values.storage_local_access_port }}
+      {{- end }}
+      name: storage
+
+---
+apiVersion: v1
+kind: Service
+
+metadata:
+  namespace: {{ .Values.crawler_namespace }}
+  name: local-storage
+  labels:
+    app: local-storage
+
+spec:
+  type: ExternalName
+  externalName: "local-storage.{{ .Release.Namespace }}{{ .Values.fqdn_suffix }}"
+  ports:
+    - port: {{ .Values.storage_internal_port }}
+
+
+{{- if .Values.storage_local_console_port }}
+---
+apiVersion: v1
+kind: Service
+
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: local-storage-console
+  labels:
+    app: local-storage-console
+
+spec:
+  type: NodePort
+  selector:
+    app: local-storage
+
+  ports:
+    - protocol: TCP
+      port: 9001
+      nodePort: {{ .Values.storage_local_console_port }}
+      name: storage-console
+{{- end }}
+
+{{- end }}
+
+

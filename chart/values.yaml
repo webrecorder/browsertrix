@@ -402,10 +402,30 @@ crawler_enable_network_policy: true
 # time to wait for graceful stop
 grace_period: 1000
 
+# Local Storage
+# =========================================
+storage_local: true
+
+storage_host: "local-storage:7070"
+
+storage_image: "versity/versitygw:latest"
+storage_pull_policy: "IfNotPresent"
+
+storage_internal_port: 7070
+
+storage_local_bucket_name: &local_bucket_name "btrix-data"
+
+# path for serving from local minio bucket
+storage_access_path: &storage_access_path "/data/"
+
+storage_cpu: "10m"
+storage_memory: "1024Mi"
+
+
 # Local Minio Pod (optional)
 # =========================================
 # set to true to use a local minio image
-minio_local: true
+minio_local: false
 
 # enable to allow access to minio console via specified port
 # minio_local_console_port: 30091
@@ -436,8 +456,9 @@ storages:
     secret_key: "PASSW0RD"
     bucket_name: *local_bucket_name
 
-    endpoint_url: "http://local-minio:9000/"
-    access_endpoint_url: *minio_access_path
+    #endpoint_url: "http://local-minio:9000/"
+    endpoint_url: "http://local-storage:7070/"
+    access_endpoint_url: *storage_access_path
 
     #access_addressing_style: 'path' or 'virtual'
     # determine if bucket should be accessed as:

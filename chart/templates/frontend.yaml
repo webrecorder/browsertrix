@@ -54,15 +54,15 @@ spec:
               value: {{ .Values.docs_url }}
             {{- end }}
 
-            {{- if .Values.minio_local }}
-            - name: LOCAL_MINIO_HOST
-              value: "{{ .Values.minio_host }}"
+            {{- if .Values.storage_local }}
+            - name: LOCAL_STORAGE_HOST
+              value: "{{ .Values.storage_host }}"
 
             - name: LOCAL_BUCKET
-              value: "{{ .Values.minio_local_bucket_name }}"
+              value: "{{ .Values.storage_local_bucket_name }}"
 
             - name: LOCAL_ACCESS_PATH
-              value: "{{ .Values.minio_access_path }}"
+              value: "{{ .Values.storage_access_path }}"
              {{- end }}
 
             {{- if .Values.inject_extra }}

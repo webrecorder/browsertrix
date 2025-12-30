@@ -107,7 +107,7 @@ class StorageOps:
         default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
         self.frontend_origin = f"{frontend_origin}.{default_namespace}"
 
-        self.local_minio_access_path = os.environ.get("LOCAL_MINIO_ACCESS_PATH")
+        self.local_storage_access_path = os.environ.get("LOCAL_STORAGE_ACCESS_PATH")
         self.presign_batch_size = int(os.environ.get("PRESIGN_BATCH_SIZE", 8))
 
         with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
@@ -177,7 +177,7 @@ class StorageOps:
         access_endpoint_url = storage.get("access_endpoint_url") or endpoint_url
 
         addressing_style = storage.get("access_addressing_style", "virtual")
-        if access_endpoint_url == self.local_minio_access_path:
+        if access_endpoint_url == self.local_storage_access_path:
             addressing_style = "path"
 
         return S3Storage(
@@ -346,7 +346,7 @@ class StorageOps:
             assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
 
     def resolve_internal_access_path(self, path):
-        """Resolve relative path for internal access to minio bucket"""
+        """Resolve relative path for internal access to local storage bucket"""
         if path.startswith("/"):
             return self.frontend_origin + path
         return path
