@@ -416,6 +416,16 @@ local_storage:
       secret_env_var_name: RUSTFS_SECRET_KEY
       debug_console_internal_port: 9001
 
+    seaweedfs:
+      image: chrislusf/seaweedfs
+      internal_port: 8333
+      access_env_var_name: AWS_ACCESS_KEY_ID
+      secret_env_var_name: AWS_SECRET_ACCESS_KEY
+      debug_console_internal_port: 9333
+      args:
+        - mini
+        - "-dir=/data"
+
     versitygw:
       image: "versity/versitygw:latest"
       internal_port: 7070

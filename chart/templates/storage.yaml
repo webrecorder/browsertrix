@@ -74,6 +74,13 @@ spec:
         - name: storage
           image: {{ $provider.image }}
           imagePullPolicy: {{ .pull_policy }}
+          {{- if $provider.args }}
+          args:
+          {{- range $provider.args }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- end }}
+
           env:
             - name: {{ $provider.access_env_var_name }}
               valueFrom:
