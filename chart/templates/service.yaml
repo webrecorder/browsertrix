@@ -49,6 +49,10 @@ spec:
 
   ports:
     - protocol: TCP
+      port: 6080
+      name: browser-vnc-ws
+
+    - protocol: TCP
       port: 9223
       name: browser-api
 
