@@ -57,7 +57,8 @@ data:
 
   LOG_FAILED_CRAWL_LINES: "{{ .Values.log_failed_crawl_lines | default 0 }}"
 
-  LOCAL_STORAGE_ACCESS_PATH: "{{ .Values.storage_access_path }}"
+  HAS_LOCAL_STORAGE: "{{ .Values.local_storage.provider }}"
+  LOCAL_STORAGE_ACCESS_PATH: "{{ .Values.local_storage.access_path }}"
 
   STORAGES_JSON: "/ops-configs/storages.json"
 

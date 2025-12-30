@@ -61,7 +61,9 @@ async def main() -> int:
         crawl_manager,
     )
 
-    await storage_ops.create_default_bucket()
+    # ensure default bucket has been created
+    if os.environ.get("HAS_LOCAL_STORAGE"):
+        await storage_ops.create_default_bucket()
 
     return 0
 

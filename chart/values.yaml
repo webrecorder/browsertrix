@@ -404,22 +404,50 @@ grace_period: 1000
 
 # Local Storage
 # =========================================
-storage_local: true
+local_storage:
+  provider: "rustfs"
 
-storage_host: "local-storage:7070"
+  # storage provider specific options
+  providers:
+    rustfs:
+      image: "rustfs/rustfs:latest"
+      internal_port: 9000
+      access_env_var_name: RUSTFS_ACCESS_KEY
+      secret_env_var_name: RUSTFS_SECRET_KEY
+      debug_console_internal_port: 9001
 
-storage_image: "versity/versitygw:latest"
-storage_pull_policy: "IfNotPresent"
+    versitygw:
+      image: "versity/versitygw:latest"
+      internal_port: 7070
+      access_env_var_name: ROOT_ACCESS_KEY
+      secret_env_var_name: ROOT_SECRET_KEY
+      env:
+        VGW_BACKEND: posix
+        VGW_BACKEND_ARG: /data
 
-storage_internal_port: 7070
+  hostname: "local-storage"
 
-storage_local_bucket_name: &local_bucket_name "btrix-data"
+  disk_storage: "5Gi"
 
-# path for serving from local minio bucket
-storage_access_path: &storage_access_path "/data/"
+  service_port: 9000
 
-storage_cpu: "10m"
-storage_memory: "1024Mi"
+  pull_policy: "IfNotPresent"
+
+  bucket_name: &local_bucket_name "btrix-data"
+  access_path: &storage_access_path "/data/"
+
+  cpu: "10m"
+  memory: "1024Mi"
+
+  # to allow accessing storage from Node
+  # debug_access_port: 30090
+
+  # if storage includes a console, enable it here
+  # only available if storage provider also has
+  # 'debug_console_internal_port' set
+  # debug_console_port: 30091
+
+
 
 
 # Local Minio Pod (optional)

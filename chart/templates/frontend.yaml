@@ -54,15 +54,15 @@ spec:
               value: {{ .Values.docs_url }}
             {{- end }}
 
-            {{- if .Values.storage_local }}
+            {{- if .Values.local_storage.provider }}
             - name: LOCAL_STORAGE_HOST
-              value: "{{ .Values.storage_host }}"
+              value: "{{ .Values.local_storage.hostname }}:{{ .Values.local_storage.service_port }}"
 
             - name: LOCAL_BUCKET
-              value: "{{ .Values.storage_local_bucket_name }}"
+              value: "{{ .Values.local_storage.bucket_name }}"
 
             - name: LOCAL_ACCESS_PATH
-              value: "{{ .Values.storage_access_path }}"
+              value: "{{ .Values.local_storage.access_path }}"
              {{- end }}
 
             {{- if .Values.inject_extra }}

@@ -1,17 +1,26 @@
-{{- if .Values.storage_local }}
+{{- if .Values.local_storage.provider }}
+
+{{ $rel_name := .Release.Namespace }}
+{{ $crawler_name := .Values.crawler_namespace }}
+{{ $storage_class := .Values.volume_storage_class }}
+{{ $first_storage := first .Values.storages }}
+{{ $main_node_type := .Values.main_node_type }}
+{{ $fqdn_suffix := .Values.fqdn_suffix }}
+
+{{- with .Values.local_storage }}
+
+{{ $provider := get .providers .provider }}
 ---
 kind: Secret
 apiVersion: v1
 metadata:
   name: storage-auth
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ $rel_name }}
 
 type: Opaque
 stringData:
-  {{- with (first .Values.storages) }}
-  ROOT_ACCESS_KEY: "{{ .access_key }}"
-  ROOT_SECRET_KEY: "{{ .secret_key }}"
-  {{- end }}
+  ACCESS_KEY: "{{ $first_storage.access_key }}"
+  SECRET_KEY: "{{ $first_storage.secret_key }}"
 
 ---
 kind: PersistentVolumeClaim
@@ -26,10 +35,10 @@ spec:
 
   resources:
     requests:
-      storage: 5Gi
+      storage: {{ .disk_storage }}
 
-  {{- if .Values.volume_storage_class }}
-  storageClassName: {{ .Values.volume_storage_class }}
+  {{- if $storage_class }}
+  storageClassName: {{ $storage_class }}
   {{- end }}
 
 
@@ -38,7 +47,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: local-storage
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ $rel_name }}
 spec:
   selector:
     matchLabels:
@@ -51,9 +60,9 @@ spec:
         app: local-storage
 
     spec:
-      {{- if .Values.main_node_type }}
+      {{- if $main_node_type }}
       nodeSelector:
-        nodeType: {{ .Values.main_node_type }}
+        nodeType: {{ $main_node_type }}
       {{- end }}
 
       volumes:
@@ -63,18 +72,25 @@ spec:
 
       containers:
         - name: storage
-          image: {{ .Values.storage_image }}
-          imagePullPolicy: {{ .Values.storage_pull_policy }}
-          envFrom:
-            - secretRef:
-                name: storage-auth
-
+          image: {{ $provider.image }}
+          imagePullPolicy: {{ .pull_policy }}
           env:
-            - name: VGW_BACKEND
-              value: posix
+            - name: {{ $provider.access_env_var_name }}
+              valueFrom:
+                secretKeyRef:
+                  name: storage-auth
+                  key: ACCESS_KEY
 
-            - name: VGW_BACKEND_ARG
-              value: /data
+            - name: {{ $provider.secret_env_var_name }}
+              valueFrom:
+                secretKeyRef:
+                  name: storage-auth
+                  key: SECRET_KEY
+
+          {{- range $key, $value := $provider.env }}
+            - name: {{ $key | quote }}
+              value: {{ $value | quote }}
+          {{- end }}
 
           volumeMounts:
             - name: local-storage
@@ -83,24 +99,24 @@ spec:
 
           resources:
             limits:
-              memory: {{ .Values.storage_memory }}
+              memory: {{ .memory }}
 
             requests:
-              cpu: {{ .Values.storage_cpu }}
-              memory: {{ .Values.storage_memory }}
+              cpu: {{ .cpu }}
+              memory: {{ .memory }}
 
 ---
 apiVersion: v1
 kind: Service
 
 metadata:
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ $rel_name }}
   name: local-storage
   labels:
     app: local-storage
 
 spec:
-  {{- if .Values.storage_local_access_port }}
+  {{- if .debug_access_port }}
   type: NodePort
   {{- end }}
   selector:
@@ -108,9 +124,10 @@ spec:
 
   ports:
     - protocol: TCP
-      port: {{ .Values.storage_internal_port }}
-      {{- if .Values.storage_local_access_port }}
-      nodePort: {{ .Values.storage_local_access_port }}
+      targetPort: {{ $provider.internal_port }}
+      port: {{ .service_port }}
+      {{- if .debug_access_port }}
+      nodePort: {{ .debug_access_port }}
       {{- end }}
       name: storage
 
@@ -119,25 +136,27 @@ apiVersion: v1
 kind: Service
 
 metadata:
-  namespace: {{ .Values.crawler_namespace }}
+  namespace: {{ $crawler_name }}
   name: local-storage
   labels:
     app: local-storage
 
 spec:
   type: ExternalName
-  externalName: "local-storage.{{ .Release.Namespace }}{{ .Values.fqdn_suffix }}"
+  externalName: "{{ .hostname }}.{{ $rel_name }}{{ $fqdn_suffix }}"
+
   ports:
-    - port: {{ .Values.storage_internal_port }}
+    - targetPort: {{ $provider.internal_port }}
+      port: {{ .service_port }}
 
 
-{{- if .Values.storage_local_console_port }}
+{{- if (and .debug_console_port $provider.debug_console_internal_port) }}
 ---
 apiVersion: v1
 kind: Service
 
 metadata:
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ $rel_name }}
   name: local-storage-console
   labels:
     app: local-storage-console
@@ -149,11 +168,11 @@ spec:
 
   ports:
     - protocol: TCP
-      port: 9001
-      nodePort: {{ .Values.storage_local_console_port }}
+      port: {{ $provider.debug_console_internal_port }}
+      nodePort: {{ .debug_console_port }}
       name: storage-console
 {{- end }}
 
 {{- end }}
-
+{{- end }}
 

@@ -230,6 +230,7 @@ class StorageOps:
                 print(
                     f"error creating bucket '{bucket}', storage operations may fail!", e
                 )
+                raise e
 
     async def add_custom_storage(
         self, storagein: S3StorageIn, org: Organization
