@@ -61,29 +61,6 @@ spec:
           persistentVolumeClaim:
             claimName: local-storage-pvc
 
-      initContainers:
-        - name: init-bucket
-          image: {{ .Values.storage_image }}
-          imagePullPolicy: {{ .Values.storage_pull_policy }}
-          command:
-              - sh
-              - -c
-              - |
-                  mkdir -p /data/{{ .Values.storage_local_bucket_name }}
-
-          volumeMounts:
-            - name: local-storage
-              mountPath: /data
-              subPath: storage
-
-          resources:
-            limits:
-              memory: {{ .Values.storage_memory }}
-
-            requests:
-              cpu: {{ .Values.storage_cpu }}
-              memory: {{ .Values.storage_memory }}
-
       containers:
         - name: storage
           image: {{ .Values.storage_image }}

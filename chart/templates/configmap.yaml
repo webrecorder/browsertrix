@@ -57,9 +57,7 @@ data:
 
   LOG_FAILED_CRAWL_LINES: "{{ .Values.log_failed_crawl_lines | default 0 }}"
 
-  IS_LOCAL_MINIO: "{{ .Values.minio_local }}"
-
-  LOCAL_MINIO_ACCESS_PATH: "{{ .Values.minio_access_path }}"
+  LOCAL_STORAGE_ACCESS_PATH: "{{ .Values.storage_access_path }}"
 
   STORAGES_JSON: "/ops-configs/storages.json"
 

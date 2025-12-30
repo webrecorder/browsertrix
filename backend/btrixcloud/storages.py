@@ -38,7 +38,10 @@ import requests
 import pymongo
 
 from types_aiobotocore_s3 import S3Client as AIOS3Client
-from types_aiobotocore_s3.type_defs import CompletedPartTypeDef
+from types_aiobotocore_s3.type_defs import (
+    CompletedPartTypeDef,
+    CreateBucketConfigurationTypeDef,
+)
 
 from .models import (
     BaseFile,
@@ -189,6 +192,44 @@ class StorageOps:
             access_endpoint_url=access_endpoint_url,
             access_addressing_style=addressing_style,
         )
+
+    async def create_default_bucket(self):
+        """create default bucket"""
+        # pylint: disable=broad-exception-raised
+        if not self.default_primary:
+            raise Exception("no default_primary defined")
+
+        storage = self.default_storages.get(self.default_primary.name)
+        if not storage:
+            raise Exception("default storage not found")
+
+        async with self.get_s3_client(storage) as (client, bucket, _):
+            if storage.region:
+                constraint = {"LocationConstraint": storage.region}
+            else:
+                constraint = {}
+
+            try:
+                await client.create_bucket(
+                    Bucket=bucket,
+                    CreateBucketConfiguration=cast(
+                        CreateBucketConfigurationTypeDef, constraint
+                    ),
+                )
+                print(f"Primary storage bucket '{bucket}' created")
+
+            except client.exceptions.BucketAlreadyOwnedByYou:
+                print(f"Primary storage bucket '{bucket}' already exists")
+
+            except client.exceptions.BucketAlreadyExists:
+                print(
+                    f"Primary storage bucket '{bucket}' already exists, different owner"
+                )
+
+            except Exception as e:
+                print(
+                    f"error creating bucket '{bucket}', storage operations may fail!", e
+                )
 
     async def add_custom_storage(
         self, storagein: S3StorageIn, org: Organization

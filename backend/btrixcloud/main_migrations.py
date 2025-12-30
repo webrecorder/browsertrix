@@ -61,6 +61,8 @@ async def main() -> int:
         crawl_manager,
     )
 
+    await storage_ops.create_default_bucket()
+
     return 0
 
 
