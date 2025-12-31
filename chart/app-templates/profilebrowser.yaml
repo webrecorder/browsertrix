@@ -13,13 +13,13 @@ spec:
   hostname: browser-{{ id }}
   subdomain: browser
 
-  securityContext:
-    runAsNonRoot: true
-    runAsUser: {{ crawler_uid}}
-    runAsGroup: {{ crawler_gid}}
-    fsGroup: {{ crawler_fsgroup }}
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
+  #securityContext:
+  #  runAsNonRoot: true
+  #  runAsUser: {{ crawler_uid}}
+  #  runAsGroup: {{ crawler_gid}}
+  #  fsGroup: {{ crawler_fsgroup }}
+  #  allowPrivilegeEscalation: false
+  #  readOnlyRootFilesystem: true
 
   volumes:
     - name: crawler-workdir
