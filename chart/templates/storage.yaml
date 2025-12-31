@@ -9,6 +9,11 @@
 
 {{- with .Values.local_storage }}
 
+# ensure provider is valid
+{{- if not (hasKey .providers .provider) }}
+  {{- fail (printf "Error: The 'provider' field was set to '%s', but must be left empty or set to one of the available providers: %s" .provider (join ", " (keys .providers))) }}
+{{- end }}
+
 {{ $provider := get .providers .provider }}
 ---
 kind: Secret
