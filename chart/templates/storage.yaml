@@ -35,7 +35,7 @@ spec:
 
   resources:
     requests:
-      storage: {{ .disk_storage }}
+      storage: {{ .total_storage }}
 
   {{- if $storage_class }}
   storageClassName: {{ $storage_class }}

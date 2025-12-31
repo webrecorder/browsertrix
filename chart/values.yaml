@@ -342,12 +342,12 @@ enable_auto_resize_crawlers: false
 
 # minimum size allocated to each crawler
 # should be at least double crawl session size to ensure space for WACZ and browser profile data
-crawler_storage: "25Gi"
+crawler_storage: "5Gi"
 
 # if set, will ensure 'crawler_storage' is at least this times used storage
-# eg. if crawler session reaches 10Gb, and this value is 2.5, will attempt
-# to resize to at least 25Gb.
-crawler_min_avail_storage_ratio: 2.5
+# eg. if crawler session reaches 5G, and this value is 1.1, will attempt
+# to resize to at least 5.5G.
+crawler_min_avail_storage_ratio: 1.1
 
 # max size at which crawler will commit current crawl session
 crawler_session_size_limit_bytes: "10000000000"
@@ -405,7 +405,7 @@ grace_period: 1000
 # Local Storage
 # =========================================
 local_storage:
-  provider: "rustfs"
+  provider: "versitygw"
 
   # storage provider specific options
   providers:
@@ -422,9 +422,7 @@ local_storage:
       access_env_var_name: AWS_ACCESS_KEY_ID
       secret_env_var_name: AWS_SECRET_ACCESS_KEY
       debug_console_internal_port: 9333
-      args:
-        - mini
-        - "-dir=/data"
+      args: ["mini", "-dir=/data"]
 
     versitygw:
       image: "versity/versitygw:latest"
@@ -435,9 +433,20 @@ local_storage:
         VGW_BACKEND: posix
         VGW_BACKEND_ARG: /data
 
+    minio:
+      image: "minio/minio:latest"
+      internal_port: 9000
+      access_env_var_name: MINIO_ROOT_USER
+      secret_env_var_name: MINIO_ROOT_PASSWORD
+      debug_console_internal_port: 9001
+      args: ["server", "/data", "--console-address", ":9001"]
+
   hostname: "local-storage"
 
-  disk_storage: "5Gi"
+  # total storage allocated on volume
+  # (may not be enforced on local volumes)
+  # should be at least size of 'crawler_storage'
+  total_storage: "10Gi"
 
   service_port: 9000
 
