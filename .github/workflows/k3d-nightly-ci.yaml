@@ -121,7 +121,7 @@ jobs:
         run: kubectl wait --for=condition=ready pod --all --timeout=240s
 
       - name: Create Extra Test Buckets
-        run: kubectl exec -i deployment/local-minio -c minio -- mkdir /data/replica-0
+        run: kubectl exec -i deployment/local-storage -c storage -- mkdir -p /data/replica-0
 
       - name: Run Tests
         run: pytest -vv ./backend/test_nightly/${{ matrix.module }}
