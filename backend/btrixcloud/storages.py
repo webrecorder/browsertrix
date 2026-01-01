@@ -204,6 +204,8 @@ class StorageOps:
             raise Exception("default storage not found")
 
         async with self.get_s3_client(storage) as (client, bucket, _):
+            print(f"Creating primary storage bucket {bucket}")
+
             if storage.region:
                 constraint = {"LocationConstraint": storage.region}
             else:

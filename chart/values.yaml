@@ -503,8 +503,7 @@ storages:
     secret_key: "PASSW0RD"
     bucket_name: *local_bucket_name
 
-    #endpoint_url: "http://local-minio:9000/"
-    endpoint_url: "http://local-storage:7070/"
+    endpoint_url: "http://local-storage:9000/"
     access_endpoint_url: *storage_access_path
 
     #access_addressing_style: 'path' or 'virtual'
