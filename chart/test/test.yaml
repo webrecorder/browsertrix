@@ -24,6 +24,9 @@ redis_storage: "100Mi"
 profile_browser_workdir_size: "100Mi"
 crawler_storage: "500Mi"
 
+local_storage:
+  total_storage: "1Gi"
+
 
 # for testing only
 crawler_extra_cpu_per_browser: 300m
