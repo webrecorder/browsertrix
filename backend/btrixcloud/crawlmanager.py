@@ -499,19 +499,19 @@ class CrawlManager(K8sAPI):
         """Delete all crawl configs for given org"""
         await self._delete_cron_jobs(f"btrix.org={oid_str},role=cron-job")
 
-    async def create_coll_index(self, collection: Collection):
-        """create collection index"""
-        await self.create_coll_index_direct(
-            str(collection.id), str(collection.oid), collection.modified
-        )
+    # async def create_coll_index(self, collection: Collection):
+    #    """create collection index"""
+    #    await self.create_coll_index_direct(
+    #        str(collection.id), str(collection.oid), collection.modified
+    #    )
 
-    async def update_coll_index(self, coll_id: UUID, is_purge: bool = False):
+    async def update_coll_index(self, coll: Collection, is_purge: bool = False):
         """force collection index to update"""
-        field = "collItemsUpdatedAt" if not is_purge else "purgeRequestedAt"
-        return await self.patch_custom_object(
-            f"collindex-{coll_id}",
-            {field: date_to_str(dt_now())},
-            "collindexes",
+        await self.create_or_update_coll_index(
+            str(coll.id),
+            str(coll.oid),
+            coll.modified if not is_purge else None,
+            is_purge=is_purge,
         )
 
     async def delete_coll_index(self, coll_id: UUID):

@@ -458,21 +458,36 @@ class K8sAPI:
             propagation_policy="Background",
         )
 
-    async def create_coll_index_direct(
-        self, coll_id: str, oid: str, modified: Optional[datetime] = None
+    async def create_or_update_coll_index(
+        self,
+        coll_id: str,
+        oid: str,
+        modified: Optional[datetime] = None,
+        is_purge=False,
     ):
         """create collection index if doesn't exist"""
+        field = "collItemsUpdatedAt" if not is_purge else "purgeRequestedAt"
+        date_val = date_to_str(modified or dt_now())
         params = {
             "id": coll_id,
             "oid": oid,
-            "collItemsUpdatedAt": date_to_str(modified or dt_now()),
+            "purgeRequestedAt": "",
+            "collItemsUpdatedAt": "",
         }
+        params[field] = date_val
         data = self.templates.env.get_template("coll_index.yaml").render(params)
 
         try:
             await self.create_from_yaml(data)
 
         except ApiException as e:
-            # 409 if object already exists, ignore silently
-            if e.status != 409:
-                raise e
+            # 409 if object already exists, update
+            if e.status == 409:
+                print("patching", field, date_val)
+                await self.patch_custom_object(
+                    f"collindex-{coll_id}",
+                    {field: date_val},
+                    "collindexes",
+                )
+            else:
+                raise
