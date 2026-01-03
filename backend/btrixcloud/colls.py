@@ -26,6 +26,7 @@ from .models import (
     CollectionThumbnailSource,
     UpdateColl,
     DedupeIndexStats,
+    DedupeIndexFile,
     AddRemoveCrawlList,
     BaseCrawl,
     CrawlFileOut,
@@ -50,6 +51,7 @@ from .models import (
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
     ResourcesOnly,
+    TYPE_DEDUPE_INDEX_STATES,
 )
 from .utils import (
     dt_now,
@@ -143,6 +145,8 @@ class CollectionOps:
 
         slug = coll_in.slug or slug_from_name(coll_in.name)
 
+        dedupeIndex = DedupeIndexStats() if coll_in.hasDedupeIndex else None
+
         coll = Collection(
             id=coll_id,
             oid=org.id,
@@ -155,14 +159,14 @@ class CollectionOps:
             access=coll_in.access,
             defaultThumbnailName=coll_in.defaultThumbnailName,
             allowPublicDownload=coll_in.allowPublicDownload,
-            hasDedupeIndex=coll_in.hasDedupeIndex,
+            dedupeIndex=dedupeIndex,
         )
         try:
             await self.collections.insert_one(coll.to_dict())
             await self.clear_org_previous_slugs_matching_slug(slug, org)
             # create collection index
-            if coll.hasDedupeIndex:
-                await self.crawl_manager.create_coll_index(coll)
+            # if coll.dedupeIndex:
+            #    await self.crawl_manager.create_coll_index(coll)
 
             if crawl_ids:
                 await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
@@ -184,19 +188,19 @@ class CollectionOps:
         self, coll_id: UUID, org: Organization, update: UpdateColl
     ):
         """Update collection"""
-        query = update.dict(exclude_unset=True)
+        query = update.model_dump(exclude_unset=True, exclude={"hasDedupeIndex"})
 
-        if len(query) == 0:
+        if len(query) == 0 and update.hasDedupeIndex is None:
             raise HTTPException(status_code=400, detail="no_update_data")
 
         name_update = query.get("name")
         slug_update = query.get("slug")
 
         previous_slug = None
+        coll = await self.get_collection(coll_id, org.id)
 
         if name_update or slug_update:
             # If we're updating slug, save old one to previousSlugs to support redirects
-            coll = await self.get_collection(coll_id, org.id)
             previous_slug = coll.slug
 
         if name_update and not slug_update:
@@ -205,6 +209,13 @@ class CollectionOps:
             slug_update = slug
 
         query["modified"] = dt_now()
+
+        if update.hasDedupeIndex and not coll.dedupeIndex:
+            query["dedupeIndex"] = DedupeIndexStats().dict()
+            await self.crawl_manager.update_coll_index(coll)
+
+        elif not update.hasDedupeIndex and coll.dedupeIndex:
+            await self.delete_coll_index(coll, org)
 
         db_update = {"$set": query}
         if previous_slug:
@@ -227,17 +238,6 @@ class CollectionOps:
         if slug_update:
             await self.clear_org_previous_slugs_matching_slug(slug_update, org)
 
-        # if dedupe index is true, but was false
-        if update.hasDedupeIndex and not prev_result.get("hasDedupeIndex"):
-            # get latest coll, create index
-            coll = await self.get_collection(coll_id, org.id)
-            await self.crawl_manager.create_coll_index(coll)
-
-        # if dedupe is false, but was true
-        if update.hasDedupeIndex is False and prev_result.get("hasDedupeIndex"):
-            # delete index -- may need extra restrictions
-            await self.crawl_manager.delete_coll_index(coll_id)
-
         return {"updated": True}
 
     async def clear_org_previous_slugs_matching_slug(
@@ -248,16 +248,6 @@ class CollectionOps:
             {"oid": org.id, "previousSlugs": slug},
             {"$pull": {"previousSlugs": slug}},
         )
-
-    async def get_coll_dedupe_index(self, coll_id: UUID) -> bool:
-        """return true/false if collection has dedupe index, or raise"""
-        result = await self.collections.find_one(
-            {"_id": coll_id}, projection=["hasDedupeIndex"]
-        )
-        if not result:
-            raise HTTPException(status_code=404, detail="collection_not_found")
-
-        return result["hasDedupeIndex"] is True
 
     async def add_crawls_to_collection(
         self,
@@ -335,23 +325,11 @@ class CollectionOps:
 
         return result
 
-    async def enable_dedupe_index(self, coll_id: UUID):
+    async def enable_dedupe_index(self, coll_id: UUID, org: Organization):
         """enable dedupe index if it doesn't exist yet"""
-        result = await self.collections.find_one_and_update(
-            {"_id": coll_id, "hasDedupeIndex": {"$ne": True}},
-            {"$set": {"hasDedupeIndex": True}},
-            return_document=pymongo.ReturnDocument.AFTER,
+        return await self.update_collection(
+            coll_id, org, UpdateColl(hasDedupeIndex=True)
         )
-
-        # not changed, nothing to do
-        if not result:
-            return False
-
-        coll = Collection.from_dict(result)
-
-        await self.crawl_manager.create_coll_index(coll)
-
-        return True
 
     async def get_collection_raw_by_slug(
         self,
@@ -559,7 +537,7 @@ class CollectionOps:
             match_query["name"] = {"$regex": regex_pattern, "$options": "i"}
 
         if has_dedupe_index is not None:
-            match_query["hasDedupeIndex"] = has_dedupe_index
+            match_query["dedupeIndex"] = {"$ne" if has_dedupe_index else "$eq": None}
 
         if public_colls_out:
             match_query["access"] = CollAccessType.PUBLIC
@@ -704,16 +682,31 @@ class CollectionOps:
                 crawl_ids.append(crawl_id)
         return crawl_ids
 
+    async def delete_coll_index(self, coll: Collection, org: Organization):
+        """delete coll dedupe index, if possible"""
+
+        # if index is not idle, can't delete it yet
+        if coll.dedupeIndex and coll.dedupeIndex.state != "idle":
+            raise HTTPException(status_code=400, detail="dedupe_index_is_in_use")
+
+        if coll.indexFile:
+            if not await self.storage_ops.delete_file_object(org, coll.indexFile):
+                print(
+                    "Unable to delete collection dedupe index: "
+                    + f"{coll.indexFile.filename}"
+                )
+                raise HTTPException(status_code=400, detail="file_deletion_error")
+
     async def delete_collection(self, coll_id: UUID, org: Organization):
         """Delete collection and remove from associated crawls."""
+        coll = await self.get_collection(coll_id, org.id)
+
+        await self.delete_coll_index(coll, org)
+
         await self.crawl_ops.remove_collection_from_all_crawls(coll_id, org)
 
-        coll = await self.get_collection(coll_id, org.id)
         if coll.thumbnail:
-            await self.delete_thumbnail(coll_id, org)
-
-        if coll.hasDedupeIndex:
-            await self.crawl_manager.delete_coll_index(coll.id)
+            await self.delete_thumbnail(coll, org)
 
         result = await self.collections.delete_one({"_id": coll_id, "oid": org.id})
         if result.deleted_count < 1:
@@ -753,6 +746,35 @@ class CollectionOps:
             {"_id": coll_id},
             {"$set": {"dedupeIndex": stats.dict() if stats else None}},
         )
+
+    async def update_dedupe_index_info(
+        self,
+        coll_id: UUID,
+        state: TYPE_DEDUPE_INDEX_STATES,
+        index_file: Optional[DedupeIndexFile] = None,
+        dt: Optional[datetime] = None,
+    ):
+        """update the state, and optionally, dedupe index file info"""
+        query: dict[str, Any] = {"dedupeIndex.state": state}
+        if index_file and dt:
+            query["indexLastSavedAt"] = dt
+            query["indexFile"] = index_file.model_dump()
+
+        res = self.collections.find_one_and_update(
+            {"_id": coll_id, "dedupeIndex": {"$ne": None}},
+            {"$set": query},
+        )
+        return res is not None
+
+    async def get_dedupe_index_saved(self, coll_id: UUID) -> Optional[datetime]:
+        """return datetime for when index was last saved, if any"""
+        coll = await self.collections.find_one(
+            {"_id": coll_id, "indexLastSavedAt": {"$ne": None}},
+            projection={"indexLastSavedAt": 1},
+        )
+        if coll:
+            return coll.get("indexLastSavedAt")
+        return None
 
     async def recalculate_org_collection_stats(self, org: Organization):
         """recalculate counts, tags and dates for all collections in an org"""
@@ -837,8 +859,8 @@ class CollectionOps:
         latest_ts = None
 
         # update_index is set, update dedupe index if it exists
-        if update_index and coll.hasDedupeIndex:
-            await self.crawl_manager.update_coll_index(coll_id)
+        if update_index and coll.dedupeIndex:
+            await self.crawl_manager.update_coll_index(coll)
 
         match_query = {
             "oid": coll.oid,
@@ -906,13 +928,13 @@ class CollectionOps:
     async def purge_dedupe_index(self, coll_id: UUID, org: Organization):
         """purge dedupe index on collection, raise exception if no index or not ready"""
         coll = await self.get_collection(coll_id, org.id)
-        if not coll.hasDedupeIndex or not coll.dedupeIndex:
+        if not coll.dedupeIndex:
             raise HTTPException(status_code=400, detail="no_dedupe_index_on_collection")
 
-        if coll.dedupeIndex.state != "ready":
+        if coll.dedupeIndex.state not in ("ready", "idle"):
             raise HTTPException(status_code=400, detail="dedupe_index_not_ready")
 
-        await self.crawl_manager.update_coll_index(coll_id, is_purge=True)
+        await self.crawl_manager.update_coll_index(coll, is_purge=True)
         return {"success": True}
 
     async def get_org_public_collections(
@@ -1067,10 +1089,8 @@ class CollectionOps:
 
         return {"added": True}
 
-    async def delete_thumbnail(self, coll_id: UUID, org: Organization):
+    async def delete_thumbnail(self, coll: Collection, org: Organization):
         """Delete collection thumbnail"""
-        coll = await self.get_collection(coll_id, org.id)
-
         if not coll.thumbnail:
             raise HTTPException(status_code=404, detail="thumbnail_not_found")
 
@@ -1080,7 +1100,7 @@ class CollectionOps:
 
         # Delete from database
         await self.collections.find_one_and_update(
-            {"_id": coll_id, "oid": org.id},
+            {"_id": coll.id, "oid": org.id},
             {"$set": {"thumbnail": None}},
         )
 
@@ -1439,7 +1459,9 @@ def init_collections_api(
         coll_id: UUID,
         org: Organization = Depends(org_crawl_dep),
     ):
-        return await colls.delete_thumbnail(coll_id, org)
+        coll = await colls.get_collection(coll_id, org.id)
+
+        return await colls.delete_thumbnail(coll, org)
 
     @app.post(
         "/orgs/{oid}/collections/{coll_id}/purgeDedupeIndex",

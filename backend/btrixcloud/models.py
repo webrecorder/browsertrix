@@ -1566,7 +1566,9 @@ class CrawlOutWithResources(CrawlOut):
 
 ### COLLECTIONS ###
 
-TYPE_DEDUPE_INDEX_STATES = Literal["initing", "importing", "ready", "purging"]
+TYPE_DEDUPE_INDEX_STATES = Literal[
+    "initing", "importing", "ready", "purging", "idle", "saving", "crawling"
+]
 DEDUPE_INDEX_STATES = get_args(TYPE_DEDUPE_INDEX_STATES)
 
 
@@ -1605,17 +1607,23 @@ class HostCount(BaseModel):
 
 
 # ============================================================================
+class DedupeIndexFile(BaseFile):
+    """serialize dedupe index"""
+
+
+# ============================================================================
 class DedupeIndexStats(BaseModel):
     """stats from collection dedupe index"""
 
-    state: TYPE_DEDUPE_INDEX_STATES
+    state: TYPE_DEDUPE_INDEX_STATES = "initing"
 
     uniqueUrls: int = 0
     totalUrls: int = 0
 
     sizeSaved: int = 0
 
-    removable: int = 0
+    totalCrawls: int = 0
+    removableCrawls: int = 0
 
 
 # ============================================================================
@@ -1657,7 +1665,9 @@ class Collection(BaseMongoModel):
 
     previousSlugs: List[str] = []
 
-    hasDedupeIndex: bool = False
+    indexLastSavedAt: Optional[datetime] = None
+    indexFile: Optional[DedupeIndexFile] = None
+
     dedupeIndex: Optional[DedupeIndexStats] = None
 
 
@@ -1722,7 +1732,7 @@ class CollOut(BaseMongoModel):
     downloadUrl: Optional[str] = None
 
     topPageHosts: List[HostCount] = []
-    hasDedupeIndex: bool = False
+
     dedupeIndex: Optional[DedupeIndexStats] = None
 
 

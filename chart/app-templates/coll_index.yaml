@@ -16,3 +16,4 @@ spec:
   oid: "{{ oid }}"
 
   collItemsUpdatedAt: "{{ collItemsUpdatedAt }}"
+  purgeRequestedAt: "{{ purgeRequestedAt }}"

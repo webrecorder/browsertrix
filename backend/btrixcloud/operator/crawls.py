@@ -601,7 +601,7 @@ class CrawlOperator(BaseOperator):
         pod_info = status.podStatus[name]
 
         # compute if number of browsers for this pod has changed
-        workers_changed = pod_info.lastWorkers != workers
+        workers_changed = pod_info.lastWorkers != workers and pod_info.lastWorkers
         if workers_changed:
             print(f"Workers changed for {i}: {pod_info.lastWorkers} -> {workers}")
 
@@ -844,7 +844,7 @@ class CrawlOperator(BaseOperator):
 
         for index in coll_indexes.values():
             found = True
-            if index.get("status", {}).get("state") == "ready":
+            if index.get("status", {}).get("state") in ("ready", "crawling"):
                 return False
 
             # only check first index, should only be one
@@ -852,7 +852,7 @@ class CrawlOperator(BaseOperator):
 
         # if index not found, create it
         if not found:
-            await self.k8s.create_coll_index_direct(
+            await self.k8s.create_or_update_coll_index(
                 str(crawl.dedupe_coll_id), str(crawl.oid)
             )
 
