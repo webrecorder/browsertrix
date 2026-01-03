@@ -1607,7 +1607,12 @@ class HostCount(BaseModel):
 
 
 # ============================================================================
-class DedupeIndex(BaseModel):
+class DedupeIndexFile(BaseFile):
+    """serialize dedupe index"""
+
+
+# ============================================================================
+class DedupeIndexStats(BaseModel):
     """stats from collection dedupe index"""
 
     state: TYPE_DEDUPE_INDEX_STATES = "initing"
@@ -1660,10 +1665,10 @@ class Collection(BaseMongoModel):
 
     previousSlugs: List[str] = []
 
-    indexFilename: Optional[str] = None
     indexLastSavedAt: Optional[datetime] = None
+    indexFile: Optional[DedupeIndexFile] = None
 
-    dedupeIndex: Optional[DedupeIndex] = None
+    dedupeIndex: Optional[DedupeIndexStats] = None
 
 
 # ============================================================================
@@ -1727,7 +1732,8 @@ class CollOut(BaseMongoModel):
     downloadUrl: Optional[str] = None
 
     topPageHosts: List[HostCount] = []
-    dedupeIndex: Optional[DedupeIndex] = None
+
+    dedupeIndex: Optional[DedupeIndexStats] = None
 
 
 # ============================================================================

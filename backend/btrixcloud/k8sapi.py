@@ -349,6 +349,17 @@ class K8sAPI:
             except:
                 print("Logs Not Found")
 
+    async def get_pod_logs(self, pod_name, lines=100) -> str:
+        """get logs for pod"""
+        try:
+            resp = await self.core_api.read_namespaced_pod_log(
+                pod_name, self.namespace, tail_lines=lines
+            )
+            return resp
+        # pylint: disable=bare-except
+        except:
+            return ""
+
     async def is_pod_metrics_available(self) -> bool:
         """return true/false if metrics server api is available by
         attempting list operation. if operation succeeds, then

@@ -5,7 +5,6 @@ import secrets
 
 from typing import Optional, Dict, Tuple
 from datetime import datetime, timedelta
-from uuid import UUID
 
 from fastapi import HTTPException
 
@@ -513,10 +512,6 @@ class CrawlManager(K8sAPI):
             coll.modified if not is_purge else None,
             is_purge=is_purge,
         )
-
-    async def delete_coll_index(self, coll_id: UUID):
-        """delete collection index"""
-        return await self.delete_custom_object(f"collindex-{coll_id}", "collindexes")
 
     # ========================================================================
     # Internal Methods
