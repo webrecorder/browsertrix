@@ -710,7 +710,7 @@ class CollectionOps:
         """delete coll dedupe index, if possible"""
 
         # if index is not idle, can't delete it yet
-        if coll.dedupeIndex and coll.dedupeIndex.state != "idle":
+        if coll.dedupeIndex and coll.indexState != "idle":
             raise HTTPException(status_code=400, detail="dedupe_index_is_in_use")
 
         if coll.indexFile:
@@ -779,7 +779,7 @@ class CollectionOps:
         dt: Optional[datetime] = None,
     ):
         """update the state, and optionally, dedupe index file info"""
-        query: dict[str, Any] = {"dedupeIndex.state": state}
+        query: dict[str, Any] = {"indexState": state}
         if index_file and dt:
             query["indexLastSavedAt"] = dt
             query["indexFile"] = index_file.model_dump()
@@ -955,7 +955,7 @@ class CollectionOps:
         if not coll.dedupeIndex:
             raise HTTPException(status_code=400, detail="no_dedupe_index_on_collection")
 
-        if coll.dedupeIndex.state not in ("ready", "idle"):
+        if coll.indexState not in ("ready", "idle"):
             raise HTTPException(status_code=400, detail="dedupe_index_not_ready")
 
         await self.update_coll_index(coll, org.id, is_purge=True)

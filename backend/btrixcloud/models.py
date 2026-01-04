@@ -1615,8 +1615,6 @@ class DedupeIndexFile(BaseFile):
 class DedupeIndexStats(BaseModel):
     """stats from collection dedupe index"""
 
-    state: TYPE_DEDUPE_INDEX_STATES = "initing"
-
     uniqueUrls: int = 0
     totalUrls: int = 0
 
@@ -1667,6 +1665,7 @@ class Collection(BaseMongoModel):
 
     indexLastSavedAt: Optional[datetime] = None
     indexFile: Optional[DedupeIndexFile] = None
+    indexState: Optional[TYPE_DEDUPE_INDEX_STATES] = None
 
     dedupeIndex: Optional[DedupeIndexStats] = None
 
@@ -1732,6 +1731,9 @@ class CollOut(BaseMongoModel):
     downloadUrl: Optional[str] = None
 
     topPageHosts: List[HostCount] = []
+
+    indexLastSavedAt: Optional[datetime] = None
+    indexState: Optional[TYPE_DEDUPE_INDEX_STATES] = None
 
     dedupeIndex: Optional[DedupeIndexStats] = None
 

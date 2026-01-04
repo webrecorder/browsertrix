@@ -181,15 +181,17 @@ class CollIndexOperator(BaseOperator):
         if not redis:
             desired_state = "initing"
 
-        # has active crawls
-        elif bool(data.related.get(CJS)):
-            desired_state = "crawling"
+        # first, handle any import or purge jobs
         elif bool(data.related.get(JOB)):
             desired_state = "importing"
             for job_name in data.related.get(JOB, {}):
                 if job_name.startswith("purge-"):
                     desired_state = "purging"
                     break
+
+        # then, active crawls
+        elif bool(data.related.get(CJS)):
+            desired_state = "crawling"
 
         else:
             desired_state = "ready"
@@ -258,7 +260,6 @@ class CollIndexOperator(BaseOperator):
                 DedupeIndexStats(
                     uniqueUrls=num_unique_urls,
                     totalCrawls=num_crawls,
-                    state="ready",
                     **stats,
                 ),
             )
@@ -370,16 +371,18 @@ class CollIndexOperator(BaseOperator):
         """update state of index in db, including uploaded storage"""
         hash_ = ""
         size = -1
-        if pod_name:
-            logs = await self.k8s.get_pod_logs(
-                pod_name, container=self.rclone_save, lines=10
-            )
-            m = re.search(r"md5 = ([^\s]+) OK", logs)
-            if m:
-                hash_ = "md5:" + m.group(1)
-            m = re.search(r"size = ([\d]+) OK", logs)
-            if m:
-                size = int(m.group(1))
+        logs = await self.k8s.get_pod_logs(
+            pod_name, container=self.rclone_save, lines=10
+        )
+        m = re.search(r"md5 = ([^\s]+) OK", logs)
+        if m:
+            hash_ = "md5:" + m.group(1)
+        m = re.search(r"size = ([\d]+) OK", logs)
+        if m:
+            size = int(m.group(1))
+
+        if not hash_:
+            print("LOGS empty?", logs)
 
         org = await self.coll_ops.orgs.get_org_by_id(oid)
         filename = self.get_index_storage_filename(coll_id, org)

@@ -147,11 +147,11 @@ spec:
 
       args: ["-vv", "copyto", "--checksum", "remote:{{ remote_file_path }}", "/data/{{ local_file }}"]
 
-      volumeMounts: &rclone_volume
+      volumeMounts:
         - name: redis-data
           mountPath: /data
 
-      env: &rclone_env
+      env:
       - name: RCLONE_CONFIG_REMOTE_TYPE
         value: "s3"
 
@@ -182,7 +182,7 @@ spec:
       - name: RCLONE_CONFIG_REMOTE_ENDPOINT
         value: "{{ storage_endpoint }}"
 
-      resources: &rclone_resources
+      resources:
         limits:
           memory: "200Mi"
 
@@ -210,9 +210,49 @@ spec:
           exec:
             command: ["touch", "/tmp/done"]
 
-      volumeMounts: *rclone_volume
-      env: *rclone_env
-      resources: *rclone_resources
+      volumeMounts:
+        - name: redis-data
+          mountPath: /data
+
+      env:
+      - name: RCLONE_CONFIG_REMOTE_TYPE
+        value: "s3"
+
+      - name: RCLONE_CONFIG_REMOTE_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_ACCESS_KEY
+
+      - name: RCLONE_CONFIG_REMOTE_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_SECRET_KEY
+
+      - name: RCLONE_CONFIG_REMOTE_REGION
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_REGION
+
+      - name: RCLONE_CONFIG_REMOTE_PROVIDER
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_S3_PROVIDER
+
+      - name: RCLONE_CONFIG_REMOTE_ENDPOINT
+        value: "{{ storage_endpoint }}"
+
+      resources:
+        limits:
+          memory: "200Mi"
+
+        requests:
+          memory: "200Mi"
+          cpu: "50m"
+
 {% endif %}
 
 {% endif %}
