@@ -53,7 +53,6 @@ from .models import (
     POD,
     CMAP,
     PVC,
-    COLLINDEX,
     BTRIX_API,
 )
 
@@ -837,26 +836,9 @@ class CrawlOperator(BaseOperator):
         if not crawl.dedupe_coll_id:
             return False
 
-        # index object doesn't exist
-        coll_indexes = data.related.get(COLLINDEX, {})
-
-        found = False
-
-        for index in coll_indexes.values():
-            found = True
-            if index.get("status", {}).get("state") in ("ready", "crawling"):
-                return False
-
-            # only check first index, should only be one
-            break
-
-        # if index not found, create it
-        if not found:
-            await self.k8s.create_or_update_coll_index(
-                str(crawl.dedupe_coll_id), str(crawl.oid)
-            )
-
-        return True
+        return not await self.ensure_coll_index_ready(
+            data, str(crawl.dedupe_coll_id), str(crawl.oid), ("ready", "crawling")
+        )
 
     async def cancel_crawl(
         self,

@@ -108,6 +108,10 @@ class CollectionOps:
         self.crawl_manager = crawl_manager
         self.event_webhook_ops = event_webhook_ops
 
+        self.dedupe_importer_channel = os.environ.get(
+            "DEDUPE_IMPORTER_CHANNEL", "default"
+        )
+
     def set_crawl_ops(self, ops):
         """set crawl ops"""
         self.crawl_ops = ops
@@ -212,7 +216,7 @@ class CollectionOps:
 
         if update.hasDedupeIndex and not coll.dedupeIndex:
             query["dedupeIndex"] = DedupeIndexStats().dict()
-            await self.crawl_manager.update_coll_index(coll)
+            await self.update_coll_index(coll, org.id)
 
         elif not update.hasDedupeIndex and coll.dedupeIndex:
             await self.delete_coll_index(coll, org)
@@ -682,6 +686,24 @@ class CollectionOps:
                 crawl_ids.append(crawl_id)
         return crawl_ids
 
+    async def update_coll_index(self, coll: Collection, oid: UUID, is_purge=False):
+        """create index import job"""
+        crawler_image = (
+            self.crawl_ops.crawl_configs.get_channel_crawler_image(
+                self.dedupe_importer_channel
+            )
+            or "default"
+        )
+        pull_policy = (
+            self.crawl_ops.crawl_configs.get_channel_crawler_image_pull_policy(
+                self.dedupe_importer_channel
+            )
+            or "IfNotPresent"
+        )
+        await self.crawl_manager.run_index_import_job(
+            str(coll.id), str(oid), crawler_image, pull_policy, is_purge
+        )
+
     async def delete_coll_index(self, coll: Collection, org: Organization):
         """delete coll dedupe index, if possible"""
 
@@ -860,7 +882,7 @@ class CollectionOps:
 
         # update_index is set, update dedupe index if it exists
         if update_index and coll.dedupeIndex:
-            await self.crawl_manager.update_coll_index(coll)
+            await self.update_coll_index(coll, oid)
 
         match_query = {
             "oid": coll.oid,
@@ -934,7 +956,7 @@ class CollectionOps:
         if coll.dedupeIndex.state not in ("ready", "idle"):
             raise HTTPException(status_code=400, detail="dedupe_index_not_ready")
 
-        await self.crawl_manager.update_coll_index(coll, is_purge=True)
+        await self.update_coll_index(coll, org.id, is_purge=True)
         return {"success": True}
 
     async def get_org_public_collections(

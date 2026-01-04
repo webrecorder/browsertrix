@@ -3,6 +3,8 @@
 import re
 import os
 import datetime
+import traceback
+
 from urllib.parse import urlsplit
 
 from uuid import UUID
@@ -17,7 +19,7 @@ from btrixcloud.models import (
     Organization,
 )
 
-from .models import MCSyncData, MCBaseRequest, POD, JOB, CMAP, CJS, BTRIX_API
+from .models import MCSyncData, MCBaseRequest, POD, JOB, CJS, BTRIX_API
 from .baseoperator import BaseOperator
 
 
@@ -46,9 +48,6 @@ class CollIndexSpec(BaseModel):
 
     id: UUID
     oid: UUID
-
-    collItemsUpdatedAt: str = ""
-    purgeRequestedAt: str = ""
 
 
 # ============================================================================
@@ -95,7 +94,6 @@ class CollIndexOperator(BaseOperator):
         index_id = str(spec.id)
         redis_name = "redis-coll-" + index_id
         new_children = []
-        desired_state: TYPE_DEDUPE_INDEX_STATES = "initing"
         skip_redis = False
 
         # allow deletion only if idle
@@ -120,11 +118,6 @@ class CollIndexOperator(BaseOperator):
             if redis_name in data.children[POD]:
                 redis = await self.k8s.get_redis_connected("coll-" + index_id)
 
-            # get desired state, not including finalizing
-            desired_state = await self.get_desired_state(
-                data, new_children, spec, status, bool(redis)
-            )
-
             # determine if index was previously saved before initing redis
             if not redis:
                 if not status.indexLastSavedAt:
@@ -133,41 +126,37 @@ class CollIndexOperator(BaseOperator):
                         status.indexLastSavedAt = date_to_str(res)
 
             else:
-                await self.handle_redis_update(redis, status, spec.id, data)
+                await self.handle_redis_update(redis, status, spec.id)
 
-                if desired_state != "ready":
-                    status.lastActiveAt = date_to_str(dt_now())
-
-            is_expired = self.is_expired(desired_state, status)
-
-            if is_expired:
+            if self.is_expired(status) or data.finalizing:
                 # do actual deletion here
                 if not data.finalizing:
                     self.do_delete(spec.id)
-                else:
-                    # Saving process
-                    # 1. run bgsave while redis is active
-                    if redis:
-                        if status.state in (
-                            "ready",
-                            "saving",
-                        ) and await self.handle_redis_save(spec.id, redis, status):
-                            skip_redis = True
 
-                    # 2. once redis has shutdown, do the upload
-                    else:
+                # Saving process
+                # 1. run bgsave while redis is active
+                if redis:
+                    if status.state in (
+                        "ready",
+                        "saving",
+                    ) and await self.handle_redis_save(spec.id, redis, status):
                         skip_redis = True
-                        if status.state == "saving":
-                            await self.save_index_data(
-                                new_children, redis_name, spec, status, data
-                            )
-            elif status.state != desired_state:
-                status.state = desired_state
-                await self.coll_ops.update_dedupe_index_info(spec.id, desired_state)
+
+                # 2. once redis has shutdown, do the upload
+                else:
+                    skip_redis = True
+                    if status.state == "saving":
+                        await self.save_index_data(
+                            new_children, redis_name, spec, status, data
+                        )
+
+            else:
+                await self.update_state(bool(redis), data, spec.id, status)
 
         # pylint: disable=broad-exception-caught
         except Exception as e:
             print(e)
+            traceback.print_exc()
 
             # load redis pvc and/or redis pod itself
         if status.state != "idle":
@@ -181,71 +170,53 @@ class CollIndexOperator(BaseOperator):
             "finalized": False,
         }
 
-    def is_expired(
-        self, desired_state: TYPE_DEDUPE_INDEX_STATES, status: CollIndexStatus
+    async def update_state(
+        self, has_redis: bool, data, coll_id: UUID, status: CollIndexStatus
     ):
+        """update state"""
+        desired_state = status.state
+        if not has_redis:
+            desired_state = "initing"
+
+        # has active crawls
+        elif status.state == "ready":
+            if bool(data.related.get(CJS)):
+                desired_state = "crawling"
+            elif bool(data.related.get(JOB)):
+                desired_state = "importing"
+                for job_name in data.related.get(JOB, {}):
+                    if job_name.startswith("purge-"):
+                        desired_state = "purging"
+                        break
+
+        elif status.state in ("importing", "purging", "initing"):
+            desired_state = "ready"
+
+        if desired_state != status.state:
+            await self.set_state(desired_state, status, coll_id)
+
+        if desired_state != "ready":
+            status.lastActiveAt = date_to_str(dt_now())
+
+    def is_expired(self, status: CollIndexStatus):
         """return true if collindex is considered expired and should be deleted"""
-
-        # never expire if active / importing / purging, even if time constaint is met
-        if desired_state in ("crawling", "importing", "purging", "initing"):
-            return False
-
         dt_active = str_to_date(status.lastActiveAt)
         if dt_active and (dt_now() - dt_active) > EXPIRE_MIN:
             return True
 
         return False
 
+    async def set_state(
+        self, state: TYPE_DEDUPE_INDEX_STATES, status: CollIndexStatus, coll_id: UUID
+    ):
+        """set state after updating db"""
+        await self.coll_ops.update_dedupe_index_info(coll_id, state)
+        status.state = state
+
     def do_delete(self, index_id: UUID):
         """delete the CollIndex object"""
         name = f"collindex-{index_id}"
         self.run_task(self.k8s.delete_custom_object(name, "collindexes"))
-
-    # pylint: disable=too-many-arguments
-    async def get_desired_state(
-        self,
-        data: MCSyncData,
-        new_children,
-        spec: CollIndexSpec,
-        status: CollIndexStatus,
-        has_redis: bool,
-    ) -> TYPE_DEDUPE_INDEX_STATES:
-        """get desired state based on active crawls, import or purge and redis state"""
-        # has active crawls
-        has_crawls = bool(data.related.get(CJS))
-        if has_crawls:
-            return "crawling" if has_redis else "initing"
-
-        index_id = str(spec.id)
-
-        # check if import/purge needed, if no crawls running
-        import_ts, is_purge = self.get_import_or_purge_ts(spec, status)
-        if import_ts:
-            import_job_name = (
-                f"import-{index_id}-{import_ts}"
-                if not is_purge
-                else f"purge-{index_id}-{import_ts}"
-            )
-            if not has_redis:
-                return "initing"
-
-            new_children.extend(
-                await self.load_import_job(index_id, import_job_name, is_purge)
-            )
-            new_children.extend(
-                await self.load_import_configmap(
-                    index_id, import_job_name, spec.oid, data.children
-                )
-            )
-            return "importing" if not is_purge else "purging"
-
-        if has_redis:
-            return "ready"
-
-        if status.state == "saving":
-            return "saving"
-
-        return "initing"
 
     async def handle_redis_save(
         self, coll_id: UUID, redis: Redis, status: CollIndexStatus
@@ -259,8 +230,7 @@ class CollIndexOperator(BaseOperator):
             except:
                 pass
 
-            status.state = "saving"
-            await self.coll_ops.update_dedupe_index_info(coll_id, status.state)
+            await self.set_state("saving", status, coll_id)
 
         last_saved = await redis.lastsave()
         if last_saved and (
@@ -272,24 +242,21 @@ class CollIndexOperator(BaseOperator):
         return False
 
     async def handle_redis_update(
-        self, redis: Redis, status: CollIndexStatus, coll_id: UUID, data: MCSyncData
+        self, redis: Redis, status: CollIndexStatus, coll_id: UUID
     ):
         """update stats from ready, return ready if import jobs finished"""
         # attempt to set the last updated from redis when import is finished
         try:
-            # index is now ready if no more child pods
+            # some kind of index update running
             if status.state != "ready":
+                # update last update ts
                 last_update_ts = await redis.get("last_update_ts")
                 if last_update_ts:
                     status.updated = last_update_ts
 
+                # readd appendonly
                 if status.state == "initing":
                     await redis.config_set("appendonly", "yes")
-
-                # index is now ready!
-                if not data.children[JOB]:
-                    status.state = "ready"
-                    # resync_after = self.fast_retry
 
             # update db stats from redis
             stats = await redis.hgetall("allcounts")
@@ -308,6 +275,7 @@ class CollIndexOperator(BaseOperator):
         # pylint: disable=broad-exception-caught
         except Exception as e:
             print(e)
+            traceback.print_exc()
 
     def get_related(self, data: MCBaseRequest):
         """return crawljobs that use this dedupe index"""
@@ -327,30 +295,15 @@ class CollIndexOperator(BaseOperator):
                     "matchLabels": {"coll": coll_id, "role": "save-dedupe-index"}
                 },
             },
+            {
+                "apiVersion": "batch/v1",
+                "resource": "jobs",
+                "labelSelector": {
+                    "matchLabels": {"coll": coll_id, "role": "index-import-job"}
+                },
+            },
         ]
         return {"relatedResources": related_resources}
-
-    def get_import_or_purge_ts(self, spec: CollIndexSpec, status: CollIndexStatus):
-        """return true if a reimport or purge is needed based on last import date
-        or purge request data"""
-        if status.state in ("crawling"):
-            return None, None
-
-        purge_request_date = str_to_date(spec.purgeRequestedAt)
-        coll_update_date = str_to_date(spec.collItemsUpdatedAt)
-        last_import_date = str_to_date(status.updated)
-
-        # do a import with purge
-        if purge_request_date:
-            if not last_import_date or purge_request_date >= last_import_date:
-                return re.sub(r"[^0-9]", "", spec.purgeRequestedAt), True
-
-        if coll_update_date:
-            # do update from 'coll_update_date' timestamp
-            if not last_import_date or coll_update_date >= last_import_date:
-                return re.sub(r"[^0-9]", "", spec.collItemsUpdatedAt), False
-
-        return None, None
 
     # pylint: disable=too-many-arguments
     async def load_redis(
@@ -373,52 +326,6 @@ class CollIndexOperator(BaseOperator):
 
         return self.load_from_yaml("redis.yaml", params)
 
-    async def load_import_job(self, index_id: str, name: str, is_purging: bool):
-        """create indexer pods from yaml template"""
-        params = {}
-        params.update(self.shared_params)
-        params["name"] = name
-        params["id"] = index_id
-        params["crawler_image"] = self.crawl_config_ops.get_channel_crawler_image(
-            self.dedupe_importer_channel
-        )
-        pull_policy = self.crawl_config_ops.get_channel_crawler_image_pull_policy(
-            self.dedupe_importer_channel
-        )
-        if pull_policy:
-            params["crawler_image_pull_policy"] = pull_policy
-
-        params["is_purging"] = is_purging
-
-        params["redis_url"] = self.k8s.get_redis_url("coll-" + index_id)
-
-        return self.load_from_yaml("index-import-job.yaml", params)
-
-    async def load_import_configmap(
-        self, index_id: str, name: str, oid: UUID, children
-    ):
-        """create configmap for import job, lookup resources only on first init"""
-        configmap = children[CMAP].get(name)
-        # pylint: disable=duplicate-code
-        if configmap and not self.is_configmap_update_needed("config.json", configmap):
-            metadata = configmap["metadata"]
-            configmap["metadata"] = {
-                "name": metadata["name"],
-                "namespace": metadata["namespace"],
-                "labels": metadata["labels"],
-            }
-            return [configmap]
-
-        replay_list = await self.coll_ops.get_internal_replay_list(UUID(index_id), oid)
-
-        params = {}
-        params.update(self.shared_params)
-        params["name"] = name
-        params["id"] = index_id
-        params["config"] = replay_list.json()
-
-        return self.load_from_yaml("index-import-configmap.yaml", params)
-
     # pylint: disable=too-many-arguments
     async def save_index_data(
         self,
@@ -439,7 +346,7 @@ class CollIndexOperator(BaseOperator):
                 now = dt_now()
                 status.indexLastSavedAt = date_to_str(now)
             elif job_status.get("failed") == 3:
-                status.state = "idle"
+                await self.set_state("idle", status, spec.id)
                 return
 
         if (

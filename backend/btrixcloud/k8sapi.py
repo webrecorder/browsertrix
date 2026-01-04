@@ -2,7 +2,6 @@
 
 import os
 import traceback
-from datetime import datetime
 from typing import Optional, List, Any
 
 import yaml
@@ -21,7 +20,7 @@ from redis.asyncio.client import Redis
 from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
 
-from .utils import get_templates_dir, dt_now, date_to_str
+from .utils import get_templates_dir, dt_now
 
 
 # ============================================================================
@@ -473,19 +472,12 @@ class K8sAPI:
         self,
         coll_id: str,
         oid: str,
-        modified: Optional[datetime] = None,
-        is_purge=False,
     ):
         """create collection index if doesn't exist"""
-        field = "collItemsUpdatedAt" if not is_purge else "purgeRequestedAt"
-        date_val = date_to_str(modified or dt_now())
         params = {
             "id": coll_id,
             "oid": oid,
-            "purgeRequestedAt": "",
-            "collItemsUpdatedAt": "",
         }
-        params[field] = date_val
         data = self.templates.env.get_template("coll_index.yaml").render(params)
 
         try:
@@ -493,12 +485,5 @@ class K8sAPI:
 
         except ApiException as e:
             # 409 if object already exists, update
-            if e.status == 409:
-                print("patching", field, date_val)
-                await self.patch_custom_object(
-                    f"collindex-{coll_id}",
-                    {field: date_val},
-                    "collindexes",
-                )
-            else:
+            if e.status != 409:
                 raise

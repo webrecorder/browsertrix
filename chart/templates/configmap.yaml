@@ -110,6 +110,9 @@ data:
 
   CLEANUP_FILES_AFTER_MINUTES: "{{ .Values.cleanup_files_after_minutes | default 1440 }}"
 
+  DEDUPE_IMPORTER_CHANNEL: "{{ .Values.dedupe_importer_channel }}"
+
+
   {{- if .Values.available_plans }}
   AVAILABLE_PLANS: {{ .Values.available_plans | toJson }}
   {{- end }}
