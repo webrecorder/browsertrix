@@ -98,11 +98,6 @@ spec:
     updateStrategy:
       method: InPlace
 
-  - apiVersion: batch/v1
-    resource: jobs
-    updateStrategy:
-      method: InPlace
-
   hooks:
     sync:
       webhook:

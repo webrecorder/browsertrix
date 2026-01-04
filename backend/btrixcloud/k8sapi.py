@@ -348,11 +348,11 @@ class K8sAPI:
             except:
                 print("Logs Not Found")
 
-    async def get_pod_logs(self, pod_name, lines=100) -> str:
+    async def get_pod_logs(self, pod_name, lines=100, container=None) -> str:
         """get logs for pod"""
         try:
             resp = await self.core_api.read_namespaced_pod_log(
-                pod_name, self.namespace, tail_lines=lines
+                pod_name, self.namespace, container=container, tail_lines=lines
             )
             return resp
         # pylint: disable=bare-except

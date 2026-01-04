@@ -688,12 +688,14 @@ class CollectionOps:
 
     async def update_coll_index(self, coll: Collection, oid: UUID, is_purge=False):
         """create index import job"""
-        crawler_image = (
-            self.crawl_ops.crawl_configs.get_channel_crawler_image(
-                self.dedupe_importer_channel
-            )
-            or "default"
+        crawler_image = self.crawl_ops.crawl_configs.get_channel_crawler_image(
+            self.dedupe_importer_channel
         )
+        if not crawler_image:
+            raise HTTPException(
+                status_code=500, detail="dedupe_crawler_image_not_defined"
+            )
+
         pull_policy = (
             self.crawl_ops.crawl_configs.get_channel_crawler_image_pull_policy(
                 self.dedupe_importer_channel
