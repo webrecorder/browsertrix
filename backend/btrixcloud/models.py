@@ -1619,6 +1619,7 @@ class DedupeIndexStats(BaseModel):
     totalUrls: int = 0
 
     sizeSaved: int = 0
+    totalSize: int = 0
 
     totalCrawls: int = 0
     removableCrawls: int = 0

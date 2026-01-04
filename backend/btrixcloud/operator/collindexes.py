@@ -22,8 +22,10 @@ from btrixcloud.models import (
 from .models import MCSyncData, MCBaseRequest, POD, JOB, CJS, BTRIX_API
 from .baseoperator import BaseOperator
 
+# expire CollIndex after idle for this many seconds with no additional jobs
+IDLE_SECS = 10
 
-EXPIRE_MIN = datetime.timedelta(seconds=30)
+EXPIRE_TIME = datetime.timedelta(seconds=IDLE_SECS)
 
 
 # ============================================================================
@@ -34,9 +36,11 @@ class CollIndexStatus(BaseModel):
 
     updated: str = ""
 
-    lastActiveAt: str = ""
+    lastStateChangeAt: str = ""
 
     indexLastSavedAt: str = ""
+
+    finishedAt: str = ""
 
 
 # ============================================================================
@@ -89,14 +93,17 @@ class CollIndexOperator(BaseOperator):
         spec = CollIndexSpec(**data.parent.get("spec", {}))
         status = CollIndexStatus(**data.parent.get("status", {}))
 
-        index_id = str(spec.id)
-        redis_name = "redis-coll-" + index_id
+        coll_id = str(spec.id)
+        redis_name = "redis-coll-" + coll_id
         new_children = []
 
         # allow deletion only if idle
         if data.finalizing:
             is_done = False
-            if status.state == "idle" and not data.children[POD]:
+            if status.state in ("idle", "saving") and not data.children[POD]:
+                # likely reentrant call still set to saving, just switch to idle
+                if status.state == "saving":
+                    status.state = "idle"
                 is_done = True
             else:
                 try:
@@ -107,16 +114,15 @@ class CollIndexOperator(BaseOperator):
                     is_done = True
 
             if is_done:
+                print(f"CollIndex removed: {spec.id}")
                 return {"status": status.dict(), "children": [], "finalized": True}
 
         try:
-            # get redis if exists
-            redis = None
-            if not self.skip_redis(data.children[POD].get(redis_name)):
-                redis = await self.k8s.get_redis_connected("coll-" + index_id)
+            # check if redis should be skipped
+            skip_redis = self.skip_redis(data.children[POD].get(redis_name))
 
             # determine if index was previously saved before initing redis
-            if not redis:
+            if redis_name not in data.children[POD]:
                 if not status.indexLastSavedAt:
                     res = await self.coll_ops.get_dedupe_index_saved(spec.id)
                     if res:
@@ -129,15 +135,16 @@ class CollIndexOperator(BaseOperator):
 
                 # Saving process
                 # 1. run bgsave while redis is active
-                if redis:
-                    self.run_task(self.do_redis_save(spec.id, redis, status))
+                if not skip_redis:
+                    if status.state != "saving":
+                        await self.do_redis_save(spec.id, status)
 
                 # 2. once redis has shutdown, check if fully finished
                 else:
-                    self.check_redis_saved(redis_name, spec, status, data)
+                    await self.check_redis_saved(redis_name, spec, status, data)
 
             else:
-                await self.update_state(redis, data, spec.id, status)
+                await self.update_state(skip_redis, data, spec.id, status)
 
         # pylint: disable=broad-exception-caught
         except Exception as e:
@@ -147,13 +154,19 @@ class CollIndexOperator(BaseOperator):
             # load redis pvc and/or redis pod itself
         if status.state != "idle":
             new_children.extend(
-                await self.load_redis(index_id, redis_name, spec, status)
+                await self.load_redis(coll_id, redis_name, spec, status)
             )
+
+        if status.state in ("idle", "saving", "ready"):
+            resync_after = IDLE_SECS
+        else:
+            resync_after = None
 
         return {
             "status": status.dict(exclude_none=True),
             "children": new_children,
             "finalized": False,
+            "resyncAfterSeconds": resync_after,
         }
 
     def skip_redis(self, pod):
@@ -174,11 +187,11 @@ class CollIndexOperator(BaseOperator):
         return False
 
     async def update_state(
-        self, redis: Redis | None, data, coll_id: UUID, status: CollIndexStatus
+        self, skip_redis: bool, data, coll_id: UUID, status: CollIndexStatus
     ):
         """update state"""
         desired_state = status.state
-        if not redis:
+        if skip_redis:
             desired_state = "initing"
 
         # first, handle any import or purge jobs
@@ -197,51 +210,74 @@ class CollIndexOperator(BaseOperator):
             desired_state = "ready"
 
         if desired_state != status.state:
-            # other updates when switching to ready
-            if redis and desired_state == "ready":
-                await self.update_stats_from_redis(redis, status, coll_id)
+            # update stats if redis is available
+            if not skip_redis and desired_state == "ready":
+                await self.update_stats_from_redis(status, coll_id)
 
-            self.set_state(desired_state, status, coll_id)
-
-        if desired_state != "ready":
-            status.lastActiveAt = date_to_str(dt_now())
+            await self.set_state(desired_state, status, coll_id)
 
     def is_expired(self, status: CollIndexStatus):
         """return true if collindex is considered expired and should be deleted"""
-        dt_active = str_to_date(status.lastActiveAt)
-        if dt_active and (dt_now() - dt_active) > EXPIRE_MIN:
+        if status.state != "ready":
+            return False
+
+        dt_change = str_to_date(status.lastStateChangeAt)
+        if dt_change and (dt_now() - dt_change) > EXPIRE_TIME:
+            return True
+
+        if status.state == "saving":
             return True
 
         return False
 
-    def set_state(
+    async def set_state(
         self, state: TYPE_DEDUPE_INDEX_STATES, status: CollIndexStatus, coll_id: UUID
     ):
         """set state after updating db"""
-        print(f"Setting coll index state {status.state} -> {state}")
+        print(f"Setting coll index state {status.state} -> {state} {coll_id}")
         status.state = state
-        self.run_task(self.coll_ops.update_dedupe_index_info(coll_id, state))
+        status.lastStateChangeAt = date_to_str(dt_now())
+
+        # self.run_task(self.coll_ops.update_dedupe_index_info(coll_id, state))
+        await self.coll_ops.update_dedupe_index_info(coll_id, state)
 
     async def do_delete(self, index_id: UUID):
         """delete the CollIndex object"""
+        print(f"Deleting collindex {index_id}")
         await self.k8s.delete_custom_object(f"collindex-{index_id}", "collindexes")
 
-    async def do_redis_save(self, coll_id: UUID, redis: Redis, status: CollIndexStatus):
+    async def do_redis_save(self, coll_id: UUID, status: CollIndexStatus):
         """shutdown save redis"""
-        self.set_state("saving", status, coll_id)
+        try:
+            redis = await self.k8s.get_redis_connected("coll-" + str(coll_id))
+            if redis:
+                await self.set_state("saving", status, coll_id)
+                self.run_task(self.do_redis_shutdown(redis, coll_id, status))
+
+        # pylint: disable=broad-exception-caught
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+
+    async def do_redis_shutdown(
+        self, redis: Redis, coll_id: UUID, status: CollIndexStatus
+    ):
+        """save and shutdown redis, waiting for it to succeed"""
         try:
             await redis.shutdown(save=True)
         # pylint: disable=broad-exception-caught
         except Exception as e:
             print("Redis shutdown failed", e)
-            self.set_state("ready", status, coll_id)
+            await self.set_state("ready", status, coll_id)
 
-    async def update_stats_from_redis(
-        self, redis: Redis, status: CollIndexStatus, coll_id: UUID
-    ):
+    async def update_stats_from_redis(self, status: CollIndexStatus, coll_id: UUID):
         """update stats from redis, set other changes based on prev and new state"""
         # attempt to set the last updated from redis when import is finished
         try:
+            redis = await self.k8s.get_redis_connected("coll-" + str(coll_id))
+            if not redis:
+                return
+
             # readd appendonly
             if status.state == "initing":
                 await redis.config_set("appendonly", "yes")
@@ -334,7 +370,7 @@ class CollIndexOperator(BaseOperator):
 
         return filename
 
-    def check_redis_saved(
+    async def check_redis_saved(
         self,
         redis_name: str,
         spec: CollIndexSpec,
@@ -346,24 +382,29 @@ class CollIndexOperator(BaseOperator):
         redis_pod = data.children[POD].get(redis_name)
         if redis_pod and redis_pod["status"].get("phase") == "Succeeded":
             finished_at = None
+            finished_at_str = ""
             try:
-                finished_at = str_to_date(
-                    redis_pod["status"]["initContainerStatuses"][1]["state"][
-                        "terminated"
-                    ]["finishedAt"]
-                )
+                finished_at_str = redis_pod["status"]["initContainerStatuses"][1][
+                    "state"
+                ]["terminated"]["finishedAt"]
             # pylint: disable=bare-except
             except:
                 pass
 
             # update state immediately to speed up cleanup
-            print(f"Setting coll index state {status.state} -> idle")
+            print(f"Setting coll index state {status.state} -> idle {spec.id}")
             status.state = "idle"
-            self.run_task(
-                self.update_saved_dedupe_index_state_in_db(
-                    spec.id, spec.oid, redis_name, finished_at or dt_now()
-                )
+
+            if finished_at_str:
+                if status.finishedAt == finished_at_str:
+                    return
+                finished_at = str_to_date(finished_at_str)
+
+            await self.update_saved_dedupe_index_state_in_db(
+                spec.id, spec.oid, redis_name, finished_at or dt_now()
             )
+
+            status.finishedAt = finished_at_str
 
     async def update_saved_dedupe_index_state_in_db(
         self, coll_id: UUID, oid: UUID, pod_name: str, finished_at: datetime.datetime
@@ -381,8 +422,9 @@ class CollIndexOperator(BaseOperator):
         if m:
             size = int(m.group(1))
 
-        if not hash_:
-            print("LOGS empty?", logs)
+        print("UPLOAD LOGS")
+        print("-----------")
+        print(logs)
 
         org = await self.coll_ops.orgs.get_org_by_id(oid)
         filename = self.get_index_storage_filename(coll_id, org)

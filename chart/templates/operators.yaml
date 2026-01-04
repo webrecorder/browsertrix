@@ -83,7 +83,6 @@ metadata:
   name: collindexes-operator
 spec:
   generateSelector: false
-  resyncPeriodSeconds: 30
   parentResource:
     apiVersion: btrix.cloud/v1
     resource: collindexes
@@ -130,7 +129,6 @@ kind: DecoratorController
 metadata:
   name: collindex-job-operator
 spec:
-  resyncPeriodSeconds: 60
   resources:
   - apiVersion: batch/v1
     resource: jobs
