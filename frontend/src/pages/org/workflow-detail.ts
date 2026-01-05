@@ -1681,6 +1681,10 @@ export class WorkflowDetail extends BtrixElement {
           );
           break;
 
+        case "waiting_dedupe_index":
+          waitingMsg = msg("Crawl waiting for deduplication index...");
+          break;
+
         case "pending-wait":
         case "generate-wacz":
         case "uploading-wacz":
