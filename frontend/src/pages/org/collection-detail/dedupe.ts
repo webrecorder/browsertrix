@@ -14,8 +14,9 @@ import { emptyMessage } from "@/layouts/emptyMessage";
 import { panel, panelBody, panelHeader } from "@/layouts/panel";
 import { OrgTab } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { Collection, DedupeStats } from "@/types/collection";
+import type { Collection } from "@/types/collection";
 import type { Crawl, Workflow } from "@/types/crawler";
+import type { DedupeIndexStats } from "@/types/dedupe";
 import { SortDirection } from "@/types/utils";
 import { pluralOf } from "@/utils/pluralize";
 
@@ -141,7 +142,7 @@ export class CollectionDetailDedupe extends BtrixElement {
   render() {
     if (!this.collection) return;
 
-    if (this.collection.hasDedupeIndex) {
+    if (this.collection.dedupeIndex) {
       return html` <div
         class="grid grid-cols-4 grid-rows-[repeat(2,min-content)] gap-x-3 gap-y-3"
       >
@@ -216,8 +217,9 @@ export class CollectionDetailDedupe extends BtrixElement {
       </div>
     `;
 
-    const ringStatWithDedupe = (render: (dedupe: DedupeStats) => unknown) =>
-      when(dedupe, render, ringSkeleton);
+    const ringStatWithDedupe = (
+      render: (dedupe: DedupeIndexStats) => unknown,
+    ) => when(dedupe, render, ringSkeleton);
 
     return html`
       <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -390,20 +392,21 @@ export class CollectionDetailDedupe extends BtrixElement {
   };
 
   private renderOverview() {
-    const dedupe = this.collection?.dedupeIndex;
+    const dedupeState = this.collection?.indexState;
+    const dedupeStats = this.collection?.dedupeIndex;
 
     return panel({
       heading: msg("Overview"),
       body: html`<btrix-desc-list>
         <btrix-desc-list-item label=${msg("Dedupe Status")}>
-          ${when(dedupe, (dedupe) => html` ${dedupe.state} `)}
+          ${when(dedupeState, (state) => html` ${state} `)}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Purgeable Items")}>
           ${when(
-            dedupe,
+            dedupeStats,
             (dedupe) =>
-              html`${this.localize.number(dedupe.removable)}
-              ${pluralOf("items", dedupe.removable)} `,
+              html`${this.localize.number(dedupe.removableCrawls)}
+              ${pluralOf("items", dedupe.removableCrawls)} `,
           )}
         </btrix-desc-list-item>
       </btrix-desc-list>`,

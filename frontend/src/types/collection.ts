@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { DEDUPE_INDEX_STATES, dedupeIndexStatsSchema } from "./dedupe";
 import { storageFileSchema } from "./storage";
 
 export const COLLECTION_NAME_MAX_LENGTH = 50;
@@ -53,32 +54,19 @@ export const publicCollectionSchema = z.object({
   homeUrlPageId: z.string().nullable(),
   homeUrlTs: z.string().datetime().nullable(),
   access: z.nativeEnum(CollectionAccess),
-  hasDedupeIndex: z.boolean(),
 });
 export type PublicCollection = z.infer<typeof publicCollectionSchema>;
-
-export const dedupeStatsSchema = z.object({
-  uniqueUrls: z.number(),
-  totalUrls: z.number(),
-  sizeSaved: z.number(),
-  removable: z.number(),
-  state: z.string(),
-});
-export type DedupeStats = z.infer<typeof dedupeStatsSchema>;
 
 export const collectionSchema = publicCollectionSchema.extend({
   orgName: z.string().optional(),
   orgPublicProfile: z.boolean().optional(),
   tags: z.array(z.string()),
   access: z.nativeEnum(CollectionAccess),
-  dedupeIndex: dedupeStatsSchema.optional(),
+  indexLastSavedAt: z.string().datetime().nullable(),
+  indexState: z.enum(DEDUPE_INDEX_STATES).nullable(),
+  dedupeIndex: dedupeIndexStatsSchema.optional(),
 });
 export type Collection = z.infer<typeof collectionSchema>;
-
-// export const dedupeSourceSchema = collectionSchema.extend({
-//   dedupeIndex: dedupeStatsSchema.optional(),
-// });
-// export type DedupeSource = z.infer<typeof dedupeSourceSchema>;
 
 export type CollectionSearchValues = {
   names: string[];

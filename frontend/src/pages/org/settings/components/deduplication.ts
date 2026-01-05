@@ -14,7 +14,8 @@ import { Tab } from "@/pages/org/collection-detail/types";
 import { OrgTab } from "@/routes";
 import { notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { Collection, DedupeStats } from "@/types/collection";
+import type { Collection } from "@/types/collection";
+import type { DedupeIndexStats } from "@/types/dedupe";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { pluralOf } from "@/utils/pluralize";
 
@@ -72,7 +73,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
   private readonly renderTable = (sources: APIPaginatedList<Collection>) => {
     const dedupeStat = (
       source: Collection,
-      render: (dedupe: DedupeStats) => TemplateResult,
+      render: (dedupe: DedupeIndexStats) => TemplateResult,
     ) => {
       if (source.dedupeIndex) render(source.dedupeIndex);
 
@@ -139,8 +140,8 @@ export class OrgSettingsDeduplication extends BtrixElement {
                     ${dedupeStat(
                       item,
                       (dedupe) => html`
-                        ${this.localize.number(dedupe.removable)}
-                        ${pluralOf("items", dedupe.removable)}
+                        ${this.localize.number(dedupe.removableCrawls)}
+                        ${pluralOf("items", dedupe.removableCrawls)}
                       `,
                     )}
                   </btrix-table-cell>
