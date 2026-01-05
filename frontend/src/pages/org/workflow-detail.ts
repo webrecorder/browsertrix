@@ -13,6 +13,7 @@ import omitBy from "lodash/fp/omitBy";
 import isNil from "lodash/isNil";
 import queryString from "query-string";
 
+import type { ArchivedItemSectionName } from "./archived-item-detail/archived-item-detail";
 import type { Crawl, CrawlLog, Seed, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -20,6 +21,7 @@ import type { Alert } from "@/components/ui/alert";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { dedupeReplayNotice } from "@/features/archived-items/templates/dedupe-replay-notice";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { ShareableNotice } from "@/features/crawl-workflows/templates/shareable-notice";
 import {
@@ -29,7 +31,7 @@ import {
 import type { BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
 import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
-import { WorkflowTab } from "@/routes";
+import { CommonTab, OrgTab, WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
@@ -683,7 +685,12 @@ export class WorkflowDetail extends BtrixElement {
       <header
         class="mb-2 flex h-7 items-end justify-between text-lg font-medium"
       >
-        <h3>${this.tabLabels[tab]}</h3>
+        <div class="flex items-center gap-2">
+          <h3>${this.tabLabels[tab]}</h3>
+          ${tab === WorkflowTab.LatestCrawl
+            ? this.renderDedupeBadge()
+            : nothing}
+        </div>
         <div class="flex items-center gap-2">${this.renderPanelAction()}</div>
       </header>
 
@@ -1387,6 +1394,17 @@ export class WorkflowDetail extends BtrixElement {
     `;
   };
 
+  private readonly renderDedupeBadge = () => {
+    const latestCrawl = this.latestCrawlTask.value;
+
+    if (!latestCrawl) return;
+
+    return html`<btrix-dedupe-badge
+      .dependencies=${latestCrawl.requiresCrawls}
+      .dependents=${latestCrawl.requiredByCrawls}
+    ></btrix-dedupe-badge>`;
+  };
+
   private readonly renderPausedNotice = (
     { truncate } = { truncate: false },
   ) => {
@@ -1715,6 +1733,18 @@ export class WorkflowDetail extends BtrixElement {
     }
 
     return html`
+      ${when(this.latestCrawlTask.value, (crawl) =>
+        crawl.requiresCrawls.length
+          ? dedupeReplayNotice({
+              topClass: tw`top-12`, // Sticky below tabs
+              dependenciesHref: `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${crawl.cid}/${WorkflowTab.Crawls}/${crawl.id}#${"dependencies" satisfies ArchivedItemSectionName}`,
+              collectionHref: this.workflow?.dedupeCollId
+                ? `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${this.workflow.dedupeCollId}`
+                : undefined,
+            })
+          : nothing,
+      )}
+
       <div class="aspect-video overflow-hidden rounded-lg border">
         ${guard([this.lastCrawlId], () =>
           when(this.latestCrawlTask.value, this.renderReplay),
