@@ -391,7 +391,7 @@ class CollIndexOperator(BaseOperator):
             finished_at = None
             finished_at_str = ""
             try:
-                finished_at_str = redis_pod["status"]["initContainerStatuses"][1][
+                finished_at_str = redis_pod["status"]["initContainerStatuses"][0][
                     "state"
                 ]["terminated"]["finishedAt"]
             # pylint: disable=bare-except
