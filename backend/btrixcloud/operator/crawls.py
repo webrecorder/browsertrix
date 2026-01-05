@@ -39,6 +39,7 @@ from btrixcloud.utils import (
     date_to_str,
     dt_now,
     scale_from_browser_windows,
+    crawler_image_below_minimum,
 )
 
 from .baseoperator import BaseOperator, Redis
@@ -457,7 +458,7 @@ class CrawlOperator(BaseOperator):
             and behaviors
             and "autoclick" in behaviors
             and crawler_image
-            and crawler_image < min_autoclick_crawler_image
+            and crawler_image_below_minimum(crawler_image, min_autoclick_crawler_image)
         ):
             print(
                 "Crawler version < min_autoclick_crawler_image, removing autoclick behavior",
