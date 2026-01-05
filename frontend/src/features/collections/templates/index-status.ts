@@ -15,39 +15,27 @@ export function indexStatus(state: DedupeIndexState) {
 
   switch (state) {
     case "initing":
-      label = msg("Initializing");
+      label = msg("Creating Index");
       iconName = "hourglass-split";
       iconClass = tw`text-violet-600`;
       break;
     case "importing":
-      label = msg("Importing");
-      iconName = "hourglass-split";
-      iconClass = tw`text-violet-600`;
+    case "purging":
+      label = msg("Updating");
+      iconName = "dot";
+      iconClass = tw`animate-pulse text-violet-600`;
       break;
     case "ready":
-      label = msg("Ready");
-      iconName = "hourglass-split";
-      iconClass = tw`text-violet-600`;
-      break;
-    case "purging":
-      label = msg("Purging");
-      iconName = "hourglass-split";
-      iconClass = tw`text-violet-600`;
-      break;
     case "idle":
-      label = msg("Idle");
-      iconName = "hourglass-split";
-      iconClass = tw`text-violet-600`;
+      label = msg("Available");
+      iconName = "check-circle-fill";
+      iconClass = tw`text-success-600`;
       break;
     case "saving":
-      label = msg("Saving");
-      iconName = "hourglass-split";
-      iconClass = tw`text-violet-600`;
-      break;
     case "crawling":
-      label = msg("Crawling");
-      iconName = "hourglass-split";
-      iconClass = tw`text-violet-600`;
+      label = msg("Updating");
+      iconName = "dot";
+      iconClass = tw`animate-pulse text-success-600`;
       break;
     default:
       break;

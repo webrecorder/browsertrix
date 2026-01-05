@@ -10,9 +10,11 @@ import queryString from "query-string";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { indexStatus } from "@/features/collections/templates/index-status";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { panel, panelBody, panelHeader } from "@/layouts/panel";
 import { OrgTab } from "@/routes";
+import { stringFor } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { Crawl, Workflow } from "@/types/crawler";
@@ -392,18 +394,18 @@ export class CollectionDetailDedupe extends BtrixElement {
   };
 
   private renderOverview() {
-    const dedupeState = this.collection?.indexState;
-    const dedupeStats = this.collection?.dedupeIndex;
+    const state = this.collection?.indexState;
+    const stats = this.collection?.dedupeIndex;
 
     return panel({
       heading: msg("Overview"),
       body: html`<btrix-desc-list>
-        <btrix-desc-list-item label=${msg("Dedupe Status")}>
-          ${when(dedupeState, (state) => html` ${state} `)}
+        <btrix-desc-list-item label=${msg("Index Status")}>
+          ${state ? indexStatus(state) : stringFor.unknown}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Purgeable Items")}>
           ${when(
-            dedupeStats,
+            stats,
             (dedupe) =>
               html`${this.localize.number(dedupe.removableCrawls)}
               ${pluralOf("items", dedupe.removableCrawls)} `,
