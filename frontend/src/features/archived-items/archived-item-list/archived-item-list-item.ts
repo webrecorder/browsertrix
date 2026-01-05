@@ -4,6 +4,8 @@ import { css, html, nothing } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
+import { dedupeStatusIcon } from "../templates/dedupe-status-icon";
+
 import type { ArchivedItemCheckedEvent } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -11,6 +13,7 @@ import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ReviewStatus, type ArchivedItem, type Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
+import { tw } from "@/utils/tailwind";
 
 /**
  * @slot actionCell - Action cell
@@ -104,7 +107,7 @@ export class ArchivedItemListItem extends BtrixElement {
     return html`
       <btrix-table-row
         class=${this.href || this.checkbox
-          ? "cursor-pointer select-none transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50 duration-fast"
+          ? tw`cursor-pointer select-none whitespace-nowrap transition-colors duration-fast focus-within:bg-neutral-50 hover:bg-neutral-50`
           : ""}
       >
         ${this.checkbox
@@ -146,7 +149,7 @@ export class ArchivedItemListItem extends BtrixElement {
                   hoist
                 >
                   <sl-icon
-                    class="text-inherit"
+                    class="size-4 text-base"
                     style="color: ${crawlStatus.cssColor}"
                     name=${typeIcon}
                     label=${typeLabel}
@@ -183,6 +186,7 @@ export class ArchivedItemListItem extends BtrixElement {
                   ></sl-icon>
                 `}
           </sl-tooltip>
+          ${dedupeStatusIcon(this.item)}
         </btrix-table-cell>
         <btrix-table-cell
           rowClickTarget=${ifDefined(
