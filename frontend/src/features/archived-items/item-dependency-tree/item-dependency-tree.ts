@@ -11,7 +11,7 @@ import queryString from "query-string";
 import stylesheet from "./item-dependency-tree.stylesheet.css";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { dedupeIconFor } from "@/features/collections/dedupe-badge";
+import { dedupeIcon } from "@/features/collections/templates/dedupe-icon";
 import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/archived-item-detail";
 import { OrgTab, WorkflowTab } from "@/routes";
 import { noData } from "@/strings/ui";
@@ -261,7 +261,7 @@ export class ItemDependencyTree extends BtrixElement {
       <div class="component--detail">${renderName(item)}</div>
       <div class="component--detail">
         <sl-tooltip content=${msg("Dedupe Dependencies")} hoist>
-          <sl-icon name=${dedupeIconFor.dependent}></sl-icon>
+          ${dedupeIcon()}
         </sl-tooltip>
         <span
           >${this.localize.number(dependencies.length)}

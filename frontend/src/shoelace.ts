@@ -83,7 +83,9 @@ import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tree-item/tree-item.js"
 );
 
+export const APP_ICON_LIBRARY = "app";
+
 setBasePath("/shoelace");
-registerIconLibrary("app", {
+registerIconLibrary(APP_ICON_LIBRARY, {
   resolver: (name) => `/assets/icons/${name}.svg`,
 });
