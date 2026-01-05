@@ -10,6 +10,7 @@ import type {
 import { isActualCollection } from "./utils";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { NavigateController } from "@/controllers/navigate";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -31,6 +32,8 @@ export class LinkedCollectionsListItem extends TailwindElement {
   @property({ type: Boolean })
   loading = false;
 
+  private readonly navigate = new NavigateController(this);
+
   render() {
     const item = this.item;
 
@@ -45,38 +48,29 @@ export class LinkedCollectionsListItem extends TailwindElement {
       >
         <div class="w-0 flex-1 truncate">${item.name}</div>
         ${dedupeEnabled
-          ? html`<btrix-badge variant="primary">
-              ${msg("Dedupe Source")}
-            </btrix-badge>`
+          ? html`<btrix-dedupe-source-badge></btrix-dedupe-source-badge>`
           : nothing}
       </div>`,
     ];
 
     if (actual) {
       content.push(
-        html`<div class="flex-none last:mr-1.5">
-          <btrix-badge variant="cyan"
-            >${item.crawlCount}
-            ${pluralOf("items", item.crawlCount)}</btrix-badge
-          >
-        </div>`,
+        html`<btrix-badge class="flex-none last:mr-1.5"
+          >${item.crawlCount} ${pluralOf("items", item.crawlCount)}</btrix-badge
+        >`,
       );
     }
 
     if (this.baseUrl) {
       content.push(
         html`<div class="flex-none">
-          <sl-tooltip
-            placement=${this.removable ? "left" : "right"}
-            content=${msg("Open in New Tab")}
+          <sl-icon-button
+            name="link"
+            href="${this.baseUrl}/${item.id}"
+            label=${msg("Visit Link")}
+            @click=${this.navigate.link}
           >
-            <sl-icon-button
-              name="arrow-up-right"
-              href="${this.baseUrl}/${item.id}"
-              target="_blank"
-            >
-            </sl-icon-button>
-          </sl-tooltip>
+          </sl-icon-button>
         </div>`,
       );
     }

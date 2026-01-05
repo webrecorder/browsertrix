@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  :host {
+    --border: 1px solid var(--sl-panel-border-color);
+  }
+
+  .component--row {
+    grid-template-columns: repeat(2, minmax(12rem, 1fr)) 12rem 2rem;
+    @apply grid w-full items-center gap-2;
+  }
+
+  sl-details::part(base) {
+    @apply border-0;
+  }
+
+  sl-details::part(summary-icon) {
+    @apply order-first ml-2 mr-2.5;
+  }
+
+  sl-details::part(header) {
+    @apply h-10 p-0 transition-shadow duration-fast;
+  }
+
+  sl-details::part(content) {
+    @apply p-0;
+  }
+
+  sl-details[open]::part(header) {
+    @apply shadow-sm;
+  }
+}
