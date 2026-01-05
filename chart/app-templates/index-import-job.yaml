@@ -14,6 +14,7 @@ metadata:
 spec:
   ttlSecondsAfterFinished: 0
   backoffLimit: 3
+  parallelism: 1
   template:
     metadata:
       labels:
@@ -50,11 +51,11 @@ spec:
 
           resources:
             limits:
-              memory: "500Mi"
+              memory: "200Mi"
 
             requests:
-              cpu: "300m"
-              memory: "100Mi"
+              cpu: "500m"
+              memory: "50Mi"
 
           {% if crawler_liveness_port and crawler_liveness_port != '0' %}
           livenessProbe:
