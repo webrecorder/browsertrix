@@ -8,6 +8,7 @@ import("./crawl-pending-exclusions");
 import("./crawl-queue");
 import("./crawl-status");
 import("./file-uploader");
+import("./item-dependency-tree");
 import("./item-list-controls");
 import("./qa-rating-filter");
 import("./upload-status");

@@ -1,10 +1,12 @@
-import { msg } from "@lit/localize";
+import { msg, str } from "@lit/localize";
 import { html, nothing } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { iconFor, labelFor, variantFor } from "@/features/qa/review-status";
 import { type ArchivedItem } from "@/types/crawler";
 import { isCrawl } from "@/utils/crawler";
+import localize from "@/utils/localize";
+import { pluralOf } from "@/utils/pluralize";
 
 export const itemTypeBadge = (itemType: ArchivedItem["type"]) => {
   const upload = itemType === "upload";
@@ -19,23 +21,32 @@ export const itemTypeBadge = (itemType: ArchivedItem["type"]) => {
   >`;
 };
 
-const collectionBadge = (inCollection: boolean) =>
-  html`<sl-tooltip content=${msg("In Collection")} ?disabled=${!inCollection}>
-    <btrix-badge variant=${inCollection ? "cyan" : "neutral"}>
+const collectionBadge = (collectionCount: number) => {
+  const number_of_collections = localize.number(collectionCount);
+  const plural_of_collections = pluralOf("collections", collectionCount);
+
+  return html`<btrix-popover
+    content=${msg(
+      str`Included in ${number_of_collections} ${plural_of_collections}.`,
+    )}
+    ?disabled=${!collectionCount}
+  >
+    <btrix-badge variant=${collectionCount ? "cyan" : "neutral"}>
       <sl-icon
-        name=${inCollection ? "check-circle" : "dash-circle"}
+        name=${collectionCount ? "check-circle" : "dash-circle"}
         class="mr-1.5"
       ></sl-icon>
-      ${inCollection ? msg("In Collection") : msg("Not in Collection")}
+      ${collectionCount ? msg("In Collection") : msg("Not in Collection")}
     </btrix-badge>
-  </sl-tooltip>`;
+  </btrix-popover>`;
+};
 
 const qaReviewBadge = (reviewStatus: ArchivedItem["reviewStatus"]) => html`
   <sl-tooltip
     content=${ifDefined(reviewStatus ? msg("QA Rating") : undefined)}
     ?disabled=${!reviewStatus}
   >
-    <btrix-badge variant=${variantFor(reviewStatus)} outline>
+    <btrix-badge variant=${variantFor(reviewStatus)} ?outline=${!!reviewStatus}>
       <sl-icon
         class="mr-1.5"
         name=${reviewStatus ? iconFor(reviewStatus).name : "clipboard2-data"}
@@ -47,12 +58,19 @@ const qaReviewBadge = (reviewStatus: ArchivedItem["reviewStatus"]) => html`
 
 export const badges = (item: ArchivedItem) => {
   return html`<div class="flex flex-wrap gap-3 whitespace-nowrap">
-    ${itemTypeBadge(item.type)}
-    ${isCrawl(item) ? html`${qaReviewBadge(item.reviewStatus)}` : nothing}
-    ${collectionBadge(item.collectionIds.length > 0)}
+    ${itemTypeBadge(item.type)} ${collectionBadge(item.collectionIds.length)}
+    ${isCrawl(item)
+      ? html`${qaReviewBadge(item.reviewStatus)}
+          <btrix-dedupe-badge
+            .dependencies=${item.requiresCrawls}
+            .dependents=${item.requiredByCrawls}
+          ></btrix-dedupe-badge>`
+      : nothing}
   </div>`;
 };
 
 export const badgesSkeleton = () =>
-  html`<sl-skeleton class="h-4 w-12"></sl-skeleton>
-    <sl-skeleton class="h-4 w-12"></sl-skeleton>`;
+  html`<div class="flex flex-wrap gap-3 whitespace-nowrap">
+    <sl-skeleton class="h-4 w-12"></sl-skeleton>
+    <sl-skeleton class="h-4 w-12"></sl-skeleton>
+  </div>`;
