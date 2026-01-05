@@ -351,6 +351,58 @@ const plurals = {
       id: "domains.plural.other",
     }),
   },
+  runs: {
+    zero: msg("runs", {
+      desc: 'plural form of "run" for zero runs',
+      id: "runs.plural.zero",
+    }),
+    one: msg("run", {
+      desc: 'singular form for "run"',
+      id: "runs.plural.one",
+    }),
+    two: msg("runs", {
+      desc: 'plural form of "run" for two runs',
+      id: "runs.plural.two",
+    }),
+    few: msg("runs", {
+      desc: 'plural form of "run" for few runs',
+      id: "runs.plural.few",
+    }),
+    many: msg("runs", {
+      desc: 'plural form of "run" for many runs',
+      id: "runs.plural.many",
+    }),
+    other: msg("runs", {
+      desc: 'plural form of "run" for multiple/other runs',
+      id: "runs.plural.other",
+    }),
+  },
+  dependencies: {
+    zero: msg("dependencies", {
+      desc: 'plural form of "dependency" for zero dependencies',
+      id: "dependencies.plural.zero",
+    }),
+    one: msg("dependency", {
+      desc: 'singular form for "dependency"',
+      id: "dependencies.plural.one",
+    }),
+    two: msg("dependencies", {
+      desc: 'plural form of "dependency" for two dependencies',
+      id: "dependencies.plural.two",
+    }),
+    few: msg("dependencies", {
+      desc: 'plural form of "dependency" for few dependencies',
+      id: "dependencies.plural.few",
+    }),
+    many: msg("dependencies", {
+      desc: 'plural form of "dependency" for many dependencies',
+      id: "dependencies.plural.many",
+    }),
+    other: msg("dependencies", {
+      desc: 'plural form of "dependency" for multiple/other dependencies',
+      id: "dependencies.plural.other",
+    }),
+  },
 };
 
 export const pluralOf = (word: keyof typeof plurals, count: number) => {

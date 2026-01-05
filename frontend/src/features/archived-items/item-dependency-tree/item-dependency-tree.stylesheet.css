@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  sl-tree {
+    --indent-guide-width: 1px;
+    --indent-guide-color: var(--sl-color-neutral-300);
+  }
+
+  /* Reset selected styles */
+  sl-tree-item::part(item--selected) {
+    border-inline-start-color: transparent;
+    background: transparent;
+  }
+
+  sl-tree-item::part(item) {
+    border-inline-start-width: 0;
+  }
+
+  sl-tree-item::part(label) {
+    @apply w-full;
+  }
+
+  sl-tree-item:focus {
+    @apply bg-cyan-50/50;
+  }
+
+  sl-tree-item:hover .component--detail,
+  sl-tree-item:focus .component--detail,
+  sl-tree-item:hover .component--detail sl-icon,
+  sl-tree-item:focus .component--detail sl-icon {
+    @apply text-cyan-600;
+  }
+
+  sl-tree-item::part(children)::before {
+    left: calc(1rem - (var(--indent-guide-width) / 2));
+    bottom: calc(1rem + var(--sl-border-radius-medium));
+  }
+
+  .component--row {
+    grid-template-columns:
+      1rem minmax(16rem, 1fr) minmax(8rem, 12rem) repeat(
+        2,
+        minmax(11rem, 13rem)
+      )
+      minmax(6rem, 8rem)
+      2rem;
+    @apply grid w-full items-center gap-2;
+  }
+
+  .component--dependency::part(indentation) {
+    @apply w-3;
+  }
+
+  .component--dependency::part(base)::before {
+    content: "";
+    width: 1.25rem;
+    left: calc(1rem - (var(--indent-guide-width) / 2));
+    top: calc(1rem - var(--indent-guide-width));
+    height: var(--sl-border-radius-medium);
+    border-left: var(--indent-guide-width) var(--indent-guide-style)
+      var(--indent-guide-color);
+    border-bottom: var(--indent-guide-width) var(--indent-guide-style)
+      var(--indent-guide-color);
+
+    @apply absolute rounded-bl-lg;
+  }
+
+  .component--dependency::part(label) {
+    @apply relative;
+  }
+
+  .component--content {
+    @apply h-9;
+  }
+
+  .component--detail {
+    @apply flex items-center gap-1.5 truncate;
+  }
+
+  .component--detail sl-icon {
+    @apply text-neutral-500;
+  }
+
+  .component--notInCollection .component--detail {
+    @apply opacity-75;
+  }
+
+  .component--withHeader .component--detail sl-icon {
+    @apply hidden;
+  }
+}
