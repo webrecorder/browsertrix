@@ -11,6 +11,7 @@ export const WAITING_NOT_PAUSED_STATES = [
   "starting",
   "waiting_capacity",
   "waiting_org_limit",
+  "waiting_dedupe_index",
 ] as const;
 
 // Match backend TYPE_PAUSED_STATES in models.py

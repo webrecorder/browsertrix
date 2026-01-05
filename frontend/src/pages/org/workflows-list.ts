@@ -948,7 +948,7 @@ export class WorkflowsList extends BtrixElement {
 
       this.notify.toast({
         message: msg(
-          html`Started crawl from <strong>${renderName(workflow)}</strong>.
+          html`Started crawl from <strong>${renderName(workflow)}</strong>
             <br />
             <a
               class="underline hover:no-underline"
