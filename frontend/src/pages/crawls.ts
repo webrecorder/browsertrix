@@ -30,7 +30,7 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
   fileSize: {
-    label: msg("File Size"),
+    label: msg("Size"),
     defaultDirection: "desc",
   },
 };
