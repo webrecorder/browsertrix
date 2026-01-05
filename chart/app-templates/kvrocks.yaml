@@ -1,0 +1,230 @@
+{% if not no_pvc %}
+# -------
+# PVC
+# -------
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  labels:
+    {{ obj_type }}: {{ id }}
+    role: redis
+
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: {{ redis_storage }}
+
+  {% if volume_storage_class %}
+  storageClassName: {{ volume_storage_class }}
+  {% endif %}
+{% endif %}
+
+# --------
+# REDIS
+# --------
+{% if init_redis %}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  labels:
+    {{ obj_type }}: {{ id }}
+    role: redis
+
+spec:
+  hostname: {{ name }}
+  subdomain: redis
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+
+  terminationGracePeriodSeconds: 300
+  restartPolicy: {{ "OnFailure" if save_dump else "Always" }}
+
+  volumes:
+    - name: shared-redis-conf
+      configMap:
+        name: shared-redis-conf
+        items:
+          - key: redis.conf
+            path: redis.conf
+
+    - name: redis-data
+      {% if not no_pvc %}
+      persistentVolumeClaim:
+        claimName: {{ name }}
+      {% else %}
+      emptyDir: {}
+      {% endif %}
+
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          preference:
+            matchExpressions:
+            - key: nodeType
+              operator: In
+              values:
+                - "{{ redis_node_type }}"
+
+    podAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 2
+          podAffinityTerm:
+            topologyKey: "failure-domain.beta.kubernetes.io/zone"
+            labelSelector:
+              matchLabels:
+                {{ obj_type }}: {{ id }}
+
+  tolerations:
+    - key: nodeType
+      operator: Equal
+      value: crawling
+      effect: NoSchedule
+    - key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+      effect: NoExecute
+    - key: node.kubernetes.io/unreachable
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300
+
+  containers:
+    - name: redis
+      image: {{ redis_image }}
+      imagePullPolicy: {{ redis_image_pull_policy }}
+
+      args: ["--port", "6379", "--dir", "/data", "--appendonly", "{{ 'no' if load_dump else 'yes' }}"]
+      volumeMounts:
+        - name: redis-data
+          mountPath: /data
+
+        - name: shared-redis-conf
+          mountPath: /redis-conf
+
+      resources:
+        limits:
+          memory: {{ memory }}
+
+        requests:
+          cpu: {{ cpu }}
+          memory: {{ memory }}
+
+      readinessProbe:
+        initialDelaySeconds: 10
+        timeoutSeconds: 5
+        exec:
+          command:
+            - bash
+            - -c
+            - "res=$(redis-cli ping); [[ $res = 'PONG' ]]"
+
+      livenessProbe:
+        initialDelaySeconds: 10
+        timeoutSeconds: 5
+        exec:
+          command:
+            - bash
+            - -c
+            - "res=$(redis-cli ping); [[ $res = 'PONG' ]]"
+
+  initContainers:
+{% if save_dump %}
+    - name: rclone-save
+      image: rclone/rclone:latest
+
+      command: ["sh", "-c"]
+      args:
+        - |
+          echo "Waiting until redis is done";
+          while [ ! -f /tmp/done ]; do 
+            sleep 1;
+          done;
+
+          cd /data/{{ local_file_src }}
+          tar cvfz ../backup.tar.gz .
+
+          rclone -vv copyto --checksum /data/backup.tar.gz remote:{{ remote_file_path }}
+
+      restartPolicy: Always
+      lifecycle:
+        preStop:
+          exec:
+            command: ["touch", "/tmp/done"]
+
+      volumeMounts: &rclone_volumes
+        - name: redis-data
+          mountPath: /data
+
+      env: &rclone_env
+      - name: RCLONE_CONFIG_REMOTE_TYPE
+        value: "s3"
+
+      - name: RCLONE_CONFIG_REMOTE_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_ACCESS_KEY
+
+      - name: RCLONE_CONFIG_REMOTE_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_SECRET_KEY
+
+      - name: RCLONE_CONFIG_REMOTE_REGION
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_REGION
+
+      - name: RCLONE_CONFIG_REMOTE_PROVIDER
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_S3_PROVIDER
+
+      - name: RCLONE_CONFIG_REMOTE_ENDPOINT
+        value: "{{ storage_endpoint }}"
+
+      resources: &rclone_resources
+        limits:
+          memory: "200Mi"
+
+        requests:
+          memory: "200Mi"
+          cpu: "50m"
+
+{% if load_dump %}
+    - name: rclone-load
+      image: rclone/rclone:latest
+
+      command: ["sh", "-c"]
+      args:
+        - |
+          rclone -vv copyto --checksum remote:{{ remote_file_path }} /data/backup.tar.gz
+
+          mkdir -p /data/{{ local_file_dest }}
+          cd /data/{{ local_file_dest }}
+
+          tar xvfz /data/backup.tar.gz
+
+      volumeMounts: *rclone_volumes
+      env: *rclone_env
+      resources: *rclone_resources
+{% endif %}
+{% endif %}
+
+{% endif %}

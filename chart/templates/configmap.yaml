@@ -213,6 +213,7 @@ metadata:
 data:
   redis.conf: |
     dir /data
+    port 6379
 
 ---
 apiVersion: v1
