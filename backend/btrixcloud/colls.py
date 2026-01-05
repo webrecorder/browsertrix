@@ -688,6 +688,11 @@ class CollectionOps:
 
     async def update_coll_index(self, coll: Collection, oid: UUID, is_purge=False):
         """create index import job"""
+
+        # don't update if no crawls if not purging removed crawls
+        if not is_purge and not coll.crawlCount:
+            return
+
         crawler_image = self.crawl_ops.crawl_configs.get_channel_crawler_image(
             self.dedupe_importer_channel
         )
