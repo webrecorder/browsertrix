@@ -97,13 +97,21 @@ class CollIndexOperator(BaseOperator):
         redis_name = "redis-coll-" + coll_id
         new_children = []
 
+        redis_pod = data.children[POD].get(redis_name)
+
+        # check if redis should be skipped, eg. no pod active or complete
+        skip_redis = self.skip_redis(redis_pod)
+
         # allow deletion only if idle
         if data.finalizing:
             is_done = False
-            if status.state in ("idle", "saving") and not data.children[POD]:
+            if status.state in ("idle", "saving") and not redis_pod:
                 # likely reentrant call still set to saving, just switch to idle
                 if status.state == "saving":
                     status.state = "idle"
+                is_done = True
+            # never inited, just remove
+            elif status.state == "initing" and skip_redis:
                 is_done = True
             else:
                 try:
@@ -118,11 +126,8 @@ class CollIndexOperator(BaseOperator):
                 return {"status": status.dict(), "children": [], "finalized": True}
 
         try:
-            # check if redis should be skipped
-            skip_redis = self.skip_redis(data.children[POD].get(redis_name))
-
             # determine if index was previously saved before initing redis
-            if redis_name not in data.children[POD]:
+            if not redis_pod:
                 if not status.indexLastSavedAt:
                     res = await self.coll_ops.get_dedupe_index_saved(spec.id)
                     if res:
@@ -141,7 +146,7 @@ class CollIndexOperator(BaseOperator):
 
                 # 2. once redis has shutdown, check if fully finished
                 else:
-                    await self.check_redis_saved(redis_name, spec, status, data)
+                    await self.check_redis_saved(redis_name, redis_pod, spec, status)
 
             else:
                 await self.update_state(skip_redis, data, spec.id, status)
@@ -172,6 +177,9 @@ class CollIndexOperator(BaseOperator):
     def skip_redis(self, pod):
         """skip redis if no pod or redis container exited"""
         if not pod:
+            return True
+
+        if pod["status"].get("phase") != "Running":
             return True
 
         try:
@@ -373,13 +381,12 @@ class CollIndexOperator(BaseOperator):
     async def check_redis_saved(
         self,
         redis_name: str,
+        redis_pod,
         spec: CollIndexSpec,
         status: CollIndexStatus,
-        data: MCSyncData,
     ):
         """create sync job to save redis index data to s3 storage"""
 
-        redis_pod = data.children[POD].get(redis_name)
         if redis_pod and redis_pod["status"].get("phase") == "Succeeded":
             finished_at = None
             finished_at_str = ""
