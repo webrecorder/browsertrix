@@ -154,9 +154,12 @@ spec:
           done;
 
           cd /data/{{ local_file_src }}
-          tar cvfz ../backup.tar.gz .
 
-          rclone -vv copyto --checksum /data/backup.tar.gz remote:{{ remote_file_path }}
+          tar cvfz - . | rclone --config "" rcat remote:{{ remote_file_path }}
+
+          echo "STATS (size,hash,file)"
+          echo "----------------------"
+          rclone --config "" lsf  --separator "," --format "shp" remote:{{ remote_file_path }}
 
       restartPolicy: Always
       lifecycle:
@@ -214,12 +217,10 @@ spec:
       command: ["sh", "-c"]
       args:
         - |
-          rclone -vv copyto --checksum remote:{{ remote_file_path }} /data/backup.tar.gz
-
           mkdir -p /data/{{ local_file_dest }}
           cd /data/{{ local_file_dest }}
 
-          tar xvfz /data/backup.tar.gz
+          rclone --config "" cat remote:{{ remote_file_path }} | tar xzf -
 
       volumeMounts: *rclone_volumes
       env: *rclone_env

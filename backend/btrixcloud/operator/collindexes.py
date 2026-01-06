@@ -42,8 +42,6 @@ class CollIndexStatus(BaseModel):
 
     finishedAt: str = ""
 
-    redisBgSaveTs: int = 0
-
 
 # ============================================================================
 class CollIndexSpec(BaseModel):
@@ -283,31 +281,24 @@ class CollIndexOperator(BaseOperator):
                 await self.set_state("saving", status, coll_id)
 
                 if self.is_kvrocks:
-                    status.redisBgSaveTs = await self.get_bgsave_time(redis)
-                    await redis.execute_command("bgsave")
+                    await redis.bgsave(False)
                 else:
                     self.run_task(self.do_redis_shutdown(redis, coll_id, status))
 
             if self.is_kvrocks:
-                save_time = await self.get_bgsave_time(redis)
-                if status.redisBgSaveTs < save_time:
-                    status.redisBgSaveTs = save_time
+                if await self.is_bgsave_done(redis):
                     await redis.shutdown()
 
         # pylint: disable=broad-exception-caught
-        except Exception as e:
+        except Exception:
             await self.set_state("ready", status, coll_id)
             traceback.print_exc()
 
-    async def get_bgsave_time(self, redis: Redis):
-        """get kvrocks bgsave time"""
+    async def is_bgsave_done(self, redis: Redis) -> bool:
+        """return true if bgsave has successfully finished"""
         info = await redis.execute_command("INFO persistence")
 
-        m = re.search(r"last_bgsave_time:([\d]+)", info)
-        if m:
-            return int(m.group(1))
-
-        return 0
+        return "bgsave_in_progress:0" in info and "last_bgsave_status:ok" in info
 
     async def do_redis_shutdown(
         self, redis: Redis, coll_id: UUID, status: CollIndexStatus
@@ -462,12 +453,17 @@ class CollIndexOperator(BaseOperator):
         logs = await self.k8s.get_pod_logs(
             pod_name, container=self.rclone_save, lines=100
         )
-        m = re.search(r"md5 = ([^\s]+) OK", logs)
-        if m:
-            hash_ = "md5:" + m.group(1)
-        m = re.search(r"size = ([\d]+) OK", logs)
+        # m = re.search(r"md5 = ([^\s]+) OK", logs)
+        # if m:
+        #    hash_ = "md5:" + m.group(1)
+        # m = re.search(r"size = ([\d]+) OK", logs)
+        # if m:
+        #    size = int(m.group(1))
+
+        m = re.search(r"([\d]+),([^,]+)," + str(coll_id), logs)
         if m:
             size = int(m.group(1))
+            hash_ = "md5:" + m.group(2)
 
         print("UPLOAD LOGS")
         print("-----------")
