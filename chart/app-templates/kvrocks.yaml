@@ -106,7 +106,7 @@ spec:
       image: {{ redis_image }}
       imagePullPolicy: {{ redis_image_pull_policy }}
 
-      args: ["--port", "6379", "--dir", "/data", "--appendonly", "{{ 'no' if load_dump else 'yes' }}"]
+      args: ["--port", "6379", "--dir", "/data", "--rocksdb.block_cache_size", "512", "--appendonly", "{{ 'no' if load_dump else 'yes' }}"]
       volumeMounts:
         - name: redis-data
           mountPath: /data
