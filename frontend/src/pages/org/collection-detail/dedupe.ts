@@ -13,6 +13,7 @@ import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { indexStatus } from "@/features/collections/templates/index-status";
 import { emptyMessage } from "@/layouts/emptyMessage";
+import { infoPopover } from "@/layouts/info-popover";
 import { panel, panelBody, panelHeader } from "@/layouts/panel";
 import { OrgTab } from "@/routes";
 import { noData, notApplicable, stringFor } from "@/strings/ui";
@@ -168,7 +169,7 @@ export class CollectionDetailDedupe extends BtrixElement {
       getValue: (col: Collection) => string | TemplateResult;
     }) => html`
       <div
-        class="col-span-full grid grid-cols-[1fr_min-content] grid-rows-[min-content_1fr] items-center gap-x-4 gap-y-0.5 rounded border px-4 py-3 md:col-span-1"
+        class="grid grid-cols-[1fr_min-content] grid-rows-[min-content_1fr] items-center gap-x-4 gap-y-0.5 px-4 py-2"
       >
         <dt class="min-h-6 text-base font-medium">
           ${when(
@@ -189,6 +190,7 @@ export class CollectionDetailDedupe extends BtrixElement {
     const value = (
       v: number,
       unit: "bytes" | "number" = "number",
+      size: "medium" | "large" = "medium",
       successThreshold?: number,
     ) =>
       html`<span
@@ -196,43 +198,95 @@ export class CollectionDetailDedupe extends BtrixElement {
           successThreshold && v >= successThreshold
             ? tw`text-success-600`
             : tw`text-neutral-700`,
+          size === "large" && tw`text-lg`,
         )}
       >
         ${unit === "bytes" ? this.localize.bytes(v) : this.localize.number(v)}
       </span>`;
 
     return html`<h2 class="sr-only">${msg("Statistics")}</h2>
-      <dl class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
-        ${stat({
-          label: msg("Unique Documents"),
-          icon: "circle-square",
-          getValue: (col) =>
-            col.indexStats ? value(col.indexStats.uniqueUrls) : notApplicable,
-        })}
-        ${stat({
-          label: msg("Duplicate Documents"),
-          icon: "intersect",
-          getValue: (col) =>
-            col.indexStats
-              ? value(col.indexStats.totalUrls - col.indexStats.uniqueUrls)
-              : notApplicable,
-        })}
-        ${stat({
-          label: msg("Hidden Crawls"),
-          icon: "eye-slash",
-          getValue: (col) =>
-            col.indexStats
-              ? value(col.indexStats.removableCrawls)
-              : notApplicable,
-        })}
-        ${stat({
-          label: msg("Estimated Storage Savings"),
-          getValue: (col) =>
-            col.indexStats
-              ? value(col.indexStats.sizeSaved, "bytes", BYTES_PER_MB)
-              : notApplicable,
-        })}
-      </dl>`;
+      <div
+        class="grid grid-cols-1 divide-y rounded border py-2 lg:grid-cols-2 lg:divide-x lg:divide-y-0"
+      >
+        <section class="col-span-1 flex flex-col">
+          <header
+            class="mx-4 flex items-center justify-between border-b pb-3 pt-1 text-base leading-none"
+          >
+            <h3 class="font-semibold">${msg("Storage")}</h3>
+            ${infoPopover({
+              content: html`
+                <strong class="font-semibold"
+                  >${msg("Size of Indexed Crawl")}</strong
+                >:
+                ${msg("The total size of all data crawled and indexed by URL.")}
+                <br /><br />
+                <strong class="font-semibold"
+                  >${msg("Estimated Space Savings")}</strong
+                >:
+                ${msg(
+                  "An estimate of how much storage space has been saved by deduplicating this collection.",
+                )}
+              `,
+              placement: "right",
+            })}
+          </header>
+          <dl class="grid flex-1 grid-cols-1 items-center md:grid-cols-2">
+            ${stat({
+              label: msg("Size of Indexed Crawls"),
+              getValue: (col) =>
+                col.indexStats
+                  ? value(col.indexStats.totalSize, "bytes", "large")
+                  : notApplicable,
+            })}
+            ${stat({
+              label: msg("Estimated Space Savings"),
+              getValue: (col) =>
+                col.indexStats
+                  ? value(
+                      col.indexStats.sizeSaved,
+                      "bytes",
+                      "large",
+                      BYTES_PER_MB,
+                    )
+                  : notApplicable,
+            })}
+          </dl>
+        </section>
+        <dl class="col-span-1 grid grid-cols-1 md:grid-cols-2">
+          ${stat({
+            label: msg("Unique Documents"),
+            icon: "circle-square",
+            getValue: (col) =>
+              col.indexStats ? value(col.indexStats.uniqueUrls) : notApplicable,
+          })}
+          ${stat({
+            label: msg("Duplicate Documents"),
+            icon: "intersect",
+            getValue: (col) =>
+              col.indexStats
+                ? value(col.indexStats.totalUrls - col.indexStats.uniqueUrls)
+                : notApplicable,
+          })}
+          ${stat({
+            label: msg("Deleted Indexed Crawls"),
+            icon: "trash2",
+            getValue: (col) =>
+              col.indexStats
+                ? value(col.indexStats.removableCrawls)
+                : notApplicable,
+          })}
+          ${when(
+            this.appState.isAdmin,
+            () => html`
+              <btrix-overflow-dropdown class="flex items-end justify-end">
+                <sl-menu>
+                  <sl-menu-item>${msg("Purge Deleted Crawls")}</sl-menu-item>
+                </sl-menu>
+              </btrix-overflow-dropdown>
+            `,
+          )}
+        </dl>
+      </div>`;
   }
 
   private renderCrawls() {
