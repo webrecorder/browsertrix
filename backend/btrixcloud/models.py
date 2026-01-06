@@ -1668,7 +1668,7 @@ class Collection(BaseMongoModel):
     indexFile: Optional[DedupeIndexFile] = None
     indexState: Optional[TYPE_DEDUPE_INDEX_STATES] = None
 
-    dedupeIndex: Optional[DedupeIndexStats] = None
+    indexStats: Optional[DedupeIndexStats] = None
 
 
 # ============================================================================
@@ -1736,7 +1736,7 @@ class CollOut(BaseMongoModel):
     indexLastSavedAt: Optional[datetime] = None
     indexState: Optional[TYPE_DEDUPE_INDEX_STATES] = None
 
-    dedupeIndex: Optional[DedupeIndexStats] = None
+    indexStats: Optional[DedupeIndexStats] = None
 
 
 # ============================================================================

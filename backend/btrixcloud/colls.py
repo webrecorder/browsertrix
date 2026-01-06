@@ -149,7 +149,7 @@ class CollectionOps:
 
         slug = coll_in.slug or slug_from_name(coll_in.name)
 
-        dedupeIndex = DedupeIndexStats() if coll_in.hasDedupeIndex else None
+        indexStats = DedupeIndexStats() if coll_in.hasDedupeIndex else None
 
         coll = Collection(
             id=coll_id,
@@ -163,14 +163,11 @@ class CollectionOps:
             access=coll_in.access,
             defaultThumbnailName=coll_in.defaultThumbnailName,
             allowPublicDownload=coll_in.allowPublicDownload,
-            dedupeIndex=dedupeIndex,
+            indexStats=indexStats,
         )
         try:
             await self.collections.insert_one(coll.to_dict())
             await self.clear_org_previous_slugs_matching_slug(slug, org)
-            # create collection index
-            # if coll.dedupeIndex:
-            #    await self.crawl_manager.create_coll_index(coll)
 
             if crawl_ids:
                 await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
@@ -214,11 +211,11 @@ class CollectionOps:
 
         query["modified"] = dt_now()
 
-        if update.hasDedupeIndex and not coll.dedupeIndex:
-            query["dedupeIndex"] = DedupeIndexStats().dict()
+        if update.hasDedupeIndex is True and not coll.indexStats:
+            query["indexStats"] = DedupeIndexStats().dict()
             await self.update_coll_index(coll, org.id)
 
-        elif not update.hasDedupeIndex and coll.dedupeIndex:
+        elif update.hasDedupeIndex is False and coll.indexStats:
             await self.delete_coll_index(coll, org)
 
         db_update = {"$set": query}
@@ -541,7 +538,7 @@ class CollectionOps:
             match_query["name"] = {"$regex": regex_pattern, "$options": "i"}
 
         if has_dedupe_index is not None:
-            match_query["dedupeIndex"] = {"$ne" if has_dedupe_index else "$eq": None}
+            match_query["indexStats"] = {"$ne" if has_dedupe_index else "$eq": None}
 
         if public_colls_out:
             match_query["access"] = CollAccessType.PUBLIC
@@ -715,7 +712,7 @@ class CollectionOps:
         """delete coll dedupe index, if possible"""
 
         # if index is not idle, can't delete it yet
-        if coll.dedupeIndex and coll.indexState != "idle":
+        if coll.indexStats and coll.indexState != "idle":
             raise HTTPException(status_code=400, detail="dedupe_index_is_in_use")
 
         if coll.indexFile:
@@ -773,7 +770,7 @@ class CollectionOps:
         """update dedupe index stats for specified collection"""
         self.collections.find_one_and_update(
             {"_id": coll_id},
-            {"$set": {"dedupeIndex": stats.dict() if stats else None}},
+            {"$set": {"indexStats": stats.dict() if stats else None}},
         )
 
     async def update_dedupe_index_info(
@@ -790,7 +787,7 @@ class CollectionOps:
             query["indexFile"] = index_file.model_dump()
 
         res = self.collections.find_one_and_update(
-            {"_id": coll_id, "dedupeIndex": {"$ne": None}},
+            {"_id": coll_id, "indexStats": {"$ne": None}},
             {"$set": query},
         )
         return res is not None
@@ -888,7 +885,7 @@ class CollectionOps:
         latest_ts = None
 
         # update_index is set, update dedupe index if it exists
-        if update_index and coll.dedupeIndex:
+        if update_index and coll.indexStats:
             await self.update_coll_index(coll, oid)
 
         match_query = {
@@ -957,7 +954,7 @@ class CollectionOps:
     async def purge_dedupe_index(self, coll_id: UUID, org: Organization):
         """purge dedupe index on collection, raise exception if no index or not ready"""
         coll = await self.get_collection(coll_id, org.id)
-        if not coll.dedupeIndex:
+        if not coll.indexStats:
             raise HTTPException(status_code=400, detail="no_dedupe_index_on_collection")
 
         if coll.indexState not in ("ready", "idle"):
