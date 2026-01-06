@@ -252,10 +252,26 @@ redis_storage: "3Gi"
 
 # Redis Dedup Index
 # =========================================
-redis_dedupe_memory: "1Gi"
+dedupe:
+  backend_type: kvrocks
+  image: apache/kvrocks
+  image_pull_policy: IfNotPresent
 
-redis_dedupe_storage: "5Gi"
+  # to use redis:
+  # backend_type: redis
+  # dedupe_image: redis
 
+  memory: "1Gi"
+  storage: "5Gi"
+  cpu: "100m"
+
+  # type of hash to use with rclone
+  # depends on s3 provider support
+  rclone_hash: sha256
+
+  # set this to custom crawler channel (from one of options below)
+  # used for dedupe index importing
+  importer_channel: "default"
 
 # Crawler Channels
 # =========================================
@@ -276,11 +292,6 @@ crawler_channels:
 crawler_pull_policy: "IfNotPresent"
 
 crawler_namespace: "crawlers"
-
-
-# set this to custom crawler channel used for dedupe index importing
-# dedupe_importer_channel: "default"
-
 
 # if set, will restrict QA to image names that are >= than this value
 # min_qa_crawler_image: ""

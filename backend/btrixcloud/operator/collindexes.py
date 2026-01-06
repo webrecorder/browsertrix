@@ -61,29 +61,32 @@ class CollIndexOperator(BaseOperator):
     def __init__(self, *args):
         super().__init__(*args)
         self.shared_params.update(self.k8s.shared_params)
-        self.shared_params["redis_storage"] = self.shared_params["redis_dedupe_storage"]
-        self.shared_params["memory"] = self.shared_params["redis_dedupe_memory"]
-        self.shared_params["cpu"] = self.shared_params["redis_cpu"]
+        self.shared_params["redis_storage"] = self.shared_params["dedupe_storage"]
+        self.shared_params["memory"] = self.shared_params["dedupe_memory"]
+        self.shared_params["cpu"] = self.shared_params["dedupe_cpu"]
+
+        self.shared_params["redis_image"] = self.shared_params["dedupe_image"]
+        self.shared_params["redis_image_pull_policy"] = self.shared_params[
+            "dedupe_image_pull_policy"
+        ]
+
         self.shared_params["obj_type"] = "coll"
 
-        self.is_kvrocks = True
+        self.shared_params["use_kvrocks"] = self.shared_params["dedupe_use_kvrocks"]
+        self.shared_params["rclone_hash"] = self.shared_params["dedupe_rclone_hash"]
 
-        if self.is_kvrocks:
+        if self.shared_params["use_kvrocks"]:
             self.shared_params["local_file_src"] = "backup"
             self.shared_params["local_file_dest"] = "db"
         else:
             self.shared_params["local_file_src"] = "dump.rdb"
             self.shared_params["local_file_dest"] = "dump.rdb"
 
-        if self.is_kvrocks:
-            self.shared_params["redis_image"] = "apache/kvrocks:latest"
-            self.pod_yaml = "kvrocks.yaml"
-        else:
-            self.pod_yaml = "redis.yaml"
+        self.shared_params["save_dump"] = True
 
         self.fast_retry = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
-        self.rclone_save = "rclone-save"
+        self.rclone_save = "save"
 
     def init_routes(self, app):
         """init routes for this operator"""
@@ -175,7 +178,7 @@ class CollIndexOperator(BaseOperator):
             )
 
         if status.state in ("idle", "saving", "ready"):
-            resync_after = IDLE_SECS
+            resync_after = self.fast_retry_secs
         else:
             resync_after = None
 
@@ -241,11 +244,20 @@ class CollIndexOperator(BaseOperator):
         if status.state != "ready":
             return False
 
-        dt_change = str_to_date(status.lastStateChangeAt)
-        if dt_change and (dt_now() - dt_change) > EXPIRE_TIME:
+        if self.is_last_active_exceeds(status, EXPIRE_TIME):
             return True
 
         if status.state == "saving":
+            return True
+
+        return False
+
+    def is_last_active_exceeds(
+        self, status: CollIndexStatus, min_dura: datetime.timedelta
+    ):
+        """return true if last active time exceeds duration"""
+        dt_change = str_to_date(status.lastStateChangeAt)
+        if dt_change and (dt_now() - dt_change) > min_dura:
             return True
 
         return False
@@ -269,25 +281,17 @@ class CollIndexOperator(BaseOperator):
     async def do_redis_save(self, coll_id: UUID, status: CollIndexStatus):
         """shutdown save redis"""
         try:
-            if status.state != "saving":
-                if not self.is_kvrocks:
-                    return
-
             redis = await self.k8s.get_redis_connected("coll-" + str(coll_id))
             if not redis:
                 return
 
             if status.state != "saving":
+                await redis.bgsave(False)
+
                 await self.set_state("saving", status, coll_id)
 
-                if self.is_kvrocks:
-                    await redis.bgsave(False)
-                else:
-                    self.run_task(self.do_redis_shutdown(redis, coll_id, status))
-
-            if self.is_kvrocks:
-                if await self.is_bgsave_done(redis):
-                    await redis.shutdown()
+            if await self.is_bgsave_done(redis):
+                await redis.shutdown()
 
         # pylint: disable=broad-exception-caught
         except Exception:
@@ -299,17 +303,6 @@ class CollIndexOperator(BaseOperator):
         info = await redis.execute_command("INFO persistence")
 
         return "bgsave_in_progress:0" in info and "last_bgsave_status:ok" in info
-
-    async def do_redis_shutdown(
-        self, redis: Redis, coll_id: UUID, status: CollIndexStatus
-    ):
-        """save and shutdown redis, waiting for it to succeed"""
-        try:
-            await redis.shutdown(save=True)
-        # pylint: disable=broad-exception-caught
-        except Exception as e:
-            print("Redis shutdown failed", e)
-            await self.set_state("ready", status, coll_id)
 
     async def update_stats_from_redis(self, status: CollIndexStatus, coll_id: UUID):
         """update stats from redis, set other changes based on prev and new state"""
@@ -382,7 +375,6 @@ class CollIndexOperator(BaseOperator):
         params["init_redis"] = True
 
         params["load_dump"] = bool(status.indexLastSavedAt)
-        params["save_dump"] = True
 
         org = await self.coll_ops.orgs.get_org_by_id(spec.oid)
         oid = str(spec.oid)
@@ -402,7 +394,7 @@ class CollIndexOperator(BaseOperator):
             spec.id, org
         )
 
-        return self.load_from_yaml(self.pod_yaml, params)
+        return self.load_from_yaml("redis.yaml", params)
 
     def get_index_storage_filename(self, coll_id: UUID, org: Organization):
         """get index filename for storage"""
@@ -453,14 +445,7 @@ class CollIndexOperator(BaseOperator):
         logs = await self.k8s.get_pod_logs(
             pod_name, container=self.rclone_save, lines=100
         )
-        # m = re.search(r"md5 = ([^\s]+) OK", logs)
-        # if m:
-        #    hash_ = "md5:" + m.group(1)
-        # m = re.search(r"size = ([\d]+) OK", logs)
-        # if m:
-        #    size = int(m.group(1))
-
-        m = re.search(r"([\d]+),([^,]+)," + str(coll_id), logs)
+        m = re.search(r"([\d]+),([^,]*)," + str(coll_id), logs)
         if m:
             size = int(m.group(1))
             hash_ = "md5:" + m.group(2)

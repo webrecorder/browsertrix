@@ -110,7 +110,7 @@ data:
 
   CLEANUP_FILES_AFTER_MINUTES: "{{ .Values.cleanup_files_after_minutes | default 1440 }}"
 
-  DEDUPE_IMPORTER_CHANNEL: "{{ .Values.dedupe_importer_channel }}"
+  DEDUPE_IMPORTER_CHANNEL: "{{ .Values.dedupe.importer_channel }}"
 
 
   {{- if .Values.available_plans }}
@@ -158,10 +158,22 @@ data:
 
     redis_storage: "{{ .Values.redis_storage }}"
 
-    redis_dedupe_storage: "{{ .Values.redis_dedupe_storage }}"
-    redis_dedupe_memory: "{{ .Values.redis_dedupe_memory }}"
+    dedupe_storage: "{{ .Values.dedupe.storage }}"
+    dedupe_memory: "{{ .Values.dedupe.memory }}"
+    dedupe_cpu: "{{ .Values.dedupe.cpu }}"
 
-    dedupe_importer_channel: {{ .Values.dedupe_importer_channel | default "default" }}
+    dedupe_rclone_hash: "{{ .Values.dedupe.rclone_hash }}"
+
+    {{ if eq .Values.dedupe.backend_type "kvrocks" }}
+    dedupe_use_kvrocks: true
+    {{ else if eq .Values.dedupe.backend_type "redis" }}
+    dedupe_use_kvrocks: false
+    {{ else }}
+    {{ fail "Unknown dedupe backend, must be kvrocks or redis" }}
+    {{ end }}
+
+    dedupe_image: "{{ .Values.dedupe.image }}"
+    dedupe_image_pull_policy: "{{ .Values.dedupe.image_pull_policy }}"
 
     # crawler
     crawler_image_pull_policy: {{ .Values.crawler_pull_policy }}
@@ -213,7 +225,15 @@ metadata:
 data:
   redis.conf: |
     dir /data
+
+  kvrocks.conf: |
+    dir /data
     port 6379
+
+    # for kvrocks only
+    rocksdb.block_cache_size 512
+    rocksdb.max_write_buffer_number 2
+    rocksdb.write_buffer_size 32
 
 ---
 apiVersion: v1
