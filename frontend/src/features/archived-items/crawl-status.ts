@@ -103,16 +103,15 @@ export class CrawlStatus extends TailwindElement {
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;
-        label =
-          originalState === "waiting_dedupe_index"
-            ? msg("Indexing Dedupe Source")
-            : msg("Waiting");
+        label = msg("Waiting");
         reason =
           originalState === "waiting_capacity"
             ? msg("At Capacity")
             : originalState === "waiting_org_limit"
               ? msg("At Crawl Limit")
-              : "";
+              : originalState === "waiting_dedupe_index"
+                ? msg("Indexing Dedupe Source")
+                : "";
         break;
 
       case "running":

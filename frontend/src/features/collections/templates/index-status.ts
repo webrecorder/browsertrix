@@ -20,8 +20,9 @@ export function indexStatus(state: DedupeIndexState) {
       iconClass = tw`text-violet-600`;
       break;
     case "importing":
+    case "saving":
     case "purging":
-      label = msg("Updating");
+      label = msg("In Use");
       iconName = "dot";
       iconClass = tw`animate-pulse text-violet-600`;
       break;
@@ -31,7 +32,6 @@ export function indexStatus(state: DedupeIndexState) {
       iconName = "check-circle-fill";
       iconClass = tw`text-success-600`;
       break;
-    case "saving":
     case "crawling":
       label = msg("Updating");
       iconName = "dot";
