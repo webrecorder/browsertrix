@@ -155,7 +155,12 @@ spec:
 
           cd /data/{{ local_file_src }}
 
-          tar cvfz - . | rclone --config "" rcat remote:{{ remote_file_path }}
+          set -o pipefail
+
+          until tar cvfz - . | rclone --config "" rcat remote:{{ remote_file_path }}; do
+            echo "retrying upload..."
+            sleep 1;
+          done;
 
           echo "STATS (size,hash,file)"
           echo "----------------------"
@@ -217,10 +222,14 @@ spec:
       command: ["sh", "-c"]
       args:
         - |
+          set -e
+
           mkdir -p /data/{{ local_file_dest }}
           cd /data/{{ local_file_dest }}
 
           rclone --config "" cat remote:{{ remote_file_path }} | tar xzf -
+
+          ls -r /data/
 
       volumeMounts: *rclone_volumes
       env: *rclone_env
