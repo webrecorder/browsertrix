@@ -572,7 +572,8 @@ class CrawlOperator(BaseOperator):
         pod_info = status.podStatus[name]
 
         # compute if number of browsers for this pod has changed
-        workers_changed = pod_info.lastWorkers != workers
+        # and previous number of workers was >0
+        workers_changed = pod_info.lastWorkers != workers and pod_info.lastWorkers
         if workers_changed:
             print(f"Workers changed for {i}: {pod_info.lastWorkers} -> {workers}")
 
