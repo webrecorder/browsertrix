@@ -1,7 +1,6 @@
 """Operator handler for CollIndexes"""
 
 import re
-import os
 import datetime
 import traceback
 
@@ -21,11 +20,6 @@ from btrixcloud.models import (
 
 from .models import MCSyncData, MCBaseRequest, POD, JOB, CJS, BTRIX_API
 from .baseoperator import BaseOperator
-
-# expire CollIndex after idle for this many seconds with no additional jobs
-IDLE_SECS = 10
-
-EXPIRE_TIME = datetime.timedelta(seconds=IDLE_SECS)
 
 
 # ============================================================================
@@ -56,7 +50,6 @@ class CollIndexOperator(BaseOperator):
     """CollIndex Operation"""
 
     shared_params = {}
-    fast_retry: int
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -84,7 +77,9 @@ class CollIndexOperator(BaseOperator):
 
         self.shared_params["save_dump"] = True
 
-        self.fast_retry = int(os.environ.get("FAST_RETRY_SECS") or 0)
+        # expire CollIndex after idle for this many seconds with no additional jobs
+        self.idle_secs = self.shared_params["dedupe_idle_secs"]
+        self.idle_expire_time = datetime.timedelta(seconds=self.idle_secs)
 
         self.rclone_save = "save"
 
@@ -178,7 +173,7 @@ class CollIndexOperator(BaseOperator):
             )
 
         if status.state in ("idle", "saving", "ready"):
-            resync_after = self.fast_retry_secs
+            resync_after = self.idle_secs
         else:
             resync_after = None
 
@@ -244,7 +239,7 @@ class CollIndexOperator(BaseOperator):
         if status.state != "ready":
             return False
 
-        if self.is_last_active_exceeds(status, EXPIRE_TIME):
+        if self.is_last_active_exceeds(status, self.idle_expire_time):
             return True
 
         if status.state == "saving":

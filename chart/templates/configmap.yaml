@@ -162,6 +162,8 @@ data:
     dedupe_memory: "{{ .Values.dedupe.memory }}"
     dedupe_cpu: "{{ .Values.dedupe.cpu }}"
 
+    dedupe_idle_secs: {{ .Values.dedupe.idle_secs }}
+
     dedupe_rclone_hash: "{{ .Values.dedupe.rclone_hash }}"
 
     {{ if eq .Values.dedupe.backend_type "kvrocks" }}
