@@ -1,7 +1,8 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlChangeEvent, SlRadioGroup } from "@shoelace-style/shoelace";
-import { html, type PropertyValues } from "lit";
+import clsx from "clsx";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
@@ -14,14 +15,15 @@ import { indexStatus } from "@/features/collections/templates/index-status";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { panel, panelBody, panelHeader } from "@/layouts/panel";
 import { OrgTab } from "@/routes";
-import { stringFor } from "@/strings/ui";
+import { noData, notApplicable, stringFor } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { Crawl, Workflow } from "@/types/crawler";
-import type { DedupeIndexStats } from "@/types/dedupe";
 import { SortDirection } from "@/types/utils";
 import { pluralOf } from "@/utils/pluralize";
+import { tw } from "@/utils/tailwind";
 
+const BYTES_PER_MB = 1e6;
 const INITIAL_PAGE_SIZE = 10;
 
 enum CrawlsView {
@@ -69,32 +71,6 @@ export class CollectionDetailDedupe extends BtrixElement {
       };
     },
   );
-
-  // private readonly dedupeStatsTask = new Task(this, {
-  //   task: async ([collectionId]) => {
-  //     if (!collectionId) return;
-
-  //     // TODO Actual data
-  //     return await new Promise<DedupeStats>((resolve) => {
-  //       setTimeout(() => {
-  //         resolve({
-  //           uniqueUrls: 24,
-  //           totalUrls: 49,
-  //           uniqueSize: 1234,
-  //           totalSize: 2345,
-  //           removable: 2,
-  //           state: "waiting_dedupe_index",
-  //         });
-  //       }, 1000);
-  //     });
-
-  //     // return await this.api.fetch<DedupeStats>(
-  //     //   `/orgs/${this.orgId}/collections/${this.collectionId}/dedupe`,
-  //     //   { signal },
-  //     // );
-  //   },
-  //   args: () => [this.collectionId] as const,
-  // });
 
   private readonly dedupeWorkflowsTask = new Task(this, {
     task: async ([collectionId], { signal }) => {
@@ -144,16 +120,14 @@ export class CollectionDetailDedupe extends BtrixElement {
   render() {
     if (!this.collection) return;
 
-    if (this.collection.dedupeIndex) {
+    if (this.collection.indexStats) {
       return html` <div
-        class="grid grid-cols-4 grid-rows-[repeat(2,min-content)] gap-x-3 gap-y-3"
+        class="grid grid-cols-4 grid-rows-[min-content_1fr] gap-x-3 gap-y-3 xl:gap-x-7"
       >
         <section class="col-span-full row-span-1 xl:col-span-3">
           ${this.renderStats()}
         </section>
-        <section
-          class="col-span-full row-span-2 xl:col-span-1 xl:border-l xl:pl-5"
-        >
+        <section class="col-span-full row-span-2 xl:col-span-1">
           ${this.renderOverview()}
         </section>
         <section class="col-span-full row-span-1 xl:col-span-3">
@@ -184,105 +158,81 @@ export class CollectionDetailDedupe extends BtrixElement {
   }
 
   private renderStats() {
-    const dedupe = this.collection?.dedupeIndex;
-
-    const ringStat = (
-      ring: Parameters<CollectionDetailDedupe["renderRing"]>[0],
-      { format, icon }: { format: (v: number) => string; icon: string },
-    ) => html`
-      <div class="flex items-center gap-3">
-        <sl-icon
-          name=${icon}
-          class="size-9 shrink-0 text-neutral-300"
-        ></sl-icon>
-        <div class="flex-1">
-          <div class="text-base font-medium">
-            ${format(ring.total - ring.unique)}
-          </div>
-          <div class="text-xs text-neutral-700">
-            ${msg("out of")} ${format(ring.total)}
-          </div>
-        </div>
-        <div>${this.renderRing(ring)}</div>
-      </div>
-    `;
-    const ringSkeleton = () => html`
-      <div class="flex items-center gap-3">
-        <sl-skeleton class="size-9"></sl-skeleton>
-        <div class="flex-1">
-          <sl-skeleton class="mb-1 h-3 w-12"></sl-skeleton>
-          <sl-skeleton class="h-3 w-12"></sl-skeleton>
-        </div>
-        <sl-skeleton
-          class="size-16 part-[indicator]:rounded-full"
-        ></sl-skeleton>
-      </div>
-    `;
-
-    const ringStatWithDedupe = (
-      render: (dedupe: DedupeIndexStats) => unknown,
-    ) => when(dedupe, render, ringSkeleton);
-
-    return html`
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <btrix-card class="col-span-full md:col-span-1">
-          <span slot="title">${msg("Deduplicated URLs")}</span>
-          ${ringStatWithDedupe((dedupe) =>
-            ringStat(
-              {
-                unique: dedupe.uniqueUrls,
-                total: dedupe.totalUrls,
-                label: msg("URLs"),
-              },
-              {
-                icon: "link-45deg",
-                format: (v) =>
-                  `${this.localize.number(v)} ${pluralOf("URLs", v)}`,
-              },
-            ),
-          )}
-        </btrix-card>
-        <btrix-card class="col-span-full md:col-span-1">
-          <span slot="title">${msg("Deduplicated Size")}</span>
-          ${ringStatWithDedupe((dedupe) =>
-            ringStat(
-              {
-                unique: this.collection!.totalSize,
-                total: this.collection!.totalSize + dedupe.sizeSaved,
-                label: msg("Size"),
-              },
-              {
-                icon: "file-earmark-binary",
-                format: (v) => this.localize.bytes(v),
-              },
-            ),
-          )}
-        </btrix-card>
-      </div>
-    `;
-  }
-
-  private renderRing({
-    unique,
-    total,
-    label,
-  }: {
-    unique: number;
-    total: number;
-    label: string;
-  }) {
-    const value = ((total - unique) / total) * 100;
-    return html`
-      <sl-progress-ring
-        class="block size-16 [--indicator-color:theme(colors.blue.200)] [--indicator-width:.5rem] [--size:4rem] [--track-color:theme(colors.blue.50)] [--track-width:.5rem]"
-        label="${msg("Deduplicated")} ${label}"
-        value=${value}
+    const stat = ({
+      label,
+      icon,
+      getValue,
+    }: {
+      label: string;
+      icon?: string;
+      getValue: (col: Collection) => string | TemplateResult;
+    }) => html`
+      <div
+        class="col-span-full grid grid-cols-[1fr_min-content] grid-rows-[min-content_1fr] items-center gap-x-4 gap-y-0.5 rounded border px-4 py-3 md:col-span-1"
       >
-        <span class="font-monostyle text-neutral-700"
-          >${this.localize.number(value, { maximumFractionDigits: 0 })}%</span
-        >
-      </sl-progress-ring>
+        <dt class="min-h-6 text-base font-medium">
+          ${when(
+            this.collection,
+            getValue,
+            () => html`<sl-skeleton class="mt-1"></sl-skeleton>`,
+          )}
+        </dt>
+        <dd class="col-start-1 text-xs text-neutral-500">${label}</dd>
+        ${icon
+          ? html`<sl-icon
+              name=${icon}
+              class="col-start-2 row-span-2 row-start-1 text-xl text-neutral-300"
+            ></sl-icon>`
+          : nothing}
+      </div>
     `;
+    const value = (
+      v: number,
+      unit: "bytes" | "number" = "number",
+      successThreshold?: number,
+    ) =>
+      html`<span
+        class=${clsx(
+          successThreshold && v >= successThreshold
+            ? tw`text-success-600`
+            : tw`text-neutral-700`,
+        )}
+      >
+        ${unit === "bytes" ? this.localize.bytes(v) : this.localize.number(v)}
+      </span>`;
+
+    return html`<h2 class="sr-only">${msg("Statistics")}</h2>
+      <dl class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+        ${stat({
+          label: msg("Unique Documents"),
+          icon: "circle-square",
+          getValue: (col) =>
+            col.indexStats ? value(col.indexStats.uniqueUrls) : notApplicable,
+        })}
+        ${stat({
+          label: msg("Duplicate Documents"),
+          icon: "intersect",
+          getValue: (col) =>
+            col.indexStats
+              ? value(col.indexStats.totalUrls - col.indexStats.uniqueUrls)
+              : notApplicable,
+        })}
+        ${stat({
+          label: msg("Hidden Crawls"),
+          icon: "eye-slash",
+          getValue: (col) =>
+            col.indexStats
+              ? value(col.indexStats.removableCrawls)
+              : notApplicable,
+        })}
+        ${stat({
+          label: msg("Estimated Storage Savings"),
+          getValue: (col) =>
+            col.indexStats
+              ? value(col.indexStats.sizeSaved, "bytes", BYTES_PER_MB)
+              : notApplicable,
+        })}
+      </dl>`;
   }
 
   private renderCrawls() {
@@ -395,20 +345,38 @@ export class CollectionDetailDedupe extends BtrixElement {
 
   private renderOverview() {
     const state = this.collection?.indexState;
-    const stats = this.collection?.dedupeIndex;
+    const stats = this.collection?.indexStats;
 
     return panel({
-      heading: msg("Overview"),
+      heading: msg("Index Overview"),
       body: html`<btrix-desc-list>
-        <btrix-desc-list-item label=${msg("Index Status")}>
+        <btrix-desc-list-item label=${msg("Status")}>
           ${state ? indexStatus(state) : stringFor.unknown}
         </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Purgeable Items")}>
+        <btrix-desc-list-item label=${msg("Last Saved")}>
+          ${when(this.collection, (col) =>
+            col.indexLastSavedAt
+              ? this.localize.relativeDate(col.indexLastSavedAt)
+              : noData,
+          )}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Indexed Crawls")}>
           ${when(
             stats,
             (dedupe) =>
-              html`${this.localize.number(dedupe.removableCrawls)}
-              ${pluralOf("items", dedupe.removableCrawls)} `,
+              html`${this.localize.number(dedupe.totalCrawls)}
+              ${pluralOf("crawls", dedupe.totalCrawls)} `,
+          )}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Size of Indexed Crawls")}>
+          ${when(stats, (dedupe) => this.localize.bytes(dedupe.totalSize))}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Indexed URLs")}>
+          ${when(
+            stats,
+            (dedupe) =>
+              html`${this.localize.number(dedupe.totalUrls)}
+              ${pluralOf("URLs", dedupe.totalUrls)} `,
           )}
         </btrix-desc-list-item>
       </btrix-desc-list>`,

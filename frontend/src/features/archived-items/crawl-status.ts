@@ -110,7 +110,7 @@ export class CrawlStatus extends TailwindElement {
             : originalState === "waiting_org_limit"
               ? msg("At Crawl Limit")
               : originalState === "waiting_dedupe_index"
-                ? msg("Indexing Dedupe Source")
+                ? msg("Dedupe Index")
                 : "";
         break;
 

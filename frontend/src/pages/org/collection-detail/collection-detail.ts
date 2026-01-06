@@ -257,7 +257,14 @@ export class CollectionDetail extends BtrixElement {
       >
         ${this.renderInfoBar()}
       </div>
-      <div class="flex items-center justify-between py-3">
+      <div
+        class=${clsx(
+          tw`flex items-center justify-between py-3`,
+          this.collectionTab &&
+            this.collectionTab !== Tab.Replay &&
+            tw`mb-3 border-b`,
+        )}
+      >
         ${this.renderTabs()}
         ${when(this.isCrawler, () =>
           choose(this.collectionTab, [

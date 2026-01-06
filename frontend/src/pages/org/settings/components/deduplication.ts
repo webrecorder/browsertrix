@@ -75,7 +75,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
       source: Collection,
       render: (dedupe: DedupeIndexStats) => TemplateResult,
     ) => {
-      if (source.dedupeIndex) render(source.dedupeIndex);
+      if (source.indexStats) render(source.indexStats);
 
       return html`<span class="text-neutral-400">${notApplicable}</span>`;
     };

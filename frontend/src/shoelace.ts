@@ -31,6 +31,8 @@ import "@shoelace-style/shoelace/dist/components/progress-bar/progress-bar";
 import "@shoelace-style/shoelace/dist/components/progress-ring/progress-ring";
 import "@shoelace-style/shoelace/dist/components/visually-hidden/visually-hidden";
 
+import { APP_ICON_LIBRARY } from "./types/shoelace";
+
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/breadcrumb/breadcrumb.js"
 );
@@ -82,8 +84,6 @@ import(
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tree-item/tree-item.js"
 );
-
-export const APP_ICON_LIBRARY = "app";
 
 setBasePath("/shoelace");
 registerIconLibrary(APP_ICON_LIBRARY, {

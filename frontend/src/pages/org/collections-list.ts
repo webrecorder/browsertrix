@@ -637,7 +637,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
             @click=${this.navigate.link}
           >
             <div class="truncate">${col.name}</div>
-            ${(col.dateEarliest && col.dateLatest) || col.dedupeIndex
+            ${(col.dateEarliest && col.dateLatest) || col.indexStats
               ? html`
                   <div class="mt-1 flex gap-3">
                     ${col.dateEarliest && col.dateLatest
@@ -652,7 +652,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
                           )}
                         `)
                       : nothing}
-                    ${col.dedupeIndex
+                    ${col.indexStats
                       ? detail(html`
                           <sl-icon
                             name="stack"

@@ -2,9 +2,9 @@ import { msg } from "@lit/localize";
 import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 
-import { APP_ICON_LIBRARY } from "@/shoelace";
+import { APP_ICON_LIBRARY, type IconLibrary } from "@/types/shoelace";
 
-type DedupeIcon = { name: string; library?: string };
+type DedupeIcon = { name: string; library?: IconLibrary };
 
 export const dedupeIconFor = {
   dependent: {
