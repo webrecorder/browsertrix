@@ -566,7 +566,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   private readonly renderItem = (col: Collection) => {
     const detail = (content: TemplateResult | string) =>
       html`<div
-        class="${tw`[&>sl-icon]:text-sm`} flex items-center gap-1.5 font-mono text-xs leading-none text-neutral-500 [font-variation-settings:var(--font-monostyle-variation)]"
+        class="${tw`[&>sl-icon]:text-sm`} font-monostyle flex items-center gap-1.5 text-xs leading-none text-neutral-500"
       >
         ${content}
       </div>`;

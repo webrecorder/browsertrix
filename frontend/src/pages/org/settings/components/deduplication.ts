@@ -79,26 +79,28 @@ export class OrgSettingsDeduplication extends BtrixElement {
 
       return html`<span class="text-neutral-400">${notApplicable}</span>`;
     };
+    const detail = (content: TemplateResult | string) =>
+      html`<div
+        class="font-monostyle mt-1 text-xs leading-none text-neutral-500"
+      >
+        ${content}
+      </div>`;
 
     return html`
       <btrix-overflow-scroll>
         <btrix-table
           class="whitespace-nowrap [--btrix-table-cell-padding-x:var(--sl-spacing-2x-small)]"
-          style="--btrix-table-grid-template-columns: min-content 30ch repeat(4, 1fr) min-content"
+          style="--btrix-table-grid-template-columns: 40ch repeat(3, 1fr) min-content"
         >
           <btrix-table-head class="mb-2">
-            <btrix-table-header-cell>
-              ${msg("Source Type")}
+            <btrix-table-header-cell class="px-3">
+              ${msg("Name")}
             </btrix-table-header-cell>
-            <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Indexed URLs")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Indexed Items")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Indexed Items Size")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Purgeable Items")}
@@ -108,26 +110,33 @@ export class OrgSettingsDeduplication extends BtrixElement {
             </btrix-table-header-cell>
           </btrix-table-head>
           <btrix-table-body
-            class="divide-y rounded border [--btrix-table-cell-padding:var(--sl-spacing-2x-small)] *:first:border-t-0 *:last:rounded-b"
+            class="divide-y rounded border [--btrix-table-cell-padding-y:var(--sl-spacing-x-small)] *:first:border-t-0 *:last:rounded-b"
           >
             ${sources.items.map(
               (item) => html`
                 <btrix-table-row>
-                  <btrix-table-cell>
-                    <btrix-badge class="whitespace-nowrap">
-                      <sl-icon name="collection" class="mr-1.5"></sl-icon>
-                      ${msg("Collection")}
-                    </btrix-badge>
-                  </btrix-table-cell>
-                  <btrix-table-cell>
-                    <div class="truncate">${item.name}</div>
+                  <btrix-table-cell class="px-3">
+                    <div class="overflow-hidden">
+                      <div class="truncate">${item.name}</div>
+                      ${detail(html`
+                        <span class="inline-flex items-center">
+                          <sl-icon name="collection" class="mr-1.5"></sl-icon>
+                          ${msg("Collection")}
+                        </span>
+                      `)}
+                    </div>
                   </btrix-table-cell>
                   <btrix-table-cell>
                     ${dedupeStat(
                       item,
                       (dedupe) => html`
-                        ${this.localize.number(dedupe.totalUrls)}
-                        ${pluralOf("URLs", dedupe.totalUrls)}
+                        <div>
+                          ${this.localize.number(dedupe.totalUrls)}
+                          ${pluralOf("URLs", dedupe.totalUrls)}
+                          ${detail(
+                            `${this.localize.number(dedupe.uniqueUrls)} ${msg("unique")}`,
+                          )}
+                        </div>
                       `,
                     )}
                   </btrix-table-cell>
@@ -135,16 +144,11 @@ export class OrgSettingsDeduplication extends BtrixElement {
                     ${dedupeStat(
                       item,
                       (dedupe) => html`
-                        ${this.localize.number(dedupe.totalCrawls)}
-                        ${pluralOf("items", dedupe.totalCrawls)}
-                      `,
-                    )}
-                  </btrix-table-cell>
-                  <btrix-table-cell>
-                    ${dedupeStat(
-                      item,
-                      (dedupe) => html`
-                        ${this.localize.bytes(dedupe.totalSize)}
+                        <div>
+                          ${this.localize.number(dedupe.totalCrawls)}
+                          ${pluralOf("items", dedupe.totalCrawls)}
+                          ${detail(this.localize.bytes(dedupe.totalSize))}
+                        </div>
                       `,
                     )}
                   </btrix-table-cell>
