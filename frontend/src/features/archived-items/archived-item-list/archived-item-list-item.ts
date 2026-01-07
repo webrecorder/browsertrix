@@ -175,7 +175,7 @@ export class ArchivedItemListItem extends BtrixElement {
                     class="text-base text-neutral-300"
                     style=${ifDefined(
                       lastQAState === "complete"
-                        ? "color: ${qaStatus.cssColor}"
+                        ? `color: ${qaStatus.cssColor}`
                         : undefined,
                     )}
                     name=${isUpload ? "slash-lg" : "microscope"}
