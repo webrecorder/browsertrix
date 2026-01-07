@@ -123,16 +123,16 @@ export class CollectionDetailDedupe extends BtrixElement {
 
     if (this.collection.indexStats) {
       return html` <div
-        class="grid grid-cols-4 grid-rows-[min-content_1fr] gap-x-3 gap-y-3 xl:gap-x-7"
+        class="grid grid-cols-5 grid-rows-[min-content_1fr] gap-x-3 gap-y-3 xl:gap-x-7"
       >
-        <section class="col-span-full row-span-1 xl:col-span-3">
+        <section class="col-span-full row-span-1 xl:col-span-4">
           ${this.renderStats()}
         </section>
         <section class="col-span-full row-span-2 xl:col-span-1">
           ${this.renderOverview()}
         </section>
-        <section class="col-span-full row-span-1 xl:col-span-3">
-          ${panelHeader({ heading: msg("Indexed Crawls") })}
+        <section class="col-span-full row-span-1 xl:col-span-4">
+          ${panelHeader({ heading: msg("Indexed Items") })}
           ${this.renderCrawls()}
         </section>
       </div>`;
@@ -169,7 +169,7 @@ export class CollectionDetailDedupe extends BtrixElement {
       getValue: (col: Collection) => string | TemplateResult;
     }) => html`
       <div
-        class="grid grid-cols-[1fr_min-content] grid-rows-[min-content_1fr] items-center gap-x-4 gap-y-0.5 px-4 py-2"
+        class="grid grid-cols-[1fr_min-content] grid-rows-[min-content_1fr] items-center gap-x-4 gap-y-0.5"
       >
         <dt class="min-h-6 text-base font-medium">
           ${when(
@@ -178,12 +178,13 @@ export class CollectionDetailDedupe extends BtrixElement {
             () => html`<sl-skeleton class="mt-1"></sl-skeleton>`,
           )}
         </dt>
-        <dd class="col-start-1 text-xs text-neutral-500">${label}</dd>
+        <dd class="col-start-1 text-xs text-neutral-700">${label}</dd>
         ${icon
-          ? html`<sl-icon
-              name=${icon}
-              class="col-start-2 row-span-2 row-start-1 text-xl text-neutral-300"
-            ></sl-icon>`
+          ? html`<div
+              class="col-start-2 row-span-2 row-start-1 flex size-10 items-center justify-center rounded-lg bg-neutral-50"
+            >
+              <sl-icon name=${icon} class="size-5 text-neutral-400"></sl-icon>
+            </div>`
           : nothing}
       </div>
     `;
@@ -195,51 +196,50 @@ export class CollectionDetailDedupe extends BtrixElement {
     ) =>
       html`<span
         class=${clsx(
-          successThreshold && v >= successThreshold
-            ? tw`text-success-600`
-            : tw`text-neutral-700`,
-          size === "large" && tw`text-lg`,
+          successThreshold && v >= successThreshold && tw`text-success-600`,
+          size === "large" && tw`text-lg leading-5`,
         )}
       >
         ${unit === "bytes" ? this.localize.bytes(v) : this.localize.number(v)}
       </span>`;
 
-    return html`<h2 class="sr-only">${msg("Statistics")}</h2>
-      <div
-        class="grid grid-cols-1 divide-y rounded border py-2 lg:grid-cols-2 lg:divide-x lg:divide-y-0"
-      >
-        <section class="col-span-1 flex flex-col">
-          <header
-            class="mx-4 flex items-center justify-between border-b pb-3 pt-1 text-base leading-none"
-          >
-            <h3 class="font-semibold">${msg("Storage")}</h3>
-            ${infoPopover({
-              content: html`
-                <strong class="font-semibold"
-                  >${msg("Size of Indexed Crawl")}</strong
-                >:
-                ${msg("The total size of all data crawled and indexed by URL.")}
-                <br /><br />
-                <strong class="font-semibold"
-                  >${msg("Estimated Space Savings")}</strong
-                >:
-                ${msg(
-                  "An estimate of how much storage space has been saved by deduplicating this collection.",
-                )}
-              `,
-              placement: "right",
-            })}
-          </header>
-          <dl class="grid flex-1 grid-cols-1 items-center md:grid-cols-2">
+    return html`<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <btrix-card>
+        <header slot="title" class="flex items-center justify-between">
+          <h2>${msg("Storage Impact")}</h2>
+          ${infoPopover({
+            content: html`
+              <strong class="font-semibold">${msg("Estimated Savings")}</strong
+              >:
+              ${msg(
+                "An estimate of how much storage space has been saved by deduplicating this collection.",
+              )}<br /><br />
+              <strong class="font-semibold">${msg("Size Stored")}</strong>:
+              ${msg(
+                "The total size of storage space used by this collection and its index. If an org quota is present, this is the size that counts towards the quota.",
+              )}<br /><br />
+              <strong class="font-semibold">${msg("Size Crawled")}</strong>:
+              ${msg(
+                "The total size of all documents found by the crawler, including duplicates.",
+              )}<br /><br />
+              <strong class="font-semibold">${msg("Indexed Items")}</strong>:
+              ${msg(
+                "The total size of all crawled items that have been indexed by URL.",
+              )}<br /><br />
+              <strong class="font-semibold"
+                >${msg("Deleted Items in Index")}</strong
+              >:
+              ${msg(
+                "The total size of all crawled items that have been deleted from the org but remain in the index.",
+              )}
+            `,
+            placement: "right-start",
+          })}
+        </header>
+        <dl class="grid flex-1 grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-2">
+          <div class="flex gap-3 lg:col-span-2">
             ${stat({
-              label: msg("Size of Indexed Crawls"),
-              getValue: (col) =>
-                col.indexStats
-                  ? value(col.indexStats.totalSize, "bytes", "large")
-                  : notApplicable,
-            })}
-            ${stat({
-              label: msg("Estimated Space Savings"),
+              label: msg("Estimated Savings"),
               getValue: (col) =>
                 col.indexStats
                   ? value(
@@ -250,9 +250,35 @@ export class CollectionDetailDedupe extends BtrixElement {
                     )
                   : notApplicable,
             })}
-          </dl>
-        </section>
-        <dl class="col-span-1 grid grid-cols-1 md:grid-cols-2">
+            <div class="mt-0.5 flex-1">${this.renderStorageBar()}</div>
+          </div>
+          ${stat({
+            label: msg("Indexed Items"),
+            icon: "file-earmark-zip",
+            getValue: (col) =>
+              col.indexStats
+                ? value(col.indexStats.totalSize, "bytes")
+                : notApplicable,
+          })}
+          ${stat({
+            label: msg("Deleted Items in Index"),
+            icon: "file-earmark-minus",
+            getValue: (col) =>
+              col.indexStats
+                ? value(
+                    // TODO
+                    0,
+                    "bytes",
+                  )
+                : notApplicable,
+          })}
+        </dl>
+      </btrix-card>
+      <btrix-card>
+        <header slot="title">
+          <h2>${msg("Index Overview")}</h2>
+        </header>
+        <dl class="col-span-1 grid grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-2">
           ${stat({
             label: msg("Unique Documents"),
             icon: "circle-square",
@@ -268,25 +294,69 @@ export class CollectionDetailDedupe extends BtrixElement {
                 : notApplicable,
           })}
           ${stat({
-            label: msg("Deleted Indexed Crawls"),
-            icon: "trash2",
+            label: msg("Indexed Items"),
+            icon: "file-earmark-zip",
+            getValue: (col) =>
+              col.indexStats
+                ? value(col.indexStats.totalCrawls)
+                : notApplicable,
+          })}
+          ${stat({
+            label: msg("Deleted Items in Index"),
+            icon: "file-earmark-minus",
             getValue: (col) =>
               col.indexStats
                 ? value(col.indexStats.removableCrawls)
                 : notApplicable,
           })}
-          ${when(
-            this.appState.isAdmin,
-            () => html`
-              <btrix-overflow-dropdown class="flex items-end justify-end">
-                <sl-menu>
-                  <sl-menu-item>${msg("Purge Deleted Crawls")}</sl-menu-item>
-                </sl-menu>
-              </btrix-overflow-dropdown>
-            `,
-          )}
         </dl>
-      </div>`;
+      </btrix-card>
+    </div>`;
+  }
+
+  private renderStorageBar() {
+    const stats = this.collection?.indexStats;
+
+    if (!stats) return;
+
+    const { totalSize, sizeSaved } = stats;
+    const deletedSize = 0; // TODO
+    const used = totalSize + deletedSize;
+    const max = totalSize + deletedSize + sizeSaved;
+
+    return html`<btrix-meter value=${used} max=${max} class="w-full">
+      <btrix-meter-bar
+        value=${(totalSize / used) * 100}
+        class="[--background-color:theme(colors.primary.300)]"
+      >
+        <div class="flex justify-between gap-4 font-medium leading-none">
+          <span>${msg("Indexed Items")}</span>
+          <span>${this.localize.bytes(stats.totalSize)}</span>
+        </div>
+      </btrix-meter-bar>
+      <btrix-meter-bar
+        value=${(deletedSize / used) * 100}
+        class="[--background-color:theme(colors.slate.200)]"
+      >
+        <div class="flex justify-between gap-4 font-medium leading-none">
+          <span>${msg("Deleted Items in Index")}</span>
+          <span>${this.localize.bytes(deletedSize)}</span>
+        </div>
+      </btrix-meter-bar>
+      <div slot="available" class="flex-1">
+        <btrix-floating-popover placement="top" class="text-center">
+          <div slot="content">
+            <header class="flex justify-between gap-4 font-medium leading-none">
+              <span>${msg("Estimated Savings")}</span>
+              <span>${this.localize.bytes(stats.sizeSaved)}</span>
+            </header>
+          </div>
+          <div class="h-full w-full"></div>
+        </btrix-floating-popover>
+      </div>
+      <span slot="valueLabel">${msg("Size Stored")}</span>
+      <span slot="maxLabel">${msg("Size Crawled")}</span>
+    </btrix-meter>`;
   }
 
   private renderCrawls() {
@@ -296,7 +366,7 @@ export class CollectionDetailDedupe extends BtrixElement {
       >
         <div class="flex items-center gap-2">
           <label for="view" class="whitespace-nowrap text-neutral-500"
-            >${msg("View:")}</label
+            >${msg("View by:")}</label
           >
           <sl-radio-group
             id="view"
@@ -309,10 +379,12 @@ export class CollectionDetailDedupe extends BtrixElement {
             }}
           >
             <sl-radio-button pill value=${DEFAULT_CRAWLS_VIEW}>
-              ${msg("By Workflow")}
+              <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
+              ${msg("Workflow")}
             </sl-radio-button>
             <sl-radio-button pill value=${CrawlsView.Crawls}>
-              ${msg("All Crawls")}
+              <sl-icon slot="prefix" name="gear-wide-connected"></sl-icon>
+              ${msg("Crawl Run")}
             </sl-radio-button>
           </sl-radio-group>
         </div>
@@ -402,30 +474,19 @@ export class CollectionDetailDedupe extends BtrixElement {
     const stats = this.collection?.indexStats;
 
     return panel({
-      heading: msg("Index Overview"),
+      heading: msg("Overview"),
       body: html`<btrix-desc-list>
-        <btrix-desc-list-item label=${msg("Status")}>
+        <btrix-desc-list-item label=${msg("Index Status")}>
           ${state ? indexStatus(state) : stringFor.unknown}
         </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Last Saved")}>
+        <btrix-desc-list-item label=${msg("Index Last Saved")}>
           ${when(this.collection, (col) =>
             col.indexLastSavedAt
               ? this.localize.relativeDate(col.indexLastSavedAt)
               : noData,
           )}
         </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Indexed Crawls")}>
-          ${when(
-            stats,
-            (dedupe) =>
-              html`${this.localize.number(dedupe.totalCrawls)}
-              ${pluralOf("crawls", dedupe.totalCrawls)} `,
-          )}
-        </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Size of Indexed Crawls")}>
-          ${when(stats, (dedupe) => this.localize.bytes(dedupe.totalSize))}
-        </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Indexed URLs")}>
+        <btrix-desc-list-item label=${msg("Total Indexed URLs")}>
           ${when(
             stats,
             (dedupe) =>
