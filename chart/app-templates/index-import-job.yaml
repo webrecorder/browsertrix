@@ -14,6 +14,13 @@ metadata:
 spec:
   ttlSecondsAfterFinished: 0
   backoffLimit: 3
+
+# if purging, set completions to disallow changing parallelism
+# for import, omit to allow increasing later
+{% if is_purging %}
+  completions: 1
+{% endif %}
+
   parallelism: 1
   template:
     metadata:

@@ -164,8 +164,6 @@ data:
 
     dedupe_idle_secs: {{ .Values.dedupe.idle_secs }}
 
-    dedupe_rclone_hash: "{{ .Values.dedupe.rclone_hash }}"
-
     {{ if eq .Values.dedupe.backend_type "kvrocks" }}
     dedupe_use_kvrocks: true
     {{ else if eq .Values.dedupe.backend_type "redis" }}

@@ -168,7 +168,7 @@ spec:
 
           set -o pipefail
 
-          until tar cvfz - . | rclone --config '' rcat remote:{{ remote_file_path }}; do
+          until tar cvfz - . | tee >(sha256sum > /tmp/hash.txt) | tee >(wc -c > /tmp/size.txt) | rclone --config '' rcat remote:{{ remote_file_path }}; do
             echo "retrying upload..."
             sleep 1;
           done
@@ -186,9 +186,11 @@ spec:
 
         {% endif %}
 
-          echo "STATS (size,hash,file)"
-          echo "----------------------"
-          rclone --config "" lsf  --separator "," --format "shp" --hash {{ rclone_hash | default('md5') }} remote:{{ remote_file_path }}
+          size=$(cat /tmp/size.txt)
+          hash=$(awk '{ print $1 }' /tmp/hash.txt)
+
+          echo ""
+          echo "STATS: (size,hash): $size,$hash"
 
           rm /tmp/done
 

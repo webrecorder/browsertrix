@@ -4,6 +4,7 @@ import re
 import datetime
 import traceback
 
+from typing import Literal
 from urllib.parse import urlsplit
 
 from uuid import UUID
@@ -49,6 +50,7 @@ class CollIndexSpec(BaseModel):
 class CollIndexOperator(BaseOperator):
     """CollIndex Operation"""
 
+    backend_type: Literal["redis", "kvrocks"]
     shared_params = {}
 
     def __init__(self, *args):
@@ -66,12 +68,13 @@ class CollIndexOperator(BaseOperator):
         self.shared_params["obj_type"] = "coll"
 
         self.shared_params["use_kvrocks"] = self.shared_params["dedupe_use_kvrocks"]
-        self.shared_params["rclone_hash"] = self.shared_params["dedupe_rclone_hash"]
 
         if self.shared_params["use_kvrocks"]:
+            self.backend_type = "kvrocks"
             self.shared_params["local_file_src"] = "backup"
             self.shared_params["local_file_dest"] = "db"
         else:
+            self.backend_type = "redis"
             self.shared_params["local_file_src"] = "dump.rdb"
             self.shared_params["local_file_dest"] = "dump.rdb"
 
@@ -440,20 +443,24 @@ class CollIndexOperator(BaseOperator):
         logs = await self.k8s.get_pod_logs(
             pod_name, container=self.rclone_save, lines=100
         )
-        m = re.search(r"([\d]+),([^,]*)," + str(coll_id), logs)
+        m = re.search(r"STATS: \(size,hash\): ([\d]+),([\w]+)", logs)
         if m:
             size = int(m.group(1))
-            hash_ = "md5:" + m.group(2)
+            hash_ = m.group(2)
 
         print("UPLOAD LOGS")
         print("-----------")
-        print(logs)
+        print(logs, size, hash_)
 
         org = await self.coll_ops.orgs.get_org_by_id(oid)
         filename = self.get_index_storage_filename(coll_id, org)
 
         index_file = DedupeIndexFile(
-            filename=filename, hash=hash_, size=size, storage=org.storage
+            type=self.backend_type,
+            filename=filename,
+            hash=hash_,
+            size=size,
+            storage=org.storage,
         )
 
         await self.coll_ops.update_dedupe_index_info(
