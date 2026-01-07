@@ -55,9 +55,6 @@ spec:
     - name: shared-redis-conf
       configMap:
         name: shared-redis-conf
-        items:
-          - key: redis.conf
-            path: redis.conf
 
     - name: redis-data
       {% if not no_pvc %}
@@ -106,7 +103,12 @@ spec:
       image: {{ redis_image }}
       imagePullPolicy: {{ redis_image_pull_policy }}
 
+      {% if use_kvrocks %}
+      args: ["-c", "/redis-conf/kvrocks.conf", "--dir", "/data", "--appendonly", "{{ 'no' if load_dump else 'yes' }}"]
+      {% else %}
       args: ["/redis-conf/redis.conf", "--appendonly", "{{ 'no' if load_dump else 'yes' }}"]
+      {% endif %}
+
       volumeMounts:
         - name: redis-data
           mountPath: /data
@@ -142,7 +144,7 @@ spec:
 
   initContainers:
 {% if save_dump %}
-    - name: rclone-save
+    - name: save
       image: rclone/rclone:latest
 
       command: ["sh", "-c"]
@@ -152,7 +154,45 @@ spec:
           while [ ! -f /tmp/done ]; do 
             sleep 1;
           done;
-          rclone -vv copyto --checksum /data/{{ local_file }} remote:{{ remote_file_path }}
+
+          set -e
+
+
+        {% if use_kvrocks %}
+          if [ ! -d /data/{{ local_file_src }} ]; then
+            echo "directory /data/{{ local_file_src }} doesn't exist, erroring"
+            exit 1
+          fi
+
+          cd /data/{{ local_file_src }}
+
+          set -o pipefail
+
+          until tar cvfz - . | tee >(sha256sum > /tmp/hash.txt) | tee >(wc -c > /tmp/size.txt) | rclone --config '' rcat remote:{{ remote_file_path }}; do
+            echo "retrying upload..."
+            sleep 1;
+          done
+
+        {% else %}
+          if [ ! -f /data/{{ local_file_src }} ]; then
+            echo "/data/{{ local_file_src }} doesn't exist!"
+            exit 1
+          fi
+
+          until rclone -vv copyto --checksum /data/{{ local_file_src }} remote:{{ remote_file_path }}; do
+            echo "retrying upload..."
+            sleep 1;
+          done
+
+        {% endif %}
+
+          size=$(cat /tmp/size.txt)
+          hash=$(awk '{ print $1 }' /tmp/hash.txt)
+
+          echo ""
+          echo "STATS: (size,hash): $size,$hash"
+
+          rm /tmp/done
 
       restartPolicy: Always
       lifecycle:
@@ -204,11 +244,24 @@ spec:
           cpu: "50m"
 
 {% if load_dump %}
-    - name: rclone-load
+    - name: load
       image: rclone/rclone:latest
 
-      args: ["-vv", "copyto", "--checksum", "remote:{{ remote_file_path }}", "/data/{{ local_file }}"]
+      command: ["sh", "-c"]
+      args:
+        - |
+          set -e
 
+        {% if use_kvrocks %}
+          mkdir -p /data/{{ local_file_dest }}
+          cd /data/{{ local_file_dest }}
+
+          rclone --config "" cat remote:{{ remote_file_path }} | tar xzf -
+
+        {% else %}
+          rclone --config "" copyto remote:{{ remote_file_path }} /data/{{ local_file_dest }}
+
+        {% endif %}
       volumeMounts: *rclone_volumes
       env: *rclone_env
       resources: *rclone_resources

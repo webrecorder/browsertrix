@@ -158,6 +158,8 @@ class BaseOperator:
     user_ops: UserManager
     crawl_log_ops: CrawlLogOps
 
+    fast_retry_secs: int
+
     def __init__(
         self,
         k8s,
@@ -186,6 +188,7 @@ class BaseOperator:
         # to avoid background tasks being garbage collected
         # see: https://stackoverflow.com/a/74059981
         self.bg_tasks = set()
+        self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
     def init_routes(self, app) -> None:
         """init routes for this operator"""

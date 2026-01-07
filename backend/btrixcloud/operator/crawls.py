@@ -96,7 +96,6 @@ class CrawlOperator(BaseOperator):
     errors_key: str
     behavior_logs_key: str
 
-    fast_retry_secs: int
     log_failed_crawl_lines: int
 
     min_avail_storage_ratio: float
@@ -110,8 +109,6 @@ class CrawlOperator(BaseOperator):
         self.pages_key = "pages"
         self.errors_key = "e"
         self.behavior_logs_key = "b"
-
-        self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
         self.log_failed_crawl_lines = int(os.environ.get("LOG_FAILED_CRAWL_LINES") or 0)
 

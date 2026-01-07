@@ -1,10 +1,10 @@
 """Operator handler for CollIndexes"""
 
 import re
-import os
 import datetime
 import traceback
 
+from typing import Literal
 from urllib.parse import urlsplit
 
 from uuid import UUID
@@ -21,11 +21,6 @@ from btrixcloud.models import (
 
 from .models import MCSyncData, MCBaseRequest, POD, JOB, CJS, BTRIX_API
 from .baseoperator import BaseOperator
-
-# expire CollIndex after idle for this many seconds with no additional jobs
-IDLE_SECS = 10
-
-EXPIRE_TIME = datetime.timedelta(seconds=IDLE_SECS)
 
 
 # ============================================================================
@@ -55,22 +50,41 @@ class CollIndexSpec(BaseModel):
 class CollIndexOperator(BaseOperator):
     """CollIndex Operation"""
 
+    backend_type: Literal["redis", "kvrocks"]
     shared_params = {}
-    fast_retry: int
 
     def __init__(self, *args):
         super().__init__(*args)
         self.shared_params.update(self.k8s.shared_params)
-        self.shared_params["redis_storage"] = self.shared_params["redis_dedupe_storage"]
-        self.shared_params["memory"] = self.shared_params["redis_dedupe_memory"]
-        self.shared_params["cpu"] = self.shared_params["redis_cpu"]
+        self.shared_params["redis_storage"] = self.shared_params["dedupe_storage"]
+        self.shared_params["memory"] = self.shared_params["dedupe_memory"]
+        self.shared_params["cpu"] = self.shared_params["dedupe_cpu"]
+
+        self.shared_params["redis_image"] = self.shared_params["dedupe_image"]
+        self.shared_params["redis_image_pull_policy"] = self.shared_params[
+            "dedupe_image_pull_policy"
+        ]
+
         self.shared_params["obj_type"] = "coll"
 
-        self.shared_params["local_file"] = "dump.rdb"
+        self.shared_params["use_kvrocks"] = self.shared_params["dedupe_use_kvrocks"]
 
-        self.fast_retry = int(os.environ.get("FAST_RETRY_SECS") or 0)
+        if self.shared_params["use_kvrocks"]:
+            self.backend_type = "kvrocks"
+            self.shared_params["local_file_src"] = "backup"
+            self.shared_params["local_file_dest"] = "db"
+        else:
+            self.backend_type = "redis"
+            self.shared_params["local_file_src"] = "dump.rdb"
+            self.shared_params["local_file_dest"] = "dump.rdb"
 
-        self.rclone_save = "rclone-save"
+        self.shared_params["save_dump"] = True
+
+        # expire CollIndex after idle for this many seconds with no additional jobs
+        self.idle_secs = self.shared_params["dedupe_idle_secs"]
+        self.idle_expire_time = datetime.timedelta(seconds=self.idle_secs)
+
+        self.rclone_save = "save"
 
     def init_routes(self, app):
         """init routes for this operator"""
@@ -141,8 +155,7 @@ class CollIndexOperator(BaseOperator):
                 # Saving process
                 # 1. run bgsave while redis is active
                 if not skip_redis:
-                    if status.state != "saving":
-                        await self.do_redis_save(spec.id, status)
+                    await self.do_redis_save(spec.id, status)
 
                 # 2. once redis has shutdown, check if fully finished
                 else:
@@ -163,7 +176,7 @@ class CollIndexOperator(BaseOperator):
             )
 
         if status.state in ("idle", "saving", "ready"):
-            resync_after = IDLE_SECS
+            resync_after = self.idle_secs
         else:
             resync_after = None
 
@@ -229,11 +242,20 @@ class CollIndexOperator(BaseOperator):
         if status.state != "ready":
             return False
 
-        dt_change = str_to_date(status.lastStateChangeAt)
-        if dt_change and (dt_now() - dt_change) > EXPIRE_TIME:
+        if self.is_last_active_exceeds(status, self.idle_expire_time):
             return True
 
         if status.state == "saving":
+            return True
+
+        return False
+
+    def is_last_active_exceeds(
+        self, status: CollIndexStatus, min_dura: datetime.timedelta
+    ):
+        """return true if last active time exceeds duration"""
+        dt_change = str_to_date(status.lastStateChangeAt)
+        if dt_change and (dt_now() - dt_change) > min_dura:
             return True
 
         return False
@@ -258,25 +280,27 @@ class CollIndexOperator(BaseOperator):
         """shutdown save redis"""
         try:
             redis = await self.k8s.get_redis_connected("coll-" + str(coll_id))
-            if redis:
+            if not redis:
+                return
+
+            if status.state != "saving":
+                await redis.bgsave(False)
+
                 await self.set_state("saving", status, coll_id)
-                self.run_task(self.do_redis_shutdown(redis, coll_id, status))
+
+            if await self.is_bgsave_done(redis):
+                await redis.shutdown()
 
         # pylint: disable=broad-exception-caught
-        except Exception as e:
-            print(e)
+        except Exception:
+            await self.set_state("ready", status, coll_id)
             traceback.print_exc()
 
-    async def do_redis_shutdown(
-        self, redis: Redis, coll_id: UUID, status: CollIndexStatus
-    ):
-        """save and shutdown redis, waiting for it to succeed"""
-        try:
-            await redis.shutdown(save=True)
-        # pylint: disable=broad-exception-caught
-        except Exception as e:
-            print("Redis shutdown failed", e)
-            await self.set_state("ready", status, coll_id)
+    async def is_bgsave_done(self, redis: Redis) -> bool:
+        """return true if bgsave has successfully finished"""
+        info = await redis.execute_command("INFO persistence")
+
+        return "bgsave_in_progress:0" in info and "last_bgsave_status:ok" in info
 
     async def update_stats_from_redis(self, status: CollIndexStatus, coll_id: UUID):
         """update stats from redis, set other changes based on prev and new state"""
@@ -349,7 +373,6 @@ class CollIndexOperator(BaseOperator):
         params["init_redis"] = True
 
         params["load_dump"] = bool(status.indexLastSavedAt)
-        params["save_dump"] = True
 
         org = await self.coll_ops.orgs.get_org_by_id(spec.oid)
         oid = str(spec.oid)
@@ -374,9 +397,7 @@ class CollIndexOperator(BaseOperator):
     def get_index_storage_filename(self, coll_id: UUID, org: Organization):
         """get index filename for storage"""
         storage_path = org.storage.get_storage_extra_path(str(org.id))
-        filename = storage_path + f"dedupe-index/{coll_id}.rdb"
-
-        return filename
+        return storage_path + f"dedupe-index/{coll_id}"
 
     async def check_redis_saved(
         self,
@@ -420,24 +441,26 @@ class CollIndexOperator(BaseOperator):
         hash_ = ""
         size = -1
         logs = await self.k8s.get_pod_logs(
-            pod_name, container=self.rclone_save, lines=10
+            pod_name, container=self.rclone_save, lines=100
         )
-        m = re.search(r"md5 = ([^\s]+) OK", logs)
-        if m:
-            hash_ = "md5:" + m.group(1)
-        m = re.search(r"size = ([\d]+) OK", logs)
+        m = re.search(r"STATS: \(size,hash\): ([\d]+),([\w]+)", logs)
         if m:
             size = int(m.group(1))
+            hash_ = m.group(2)
 
         print("UPLOAD LOGS")
         print("-----------")
-        print(logs)
+        print(logs, size, hash_)
 
         org = await self.coll_ops.orgs.get_org_by_id(oid)
         filename = self.get_index_storage_filename(coll_id, org)
 
         index_file = DedupeIndexFile(
-            filename=filename, hash=hash_, size=size, storage=org.storage
+            type=self.backend_type,
+            filename=filename,
+            hash=hash_,
+            size=size,
+            storage=org.storage,
         )
 
         await self.coll_ops.update_dedupe_index_info(

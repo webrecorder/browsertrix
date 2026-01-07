@@ -1610,6 +1610,8 @@ class HostCount(BaseModel):
 class DedupeIndexFile(BaseFile):
     """serialize dedupe index"""
 
+    type: Literal["redis", "kvrocks"] = "kvrocks"
+
 
 # ============================================================================
 class DedupeIndexStats(BaseModel):
