@@ -100,7 +100,7 @@ export class OrgSettingsBilling extends BtrixElement {
 
       return metrics;
     },
-    args: () => [this.org?.id] as const,
+    args: () => [this.orgId] as const,
   });
 
   render() {
