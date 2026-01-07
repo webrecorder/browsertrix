@@ -197,7 +197,7 @@ export class CollectionDetailDedupe extends BtrixElement {
       html`<span
         class=${clsx(
           successThreshold && v >= successThreshold && tw`text-success-600`,
-          size === "large" && tw`text-lg leading-5`,
+          size === "large" && tw`text-lg leading-none`,
         )}
       >
         ${unit === "bytes" ? this.localize.bytes(v) : this.localize.number(v)}
@@ -237,7 +237,9 @@ export class CollectionDetailDedupe extends BtrixElement {
           })}
         </header>
         <dl class="grid flex-1 grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-2">
-          <div class="flex gap-3 lg:col-span-2">
+          <div
+            class="flex flex-col gap-3 lg:col-span-2 lg:flex-row lg:items-center lg:border-b lg:pb-[calc(.75rem-1px)]"
+          >
             ${stat({
               label: msg("Estimated Savings"),
               getValue: (col) =>
@@ -250,7 +252,7 @@ export class CollectionDetailDedupe extends BtrixElement {
                     )
                   : notApplicable,
             })}
-            <div class="mt-0.5 flex-1">${this.renderStorageBar()}</div>
+            <div class="flex-1">${this.renderStorageBar()}</div>
           </div>
           ${stat({
             label: msg("Indexed Items"),
@@ -278,7 +280,7 @@ export class CollectionDetailDedupe extends BtrixElement {
         <header slot="title">
           <h2>${msg("Index Overview")}</h2>
         </header>
-        <dl class="col-span-1 grid grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-2">
+        <dl class="col-span-1 grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-y-6">
           ${stat({
             label: msg("Unique Documents"),
             icon: "circle-square",
