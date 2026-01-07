@@ -75,7 +75,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
       source: Collection,
       render: (dedupe: DedupeIndexStats) => TemplateResult,
     ) => {
-      if (source.indexStats) render(source.indexStats);
+      if (source.indexStats) return render(source.indexStats);
 
       return html`<span class="text-neutral-400">${notApplicable}</span>`;
     };
@@ -84,7 +84,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
       <btrix-overflow-scroll>
         <btrix-table
           class="whitespace-nowrap [--btrix-table-cell-padding-x:var(--sl-spacing-2x-small)]"
-          style="--btrix-table-grid-template-columns: min-content 40ch repeat(3, 1fr) min-content"
+          style="--btrix-table-grid-template-columns: min-content 30ch repeat(4, 1fr) min-content"
         >
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell>
@@ -92,13 +92,16 @@ export class OrgSettingsDeduplication extends BtrixElement {
             </btrix-table-header-cell>
             <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
             <btrix-table-header-cell>
-              ${msg("Total Size")}
+              ${msg("Indexed URLs")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
-              ${msg("Total URLs")}
+              ${msg("Indexed Items")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
-              ${msg("Total Purgeable")}
+              ${msg("Indexed Items Size")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg("Purgeable Items")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Actions")}
@@ -123,7 +126,8 @@ export class OrgSettingsDeduplication extends BtrixElement {
                     ${dedupeStat(
                       item,
                       (dedupe) => html`
-                        ${this.localize.bytes(dedupe.sizeSaved)}
+                        ${this.localize.number(dedupe.totalUrls)}
+                        ${pluralOf("URLs", dedupe.totalUrls)}
                       `,
                     )}
                   </btrix-table-cell>
@@ -131,8 +135,16 @@ export class OrgSettingsDeduplication extends BtrixElement {
                     ${dedupeStat(
                       item,
                       (dedupe) => html`
-                        ${this.localize.number(dedupe.totalUrls)}
-                        ${pluralOf("URLs", dedupe.totalUrls)}
+                        ${this.localize.number(dedupe.totalCrawls)}
+                        ${pluralOf("items", dedupe.totalCrawls)}
+                      `,
+                    )}
+                  </btrix-table-cell>
+                  <btrix-table-cell>
+                    ${dedupeStat(
+                      item,
+                      (dedupe) => html`
+                        ${this.localize.bytes(dedupe.totalSize)}
                       `,
                     )}
                   </btrix-table-cell>
