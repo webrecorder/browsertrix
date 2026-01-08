@@ -267,11 +267,7 @@ export class CollectionDetailDedupe extends BtrixElement {
             icon: "file-earmark-minus",
             getValue: (col) =>
               col.indexStats
-                ? value(
-                    // TODO
-                    0,
-                    "bytes",
-                  )
+                ? value(col.indexStats.removedCrawlSize, "bytes")
                 : notApplicable,
           })}
         </dl>
