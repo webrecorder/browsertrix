@@ -212,25 +212,15 @@ export class CollectionDetailDedupe extends BtrixElement {
               <strong class="font-semibold">${msg("Estimated Savings")}</strong
               >:
               ${msg(
-                "An estimate of how much storage space has been saved by deduplicating this collection.",
+                "An estimate of how much storage space has been conserved by deduplicating this collection.",
               )}<br /><br />
-              <strong class="font-semibold">${msg("Size Stored")}</strong>:
+              <strong class="font-semibold">${msg("Indexed")}</strong>:
               ${msg(
-                "The total size of storage space used by this collection and its index. If an org quota is present, this is the size that counts towards the quota.",
+                "The total storage space used by indexed items, including indexed and then deleted archived items.",
               )}<br /><br />
-              <strong class="font-semibold">${msg("Size Crawled")}</strong>:
+              <strong class="font-semibold">${msg("Crawled")}</strong>:
               ${msg(
-                "The total size of all documents found by the crawler, including duplicates.",
-              )}<br /><br />
-              <strong class="font-semibold">${msg("Indexed Items")}</strong>:
-              ${msg(
-                "The total size of all crawled items that have been indexed by URL.",
-              )}<br /><br />
-              <strong class="font-semibold"
-                >${msg("Deleted Items in Index")}</strong
-              >:
-              ${msg(
-                "The total size of all crawled items that have been deleted from the org but remain in the index.",
+                "The total size of all archived items, including duplicates.",
               )}
             `,
             placement: "right-start",
@@ -324,22 +314,22 @@ export class CollectionDetailDedupe extends BtrixElement {
     if (!stats) return;
 
     const { totalCrawlSize, conservedSize, removedCrawlSize } = stats;
-    const used = totalCrawlSize + removedCrawlSize;
-    const max = totalCrawlSize + removedCrawlSize + conservedSize;
+    const notRemoved = totalCrawlSize - removedCrawlSize;
+    const max = totalCrawlSize + conservedSize;
 
-    return html`<btrix-meter value=${used} max=${max} class="w-full">
+    return html`<btrix-meter value=${totalCrawlSize} max=${max} class="w-full">
       <btrix-meter-bar
-        value=${(totalCrawlSize / used) * 100}
+        value=${(notRemoved / totalCrawlSize) * 100}
         class="[--background-color:theme(colors.primary.300)]"
       >
         <div class="flex justify-between gap-4 font-medium leading-none">
-          <span>${msg("Indexed Items")}</span>
-          <span>${this.localize.bytes(stats.totalCrawlSize)}</span>
+          <span>${msg("Kept Items in Index")}</span>
+          <span>${this.localize.bytes(notRemoved)}</span>
         </div>
       </btrix-meter-bar>
       <btrix-meter-bar
-        value=${(removedCrawlSize / used) * 100}
-        class="[--background-color:theme(colors.slate.300)]"
+        value=${(removedCrawlSize / totalCrawlSize) * 100}
+        class="[--background-color:theme(colors.primary.200)]"
       >
         <div class="flex justify-between gap-4 font-medium leading-none">
           <span>${msg("Deleted Items in Index")}</span>
@@ -357,8 +347,8 @@ export class CollectionDetailDedupe extends BtrixElement {
           <div class="h-full w-full"></div>
         </btrix-floating-popover>
       </div>
-      <span slot="valueLabel">${msg("Size Stored")}</span>
-      <span slot="maxLabel">${msg("Size Crawled")}</span>
+      <span slot="valueLabel">${msg("Indexed")}</span>
+      <span slot="maxLabel">${msg("Crawled")}</span>
     </btrix-meter>`;
   }
 
