@@ -252,7 +252,11 @@ export class CollectionDetailDedupe extends BtrixElement {
                     )
                   : notApplicable,
             })}
-            <div class="flex-1">${this.renderStorageBar()}</div>
+            ${when(this.collection?.indexStats, (stats) =>
+              stats.totalSize || stats.conservedSize || stats.removedCrawlSize
+                ? html`<div class="flex-1">${this.renderStorageBar()}</div>`
+                : nothing,
+            )}
           </div>
           ${stat({
             label: msg("Indexed Items"),
@@ -333,7 +337,7 @@ export class CollectionDetailDedupe extends BtrixElement {
       </btrix-meter-bar>
       <btrix-meter-bar
         value=${(removedCrawlSize / used) * 100}
-        class="[--background-color:theme(colors.slate.200)]"
+        class="[--background-color:theme(colors.slate.300)]"
       >
         <div class="flex justify-between gap-4 font-medium leading-none">
           <span>${msg("Deleted Items in Index")}</span>
