@@ -1617,14 +1617,20 @@ class DedupeIndexFile(BaseFile):
 class DedupeIndexStats(BaseModel):
     """stats from collection dedupe index"""
 
-    uniqueUrls: int = 0
     totalUrls: int = 0
+    dupeUrls: int = 0
 
-    sizeSaved: int = 0
-    totalSize: int = 0
+    conservedSize: int = 0
 
     totalCrawls: int = 0
-    removableCrawls: int = 0
+    totalSize: int = 0
+
+    removedCrawls: int = 0
+    removedCrawlSize: int = 0
+
+    # for internal use for now
+    uniqueHashes: int = 0
+    estimatedRedundantSize: int = 0
 
 
 # ============================================================================

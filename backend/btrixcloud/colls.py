@@ -149,8 +149,6 @@ class CollectionOps:
 
         slug = coll_in.slug or slug_from_name(coll_in.name)
 
-        indexStats = DedupeIndexStats() if coll_in.hasDedupeIndex else None
-
         coll = Collection(
             id=coll_id,
             oid=org.id,
@@ -163,7 +161,6 @@ class CollectionOps:
             access=coll_in.access,
             defaultThumbnailName=coll_in.defaultThumbnailName,
             allowPublicDownload=coll_in.allowPublicDownload,
-            indexStats=indexStats,
         )
         try:
             await self.collections.insert_one(coll.to_dict())
@@ -189,19 +186,19 @@ class CollectionOps:
         self, coll_id: UUID, org: Organization, update: UpdateColl
     ):
         """Update collection"""
-        query = update.model_dump(exclude_unset=True, exclude={"hasDedupeIndex"})
+        query = update.dict(exclude_unset=True)
 
-        if len(query) == 0 and update.hasDedupeIndex is None:
+        if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
 
         name_update = query.get("name")
         slug_update = query.get("slug")
 
         previous_slug = None
-        coll = await self.get_collection(coll_id, org.id)
 
         if name_update or slug_update:
             # If we're updating slug, save old one to previousSlugs to support redirects
+            coll = await self.get_collection(coll_id, org.id)
             previous_slug = coll.slug
 
         if name_update and not slug_update:
@@ -211,29 +208,22 @@ class CollectionOps:
 
         query["modified"] = dt_now()
 
-        if update.hasDedupeIndex is True and not coll.indexStats:
-            query["indexStats"] = DedupeIndexStats().dict()
-            await self.update_coll_index(coll, org.id)
-
-        elif update.hasDedupeIndex is False and coll.indexStats:
-            await self.delete_coll_index(coll, org)
-
         db_update = {"$set": query}
         if previous_slug:
             db_update["$push"] = {"previousSlugs": previous_slug}
 
         try:
-            prev_result = await self.collections.find_one_and_update(
+            result = await self.collections.find_one_and_update(
                 {"_id": coll_id, "oid": org.id},
                 db_update,
-                return_document=pymongo.ReturnDocument.BEFORE,
+                return_document=pymongo.ReturnDocument.AFTER,
             )
         except pymongo.errors.DuplicateKeyError as err:
             # pylint: disable=raise-missing-from
             field = get_duplicate_key_error_field(err)
             raise HTTPException(status_code=400, detail=f"collection_{field}_taken")
 
-        if not prev_result:
+        if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         if slug_update:
@@ -325,12 +315,6 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         return result
-
-    async def enable_dedupe_index(self, coll_id: UUID, org: Organization):
-        """enable dedupe index if it doesn't exist yet"""
-        return await self.update_collection(
-            coll_id, org, UpdateColl(hasDedupeIndex=True)
-        )
 
     async def get_collection_raw_by_slug(
         self,
@@ -683,51 +667,12 @@ class CollectionOps:
                 crawl_ids.append(crawl_id)
         return crawl_ids
 
-    async def update_coll_index(self, coll: Collection, oid: UUID, is_purge=False):
-        """create index import job"""
-
-        # don't update if no crawls if not purging removed crawls
-        if not is_purge and not coll.crawlCount:
-            return
-
-        crawler_image = self.crawl_ops.crawl_configs.get_channel_crawler_image(
-            self.dedupe_importer_channel
-        )
-        if not crawler_image:
-            raise HTTPException(
-                status_code=500, detail="dedupe_crawler_image_not_defined"
-            )
-
-        pull_policy = (
-            self.crawl_ops.crawl_configs.get_channel_crawler_image_pull_policy(
-                self.dedupe_importer_channel
-            )
-            or "IfNotPresent"
-        )
-        await self.crawl_manager.run_index_import_job(
-            str(coll.id), str(oid), crawler_image, pull_policy, is_purge
-        )
-
-    async def delete_coll_index(self, coll: Collection, org: Organization):
-        """delete coll dedupe index, if possible"""
-
-        # if index is not idle, can't delete it yet
-        if coll.indexStats and coll.indexState != "idle":
-            raise HTTPException(status_code=400, detail="dedupe_index_is_in_use")
-
-        if coll.indexFile:
-            if not await self.storage_ops.delete_file_object(org, coll.indexFile):
-                print(
-                    "Unable to delete collection dedupe index: "
-                    + f"{coll.indexFile.filename}"
-                )
-                raise HTTPException(status_code=400, detail="file_deletion_error")
-
     async def delete_collection(self, coll_id: UUID, org: Organization):
         """Delete collection and remove from associated crawls."""
         coll = await self.get_collection(coll_id, org.id)
 
-        await self.delete_coll_index(coll, org)
+        if coll.indexStats:
+            await self.delete_dedupe_index(coll, org)
 
         await self.crawl_ops.remove_collection_from_all_crawls(coll_id, org)
 
@@ -764,13 +709,101 @@ class CollectionOps:
             resp, headers=headers, media_type="application/wacz+zip"
         )
 
-    async def update_dedupe_index_stats(
-        self, coll_id: UUID, stats: Optional[DedupeIndexStats]
-    ):
+    # DEDUPE INDEX OPS
+
+    async def create_dedupe_index(self, coll: Collection, org: Organization):
+        """create collection dedupe index, raise or ignore existing.
+        for API use"""
+        if coll.indexStats:
+            raise HTTPException(status_code=400, detail="index_already_exists")
+
+        # enable index by settings stats to empty value
+        await self.update_dedupe_index_stats(coll.id, DedupeIndexStats())
+
+        # run import job only if collection not empty
+        if coll.crawlCount:
+            await self.run_import_index_job(coll, org.id)
+
+        return {"success": True}
+
+    async def enable_dedupe_index(self, coll_id: UUID, org: Organization):
+        """create dedupe index if not already enabled, do nothing otherwise
+        for internal use from crawl workflows"""
+        coll = await self.get_collection(coll_id, org.id)
+        if coll.indexStats:
+            return
+
+        await self.create_dedupe_index(coll, org)
+
+    async def purge_dedupe_index(self, coll: Collection, org: Organization):
+        """purge dedupe index on collection, raise exception if no index or not ready"""
+        if not coll.indexStats:
+            raise HTTPException(status_code=404, detail="no_dedupe_index")
+
+        if coll.indexState not in ("ready", "idle"):
+            raise HTTPException(status_code=400, detail="dedupe_index_not_ready")
+
+        await self.run_import_index_job(coll, org.id, is_purge=True)
+        return {"updated": True}
+
+    async def run_import_index_job(self, coll: Collection, oid: UUID, is_purge=False):
+        """update index with import / purge job"""
+
+        crawler_image = self.crawl_ops.crawl_configs.get_channel_crawler_image(
+            self.dedupe_importer_channel
+        )
+        if not crawler_image:
+            raise HTTPException(
+                status_code=500, detail="dedupe_crawler_image_not_defined"
+            )
+
+        pull_policy = (
+            self.crawl_ops.crawl_configs.get_channel_crawler_image_pull_policy(
+                self.dedupe_importer_channel
+            )
+            or "IfNotPresent"
+        )
+
+        await self.crawl_manager.run_index_import_job(
+            str(coll.id), str(oid), crawler_image, pull_policy, is_purge
+        )
+
+    async def delete_dedupe_index(self, coll: Collection, org: Organization):
+        """delete coll dedupe index, if possible"""
+        if not coll.indexStats:
+            raise HTTPException(status_code=404, detail="no_dedupe_index")
+
+        # if index is not idle, can't delete it yet
+        if coll.indexStats and coll.indexState != "idle":
+            raise HTTPException(status_code=400, detail="dedupe_index_is_in_use")
+
+        if coll.indexFile:
+            if not await self.storage_ops.delete_file_object(org, coll.indexFile):
+                print(
+                    "Unable to delete collection dedupe index: "
+                    + f"{coll.indexFile.filename}"
+                )
+                raise HTTPException(status_code=400, detail="file_deletion_error")
+
+        await self.collections.find_one_and_update(
+            {"_id": coll.id, "indexState": "idle"},
+            {
+                "$set": {
+                    "indexStats": None,
+                    "indexState": None,
+                    "indexFile": None,
+                    "indexLastSavedAt": None,
+                }
+            },
+        )
+
+        return {"deleted": True}
+
+    async def update_dedupe_index_stats(self, coll_id: UUID, stats: DedupeIndexStats):
         """update dedupe index stats for specified collection"""
         self.collections.find_one_and_update(
             {"_id": coll_id},
-            {"$set": {"indexStats": stats.dict() if stats else None}},
+            {"$set": {"indexStats": stats.dict()}},
         )
 
     async def update_dedupe_index_info(
@@ -801,6 +834,8 @@ class CollectionOps:
         if coll:
             return coll.get("indexLastSavedAt")
         return None
+
+    # END DEDUPE OPS
 
     async def recalculate_org_collection_stats(self, org: Organization):
         """recalculate counts, tags and dates for all collections in an org"""
@@ -886,7 +921,7 @@ class CollectionOps:
 
         # update_index is set, update dedupe index if it exists
         if update_index and coll.indexStats:
-            await self.update_coll_index(coll, oid)
+            await self.run_import_index_job(coll, oid)
 
         match_query = {
             "oid": coll.oid,
@@ -950,18 +985,6 @@ class CollectionOps:
                 {"$set": {"collectionIds": auto_add_collections}},
             )
             await self.update_crawl_collections(crawl_id, oid)
-
-    async def purge_dedupe_index(self, coll_id: UUID, org: Organization):
-        """purge dedupe index on collection, raise exception if no index or not ready"""
-        coll = await self.get_collection(coll_id, org.id)
-        if not coll.indexStats:
-            raise HTTPException(status_code=400, detail="no_dedupe_index_on_collection")
-
-        if coll.indexState not in ("ready", "idle"):
-            raise HTTPException(status_code=400, detail="dedupe_index_not_ready")
-
-        await self.update_coll_index(coll, org.id, is_purge=True)
-        return {"success": True}
 
     async def get_org_public_collections(
         self,
@@ -1167,6 +1190,7 @@ def init_collections_api(
         mdb, orgs, storage_ops, crawl_manager, event_webhook_ops
     )
 
+    org_owner_dep = orgs.org_owner_dep
     org_crawl_dep = orgs.org_crawl_dep
     org_viewer_dep = orgs.org_viewer_dep
     org_public = orgs.org_public
@@ -1489,15 +1513,45 @@ def init_collections_api(
 
         return await colls.delete_thumbnail(coll, org)
 
+    # DEDUPE API
+
     @app.post(
-        "/orgs/{oid}/collections/{coll_id}/purgeDedupeIndex",
+        "/orgs/{oid}/collections/{coll_id}/dedupeIndex/create",
         tags=["collections", "dedupe"],
         response_model=SuccessResponse,
     )
-    async def purge_dedupe_index(
+    async def create_dedupe_index(
         coll_id: UUID,
         org: Organization = Depends(org_crawl_dep),
     ):
-        return await colls.purge_dedupe_index(coll_id, org)
+        coll = await colls.get_collection(coll_id, org.id)
+
+        return await colls.create_dedupe_index(coll, org)
+
+    @app.post(
+        "/orgs/{oid}/collections/{coll_id}/dedupeIndex/purge",
+        tags=["collections", "dedupe"],
+        response_model=UpdatedResponse,
+    )
+    async def purge_dedupe_index(
+        coll_id: UUID,
+        org: Organization = Depends(org_owner_dep),
+    ):
+        coll = await colls.get_collection(coll_id, org.id)
+
+        return await colls.purge_dedupe_index(coll, org)
+
+    @app.post(
+        "/orgs/{oid}/collections/{coll_id}/dedupeIndex/delete",
+        tags=["collections", "dedupe"],
+        response_model=DeletedResponse,
+    )
+    async def delete_dedupe_index(
+        coll_id: UUID,
+        org: Organization = Depends(org_owner_dep),
+    ):
+        coll = await colls.get_collection(coll_id, org.id)
+
+        return await colls.delete_dedupe_index(coll, org)
 
     return colls
