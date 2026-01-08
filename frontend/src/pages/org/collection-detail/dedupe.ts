@@ -245,7 +245,7 @@ export class CollectionDetailDedupe extends BtrixElement {
               getValue: (col) =>
                 col.indexStats
                   ? value(
-                      col.indexStats.sizeSaved,
+                      col.indexStats.conservedSize,
                       "bytes",
                       "large",
                       BYTES_PER_MB,
@@ -285,15 +285,15 @@ export class CollectionDetailDedupe extends BtrixElement {
             label: msg("Unique Documents"),
             icon: "circle-square",
             getValue: (col) =>
-              col.indexStats ? value(col.indexStats.uniqueUrls) : notApplicable,
+              col.indexStats
+                ? value(col.indexStats.totalUrls - col.indexStats.dupeUrls)
+                : notApplicable,
           })}
           ${stat({
             label: msg("Duplicate Documents"),
             icon: "intersect",
             getValue: (col) =>
-              col.indexStats
-                ? value(col.indexStats.totalUrls - col.indexStats.uniqueUrls)
-                : notApplicable,
+              col.indexStats ? value(col.indexStats.dupeUrls) : notApplicable,
           })}
           ${stat({
             label: msg("Indexed Items"),
@@ -308,7 +308,7 @@ export class CollectionDetailDedupe extends BtrixElement {
             icon: "file-earmark-minus",
             getValue: (col) =>
               col.indexStats
-                ? value(col.indexStats.removableCrawls)
+                ? value(col.indexStats.removedCrawls)
                 : notApplicable,
           })}
         </dl>
@@ -321,10 +321,9 @@ export class CollectionDetailDedupe extends BtrixElement {
 
     if (!stats) return;
 
-    const { totalSize, sizeSaved } = stats;
-    const deletedSize = 0; // TODO
-    const used = totalSize + deletedSize;
-    const max = totalSize + deletedSize + sizeSaved;
+    const { totalSize, conservedSize, removedCrawlSize } = stats;
+    const used = totalSize + removedCrawlSize;
+    const max = totalSize + removedCrawlSize + conservedSize;
 
     return html`<btrix-meter value=${used} max=${max} class="w-full">
       <btrix-meter-bar
@@ -337,12 +336,12 @@ export class CollectionDetailDedupe extends BtrixElement {
         </div>
       </btrix-meter-bar>
       <btrix-meter-bar
-        value=${(deletedSize / used) * 100}
+        value=${(removedCrawlSize / used) * 100}
         class="[--background-color:theme(colors.slate.200)]"
       >
         <div class="flex justify-between gap-4 font-medium leading-none">
           <span>${msg("Deleted Items in Index")}</span>
-          <span>${this.localize.bytes(deletedSize)}</span>
+          <span>${this.localize.bytes(removedCrawlSize)}</span>
         </div>
       </btrix-meter-bar>
       <div slot="available" class="flex-1">
@@ -350,7 +349,7 @@ export class CollectionDetailDedupe extends BtrixElement {
           <div slot="content">
             <header class="flex justify-between gap-4 font-medium leading-none">
               <span>${msg("Estimated Savings")}</span>
-              <span>${this.localize.bytes(stats.sizeSaved)}</span>
+              <span>${this.localize.bytes(stats.conservedSize)}</span>
             </header>
           </div>
           <div class="h-full w-full"></div>

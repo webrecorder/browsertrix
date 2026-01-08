@@ -134,7 +134,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
                           ${this.localize.number(dedupe.totalUrls)}
                           ${pluralOf("URLs", dedupe.totalUrls)}
                           ${detail(
-                            `${this.localize.number(dedupe.uniqueUrls)} ${msg("unique")}`,
+                            `${this.localize.number(dedupe.dupeUrls)} ${msg("duplicate")}`,
                           )}
                         </div>
                       `,
@@ -156,8 +156,8 @@ export class OrgSettingsDeduplication extends BtrixElement {
                     ${dedupeStat(
                       item,
                       (dedupe) => html`
-                        ${this.localize.number(dedupe.removableCrawls)}
-                        ${pluralOf("items", dedupe.removableCrawls)}
+                        ${this.localize.number(dedupe.removedCrawls)}
+                        ${pluralOf("items", dedupe.removedCrawls)}
                       `,
                     )}
                   </btrix-table-cell>
@@ -332,7 +332,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
   private async clearIndex(source: Collection) {
     try {
       await this.api.fetch(
-        `/orgs/${this.orgId}/collections/${source.id}/purgeDedupeIndex`,
+        `/orgs/${this.orgId}/collections/${source.id}/dedupeIndex/purge`,
         {
           method: "POST",
         },
@@ -359,9 +359,9 @@ export class OrgSettingsDeduplication extends BtrixElement {
   private async deleteIndex(source: Collection) {
     try {
       await this.api.fetch(
-        `/orgs/${this.orgId}/collections/${source.id}/dedupe`,
+        `/orgs/${this.orgId}/collections/${source.id}/dedupeIndex/delete`,
         {
-          method: "DELETE",
+          method: "POST",
         },
       );
 
