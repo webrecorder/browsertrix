@@ -1623,7 +1623,7 @@ class DedupeIndexStats(BaseModel):
     conservedSize: int = 0
 
     totalCrawls: int = 0
-    totalSize: int = 0
+    totalCrawlSize: int = 0
 
     removedCrawls: int = 0
     removedCrawlSize: int = 0
