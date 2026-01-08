@@ -27,8 +27,8 @@ class Migration(BaseMigration):
         be restarted via the retry endpoints.
 
         We don't want to modify jobs that are still in process or subject to
-        the replica deletion delay, so target jobs that are either replica
-        delay deltion + 1 or 7 days old, whichever is greater.
+        the replica deletion delay, so target jobs that are either (replica delay
+        deltion + 1) or 7 days old, whichever is greater.
         """
         jobs_mdb = self.mdb["jobs"]
 
