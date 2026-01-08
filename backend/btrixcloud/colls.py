@@ -738,7 +738,7 @@ class CollectionOps:
     async def purge_dedupe_index(self, coll: Collection, org: Organization):
         """purge dedupe index on collection, raise exception if no index or not ready"""
         if not coll.indexStats:
-            raise HTTPException(status_code=400, detail="no_dedupe_index_on_collection")
+            raise HTTPException(status_code=404, detail="no_dedupe_index")
 
         if coll.indexState not in ("ready", "idle"):
             raise HTTPException(status_code=400, detail="dedupe_index_not_ready")
