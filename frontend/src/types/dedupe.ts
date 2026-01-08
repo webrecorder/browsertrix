@@ -14,11 +14,12 @@ export const DEDUPE_INDEX_STATES = [
 export type DedupeIndexState = (typeof DEDUPE_INDEX_STATES)[number];
 
 export const dedupeIndexStatsSchema = z.object({
-  uniqueUrls: z.number(),
+  dupeUrls: z.number(),
   totalUrls: z.number(),
-  sizeSaved: z.number(),
+  conservedSize: z.number(),
   totalSize: z.number(),
-  removableCrawls: z.number(),
   totalCrawls: z.number(),
+  removedCrawls: z.number(),
+  removedCrawlSize: z.number(),
 });
 export type DedupeIndexStats = z.infer<typeof dedupeIndexStatsSchema>;

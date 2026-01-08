@@ -134,7 +134,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
                           ${this.localize.number(dedupe.totalUrls)}
                           ${pluralOf("URLs", dedupe.totalUrls)}
                           ${detail(
-                            `${this.localize.number(dedupe.uniqueUrls)} ${msg("unique")}`,
+                            `${this.localize.number(dedupe.dupeUrls)} ${msg("unique")}`,
                           )}
                         </div>
                       `,
@@ -156,8 +156,8 @@ export class OrgSettingsDeduplication extends BtrixElement {
                     ${dedupeStat(
                       item,
                       (dedupe) => html`
-                        ${this.localize.number(dedupe.removableCrawls)}
-                        ${pluralOf("items", dedupe.removableCrawls)}
+                        ${this.localize.number(dedupe.removedCrawls)}
+                        ${pluralOf("items", dedupe.removedCrawls)}
                       `,
                     )}
                   </btrix-table-cell>
