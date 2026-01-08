@@ -281,15 +281,15 @@ export class CollectionDetailDedupe extends BtrixElement {
             label: msg("Unique Documents"),
             icon: "circle-square",
             getValue: (col) =>
-              col.indexStats ? value(col.indexStats.dupeUrls) : notApplicable,
+              col.indexStats
+                ? value(col.indexStats.totalUrls - col.indexStats.dupeUrls)
+                : notApplicable,
           })}
           ${stat({
             label: msg("Duplicate Documents"),
             icon: "intersect",
             getValue: (col) =>
-              col.indexStats
-                ? value(col.indexStats.totalUrls - col.indexStats.dupeUrls)
-                : notApplicable,
+              col.indexStats ? value(col.indexStats.dupeUrls) : notApplicable,
           })}
           ${stat({
             label: msg("Indexed Items"),
