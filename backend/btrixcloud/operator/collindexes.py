@@ -321,12 +321,12 @@ class CollIndexOperator(BaseOperator):
 
             # update db stats from redis
             stats = await redis.hgetall("allcounts")
-            num_unique_urls = await redis.hlen("alldupes")
+            num_unique_hashes = await redis.hlen("alldupes")
             num_crawls = await redis.scard("allcrawls")
             await self.coll_ops.update_dedupe_index_stats(
                 coll_id,
                 DedupeIndexStats(
-                    uniqueUrls=num_unique_urls,
+                    uniqueHashes=num_unique_hashes,
                     totalCrawls=num_crawls,
                     **stats,
                 ),
