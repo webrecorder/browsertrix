@@ -142,7 +142,7 @@ export class CollectionDetailDedupe extends BtrixElement {
       content: emptyMessage({
         message: msg("Deduplication is not enabled"),
         detail: msg(
-          "Deduplication can help recover storage space and reduce crawl time.",
+          "Deduplication can help conserve storage space and reduce crawl time.",
         ),
         actions: html`
           <sl-button
