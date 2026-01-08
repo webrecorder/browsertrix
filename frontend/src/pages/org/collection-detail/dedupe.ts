@@ -132,7 +132,7 @@ export class CollectionDetailDedupe extends BtrixElement {
           ${this.renderOverview()}
         </section>
         <section class="col-span-full row-span-1 xl:col-span-4">
-          ${panelHeader({ heading: msg("Indexed Items") })}
+          ${panelHeader({ heading: msg("Indexed Crawls") })}
           ${this.renderCrawls()}
         </section>
       </div>`;
@@ -209,8 +209,7 @@ export class CollectionDetailDedupe extends BtrixElement {
           <h2>${msg("Storage Impact")}</h2>
           ${infoPopover({
             content: html`
-              <strong class="font-semibold">${msg("Estimated Savings")}</strong
-              >:
+              <strong class="font-semibold">${msg("Conserved")}</strong>:
               ${msg(
                 "An estimate of how much storage space has been conserved by deduplicating this collection.",
               )}<br /><br />
@@ -220,7 +219,7 @@ export class CollectionDetailDedupe extends BtrixElement {
               )}<br /><br />
               <strong class="font-semibold">${msg("Crawled")}</strong>:
               ${msg(
-                "The total size of all archived items, including duplicates.",
+                "The total size of all archived items if deduplication was not enabled.",
               )}
             `,
             placement: "right-start",
@@ -231,7 +230,7 @@ export class CollectionDetailDedupe extends BtrixElement {
             class="flex flex-col gap-3 lg:col-span-2 lg:flex-row lg:items-center lg:border-b lg:pb-[calc(.75rem-1px)]"
           >
             ${stat({
-              label: msg("Estimated Savings"),
+              label: msg("Conserved"),
               getValue: (col) =>
                 col.indexStats
                   ? value(
@@ -251,7 +250,7 @@ export class CollectionDetailDedupe extends BtrixElement {
             )}
           </div>
           ${stat({
-            label: msg("Indexed Items"),
+            label: msg("Total Indexed Items"),
             icon: "file-earmark-zip",
             getValue: (col) =>
               col.indexStats
@@ -288,7 +287,7 @@ export class CollectionDetailDedupe extends BtrixElement {
               col.indexStats ? value(col.indexStats.dupeUrls) : notApplicable,
           })}
           ${stat({
-            label: msg("Indexed Items"),
+            label: msg("Total Indexed Items"),
             icon: "file-earmark-zip",
             getValue: (col) =>
               col.indexStats
@@ -323,7 +322,8 @@ export class CollectionDetailDedupe extends BtrixElement {
         class="[--background-color:theme(colors.primary.300)]"
       >
         <div class="flex justify-between gap-4 font-medium leading-none">
-          <span>${msg("Kept Items in Index")}</span>
+          <!-- TODO Match storage tooltip content -->
+          <span>${msg("Items in Index")} (${msg("Kept in Collection")})</span>
           <span>${this.localize.bytes(notRemoved)}</span>
         </div>
       </btrix-meter-bar>
@@ -332,7 +332,10 @@ export class CollectionDetailDedupe extends BtrixElement {
         class="[--background-color:theme(colors.primary.200)]"
       >
         <div class="flex justify-between gap-4 font-medium leading-none">
-          <span>${msg("Deleted Items in Index")}</span>
+          <!-- TODO Match storage tooltip content -->
+          <span
+            >${msg("Items in Index")} (${msg("Deleted from Collection")})</span
+          >
           <span>${this.localize.bytes(removedCrawlSize)}</span>
         </div>
       </btrix-meter-bar>
