@@ -253,7 +253,9 @@ export class CollectionDetailDedupe extends BtrixElement {
                   : notApplicable,
             })}
             ${when(this.collection?.indexStats, (stats) =>
-              stats.totalSize || stats.conservedSize || stats.removedCrawlSize
+              stats.totalCrawlSize ||
+              stats.conservedSize ||
+              stats.removedCrawlSize
                 ? html`<div class="flex-1">${this.renderStorageBar()}</div>`
                 : nothing,
             )}
@@ -263,7 +265,7 @@ export class CollectionDetailDedupe extends BtrixElement {
             icon: "file-earmark-zip",
             getValue: (col) =>
               col.indexStats
-                ? value(col.indexStats.totalSize, "bytes")
+                ? value(col.indexStats.totalCrawlSize, "bytes")
                 : notApplicable,
           })}
           ${stat({
@@ -321,18 +323,18 @@ export class CollectionDetailDedupe extends BtrixElement {
 
     if (!stats) return;
 
-    const { totalSize, conservedSize, removedCrawlSize } = stats;
-    const used = totalSize + removedCrawlSize;
-    const max = totalSize + removedCrawlSize + conservedSize;
+    const { totalCrawlSize, conservedSize, removedCrawlSize } = stats;
+    const used = totalCrawlSize + removedCrawlSize;
+    const max = totalCrawlSize + removedCrawlSize + conservedSize;
 
     return html`<btrix-meter value=${used} max=${max} class="w-full">
       <btrix-meter-bar
-        value=${(totalSize / used) * 100}
+        value=${(totalCrawlSize / used) * 100}
         class="[--background-color:theme(colors.primary.300)]"
       >
         <div class="flex justify-between gap-4 font-medium leading-none">
           <span>${msg("Indexed Items")}</span>
-          <span>${this.localize.bytes(stats.totalSize)}</span>
+          <span>${this.localize.bytes(stats.totalCrawlSize)}</span>
         </div>
       </btrix-meter-bar>
       <btrix-meter-bar

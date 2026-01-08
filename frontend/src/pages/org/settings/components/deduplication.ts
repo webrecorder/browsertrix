@@ -147,7 +147,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
                         <div>
                           ${this.localize.number(dedupe.totalCrawls)}
                           ${pluralOf("items", dedupe.totalCrawls)}
-                          ${detail(this.localize.bytes(dedupe.totalSize))}
+                          ${detail(this.localize.bytes(dedupe.totalCrawlSize))}
                         </div>
                       `,
                     )}

@@ -18,7 +18,7 @@ export const dedupeIndexStatsSchema = z.object({
   dupeUrls: z.number(),
   conservedSize: z.number(),
   totalCrawls: z.number(),
-  totalSize: z.number(),
+  totalCrawlSize: z.number(),
   removedCrawls: z.number(),
   removedCrawlSize: z.number(),
 });
