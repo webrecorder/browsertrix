@@ -47,7 +47,7 @@ spec:
           command:
             - indexer
             - --sourceUrl
-            - /tmp/config/config.json
+            - /btrix-config/config.json
             - --redisDedupeUrl
             - {{ redis_url }}
           {% if is_purging %}
@@ -59,7 +59,7 @@ spec:
               mountPath: /tmp
 
             - name: config
-              mountPath: /tmp/config/
+              mountPath: /btrix-config/
               readOnly: True
 
           resources:
