@@ -1628,6 +1628,9 @@ class DedupeIndexStats(BaseModel):
     removedCrawls: int = 0
     removedCrawlSize: int = 0
 
+    # import / purge progress
+    updateProgress: float = 0
+
     # for internal use for now
     uniqueHashes: int = 0
     estimatedRedundantSize: int = 0

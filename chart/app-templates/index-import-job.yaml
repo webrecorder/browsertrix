@@ -37,6 +37,9 @@ spec:
           configMap:
             name: {{ name }}
 
+        - name: tmpdir
+          emptyDir: {}
+
       containers:
         - name: indexer
           image: {{ crawler_image }}
@@ -52,6 +55,9 @@ spec:
           {% endif %}
 
           volumeMounts:
+            - name: tmpdir
+              mountPath: /tmp
+
             - name: config
               mountPath: /tmp/config/
               readOnly: True

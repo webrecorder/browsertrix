@@ -168,7 +168,7 @@ spec:
 
           set -o pipefail
 
-          until tar cvfz - . | tee >(sha256sum > /tmp/hash.txt) | tee >(wc -c > /tmp/size.txt) | rclone --config '' rcat remote:{{ remote_file_path }}; do
+          until tar cvfz - . | tee >(sha256sum > /tmp/hash.txt) | tee >(wc -c > /tmp/size.txt) | rclone --config '' rcat remote:{{ remote_file_path }} --s3-chunk-size 100M; do
             echo "retrying upload..."
             sleep 1;
           done
@@ -179,7 +179,7 @@ spec:
             exit 1
           fi
 
-          until rclone -vv copyto --checksum /data/{{ local_file_src }} remote:{{ remote_file_path }}; do
+          until rclone -vv copyto --checksum /data/{{ local_file_src }} remote:{{ remote_file_path }} --s3-chunk-size 100M; do
             echo "retrying upload..."
             sleep 1;
           done
