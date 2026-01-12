@@ -8,7 +8,7 @@ import type { DedupeIndexState } from "@/types/dedupe";
 import { APP_ICON_LIBRARY } from "@/types/shoelace";
 import { tw } from "@/utils/tailwind";
 
-export function indexStatus(state: DedupeIndexState) {
+export function indexStatus(state?: DedupeIndexState | null) {
   let label = stringFor.unknown;
   let iconName = "question-diamond";
   let iconClass = tw`text-neutral-400`;

@@ -4,22 +4,30 @@ import { html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
+import type { RequireExactlyOne } from "type-fest";
 
 import { loadingPanel } from "../templates/loading-panel";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { indexStatus } from "@/features/collections/templates/index-status";
+import { labelWithIcon } from "@/layouts/labelWithIcon";
 import { Tab } from "@/pages/org/collection-detail/types";
 import { OrgTab } from "@/routes";
-import { notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
-import type { DedupeIndexStats } from "@/types/dedupe";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { pluralOf } from "@/utils/pluralize";
 
 const INITIAL_PAGE_SIZE = 10;
+
+type DedupeSource = RequireExactlyOne<Collection, "indexStats">;
+
+const detail = (content: TemplateResult | string) =>
+  html`<div class="font-monostyle mt-1 text-xs leading-none text-neutral-500">
+    ${content}
+  </div>`;
 
 @customElement("btrix-org-settings-deduplication")
 @localized()
@@ -31,7 +39,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
   private openDialog?: "purge" | "delete";
 
   @state()
-  private selectedIndex?: Collection;
+  private selectedIndex?: DedupeSource;
 
   @state({ hasChanged: isNotEqual })
   private pagination: Required<APIPaginationQuery> = {
@@ -70,31 +78,19 @@ export class OrgSettingsDeduplication extends BtrixElement {
     `;
   }
 
-  private readonly renderTable = (sources: APIPaginatedList<Collection>) => {
-    const dedupeStat = (
-      source: Collection,
-      render: (dedupe: DedupeIndexStats) => TemplateResult,
-    ) => {
-      if (source.indexStats) return render(source.indexStats);
-
-      return html`<span class="text-neutral-400">${notApplicable}</span>`;
-    };
-    const detail = (content: TemplateResult | string) =>
-      html`<div
-        class="font-monostyle mt-1 text-xs leading-none text-neutral-500"
-      >
-        ${content}
-      </div>`;
-
+  private readonly renderTable = (sources: APIPaginatedList<DedupeSource>) => {
     return html`
       <btrix-overflow-scroll>
         <btrix-table
           class="whitespace-nowrap [--btrix-table-cell-padding-x:var(--sl-spacing-2x-small)]"
-          style="--btrix-table-grid-template-columns: 40ch repeat(3, 1fr) min-content"
+          style="--btrix-table-grid-template-columns: 40ch repeat(4, 1fr) min-content"
         >
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell class="px-3">
               ${msg("Name")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg("Status")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Indexed URLs")}
@@ -112,107 +108,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
           <btrix-table-body
             class="divide-y rounded border [--btrix-table-cell-padding-y:var(--sl-spacing-x-small)] *:first:border-t-0 *:last:rounded-b"
           >
-            ${sources.items.map(
-              (item) => html`
-                <btrix-table-row>
-                  <btrix-table-cell class="px-3">
-                    <div class="overflow-hidden">
-                      <div class="truncate">${item.name}</div>
-                      ${detail(html`
-                        <span class="inline-flex items-center">
-                          <sl-icon name="collection" class="mr-1.5"></sl-icon>
-                          ${msg("Collection")}
-                        </span>
-                      `)}
-                    </div>
-                  </btrix-table-cell>
-                  <btrix-table-cell>
-                    ${dedupeStat(
-                      item,
-                      (dedupe) => html`
-                        <div>
-                          ${this.localize.number(dedupe.totalUrls)}
-                          ${pluralOf("URLs", dedupe.totalUrls)}
-                          ${detail(
-                            `${this.localize.number(dedupe.dupeUrls)} ${msg("duplicate")}`,
-                          )}
-                        </div>
-                      `,
-                    )}
-                  </btrix-table-cell>
-                  <btrix-table-cell>
-                    ${dedupeStat(
-                      item,
-                      (dedupe) => html`
-                        <div>
-                          ${this.localize.number(dedupe.totalCrawls)}
-                          ${pluralOf("items", dedupe.totalCrawls)}
-                          ${detail(this.localize.bytes(dedupe.totalCrawlSize))}
-                        </div>
-                      `,
-                    )}
-                  </btrix-table-cell>
-                  <btrix-table-cell>
-                    ${dedupeStat(
-                      item,
-                      (dedupe) => html`
-                        ${this.localize.number(dedupe.removedCrawls)}
-                        ${pluralOf("items", dedupe.removedCrawls)}
-                      `,
-                    )}
-                  </btrix-table-cell>
-                  <btrix-table-cell>
-                    <sl-tooltip
-                      content=${msg("Open in New Tab")}
-                      placement="left"
-                    >
-                      <sl-icon-button
-                        name="arrow-up-right"
-                        href="${this.navigate
-                          .orgBasePath}/${OrgTab.Collections}/view/${item.id}/${Tab.Deduplication}"
-                        target="_blank"
-                      >
-                      </sl-icon-button>
-                    </sl-tooltip>
-                    <btrix-overflow-dropdown>
-                      <sl-menu>
-                        <btrix-menu-item-link
-                          href="${this.navigate
-                            .orgBasePath}/${OrgTab.Collections}/view/${item.id}"
-                        >
-                          <sl-icon
-                            name="arrow-return-right"
-                            slot="prefix"
-                          ></sl-icon>
-                          ${msg("Go to Collection")}
-                        </btrix-menu-item-link>
-                        <sl-divider></sl-divider>
-                        <sl-menu-item
-                          class="menu-item-warning"
-                          @click=${() => {
-                            this.selectedIndex = item;
-                            this.openDialog = "purge";
-                          }}
-                        >
-                          <sl-icon slot="prefix" name="arrow-repeat"></sl-icon>
-                          ${msg("Reset Index")}
-                        </sl-menu-item>
-                        <sl-menu-item
-                          class="menu-item-danger"
-                          @click=${() => {
-                            this.selectedIndex = item;
-                            this.openDialog = "delete";
-                          }}
-                        >
-                          <sl-icon slot="prefix" name="trash3"></sl-icon>
-                          ${msg("Delete Index")}
-                        </sl-menu-item>
-                      </sl-menu>
-                    </btrix-overflow-dropdown>
-                  </btrix-table-cell>
-                </btrix-table-row>
-              `,
-            )}
+            ${sources.items.map(this.renderSource)}
           </btrix-table-body>
         </btrix-table>
       </btrix-overflow-scroll>
@@ -235,6 +131,102 @@ export class OrgSettingsDeduplication extends BtrixElement {
           </footer>
         `,
       )}
+    `;
+  };
+
+  private readonly renderSource = (item: DedupeSource) => {
+    const stats = item.indexStats;
+    const updating = stats.updateProgress > 0 && stats.updateProgress < 1;
+
+    return html`
+      <btrix-table-row>
+        <btrix-table-cell class="px-3">
+          <div class="overflow-hidden">
+            <div class="truncate">${item.name}</div>
+            ${detail(html`
+              <span class="inline-flex items-center">
+                <sl-icon name="collection" class="mr-1.5"></sl-icon>
+                ${msg("Collection")}
+              </span>
+            `)}
+          </div>
+        </btrix-table-cell>
+        <btrix-table-cell class="text-base">
+          ${updating
+            ? labelWithIcon({
+                icon: html`<sl-progress-ring
+                  class="[--indicator-width:2px] [--size:1rem] [--track-width:1px]"
+                  value=${stats.updateProgress * 100}
+                ></sl-progress-ring>`,
+                label: `${(stats.updateProgress * 100).toFixed(0)}% ${msg("Imported")}`,
+              })
+            : indexStatus(item.indexState)}
+        </btrix-table-cell>
+        <btrix-table-cell>
+          <div>
+            ${this.localize.number(stats.totalUrls)}
+            ${pluralOf("URLs", stats.totalUrls)}
+            ${detail(
+              `${this.localize.number(stats.dupeUrls)} ${msg("duplicate")}`,
+            )}
+          </div>
+        </btrix-table-cell>
+        <btrix-table-cell>
+          <div>
+            ${this.localize.number(stats.totalCrawls)}
+            ${pluralOf("items", stats.totalCrawls)}
+            ${detail(this.localize.bytes(stats.totalCrawlSize))}
+          </div>
+        </btrix-table-cell>
+        <btrix-table-cell>
+          ${this.localize.number(stats.removedCrawls)}
+          ${pluralOf("items", stats.removedCrawls)}
+        </btrix-table-cell>
+        <btrix-table-cell>
+          <sl-tooltip content=${msg("Open in New Tab")} placement="left">
+            <sl-icon-button
+              name="arrow-up-right"
+              href="${this.navigate
+                .orgBasePath}/${OrgTab.Collections}/view/${item.id}/${Tab.Deduplication}"
+              target="_blank"
+            >
+            </sl-icon-button>
+          </sl-tooltip>
+          <btrix-overflow-dropdown>
+            <sl-menu>
+              <btrix-menu-item-link
+                href="${this.navigate
+                  .orgBasePath}/${OrgTab.Collections}/view/${item.id}"
+              >
+                <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
+                ${msg("Go to Collection")}
+              </btrix-menu-item-link>
+              <sl-divider></sl-divider>
+              <sl-menu-item
+                class="menu-item-warning"
+                @click=${() => {
+                  this.selectedIndex = item;
+                  this.openDialog = "purge";
+                }}
+                ?disabled=${updating}
+              >
+                <sl-icon slot="prefix" name="arrow-repeat"></sl-icon>
+                ${msg("Reset Index")}
+              </sl-menu-item>
+              <sl-menu-item
+                class="menu-item-danger"
+                @click=${() => {
+                  this.selectedIndex = item;
+                  this.openDialog = "delete";
+                }}
+              >
+                <sl-icon slot="prefix" name="trash3"></sl-icon>
+                ${msg("Delete Index")}
+              </sl-menu-item>
+            </sl-menu>
+          </btrix-overflow-dropdown>
+        </btrix-table-cell>
+      </btrix-table-row>
     `;
   };
 
@@ -401,7 +393,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
       ...params,
       hasDedupeIndex: true,
     });
-    return this.api.fetch<APIPaginatedList<Collection>>(
+    return this.api.fetch<APIPaginatedList<DedupeSource>>(
       `/orgs/${this.orgId}/collections?${query}`,
       {
         signal,
