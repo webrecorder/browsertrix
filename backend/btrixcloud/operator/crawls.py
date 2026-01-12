@@ -53,7 +53,6 @@ from .models import (
     POD,
     CMAP,
     PVC,
-    COLLINDEX,
     BTRIX_API,
 )
 
@@ -97,7 +96,6 @@ class CrawlOperator(BaseOperator):
     errors_key: str
     behavior_logs_key: str
 
-    fast_retry_secs: int
     log_failed_crawl_lines: int
 
     min_avail_storage_ratio: float
@@ -111,8 +109,6 @@ class CrawlOperator(BaseOperator):
         self.pages_key = "pages"
         self.errors_key = "e"
         self.behavior_logs_key = "b"
-
-        self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
         self.log_failed_crawl_lines = int(os.environ.get("LOG_FAILED_CRAWL_LINES") or 0)
 
@@ -839,26 +835,9 @@ class CrawlOperator(BaseOperator):
         if not crawl.dedupe_coll_id:
             return False
 
-        # index object doesn't exist
-        coll_indexes = data.related.get(COLLINDEX, {})
-
-        found = False
-
-        for index in coll_indexes.values():
-            found = True
-            if index.get("status", {}).get("state") == "ready":
-                return False
-
-            # only check first index, should only be one
-            break
-
-        # if index not found, create it
-        if not found:
-            await self.k8s.create_coll_index_direct(
-                str(crawl.dedupe_coll_id), str(crawl.oid)
-            )
-
-        return True
+        return not await self.ensure_coll_index_ready(
+            data, str(crawl.dedupe_coll_id), str(crawl.oid), ("ready", "crawling")
+        )
 
     async def cancel_crawl(
         self,
