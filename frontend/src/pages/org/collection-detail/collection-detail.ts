@@ -17,6 +17,7 @@ import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
 import { ClipboardController } from "@/controllers/clipboard";
+import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import type { EditDialogTab } from "@/features/collections/collection-edit-dialog";
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
@@ -64,12 +65,7 @@ export class CollectionDetail extends BtrixElement {
   private archivedItems?: APIPaginatedList<ArchivedItem>;
 
   @state()
-  private openDialogName?:
-    | "delete"
-    | "edit"
-    | "replaySettings"
-    | "editItems"
-    | "removeItem";
+  private openDialogName?: "delete" | "edit" | "replaySettings" | "removeItem";
 
   @state()
   private itemToRemove?: ArchivedItem;
@@ -100,6 +96,21 @@ export class CollectionDetail extends BtrixElement {
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
+
+  private readonly editing = new SearchParamsValue<"items" | null>(
+    this,
+    (value, params) => {
+      if (value === "items") {
+        params.set("editing", value);
+      } else {
+        params.delete("editing");
+      }
+      return params;
+    },
+    (params) => {
+      return params.get("editing") === "items" ? "items" : null;
+    },
+  );
 
   private readonly tabLabels: Record<
     Tab,
@@ -292,7 +303,7 @@ export class CollectionDetail extends BtrixElement {
               () => html`
                 <sl-button
                   size="small"
-                  @click=${() => (this.openDialogName = "editItems")}
+                  @click=${() => this.editing.setValue("items")}
                   ?disabled=${!this.collection}
                 >
                   <sl-icon name="ui-checks" slot="prefix"></sl-icon>
@@ -409,8 +420,8 @@ export class CollectionDetail extends BtrixElement {
         collectionId=${this.collectionId}
         collectionName=${this.collection?.name || ""}
         ?isCrawler=${this.isCrawler}
-        ?open=${this.openDialogName === "editItems"}
-        @sl-hide=${() => (this.openDialogName = undefined)}
+        ?open=${Boolean(this.editing.value === "items" && this.collection)}
+        @sl-hide=${() => this.editing.setValue(null)}
         @btrix-collection-saved=${() => {
           this.refreshReplay();
           void this.fetchCollection();
@@ -628,7 +639,7 @@ export class CollectionDetail extends BtrixElement {
             <sl-icon name="pencil" slot="prefix"></sl-icon>
             ${msg("Edit Description")}
           </sl-menu-item>
-          <sl-menu-item @click=${() => (this.openDialogName = "editItems")}>
+          <sl-menu-item @click=${() => this.editing.setValue("items")}>
             <sl-icon name="ui-checks" slot="prefix"></sl-icon>
             ${msg("Select Archived Items")}
           </sl-menu-item>
@@ -935,7 +946,7 @@ export class CollectionDetail extends BtrixElement {
                   <div class="mt-3">
                     <sl-button
                       variant="primary"
-                      @click=${() => (this.openDialogName = "editItems")}
+                      @click=${() => this.editing.setValue("items")}
                     >
                       <sl-icon name="ui-checks" slot="prefix"></sl-icon>
                       ${msg("Add Archived Items")}
