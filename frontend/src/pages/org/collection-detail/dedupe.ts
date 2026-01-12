@@ -273,7 +273,7 @@ export class CollectionDetailDedupe extends BtrixElement {
         </header>
         <dl class="col-span-1 grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-y-6">
           ${stat({
-            label: msg("Unique Documents"),
+            label: msg("Original Resources"),
             icon: "circle-square",
             getValue: (col) =>
               col.indexStats
@@ -281,7 +281,7 @@ export class CollectionDetailDedupe extends BtrixElement {
                 : notApplicable,
           })}
           ${stat({
-            label: msg("Duplicate Documents"),
+            label: msg("Duplicate Resources"),
             icon: "intersect",
             getValue: (col) =>
               col.indexStats ? value(col.indexStats.dupeUrls) : notApplicable,
