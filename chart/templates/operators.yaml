@@ -83,7 +83,7 @@ metadata:
   name: collindexes-operator
 spec:
   generateSelector: false
-  resyncPeriodSeconds: 30
+  resyncPeriodSeconds: 60
   parentResource:
     apiVersion: btrix.cloud/v1
     resource: collindexes
@@ -95,16 +95,6 @@ spec:
 
   - apiVersion: v1
     resource: persistentvolumeclaims
-    updateStrategy:
-      method: InPlace
-
-  - apiVersion: batch/v1
-    resource: jobs
-    updateStrategy:
-      method: InPlace
-
-  - apiVersion: v1
-    resource: configmaps
     updateStrategy:
       method: InPlace
 
@@ -124,6 +114,52 @@ spec:
           name: {{ .Values.name }}-backend
           port: {{ .Values.opPort }}
         path: /op/collindexes/finalize
+
+    customize:
+      webhook:
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/collindexes/customize
+
+
+---
+apiVersion: metacontroller.k8s.io/v1alpha1
+kind: DecoratorController
+metadata:
+  name: collindex-job-operator
+spec:
+  resyncPeriodSeconds: 60
+  resources:
+  - apiVersion: batch/v1
+    resource: jobs
+    labelSelector:
+      matchLabels:
+        role: index-import-job
+
+  attachments:
+  - apiVersion: v1
+    resource: configmaps
+    updateStrategy:
+      method: InPlace
+
+  hooks:
+    sync:
+      webhook:
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/dedupe-import-job/sync
+
+    customize:
+      webhook:
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/dedupe-import-job/customize
 
 ---
 apiVersion: metacontroller.k8s.io/v1alpha1

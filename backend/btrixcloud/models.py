@@ -1566,7 +1566,9 @@ class CrawlOutWithResources(CrawlOut):
 
 ### COLLECTIONS ###
 
-TYPE_DEDUPE_INDEX_STATES = Literal["initing", "importing", "ready", "purging"]
+TYPE_DEDUPE_INDEX_STATES = Literal[
+    "initing", "importing", "ready", "purging", "idle", "saving", "crawling"
+]
 DEDUPE_INDEX_STATES = get_args(TYPE_DEDUPE_INDEX_STATES)
 
 
@@ -1605,17 +1607,33 @@ class HostCount(BaseModel):
 
 
 # ============================================================================
+class DedupeIndexFile(BaseFile):
+    """serialize dedupe index"""
+
+    type: Literal["redis", "kvrocks"] = "kvrocks"
+
+
+# ============================================================================
 class DedupeIndexStats(BaseModel):
     """stats from collection dedupe index"""
 
-    state: TYPE_DEDUPE_INDEX_STATES
-
-    uniqueUrls: int = 0
     totalUrls: int = 0
+    dupeUrls: int = 0
 
-    sizeSaved: int = 0
+    conservedSize: int = 0
 
-    removable: int = 0
+    totalCrawls: int = 0
+    totalCrawlSize: int = 0
+
+    removedCrawls: int = 0
+    removedCrawlSize: int = 0
+
+    # import / purge progress
+    updateProgress: float = 0
+
+    # for internal use for now
+    uniqueHashes: int = 0
+    estimatedRedundantSize: int = 0
 
 
 # ============================================================================
@@ -1657,8 +1675,11 @@ class Collection(BaseMongoModel):
 
     previousSlugs: List[str] = []
 
-    hasDedupeIndex: bool = False
-    dedupeIndex: Optional[DedupeIndexStats] = None
+    indexLastSavedAt: Optional[datetime] = None
+    indexFile: Optional[DedupeIndexFile] = None
+    indexState: Optional[TYPE_DEDUPE_INDEX_STATES] = None
+
+    indexStats: Optional[DedupeIndexStats] = None
 
 
 # ============================================================================
@@ -1722,8 +1743,11 @@ class CollOut(BaseMongoModel):
     downloadUrl: Optional[str] = None
 
     topPageHosts: List[HostCount] = []
-    hasDedupeIndex: bool = False
-    dedupeIndex: Optional[DedupeIndexStats] = None
+
+    indexLastSavedAt: Optional[datetime] = None
+    indexState: Optional[TYPE_DEDUPE_INDEX_STATES] = None
+
+    indexStats: Optional[DedupeIndexStats] = None
 
 
 # ============================================================================
