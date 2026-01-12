@@ -28,10 +28,10 @@ export class OrgSettingsDeduplication extends BtrixElement {
   visible?: boolean;
 
   @state()
-  private indexToClear?: Collection;
+  private openDialog?: "purge" | "delete";
 
   @state()
-  private indexToDelete?: Collection;
+  private selectedIndex?: Collection;
 
   @state({ hasChanged: isNotEqual })
   private pagination: Required<APIPaginationQuery> = {
@@ -189,14 +189,20 @@ export class OrgSettingsDeduplication extends BtrixElement {
                         <sl-divider></sl-divider>
                         <sl-menu-item
                           class="menu-item-warning"
-                          @click=${() => (this.indexToClear = item)}
+                          @click=${() => {
+                            this.selectedIndex = item;
+                            this.openDialog = "purge";
+                          }}
                         >
                           <sl-icon slot="prefix" name="arrow-repeat"></sl-icon>
                           ${msg("Reset Index")}
                         </sl-menu-item>
                         <sl-menu-item
                           class="menu-item-danger"
-                          @click=${() => (this.indexToDelete = item)}
+                          @click=${() => {
+                            this.selectedIndex = item;
+                            this.openDialog = "delete";
+                          }}
                         >
                           <sl-icon slot="prefix" name="trash3"></sl-icon>
                           ${msg("Delete Index")}
@@ -235,9 +241,11 @@ export class OrgSettingsDeduplication extends BtrixElement {
   private renderClearConfirmation() {
     return html`<btrix-dialog
       label=${msg("Reset Index?")}
-      ?open=${!!this.indexToClear}
+      ?open=${this.openDialog === "purge"}
+      @sl-hide=${() => (this.openDialog = undefined)}
+      @sl-after-hide=${() => (this.selectedIndex = undefined)}
     >
-      ${when(this.indexToClear, (col) => {
+      ${when(this.selectedIndex, (col) => {
         const collection_name = html`<strong class="font-semibold"
           >${col.name}</strong
         >`;
@@ -269,11 +277,11 @@ export class OrgSettingsDeduplication extends BtrixElement {
         <sl-button
           size="small"
           variant="warning"
-          @click=${() => {
-            if (!this.indexToClear) return;
+          @click=${async () => {
+            if (!this.selectedIndex) return;
 
-            void this.clearIndex(this.indexToClear);
-            this.indexToClear = undefined;
+            await this.clearIndex(this.selectedIndex);
+            this.openDialog = undefined;
           }}
           >${msg("Reset Index")}</sl-button
         >
@@ -284,9 +292,11 @@ export class OrgSettingsDeduplication extends BtrixElement {
   private renderDeleteConfirmation() {
     return html`<btrix-dialog
       label=${msg("Delete Index?")}
-      ?open=${!!this.indexToDelete}
+      ?open=${this.openDialog === "delete"}
+      @sl-hide=${() => (this.openDialog = undefined)}
+      @sl-after-hide=${() => (this.selectedIndex = undefined)}
     >
-      ${when(this.indexToDelete, (col) => {
+      ${when(this.selectedIndex, (col) => {
         const collection_name = html`<strong class="font-semibold"
           >${col.name}</strong
         >`;
@@ -317,11 +327,11 @@ export class OrgSettingsDeduplication extends BtrixElement {
         <sl-button
           size="small"
           variant="danger"
-          @click=${() => {
-            if (!this.indexToDelete) return;
+          @click=${async () => {
+            if (!this.selectedIndex) return;
 
-            void this.deleteIndex(this.indexToDelete);
-            this.indexToDelete = undefined;
+            await this.deleteIndex(this.selectedIndex);
+            this.openDialog = undefined;
           }}
           >${msg("Delete Index")}</sl-button
         >
