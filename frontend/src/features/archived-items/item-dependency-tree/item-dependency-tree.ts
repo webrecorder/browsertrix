@@ -17,7 +17,8 @@ import { OrgTab, WorkflowTab } from "@/routes";
 import { noData } from "@/strings/ui";
 import type { APIPaginatedList } from "@/types/api";
 import type { Crawl } from "@/types/crawler";
-import { renderName } from "@/utils/crawler";
+import type { IconLibrary } from "@/types/shoelace";
+import { isActive, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -222,6 +223,7 @@ export class ItemDependencyTree extends BtrixElement {
 
     const status = () => {
       let icon = "dash-circle";
+      let library: IconLibrary = "default";
       let variant = tw`text-neutral-400`;
       let tooltip = msg("Not in Collection");
 
@@ -234,10 +236,19 @@ export class ItemDependencyTree extends BtrixElement {
         } else {
           tooltip = msg("In Collection");
         }
+      } else if (isActive(item)) {
+        icon = "dot";
+        library = "app";
+        variant = tw`animate-pulse text-success`;
+        tooltip = msg("Active Run");
       }
 
       return html`<sl-tooltip content=${tooltip} hoist placement="left">
-        <sl-icon name=${icon} class=${clsx(variant, tw`text-base`)}></sl-icon>
+        <sl-icon
+          name=${icon}
+          class=${clsx(variant, tw`text-base`)}
+          library=${library}
+        ></sl-icon>
       </sl-tooltip>`;
     };
 
