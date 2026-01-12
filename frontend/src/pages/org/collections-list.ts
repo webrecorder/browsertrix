@@ -566,7 +566,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   private readonly renderItem = (col: Collection) => {
     const detail = (content: TemplateResult | string) =>
       html`<div
-        class="${tw`[&>sl-icon]:text-sm`} flex items-center gap-1.5 font-mono text-xs leading-none text-neutral-500 [font-variation-settings:var(--font-monostyle-variation)]"
+        class="${tw`[&>sl-icon]:text-sm`} font-monostyle flex items-center gap-1.5 text-xs leading-none text-neutral-500"
       >
         ${content}
       </div>`;
@@ -637,7 +637,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
             @click=${this.navigate.link}
           >
             <div class="truncate">${col.name}</div>
-            ${(col.dateEarliest && col.dateLatest) || col.hasDedupeIndex
+            ${(col.dateEarliest && col.dateLatest) || col.indexStats
               ? html`
                   <div class="mt-1 flex gap-3">
                     ${col.dateEarliest && col.dateLatest
@@ -652,7 +652,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
                           )}
                         `)
                       : nothing}
-                    ${col.hasDedupeIndex
+                    ${col.indexStats
                       ? detail(html`
                           <sl-icon
                             name="stack"
