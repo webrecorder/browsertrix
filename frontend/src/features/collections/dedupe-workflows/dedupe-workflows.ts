@@ -164,9 +164,9 @@ export class DedupeWorkflows extends BtrixElement {
                 name="gear-wide-connected"
                 class="text-base text-neutral-600"
               ></sl-icon>
+              ${this.localize.number(totalCrawls)} ${msg("crawl")}
+              ${pluralOf("runs", totalCrawls)}
             </sl-tooltip>
-            ${this.localize.number(totalCrawls)} ${msg("crawl")}
-            ${pluralOf("runs", totalCrawls)}
           </div>
           <div class="flex items-center gap-1.5 truncate">
             <sl-tooltip content=${msg("Total Size")} hoist>
@@ -174,8 +174,10 @@ export class DedupeWorkflows extends BtrixElement {
                 name="file-earmark-binary"
                 class="text-base text-neutral-600"
               ></sl-icon>
+              ${this.localize.bytes(
+                workflow.totalSize ? +workflow.totalSize : 0,
+              )}
             </sl-tooltip>
-            ${this.localize.bytes(workflow.totalSize ? +workflow.totalSize : 0)}
           </div>
           <div>
             <btrix-overflow-dropdown
