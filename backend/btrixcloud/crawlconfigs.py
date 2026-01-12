@@ -389,7 +389,7 @@ class CrawlConfigOps:
         exec_mins_quota_reached = False
 
         if dedupe_coll_id:
-            await self.coll_ops.enable_dedupe_index(dedupe_coll_id)
+            await self.coll_ops.enable_dedupe_index(dedupe_coll_id, org)
 
         if config_in.runNow:
             try:
@@ -723,7 +723,7 @@ class CrawlConfigOps:
         # else, enable dedupe on collection
         if isinstance(update.dedupeCollId, UUID):
             query["dedupeCollId"] = update.dedupeCollId
-            await self.coll_ops.enable_dedupe_index(update.dedupeCollId)
+            await self.coll_ops.enable_dedupe_index(update.dedupeCollId, org)
 
         if merged_raw_config_dict:
             query["config"] = merged_raw_config_dict

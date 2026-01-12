@@ -5,6 +5,7 @@ from .bgjobs import BgJobOperator
 from .cronjobs import CronJobOperator
 from .crawls import CrawlOperator
 from .collindexes import CollIndexOperator
+from .collindexjob import CollIndexImportJobOperator
 from .baseoperator import K8sOpAPI
 
 operator_classes = [
@@ -13,6 +14,7 @@ operator_classes = [
     CronJobOperator,
     CrawlOperator,
     CollIndexOperator,
+    CollIndexImportJobOperator,
 ]
 
 
