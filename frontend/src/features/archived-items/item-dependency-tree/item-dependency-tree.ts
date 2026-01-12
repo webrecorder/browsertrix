@@ -11,13 +11,14 @@ import queryString from "query-string";
 import stylesheet from "./item-dependency-tree.stylesheet.css";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { dedupeIconFor } from "@/features/collections/dedupe-badge";
+import { dedupeIcon } from "@/features/collections/templates/dedupe-icon";
 import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/archived-item-detail";
 import { OrgTab, WorkflowTab } from "@/routes";
 import { noData } from "@/strings/ui";
 import type { APIPaginatedList } from "@/types/api";
 import type { Crawl } from "@/types/crawler";
-import { renderName } from "@/utils/crawler";
+import type { IconLibrary } from "@/types/shoelace";
+import { isActive, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -222,6 +223,7 @@ export class ItemDependencyTree extends BtrixElement {
 
     const status = () => {
       let icon = "dash-circle";
+      let library: IconLibrary = "default";
       let variant = tw`text-neutral-400`;
       let tooltip = msg("Not in Collection");
 
@@ -234,10 +236,19 @@ export class ItemDependencyTree extends BtrixElement {
         } else {
           tooltip = msg("In Collection");
         }
+      } else if (isActive(item)) {
+        icon = "dot";
+        library = "app";
+        variant = tw`animate-pulse text-success`;
+        tooltip = msg("Active Run");
       }
 
       return html`<sl-tooltip content=${tooltip} hoist placement="left">
-        <sl-icon name=${icon} class=${clsx(variant, tw`text-base`)}></sl-icon>
+        <sl-icon
+          name=${icon}
+          class=${clsx(variant, tw`text-base`)}
+          library=${library}
+        ></sl-icon>
       </sl-tooltip>`;
     };
 
@@ -261,33 +272,30 @@ export class ItemDependencyTree extends BtrixElement {
       <div class="component--detail">${renderName(item)}</div>
       <div class="component--detail">
         <sl-tooltip content=${msg("Dedupe Dependencies")} hoist>
-          <sl-icon name=${dedupeIconFor.dependent}></sl-icon>
+          ${dedupeIcon({ hasDependencies: true, hasDependents: true })}
+          <span
+            >${this.localize.number(dependencies.length)}
+            ${pluralOf("items", dependencies.length)}</span
+          >
         </sl-tooltip>
-        <span
-          >${this.localize.number(dependencies.length)}
-          ${pluralOf(
-            this.showHeader ? "items" : "dependencies",
-            dependencies.length,
-          )}</span
-        >
       </div>
       <div class="component--detail">
         <sl-tooltip content=${msg("Date Started")} hoist>
           <sl-icon name="hourglass-top"></sl-icon>
+          ${date(item.started)}
         </sl-tooltip>
-        ${date(item.started)}
       </div>
       <div class="component--detail">
         <sl-tooltip content=${msg("Date Finished")} hoist>
           <sl-icon name="hourglass-bottom"></sl-icon>
+          ${item.finished ? date(item.finished) : noData}
         </sl-tooltip>
-        ${item.finished ? date(item.finished) : noData}
       </div>
       <div class="component--detail flex items-center gap-1.5 truncate">
         <sl-tooltip content=${msg("Size")} hoist>
           <sl-icon name="file-earmark-binary"></sl-icon>
+          ${this.localize.bytes(item.fileSize || 0, { unitDisplay: "short" })}
         </sl-tooltip>
-        ${this.localize.bytes(item.fileSize || 0, { unitDisplay: "short" })}
       </div>
       ${this.renderLink(
         `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}#${"overview" as ArchivedItemSectionName}`,

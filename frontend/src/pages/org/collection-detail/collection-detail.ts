@@ -662,10 +662,20 @@ export class CollectionDetail extends BtrixElement {
             ${msg("Copy Collection ID")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
-            @click=${this.confirmDelete}
-          >
+          ${when(
+            this.appState.isAdmin,
+            () => html`
+              <sl-menu-item class="menu-item-warning" @click=${console.log}>
+                <sl-icon slot="prefix" name="arrow-repeat"></sl-icon>
+                ${msg("Reset Index")}
+              </sl-menu-item>
+              <sl-menu-item class="menu-item-danger" @click=${console.log}>
+                <sl-icon slot="prefix" name="trash3"></sl-icon>
+                ${msg("Delete Index")}
+              </sl-menu-item>
+            `,
+          )}
+          <sl-menu-item class="menu-item-danger" @click=${this.confirmDelete}>
             <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${msg("Delete Collection")}
           </sl-menu-item>

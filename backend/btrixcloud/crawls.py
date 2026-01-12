@@ -178,6 +178,7 @@ class CrawlOps(BaseCrawlOps):
         tags: list[str] | None = None,
         tag_match: ListFilterType | None = ListFilterType.AND,
         collection_id: Optional[UUID] = None,
+        dedupe_coll_id: Optional[UUID] = None,
         crawl_ids: Optional[List[str]] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -295,6 +296,9 @@ class CrawlOps(BaseCrawlOps):
 
         if first_seed:
             aggregate.extend([{"$match": {"firstSeed": first_seed}}])
+
+        if dedupe_coll_id:
+            aggregate.extend([{"$match": {"dedupeCollId": dedupe_coll_id}}])
 
         if collection_id:
             aggregate.extend([{"$match": {"collectionIds": {"$in": [collection_id]}}}])
@@ -1398,6 +1402,7 @@ def init_crawls_api(
             ),
         ] = ListFilterType.AND,
         collectionId: Optional[UUID] = None,
+        dedupeCollId: Optional[UUID] = None,
         ids: Annotated[list[str] | None, Query()] = None,
         sortBy: Optional[str] = None,
         sortDirection: int = -1,
@@ -1430,6 +1435,7 @@ def init_crawls_api(
             tags=tags,
             tag_match=tag_match,
             collection_id=collectionId,
+            dedupe_coll_id=dedupeCollId,
             crawl_ids=ids,
             page_size=pageSize,
             page=page,
