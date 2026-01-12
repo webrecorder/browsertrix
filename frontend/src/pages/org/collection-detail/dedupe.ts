@@ -21,6 +21,7 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { Crawl, Workflow } from "@/types/crawler";
 import { SortDirection } from "@/types/utils";
+import { finishedCrawlStates } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -96,7 +97,8 @@ export class CollectionDetailDedupe extends BtrixElement {
 
       const query = queryString.stringify({
         ...pagination,
-        dedupeCollId: collectionId,
+        state: finishedCrawlStates,
+        collectionId,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
       });

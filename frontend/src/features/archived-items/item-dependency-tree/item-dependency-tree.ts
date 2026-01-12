@@ -273,29 +273,29 @@ export class ItemDependencyTree extends BtrixElement {
       <div class="component--detail">
         <sl-tooltip content=${msg("Dedupe Dependencies")} hoist>
           ${dedupeIcon({ hasDependencies: true, hasDependents: true })}
+          <span
+            >${this.localize.number(dependencies.length)}
+            ${pluralOf("items", dependencies.length)}</span
+          >
         </sl-tooltip>
-        <span
-          >${this.localize.number(dependencies.length)}
-          ${pluralOf("items", dependencies.length)}</span
-        >
       </div>
       <div class="component--detail">
         <sl-tooltip content=${msg("Date Started")} hoist>
           <sl-icon name="hourglass-top"></sl-icon>
+          ${date(item.started)}
         </sl-tooltip>
-        ${date(item.started)}
       </div>
       <div class="component--detail">
         <sl-tooltip content=${msg("Date Finished")} hoist>
           <sl-icon name="hourglass-bottom"></sl-icon>
+          ${item.finished ? date(item.finished) : noData}
         </sl-tooltip>
-        ${item.finished ? date(item.finished) : noData}
       </div>
       <div class="component--detail flex items-center gap-1.5 truncate">
         <sl-tooltip content=${msg("Size")} hoist>
           <sl-icon name="file-earmark-binary"></sl-icon>
+          ${this.localize.bytes(item.fileSize || 0, { unitDisplay: "short" })}
         </sl-tooltip>
-        ${this.localize.bytes(item.fileSize || 0, { unitDisplay: "short" })}
       </div>
       ${this.renderLink(
         `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}#${"overview" as ArchivedItemSectionName}`,
