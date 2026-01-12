@@ -5,7 +5,6 @@ import secrets
 
 from typing import Optional, Dict, Tuple
 from datetime import datetime, timedelta
-from uuid import UUID
 
 from fastapi import HTTPException
 
@@ -17,7 +16,6 @@ from .models import (
     CrawlConfig,
     BgJobType,
     ProfileBrowserMetadata,
-    Collection,
 )
 
 
@@ -222,6 +220,38 @@ class CrawlManager(K8sAPI):
         await self.create_from_yaml(data, namespace=DEFAULT_NAMESPACE)
 
         return job_id
+
+    async def run_index_import_job(
+        self,
+        coll_id: str,
+        oid: str,
+        image: str,
+        image_pull_policy: str,
+        is_purging: bool,
+    ):
+        """create dedupe index import/purge job"""
+        suffix = secrets.token_hex(5)
+        name = (
+            f"import-{coll_id}-{suffix}"
+            if not is_purging
+            else f"purge-{coll_id}-{suffix}"
+        )
+
+        params = {
+            "name": name,
+            "id": coll_id,
+            "oid": oid,
+            "crawler_image": image,
+            "crawler_image_pull_policy": image_pull_policy,
+            "is_purging": is_purging,
+            "redis_url": self.get_redis_url("coll-" + str(coll_id)),
+        }
+
+        data = self.templates.env.get_template("index-import-job.yaml").render(params)
+
+        await self.create_from_yaml(data, namespace=self.namespace)
+
+        return name
 
     async def ensure_cleanup_seed_file_cron_job_exists(self):
         """ensure cron background job to clean up unused seed files weekly exists"""
@@ -498,25 +528,6 @@ class CrawlManager(K8sAPI):
     async def delete_crawl_config_cron_jobs_for_org(self, oid_str: str) -> None:
         """Delete all crawl configs for given org"""
         await self._delete_cron_jobs(f"btrix.org={oid_str},role=cron-job")
-
-    async def create_coll_index(self, collection: Collection):
-        """create collection index"""
-        await self.create_coll_index_direct(
-            str(collection.id), str(collection.oid), collection.modified
-        )
-
-    async def update_coll_index(self, coll_id: UUID, is_purge: bool = False):
-        """force collection index to update"""
-        field = "collItemsUpdatedAt" if not is_purge else "purgeRequestedAt"
-        return await self.patch_custom_object(
-            f"collindex-{coll_id}",
-            {field: date_to_str(dt_now())},
-            "collindexes",
-        )
-
-    async def delete_coll_index(self, coll_id: UUID):
-        """delete collection index"""
-        return await self.delete_custom_object(f"collindex-{coll_id}", "collindexes")
 
     # ========================================================================
     # Internal Methods

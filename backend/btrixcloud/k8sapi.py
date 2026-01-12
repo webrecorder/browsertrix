@@ -2,7 +2,6 @@
 
 import os
 import traceback
-from datetime import datetime
 from typing import Optional, List, Any
 
 import yaml
@@ -21,7 +20,7 @@ from redis.asyncio.client import Redis
 from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
 
-from .utils import get_templates_dir, dt_now, date_to_str
+from .utils import get_templates_dir, dt_now
 
 
 # ============================================================================
@@ -349,6 +348,17 @@ class K8sAPI:
             except:
                 print("Logs Not Found")
 
+    async def get_pod_logs(self, pod_name, lines=100, container=None) -> str:
+        """get logs for pod"""
+        try:
+            resp = await self.core_api.read_namespaced_pod_log(
+                pod_name, self.namespace, container=container, tail_lines=lines
+            )
+            return resp
+        # pylint: disable=bare-except
+        except:
+            return ""
+
     async def is_pod_metrics_available(self) -> bool:
         """return true/false if metrics server api is available by
         attempting list operation. if operation succeeds, then
@@ -458,14 +468,15 @@ class K8sAPI:
             propagation_policy="Background",
         )
 
-    async def create_coll_index_direct(
-        self, coll_id: str, oid: str, modified: Optional[datetime] = None
+    async def create_or_update_coll_index(
+        self,
+        coll_id: str,
+        oid: str,
     ):
         """create collection index if doesn't exist"""
         params = {
             "id": coll_id,
             "oid": oid,
-            "collItemsUpdatedAt": date_to_str(modified or dt_now()),
         }
         data = self.templates.env.get_template("coll_index.yaml").render(params)
 
@@ -473,6 +484,6 @@ class K8sAPI:
             await self.create_from_yaml(data)
 
         except ApiException as e:
-            # 409 if object already exists, ignore silently
+            # 409 if object already exists, update
             if e.status != 409:
-                raise e
+                raise
