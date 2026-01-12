@@ -214,9 +214,13 @@ export class CollectionWorkflowList extends BtrixElement {
           });
         }}
       >
-        <div class="flex flex-1 items-center gap-2 overflow-hidden md:gap-x-6">
+        <div
+          class="flex min-h-5 flex-1 items-center gap-2 overflow-hidden leading-none md:gap-x-6"
+        >
           <div class="flex-1 overflow-hidden">${this.renderName(workflow)}</div>
-          <div class="flex-none text-neutral-500 md:text-right">
+          <div
+            class="flex-none whitespace-nowrap text-neutral-500 md:text-right"
+          >
             ${until(
               countAsync.then(({ total, selected }) =>
                 total === 1
@@ -233,7 +237,6 @@ export class CollectionWorkflowList extends BtrixElement {
           </div>
           <div class="flex-none">
             <sl-switch
-              class="flex"
               size="small"
               ?checked=${workflow.autoAddCollections.some(
                 (id) => id === this.collectionId,
