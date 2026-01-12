@@ -9,7 +9,7 @@ from kubernetes.utils import parse_quantity
 import yaml
 from btrixcloud.k8sapi import K8sAPI
 from btrixcloud.utils import is_bool, dt_now, str_to_date
-
+from .models import COLLINDEX
 
 if TYPE_CHECKING:
     from btrixcloud.crawlconfigs import CrawlConfigOps
@@ -158,6 +158,8 @@ class BaseOperator:
     user_ops: UserManager
     crawl_log_ops: CrawlLogOps
 
+    fast_retry_secs: int
+
     def __init__(
         self,
         k8s,
@@ -186,6 +188,7 @@ class BaseOperator:
         # to avoid background tasks being garbage collected
         # see: https://stackoverflow.com/a/74059981
         self.bg_tasks = set()
+        self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
     def init_routes(self, app) -> None:
         """init routes for this operator"""
@@ -209,6 +212,33 @@ class BaseOperator:
         # pylint: disable=broad-exception-caught
         except Exception as e:
             print(e)
+
+        return False
+
+    async def ensure_coll_index_ready(
+        self,
+        data,
+        coll_id: str,
+        oid: str,
+        allowed_states: tuple[str, ...],
+    ) -> bool:
+        """check if CollIndex exists and in allowed state"""
+        # index object doesn't exist
+        coll_indexes = data.related.get(COLLINDEX, {})
+
+        found = False
+
+        for index in coll_indexes.values():
+            found = True
+            if index.get("status", {}).get("state") in allowed_states:
+                return True
+
+            # only check first index, should only be one
+            break
+
+        # if index not found, create it
+        if not found:
+            await self.k8s.create_or_update_coll_index(coll_id, oid)
 
         return False
 

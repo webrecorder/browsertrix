@@ -9,15 +9,25 @@ metadata:
   labels:
     role: index-import-job
     coll: {{ id }}
+    oid: {{ oid }}
 
 spec:
   ttlSecondsAfterFinished: 0
   backoffLimit: 3
+
+# if purging, set completions to disallow changing parallelism
+# for import, omit to allow increasing later
+{% if is_purging %}
+  completions: 1
+{% endif %}
+
+  parallelism: 1
   template:
     metadata:
       labels:
         role: index-import-job
         coll: {{ id }}
+        oid: {{ oid }}
 
     spec:
       restartPolicy: OnFailure
@@ -27,6 +37,9 @@ spec:
           configMap:
             name: {{ name }}
 
+        - name: tmpdir
+          emptyDir: {}
+
       containers:
         - name: indexer
           image: {{ crawler_image }}
@@ -34,7 +47,7 @@ spec:
           command:
             - indexer
             - --sourceUrl
-            - /tmp/config/config.json
+            - /btrix-config/config.json
             - --redisDedupeUrl
             - {{ redis_url }}
           {% if is_purging %}
@@ -42,17 +55,20 @@ spec:
           {% endif %}
 
           volumeMounts:
+            - name: tmpdir
+              mountPath: /tmp
+
             - name: config
-              mountPath: /tmp/config/
+              mountPath: /btrix-config/
               readOnly: True
 
           resources:
             limits:
-              memory: "500Mi"
+              memory: "200Mi"
 
             requests:
-              cpu: "300m"
-              memory: "100Mi"
+              cpu: "500m"
+              memory: "50Mi"
 
           {% if crawler_liveness_port and crawler_liveness_port != '0' %}
           livenessProbe:
