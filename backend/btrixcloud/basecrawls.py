@@ -682,6 +682,7 @@ class BaseCrawlOps:
         tag_match: ListFilterType | None = None,
         collection_id: Optional[UUID] = None,
         dedupe_coll_id: Optional[UUID] = None,
+        crawl_ids: Optional[List[str]] = None,
         states: Optional[List[str]] = None,
         first_seed: Optional[str] = None,
         type_: Optional[str] = None,
@@ -718,6 +719,9 @@ class BaseCrawlOps:
 
         if cid:
             query["cid"] = cid
+
+        if crawl_ids:
+            query["_id"] = {"$in": crawl_ids}
 
         if tags:
             query_type = "$all" if tag_match == ListFilterType.AND else "$in"
@@ -1093,6 +1097,7 @@ def init_base_crawls_api(app, user_dep, *args):
         ] = ListFilterType.AND,
         collectionId: Optional[UUID] = None,
         dedupeCollId: Optional[UUID] = None,
+        ids: Annotated[list[str] | None, Query()] = None,
         crawlType: Optional[str] = None,
         cid: Optional[UUID] = None,
         sortBy: Optional[str] = "finished",
@@ -1126,6 +1131,7 @@ def init_base_crawls_api(app, user_dep, *args):
             tag_match=tag_match,
             collection_id=collectionId,
             dedupe_coll_id=dedupeCollId,
+            crawl_ids=ids,
             states=states,
             first_seed=firstSeed,
             type_=crawlType,
