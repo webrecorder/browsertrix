@@ -2,21 +2,12 @@ import { localized, msg, str } from "@lit/localize";
 import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
+import { dedupeIcon, dedupeLabelFor } from "./templates/dedupe-icon";
+
 import { TailwindElement } from "@/classes/TailwindElement";
 import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
-
-export const dedupeIconFor = {
-  dependent: "layers-fill",
-  dependency: "layers-half",
-  both: "layers-half",
-} as const;
-
-export const dedupeLabelFor = {
-  dependent: msg("Dependent"),
-  dependency: msg("Dependency"),
-  both: msg("Dependent"),
-} as const;
+import { tw } from "@/utils/tailwind";
 
 @customElement("btrix-dedupe-badge")
 @localized()
@@ -40,7 +31,6 @@ export class DedupeBadge extends TailwindElement {
     if (!dependentsCount && !dependenciesCount) return;
 
     let tooltip = "";
-    let icon: string = dedupeIconFor.both;
     let text: string = dedupeLabelFor.both;
 
     if (dependentsCount && dependenciesCount) {
@@ -56,7 +46,6 @@ export class DedupeBadge extends TailwindElement {
       tooltip = msg(
         str`This crawl is dependent on ${number_of_dependency_crawls}.`,
       );
-      icon = dedupeIconFor.dependent;
       text = dedupeLabelFor.dependent;
     } else if (dependentsCount) {
       const number_of_dependent_crawls = `${localize.number(dependentsCount)} ${pluralOf("crawls", dependentsCount)}`;
@@ -64,13 +53,20 @@ export class DedupeBadge extends TailwindElement {
       tooltip = msg(
         str`This crawl is a dependency of ${number_of_dependent_crawls}.`,
       );
-      icon = dedupeIconFor.dependency;
       text = dedupeLabelFor.dependency;
     }
 
     return html`<btrix-popover content=${tooltip} hoist>
       <btrix-badge variant="orange">
-        <sl-icon class="mr-1.5" name=${icon}></sl-icon>
+        ${dedupeIcon(
+          {
+            hasDependents: Boolean(dependentsCount),
+            hasDependencies: Boolean(dependenciesCount),
+          },
+          {
+            className: tw`mr-1.5`,
+          },
+        )}
         ${text}
       </btrix-badge>
     </btrix-popover>`;
