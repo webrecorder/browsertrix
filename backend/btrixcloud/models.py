@@ -888,6 +888,9 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
     isMigrating: Optional[bool] = None
     version: Optional[int] = None
 
+    requiresCrawls: Optional[list[str]] = []
+    requiredByCrawls: Optional[list[str]] = []
+
 
 # ============================================================================
 class CollIdName(BaseModel):
@@ -1118,9 +1121,6 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     pendingSize: int = 0
 
     autoPausedEmailsSent: bool = False
-
-    requiresCrawls: Optional[list[str]] = []
-    requiredByCrawls: Optional[list[str]] = []
 
 
 # ============================================================================
