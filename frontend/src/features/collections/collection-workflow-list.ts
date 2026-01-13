@@ -8,6 +8,7 @@ import { until } from "lit/directives/until.js";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { CollectionWorkflowListSettingChangeEvent } from "@/features/collections/collection-workflow-list/settings";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -245,8 +246,21 @@ export class CollectionWorkflowList extends BtrixElement {
         dedupeCollId=${ifDefined(workflow.dedupeCollId || undefined)}
         .autoAddCollections=${workflow.autoAddCollections}
         ?collapse=${!this.expandWorkflowSettings}
-        @click=${(e: MouseEvent) => {
+        @btrix-change=${(e: CollectionWorkflowListSettingChangeEvent) => {
           e.stopPropagation();
+
+          const { autoAdd, dedupe } = e.detail.value;
+
+          this.dispatchEvent(
+            new CustomEvent<AutoAddChangeDetail>("btrix-auto-add-change", {
+              detail: {
+                id: workflow.id,
+                checked: autoAdd,
+                dedupe,
+              },
+              composed: true,
+            }),
+          );
         }}
       ></btrix-collection-workflow-list-settings>
     `;

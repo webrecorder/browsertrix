@@ -16,7 +16,7 @@ import { emptyMessage } from "@/layouts/emptyMessage";
 import { infoPopover } from "@/layouts/info-popover";
 import { panel, panelBody, panelHeader } from "@/layouts/panel";
 import { OrgTab } from "@/routes";
-import { noData, notApplicable, stringFor } from "@/strings/ui";
+import { noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { Crawl, Workflow } from "@/types/crawler";
@@ -475,7 +475,7 @@ export class CollectionDetailDedupe extends BtrixElement {
       heading: msg("Overview"),
       body: html`<btrix-desc-list>
         <btrix-desc-list-item label=${msg("Index Status")}>
-          ${state ? indexStatus(state) : stringFor.unknown}
+          ${state ? indexStatus(state) : msg("Unavailable")}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Index Last Saved")}>
           ${when(this.collection, (col) =>

@@ -11,7 +11,7 @@ import { tw } from "@/utils/tailwind";
 
 export type CollectionWorkflowListSettingChangeEvent = BtrixChangeEvent<{
   autoAdd: boolean;
-  dedupe?: boolean | null;
+  dedupe?: boolean;
 }>;
 
 /**
@@ -43,7 +43,6 @@ export class CollectionWorkflowListSettings extends BtrixElement {
       changedProperties.has("collectionId") ||
       changedProperties.has("autoAddCollections")
     ) {
-      console.log(this.collectionId, this.autoAddCollections);
       this.autoAdd = this.autoAddCollections.some(
         (id) => id === this.collectionId,
       );

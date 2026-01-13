@@ -885,7 +885,10 @@ export class CollectionItemsDialog extends BtrixElement {
       await this.fetchCrawls();
 
       this.notify.toast({
-        message: msg(str`Updated.`),
+        message:
+          dedupe === true || dedupe === false
+            ? msg("Deduplication settings updated.")
+            : msg("Auto-add settings updated."),
         variant: "success",
         icon: "check2-circle",
         duration: 1000,
