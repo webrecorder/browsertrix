@@ -13,5 +13,6 @@ export const renderComponent = (props: Partial<RenderProps>) => {
     collectionId=${ifDefined(props.collectionId)}
     dedupeCollId=${ifDefined(props.dedupeCollId)}
     .autoAddCollections=${props.autoAddCollections || []}
+    ?collapse=${props.collapse}
   ></btrix-collection-workflow-list-settings>`;
 };

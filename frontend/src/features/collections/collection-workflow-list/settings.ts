@@ -32,6 +32,9 @@ export class CollectionWorkflowListSettings extends BtrixElement {
   @property({ type: Array, hasChanged: isNotEqual })
   autoAddCollections: string[] = [];
 
+  @property({ type: Boolean })
+  collapse = false;
+
   @state()
   private autoAdd = false;
 
@@ -48,15 +51,18 @@ export class CollectionWorkflowListSettings extends BtrixElement {
   }
 
   render() {
-    const disableDedupe =
-      !this.autoAdd ||
-      Boolean(this.dedupeCollId && this.dedupeCollId !== this.collectionId);
+    const disableDedupe = Boolean(
+      this.dedupeCollId && this.dedupeCollId !== this.collectionId,
+    );
 
     return html`
       <div
-        class="flex h-11 w-max items-center gap-4 whitespace-nowrap rounded border px-4"
+        class=${clsx(
+          tw`flex h-11 w-max items-center whitespace-nowrap rounded border px-4`,
+          !this.collapse && tw`gap-4`,
+        )}
       >
-        <div class="flex grow basis-0 justify-center transition-all">
+        <div class="flex grow basis-0 transition-all">
           <sl-switch
             class="mx-[2px] inline-block"
             size="small"
@@ -87,14 +93,13 @@ export class CollectionWorkflowListSettings extends BtrixElement {
           class=${clsx(
             tw`basis-0 overflow-hidden transition-all`,
             this.autoAdd ? tw`grow` : tw`shrink`,
+            this.collapse && tw`w-0`,
           )}
         >
           <btrix-popover
-            content=${this.autoAdd
-              ? msg(
-                  "This workflow is already deduplicated in another collection.",
-                )
-              : msg("Enable auto-add to enable deduplication;.")}
+            content=${msg(
+              "This workflow is using another collection for deduplication.",
+            )}
             ?disabled=${!disableDedupe}
           >
             <sl-switch

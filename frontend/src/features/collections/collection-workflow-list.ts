@@ -1,7 +1,8 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlTreeItem } from "@shoelace-style/shoelace";
 import { css, html, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, property, queryAll } from "lit/decorators.js";
+import { customElement, property, queryAll, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { until } from "lit/directives/until.js";
 import queryString from "query-string";
@@ -113,6 +114,9 @@ export class CollectionWorkflowList extends BtrixElement {
   @property({ type: Array })
   workflows: Workflow[] = [];
 
+  @state()
+  expandWorkflowSettings = false;
+
   /**
    * Whether item is selected or not, keyed by ID
    */
@@ -129,6 +133,13 @@ export class CollectionWorkflowList extends BtrixElement {
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("workflows")) {
+      if (this.collectionId) {
+        const collId = this.collectionId;
+        this.expandWorkflowSettings = this.workflows.some((workflow) =>
+          workflow.autoAddCollections.some((id) => id === collId),
+        );
+      }
+
       void this.fetchCrawls();
     }
   }
@@ -229,7 +240,11 @@ export class CollectionWorkflowList extends BtrixElement {
         ${until(crawlsAsync.then((crawls) => crawls.map(this.renderCrawl)))}
       </sl-tree-item>
       <btrix-collection-workflow-list-settings
-        .workflow=${workflow}
+        collectionId=${ifDefined(this.collectionId)}
+        workflowId=${workflow.id}
+        dedupeCollId=${ifDefined(workflow.dedupeCollId || undefined)}
+        .autoAddCollections=${workflow.autoAddCollections}
+        ?collapse=${!this.expandWorkflowSettings}
         @click=${(e: MouseEvent) => {
           e.stopPropagation();
         }}

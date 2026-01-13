@@ -67,3 +67,13 @@ export const DedupeAnotherCollection: Story = {
     dedupeCollId: "storybook-dedupe-another-collection-id",
   },
 };
+
+export const Collapsed: Story = {
+  args: {
+    workflowId: workflowWithAutoAdd.id,
+    autoAddCollections: workflowWithAutoAdd.autoAddCollections,
+    collectionId: workflowWithAutoAdd.autoAddCollections[0],
+    dedupeCollId: "storybook-dedupe-another-collection-id",
+    collapse: true,
+  },
+};
