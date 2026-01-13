@@ -5,6 +5,15 @@ export enum Tab {
   Deduplication = "deduplication",
 }
 
+export type Dialog =
+  | "delete"
+  | "edit"
+  | "replaySettings"
+  | "removeItem"
+  | "createIndex";
+
+export type OpenDialogEventDetail = Dialog | "editItems";
+
 export enum CollectionSearchParam {
   Editing = "editing",
 }

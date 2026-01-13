@@ -9,9 +9,10 @@ import type { RequireExactlyOne } from "type-fest";
 import { loadingPanel } from "../templates/loading-panel";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { deleteIndexDialog } from "@/features/collections/templates/delete-index-dialog";
 import { indexStatus } from "@/features/collections/templates/index-status";
+import { purgeIndexDialog } from "@/features/collections/templates/purge-index-dialog";
 import { labelWithIcon } from "@/layouts/labelWithIcon";
 import { Tab } from "@/pages/org/collection-detail/types";
 import { OrgTab } from "@/routes";
@@ -74,9 +75,28 @@ export class OrgSettingsDeduplication extends BtrixElement {
             : loadingPanel(),
         complete: this.renderTable,
       })}
-      ${this.renderClearConfirmation()} ${this.renderDeleteConfirmation()}
+      ${purgeIndexDialog({
+        collection: this.selectedIndex,
+        open: this.openDialog === "purge",
+        hide: this.hideDialog,
+        confirm: async () =>
+          this.selectedIndex
+            ? this.purgeIndex(this.selectedIndex)
+            : console.debug("missing `selectedIndex`"),
+      })}
+      ${deleteIndexDialog({
+        collection: this.selectedIndex,
+        open: this.openDialog === "delete",
+        hide: this.hideDialog,
+        confirm: async () =>
+          this.selectedIndex
+            ? this.deleteIndex(this.selectedIndex)
+            : console.debug("missing `selectedIndex`"),
+      })}
     `;
   }
+
+  private readonly hideDialog = () => (this.openDialog = undefined);
 
   private readonly renderTable = (sources: APIPaginatedList<DedupeSource>) => {
     return html`
@@ -230,108 +250,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
     `;
   };
 
-  private renderClearConfirmation() {
-    return html`<btrix-dialog
-      label=${msg("Reset Index?")}
-      ?open=${this.openDialog === "purge"}
-      @sl-hide=${() => (this.openDialog = undefined)}
-      @sl-after-hide=${() => (this.selectedIndex = undefined)}
-    >
-      ${when(this.selectedIndex, (col) => {
-        const collection_name = html`<strong class="font-semibold"
-          >${col.name}</strong
-        >`;
-
-        return html`
-          <p>
-            ${msg(
-              html`Are you sure you want to reset the deduplication index for
-              ${collection_name}?`,
-            )}
-          </p>
-          <p class="mt-3">
-            ${msg(
-              "This will clear the index of purgeable archived items and rebuild the index using items currently in the deduplication source.",
-            )}
-          </p>
-        `;
-      })}
-      <div slot="footer" class="flex justify-between">
-        <sl-button
-          size="small"
-          @click=${(e: MouseEvent) =>
-            void (e.target as HTMLElement)
-              .closest<Dialog>("btrix-dialog")
-              ?.hide()}
-          .autofocus=${true}
-          >${msg("Cancel")}</sl-button
-        >
-        <sl-button
-          size="small"
-          variant="warning"
-          @click=${async () => {
-            if (!this.selectedIndex) return;
-
-            await this.clearIndex(this.selectedIndex);
-            this.openDialog = undefined;
-          }}
-          >${msg("Reset Index")}</sl-button
-        >
-      </div>
-    </btrix-dialog>`;
-  }
-
-  private renderDeleteConfirmation() {
-    return html`<btrix-dialog
-      label=${msg("Delete Index?")}
-      ?open=${this.openDialog === "delete"}
-      @sl-hide=${() => (this.openDialog = undefined)}
-      @sl-after-hide=${() => (this.selectedIndex = undefined)}
-    >
-      ${when(this.selectedIndex, (col) => {
-        const collection_name = html`<strong class="font-semibold"
-          >${col.name}</strong
-        >`;
-        return html`
-          <p>
-            ${msg(
-              html`Are you sure you want to delete the deduplication index for
-              ${collection_name}?`,
-            )}
-          </p>
-          <p class="mt-3">
-            ${msg(
-              "The index will only be deleted if there are not any workflows using this index as a deduplication source.",
-            )}
-          </p>
-        `;
-      })}
-      <div slot="footer" class="flex justify-between">
-        <sl-button
-          size="small"
-          @click=${(e: MouseEvent) =>
-            void (e.target as HTMLElement)
-              .closest<Dialog>("btrix-dialog")
-              ?.hide()}
-          .autofocus=${true}
-          >${msg("Cancel")}</sl-button
-        >
-        <sl-button
-          size="small"
-          variant="danger"
-          @click=${async () => {
-            if (!this.selectedIndex) return;
-
-            await this.deleteIndex(this.selectedIndex);
-            this.openDialog = undefined;
-          }}
-          >${msg("Delete Index")}</sl-button
-        >
-      </div>
-    </btrix-dialog>`;
-  }
-
-  private async clearIndex(source: Collection) {
+  private async purgeIndex(source: Collection) {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/collections/${source.id}/dedupeIndex/purge`,
@@ -350,7 +269,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
       console.debug(err);
 
       this.notify.toast({
-        message: msg("Sorry, couldn't reset index at this time."),
+        message: msg("Sorry, couldn't purge index at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
         id: "dedupe-index-update-status",

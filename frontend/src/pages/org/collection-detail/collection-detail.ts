@@ -10,7 +10,13 @@ import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 import type { Embed as ReplayWebPage } from "replaywebpage";
 
-import { CollectionSearchParam, EditingSearchParamValue, Tab } from "./types";
+import {
+  CollectionSearchParam,
+  EditingSearchParamValue,
+  Tab,
+  type Dialog,
+  type OpenDialogEventDetail,
+} from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
@@ -22,6 +28,7 @@ import type { EditDialogTab } from "@/features/collections/collection-edit-dialo
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
+import { createIndexDialog } from "@/features/collections/templates/create-index-dialog";
 import {
   metadataColumn,
   metadataItemWithCollection,
@@ -66,7 +73,7 @@ export class CollectionDetail extends BtrixElement {
   private archivedItems?: APIPaginatedList<ArchivedItem>;
 
   @state()
-  private openDialogName?: "delete" | "edit" | "replaySettings" | "removeItem";
+  private openDialogName?: Dialog;
 
   @state()
   private itemToRemove?: ArchivedItem;
@@ -279,29 +286,23 @@ export class CollectionDetail extends BtrixElement {
           choose(this.collectionTab, [
             [
               Tab.Replay,
-              () => html`
-                <sl-tooltip
-                  content=${this.collection?.crawlCount
-                    ? msg("Choose what page viewers see first in replay")
-                    : msg("Add items to select a home page")}
-                  ?disabled=${Boolean(this.collection?.crawlCount)}
-                >
-                  <sl-button
-                    size="small"
-                    @click=${() => {
-                      this.openDialogName = "replaySettings";
-                    }}
-                    ?disabled=${!this.collection?.crawlCount ||
-                    !this.isRwpLoaded}
-                  >
-                    ${!this.collection ||
-                    Boolean(this.collection.crawlCount && !this.isRwpLoaded)
-                      ? html`<sl-spinner slot="prefix"></sl-spinner>`
-                      : html`<sl-icon name="house" slot="prefix"></sl-icon>`}
-                    ${msg("Set Initial View")}
-                  </sl-button>
-                </sl-tooltip>
-              `,
+              () =>
+                this.collection?.crawlCount
+                  ? html`
+                      <sl-button
+                        size="small"
+                        @click=${() => {
+                          this.openDialogName = "replaySettings";
+                        }}
+                        ?disabled=${!this.isRwpLoaded}
+                      >
+                        ${this.isRwpLoaded
+                          ? html`<sl-icon name="house" slot="prefix"></sl-icon>`
+                          : html`<sl-spinner slot="prefix"></sl-spinner>`}
+                        ${msg("Set Initial View")}
+                      </sl-button>
+                    `
+                  : nothing,
             ],
             [
               Tab.Items,
@@ -333,8 +334,13 @@ export class CollectionDetail extends BtrixElement {
             html`<btrix-collection-detail-dedupe
               .collectionId=${this.collectionId}
               .collection=${this.collection}
-              @btrix-choose-workflows=${() =>
-                this.editing.setValue(EditingSearchParamValue.Items)}
+              @btrix-open-dialog=${(e: CustomEvent<OpenDialogEventDetail>) => {
+                if (e.detail === "editItems") {
+                  this.editing.setValue(EditingSearchParamValue.Items);
+                } else {
+                  this.openDialogName = e.detail;
+                }
+              }}
             ></btrix-collection-detail-dedupe> `,
         ],
       ])}
@@ -475,6 +481,13 @@ export class CollectionDetail extends BtrixElement {
         .replayWebPage=${this.replayEmbed}
         ?replayLoaded=${this.isRwpLoaded}
       ></btrix-collection-edit-dialog>
+
+      ${createIndexDialog({
+        open: this.openDialogName === "createIndex",
+        collection: this.collection,
+        hide: () => (this.openDialogName = undefined),
+        confirm: async () => this.createIndex(),
+      })}
     `;
   }
 
@@ -612,30 +625,26 @@ export class CollectionDetail extends BtrixElement {
 
               this.openDialogName = "edit";
             }}
-            ?disabled=${!this.collection?.crawlCount}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
             ${msg("Edit Collection Settings")}
           </sl-menu-item>
-          <sl-tooltip
-            content=${this.collection?.crawlCount
-              ? msg("Choose what page viewers see first in replay")
-              : msg("Add items to select a home page")}
-            ?disabled=${Boolean(this.collection?.crawlCount)}
-          >
-            <sl-menu-item
-              @click=${() => {
-                this.openDialogName = "replaySettings";
-              }}
-              ?disabled=${!this.collection?.crawlCount || !this.isRwpLoaded}
-            >
-              ${!this.collection ||
-              Boolean(this.collection.crawlCount && !this.isRwpLoaded)
-                ? html`<sl-spinner slot="prefix"></sl-spinner>`
-                : html`<sl-icon name="house" slot="prefix"></sl-icon>`}
-              ${msg("Set Initial View")}
-            </sl-menu-item>
-          </sl-tooltip>
+          ${when(
+            this.collection?.crawlCount,
+            () => html`
+              <sl-menu-item
+                @click=${() => {
+                  this.openDialogName = "replaySettings";
+                }}
+                ?disabled=${!this.isRwpLoaded}
+              >
+                ${this.isRwpLoaded
+                  ? html`<sl-icon name="house" slot="prefix"></sl-icon>`
+                  : html`<sl-spinner slot="prefix"></sl-spinner>`}
+                ${msg("Set Initial View")}
+              </sl-menu-item>
+            `,
+          )}
           <sl-menu-item
             @click=${async () => {
               this.navigate.to(
@@ -656,26 +665,62 @@ export class CollectionDetail extends BtrixElement {
             <sl-icon name="ui-checks" slot="prefix"></sl-icon>
             ${msg("Select Archived Items")}
           </sl-menu-item>
+          ${when(
+            this.appState.isAdmin && this.collection,
+            (collection) => html`
+              <sl-menu-item>
+                <sl-icon name="stack" slot="prefix"></sl-icon>
+                ${msg("Deduplication Settings")}
+                <sl-menu slot="submenu">
+                  ${collection.indexStats
+                    ? html`${when(
+                          collection.indexStats.removedCrawls,
+                          () => html`
+                            <sl-menu-item
+                              class="menu-item-warning"
+                              @click=${() => void this.purgeIndex()}
+                            >
+                              <sl-icon slot="prefix" name="trash2"></sl-icon>
+                              ${msg("Purge Index")}
+                            </sl-menu-item>
+                          `,
+                        )}
+                        <sl-menu-item
+                          class="menu-item-danger"
+                          @click=${() => void this.deleteIndex()}
+                        >
+                          <sl-icon slot="prefix" name="trash3"></sl-icon>
+                          ${msg("Delete Index")}
+                        </sl-menu-item>`
+                    : html`<sl-menu-item
+                        class="menu-item-success"
+                        @click=${() => (this.openDialogName = "createIndex")}
+                      >
+                        <sl-icon slot="prefix" name="table"></sl-icon>
+                        ${msg("Create Index")}
+                      </sl-menu-item>`}
+                </sl-menu>
+              </sl-menu-item>
+            `,
+          )}
           <sl-divider></sl-divider>
-          <btrix-menu-item-link
-            href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
-            download
-            ?disabled=${!this.collection?.totalSize}
-          >
-            <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-            ${msg("Download Collection")}
-            ${when(
-              this.collection,
-              (collection) => html`
+          ${when(
+            this.collection?.totalSize,
+            (size) => html`
+              <btrix-menu-item-link
+                href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
+                download
+                ?disabled=${!this.collection?.totalSize}
+              >
+                <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+                ${msg("Download Collection")}
                 <btrix-badge slot="suffix"
-                  >${this.localize.bytes(
-                    collection.totalSize || 0,
-                  )}</btrix-badge
+                  >${this.localize.bytes(size)}</btrix-badge
                 >
-              `,
-            )}
-          </btrix-menu-item-link>
-          <sl-divider></sl-divider>
+              </btrix-menu-item-link>
+              <sl-divider></sl-divider>
+            `,
+          )}
           <sl-menu-item
             @click=${() =>
               ClipboardController.copyToClipboard(
@@ -686,19 +731,6 @@ export class CollectionDetail extends BtrixElement {
             ${msg("Copy Collection ID")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-          ${when(
-            this.appState.isAdmin,
-            () => html`
-              <sl-menu-item class="menu-item-warning" @click=${console.log}>
-                <sl-icon slot="prefix" name="arrow-repeat"></sl-icon>
-                ${msg("Reset Index")}
-              </sl-menu-item>
-              <sl-menu-item class="menu-item-danger" @click=${console.log}>
-                <sl-icon slot="prefix" name="trash3"></sl-icon>
-                ${msg("Delete Index")}
-              </sl-menu-item>
-            `,
-          )}
           <sl-menu-item class="menu-item-danger" @click=${this.confirmDelete}>
             <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${msg("Delete Collection")}
@@ -1270,6 +1302,100 @@ export class CollectionDetail extends BtrixElement {
         ),
         variant: "danger",
         icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async createIndex() {
+    try {
+      await this.api.fetch(
+        `/orgs/${this.orgId}/collections/${this.collectionId}/dedupeIndex/create`,
+        {
+          method: "POST",
+        },
+      );
+
+      const count = this.collection?.crawlCount || 0;
+      const items_count = this.localize.number(count);
+      const plural_of_items = pluralOf("items", count);
+
+      this.notify.toast({
+        ...(count
+          ? {
+              title: msg("Created deduplication index."),
+              message: msg(
+                str`Importing ${items_count} archived ${plural_of_items}.`,
+              ),
+            }
+          : {
+              message: msg("Created deduplication index."),
+            }),
+        variant: "success",
+        icon: "check2-circle",
+        id: "dedupe-index-update-status",
+      });
+    } catch (err) {
+      console.debug(err);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't created index at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "dedupe-index-update-status",
+      });
+    }
+  }
+
+  private async purgeIndex() {
+    try {
+      await this.api.fetch(
+        `/orgs/${this.orgId}/collections/${this.collectionId}/dedupeIndex/purge`,
+        {
+          method: "POST",
+        },
+      );
+
+      this.notify.toast({
+        message: msg("Reset deduplication index."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "dedupe-index-update-status",
+      });
+    } catch (err) {
+      console.debug(err);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't purge index at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "dedupe-index-update-status",
+      });
+    }
+  }
+
+  private async deleteIndex() {
+    try {
+      await this.api.fetch(
+        `/orgs/${this.orgId}/collections/${this.collectionId}/dedupeIndex/delete`,
+        {
+          method: "POST",
+        },
+      );
+
+      this.notify.toast({
+        message: msg("Deleted deduplication index."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "dedupe-index-update-status",
+      });
+    } catch (err) {
+      console.debug(err);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't delete index at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "dedupe-index-update-status",
       });
     }
   }

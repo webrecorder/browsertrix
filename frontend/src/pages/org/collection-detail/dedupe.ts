@@ -1,4 +1,4 @@
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlChangeEvent, SlRadioGroup } from "@shoelace-style/shoelace";
 import clsx from "clsx";
@@ -8,8 +8,9 @@ import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import type { OpenDialogEventDetail } from "./types";
+
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { indexStatus } from "@/features/collections/templates/index-status";
@@ -40,7 +41,7 @@ type View = {
 };
 
 /**
- * @fires btrix-choose-workflows
+ * @fires btrix-open-dialog
  */
 @customElement("btrix-collection-detail-dedupe")
 @localized()
@@ -50,9 +51,6 @@ export class CollectionDetailDedupe extends BtrixElement {
 
   @property({ type: Object })
   collection?: Collection;
-
-  @state()
-  private openDialog?: "createIndex";
 
   @state()
   private pagination: Required<APIPaginationQuery> = {
@@ -146,7 +144,7 @@ export class CollectionDetailDedupe extends BtrixElement {
       </div>`;
     }
 
-    return html`${panelBody({
+    return panelBody({
       content: emptyMessage({
         message: msg("Deduplication is not enabled"),
         detail: msg(
@@ -157,14 +155,26 @@ export class CollectionDetailDedupe extends BtrixElement {
             <sl-button
               variant="primary"
               @click=${() =>
-                this.dispatchEvent(new CustomEvent("btrix-choose-workflows"))}
+                this.dispatchEvent(
+                  new CustomEvent<OpenDialogEventDetail>("btrix-open-dialog", {
+                    detail: "editItems",
+                  }),
+                )}
             >
               <sl-icon slot="prefix" name="ui-checks"></sl-icon>
               ${msg("Dedupe Auto-Added Workflows")}
             </sl-button>
             ${this.appState.isAdmin
               ? html`<sl-button
-                  @click=${() => (this.openDialog = "createIndex")}
+                  @click=${() =>
+                    this.dispatchEvent(
+                      new CustomEvent<OpenDialogEventDetail>(
+                        "btrix-open-dialog",
+                        {
+                          detail: "createIndex",
+                        },
+                      ),
+                    )}
                 >
                   <sl-icon slot="prefix" name="table"></sl-icon>
                   ${msg("Create Index")}
@@ -173,60 +183,7 @@ export class CollectionDetailDedupe extends BtrixElement {
           </div>
         `,
       }),
-    })}
-    ${this.renderCreateIndex()}`;
-  }
-
-  private renderCreateIndex() {
-    return html`<btrix-dialog
-      label=${msg("Create Deduplication Index")}
-      ?open=${this.openDialog === "createIndex"}
-      @sl-hide=${() => (this.openDialog = undefined)}
-    >
-      ${when(this.collection, (col) => {
-        const collection_name = html`<strong class="font-semibold"
-          >${col.name}</strong
-        >`;
-
-        return html`
-          <p>
-            ${msg(
-              html`Are you sure you want to manually create a deduplication
-              index for ${collection_name}?`,
-            )}
-            ${when(col.crawlCount, (count) => {
-              const items_count = this.localize.number(count);
-              const plural_of_items = pluralOf("items", count);
-
-              return msg(
-                html`${items_count} archived ${plural_of_items} will be imported
-                into the index.`,
-              );
-            })}
-          </p>
-        `;
-      })}
-      <div slot="footer" class="flex justify-between">
-        <sl-button
-          size="small"
-          @click=${(e: MouseEvent) =>
-            void (e.target as HTMLElement)
-              .closest<Dialog>("btrix-dialog")
-              ?.hide()}
-          .autofocus=${true}
-          >${msg("Cancel")}</sl-button
-        >
-        <sl-button
-          size="small"
-          variant="primary"
-          @click=${async () => {
-            await this.createIndex();
-            this.openDialog = undefined;
-          }}
-          >${msg("Create Index")}</sl-button
-        >
-      </div>
-    </btrix-dialog>`;
+    });
   }
 
   private renderStats() {
@@ -563,45 +520,5 @@ export class CollectionDetailDedupe extends BtrixElement {
         </btrix-desc-list-item>
       </btrix-desc-list>`,
     });
-  }
-
-  private async createIndex() {
-    try {
-      await this.api.fetch(
-        `/orgs/${this.orgId}/collections/${this.collectionId}/dedupeIndex/create`,
-        {
-          method: "POST",
-        },
-      );
-
-      const count = this.collection?.crawlCount || 0;
-      const items_count = this.localize.number(count);
-      const plural_of_items = pluralOf("items", count);
-
-      this.notify.toast({
-        ...(count
-          ? {
-              title: msg("Created deduplication index."),
-              message: msg(
-                str`Importing ${items_count} archived ${plural_of_items}.`,
-              ),
-            }
-          : {
-              message: msg("Created deduplication index."),
-            }),
-        variant: "success",
-        icon: "check2-circle",
-        id: "dedupe-index-update-status",
-      });
-    } catch (err) {
-      console.debug(err);
-
-      this.notify.toast({
-        message: msg("Sorry, couldn't created index at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "dedupe-index-update-status",
-      });
-    }
   }
 }
