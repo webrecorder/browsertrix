@@ -735,11 +735,15 @@ class BaseCrawlOps:
             query["requiresCrawls"] = {"$in": requires_crawls}
         elif has_requires_crawls:
             query["requiresCrawls"] = {"$nin": [None, []]}
+        elif has_requires_crawls is False:
+            query["requiresCrawls"] = {"$in": [None, []]}
 
         if required_by_crawls:
             query["requiredByCrawls"] = {"$in": required_by_crawls}
         elif has_required_by_crawls:
             query["requiredByCrawls"] = {"$nin": [None, []]}
+        elif has_required_by_crawls is False:
+            query["requiredByCrawls"] = {"$in": [None, []]}
 
         aggregate = [
             {"$match": query},
