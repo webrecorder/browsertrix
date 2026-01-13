@@ -17,10 +17,11 @@ import { indexStatus } from "@/features/collections/templates/index-status";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { infoPopover } from "@/layouts/info-popover";
 import { panel, panelBody, panelHeader } from "@/layouts/panel";
-import { noData, notApplicable } from "@/strings/ui";
+import { noData } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { Crawl, Workflow } from "@/types/crawler";
+import type { DedupeIndexStats } from "@/types/dedupe";
 import { SortDirection } from "@/types/utils";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
@@ -128,16 +129,27 @@ export class CollectionDetailDedupe extends BtrixElement {
     if (!this.collection) return;
 
     if (this.collection.indexStats) {
+      const hideStats = !this.collection.indexStats.totalCrawls;
       return html` <div
         class="grid grid-cols-5 grid-rows-[min-content_1fr] gap-x-3 gap-y-3 xl:gap-x-7"
       >
-        <section class="col-span-full row-span-1 xl:col-span-4">
-          ${this.renderStats()}
-        </section>
-        <section class="col-span-full row-span-2 xl:col-span-1">
+        <section
+          class="col-span-full row-span-2 xl:order-last xl:col-span-1 xl:col-start-5 xl:row-start-1"
+        >
           ${this.renderOverview()}
         </section>
-        <section class="col-span-full row-span-1 xl:col-span-4">
+        ${hideStats
+          ? nothing
+          : html`<section
+              class="col-span-full row-span-1 xl:col-span-4 xl:col-start-1 xl:row-start-1"
+            >
+              ${this.renderStats(this.collection.indexStats)}
+            </section>`}
+        <section
+          class="${hideStats
+            ? tw`xl:row-start-1`
+            : tw`xl:row-start-2`} col-span-full row-span-1 xl:col-span-4 xl:col-start-1"
+        >
           ${panelHeader({ heading: msg("Indexed Crawls") })}
           ${this.renderCrawls()}
         </section>
@@ -186,26 +198,20 @@ export class CollectionDetailDedupe extends BtrixElement {
     });
   }
 
-  private renderStats() {
+  private renderStats(indexStats: DedupeIndexStats) {
     const stat = ({
       label,
       icon,
-      getValue,
+      value,
     }: {
       label: string;
       icon?: string;
-      getValue: (col: Collection) => string | TemplateResult;
+      value: string | TemplateResult;
     }) => html`
       <div
         class="grid grid-cols-[1fr_min-content] grid-rows-[min-content_1fr] items-center gap-x-4 gap-y-0.5"
       >
-        <dt class="min-h-6 text-base font-medium">
-          ${when(
-            this.collection,
-            getValue,
-            () => html`<sl-skeleton class="mt-1"></sl-skeleton>`,
-          )}
-        </dt>
+        <dt class="min-h-6 text-base font-medium">${value}</dt>
         <dd class="col-start-1 text-xs text-neutral-700">${label}</dd>
         ${icon
           ? html`<div
@@ -216,20 +222,6 @@ export class CollectionDetailDedupe extends BtrixElement {
           : nothing}
       </div>
     `;
-    const value = (
-      v: number,
-      unit: "bytes" | "number" = "number",
-      size: "medium" | "large" = "medium",
-      successThreshold?: number,
-    ) =>
-      html`<span
-        class=${clsx(
-          successThreshold && v >= successThreshold && tw`text-success-600`,
-          size === "large" && tw`text-lg leading-none`,
-        )}
-      >
-        ${unit === "bytes" ? this.localize.bytes(v) : this.localize.number(v)}
-      </span>`;
 
     return html`<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
       <btrix-card>
@@ -259,39 +251,29 @@ export class CollectionDetailDedupe extends BtrixElement {
           >
             ${stat({
               label: msg("Conserved"),
-              getValue: (col) =>
-                col.indexStats
-                  ? value(
-                      col.indexStats.conservedSize,
-                      "bytes",
-                      "large",
-                      BYTES_PER_MB,
-                    )
-                  : notApplicable,
+              value: html`
+                <span
+                  class=${clsx(
+                    tw`text-lg leading-none`,
+                    indexStats.conservedSize >= BYTES_PER_MB &&
+                      tw`text-success-600`,
+                  )}
+                >
+                  ${this.localize.bytes(indexStats.conservedSize)}
+                </span>
+              `,
             })}
-            ${when(this.collection?.indexStats, (stats) =>
-              stats.totalCrawlSize ||
-              stats.conservedSize ||
-              stats.removedCrawlSize
-                ? html`<div class="flex-1">${this.renderStorageBar()}</div>`
-                : nothing,
-            )}
+            <div class="flex-1">${this.renderStorageBar()}</div>
           </div>
           ${stat({
             label: msg("Total Indexed Items"),
             icon: "file-earmark-zip",
-            getValue: (col) =>
-              col.indexStats
-                ? value(col.indexStats.totalCrawlSize, "bytes")
-                : notApplicable,
+            value: this.localize.bytes(indexStats.totalCrawlSize),
           })}
           ${stat({
             label: msg("Deleted Items in Index"),
             icon: "file-earmark-minus",
-            getValue: (col) =>
-              col.indexStats
-                ? value(col.indexStats.removedCrawlSize, "bytes")
-                : notApplicable,
+            value: this.localize.bytes(indexStats.removedCrawlSize),
           })}
         </dl>
       </btrix-card>
@@ -303,32 +285,24 @@ export class CollectionDetailDedupe extends BtrixElement {
           ${stat({
             label: msg("Original Resources"),
             icon: "circle-square",
-            getValue: (col) =>
-              col.indexStats
-                ? value(col.indexStats.totalUrls - col.indexStats.dupeUrls)
-                : notApplicable,
+            value: this.localize.number(
+              indexStats.totalUrls - indexStats.dupeUrls,
+            ),
           })}
           ${stat({
             label: msg("Duplicate Resources"),
             icon: "intersect",
-            getValue: (col) =>
-              col.indexStats ? value(col.indexStats.dupeUrls) : notApplicable,
+            value: this.localize.number(indexStats.dupeUrls),
           })}
           ${stat({
             label: msg("Total Indexed Items"),
             icon: "file-earmark-zip",
-            getValue: (col) =>
-              col.indexStats
-                ? value(col.indexStats.totalCrawls)
-                : notApplicable,
+            value: this.localize.number(indexStats.totalCrawls),
           })}
           ${stat({
             label: msg("Deleted Items in Index"),
             icon: "file-earmark-minus",
-            getValue: (col) =>
-              col.indexStats
-                ? value(col.indexStats.removedCrawls)
-                : notApplicable,
+            value: this.localize.number(indexStats.removedCrawls),
           })}
         </dl>
       </btrix-card>
@@ -458,7 +432,28 @@ export class CollectionDetailDedupe extends BtrixElement {
           `
         : panelBody({
             content: emptyMessage({
-              message: msg("No crawls found."),
+              message: msg("No indexed crawls found"),
+              detail: msg(
+                "Select crawled items to import them into the index.",
+              ),
+              actions: this.appState.isAdmin
+                ? html`<sl-button
+                    size="small"
+                    variant="primary"
+                    @click=${() =>
+                      this.dispatchEvent(
+                        new CustomEvent<OpenDialogEventDetail>(
+                          "btrix-open-dialog",
+                          {
+                            detail: "editItems",
+                          },
+                        ),
+                      )}
+                  >
+                    <sl-icon slot="prefix" name="ui-checks"></sl-icon>
+                    ${msg("Select Items")}
+                  </sl-button>`
+                : undefined,
             }),
           });
 
@@ -487,7 +482,28 @@ export class CollectionDetailDedupe extends BtrixElement {
             `
           : panelBody({
               content: emptyMessage({
-                message: msg("No crawls added."),
+                message: msg("No related workflows found"),
+                detail: msg(
+                  "Enable auto-add and dedupe in workflow settings to deduplicate crawls.",
+                ),
+                actions: this.appState.isAdmin
+                  ? html`<sl-button
+                      size="small"
+                      variant="primary"
+                      @click=${() =>
+                        this.dispatchEvent(
+                          new CustomEvent<OpenDialogEventDetail>(
+                            "btrix-open-dialog",
+                            {
+                              detail: "editItems",
+                            },
+                          ),
+                        )}
+                    >
+                      <sl-icon slot="prefix" name="ui-checks"></sl-icon>
+                      ${msg("Configure Workflow Settings")}
+                    </sl-button>`
+                  : undefined,
               }),
             }),
     })}`;
