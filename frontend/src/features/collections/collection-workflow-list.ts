@@ -147,8 +147,15 @@ export class CollectionWorkflowList extends BtrixElement {
 
   render() {
     return html`<sl-tree
-      class="part-[base]:grid part-[base]:grid-cols-[1fr_min-content] part-[base]:gap-2 part-[base]:gap-x-3"
+      class="part-[base]:grid part-[base]:grid-cols-[1fr_min-content] part-[base]:gap-2"
       selection="multiple"
+      @mousedown=${(e: MouseEvent) => {
+        if ((e.target as HTMLElement).tagName !== "SL-TREE-ITEM") {
+          // Prevent sl-tree from switching focusing
+          // https://github.com/shoelace-style/shoelace/blob/370727c7bf70d427ad0cbb80d95df226c87dc77a/src/components/tree/tree.component.ts#L404C10-L404C19
+          e.preventDefault();
+        }
+      }}
       @sl-selection-change=${(e: CustomEvent<{ selection: SlTreeItem[] }>) => {
         if (!this.crawlItems) {
           console.debug("no crawl items with classname `crawl`");
@@ -217,7 +224,7 @@ export class CollectionWorkflowList extends BtrixElement {
         }}
       >
         <div
-          class="flex min-h-5 flex-1 items-center gap-2 overflow-hidden leading-none md:gap-x-6"
+          class="pointer-events-none flex min-h-5 flex-1 items-center gap-2 overflow-hidden leading-none md:gap-x-6"
         >
           <div class="flex-1 overflow-hidden">${this.renderName(workflow)}</div>
           <div
