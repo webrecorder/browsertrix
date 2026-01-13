@@ -10,7 +10,7 @@ import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 import type { Embed as ReplayWebPage } from "replaywebpage";
 
-import { Tab } from "./types";
+import { CollectionSearchParam, EditingSearchParamValue, Tab } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
@@ -26,8 +26,9 @@ import {
   metadataColumn,
   metadataItemWithCollection,
 } from "@/layouts/collections/metadataColumn";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
-import { panelHeader } from "@/layouts/panel";
+import { panelBody, panelHeader } from "@/layouts/panel";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -97,20 +98,24 @@ export class CollectionDetail extends BtrixElement {
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
 
-  private readonly editing = new SearchParamsValue<"items" | null>(
-    this,
-    (value, params) => {
-      if (value === "items") {
-        params.set("editing", value);
-      } else {
-        params.delete("editing");
-      }
-      return params;
-    },
-    (params) => {
-      return params.get("editing") === "items" ? "items" : null;
-    },
-  );
+  private readonly editing =
+    new SearchParamsValue<EditingSearchParamValue | null>(
+      this,
+      (value, params) => {
+        if (value === EditingSearchParamValue.Items) {
+          params.set(CollectionSearchParam.Editing, value);
+        } else {
+          params.delete(CollectionSearchParam.Editing);
+        }
+        return params;
+      },
+      (params) => {
+        return params.get(CollectionSearchParam.Editing) ===
+          EditingSearchParamValue.Items
+          ? EditingSearchParamValue.Items
+          : null;
+      },
+    );
 
   private readonly tabLabels: Record<
     Tab,
@@ -303,7 +308,8 @@ export class CollectionDetail extends BtrixElement {
               () => html`
                 <sl-button
                   size="small"
-                  @click=${() => this.editing.setValue("items")}
+                  @click=${() =>
+                    this.editing.setValue(EditingSearchParamValue.Items)}
                   ?disabled=${!this.collection}
                 >
                   <sl-icon name="ui-checks" slot="prefix"></sl-icon>
@@ -327,6 +333,8 @@ export class CollectionDetail extends BtrixElement {
             html`<btrix-collection-detail-dedupe
               .collectionId=${this.collectionId}
               .collection=${this.collection}
+              @btrix-choose-workflows=${() =>
+                this.editing.setValue(EditingSearchParamValue.Items)}
             ></btrix-collection-detail-dedupe> `,
         ],
       ])}
@@ -420,7 +428,10 @@ export class CollectionDetail extends BtrixElement {
         collectionId=${this.collectionId}
         collectionName=${this.collection?.name || ""}
         ?isCrawler=${this.isCrawler}
-        ?open=${Boolean(this.editing.value === "items" && this.collection)}
+        ?open=${Boolean(
+          this.editing.value === EditingSearchParamValue.Items &&
+            this.collection,
+        )}
         @sl-hide=${() => this.editing.setValue(null)}
         @btrix-collection-saved=${() => {
           this.refreshReplay();
@@ -639,7 +650,9 @@ export class CollectionDetail extends BtrixElement {
             <sl-icon name="pencil" slot="prefix"></sl-icon>
             ${msg("Edit Description")}
           </sl-menu-item>
-          <sl-menu-item @click=${() => this.editing.setValue("items")}>
+          <sl-menu-item
+            @click=${() => this.editing.setValue(EditingSearchParamValue.Items)}
+          >
             <sl-icon name="ui-checks" slot="prefix"></sl-icon>
             ${msg("Select Archived Items")}
           </sl-menu-item>
@@ -934,29 +947,33 @@ export class CollectionDetail extends BtrixElement {
   }
 
   private renderEmptyState() {
-    return html`
-      <div class="rounded border px-3 py-12">
-        <p class="text-center text-neutral-500">
-          ${this.archivedItems?.page && this.archivedItems.page > 1
-            ? msg("Page not found.")
-            : html`
-                ${msg("This Collection doesn’t have any archived items, yet.")}
-                ${this.isCrawler &&
-                html`
-                  <div class="mt-3">
-                    <sl-button
-                      variant="primary"
-                      @click=${() => this.editing.setValue("items")}
-                    >
-                      <sl-icon name="ui-checks" slot="prefix"></sl-icon>
-                      ${msg("Add Archived Items")}
-                    </sl-button>
-                  </div>
-                `}
-              `}
-        </p>
-      </div>
-    `;
+    const notFound = this.archivedItems?.page && this.archivedItems.page > 1;
+
+    return panelBody({
+      content: emptyMessage({
+        message: notFound
+          ? msg("Page not found.")
+          : msg("No archived items yet"),
+        detail: notFound
+          ? undefined
+          : msg(
+              "Select individual items or automatically add new crawled items.",
+            ),
+        actions:
+          !notFound && this.isCrawler
+            ? html`
+                <sl-button
+                  variant="primary"
+                  @click=${() =>
+                    this.editing.setValue(EditingSearchParamValue.Items)}
+                >
+                  <sl-icon name="ui-checks" slot="prefix"></sl-icon>
+                  ${msg("Add Archived Items")}
+                </sl-button>
+              `
+            : undefined,
+      }),
+    });
   }
 
   private readonly renderArchivedItem = (

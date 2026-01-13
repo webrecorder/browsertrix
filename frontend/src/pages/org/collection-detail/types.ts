@@ -4,3 +4,11 @@ export enum Tab {
   Items = "items",
   Deduplication = "deduplication",
 }
+
+export enum CollectionSearchParam {
+  Editing = "editing",
+}
+
+export enum EditingSearchParamValue {
+  Items = "items",
+}

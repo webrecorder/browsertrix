@@ -15,7 +15,6 @@ import { indexStatus } from "@/features/collections/templates/index-status";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { infoPopover } from "@/layouts/info-popover";
 import { panel, panelBody, panelHeader } from "@/layouts/panel";
-import { OrgTab } from "@/routes";
 import { noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
@@ -39,6 +38,9 @@ type View = {
   crawlsView?: CrawlsView;
 };
 
+/**
+ * @fires btrix-choose-workflows
+ */
 @customElement("btrix-collection-detail-dedupe")
 @localized()
 export class CollectionDetailDedupe extends BtrixElement {
@@ -147,14 +149,22 @@ export class CollectionDetailDedupe extends BtrixElement {
           "Deduplication can help conserve storage space and reduce crawl time.",
         ),
         actions: html`
-          <sl-button
-            size="small"
-            href="${this.navigate.orgBasePath}/${OrgTab.Workflows}"
-            @click=${this.navigate.link}
-          >
-            <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
-            ${msg("Enable in Workflows")}
-          </sl-button>
+          <div class="flex gap-3">
+            <sl-button
+              variant="primary"
+              @click=${() =>
+                this.dispatchEvent(new CustomEvent("btrix-choose-workflows"))}
+            >
+              <sl-icon slot="prefix" name="ui-checks"></sl-icon>
+              ${msg("Choose Workflows")}
+            </sl-button>
+            ${this.appState.isAdmin
+              ? html`<sl-button>
+                  <sl-icon slot="prefix" name="database"></sl-icon>
+                  ${msg("Create Index")}
+                </sl-button>`
+              : nothing}
+          </div>
         `,
       }),
     });
