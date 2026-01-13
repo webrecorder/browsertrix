@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/web-components";
 import { delay, http, HttpResponse } from "msw";
 import type { DecoratorFunction } from "storybook/internal/types";
 
-import { data, renderComponent, type RenderProps } from "./DedupeWorkflows";
+import { data } from "./data";
+import { renderComponent, type RenderProps } from "./DedupeWorkflows";
 
 import { orgDecorator } from "@/stories/decorators/orgDecorator";
 import {

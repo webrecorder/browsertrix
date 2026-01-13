@@ -465,7 +465,7 @@ export class CollectionItemsDialog extends BtrixElement {
             };
           }}
           @btrix-auto-add-change=${(e: CustomEvent<AutoAddChangeDetail>) => {
-            const { id, checked } = e.detail;
+            const { id, checked, dedupe } = e.detail;
             const workflow = this.workflows?.items.find(
               (workflow) => workflow.id === id,
             );
@@ -475,6 +475,7 @@ export class CollectionItemsDialog extends BtrixElement {
                 autoAddCollections: checked
                   ? union([this.collectionId], workflow.autoAddCollections)
                   : without([this.collectionId], workflow.autoAddCollections),
+                dedupe,
               });
             }
           }}
@@ -864,14 +865,25 @@ export class CollectionItemsDialog extends BtrixElement {
   private async saveAutoAdd({
     id,
     autoAddCollections,
-  }: Pick<Workflow, "id" | "autoAddCollections">) {
+    dedupe,
+  }: Pick<Workflow, "id" | "autoAddCollections"> & { dedupe?: boolean }) {
+    const params: Pick<Workflow, "autoAddCollections" | "dedupeCollId"> = {
+      autoAddCollections: autoAddCollections,
+    };
+
+    if (dedupe === true) {
+      params.dedupeCollId = this.collectionId;
+    } else if (dedupe === false) {
+      params.dedupeCollId = null;
+    }
+
     try {
       await this.api.fetch(`/orgs/${this.orgId}/crawlconfigs/${id}`, {
         method: "PATCH",
-        body: JSON.stringify({
-          autoAddCollections: autoAddCollections,
-        }),
+        body: JSON.stringify(params),
       });
+      await this.fetchCrawls();
+
       this.notify.toast({
         message: msg(str`Updated.`),
         variant: "success",
