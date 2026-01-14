@@ -179,7 +179,7 @@ export class CollectionDetailDedupe extends BtrixElement {
                     )}
                 >
                   <sl-icon slot="prefix" name="ui-checks"></sl-icon>
-                  ${msg("Dedupe Auto-Added Workflows")}
+                  ${msg("Configure Auto-Add")}
                 </sl-button>
                 ${this.appState.isAdmin
                   ? html`<sl-button
@@ -489,16 +489,13 @@ export class CollectionDetailDedupe extends BtrixElement {
             `
           : panelBody({
               content: emptyMessage({
-                message: msg("No related workflows found"),
+                message: msg("No deduped workflows found"),
                 detail: this.appState.isCrawler
-                  ? msg(
-                      "Enable auto-add and dedupe in workflow settings to deduplicate crawls.",
-                    )
+                  ? msg("Auto-add workflow crawls to enable dedupe.")
                   : undefined,
                 actions: this.appState.isCrawler
                   ? html`<sl-button
                       size="small"
-                      variant="primary"
                       @click=${() =>
                         this.dispatchEvent(
                           new CustomEvent<OpenDialogEventDetail>(
@@ -510,7 +507,7 @@ export class CollectionDetailDedupe extends BtrixElement {
                         )}
                     >
                       <sl-icon slot="prefix" name="ui-checks"></sl-icon>
-                      ${msg("View Workflows")}
+                      ${msg("Configure Auto-Add")}
                     </sl-button>`
                   : undefined,
               }),

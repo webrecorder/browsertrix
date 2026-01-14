@@ -97,9 +97,10 @@ export class CollectionWorkflowListSettings extends BtrixElement {
         >
           <btrix-popover
             content=${msg(
-              "This workflow is using another collection for deduplication.",
+              "This workflow is using another collection to dedupe.",
             )}
             ?disabled=${!disableDedupe}
+            hoist
           >
             <sl-switch
               class="mx-[2px] inline-block"

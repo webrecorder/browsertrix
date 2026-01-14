@@ -314,7 +314,7 @@ export class CollectionDetail extends BtrixElement {
                   ?disabled=${!this.collection}
                 >
                   <sl-icon name="ui-checks" slot="prefix"></sl-icon>
-                  ${msg("Select Items")}
+                  ${msg("Configure Items")}
                 </sl-button>
               `,
             ],
@@ -663,7 +663,7 @@ export class CollectionDetail extends BtrixElement {
             @click=${() => this.editing.setValue(EditingSearchParamValue.Items)}
           >
             <sl-icon name="ui-checks" slot="prefix"></sl-icon>
-            ${msg("Select Archived Items")}
+            ${msg("Configure Items")}
           </sl-menu-item>
           ${when(
             this.appState.isAdmin && this.collection,
@@ -1315,6 +1315,7 @@ export class CollectionDetail extends BtrixElement {
           method: "POST",
         },
       );
+      await this.fetchCollection();
 
       const count = this.collection?.crawlCount || 0;
       const items_count = this.localize.number(count);
@@ -1355,6 +1356,7 @@ export class CollectionDetail extends BtrixElement {
           method: "POST",
         },
       );
+      await this.fetchCollection();
 
       this.notify.toast({
         message: msg("Reset deduplication index."),
@@ -1382,6 +1384,7 @@ export class CollectionDetail extends BtrixElement {
           method: "POST",
         },
       );
+      await this.fetchCollection();
 
       this.notify.toast({
         message: msg("Deleted deduplication index."),

@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import clsx from "clsx";
 import { merge } from "immutable";
 import { css, html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -36,6 +37,7 @@ import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import { isApiError } from "@/utils/api";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
+import { tw } from "@/utils/tailwind";
 
 const TABS = ["crawl", "upload"] as const;
 type Tab = (typeof TABS)[number];
@@ -200,16 +202,17 @@ export class CollectionItemsDialog extends BtrixElement {
   render() {
     return html` <btrix-dialog
       ?open=${this.open}
+      class="part-[title]:overflow-hidden"
       style="--width: var(--btrix-screen-desktop); --body-spacing: 0;"
       @sl-show=${() => (this.isReady = true)}
       @sl-after-hide=${() => this.reset()}
     >
-      <span slot="label">
-        ${msg("Select Archived Items")}
-        <span class="font-normal text-neutral-500"
-          >${msg("in")} ${this.collectionName}</span
-        >
-      </span>
+      <div slot="label" class="flex items-center gap-3 divide-x">
+        <div class="whitespace-nowrap">${msg("Configure Items")}</div>
+        <div class="truncate px-3 text-sm leading-none text-neutral-500">
+          ${this.collectionName}
+        </div>
+      </div>
       <div class="dialogContent flex flex-col">
         ${when(this.isReady, this.renderContent)}
       </div>
@@ -234,7 +237,10 @@ export class CollectionItemsDialog extends BtrixElement {
       </div>
       <div
         id="tabPanel-crawls"
-        class="flex-1${this.activeTab === "crawl" ? " flex flex-col" : ""}"
+        class=${clsx(
+          tw`flex-1 overflow-hidden`,
+          this.activeTab === "crawl" && tw`flex flex-col`,
+        )}
         role="tabpanel"
         tabindex="0"
         aria-labelledby="tab-crawls"
@@ -245,7 +251,10 @@ export class CollectionItemsDialog extends BtrixElement {
 
       <div
         id="tabPanel-uploads"
-        class="flex-1${this.activeTab === "upload" ? " flex flex-col" : ""}"
+        class=${clsx(
+          tw`flex-1`,
+          this.activeTab === "upload" && tw`flex flex-col`,
+        )}
         role="tabpanel"
         tabindex="0"
         aria-labelledby="tab-uploads"
@@ -304,14 +313,14 @@ export class CollectionItemsDialog extends BtrixElement {
           <div class="px-3">
             ${when(
               data,
-              () =>
+              ({ total }) =>
                 this.showOnlyInCollection
-                  ? msg(
-                      str`Crawls in Collection (${this.localize.number(data!.total)})`,
-                    )
-                  : msg(
-                      str`All Workflows (${this.localize.number(data!.total)})`,
-                    ),
+                  ? html`${msg("Crawled Items")}
+                      <btrix-badge>${this.localize.number(total)}</btrix-badge>`
+                  : html`${msg("Crawl Workflows")}
+                      <btrix-badge
+                        >${this.localize.number(total)}</btrix-badge
+                      >`,
               () => msg("Loading..."),
             )}
           </div>
@@ -510,7 +519,7 @@ export class CollectionItemsDialog extends BtrixElement {
         @sl-change=${() =>
           (this.showOnlyInCollection = !this.showOnlyInCollection)}
       >
-        ${msg("Only items in Collection")}
+        ${msg("Only items in collection")}
       </sl-switch>
     `;
   }
@@ -582,7 +591,7 @@ export class CollectionItemsDialog extends BtrixElement {
         ?loading=${this.isSubmitting}
         @click=${() => void this.save()}
       >
-        ${msg("Save Selection")}
+        ${msg("Save Item Selection")}
       </sl-button>
     `;
   };
