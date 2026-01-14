@@ -995,6 +995,7 @@ export class CollectionDetail extends BtrixElement {
           !notFound && this.isCrawler
             ? html`
                 <sl-button
+                  size="small"
                   variant="primary"
                   @click=${() =>
                     this.editing.setValue(EditingSearchParamValue.Items)}

@@ -162,38 +162,45 @@ export class CollectionDetailDedupe extends BtrixElement {
         detail: msg(
           "Deduplication can help conserve storage space and reduce crawl time.",
         ),
-        actions: html`
-          <div class="flex gap-3">
-            <sl-button
-              variant="primary"
-              @click=${() =>
-                this.dispatchEvent(
-                  new CustomEvent<OpenDialogEventDetail>("btrix-open-dialog", {
-                    detail: "editItems",
-                  }),
-                )}
-            >
-              <sl-icon slot="prefix" name="ui-checks"></sl-icon>
-              ${msg("Dedupe Auto-Added Workflows")}
-            </sl-button>
-            ${this.appState.isAdmin
-              ? html`<sl-button
+        actions: this.appState.isCrawler
+          ? html`
+              <div class="flex gap-3">
+                <sl-button
+                  size="small"
+                  variant="primary"
                   @click=${() =>
                     this.dispatchEvent(
                       new CustomEvent<OpenDialogEventDetail>(
                         "btrix-open-dialog",
                         {
-                          detail: "createIndex",
+                          detail: "editItems",
                         },
                       ),
                     )}
                 >
-                  <sl-icon slot="prefix" name="table"></sl-icon>
-                  ${msg("Create Index")}
-                </sl-button>`
-              : nothing}
-          </div>
-        `,
+                  <sl-icon slot="prefix" name="ui-checks"></sl-icon>
+                  ${msg("Dedupe Auto-Added Workflows")}
+                </sl-button>
+                ${this.appState.isAdmin
+                  ? html`<sl-button
+                      size="small"
+                      @click=${() =>
+                        this.dispatchEvent(
+                          new CustomEvent<OpenDialogEventDetail>(
+                            "btrix-open-dialog",
+                            {
+                              detail: "createIndex",
+                            },
+                          ),
+                        )}
+                    >
+                      <sl-icon slot="prefix" name="table"></sl-icon>
+                      ${msg("Create Index")}
+                    </sl-button>`
+                  : nothing}
+              </div>
+            `
+          : undefined,
       }),
     });
   }
@@ -433,10 +440,10 @@ export class CollectionDetailDedupe extends BtrixElement {
         : panelBody({
             content: emptyMessage({
               message: msg("No indexed crawls found"),
-              detail: msg(
-                "Select crawled items to import them into the index.",
-              ),
-              actions: this.appState.isAdmin
+              detail: this.appState.isCrawler
+                ? msg("Select crawled items to import them into the index.")
+                : undefined,
+              actions: this.appState.isCrawler
                 ? html`<sl-button
                     size="small"
                     variant="primary"
@@ -483,10 +490,12 @@ export class CollectionDetailDedupe extends BtrixElement {
           : panelBody({
               content: emptyMessage({
                 message: msg("No related workflows found"),
-                detail: msg(
-                  "Enable auto-add and dedupe in workflow settings to deduplicate crawls.",
-                ),
-                actions: this.appState.isAdmin
+                detail: this.appState.isCrawler
+                  ? msg(
+                      "Enable auto-add and dedupe in workflow settings to deduplicate crawls.",
+                    )
+                  : undefined,
+                actions: this.appState.isCrawler
                   ? html`<sl-button
                       size="small"
                       variant="primary"
@@ -501,7 +510,7 @@ export class CollectionDetailDedupe extends BtrixElement {
                         )}
                     >
                       <sl-icon slot="prefix" name="ui-checks"></sl-icon>
-                      ${msg("Configure Workflow Settings")}
+                      ${msg("View Workflows")}
                     </sl-button>`
                   : undefined,
               }),
