@@ -65,7 +65,6 @@ class Migration(BaseMigration):
                             "file_path": file_.filename,
                             "started": {"$ne": None},
                             "finished": None,
-                            "success": None,
                         }
                     )
                     if matching_job:
@@ -103,7 +102,6 @@ class Migration(BaseMigration):
                     "file_path": profile.resource.filename,
                     "started": {"$ne": None},
                     "finished": None,
-                    "success": None,
                 }
             )
             if matching_job:
