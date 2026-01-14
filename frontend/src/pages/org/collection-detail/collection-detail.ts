@@ -36,10 +36,11 @@ import {
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
 import { panelBody, panelHeader } from "@/layouts/panel";
-import type {
-  APIPaginatedList,
-  APIPaginationQuery,
-  APISortQuery,
+import { getIndexErrorMessage } from "@/strings/collections/index-error";
+import {
+  type APIPaginatedList,
+  type APIPaginationQuery,
+  type APISortQuery,
 } from "@/types/api";
 import {
   CollectionAccess,
@@ -1365,10 +1366,12 @@ export class CollectionDetail extends BtrixElement {
         id: "dedupe-index-update-status",
       });
     } catch (err) {
-      console.debug(err);
+      const message =
+        getIndexErrorMessage(err) ||
+        msg("Sorry, couldn’t purge index at this time.");
 
       this.notify.toast({
-        message: msg("Sorry, couldn't purge index at this time."),
+        message,
         variant: "danger",
         icon: "exclamation-octagon",
         id: "dedupe-index-update-status",
@@ -1393,10 +1396,12 @@ export class CollectionDetail extends BtrixElement {
         id: "dedupe-index-update-status",
       });
     } catch (err) {
-      console.debug(err);
+      const message =
+        getIndexErrorMessage(err) ||
+        msg("Sorry, couldn’t delete index at this time.");
 
       this.notify.toast({
-        message: msg("Sorry, couldn't delete index at this time."),
+        message,
         variant: "danger",
         icon: "exclamation-octagon",
         id: "dedupe-index-update-status",

@@ -16,7 +16,8 @@ import { purgeIndexDialog } from "@/features/collections/templates/purge-index-d
 import { labelWithIcon } from "@/layouts/labelWithIcon";
 import { Tab } from "@/pages/org/collection-detail/types";
 import { OrgTab } from "@/routes";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import { getIndexErrorMessage } from "@/strings/collections/index-error";
+import { type APIPaginatedList, type APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { pluralOf } from "@/utils/pluralize";
@@ -266,10 +267,12 @@ export class OrgSettingsDeduplication extends BtrixElement {
         id: "dedupe-index-update-status",
       });
     } catch (err) {
-      console.debug(err);
+      const message =
+        getIndexErrorMessage(err) ||
+        msg("Sorry, couldn’t purge index at this time.");
 
       this.notify.toast({
-        message: msg("Sorry, couldn't purge index at this time."),
+        message,
         variant: "danger",
         icon: "exclamation-octagon",
         id: "dedupe-index-update-status",
@@ -293,10 +296,12 @@ export class OrgSettingsDeduplication extends BtrixElement {
         id: "dedupe-index-update-status",
       });
     } catch (err) {
-      console.debug(err);
+      const message =
+        getIndexErrorMessage(err) ||
+        msg("Sorry, couldn’t delete index at this time.");
 
       this.notify.toast({
-        message: msg("Sorry, couldn't delete index at this time."),
+        message,
         variant: "danger",
         icon: "exclamation-octagon",
         id: "dedupe-index-update-status",

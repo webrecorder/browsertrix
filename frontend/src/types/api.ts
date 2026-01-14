@@ -45,6 +45,9 @@ export enum APIErrorDetail {
   CustomBehaviorNotFound = "custom_behavior_not_found",
   CustomBehaviorBranchNotFound = "custom_behavior_branch_not_found",
   UseOneOfSeedsOrSeedFile = "use_one_of_seeds_or_seedfile",
+  NoDedupeIndex = "no_dedupe_index",
+  DedupeIndexNotReady = "dedupe_index_not_ready",
+  DedupeIndexInUse = "dedupe_index_is_in_use",
 }
 export const APIErrorDetailEnum = z.nativeEnum(APIErrorDetail);
 export type APIErrorDetailEnum = z.infer<typeof APIErrorDetailEnum>;
