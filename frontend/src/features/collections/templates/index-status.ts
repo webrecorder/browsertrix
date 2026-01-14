@@ -22,7 +22,7 @@ export function indexStatus(state?: DedupeIndexState | null) {
       break;
     case "importing":
     case "purging":
-      label = msg("In Use");
+      label = msg("Updating Index");
       iconName = "dot";
       iconClass = tw`animate-pulse text-violet-600`;
       break;

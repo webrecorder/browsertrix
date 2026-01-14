@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
@@ -135,6 +136,7 @@ export class CollectionDetailDedupe extends BtrixElement {
 
     if (this.collection.indexStats) {
       const hideStats = !this.collection.indexStats.totalCrawls;
+
       return html` <div
         class="grid grid-cols-5 grid-rows-[min-content_1fr] gap-x-3 gap-y-3 xl:gap-x-7"
       >
@@ -525,29 +527,39 @@ export class CollectionDetailDedupe extends BtrixElement {
 
   private renderOverview() {
     const state = this.collection?.indexState;
-    const stats = this.collection?.indexStats;
+    const updating = state === "importing" || state === "purging";
+
+    console.log(this.collection);
 
     return panel({
       heading: msg("Overview"),
       body: html`<btrix-desc-list>
         <btrix-desc-list-item label=${msg("Index Status")}>
-          ${state ? indexStatus(state) : msg("Unavailable")}
+          ${state ? indexStatus(state) : msg("Not Created")}
         </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Index Last Saved")}>
-          ${when(this.collection, (col) =>
-            col.indexLastSavedAt
-              ? this.localize.relativeDate(col.indexLastSavedAt)
-              : noData,
-          )}
-        </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Total Indexed URLs")}>
-          ${when(
-            stats,
-            (dedupe) =>
-              html`${this.localize.number(dedupe.totalUrls)}
-              ${pluralOf("URLs", dedupe.totalUrls)} `,
-          )}
-        </btrix-desc-list-item>
+        ${when(
+          state && this.collection,
+          (col) => html`
+            <btrix-desc-list-item label=${msg("Index Last Updated")}>
+              ${col.indexLastSavedAt
+                ? this.localize.relativeDate(col.indexLastSavedAt)
+                : noData}
+            </btrix-desc-list-item>
+            <btrix-desc-list-item label=${msg("Total Indexed URLs")}>
+              ${col.indexStats
+                ? `${this.localize.number(col.indexStats.totalUrls)} ${pluralOf("URLs", col.indexStats.totalUrls)}`
+                : noData}
+            </btrix-desc-list-item>
+            ${updating
+              ? html`<btrix-desc-list-item label=${msg("Import Progress")}>
+                  <btrix-index-import-progress
+                    collectionId=${this.collectionId}
+                    initialValue=${ifDefined(col.indexStats?.updateProgress)}
+                  ></btrix-index-import-progress>
+                </btrix-desc-list-item>`
+              : nothing}
+          `,
+        )}
       </btrix-desc-list>`,
     });
   }
