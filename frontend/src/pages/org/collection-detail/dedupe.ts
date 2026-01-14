@@ -36,6 +36,11 @@ enum CrawlsView {
 }
 
 const DEFAULT_CRAWLS_VIEW = CrawlsView.Workflows;
+const storageLabelFor = {
+  conserved: msg("Space Conserved"),
+  used: msg("Actual Stored"),
+  withoutDedupe: msg("Estimated Total"),
+};
 
 type View = {
   crawlsView?: CrawlsView;
@@ -236,17 +241,20 @@ export class CollectionDetailDedupe extends BtrixElement {
           <h2>${msg("Storage Impact")}</h2>
           ${infoPopover({
             content: html`
-              <strong class="font-semibold">${msg("Conserved")}</strong>:
+              <strong class="font-semibold">${storageLabelFor.conserved}</strong
+              >:
               ${msg(
-                "An estimate of how much storage space has been conserved by deduplicating this collection.",
+                "How much storage space has been conserved by deduplicating items.",
               )}<br /><br />
-              <strong class="font-semibold">${msg("Indexed")}</strong>:
+              <strong class="font-semibold">${storageLabelFor.used}</strong>:
               ${msg(
-                "The total storage space used by indexed items, including indexed and then deleted archived items.",
+                "The total storage space used by indexed items, including indexed and then removed archived items.",
               )}<br /><br />
-              <strong class="font-semibold">${msg("Crawled")}</strong>:
+              <strong class="font-semibold"
+                >${storageLabelFor.withoutDedupe}</strong
+              >:
               ${msg(
-                "The total size of all archived items if deduplication was not enabled.",
+                "Estimated total size of collection if items were not deduplicated.",
               )}
             `,
             placement: "right-start",
@@ -257,7 +265,7 @@ export class CollectionDetailDedupe extends BtrixElement {
             class="flex flex-col gap-3 lg:col-span-2 lg:flex-row lg:items-center lg:border-b lg:pb-[calc(.75rem-1px)]"
           >
             ${stat({
-              label: msg("Conserved"),
+              label: storageLabelFor.conserved,
               value: html`
                 <span
                   class=${clsx(
@@ -343,7 +351,7 @@ export class CollectionDetailDedupe extends BtrixElement {
         <div class="flex justify-between gap-4 font-medium leading-none">
           <!-- TODO Match storage tooltip content -->
           <span
-            >${msg("Items in Index")} (${msg("Deleted from Collection")})</span
+            >${msg("Items in Index")} (${msg("Removed from Collection")})</span
           >
           <span>${this.localize.bytes(removedCrawlSize)}</span>
         </div>
@@ -359,8 +367,8 @@ export class CollectionDetailDedupe extends BtrixElement {
           <div class="h-full w-full"></div>
         </btrix-floating-popover>
       </div>
-      <span slot="valueLabel">${msg("Indexed")}</span>
-      <span slot="maxLabel">${msg("Crawled")}</span>
+      <span slot="valueLabel">${storageLabelFor.used}</span>
+      <span slot="maxLabel">${storageLabelFor.withoutDedupe}</span>
     </btrix-meter>`;
   }
 
