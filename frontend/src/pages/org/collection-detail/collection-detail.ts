@@ -344,6 +344,7 @@ export class CollectionDetail extends BtrixElement {
                   this.openDialogName = e.detail;
                 }
               }}
+              @btrix-request-update=${() => void this.fetchCollection()}
             >
               ${when(
                 this.appState.isAdmin,
@@ -1349,7 +1350,14 @@ export class CollectionDetail extends BtrixElement {
           method: "POST",
         },
       );
+      // FIXME Backend should return the correct state if index is successfully created
       await this.fetchCollection();
+      if (this.collection) {
+        this.collection = {
+          ...this.collection,
+          indexState: "initing",
+        };
+      }
 
       const count = this.collection?.crawlCount || 0;
       const items_count = this.localize.number(count);

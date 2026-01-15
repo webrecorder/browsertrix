@@ -12,7 +12,6 @@ export function indexStatus(state?: DedupeIndexState | null) {
   let label = stringFor.unknown;
   let iconName = "question-diamond";
   let iconClass = tw`text-neutral-400`;
-  let reason = "";
 
   switch (state) {
     case "initing":
@@ -31,7 +30,6 @@ export function indexStatus(state?: DedupeIndexState | null) {
       label = msg("In Use");
       iconName = "dot";
       iconClass = tw`animate-pulse text-success-600`;
-      reason = state == "crawling" ? msg("Active Crawl") : msg("Saving Crawl");
       break;
     case "ready":
     case "idle":
@@ -50,7 +48,7 @@ export function indexStatus(state?: DedupeIndexState | null) {
   ></sl-icon>`;
 
   return labelWithIcon({
-    label: reason ? `${label} (${reason})` : label,
+    label,
     icon,
   });
 }

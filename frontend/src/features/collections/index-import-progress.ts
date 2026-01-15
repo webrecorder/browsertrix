@@ -6,12 +6,18 @@ import { ifDefined } from "lit/directives/if-defined.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Collection } from "@/types/collection";
+import type { DedupeIndexState } from "@/types/dedupe";
 
 const getPollInterval = (crawlCount: number) =>
   crawlCount < 10 ? 5 : crawlCount < 100 ? 10 : crawlCount < 1000 ? 30 : 60;
 
+export const indexUpdating = (state: DedupeIndexState | null) =>
+  state === "importing" || state === "purging";
+
 /**
  * Live progress of deduplication index import
+ *
+ * @fires btrix-progress-complete
  */
 @customElement("btrix-index-import-progress")
 @localized()
@@ -30,16 +36,21 @@ export class IndexImportProgress extends BtrixElement {
 
       this.pollInterval = getPollInterval(collection.crawlCount);
 
-      console.log("this.pollInterval:", this.pollInterval);
-
-      return collection.indexStats?.updateProgress || 0;
+      return indexUpdating(collection.indexState)
+        ? collection.indexStats?.updateProgress
+        : undefined;
     },
     args: () => [this.collectionId] as const,
   });
 
   private readonly pollTask = new Task(this, {
-    task: async () => {
+    task: async ([progress]) => {
       window.clearTimeout(this.pollTask.value);
+
+      if (progress === 1) {
+        this.dispatchEvent(new CustomEvent("btrix-progress-complete"));
+        return;
+      }
 
       return window.setTimeout(() => {
         void this.progressTask.run();

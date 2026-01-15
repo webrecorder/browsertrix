@@ -34,6 +34,12 @@ export function deleteIndexDialog({
             ${collection_name}?`,
           )}
         </p>
+        <p class="mt-3">
+          ${msg("The index will be rebuilt during the next crawl run.")}
+          ${msg(
+            "To disable deduplication completely, deselect this collection in each workflow that uses it as the deduplication source.",
+          )}
+        </p>
         <p class="mt-3">${msg("This action cannot be undone.")}</p>
       `;
     })}

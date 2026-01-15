@@ -14,6 +14,7 @@ import type { OpenDialogEventDetail } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { indexUpdating } from "@/features/collections/index-import-progress";
 import { indexStatus } from "@/features/collections/templates/index-status";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { infoPopover } from "@/layouts/info-popover";
@@ -49,6 +50,7 @@ type View = {
 /**
  * @slot actions
  * @fires btrix-open-dialog
+ * @fires btrix-request-update
  */
 @customElement("btrix-collection-detail-dedupe")
 @localized()
@@ -551,7 +553,7 @@ export class CollectionDetailDedupe extends BtrixElement {
 
   private renderOverview() {
     const state = this.collection?.indexState;
-    const updating = state === "importing" || state === "purging";
+    const updating = indexUpdating(state || null);
 
     return panel({
       heading: msg("Index Overview"),
@@ -560,16 +562,16 @@ export class CollectionDetailDedupe extends BtrixElement {
         : undefined,
       body: html`<btrix-desc-list>
         <btrix-desc-list-item label=${msg("Index Status")}>
-          ${state ? indexStatus(state) : msg("Not Created")}
+          ${indexStatus(state)}
         </btrix-desc-list-item>
         ${when(
           state && this.collection,
           (col) => html`
-            <btrix-desc-list-item label=${msg("Index Last Updated")}>
-              ${col.indexLastSavedAt
-                ? this.localize.relativeDate(col.indexLastSavedAt)
-                : stringFor.noData}
-            </btrix-desc-list-item>
+            ${col.indexLastSavedAt
+              ? html`<btrix-desc-list-item label=${msg("Index Last Updated")}>
+                  ${this.localize.relativeDate(col.indexLastSavedAt)}
+                </btrix-desc-list-item>`
+              : nothing}
             ${when(
               this.appState.isAdmin,
               () => html`
@@ -580,11 +582,17 @@ export class CollectionDetailDedupe extends BtrixElement {
                 </btrix-desc-list-item>
               `,
             )}
-            ${updating
+            ${state === "initing" || updating
               ? html`<btrix-desc-list-item label=${msg("Import Progress")}>
                   <btrix-index-import-progress
                     collectionId=${this.collectionId}
-                    initialValue=${ifDefined(col.indexStats?.updateProgress)}
+                    initialValue=${ifDefined(
+                      updating ? col.indexStats?.updateProgress : undefined,
+                    )}
+                    @btrix-progress-complete=${() =>
+                      this.dispatchEvent(
+                        new CustomEvent("btrix-request-update"),
+                      )}
                   ></btrix-index-import-progress>
                 </btrix-desc-list-item>`
               : nothing}
