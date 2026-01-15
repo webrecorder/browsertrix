@@ -57,7 +57,7 @@ class Migration(BaseMigration):
             for file_ in crawl.files:
                 if not file_.replicas:
                     # Check that there isn't an in-progress job for this file
-                    matching_job = await jobs_mdb.find(
+                    if await jobs_mdb.find(
                         {
                             "type": BgJobType.CREATE_REPLICA.value,
                             "object_id": crawl.id,
@@ -66,8 +66,7 @@ class Migration(BaseMigration):
                             "started": {"$ne": None},
                             "finished": None,
                         }
-                    )
-                    if matching_job:
+                    ):
                         continue
 
                     try:
@@ -94,7 +93,7 @@ class Migration(BaseMigration):
                 continue
 
             # Check there isn't already an in-progress job for this profile
-            matching_job = await jobs_mdb.find(
+            if await jobs_mdb.find(
                 {
                     "type": BgJobType.CREATE_REPLICA.value,
                     "object_id": profile.id,
@@ -103,8 +102,7 @@ class Migration(BaseMigration):
                     "started": {"$ne": None},
                     "finished": None,
                 }
-            )
-            if matching_job:
+            ):
                 continue
 
             try:
