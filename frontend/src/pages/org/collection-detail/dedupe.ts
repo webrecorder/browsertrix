@@ -24,7 +24,7 @@ import { stringFor } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { ArchivedItemSearchValues } from "@/types/archivedItems";
 import type { Collection } from "@/types/collection";
-import type { ArchivedItem, Crawl, Workflow } from "@/types/crawler";
+import type { ArchivedItem, Workflow } from "@/types/crawler";
 import type { DedupeIndexStats } from "@/types/dedupe";
 import { SortDirection } from "@/types/utils";
 import { finishedCrawlStates } from "@/utils/crawler";
@@ -36,7 +36,7 @@ const INITIAL_PAGE_SIZE = 10;
 enum ItemsView {
   Workflows = "workflows",
   Crawls = "crawls",
-  Dependents = "dependents",
+  Dependencies = "dependencies",
 }
 
 const storageLabelFor = {
@@ -119,7 +119,7 @@ export class CollectionDetailDedupe extends BtrixElement {
         hasRequiresCrawls: true,
       });
 
-      return await this.api.fetch<APIPaginatedList<Crawl>>(
+      return await this.api.fetch<APIPaginatedList<ArchivedItem>>(
         `/orgs/${this.orgId}/crawls?${query}`,
         { signal },
       );
@@ -145,7 +145,7 @@ export class CollectionDetailDedupe extends BtrixElement {
     args: () => [this.collectionId] as const,
   });
 
-  private readonly dependentsTask = new Task(this, {
+  private readonly dependenciesTask = new Task(this, {
     task: async ([itemIds, pagination], { signal }) => {
       if (!itemIds?.length) return;
 
@@ -153,10 +153,10 @@ export class CollectionDetailDedupe extends BtrixElement {
         ...pagination,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
-        requiresCrawls: itemIds,
+        requiredByCrawls: itemIds,
       });
 
-      return await this.api.fetch<APIPaginatedList<Crawl>>(
+      return await this.api.fetch<APIPaginatedList<ArchivedItem>>(
         `/orgs/${this.orgId}/all-crawls?${query}`,
         { signal },
       );
@@ -459,18 +459,18 @@ export class CollectionDetailDedupe extends BtrixElement {
           >
             <sl-radio-button pill value=${DEFAULT_ITEMS_VIEW}>
               <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
-              ${msg("Workflows")}
+              ${msg("By Workflow")}
             </sl-radio-button>
             <sl-radio-button pill value=${ItemsView.Crawls}>
               <sl-icon slot="prefix" name="gear-wide-connected"></sl-icon>
-              ${msg("Crawl Runs")}
+              ${msg("By Crawl Run")}
             </sl-radio-button>
-            <sl-radio-button pill value=${ItemsView.Dependents}>
+            <sl-radio-button pill value=${ItemsView.Dependencies}>
               <sl-icon
                 slot="prefix"
                 name=${dedupeIconFor["dependency"].name}
               ></sl-icon>
-              ${msg("Dependents")}
+              ${msg("All Dependencies")}
             </sl-radio-button>
           </sl-radio-group>
         </div>
@@ -481,8 +481,8 @@ export class CollectionDetailDedupe extends BtrixElement {
           [ItemsView.Workflows, this.renderWorkflowList],
           [ItemsView.Crawls, () => this.renderItemsList(this.dedupeCrawlsTask)],
           [
-            ItemsView.Dependents,
-            () => this.renderItemsList(this.dependentsTask),
+            ItemsView.Dependencies,
+            () => this.renderItemsList(this.dependenciesTask),
           ],
         ])}
       </div>
@@ -492,7 +492,7 @@ export class CollectionDetailDedupe extends BtrixElement {
   private readonly renderItemsList = (
     itemsTask:
       | CollectionDetailDedupe["dedupeCrawlsTask"]
-      | CollectionDetailDedupe["dependentsTask"],
+      | CollectionDetailDedupe["dependenciesTask"],
   ) => {
     const loading = () => html`
       <sl-skeleton effect="sheen" class="h-9"></sl-skeleton>
