@@ -22,7 +22,7 @@ import { panel, panelBody, panelHeader } from "@/layouts/panel";
 import { stringFor } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
-import type { Crawl, Workflow } from "@/types/crawler";
+import type { ArchivedItem, Crawl, Workflow } from "@/types/crawler";
 import type { DedupeIndexStats } from "@/types/dedupe";
 import { SortDirection } from "@/types/utils";
 import { finishedCrawlStates } from "@/utils/crawler";
@@ -31,20 +31,21 @@ import { tw } from "@/utils/tailwind";
 const BYTES_PER_MB = 1e6;
 const INITIAL_PAGE_SIZE = 10;
 
-enum CrawlsView {
+enum ItemsView {
   Workflows = "workflows",
   Crawls = "crawls",
+  Uploads = "uploads",
 }
 
-const DEFAULT_CRAWLS_VIEW = CrawlsView.Workflows;
 const storageLabelFor = {
   conserved: msg("Space Conserved"),
   used: msg("Actual Stored"),
   withoutDedupe: msg("Estimated Total"),
 };
-
+const DEFAULT_ITEMS_VIEW = ItemsView.Workflows;
+const ITEMS_VIEW_PARAM = "itemsView";
 type View = {
-  crawlsView?: CrawlsView;
+  itemsView?: ItemsView;
 };
 
 /**
@@ -70,19 +71,17 @@ export class CollectionDetailDedupe extends BtrixElement {
   private readonly view = new SearchParamsValue<View>(
     this,
     (value, params) => {
-      if (value.crawlsView) {
-        params.set("crawlsView", value.crawlsView);
+      if (value.itemsView) {
+        params.set(ITEMS_VIEW_PARAM, value.itemsView);
       } else {
-        params.delete("crawlsView");
+        params.delete(ITEMS_VIEW_PARAM);
       }
       return params;
     },
     (params) => {
-      const crawlsView = params.get("crawlsView");
+      const itemsView = params.get(ITEMS_VIEW_PARAM);
       return {
-        crawlsView: crawlsView
-          ? (crawlsView as CrawlsView)
-          : DEFAULT_CRAWLS_VIEW,
+        itemsView: itemsView ? (itemsView as ItemsView) : DEFAULT_ITEMS_VIEW,
       };
     },
   );
@@ -124,6 +123,30 @@ export class CollectionDetailDedupe extends BtrixElement {
     args: () => [this.collectionId, this.pagination] as const,
   });
 
+  private readonly dedupeUploadsTask = new Task(this, {
+    task: async ([collectionId, pagination], { signal }) => {
+      if (!collectionId) return;
+
+      const query = queryString.stringify({
+        ...pagination,
+        collectionId,
+        sortBy: "finished",
+        sortDirection: SortDirection.Descending,
+        crawlType: "upload",
+        // Deduplicated uploads are not supported yet
+        // so we only check for uploads with dependencies
+        hasRequiredByCrawls: true,
+        // hasRequiresCrawls: true
+      });
+
+      return await this.api.fetch<APIPaginatedList<Crawl>>(
+        `/orgs/${this.orgId}/all-crawls?${query}`,
+        { signal },
+      );
+    },
+    args: () => [this.collectionId, this.pagination] as const,
+  });
+
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("view.internalValue")) {
       this.pagination = {
@@ -159,8 +182,8 @@ export class CollectionDetailDedupe extends BtrixElement {
             ? tw`xl:row-start-1`
             : tw`xl:row-start-2`} col-span-full row-span-1 xl:col-span-4 xl:col-start-1"
         >
-          ${panelHeader({ heading: msg("Indexed Crawls") })}
-          ${this.renderCrawls()}
+          ${panelHeader({ heading: msg("Indexed Items") })}
+          ${this.renderItems()}
         </section>
       </div>`;
     }
@@ -398,7 +421,7 @@ export class CollectionDetailDedupe extends BtrixElement {
     </btrix-meter>`;
   }
 
-  private renderCrawls() {
+  private renderItems() {
     return html`
       <div
         class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 p-3"
@@ -410,59 +433,69 @@ export class CollectionDetailDedupe extends BtrixElement {
           <sl-radio-group
             id="view"
             size="small"
-            value=${this.view.value.crawlsView || DEFAULT_CRAWLS_VIEW}
+            value=${this.view.value.itemsView || DEFAULT_ITEMS_VIEW}
             @sl-change=${(e: SlChangeEvent) => {
               this.view.setValue({
-                crawlsView: (e.target as SlRadioGroup).value as CrawlsView,
+                itemsView: (e.target as SlRadioGroup).value as ItemsView,
               });
             }}
           >
-            <sl-radio-button pill value=${DEFAULT_CRAWLS_VIEW}>
+            <sl-radio-button pill value=${DEFAULT_ITEMS_VIEW}>
               <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
               ${msg("Workflow")}
             </sl-radio-button>
-            <sl-radio-button pill value=${CrawlsView.Crawls}>
+            <sl-radio-button pill value=${ItemsView.Crawls}>
               <sl-icon slot="prefix" name="gear-wide-connected"></sl-icon>
               ${msg("Crawl Run")}
+            </sl-radio-button>
+            <sl-radio-button pill value=${ItemsView.Uploads}>
+              <sl-icon slot="prefix" name="upload"></sl-icon>
+              ${msg("Upload")}
             </sl-radio-button>
           </sl-radio-group>
         </div>
       </div>
 
       <div class="mx-2">
-        ${choose(this.view.value.crawlsView, [
-          [CrawlsView.Workflows, this.renderWorkflowList],
-          [CrawlsView.Crawls, this.renderCrawlList],
+        ${choose(this.view.value.itemsView, [
+          [ItemsView.Workflows, this.renderWorkflowList],
+          [ItemsView.Crawls, () => this.renderItemsList(this.dedupeCrawlsTask)],
+          [
+            ItemsView.Uploads,
+            () => this.renderItemsList(this.dedupeUploadsTask),
+          ],
         ])}
       </div>
     `;
   }
 
-  private readonly renderCrawlList = () => {
+  private readonly renderItemsList = (
+    itemsTask: CollectionDetailDedupe["dedupeCrawlsTask"],
+  ) => {
     const loading = () => html`
       <sl-skeleton effect="sheen" class="h-9"></sl-skeleton>
     `;
-    const crawls = (crawls?: APIPaginatedList<Crawl>) =>
-      crawls?.items.length
+    const items = (items?: APIPaginatedList<ArchivedItem>) =>
+      items?.items.length
         ? html`
             <btrix-item-dependency-tree
-              .items=${crawls.items}
+              .items=${items.items}
               collectionId=${this.collectionId}
               showHeader
             ></btrix-item-dependency-tree>
 
             <footer class="mt-6 flex justify-center">
               <btrix-pagination
-                page=${crawls.page}
-                totalCount=${crawls.total}
-                size=${crawls.pageSize}
+                page=${items.page}
+                totalCount=${items.total}
+                size=${items.pageSize}
                 @page-change=${async (e: PageChangeEvent) => {
                   this.pagination = {
                     ...this.pagination,
                     page: e.detail.page,
                   };
 
-                  await this.dedupeCrawlsTask.taskComplete;
+                  await itemsTask.taskComplete;
 
                   // Scroll to top of list
                   // TODO once deep-linking is implemented, scroll to top of pushstate
@@ -498,13 +531,10 @@ export class CollectionDetailDedupe extends BtrixElement {
             }),
           });
 
-    return html`${this.dedupeCrawlsTask.render({
+    return html`${itemsTask.render({
       initial: loading,
-      pending: () =>
-        this.dedupeCrawlsTask.value
-          ? crawls(this.dedupeCrawlsTask.value)
-          : loading(),
-      complete: crawls,
+      pending: () => (itemsTask.value ? items(itemsTask.value) : loading()),
+      complete: items,
     })}`;
   };
 
