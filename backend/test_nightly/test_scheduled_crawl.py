@@ -31,6 +31,7 @@ def scheduled_config_id(admin_auth_headers, default_org_id):
     return data["id"]
 
 
+@pytest.mark.timeout(600)
 def test_scheduled_crawl(admin_auth_headers, default_org_id, scheduled_config_id):
     # Ensure workflow exists with correct schedule, no crawls yet
     r = requests.get(
