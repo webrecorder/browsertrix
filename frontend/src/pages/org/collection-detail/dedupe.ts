@@ -15,6 +15,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { indexUpdating } from "@/features/collections/index-import-progress";
+import { dedupeIconFor } from "@/features/collections/templates/dedupe-icon";
 import { indexStatus } from "@/features/collections/templates/index-status";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { infoPopover } from "@/layouts/info-popover";
@@ -34,7 +35,7 @@ const INITIAL_PAGE_SIZE = 10;
 enum ItemsView {
   Workflows = "workflows",
   Crawls = "crawls",
-  Uploads = "uploads",
+  Dependents = "dependents",
 }
 
 const storageLabelFor = {
@@ -109,36 +110,32 @@ export class CollectionDetailDedupe extends BtrixElement {
 
       const query = queryString.stringify({
         ...pagination,
-        state: finishedCrawlStates,
-        collectionId,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
-        crawlType: "crawl",
-        // hasRequiresCrawls: true,
+        collectionId,
+        dedupeCollId: collectionId,
+        state: finishedCrawlStates,
+        hasRequiresCrawls: true,
       });
 
       return await this.api.fetch<APIPaginatedList<Crawl>>(
-        `/orgs/${this.orgId}/all-crawls?${query}`,
+        `/orgs/${this.orgId}/crawls?${query}`,
         { signal },
       );
     },
     args: () => [this.collectionId, this.pagination] as const,
   });
 
-  private readonly dedupeUploadsTask = new Task(this, {
+  private readonly dependentsTask = new Task(this, {
     task: async ([collectionId, pagination], { signal }) => {
       if (!collectionId) return;
 
       const query = queryString.stringify({
         ...pagination,
-        collectionId,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
-        crawlType: "upload",
-        // Deduplicated uploads are not supported yet
-        // so we only check for uploads with dependencies
+        collectionId,
         hasRequiredByCrawls: true,
-        // hasRequiresCrawls: true
       });
 
       return await this.api.fetch<APIPaginatedList<Crawl>>(
@@ -184,8 +181,8 @@ export class CollectionDetailDedupe extends BtrixElement {
             ? tw`xl:row-start-1`
             : tw`xl:row-start-2`} col-span-full row-span-1 xl:col-span-4 xl:col-start-1"
         >
-          ${panelHeader({ heading: msg("Indexed Items") })}
-          ${this.renderItems()}
+          ${panelHeader({ heading: msg("Deduplicated Crawls") })}
+          ${this.renderDeduped()}
         </section>
       </div>`;
     }
@@ -423,14 +420,14 @@ export class CollectionDetailDedupe extends BtrixElement {
     </btrix-meter>`;
   }
 
-  private renderItems() {
+  private renderDeduped() {
     return html`
       <div
         class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 p-3"
       >
         <div class="flex items-center gap-2">
           <label for="view" class="whitespace-nowrap text-neutral-500"
-            >${msg("View by:")}</label
+            >${msg("View:")}</label
           >
           <sl-radio-group
             id="view"
@@ -444,15 +441,18 @@ export class CollectionDetailDedupe extends BtrixElement {
           >
             <sl-radio-button pill value=${DEFAULT_ITEMS_VIEW}>
               <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
-              ${msg("Workflow")}
+              ${msg("Workflows")}
             </sl-radio-button>
             <sl-radio-button pill value=${ItemsView.Crawls}>
               <sl-icon slot="prefix" name="gear-wide-connected"></sl-icon>
               ${msg("Crawl Run")}
             </sl-radio-button>
-            <sl-radio-button pill value=${ItemsView.Uploads}>
-              <sl-icon slot="prefix" name="upload"></sl-icon>
-              ${msg("Upload")}
+            <sl-radio-button pill value=${ItemsView.Dependents}>
+              <sl-icon
+                slot="prefix"
+                name=${dedupeIconFor["dependency"].name}
+              ></sl-icon>
+              ${msg("Dependents")}
             </sl-radio-button>
           </sl-radio-group>
         </div>
@@ -463,8 +463,8 @@ export class CollectionDetailDedupe extends BtrixElement {
           [ItemsView.Workflows, this.renderWorkflowList],
           [ItemsView.Crawls, () => this.renderItemsList(this.dedupeCrawlsTask)],
           [
-            ItemsView.Uploads,
-            () => this.renderItemsList(this.dedupeUploadsTask),
+            ItemsView.Dependents,
+            () => this.renderItemsList(this.dependentsTask),
           ],
         ])}
       </div>
@@ -508,7 +508,7 @@ export class CollectionDetailDedupe extends BtrixElement {
           `
         : panelBody({
             content: emptyMessage({
-              message: msg("No indexed crawls found"),
+              message: msg("No crawled items found."),
               detail: this.appState.isCrawler
                 ? msg("Select crawled items to import them into the index.")
                 : undefined,

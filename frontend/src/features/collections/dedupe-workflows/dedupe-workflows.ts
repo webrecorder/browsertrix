@@ -101,9 +101,9 @@ export class DedupeWorkflows extends BtrixElement {
               .get(workflow.id)
               ?.then((crawls) =>
                 crawls?.total
-                  ? html`${this.localize.number(crawls.total)} ${msg("indexed")}
+                  ? html`${this.localize.number(crawls.total)} ${msg("deduped")}
                     ${pluralOf("crawls", crawls.total)}`
-                  : msg("No indexed crawls"),
+                  : msg("No deduped crawls."),
               ),
           )}
         </div>
@@ -247,6 +247,8 @@ export class DedupeWorkflows extends BtrixElement {
         sortBy: "started",
         sortDirection: SortDirection.Descending,
         state: finishedCrawlStates,
+        crawlType: "crawl",
+        hasRequiresCrawls: true,
         ...params,
       },
       {
@@ -256,7 +258,7 @@ export class DedupeWorkflows extends BtrixElement {
 
     try {
       return await this.api.fetch<APIPaginatedList<Crawl>>(
-        `/orgs/${this.orgId}/crawls?${query}`,
+        `/orgs/${this.orgId}/all-crawls?${query}`,
         { signal },
       );
     } catch (err) {
