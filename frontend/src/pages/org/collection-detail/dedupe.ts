@@ -452,7 +452,7 @@ export class CollectionDetailDedupe extends BtrixElement {
                 slot="prefix"
                 name=${dedupeIconFor["dependency"].name}
               ></sl-icon>
-              ${msg("Dependents")}
+              ${msg("All Dependents")}
             </sl-radio-button>
           </sl-radio-group>
         </div>
