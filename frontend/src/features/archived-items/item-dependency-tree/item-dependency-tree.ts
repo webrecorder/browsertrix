@@ -16,16 +16,16 @@ import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/a
 import { OrgTab, WorkflowTab } from "@/routes";
 import { noData } from "@/strings/ui";
 import type { APIPaginatedList } from "@/types/api";
-import type { Crawl } from "@/types/crawler";
+import type { ArchivedItem } from "@/types/crawler";
 import type { IconLibrary } from "@/types/shoelace";
-import { isActive, renderName } from "@/utils/crawler";
+import { isActive, isCrawl, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 const styles = unsafeCSS(stylesheet);
 
 // FIXME Sometimes the API returns circular dependencies
-const dependenciesWithoutSelf = (item: Crawl) =>
+const dependenciesWithoutSelf = (item: ArchivedItem) =>
   item.requiresCrawls.filter((id) => id !== item.id);
 
 @customElement("btrix-item-dependency-tree")
@@ -37,7 +37,7 @@ export class ItemDependencyTree extends BtrixElement {
   collectionId?: string;
 
   @property({ type: Array })
-  items?: Crawl[];
+  items?: ArchivedItem[];
 
   @property({ type: Boolean })
   showHeader = false;
@@ -49,7 +49,7 @@ export class ItemDependencyTree extends BtrixElement {
 
   private readonly dependenciesMap = new Map<
     string,
-    Crawl | Promise<Crawl | undefined>
+    ArchivedItem | Promise<ArchivedItem | undefined>
   >();
 
   private readonly dependenciesTask = new Task(this, {
@@ -81,8 +81,8 @@ export class ItemDependencyTree extends BtrixElement {
         },
       );
 
-      const request = this.api.fetch<APIPaginatedList<Crawl>>(
-        `/orgs/${this.orgId}/crawls?${query}`,
+      const request = this.api.fetch<APIPaginatedList<ArchivedItem>>(
+        `/orgs/${this.orgId}/all-crawls?${query}`,
         { signal },
       );
 
@@ -136,7 +136,7 @@ export class ItemDependencyTree extends BtrixElement {
     `;
   }
 
-  private readonly renderItem = (item: Crawl) => {
+  private readonly renderItem = (item: ArchivedItem) => {
     const dependencies = dependenciesWithoutSelf(item);
     const hasDependencies = dependencies.length;
 
@@ -214,12 +214,11 @@ export class ItemDependencyTree extends BtrixElement {
     </sl-tree-item>`;
   };
 
-  private readonly renderContent = (item: Crawl) => {
+  private readonly renderContent = (item: ArchivedItem) => {
     const dependencies = dependenciesWithoutSelf(item);
     const collectionId = this.collectionId;
-    const inCollection = collectionId
-      ? item.collectionIds.includes(collectionId)
-      : item.dedupeCollId && item.collectionIds.includes(item.dedupeCollId);
+    const inCollection =
+      collectionId && item.collectionIds.includes(collectionId);
 
     const status = () => {
       let icon = "dash-circle";
@@ -236,7 +235,7 @@ export class ItemDependencyTree extends BtrixElement {
         } else {
           tooltip = msg("In Collection");
         }
-      } else if (isActive(item)) {
+      } else if (isCrawl(item) && isActive(item)) {
         icon = "dot";
         library = "app";
         variant = tw`animate-pulse text-success`;
