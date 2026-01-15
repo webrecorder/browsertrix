@@ -71,6 +71,8 @@ export class ItemDependencyTree extends BtrixElement {
         });
       });
 
+      if (!newIds.length) return;
+
       const query = queryString.stringify(
         {
           ids: newIds,

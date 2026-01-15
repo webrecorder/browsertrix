@@ -20,8 +20,6 @@ import { finishedCrawlStates, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
-const INITIAL_PAGE_SIZE = 1000;
-
 const styles = unsafeCSS(stylesheet);
 
 @customElement("btrix-dedupe-workflows")
@@ -243,11 +241,9 @@ export class DedupeWorkflows extends BtrixElement {
     const query = queryString.stringify(
       {
         cid: workflowId,
-        pageSize: INITIAL_PAGE_SIZE,
         sortBy: "started",
         sortDirection: SortDirection.Descending,
         state: finishedCrawlStates,
-        crawlType: "crawl",
         hasRequiresCrawls: true,
         ...params,
       },
@@ -258,7 +254,7 @@ export class DedupeWorkflows extends BtrixElement {
 
     try {
       return await this.api.fetch<APIPaginatedList<Crawl>>(
-        `/orgs/${this.orgId}/all-crawls?${query}`,
+        `/orgs/${this.orgId}/crawls?${query}`,
         { signal },
       );
     } catch (err) {

@@ -22,6 +22,7 @@ import { infoPopover } from "@/layouts/info-popover";
 import { panel, panelBody, panelHeader } from "@/layouts/panel";
 import { stringFor } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type { ArchivedItemSearchValues } from "@/types/archivedItems";
 import type { Collection } from "@/types/collection";
 import type { ArchivedItem, Crawl, Workflow } from "@/types/crawler";
 import type { DedupeIndexStats } from "@/types/dedupe";
@@ -126,16 +127,33 @@ export class CollectionDetailDedupe extends BtrixElement {
     args: () => [this.collectionId, this.pagination] as const,
   });
 
-  private readonly dependentsTask = new Task(this, {
-    task: async ([collectionId, pagination], { signal }) => {
+  private readonly collectionItemIdsTask = new Task(this, {
+    task: async ([collectionId], { signal }) => {
       if (!collectionId) return;
+
+      const query = queryString.stringify({
+        collectionId,
+      });
+
+      const { ids } = await this.api.fetch<ArchivedItemSearchValues>(
+        `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
+        { signal },
+      );
+
+      return ids;
+    },
+    args: () => [this.collectionId] as const,
+  });
+
+  private readonly dependentsTask = new Task(this, {
+    task: async ([itemIds, pagination], { signal }) => {
+      if (!itemIds?.length) return;
 
       const query = queryString.stringify({
         ...pagination,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
-        collectionId,
-        hasRequiredByCrawls: true,
+        requiresCrawls: itemIds,
       });
 
       return await this.api.fetch<APIPaginatedList<Crawl>>(
@@ -143,7 +161,7 @@ export class CollectionDetailDedupe extends BtrixElement {
         { signal },
       );
     },
-    args: () => [this.collectionId, this.pagination] as const,
+    args: () => [this.collectionItemIdsTask.value, this.pagination] as const,
   });
 
   protected willUpdate(changedProperties: PropertyValues): void {
@@ -445,14 +463,14 @@ export class CollectionDetailDedupe extends BtrixElement {
             </sl-radio-button>
             <sl-radio-button pill value=${ItemsView.Crawls}>
               <sl-icon slot="prefix" name="gear-wide-connected"></sl-icon>
-              ${msg("Crawl Run")}
+              ${msg("Crawl Runs")}
             </sl-radio-button>
             <sl-radio-button pill value=${ItemsView.Dependents}>
               <sl-icon
                 slot="prefix"
                 name=${dedupeIconFor["dependency"].name}
               ></sl-icon>
-              ${msg("All Dependents")}
+              ${msg("Dependents")}
             </sl-radio-button>
           </sl-radio-group>
         </div>
@@ -472,7 +490,9 @@ export class CollectionDetailDedupe extends BtrixElement {
   }
 
   private readonly renderItemsList = (
-    itemsTask: CollectionDetailDedupe["dedupeCrawlsTask"],
+    itemsTask:
+      | CollectionDetailDedupe["dedupeCrawlsTask"]
+      | CollectionDetailDedupe["dependentsTask"],
   ) => {
     const loading = () => html`
       <sl-skeleton effect="sheen" class="h-9"></sl-skeleton>
