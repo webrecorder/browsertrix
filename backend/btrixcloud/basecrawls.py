@@ -1207,7 +1207,7 @@ def init_base_crawls_api(app, user_dep, *args):
     async def get_all_crawls_search_values(
         org: Organization = Depends(org_viewer_dep),
         crawlType: Optional[TYPE_CRAWL_TYPES] = None,
-        collectionId: Optional[str] = None,
+        collectionId: Optional[UUID] = None,
     ):
         return await ops.get_all_crawl_search_values(
             org, type_=crawlType, collection_id=collectionId
