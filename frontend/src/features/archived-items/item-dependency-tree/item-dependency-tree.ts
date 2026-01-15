@@ -14,7 +14,6 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { dedupeIcon } from "@/features/collections/templates/dedupe-icon";
 import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/archived-item-detail";
 import { OrgTab, WorkflowTab } from "@/routes";
-import { noData } from "@/strings/ui";
 import type { APIPaginatedList } from "@/types/api";
 import type { ArchivedItem } from "@/types/crawler";
 import type { IconLibrary } from "@/types/shoelace";
@@ -49,7 +48,7 @@ export class ItemDependencyTree extends BtrixElement {
 
   private readonly dependenciesMap = new Map<
     string,
-    ArchivedItem | Promise<ArchivedItem | undefined>
+    ArchivedItem | undefined
   >();
 
   private readonly dependenciesTask = new Task(this, {
@@ -81,19 +80,16 @@ export class ItemDependencyTree extends BtrixElement {
         },
       );
 
-      const request = this.api.fetch<APIPaginatedList<ArchivedItem>>(
-        `/orgs/${this.orgId}/all-crawls?${query}`,
-        { signal },
-      );
+      const { items: dependencies } = await this.api.fetch<
+        APIPaginatedList<ArchivedItem>
+      >(`/orgs/${this.orgId}/all-crawls?${query}`, { signal });
 
       newIds.forEach((id) => {
         this.dependenciesMap.set(
           id,
-          request.then(({ items }) => items.find((item) => item.id === id)),
+          dependencies.find((item) => item.id === id),
         );
       });
-
-      return request;
     },
     args: () => [this.items] as const,
   });
@@ -116,8 +112,7 @@ export class ItemDependencyTree extends BtrixElement {
             </div>
             <div>${msg("Name")}</div>
             <div>${msg("Dependencies")}</div>
-            <div>${msg("Date Started")}</div>
-            <div>${msg("Date Finished")}</div>
+            <div>${msg("Date Created")}</div>
             <div>${msg("Size")}</div>
             <div>
               <span class="sr-only">${msg("Actions")}</span>
@@ -190,7 +185,6 @@ export class ItemDependencyTree extends BtrixElement {
         </div>
       </div>
     `;
-    const item = this.dependenciesMap.get(id);
 
     return html`<sl-tree-item
       class="component--dependency"
@@ -203,19 +197,18 @@ export class ItemDependencyTree extends BtrixElement {
         }
       }}
     >
-      ${item
-        ? until(
-            Promise.resolve(item).then((item) =>
-              item ? this.renderContent(item) : noItem(),
-            ),
-            skeleton(),
-          )
-        : skeleton()}
+      ${until(
+        this.dependenciesTask.taskComplete
+          .then(() => this.dependenciesMap.get(id))
+          .then((item) => (item ? this.renderContent(item) : noItem())),
+        skeleton(),
+      )}
     </sl-tree-item>`;
   };
 
   private readonly renderContent = (item: ArchivedItem) => {
     const dependencies = dependenciesWithoutSelf(item);
+    const crawled = isCrawl(item);
     const collectionId = this.collectionId;
     const inCollection =
       collectionId && item.collectionIds.includes(collectionId);
@@ -279,16 +272,18 @@ export class ItemDependencyTree extends BtrixElement {
         </sl-tooltip>
       </div>
       <div class="component--detail">
-        <sl-tooltip content=${msg("Date Started")} hoist>
-          <sl-icon name="hourglass-top"></sl-icon>
-          ${date(item.started)}
-        </sl-tooltip>
-      </div>
-      <div class="component--detail">
-        <sl-tooltip content=${msg("Date Finished")} hoist>
-          <sl-icon name="hourglass-bottom"></sl-icon>
-          ${item.finished ? date(item.finished) : noData}
-        </sl-tooltip>
+        ${crawled
+          ? html`<sl-tooltip content=${msg("Date Finished")} hoist>
+              ${item.finished
+                ? html`<sl-icon name="gear-wide-connected"></sl-icon> ${date(
+                      item.finished,
+                    )}`
+                : html`<sl-icon name="play"></sl-icon> ${date(item.started)}`}
+            </sl-tooltip>`
+          : html`<sl-tooltip content=${msg("Date Uploaded")} hoist>
+              <sl-icon name="upload"></sl-icon>
+              ${date(item.started)}
+            </sl-tooltip>`}
       </div>
       <div class="component--detail flex items-center gap-1.5 truncate">
         <sl-tooltip content=${msg("Size")} hoist>
@@ -297,7 +292,9 @@ export class ItemDependencyTree extends BtrixElement {
         </sl-tooltip>
       </div>
       ${this.renderLink(
-        `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}#${"overview" as ArchivedItemSectionName}`,
+        crawled
+          ? `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}#${"overview" as ArchivedItemSectionName}`
+          : `${this.navigate.orgBasePath}/${OrgTab.Items}/${item.type}/${item.id}`,
       )}
     </div>`;
   };
@@ -306,7 +303,7 @@ export class ItemDependencyTree extends BtrixElement {
     return html`<sl-icon-button
       name="link"
       href=${href}
-      label=${msg("Visit Link")}
+      label=${msg("Link")}
       @click=${this.navigate.link}
     >
     </sl-icon-button>`;
