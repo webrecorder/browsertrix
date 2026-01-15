@@ -1,4 +1,5 @@
 import { msg } from "@lit/localize";
+import type { SlButton } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { when } from "lit/directives/when.js";
 
@@ -50,7 +51,7 @@ export function createIndexDialog({
       <sl-button
         size="small"
         @click=${(e: MouseEvent) =>
-          void (e.target as HTMLElement)
+          void (e.currentTarget as SlButton)
             .closest<Dialog>("btrix-dialog")
             ?.hide()}
         .autofocus=${true}
@@ -59,8 +60,11 @@ export function createIndexDialog({
       <sl-button
         size="small"
         variant="primary"
-        @click=${async () => {
+        @click=${async (e: MouseEvent) => {
+          const btn = e.currentTarget as SlButton;
+          btn.setAttribute("loading", "true");
           await confirm();
+          btn.removeAttribute("loading");
           hide();
         }}
         >${msg("Create Index")}</sl-button

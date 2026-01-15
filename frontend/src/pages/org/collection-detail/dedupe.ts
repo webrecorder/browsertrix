@@ -18,14 +18,13 @@ import { indexStatus } from "@/features/collections/templates/index-status";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { infoPopover } from "@/layouts/info-popover";
 import { panel, panelBody, panelHeader } from "@/layouts/panel";
-import { noData } from "@/strings/ui";
+import { stringFor } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { Crawl, Workflow } from "@/types/crawler";
 import type { DedupeIndexStats } from "@/types/dedupe";
 import { SortDirection } from "@/types/utils";
 import { finishedCrawlStates } from "@/utils/crawler";
-import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 const BYTES_PER_MB = 1e6;
@@ -48,6 +47,7 @@ type View = {
 };
 
 /**
+ * @slot actions
  * @fires btrix-open-dialog
  */
 @customElement("btrix-collection-detail-dedupe")
@@ -217,25 +217,49 @@ export class CollectionDetailDedupe extends BtrixElement {
       label,
       icon,
       value,
+      format = "number",
     }: {
       label: string;
       icon?: string;
-      value: string | TemplateResult;
-    }) => html`
-      <div
-        class="grid grid-cols-[1fr_min-content] grid-rows-[min-content_1fr] items-center gap-x-4 gap-y-0.5"
-      >
-        <dt class="min-h-6 text-base font-medium">${value}</dt>
-        <dd class="col-start-1 text-xs text-neutral-700">${label}</dd>
-        ${icon
-          ? html`<div
-              class="col-start-2 row-span-2 row-start-1 flex size-10 items-center justify-center rounded-lg bg-neutral-50"
-            >
-              <sl-icon name=${icon} class="size-5 text-neutral-400"></sl-icon>
-            </div>`
-          : nothing}
-      </div>
-    `;
+      value: number | TemplateResult;
+      format?: "number" | "byte";
+    }) => {
+      const formatValue = (v: number) => {
+        let long = "";
+        let short = "";
+        if (format === "byte") {
+          long = this.localize.bytes(v, undefined, 5);
+          short = this.localize.bytes(v);
+        } else {
+          long = this.localize.number(v);
+          short = this.localize.number(v, { notation: "compact" });
+        }
+
+        return html`
+          <sl-tooltip content=${long} ?disabled=${long === short}>
+            <span>${short}</span>
+          </sl-tooltip>
+        `;
+      };
+
+      return html`
+        <div
+          class="grid grid-cols-[1fr_min-content] grid-rows-[min-content_1fr] items-center gap-x-4 gap-y-0.5"
+        >
+          <dt class="min-h-6 text-base font-medium">
+            ${typeof value === "number" ? formatValue(value) : value}
+          </dt>
+          <dd class="col-start-1 text-xs text-neutral-700">${label}</dd>
+          ${icon
+            ? html`<div
+                class="col-start-2 row-span-2 row-start-1 flex size-10 items-center justify-center rounded-lg bg-neutral-50"
+              >
+                <sl-icon name=${icon} class="size-5 text-neutral-400"></sl-icon>
+              </div>`
+            : nothing}
+        </div>
+      `;
+    };
 
     return html`<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
       <btrix-card>
@@ -285,41 +309,41 @@ export class CollectionDetailDedupe extends BtrixElement {
           ${stat({
             label: msg("Total Indexed Items"),
             icon: "file-earmark-zip",
-            value: this.localize.bytes(indexStats.totalCrawlSize),
+            value: indexStats.totalCrawlSize,
+            format: "byte",
           })}
           ${stat({
             label: msg("Deleted Items in Index"),
             icon: "file-earmark-minus",
-            value: this.localize.bytes(indexStats.removedCrawlSize),
+            value: indexStats.removedCrawlSize,
+            format: "byte",
           })}
         </dl>
       </btrix-card>
       <btrix-card>
         <header slot="title">
-          <h2>${msg("Index Overview")}</h2>
+          <h2>${msg("Deduplication Summary")}</h2>
         </header>
         <dl class="col-span-1 grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-y-6">
           ${stat({
             label: msg("Original Resources"),
             icon: "circle-square",
-            value: this.localize.number(
-              indexStats.totalUrls - indexStats.dupeUrls,
-            ),
+            value: indexStats.totalUrls - indexStats.dupeUrls,
           })}
           ${stat({
             label: msg("Duplicate Resources"),
             icon: "intersect",
-            value: this.localize.number(indexStats.dupeUrls),
+            value: indexStats.dupeUrls,
           })}
           ${stat({
             label: msg("Total Indexed Items"),
             icon: "file-earmark-zip",
-            value: this.localize.number(indexStats.totalCrawls),
+            value: indexStats.totalCrawls,
           })}
           ${stat({
-            label: msg("Deleted Items in Index"),
-            icon: "file-earmark-minus",
-            value: this.localize.number(indexStats.removedCrawls),
+            label: msg("Total Indexed URLs"),
+            icon: "link-45deg",
+            value: indexStats.totalUrls,
           })}
         </dl>
       </btrix-card>
@@ -338,7 +362,7 @@ export class CollectionDetailDedupe extends BtrixElement {
     return html`<btrix-meter value=${totalCrawlSize} max=${max} class="w-full">
       <btrix-meter-bar
         value=${(notRemoved / totalCrawlSize) * 100}
-        class="[--background-color:theme(colors.primary.300)]"
+        class="[--background-color:theme(colors.blue.300)]"
       >
         <div class="flex justify-between gap-4 font-medium leading-none">
           <!-- TODO Match storage tooltip content -->
@@ -348,7 +372,7 @@ export class CollectionDetailDedupe extends BtrixElement {
       </btrix-meter-bar>
       <btrix-meter-bar
         value=${(removedCrawlSize / totalCrawlSize) * 100}
-        class="[--background-color:theme(colors.primary.200)]"
+        class="[--background-color:theme(colors.blue.200)]"
       >
         <div class="flex justify-between gap-4 font-medium leading-none">
           <!-- TODO Match storage tooltip content -->
@@ -362,7 +386,7 @@ export class CollectionDetailDedupe extends BtrixElement {
         <btrix-floating-popover placement="top" class="text-center">
           <div slot="content">
             <header class="flex justify-between gap-4 font-medium leading-none">
-              <span>${msg("Estimated Savings")}</span>
+              <span>${msg("Estimated Space Conserved")}</span>
               <span>${this.localize.bytes(stats.conservedSize)}</span>
             </header>
           </div>
@@ -529,10 +553,11 @@ export class CollectionDetailDedupe extends BtrixElement {
     const state = this.collection?.indexState;
     const updating = state === "importing" || state === "purging";
 
-    console.log(this.collection);
-
     return panel({
-      heading: msg("Overview"),
+      heading: msg("Index Overview"),
+      actions: this.appState.isAdmin
+        ? html`<slot name="actions"></slot>`
+        : undefined,
       body: html`<btrix-desc-list>
         <btrix-desc-list-item label=${msg("Index Status")}>
           ${state ? indexStatus(state) : msg("Not Created")}
@@ -543,13 +568,18 @@ export class CollectionDetailDedupe extends BtrixElement {
             <btrix-desc-list-item label=${msg("Index Last Updated")}>
               ${col.indexLastSavedAt
                 ? this.localize.relativeDate(col.indexLastSavedAt)
-                : noData}
+                : stringFor.noData}
             </btrix-desc-list-item>
-            <btrix-desc-list-item label=${msg("Total Indexed URLs")}>
-              ${col.indexStats
-                ? `${this.localize.number(col.indexStats.totalUrls)} ${pluralOf("URLs", col.indexStats.totalUrls)}`
-                : noData}
-            </btrix-desc-list-item>
+            ${when(
+              this.appState.isAdmin,
+              () => html`
+                <btrix-desc-list-item label=${msg("Purgeable Items")}>
+                  ${col.indexStats?.removedCrawls
+                    ? this.localize.number(col.indexStats.removedCrawls)
+                    : stringFor.none}
+                </btrix-desc-list-item>
+              `,
+            )}
             ${updating
               ? html`<btrix-desc-list-item label=${msg("Import Progress")}>
                   <btrix-index-import-progress

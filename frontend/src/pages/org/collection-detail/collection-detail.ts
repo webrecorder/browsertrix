@@ -29,6 +29,8 @@ import { collectionShareLink } from "@/features/collections/helpers/share-link";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
 import { createIndexDialog } from "@/features/collections/templates/create-index-dialog";
+import { deleteIndexDialog } from "@/features/collections/templates/delete-index-dialog";
+import { purgeIndexDialog } from "@/features/collections/templates/purge-index-dialog";
 import {
   metadataColumn,
   metadataItemWithCollection,
@@ -342,7 +344,18 @@ export class CollectionDetail extends BtrixElement {
                   this.openDialogName = e.detail;
                 }
               }}
-            ></btrix-collection-detail-dedupe> `,
+            >
+              ${when(
+                this.appState.isAdmin,
+                () =>
+                  html`<btrix-overflow-dropdown
+                    slot="actions"
+                    placement="bottom-end"
+                  >
+                    <sl-menu>${this.renderDedupeMenuItems()}</sl-menu>
+                  </btrix-overflow-dropdown>`,
+              )}
+            </btrix-collection-detail-dedupe> `,
         ],
       ])}
 
@@ -488,6 +501,18 @@ export class CollectionDetail extends BtrixElement {
         collection: this.collection,
         hide: () => (this.openDialogName = undefined),
         confirm: async () => this.createIndex(),
+      })}
+      ${purgeIndexDialog({
+        open: this.openDialogName === "purgeIndex",
+        collection: this.collection,
+        hide: () => (this.openDialogName = undefined),
+        confirm: async () => this.purgeIndex(),
+      })}
+      ${deleteIndexDialog({
+        open: this.openDialogName === "deleteIndex",
+        collection: this.collection,
+        hide: () => (this.openDialogName = undefined),
+        confirm: async () => this.deleteIndex(),
       })}
     `;
   }
@@ -667,39 +692,13 @@ export class CollectionDetail extends BtrixElement {
             ${msg("Configure Items")}
           </sl-menu-item>
           ${when(
-            this.appState.isAdmin && this.collection,
-            (collection) => html`
+            this.appState.isAdmin,
+            () => html`
               <sl-menu-item>
                 <sl-icon name="stack" slot="prefix"></sl-icon>
                 ${msg("Deduplication Settings")}
                 <sl-menu slot="submenu">
-                  ${collection.indexStats
-                    ? html`${when(
-                          collection.indexStats.removedCrawls,
-                          () => html`
-                            <sl-menu-item
-                              class="menu-item-warning"
-                              @click=${() => void this.purgeIndex()}
-                            >
-                              <sl-icon slot="prefix" name="trash2"></sl-icon>
-                              ${msg("Purge Index")}
-                            </sl-menu-item>
-                          `,
-                        )}
-                        <sl-menu-item
-                          class="menu-item-danger"
-                          @click=${() => void this.deleteIndex()}
-                        >
-                          <sl-icon slot="prefix" name="trash3"></sl-icon>
-                          ${msg("Delete Index")}
-                        </sl-menu-item>`
-                    : html`<sl-menu-item
-                        class="menu-item-success"
-                        @click=${() => (this.openDialogName = "createIndex")}
-                      >
-                        <sl-icon slot="prefix" name="table"></sl-icon>
-                        ${msg("Create Index")}
-                      </sl-menu-item>`}
+                  ${this.renderDedupeMenuItems()}
                 </sl-menu>
               </sl-menu-item>
             `,
@@ -740,6 +739,40 @@ export class CollectionDetail extends BtrixElement {
       </sl-dropdown>
     `;
   };
+
+  private renderDedupeMenuItems() {
+    if (!this.collection) return;
+
+    if (this.collection.indexStats) {
+      return html`${when(
+          this.collection.indexStats.removedCrawls,
+          () => html`
+            <sl-menu-item
+              class="menu-item-warning"
+              @click=${() => (this.openDialogName = "purgeIndex")}
+            >
+              <sl-icon slot="prefix" name="trash2"></sl-icon>
+              ${msg("Purge Index")}
+            </sl-menu-item>
+          `,
+        )}
+        <sl-menu-item
+          class="menu-item-danger"
+          @click=${() => (this.openDialogName = "deleteIndex")}
+        >
+          <sl-icon slot="prefix" name="trash3"></sl-icon>
+          ${msg("Delete Index")}
+        </sl-menu-item>`;
+    }
+
+    return html`<sl-menu-item
+      class="menu-item-success"
+      @click=${() => (this.openDialogName = "createIndex")}
+    >
+      <sl-icon slot="prefix" name="table"></sl-icon>
+      ${msg("Create Index")}
+    </sl-menu-item>`;
+  }
 
   private renderInfoBar() {
     if (!this.collection) {

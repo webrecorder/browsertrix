@@ -10,7 +10,9 @@ export type Dialog =
   | "edit"
   | "replaySettings"
   | "removeItem"
-  | "createIndex";
+  | "createIndex"
+  | "purgeIndex"
+  | "deleteIndex";
 
 export type OpenDialogEventDetail = Dialog | "editItems";
 

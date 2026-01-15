@@ -1,4 +1,5 @@
 import { msg } from "@lit/localize";
+import type { SlButton } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { when } from "lit/directives/when.js";
 
@@ -33,11 +34,6 @@ export function deleteIndexDialog({
             ${collection_name}?`,
           )}
         </p>
-        <p class="mt-3">
-          ${msg(
-            "The index will only be deleted if there are not any workflows using this index as a deduplication source.",
-          )}
-        </p>
         <p class="mt-3">${msg("This action cannot be undone.")}</p>
       `;
     })}
@@ -45,7 +41,7 @@ export function deleteIndexDialog({
       <sl-button
         size="small"
         @click=${(e: MouseEvent) =>
-          void (e.target as HTMLElement)
+          void (e.currentTarget as SlButton)
             .closest<Dialog>("btrix-dialog")
             ?.hide()}
         .autofocus=${true}
@@ -54,8 +50,11 @@ export function deleteIndexDialog({
       <sl-button
         size="small"
         variant="danger"
-        @click=${async () => {
+        @click=${async (e: MouseEvent) => {
+          const btn = e.currentTarget as SlButton;
+          btn.setAttribute("loading", "true");
           await confirm();
+          btn.removeAttribute("loading");
           hide();
         }}
         >${msg("Delete Index")}</sl-button

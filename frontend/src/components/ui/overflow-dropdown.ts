@@ -35,6 +35,9 @@ export class OverflowDropdown extends TailwindElement {
   @property({ type: String })
   size?: "x-small" | "small" | "medium";
 
+  @property({ type: String })
+  placement?: SlDropdown["placement"];
+
   @state()
   private hasMenuItems?: boolean;
 
@@ -53,6 +56,7 @@ export class OverflowDropdown extends TailwindElement {
         ?disabled=${!this.hasMenuItems}
         hoist
         distance=${ifDefined(this.raised ? "4" : undefined)}
+        placement=${ifDefined(this.placement)}
         @btrix-select=${() => {
           void this.dropdown?.hide();
           this.dropdown?.focusOnTrigger();
