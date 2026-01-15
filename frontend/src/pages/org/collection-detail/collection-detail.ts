@@ -692,18 +692,27 @@ export class CollectionDetail extends BtrixElement {
             <sl-icon name="ui-checks" slot="prefix"></sl-icon>
             ${msg("Configure Items")}
           </sl-menu-item>
-          ${when(
-            this.appState.isAdmin,
-            () => html`
-              <sl-menu-item>
+          ${this.appState.isAdmin
+            ? html`<sl-menu-item>
                 <sl-icon name="stack" slot="prefix"></sl-icon>
                 ${msg("Deduplication Settings")}
                 <sl-menu slot="submenu">
                   ${this.renderDedupeMenuItems()}
                 </sl-menu>
-              </sl-menu-item>
-            `,
-          )}
+              </sl-menu-item>`
+            : when(
+                this.isCrawler &&
+                  this.collection &&
+                  !this.collection.indexStats,
+                () =>
+                  html`<sl-menu-item
+                    class="menu-item-success"
+                    @click=${() => (this.openDialogName = "createIndex")}
+                  >
+                    <sl-icon slot="prefix" name="table"></sl-icon>
+                    ${msg("Create Index")}
+                  </sl-menu-item>`,
+              )}
           <sl-divider></sl-divider>
           ${when(
             this.collection?.totalSize,

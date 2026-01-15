@@ -190,23 +190,21 @@ export class CollectionDetailDedupe extends BtrixElement {
                   <sl-icon slot="prefix" name="ui-checks"></sl-icon>
                   ${msg("Configure Auto-Add")}
                 </sl-button>
-                ${this.appState.isAdmin
-                  ? html`<sl-button
-                      size="small"
-                      @click=${() =>
-                        this.dispatchEvent(
-                          new CustomEvent<OpenDialogEventDetail>(
-                            "btrix-open-dialog",
-                            {
-                              detail: "createIndex",
-                            },
-                          ),
-                        )}
-                    >
-                      <sl-icon slot="prefix" name="table"></sl-icon>
-                      ${msg("Create Index")}
-                    </sl-button>`
-                  : nothing}
+                <sl-button
+                  size="small"
+                  @click=${() =>
+                    this.dispatchEvent(
+                      new CustomEvent<OpenDialogEventDetail>(
+                        "btrix-open-dialog",
+                        {
+                          detail: "createIndex",
+                        },
+                      ),
+                    )}
+                >
+                  <sl-icon slot="prefix" name="table"></sl-icon>
+                  ${msg("Create Index")}
+                </sl-button>
               </div>
             `
           : undefined,
