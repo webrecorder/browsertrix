@@ -180,6 +180,10 @@ class CrawlOps(BaseCrawlOps):
         tag_match: ListFilterType | None = ListFilterType.AND,
         collection_id: Optional[UUID] = None,
         dedupe_coll_id: Optional[UUID] = None,
+        requires_crawls: list[str] | None = None,
+        required_by_crawls: list[str] | None = None,
+        has_requires_crawls: Optional[bool] = None,
+        has_required_by_crawls: Optional[bool] = None,
         crawl_ids: Optional[List[str]] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -211,6 +215,20 @@ class CrawlOps(BaseCrawlOps):
         if tags:
             query_type = "$all" if tag_match == ListFilterType.AND else "$in"
             query["tags"] = {query_type: tags}
+
+        if requires_crawls:
+            query["requiresCrawls"] = {"$in": requires_crawls}
+        elif has_requires_crawls:
+            query["requiresCrawls"] = {"$nin": [None, []]}
+        elif has_requires_crawls is False:
+            query["requiresCrawls"] = {"$in": [None, []]}
+
+        if required_by_crawls:
+            query["requiredByCrawls"] = {"$in": required_by_crawls}
+        elif has_required_by_crawls:
+            query["requiredByCrawls"] = {"$nin": [None, []]}
+        elif has_required_by_crawls is False:
+            query["requiredByCrawls"] = {"$in": [None, []]}
 
         # Override running_only if state list is explicitly passed
         if state:
@@ -1404,6 +1422,10 @@ def init_crawls_api(
         ] = ListFilterType.AND,
         collectionId: Optional[UUID] = None,
         dedupeCollId: Optional[UUID] = None,
+        requiresCrawls: Annotated[list[str] | None, Query()] = None,
+        requiredByCrawls: Annotated[list[str] | None, Query()] = None,
+        hasRequiresCrawls: Optional[bool] = None,
+        hasRequiredByCrawls: Optional[bool] = None,
         ids: Annotated[list[str] | None, Query()] = None,
         sortBy: Optional[str] = None,
         sortDirection: int = -1,
@@ -1437,6 +1459,10 @@ def init_crawls_api(
             tag_match=tag_match,
             collection_id=collectionId,
             dedupe_coll_id=dedupeCollId,
+            requires_crawls=requiresCrawls,
+            required_by_crawls=requiredByCrawls,
+            has_requires_crawls=hasRequiresCrawls,
+            has_required_by_crawls=hasRequiredByCrawls,
             crawl_ids=ids,
             page_size=pageSize,
             page=page,
