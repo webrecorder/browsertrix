@@ -263,7 +263,7 @@ export class ItemDependencyTree extends BtrixElement {
       ${status()}
       <div class="component--detail">${renderName(item)}</div>
       <div class="component--detail">
-        <sl-tooltip content=${msg("Dedupe Dependencies")} hoist>
+        <sl-tooltip content=${msg("Dependencies")} hoist>
           ${dedupeIcon({ hasDependencies: true, hasDependents: true })}
           <span
             >${this.localize.number(dependencies.length)}

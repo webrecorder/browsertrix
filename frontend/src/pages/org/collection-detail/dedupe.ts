@@ -113,10 +113,12 @@ export class CollectionDetailDedupe extends BtrixElement {
         collectionId,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
+        crawlType: "crawl",
+        // hasRequiresCrawls: true,
       });
 
       return await this.api.fetch<APIPaginatedList<Crawl>>(
-        `/orgs/${this.orgId}/crawls?${query}`,
+        `/orgs/${this.orgId}/all-crawls?${query}`,
         { signal },
       );
     },
