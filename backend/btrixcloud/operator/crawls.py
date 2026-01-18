@@ -1501,8 +1501,8 @@ class CrawlOperator(BaseOperator):
         pipe.get(f"{crawl_id}:profileUploaded")
         results = await pipe.execute()
 
-        pages_done = int(results[0]) or 0
-        pages_found = int(results[1]) - int(results[2] or 0) - int(results[3] or 0)
+        pages_done = int(results[0] or 0)
+        pages_found = int(results[1] or 0) - int(results[2] or 0) - int(results[3] or 0)
 
         sizes = results[4]
         archive_size = sum(int(x) for x in sizes.values())
