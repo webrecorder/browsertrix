@@ -694,38 +694,49 @@
         <source>Trials</source>
         <target state="translated">试验</target>
       </trans-unit>
-      <trans-unit id="sab0b871c3b894ae1">
+      <trans-unit id="sab0b871c3b894ae1" xml:space="preserve">
         <source>Cancellation Scheduled</source>
+        <target state="translated">计划取消</target>
       </trans-unit>
-      <trans-unit id="s2bf359cf530e6c24">
+      <trans-unit id="s2bf359cf530e6c24" xml:space="preserve">
         <source>Unexpected States</source>
+        <target state="translated">意料之外的状态</target>
       </trans-unit>
-      <trans-unit id="sad3e3c8146fc920f">
+      <trans-unit id="sad3e3c8146fc920f" xml:space="preserve">
         <source>Status</source>
+        <target state="translated">状态</target>
       </trans-unit>
-      <trans-unit id="sb41b2cfbbc52565b">
+      <trans-unit id="sb41b2cfbbc52565b" xml:space="preserve">
         <source>Created</source>
+        <target state="translated">创建</target>
       </trans-unit>
-      <trans-unit id="s9f5a5f23312798f0">
+      <trans-unit id="s9f5a5f23312798f0" xml:space="preserve">
         <source>Members</source>
+        <target state="translated">成员</target>
       </trans-unit>
-      <trans-unit id="s466e48320d0fb4fb">
+      <trans-unit id="s466e48320d0fb4fb" xml:space="preserve">
         <source>Bytes Stored</source>
+        <target state="translated">存储的字节数</target>
       </trans-unit>
-      <trans-unit id="s2428027aa3e49f16">
+      <trans-unit id="s2428027aa3e49f16" xml:space="preserve">
         <source>Last Crawl</source>
+        <target state="translated">上次爬取</target>
       </trans-unit>
-      <trans-unit id="s438a40049bb04715">
+      <trans-unit id="s438a40049bb04715" xml:space="preserve">
         <source>Proxy Settings for: <x id="0" equiv-text="${this.currOrg?.name || &quot;&quot;}"/></source>
+        <target state="translated"><x id="0" equiv-text="${this.currOrg?.name || &quot;&quot;}"/>的代理设置</target>
       </trans-unit>
-      <trans-unit id="s234e4c06c8c1aada">
+      <trans-unit id="s234e4c06c8c1aada" xml:space="preserve">
         <source>Enable all shared proxies</source>
+        <target state="translated">启用所有共享代理</target>
       </trans-unit>
-      <trans-unit id="sa166018e0e9d30e9">
+      <trans-unit id="sa166018e0e9d30e9" xml:space="preserve">
         <source>Update Proxy Settings</source>
+        <target state="translated">更新代理设置</target>
       </trans-unit>
-      <trans-unit id="s8d7a8a8d9ff3a0c7">
+      <trans-unit id="s8d7a8a8d9ff3a0c7" xml:space="preserve">
         <source>Disable Archiving?</source>
+        <target state="translated">禁用归档？</target>
       </trans-unit>
       <trans-unit id="h66cb67cd841f4beb">
         <source>Are you sure you want to disable archiving in <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;"/> org? Members will no longer be able to crawl, upload files, create browser profiles, or create collections.</source>
@@ -760,32 +771,41 @@
       <trans-unit id="s271e65e1451601ef">
         <source>Crawls: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredCrawls)}"/></source>
       </trans-unit>
-      <trans-unit id="s6fc1df91bcc961d3">
+      <trans-unit id="s6fc1df91bcc961d3" xml:space="preserve">
         <source>Uploads: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredUploads)}"/></source>
+        <target state="translated">上传：<x id="0" equiv-text="${this.localize.bytes(org.bytesStoredUploads)}"/></target>
       </trans-unit>
-      <trans-unit id="sbe6bd4a4b8f70dc1">
+      <trans-unit id="sbe6bd4a4b8f70dc1" xml:space="preserve">
         <source>Profiles: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredProfiles)}"/></source>
+        <target state="translated">配置文件：<x id="0" equiv-text="${this.localize.bytes(org.bytesStoredProfiles)}"/></target>
       </trans-unit>
-      <trans-unit id="se49bbaeabfd85d48">
+      <trans-unit id="se49bbaeabfd85d48" xml:space="preserve">
         <source>Type "<x id="0" equiv-text="${confirmationStr}"/>" to confirm</source>
+        <target state="translated">输入“<x id="0" equiv-text="${confirmationStr}"/>”来确认</target>
       </trans-unit>
-      <trans-unit id="s2ceb11be2290bb1b">
+      <trans-unit id="s2ceb11be2290bb1b" xml:space="preserve">
         <source>Cancel</source>
+        <target state="translated">取消</target>
       </trans-unit>
-      <trans-unit id="s91622815dce6a0ec">
+      <trans-unit id="s91622815dce6a0ec" xml:space="preserve">
         <source>Delete Org</source>
+        <target state="translated">删除组织</target>
       </trans-unit>
-      <trans-unit id="s3eab2ed27de13f27">
+      <trans-unit id="s3eab2ed27de13f27" xml:space="preserve">
         <source>Archiving in "<x id="0" equiv-text="${org.name}"/>" is disabled.</source>
+        <target state="translated">“<x id="0" equiv-text="${org.name}"/>”中的归档已禁用。</target>
       </trans-unit>
-      <trans-unit id="s2da2e2eba00d0f28">
+      <trans-unit id="s2da2e2eba00d0f28" xml:space="preserve">
         <source>Archiving in "<x id="0" equiv-text="${org.name}"/>" is re-enabled.</source>
+        <target state="translated">“<x id="0" equiv-text="${org.name}"/>”中的归档已重新启用。</target>
       </trans-unit>
-      <trans-unit id="s42dfcfdcb5aee47e">
+      <trans-unit id="s42dfcfdcb5aee47e" xml:space="preserve">
         <source>Sorry, couldn't update org archiving ability at this time.</source>
+        <target state="translated">抱歉，目前无法更新组织的归档功能。</target>
       </trans-unit>
-      <trans-unit id="s4b9eccf40f4a605d">
+      <trans-unit id="s4b9eccf40f4a605d" xml:space="preserve">
         <source>Sorry, couldn't get all proxies at this time.</source>
+        <target state="translated">抱歉，目前没法获取到所有代理。</target>
       </trans-unit>
       <trans-unit id="s081029829332df74">
         <source>Org "<x id="0" equiv-text="${org.name}"/>" has been deleted.</source>
