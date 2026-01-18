@@ -13,7 +13,6 @@ import json
 import humanize
 
 from kubernetes.utils import parse_quantity
-from redis import asyncio as exceptions
 
 from fastapi import HTTPException
 
@@ -1493,23 +1492,22 @@ class CrawlOperator(BaseOperator):
         self, redis: Redis, crawl_id: str
     ) -> tuple[OpCrawlStats, dict[str, Any]]:
         """get page stats"""
-        try:
-            # crawler >0.9.0, done key is a value
-            pages_done = int(await redis.get(f"{crawl_id}:d") or 0)
-        except exceptions.ResponseError:
-            # crawler <=0.9.0, done key is a list
-            pages_done = await redis.llen(f"{crawl_id}:d")
+        pipe = redis.pipeline(transaction=False)
+        pipe.get(f"{crawl_id}:d")
+        pipe.scard(f"{crawl_id}:s")
+        pipe.llen(f"{crawl_id}:extraSeeds")
+        pipe.scard(f"{crawl_id}:excluded")
+        pipe.hgetall(f"{crawl_id}:size")
+        pipe.get(f"{crawl_id}:profileUploaded")
+        results = await pipe.execute()
 
-        pages_found = await redis.scard(f"{crawl_id}:s")
-        # account for extra seeds and subtract from seen list
-        extra_seeds = await redis.llen(f"{crawl_id}:extraSeeds")
-        if extra_seeds:
-            pages_found -= extra_seeds
+        pages_done = int(results[0]) or 0
+        pages_found = int(results[1]) - int(results[2] or 0) - int(results[3] or 0)
 
-        sizes = await redis.hgetall(f"{crawl_id}:size")
+        sizes = results[4]
         archive_size = sum(int(x) for x in sizes.values())
 
-        profile_update = await redis.get(f"{crawl_id}:profileUploaded")
+        profile_update = results[5]
 
         stats = OpCrawlStats(
             found=pages_found,
