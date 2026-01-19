@@ -18,7 +18,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from iso639 import is_language
-from packaging.version import parse
+from packaging.version import parse as parse_version
 from pymongo.collation import Collation
 from pymongo.errors import DuplicateKeyError
 from slugify import slugify
@@ -227,8 +227,8 @@ def crawler_image_below_minimum(crawler_image: str, min_image: str):
     Return False by default or if versions can't be parsed as semver (e.g. "latest")
     """
     try:
-        crawler_image_version = parse(crawler_image.split(":")[1])
-        min_image_version = parse(min_image.split(":")[1])
+        crawler_image_version = parse_version(crawler_image.split(":")[1])
+        min_image_version = parse_version(min_image.split(":")[1])
     # pylint: disable=broad-exception-caught
     except Exception:
         print("Unable to compare crawler versions, allowing", flush=True)
