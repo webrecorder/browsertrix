@@ -36,7 +36,7 @@ class Migration(BaseMigration):
 
         for crawl_id in log_crawl_ids:
             index += 1
-            res = await crawls_mdb.find({"_id": crawl_id})
+            res = await crawls_mdb.find_one({"_id": crawl_id})
             if res is None:
                 crawl_logs_to_delete.append(crawl_id)
 
