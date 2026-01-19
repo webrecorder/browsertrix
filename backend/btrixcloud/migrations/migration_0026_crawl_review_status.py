@@ -4,7 +4,6 @@ Migration 0026 - Crawl reviewStatus type
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0026"
 
 

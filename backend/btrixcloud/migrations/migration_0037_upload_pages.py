@@ -5,7 +5,6 @@ Migration 0037 -- upload pages
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Organization, UploadedCrawl
 
-
 MIGRATION_VERSION = "0037"
 
 

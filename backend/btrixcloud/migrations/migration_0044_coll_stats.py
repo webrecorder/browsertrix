@@ -4,7 +4,6 @@ Migration 0044 - Recalculate collection stats
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0044"
 
 

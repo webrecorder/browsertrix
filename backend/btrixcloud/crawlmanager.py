@@ -13,7 +13,6 @@ from .k8sapi import K8sAPI
 
 from .models import StorageRef, CrawlConfig, BgJobType, ProfileBrowserMetadata
 
-
 # ============================================================================
 DEFAULT_PROXY_ID: str = os.environ.get("DEFAULT_PROXY_ID", "")
 

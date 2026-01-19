@@ -4,7 +4,6 @@ Migration 0038 - Organization lastCrawlFinished field
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0038"
 
 

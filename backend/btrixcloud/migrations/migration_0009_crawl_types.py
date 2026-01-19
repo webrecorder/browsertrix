@@ -4,7 +4,6 @@ Migration 0009 - Crawl types
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0009"
 
 

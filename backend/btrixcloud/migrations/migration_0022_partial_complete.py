@@ -4,7 +4,6 @@ Migration 0022 -- Partial Complete
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0022"
 
 

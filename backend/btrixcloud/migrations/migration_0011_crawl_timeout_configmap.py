@@ -8,7 +8,6 @@ from btrixcloud.k8sapi import K8sAPI
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0011"
 
 

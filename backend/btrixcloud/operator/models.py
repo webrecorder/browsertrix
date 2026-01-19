@@ -13,7 +13,6 @@ from btrixcloud.models import (
     CrawlStats,
 )
 
-
 BTRIX_API = "btrix.cloud/v1"
 
 CMAP = "ConfigMap.v1"

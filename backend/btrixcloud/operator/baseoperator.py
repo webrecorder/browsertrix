@@ -9,7 +9,6 @@ import yaml
 from btrixcloud.k8sapi import K8sAPI
 from btrixcloud.utils import is_bool
 
-
 if TYPE_CHECKING:
     from btrixcloud.crawlconfigs import CrawlConfigOps
     from btrixcloud.crawls import CrawlOps

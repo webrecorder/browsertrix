@@ -4,7 +4,6 @@ Migration 0040 -- archived item pageCount
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0040"
 
 

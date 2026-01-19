@@ -8,7 +8,6 @@ from btrixcloud.emailsender import EmailSender
 from btrixcloud.invites import init_invites
 from btrixcloud.users import init_user_manager
 
-
 MIGRATION_VERSION = "0018"
 
 

@@ -61,7 +61,6 @@ from .models import (
 from .utils import slug_from_name, dt_now, get_origin
 from .version import __version__
 
-
 if TYPE_CHECKING:
     from .orgs import OrgOps
     from .crawlmanager import CrawlManager

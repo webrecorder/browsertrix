@@ -5,7 +5,6 @@ Migration 0008 - Precomputing crawl file stats
 from btrixcloud.crawls import recompute_crawl_file_count_and_size
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0008"
 
 

@@ -4,7 +4,6 @@ Migration 0024 -- crawlerChannel
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0024"
 
 

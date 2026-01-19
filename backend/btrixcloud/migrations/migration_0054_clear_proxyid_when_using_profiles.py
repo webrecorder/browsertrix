@@ -5,7 +5,6 @@ using proxyId from profile always
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0054"
 
 

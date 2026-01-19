@@ -6,7 +6,6 @@ from btrixcloud.models import CrawlConfig
 from btrixcloud.crawlmanager import CrawlManager
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0005"
 
 

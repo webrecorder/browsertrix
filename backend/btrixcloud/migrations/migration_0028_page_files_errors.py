@@ -5,7 +5,6 @@ Migration 0028 - Page files and errors
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Page, Crawl
 
-
 MIGRATION_VERSION = "0028"
 
 

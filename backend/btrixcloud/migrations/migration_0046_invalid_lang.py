@@ -4,7 +4,6 @@ Migration 0046 - Invalid language codes
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0046"
 
 ISO_639_1_CODES = [

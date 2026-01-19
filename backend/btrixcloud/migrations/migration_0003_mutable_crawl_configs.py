@@ -6,7 +6,6 @@ from btrixcloud.models import Crawl, CrawlConfig
 from btrixcloud.migrations import BaseMigration, MigrationError
 from btrixcloud.utils import dt_now
 
-
 MIGRATION_VERSION = "0003"
 
 

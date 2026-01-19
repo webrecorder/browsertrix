@@ -4,7 +4,6 @@ Migration 0045 - Recalculate crawl filePageCount and errorPageCount
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0045"
 
 

@@ -24,7 +24,6 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from .models import User, UserOut
 from .utils import dt_now
 
-
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid4().hex)
 

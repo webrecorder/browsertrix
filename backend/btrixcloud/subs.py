@@ -52,7 +52,6 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now
 
-
 # if set, will enable this api
 subscriptions_enabled = is_bool(os.environ.get("BILLING_ENABLED"))
 

@@ -4,7 +4,6 @@ Migration 0043 - Remove expireAt and presignedUrl from files, now stored in sepa
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0043"
 
 

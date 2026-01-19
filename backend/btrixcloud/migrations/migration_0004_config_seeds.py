@@ -7,7 +7,6 @@ from pydantic import HttpUrl
 from btrixcloud.models import Crawl, CrawlConfig, ScopeType, Seed
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0004"
 
 

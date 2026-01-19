@@ -9,7 +9,6 @@ from .operator import init_operator_api
 from .ops import init_ops
 from .utils import register_exit_handler
 
-
 app_root = FastAPI()
 
 

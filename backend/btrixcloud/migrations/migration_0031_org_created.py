@@ -4,7 +4,6 @@ Migration 0031 - Organization created field
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0031"
 
 

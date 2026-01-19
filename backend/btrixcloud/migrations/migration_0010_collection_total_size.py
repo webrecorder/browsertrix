@@ -5,7 +5,6 @@ Migration 0010 - Precomputing collection total size
 from btrixcloud.colls import CollectionOps
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0010"
 
 

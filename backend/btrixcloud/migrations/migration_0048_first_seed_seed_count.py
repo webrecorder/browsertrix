@@ -7,7 +7,6 @@ from typing import cast, List, Dict, Any
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import CrawlConfig, Crawl, Seed
 
-
 MIGRATION_VERSION = "0048"
 
 

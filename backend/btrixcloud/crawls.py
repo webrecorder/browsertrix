@@ -84,7 +84,6 @@ from .models import (
     UserRole,
 )
 
-
 MAX_MATCH_SIZE = 500000
 DEFAULT_RANGE_LIMIT = 50
 

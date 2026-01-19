@@ -55,7 +55,6 @@ from .models import (
     PVC,
 )
 
-
 METRICS_API = "metrics.k8s.io/v1beta1"
 METRICS = f"PodMetrics.{METRICS_API}"
 

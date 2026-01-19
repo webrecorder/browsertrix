@@ -22,7 +22,6 @@ from pymongo.collation import Collation
 from pymongo.errors import DuplicateKeyError
 from slugify import slugify
 
-
 default_origin = os.environ.get("APP_ORIGIN", "")
 
 browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
