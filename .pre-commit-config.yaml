@@ -1,8 +1,8 @@
 repos:
-- repo: https://github.com/psf/black
-  rev: 24.1.1
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.14.13
   hooks:
-    - id: black
+    - id: ruff-format
       args: ["backend/btrixcloud/"]
 - repo: local
   hooks:
