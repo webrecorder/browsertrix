@@ -1262,10 +1262,12 @@ class CrawlConfigOps:
         await self.check_if_too_many_waiting_crawls(org)
 
         if crawlconfig.profileid:
-            profile_filename, crawlconfig.proxyId, _ = (
-                await self.profiles.get_profile_filename_proxy_channel(
-                    crawlconfig.profileid, org
-                )
+            (
+                profile_filename,
+                crawlconfig.proxyId,
+                _,
+            ) = await self.profiles.get_profile_filename_proxy_channel(
+                crawlconfig.profileid, org
             )
             if not profile_filename:
                 raise HTTPException(status_code=400, detail="invalid_profile_id")
