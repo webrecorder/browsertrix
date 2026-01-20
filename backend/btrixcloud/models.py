@@ -1013,6 +1013,7 @@ class DeleteQARunList(BaseModel):
 class CrawlSearchValuesResponse(BaseModel):
     """Response model for crawl search values"""
 
+    ids: List[str]
     names: List[str]
     descriptions: List[str]
     firstSeeds: List[str]
