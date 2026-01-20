@@ -768,7 +768,9 @@ class CollectionOps:
             str(coll.id), str(oid), crawler_image, pull_policy, is_purge
         )
 
-    async def delete_dedupe_index(self, coll: Collection, org: Organization):
+    async def delete_dedupe_index(
+        self, coll: Collection, org: Organization, disable_workflow_dudupe: bool = False
+    ):
         """delete coll dedupe index, if possible"""
         if not coll.indexStats:
             raise HTTPException(status_code=404, detail="no_dedupe_index")
@@ -796,6 +798,12 @@ class CollectionOps:
                 }
             },
         )
+
+        if disable_workflow_dudupe:
+            await self.crawl_configs.update_many(
+                {"oid": org.id, "dedupeCollId": coll.id},
+                {"$set": {"dedupeCollId": None}},
+            )
 
         return {"deleted": True}
 
@@ -1548,10 +1556,13 @@ def init_collections_api(
     )
     async def delete_dedupe_index(
         coll_id: UUID,
+        disableWorkflowDedupe: bool = False,
         org: Organization = Depends(org_owner_dep),
     ):
         coll = await colls.get_collection(coll_id, org.id)
 
-        return await colls.delete_dedupe_index(coll, org)
+        return await colls.delete_dedupe_index(
+            coll, org, disable_workflow_dudupe=disableWorkflowDedupe
+        )
 
     return colls
