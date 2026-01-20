@@ -162,6 +162,22 @@
     background-color: var(--sl-color-primary-500);
   }
 
+  sl-progress-bar {
+    --height: 0.5rem;
+    --track-color: var(--sl-color-neutral-100);
+    --indicator-color: var(--sl-color-primary-300);
+  }
+
+  sl-progress-bar::part(base) {
+    box-shadow: inset 0 0 0 1px var(--sl-color-neutral-300);
+    @apply rounded-md;
+  }
+
+  sl-progress-bar::part(indicator) {
+    box-shadow: inset 0 0 0 1px var(--sl-color-primary-500);
+    @apply rounded-md;
+  }
+
   /* Add more spacing between label, input and help text */
   .form-label,
   btrix-tag-input::part(form-control-label),

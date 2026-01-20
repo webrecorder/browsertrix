@@ -24,10 +24,11 @@ import { SelectCollectionAccess } from "@/features/collections/select-collection
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
+import { getIndexErrorMessage } from "@/strings/collections/index-error";
 import { metadata } from "@/strings/collections/metadata";
 import { stringFor } from "@/strings/ui";
 import { monthYearDateRange } from "@/strings/utils";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import { type APIPaginatedList, type APIPaginationQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import { SortDirection, type UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
@@ -831,9 +832,13 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         icon: "check2-circle",
         id: "collection-delete-status",
       });
-    } catch {
+    } catch (err) {
+      const message =
+        getIndexErrorMessage(err) ||
+        msg("Sorry, couldn’t delete collection at this time.");
+
       this.notify.toast({
-        message: msg("Sorry, couldn't delete Collection at this time."),
+        message,
         variant: "danger",
         icon: "exclamation-octagon",
         id: "collection-delete-status",
@@ -851,7 +856,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         this.fetchErrorStatusCode = e.statusCode;
       } else {
         this.notify.toast({
-          message: msg("Sorry, couldn't retrieve Collections at this time."),
+          message: msg("Sorry, couldn’t retrieve collection at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
           id: "collection-retrieve-status",
