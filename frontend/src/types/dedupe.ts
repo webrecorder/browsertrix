@@ -21,5 +21,6 @@ export const dedupeIndexStatsSchema = z.object({
   totalCrawlSize: z.number(),
   removedCrawls: z.number(),
   removedCrawlSize: z.number(),
+  updateProgress: z.number().gte(0).lte(1),
 });
 export type DedupeIndexStats = z.infer<typeof dedupeIndexStatsSchema>;
