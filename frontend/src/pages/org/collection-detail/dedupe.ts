@@ -646,13 +646,11 @@ export class CollectionDetailDedupe extends BtrixElement {
                 </btrix-desc-list-item>
               `,
             )}
-            ${state === "initing" || updating
+            ${updating
               ? html`<btrix-desc-list-item label=${msg("Import Progress")}>
                   <btrix-index-import-progress
                     collectionId=${this.collectionId}
-                    initialValue=${ifDefined(
-                      updating ? col.indexStats?.updateProgress : undefined,
-                    )}
+                    initialValue=${ifDefined(col.indexStats?.updateProgress)}
                     @btrix-progress-complete=${() =>
                       this.dispatchEvent(
                         new CustomEvent("btrix-request-update"),
