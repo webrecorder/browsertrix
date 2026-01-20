@@ -13,12 +13,16 @@ import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { deleteIndexDialog } from "@/features/collections/templates/delete-index-dialog";
 import { indexStatus } from "@/features/collections/templates/index-status";
 import { purgeIndexDialog } from "@/features/collections/templates/purge-index-dialog";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import { labelWithIcon } from "@/layouts/labelWithIcon";
+import { panelBody } from "@/layouts/panel";
 import { Tab } from "@/pages/org/collection-detail/types";
 import { OrgTab } from "@/routes";
 import { getIndexErrorMessage } from "@/strings/collections/index-error";
+import { noData } from "@/strings/ui";
 import { type APIPaginatedList, type APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
+import { indexAvailable } from "@/utils/dedupe";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { pluralOf } from "@/utils/pluralize";
 
@@ -26,9 +30,9 @@ const INITIAL_PAGE_SIZE = 10;
 
 type DedupeSource = RequireExactlyOne<Collection, "indexStats">;
 
-const detail = (content: TemplateResult | string) =>
+const detail = (content?: TemplateResult | string) =>
   html`<div class="font-monostyle mt-1 text-xs leading-none text-neutral-500">
-    ${content}
+    ${content || noData}
   </div>`;
 
 @customElement("btrix-org-settings-deduplication")
@@ -89,9 +93,9 @@ export class OrgSettingsDeduplication extends BtrixElement {
         collection: this.selectedIndex,
         open: this.openDialog === "delete",
         hide: this.hideDialog,
-        confirm: async () =>
+        confirm: async (params) =>
           this.selectedIndex
-            ? this.deleteIndex(this.selectedIndex)
+            ? this.deleteIndex(this.selectedIndex, params)
             : console.debug("missing `selectedIndex`"),
       })}
     `;
@@ -100,6 +104,14 @@ export class OrgSettingsDeduplication extends BtrixElement {
   private readonly hideDialog = () => (this.openDialog = undefined);
 
   private readonly renderTable = (sources: APIPaginatedList<DedupeSource>) => {
+    if (!sources.total) {
+      return panelBody({
+        content: emptyMessage({
+          message: msg("No deduplication sources found."),
+        }),
+      });
+    }
+
     return html`
       <btrix-overflow-scroll>
         <btrix-table
@@ -156,8 +168,10 @@ export class OrgSettingsDeduplication extends BtrixElement {
   };
 
   private readonly renderSource = (item: DedupeSource) => {
-    const stats = item.indexStats;
-    const updating = stats.updateProgress > 0 && stats.updateProgress < 1;
+    const { indexStats, indexState } = item;
+    const updating =
+      indexStats.updateProgress > 0 && indexStats.updateProgress < 1;
+    const available = indexAvailable(indexState);
 
     return html`
       <btrix-table-row>
@@ -177,31 +191,46 @@ export class OrgSettingsDeduplication extends BtrixElement {
             ? labelWithIcon({
                 icon: html`<sl-progress-ring
                   class="[--indicator-width:2px] [--size:1rem] [--track-width:1px]"
-                  value=${stats.updateProgress * 100}
+                  value=${indexStats.updateProgress * 100}
                 ></sl-progress-ring>`,
-                label: `${(stats.updateProgress * 100).toFixed(0)}% ${msg("Imported")}`,
+                label: `${(indexStats.updateProgress * 100).toFixed(0)}% ${indexState === "purging" ? msg("Purged") : msg("Imported")}`,
               })
-            : indexStatus(item.indexState)}
+            : indexStatus(indexState)}
         </btrix-table-cell>
         <btrix-table-cell>
           <div>
-            ${this.localize.number(stats.totalUrls)}
-            ${pluralOf("URLs", stats.totalUrls)}
+            ${this.localize.number(indexStats.totalUrls)}
+            ${pluralOf("URLs", indexStats.totalUrls)}
             ${detail(
-              `${this.localize.number(stats.dupeUrls)} ${msg("duplicate")}`,
+              indexStats.dupeUrls
+                ? `${this.localize.number(indexStats.dupeUrls, {
+                    notation: "compact",
+                  })} ${msg("duplicate")}`
+                : undefined,
             )}
           </div>
         </btrix-table-cell>
         <btrix-table-cell>
           <div>
-            ${this.localize.number(stats.totalCrawls)}
-            ${pluralOf("items", stats.totalCrawls)}
-            ${detail(this.localize.bytes(stats.totalCrawlSize))}
+            ${this.localize.number(indexStats.totalCrawls)}
+            ${pluralOf("items", indexStats.totalCrawls)}
+            ${detail(
+              indexStats.totalCrawlSize
+                ? this.localize.bytes(indexStats.totalCrawlSize)
+                : undefined,
+            )}
           </div>
         </btrix-table-cell>
         <btrix-table-cell>
-          ${this.localize.number(stats.removedCrawls)}
-          ${pluralOf("items", stats.removedCrawls)}
+          <div>
+            ${this.localize.number(indexStats.removedCrawls)}
+            ${pluralOf("items", indexStats.removedCrawls)}
+            ${detail(
+              indexStats.removedCrawlSize
+                ? this.localize.bytes(indexStats.removedCrawlSize)
+                : undefined,
+            )}
+          </div>
         </btrix-table-cell>
         <btrix-table-cell>
           <sl-tooltip content=${msg("Open in New Tab")} placement="left">
@@ -229,10 +258,10 @@ export class OrgSettingsDeduplication extends BtrixElement {
                   this.selectedIndex = item;
                   this.openDialog = "purge";
                 }}
-                ?disabled=${updating}
+                ?disabled=${!available}
               >
-                <sl-icon slot="prefix" name="arrow-repeat"></sl-icon>
-                ${msg("Reset Index")}
+                <sl-icon slot="prefix" name="trash2"></sl-icon>
+                ${msg("Purge Index")}
               </sl-menu-item>
               <sl-menu-item
                 class="menu-item-danger"
@@ -259,9 +288,10 @@ export class OrgSettingsDeduplication extends BtrixElement {
           method: "POST",
         },
       );
+      await this.sources.run();
 
       this.notify.toast({
-        message: msg("Reset deduplication index."),
+        message: msg("Purging deduplication index..."),
         variant: "success",
         icon: "check2-circle",
         id: "dedupe-index-update-status",
@@ -280,14 +310,19 @@ export class OrgSettingsDeduplication extends BtrixElement {
     }
   }
 
-  private async deleteIndex(source: Collection) {
+  private async deleteIndex(
+    source: Collection,
+    params: { removeFromWorkflows: boolean },
+  ) {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/collections/${source.id}/dedupeIndex/delete`,
         {
           method: "POST",
+          body: JSON.stringify(params),
         },
       );
+      await this.sources.run();
 
       this.notify.toast({
         message: msg("Deleted deduplication index."),

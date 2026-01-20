@@ -693,7 +693,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           ></btrix-format-date>
         </btrix-table-cell>
         <btrix-table-cell class="p-0">
-          ${this.isCrawler ? this.renderActions(col) : ""}
+          ${this.renderActions(col)}
         </btrix-table-cell>
       </btrix-table-row>
     `;
@@ -711,10 +711,17 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         size=${renderOnGridItem ? "small" : "medium"}
       >
         <sl-menu>
-          <sl-menu-item @click=${() => void this.manageCollection(col, "edit")}>
-            <sl-icon name="gear" slot="prefix"></sl-icon>
-            ${msg("Edit Collection Settings")}
-          </sl-menu-item>
+          ${when(
+            this.isCrawler,
+            () => html`
+              <sl-menu-item
+                @click=${() => void this.manageCollection(col, "edit")}
+              >
+                <sl-icon name="gear" slot="prefix"></sl-icon>
+                ${msg("Edit Collection Settings")}
+              </sl-menu-item>
+            `,
+          )}
           ${col.access === CollectionAccess.Public ||
           col.access === CollectionAccess.Unlisted
             ? html`
@@ -752,14 +759,19 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
             <sl-icon name="copy" slot="prefix"></sl-icon>
             ${msg("Copy Collection ID")}
           </sl-menu-item>
-          <sl-divider></sl-divider>
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => void this.manageCollection(col, "delete")}
-          >
-            <sl-icon name="trash3" slot="prefix"></sl-icon>
-            ${msg("Delete Collection")}
-          </sl-menu-item>
+          ${when(
+            this.isCrawler && !col.indexStats,
+            () => html`
+              <sl-divider></sl-divider>
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--danger)"
+                @click=${() => void this.manageCollection(col, "delete")}
+              >
+                <sl-icon name="trash3" slot="prefix"></sl-icon>
+                ${msg("Delete Collection")}
+              </sl-menu-item>
+            `,
+          )}
         </sl-menu>
       </btrix-overflow-dropdown>
     `;

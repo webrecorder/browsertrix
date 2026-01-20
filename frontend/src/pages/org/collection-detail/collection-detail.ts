@@ -5,6 +5,7 @@ import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -51,7 +52,9 @@ import {
 } from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
-import { isCrawl, isCrawlReplay, renderName } from "@/utils/crawler";
+import type { DedupeIndexState } from "@/types/dedupe";
+import { isCrawlReplay, renderName } from "@/utils/crawler";
+import { indexAvailable, indexInUse, indexUpdating } from "@/utils/dedupe";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { richText } from "@/utils/rich-text";
@@ -170,8 +173,15 @@ export class CollectionDetail extends BtrixElement {
         page: parsePage(new URLSearchParams(location.search).get("page")),
       });
     }
-    if (changedProperties.has("collectionTab") && this.collectionTab === null) {
-      this.collectionTab = Tab.Replay;
+    if (changedProperties.has("collectionTab")) {
+      if (this.collectionTab === null) {
+        this.collectionTab = Tab.Replay;
+      }
+
+      if (this.collectionTab === Tab.Deduplication) {
+        // Get latest stats
+        void this.fetchCollection();
+      }
     }
   }
 
@@ -297,6 +307,11 @@ export class CollectionDetail extends BtrixElement {
                         @click=${() => {
                           this.openDialogName = "replaySettings";
                         }}
+                        title=${ifDefined(
+                          this.isRwpLoaded
+                            ? undefined
+                            : msg("Please wait for replay load"),
+                        )}
                         ?disabled=${!this.isRwpLoaded}
                       >
                         ${this.isRwpLoaded
@@ -387,7 +402,7 @@ export class CollectionDetail extends BtrixElement {
               return html`
                 <p class="my-2">
                   ${msg(
-                    html`${number_of_items} ${plural_of_items} depend on this
+                    str`${number_of_items} ${plural_of_items} depend on this
                     item.`,
                   )}
                 </p>
@@ -423,27 +438,52 @@ export class CollectionDetail extends BtrixElement {
       </btrix-dialog>
 
       <btrix-dialog
-        .label=${msg("Delete Collection?")}
+        .label=${this.collection?.indexStats
+          ? msg("Deletion Not Allowed")
+          : msg("Delete Collection?")}
         .open=${this.openDialogName === "delete"}
         @sl-hide=${() => (this.openDialogName = undefined)}
       >
-        ${msg(html`Are you sure you want to delete ${collection_name}?`)}
-        <div slot="footer" class="flex justify-between">
-          <sl-button
-            size="small"
-            @click=${() => (this.openDialogName = undefined)}
-            >${msg("Cancel")}</sl-button
-          >
-          <sl-button
-            size="small"
-            variant="danger"
-            @click=${async () => {
-              await this.deleteCollection();
-              this.openDialogName = undefined;
-            }}
-            >${msg("Delete Collection")}</sl-button
-          >
-        </div>
+        ${when(this.collection, (col) =>
+          col.indexStats
+            ? html`${msg(
+                  html`${collection_name} cannot be deleted because it is being
+                  used as a deduplication source.`,
+                )}
+                ${this.appState.isAdmin
+                  ? msg(
+                      "To delete this collection, delete the deduplication index first.",
+                    )
+                  : nothing}
+                <div slot="footer" class="flex justify-end">
+                  <sl-button
+                    size="small"
+                    @click=${() => {
+                      this.openDialogName = undefined;
+                    }}
+                    >${msg("Close")}</sl-button
+                  >
+                </div>`
+            : html`${msg(
+                  html`Are you sure you want to delete ${collection_name}?`,
+                )}
+                <div slot="footer" class="flex justify-between">
+                  <sl-button
+                    size="small"
+                    @click=${() => (this.openDialogName = undefined)}
+                    >${msg("Cancel")}</sl-button
+                  >
+                  <sl-button
+                    size="small"
+                    variant="danger"
+                    @click=${async () => {
+                      await this.deleteCollection();
+                      this.openDialogName = undefined;
+                    }}
+                    >${msg("Delete Collection")}</sl-button
+                  >
+                </div>`,
+        )}
       </btrix-dialog>
       <btrix-collection-items-dialog
         collectionId=${this.collectionId}
@@ -513,7 +553,7 @@ export class CollectionDetail extends BtrixElement {
         open: this.openDialogName === "deleteIndex",
         collection: this.collection,
         hide: () => (this.openDialogName = undefined),
-        confirm: async () => this.deleteIndex(),
+        confirm: async (args) => this.deleteIndex(args),
       })}
     `;
   }
@@ -754,17 +794,30 @@ export class CollectionDetail extends BtrixElement {
     if (!this.collection) return;
 
     if (this.collection.indexStats) {
+      const purgeMenuItem = (indexState: DedupeIndexState) => {
+        const available = indexAvailable(indexState);
+        const pending = indexInUse(indexState) || indexUpdating(indexState);
+
+        return html`
+          <sl-menu-item
+            class="menu-item-warning"
+            ?disabled=${!available}
+            title=${ifDefined(
+              pending ? msg("Please wait for pending update") : undefined,
+            )}
+            @click=${() => (this.openDialogName = "purgeIndex")}
+          >
+            ${pending
+              ? html`<sl-spinner slot="prefix"></sl-spinner>`
+              : html`<sl-icon slot="prefix" name="trash2"></sl-icon>`}
+            ${msg("Purge Index")}
+          </sl-menu-item>
+        `;
+      };
       return html`${when(
-          this.collection.indexStats.removedCrawls,
-          () => html`
-            <sl-menu-item
-              class="menu-item-warning"
-              @click=${() => (this.openDialogName = "purgeIndex")}
-            >
-              <sl-icon slot="prefix" name="trash2"></sl-icon>
-              ${msg("Purge Index")}
-            </sl-menu-item>
-          `,
+          this.collection.indexStats.removedCrawls &&
+            this.collection.indexState,
+          purgeMenuItem,
         )}
         <sl-menu-item
           class="menu-item-danger"
@@ -1075,7 +1128,7 @@ export class CollectionDetail extends BtrixElement {
                   <sl-menu-item
                     style="--sl-color-neutral-700: var(--warning)"
                     @click=${() => {
-                      if (isCrawl(item) && item.requiredByCrawls.length) {
+                      if (item.requiredByCrawls.length) {
                         this.itemToRemove = item;
                         this.openDialogName = "removeItem";
                       } else {
@@ -1359,14 +1412,7 @@ export class CollectionDetail extends BtrixElement {
           method: "POST",
         },
       );
-      // FIXME Backend should return the correct state if index is successfully created
       await this.fetchCollection();
-      if (this.collection) {
-        this.collection = {
-          ...this.collection,
-          indexState: "initing",
-        };
-      }
 
       const count = this.collection?.crawlCount || 0;
       const items_count = this.localize.number(count);
@@ -1410,7 +1456,7 @@ export class CollectionDetail extends BtrixElement {
       await this.fetchCollection();
 
       this.notify.toast({
-        message: msg("Reset deduplication index."),
+        message: msg("Purging deduplication index..."),
         variant: "success",
         icon: "check2-circle",
         id: "dedupe-index-update-status",
@@ -1429,12 +1475,13 @@ export class CollectionDetail extends BtrixElement {
     }
   }
 
-  private async deleteIndex() {
+  private async deleteIndex(params: { removeFromWorkflows: boolean }) {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/collections/${this.collectionId}/dedupeIndex/delete`,
         {
           method: "POST",
+          body: JSON.stringify(params),
         },
       );
       await this.fetchCollection();
