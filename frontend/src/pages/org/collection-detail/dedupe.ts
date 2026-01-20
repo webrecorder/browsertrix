@@ -5,24 +5,27 @@ import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
+
+import type { OpenDialogEventDetail } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { indexUpdating } from "@/features/collections/index-import-progress";
 import { indexStatus } from "@/features/collections/templates/index-status";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { infoPopover } from "@/layouts/info-popover";
 import { panel, panelBody, panelHeader } from "@/layouts/panel";
-import { OrgTab } from "@/routes";
-import { noData, notApplicable, stringFor } from "@/strings/ui";
+import { stringFor } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { Crawl, Workflow } from "@/types/crawler";
+import type { DedupeIndexStats } from "@/types/dedupe";
 import { SortDirection } from "@/types/utils";
 import { finishedCrawlStates } from "@/utils/crawler";
-import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 const BYTES_PER_MB = 1e6;
@@ -34,11 +37,21 @@ enum CrawlsView {
 }
 
 const DEFAULT_CRAWLS_VIEW = CrawlsView.Workflows;
+const storageLabelFor = {
+  conserved: msg("Space Conserved"),
+  used: msg("Actual Stored"),
+  withoutDedupe: msg("Estimated Total"),
+};
 
 type View = {
   crawlsView?: CrawlsView;
 };
 
+/**
+ * @slot actions
+ * @fires btrix-open-dialog
+ * @fires btrix-request-update
+ */
 @customElement("btrix-collection-detail-dedupe")
 @localized()
 export class CollectionDetailDedupe extends BtrixElement {
@@ -124,16 +137,28 @@ export class CollectionDetailDedupe extends BtrixElement {
     if (!this.collection) return;
 
     if (this.collection.indexStats) {
+      const hideStats = !this.collection.indexStats.totalCrawls;
+
       return html` <div
         class="grid grid-cols-5 grid-rows-[min-content_1fr] gap-x-3 gap-y-3 xl:gap-x-7"
       >
-        <section class="col-span-full row-span-1 xl:col-span-4">
-          ${this.renderStats()}
-        </section>
-        <section class="col-span-full row-span-2 xl:col-span-1">
+        <section
+          class="col-span-full row-span-2 xl:order-last xl:col-span-1 xl:col-start-5 xl:row-start-1"
+        >
           ${this.renderOverview()}
         </section>
-        <section class="col-span-full row-span-1 xl:col-span-4">
+        ${hideStats
+          ? nothing
+          : html`<section
+              class="col-span-full row-span-1 xl:col-span-4 xl:col-start-1 xl:row-start-1"
+            >
+              ${this.renderStats(this.collection.indexStats)}
+            </section>`}
+        <section
+          class="${hideStats
+            ? tw`xl:row-start-1`
+            : tw`xl:row-start-2`} col-span-full row-span-1 xl:col-span-4 xl:col-start-1"
+        >
           ${panelHeader({ heading: msg("Indexed Crawls") })}
           ${this.renderCrawls()}
         </section>
@@ -146,64 +171,95 @@ export class CollectionDetailDedupe extends BtrixElement {
         detail: msg(
           "Deduplication can help conserve storage space and reduce crawl time.",
         ),
-        actions: html`
-          <sl-button
-            size="small"
-            href="${this.navigate.orgBasePath}/${OrgTab.Workflows}"
-            @click=${this.navigate.link}
-          >
-            <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
-            ${msg("Enable in Workflows")}
-          </sl-button>
-        `,
+        actions: this.appState.isCrawler
+          ? html`
+              <div class="flex gap-3">
+                <sl-button
+                  size="small"
+                  variant="primary"
+                  @click=${() =>
+                    this.dispatchEvent(
+                      new CustomEvent<OpenDialogEventDetail>(
+                        "btrix-open-dialog",
+                        {
+                          detail: "editItems",
+                        },
+                      ),
+                    )}
+                >
+                  <sl-icon slot="prefix" name="ui-checks"></sl-icon>
+                  ${msg("Configure Auto-Add")}
+                </sl-button>
+                <sl-button
+                  size="small"
+                  @click=${() =>
+                    this.dispatchEvent(
+                      new CustomEvent<OpenDialogEventDetail>(
+                        "btrix-open-dialog",
+                        {
+                          detail: "createIndex",
+                        },
+                      ),
+                    )}
+                >
+                  <sl-icon slot="prefix" name="table"></sl-icon>
+                  ${msg("Create Index")}
+                </sl-button>
+              </div>
+            `
+          : undefined,
       }),
     });
   }
 
-  private renderStats() {
+  private renderStats(indexStats: DedupeIndexStats) {
     const stat = ({
       label,
       icon,
-      getValue,
+      value,
+      format = "number",
     }: {
       label: string;
       icon?: string;
-      getValue: (col: Collection) => string | TemplateResult;
-    }) => html`
-      <div
-        class="grid grid-cols-[1fr_min-content] grid-rows-[min-content_1fr] items-center gap-x-4 gap-y-0.5"
-      >
-        <dt class="min-h-6 text-base font-medium">
-          ${when(
-            this.collection,
-            getValue,
-            () => html`<sl-skeleton class="mt-1"></sl-skeleton>`,
-          )}
-        </dt>
-        <dd class="col-start-1 text-xs text-neutral-700">${label}</dd>
-        ${icon
-          ? html`<div
-              class="col-start-2 row-span-2 row-start-1 flex size-10 items-center justify-center rounded-lg bg-neutral-50"
-            >
-              <sl-icon name=${icon} class="size-5 text-neutral-400"></sl-icon>
-            </div>`
-          : nothing}
-      </div>
-    `;
-    const value = (
-      v: number,
-      unit: "bytes" | "number" = "number",
-      size: "medium" | "large" = "medium",
-      successThreshold?: number,
-    ) =>
-      html`<span
-        class=${clsx(
-          successThreshold && v >= successThreshold && tw`text-success-600`,
-          size === "large" && tw`text-lg leading-none`,
-        )}
-      >
-        ${unit === "bytes" ? this.localize.bytes(v) : this.localize.number(v)}
-      </span>`;
+      value: number | TemplateResult;
+      format?: "number" | "byte";
+    }) => {
+      const formatValue = (v: number) => {
+        let long = "";
+        let short = "";
+        if (format === "byte") {
+          long = this.localize.bytes(v, undefined, 5);
+          short = this.localize.bytes(v);
+        } else {
+          long = this.localize.number(v);
+          short = this.localize.number(v, { notation: "compact" });
+        }
+
+        return html`
+          <sl-tooltip content=${long} ?disabled=${long === short}>
+            <span>${short}</span>
+          </sl-tooltip>
+        `;
+      };
+
+      return html`
+        <div
+          class="grid grid-cols-[1fr_min-content] grid-rows-[min-content_1fr] items-center gap-x-4 gap-y-0.5"
+        >
+          <dt class="min-h-6 text-base font-medium">
+            ${typeof value === "number" ? formatValue(value) : value}
+          </dt>
+          <dd class="col-start-1 text-xs text-neutral-700">${label}</dd>
+          ${icon
+            ? html`<div
+                class="col-start-2 row-span-2 row-start-1 flex size-10 items-center justify-center rounded-lg bg-neutral-50"
+              >
+                <sl-icon name=${icon} class="size-5 text-neutral-400"></sl-icon>
+              </div>`
+            : nothing}
+        </div>
+      `;
+    };
 
     return html`<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
       <btrix-card>
@@ -211,17 +267,20 @@ export class CollectionDetailDedupe extends BtrixElement {
           <h2>${msg("Storage Impact")}</h2>
           ${infoPopover({
             content: html`
-              <strong class="font-semibold">${msg("Conserved")}</strong>:
+              <strong class="font-semibold">${storageLabelFor.conserved}</strong
+              >:
               ${msg(
-                "An estimate of how much storage space has been conserved by deduplicating this collection.",
+                "How much storage space has been conserved by deduplicating items.",
               )}<br /><br />
-              <strong class="font-semibold">${msg("Indexed")}</strong>:
+              <strong class="font-semibold">${storageLabelFor.used}</strong>:
               ${msg(
-                "The total storage space used by indexed items, including indexed and then deleted archived items.",
+                "The total storage space used by indexed items, including indexed and then removed archived items.",
               )}<br /><br />
-              <strong class="font-semibold">${msg("Crawled")}</strong>:
+              <strong class="font-semibold"
+                >${storageLabelFor.withoutDedupe}</strong
+              >:
               ${msg(
-                "The total size of all archived items if deduplication was not enabled.",
+                "Estimated total size of collection if items were not deduplicated.",
               )}
             `,
             placement: "right-start",
@@ -232,77 +291,59 @@ export class CollectionDetailDedupe extends BtrixElement {
             class="flex flex-col gap-3 lg:col-span-2 lg:flex-row lg:items-center lg:border-b lg:pb-[calc(.75rem-1px)]"
           >
             ${stat({
-              label: msg("Conserved"),
-              getValue: (col) =>
-                col.indexStats
-                  ? value(
-                      col.indexStats.conservedSize,
-                      "bytes",
-                      "large",
-                      BYTES_PER_MB,
-                    )
-                  : notApplicable,
+              label: storageLabelFor.conserved,
+              value: html`
+                <span
+                  class=${clsx(
+                    tw`text-lg leading-none`,
+                    indexStats.conservedSize >= BYTES_PER_MB &&
+                      tw`text-success-600`,
+                  )}
+                >
+                  ${this.localize.bytes(indexStats.conservedSize)}
+                </span>
+              `,
             })}
-            ${when(this.collection?.indexStats, (stats) =>
-              stats.totalCrawlSize ||
-              stats.conservedSize ||
-              stats.removedCrawlSize
-                ? html`<div class="flex-1">${this.renderStorageBar()}</div>`
-                : nothing,
-            )}
+            <div class="flex-1">${this.renderStorageBar()}</div>
           </div>
           ${stat({
             label: msg("Total Indexed Items"),
             icon: "file-earmark-zip",
-            getValue: (col) =>
-              col.indexStats
-                ? value(col.indexStats.totalCrawlSize, "bytes")
-                : notApplicable,
+            value: indexStats.totalCrawlSize,
+            format: "byte",
           })}
           ${stat({
             label: msg("Deleted Items in Index"),
             icon: "file-earmark-minus",
-            getValue: (col) =>
-              col.indexStats
-                ? value(col.indexStats.removedCrawlSize, "bytes")
-                : notApplicable,
+            value: indexStats.removedCrawlSize,
+            format: "byte",
           })}
         </dl>
       </btrix-card>
       <btrix-card>
         <header slot="title">
-          <h2>${msg("Index Overview")}</h2>
+          <h2>${msg("Deduplication Summary")}</h2>
         </header>
         <dl class="col-span-1 grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-y-6">
           ${stat({
             label: msg("Original Resources"),
             icon: "circle-square",
-            getValue: (col) =>
-              col.indexStats
-                ? value(col.indexStats.totalUrls - col.indexStats.dupeUrls)
-                : notApplicable,
+            value: indexStats.totalUrls - indexStats.dupeUrls,
           })}
           ${stat({
             label: msg("Duplicate Resources"),
             icon: "intersect",
-            getValue: (col) =>
-              col.indexStats ? value(col.indexStats.dupeUrls) : notApplicable,
+            value: indexStats.dupeUrls,
           })}
           ${stat({
             label: msg("Total Indexed Items"),
             icon: "file-earmark-zip",
-            getValue: (col) =>
-              col.indexStats
-                ? value(col.indexStats.totalCrawls)
-                : notApplicable,
+            value: indexStats.totalCrawls,
           })}
           ${stat({
-            label: msg("Deleted Items in Index"),
-            icon: "file-earmark-minus",
-            getValue: (col) =>
-              col.indexStats
-                ? value(col.indexStats.removedCrawls)
-                : notApplicable,
+            label: msg("Total Indexed URLs"),
+            icon: "link-45deg",
+            value: indexStats.totalUrls,
           })}
         </dl>
       </btrix-card>
@@ -321,7 +362,7 @@ export class CollectionDetailDedupe extends BtrixElement {
     return html`<btrix-meter value=${totalCrawlSize} max=${max} class="w-full">
       <btrix-meter-bar
         value=${(notRemoved / totalCrawlSize) * 100}
-        class="[--background-color:theme(colors.primary.300)]"
+        class="[--background-color:theme(colors.blue.300)]"
       >
         <div class="flex justify-between gap-4 font-medium leading-none">
           <!-- TODO Match storage tooltip content -->
@@ -331,12 +372,12 @@ export class CollectionDetailDedupe extends BtrixElement {
       </btrix-meter-bar>
       <btrix-meter-bar
         value=${(removedCrawlSize / totalCrawlSize) * 100}
-        class="[--background-color:theme(colors.primary.200)]"
+        class="[--background-color:theme(colors.blue.200)]"
       >
         <div class="flex justify-between gap-4 font-medium leading-none">
           <!-- TODO Match storage tooltip content -->
           <span
-            >${msg("Items in Index")} (${msg("Deleted from Collection")})</span
+            >${msg("Items in Index")} (${msg("Removed from Collection")})</span
           >
           <span>${this.localize.bytes(removedCrawlSize)}</span>
         </div>
@@ -345,15 +386,15 @@ export class CollectionDetailDedupe extends BtrixElement {
         <btrix-floating-popover placement="top" class="text-center">
           <div slot="content">
             <header class="flex justify-between gap-4 font-medium leading-none">
-              <span>${msg("Estimated Savings")}</span>
+              <span>${msg("Estimated Space Conserved")}</span>
               <span>${this.localize.bytes(stats.conservedSize)}</span>
             </header>
           </div>
           <div class="h-full w-full"></div>
         </btrix-floating-popover>
       </div>
-      <span slot="valueLabel">${msg("Indexed")}</span>
-      <span slot="maxLabel">${msg("Crawled")}</span>
+      <span slot="valueLabel">${storageLabelFor.used}</span>
+      <span slot="maxLabel">${storageLabelFor.withoutDedupe}</span>
     </btrix-meter>`;
   }
 
@@ -432,7 +473,28 @@ export class CollectionDetailDedupe extends BtrixElement {
           `
         : panelBody({
             content: emptyMessage({
-              message: msg("No crawls found."),
+              message: msg("No indexed crawls found"),
+              detail: this.appState.isCrawler
+                ? msg("Select crawled items to import them into the index.")
+                : undefined,
+              actions: this.appState.isCrawler
+                ? html`<sl-button
+                    size="small"
+                    variant="primary"
+                    @click=${() =>
+                      this.dispatchEvent(
+                        new CustomEvent<OpenDialogEventDetail>(
+                          "btrix-open-dialog",
+                          {
+                            detail: "editItems",
+                          },
+                        ),
+                      )}
+                  >
+                    <sl-icon slot="prefix" name="ui-checks"></sl-icon>
+                    ${msg("Select Items")}
+                  </sl-button>`
+                : undefined,
             }),
           });
 
@@ -461,7 +523,27 @@ export class CollectionDetailDedupe extends BtrixElement {
             `
           : panelBody({
               content: emptyMessage({
-                message: msg("No crawls added."),
+                message: msg("No deduped workflows found"),
+                detail: this.appState.isCrawler
+                  ? msg("Auto-add workflow crawls to enable dedupe.")
+                  : undefined,
+                actions: this.appState.isCrawler
+                  ? html`<sl-button
+                      size="small"
+                      @click=${() =>
+                        this.dispatchEvent(
+                          new CustomEvent<OpenDialogEventDetail>(
+                            "btrix-open-dialog",
+                            {
+                              detail: "editItems",
+                            },
+                          ),
+                        )}
+                    >
+                      <sl-icon slot="prefix" name="ui-checks"></sl-icon>
+                      ${msg("Configure Auto-Add")}
+                    </sl-button>`
+                  : undefined,
               }),
             }),
     })}`;
@@ -469,29 +551,51 @@ export class CollectionDetailDedupe extends BtrixElement {
 
   private renderOverview() {
     const state = this.collection?.indexState;
-    const stats = this.collection?.indexStats;
+    const updating = indexUpdating(state || null);
 
     return panel({
-      heading: msg("Overview"),
+      heading: msg("Index Overview"),
+      actions: this.appState.isAdmin
+        ? html`<slot name="actions"></slot>`
+        : undefined,
       body: html`<btrix-desc-list>
         <btrix-desc-list-item label=${msg("Index Status")}>
-          ${state ? indexStatus(state) : stringFor.unknown}
+          ${indexStatus(state)}
         </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Index Last Saved")}>
-          ${when(this.collection, (col) =>
-            col.indexLastSavedAt
-              ? this.localize.relativeDate(col.indexLastSavedAt)
-              : noData,
-          )}
-        </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Total Indexed URLs")}>
-          ${when(
-            stats,
-            (dedupe) =>
-              html`${this.localize.number(dedupe.totalUrls)}
-              ${pluralOf("URLs", dedupe.totalUrls)} `,
-          )}
-        </btrix-desc-list-item>
+        ${when(
+          state && this.collection,
+          (col) => html`
+            ${col.indexLastSavedAt
+              ? html`<btrix-desc-list-item label=${msg("Index Last Updated")}>
+                  ${this.localize.relativeDate(col.indexLastSavedAt)}
+                </btrix-desc-list-item>`
+              : nothing}
+            ${when(
+              this.appState.isAdmin,
+              () => html`
+                <btrix-desc-list-item label=${msg("Purgeable Items")}>
+                  ${col.indexStats?.removedCrawls
+                    ? this.localize.number(col.indexStats.removedCrawls)
+                    : stringFor.none}
+                </btrix-desc-list-item>
+              `,
+            )}
+            ${state === "initing" || updating
+              ? html`<btrix-desc-list-item label=${msg("Import Progress")}>
+                  <btrix-index-import-progress
+                    collectionId=${this.collectionId}
+                    initialValue=${ifDefined(
+                      updating ? col.indexStats?.updateProgress : undefined,
+                    )}
+                    @btrix-progress-complete=${() =>
+                      this.dispatchEvent(
+                        new CustomEvent("btrix-request-update"),
+                      )}
+                  ></btrix-index-import-progress>
+                </btrix-desc-list-item>`
+              : nothing}
+          `,
+        )}
       </btrix-desc-list>`,
     });
   }
