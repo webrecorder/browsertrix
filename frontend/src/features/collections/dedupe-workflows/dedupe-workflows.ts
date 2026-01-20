@@ -20,8 +20,6 @@ import { finishedCrawlStates, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
-const INITIAL_PAGE_SIZE = 1000;
-
 const styles = unsafeCSS(stylesheet);
 
 @customElement("btrix-dedupe-workflows")
@@ -101,9 +99,9 @@ export class DedupeWorkflows extends BtrixElement {
               .get(workflow.id)
               ?.then((crawls) =>
                 crawls?.total
-                  ? html`${this.localize.number(crawls.total)} ${msg("indexed")}
+                  ? html`${this.localize.number(crawls.total)} ${msg("deduped")}
                     ${pluralOf("crawls", crawls.total)}`
-                  : msg("No indexed crawls"),
+                  : msg("No deduped crawls."),
               ),
           )}
         </div>
@@ -243,10 +241,10 @@ export class DedupeWorkflows extends BtrixElement {
     const query = queryString.stringify(
       {
         cid: workflowId,
-        pageSize: INITIAL_PAGE_SIZE,
         sortBy: "started",
         sortDirection: SortDirection.Descending,
         state: finishedCrawlStates,
+        hasRequiresCrawls: true,
         ...params,
       },
       {
