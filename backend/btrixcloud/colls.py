@@ -672,7 +672,9 @@ class CollectionOps:
         coll = await self.get_collection(coll_id, org.id)
 
         if coll.indexStats:
-            await self.delete_dedupe_index(coll, org)
+            raise HTTPException(
+                status_code=400, detail="not_allowed_while_dedupe_index_exists"
+            )
 
         await self.crawl_ops.remove_collection_from_all_crawls(coll_id, org)
 
