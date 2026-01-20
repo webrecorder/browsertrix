@@ -39,7 +39,7 @@
   }
 
   .component--row {
-    grid-template-columns: 1rem minmax(7rem, 1fr) 7rem repeat(2, 11rem) 5rem 2rem;
+    grid-template-columns: 1rem minmax(12rem, 1fr) 12rem 12rem 8rem 2rem;
     @apply grid w-full items-center gap-2;
   }
 

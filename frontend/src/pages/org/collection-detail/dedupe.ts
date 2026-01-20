@@ -15,14 +15,16 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { indexUpdating } from "@/features/collections/index-import-progress";
+import { dedupeIconFor } from "@/features/collections/templates/dedupe-icon";
 import { indexStatus } from "@/features/collections/templates/index-status";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { infoPopover } from "@/layouts/info-popover";
 import { panel, panelBody, panelHeader } from "@/layouts/panel";
 import { stringFor } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type { ArchivedItemSearchValues } from "@/types/archivedItems";
 import type { Collection } from "@/types/collection";
-import type { Crawl, Workflow } from "@/types/crawler";
+import type { ArchivedItem, Workflow } from "@/types/crawler";
 import type { DedupeIndexStats } from "@/types/dedupe";
 import { SortDirection } from "@/types/utils";
 import { finishedCrawlStates } from "@/utils/crawler";
@@ -31,20 +33,21 @@ import { tw } from "@/utils/tailwind";
 const BYTES_PER_MB = 1e6;
 const INITIAL_PAGE_SIZE = 10;
 
-enum CrawlsView {
+enum ItemsView {
   Workflows = "workflows",
   Crawls = "crawls",
+  Dependencies = "dependencies",
 }
 
-const DEFAULT_CRAWLS_VIEW = CrawlsView.Workflows;
 const storageLabelFor = {
   conserved: msg("Space Conserved"),
   used: msg("Actual Stored"),
   withoutDedupe: msg("Estimated Total"),
 };
-
+const DEFAULT_ITEMS_VIEW = ItemsView.Workflows;
+const ITEMS_VIEW_PARAM = "itemsView";
 type View = {
-  crawlsView?: CrawlsView;
+  itemsView?: ItemsView;
 };
 
 /**
@@ -70,23 +73,24 @@ export class CollectionDetailDedupe extends BtrixElement {
   private readonly view = new SearchParamsValue<View>(
     this,
     (value, params) => {
-      if (value.crawlsView) {
-        params.set("crawlsView", value.crawlsView);
+      if (value.itemsView) {
+        params.set(ITEMS_VIEW_PARAM, value.itemsView);
       } else {
-        params.delete("crawlsView");
+        params.delete(ITEMS_VIEW_PARAM);
       }
       return params;
     },
     (params) => {
-      const crawlsView = params.get("crawlsView");
+      const itemsView = params.get(ITEMS_VIEW_PARAM);
       return {
-        crawlsView: crawlsView
-          ? (crawlsView as CrawlsView)
-          : DEFAULT_CRAWLS_VIEW,
+        itemsView: itemsView ? (itemsView as ItemsView) : DEFAULT_ITEMS_VIEW,
       };
     },
   );
 
+  /**
+   * Workflows using this collection as deduplication source
+   */
   private readonly dedupeWorkflowsTask = new Task(this, {
     task: async ([collectionId], { signal }) => {
       if (!collectionId) return;
@@ -104,24 +108,74 @@ export class CollectionDetailDedupe extends BtrixElement {
     args: () => [this.collectionId] as const,
   });
 
+  /**
+   * Successfully finished crawls with dependencies that used
+   * this collection as the deduplication source
+   */
   private readonly dedupeCrawlsTask = new Task(this, {
     task: async ([collectionId, pagination], { signal }) => {
       if (!collectionId) return;
 
       const query = queryString.stringify({
         ...pagination,
-        state: finishedCrawlStates,
-        collectionId,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
+        collectionId,
+        dedupeCollId: collectionId,
+        state: finishedCrawlStates,
+        hasRequiresCrawls: true,
       });
 
-      return await this.api.fetch<APIPaginatedList<Crawl>>(
+      return await this.api.fetch<APIPaginatedList<ArchivedItem>>(
         `/orgs/${this.orgId}/crawls?${query}`,
         { signal },
       );
     },
     args: () => [this.collectionId, this.pagination] as const,
+  });
+
+  /**
+   * IDs of all archived items currently in the collection
+   */
+  private readonly collectionItemIdsTask = new Task(this, {
+    task: async ([collectionId], { signal }) => {
+      if (!collectionId) return;
+
+      const query = queryString.stringify({
+        collectionId,
+      });
+
+      const { ids } = await this.api.fetch<ArchivedItemSearchValues>(
+        `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
+        { signal },
+      );
+
+      return ids;
+    },
+    args: () => [this.collectionId] as const,
+  });
+
+  /**
+   * Crawled items that are a dependency of an archived item
+   * currently in the collection
+   */
+  private readonly dependenciesTask = new Task(this, {
+    task: async ([itemIds, pagination], { signal }) => {
+      if (!itemIds?.length) return;
+
+      const query = queryString.stringify({
+        ...pagination,
+        sortBy: "finished",
+        sortDirection: SortDirection.Descending,
+        requiredByCrawls: itemIds,
+      });
+
+      return await this.api.fetch<APIPaginatedList<ArchivedItem>>(
+        `/orgs/${this.orgId}/all-crawls?${query}`,
+        { signal },
+      );
+    },
+    args: () => [this.collectionItemIdsTask.value, this.pagination] as const,
   });
 
   protected willUpdate(changedProperties: PropertyValues): void {
@@ -159,8 +213,8 @@ export class CollectionDetailDedupe extends BtrixElement {
             ? tw`xl:row-start-1`
             : tw`xl:row-start-2`} col-span-full row-span-1 xl:col-span-4 xl:col-start-1"
         >
-          ${panelHeader({ heading: msg("Indexed Crawls") })}
-          ${this.renderCrawls()}
+          ${panelHeader({ heading: msg("Deduplicated Crawls") })}
+          ${this.renderDeduped()}
         </section>
       </div>`;
     }
@@ -398,71 +452,86 @@ export class CollectionDetailDedupe extends BtrixElement {
     </btrix-meter>`;
   }
 
-  private renderCrawls() {
+  private renderDeduped() {
     return html`
       <div
         class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 p-3"
       >
         <div class="flex items-center gap-2">
           <label for="view" class="whitespace-nowrap text-neutral-500"
-            >${msg("View by:")}</label
+            >${msg("View:")}</label
           >
           <sl-radio-group
             id="view"
             size="small"
-            value=${this.view.value.crawlsView || DEFAULT_CRAWLS_VIEW}
+            value=${this.view.value.itemsView || DEFAULT_ITEMS_VIEW}
             @sl-change=${(e: SlChangeEvent) => {
               this.view.setValue({
-                crawlsView: (e.target as SlRadioGroup).value as CrawlsView,
+                itemsView: (e.target as SlRadioGroup).value as ItemsView,
               });
             }}
           >
-            <sl-radio-button pill value=${DEFAULT_CRAWLS_VIEW}>
+            <sl-radio-button pill value=${DEFAULT_ITEMS_VIEW}>
               <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
-              ${msg("Workflow")}
+              ${msg("By Workflow")}
             </sl-radio-button>
-            <sl-radio-button pill value=${CrawlsView.Crawls}>
+            <sl-radio-button pill value=${ItemsView.Crawls}>
               <sl-icon slot="prefix" name="gear-wide-connected"></sl-icon>
-              ${msg("Crawl Run")}
+              ${msg("By Crawl Run")}
+            </sl-radio-button>
+            <sl-radio-button pill value=${ItemsView.Dependencies}>
+              <sl-icon
+                slot="prefix"
+                name=${dedupeIconFor["dependency"].name}
+              ></sl-icon>
+              ${msg("All Dependencies")}
             </sl-radio-button>
           </sl-radio-group>
         </div>
       </div>
 
       <div class="mx-2">
-        ${choose(this.view.value.crawlsView, [
-          [CrawlsView.Workflows, this.renderWorkflowList],
-          [CrawlsView.Crawls, this.renderCrawlList],
+        ${choose(this.view.value.itemsView, [
+          [ItemsView.Workflows, this.renderWorkflowList],
+          [ItemsView.Crawls, () => this.renderItemsList(this.dedupeCrawlsTask)],
+          [
+            ItemsView.Dependencies,
+            () => this.renderItemsList(this.dependenciesTask),
+          ],
         ])}
       </div>
     `;
   }
 
-  private readonly renderCrawlList = () => {
+  private readonly renderItemsList = (
+    itemsTask:
+      | CollectionDetailDedupe["dedupeCrawlsTask"]
+      | CollectionDetailDedupe["dependenciesTask"],
+  ) => {
     const loading = () => html`
       <sl-skeleton effect="sheen" class="h-9"></sl-skeleton>
     `;
-    const crawls = (crawls?: APIPaginatedList<Crawl>) =>
-      crawls?.items.length
+    const items = (items?: APIPaginatedList<ArchivedItem>) =>
+      items?.items.length
         ? html`
             <btrix-item-dependency-tree
-              .items=${crawls.items}
+              .items=${items.items}
               collectionId=${this.collectionId}
               showHeader
             ></btrix-item-dependency-tree>
 
             <footer class="mt-6 flex justify-center">
               <btrix-pagination
-                page=${crawls.page}
-                totalCount=${crawls.total}
-                size=${crawls.pageSize}
+                page=${items.page}
+                totalCount=${items.total}
+                size=${items.pageSize}
                 @page-change=${async (e: PageChangeEvent) => {
                   this.pagination = {
                     ...this.pagination,
                     page: e.detail.page,
                   };
 
-                  await this.dedupeCrawlsTask.taskComplete;
+                  await itemsTask.taskComplete;
 
                   // Scroll to top of list
                   // TODO once deep-linking is implemented, scroll to top of pushstate
@@ -473,7 +542,7 @@ export class CollectionDetailDedupe extends BtrixElement {
           `
         : panelBody({
             content: emptyMessage({
-              message: msg("No indexed crawls found"),
+              message: msg("No crawled items found."),
               detail: this.appState.isCrawler
                 ? msg("Select crawled items to import them into the index.")
                 : undefined,
@@ -498,13 +567,10 @@ export class CollectionDetailDedupe extends BtrixElement {
             }),
           });
 
-    return html`${this.dedupeCrawlsTask.render({
+    return html`${itemsTask.render({
       initial: loading,
-      pending: () =>
-        this.dedupeCrawlsTask.value
-          ? crawls(this.dedupeCrawlsTask.value)
-          : loading(),
-      complete: crawls,
+      pending: () => (itemsTask.value ? items(itemsTask.value) : loading()),
+      complete: items,
     })}`;
   };
 

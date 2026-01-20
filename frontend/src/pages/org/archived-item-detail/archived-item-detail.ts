@@ -212,9 +212,7 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private readonly dependenciesTask = new Task(this, {
     task: async ([item], { signal }) => {
-      if (!item) return;
-      if (!isCrawlReplay(item)) return;
-      if (!item.requiresCrawls.length) return;
+      if (!item?.requiresCrawls.length) return;
 
       const query = queryString.stringify(
         {
@@ -228,7 +226,7 @@ export class ArchivedItemDetail extends BtrixElement {
       );
 
       return this.api.fetch<APIPaginatedList<Crawl>>(
-        `/orgs/${this.orgId}/crawls?${query}`,
+        `/orgs/${this.orgId}/all-crawls?${query}`,
         { signal },
       );
     },
@@ -378,8 +376,7 @@ export class ArchivedItemDetail extends BtrixElement {
   render() {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
     const isSuccess = this.item && isSuccessfullyFinished(this.item);
-    const dedupeDependent =
-      this.item && isCrawl(this.item) && this.item.requiresCrawls.length;
+    const dedupeDependent = this.item?.requiresCrawls.length;
 
     let sectionContent: string | TemplateResult<1> = "";
 
@@ -752,17 +749,15 @@ export class ArchivedItemDetail extends BtrixElement {
               iconLibrary: "default",
               icon: "file-code-fill",
             })}
-            ${this.item &&
-            isCrawlReplay(this.item) &&
-            this.item.requiresCrawls.length
-              ? renderNavItem({
-                  section: "dependencies",
-                  iconLibrary: "default",
-                  icon: "layers-fill",
-                })
-              : nothing}
           `,
         )}
+        ${this.item?.requiresCrawls.length
+          ? renderNavItem({
+              section: "dependencies",
+              iconLibrary: "default",
+              icon: "layers-fill",
+            })
+          : nothing}
       </nav>
     `;
   }
@@ -923,17 +918,14 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderReplay() {
-    const dedupeCollId =
-      this.item &&
-      isCrawl(this.item) &&
-      this.item.requiresCrawls.length &&
-      this.item.dedupeCollId;
-
     return html`
-      ${dedupeCollId
+      ${this.item?.requiresCrawls.length
         ? dedupeReplayNotice({
             dependenciesHref: this.dependenciesUrl,
-            collectionHref: `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${dedupeCollId}`,
+            collectionHref:
+              isCrawl(this.item) && this.item.dedupeCollId
+                ? `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${this.item.dedupeCollId}`
+                : undefined,
           })
         : nothing}
       <div class="overflow-hidden rounded-lg border">${this.renderRWP()}</div>
@@ -1169,15 +1161,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderDependencies() {
     if (!this.item) return;
 
-    if (!isCrawlReplay(this.item)) {
-      return panelBody({
-        content: emptyMessage({
-          message: msg("Crawl dependencies are not applicable for this item."),
-        }),
-      });
-    }
-
-    const { dedupeCollId, requiresCrawls } = this.item;
+    const { requiresCrawls } = this.item;
     const noDeps = panelBody({
       content: emptyMessage({
         message: msg("This crawl doesn't have any dependencies."),
@@ -1187,6 +1171,8 @@ export class ArchivedItemDetail extends BtrixElement {
     if (!requiresCrawls.length) {
       return noDeps;
     }
+
+    const dedupeCollId = isCrawl(this.item) && this.item.dedupeCollId;
 
     return html`
       ${this.dependenciesTask.render({
@@ -1224,17 +1210,14 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderFiles() {
-    const dedupeCollId =
-      this.item &&
-      isCrawl(this.item) &&
-      this.item.requiresCrawls.length &&
-      this.item.dedupeCollId;
-
     return html`
-      ${this.hasFiles && dedupeCollId
+      ${this.hasFiles && this.item?.requiresCrawls.length
         ? dedupeFilesNotice({
             dependenciesHref: this.dependenciesUrl,
-            collectionHref: `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${dedupeCollId}`,
+            collectionHref:
+              isCrawl(this.item) && this.item.dedupeCollId
+                ? `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${this.item.dedupeCollId}`
+                : undefined,
           })
         : nothing}
       ${this.hasFiles
