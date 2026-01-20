@@ -214,16 +214,11 @@ export class ArchivedItemDetail extends BtrixElement {
     task: async ([item], { signal }) => {
       if (!item?.requiresCrawls.length) return;
 
-      const query = queryString.stringify(
-        {
-          ids: item.requiresCrawls,
-          sortBy: "started",
-          sortDirection: SortDirection.Descending,
-        },
-        {
-          arrayFormat: "comma",
-        },
-      );
+      const query = queryString.stringify({
+        ids: item.requiresCrawls,
+        sortBy: "started",
+        sortDirection: SortDirection.Descending,
+      });
 
       return this.api.fetch<APIPaginatedList<Crawl>>(
         `/orgs/${this.orgId}/all-crawls?${query}`,

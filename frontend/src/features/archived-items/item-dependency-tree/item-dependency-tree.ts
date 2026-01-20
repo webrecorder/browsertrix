@@ -176,14 +176,14 @@ export class ItemDependencyTree extends BtrixElement {
     `;
     const noItem = () => html`
       <div class="inline-flex h-9 w-full items-center gap-2">
-        <sl-tooltip content=${msg("Missing Dependency")} hoist>
+        <sl-tooltip content=${msg("Deleted from Org")} hoist>
           <sl-icon
-            name="question-diamond"
-            class="text-base text-warning"
+            name="slash-circle"
+            class="text-base text-neutral-600"
           ></sl-icon>
         </sl-tooltip>
-        <div class="font-monostyle text-xs text-neutral-600">
-          ${msg("Missing item with ID")} <code>${id}</code>
+        <div class="font-monostyle text-neutral-400">
+          (${msg("deleted item")})
         </div>
       </div>
     `;
@@ -264,37 +264,49 @@ export class ItemDependencyTree extends BtrixElement {
     >
       ${status()}
       <div class="component--detail">${renderName(item)}</div>
-      <div class="component--detail">
-        <sl-tooltip content=${msg("Dependencies")} hoist>
+
+      <sl-tooltip content=${msg("Dependencies")} hoist placement="left">
+        <div class="component--detail">
           ${dedupeIcon({ hasDependencies: true, hasDependents: true })}
-          <span>
-            ${this.localize.number(dependencies.length)}
-            ${this.showHeader
-              ? nothing
-              : pluralOf("dependencies", dependencies.length)}
-          </span>
-        </sl-tooltip>
-      </div>
-      <div class="component--detail">
-        ${crawled
-          ? html`<sl-tooltip content=${msg("Date Finished")} hoist>
+          ${this.localize.number(dependencies.length)}
+          ${this.showHeader
+            ? nothing
+            : pluralOf("dependencies", dependencies.length)}
+        </div>
+      </sl-tooltip>
+
+      ${crawled
+        ? html`<sl-tooltip
+            content=${msg("Date Finished")}
+            placement="left"
+            hoist
+          >
+            <div class="component--detail">
               ${item.finished
                 ? html`<sl-icon name="gear-wide-connected"></sl-icon> ${date(
                       item.finished,
                     )}`
                 : html`<sl-icon name="play"></sl-icon> ${date(item.started)}`}
-            </sl-tooltip>`
-          : html`<sl-tooltip content=${msg("Date Uploaded")} hoist>
+            </div>
+          </sl-tooltip>`
+        : html`<sl-tooltip
+            content=${msg("Date Uploaded")}
+            placement="left"
+            hoist
+          >
+            <div class="component--detail">
               <sl-icon name="upload"></sl-icon>
               ${date(item.started)}
-            </sl-tooltip>`}
-      </div>
-      <div class="component--detail flex items-center gap-1.5 truncate">
-        <sl-tooltip content=${msg("Size")} hoist>
+            </div>
+          </sl-tooltip>`}
+
+      <sl-tooltip content=${msg("Size")} hoist placement="left">
+        <div class="component--detail flex items-center gap-1.5 truncate">
           <sl-icon name="file-earmark-binary"></sl-icon>
           ${this.localize.bytes(item.fileSize || 0, { unitDisplay: "short" })}
-        </sl-tooltip>
-      </div>
+        </div>
+      </sl-tooltip>
+
       ${this.renderLink(
         crawled
           ? `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}#${"overview" as ArchivedItemSectionName}`

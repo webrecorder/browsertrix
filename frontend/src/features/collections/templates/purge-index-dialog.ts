@@ -48,7 +48,11 @@ export function purgeIndexDialog({
             )}
           </p>`;
         })}
-        <p class="mt-3">${msg("This action cannot be undone.")}</p>
+        <p class="mt-3">
+          ${msg(
+            "This action cannot be reversed and may result in the loss of archived content.",
+          )}
+        </p>
       `;
     })}
     <div slot="footer" class="flex justify-between">
