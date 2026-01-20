@@ -1142,10 +1142,7 @@ export class ArchivedItemQA extends BtrixElement {
           @sl-request-close=${(e: SlRequestCloseEvent) => e.preventDefault()}
         >
           <div class="sr-only">${msg("Loading page")}</div>
-          <sl-progress-bar
-            indeterminate
-            class="[--height:0.5rem]"
-          ></sl-progress-bar>
+          <sl-progress-bar indeterminate></sl-progress-bar>
         </btrix-dialog>
         <btrix-dialog
           class="clickPreventedDialog"

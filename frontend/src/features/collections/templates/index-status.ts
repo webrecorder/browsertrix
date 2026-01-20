@@ -8,11 +8,10 @@ import type { DedupeIndexState } from "@/types/dedupe";
 import { APP_ICON_LIBRARY } from "@/types/shoelace";
 import { tw } from "@/utils/tailwind";
 
-export function indexStatus(state: DedupeIndexState) {
+export function indexStatus(state?: DedupeIndexState | null) {
   let label = stringFor.unknown;
   let iconName = "question-diamond";
   let iconClass = tw`text-neutral-400`;
-  let reason = "";
 
   switch (state) {
     case "initing":
@@ -22,7 +21,7 @@ export function indexStatus(state: DedupeIndexState) {
       break;
     case "importing":
     case "purging":
-      label = msg("In Use");
+      label = msg("Updating Index");
       iconName = "dot";
       iconClass = tw`animate-pulse text-violet-600`;
       break;
@@ -31,7 +30,6 @@ export function indexStatus(state: DedupeIndexState) {
       label = msg("In Use");
       iconName = "dot";
       iconClass = tw`animate-pulse text-success-600`;
-      reason = state == "crawling" ? msg("Active Crawl") : msg("Saving Crawl");
       break;
     case "ready":
     case "idle":
@@ -50,7 +48,7 @@ export function indexStatus(state: DedupeIndexState) {
   ></sl-icon>`;
 
   return labelWithIcon({
-    label: reason ? `${label} (${reason})` : label,
+    label,
     icon,
   });
 }
