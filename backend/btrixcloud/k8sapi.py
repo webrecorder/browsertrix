@@ -307,7 +307,6 @@ class K8sAPI:
     async def patch_custom_object(self, name: str, body, pluraltype: str) -> dict:
         """patch custom object"""
         try:
-
             await self.custom_api.patch_namespaced_custom_object(
                 group="btrix.cloud",
                 version="v1",
