@@ -978,13 +978,20 @@ class BaseCrawlOps:
         return {"deleted": True, "storageQuotaReached": quota_reached}
 
     async def get_all_crawl_search_values(
-        self, org: Organization, type_: Optional[TYPE_CRAWL_TYPES] = None
+        self,
+        org: Organization,
+        type_: Optional[TYPE_CRAWL_TYPES] = None,
+        collection_id: Optional[UUID] = None,
     ):
         """List unique names, first seeds, and descriptions from all captures in org"""
         match_query: dict[str, object] = {"oid": org.id}
         if type_:
             match_query["type"] = type_
 
+        if collection_id:
+            match_query["collectionIds"] = {"$in": [collection_id]}
+
+        ids = await self.crawls.distinct("_id", match_query)
         names = await self.crawls.distinct("name", match_query)
         descriptions = await self.crawls.distinct("description", match_query)
         cids = (
@@ -1010,6 +1017,7 @@ class BaseCrawlOps:
                 pass
 
         return {
+            "ids": ids,
             "names": names,
             "descriptions": descriptions,
             "firstSeeds": list(first_seeds),
@@ -1223,8 +1231,11 @@ def init_base_crawls_api(app, user_dep, *args):
     async def get_all_crawls_search_values(
         org: Organization = Depends(org_viewer_dep),
         crawlType: Optional[TYPE_CRAWL_TYPES] = None,
+        collectionId: Optional[UUID] = None,
     ):
-        return await ops.get_all_crawl_search_values(org, type_=crawlType)
+        return await ops.get_all_crawl_search_values(
+            org, type_=crawlType, collection_id=collectionId
+        )
 
     @app.get(
         "/orgs/{oid}/all-crawls/tagCounts",

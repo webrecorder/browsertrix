@@ -14,18 +14,17 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { dedupeIcon } from "@/features/collections/templates/dedupe-icon";
 import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/archived-item-detail";
 import { OrgTab, WorkflowTab } from "@/routes";
-import { noData } from "@/strings/ui";
 import type { APIPaginatedList } from "@/types/api";
-import type { Crawl } from "@/types/crawler";
+import type { ArchivedItem } from "@/types/crawler";
 import type { IconLibrary } from "@/types/shoelace";
-import { isActive, renderName } from "@/utils/crawler";
+import { isActive, isCrawl, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 const styles = unsafeCSS(stylesheet);
 
 // FIXME Sometimes the API returns circular dependencies
-const dependenciesWithoutSelf = (item: Crawl) =>
+const dependenciesWithoutSelf = (item: ArchivedItem) =>
   item.requiresCrawls.filter((id) => id !== item.id);
 
 @customElement("btrix-item-dependency-tree")
@@ -37,7 +36,7 @@ export class ItemDependencyTree extends BtrixElement {
   collectionId?: string;
 
   @property({ type: Array })
-  items?: Crawl[];
+  items?: ArchivedItem[];
 
   @property({ type: Boolean })
   showHeader = false;
@@ -49,7 +48,7 @@ export class ItemDependencyTree extends BtrixElement {
 
   private readonly dependenciesMap = new Map<
     string,
-    Crawl | Promise<Crawl | undefined>
+    ArchivedItem | undefined
   >();
 
   private readonly dependenciesTask = new Task(this, {
@@ -72,6 +71,8 @@ export class ItemDependencyTree extends BtrixElement {
         });
       });
 
+      if (!newIds.length) return;
+
       const query = queryString.stringify(
         {
           ids: newIds,
@@ -81,19 +82,16 @@ export class ItemDependencyTree extends BtrixElement {
         },
       );
 
-      const request = this.api.fetch<APIPaginatedList<Crawl>>(
-        `/orgs/${this.orgId}/crawls?${query}`,
-        { signal },
-      );
+      const { items: dependencies } = await this.api.fetch<
+        APIPaginatedList<ArchivedItem>
+      >(`/orgs/${this.orgId}/all-crawls?${query}`, { signal });
 
       newIds.forEach((id) => {
         this.dependenciesMap.set(
           id,
-          request.then(({ items }) => items.find((item) => item.id === id)),
+          dependencies.find((item) => item.id === id),
         );
       });
-
-      return request;
     },
     args: () => [this.items] as const,
   });
@@ -116,8 +114,7 @@ export class ItemDependencyTree extends BtrixElement {
             </div>
             <div>${msg("Name")}</div>
             <div>${msg("Dependencies")}</div>
-            <div>${msg("Date Started")}</div>
-            <div>${msg("Date Finished")}</div>
+            <div>${msg("Date Created")}</div>
             <div>${msg("Size")}</div>
             <div>
               <span class="sr-only">${msg("Actions")}</span>
@@ -136,7 +133,7 @@ export class ItemDependencyTree extends BtrixElement {
     `;
   }
 
-  private readonly renderItem = (item: Crawl) => {
+  private readonly renderItem = (item: ArchivedItem) => {
     const dependencies = dependenciesWithoutSelf(item);
     const hasDependencies = dependencies.length;
 
@@ -190,7 +187,6 @@ export class ItemDependencyTree extends BtrixElement {
         </div>
       </div>
     `;
-    const item = this.dependenciesMap.get(id);
 
     return html`<sl-tree-item
       class="component--dependency"
@@ -203,23 +199,21 @@ export class ItemDependencyTree extends BtrixElement {
         }
       }}
     >
-      ${item
-        ? until(
-            Promise.resolve(item).then((item) =>
-              item ? this.renderContent(item) : noItem(),
-            ),
-            skeleton(),
-          )
-        : skeleton()}
+      ${until(
+        this.dependenciesTask.taskComplete
+          .then(() => this.dependenciesMap.get(id))
+          .then((item) => (item ? this.renderContent(item) : noItem())),
+        skeleton(),
+      )}
     </sl-tree-item>`;
   };
 
-  private readonly renderContent = (item: Crawl) => {
+  private readonly renderContent = (item: ArchivedItem) => {
     const dependencies = dependenciesWithoutSelf(item);
+    const crawled = isCrawl(item);
     const collectionId = this.collectionId;
-    const inCollection = collectionId
-      ? item.collectionIds.includes(collectionId)
-      : item.dedupeCollId && item.collectionIds.includes(item.dedupeCollId);
+    const inCollection =
+      collectionId && item.collectionIds.includes(collectionId);
 
     const status = () => {
       let icon = "dash-circle";
@@ -236,7 +230,7 @@ export class ItemDependencyTree extends BtrixElement {
         } else {
           tooltip = msg("In Collection");
         }
-      } else if (isActive(item)) {
+      } else if (isCrawl(item) && isActive(item)) {
         icon = "dot";
         library = "app";
         variant = tw`animate-pulse text-success`;
@@ -271,25 +265,29 @@ export class ItemDependencyTree extends BtrixElement {
       ${status()}
       <div class="component--detail">${renderName(item)}</div>
       <div class="component--detail">
-        <sl-tooltip content=${msg("Dedupe Dependencies")} hoist>
+        <sl-tooltip content=${msg("Dependencies")} hoist>
           ${dedupeIcon({ hasDependencies: true, hasDependents: true })}
-          <span
-            >${this.localize.number(dependencies.length)}
-            ${pluralOf("items", dependencies.length)}</span
-          >
+          <span>
+            ${this.localize.number(dependencies.length)}
+            ${this.showHeader
+              ? nothing
+              : pluralOf("dependencies", dependencies.length)}
+          </span>
         </sl-tooltip>
       </div>
       <div class="component--detail">
-        <sl-tooltip content=${msg("Date Started")} hoist>
-          <sl-icon name="hourglass-top"></sl-icon>
-          ${date(item.started)}
-        </sl-tooltip>
-      </div>
-      <div class="component--detail">
-        <sl-tooltip content=${msg("Date Finished")} hoist>
-          <sl-icon name="hourglass-bottom"></sl-icon>
-          ${item.finished ? date(item.finished) : noData}
-        </sl-tooltip>
+        ${crawled
+          ? html`<sl-tooltip content=${msg("Date Finished")} hoist>
+              ${item.finished
+                ? html`<sl-icon name="gear-wide-connected"></sl-icon> ${date(
+                      item.finished,
+                    )}`
+                : html`<sl-icon name="play"></sl-icon> ${date(item.started)}`}
+            </sl-tooltip>`
+          : html`<sl-tooltip content=${msg("Date Uploaded")} hoist>
+              <sl-icon name="upload"></sl-icon>
+              ${date(item.started)}
+            </sl-tooltip>`}
       </div>
       <div class="component--detail flex items-center gap-1.5 truncate">
         <sl-tooltip content=${msg("Size")} hoist>
@@ -298,7 +296,9 @@ export class ItemDependencyTree extends BtrixElement {
         </sl-tooltip>
       </div>
       ${this.renderLink(
-        `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}#${"overview" as ArchivedItemSectionName}`,
+        crawled
+          ? `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}#${"overview" as ArchivedItemSectionName}`
+          : `${this.navigate.orgBasePath}/${OrgTab.Items}/${item.type}/${item.id}`,
       )}
     </div>`;
   };
@@ -307,7 +307,7 @@ export class ItemDependencyTree extends BtrixElement {
     return html`<sl-icon-button
       name="link"
       href=${href}
-      label=${msg("Visit Link")}
+      label=${msg("Link")}
       @click=${this.navigate.link}
     >
     </sl-icon-button>`;

@@ -6,12 +6,11 @@ import {
   dedupeLabelFor,
 } from "@/features/collections/templates/dedupe-icon";
 import type { ArchivedItem } from "@/types/crawler";
-import { isCrawl } from "@/utils/crawler";
 import { tw } from "@/utils/tailwind";
 
 export function dedupeStatusIcon(item: ArchivedItem) {
-  const hasDependents = Boolean(isCrawl(item) && item.requiredByCrawls.length);
-  const hasDependencies = Boolean(isCrawl(item) && item.requiresCrawls.length);
+  const hasDependents = Boolean(item.requiredByCrawls.length);
+  const hasDependencies = Boolean(item.requiresCrawls.length);
   const dedupeEnabled = hasDependents || hasDependencies;
 
   let tooltip = dedupeLabelFor.none;

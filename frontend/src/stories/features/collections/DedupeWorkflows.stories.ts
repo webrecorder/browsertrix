@@ -39,7 +39,7 @@ export const WithCrawls: Story = {
   parameters: {
     msw: {
       handlers: [
-        http.get(/\/crawls$/, async () => {
+        http.get(/\/(all-crawls|crawls)$/, async () => {
           await delay(500);
           return HttpResponse.json<APIPaginatedList<Crawl>>({
             total: data.crawls.length,
@@ -58,7 +58,7 @@ export const WithoutCrawls: Story = {
   parameters: {
     msw: {
       handlers: [
-        http.get(/\/crawls$/, async () => {
+        http.get(/\/(all-crawls|crawls)$/, async () => {
           await delay(500);
           return HttpResponse.json<APIPaginatedList<Crawl>>({
             total: 0,
@@ -77,7 +77,7 @@ export const MissingDependency: Story = {
   parameters: {
     msw: {
       handlers: [
-        http.get(/\/crawls$/, async () => {
+        http.get(/\/(all-crawls|crawls)$/, async () => {
           await delay(500);
           return HttpResponse.json<APIPaginatedList<Crawl>>({
             total: data.crawls.length,
