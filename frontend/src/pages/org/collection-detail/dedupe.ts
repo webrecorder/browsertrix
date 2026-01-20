@@ -88,6 +88,9 @@ export class CollectionDetailDedupe extends BtrixElement {
     },
   );
 
+  /**
+   * Workflows using this collection as deduplication source
+   */
   private readonly dedupeWorkflowsTask = new Task(this, {
     task: async ([collectionId], { signal }) => {
       if (!collectionId) return;
@@ -105,6 +108,10 @@ export class CollectionDetailDedupe extends BtrixElement {
     args: () => [this.collectionId] as const,
   });
 
+  /**
+   * Successfully finished crawls with dependencies that used
+   * this collection as the deduplication source
+   */
   private readonly dedupeCrawlsTask = new Task(this, {
     task: async ([collectionId, pagination], { signal }) => {
       if (!collectionId) return;
@@ -127,6 +134,9 @@ export class CollectionDetailDedupe extends BtrixElement {
     args: () => [this.collectionId, this.pagination] as const,
   });
 
+  /**
+   * IDs of all archived items currently in the collection
+   */
   private readonly collectionItemIdsTask = new Task(this, {
     task: async ([collectionId], { signal }) => {
       if (!collectionId) return;
@@ -145,6 +155,10 @@ export class CollectionDetailDedupe extends BtrixElement {
     args: () => [this.collectionId] as const,
   });
 
+  /**
+   * Crawled items that are a dependency of an archived item
+   * currently in the collection
+   */
   private readonly dependenciesTask = new Task(this, {
     task: async ([itemIds, pagination], { signal }) => {
       if (!itemIds?.length) return;
