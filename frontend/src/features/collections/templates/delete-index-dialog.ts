@@ -1,5 +1,5 @@
 import { msg } from "@lit/localize";
-import type { SlButton } from "@shoelace-style/shoelace";
+import type { SlButton, SlCheckbox } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { when } from "lit/directives/when.js";
 
@@ -15,7 +15,7 @@ export function deleteIndexDialog({
   open: boolean;
   collection?: Collection;
   hide: () => void;
-  confirm: () => Promise<unknown>;
+  confirm: (arg: { removeFromWorkflows: boolean }) => Promise<unknown>;
 }) {
   return html`<btrix-dialog
     label=${msg("Delete Deduplication Index?")}
@@ -30,17 +30,27 @@ export function deleteIndexDialog({
       return html`
         <p>
           ${msg(
-            html`Are you sure you want to delete the deduplication index for
-            ${collection_name}?`,
+            html`Are you sure you want to delete the index and disable
+            deduplication for ${collection_name}?`,
           )}
         </p>
         <p class="mt-3">
-          ${msg("The index will be rebuilt during the next crawl run.")}
           ${msg(
-            "To disable deduplication completely, deselect this collection in each workflow that uses it as the deduplication source.",
+            "This action cannot be reversed and may result in the loss of archived content.",
           )}
         </p>
-        <p class="mt-3">${msg("This action cannot be undone.")}</p>
+        <btrix-details class="mt-3">
+          <span slot="title">${msg("More Options")}</span>
+          <sl-checkbox
+            class="mt-2"
+            ?checked=${open}
+            help-text=${msg(
+              "If unchecked, deduplication will be re-enabled after the next crawl run.",
+            )}
+          >
+            ${msg("Remove as deduplication source from workflows")}
+          </sl-checkbox>
+        </btrix-details>
       `;
     })}
     <div slot="footer" class="flex justify-between">
@@ -58,8 +68,13 @@ export function deleteIndexDialog({
         variant="danger"
         @click=${async (e: MouseEvent) => {
           const btn = e.currentTarget as SlButton;
+          const checkbox = btn
+            .closest("btrix-dialog")
+            ?.querySelector<SlCheckbox>("sl-checkbox");
           btn.setAttribute("loading", "true");
-          await confirm();
+          await confirm({
+            removeFromWorkflows: checkbox?.checked === false ? false : true,
+          });
           btn.removeAttribute("loading");
           hide();
         }}
