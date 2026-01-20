@@ -33,7 +33,7 @@ class Migration(BaseMigration):
                 invite = InvitePending(
                     userid=user["id"],
                     tokenHash=get_hash(user_invite["id"]),
-                    **user_invite
+                    **user_invite,
                 )
                 await invites_db.insert_one(invite.to_dict())
 

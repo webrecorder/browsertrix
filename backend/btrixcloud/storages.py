@@ -586,7 +586,6 @@ class StorageOps:
             s3storage,
             for_presign=True,
         ) as (client, bucket, key):
-
             for filename in filenames:
                 futures.append(
                     client.generate_presigned_url(
@@ -879,9 +878,9 @@ class StorageOps:
         def get_datapackage() -> Iterable[bytes]:
             yield datapackage_bytes
 
-        def member_files() -> (
-            Iterable[tuple[str, datetime, int, Method, Iterable[bytes]]]
-        ):
+        def member_files() -> Iterable[
+            tuple[str, datetime, int, Method, Iterable[bytes]]
+        ]:
             modified_at = datetime(year=1980, month=1, day=1)
             perms = 0o664
             for file_ in all_files:
