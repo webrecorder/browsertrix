@@ -560,7 +560,7 @@ export class CollectionItemsDialog extends BtrixElement {
     const addCount = add.length;
     const removeCount = remove.length;
     const hasChange = addCount || removeCount;
-    let selectionMessage = msg("No changes to save");
+    let selectionMessage = "";
 
     if (hasChange) {
       const messages: string[] = [];
@@ -587,11 +587,11 @@ export class CollectionItemsDialog extends BtrixElement {
       <sl-button
         variant="primary"
         size="small"
-        ?disabled=${this.isSubmitting || !hasChange}
+        ?disabled=${this.isSubmitting}
         ?loading=${this.isSubmitting}
-        @click=${() => void this.save()}
+        @click=${hasChange ? () => void this.save() : () => this.close()}
       >
-        ${msg("Save Item Selection")}
+        ${hasChange ? msg("Save Selection") : msg("Done")}
       </sl-button>
     `;
   };
@@ -746,21 +746,31 @@ export class CollectionItemsDialog extends BtrixElement {
         ...this.filterCrawlsBy,
       });
       if (!this.showOnlyInCollection) {
-        this.workflows = await this.getWorkflows({
-          userid: this.showOnlyMine ? userId : undefined,
-          sortBy:
-            // NOTE "finished" field doesn't exist in crawlconfigs,
-            // `lastRun` is used instead
-            this.sortCrawlsBy.field === "finished"
-              ? "lastRun"
-              : this.sortCrawlsBy.field,
-          sortDirection: this.sortCrawlsBy.direction,
-          page: this.workflows?.page,
-          pageSize: this.workflows?.pageSize,
-          ...pageParams,
-          ...this.filterCrawlsBy,
-        });
+        await this.fetchWorkflows(pageParams);
       }
+    } catch (e: unknown) {
+      console.debug(e);
+    }
+  }
+
+  private async fetchWorkflows(pageParams: APIPaginationQuery = {}) {
+    const userId = this.userInfo!.id;
+
+    try {
+      this.workflows = await this.getWorkflows({
+        userid: this.showOnlyMine ? userId : undefined,
+        sortBy:
+          // NOTE "finished" field doesn't exist in crawlconfigs,
+          // `lastRun` is used instead
+          this.sortCrawlsBy.field === "finished"
+            ? "lastRun"
+            : this.sortCrawlsBy.field,
+        sortDirection: this.sortCrawlsBy.direction,
+        page: this.workflows?.page,
+        pageSize: this.workflows?.pageSize,
+        ...pageParams,
+        ...this.filterCrawlsBy,
+      });
     } catch (e: unknown) {
       console.debug(e);
     }
@@ -883,7 +893,7 @@ export class CollectionItemsDialog extends BtrixElement {
     if (dedupe === true) {
       params.dedupeCollId = this.collectionId;
     } else if (dedupe === false) {
-      params.dedupeCollId = null;
+      params.dedupeCollId = "";
     }
 
     try {
@@ -891,7 +901,8 @@ export class CollectionItemsDialog extends BtrixElement {
         method: "PATCH",
         body: JSON.stringify(params),
       });
-      await this.fetchCrawls();
+      await this.fetchWorkflows();
+      this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
 
       this.notify.toast({
         message:

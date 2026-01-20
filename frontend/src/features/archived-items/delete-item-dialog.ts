@@ -70,7 +70,8 @@ export class DeleteItemDialog extends BtrixElement {
         ${msg("All associated files and logs will be deleted.")}
       </p>
 
-      ${this.renderCollections()}
+      ${this.renderDependents()} ${this.renderCollections()}
+
       <div slot="footer" class="flex justify-between">
         <sl-button
           size="small"
@@ -128,6 +129,28 @@ export class DeleteItemDialog extends BtrixElement {
               </btrix-linked-collections-list>`,
           ),
       })}
+    `;
+  }
+
+  private renderDependents() {
+    if (!this.item?.requiredByCrawls.length) return;
+
+    const { requiredByCrawls } = this.item;
+    const count = requiredByCrawls.length;
+
+    const number_of_items = this.localize.number(count);
+    const plural_of_items = pluralOf("items", count);
+
+    return html`
+      <p class="my-2">
+        ${msg(
+          str`${number_of_items} ${plural_of_items} depend on this
+                    item.`,
+        )}
+        ${msg(
+          "Deleting this item will result in incomplete replay and downloads.",
+        )}
+      </p>
     `;
   }
 

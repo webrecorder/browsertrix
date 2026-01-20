@@ -14,7 +14,6 @@ import type { OpenDialogEventDetail } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
-import { indexUpdating } from "@/features/collections/index-import-progress";
 import { dedupeIconFor } from "@/features/collections/templates/dedupe-icon";
 import { indexStatus } from "@/features/collections/templates/index-status";
 import { emptyMessage } from "@/layouts/emptyMessage";
@@ -22,12 +21,12 @@ import { infoPopover } from "@/layouts/info-popover";
 import { panel, panelBody, panelHeader } from "@/layouts/panel";
 import { stringFor } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { ArchivedItemSearchValues } from "@/types/archivedItems";
 import type { Collection } from "@/types/collection";
 import type { ArchivedItem, Workflow } from "@/types/crawler";
 import type { DedupeIndexStats } from "@/types/dedupe";
 import { SortDirection } from "@/types/utils";
 import { finishedCrawlStates } from "@/utils/crawler";
+import { indexAvailable, indexUpdating } from "@/utils/dedupe";
 import { tw } from "@/utils/tailwind";
 
 const BYTES_PER_MB = 1e6;
@@ -44,6 +43,8 @@ const storageLabelFor = {
   used: msg("Actual Stored"),
   withoutDedupe: msg("Estimated Total"),
 };
+const CRAWLS_PAGE_NAME = "crawlsPage";
+const DEPENDENCIES_PAGE_NAME = "dependenciesPage";
 const DEFAULT_ITEMS_VIEW = ItemsView.Workflows;
 const ITEMS_VIEW_PARAM = "itemsView";
 type View = {
@@ -65,8 +66,16 @@ export class CollectionDetailDedupe extends BtrixElement {
   collection?: Collection;
 
   @state()
-  private pagination: Required<APIPaginationQuery> = {
-    page: parsePage(new URLSearchParams(location.search).get("page")),
+  private crawlsPagination: Required<APIPaginationQuery> = {
+    page: parsePage(new URLSearchParams(location.search).get(CRAWLS_PAGE_NAME)),
+    pageSize: INITIAL_PAGE_SIZE,
+  };
+
+  @state()
+  private dependenciesPagination: Required<APIPaginationQuery> = {
+    page: parsePage(
+      new URLSearchParams(location.search).get(DEPENDENCIES_PAGE_NAME),
+    ),
     pageSize: INITIAL_PAGE_SIZE,
   };
 
@@ -92,11 +101,11 @@ export class CollectionDetailDedupe extends BtrixElement {
    * Workflows using this collection as deduplication source
    */
   private readonly dedupeWorkflowsTask = new Task(this, {
-    task: async ([collectionId], { signal }) => {
-      if (!collectionId) return;
+    task: async ([collection], { signal }) => {
+      if (!collection) return;
 
       const query = queryString.stringify({
-        dedupeCollId: collectionId,
+        dedupeCollId: collection.id,
         sortBy: "name",
       });
 
@@ -105,12 +114,12 @@ export class CollectionDetailDedupe extends BtrixElement {
         { signal },
       );
     },
-    args: () => [this.collectionId] as const,
+    args: () => [this.collection] as const,
   });
 
   /**
-   * Successfully finished crawls with dependencies that used
-   * this collection as the deduplication source
+   * Successfully finished and deduplicated crawls in the collection
+   * that used this collection as the deduplication source
    */
   private readonly dedupeCrawlsTask = new Task(this, {
     task: async ([collectionId, pagination], { signal }) => {
@@ -131,28 +140,7 @@ export class CollectionDetailDedupe extends BtrixElement {
         { signal },
       );
     },
-    args: () => [this.collectionId, this.pagination] as const,
-  });
-
-  /**
-   * IDs of all archived items currently in the collection
-   */
-  private readonly collectionItemIdsTask = new Task(this, {
-    task: async ([collectionId], { signal }) => {
-      if (!collectionId) return;
-
-      const query = queryString.stringify({
-        collectionId,
-      });
-
-      const { ids } = await this.api.fetch<ArchivedItemSearchValues>(
-        `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
-        { signal },
-      );
-
-      return ids;
-    },
-    args: () => [this.collectionId] as const,
+    args: () => [this.collectionId, this.crawlsPagination] as const,
   });
 
   /**
@@ -160,31 +148,101 @@ export class CollectionDetailDedupe extends BtrixElement {
    * currently in the collection
    */
   private readonly dependenciesTask = new Task(this, {
-    task: async ([itemIds, pagination], { signal }) => {
-      if (!itemIds?.length) return;
+    task: async ([collectionId, pagination], { signal }) => {
+      if (!collectionId) return;
 
+      const crawlsQuery = queryString.stringify({
+        sortBy: "finished",
+        sortDirection: SortDirection.Descending,
+        collectionId,
+        dedupeCollId: collectionId,
+        state: finishedCrawlStates,
+        hasRequiresCrawls: true,
+      });
+
+      const { items } = await this.api.fetch<APIPaginatedList<ArchivedItem>>(
+        `/orgs/${this.orgId}/crawls?${crawlsQuery}`,
+        { signal },
+      );
+
+      const crawlIds = items.map(({ id }) => id);
+
+      if (!crawlIds.length) return;
+
+      // FIXME Prevent API from returning 431 by limiting IDs
+      // should be an edge case that there are more that 100
+      // dependencies in a collection but we would want a more
+      // robust solution if this becomes more common.
+      const limit = 100;
       const query = queryString.stringify({
         ...pagination,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
-        requiredByCrawls: itemIds,
+        requiredByCrawls: crawlIds.slice(0, limit),
       });
+
+      if (crawlIds.length > limit) {
+        console.warn(`up to ${limit} dependencies queried`);
+      }
 
       return await this.api.fetch<APIPaginatedList<ArchivedItem>>(
         `/orgs/${this.orgId}/all-crawls?${query}`,
         { signal },
       );
     },
-    args: () => [this.collectionItemIdsTask.value, this.pagination] as const,
+    args: () => [this.collectionId, this.dependenciesPagination] as const,
+  });
+
+  /**
+   * Poll for fresh collection data
+   */
+  private readonly pollTask = new Task(this, {
+    task: async ([collection]) => {
+      if (!collection) return;
+
+      window.clearTimeout(this.pollTask.value);
+
+      const pollInterval =
+        collection.indexState === null || indexAvailable(collection.indexState)
+          ? 30
+          : // Decrease poll interval if index is updating
+            indexUpdating(collection.indexState)
+            ? 5
+            : 10;
+
+      return window.setTimeout(() => {
+        this.dispatchEvent(new CustomEvent("btrix-request-update"));
+      }, pollInterval * 1000);
+    },
+    args: () => [this.collection] as const,
   });
 
   protected willUpdate(changedProperties: PropertyValues): void {
-    if (changedProperties.has("view.internalValue")) {
-      this.pagination = {
-        ...this.pagination,
+    if (
+      changedProperties.get("view.internalValue")?.[ITEMS_VIEW_PARAM] ===
+        ItemsView.Crawls &&
+      this.crawlsPagination.page !== 1
+    ) {
+      this.crawlsPagination = {
+        ...this.crawlsPagination,
         page: 1,
       };
     }
+    if (
+      changedProperties.get("view.internalValue")?.[ITEMS_VIEW_PARAM] ===
+        ItemsView.Dependencies &&
+      this.dependenciesPagination.page !== 1
+    ) {
+      this.dependenciesPagination = {
+        ...this.dependenciesPagination,
+        page: 1,
+      };
+    }
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    window.clearTimeout(this.pollTask.value);
   }
 
   render() {
@@ -242,7 +300,7 @@ export class CollectionDetailDedupe extends BtrixElement {
                     )}
                 >
                   <sl-icon slot="prefix" name="ui-checks"></sl-icon>
-                  ${msg("Configure Auto-Add")}
+                  ${msg("Configure with Auto-Add")}
                 </sl-button>
                 <sl-button
                   size="small"
@@ -257,7 +315,7 @@ export class CollectionDetailDedupe extends BtrixElement {
                     )}
                 >
                   <sl-icon slot="prefix" name="table"></sl-icon>
-                  ${msg("Create Index")}
+                  ${msg("Create Dedupe Index")}
                 </sl-button>
               </div>
             `
@@ -324,7 +382,7 @@ export class CollectionDetailDedupe extends BtrixElement {
               <strong class="font-semibold">${storageLabelFor.conserved}</strong
               >:
               ${msg(
-                "How much storage space has been conserved by deduplicating items.",
+                "How much storage space has been conserved by deduplicating crawls.",
               )}<br /><br />
               <strong class="font-semibold">${storageLabelFor.used}</strong>:
               ${msg(
@@ -367,7 +425,7 @@ export class CollectionDetailDedupe extends BtrixElement {
             format: "byte",
           })}
           ${stat({
-            label: msg("Deleted Items in Index"),
+            label: msg("Removed Items in Index"),
             icon: "file-earmark-minus",
             value: indexStats.removedCrawlSize,
             format: "byte",
@@ -484,7 +542,7 @@ export class CollectionDetailDedupe extends BtrixElement {
                 slot="prefix"
                 name=${dedupeIconFor["dependency"].name}
               ></sl-icon>
-              ${msg("All Dependencies")}
+              ${msg("Dependencies")}
             </sl-radio-button>
           </sl-radio-group>
         </div>
@@ -492,22 +550,164 @@ export class CollectionDetailDedupe extends BtrixElement {
 
       <div class="mx-2">
         ${choose(this.view.value.itemsView, [
-          [ItemsView.Workflows, this.renderWorkflowList],
-          [ItemsView.Crawls, () => this.renderItemsList(this.dedupeCrawlsTask)],
-          [
-            ItemsView.Dependencies,
-            () => this.renderItemsList(this.dependenciesTask),
-          ],
+          [ItemsView.Workflows, this.renderWorkflowsView],
+          [ItemsView.Crawls, this.renderCrawlsView],
+          [ItemsView.Dependencies, this.renderDependenciesView],
         ])}
       </div>
     `;
   }
 
-  private readonly renderItemsList = (
-    itemsTask:
-      | CollectionDetailDedupe["dedupeCrawlsTask"]
-      | CollectionDetailDedupe["dependenciesTask"],
+  private readonly renderWorkflowsView = () => {
+    const loading = () =>
+      html`<sl-skeleton effect="sheen" class="h-10"></sl-skeleton>`;
+    const workflows = (workflows?: APIPaginatedList<Workflow>) => {
+      if (workflows?.items.length) {
+        return html`
+          <btrix-dedupe-workflows
+            .workflows=${workflows.items}
+          ></btrix-dedupe-workflows>
+        `;
+      }
+
+      return panelBody({
+        content: emptyMessage({
+          message: msg("No workflows with dedupe enabled found"),
+          detail: this.appState.isCrawler
+            ? msg(
+                "Dedupe can be enabled on workflows that auto-add crawls to this collection.",
+              )
+            : undefined,
+          actions: this.appState.isCrawler
+            ? html`<sl-button
+                size="small"
+                @click=${() =>
+                  this.dispatchEvent(
+                    new CustomEvent<OpenDialogEventDetail>(
+                      "btrix-open-dialog",
+                      {
+                        detail: "editItems",
+                      },
+                    ),
+                  )}
+              >
+                <sl-icon slot="prefix" name="ui-checks"></sl-icon>
+                ${msg("Configure Auto-Add")}
+              </sl-button>`
+            : undefined,
+        }),
+      });
+    };
+
+    return html`${this.dedupeWorkflowsTask.render({
+      initial: loading,
+      pending: () =>
+        this.dedupeWorkflowsTask.value
+          ? workflows(this.dedupeWorkflowsTask.value)
+          : loading(),
+      complete: workflows,
+    })}`;
+  };
+
+  private readonly renderCrawlsView = () => {
+    const enableInWorkflow =
+      this.dedupeWorkflowsTask.value && !this.dedupeWorkflowsTask.value.total;
+
+    const empty = () => {
+      return panelBody({
+        content: emptyMessage({
+          message: msg("No deduped crawls yet"),
+          detail: this.appState.isCrawler
+            ? enableInWorkflow
+              ? msg(
+                  "Dedupe can be enabled on workflows that auto-add crawls to this collection.",
+                )
+              : msg(
+                  "You’ll see deduplicated crawls here after running a workflow with dedupe enabled.",
+                )
+            : undefined,
+          actions:
+            this.appState.isCrawler && enableInWorkflow
+              ? html`<sl-button
+                  size="small"
+                  @click=${() =>
+                    this.dispatchEvent(
+                      new CustomEvent<OpenDialogEventDetail>(
+                        "btrix-open-dialog",
+                        {
+                          detail: "editItems",
+                        },
+                      ),
+                    )}
+                >
+                  <sl-icon slot="prefix" name="ui-checks"></sl-icon>
+                  ${msg("Configure Auto-Add")}
+                </sl-button>`
+              : undefined,
+        }),
+      });
+    };
+
+    return html`${this.renderDependencyTree(this.dedupeCrawlsTask, empty)}`;
+  };
+
+  private readonly renderDependenciesView = () => {
+    const empty = () =>
+      panelBody({
+        content: emptyMessage({
+          message: msg("No dedupe dependencies found"),
+          detail: this.appState.isCrawler
+            ? msg(
+                "Dependencies are archived items that are indexed and required by deduped crawls.",
+              )
+            : undefined,
+          actions: this.appState.isCrawler
+            ? html`<sl-button
+                size="small"
+                @click=${() =>
+                  this.dispatchEvent(
+                    new CustomEvent<OpenDialogEventDetail>(
+                      "btrix-open-dialog",
+                      {
+                        detail: "editItems",
+                      },
+                    ),
+                  )}
+              >
+                <sl-icon slot="prefix" name="ui-checks"></sl-icon>
+                ${msg("Add Items to Index")}
+              </sl-button>`
+            : undefined,
+        }),
+      });
+    const deletedItemsWarning = () => {
+      return html`
+        <btrix-alert
+          variant="warning"
+          class="mb-3 part-[base]:flex part-[base]:items-center part-[base]:gap-2"
+        >
+          <sl-icon name="exclamation-diamond-fill" class="text-base"></sl-icon>
+          ${msg("Some dependencies were deleted and cannot be displayed.")}
+        </btrix-alert>
+      `;
+    };
+
+    return html` ${when(
+      // TODO More accurate warning by checking if all required IDs exist
+      this.dedupeCrawlsTask.value?.total &&
+        !this.dependenciesTask.value?.total &&
+        this.collection?.indexStats?.removedCrawls,
+      deletedItemsWarning,
+    )}
+    ${this.renderDependencyTree(this.dependenciesTask, empty)}`;
+  };
+
+  private readonly renderDependencyTree = (
+    itemsTask: CollectionDetailDedupe["dedupeCrawlsTask"],
+    empty: () => TemplateResult,
   ) => {
+    const dependenciesView =
+      this.view.value[ITEMS_VIEW_PARAM] === ItemsView.Dependencies;
     const loading = () => html`
       <sl-skeleton effect="sheen" class="h-9"></sl-skeleton>
     `;
@@ -522,14 +722,24 @@ export class CollectionDetailDedupe extends BtrixElement {
 
             <footer class="mt-6 flex justify-center">
               <btrix-pagination
+                name=${dependenciesView
+                  ? DEPENDENCIES_PAGE_NAME
+                  : CRAWLS_PAGE_NAME}
                 page=${items.page}
                 totalCount=${items.total}
                 size=${items.pageSize}
                 @page-change=${async (e: PageChangeEvent) => {
-                  this.pagination = {
-                    ...this.pagination,
-                    page: e.detail.page,
-                  };
+                  if (dependenciesView) {
+                    this.dependenciesPagination = {
+                      ...this.dependenciesPagination,
+                      page: e.detail.page,
+                    };
+                  } else {
+                    this.crawlsPagination = {
+                      ...this.crawlsPagination,
+                      page: e.detail.page,
+                    };
+                  }
 
                   await itemsTask.taskComplete;
 
@@ -540,32 +750,7 @@ export class CollectionDetailDedupe extends BtrixElement {
               ></btrix-pagination>
             </footer>
           `
-        : panelBody({
-            content: emptyMessage({
-              message: msg("No crawled items found."),
-              detail: this.appState.isCrawler
-                ? msg("Select crawled items to import them into the index.")
-                : undefined,
-              actions: this.appState.isCrawler
-                ? html`<sl-button
-                    size="small"
-                    variant="primary"
-                    @click=${() =>
-                      this.dispatchEvent(
-                        new CustomEvent<OpenDialogEventDetail>(
-                          "btrix-open-dialog",
-                          {
-                            detail: "editItems",
-                          },
-                        ),
-                      )}
-                  >
-                    <sl-icon slot="prefix" name="ui-checks"></sl-icon>
-                    ${msg("Select Items")}
-                  </sl-button>`
-                : undefined,
-            }),
-          });
+        : empty();
 
     return html`${itemsTask.render({
       initial: loading,
@@ -574,50 +759,9 @@ export class CollectionDetailDedupe extends BtrixElement {
     })}`;
   };
 
-  private readonly renderWorkflowList = () => {
-    const loading = () =>
-      html`<sl-skeleton effect="sheen" class="h-10"></sl-skeleton>`;
-    return html`${this.dedupeWorkflowsTask.render({
-      initial: loading,
-      pending: loading,
-      complete: (workflows) =>
-        workflows?.items.length
-          ? html`
-              <btrix-dedupe-workflows
-                .workflows=${workflows.items}
-              ></btrix-dedupe-workflows>
-            `
-          : panelBody({
-              content: emptyMessage({
-                message: msg("No deduped workflows found"),
-                detail: this.appState.isCrawler
-                  ? msg("Auto-add workflow crawls to enable dedupe.")
-                  : undefined,
-                actions: this.appState.isCrawler
-                  ? html`<sl-button
-                      size="small"
-                      @click=${() =>
-                        this.dispatchEvent(
-                          new CustomEvent<OpenDialogEventDetail>(
-                            "btrix-open-dialog",
-                            {
-                              detail: "editItems",
-                            },
-                          ),
-                        )}
-                    >
-                      <sl-icon slot="prefix" name="ui-checks"></sl-icon>
-                      ${msg("Configure Auto-Add")}
-                    </sl-button>`
-                  : undefined,
-              }),
-            }),
-    })}`;
-  };
-
   private renderOverview() {
     const state = this.collection?.indexState;
-    const updating = indexUpdating(state || null);
+    const updating = indexUpdating(state);
 
     return panel({
       heading: msg("Index Overview"),
@@ -646,13 +790,15 @@ export class CollectionDetailDedupe extends BtrixElement {
                 </btrix-desc-list-item>
               `,
             )}
-            ${state === "initing" || updating
-              ? html`<btrix-desc-list-item label=${msg("Import Progress")}>
+            ${updating
+              ? html`<btrix-desc-list-item
+                  label=${state === "purging"
+                    ? msg("Purge Progress")
+                    : msg("Import Progress")}
+                >
                   <btrix-index-import-progress
                     collectionId=${this.collectionId}
-                    initialValue=${ifDefined(
-                      updating ? col.indexStats?.updateProgress : undefined,
-                    )}
+                    initialValue=${ifDefined(col.indexStats?.updateProgress)}
                     @btrix-progress-complete=${() =>
                       this.dispatchEvent(
                         new CustomEvent("btrix-request-update"),
