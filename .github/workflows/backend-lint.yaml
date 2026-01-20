@@ -61,7 +61,8 @@ jobs:
       - name: Lint Check
         run: |
           cd backend/
-          ruff check --exit-non-zero-on-fix btrixcloud/
+          pylint btrixcloud/
+          #ruff check --exit-non-zero-on-fix btrixcloud/
 
       - name: Type Check
         run: |
