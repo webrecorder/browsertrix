@@ -2,6 +2,8 @@
 Migration 0057 - Remove background jobs for deleted orgs from db
 """
 
+from uuid import UUID
+
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from btrixcloud.migrations import BaseMigration
