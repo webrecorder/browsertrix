@@ -73,6 +73,7 @@ from .utils import (
     is_url,
     browser_windows_from_scale,
     case_insensitive_collation,
+    crawler_image_below_minimum,
 )
 
 if TYPE_CHECKING:
@@ -1283,7 +1284,9 @@ class CrawlConfigOps:
             if (
                 self.min_seed_file_crawler_image
                 and crawler_image
-                and crawler_image < self.min_seed_file_crawler_image
+                and crawler_image_below_minimum(
+                    crawler_image, self.min_seed_file_crawler_image
+                )
             ):
                 raise HTTPException(
                     status_code=400, detail="seed_file_not_supported_by_crawler"
