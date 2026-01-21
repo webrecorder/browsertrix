@@ -723,6 +723,8 @@ class CollectionOps:
         # run import job only if collection not empty
         if coll.crawlCount:
             await self.run_import_index_job(coll, org.id)
+        else:
+            await self.update_dedupe_index_info(coll.id, state="idle")
 
         return {"success": True}
 
