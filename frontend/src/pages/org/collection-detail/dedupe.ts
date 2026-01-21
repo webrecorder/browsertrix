@@ -1,4 +1,4 @@
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlChangeEvent, SlRadioGroup } from "@shoelace-style/shoelace";
 import clsx from "clsx";
@@ -28,7 +28,6 @@ import type { ArchivedItem, Workflow } from "@/types/crawler";
 import type { DedupeIndexStats } from "@/types/dedupe";
 import { SortDirection } from "@/types/utils";
 import { finishedCrawlStates } from "@/utils/crawler";
-import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 const BYTES_PER_MB = 1e6;
@@ -110,8 +109,8 @@ export class CollectionDetailDedupe extends BtrixElement {
   });
 
   /**
-   * Successfully finished crawls with dependencies that used
-   * this collection as the deduplication source
+   * Successfully finished and deduplicated crawls in the collection
+   * that used this collection as the deduplication source
    */
   private readonly dedupeCrawlsTask = new Task(this, {
     task: async ([collectionId, pagination], { signal }) => {
@@ -121,6 +120,7 @@ export class CollectionDetailDedupe extends BtrixElement {
         ...pagination,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
+        collectionId,
         dedupeCollId: collectionId,
         state: finishedCrawlStates,
         hasRequiresCrawls: true,
@@ -650,25 +650,23 @@ export class CollectionDetailDedupe extends BtrixElement {
             : undefined,
         }),
       });
-    const deletedItemsWarning = (count: number) => {
-      const number_of_dependencies = this.localize.number(count);
-      const plural_of_dependencies = pluralOf("dependencies", count);
-
+    const deletedItemsWarning = () => {
       return html`
         <btrix-alert
           variant="warning"
           class="mb-3 part-[base]:flex part-[base]:items-center part-[base]:gap-2"
         >
           <sl-icon name="exclamation-diamond-fill" class="text-base"></sl-icon>
-          ${msg(
-            str`${number_of_dependencies} removed ${plural_of_dependencies} not shown.`,
-          )}
+          ${msg("Some dependencies were deleted and cannot be displayed.")}
         </btrix-alert>
       `;
     };
 
     return html` ${when(
-      this.collection?.indexStats?.removedCrawls,
+      // TODO More accurate warning by checking if all required IDs exist
+      this.dedupeCrawlsTask.value?.total &&
+        !this.dependenciesTask.value?.total &&
+        this.collection?.indexStats?.removedCrawls,
       deletedItemsWarning,
     )}
     ${this.renderDependencyTree(this.dependenciesTask, empty)}`;

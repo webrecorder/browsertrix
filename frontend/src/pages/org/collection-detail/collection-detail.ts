@@ -51,7 +51,7 @@ import {
 } from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
-import { isCrawl, isCrawlReplay, renderName } from "@/utils/crawler";
+import { isCrawlReplay, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { richText } from "@/utils/rich-text";
@@ -394,7 +394,7 @@ export class CollectionDetail extends BtrixElement {
               return html`
                 <p class="my-2">
                   ${msg(
-                    html`${number_of_items} ${plural_of_items} depend on this
+                    str`${number_of_items} ${plural_of_items} depend on this
                     item.`,
                   )}
                 </p>
@@ -1107,7 +1107,7 @@ export class CollectionDetail extends BtrixElement {
                   <sl-menu-item
                     style="--sl-color-neutral-700: var(--warning)"
                     @click=${() => {
-                      if (isCrawl(item) && item.requiredByCrawls.length) {
+                      if (item.requiredByCrawls.length) {
                         this.itemToRemove = item;
                         this.openDialogName = "removeItem";
                       } else {
