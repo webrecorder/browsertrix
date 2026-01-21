@@ -51,6 +51,7 @@ from .models import (
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
     ResourcesOnly,
+    DeleteDedupeIndex,
     TYPE_DEDUPE_INDEX_STATES,
 )
 from .utils import (
@@ -1558,13 +1559,13 @@ def init_collections_api(
     )
     async def delete_dedupe_index(
         coll_id: UUID,
-        removeFromWorkflows: bool = False,
+        delete: DeleteDedupeIndex,
         org: Organization = Depends(org_owner_dep),
     ):
         coll = await colls.get_collection(coll_id, org.id)
 
         return await colls.delete_dedupe_index(
-            coll, org, remove_from_workflows=removeFromWorkflows
+            coll, org, remove_from_workflows=delete.removeFromWorkflows
         )
 
     return colls

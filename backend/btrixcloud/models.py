@@ -1840,6 +1840,13 @@ class CollectionAllResponse(BaseModel):
 
 
 # ============================================================================
+class DeleteDedupeIndex(BaseModel):
+    """Options for deleting dedupe index on collection"""
+
+    removeFromWorkflows: bool = False
+
+
+# ============================================================================
 
 ### ORGS ###
 
