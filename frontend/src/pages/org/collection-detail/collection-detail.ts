@@ -443,8 +443,7 @@ export class CollectionDetail extends BtrixElement {
                 <div slot="footer" class="flex justify-end">
                   <sl-button
                     size="small"
-                    @click=${async () => {
-                      await this.deleteCollection();
+                    @click=${() => {
                       this.openDialogName = undefined;
                     }}
                     >${msg("Close")}</sl-button
@@ -539,7 +538,7 @@ export class CollectionDetail extends BtrixElement {
         open: this.openDialogName === "deleteIndex",
         collection: this.collection,
         hide: () => (this.openDialogName = undefined),
-        confirm: async () => this.deleteIndex(),
+        confirm: async (args) => this.deleteIndex(args),
       })}
     `;
   }
@@ -1385,14 +1384,7 @@ export class CollectionDetail extends BtrixElement {
           method: "POST",
         },
       );
-      // FIXME Backend should return the correct state if index is successfully created
       await this.fetchCollection();
-      if (this.collection) {
-        this.collection = {
-          ...this.collection,
-          indexState: "initing",
-        };
-      }
 
       const count = this.collection?.crawlCount || 0;
       const items_count = this.localize.number(count);
@@ -1436,7 +1428,7 @@ export class CollectionDetail extends BtrixElement {
       await this.fetchCollection();
 
       this.notify.toast({
-        message: msg("Reset deduplication index."),
+        message: msg("Purging deduplication index..."),
         variant: "success",
         icon: "check2-circle",
         id: "dedupe-index-update-status",
@@ -1455,12 +1447,13 @@ export class CollectionDetail extends BtrixElement {
     }
   }
 
-  private async deleteIndex() {
+  private async deleteIndex(params: { removeFromWorkflows: boolean }) {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/collections/${this.collectionId}/dedupeIndex/delete`,
         {
           method: "POST",
+          body: JSON.stringify(params),
         },
       );
       await this.fetchCollection();

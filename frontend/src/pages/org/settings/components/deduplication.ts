@@ -90,9 +90,9 @@ export class OrgSettingsDeduplication extends BtrixElement {
         collection: this.selectedIndex,
         open: this.openDialog === "delete",
         hide: this.hideDialog,
-        confirm: async () =>
+        confirm: async (params) =>
           this.selectedIndex
-            ? this.deleteIndex(this.selectedIndex)
+            ? this.deleteIndex(this.selectedIndex, params)
             : console.debug("missing `selectedIndex`"),
       })}
     `;
@@ -296,12 +296,16 @@ export class OrgSettingsDeduplication extends BtrixElement {
     }
   }
 
-  private async deleteIndex(source: Collection) {
+  private async deleteIndex(
+    source: Collection,
+    params: { removeFromWorkflows: boolean },
+  ) {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/collections/${source.id}/dedupeIndex/delete`,
         {
           method: "POST",
+          body: JSON.stringify(params),
         },
       );
 
