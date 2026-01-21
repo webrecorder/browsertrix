@@ -395,7 +395,7 @@ export class CollectionDetailDedupe extends BtrixElement {
             format: "byte",
           })}
           ${stat({
-            label: msg("Deleted Items in Index"),
+            label: msg("Removed Items in Index"),
             icon: "file-earmark-minus",
             value: indexStats.removedCrawlSize,
             format: "byte",
@@ -657,11 +657,11 @@ export class CollectionDetailDedupe extends BtrixElement {
       return html`
         <btrix-alert
           variant="warning"
-          class="mb-5 part-[base]:flex part-[base]:items-center part-[base]:gap-2"
+          class="mb-3 part-[base]:flex part-[base]:items-center part-[base]:gap-2"
         >
           <sl-icon name="exclamation-diamond-fill" class="text-base"></sl-icon>
           ${msg(
-            str`${number_of_dependencies} deleted ${plural_of_dependencies} not shown.`,
+            str`${number_of_dependencies} removed ${plural_of_dependencies} not shown.`,
           )}
         </btrix-alert>
       `;
