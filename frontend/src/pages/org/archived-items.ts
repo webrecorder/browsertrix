@@ -935,7 +935,7 @@ export class CrawlsList extends BtrixElement {
         userid: params.filterByCurrentUser ? this.userInfo!.id : undefined,
         sortBy: params.orderBy.field,
         sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
-        crawlType: params.itemType,
+        crawlType: params.itemType ?? undefined,
       },
       {
         arrayFormat: "none",
