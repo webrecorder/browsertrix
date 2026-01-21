@@ -720,10 +720,11 @@ class CollectionOps:
         # enable index by settings stats to empty value
         await self.update_dedupe_index_stats(coll.id, DedupeIndexStats())
 
-        # run import job only if collection not empty
         await self.update_dedupe_index_info(
             coll.id, state="initing" if coll.crawlCount else "idle"
         )
+
+        # run import job only if collection not empty
         if coll.crawlCount:
             await self.run_import_index_job(coll, org.id)
 
