@@ -396,13 +396,8 @@ class CrawlOperator(BaseOperator):
         if status.pagesFound < status.desiredScale:
             status.desiredScale = max(1, status.pagesFound)
 
-        # paused and shut down pods if size is <= 4096 (empty dir),
         # paused_at is set, and state is a valid paused state
-        is_paused = (
-            bool(crawl.paused_at)
-            and status.sizePending <= 4096
-            and status.state in PAUSED_STATES
-        )
+        is_paused = bool(crawl.paused_at) and status.state in PAUSED_STATES
 
         for i in range(0, status.desiredScale):
             if status.pagesFound < i * num_browsers_per_pod:
@@ -570,6 +565,12 @@ class CrawlOperator(BaseOperator):
             memory = params.get(mem_field)
 
         pod_info = status.podStatus[name]
+
+        # only consider paused once pending size has been cleared
+        # account for empty dir size just in case
+        size_pending = pod_info.sizePending or 0
+        if is_paused and size_pending > 4096:
+            is_paused = False
 
         # compute if number of browsers for this pod has changed
         # and previous number of workers was >0
@@ -1478,7 +1479,7 @@ class CrawlOperator(BaseOperator):
         return None
 
     async def get_redis_crawl_stats(
-        self, redis: Redis, crawl_id: str
+        self, redis: Redis, crawl_id: str, status: CrawlStatus
     ) -> tuple[OpCrawlStats, dict[str, Any]]:
         """get page stats"""
         pipe = redis.pipeline(transaction=False)
@@ -1494,7 +1495,15 @@ class CrawlOperator(BaseOperator):
         pages_found = int(results[1] or 0) - int(results[2] or 0) - int(results[3] or 0)
 
         sizes = results[4]
-        archive_size = sum(int(x) for x in sizes.values())
+
+        archive_size = 0
+
+        for key, value in sizes.items():
+            size = int(value)
+            archive_size += size
+            pod_info = status.podStatus.get(key)
+            if pod_info:
+                pod_info.sizePending = size
 
         profile_update = results[5]
 
@@ -1516,7 +1525,7 @@ class CrawlOperator(BaseOperator):
     ) -> CrawlStatus:
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
-        stats, sizes = await self.get_redis_crawl_stats(redis, crawl.id)
+        stats, sizes = await self.get_redis_crawl_stats(redis, crawl.id, status)
 
         pending_size = stats.size
 
