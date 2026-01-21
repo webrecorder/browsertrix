@@ -43,7 +43,7 @@ export function deleteIndexDialog({
           <span slot="title">${msg("More Options")}</span>
           <sl-checkbox
             class="mt-2"
-            checked
+            ?checked=${open}
             help-text=${msg(
               "If unchecked, deduplication will be re-enabled after the next crawl run.",
             )}
