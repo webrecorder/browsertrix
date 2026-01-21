@@ -1,4 +1,4 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlChangeEvent, SlRadioGroup } from "@shoelace-style/shoelace";
 import clsx from "clsx";
@@ -28,6 +28,7 @@ import type { ArchivedItem, Workflow } from "@/types/crawler";
 import type { DedupeIndexStats } from "@/types/dedupe";
 import { SortDirection } from "@/types/utils";
 import { finishedCrawlStates } from "@/utils/crawler";
+import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 const BYTES_PER_MB = 1e6;
@@ -484,7 +485,7 @@ export class CollectionDetailDedupe extends BtrixElement {
                 slot="prefix"
                 name=${dedupeIconFor["dependency"].name}
               ></sl-icon>
-              ${msg("All Dependencies")}
+              ${msg("Dependencies")}
             </sl-radio-button>
           </sl-radio-group>
         </div>
@@ -493,79 +494,8 @@ export class CollectionDetailDedupe extends BtrixElement {
       <div class="mx-2">
         ${choose(this.view.value.itemsView, [
           [ItemsView.Workflows, this.renderWorkflowsView],
-          [
-            ItemsView.Crawls,
-            () =>
-              this.renderDependencyTree(this.dedupeCrawlsTask, () =>
-                panelBody({
-                  content: emptyMessage({
-                    message: msg("No deduped crawls yet"),
-                    detail: this.appState.isCrawler
-                      ? this.dedupeWorkflowsTask.value?.total
-                        ? msg(
-                            "You’ll see deduplicated crawls here after running a workflow with dedupe enabled.",
-                          )
-                        : msg(
-                            "Dedupe can be enabled on workflows that auto-add crawls to this collection.",
-                          )
-                      : undefined,
-                    actions:
-                      this.appState.isCrawler &&
-                      this.dedupeWorkflowsTask.value &&
-                      !this.dedupeWorkflowsTask.value.total
-                        ? html`<sl-button
-                            size="small"
-                            @click=${() =>
-                              this.dispatchEvent(
-                                new CustomEvent<OpenDialogEventDetail>(
-                                  "btrix-open-dialog",
-                                  {
-                                    detail: "editItems",
-                                  },
-                                ),
-                              )}
-                          >
-                            <sl-icon slot="prefix" name="ui-checks"></sl-icon>
-                            ${msg("Configure Auto-Add")}
-                          </sl-button>`
-                        : undefined,
-                  }),
-                }),
-              ),
-          ],
-          [
-            ItemsView.Dependencies,
-            () =>
-              this.renderDependencyTree(this.dependenciesTask, () =>
-                panelBody({
-                  content: emptyMessage({
-                    message: msg("No dedupe dependencies found"),
-                    detail: this.appState.isCrawler
-                      ? msg(
-                          "Dependencies are archived items that are indexed and required by deduped crawls.",
-                        )
-                      : undefined,
-                    actions: this.appState.isCrawler
-                      ? html`<sl-button
-                          size="small"
-                          @click=${() =>
-                            this.dispatchEvent(
-                              new CustomEvent<OpenDialogEventDetail>(
-                                "btrix-open-dialog",
-                                {
-                                  detail: "editItems",
-                                },
-                              ),
-                            )}
-                        >
-                          <sl-icon slot="prefix" name="ui-checks"></sl-icon>
-                          ${msg("Add Items to Index")}
-                        </sl-button>`
-                      : undefined,
-                  }),
-                }),
-              ),
-          ],
+          [ItemsView.Crawls, this.renderCrawlsView],
+          [ItemsView.Dependencies, this.renderDependenciesView],
         ])}
       </div>
     `;
@@ -612,6 +542,101 @@ export class CollectionDetailDedupe extends BtrixElement {
               }),
             }),
     })}`;
+  };
+
+  private readonly renderCrawlsView = () => {
+    const enableInWorkflow =
+      this.dedupeWorkflowsTask.value && !this.dedupeWorkflowsTask.value.total;
+
+    const empty = () => {
+      return panelBody({
+        content: emptyMessage({
+          message: msg("No deduped crawls yet"),
+          detail: this.appState.isCrawler
+            ? enableInWorkflow
+              ? msg(
+                  "Dedupe can be enabled on workflows that auto-add crawls to this collection.",
+                )
+              : msg(
+                  "You’ll see deduplicated crawls here after running a workflow with dedupe enabled.",
+                )
+            : undefined,
+          actions:
+            this.appState.isCrawler && enableInWorkflow
+              ? html`<sl-button
+                  size="small"
+                  @click=${() =>
+                    this.dispatchEvent(
+                      new CustomEvent<OpenDialogEventDetail>(
+                        "btrix-open-dialog",
+                        {
+                          detail: "editItems",
+                        },
+                      ),
+                    )}
+                >
+                  <sl-icon slot="prefix" name="ui-checks"></sl-icon>
+                  ${msg("Configure Auto-Add")}
+                </sl-button>`
+              : undefined,
+        }),
+      });
+    };
+
+    return html`${this.renderDependencyTree(this.dedupeCrawlsTask, empty)}`;
+  };
+
+  private readonly renderDependenciesView = () => {
+    const empty = () =>
+      panelBody({
+        content: emptyMessage({
+          message: msg("No dedupe dependencies found"),
+          detail: this.appState.isCrawler
+            ? msg(
+                "Dependencies are archived items that are indexed and required by deduped crawls.",
+              )
+            : undefined,
+          actions: this.appState.isCrawler
+            ? html`<sl-button
+                size="small"
+                @click=${() =>
+                  this.dispatchEvent(
+                    new CustomEvent<OpenDialogEventDetail>(
+                      "btrix-open-dialog",
+                      {
+                        detail: "editItems",
+                      },
+                    ),
+                  )}
+              >
+                <sl-icon slot="prefix" name="ui-checks"></sl-icon>
+                ${msg("Add Items to Index")}
+              </sl-button>`
+            : undefined,
+        }),
+      });
+    const deletedItemsWarning = (count: number) => {
+      const number_of_dependencies = this.localize.number(count);
+      const plural_of_dependencies = pluralOf("dependencies", count);
+
+      return html`
+        <btrix-alert
+          variant="warning"
+          class="mb-5 part-[base]:flex part-[base]:items-center part-[base]:gap-2"
+        >
+          <sl-icon name="exclamation-diamond-fill" class="text-base"></sl-icon>
+          ${msg(
+            str`${number_of_dependencies} deleted ${plural_of_dependencies} not shown.`,
+          )}
+        </btrix-alert>
+      `;
+    };
+
+    return html` ${when(
+      this.collection?.indexStats?.removedCrawls,
+      deletedItemsWarning,
+    )}
+    ${this.renderDependencyTree(this.dependenciesTask, empty)}`;
   };
 
   private readonly renderDependencyTree = (

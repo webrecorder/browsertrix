@@ -176,14 +176,14 @@ export class ItemDependencyTree extends BtrixElement {
     `;
     const noItem = () => html`
       <div class="inline-flex h-9 w-full items-center gap-2">
-        <sl-tooltip content=${msg("Missing Dependency")} hoist>
+        <sl-tooltip content=${msg("Deleted from Org")} hoist>
           <sl-icon
-            name="question-diamond"
-            class="text-base text-warning"
+            name="slash-circle"
+            class="text-base text-neutral-600"
           ></sl-icon>
         </sl-tooltip>
-        <div class="font-monostyle text-xs text-neutral-600">
-          ${msg("Missing item with ID")} <code>${id}</code>
+        <div class="font-monostyle text-neutral-400">
+          (${msg("deleted item")})
         </div>
       </div>
     `;
