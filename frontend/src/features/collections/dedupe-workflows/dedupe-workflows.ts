@@ -156,6 +156,13 @@ export class DedupeWorkflows extends BtrixElement {
             </sl-tooltip>
             ${renderName(workflow)}
           </div>
+          <div class="flex items-center">
+            ${when(
+              workflow.lastCrawlState,
+              (state) =>
+                html`<btrix-crawl-status state=${state}></btrix-crawl-status>`,
+            )}
+          </div>
           <div class="flex items-center gap-1.5 truncate">
             <sl-tooltip content=${msg("Successful Crawl Runs")} hoist>
               <sl-icon

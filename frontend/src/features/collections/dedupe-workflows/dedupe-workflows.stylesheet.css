@@ -8,7 +8,7 @@
   }
 
   .component--row {
-    grid-template-columns: minmax(12rem, 1fr) 12rem 8rem 2rem;
+    grid-template-columns: minmax(12rem, 1fr) 12rem 12rem 8rem 2rem;
     @apply grid w-full items-center gap-2;
   }
 

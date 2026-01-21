@@ -170,8 +170,15 @@ export class CollectionDetail extends BtrixElement {
         page: parsePage(new URLSearchParams(location.search).get("page")),
       });
     }
-    if (changedProperties.has("collectionTab") && this.collectionTab === null) {
-      this.collectionTab = Tab.Replay;
+    if (changedProperties.has("collectionTab")) {
+      if (this.collectionTab === null) {
+        this.collectionTab = Tab.Replay;
+      }
+
+      if (this.collectionTab === Tab.Deduplication) {
+        // Get latest stats
+        void this.fetchCollection();
+      }
     }
   }
 

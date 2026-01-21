@@ -28,10 +28,15 @@ export class IndexImportProgress extends BtrixElement {
   @property({ type: Number })
   initialValue?: number;
 
+  @property({ type: Boolean })
+  live = false;
+
   private pollInterval = 5;
 
   private readonly progressTask = new Task(this, {
-    task: async ([collectionId], { signal }) => {
+    task: async ([live, collectionId], { signal }) => {
+      if (!live) return;
+
       const collection = await this.getCollection(collectionId, signal);
 
       this.pollInterval = getPollInterval(collection.crawlCount);
@@ -40,12 +45,14 @@ export class IndexImportProgress extends BtrixElement {
         ? collection.indexStats?.updateProgress
         : undefined;
     },
-    args: () => [this.collectionId] as const,
+    args: () => [this.live, this.collectionId] as const,
   });
 
   private readonly pollTask = new Task(this, {
-    task: async ([progress]) => {
+    task: async ([live, progress]) => {
       window.clearTimeout(this.pollTask.value);
+
+      if (!live) return;
 
       if (progress === 1) {
         this.dispatchEvent(new CustomEvent("btrix-progress-complete"));
@@ -56,7 +63,7 @@ export class IndexImportProgress extends BtrixElement {
         void this.progressTask.run();
       }, this.pollInterval * 1000);
     },
-    args: () => [this.progressTask.value] as const,
+    args: () => [this.live, this.progressTask.value] as const,
   });
 
   disconnectedCallback(): void {

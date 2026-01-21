@@ -93,11 +93,11 @@ export class CollectionDetailDedupe extends BtrixElement {
    * Workflows using this collection as deduplication source
    */
   private readonly dedupeWorkflowsTask = new Task(this, {
-    task: async ([collectionId], { signal }) => {
-      if (!collectionId) return;
+    task: async ([collection], { signal }) => {
+      if (!collection) return;
 
       const query = queryString.stringify({
-        dedupeCollId: collectionId,
+        dedupeCollId: collection.id,
         sortBy: "name",
       });
 
@@ -106,7 +106,7 @@ export class CollectionDetailDedupe extends BtrixElement {
         { signal },
       );
     },
-    args: () => [this.collectionId] as const,
+    args: () => [this.collection] as const,
   });
 
   /**
@@ -121,7 +121,6 @@ export class CollectionDetailDedupe extends BtrixElement {
         ...pagination,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
-        collectionId,
         dedupeCollId: collectionId,
         state: finishedCrawlStates,
         hasRequiresCrawls: true,
@@ -179,6 +178,29 @@ export class CollectionDetailDedupe extends BtrixElement {
     args: () => [this.collectionItemIdsTask.value, this.pagination] as const,
   });
 
+  /**
+   * Poll for fresh collection data
+   */
+  private readonly pollTask = new Task(this, {
+    task: async ([collection]) => {
+      if (!collection) return;
+
+      window.clearTimeout(this.pollTask.value);
+
+      const pollInterval =
+        collection.indexState === null ||
+        ["ready", "idle"].includes(collection.indexState)
+          ? 30
+          : // Decrease poll interval if index is in use
+            10;
+
+      return window.setTimeout(() => {
+        this.dispatchEvent(new CustomEvent("btrix-request-update"));
+      }, pollInterval * 1000);
+    },
+    args: () => [this.collection] as const,
+  });
+
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("view.internalValue")) {
       this.pagination = {
@@ -186,6 +208,11 @@ export class CollectionDetailDedupe extends BtrixElement {
         page: 1,
       };
     }
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    window.clearTimeout(this.pollTask.value);
   }
 
   render() {
@@ -325,7 +352,7 @@ export class CollectionDetailDedupe extends BtrixElement {
               <strong class="font-semibold">${storageLabelFor.conserved}</strong
               >:
               ${msg(
-                "How much storage space has been conserved by deduplicating items.",
+                "How much storage space has been conserved by deduplicating crawls.",
               )}<br /><br />
               <strong class="font-semibold">${storageLabelFor.used}</strong>:
               ${msg(
@@ -504,43 +531,51 @@ export class CollectionDetailDedupe extends BtrixElement {
   private readonly renderWorkflowsView = () => {
     const loading = () =>
       html`<sl-skeleton effect="sheen" class="h-10"></sl-skeleton>`;
+    const workflows = (workflows?: APIPaginatedList<Workflow>) => {
+      if (workflows?.items.length) {
+        return html`
+          <btrix-dedupe-workflows
+            .workflows=${workflows.items}
+          ></btrix-dedupe-workflows>
+        `;
+      }
+
+      return panelBody({
+        content: emptyMessage({
+          message: msg("No workflows with dedupe enabled found"),
+          detail: this.appState.isCrawler
+            ? msg(
+                "Dedupe can be enabled on workflows that auto-add crawls to this collection.",
+              )
+            : undefined,
+          actions: this.appState.isCrawler
+            ? html`<sl-button
+                size="small"
+                @click=${() =>
+                  this.dispatchEvent(
+                    new CustomEvent<OpenDialogEventDetail>(
+                      "btrix-open-dialog",
+                      {
+                        detail: "editItems",
+                      },
+                    ),
+                  )}
+              >
+                <sl-icon slot="prefix" name="ui-checks"></sl-icon>
+                ${msg("Configure Auto-Add")}
+              </sl-button>`
+            : undefined,
+        }),
+      });
+    };
+
     return html`${this.dedupeWorkflowsTask.render({
       initial: loading,
-      pending: loading,
-      complete: (workflows) =>
-        workflows?.items.length
-          ? html`
-              <btrix-dedupe-workflows
-                .workflows=${workflows.items}
-              ></btrix-dedupe-workflows>
-            `
-          : panelBody({
-              content: emptyMessage({
-                message: msg("No workflows with dedupe enabled found"),
-                detail: this.appState.isCrawler
-                  ? msg(
-                      "Dedupe can be enabled on workflows that auto-add crawls to this collection.",
-                    )
-                  : undefined,
-                actions: this.appState.isCrawler
-                  ? html`<sl-button
-                      size="small"
-                      @click=${() =>
-                        this.dispatchEvent(
-                          new CustomEvent<OpenDialogEventDetail>(
-                            "btrix-open-dialog",
-                            {
-                              detail: "editItems",
-                            },
-                          ),
-                        )}
-                    >
-                      <sl-icon slot="prefix" name="ui-checks"></sl-icon>
-                      ${msg("Configure Auto-Add")}
-                    </sl-button>`
-                  : undefined,
-              }),
-            }),
+      pending: () =>
+        this.dedupeWorkflowsTask.value
+          ? workflows(this.dedupeWorkflowsTask.value)
+          : loading(),
+      complete: workflows,
     })}`;
   };
 
