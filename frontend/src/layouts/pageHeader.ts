@@ -85,7 +85,7 @@ export function pageTitle(
   skeletonClass?: string,
 ) {
   return html`
-    <h1 class="min-w-0 text-xl font-semibold leading-8">
+    <h1 class="min-w-0 truncate text-xl font-semibold leading-8">
       ${title ||
       html`<sl-skeleton
         class=${skeletonClass ?? "my-.5 h-5 w-60"}

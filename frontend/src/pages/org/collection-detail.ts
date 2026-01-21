@@ -184,7 +184,7 @@ export class CollectionDetail extends BtrixElement {
       </div>
       <header class="mt-5 flex min-h-16 flex-col gap-3  lg:flex-row">
         <div
-          class="-mb-1 -ml-2 -mr-1 -mt-1 flex flex-none flex-col gap-2 self-start rounded-lg pb-1 pl-2 pr-1 pt-1 transition-colors has-[.addSummary:hover]:bg-primary-50 has-[sl-icon-button:hover]:bg-primary-50"
+          class="-mb-1 -ml-2 -mr-1 -mt-1 flex max-w-full flex-none flex-col gap-2 self-start rounded-lg pb-1 pl-2 pr-1 pt-1 transition-colors has-[.addSummary:hover]:bg-primary-50 has-[sl-icon-button:hover]:bg-primary-50"
         >
           <div class="flex flex-wrap items-center gap-2.5">
             ${this.renderAccessIcon()}${pageTitle(
