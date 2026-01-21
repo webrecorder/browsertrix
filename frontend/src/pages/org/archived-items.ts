@@ -99,6 +99,7 @@ type FilterBy = {
   name?: string;
   firstSeed?: string;
   state?: CrawlState[];
+  reviewStatus?: [number, number];
 };
 
 /**
@@ -227,6 +228,8 @@ export class CrawlsList extends BtrixElement {
                 params.append("status", state);
               });
               break;
+            case "reviewStatus":
+              params.set(key, `${value[key][0]}-${value[key][1]}`);
           }
         }
       });
@@ -239,6 +242,11 @@ export class CrawlsList extends BtrixElement {
         name: params.get("name") ?? undefined,
         firstSeed: params.get("firstSeed") ?? undefined,
         state: state.length ? state : undefined,
+        reviewStatus: params
+          .get("reviewStatus")
+          ?.split("-")
+          .slice(0, 2)
+          .map(parseInt) as [number, number] | undefined,
       };
     },
   );
@@ -266,6 +274,7 @@ export class CrawlsList extends BtrixElement {
       this.filterBy.value.firstSeed,
       this.filterBy.value.name,
       this.filterBy.value.state?.length || undefined,
+      this.filterBy.value.reviewStatus,
       this.filterByCurrentUser.value || undefined,
       this.filterByTags.value?.length || undefined,
     ].some((v) => v !== undefined);
@@ -277,6 +286,7 @@ export class CrawlsList extends BtrixElement {
       firstSeed: undefined,
       name: undefined,
       state: undefined,
+      reviewStatus: undefined,
     });
     this.filterByCurrentUser.setValue(false);
     this.filterByTags.setValue([]);
@@ -936,6 +946,7 @@ export class CrawlsList extends BtrixElement {
         sortBy: params.orderBy.field,
         sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
         crawlType: params.itemType ?? undefined,
+        reviewStatus: params.filterBy.reviewStatus,
       },
       {
         arrayFormat: "none",
