@@ -423,27 +423,53 @@ export class CollectionDetail extends BtrixElement {
       </btrix-dialog>
 
       <btrix-dialog
-        .label=${msg("Delete Collection?")}
+        .label=${this.collection?.indexStats
+          ? msg("Deletion Not Allowed")
+          : msg("Delete Collection?")}
         .open=${this.openDialogName === "delete"}
         @sl-hide=${() => (this.openDialogName = undefined)}
       >
-        ${msg(html`Are you sure you want to delete ${collection_name}?`)}
-        <div slot="footer" class="flex justify-between">
-          <sl-button
-            size="small"
-            @click=${() => (this.openDialogName = undefined)}
-            >${msg("Cancel")}</sl-button
-          >
-          <sl-button
-            size="small"
-            variant="danger"
-            @click=${async () => {
-              await this.deleteCollection();
-              this.openDialogName = undefined;
-            }}
-            >${msg("Delete Collection")}</sl-button
-          >
-        </div>
+        ${when(this.collection, (col) =>
+          col.indexStats
+            ? html`${msg(
+                  html`${collection_name} cannot be deleted because it is being
+                  used as a deduplication source.`,
+                )}
+                ${this.appState.isAdmin
+                  ? msg(
+                      "To delete this collection, delete the deduplication index first.",
+                    )
+                  : nothing}
+                <div slot="footer" class="flex justify-end">
+                  <sl-button
+                    size="small"
+                    @click=${async () => {
+                      await this.deleteCollection();
+                      this.openDialogName = undefined;
+                    }}
+                    >${msg("Close")}</sl-button
+                  >
+                </div>`
+            : html`${msg(
+                  html`Are you sure you want to delete ${collection_name}?`,
+                )}
+                <div slot="footer" class="flex justify-between">
+                  <sl-button
+                    size="small"
+                    @click=${() => (this.openDialogName = undefined)}
+                    >${msg("Cancel")}</sl-button
+                  >
+                  <sl-button
+                    size="small"
+                    variant="danger"
+                    @click=${async () => {
+                      await this.deleteCollection();
+                      this.openDialogName = undefined;
+                    }}
+                    >${msg("Delete Collection")}</sl-button
+                  >
+                </div>`,
+        )}
       </btrix-dialog>
       <btrix-collection-items-dialog
         collectionId=${this.collectionId}
