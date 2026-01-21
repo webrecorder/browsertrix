@@ -17,6 +17,7 @@ import { labelWithIcon } from "@/layouts/labelWithIcon";
 import { Tab } from "@/pages/org/collection-detail/types";
 import { OrgTab } from "@/routes";
 import { getIndexErrorMessage } from "@/strings/collections/index-error";
+import { noData } from "@/strings/ui";
 import { type APIPaginatedList, type APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import { isNotEqual } from "@/utils/is-not-equal";
@@ -26,9 +27,9 @@ const INITIAL_PAGE_SIZE = 10;
 
 type DedupeSource = RequireExactlyOne<Collection, "indexStats">;
 
-const detail = (content: TemplateResult | string) =>
+const detail = (content?: TemplateResult | string) =>
   html`<div class="font-monostyle mt-1 text-xs leading-none text-neutral-500">
-    ${content}
+    ${content || noData}
   </div>`;
 
 @customElement("btrix-org-settings-deduplication")
@@ -188,7 +189,11 @@ export class OrgSettingsDeduplication extends BtrixElement {
             ${this.localize.number(stats.totalUrls)}
             ${pluralOf("URLs", stats.totalUrls)}
             ${detail(
-              `${this.localize.number(stats.dupeUrls)} ${msg("duplicate")}`,
+              stats.dupeUrls
+                ? `${this.localize.number(stats.dupeUrls, {
+                    notation: "compact",
+                  })} ${msg("duplicate")}`
+                : undefined,
             )}
           </div>
         </btrix-table-cell>
@@ -196,12 +201,23 @@ export class OrgSettingsDeduplication extends BtrixElement {
           <div>
             ${this.localize.number(stats.totalCrawls)}
             ${pluralOf("items", stats.totalCrawls)}
-            ${detail(this.localize.bytes(stats.totalCrawlSize))}
+            ${detail(
+              stats.totalCrawlSize
+                ? this.localize.bytes(stats.totalCrawlSize)
+                : undefined,
+            )}
           </div>
         </btrix-table-cell>
         <btrix-table-cell>
-          ${this.localize.number(stats.removedCrawls)}
-          ${pluralOf("items", stats.removedCrawls)}
+          <div>
+            ${this.localize.number(stats.removedCrawls)}
+            ${pluralOf("items", stats.removedCrawls)}
+            ${detail(
+              stats.removedCrawlSize
+                ? this.localize.bytes(stats.removedCrawlSize)
+                : undefined,
+            )}
+          </div>
         </btrix-table-cell>
         <btrix-table-cell>
           <sl-tooltip content=${msg("Open in New Tab")} placement="left">
@@ -231,8 +247,8 @@ export class OrgSettingsDeduplication extends BtrixElement {
                 }}
                 ?disabled=${updating}
               >
-                <sl-icon slot="prefix" name="arrow-repeat"></sl-icon>
-                ${msg("Reset Index")}
+                <sl-icon slot="prefix" name="trash2"></sl-icon>
+                ${msg("Purge Index")}
               </sl-menu-item>
               <sl-menu-item
                 class="menu-item-danger"
