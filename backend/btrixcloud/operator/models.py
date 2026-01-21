@@ -157,6 +157,8 @@ class PodInfo(BaseModel):
 
     lastWorkers: Optional[int] = 0
 
+    sizePending: Optional[int] = 0
+
     def dict(self, *a, **kw):
         res = super().dict(*a, **kw)
         percent = {

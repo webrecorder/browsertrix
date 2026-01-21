@@ -135,10 +135,12 @@ class ProfileOps:
         prev_proxy_id = ""
         prev_channel = ""
         if profile_launch.profileId:
-            prev_profile_path, prev_proxy_id, prev_channel = (
-                await self.get_profile_filename_proxy_channel(
-                    profile_launch.profileId, org
-                )
+            (
+                prev_profile_path,
+                prev_proxy_id,
+                prev_channel,
+            ) = await self.get_profile_filename_proxy_channel(
+                profile_launch.profileId, org
             )
 
             if not prev_profile_path:

@@ -741,7 +741,8 @@ class OrgOps(BaseOrgs):
                     increment_update = quotas.model_dump(
                         exclude_unset=True, exclude_defaults=True, exclude_none=True
                     )
-                    update["$set"]["quotas"] = increment_update
+                    for key, value in increment_update.items():
+                        update["$set"][f"quotas.{key}"] = value
 
                 # Inc org available fields for extra/gifted execution time as needed
                 if quotas.extraExecMinutes is not None:

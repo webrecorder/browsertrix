@@ -297,6 +297,15 @@ ALL_CRAWL_STATES = [*RUNNING_AND_WAITING_STATES, *NON_RUNNING_STATES]
 
 
 # ============================================================================
+
+### CRAWL TYPES
+
+# ============================================================================
+TYPE_CRAWL_TYPES = Literal["crawl", "upload"]
+CRAWL_TYPES = get_args(TYPE_CRAWL_TYPES)
+
+
+# ============================================================================
 class CrawlStats(BaseModel):
     """Crawl Stats for pages and size"""
 
@@ -846,7 +855,7 @@ class CoreCrawlable(BaseModel):
 class BaseCrawl(CoreCrawlable, BaseMongoModel):
     """Base Crawl object (representing crawls, uploads and manual sessions)"""
 
-    type: str
+    type: TYPE_CRAWL_TYPES
 
     oid: UUID
     cid: Optional[UUID] = None
@@ -885,7 +894,7 @@ class CrawlOut(BaseMongoModel):
 
     # pylint: disable=duplicate-code
 
-    type: str
+    type: TYPE_CRAWL_TYPES
 
     id: str
 

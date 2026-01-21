@@ -13,7 +13,6 @@ import json
 import humanize
 
 from kubernetes.utils import parse_quantity
-from redis import asyncio as exceptions
 
 from fastapi import HTTPException
 
@@ -39,6 +38,7 @@ from btrixcloud.utils import (
     date_to_str,
     dt_now,
     scale_from_browser_windows,
+    crawler_image_below_minimum,
 )
 
 from .baseoperator import BaseOperator, Redis
@@ -396,13 +396,8 @@ class CrawlOperator(BaseOperator):
         if status.pagesFound < status.desiredScale:
             status.desiredScale = max(1, status.pagesFound)
 
-        # paused and shut down pods if size is <= 4096 (empty dir),
         # paused_at is set, and state is a valid paused state
-        is_paused = (
-            bool(crawl.paused_at)
-            and status.sizePending <= 4096
-            and status.state in PAUSED_STATES
-        )
+        is_paused = bool(crawl.paused_at) and status.state in PAUSED_STATES
 
         for i in range(0, status.desiredScale):
             if status.pagesFound < i * num_browsers_per_pod:
@@ -457,7 +452,7 @@ class CrawlOperator(BaseOperator):
             and behaviors
             and "autoclick" in behaviors
             and crawler_image
-            and crawler_image < min_autoclick_crawler_image
+            and crawler_image_below_minimum(crawler_image, min_autoclick_crawler_image)
         ):
             print(
                 "Crawler version < min_autoclick_crawler_image, removing autoclick behavior",
@@ -571,8 +566,15 @@ class CrawlOperator(BaseOperator):
 
         pod_info = status.podStatus[name]
 
+        # only consider paused once pending size has been cleared
+        # account for empty dir size just in case
+        size_pending = pod_info.sizePending or 0
+        if is_paused and size_pending > 4096:
+            is_paused = False
+
         # compute if number of browsers for this pod has changed
-        workers_changed = pod_info.lastWorkers != workers
+        # and previous number of workers was >0
+        workers_changed = pod_info.lastWorkers != workers and pod_info.lastWorkers
         if workers_changed:
             print(f"Workers changed for {i}: {pod_info.lastWorkers} -> {workers}")
 
@@ -1414,18 +1416,6 @@ class CrawlOperator(BaseOperator):
 
         await self.org_ops.inc_org_bytes_stored(crawl.oid, filecomplete.size, "crawl")
 
-        # no replicas for QA for now
-        if crawl.is_qa:
-            return filecomplete.size
-
-        try:
-            await self.background_job_ops.create_replica_jobs(
-                crawl.oid, crawl_file, crawl.id, "crawl"
-            )
-        # pylint: disable=broad-except
-        except Exception as exc:
-            print("Replicate Exception", exc, flush=True)
-
         return filecomplete.size
 
     async def is_crawl_stopping(
@@ -1489,26 +1479,33 @@ class CrawlOperator(BaseOperator):
         return None
 
     async def get_redis_crawl_stats(
-        self, redis: Redis, crawl_id: str
+        self, redis: Redis, crawl_id: str, status: CrawlStatus
     ) -> tuple[OpCrawlStats, dict[str, Any]]:
         """get page stats"""
-        try:
-            # crawler >0.9.0, done key is a value
-            pages_done = int(await redis.get(f"{crawl_id}:d") or 0)
-        except exceptions.ResponseError:
-            # crawler <=0.9.0, done key is a list
-            pages_done = await redis.llen(f"{crawl_id}:d")
+        pipe = redis.pipeline(transaction=False)
+        pipe.get(f"{crawl_id}:d")
+        pipe.scard(f"{crawl_id}:s")
+        pipe.llen(f"{crawl_id}:extraSeeds")
+        pipe.scard(f"{crawl_id}:excluded")
+        pipe.hgetall(f"{crawl_id}:size")
+        pipe.get(f"{crawl_id}:profileUploaded")
+        results = await pipe.execute()
 
-        pages_found = await redis.scard(f"{crawl_id}:s")
-        # account for extra seeds and subtract from seen list
-        extra_seeds = await redis.llen(f"{crawl_id}:extraSeeds")
-        if extra_seeds:
-            pages_found -= extra_seeds
+        pages_done = int(results[0] or 0)
+        pages_found = int(results[1] or 0) - int(results[2] or 0) - int(results[3] or 0)
 
-        sizes = await redis.hgetall(f"{crawl_id}:size")
-        archive_size = sum(int(x) for x in sizes.values())
+        sizes = results[4]
 
-        profile_update = await redis.get(f"{crawl_id}:profileUploaded")
+        archive_size = 0
+
+        for key, value in sizes.items():
+            size = int(value)
+            archive_size += size
+            pod_info = status.podStatus.get(key)
+            if pod_info:
+                pod_info.sizePending = size
+
+        profile_update = results[5]
 
         stats = OpCrawlStats(
             found=pages_found,
@@ -1528,7 +1525,7 @@ class CrawlOperator(BaseOperator):
     ) -> CrawlStatus:
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
-        stats, sizes = await self.get_redis_crawl_stats(redis, crawl.id)
+        stats, sizes = await self.get_redis_crawl_stats(redis, crawl.id, status)
 
         pending_size = stats.size
 
@@ -1762,6 +1759,7 @@ class CrawlOperator(BaseOperator):
             await self.coll_ops.add_successful_crawl_to_collections(
                 crawl.id, crawl.cid, crawl.oid
             )
+            await self.crawl_ops.replicate_crawl_files(crawl.id, crawl.org, "crawl")
 
             if stats and stats.profile_update and crawl.profileid:
                 await self.crawl_config_ops.profiles.update_profile_from_crawl_upload(

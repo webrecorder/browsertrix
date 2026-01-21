@@ -126,10 +126,12 @@ class CronJobOperator(BaseOperator):
             print("Scheduled Crawl Created: " + crawl_id)
 
         if crawlconfig.profileid:
-            profile_filename, crawlconfig.proxyId, _ = (
-                await self.crawl_config_ops.profiles.get_profile_filename_proxy_channel(
-                    crawlconfig.profileid, org
-                )
+            (
+                profile_filename,
+                crawlconfig.proxyId,
+                _,
+            ) = await self.crawl_config_ops.profiles.get_profile_filename_proxy_channel(
+                crawlconfig.profileid, org
             )
             if not profile_filename:
                 print(f"error: missing profile {crawlconfig.profileid}")

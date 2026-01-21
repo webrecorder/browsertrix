@@ -37,6 +37,7 @@ from .utils import (
     validate_regexes,
     scale_from_browser_windows,
     browser_windows_from_scale,
+    crawler_image_below_minimum,
 )
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
@@ -935,7 +936,7 @@ class CrawlOps(BaseCrawlOps):
         if (
             self.min_qa_crawler_image
             and crawl.image
-            and crawl.image < self.min_qa_crawler_image
+            and crawler_image_below_minimum(crawl.image, self.min_qa_crawler_image)
         ):
             raise HTTPException(status_code=400, detail="qa_not_supported_for_crawl")
 

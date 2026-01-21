@@ -18,6 +18,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from iso639 import is_language
+from packaging.version import parse as parse_version
 from pymongo.collation import Collation
 from pymongo.errors import DuplicateKeyError
 from slugify import slugify
@@ -218,3 +219,22 @@ def scale_from_browser_windows(
 def browser_windows_from_scale(scale: int) -> int:
     """Return number of browser windows from specified scale"""
     return scale * browsers_per_pod
+
+
+def crawler_image_below_minimum(crawler_image: str, min_image: str):
+    """Return bool indicating if specified crawler version is below required minimum
+
+    Return False by default or if versions can't be parsed as semver (e.g. "latest")
+    """
+    try:
+        crawler_image_version = parse_version(crawler_image.split(":")[1])
+        min_image_version = parse_version(min_image.split(":")[1])
+    # pylint: disable=broad-exception-caught
+    except Exception:
+        print("Unable to compare crawler versions, allowing", flush=True)
+        return False
+
+    if crawler_image_version < min_image_version:
+        return True
+
+    return False

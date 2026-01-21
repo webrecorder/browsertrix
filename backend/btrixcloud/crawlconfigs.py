@@ -73,6 +73,7 @@ from .utils import (
     is_url,
     browser_windows_from_scale,
     case_insensitive_collation,
+    crawler_image_below_minimum,
 )
 
 if TYPE_CHECKING:
@@ -1261,10 +1262,12 @@ class CrawlConfigOps:
         await self.check_if_too_many_waiting_crawls(org)
 
         if crawlconfig.profileid:
-            profile_filename, crawlconfig.proxyId, _ = (
-                await self.profiles.get_profile_filename_proxy_channel(
-                    crawlconfig.profileid, org
-                )
+            (
+                profile_filename,
+                crawlconfig.proxyId,
+                _,
+            ) = await self.profiles.get_profile_filename_proxy_channel(
+                crawlconfig.profileid, org
             )
             if not profile_filename:
                 raise HTTPException(status_code=400, detail="invalid_profile_id")
@@ -1283,7 +1286,9 @@ class CrawlConfigOps:
             if (
                 self.min_seed_file_crawler_image
                 and crawler_image
-                and crawler_image < self.min_seed_file_crawler_image
+                and crawler_image_below_minimum(
+                    crawler_image, self.min_seed_file_crawler_image
+                )
             ):
                 raise HTTPException(
                     status_code=400, detail="seed_file_not_supported_by_crawler"
