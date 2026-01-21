@@ -95,6 +95,7 @@ from .models import (
     OrgSlugsResponse,
     OrgImportResponse,
     OrgPublicProfileUpdate,
+    OrgFeatureFlags,
     MAX_BROWSER_WINDOWS,
     MAX_CRAWL_SCALE,
 )
@@ -1137,6 +1138,16 @@ class OrgOps(BaseOrgs):
         )
         return res is not None
 
+    async def update_feature_flags(
+        self, org: Organization, features: OrgFeatureFlags
+    ) -> bool:
+        """Update feature flags on organization"""
+        res = await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            {"$set": {"featureFlags": features.model_dump()}},
+        )
+        return res is not None
+
     async def update_public_profile(
         self, org: Organization, update: OrgPublicProfileUpdate
     ):
@@ -1784,6 +1795,21 @@ def init_orgs_api(
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         await ops.update_read_only_on_cancel(org, update)
+
+        return {"updated": True}
+
+    @router.post(
+        "/feature-flags", tags=["organizations"], response_model=UpdatedResponse
+    )
+    async def update_feature_flags(
+        features: OrgFeatureFlags,
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        await ops.update_feature_flags(org, features)
 
         return {"updated": True}
 

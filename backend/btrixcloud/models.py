@@ -2296,6 +2296,13 @@ class OrgWebhookUrls(BaseModel):
 
 
 # ============================================================================
+class OrgFeatureFlags(BaseModel):
+    """Organization feature falgs"""
+
+    dedupe: bool = False
+
+
+# ============================================================================
 class OrgOut(BaseMongoModel):
     """Organization API output model"""
 
@@ -2353,6 +2360,8 @@ class OrgOut(BaseMongoModel):
     enablePublicProfile: bool = False
     publicDescription: str = ""
     publicUrl: str = ""
+
+    featureFlags: Optional[OrgFeatureFlags] = OrgFeatureFlags()
 
 
 # ============================================================================
@@ -2416,6 +2425,8 @@ class Organization(BaseMongoModel):
     enablePublicProfile: bool = False
     publicDescription: Optional[str] = None
     publicUrl: Optional[str] = None
+
+    featureFlags: Optional[OrgFeatureFlags] = OrgFeatureFlags()
 
     def is_owner(self, user):
         """Check if user is owner"""
