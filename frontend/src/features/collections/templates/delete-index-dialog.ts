@@ -34,7 +34,7 @@ export function deleteIndexDialog({
             deduplication for ${collection_name}?`,
           )}
         </p>
-        <p class="mt-3 text-pretty">
+        <p class="mt-3">
           ${msg(
             "This action cannot be reversed and may result in the loss of archived content.",
           )}

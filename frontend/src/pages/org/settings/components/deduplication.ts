@@ -275,9 +275,10 @@ export class OrgSettingsDeduplication extends BtrixElement {
           method: "POST",
         },
       );
+      await this.sources.run();
 
       this.notify.toast({
-        message: msg("Reset deduplication index."),
+        message: msg("Purging deduplication index..."),
         variant: "success",
         icon: "check2-circle",
         id: "dedupe-index-update-status",
@@ -308,6 +309,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
           body: JSON.stringify(params),
         },
       );
+      await this.sources.run();
 
       this.notify.toast({
         message: msg("Deleted deduplication index."),
