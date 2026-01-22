@@ -621,13 +621,19 @@ export class WorkflowEditor extends BtrixElement {
   private renderNav() {
     const button = (tab: StepName) => {
       const isActive = tab === this.progressState?.activeTab;
+      const section = this.formSections.find(({ name }) => name === tab);
       return html`
         <btrix-tab-list-tab
+          class="part-[base]:flex part-[base]:items-center part-[base]:gap-2"
           name=${tab}
           .active=${isActive}
           @click=${this.tabClickHandler(tab)}
         >
           ${this.tabLabels[tab]}
+          ${when(
+            section?.beta,
+            () => html`<btrix-beta-icon></btrix-beta-icon>`,
+          )}
         </btrix-tab-list-tab>
       `;
     };
@@ -650,7 +656,6 @@ export class WorkflowEditor extends BtrixElement {
       desc,
       render,
       required,
-      beta,
     }: (typeof this.formSections)[number]) => {
       const tabProgress = this.progressState?.tabs[name];
       const hasError = tabProgress?.error;
@@ -755,10 +760,7 @@ export class WorkflowEditor extends BtrixElement {
           )}
         </div>
 
-        <div slot="summary" class="flex items-center gap-2">
-          <p class="text-neutral-700">${desc}</p>
-          ${when(beta, () => html`<btrix-beta-badge></btrix-beta-badge>`)}
-        </div>
+        <p class="text-neutral-700" slot="summary">${desc}</p>
         <div class="grid grid-cols-5 gap-5">${render.bind(this)()}</div>
       </sl-details>`;
     };
@@ -772,7 +774,15 @@ export class WorkflowEditor extends BtrixElement {
             `${formName}${panelSuffix}--active`,
           tw`scroll-mt-7`,
         ),
-        heading: this.tabLabels[section.name],
+        heading: {
+          content: html`<div class="inline-flex items-center gap-2">
+            ${this.tabLabels[section.name]}
+            ${when(
+              section.beta,
+              () => html`<btrix-beta-badge></btrix-beta-badge>`,
+            )}
+          </div>`,
+        },
         body: panelBody(section),
         actions: section.required
           ? html`<p class="text-xs font-normal text-neutral-500">
