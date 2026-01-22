@@ -650,6 +650,7 @@ export class WorkflowEditor extends BtrixElement {
       desc,
       render,
       required,
+      beta,
     }: (typeof this.formSections)[number]) => {
       const tabProgress = this.progressState?.tabs[name];
       const hasError = tabProgress?.error;
@@ -754,7 +755,10 @@ export class WorkflowEditor extends BtrixElement {
           )}
         </div>
 
-        <p class="text-neutral-700" slot="summary">${desc}</p>
+        <div slot="summary" class="flex items-center gap-2">
+          <p class="text-neutral-700">${desc}</p>
+          ${when(beta, () => html`<btrix-beta-badge></btrix-beta-badge>`)}
+        </div>
         <div class="grid grid-cols-5 gap-5">${render.bind(this)()}</div>
       </sl-details>`;
     };
@@ -2730,6 +2734,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     desc: string;
     render: () => TemplateResult<1>;
     required?: boolean;
+    beta?: boolean;
   }[] = [
     {
       name: "scope",
@@ -2761,6 +2766,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       name: "deduplication",
       desc: msg("Prevent duplicate content from being crawled and stored."),
       render: this.renderDeduplication,
+      beta: true,
     },
     {
       name: "collections",
