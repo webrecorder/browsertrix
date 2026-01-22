@@ -715,7 +715,7 @@ class BaseCrawlOps:
         page: int = 1,
         sort_by: Optional[str] = None,
         sort_direction: int = -1,
-        qaReview: tuple[int, int] | None = None,
+        review_status_range: tuple[int, int] | None = None,
     ):
         """List crawls of all types from the db"""
         # Zero-index page for query
@@ -748,8 +748,11 @@ class BaseCrawlOps:
             query_type = "$all" if tag_match == ListFilterType.AND else "$in"
             query["tags"] = {query_type: tags}
 
-        if qaReview:
-            query["reviewStatus"] = {"$gte": qaReview[0], "$lte": qaReview[1]}
+        if review_status_range:
+            query["reviewStatus"] = {
+                "$gte": review_status_range[0],
+                "$lte": review_status_range[1],
+            }
 
         aggregate = [
             {"$match": query},
@@ -1139,10 +1142,12 @@ def init_base_crawls_api(app, user_dep, *args):
         if description:
             description = urllib.parse.unquote(description)
 
+        review_status_range: tuple[int, int] | None = None
+
         if reviewStatus:
             if len(reviewStatus) > 2 or any(qa < 1 or qa >= 5 for qa in reviewStatus):
                 raise HTTPException(status_code=400, detail="Invalid QA review range")
-            qaReviewTuple = (
+            review_status_range = (
                 reviewStatus[0],
                 reviewStatus[1] if len(reviewStatus) > 1 else reviewStatus[0],
             )
@@ -1163,7 +1168,7 @@ def init_base_crawls_api(app, user_dep, *args):
             page=page,
             sort_by=sortBy,
             sort_direction=sortDirection,
-            qa_review=qaReviewTuple,
+            review_status_range=review_status_range,
         )
         return paginated_format(crawls, total, page, pageSize)
 
