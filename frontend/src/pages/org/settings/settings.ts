@@ -251,7 +251,7 @@ export class OrgSettings extends BtrixElement {
     `;
   }
 
-  private renderTab(name: Tab, path: string, opts = { beta: false }) {
+  private renderTab(name: Tab, path: string, { beta } = { beta: false }) {
     return html`
       <btrix-tab-group-tab
         slot="nav"
@@ -273,7 +273,7 @@ export class OrgSettings extends BtrixElement {
           ["deduplication", () => html`<sl-icon name="stack"></sl-icon>`],
         ])}
         ${this.tabLabels[name]}
-        ${when(opts.beta, () => html`<btrix-beta-icon></btrix-beta-icon>`)}
+        ${when(beta, () => html`<btrix-beta-icon></btrix-beta-icon>`)}
       </btrix-tab-group-tab>
     `;
   }

@@ -387,9 +387,7 @@ export class ArchivedItemDetail extends BtrixElement {
           break;
         }
         sectionContent = this.renderPanel(
-          html`${this.renderTitle(
-              html`${this.tabLabels.qa} <btrix-beta-badge></btrix-beta-badge>`,
-            )}
+          html`${this.renderTitle(this.tabLabels.qa, { beta: true })}
             <div class="ml-auto flex flex-wrap justify-end gap-2">
               ${when(!dedupeDependent && this.qaRuns, this.renderQAHeader)}
             </div> `,
@@ -487,7 +485,9 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       case "dependencies":
         sectionContent = this.renderPanel(
-          html` ${this.renderTitle(msg("Dependencies"))} `,
+          html`
+            ${this.renderTitle(this.tabLabels.dependencies, { beta: true })}
+          `,
           this.renderDependencies(),
         );
         break;
@@ -672,12 +672,12 @@ export class ArchivedItemDetail extends BtrixElement {
       section,
       iconLibrary,
       icon,
-      detail,
+      beta,
     }: {
       section: SectionName;
       iconLibrary: "app" | "default";
       icon: string;
-      detail?: TemplateResult<1>;
+      beta?: boolean;
     }) => {
       const isActive = section === this.activeTab;
       const baseUrl = window.location.pathname.split("#")[0];
@@ -695,8 +695,9 @@ export class ArchivedItemDetail extends BtrixElement {
             aria-hidden="true"
             library=${iconLibrary}
           ></sl-icon>
-          ${this.tabLabels[section]}${detail}</btrix-navigation-button
-        >
+          ${this.tabLabels[section]}
+          ${when(beta, () => html`<btrix-beta-icon></btrix-beta-icon>`)}
+        </btrix-navigation-button>
       `;
     };
     return html`
@@ -719,7 +720,7 @@ export class ArchivedItemDetail extends BtrixElement {
                       section: "qa",
                       iconLibrary: "default",
                       icon: "clipboard2-data-fill",
-                      detail: html`<btrix-beta-icon></btrix-beta-icon>`,
+                      beta: true,
                     })}
                   `,
                 )}
@@ -756,6 +757,7 @@ export class ArchivedItemDetail extends BtrixElement {
               section: "dependencies",
               iconLibrary: "default",
               icon: "layers-fill",
+              beta: true,
             })
           : nothing}
       </nav>
@@ -893,12 +895,16 @@ export class ArchivedItemDetail extends BtrixElement {
     `;
   }
 
-  private renderTitle(title: string | TemplateResult) {
-    return html`<h2
-      class="flex items-center gap-2 text-lg font-medium leading-8"
-    >
-      ${title}
-    </h2>`;
+  private renderTitle(
+    title: string | TemplateResult,
+    { beta } = { beta: false },
+  ) {
+    return html`<div class="flex items-center gap-2">
+      <h2 class="text-lg font-medium leading-8">
+        ${title}
+        ${when(beta, () => html`<btrix-beta-badge></btrix-beta-badge>`)}
+      </h2>
+    </div>`;
   }
 
   private renderPanel(
