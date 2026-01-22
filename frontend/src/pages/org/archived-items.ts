@@ -956,7 +956,7 @@ export class CrawlsList extends BtrixElement {
   private async fetchConfigSearchValues() {
     try {
       const query = queryString.stringify({
-        crawlType: this.itemType,
+        crawlType: this.itemType ?? undefined,
       });
       const data: {
         crawlIds: string[];

@@ -4,22 +4,33 @@ import { html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
+import type { RequireExactlyOne } from "type-fest";
 
 import { loadingPanel } from "../templates/loading-panel";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { deleteIndexDialog } from "@/features/collections/templates/delete-index-dialog";
+import { indexStatus } from "@/features/collections/templates/index-status";
+import { purgeIndexDialog } from "@/features/collections/templates/purge-index-dialog";
+import { labelWithIcon } from "@/layouts/labelWithIcon";
 import { Tab } from "@/pages/org/collection-detail/types";
 import { OrgTab } from "@/routes";
-import { notApplicable } from "@/strings/ui";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import { getIndexErrorMessage } from "@/strings/collections/index-error";
+import { noData } from "@/strings/ui";
+import { type APIPaginatedList, type APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
-import type { DedupeIndexStats } from "@/types/dedupe";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { pluralOf } from "@/utils/pluralize";
 
 const INITIAL_PAGE_SIZE = 10;
+
+type DedupeSource = RequireExactlyOne<Collection, "indexStats">;
+
+const detail = (content?: TemplateResult | string) =>
+  html`<div class="font-monostyle mt-1 text-xs leading-none text-neutral-500">
+    ${content || noData}
+  </div>`;
 
 @customElement("btrix-org-settings-deduplication")
 @localized()
@@ -28,10 +39,10 @@ export class OrgSettingsDeduplication extends BtrixElement {
   visible?: boolean;
 
   @state()
-  private indexToClear?: Collection;
+  private openDialog?: "purge" | "delete";
 
   @state()
-  private indexToDelete?: Collection;
+  private selectedIndex?: DedupeSource;
 
   @state({ hasChanged: isNotEqual })
   private pagination: Required<APIPaginationQuery> = {
@@ -66,35 +77,42 @@ export class OrgSettingsDeduplication extends BtrixElement {
             : loadingPanel(),
         complete: this.renderTable,
       })}
-      ${this.renderClearConfirmation()} ${this.renderDeleteConfirmation()}
+      ${purgeIndexDialog({
+        collection: this.selectedIndex,
+        open: this.openDialog === "purge",
+        hide: this.hideDialog,
+        confirm: async () =>
+          this.selectedIndex
+            ? this.purgeIndex(this.selectedIndex)
+            : console.debug("missing `selectedIndex`"),
+      })}
+      ${deleteIndexDialog({
+        collection: this.selectedIndex,
+        open: this.openDialog === "delete",
+        hide: this.hideDialog,
+        confirm: async (params) =>
+          this.selectedIndex
+            ? this.deleteIndex(this.selectedIndex, params)
+            : console.debug("missing `selectedIndex`"),
+      })}
     `;
   }
 
-  private readonly renderTable = (sources: APIPaginatedList<Collection>) => {
-    const dedupeStat = (
-      source: Collection,
-      render: (dedupe: DedupeIndexStats) => TemplateResult,
-    ) => {
-      if (source.indexStats) return render(source.indexStats);
+  private readonly hideDialog = () => (this.openDialog = undefined);
 
-      return html`<span class="text-neutral-400">${notApplicable}</span>`;
-    };
-    const detail = (content: TemplateResult | string) =>
-      html`<div
-        class="font-monostyle mt-1 text-xs leading-none text-neutral-500"
-      >
-        ${content}
-      </div>`;
-
+  private readonly renderTable = (sources: APIPaginatedList<DedupeSource>) => {
     return html`
       <btrix-overflow-scroll>
         <btrix-table
           class="whitespace-nowrap [--btrix-table-cell-padding-x:var(--sl-spacing-2x-small)]"
-          style="--btrix-table-grid-template-columns: 40ch repeat(3, 1fr) min-content"
+          style="--btrix-table-grid-template-columns: 40ch repeat(4, 1fr) min-content"
         >
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell class="px-3">
               ${msg("Name")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg("Status")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Indexed URLs")}
@@ -112,101 +130,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
           <btrix-table-body
             class="divide-y rounded border [--btrix-table-cell-padding-y:var(--sl-spacing-x-small)] *:first:border-t-0 *:last:rounded-b"
           >
-            ${sources.items.map(
-              (item) => html`
-                <btrix-table-row>
-                  <btrix-table-cell class="px-3">
-                    <div class="overflow-hidden">
-                      <div class="truncate">${item.name}</div>
-                      ${detail(html`
-                        <span class="inline-flex items-center">
-                          <sl-icon name="collection" class="mr-1.5"></sl-icon>
-                          ${msg("Collection")}
-                        </span>
-                      `)}
-                    </div>
-                  </btrix-table-cell>
-                  <btrix-table-cell>
-                    ${dedupeStat(
-                      item,
-                      (dedupe) => html`
-                        <div>
-                          ${this.localize.number(dedupe.totalUrls)}
-                          ${pluralOf("URLs", dedupe.totalUrls)}
-                          ${detail(
-                            `${this.localize.number(dedupe.dupeUrls)} ${msg("duplicate")}`,
-                          )}
-                        </div>
-                      `,
-                    )}
-                  </btrix-table-cell>
-                  <btrix-table-cell>
-                    ${dedupeStat(
-                      item,
-                      (dedupe) => html`
-                        <div>
-                          ${this.localize.number(dedupe.totalCrawls)}
-                          ${pluralOf("items", dedupe.totalCrawls)}
-                          ${detail(this.localize.bytes(dedupe.totalCrawlSize))}
-                        </div>
-                      `,
-                    )}
-                  </btrix-table-cell>
-                  <btrix-table-cell>
-                    ${dedupeStat(
-                      item,
-                      (dedupe) => html`
-                        ${this.localize.number(dedupe.removedCrawls)}
-                        ${pluralOf("items", dedupe.removedCrawls)}
-                      `,
-                    )}
-                  </btrix-table-cell>
-                  <btrix-table-cell>
-                    <sl-tooltip
-                      content=${msg("Open in New Tab")}
-                      placement="left"
-                    >
-                      <sl-icon-button
-                        name="arrow-up-right"
-                        href="${this.navigate
-                          .orgBasePath}/${OrgTab.Collections}/view/${item.id}/${Tab.Deduplication}"
-                        target="_blank"
-                      >
-                      </sl-icon-button>
-                    </sl-tooltip>
-                    <btrix-overflow-dropdown>
-                      <sl-menu>
-                        <btrix-menu-item-link
-                          href="${this.navigate
-                            .orgBasePath}/${OrgTab.Collections}/view/${item.id}"
-                        >
-                          <sl-icon
-                            name="arrow-return-right"
-                            slot="prefix"
-                          ></sl-icon>
-                          ${msg("Go to Collection")}
-                        </btrix-menu-item-link>
-                        <sl-divider></sl-divider>
-                        <sl-menu-item
-                          class="menu-item-warning"
-                          @click=${() => (this.indexToClear = item)}
-                        >
-                          <sl-icon slot="prefix" name="arrow-repeat"></sl-icon>
-                          ${msg("Reset Index")}
-                        </sl-menu-item>
-                        <sl-menu-item
-                          class="menu-item-danger"
-                          @click=${() => (this.indexToDelete = item)}
-                        >
-                          <sl-icon slot="prefix" name="trash3"></sl-icon>
-                          ${msg("Delete Index")}
-                        </sl-menu-item>
-                      </sl-menu>
-                    </btrix-overflow-dropdown>
-                  </btrix-table-cell>
-                </btrix-table-row>
-              `,
-            )}
+            ${sources.items.map(this.renderSource)}
           </btrix-table-body>
         </btrix-table>
       </btrix-overflow-scroll>
@@ -232,104 +156,118 @@ export class OrgSettingsDeduplication extends BtrixElement {
     `;
   };
 
-  private renderClearConfirmation() {
-    return html`<btrix-dialog
-      label=${msg("Reset Index?")}
-      ?open=${!!this.indexToClear}
-    >
-      ${when(this.indexToClear, (col) => {
-        const collection_name = html`<strong class="font-semibold"
-          >${col.name}</strong
-        >`;
+  private readonly renderSource = (item: DedupeSource) => {
+    const stats = item.indexStats;
+    const updating = stats.updateProgress > 0 && stats.updateProgress < 1;
 
-        return html`
-          <p>
-            ${msg(
-              html`Are you sure you want to reset the deduplication index for
-              ${collection_name}?`,
+    return html`
+      <btrix-table-row>
+        <btrix-table-cell class="px-3">
+          <div class="overflow-hidden">
+            <div class="truncate">${item.name}</div>
+            ${detail(html`
+              <span class="inline-flex items-center">
+                <sl-icon name="collection" class="mr-1.5"></sl-icon>
+                ${msg("Collection")}
+              </span>
+            `)}
+          </div>
+        </btrix-table-cell>
+        <btrix-table-cell class="text-base">
+          ${updating
+            ? labelWithIcon({
+                icon: html`<sl-progress-ring
+                  class="[--indicator-width:2px] [--size:1rem] [--track-width:1px]"
+                  value=${stats.updateProgress * 100}
+                ></sl-progress-ring>`,
+                label: `${(stats.updateProgress * 100).toFixed(0)}% ${msg("Imported")}`,
+              })
+            : indexStatus(item.indexState)}
+        </btrix-table-cell>
+        <btrix-table-cell>
+          <div>
+            ${this.localize.number(stats.totalUrls)}
+            ${pluralOf("URLs", stats.totalUrls)}
+            ${detail(
+              stats.dupeUrls
+                ? `${this.localize.number(stats.dupeUrls, {
+                    notation: "compact",
+                  })} ${msg("duplicate")}`
+                : undefined,
             )}
-          </p>
-          <p class="mt-3">
-            ${msg(
-              "This will clear the index of purgeable archived items and rebuild the index using items currently in the deduplication source.",
+          </div>
+        </btrix-table-cell>
+        <btrix-table-cell>
+          <div>
+            ${this.localize.number(stats.totalCrawls)}
+            ${pluralOf("items", stats.totalCrawls)}
+            ${detail(
+              stats.totalCrawlSize
+                ? this.localize.bytes(stats.totalCrawlSize)
+                : undefined,
             )}
-          </p>
-        `;
-      })}
-      <div slot="footer" class="flex justify-between">
-        <sl-button
-          size="small"
-          @click=${(e: MouseEvent) =>
-            void (e.target as HTMLElement)
-              .closest<Dialog>("btrix-dialog")
-              ?.hide()}
-          .autofocus=${true}
-          >${msg("Cancel")}</sl-button
-        >
-        <sl-button
-          size="small"
-          variant="warning"
-          @click=${() => {
-            if (!this.indexToClear) return;
-
-            void this.clearIndex(this.indexToClear);
-            this.indexToClear = undefined;
-          }}
-          >${msg("Reset Index")}</sl-button
-        >
-      </div>
-    </btrix-dialog>`;
-  }
-
-  private renderDeleteConfirmation() {
-    return html`<btrix-dialog
-      label=${msg("Delete Index?")}
-      ?open=${!!this.indexToDelete}
-    >
-      ${when(this.indexToDelete, (col) => {
-        const collection_name = html`<strong class="font-semibold"
-          >${col.name}</strong
-        >`;
-        return html`
-          <p>
-            ${msg(
-              html`Are you sure you want to delete the deduplication index for
-              ${collection_name}?`,
+          </div>
+        </btrix-table-cell>
+        <btrix-table-cell>
+          <div>
+            ${this.localize.number(stats.removedCrawls)}
+            ${pluralOf("items", stats.removedCrawls)}
+            ${detail(
+              stats.removedCrawlSize
+                ? this.localize.bytes(stats.removedCrawlSize)
+                : undefined,
             )}
-          </p>
-          <p class="mt-3">
-            ${msg(
-              "The index will only be deleted if there are not any workflows using this index as a deduplication source.",
-            )}
-          </p>
-        `;
-      })}
-      <div slot="footer" class="flex justify-between">
-        <sl-button
-          size="small"
-          @click=${(e: MouseEvent) =>
-            void (e.target as HTMLElement)
-              .closest<Dialog>("btrix-dialog")
-              ?.hide()}
-          .autofocus=${true}
-          >${msg("Cancel")}</sl-button
-        >
-        <sl-button
-          size="small"
-          variant="danger"
-          @click=${() => {
-            if (!this.indexToDelete) return;
+          </div>
+        </btrix-table-cell>
+        <btrix-table-cell>
+          <sl-tooltip content=${msg("Open in New Tab")} placement="left">
+            <sl-icon-button
+              name="arrow-up-right"
+              href="${this.navigate
+                .orgBasePath}/${OrgTab.Collections}/view/${item.id}/${Tab.Deduplication}"
+              target="_blank"
+            >
+            </sl-icon-button>
+          </sl-tooltip>
+          <btrix-overflow-dropdown>
+            <sl-menu>
+              <btrix-menu-item-link
+                href="${this.navigate
+                  .orgBasePath}/${OrgTab.Collections}/view/${item.id}"
+              >
+                <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
+                ${msg("Go to Collection")}
+              </btrix-menu-item-link>
+              <sl-divider></sl-divider>
+              <sl-menu-item
+                class="menu-item-warning"
+                @click=${() => {
+                  this.selectedIndex = item;
+                  this.openDialog = "purge";
+                }}
+                ?disabled=${updating}
+              >
+                <sl-icon slot="prefix" name="trash2"></sl-icon>
+                ${msg("Purge Index")}
+              </sl-menu-item>
+              <sl-menu-item
+                class="menu-item-danger"
+                @click=${() => {
+                  this.selectedIndex = item;
+                  this.openDialog = "delete";
+                }}
+              >
+                <sl-icon slot="prefix" name="trash3"></sl-icon>
+                ${msg("Delete Index")}
+              </sl-menu-item>
+            </sl-menu>
+          </btrix-overflow-dropdown>
+        </btrix-table-cell>
+      </btrix-table-row>
+    `;
+  };
 
-            void this.deleteIndex(this.indexToDelete);
-            this.indexToDelete = undefined;
-          }}
-          >${msg("Delete Index")}</sl-button
-        >
-      </div>
-    </btrix-dialog>`;
-  }
-
-  private async clearIndex(source: Collection) {
+  private async purgeIndex(source: Collection) {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/collections/${source.id}/dedupeIndex/purge`,
@@ -337,18 +275,21 @@ export class OrgSettingsDeduplication extends BtrixElement {
           method: "POST",
         },
       );
+      await this.sources.run();
 
       this.notify.toast({
-        message: msg("Reset deduplication index."),
+        message: msg("Purging deduplication index..."),
         variant: "success",
         icon: "check2-circle",
         id: "dedupe-index-update-status",
       });
     } catch (err) {
-      console.debug(err);
+      const message =
+        getIndexErrorMessage(err) ||
+        msg("Sorry, couldn’t purge index at this time.");
 
       this.notify.toast({
-        message: msg("Sorry, couldn't reset index at this time."),
+        message,
         variant: "danger",
         icon: "exclamation-octagon",
         id: "dedupe-index-update-status",
@@ -356,14 +297,19 @@ export class OrgSettingsDeduplication extends BtrixElement {
     }
   }
 
-  private async deleteIndex(source: Collection) {
+  private async deleteIndex(
+    source: Collection,
+    params: { removeFromWorkflows: boolean },
+  ) {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/collections/${source.id}/dedupeIndex/delete`,
         {
           method: "POST",
+          body: JSON.stringify(params),
         },
       );
+      await this.sources.run();
 
       this.notify.toast({
         message: msg("Deleted deduplication index."),
@@ -372,10 +318,12 @@ export class OrgSettingsDeduplication extends BtrixElement {
         id: "dedupe-index-update-status",
       });
     } catch (err) {
-      console.debug(err);
+      const message =
+        getIndexErrorMessage(err) ||
+        msg("Sorry, couldn’t delete index at this time.");
 
       this.notify.toast({
-        message: msg("Sorry, couldn't delete index at this time."),
+        message,
         variant: "danger",
         icon: "exclamation-octagon",
         id: "dedupe-index-update-status",
@@ -391,7 +339,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
       ...params,
       hasDedupeIndex: true,
     });
-    return this.api.fetch<APIPaginatedList<Collection>>(
+    return this.api.fetch<APIPaginatedList<DedupeSource>>(
       `/orgs/${this.orgId}/collections?${query}`,
       {
         signal,

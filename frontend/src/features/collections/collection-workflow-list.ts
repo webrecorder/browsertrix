@@ -1,13 +1,14 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlSwitch, SlTreeItem } from "@shoelace-style/shoelace";
+import type { SlTreeItem } from "@shoelace-style/shoelace";
 import { css, html, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, property, queryAll } from "lit/decorators.js";
+import { customElement, property, queryAll, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { until } from "lit/directives/until.js";
-import isEqual from "lodash/fp/isEqual";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { CollectionWorkflowListSettingChangeEvent } from "@/features/collections/collection-workflow-list/settings";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -17,12 +18,15 @@ import type { Crawl, Workflow } from "@/types/crawler";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 
+import "@/features/collections/collection-workflow-list/settings";
+
 export type SelectionChangeDetail = {
   selection: Record<string, boolean>;
 };
 export type AutoAddChangeDetail = {
   id: string;
   checked: boolean;
+  dedupe?: boolean;
 };
 
 const CRAWLS_PAGE_SIZE = 50;
@@ -108,21 +112,11 @@ export class CollectionWorkflowList extends BtrixElement {
   @property({ type: String })
   collectionId?: string;
 
-  @property({
-    type: Array,
-    hasChanged(newVal: Workflow[], oldVal: Workflow[]) {
-      // Customize change detection to only re-render
-      // when workflow IDs change
-      if (Array.isArray(newVal) && Array.isArray(oldVal)) {
-        return (
-          newVal.length !== oldVal.length ||
-          !isEqual(newVal.map(({ id }) => id))(oldVal.map(({ id }) => id))
-        );
-      }
-      return newVal !== oldVal;
-    },
-  })
+  @property({ type: Array })
   workflows: Workflow[] = [];
+
+  @state()
+  expandWorkflowSettings = false;
 
   /**
    * Whether item is selected or not, keyed by ID
@@ -140,13 +134,28 @@ export class CollectionWorkflowList extends BtrixElement {
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("workflows")) {
+      if (this.collectionId) {
+        const collId = this.collectionId;
+        this.expandWorkflowSettings = this.workflows.some((workflow) =>
+          workflow.autoAddCollections.some((id) => id === collId),
+        );
+      }
+
       void this.fetchCrawls();
     }
   }
 
   render() {
     return html`<sl-tree
+      class="part-[base]:grid part-[base]:grid-cols-[1fr_min-content] part-[base]:gap-2"
       selection="multiple"
+      @mousedown=${(e: MouseEvent) => {
+        if ((e.target as HTMLElement).tagName !== "SL-TREE-ITEM") {
+          // Prevent sl-tree from switching focusing
+          // https://github.com/shoelace-style/shoelace/blob/370727c7bf70d427ad0cbb80d95df226c87dc77a/src/components/tree/tree.component.ts#L404C10-L404C19
+          e.preventDefault();
+        }
+      }}
       @sl-selection-change=${(e: CustomEvent<{ selection: SlTreeItem[] }>) => {
         if (!this.crawlItems) {
           console.debug("no crawl items with classname `crawl`");
@@ -183,7 +192,7 @@ export class CollectionWorkflowList extends BtrixElement {
         class="workflow ${until(
           countAsync.then(({ total }) => (total > 0 ? "selectable" : "")),
           "",
-        )}"
+        )} !mt-0"
         ?selected=${until(
           countAsync.then(
             ({ total, selected }) => selected > 0 && selected === total,
@@ -214,9 +223,13 @@ export class CollectionWorkflowList extends BtrixElement {
           });
         }}
       >
-        <div class="flex flex-1 items-center gap-2 overflow-hidden md:gap-x-6">
+        <div
+          class="pointer-events-none flex min-h-5 flex-1 items-center gap-2 overflow-hidden leading-none md:gap-x-6"
+        >
           <div class="flex-1 overflow-hidden">${this.renderName(workflow)}</div>
-          <div class="flex-none text-neutral-500 md:text-right">
+          <div
+            class="flex-none whitespace-nowrap text-neutral-500 md:text-right"
+          >
             ${until(
               countAsync.then(({ total, selected }) =>
                 total === 1
@@ -231,38 +244,32 @@ export class CollectionWorkflowList extends BtrixElement {
               ),
             )}
           </div>
-          <div class="flex-none">
-            <sl-switch
-              class="flex"
-              size="small"
-              ?checked=${workflow.autoAddCollections.some(
-                (id) => id === this.collectionId,
-              )}
-              @click=${(e: MouseEvent) => {
-                e.stopPropagation();
-              }}
-              @sl-change=${(e: CustomEvent) => {
-                e.stopPropagation();
-                this.dispatchEvent(
-                  new CustomEvent<AutoAddChangeDetail>(
-                    "btrix-auto-add-change",
-                    {
-                      detail: {
-                        id: workflow.id,
-                        checked: (e.target as SlSwitch).checked,
-                      },
-                      composed: true,
-                    },
-                  ),
-                );
-              }}
-            >
-              <span class="text-neutral-500">${msg("Auto-Add")}</span>
-            </sl-switch>
-          </div>
         </div>
         ${until(crawlsAsync.then((crawls) => crawls.map(this.renderCrawl)))}
       </sl-tree-item>
+      <btrix-collection-workflow-list-settings
+        collectionId=${ifDefined(this.collectionId)}
+        workflowId=${workflow.id}
+        dedupeCollId=${ifDefined(workflow.dedupeCollId || undefined)}
+        .autoAddCollections=${workflow.autoAddCollections}
+        ?collapse=${!this.expandWorkflowSettings}
+        @btrix-change=${(e: CollectionWorkflowListSettingChangeEvent) => {
+          e.stopPropagation();
+
+          const { autoAdd, dedupe } = e.detail.value;
+
+          this.dispatchEvent(
+            new CustomEvent<AutoAddChangeDetail>("btrix-auto-add-change", {
+              detail: {
+                id: workflow.id,
+                checked: autoAdd,
+                dedupe,
+              },
+              composed: true,
+            }),
+          );
+        }}
+      ></btrix-collection-workflow-list-settings>
     `;
   };
 

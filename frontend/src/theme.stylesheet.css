@@ -136,6 +136,22 @@
     background-color: var(--sl-color-primary-500);
   }
 
+  sl-progress-bar {
+    --height: 0.5rem;
+    --track-color: var(--sl-color-neutral-100);
+    --indicator-color: var(--sl-color-primary-300);
+  }
+
+  sl-progress-bar::part(base) {
+    box-shadow: inset 0 0 0 1px var(--sl-color-neutral-300);
+    @apply rounded-md;
+  }
+
+  sl-progress-bar::part(indicator) {
+    box-shadow: inset 0 0 0 1px var(--sl-color-primary-500);
+    @apply rounded-md;
+  }
+
   /* Add more spacing between label, input and help text */
   .form-label,
   btrix-tag-input::part(form-control-label),
@@ -260,19 +276,19 @@
   sl-option.menu-item-success,
   sl-menu-item.menu-item-success,
   btrix-menu-item-link.menu-item-success {
-    @apply part-[base]:text-success part-[base]:hover:bg-success-50 part-[base]:hover:text-success-700 part-[base]:focus-visible:bg-success-50;
+    @apply part-[base]:hover:bg-success-50 part-[base]:hover:text-success-700 part-[base]:focus-visible:bg-success-50 part-[base]:[&:not(:hover)]:text-success;
   }
 
   sl-option.menu-item-warning,
   sl-menu-item.menu-item-warning,
   btrix-menu-item-link.menu-item-warning {
-    @apply part-[base]:text-warning part-[base]:hover:bg-warning-50 part-[base]:hover:text-warning-700 part-[base]:focus-visible:bg-warning-50;
+    @apply part-[base]:hover:bg-warning-50 part-[base]:hover:text-warning-700 part-[base]:focus-visible:bg-warning-50 part-[base]:[&:not(:hover)]:text-warning;
   }
 
   sl-option.menu-item-danger,
   sl-menu-item.menu-item-danger,
   btrix-menu-item-link.menu-item-danger {
-    @apply part-[base]:text-danger part-[base]:hover:bg-danger-50 part-[base]:hover:text-danger-700 part-[base]:focus-visible:bg-danger-50;
+    @apply part-[base]:hover:bg-danger-50 part-[base]:hover:text-danger-700 part-[base]:focus-visible:bg-danger-50 part-[base]:[&:not(:hover)]:text-danger;
   }
 
   /* Validation styles */

@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/web-components";
 import { delay, http, HttpResponse } from "msw";
 import type { DecoratorFunction } from "storybook/internal/types";
 
-import { data, renderComponent, type RenderProps } from "./DedupeWorkflows";
+import { data } from "./data";
+import { renderComponent, type RenderProps } from "./DedupeWorkflows";
 
 import { orgDecorator } from "@/stories/decorators/orgDecorator";
 import {
@@ -38,7 +39,7 @@ export const WithCrawls: Story = {
   parameters: {
     msw: {
       handlers: [
-        http.get(/\/crawls$/, async () => {
+        http.get(/\/(all-crawls|crawls)$/, async () => {
           await delay(500);
           return HttpResponse.json<APIPaginatedList<Crawl>>({
             total: data.crawls.length,
@@ -57,7 +58,7 @@ export const WithoutCrawls: Story = {
   parameters: {
     msw: {
       handlers: [
-        http.get(/\/crawls$/, async () => {
+        http.get(/\/(all-crawls|crawls)$/, async () => {
           await delay(500);
           return HttpResponse.json<APIPaginatedList<Crawl>>({
             total: 0,
@@ -76,7 +77,7 @@ export const MissingDependency: Story = {
   parameters: {
     msw: {
       handlers: [
-        http.get(/\/crawls$/, async () => {
+        http.get(/\/(all-crawls|crawls)$/, async () => {
           await delay(500);
           return HttpResponse.json<APIPaginatedList<Crawl>>({
             total: data.crawls.length,
