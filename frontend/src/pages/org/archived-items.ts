@@ -25,6 +25,7 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { type BtrixChangeReviewStatusFilterEvent } from "@/features/archived-items/review-status-filter";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { CrawlState } from "@/types/crawlState";
@@ -212,7 +213,12 @@ export class CrawlsList extends BtrixElement {
   private readonly filterBy = new SearchParamsValue<FilterBy>(
     this,
     (value, params) => {
-      const keys = ["name", "firstSeed", "state"] as (keyof FilterBy)[];
+      const keys = [
+        "name",
+        "firstSeed",
+        "state",
+        "reviewStatus",
+      ] as (keyof FilterBy)[];
       keys.forEach((key) => {
         if (value[key] == null) {
           params.delete(key);
@@ -238,15 +244,18 @@ export class CrawlsList extends BtrixElement {
     (params) => {
       const state = params.getAll("status") as CrawlState[];
 
+      const reviewStatus = params
+        .get("reviewStatus")
+        ?.split("-")
+        .slice(0, 2)
+        .map((n) => Math.max(1, Math.min(5, parseInt(n))))
+        .sort() as [number, number] | undefined;
+
       return {
         name: params.get("name") ?? undefined,
         firstSeed: params.get("firstSeed") ?? undefined,
         state: state.length ? state : undefined,
-        reviewStatus: params
-          .get("reviewStatus")
-          ?.split("-")
-          .slice(0, 2)
-          .map(parseInt) as [number, number] | undefined,
+        reviewStatus,
       };
     },
   );
@@ -640,6 +649,16 @@ export class CrawlsList extends BtrixElement {
               this.filterByTagsType.setValue(e.detail.value?.type || "or");
             }}
           ></btrix-tag-filter>
+
+          <btrix-review-status-filter
+            .reviewStatus=${this.filterBy.value.reviewStatus ?? null}
+            @btrix-change=${(e: BtrixChangeReviewStatusFilterEvent) => {
+              this.filterBy.setValue({
+                ...this.filterBy.value,
+                reviewStatus: e.detail.value ?? undefined,
+              });
+            }}
+          ></btrix-review-status-filter>
 
           ${this.userInfo?.id
             ? html`<btrix-filter-chip

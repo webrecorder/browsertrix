@@ -26,18 +26,36 @@ export const variantFor = (
   }
 };
 
-export const iconFor = (status: Required<ArchivedItem["reviewStatus"]>) => {
+export const iconFor = (
+  status: Required<ArchivedItem["reviewStatus"]>,
+  onDark = false,
+) => {
   switch (status) {
     case ReviewStatus.Bad:
-      return { name: "patch-exclamation-fill", class: tw`text-danger-600` };
+      return {
+        name: "patch-exclamation-fill",
+        class: onDark ? tw`text-danger-500` : tw`text-danger-600`,
+      };
     case ReviewStatus.Poor:
-      return { name: "patch-exclamation", class: tw`text-danger-600` };
+      return {
+        name: "patch-exclamation",
+        class: onDark ? tw`text-danger-500` : tw`text-danger-600`,
+      };
     case ReviewStatus.Fair:
-      return { name: "patch-minus-fill", class: tw`text-warning-600` };
+      return {
+        name: "patch-minus-fill",
+        class: onDark ? tw`text-warning-500` : tw`text-warning-600`,
+      };
     case ReviewStatus.Good:
-      return { name: "patch-check", class: tw`text-success-600` };
+      return {
+        name: "patch-check",
+        class: onDark ? tw`text-success-500` : tw`text-success-600`,
+      };
     case ReviewStatus.Excellent:
-      return { name: "patch-check-fill", class: tw`text-success-600` };
+      return {
+        name: "patch-check-fill",
+        class: onDark ? tw`text-success-500` : tw`text-success-600`,
+      };
     default:
       return {
         name: "dash-circle",
@@ -76,8 +94,11 @@ export class QAReviewStatus extends TailwindElement {
   @property({ type: Number })
   status: ArchivedItem["reviewStatus"];
 
+  @property({ type: Boolean })
+  onDark = false;
+
   render() {
-    const iconProps = iconFor(this.status);
+    const iconProps = iconFor(this.status, this.onDark);
     return html`
       <div class="flex items-center gap-2">
         <sl-icon name=${iconProps.name} class=${iconProps.class}></sl-icon>
