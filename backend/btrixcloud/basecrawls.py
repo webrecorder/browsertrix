@@ -1122,7 +1122,7 @@ def init_base_crawls_api(app, user_dep, *args):
         collectionId: Optional[UUID] = None,
         crawlType: Optional[TYPE_CRAWL_TYPES] = None,
         cid: Optional[UUID] = None,
-        reviewStatus: list[int] | None = None,
+        reviewStatus: Annotated[list[int] | None, Query()] = None,
         sortBy: Optional[str] = "finished",
         sortDirection: int = -1,
     ):
@@ -1145,7 +1145,7 @@ def init_base_crawls_api(app, user_dep, *args):
         review_status_range: tuple[int, int] | None = None
 
         if reviewStatus:
-            if len(reviewStatus) > 2 or any(qa < 1 or qa >= 5 for qa in reviewStatus):
+            if len(reviewStatus) > 2 or any(qa < 1 or qa > 5 for qa in reviewStatus):
                 raise HTTPException(status_code=400, detail="Invalid QA review range")
             review_status_range = (
                 reviewStatus[0],
