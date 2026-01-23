@@ -6,6 +6,7 @@ import { setBasePath } from "@shoelace-style/shoelace/dist/utilities/base-path.j
 import { registerIconLibrary } from "@shoelace-style/shoelace/dist/utilities/icon-library.js";
 
 import "@shoelace-style/shoelace/dist/themes/light.css";
+import "@awesome.me/webawesome/dist/styles/themes/default.css";
 import "@shoelace-style/shoelace/dist/components/alert/alert";
 import "@shoelace-style/shoelace/dist/components/avatar/avatar";
 import "@shoelace-style/shoelace/dist/components/button/button";
@@ -81,6 +82,9 @@ import(
 );
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tree-item/tree-item.js"
+);
+import(
+  /* webpackChunkName: "shoelace" */ "@awesome.me/webawesome/dist/components/slider/slider.js"
 );
 
 setBasePath("/shoelace");
