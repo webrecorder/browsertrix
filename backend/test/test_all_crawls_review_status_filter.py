@@ -30,6 +30,7 @@ def crawl_id_1(admin_auth_headers, default_org_id):
     assert data["id"]
     assert data["run_now_job"]
 
+    crawlconfig_id = data["id"]
     crawl_id = data["run_now_job"]
 
     # Wait for crawl to complete
@@ -70,6 +71,11 @@ def crawl_id_1(admin_auth_headers, default_org_id):
     )
     assert r.status_code == 200
 
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}"
+    )
+    assert r.status_code == 200
+
 
 @pytest.fixture(scope="module")
 def crawl_id_2(admin_auth_headers, default_org_id):
@@ -87,6 +93,7 @@ def crawl_id_2(admin_auth_headers, default_org_id):
     assert data["id"]
     assert data["run_now_job"]
 
+    crawlconfig_id = data["id"]
     crawl_id = data["run_now_job"]
 
     # Wait for crawl to complete
@@ -127,6 +134,11 @@ def crawl_id_2(admin_auth_headers, default_org_id):
     )
     assert r.status_code == 200
 
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}"
+    )
+    assert r.status_code == 200
+
 
 @pytest.fixture(scope="module")
 def crawl_id_3(admin_auth_headers, default_org_id):
@@ -144,6 +156,7 @@ def crawl_id_3(admin_auth_headers, default_org_id):
     assert data["id"]
     assert data["run_now_job"]
 
+    crawlconfig_id = data["id"]
     crawl_id = data["run_now_job"]
 
     # Wait for crawl to complete
@@ -181,6 +194,11 @@ def crawl_id_3(admin_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
         headers=admin_auth_headers,
         json={"crawl_ids": [crawl_id]},
+    )
+    assert r.status_code == 200
+
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}"
     )
     assert r.status_code == 200
 
