@@ -362,9 +362,9 @@ def test_sort_crawl_configs(
         headers=crawler_auth_headers,
     )
     data = r.json()
-    assert data["total"] == 18
+    assert data["total"] == 21
     items = data["items"]
-    assert len(items) == 18
+    assert len(items) == 21
 
     last_created = None
     for config in items:

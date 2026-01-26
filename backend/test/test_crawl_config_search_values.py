@@ -44,7 +44,13 @@ def test_get_search_values_1(admin_auth_headers, default_org_id):
     )
     data = r.json()
     assert sorted(data["names"]) == sorted(
-        [NAME_1, "Admin Test Crawl", "Canceled crawl", "crawler User Test Crawl"]
+        [
+            NAME_1,
+            "Admin Test Crawl",
+            "Canceled crawl",
+            "crawler User Test Crawl",
+            "Test Crawl for Review Status",
+        ]
     )
     assert sorted(data["descriptions"]) == sorted(
         ["Admin Test Crawl description", "crawler test crawl", DESCRIPTION_1]
@@ -80,6 +86,7 @@ def test_get_search_values_2(admin_auth_headers, default_org_id):
             "Admin Test Crawl",
             "Canceled crawl",
             "crawler User Test Crawl",
+            "Test Crawl for Review Status",
         ]
     )
     assert sorted(data["descriptions"]) == sorted(
@@ -123,6 +130,7 @@ def test_get_search_values_3(admin_auth_headers, default_org_id):
             "Admin Test Crawl",
             "Canceled crawl",
             "crawler User Test Crawl",
+            "Test Crawl for Review Status",
         ]
     )
     assert sorted(data["descriptions"]) == sorted(
