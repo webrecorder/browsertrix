@@ -3,6 +3,7 @@ import { Task } from "@lit/task";
 import clsx from "clsx";
 import { html, nothing, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { until } from "lit/directives/until.js";
@@ -83,7 +84,9 @@ export class DedupeWorkflows extends BtrixElement {
         : nothing}
 
       <div class="divide-y rounded border">
-        ${repeat(this.workflows || [], ({ id }) => id, this.renderWorkflow)}
+        ${when(this.workflows, (workflows) =>
+          repeat(workflows, ({ id }) => id, this.renderWorkflow),
+        )}
       </div>
     </btrix-overflow-scroll>`;
   }
@@ -214,7 +217,7 @@ export class DedupeWorkflows extends BtrixElement {
           </div>
         </div>
 
-        ${when(totalCrawls, content)}
+        ${guard([totalCrawls], () => when(totalCrawls, content))}
       </sl-details>
     `;
   };
