@@ -20,6 +20,7 @@ import { getIndexErrorMessage } from "@/strings/collections/index-error";
 import { noData } from "@/strings/ui";
 import { type APIPaginatedList, type APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
+import { indexAvailable } from "@/utils/dedupe";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { pluralOf } from "@/utils/pluralize";
 
@@ -157,8 +158,10 @@ export class OrgSettingsDeduplication extends BtrixElement {
   };
 
   private readonly renderSource = (item: DedupeSource) => {
-    const stats = item.indexStats;
-    const updating = stats.updateProgress > 0 && stats.updateProgress < 1;
+    const { indexStats, indexState } = item;
+    const updating =
+      indexStats.updateProgress > 0 && indexStats.updateProgress < 1;
+    const available = indexAvailable(indexState);
 
     return html`
       <btrix-table-row>
@@ -178,19 +181,19 @@ export class OrgSettingsDeduplication extends BtrixElement {
             ? labelWithIcon({
                 icon: html`<sl-progress-ring
                   class="[--indicator-width:2px] [--size:1rem] [--track-width:1px]"
-                  value=${stats.updateProgress * 100}
+                  value=${indexStats.updateProgress * 100}
                 ></sl-progress-ring>`,
-                label: `${(stats.updateProgress * 100).toFixed(0)}% ${msg("Imported")}`,
+                label: `${(indexStats.updateProgress * 100).toFixed(0)}% ${indexState === "purging" ? msg("Purged") : msg("Imported")}`,
               })
-            : indexStatus(item.indexState)}
+            : indexStatus(indexState)}
         </btrix-table-cell>
         <btrix-table-cell>
           <div>
-            ${this.localize.number(stats.totalUrls)}
-            ${pluralOf("URLs", stats.totalUrls)}
+            ${this.localize.number(indexStats.totalUrls)}
+            ${pluralOf("URLs", indexStats.totalUrls)}
             ${detail(
-              stats.dupeUrls
-                ? `${this.localize.number(stats.dupeUrls, {
+              indexStats.dupeUrls
+                ? `${this.localize.number(indexStats.dupeUrls, {
                     notation: "compact",
                   })} ${msg("duplicate")}`
                 : undefined,
@@ -199,22 +202,22 @@ export class OrgSettingsDeduplication extends BtrixElement {
         </btrix-table-cell>
         <btrix-table-cell>
           <div>
-            ${this.localize.number(stats.totalCrawls)}
-            ${pluralOf("items", stats.totalCrawls)}
+            ${this.localize.number(indexStats.totalCrawls)}
+            ${pluralOf("items", indexStats.totalCrawls)}
             ${detail(
-              stats.totalCrawlSize
-                ? this.localize.bytes(stats.totalCrawlSize)
+              indexStats.totalCrawlSize
+                ? this.localize.bytes(indexStats.totalCrawlSize)
                 : undefined,
             )}
           </div>
         </btrix-table-cell>
         <btrix-table-cell>
           <div>
-            ${this.localize.number(stats.removedCrawls)}
-            ${pluralOf("items", stats.removedCrawls)}
+            ${this.localize.number(indexStats.removedCrawls)}
+            ${pluralOf("items", indexStats.removedCrawls)}
             ${detail(
-              stats.removedCrawlSize
-                ? this.localize.bytes(stats.removedCrawlSize)
+              indexStats.removedCrawlSize
+                ? this.localize.bytes(indexStats.removedCrawlSize)
                 : undefined,
             )}
           </div>
@@ -245,7 +248,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
                   this.selectedIndex = item;
                   this.openDialog = "purge";
                 }}
-                ?disabled=${updating}
+                ?disabled=${!available}
               >
                 <sl-icon slot="prefix" name="trash2"></sl-icon>
                 ${msg("Purge Index")}

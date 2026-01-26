@@ -6,13 +6,10 @@ import { ifDefined } from "lit/directives/if-defined.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Collection } from "@/types/collection";
-import type { DedupeIndexState } from "@/types/dedupe";
+import { indexUpdating } from "@/utils/dedupe";
 
 const getPollInterval = (crawlCount: number) =>
   crawlCount < 10 ? 5 : crawlCount < 100 ? 10 : crawlCount < 1000 ? 30 : 60;
-
-export const indexUpdating = (state: DedupeIndexState | null) =>
-  state === "importing" || state === "purging";
 
 /**
  * Live progress of deduplication index import
@@ -35,7 +32,7 @@ export class IndexImportProgress extends BtrixElement {
 
   private readonly progressTask = new Task(this, {
     task: async ([live, collectionId], { signal }) => {
-      if (!live) return;
+      if (!live) return this.initialValue;
 
       const collection = await this.getCollection(collectionId, signal);
 

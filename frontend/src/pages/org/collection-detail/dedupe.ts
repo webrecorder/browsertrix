@@ -14,7 +14,6 @@ import type { OpenDialogEventDetail } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
-import { indexUpdating } from "@/features/collections/index-import-progress";
 import { dedupeIconFor } from "@/features/collections/templates/dedupe-icon";
 import { indexStatus } from "@/features/collections/templates/index-status";
 import { emptyMessage } from "@/layouts/emptyMessage";
@@ -28,6 +27,7 @@ import type { ArchivedItem, Workflow } from "@/types/crawler";
 import type { DedupeIndexStats } from "@/types/dedupe";
 import { SortDirection } from "@/types/utils";
 import { finishedCrawlStates } from "@/utils/crawler";
+import { indexUpdating } from "@/utils/dedupe";
 import { tw } from "@/utils/tailwind";
 
 const BYTES_PER_MB = 1e6;
@@ -721,7 +721,7 @@ export class CollectionDetailDedupe extends BtrixElement {
 
   private renderOverview() {
     const state = this.collection?.indexState;
-    const updating = indexUpdating(state || null);
+    const updating = indexUpdating(state);
 
     return panel({
       heading: msg("Index Overview"),

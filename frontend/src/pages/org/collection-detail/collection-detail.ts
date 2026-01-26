@@ -5,6 +5,7 @@ import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -51,7 +52,9 @@ import {
 } from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
+import type { DedupeIndexState } from "@/types/dedupe";
 import { isCrawlReplay, renderName } from "@/utils/crawler";
+import { indexAvailable, indexInUse, indexUpdating } from "@/utils/dedupe";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { richText } from "@/utils/rich-text";
@@ -304,6 +307,11 @@ export class CollectionDetail extends BtrixElement {
                         @click=${() => {
                           this.openDialogName = "replaySettings";
                         }}
+                        title=${ifDefined(
+                          this.isRwpLoaded
+                            ? undefined
+                            : msg("Please wait for replay load"),
+                        )}
                         ?disabled=${!this.isRwpLoaded}
                       >
                         ${this.isRwpLoaded
@@ -786,17 +794,30 @@ export class CollectionDetail extends BtrixElement {
     if (!this.collection) return;
 
     if (this.collection.indexStats) {
+      const purgeMenuItem = (indexState: DedupeIndexState) => {
+        const available = indexAvailable(indexState);
+        const pending = indexInUse(indexState) || indexUpdating(indexState);
+
+        return html`
+          <sl-menu-item
+            class="menu-item-warning"
+            ?disabled=${!available}
+            title=${ifDefined(
+              pending ? msg("Please wait for pending update") : undefined,
+            )}
+            @click=${() => (this.openDialogName = "purgeIndex")}
+          >
+            ${pending
+              ? html`<sl-spinner slot="prefix"></sl-spinner>`
+              : html`<sl-icon slot="prefix" name="trash2"></sl-icon>`}
+            ${msg("Purge Index")}
+          </sl-menu-item>
+        `;
+      };
       return html`${when(
-          this.collection.indexStats.removedCrawls,
-          () => html`
-            <sl-menu-item
-              class="menu-item-warning"
-              @click=${() => (this.openDialogName = "purgeIndex")}
-            >
-              <sl-icon slot="prefix" name="trash2"></sl-icon>
-              ${msg("Purge Index")}
-            </sl-menu-item>
-          `,
+          this.collection.indexStats.removedCrawls &&
+            this.collection.indexState,
+          purgeMenuItem,
         )}
         <sl-menu-item
           class="menu-item-danger"
