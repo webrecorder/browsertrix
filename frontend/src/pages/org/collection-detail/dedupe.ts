@@ -27,7 +27,7 @@ import type { ArchivedItem, Workflow } from "@/types/crawler";
 import type { DedupeIndexStats } from "@/types/dedupe";
 import { SortDirection } from "@/types/utils";
 import { finishedCrawlStates } from "@/utils/crawler";
-import { indexUpdating } from "@/utils/dedupe";
+import { indexAvailable, indexUpdating } from "@/utils/dedupe";
 import { tw } from "@/utils/tailwind";
 
 const BYTES_PER_MB = 1e6;
@@ -188,8 +188,7 @@ export class CollectionDetailDedupe extends BtrixElement {
       window.clearTimeout(this.pollTask.value);
 
       const pollInterval =
-        collection.indexState === null ||
-        ["ready", "idle"].includes(collection.indexState)
+        collection.indexState === null || indexAvailable(collection.indexState)
           ? 30
           : // Decrease poll interval if index is in use
             10;
