@@ -97,11 +97,12 @@ def init_ops() -> Tuple[
         storage_ops,
         event_webhook_ops,
         background_job_ops,
+        crawl_log_ops,
     )
 
     base_crawl_ops = BaseCrawlOps(*base_crawl_init)
 
-    crawl_ops = CrawlOps(crawl_manager, crawl_log_ops, *base_crawl_init)
+    crawl_ops = CrawlOps(crawl_manager, *base_crawl_init)
 
     upload_ops = UploadOps(*base_crawl_init)
 
