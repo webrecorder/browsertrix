@@ -14,6 +14,7 @@ import {
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
 import { iconFor, labelFor } from "@/features/qa/review-status";
+import { ReviewStatus } from "@/types/crawler";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
@@ -29,7 +30,7 @@ export type BtrixChangeReviewStatusFilterEvent =
 @localized()
 export class ReviewStatusFilter extends BtrixElement {
   @property({ type: Array })
-  reviewStatus?: [number, number] | null = null;
+  reviewStatus?: [ReviewStatus, ReviewStatus] | null = null;
 
   @query("sl-input")
   private readonly input?: SlInput | null;
@@ -38,7 +39,7 @@ export class ReviewStatusFilter extends BtrixElement {
   private readonly checkboxes!: NodeListOf<SlCheckbox>;
 
   @state({ hasChanged: isNotEqual })
-  selected: [number, number] | null = null;
+  selected: [ReviewStatus, ReviewStatus] | null = null;
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("reviewStatus")) {
@@ -131,8 +132,8 @@ export class ReviewStatusFilter extends BtrixElement {
             range
             min="1"
             max="5"
-            min-value="${this.reviewStatus?.[0] ?? 0}"
-            max-value="${this.reviewStatus?.[1] ?? 5}"
+            min-value="${this.reviewStatus?.[0] ?? ReviewStatus.Bad}"
+            max-value="${this.reviewStatus?.[1] ?? ReviewStatus.Excellent}"
             with-tooltip
             with-markers
             .valueFormatter=${(value: number) => {
@@ -149,18 +150,19 @@ export class ReviewStatusFilter extends BtrixElement {
               this.reviewStatus = value as [number, number];
             }}
             @click=${() => {
-              if (!this.reviewStatus) this.reviewStatus = [1, 5];
+              if (!this.reviewStatus)
+                this.reviewStatus = [ReviewStatus.Bad, ReviewStatus.Excellent];
             }}
           >
-            ${this.renderSliderLabel(1, "before")}
-            ${this.renderSliderLabel(5, "after")}
+            ${this.renderSliderLabel(ReviewStatus.Bad, "before")}
+            ${this.renderSliderLabel(ReviewStatus.Excellent, "after")}
           </wa-slider>
         </div>
       </btrix-filter-chip>
     `;
   }
 
-  private renderSliderLabel(value: number, position: "before" | "after") {
+  private renderSliderLabel(value: ReviewStatus, position: "before" | "after") {
     const icon = iconFor(value);
     return html`<span
       class="mt-1.5 flex items-center gap-1 text-xs text-neutral-500"

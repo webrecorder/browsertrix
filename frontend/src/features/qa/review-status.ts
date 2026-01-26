@@ -5,12 +5,10 @@ import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { BadgeVariant } from "@/components/ui/badge";
-import { ReviewStatus, type ArchivedItem } from "@/types/crawler";
+import { ReviewStatus } from "@/types/crawler";
 import { tw } from "@/utils/tailwind";
 
-export const variantFor = (
-  status: Required<ArchivedItem["reviewStatus"]>,
-): BadgeVariant => {
+export const variantFor = (status: ReviewStatus | undefined): BadgeVariant => {
   switch (status) {
     case ReviewStatus.Bad:
     case ReviewStatus.Poor:
@@ -26,10 +24,7 @@ export const variantFor = (
   }
 };
 
-export const iconFor = (
-  status: Required<ArchivedItem["reviewStatus"]>,
-  onDark = false,
-) => {
+export const iconFor = (status: ReviewStatus | undefined, onDark = false) => {
   switch (status) {
     case ReviewStatus.Bad:
       return {
@@ -64,7 +59,7 @@ export const iconFor = (
   }
 };
 
-export const labelFor = (severity: Required<ArchivedItem["reviewStatus"]>) => {
+export const labelFor = (severity: ReviewStatus | undefined) => {
   switch (severity) {
     case ReviewStatus.Bad:
       return msg("Bad");
@@ -92,7 +87,7 @@ export class QAReviewStatus extends TailwindElement {
   `;
 
   @property({ type: Number })
-  status: ArchivedItem["reviewStatus"];
+  status: ReviewStatus | undefined;
 
   @property({ type: Boolean })
   onDark = false;
