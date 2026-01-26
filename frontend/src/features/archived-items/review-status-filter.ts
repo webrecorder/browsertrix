@@ -11,10 +11,9 @@ import {
   state,
 } from "lit/decorators.js";
 
-import { iconFor, labelFor } from "../qa/review-status";
-
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
+import { iconFor, labelFor } from "@/features/qa/review-status";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
