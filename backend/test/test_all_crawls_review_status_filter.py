@@ -45,19 +45,28 @@ def crawl_id_1(admin_auth_headers, default_org_id):
 
     # Set review status to 1
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}",
         headers=admin_auth_headers,
         json={"reviewStatus": 1},
     )
     assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # Verify review status was updated
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["reviewStatus"] == 1
 
     yield crawl_id
 
     # Cleanup
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
         headers=admin_auth_headers,
-        json={"crawlIds": [crawl_id]},
+        json={"crawl_ids": [crawl_id]},
     )
     assert r.status_code == 200
 
@@ -93,19 +102,28 @@ def crawl_id_2(admin_auth_headers, default_org_id):
 
     # Set review status to 3
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}",
         headers=admin_auth_headers,
         json={"reviewStatus": 3},
     )
     assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # Verify review status was updated
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["reviewStatus"] == 3
 
     yield crawl_id
 
     # Cleanup
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
         headers=admin_auth_headers,
-        json={"crawlIds": [crawl_id]},
+        json={"crawl_ids": [crawl_id]},
     )
     assert r.status_code == 200
 
@@ -141,19 +159,28 @@ def crawl_id_3(admin_auth_headers, default_org_id):
 
     # Set review status to 5
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}",
         headers=admin_auth_headers,
         json={"reviewStatus": 5},
     )
     assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # Verify review status was updated
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["reviewStatus"] == 5
 
     yield crawl_id
 
     # Cleanup
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
         headers=admin_auth_headers,
-        json={"crawlIds": [crawl_id]},
+        json={"crawl_ids": [crawl_id]},
     )
     assert r.status_code == 200
 
