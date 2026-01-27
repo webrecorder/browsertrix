@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException
 
 from .utils import dt_now, date_to_str, scale_from_browser_windows
-from .k8sapi import K8sAPI
+from .k8sapi import K8sAPI, ApiException
 
 from .models import (
     StorageRef,
@@ -230,11 +230,13 @@ class CrawlManager(K8sAPI):
         is_purging: bool,
     ):
         """create dedupe index import/purge job"""
-        suffix = secrets.token_hex(5)
+
+        # create unique import job or fixed purge job, as can only have one purge job
+        # at a time
         name = (
-            f"import-{coll_id}-{suffix}"
+            f"import-{coll_id}-{secrets.token_hex(5)}"
             if not is_purging
-            else f"purge-{coll_id}-{suffix}"
+            else f"purge-{coll_id}"
         )
 
         params = {
@@ -249,7 +251,18 @@ class CrawlManager(K8sAPI):
 
         data = self.templates.env.get_template("index-import-job.yaml").render(params)
 
-        await self.create_from_yaml(data, namespace=self.namespace)
+        try:
+            await self.create_from_yaml(data)
+
+        # pylint: disable=duplicate-code
+        except ApiException as e:
+            # 409 if object already exists
+            if e.status != 409:
+                raise
+
+            raise HTTPException(
+                status_code=400, detail="purge_job_already_running"
+            ) from e
 
         return name
 
