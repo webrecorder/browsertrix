@@ -1136,6 +1136,10 @@ class CrawlConfigOps:
             )
 
             if result.deleted_count != 1:
+                LOGGER.warning(
+                    "Failed to delete crawl config",
+                    extra={"crawlconfig": crawlconfig, "result": result},
+                )
                 raise HTTPException(status_code=404, detail="failed_to_delete")
 
             if crawlconfig and crawlconfig.config.seedFileId:
@@ -1149,12 +1153,21 @@ class CrawlConfigOps:
             status = "deleted"
 
         else:
-            if not await self.crawl_configs.find_one_and_update(
+            result = await self.crawl_configs.find_one_and_update(
                 {"_id": crawlconfig.id, "inactive": {"$ne": True}},
                 {"$set": query},
-            ):
+            )
+            if not result:
+                LOGGER.warning(
+                    "Failed to make crawl config inactive",
+                    extra={"crawlconfig": crawlconfig, "result": result},
+                )
                 raise HTTPException(status_code=404, detail="failed_to_deactivate")
 
+            LOGGER.info(
+                "Marked crawl config as inactive",
+                extra={"crawlconfig": crawlconfig, "result": result},
+            )
             status = "deactivated"
 
         # delete from crawl manager, but not from db
