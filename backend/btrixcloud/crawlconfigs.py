@@ -33,7 +33,6 @@ from motor.motor_asyncio import (
     AsyncIOMotorCollection,
     AsyncIOMotorDatabase,
 )
-from pymongo.results import InsertOneResult
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
