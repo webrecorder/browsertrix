@@ -495,12 +495,13 @@ export class OrgSettings extends BtrixElement {
                   ${msg("All Viewer permissions, plus:")}
                 </p>
                 <ul class="ms-4 list-disc text-gray-500">
-                  <li>${msg("Create crawl workflows")}</li>
-                  <li>${msg("Create browser profiles")}</li>
+                  <li>${msg("Manage crawl workflows and browser profiles")}</li>
                   <li>${msg("Upload archived items")}</li>
-                  <li>${msg("Run QA analysis")}</li>
-                  <li>${msg("Rate and review archived items")}</li>
+                  <li>
+                    ${msg("Run QA analysis, rate, and review archived items")}
+                  </li>
                   <li>${msg("Create, edit, and share collections")}</li>
+                  <li>${msg("Enable crawl deduplication")}</li>
                 </ul>
               </sl-details>
             </sl-radio>
@@ -533,6 +534,7 @@ export class OrgSettings extends BtrixElement {
                     <li class="text-warning">
                       ${msg("Manage billing details")}
                     </li>`}
+                  <li>${msg("Purge and delete deduplication indices")}</li>
                   <li>${msg("Edit org name and URL")}</li>
                   <li>${msg("Manage org members")}</li>
                   <li>${msg("View and edit org defaults")}</li>
