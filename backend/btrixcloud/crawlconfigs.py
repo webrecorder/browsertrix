@@ -28,7 +28,11 @@ import urllib.parse
 import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 import pymongo
-from motor.motor_asyncio import AsyncIOMotorCollection
+from motor.motor_asyncio import (
+    AsyncIOMotorClient,
+    AsyncIOMotorCollection,
+    AsyncIOMotorDatabase,
+)
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
@@ -127,8 +131,8 @@ class CrawlConfigOps:
 
     def __init__(
         self,
-        dbclient,
-        mdb,
+        dbclient: AsyncIOMotorClient,
+        mdb: AsyncIOMotorDatabase,
         user_manager,
         org_ops,
         crawl_manager,

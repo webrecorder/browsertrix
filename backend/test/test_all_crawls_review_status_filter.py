@@ -75,6 +75,9 @@ def crawl_id_1(admin_auth_headers, default_org_id):
     )
     assert r.status_code == 200
 
+    # wait for cleanup to complete
+    time.sleep(2)
+
     r = requests.delete(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}"
     )
@@ -139,6 +142,9 @@ def crawl_id_2(admin_auth_headers, default_org_id):
     )
     assert r.status_code == 200
 
+    # wait for cleanup to complete
+    time.sleep(2)
+
     r = requests.delete(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}"
     )
@@ -202,6 +208,9 @@ def crawl_id_3(admin_auth_headers, default_org_id):
         json={"crawl_ids": [crawl_id]},
     )
     assert r.status_code == 200
+
+    # wait for cleanup to complete
+    time.sleep(2)
 
     r = requests.delete(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}"
