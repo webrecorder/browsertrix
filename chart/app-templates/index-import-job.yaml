@@ -12,8 +12,8 @@ metadata:
     oid: {{ oid }}
 
 spec:
-  ttlSecondsAfterFinished: 0
-  backoffLimit: 3
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 6
 
 # if purging, set completions to disallow changing parallelism
 # for import, omit to allow increasing later
