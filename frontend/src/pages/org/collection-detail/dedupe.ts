@@ -21,7 +21,6 @@ import { infoPopover } from "@/layouts/info-popover";
 import { panel, panelBody, panelHeader } from "@/layouts/panel";
 import { stringFor } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { ArchivedItemSearchValues } from "@/types/archivedItems";
 import type { Collection } from "@/types/collection";
 import type { ArchivedItem, Workflow } from "@/types/crawler";
 import type { DedupeIndexStats } from "@/types/dedupe";
@@ -44,6 +43,8 @@ const storageLabelFor = {
   used: msg("Actual Stored"),
   withoutDedupe: msg("Estimated Total"),
 };
+const CRAWLS_PAGE_NAME = "crawlsPage";
+const DEPENDENCIES_PAGE_NAME = "dependenciesPage";
 const DEFAULT_ITEMS_VIEW = ItemsView.Workflows;
 const ITEMS_VIEW_PARAM = "itemsView";
 type View = {
@@ -65,8 +66,16 @@ export class CollectionDetailDedupe extends BtrixElement {
   collection?: Collection;
 
   @state()
-  private pagination: Required<APIPaginationQuery> = {
-    page: parsePage(new URLSearchParams(location.search).get("page")),
+  private crawlsPagination: Required<APIPaginationQuery> = {
+    page: parsePage(new URLSearchParams(location.search).get(CRAWLS_PAGE_NAME)),
+    pageSize: INITIAL_PAGE_SIZE,
+  };
+
+  @state()
+  private dependenciesPagination: Required<APIPaginationQuery> = {
+    page: parsePage(
+      new URLSearchParams(location.search).get(DEPENDENCIES_PAGE_NAME),
+    ),
     pageSize: INITIAL_PAGE_SIZE,
   };
 
@@ -131,28 +140,7 @@ export class CollectionDetailDedupe extends BtrixElement {
         { signal },
       );
     },
-    args: () => [this.collectionId, this.pagination] as const,
-  });
-
-  /**
-   * IDs of all archived items currently in the collection
-   */
-  private readonly collectionItemIdsTask = new Task(this, {
-    task: async ([collectionId], { signal }) => {
-      if (!collectionId) return;
-
-      const query = queryString.stringify({
-        collectionId,
-      });
-
-      const { ids } = await this.api.fetch<ArchivedItemSearchValues>(
-        `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
-        { signal },
-      );
-
-      return ids;
-    },
-    args: () => [this.collectionId] as const,
+    args: () => [this.collectionId, this.crawlsPagination] as const,
   });
 
   /**
@@ -160,22 +148,49 @@ export class CollectionDetailDedupe extends BtrixElement {
    * currently in the collection
    */
   private readonly dependenciesTask = new Task(this, {
-    task: async ([itemIds, pagination], { signal }) => {
-      if (!itemIds?.length) return;
+    task: async ([collectionId, pagination], { signal }) => {
+      if (!collectionId) return;
 
+      const crawlsQuery = queryString.stringify({
+        sortBy: "finished",
+        sortDirection: SortDirection.Descending,
+        collectionId,
+        dedupeCollId: collectionId,
+        state: finishedCrawlStates,
+        hasRequiresCrawls: true,
+      });
+
+      const { items } = await this.api.fetch<APIPaginatedList<ArchivedItem>>(
+        `/orgs/${this.orgId}/crawls?${crawlsQuery}`,
+        { signal },
+      );
+
+      const crawlIds = items.map(({ id }) => id);
+
+      if (!crawlIds.length) return;
+
+      // FIXME Prevent API from returning 431 by limiting IDs
+      // should be an edge case that there are more that 100
+      // dependencies in a collection but we would want a more
+      // robust solution if this becomes more common.
+      const limit = 100;
       const query = queryString.stringify({
         ...pagination,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
-        requiredByCrawls: itemIds,
+        requiredByCrawls: crawlIds.slice(0, limit),
       });
+
+      if (crawlIds.length > limit) {
+        console.warn(`up to ${limit} dependencies queried`);
+      }
 
       return await this.api.fetch<APIPaginatedList<ArchivedItem>>(
         `/orgs/${this.orgId}/all-crawls?${query}`,
         { signal },
       );
     },
-    args: () => [this.collectionItemIdsTask.value, this.pagination] as const,
+    args: () => [this.collectionId, this.dependenciesPagination] as const,
   });
 
   /**
@@ -201,9 +216,23 @@ export class CollectionDetailDedupe extends BtrixElement {
   });
 
   protected willUpdate(changedProperties: PropertyValues): void {
-    if (changedProperties.has("view.internalValue")) {
-      this.pagination = {
-        ...this.pagination,
+    if (
+      changedProperties.get("view.internalValue")?.[ITEMS_VIEW_PARAM] ===
+        ItemsView.Crawls &&
+      this.crawlsPagination.page !== 1
+    ) {
+      this.crawlsPagination = {
+        ...this.crawlsPagination,
+        page: 1,
+      };
+    }
+    if (
+      changedProperties.get("view.internalValue")?.[ITEMS_VIEW_PARAM] ===
+        ItemsView.Dependencies &&
+      this.dependenciesPagination.page !== 1
+    ) {
+      this.dependenciesPagination = {
+        ...this.dependenciesPagination,
         page: 1,
       };
     }
@@ -672,11 +701,11 @@ export class CollectionDetailDedupe extends BtrixElement {
   };
 
   private readonly renderDependencyTree = (
-    itemsTask:
-      | CollectionDetailDedupe["dedupeCrawlsTask"]
-      | CollectionDetailDedupe["dependenciesTask"],
+    itemsTask: CollectionDetailDedupe["dedupeCrawlsTask"],
     empty: () => TemplateResult,
   ) => {
+    const dependenciesView =
+      this.view.value[ITEMS_VIEW_PARAM] === ItemsView.Dependencies;
     const loading = () => html`
       <sl-skeleton effect="sheen" class="h-9"></sl-skeleton>
     `;
@@ -691,14 +720,24 @@ export class CollectionDetailDedupe extends BtrixElement {
 
             <footer class="mt-6 flex justify-center">
               <btrix-pagination
+                name=${dependenciesView
+                  ? DEPENDENCIES_PAGE_NAME
+                  : CRAWLS_PAGE_NAME}
                 page=${items.page}
                 totalCount=${items.total}
                 size=${items.pageSize}
                 @page-change=${async (e: PageChangeEvent) => {
-                  this.pagination = {
-                    ...this.pagination,
-                    page: e.detail.page,
-                  };
+                  if (dependenciesView) {
+                    this.dependenciesPagination = {
+                      ...this.dependenciesPagination,
+                      page: e.detail.page,
+                    };
+                  } else {
+                    this.crawlsPagination = {
+                      ...this.crawlsPagination,
+                      page: e.detail.page,
+                    };
+                  }
 
                   await itemsTask.taskComplete;
 
