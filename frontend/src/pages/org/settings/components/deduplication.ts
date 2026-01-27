@@ -13,7 +13,9 @@ import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { deleteIndexDialog } from "@/features/collections/templates/delete-index-dialog";
 import { indexStatus } from "@/features/collections/templates/index-status";
 import { purgeIndexDialog } from "@/features/collections/templates/purge-index-dialog";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import { labelWithIcon } from "@/layouts/labelWithIcon";
+import { panelBody } from "@/layouts/panel";
 import { Tab } from "@/pages/org/collection-detail/types";
 import { OrgTab } from "@/routes";
 import { getIndexErrorMessage } from "@/strings/collections/index-error";
@@ -102,6 +104,14 @@ export class OrgSettingsDeduplication extends BtrixElement {
   private readonly hideDialog = () => (this.openDialog = undefined);
 
   private readonly renderTable = (sources: APIPaginatedList<DedupeSource>) => {
+    if (!sources.total) {
+      return panelBody({
+        content: emptyMessage({
+          message: msg("No deduplication sources found."),
+        }),
+      });
+    }
+
     return html`
       <btrix-overflow-scroll>
         <btrix-table
