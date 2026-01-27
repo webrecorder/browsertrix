@@ -333,7 +333,7 @@ class CrawlOps(BaseCrawlOps):
         )
 
         # Get total
-        cursor = self.crawls.aggregate(aggregate, session=session)
+        cursor = self.crawls.aggregate(aggregate, session=session)  # type: ignore # Argument 1 to "aggregate" of "AsyncIOMotorCollection" has incompatible type "list[object]"; expected "Sequence[Mapping[str, Any]]"
         results = await cursor.to_list(length=1)
         result = results[0]
         items = result["items"]
