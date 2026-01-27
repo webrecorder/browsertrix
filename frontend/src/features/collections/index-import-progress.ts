@@ -2,17 +2,13 @@ import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Collection } from "@/types/collection";
-import type { DedupeIndexState } from "@/types/dedupe";
+import { indexUpdating } from "@/utils/dedupe";
 
 const getPollInterval = (crawlCount: number) =>
   crawlCount < 10 ? 5 : crawlCount < 100 ? 10 : crawlCount < 1000 ? 30 : 60;
-
-export const indexUpdating = (state: DedupeIndexState | null) =>
-  state === "importing" || state === "purging";
 
 /**
  * Live progress of deduplication index import
@@ -34,8 +30,8 @@ export class IndexImportProgress extends BtrixElement {
   private pollInterval = 5;
 
   private readonly progressTask = new Task(this, {
-    task: async ([live, collectionId], { signal }) => {
-      if (!live) return;
+    task: async ([collectionId, initialValue, live], { signal }) => {
+      if (!live) return initialValue;
 
       const collection = await this.getCollection(collectionId, signal);
 
@@ -45,7 +41,7 @@ export class IndexImportProgress extends BtrixElement {
         ? collection.indexStats?.updateProgress
         : undefined;
     },
-    args: () => [this.live, this.collectionId] as const,
+    args: () => [this.collectionId, this.initialValue, this.live] as const,
   });
 
   private readonly pollTask = new Task(this, {
@@ -75,25 +71,24 @@ export class IndexImportProgress extends BtrixElement {
   render() {
     return this.progressTask.render({
       initial: () => this.renderBar(this.initialValue),
-      pending: () =>
-        this.renderBar(this.initialValue || this.progressTask.value),
+      pending: () => this.renderBar(this.progressTask.value),
       complete: this.renderBar,
     });
   }
 
   private readonly renderBar = (value?: number) => {
-    const noValue = value === undefined;
+    const percentage = value === undefined ? 0 : value * 100;
 
     return html`
       <sl-tooltip
-        content=${!noValue && `${value.toFixed(0)}%`}
-        ?disabled=${noValue}
+        content=${percentage < 1 ? `<1%` : `${percentage.toFixed(0)}%`}
+        ?disabled=${!value}
       >
         <sl-progress-bar
           class="mb-0.5 mt-1.5"
-          value=${ifDefined(noValue ? undefined : value * 100)}
+          value=${Math.max(percentage, 1)}
           label=${msg("Index Import Progress")}
-          ?indeterminate=${noValue}
+          ?indeterminate=${!value}
         ></sl-progress-bar>
       </sl-tooltip>
     `;
