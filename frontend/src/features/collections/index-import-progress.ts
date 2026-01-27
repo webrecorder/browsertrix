@@ -73,7 +73,7 @@ export class IndexImportProgress extends BtrixElement {
     return this.progressTask.render({
       initial: () => this.renderBar(this.initialValue),
       pending: () =>
-        this.renderBar(this.initialValue || this.progressTask.value),
+        this.renderBar(this.progressTask.value ?? this.initialValue),
       complete: this.renderBar,
     });
   }
