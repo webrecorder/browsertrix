@@ -141,9 +141,7 @@ class BaseCrawlOps:
             return []
 
         crawl_files = [CrawlFile(**data) for data in files]
-        return await self.resolve_signed_urls(
-            crawl_files, org, crawlid, session=session
-        )
+        return await self.resolve_signed_urls(crawl_files, org, crawlid)
 
     async def get_wacz_files(self, crawl_id: str, org: Organization):
         """Return list of WACZ files associated with crawl."""
@@ -515,9 +513,7 @@ class BaseCrawlOps:
             and crawl.state in SUCCESSFUL_AND_PAUSED_STATES
             and isinstance(crawl, CrawlOutWithResources)
         ):
-            crawl.resources = await self._files_to_resources(
-                files, org, crawl.id, session=session
-            )
+            crawl.resources = await self._files_to_resources(files, org, crawl.id)
 
         return crawl
 
