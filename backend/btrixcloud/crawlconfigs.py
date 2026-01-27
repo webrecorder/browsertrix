@@ -1219,7 +1219,7 @@ class CrawlConfigOps:
         self, org, profile_ids: Optional[List[UUID]] = None
     ):
         """List unique names, first seeds, and descriptions from all workflows in org"""
-        query: Dict[str, Any] = {"oid": org.id, "inactive": False}
+        query: Dict[str, Any] = {"oid": org.id, "inactive": {"$ne": True}}
         if profile_ids:
             query["profileid"] = {"$in": profile_ids}
 
