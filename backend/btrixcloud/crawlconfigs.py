@@ -33,6 +33,7 @@ from motor.motor_asyncio import (
     AsyncIOMotorCollection,
     AsyncIOMotorDatabase,
 )
+from pymongo.results import InsertOneResult
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
@@ -195,7 +196,7 @@ class CrawlConfigOps:
             raise TypeError("The channel list must include a 'default' channel")
 
         self._crawler_proxies_last_updated = None
-        self._crawler_proxies_map = None
+        self._crawler_proxies_map: dict[str, CrawlerProxy] | None = None
 
         if DEFAULT_PROXY_ID and DEFAULT_PROXY_ID not in self.get_crawler_proxies_map():
             raise ValueError(
@@ -663,7 +664,7 @@ class CrawlConfigOps:
             orig_dict["id"] = uuid4()
 
             last_rev = ConfigRevision(**orig_dict)
-            last_rev = await self.config_revs.insert_one(last_rev.to_dict())
+            await self.config_revs.insert_one(last_rev.to_dict())
 
         # set update query
         query = update.dict(exclude_unset=True)
