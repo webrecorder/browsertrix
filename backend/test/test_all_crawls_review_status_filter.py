@@ -69,7 +69,7 @@ def crawl_id_1(admin_auth_headers, default_org_id):
 
     # Cleanup
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
         headers=admin_auth_headers,
         json={"crawl_ids": [crawl_id]},
     )
@@ -79,6 +79,7 @@ def crawl_id_1(admin_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}"
     )
     assert r.status_code == 200
+    assert r.text == "deactivated"
 
 
 @pytest.fixture(scope="module")
@@ -113,7 +114,7 @@ def crawl_id_2(admin_auth_headers, default_org_id):
 
     # Set review status to 3
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{crawl_id}",
         headers=admin_auth_headers,
         json={"reviewStatus": 3},
     )
@@ -132,7 +133,7 @@ def crawl_id_2(admin_auth_headers, default_org_id):
 
     # Cleanup
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
         headers=admin_auth_headers,
         json={"crawl_ids": [crawl_id]},
     )
@@ -142,6 +143,7 @@ def crawl_id_2(admin_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}"
     )
     assert r.status_code == 200
+    assert r.text == "deactivated"
 
 
 @pytest.fixture(scope="module")
@@ -195,7 +197,7 @@ def crawl_id_3(admin_auth_headers, default_org_id):
 
     # Cleanup
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
         headers=admin_auth_headers,
         json={"crawl_ids": [crawl_id]},
     )
@@ -205,6 +207,7 @@ def crawl_id_3(admin_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}"
     )
     assert r.status_code == 200
+    assert r.text == "deactivated"
 
 
 def test_filter_by_single_review_status(admin_auth_headers, default_org_id, crawl_id_1):
