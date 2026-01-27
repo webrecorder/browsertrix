@@ -16,6 +16,7 @@ from typing import (
     Any,
 )
 
+import logging
 import asyncio
 import json
 import re
@@ -94,6 +95,8 @@ else:
         FileUploadOps
     ) = StorageOps = object
 
+
+LOGGER = logging.getLogger(__name__)
 
 ALLOWED_SORT_KEYS = (
     "created",
@@ -1125,6 +1128,11 @@ class CrawlConfigOps:
         if not crawlconfig.crawlAttemptCount:
             result = await self.crawl_configs.delete_one(
                 {"_id": crawlconfig.id, "oid": crawlconfig.oid}
+            )
+
+            LOGGER.info(
+                "Deleted crawl config",
+                extra={"crawlconfig": crawlconfig, "result": result},
             )
 
             if result.deleted_count != 1:
