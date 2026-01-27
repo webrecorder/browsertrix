@@ -205,8 +205,10 @@ export class CollectionDetailDedupe extends BtrixElement {
       const pollInterval =
         collection.indexState === null || indexAvailable(collection.indexState)
           ? 30
-          : // Decrease poll interval if index is in use
-            10;
+          : // Decrease poll interval if index is updating
+            indexUpdating(collection.indexState)
+            ? 5
+            : 10;
 
       return window.setTimeout(() => {
         this.dispatchEvent(new CustomEvent("btrix-request-update"));
@@ -789,7 +791,11 @@ export class CollectionDetailDedupe extends BtrixElement {
               `,
             )}
             ${updating
-              ? html`<btrix-desc-list-item label=${msg("Import Progress")}>
+              ? html`<btrix-desc-list-item
+                  label=${state === "purging"
+                    ? msg("Purge Progress")
+                    : msg("Import Progress")}
+                >
                   <btrix-index-import-progress
                     collectionId=${this.collectionId}
                     initialValue=${ifDefined(col.indexStats?.updateProgress)}
