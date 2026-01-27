@@ -256,6 +256,19 @@ class K8sAPI:
                 status_code=400, detail="invalid_config_missing_storage_secret"
             )
 
+    async def delete_job(self, name):
+        """delete job by name"""
+        try:
+            await self.batch_api.delete_namespaced_job(
+                name=name,
+                namespace=self.namespace,
+            )
+            return True
+
+        # pylint: disable=bare-except
+        except:
+            return False
+
     async def delete_crawl_job(self, crawl_id):
         """delete custom crawljob object"""
         name = f"crawljob-{crawl_id}"
