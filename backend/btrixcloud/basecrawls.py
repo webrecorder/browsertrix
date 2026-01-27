@@ -21,6 +21,7 @@ import urllib.parse
 import asyncio
 from fastapi import HTTPException, Depends, Query, Request
 from fastapi.responses import StreamingResponse
+from motor.motor_asyncio import AsyncIOMotorClientSession, AsyncIOMotorDatabase
 import pymongo
 
 from .models import (
@@ -83,7 +84,7 @@ class BaseCrawlOps:
 
     def __init__(
         self,
-        mdb,
+        mdb: AsyncIOMotorDatabase,
         users: UserManager,
         orgs: OrgOps,
         crawl_configs: CrawlConfigOps,
@@ -140,7 +141,9 @@ class BaseCrawlOps:
             return []
 
         crawl_files = [CrawlFile(**data) for data in files]
-        return await self.resolve_signed_urls(crawl_files, org, crawlid)
+        return await self.resolve_signed_urls(
+            crawl_files, org, crawlid, session=session
+        )
 
     async def get_wacz_files(self, crawl_id: str, org: Organization):
         """Return list of WACZ files associated with crawl."""
@@ -488,18 +491,19 @@ class BaseCrawlOps:
         crawl: Union[CrawlOut, CrawlOutWithResources],
         org: Optional[Organization],
         files: Optional[list[dict]],
+        session: AsyncIOMotorClientSession | None = None,
     ):
         """Resolve running crawl data"""
         # pylint: disable=too-many-branches
         if not org:
-            org = await self.orgs.get_org_by_id(crawl.oid)
+            org = await self.orgs.get_org_by_id(crawl.oid, session=session)
             if not org:
                 raise HTTPException(status_code=400, detail="missing_org")
 
         if hasattr(crawl, "profileid") and crawl.profileid:
             try:
                 profile = await self.crawl_configs.profiles.get_profile(
-                    crawl.profileid, org
+                    crawl.profileid, org, session=session
                 )
                 crawl.profileName = profile.name
             # pylint: disable=bare-except
@@ -511,7 +515,9 @@ class BaseCrawlOps:
             and crawl.state in SUCCESSFUL_AND_PAUSED_STATES
             and isinstance(crawl, CrawlOutWithResources)
         ):
-            crawl.resources = await self._files_to_resources(files, org, crawl.id)
+            crawl.resources = await self._files_to_resources(
+                files, org, crawl.id, session=session
+            )
 
         return crawl
 
@@ -521,6 +527,7 @@ class BaseCrawlOps:
         org: Organization,
         crawl_id: Optional[str] = None,
         force_update=False,
+        session: AsyncIOMotorClientSession | None = None,
     ) -> List[CrawlFileOut]:
         """Regenerate presigned URLs for files as necessary"""
         if not files:
@@ -529,7 +536,7 @@ class BaseCrawlOps:
         out_files = []
 
         cursor = self.presigned_urls.find(
-            {"_id": {"$in": [file.filename for file in files]}}
+            {"_id": {"$in": [file.filename for file in files]}}, session=session
         )
 
         presigned = await cursor.to_list(10000)

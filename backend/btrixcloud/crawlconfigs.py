@@ -31,6 +31,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 import pymongo
 from motor.motor_asyncio import (
     AsyncIOMotorClient,
+    AsyncIOMotorClientSession,
     AsyncIOMotorCollection,
     AsyncIOMotorDatabase,
 )
@@ -898,10 +899,16 @@ class CrawlConfigOps:
 
         return configs, total
 
-    async def is_profile_in_use(self, profileid: UUID, org: Organization) -> bool:
+    async def is_profile_in_use(
+        self,
+        profileid: UUID,
+        org: Organization,
+        session: AsyncIOMotorClientSession | None = None,
+    ) -> bool:
         """return true/false if any active workflows exist with given profile"""
         res = await self.crawl_configs.find_one(
-            {"oid": org.id, "inactive": {"$ne": True}, "profileid": profileid}
+            {"oid": org.id, "inactive": {"$ne": True}, "profileid": profileid},
+            session=session,
         )
         return res is not None
 
@@ -932,10 +939,14 @@ class CrawlConfigOps:
 
         return profiles
 
-    async def get_running_crawl(self, cid: UUID) -> Optional[CrawlOut]:
+    async def get_running_crawl(
+        self, cid: UUID, session: AsyncIOMotorClientSession | None = None
+    ) -> Optional[CrawlOut]:
         """Return the id of currently running crawl for this config, if any"""
         # crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
-        crawls, _ = await self.crawl_ops.list_crawls(cid=cid, running_only=True)
+        crawls, _ = await self.crawl_ops.list_crawls(
+            cid=cid, running_only=True, session=session
+        )
 
         if len(crawls) == 1:
             return crawls[0]
@@ -1110,13 +1121,18 @@ class CrawlConfigOps:
         return revisions, total
 
     async def make_inactive_or_delete(
-        self, crawlconfig: CrawlConfig, org: Organization
+        self,
+        crawlconfig: CrawlConfig,
+        org: Organization,
+        session: AsyncIOMotorClientSession | None = None,
     ):
         """Make config inactive if crawls exist, otherwise move to inactive list"""
 
         query = {"inactive": True}
 
-        is_running = await self.get_running_crawl(crawlconfig.id) is not None
+        is_running = (
+            await self.get_running_crawl(crawlconfig.id, session=session) is not None
+        )
 
         if is_running:
             raise HTTPException(status_code=400, detail="crawl_running_cant_deactivate")
@@ -1127,7 +1143,7 @@ class CrawlConfigOps:
         # if no crawls have been run, actually delete
         if not crawlconfig.crawlAttemptCount:
             result = await self.crawl_configs.delete_one(
-                {"_id": crawlconfig.id, "oid": crawlconfig.oid}
+                {"_id": crawlconfig.id, "oid": crawlconfig.oid}, session=session
             )
 
             LOGGER.info(
@@ -1145,7 +1161,7 @@ class CrawlConfigOps:
             if crawlconfig and crawlconfig.config.seedFileId:
                 try:
                     await self.file_ops.delete_seed_file(
-                        crawlconfig.config.seedFileId, org
+                        crawlconfig.config.seedFileId, org, session=session
                     )
                 except HTTPException:
                     pass
@@ -1156,6 +1172,7 @@ class CrawlConfigOps:
             result = await self.crawl_configs.find_one_and_update(
                 {"_id": crawlconfig.id, "inactive": {"$ne": True}},
                 {"$set": query},
+                session=session,
             )
             if not result:
                 LOGGER.warning(
@@ -1180,7 +1197,9 @@ class CrawlConfigOps:
 
         async with await self.dbclient.start_session() as sesh:
             async with sesh.start_transaction():
-                status = await self.make_inactive_or_delete(crawlconfig, org)
+                status = await self.make_inactive_or_delete(
+                    crawlconfig, org, session=sesh
+                )
 
         return {"success": True, "status": status}
 
