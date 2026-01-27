@@ -1,14 +1,18 @@
 import requests
 import pytest
 import time
+import itertools
 
 from .conftest import API_PREFIX, FINISHED_STATES
 
+sample_crawl_index = itertools.count(1)
+
 
 def get_sample_crawl_data():
+    index = next(sample_crawl_index)
     data = {
         "runNow": True,
-        "name": "Test Crawl for Review Status",
+        "name": f"Test Crawl for Review Status {index}",
         "config": {"seeds": [{"url": "https://example-com.webrecorder.net/"}]},
     }
     return data
