@@ -175,7 +175,7 @@ class CollIndexOperator(BaseOperator):
                 await self.load_redis(coll_id, redis_name, spec, status)
             )
 
-        if status.state in ("idle", "saving", "ready"):
+        if status.state != "crawling":
             resync_after = self.idle_secs
         else:
             resync_after = None
@@ -230,11 +230,11 @@ class CollIndexOperator(BaseOperator):
         else:
             desired_state = "ready"
 
-        if desired_state != status.state:
-            # update stats if redis is available
-            if not skip_redis and desired_state == "ready":
-                await self.update_stats_from_redis(status, coll_id)
+        # update stats if redis is available
+        if not skip_redis:
+            await self.update_stats_from_redis(status, coll_id)
 
+        if desired_state != status.state:
             await self.set_state(desired_state, status, coll_id)
 
     def is_expired(self, status: CollIndexStatus):
@@ -314,7 +314,7 @@ class CollIndexOperator(BaseOperator):
             if status.state == "initing":
                 await redis.config_set("appendonly", "yes")
 
-            else:
+            elif status.state == "ready":
                 last_update_ts = await redis.get("last_update_ts")
                 if last_update_ts:
                     status.updated = last_update_ts
