@@ -264,7 +264,10 @@ class CollectionOps:
         await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
 
         await self.update_collection_counts_and_tags(coll_id)
-        await self.update_collection_dates(coll_id, org.id, update_index=True)
+        await self.update_collection_dates(coll_id, org.id)
+
+        if result.get("indexState"):
+            await self.run_index_import_job(coll_id, org.id)
 
         asyncio.create_task(
             self.event_webhook_ops.create_added_to_collection_notification(
@@ -293,7 +296,10 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         await self.update_collection_counts_and_tags(coll_id)
-        await self.update_collection_dates(coll_id, org.id, update_index=True)
+        await self.update_collection_dates(coll_id, org.id)
+
+        if result.get("indexState"):
+            await self.run_index_import_job(coll_id, org.id)
 
         asyncio.create_task(
             self.event_webhook_ops.create_removed_from_collection_notification(
@@ -523,7 +529,7 @@ class CollectionOps:
             match_query["name"] = {"$regex": regex_pattern, "$options": "i"}
 
         if has_dedupe_index is not None:
-            match_query["indexStats"] = {"$ne" if has_dedupe_index else "$eq": None}
+            match_query["indexState"] = {"$ne" if has_dedupe_index else "$eq": None}
 
         if public_colls_out:
             match_query["access"] = CollAccessType.PUBLIC
@@ -672,7 +678,7 @@ class CollectionOps:
         """Delete collection and remove from associated crawls."""
         coll = await self.get_collection(coll_id, org.id)
 
-        if coll.indexStats:
+        if coll.indexState:
             raise HTTPException(
                 status_code=400, detail="not_allowed_while_dedupe_index_exists"
             )
@@ -717,19 +723,20 @@ class CollectionOps:
     async def create_dedupe_index(self, coll: Collection, org: Organization):
         """create collection dedupe index, raise or ignore existing.
         for API use"""
-        if coll.indexStats:
+        if coll.indexState:
             raise HTTPException(status_code=400, detail="index_already_exists")
 
-        # enable index by settings stats to empty value
-        await self.update_dedupe_index_stats(coll.id, DedupeIndexStats())
-
+        # enable index by setting indexState to a non-null value
+        # and setting stats to zeroed out default
         await self.update_dedupe_index_info(
             coll.id, state="initing" if coll.crawlCount else "idle"
         )
 
+        await self.update_dedupe_index_stats(coll.id, DedupeIndexStats())
+
         # run import job only if collection not empty
         if coll.crawlCount:
-            await self.run_import_index_job(coll, org.id)
+            await self.run_index_import_job(coll.id, org.id)
 
         return {"success": True}
 
@@ -737,23 +744,23 @@ class CollectionOps:
         """create dedupe index if not already enabled, do nothing otherwise
         for internal use from crawl workflows"""
         coll = await self.get_collection(coll_id, org.id)
-        if coll.indexStats:
+        if coll.indexState:
             return
 
         await self.create_dedupe_index(coll, org)
 
     async def purge_dedupe_index(self, coll: Collection, org: Organization):
         """purge dedupe index on collection, raise exception if no index or not ready"""
-        if not coll.indexStats:
+        if not coll.indexState:
             raise HTTPException(status_code=404, detail="no_dedupe_index")
 
         if coll.indexState not in ("ready", "idle"):
             raise HTTPException(status_code=400, detail="dedupe_index_not_ready")
 
-        await self.run_import_index_job(coll, org.id, is_purge=True)
+        await self.run_index_import_job(coll.id, org.id, is_purge=True)
         return {"updated": True}
 
-    async def run_import_index_job(self, coll: Collection, oid: UUID, is_purge=False):
+    async def run_index_import_job(self, coll_id: UUID, oid: UUID, is_purge=False):
         """update index with import / purge job"""
 
         crawler_image = self.crawl_ops.crawl_configs.get_channel_crawler_image(
@@ -772,18 +779,23 @@ class CollectionOps:
         )
 
         await self.crawl_manager.run_index_import_job(
-            str(coll.id), str(oid), crawler_image, pull_policy, is_purge
+            str(coll_id), str(oid), crawler_image, pull_policy, is_purge
+        )
+
+        # if job created, update state here so its reflected in the UI more quickly
+        await self.update_dedupe_index_info(
+            coll_id, state="purging" if is_purge else "importing"
         )
 
     async def delete_dedupe_index(
         self, coll: Collection, org: Organization, remove_from_workflows: bool = False
     ):
         """delete coll dedupe index, if possible"""
-        if not coll.indexStats:
+        if not coll.indexState:
             raise HTTPException(status_code=404, detail="no_dedupe_index")
 
         # if index is not idle, can't delete it yet
-        if coll.indexStats and coll.indexState != "idle":
+        if coll.indexState != "idle":
             raise HTTPException(status_code=400, detail="dedupe_index_is_in_use")
 
         if coll.indexFile:
@@ -834,10 +846,7 @@ class CollectionOps:
             query["indexLastSavedAt"] = dt
             query["indexFile"] = index_file.model_dump()
 
-        res = self.collections.find_one_and_update(
-            {"_id": coll_id, "indexStats": {"$ne": None}},
-            {"$set": query},
-        )
+        res = self.collections.find_one_and_update({"_id": coll_id}, {"$set": query})
         return res is not None
 
     async def get_dedupe_index_saved(self, coll_id: UUID) -> Optional[datetime]:
@@ -923,9 +932,7 @@ class CollectionOps:
             },
         )
 
-    async def update_collection_dates(
-        self, coll_id: UUID, oid: UUID, update_index=False
-    ):
+    async def update_collection_dates(self, coll_id: UUID, oid: UUID):
         """Update collection earliest and latest dates from page timestamps"""
         # pylint: disable=too-many-locals
         coll = await self.get_collection(coll_id, oid)
@@ -933,10 +940,6 @@ class CollectionOps:
 
         earliest_ts = None
         latest_ts = None
-
-        # update_index is set, update dedupe index if it exists
-        if update_index and coll.indexStats:
-            await self.run_import_index_job(coll, oid)
 
         match_query = {
             "oid": coll.oid,
@@ -979,14 +982,18 @@ class CollectionOps:
 
         for coll_id in crawl_coll_ids:
             await self.update_collection_counts_and_tags(coll_id)
-            await self.update_collection_dates(
-                coll_id, oid, crawl.get("dedupeCollId") != coll_id
-            )
-            await self.collections.find_one_and_update(
+            await self.update_collection_dates(coll_id, oid)
+
+            result = await self.collections.find_one_and_update(
                 {"_id": coll_id},
                 {"$set": {"modified": modified}},
                 return_document=pymongo.ReturnDocument.AFTER,
             )
+
+            # if this is a collection that has an index and its *not* the collection that the crawl
+            # was deduped against, need to import this crawl into the collection index
+            if crawl.get("dedupeCollId") != coll_id and result.get("indexState"):
+                await self.run_index_import_job(coll_id, oid)
 
     async def add_successful_crawl_to_collections(
         self, crawl_id: str, cid: UUID, oid: UUID

@@ -76,6 +76,10 @@ class CollIndexImportJobOperator(BaseOperator):
                 coll_id, name, oid, configmap
             )
 
+        # delete succeeded job
+        if data.object.get("status", {}).get("succeeded", 0) >= 1:
+            self.run_task(self.k8s.delete_job(name))
+
         return MCDecoratorSyncResponse(attachments=attachments)
 
     async def load_import_configmap(self, coll_id: str, name: str, oid: str, configmap):
