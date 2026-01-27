@@ -872,7 +872,9 @@ class BaseCrawlOps:
         )
 
         # Get total
-        cursor = self.crawls.aggregate(aggregate)  # type: ignore # Argument 1 to "aggregate" of "AsyncIOMotorCollection" has incompatible type "list[object]"; expected "Sequence[Mapping[str, Any]]"  [arg-type]
+        cursor = self.crawls.aggregate(aggregate)  # type: ignore
+        # pylint: disable=line-too-long
+        # Argument 1 to "aggregate" of "AsyncIOMotorCollection" has incompatible type "list[object]"; expected "Sequence[Mapping[str, Any]]"
         results = await cursor.to_list(length=1)
         result = results[0]
         items = result["items"]
