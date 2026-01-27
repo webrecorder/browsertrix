@@ -311,7 +311,7 @@ def test_invalid_review_status_too_low(admin_auth_headers, default_org_id):
         params={"reviewStatus": [0]},
     )
     assert r.status_code == 400
-    assert r.json()["detail"] == "Invalid QA review range"
+    assert r.json()["detail"] == "invalid_qa_review_range"
 
 
 def test_invalid_review_status_too_high(admin_auth_headers, default_org_id):
@@ -322,7 +322,7 @@ def test_invalid_review_status_too_high(admin_auth_headers, default_org_id):
         params={"reviewStatus": [6]},
     )
     assert r.status_code == 400
-    assert r.json()["detail"] == "Invalid QA review range"
+    assert r.json()["detail"] == "invalid_qa_review_range"
 
 
 def test_invalid_review_status_too_many_values(admin_auth_headers, default_org_id):
@@ -333,4 +333,4 @@ def test_invalid_review_status_too_many_values(admin_auth_headers, default_org_i
         params={"reviewStatus": [1, 2, 3]},
     )
     assert r.status_code == 400
-    assert r.json()["detail"] == "Invalid QA review range"
+    assert r.json()["detail"] == "invalid_qa_review_range"

@@ -1146,7 +1146,7 @@ def init_base_crawls_api(app, user_dep, *args):
 
         if reviewStatus:
             if len(reviewStatus) > 2 or any(qa < 1 or qa > 5 for qa in reviewStatus):
-                raise HTTPException(status_code=400, detail="Invalid QA review range")
+                raise HTTPException(status_code=400, detail="invalid_qa_review_range")
             review_status_range = (
                 reviewStatus[0],
                 reviewStatus[1] if len(reviewStatus) > 1 else reviewStatus[0],
