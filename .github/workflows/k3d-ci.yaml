@@ -51,7 +51,6 @@ jobs:
           remove-browsers: true
           verbose: true
 
-
       - name: Create k3d Cluster
         uses: AbsaOSS/k3d-action@v2
         with:
@@ -138,7 +137,7 @@ jobs:
 
       - name: Run Tests
         timeout-minutes: 30
-        run: pytest -vv ./backend/test/test_*.py
+        run: pytest -vv -s ./backend/test/test_*.py
 
       - name: Print Backend Logs (API)
         if: ${{ always() }}
