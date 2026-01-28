@@ -132,7 +132,7 @@ export class CollectionDetail extends BtrixElement {
 
   private readonly tabLabels: Record<
     Tab,
-    { icon: { name: string; library: string }; text: string }
+    { icon: { name: string; library: string }; text: string; beta?: boolean }
   > = {
     [Tab.Replay]: {
       icon: { name: "replaywebpage", library: "app" },
@@ -149,6 +149,7 @@ export class CollectionDetail extends BtrixElement {
     [Tab.Deduplication]: {
       icon: { name: "stack", library: "default" },
       text: msg("Deduplication"),
+      beta: true,
     },
   };
 
@@ -652,8 +653,12 @@ export class CollectionDetail extends BtrixElement {
                 name=${tab.icon.name}
                 library=${tab.icon.library}
               ></sl-icon>
-              ${tab.text}</btrix-navigation-button
-            >
+              ${tab.text}
+              ${when(
+                tab.beta,
+                () => html`<btrix-beta-badge></btrix-beta-badge>`,
+              )}
+            </btrix-navigation-button>
           `;
         })}
       </nav>
