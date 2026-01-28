@@ -254,15 +254,16 @@ export class CollectionDetail extends BtrixElement {
               this.collection?.name,
               tw`mb-2 h-6 w-60`,
             )}
-            ${this.collection &&
-            html`<sl-icon-button
-              name="pencil"
-              aria-label=${msg("Edit Collection Name and Description")}
-              @click=${() => {
-                this.openDialogName = "edit";
-                this.editTab = "general";
-              }}
-            ></sl-icon-button>`}
+            ${this.collection && this.isCrawler
+              ? html`<sl-icon-button
+                  name="pencil"
+                  aria-label=${msg("Edit Collection Name and Description")}
+                  @click=${() => {
+                    this.openDialogName = "edit";
+                    this.editTab = "general";
+                  }}
+                ></sl-icon-button>`
+              : nothing}
           </div>
           ${this.isCrawler
             ? when(
