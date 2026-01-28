@@ -325,6 +325,8 @@ export class CollectionDetailDedupe extends BtrixElement {
   }
 
   private renderStats(indexStats: DedupeIndexStats) {
+    const inProgress =
+      indexStats.updateProgress > 0 && indexStats.updateProgress < 1;
     const stat = ({
       label,
       icon,
@@ -373,10 +375,32 @@ export class CollectionDetailDedupe extends BtrixElement {
       `;
     };
 
+    const inProgressBadge = when(
+      inProgress,
+      () =>
+        html`<btrix-popover
+          content="${msg("An index update is currently in progress.")} ${msg(
+            "Statistics last updated",
+          )} ${this.localize.date(new Date(), {
+            dateStyle: "short",
+            timeStyle: "long",
+          })}."
+          placement="right"
+        >
+          <btrix-badge variant="violet">
+            <sl-icon name="dot" library="app" class="mr-1.5"></sl-icon>
+            ${msg("Updating")}
+          </btrix-badge>
+        </btrix-popover>`,
+    );
+
     return html`<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
       <btrix-card>
         <header slot="title" class="flex items-center justify-between">
-          <h2>${msg("Storage Impact")}</h2>
+          <div class="flex items-center gap-2">
+            <h2>${msg("Storage Impact")}</h2>
+            ${inProgressBadge}
+          </div>
           ${infoPopover({
             content: html`
               <strong class="font-semibold">${storageLabelFor.conserved}</strong
@@ -434,7 +458,10 @@ export class CollectionDetailDedupe extends BtrixElement {
       </btrix-card>
       <btrix-card>
         <header slot="title">
-          <h2>${msg("Deduplication Summary")}</h2>
+          <div class="flex items-center gap-2">
+            <h2>${msg("Deduplication Summary")}</h2>
+            ${inProgressBadge}
+          </div>
         </header>
         <dl class="col-span-1 grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-y-6">
           ${stat({
@@ -775,11 +802,25 @@ export class CollectionDetailDedupe extends BtrixElement {
         ${when(
           state && this.collection,
           (col) => html`
-            ${col.indexLastSavedAt
-              ? html`<btrix-desc-list-item label=${msg("Index Last Updated")}>
-                  ${this.localize.relativeDate(col.indexLastSavedAt)}
+            ${updating
+              ? html`<btrix-desc-list-item
+                  label="${msg("Update Progress")} (${state === "purging"
+                    ? msg("Purge")
+                    : msg("Import")})"
+                >
+                  <div class="flex h-6 items-center">
+                    <btrix-index-import-progress
+                      class="w-full"
+                      collectionId=${this.collectionId}
+                      initialValue=${ifDefined(col.indexStats?.updateProgress)}
+                    ></btrix-index-import-progress>
+                  </div>
                 </btrix-desc-list-item>`
-              : nothing}
+              : col.indexLastSavedAt
+                ? html`<btrix-desc-list-item label=${msg("Index Last Updated")}>
+                    ${this.localize.relativeDate(col.indexLastSavedAt)}
+                  </btrix-desc-list-item>`
+                : nothing}
             ${when(
               this.appState.isAdmin,
               () => html`
@@ -790,22 +831,6 @@ export class CollectionDetailDedupe extends BtrixElement {
                 </btrix-desc-list-item>
               `,
             )}
-            ${updating
-              ? html`<btrix-desc-list-item
-                  label=${state === "purging"
-                    ? msg("Purge Progress")
-                    : msg("Import Progress")}
-                >
-                  <btrix-index-import-progress
-                    collectionId=${this.collectionId}
-                    initialValue=${ifDefined(col.indexStats?.updateProgress)}
-                    @btrix-progress-complete=${() =>
-                      this.dispatchEvent(
-                        new CustomEvent("btrix-request-update"),
-                      )}
-                  ></btrix-index-import-progress>
-                </btrix-desc-list-item>`
-              : nothing}
           `,
         )}
       </btrix-desc-list>`,

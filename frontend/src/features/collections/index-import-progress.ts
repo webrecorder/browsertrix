@@ -71,7 +71,8 @@ export class IndexImportProgress extends BtrixElement {
   render() {
     return this.progressTask.render({
       initial: () => this.renderBar(this.initialValue),
-      pending: () => this.renderBar(this.progressTask.value),
+      pending: () =>
+        this.renderBar(this.progressTask.value ?? this.initialValue),
       complete: this.renderBar,
     });
   }
@@ -85,7 +86,6 @@ export class IndexImportProgress extends BtrixElement {
         ?disabled=${!value}
       >
         <sl-progress-bar
-          class="mb-0.5 mt-1.5"
           value=${Math.max(percentage, 1)}
           label=${msg("Index Import Progress")}
           ?indeterminate=${!value}
