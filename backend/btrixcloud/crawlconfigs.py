@@ -16,7 +16,6 @@ from typing import (
     Any,
 )
 
-import logging
 import asyncio
 import json
 import re
@@ -96,8 +95,6 @@ else:
         FileUploadOps
     ) = StorageOps = object
 
-
-LOGGER = logging.getLogger(__name__)
 
 ALLOWED_SORT_KEYS = (
     "created",
@@ -1127,11 +1124,8 @@ class CrawlConfigOps:
         session: AsyncIOMotorClientSession | None = None,
     ):
         """Make config inactive if crawls exist, otherwise move to inactive list"""
-
-        LOGGER.info(
-            "Deleting or making crawl config inactive",
-            extra={"crawlconfig": crawlconfig, "org": org, "session": session},
-        )
+        extra = {"crawlconfig": crawlconfig, "org": org, "session": session}
+        print(f"Deleting or making crawl config inactive {extra}")
 
         query = {"inactive": True}
 
@@ -1151,16 +1145,12 @@ class CrawlConfigOps:
                 {"_id": crawlconfig.id, "oid": crawlconfig.oid}, session=session
             )
 
-            LOGGER.info(
-                "Deleted crawl config",
-                extra={"crawlconfig": crawlconfig, "result": result},
-            )
+            extra = {"crawlconfig": crawlconfig, "result": result}
+            print(f"Deleted crawl config {extra}")
 
             if result.deleted_count != 1:
-                LOGGER.warning(
-                    "Failed to delete crawl config",
-                    extra={"crawlconfig": crawlconfig, "result": result},
-                )
+                extra = {"crawlconfig": crawlconfig, "result": result}
+                print(f"Failed to delete crawl config {extra}")
                 raise HTTPException(status_code=404, detail="failed_to_delete")
 
             if crawlconfig and crawlconfig.config.seedFileId:
@@ -1180,16 +1170,12 @@ class CrawlConfigOps:
                 session=session,
             )
             if not result:
-                LOGGER.warning(
-                    "Failed to make crawl config inactive",
-                    extra={"crawlconfig": crawlconfig, "result": result},
-                )
+                extra = {"crawlconfig": crawlconfig, "result": result}
+                print(f"Failed to make crawl config inactive {extra}")
                 raise HTTPException(status_code=404, detail="failed_to_deactivate")
 
-            LOGGER.info(
-                "Marked crawl config as inactive",
-                extra={"crawlconfig": crawlconfig, "result": result},
-            )
+            extra = {"crawlconfig": crawlconfig, "result": result}
+            print(f"Marked crawl config as inactive {extra}")
             status = "deactivated"
 
         # delete from crawl manager, but not from db
