@@ -73,7 +73,7 @@ def crawl_id_1(admin_auth_headers, default_org_id):
 
     # Cleanup
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
         headers=admin_auth_headers,
         json={"crawl_ids": [crawl_id]},
     )
@@ -125,7 +125,7 @@ def crawl_id_2(admin_auth_headers, default_org_id):
 
     # Set review status to 3
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}",
         headers=admin_auth_headers,
         json={"reviewStatus": 3},
     )
@@ -144,7 +144,7 @@ def crawl_id_2(admin_auth_headers, default_org_id):
 
     # Cleanup
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
         headers=admin_auth_headers,
         json={"crawl_ids": [crawl_id]},
     )
@@ -215,7 +215,7 @@ def crawl_id_3(admin_auth_headers, default_org_id):
 
     # Cleanup
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
         headers=admin_auth_headers,
         json={"crawl_ids": [crawl_id]},
     )
