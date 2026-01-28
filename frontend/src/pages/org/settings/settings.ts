@@ -166,7 +166,9 @@ export class OrgSettings extends BtrixElement {
           this.renderTab("billing", "settings/billing"),
         )}
         ${this.renderTab("crawling-defaults", "settings/crawling-defaults")}
-        ${this.renderTab("deduplication", "settings/deduplication")}
+        ${this.renderTab("deduplication", "settings/deduplication", {
+          beta: true,
+        })}
 
         <btrix-tab-group-panel name="information">
           ${this.renderPanelHeader({ title: msg("General") })}
@@ -220,7 +222,10 @@ export class OrgSettings extends BtrixElement {
           <btrix-org-settings-crawling-defaults></btrix-org-settings-crawling-defaults>
         </btrix-tab-group-panel>
         <btrix-tab-group-panel name="deduplication">
-          ${this.renderPanelHeader({ title: msg("Deduplication Sources") })}
+          ${this.renderPanelHeader({
+            title: msg("Deduplication Sources"),
+            beta: true,
+          })}
           <btrix-org-settings-deduplication></btrix-org-settings-deduplication>
         </btrix-tab-group-panel>
       </btrix-tab-group>`;
@@ -229,19 +234,24 @@ export class OrgSettings extends BtrixElement {
   private renderPanelHeader({
     title,
     actions,
+    beta,
   }: {
     title: string;
     actions?: TemplateResult;
+    beta?: boolean;
   }) {
     return html`
       <header class="mb-2 flex items-center justify-between">
-        <h3 class="text-lg font-medium">${title}</h3>
+        <div class="flex items-center gap-2">
+          <h3 class="text-lg font-medium">${title}</h3>
+          ${when(beta, () => html`<btrix-beta-badge></btrix-beta-badge>`)}
+        </div>
         ${actions}
       </header>
     `;
   }
 
-  private renderTab(name: Tab, path: string) {
+  private renderTab(name: Tab, path: string, { beta } = { beta: false }) {
     return html`
       <btrix-tab-group-tab
         slot="nav"
@@ -263,6 +273,7 @@ export class OrgSettings extends BtrixElement {
           ["deduplication", () => html`<sl-icon name="stack"></sl-icon>`],
         ])}
         ${this.tabLabels[name]}
+        ${when(beta, () => html`<btrix-beta-icon></btrix-beta-icon>`)}
       </btrix-tab-group-tab>
     `;
   }
