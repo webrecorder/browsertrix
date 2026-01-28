@@ -1196,10 +1196,7 @@ class CrawlConfigOps:
         """perform make_inactive in a transaction"""
 
         async with await self.dbclient.start_session() as sesh:
-            async with sesh.start_transaction():
-                status = await self.make_inactive_or_delete(
-                    crawlconfig, org, session=sesh
-                )
+            status = await self.make_inactive_or_delete(crawlconfig, org, session=sesh)
 
         return {"success": True, "status": status}
 
