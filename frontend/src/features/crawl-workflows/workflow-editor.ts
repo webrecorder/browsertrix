@@ -2441,6 +2441,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
           } else {
             if (this.initialWorkflow?.dedupeCollId) {
               formState.dedupeCollectionId = this.initialWorkflow.dedupeCollId;
+              formState.autoAddCollections = union(
+                formState.autoAddCollections,
+                [formState.dedupeCollectionId],
+              );
             }
           }
 
@@ -2568,12 +2572,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
       this.formState.dedupeType === "collection" &&
       !this.formState.dedupeCollectionId &&
       this.formState.dedupeCollectionName;
-    const showDedupeWarning =
-      !isEqual(
-        this.initialWorkflow?.autoAddCollections,
-        this.formState.autoAddCollections,
-      ) &&
-      (this.formState.dedupeCollectionId || newDedupeCollectionName);
+    const showDedupeWarning = newDedupeCollectionName
+      ? // New collections don't have an ID to add to list yet;
+        // check if list has any items
+        this.formState.autoAddCollections.length
+      : this.formState.dedupeCollectionId
+        ? this.formState.autoAddCollections.length > 1
+        : false;
 
     return html`
       ${inputCol(html`
