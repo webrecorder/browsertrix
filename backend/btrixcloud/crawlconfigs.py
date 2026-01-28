@@ -1145,11 +1145,11 @@ class CrawlConfigOps:
                 {"_id": crawlconfig.id, "oid": crawlconfig.oid}, session=session
             )
 
-            extra = {"crawlconfig": crawlconfig, "result": result}
+            extra = {"crawlconfig": crawlconfig, "result": result}  # type: ignore
             print(f"Deleted crawl config {extra}")
 
             if result.deleted_count != 1:
-                extra = {"crawlconfig": crawlconfig, "result": result}
+                extra = {"crawlconfig": crawlconfig, "result": result}  # type: ignore
                 print(f"Failed to delete crawl config {extra}")
                 raise HTTPException(status_code=404, detail="failed_to_delete")
 
@@ -1174,7 +1174,7 @@ class CrawlConfigOps:
                 print(f"Failed to make crawl config inactive {extra}")
                 raise HTTPException(status_code=404, detail="failed_to_deactivate")
 
-            extra = {"crawlconfig": crawlconfig, "result": result}
+            extra = {"crawlconfig": crawlconfig, "result": result}  # type: ignore
             print(f"Marked crawl config as inactive {extra}")
             status = "deactivated"
 
