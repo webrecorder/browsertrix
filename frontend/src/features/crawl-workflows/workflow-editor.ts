@@ -2468,7 +2468,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               ${msg("Auto-add will remain enabled.")}
               <br />
               ${msg(
-                html`To disable auto-add to the collection, update the
+                html`To disable auto-adding to the collection, update the
                 ${link_to_collections_settings} setting.`,
               )}
             </div>
