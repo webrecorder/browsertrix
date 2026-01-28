@@ -204,7 +204,7 @@ export class Collection extends BtrixElement {
   }
 
   private renderAbout(collection: PublicCollection) {
-    const metadata = metadataColumn(collection);
+    const metadata = metadataColumn(collection, { publicView: true });
 
     if (collection.description) {
       return html`

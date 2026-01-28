@@ -866,7 +866,7 @@ export class CollectionDetail extends BtrixElement {
         ${this.renderDetailItem(
           msg("Total Pages"),
           (col) =>
-            `${this.localize.number(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
+            `${this.localize.number(col.pageCount, { notation: "compact" })} ${pluralOf("pages", col.pageCount)}`,
         )}
         ${this.renderDetailItem(
           msg("Total Size"),
