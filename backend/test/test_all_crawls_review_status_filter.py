@@ -37,10 +37,6 @@ def crawl_id_1(admin_auth_headers, default_org_id):
     crawlconfig_id = data["id"]
     crawl_id = data["run_now_job"]
 
-    print(
-        f"Created crawlconfig 1 with ID {crawlconfig_id} and crawl with ID {crawl_id}"
-    )
-
     # Wait for crawl to complete
     while True:
         r = requests.get(
@@ -83,7 +79,8 @@ def crawl_id_1(admin_auth_headers, default_org_id):
     time.sleep(2)
 
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}"
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}",
+        headers=admin_auth_headers,
     )
     assert r.status_code == 200
     assert r.text == "deactivated"
@@ -107,10 +104,6 @@ def crawl_id_2(admin_auth_headers, default_org_id):
 
     crawlconfig_id = data["id"]
     crawl_id = data["run_now_job"]
-
-    print(
-        f"Created crawlconfig 2 with ID {crawlconfig_id} and crawl with ID {crawl_id}"
-    )
 
     # Wait for crawl to complete
     while True:
@@ -154,7 +147,8 @@ def crawl_id_2(admin_auth_headers, default_org_id):
     time.sleep(2)
 
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}"
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}",
+        headers=admin_auth_headers,
     )
     assert r.status_code == 200
     assert r.text == "deactivated"
@@ -178,10 +172,6 @@ def crawl_id_3(admin_auth_headers, default_org_id):
 
     crawlconfig_id = data["id"]
     crawl_id = data["run_now_job"]
-
-    print(
-        f"Created crawlconfig 3 with ID {crawlconfig_id} and crawl with ID {crawl_id}"
-    )
 
     # Wait for crawl to complete
     while True:
@@ -225,7 +215,8 @@ def crawl_id_3(admin_auth_headers, default_org_id):
     time.sleep(2)
 
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}"
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawlconfig_id}",
+        headers=admin_auth_headers,
     )
     assert r.status_code == 200
     assert r.text == "deactivated"
