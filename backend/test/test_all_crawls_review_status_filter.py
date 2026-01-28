@@ -83,7 +83,7 @@ def crawl_id_1(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
-    assert r.text == "deactivated"
+    assert r.json()["status"] == "deactivated"
 
 
 @pytest.fixture(scope="module")
@@ -151,7 +151,7 @@ def crawl_id_2(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
-    assert r.text == "deactivated"
+    assert r.json()["status"] == "deactivated"
 
 
 @pytest.fixture(scope="module")
@@ -219,7 +219,7 @@ def crawl_id_3(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
-    assert r.text == "deactivated"
+    assert r.json()["status"] == "deactivated"
 
 
 def test_filter_by_single_review_status(admin_auth_headers, default_org_id, crawl_id_1):
