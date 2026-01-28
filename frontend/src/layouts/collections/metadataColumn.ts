@@ -64,7 +64,9 @@ export function metadataColumn(collection?: Collection | PublicCollection) {
               (x) => html`
                 <tr>
                   <td>${x.host}</td>
-                  <td class="pl-4">${x.count}</td>
+                  <td class="pl-4">
+                    ${localize.number(x.count, { notation: "compact" })}
+                  </td>
                 </tr>
               `,
             )}
