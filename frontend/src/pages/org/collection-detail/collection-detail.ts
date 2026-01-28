@@ -952,14 +952,16 @@ export class CollectionDetail extends BtrixElement {
                     </div>
                   </btrix-popover>
                 `
-              : html`<sl-tooltip content=${msg("Edit Description")}>
-                  <sl-icon-button
-                    class="text-base"
-                    name="pencil"
-                    @click=${() => (this.isEditingDescription = true)}
-                  >
-                  </sl-icon-button>
-                </sl-tooltip>`}
+              : this.isCrawler
+                ? html`<sl-tooltip content=${msg("Edit Description")}>
+                    <sl-icon-button
+                      class="text-base"
+                      name="pencil"
+                      @click=${() => (this.isEditingDescription = true)}
+                    >
+                    </sl-icon-button>
+                  </sl-tooltip>`
+                : nothing}
           </header>
           ${when(
             this.collection,
@@ -985,15 +987,23 @@ export class CollectionDetail extends BtrixElement {
                               <p class="mb-3 max-w-prose">
                                 ${msg("No description provided.")}
                               </p>
-                              <sl-button
-                                size="small"
-                                @click=${() =>
-                                  (this.isEditingDescription = true)}
-                                ?disabled=${!this.collection}
-                              >
-                                <sl-icon name="pencil" slot="prefix"></sl-icon>
-                                ${msg("Add Description")}
-                              </sl-button>
+                              ${when(
+                                this.isCrawler,
+                                () => html`
+                                  <sl-button
+                                    size="small"
+                                    @click=${() =>
+                                      (this.isEditingDescription = true)}
+                                    ?disabled=${!this.collection}
+                                  >
+                                    <sl-icon
+                                      name="pencil"
+                                      slot="prefix"
+                                    ></sl-icon>
+                                    ${msg("Add Description")}
+                                  </sl-button>
+                                `,
+                              )}
                             </div>
                           `}
                     </div>
