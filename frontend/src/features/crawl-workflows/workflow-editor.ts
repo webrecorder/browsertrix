@@ -2405,6 +2405,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
     >
       ${msg("Auto-Add to Collections")}
     </button>`;
+    const showAutoAddWarning =
+      this.formState.dedupeType === "none" &&
+      this.initialWorkflow?.dedupeCollId &&
+      this.formState.autoAddCollections.includes(
+        this.initialWorkflow.dedupeCollId,
+      );
 
     return html` ${inputCol(html`
       <sl-radio-group
@@ -2421,7 +2427,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
             dedupeCollectionName: null,
           };
 
-          if (dedupeType === "none" && this.formState.dedupeCollectionId) {
+          if (
+            dedupeType === "none" &&
+            this.formState.dedupeCollectionId &&
+            !this.initialWorkflow?.dedupeCollId
+          ) {
             formState.autoAddCollections = without(
               [this.formState.dedupeCollectionId],
               this.formState.autoAddCollections,
@@ -2437,22 +2447,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
         >
 
         ${when(
-          this.formState.dedupeType === "none" &&
-            this.initialWorkflow?.dedupeCollId,
+          showAutoAddWarning,
           () => html`
-            <div slot="help-text" class="mt-2">
+            <div slot="help-text" class="pt-2">
               <sl-icon
                 class="mr-0.5 align-[-.175em]"
                 name="exclamation-triangle"
               ></sl-icon>
 
-              ${msg(
-                "Disabling deduplication will also disable auto-adding to the collection.",
-              )}
+              ${msg("Auto-add will remain enabled.")}
               <br />
               ${msg(
-                html`To continue to auto-add to the collection without
-                deduplication enabled, update the
+                html`To disable auto-add to the collection, update the
                 ${link_to_collections_settings} setting.`,
               )}
             </div>
