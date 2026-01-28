@@ -206,6 +206,13 @@ export class CollectionDetail extends BtrixElement {
     const collection_name = html`<strong class="font-semibold"
       >${this.collection?.name}</strong
     >`;
+    const caption = (text?: Collection["caption"]) => {
+      if (text) {
+        return html`<div class="text-pretty text-neutral-600">
+          ${richText(text)}
+        </div>`;
+      }
+    };
 
     return html`
       <div class="mb-7 flex justify-between align-baseline">
@@ -233,7 +240,12 @@ export class CollectionDetail extends BtrixElement {
             `
           : nothing}
       </div>
-      <header class="mt-5 flex min-h-16 flex-col gap-3  lg:flex-row">
+      <header
+        class=${clsx(
+          tw`mt-5 flex flex-col gap-3 lg:flex-row`,
+          this.isCrawler && tw`min-h-16`,
+        )}
+      >
         <div
           class="-mb-1 -ml-2 -mr-1 -mt-1 flex flex-none flex-col gap-2 self-start rounded-lg pb-1 pl-2 pr-1 pt-1 transition-colors has-[.addSummary:hover]:bg-primary-50 has-[sl-icon-button:hover]:bg-primary-50"
         >
@@ -252,22 +264,27 @@ export class CollectionDetail extends BtrixElement {
               }}
             ></sl-icon-button>`}
           </div>
-          ${this.collection
-            ? this.collection.caption
-              ? html`<div class="text-pretty text-neutral-600">
-                  ${richText(this.collection.caption)}
-                </div>`
-              : html`<div
-                  class="addSummary text-pretty rounded-md px-1 font-light text-neutral-500"
-                  role="button"
-                  @click=${() => {
-                    this.openDialogName = "edit";
-                    this.editTab = "general";
-                  }}
-                >
-                  ${msg("Add a summary...")}
-                </div>`
-            : html`<sl-skeleton></sl-skeleton>`}
+          ${this.isCrawler
+            ? when(
+                this.collection,
+                (col) =>
+                  col.caption
+                    ? caption(col.caption)
+                    : html`
+                        <div
+                          class="addSummary text-pretty rounded-md px-1 font-light text-neutral-500"
+                          role="button"
+                          @click=${() => {
+                            this.openDialogName = "edit";
+                            this.editTab = "general";
+                          }}
+                        >
+                          ${msg("Add a summary...")}
+                        </div>
+                      `,
+                () => html`<sl-skeleton></sl-skeleton>`,
+              )
+            : caption(this.collection?.caption)}
         </div>
 
         <div class="ml-auto flex flex-shrink-0 items-center gap-2">
