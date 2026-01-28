@@ -2427,15 +2427,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
             dedupeCollectionName: null,
           };
 
-          if (
-            dedupeType === "none" &&
-            this.formState.dedupeCollectionId &&
-            !this.initialWorkflow?.dedupeCollId
-          ) {
-            formState.autoAddCollections = without(
-              [this.formState.dedupeCollectionId],
-              this.formState.autoAddCollections,
-            );
+          if (dedupeType === "none") {
+            if (
+              this.formState.dedupeCollectionId &&
+              !this.initialWorkflow?.dedupeCollId
+            ) {
+              // Remove from auto-add list if dedupe ID hasn't been saved yet
+              formState.autoAddCollections = without(
+                [this.formState.dedupeCollectionId],
+                this.formState.autoAddCollections,
+              );
+            }
+          } else {
+            if (this.initialWorkflow?.dedupeCollId) {
+              formState.dedupeCollectionId = this.initialWorkflow.dedupeCollId;
+            }
           }
 
           this.updateFormState(formState, true);
