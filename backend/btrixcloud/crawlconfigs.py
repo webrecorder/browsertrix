@@ -1128,6 +1128,11 @@ class CrawlConfigOps:
     ):
         """Make config inactive if crawls exist, otherwise move to inactive list"""
 
+        LOGGER.info(
+            "Deleting or making crawl config inactive",
+            extra={"crawlconfig": crawlconfig, "org": org, "session": session},
+        )
+
         query = {"inactive": True}
 
         is_running = (
