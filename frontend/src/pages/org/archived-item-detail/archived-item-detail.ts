@@ -212,23 +212,16 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private readonly dependenciesTask = new Task(this, {
     task: async ([item], { signal }) => {
-      if (!item) return;
-      if (!isCrawlReplay(item)) return;
-      if (!item.requiresCrawls.length) return;
+      if (!item?.requiresCrawls.length) return;
 
-      const query = queryString.stringify(
-        {
-          ids: item.requiresCrawls,
-          sortBy: "started",
-          sortDirection: SortDirection.Descending,
-        },
-        {
-          arrayFormat: "comma",
-        },
-      );
+      const query = queryString.stringify({
+        ids: item.requiresCrawls,
+        sortBy: "started",
+        sortDirection: SortDirection.Descending,
+      });
 
       return this.api.fetch<APIPaginatedList<Crawl>>(
-        `/orgs/${this.orgId}/crawls?${query}`,
+        `/orgs/${this.orgId}/all-crawls?${query}`,
         { signal },
       );
     },
@@ -378,8 +371,7 @@ export class ArchivedItemDetail extends BtrixElement {
   render() {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
     const isSuccess = this.item && isSuccessfullyFinished(this.item);
-    const dedupeDependent =
-      this.item && isCrawl(this.item) && this.item.requiresCrawls.length;
+    const dedupeDependent = this.item?.requiresCrawls.length;
 
     let sectionContent: string | TemplateResult<1> = "";
 
@@ -390,9 +382,7 @@ export class ArchivedItemDetail extends BtrixElement {
           break;
         }
         sectionContent = this.renderPanel(
-          html`${this.renderTitle(
-              html`${this.tabLabels.qa} <btrix-beta-badge></btrix-beta-badge>`,
-            )}
+          html`${this.renderTitle(this.tabLabels.qa, { beta: true })}
             <div class="ml-auto flex flex-wrap justify-end gap-2">
               ${when(!dedupeDependent && this.qaRuns, this.renderQAHeader)}
             </div> `,
@@ -490,7 +480,9 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       case "dependencies":
         sectionContent = this.renderPanel(
-          html` ${this.renderTitle(msg("Dependencies"))} `,
+          html`
+            ${this.renderTitle(this.tabLabels.dependencies, { beta: true })}
+          `,
           this.renderDependencies(),
         );
         break;
@@ -675,12 +667,12 @@ export class ArchivedItemDetail extends BtrixElement {
       section,
       iconLibrary,
       icon,
-      detail,
+      beta,
     }: {
       section: SectionName;
       iconLibrary: "app" | "default";
       icon: string;
-      detail?: TemplateResult<1>;
+      beta?: boolean;
     }) => {
       const isActive = section === this.activeTab;
       const baseUrl = window.location.pathname.split("#")[0];
@@ -698,8 +690,9 @@ export class ArchivedItemDetail extends BtrixElement {
             aria-hidden="true"
             library=${iconLibrary}
           ></sl-icon>
-          ${this.tabLabels[section]}${detail}</btrix-navigation-button
-        >
+          ${this.tabLabels[section]}
+          ${when(beta, () => html`<btrix-beta-icon></btrix-beta-icon>`)}
+        </btrix-navigation-button>
       `;
     };
     return html`
@@ -722,7 +715,7 @@ export class ArchivedItemDetail extends BtrixElement {
                       section: "qa",
                       iconLibrary: "default",
                       icon: "clipboard2-data-fill",
-                      detail: html`<btrix-beta-icon></btrix-beta-icon>`,
+                      beta: true,
                     })}
                   `,
                 )}
@@ -752,17 +745,16 @@ export class ArchivedItemDetail extends BtrixElement {
               iconLibrary: "default",
               icon: "file-code-fill",
             })}
-            ${this.item &&
-            isCrawlReplay(this.item) &&
-            this.item.requiresCrawls.length
-              ? renderNavItem({
-                  section: "dependencies",
-                  iconLibrary: "default",
-                  icon: "layers-fill",
-                })
-              : nothing}
           `,
         )}
+        ${this.item?.requiresCrawls.length
+          ? renderNavItem({
+              section: "dependencies",
+              iconLibrary: "default",
+              icon: "layers-fill",
+              beta: true,
+            })
+          : nothing}
       </nav>
     `;
   }
@@ -898,12 +890,16 @@ export class ArchivedItemDetail extends BtrixElement {
     `;
   }
 
-  private renderTitle(title: string | TemplateResult) {
-    return html`<h2
-      class="flex items-center gap-2 text-lg font-medium leading-8"
-    >
-      ${title}
-    </h2>`;
+  private renderTitle(
+    title: string | TemplateResult,
+    { beta } = { beta: false },
+  ) {
+    return html`<div class="flex items-center gap-2">
+      <h2 class="text-lg font-medium leading-8">
+        ${title}
+        ${when(beta, () => html`<btrix-beta-badge></btrix-beta-badge>`)}
+      </h2>
+    </div>`;
   }
 
   private renderPanel(
@@ -923,17 +919,14 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderReplay() {
-    const dedupeCollId =
-      this.item &&
-      isCrawl(this.item) &&
-      this.item.requiresCrawls.length &&
-      this.item.dedupeCollId;
-
     return html`
-      ${dedupeCollId
+      ${this.item?.requiresCrawls.length
         ? dedupeReplayNotice({
             dependenciesHref: this.dependenciesUrl,
-            collectionHref: `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${dedupeCollId}`,
+            collectionHref:
+              isCrawl(this.item) && this.item.dedupeCollId
+                ? `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${this.item.dedupeCollId}`
+                : undefined,
           })
         : nothing}
       <div class="overflow-hidden rounded-lg border">${this.renderRWP()}</div>
@@ -1169,15 +1162,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderDependencies() {
     if (!this.item) return;
 
-    if (!isCrawlReplay(this.item)) {
-      return panelBody({
-        content: emptyMessage({
-          message: msg("Crawl dependencies are not applicable for this item."),
-        }),
-      });
-    }
-
-    const { dedupeCollId, requiresCrawls } = this.item;
+    const { requiresCrawls } = this.item;
     const noDeps = panelBody({
       content: emptyMessage({
         message: msg("This crawl doesn't have any dependencies."),
@@ -1187,6 +1172,8 @@ export class ArchivedItemDetail extends BtrixElement {
     if (!requiresCrawls.length) {
       return noDeps;
     }
+
+    const dedupeCollId = isCrawl(this.item) && this.item.dedupeCollId;
 
     return html`
       ${this.dependenciesTask.render({
@@ -1224,17 +1211,14 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderFiles() {
-    const dedupeCollId =
-      this.item &&
-      isCrawl(this.item) &&
-      this.item.requiresCrawls.length &&
-      this.item.dedupeCollId;
-
     return html`
-      ${this.hasFiles && dedupeCollId
+      ${this.hasFiles && this.item?.requiresCrawls.length
         ? dedupeFilesNotice({
             dependenciesHref: this.dependenciesUrl,
-            collectionHref: `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${dedupeCollId}`,
+            collectionHref:
+              isCrawl(this.item) && this.item.dedupeCollId
+                ? `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${this.item.dedupeCollId}`
+                : undefined,
           })
         : nothing}
       ${this.hasFiles

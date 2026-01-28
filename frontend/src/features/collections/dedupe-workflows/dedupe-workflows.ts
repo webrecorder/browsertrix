@@ -3,6 +3,7 @@ import { Task } from "@lit/task";
 import clsx from "clsx";
 import { html, nothing, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { until } from "lit/directives/until.js";
@@ -19,8 +20,6 @@ import { SortDirection } from "@/types/utils";
 import { finishedCrawlStates, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
-
-const INITIAL_PAGE_SIZE = 1000;
 
 const styles = unsafeCSS(stylesheet);
 
@@ -85,7 +84,9 @@ export class DedupeWorkflows extends BtrixElement {
         : nothing}
 
       <div class="divide-y rounded border">
-        ${repeat(this.workflows || [], ({ id }) => id, this.renderWorkflow)}
+        ${when(this.workflows, (workflows) =>
+          repeat(workflows, ({ id }) => id, this.renderWorkflow),
+        )}
       </div>
     </btrix-overflow-scroll>`;
   }
@@ -101,9 +102,9 @@ export class DedupeWorkflows extends BtrixElement {
               .get(workflow.id)
               ?.then((crawls) =>
                 crawls?.total
-                  ? html`${this.localize.number(crawls.total)} ${msg("indexed")}
+                  ? html`${this.localize.number(crawls.total)} ${msg("deduped")}
                     ${pluralOf("crawls", crawls.total)}`
-                  : msg("No indexed crawls"),
+                  : msg("No deduped crawls."),
               ),
           )}
         </div>
@@ -158,6 +159,13 @@ export class DedupeWorkflows extends BtrixElement {
             </sl-tooltip>
             ${renderName(workflow)}
           </div>
+          <div class="flex items-center">
+            ${when(
+              workflow.lastCrawlState,
+              (state) =>
+                html`<btrix-crawl-status state=${state}></btrix-crawl-status>`,
+            )}
+          </div>
           <div class="flex items-center gap-1.5 truncate">
             <sl-tooltip content=${msg("Successful Crawl Runs")} hoist>
               <sl-icon
@@ -209,7 +217,7 @@ export class DedupeWorkflows extends BtrixElement {
           </div>
         </div>
 
-        ${when(totalCrawls, content)}
+        ${guard([totalCrawls], () => when(totalCrawls, content))}
       </sl-details>
     `;
   };
@@ -243,10 +251,10 @@ export class DedupeWorkflows extends BtrixElement {
     const query = queryString.stringify(
       {
         cid: workflowId,
-        pageSize: INITIAL_PAGE_SIZE,
         sortBy: "started",
         sortDirection: SortDirection.Descending,
         state: finishedCrawlStates,
+        hasRequiresCrawls: true,
         ...params,
       },
       {

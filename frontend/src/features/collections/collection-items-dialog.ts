@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import clsx from "clsx";
 import { merge } from "immutable";
 import { css, html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -36,6 +37,7 @@ import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import { isApiError } from "@/utils/api";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
+import { tw } from "@/utils/tailwind";
 
 const TABS = ["crawl", "upload"] as const;
 type Tab = (typeof TABS)[number];
@@ -200,16 +202,17 @@ export class CollectionItemsDialog extends BtrixElement {
   render() {
     return html` <btrix-dialog
       ?open=${this.open}
+      class="part-[title]:overflow-hidden"
       style="--width: var(--btrix-screen-desktop); --body-spacing: 0;"
       @sl-show=${() => (this.isReady = true)}
       @sl-after-hide=${() => this.reset()}
     >
-      <span slot="label">
-        ${msg("Select Archived Items")}
-        <span class="font-normal text-neutral-500"
-          >${msg("in")} ${this.collectionName}</span
-        >
-      </span>
+      <div slot="label" class="flex items-center gap-3 divide-x">
+        <div class="whitespace-nowrap">${msg("Configure Items")}</div>
+        <div class="truncate px-3 text-sm leading-none text-neutral-500">
+          ${this.collectionName}
+        </div>
+      </div>
       <div class="dialogContent flex flex-col">
         ${when(this.isReady, this.renderContent)}
       </div>
@@ -234,7 +237,10 @@ export class CollectionItemsDialog extends BtrixElement {
       </div>
       <div
         id="tabPanel-crawls"
-        class="flex-1${this.activeTab === "crawl" ? " flex flex-col" : ""}"
+        class=${clsx(
+          tw`flex-1 overflow-hidden`,
+          this.activeTab === "crawl" && tw`flex flex-col`,
+        )}
         role="tabpanel"
         tabindex="0"
         aria-labelledby="tab-crawls"
@@ -245,7 +251,10 @@ export class CollectionItemsDialog extends BtrixElement {
 
       <div
         id="tabPanel-uploads"
-        class="flex-1${this.activeTab === "upload" ? " flex flex-col" : ""}"
+        class=${clsx(
+          tw`flex-1`,
+          this.activeTab === "upload" && tw`flex flex-col`,
+        )}
         role="tabpanel"
         tabindex="0"
         aria-labelledby="tab-uploads"
@@ -304,14 +313,14 @@ export class CollectionItemsDialog extends BtrixElement {
           <div class="px-3">
             ${when(
               data,
-              () =>
+              ({ total }) =>
                 this.showOnlyInCollection
-                  ? msg(
-                      str`Crawls in Collection (${this.localize.number(data!.total)})`,
-                    )
-                  : msg(
-                      str`All Workflows (${this.localize.number(data!.total)})`,
-                    ),
+                  ? html`${msg("Crawled Items")}
+                      <btrix-badge>${this.localize.number(total)}</btrix-badge>`
+                  : html`${msg("Crawl Workflows")}
+                      <btrix-badge
+                        >${this.localize.number(total)}</btrix-badge
+                      >`,
               () => msg("Loading..."),
             )}
           </div>
@@ -465,7 +474,7 @@ export class CollectionItemsDialog extends BtrixElement {
             };
           }}
           @btrix-auto-add-change=${(e: CustomEvent<AutoAddChangeDetail>) => {
-            const { id, checked } = e.detail;
+            const { id, checked, dedupe } = e.detail;
             const workflow = this.workflows?.items.find(
               (workflow) => workflow.id === id,
             );
@@ -475,6 +484,7 @@ export class CollectionItemsDialog extends BtrixElement {
                 autoAddCollections: checked
                   ? union([this.collectionId], workflow.autoAddCollections)
                   : without([this.collectionId], workflow.autoAddCollections),
+                dedupe,
               });
             }
           }}
@@ -509,7 +519,7 @@ export class CollectionItemsDialog extends BtrixElement {
         @sl-change=${() =>
           (this.showOnlyInCollection = !this.showOnlyInCollection)}
       >
-        ${msg("Only items in Collection")}
+        ${msg("Only items in collection")}
       </sl-switch>
     `;
   }
@@ -550,7 +560,7 @@ export class CollectionItemsDialog extends BtrixElement {
     const addCount = add.length;
     const removeCount = remove.length;
     const hasChange = addCount || removeCount;
-    let selectionMessage = msg("No changes to save");
+    let selectionMessage = "";
 
     if (hasChange) {
       const messages: string[] = [];
@@ -577,11 +587,11 @@ export class CollectionItemsDialog extends BtrixElement {
       <sl-button
         variant="primary"
         size="small"
-        ?disabled=${this.isSubmitting || !hasChange}
+        ?disabled=${this.isSubmitting}
         ?loading=${this.isSubmitting}
-        @click=${() => void this.save()}
+        @click=${hasChange ? () => void this.save() : () => this.close()}
       >
-        ${msg("Save Selection")}
+        ${hasChange ? msg("Save Selection") : msg("Done")}
       </sl-button>
     `;
   };
@@ -736,21 +746,31 @@ export class CollectionItemsDialog extends BtrixElement {
         ...this.filterCrawlsBy,
       });
       if (!this.showOnlyInCollection) {
-        this.workflows = await this.getWorkflows({
-          userid: this.showOnlyMine ? userId : undefined,
-          sortBy:
-            // NOTE "finished" field doesn't exist in crawlconfigs,
-            // `lastRun` is used instead
-            this.sortCrawlsBy.field === "finished"
-              ? "lastRun"
-              : this.sortCrawlsBy.field,
-          sortDirection: this.sortCrawlsBy.direction,
-          page: this.workflows?.page,
-          pageSize: this.workflows?.pageSize,
-          ...pageParams,
-          ...this.filterCrawlsBy,
-        });
+        await this.fetchWorkflows(pageParams);
       }
+    } catch (e: unknown) {
+      console.debug(e);
+    }
+  }
+
+  private async fetchWorkflows(pageParams: APIPaginationQuery = {}) {
+    const userId = this.userInfo!.id;
+
+    try {
+      this.workflows = await this.getWorkflows({
+        userid: this.showOnlyMine ? userId : undefined,
+        sortBy:
+          // NOTE "finished" field doesn't exist in crawlconfigs,
+          // `lastRun` is used instead
+          this.sortCrawlsBy.field === "finished"
+            ? "lastRun"
+            : this.sortCrawlsBy.field,
+        sortDirection: this.sortCrawlsBy.direction,
+        page: this.workflows?.page,
+        pageSize: this.workflows?.pageSize,
+        ...pageParams,
+        ...this.filterCrawlsBy,
+      });
     } catch (e: unknown) {
       console.debug(e);
     }
@@ -864,16 +884,31 @@ export class CollectionItemsDialog extends BtrixElement {
   private async saveAutoAdd({
     id,
     autoAddCollections,
-  }: Pick<Workflow, "id" | "autoAddCollections">) {
+    dedupe,
+  }: Pick<Workflow, "id" | "autoAddCollections"> & { dedupe?: boolean }) {
+    const params: Pick<Workflow, "autoAddCollections" | "dedupeCollId"> = {
+      autoAddCollections: autoAddCollections,
+    };
+
+    if (dedupe === true) {
+      params.dedupeCollId = this.collectionId;
+    } else if (dedupe === false) {
+      params.dedupeCollId = "";
+    }
+
     try {
       await this.api.fetch(`/orgs/${this.orgId}/crawlconfigs/${id}`, {
         method: "PATCH",
-        body: JSON.stringify({
-          autoAddCollections: autoAddCollections,
-        }),
+        body: JSON.stringify(params),
       });
+      await this.fetchWorkflows();
+      this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
+
       this.notify.toast({
-        message: msg(str`Updated.`),
+        message:
+          dedupe === true || dedupe === false
+            ? msg("Deduplication settings updated.")
+            : msg("Auto-add settings updated."),
         variant: "success",
         icon: "check2-circle",
         duration: 1000,

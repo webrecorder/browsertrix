@@ -24,10 +24,11 @@ import { SelectCollectionAccess } from "@/features/collections/select-collection
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
+import { getIndexErrorMessage } from "@/strings/collections/index-error";
 import { metadata } from "@/strings/collections/metadata";
 import { stringFor } from "@/strings/ui";
 import { monthYearDateRange } from "@/strings/utils";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import { type APIPaginatedList, type APIPaginationQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import { SortDirection, type UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
@@ -692,7 +693,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           ></btrix-format-date>
         </btrix-table-cell>
         <btrix-table-cell class="p-0">
-          ${this.isCrawler ? this.renderActions(col) : ""}
+          ${this.renderActions(col)}
         </btrix-table-cell>
       </btrix-table-row>
     `;
@@ -710,10 +711,17 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         size=${renderOnGridItem ? "small" : "medium"}
       >
         <sl-menu>
-          <sl-menu-item @click=${() => void this.manageCollection(col, "edit")}>
-            <sl-icon name="gear" slot="prefix"></sl-icon>
-            ${msg("Edit Collection Settings")}
-          </sl-menu-item>
+          ${when(
+            this.isCrawler,
+            () => html`
+              <sl-menu-item
+                @click=${() => void this.manageCollection(col, "edit")}
+              >
+                <sl-icon name="gear" slot="prefix"></sl-icon>
+                ${msg("Edit Collection Settings")}
+              </sl-menu-item>
+            `,
+          )}
           ${col.access === CollectionAccess.Public ||
           col.access === CollectionAccess.Unlisted
             ? html`
@@ -751,14 +759,19 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
             <sl-icon name="copy" slot="prefix"></sl-icon>
             ${msg("Copy Collection ID")}
           </sl-menu-item>
-          <sl-divider></sl-divider>
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => void this.manageCollection(col, "delete")}
-          >
-            <sl-icon name="trash3" slot="prefix"></sl-icon>
-            ${msg("Delete Collection")}
-          </sl-menu-item>
+          ${when(
+            this.isCrawler && !col.indexStats,
+            () => html`
+              <sl-divider></sl-divider>
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--danger)"
+                @click=${() => void this.manageCollection(col, "delete")}
+              >
+                <sl-icon name="trash3" slot="prefix"></sl-icon>
+                ${msg("Delete Collection")}
+              </sl-menu-item>
+            `,
+          )}
         </sl-menu>
       </btrix-overflow-dropdown>
     `;
@@ -831,9 +844,13 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         icon: "check2-circle",
         id: "collection-delete-status",
       });
-    } catch {
+    } catch (err) {
+      const message =
+        getIndexErrorMessage(err) ||
+        msg("Sorry, couldn’t delete collection at this time.");
+
       this.notify.toast({
-        message: msg("Sorry, couldn't delete Collection at this time."),
+        message,
         variant: "danger",
         icon: "exclamation-octagon",
         id: "collection-delete-status",
@@ -851,7 +868,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         this.fetchErrorStatusCode = e.statusCode;
       } else {
         this.notify.toast({
-          message: msg("Sorry, couldn't retrieve Collections at this time."),
+          message: msg("Sorry, couldn’t retrieve collection at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
           id: "collection-retrieve-status",
