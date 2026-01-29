@@ -2138,7 +2138,6 @@ class UserOut(UserOutNoId):
 
 # Org field filters by access type
 ORG_CRAWLER_EXCLUDE_FIELDS = [
-    *ORG_ADMIN_EXCLUDE_FIELDS,
     "users",
     "quotaUpdates",
     "webhookUrls",
@@ -2375,7 +2374,7 @@ class Organization(BaseMongoModel):
     async def serialize_for_user(self, user: User, user_manager) -> OrgOut:
         """Serialize result based on current user access"""
 
-        exclude = []
+        exclude: list[str] = []
 
         if not self.is_owner(user):
             exclude = ORG_CRAWLER_EXCLUDE_FIELDS
