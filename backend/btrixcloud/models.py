@@ -2506,8 +2506,6 @@ class FeatureFlagStats(BaseModel):
 # ============================================================================
 
 # Org field filters by access type
-ORG_ADMIN_EXCLUDE_FIELDS = ["storage"]
-
 ORG_CRAWLER_EXCLUDE_FIELDS = [
     *ORG_ADMIN_EXCLUDE_FIELDS,
     "users",
@@ -2761,7 +2759,7 @@ class Organization(BaseMongoModel):
     async def serialize_for_user(self, user: User, user_manager) -> OrgOut:
         """Serialize result based on current user access"""
 
-        exclude = ORG_ADMIN_EXCLUDE_FIELDS
+        exclude = []
 
         if not self.is_owner(user):
             exclude = ORG_CRAWLER_EXCLUDE_FIELDS
