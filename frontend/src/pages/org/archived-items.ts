@@ -100,7 +100,7 @@ type FilterBy = {
   name?: string;
   firstSeed?: string;
   state?: CrawlState[];
-  reviewStatus?: [number, number];
+  reviewStatus?: readonly [number, number];
 };
 
 /**
@@ -244,12 +244,15 @@ export class CrawlsList extends BtrixElement {
     (params) => {
       const state = params.getAll("status") as CrawlState[];
 
-      const reviewStatus = params
+      const range = params
         .get("reviewStatus")
         ?.split("-")
-        .slice(0, 2)
+        .filter((n) => n)
         .map((n) => Math.max(1, Math.min(5, parseInt(n))))
-        .sort() as [number, number] | undefined;
+        .sort();
+      const reviewStatus = range
+        ? ([range[0] ?? 1, range[1] ?? 5] as const)
+        : undefined;
 
       return {
         name: params.get("name") ?? undefined,

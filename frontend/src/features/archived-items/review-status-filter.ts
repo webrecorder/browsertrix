@@ -170,12 +170,12 @@ export class ReviewStatusFilter extends BtrixElement {
       >${position === "before"
         ? html`<sl-icon
               name=${icon.name}
-              class=${clsx(icon.class, "-ml-2 size-4")}
+              class=${clsx(icon.class, tw`-ml-2 size-4`)}
             ></sl-icon
             >${labelFor(value)}`
         : html`${labelFor(value)}<sl-icon
               name=${icon.name}
-              class=${clsx(icon.class, "-mr-2 size-4")}
+              class=${clsx(icon.class, tw`-mr-2 size-4`)}
             ></sl-icon>`}</span
     >`;
   }
