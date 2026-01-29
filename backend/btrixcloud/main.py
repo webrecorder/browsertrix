@@ -253,11 +253,12 @@ def main() -> None:
         storage_ops,
         event_webhook_ops,
         background_job_ops,
+        crawl_log_ops,
     )
 
     base_crawl_ops = init_base_crawls_api(*base_crawl_init)
 
-    crawls = init_crawls_api(crawl_manager, crawl_log_ops, *base_crawl_init)
+    crawls = init_crawls_api(crawl_manager, *base_crawl_init)
 
     upload_ops = init_uploads_api(*base_crawl_init)
 

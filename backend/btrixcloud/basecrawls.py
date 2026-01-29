@@ -60,10 +60,11 @@ if TYPE_CHECKING:
     from .webhooks import EventWebhookOps
     from .background_jobs import BackgroundJobOps
     from .pages import PageOps
+    from .crawl_logs import CrawlLogOps
 
 else:
     CrawlConfigOps = UserManager = OrgOps = CollectionOps = PageOps = object
-    StorageOps = EventWebhookOps = BackgroundJobOps = object
+    StorageOps = EventWebhookOps = BackgroundJobOps = CrawlLogOps = object
 
 
 # ============================================================================
@@ -80,6 +81,7 @@ class BaseCrawlOps:
     storage_ops: StorageOps
     event_webhook_ops: EventWebhookOps
     background_job_ops: BackgroundJobOps
+    crawl_log_ops: CrawlLogOps
     page_ops: PageOps
 
     def __init__(
@@ -92,6 +94,7 @@ class BaseCrawlOps:
         storage_ops: StorageOps,
         event_webhook_ops: EventWebhookOps,
         background_job_ops: BackgroundJobOps,
+        crawl_log_ops: CrawlLogOps,
     ):
         self.crawls = mdb["crawls"]
         self.presigned_urls = mdb["presigned_urls"]
@@ -102,6 +105,7 @@ class BaseCrawlOps:
         self.storage_ops = storage_ops
         self.event_webhook_ops = event_webhook_ops
         self.background_job_ops = background_job_ops
+        self.crawl_log_ops = crawl_log_ops
         self.page_ops = cast(PageOps, None)
 
     def set_page_ops(self, page_ops):
@@ -386,6 +390,7 @@ class BaseCrawlOps:
                     )
 
             await self.page_ops.delete_crawl_pages(crawl_id, org.id)
+            await self.crawl_log_ops.delete_crawl_logs(crawl_id, org.id)
 
             if crawl.collectionIds:
                 for coll_id in crawl.collectionIds:
