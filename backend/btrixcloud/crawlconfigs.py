@@ -396,7 +396,7 @@ class CrawlConfigOps:
             storage_quota_reached = self.org_ops.storage_quota_reached(org)
             exec_mins_quota_reached = self.org_ops.exec_mins_quota_reached(org)
 
-        res = CrawlConfigAddedResponse(
+        return CrawlConfigAddedResponse(
             added=True,
             id=str(result.inserted_id),
             run_now_job=crawl_id,
