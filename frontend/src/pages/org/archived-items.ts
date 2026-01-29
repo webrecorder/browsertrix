@@ -25,6 +25,7 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { type BtrixChangeQARatingFilterEvent } from "@/features/archived-items/qa-rating-filter";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { CrawlState } from "@/types/crawlState";
@@ -99,6 +100,7 @@ type FilterBy = {
   name?: string;
   firstSeed?: string;
   state?: CrawlState[];
+  reviewStatus?: readonly [number, number];
 };
 
 /**
@@ -211,7 +213,12 @@ export class CrawlsList extends BtrixElement {
   private readonly filterBy = new SearchParamsValue<FilterBy>(
     this,
     (value, params) => {
-      const keys = ["name", "firstSeed", "state"] as (keyof FilterBy)[];
+      const keys = [
+        "name",
+        "firstSeed",
+        "state",
+        "reviewStatus",
+      ] as (keyof FilterBy)[];
       keys.forEach((key) => {
         if (value[key] == null) {
           params.delete(key);
@@ -227,6 +234,8 @@ export class CrawlsList extends BtrixElement {
                 params.append("status", state);
               });
               break;
+            case "reviewStatus":
+              params.set(key, `${value[key][0]}-${value[key][1]}`);
           }
         }
       });
@@ -235,10 +244,21 @@ export class CrawlsList extends BtrixElement {
     (params) => {
       const state = params.getAll("status") as CrawlState[];
 
+      const range = params
+        .get("reviewStatus")
+        ?.split("-")
+        .filter((n) => n)
+        .map((n) => Math.max(1, Math.min(5, parseInt(n))))
+        .sort();
+      const reviewStatus = range
+        ? ([range[0] ?? 1, range[1] ?? 5] as const)
+        : undefined;
+
       return {
         name: params.get("name") ?? undefined,
         firstSeed: params.get("firstSeed") ?? undefined,
         state: state.length ? state : undefined,
+        reviewStatus,
       };
     },
   );
@@ -266,6 +286,7 @@ export class CrawlsList extends BtrixElement {
       this.filterBy.value.firstSeed,
       this.filterBy.value.name,
       this.filterBy.value.state?.length || undefined,
+      this.filterBy.value.reviewStatus,
       this.filterByCurrentUser.value || undefined,
       this.filterByTags.value?.length || undefined,
     ].some((v) => v !== undefined);
@@ -277,6 +298,7 @@ export class CrawlsList extends BtrixElement {
       firstSeed: undefined,
       name: undefined,
       state: undefined,
+      reviewStatus: undefined,
     });
     this.filterByCurrentUser.setValue(false);
     this.filterByTags.setValue([]);
@@ -631,6 +653,16 @@ export class CrawlsList extends BtrixElement {
             }}
           ></btrix-tag-filter>
 
+          <btrix-qa-review-filter
+            .qaRatingRange=${this.filterBy.value.reviewStatus ?? null}
+            @btrix-change=${(e: BtrixChangeQARatingFilterEvent) => {
+              this.filterBy.setValue({
+                ...this.filterBy.value,
+                reviewStatus: e.detail.value ?? undefined,
+              });
+            }}
+          ></btrix-qa-review-filter>
+
           ${this.userInfo?.id
             ? html`<btrix-filter-chip
                 ?checked=${this.filterByCurrentUser.value}
@@ -936,6 +968,7 @@ export class CrawlsList extends BtrixElement {
         sortBy: params.orderBy.field,
         sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
         crawlType: params.itemType ?? undefined,
+        reviewStatus: params.filterBy.reviewStatus,
       },
       {
         arrayFormat: "none",

@@ -1559,11 +1559,19 @@ class OrgOps(BaseOrgs):
             {"$set": {"lastCrawlFinished": last_crawl_finished}},
         )
 
-    async def inc_org_bytes_stored_field(self, oid: UUID, field: str, size: int):
+    async def inc_org_bytes_stored_field(
+        self,
+        oid: UUID,
+        field: str,
+        size: int,
+        session: AsyncIOMotorClientSession | None = None,
+    ):
         """Increment specific org bytesStored* field"""
         try:
             await self.orgs.find_one_and_update(
-                {"_id": oid}, {"$inc": {field: size, "bytesStored": size}}
+                {"_id": oid},
+                {"$inc": {field: size, "bytesStored": size}},
+                session=session,
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:

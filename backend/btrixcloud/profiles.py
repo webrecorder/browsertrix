@@ -19,6 +19,7 @@ import json
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Request, HTTPException, Query
+from motor.motor_asyncio import AsyncIOMotorClientSession
 from starlette.requests import Headers
 import pymongo
 import aiohttp
@@ -542,16 +543,23 @@ class ProfileOps:
 
         return profiles, total
 
-    async def get_profile(self, profileid: UUID, org: Organization) -> Profile:
+    async def get_profile(
+        self,
+        profileid: UUID,
+        org: Organization,
+        session: AsyncIOMotorClientSession | None = None,
+    ) -> Profile:
         """get profile by id and org"""
         query: dict[str, object] = {"_id": profileid, "oid": org.id}
 
-        res = await self.profiles.find_one(query)
+        res = await self.profiles.find_one(query, session=session)
         if not res:
             raise HTTPException(status_code=404, detail="profile_not_found")
 
         profile = Profile.from_dict(res)
-        profile.inUse = await self.crawlconfigs.is_profile_in_use(profileid, org)
+        profile.inUse = await self.crawlconfigs.is_profile_in_use(
+            profileid, org, session=session
+        )
         return profile
 
     async def get_profile_filename_proxy_channel(

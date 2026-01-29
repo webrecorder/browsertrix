@@ -153,6 +153,7 @@ const main = {
         include: [
           path.resolve(__dirname, "src"),
           path.resolve(__dirname, "node_modules/@shoelace-style/shoelace"),
+          path.resolve(__dirname, "node_modules/@awesome.me/webawesome"),
         ],
         exclude: /\.stylesheet\.css$/,
         use: [

@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 
 import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Request
+from motor.motor_asyncio import AsyncIOMotorClientSession
 import pymongo
 
 from .models import (
@@ -72,6 +73,7 @@ class FileUploadOps:
         file_id: UUID,
         org: Optional[Organization] = None,
         type_: Optional[str] = None,
+        session: AsyncIOMotorClientSession | None = None,
     ) -> Dict[str, Any]:
         """Get raw file from db"""
         query: dict[str, object] = {"_id": file_id}
@@ -81,7 +83,7 @@ class FileUploadOps:
         if type_:
             query["type"] = type_
 
-        res = await self.files.find_one(query)
+        res = await self.files.find_one(query, session=session)
 
         if not res:
             raise HTTPException(status_code=404, detail="file_not_found")
@@ -93,9 +95,10 @@ class FileUploadOps:
         file_id: UUID,
         org: Optional[Organization] = None,
         type_: Optional[str] = None,
+        session: AsyncIOMotorClientSession | None = None,
     ) -> SeedFile:
         """Get file by UUID"""
-        file_raw = await self.get_file_raw(file_id, org, type_)
+        file_raw = await self.get_file_raw(file_id, org, type_, session=session)
         return SeedFile.from_dict(file_raw)
 
     async def get_seed_file_out(
@@ -316,28 +319,33 @@ class FileUploadOps:
         return first_seed, seed_count
 
     async def delete_seed_file(
-        self, file_id: UUID, org: Organization
+        self,
+        file_id: UUID,
+        org: Organization,
+        session: AsyncIOMotorClientSession | None = None,
     ) -> Dict[str, bool]:
         """Delete user-uploaded file from storage and db"""
-        file = await self.get_seed_file(file_id, org)
+        file = await self.get_seed_file(file_id, org, session=session)
 
         # Make sure seed file isn't currently referenced by any workflows
         if file.type == "seedFile":
             matching_workflow = await self.crawl_configs.find_one(
-                {"config.seedFileId": file_id}
+                {"config.seedFileId": file_id}, session=session
             )
             if matching_workflow:
                 raise HTTPException(status_code=400, detail="seed_file_in_use")
 
-            matching_crawl = await self.crawls.find_one({"config.seedFileId": file_id})
+            matching_crawl = await self.crawls.find_one(
+                {"config.seedFileId": file_id}, session=session
+            )
             if matching_crawl:
                 raise HTTPException(status_code=400, detail="seed_file_in_use")
 
         await self.storage_ops.delete_file_object(org, file)
-        await self.files.delete_one({"_id": file_id, "oid": org.id})
+        await self.files.delete_one({"_id": file_id, "oid": org.id}, session=session)
         if file.type == "seedFile":
             await self.org_ops.inc_org_bytes_stored_field(
-                org.id, "bytesStoredSeedFiles", -file.size
+                org.id, "bytesStoredSeedFiles", -file.size, session=session
             )
 
         return {"success": True}

@@ -43,6 +43,32 @@
     --sl-color-primary-950: theme(colors.primary.900);
 
     /*
+     * Web Awesome Theme Tokens
+     */
+    --wa-color-brand-05: var(--sl-color-primary-50);
+    --wa-color-brand-10: var(--sl-color-primary-100);
+    --wa-color-brand-20: var(--sl-color-primary-200);
+    --wa-color-brand-30: var(--sl-color-primary-300);
+    --wa-color-brand-40: var(--sl-color-primary-400);
+    --wa-color-brand-50: var(--sl-color-primary-500);
+    --wa-color-brand-60: var(--sl-color-primary-600);
+    --wa-color-brand-70: var(--sl-color-primary-700);
+    --wa-color-brand-80: var(--sl-color-primary-800);
+    --wa-color-brand-90: var(--sl-color-primary-900);
+    --wa-color-brand-95: var(--sl-color-primary-950);
+
+    --wa-color-neutral-10: var(--sl-color-neutral-950);
+    --wa-color-neutral-20: var(--sl-color-neutral-900);
+    --wa-color-neutral-30: var(--sl-color-neutral-800);
+    --wa-color-neutral-40: var(--sl-color-neutral-700);
+    --wa-color-neutral-50: var(--sl-color-neutral-600);
+    --wa-color-neutral-60: var(--sl-color-neutral-500);
+    --wa-color-neutral-70: var(--sl-color-neutral-400);
+    --wa-color-neutral-80: var(--sl-color-neutral-300);
+    --wa-color-neutral-90: var(--sl-color-neutral-200);
+    --wa-color-neutral-95: var(--sl-color-neutral-100);
+
+    /*
      * Typography
      */
 

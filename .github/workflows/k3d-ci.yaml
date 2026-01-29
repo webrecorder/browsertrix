@@ -51,7 +51,6 @@ jobs:
           remove-browsers: true
           verbose: true
 
-
       - name: Create k3d Cluster
         uses: AbsaOSS/k3d-action@v2
         with:

@@ -21,6 +21,7 @@ import urllib.parse
 import asyncio
 from fastapi import HTTPException, Depends, Query, Request
 from fastapi.responses import StreamingResponse
+from motor.motor_asyncio import AsyncIOMotorClientSession, AsyncIOMotorDatabase
 import pymongo
 
 from .models import (
@@ -83,7 +84,7 @@ class BaseCrawlOps:
 
     def __init__(
         self,
-        mdb,
+        mdb: AsyncIOMotorDatabase,
         users: UserManager,
         orgs: OrgOps,
         crawl_configs: CrawlConfigOps,
@@ -488,18 +489,19 @@ class BaseCrawlOps:
         crawl: Union[CrawlOut, CrawlOutWithResources],
         org: Optional[Organization],
         files: Optional[list[dict]],
+        session: AsyncIOMotorClientSession | None = None,
     ):
         """Resolve running crawl data"""
         # pylint: disable=too-many-branches
         if not org:
-            org = await self.orgs.get_org_by_id(crawl.oid)
+            org = await self.orgs.get_org_by_id(crawl.oid, session=session)
             if not org:
                 raise HTTPException(status_code=400, detail="missing_org")
 
         if hasattr(crawl, "profileid") and crawl.profileid:
             try:
                 profile = await self.crawl_configs.profiles.get_profile(
-                    crawl.profileid, org
+                    crawl.profileid, org, session=session
                 )
                 crawl.profileName = profile.name
             # pylint: disable=bare-except
@@ -521,6 +523,7 @@ class BaseCrawlOps:
         org: Organization,
         crawl_id: Optional[str] = None,
         force_update=False,
+        session: AsyncIOMotorClientSession | None = None,
     ) -> List[CrawlFileOut]:
         """Regenerate presigned URLs for files as necessary"""
         if not files:
@@ -529,7 +532,7 @@ class BaseCrawlOps:
         out_files = []
 
         cursor = self.presigned_urls.find(
-            {"_id": {"$in": [file.filename for file in files]}}
+            {"_id": {"$in": [file.filename for file in files]}}, session=session
         )
 
         presigned = await cursor.to_list(10000)
@@ -715,6 +718,7 @@ class BaseCrawlOps:
         page: int = 1,
         sort_by: Optional[str] = None,
         sort_direction: int = -1,
+        review_status_range: tuple[int, int] | None = None,
     ):
         """List crawls of all types from the db"""
         # Zero-index page for query
@@ -746,6 +750,12 @@ class BaseCrawlOps:
         if tags:
             query_type = "$all" if tag_match == ListFilterType.AND else "$in"
             query["tags"] = {query_type: tags}
+
+        if review_status_range:
+            query["reviewStatus"] = {
+                "$gte": review_status_range[0],
+                "$lte": review_status_range[1],
+            }
 
         aggregate = [
             {"$match": query},
@@ -862,7 +872,9 @@ class BaseCrawlOps:
         )
 
         # Get total
-        cursor = self.crawls.aggregate(aggregate)
+        cursor = self.crawls.aggregate(aggregate)  # type: ignore
+        # pylint: disable=line-too-long
+        # Argument 1 to "aggregate" of "AsyncIOMotorCollection" has incompatible type "list[object]"; expected "Sequence[Mapping[str, Any]]"
         results = await cursor.to_list(length=1)
         result = results[0]
         items = result["items"]
@@ -1115,6 +1127,7 @@ def init_base_crawls_api(app, user_dep, *args):
         collectionId: Optional[UUID] = None,
         crawlType: Optional[TYPE_CRAWL_TYPES] = None,
         cid: Optional[UUID] = None,
+        reviewStatus: Annotated[list[int] | None, Query()] = None,
         sortBy: Optional[str] = "finished",
         sortDirection: int = -1,
     ):
@@ -1134,6 +1147,16 @@ def init_base_crawls_api(app, user_dep, *args):
         if description:
             description = urllib.parse.unquote(description)
 
+        review_status_range: tuple[int, int] | None = None
+
+        if reviewStatus:
+            if len(reviewStatus) > 2 or any(qa < 1 or qa > 5 for qa in reviewStatus):
+                raise HTTPException(status_code=400, detail="invalid_qa_review_range")
+            review_status_range = (
+                reviewStatus[0],
+                reviewStatus[1] if len(reviewStatus) > 1 else reviewStatus[0],
+            )
+
         crawls, total = await ops.list_all_base_crawls(
             org,
             userid=userid,
@@ -1150,6 +1173,7 @@ def init_base_crawls_api(app, user_dep, *args):
             page=page,
             sort_by=sortBy,
             sort_direction=sortDirection,
+            review_status_range=review_status_range,
         )
         return paginated_format(crawls, total, page, pageSize)
 
