@@ -654,7 +654,7 @@ export class CrawlsList extends BtrixElement {
           ></btrix-tag-filter>
 
           <btrix-qa-review-filter
-            .reviewStatus=${this.filterBy.value.reviewStatus ?? null}
+            .qaRatingRange=${this.filterBy.value.reviewStatus ?? null}
             @btrix-change=${(e: BtrixChangeQARatingFilterEvent) => {
               this.filterBy.setValue({
                 ...this.filterBy.value,
