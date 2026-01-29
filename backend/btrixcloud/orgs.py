@@ -224,6 +224,7 @@ class OrgOps(BaseOrgs):
         self.pages_db = mdb["pages"]
         self.version_db = mdb["version"]
         self.invites_db = mdb["invites"]
+        self.jobs_db = mdb["jobs"]
 
         self.router = None
         self.org_viewer_dep = None
@@ -1501,6 +1502,9 @@ class OrgOps(BaseOrgs):
 
         # Delete invites
         await self.invites_db.delete_many({"oid": org.id})
+
+        # Delete background jobs
+        await self.jobs_db.delete_many({"oid": org.id})
 
         # Delete org
         await self.orgs.delete_one({"_id": org.id})
