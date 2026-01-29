@@ -18,19 +18,19 @@ import { ReviewStatus } from "@/types/crawler";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
-type ChangeReviewStatusEventDetails = [number, number] | null;
+type ChangeQARatingEventDetails = [number, number] | null;
 
-export type BtrixChangeReviewStatusFilterEvent =
-  BtrixChangeEvent<ChangeReviewStatusEventDetails>;
+export type BtrixChangeQARatingFilterEvent =
+  BtrixChangeEvent<ChangeQARatingEventDetails>;
 
 /**
  * @fires btrix-change
  */
-@customElement("btrix-review-status-filter")
+@customElement("btrix-qa-review-filter")
 @localized()
-export class ReviewStatusFilter extends BtrixElement {
+export class QAReviewFilter extends BtrixElement {
   @property({ type: Array })
-  reviewStatus?: [ReviewStatus, ReviewStatus] | null = null;
+  qaRatingRange?: [ReviewStatus, ReviewStatus] | null = null;
 
   @query("sl-input")
   private readonly input?: SlInput | null;
@@ -42,10 +42,10 @@ export class ReviewStatusFilter extends BtrixElement {
   selected: [ReviewStatus, ReviewStatus] | null = null;
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("reviewStatus")) {
-      if (this.reviewStatus) {
-        this.selected = this.reviewStatus;
-      } else if (changedProperties.get("reviewStatus")) {
+    if (changedProperties.has("qaRatingRange")) {
+      if (this.qaRatingRange) {
+        this.selected = this.qaRatingRange;
+      } else if (changedProperties.get("qaRatingRange")) {
         this.selected = null;
       }
     }
@@ -54,13 +54,14 @@ export class ReviewStatusFilter extends BtrixElement {
   protected updated(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("selected")) {
       this.dispatchEvent(
-        new CustomEvent<
-          BtrixChangeEvent<ChangeReviewStatusEventDetails>["detail"]
-        >("btrix-change", {
-          detail: {
-            value: this.selected,
+        new CustomEvent<BtrixChangeEvent<ChangeQARatingEventDetails>["detail"]>(
+          "btrix-change",
+          {
+            detail: {
+              value: this.selected,
+            },
           },
-        }),
+        ),
       );
     }
   }
@@ -68,7 +69,7 @@ export class ReviewStatusFilter extends BtrixElement {
   render() {
     return html`
       <btrix-filter-chip
-        ?checked=${!!this.reviewStatus?.length}
+        ?checked=${!!this.qaRatingRange?.length}
         selectFromDropdown
         stayOpenOnChange
         @sl-after-show=${() => {
@@ -77,10 +78,10 @@ export class ReviewStatusFilter extends BtrixElement {
           }
         }}
       >
-        ${this.reviewStatus?.length
-          ? html`<span class="opacity-75">${msg("Reviewed")}</span>
-              ${this.renderStatesInLabel(this.reviewStatus)}`
-          : msg("QA Review")}
+        ${this.qaRatingRange?.length
+          ? html`<span class="opacity-75">${msg("Rated")}</span>
+              ${this.renderStatesInLabel(this.qaRatingRange)}`
+          : msg("QA Rating")}
 
         <div
           slot="dropdown-content"
@@ -96,9 +97,9 @@ export class ReviewStatusFilter extends BtrixElement {
                 id="tag-list-label"
                 class="leading-[var(--sl-input-height-small)]"
               >
-                ${msg("Filter by QA Review")}
+                ${msg("Filter by QA Rating")}
               </div>
-              ${this.reviewStatus?.length
+              ${this.qaRatingRange?.length
                 ? html`<sl-button
                     variant="text"
                     size="small"
@@ -110,7 +111,7 @@ export class ReviewStatusFilter extends BtrixElement {
 
                       this.dispatchEvent(
                         new CustomEvent<
-                          BtrixChangeEvent<ChangeReviewStatusEventDetails>["detail"]
+                          BtrixChangeEvent<ChangeQARatingEventDetails>["detail"]
                         >("btrix-change", {
                           detail: {
                             value: null,
@@ -126,14 +127,14 @@ export class ReviewStatusFilter extends BtrixElement {
           <wa-slider
             class=${clsx(
               "px-4 pb-2 pt-4",
-              this.reviewStatus === null &&
+              this.qaRatingRange === null &&
                 tw`[--wa-form-control-activated-color:--sl-color-neutral-200]`,
             )}
             range
             min="1"
             max="5"
-            min-value="${this.reviewStatus?.[0] ?? ReviewStatus.Bad}"
-            max-value="${this.reviewStatus?.[1] ?? ReviewStatus.Excellent}"
+            min-value="${this.qaRatingRange?.[0] ?? ReviewStatus.Bad}"
+            max-value="${this.qaRatingRange?.[1] ?? ReviewStatus.Excellent}"
             with-tooltip
             with-markers
             .valueFormatter=${(value: number) => {
@@ -147,11 +148,11 @@ export class ReviewStatusFilter extends BtrixElement {
                 (event.target as WaSlider).minValue,
                 (event.target as WaSlider).maxValue,
               ];
-              this.reviewStatus = value as [number, number];
+              this.qaRatingRange = value as [number, number];
             }}
             @click=${() => {
-              if (!this.reviewStatus)
-                this.reviewStatus = [ReviewStatus.Bad, ReviewStatus.Excellent];
+              if (!this.qaRatingRange)
+                this.qaRatingRange = [ReviewStatus.Bad, ReviewStatus.Excellent];
             }}
           >
             ${this.renderSliderLabel(ReviewStatus.Bad, "before")}

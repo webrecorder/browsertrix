@@ -25,7 +25,7 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
-import { type BtrixChangeReviewStatusFilterEvent } from "@/features/archived-items/review-status-filter";
+import { type BtrixChangeQARatingFilterEvent } from "@/features/archived-items/qa-rating-filter";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { CrawlState } from "@/types/crawlState";
@@ -653,15 +653,15 @@ export class CrawlsList extends BtrixElement {
             }}
           ></btrix-tag-filter>
 
-          <btrix-review-status-filter
+          <btrix-qa-review-filter
             .reviewStatus=${this.filterBy.value.reviewStatus ?? null}
-            @btrix-change=${(e: BtrixChangeReviewStatusFilterEvent) => {
+            @btrix-change=${(e: BtrixChangeQARatingFilterEvent) => {
               this.filterBy.setValue({
                 ...this.filterBy.value,
                 reviewStatus: e.detail.value ?? undefined,
               });
             }}
-          ></btrix-review-status-filter>
+          ></btrix-qa-review-filter>
 
           ${this.userInfo?.id
             ? html`<btrix-filter-chip
