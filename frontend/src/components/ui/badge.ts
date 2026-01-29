@@ -58,7 +58,7 @@ export class Badge extends TailwindElement {
     return html`
       <span
         class=${clsx(
-          tw`inline-flex min-h-4 items-center justify-center whitespace-nowrap leading-none`,
+          tw`inline-flex min-h-4 items-center justify-center whitespace-nowrap font-normal leading-none`,
           this.asLabel
             ? [this.size === "medium" && tw`text-xs`]
             : [
