@@ -405,8 +405,6 @@ class CrawlConfigOps:
             errorDetail=error_detail,
         )
 
-        return res
-
     def is_single_page(self, config: RawCrawlConfig):
         """return true if this config represents a single page crawl"""
         if not config.seeds or len(config.seeds) != 1:
