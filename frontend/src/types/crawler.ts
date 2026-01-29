@@ -154,7 +154,6 @@ export type Profile = {
   proxyId?: string;
 };
 
-// TODO maybe convert this to an enum?
 export enum ReviewStatus {
   Bad = 1,
   Poor = 2,

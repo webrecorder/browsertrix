@@ -28,7 +28,12 @@ import urllib.parse
 import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 import pymongo
-from motor.motor_asyncio import AsyncIOMotorCollection
+from motor.motor_asyncio import (
+    AsyncIOMotorClient,
+    AsyncIOMotorClientSession,
+    AsyncIOMotorCollection,
+    AsyncIOMotorDatabase,
+)
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
@@ -127,8 +132,8 @@ class CrawlConfigOps:
 
     def __init__(
         self,
-        dbclient,
-        mdb,
+        dbclient: AsyncIOMotorClient,
+        mdb: AsyncIOMotorDatabase,
         user_manager,
         org_ops,
         crawl_manager,
@@ -191,7 +196,7 @@ class CrawlConfigOps:
             raise TypeError("The channel list must include a 'default' channel")
 
         self._crawler_proxies_last_updated = None
-        self._crawler_proxies_map = None
+        self._crawler_proxies_map: dict[str, CrawlerProxy] | None = None
 
         if DEFAULT_PROXY_ID and DEFAULT_PROXY_ID not in self.get_crawler_proxies_map():
             raise ValueError(
@@ -659,7 +664,7 @@ class CrawlConfigOps:
             orig_dict["id"] = uuid4()
 
             last_rev = ConfigRevision(**orig_dict)
-            last_rev = await self.config_revs.insert_one(last_rev.to_dict())
+            await self.config_revs.insert_one(last_rev.to_dict())
 
         # set update query
         query = update.dict(exclude_unset=True)
@@ -891,10 +896,16 @@ class CrawlConfigOps:
 
         return configs, total
 
-    async def is_profile_in_use(self, profileid: UUID, org: Organization) -> bool:
+    async def is_profile_in_use(
+        self,
+        profileid: UUID,
+        org: Organization,
+        session: AsyncIOMotorClientSession | None = None,
+    ) -> bool:
         """return true/false if any active workflows exist with given profile"""
         res = await self.crawl_configs.find_one(
-            {"oid": org.id, "inactive": {"$ne": True}, "profileid": profileid}
+            {"oid": org.id, "inactive": {"$ne": True}, "profileid": profileid},
+            session=session,
         )
         return res is not None
 
@@ -925,10 +936,14 @@ class CrawlConfigOps:
 
         return profiles
 
-    async def get_running_crawl(self, cid: UUID) -> Optional[CrawlOut]:
+    async def get_running_crawl(
+        self, cid: UUID, session: AsyncIOMotorClientSession | None = None
+    ) -> Optional[CrawlOut]:
         """Return the id of currently running crawl for this config, if any"""
         # crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
-        crawls, _ = await self.crawl_ops.list_crawls(cid=cid, running_only=True)
+        crawls, _ = await self.crawl_ops.list_crawls(
+            cid=cid, running_only=True, session=session
+        )
 
         if len(crawls) == 1:
             return crawls[0]
@@ -1103,13 +1118,18 @@ class CrawlConfigOps:
         return revisions, total
 
     async def make_inactive_or_delete(
-        self, crawlconfig: CrawlConfig, org: Organization
+        self,
+        crawlconfig: CrawlConfig,
+        org: Organization,
+        session: AsyncIOMotorClientSession | None = None,
     ):
         """Make config inactive if crawls exist, otherwise move to inactive list"""
 
         query = {"inactive": True}
 
-        is_running = await self.get_running_crawl(crawlconfig.id) is not None
+        is_running = (
+            await self.get_running_crawl(crawlconfig.id, session=session) is not None
+        )
 
         if is_running:
             raise HTTPException(status_code=400, detail="crawl_running_cant_deactivate")
@@ -1120,7 +1140,7 @@ class CrawlConfigOps:
         # if no crawls have been run, actually delete
         if not crawlconfig.crawlAttemptCount:
             result = await self.crawl_configs.delete_one(
-                {"_id": crawlconfig.id, "oid": crawlconfig.oid}
+                {"_id": crawlconfig.id, "oid": crawlconfig.oid}, session=session
             )
 
             if result.deleted_count != 1:
@@ -1129,7 +1149,7 @@ class CrawlConfigOps:
             if crawlconfig and crawlconfig.config.seedFileId:
                 try:
                     await self.file_ops.delete_seed_file(
-                        crawlconfig.config.seedFileId, org
+                        crawlconfig.config.seedFileId, org, session=session
                     )
                 except HTTPException:
                     pass
@@ -1137,10 +1157,12 @@ class CrawlConfigOps:
             status = "deleted"
 
         else:
-            if not await self.crawl_configs.find_one_and_update(
+            result = await self.crawl_configs.find_one_and_update(
                 {"_id": crawlconfig.id, "inactive": {"$ne": True}},
                 {"$set": query},
-            ):
+                session=session,
+            )
+            if not result:
                 raise HTTPException(status_code=404, detail="failed_to_deactivate")
 
             status = "deactivated"
@@ -1154,8 +1176,7 @@ class CrawlConfigOps:
         """perform make_inactive in a transaction"""
 
         async with await self.dbclient.start_session() as sesh:
-            async with sesh.start_transaction():
-                status = await self.make_inactive_or_delete(crawlconfig, org)
+            status = await self.make_inactive_or_delete(crawlconfig, org, session=sesh)
 
         return {"success": True, "status": status}
 
@@ -1219,7 +1240,7 @@ class CrawlConfigOps:
         self, org, profile_ids: Optional[List[UUID]] = None
     ):
         """List unique names, first seeds, and descriptions from all workflows in org"""
-        query: Dict[str, Any] = {"oid": org.id}
+        query: Dict[str, Any] = {"oid": org.id, "inactive": {"$ne": True}}
         if profile_ids:
             query["profileid"] = {"$in": profile_ids}
 
