@@ -2283,7 +2283,7 @@ class OrgWebhookUrls(BaseModel):
 
 # ============================================================================
 class OrgFeatureFlags(BaseModel):
-    """Organization feature falgs"""
+    """Organization feature flags"""
 
     dedupe: bool = False
 
