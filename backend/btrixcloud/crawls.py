@@ -1305,12 +1305,12 @@ class CrawlOps(BaseCrawlOps):
         self, oid: UUID, crawl_id: str, required_crawls: list[str]
     ):
         """link current crawl to dependent crawls (for duplicates)"""
-        self.crawls.find_one_and_update(
+        await self.crawls.find_one_and_update(
             {"_id": crawl_id, "oid": oid},
             {"$addToSet": {"requiresCrawls": {"$each": required_crawls}}},
         )
 
-        self.crawls.update_many(
+        await self.crawls.update_many(
             {"_id": {"$in": required_crawls}, "oid": oid},
             {"$addToSet": {"requiredByCrawls": crawl_id}},
         )
