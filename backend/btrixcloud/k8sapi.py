@@ -282,11 +282,7 @@ class K8sAPI:
 
         res = await self.delete_custom_object(name, "profilejobs")
 
-        if res.get("success") is True:
-            return True
-        else:
-            print("Error deleting", res)
-            return False
+        return res.get("success") is True
 
     async def delete_custom_object(self, name: str, plural: str):
         """delete custom object with name and plural type"""
