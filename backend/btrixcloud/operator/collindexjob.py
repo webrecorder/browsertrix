@@ -79,6 +79,7 @@ class CollIndexImportJobOperator(BaseOperator):
         # delete succeeded job
         if data.object.get("status", {}).get("succeeded", 0) >= 1:
             self.run_task(self.k8s.delete_job(name))
+            attachments=[]
 
         return MCDecoratorSyncResponse(attachments=attachments)
 
