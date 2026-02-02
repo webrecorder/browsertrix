@@ -526,7 +526,7 @@ export class ConfigDetails extends BtrixElement {
       )}
       ${when(scopeType === WorkflowScopeType.Custom, () =>
         this.renderSetting(
-          msg("URL Prefixes in Scope"),
+          msg("Page URL Prefixes"),
           includeUrlList.length
             ? html`
                 <btrix-data-table

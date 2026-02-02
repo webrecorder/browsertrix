@@ -934,6 +934,9 @@ export class WorkflowEditor extends BtrixElement {
           <sl-option value=${ScopeType.Custom}>
             ${scopeTypeLabels[ScopeType.Custom]}
           </sl-option>
+          <sl-option value=${NewWorkflowOnlyScopeType.Regex}>
+            ${scopeTypeLabels[NewWorkflowOnlyScopeType.Regex]}
+          </sl-option>
         </sl-select>
       `)}
       ${this.renderHelpTextCol(html`
@@ -1381,6 +1384,18 @@ https://replayweb.page/docs`}
 
     let helpText: TemplateResult | string;
 
+    const custom = (customRegexFieldLabel: string) => {
+      const example_url = html`<span class="break-word text-blue-500"
+        >${exampleDomain}${examplePathname}</span
+      >`;
+      const custom_regexes = html`<em>${customRegexFieldLabel}</em>`;
+
+      return msg(
+        html`Will start crawl with ${example_url} and only follow links that
+        match the ${custom_regexes} listed below.`,
+      );
+    };
+
     switch (this.formState.scopeType) {
       case ScopeType.Prefix:
         helpText = msg(
@@ -1421,14 +1436,10 @@ https://replayweb.page/docs`}
         );
         break;
       case ScopeType.Custom:
-        helpText = msg(
-          html`Will start with
-            <span class="break-word text-blue-500"
-              >${exampleDomain}${examplePathname}</span
-            >
-            and include <em>only</em> URLs that start with the
-            <em>URL Prefixes in Scope</em> listed below.`,
-        );
+        helpText = custom(msg("Page URL Prefixes"));
+        break;
+      case NewWorkflowOnlyScopeType.Regex:
+        helpText = custom(msg("Page URL Regexes"));
         break;
       default:
         helpText = "";
@@ -1535,18 +1546,66 @@ https://replayweb.page/docs`}
           ${inputCol(html`
             <sl-textarea
               name="customIncludeUrlList"
-              label=${msg("URL Prefixes in Scope")}
+              label=${msg("Page URL Prefixes")}
               rows="3"
               autocomplete="off"
               inputmode="url"
               value=${this.formState.customIncludeUrlList}
-              placeholder=${`https://example.org
-https://example.net`}
+              placeholder=${`https://webrecoder.net/blog/2025-
+https://archiveweb.page/es/`}
               required
+              @keyup=${async (e: KeyboardEvent) => {
+                if (e.key === "Enter") {
+                  await (e.target as SlInput).updateComplete;
+                  this.doValidateUrlList(e);
+                }
+              }}
+              @sl-input=${(e: CustomEvent) => {
+                const inputEl = e.target as SlInput;
+                const value = inputEl.value;
+
+                if (value) {
+                  if (!this.stickyFooter) {
+                    const { isValid } = this.validateUrlList(inputEl.value);
+
+                    if (isValid) {
+                      this.animateStickyFooter();
+                    }
+                  }
+                } else {
+                  inputEl.helpText = msg("At least 1 URL is required.");
+                }
+              }}
+              @sl-change=${this.doValidateUrlList}
+              @sl-blur=${this.doValidateUrlList}
             ></sl-textarea>
           `)}
           ${this.renderHelpTextCol(
             msg(`Only crawl pages that begin with URLs listed here.`),
+          )}
+        `,
+      )}
+      ${when(
+        this.formState.scopeType === NewWorkflowOnlyScopeType.Regex,
+        () => html`
+          ${inputCol(html`
+            <sl-textarea
+              class="part-[textarea]:font-mono"
+              name="customIncludeUrlList"
+              label=${msg("Page URL Regexes")}
+              rows="3"
+              autocomplete="off"
+              inputmode="url"
+              value=${this.formState.customIncludeUrlList}
+              placeholder=${`/blog/.*browsertrix
+^https?://example`}
+              required
+            ></sl-textarea>
+          `)}
+          ${this.renderHelpTextCol(
+            msg(
+              `Only crawl the page if the URL matches a regular expression pattern listed here.`,
+            ),
           )}
         `,
       )}

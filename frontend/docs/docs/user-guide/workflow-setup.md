@@ -13,7 +13,8 @@ Specify the range and depth of your crawl.
 Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 
 #### Page Crawl
-:   Choose one of these crawl scopes if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one hop out.
+
+: Choose one of these crawl scopes if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one hop out.
 
     A Page Crawl workflow can be simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
 
@@ -23,7 +24,8 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
         - You want to include URLs with different domain names in the same crawl (`List of Pages`)
 
 #### Site Crawl
-:   Choose one of these crawl scopes to have the the crawler automatically find pages based on a domain name, start page URL, or directory on a website.
+
+: Choose one of these crawl scopes to have the the crawler automatically find pages based on a domain name, start page URL, or directory on a website.
 
     Site Crawl workflows are great for advanced use cases where you don't need (or want) to know every single URL of the website that you're archiving.
 
@@ -36,10 +38,12 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 #### Page Crawl
 
 ##### Single Page
-:   Crawls a single URL and does not include any linked pages.
+
+: Crawls a single URL and does not include any linked pages.
 
 ##### List of Pages
-:   Crawls a list of specified URLs.
+
+: Crawls a list of specified URLs.
 
     Select one of two options to provide a list of URLs:
 
@@ -56,7 +60,8 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
     If both a list of entered list and an uploaded file are provided, the currently selected option will be used.
 
 ##### In-Page Links
-:   Crawls only the specified URL and treats linked sections of the page as distinct pages.
+
+: Crawls only the specified URL and treats linked sections of the page as distinct pages.
 
     Any link that begins with the _Crawl Start URL_ followed by a hashtag symbol (`#`) and then a string is considered an in-page link. This is commonly used to link to a section of a page. For example, because the "Scope" section of this guide is linked by its heading as `/user-guide/workflow-setup/#scope` it would be treated as a separate page under the _In-Page Links_ scope.
 
@@ -65,27 +70,30 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 #### Site Crawl
 
 ##### Pages in Same Directory
-:   This scope will only crawl pages in the same directory as the _Crawl Start URL_. If `example.com/path` is set as the _Crawl Start URL_, `example.com/path/path2` will be crawled but `example.com/path3` will not.
+
+: This scope will only crawl pages in the same directory as the _Crawl Start URL_. If `example.com/path` is set as the _Crawl Start URL_, `example.com/path/path2` will be crawled but `example.com/path3` will not.
 
 ##### Pages on Same Domain
-:   This scope will crawl all pages on the domain entered as the _Crawl Start URL_ however it will ignore subdomains such as `subdomain.example.com`.
+
+: This scope will crawl all pages on the domain entered as the _Crawl Start URL_ however it will ignore subdomains such as `subdomain.example.com`.
 
 ##### Pages on Same Domain + Subdomains
-:   This scope will crawl all pages on the domain and any subdomains found. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
 
-##### Custom Page Prefix
-:   This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_URL Prefixes in Scope_](#url-prefixes-in-scope).
+: This scope will crawl all pages on the domain and any subdomains found. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
+
+##### Pages with URL Prefix
+
+: This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_Page URL Prefixes_](#url-prefixes-in-scope).
 
 ### Crawl Start URL / URL(s) to Crawl
 
 This is the URL used by the crawler to initiate the crawling process. The URL input may be labeled _Crawl Start URL_ or _URL(s) to Crawl_ depending on which crawl scope is used:
 
-| Crawl Scope | Label | Description |
-| ----------- | ----- | ----------- |
-| _Single Page_ | URL&nbsp;to&nbsp;Crawl | The crawler will visit only this URL. |
-| _List of Pages_ | URLs&nbsp;to&nbsp;Crawl | The crawler will visit each URL specified in the text list or file. |
+| Crawl Scope                                                                                                                               | Label                     | Description                                                                                                                               |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| _Single Page_                                                                                                                             | URL&nbsp;to&nbsp;Crawl    | The crawler will visit only this URL.                                                                                                     |
+| _List of Pages_                                                                                                                           | URLs&nbsp;to&nbsp;Crawl   | The crawler will visit each URL specified in the text list or file.                                                                       |
 | _In-Page Links_<br/>_Pages in Same Directory_<br/>_Pages on Same Domain_<br/>_Pages on Same Domain + Subdomains_<br/>_Custom Page Prefix_ | Crawl&nbsp;Start&nbsp;URL | The crawler will visit this URL as its starting point and use this URL to collect information on which linked pages it should also visit. |
-
 
 URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
 
@@ -106,7 +114,7 @@ When enabled, the crawler will check for a [Robots Exclusion Protocol](https://w
 When enabled, the crawler will visit all the links it finds within each URL defined in the [URL input field](#crawl-start-url-urls-to-crawl) under _Crawl Scope_.
 
 ??? example "Crawling tags & search queries with Page List crawls"
-    This setting can be useful for crawling a list of specific pages and pages they link to, such as a list of search queries. For example, you can add a list of multiple URLs such as: `https://example.com/search?q=search_this`, `https://example.com/search?q=also_search_this`, etc... to the _URLs to Crawl_ text box and enable _Include Any Linked Page_ to crawl all the content present on these search query pages.
+This setting can be useful for crawling a list of specific pages and pages they link to, such as a list of search queries. For example, you can add a list of multiple URLs such as: `https://example.com/search?q=search_this`, `https://example.com/search?q=also_search_this`, etc... to the _URLs to Crawl_ text box and enable _Include Any Linked Page_ to crawl all the content present on these search query pages.
 
 ### Fail Crawl if Not Logged In
 
@@ -122,13 +130,13 @@ When enabled, the crawler will fail the entire crawl if any of the provided URLs
 
 Instructs the crawler to stop visiting new links past a specified depth.
 
-### URL Prefixes in Scope
+### Page URL Prefixes
 
-When using a scope of `Custom Page Prefix`, this field accepts URLs or domains that will be crawled if URLs that lead to them are found.
+When using a scope of `Pages with URL Prefix`, this field accepts URLs or domains that will be crawled if URLs that lead to them are found.
 
-By default, _URL Prefixes in Scope_ will be prefilled with the _Crawl Start URL_ up to the last slash (`/`). For example, if `https://example.com/path/page` is set as the _Crawl Start URL_, `https://example.com/path/` will be automatically added to _URL Prefixes in Scope_. This URL prefix can then be removed or modified as needed.
+By default, _Page URL Prefixes_ will be prefilled with the _Crawl Start URL_ up to the last slash (`/`). For example, if `https://example.com/path/page` is set as the _Crawl Start URL_, `https://example.com/path/` will be automatically added to _Page URL Prefixes_. This URL prefix can then be removed or modified as needed.
 
-This field can also be useful for crawling websites that span multiple domains such as `https://example.org` and `https://example.net`. To crawl websites outside of scope for scope types other than `Custom Page Prefix`, see [_Additional Pages_](#additional-pages).
+This field can also be useful for crawling websites that span multiple domains such as `https://example.org` and `https://example.net`. To crawl websites outside of scope for scope types other than `Pages with URL Prefix`, see [_Additional Pages_](#additional-pages).
 
 ### Include Any Linked Page ("one hop out")
 
@@ -170,12 +178,14 @@ The exclusions table will instruct the crawler to ignore links it finds on pages
 This can be useful for avoiding crawler traps — sites that may automatically generate pages such as calendars or filter options — or other pages that should not be crawled according to their URL.
 
 #### Matches text
-:   Will perform simple matching of entered text and exclude all URLs where matching text is found.
+
+: Will perform simple matching of entered text and exclude all URLs where matching text is found.
 
     e.g: If `about` is entered, `example.com/aboutme/` will not be crawled.
 
 #### Regex
-:   Regular expressions (Regex) can also be used to perform more complex matching.
+
+: Regular expressions (Regex) can also be used to perform more complex matching.
 
     e.g: If `#!regex \babout\/?\b` is entered, `example.com/about/` will not be crawled however `example.com/aboutme/` will be crawled.
 
@@ -214,7 +224,7 @@ When enabled, the browser will automatically click on all link-like elements.
 When clicking a link-like element that would normally result in navigation, autoclick will only record the click and prevent navigation away from the current page.
 
 ??? Info "Autoclick use cases"
-    This behavior can be helpful for:
+This behavior can be helpful for:
 
     - Websites that use anchor links (`<a>`) in non-standard ways, such as by using JavaScript in place of the standard `href` attribute to create a hyperlink.
 
@@ -304,7 +314,7 @@ When enabled, instructs the crawler to save the browser's `localStorage` and `se
 Sets the browser's [user agent](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent) in outgoing requests to the specified value. If left blank, the crawler will use the Brave browser's default user agent. For a list of common user agents see [useragents.me](https://www.useragents.me/).
 
 ??? example "Using custom user agents to get around restrictions"
-    Despite being against best practices, some websites will block specific browsers based on their user agent: a string of text that browsers send web servers to identify what type of browser or operating system is requesting content. If Brave is blocked, using a user agent string of a different browser (such as Chrome or Firefox) may be sufficient to convince the website that a different browser is being used.
+Despite being against best practices, some websites will block specific browsers based on their user agent: a string of text that browsers send web servers to identify what type of browser or operating system is requesting content. If Brave is blocked, using a user agent string of a different browser (such as Chrome or Firefox) may be sufficient to convince the website that a different browser is being used.
 
     User agents can also be used to voluntarily identify your crawling activity, which can be useful when working with a website's owners to ensure crawls can be completed successfully. We recommend using a user agent string similar to the following, replacing the `orgname` and URL comment with your own:
 
@@ -327,15 +337,17 @@ Automatically start crawls periodically on a daily, weekly, or monthly schedule.
 ### Crawl Schedule Type
 
 #### Run on a Recurring Basis
-:   When selected, additional configuration options for instructing the system when to run the crawl will be shown. If a crawl is already running when the schedule is set to activate it, the scheduled crawl will not run.
+
+: When selected, additional configuration options for instructing the system when to run the crawl will be shown. If a crawl is already running when the schedule is set to activate it, the scheduled crawl will not run.
 
     !!! tip "Tip: Scheduling crawl workflows with logged-in browser profiles"
         Some websites will log users out after a set period of time. This can cause issues with scheduled crawl workflows—which will run even if the [selected browser profile](./browser-profiles/browser-profiles-overview.md) has been logged out.
-    
+
         For some websites, a short schedule frequency can help keep the browser profile logged in by regularly and [automatically refreshing the login session](./browser-profiles/usage-in-crawls.md#effects-of-crawling). A separate crawl workflow could be created for this purpose. We recommend manually [checking the profile](./browser-profiles/configure-sites.md#saved-sites) periodically to ensure that it is still logged in.
 
 #### No Schedule
-:   When selected, the configuration options that have been set will be saved but the system will not do anything with them unless manually instructed.
+
+: When selected, the configuration options that have been set will be saved but the system will not do anything with them unless manually instructed.
 
 ### Frequency
 
@@ -379,22 +391,22 @@ When using a `Custom` _Frequency_, a custom schedule can be specified by using a
 
 Cron expressions should follow the Unix Cron format:
 
-| Position | * | * | * | * | * |
-| - | - | - | - | - | - |
-| **Description** | minute | hour | day of the month | month | day of the week |
-| **Possible Values** | 0 - 59 | 0 - 23 | 1 - 31 | 1 - 12 | 0 - 6<br/>or `sun`, `mon`, `tue`, `wed`, `thu`, `fri`, `sat` |
+| Position            | \*     | \*     | \*               | \*     | \*                                                           |
+| ------------------- | ------ | ------ | ---------------- | ------ | ------------------------------------------------------------ |
+| **Description**     | minute | hour   | day of the month | month  | day of the week                                              |
+| **Possible Values** | 0 - 59 | 0 - 23 | 1 - 31           | 1 - 12 | 0 - 6<br/>or `sun`, `mon`, `tue`, `wed`, `thu`, `fri`, `sat` |
 
 For example, `0 0 31 12 *` would run a crawl on December 31st every year and `0 0 * * fri` would run a crawl every Friday at midnight.
 
 Additionally, the following macros are supported:
 
-| Value | Description |
-| - | - |
-| `@yearly` | Run once a year at midnight of 1 January |
-| `@monthly` | 	Run once a month at midnight of the first day of the month |
-| `@weekly` | Run once a week at midnight on Sunday |
-| `@daily` | Run once a day at midnight |
-| `@hourly` | Run once an hour at the beginning of the hour |
+| Value      | Description                                                |
+| ---------- | ---------------------------------------------------------- |
+| `@yearly`  | Run once a year at midnight of 1 January                   |
+| `@monthly` | Run once a month at midnight of the first day of the month |
+| `@weekly`  | Run once a week at midnight on Sunday                      |
+| `@daily`   | Run once a day at midnight                                 |
+| `@hourly`  | Run once an hour at the beginning of the hour              |
 
 You can use a tool like [crontab.guru](https://crontab.guru/) to check Cron syntax validity and view [common expressions](https://crontab.guru/examples.html).
 

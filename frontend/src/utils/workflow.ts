@@ -280,7 +280,7 @@ export function getInitialFormState(params: {
         .map(unescapeCustomPrefix)
         .join("\n");
       // if we have additional include URLs, set to "custom" scope here
-      // to indicate 'Custom Page Prefix' option
+      // to indicate 'Pages with URL Prefix' option
       formState.scopeType = ScopeType.Custom;
     }
     const additionalSeeds = params.initialSeeds?.slice(1);

@@ -112,6 +112,9 @@ export class OrgCrawling extends BtrixElement {
                     <sl-menu-item value=${ScopeType.Custom}>
                       ${scopeTypeLabels[ScopeType.Custom]}
                     </sl-menu-item>
+                    <sl-menu-item value=${NewWorkflowOnlyScopeType.Regex}>
+                      ${scopeTypeLabels[NewWorkflowOnlyScopeType.Regex]}
+                    </sl-menu-item>
                   </sl-menu>
                 </sl-dropdown>
               </sl-button-group>
