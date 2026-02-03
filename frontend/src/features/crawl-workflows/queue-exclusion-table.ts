@@ -5,8 +5,6 @@ import { css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, queryAll, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
-import RegexColorize from "regex-colorize";
 
 import type { Exclusion } from "./queue-exclusion-form";
 
@@ -357,9 +355,10 @@ export class QueueExclusionTable extends TailwindElement {
     }
 
     if (exclusion.type === "regex") {
-      value = staticHtml`<span class="regex ${tw`font-mono`}">${unsafeStatic(
-        new RegexColorize().colorizeText(exclusion.value) as string,
-      )}</span>`;
+      value = html`<btrix-regex
+        class="contents"
+        value=${exclusion.value}
+      ></btrix-regex>`;
     }
 
     return value;

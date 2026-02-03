@@ -6,9 +6,6 @@
   /* Regex Colorizer no bg theme */
   /* https://stevenlevithan.com/regex/colorizer/themes/nobg.css */
 
-  .regex {
-    @apply text-neutral-600;
-  }
   /* metasequence */
   .regex b {
     @apply bg-violet-50/80 text-violet-500;

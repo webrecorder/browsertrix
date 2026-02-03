@@ -36,6 +36,7 @@ import("./overflow-scroll");
 import("./pagination");
 import("./popover");
 import("./pw-strength-alert");
+import("./regex");
 import("./relative-duration");
 import("./search-combobox");
 import("./section-heading");

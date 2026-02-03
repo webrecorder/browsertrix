@@ -23,7 +23,7 @@ export class Component extends TailwindElement {
   render() {
     if (!this.value) return;
 
-    return staticHtml`<span class="regex ${tw`font-mono`}">${unsafeStatic(
+    return staticHtml`<span class="regex ${tw`font-mono leading-none text-neutral-600`}">${unsafeStatic(
       new RegexColorize().colorizeText(this.value) as string,
     )}</span>`;
   }
