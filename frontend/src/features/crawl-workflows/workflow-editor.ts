@@ -2730,7 +2730,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         formState.customIncludeUrlList = urlListToArray(
           this.formState.customIncludeUrlList,
         )
-          .map((url) => `^${url}`)
+          .map((url) => `^${regexEscape(url)}`)
           .join("\n");
       } else {
         formState.customIncludeUrlList = this.customIncludeListFromSeed(
@@ -2765,7 +2765,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
 
     return this.formState.scopeType === NewWorkflowOnlyScopeType.Regex
-      ? `^${prefixUrl}`
+      ? `^${regexEscape(prefixUrl)}`
       : prefixUrl;
   }
 

@@ -9470,10 +9470,10 @@ regenerator-runtime@^0.14.0:
   resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.14.0.tgz#5e19d68eb12d486f797e15a3c6a918f7cec5eb45"
   integrity sha512-srw17NI0TUWHuGa5CFGGmhfNIeja30WMBfbslPNhf6JrqQlLN5gcrvig1oqPxiVaXb0oW0XRKtH6Nngs5lKCIA==
 
-regex-colorize@^0.0.3:
-  version "0.0.3"
-  resolved "https://registry.npmjs.org/regex-colorize/-/regex-colorize-0.0.3.tgz"
-  integrity sha512-y+GIlZUqhLQ48T1dZ/FRax14lkVZD1NE3/f7xKuBaasiiMLF5T26Ahjym+vswKPDrtMSfElRr+XPAIHx0AT2Hw==
+regex-colorizer@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/regex-colorizer/-/regex-colorizer-1.0.2.tgz#c0f325e1045ad02c5c10c0f3947932f781b519ae"
+  integrity sha512-TCU2xbbPkXPFFct8pPC/9m43f8VO8dHM34uNFR7JIqe6SXpT+NHRtLZiTyLanmN/2+BAmruF2Dasaw0wW7khRw==
 
 regexp-to-ast@0.5.0:
   version "0.5.0"
