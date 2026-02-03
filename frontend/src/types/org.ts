@@ -99,6 +99,7 @@ export const orgDataSchema = z.object({
   enablePublicProfile: z.boolean(),
   publicDescription: z.string().nullable(),
   publicUrl: z.string().nullable(),
+  featureFlags: z.record(z.string(), z.boolean()),
 });
 export type OrgData = z.infer<typeof orgDataSchema>;
 

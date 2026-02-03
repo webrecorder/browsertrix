@@ -597,6 +597,7 @@ export class WorkflowEditor extends BtrixElement {
           main: this.renderFormSections(),
           sticky: true,
           stickyTopClassname: tw`lg:top-16`,
+          scrim: true,
         })}
         <btrix-observable
           .options=${{
