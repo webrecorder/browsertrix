@@ -1,5 +1,6 @@
 """Feature flag operations."""
 
+import asyncio
 from typing import Awaitable, Callable, Annotated
 from uuid import UUID
 
@@ -96,6 +97,22 @@ class FeatureFlagOps:
         ).to_list(None)
         return {count["_id"]: count["count"] for count in counts}
 
+    async def warn_for_orphaned_flags(self):
+        """Warn about feature flags in db that are no longer defined in code."""
+        orphaned_flags = await self.orgs.aggregate(
+            [
+                # find all flags defined in orgs that don't match flags listed in FLAG_METADATA
+                {"$match": {"featureFlags": {"$exists": True, "$ne": {}}}},
+                {"$project": {"flags": {"$objectToArray": "$featureFlags"}}},
+                {"$unwind": "$flags"},
+                {"$match": {"flags.k": {"$nin": list(FLAG_METADATA.keys())}}},
+                {"$group": {"_id": "$flags.k", "count": {"$sum": 1}}},
+                {"$sort": {"_id": 1}},
+            ]
+        ).to_list(None)
+        if orphaned_flags:
+            print("Warning: Orphaned feature flags found: %s", orphaned_flags)
+
 
 def init_feature_flags_api(
     mdb: AsyncIOMotorDatabase,
@@ -170,5 +187,7 @@ def init_feature_flags_api(
     ):
         await ops.set_orgs_for_feature_flag(update.orgs, feature)
         return FeatureFlagUpdatedResponse(feature=feature, updated=True)
+
+    asyncio.create_task(ops.warn_for_orphaned_flags())
 
     return ops
