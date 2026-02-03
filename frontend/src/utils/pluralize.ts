@@ -403,6 +403,32 @@ const plurals = {
       id: "dependencies.plural.other",
     }),
   },
+  organizations: {
+    zero: msg("organizations", {
+      desc: 'plural form of "organization" for zero organizations',
+      id: "organizations.plural.zero",
+    }),
+    one: msg("organization", {
+      desc: 'singular form for "organization"',
+      id: "organizations.plural.one",
+    }),
+    two: msg("organizations", {
+      desc: 'plural form of "organization" for two organizations',
+      id: "organizations.plural.two",
+    }),
+    few: msg("organizations", {
+      desc: 'plural form of "organization" for few organizations',
+      id: "organizations.plural.few",
+    }),
+    many: msg("organizations", {
+      desc: 'plural form of "organization" for many organizations',
+      id: "organizations.plural.many",
+    }),
+    other: msg("organizations", {
+      desc: 'plural form of "organization" for multiple/other organizations',
+      id: "organizations.plural.other",
+    }),
+  },
 };
 
 export const pluralOf = (word: keyof typeof plurals, count: number) => {
