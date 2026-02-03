@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* Regex Colorizer no bg theme */
+  /* https://stevenlevithan.com/regex/colorizer/themes/nobg.css */
+
+  .regex {
+    @apply text-neutral-600;
+  }
+  /* metasequence */
+  .regex b {
+    @apply bg-violet-50/80 text-violet-500;
+  }
+  /* char class */
+  .regex i {
+    @apply bg-lime-50/80 text-lime-500;
+  }
+  /* char class: metasequence */
+  .regex i b {
+    @apply bg-sky-50/80 text-sky-500;
+  }
+  /* char class: range-hyphen */
+  .regex i u {
+    @apply bg-green-50/80 text-green-500;
+  }
+  /* group: depth 1 */
+  .regex b.g1 {
+    @apply bg-orange-50/80 text-orange-500;
+  }
+  /* group: depth 2 */
+  .regex b.g2 {
+    @apply bg-amber-50/80 text-amber-500;
+  }
+  /* group: depth 3 */
+  .regex b.g3 {
+    @apply bg-rose-50/80 text-rose-500;
+  }
+  /* group: depth 4 */
+  .regex b.g4 {
+    @apply bg-teal-50/80 text-teal-500;
+  }
+  /* group: depth 5 */
+  .regex b.g5 {
+    @apply bg-fuchsia-50/80 text-fuchsia-500;
+  }
+  /* error */
+  .regex b.err {
+    @apply text-danger;
+  }
+  .regex b,
+  .regex i,
+  .regex u {
+    @apply font-normal not-italic no-underline;
+  }
+}
