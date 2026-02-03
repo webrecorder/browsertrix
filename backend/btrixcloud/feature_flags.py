@@ -1,7 +1,7 @@
 """Feature flag operations."""
 
 import asyncio
-from typing import Awaitable, Callable, Annotated
+from typing import Annotated, Awaitable, Callable
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
