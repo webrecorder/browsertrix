@@ -212,6 +212,9 @@ def init_feature_flags_api(
         await ops.set_orgs_for_feature_flag(update.orgs, feature)
         return FeatureFlagUpdatedResponse(feature=feature, updated=True)
 
-    asyncio.create_task(ops.warn_for_orphaned_flags())
+    background_tasks = set()
+    task = asyncio.create_task(ops.warn_for_orphaned_flags())
+    background_tasks.add(task)
+    task.add_done_callback(background_tasks.discard)
 
     return ops
