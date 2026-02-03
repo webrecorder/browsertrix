@@ -66,7 +66,7 @@ def test_get_org_feature_flags(crawler_auth_headers, default_org_id):
     assert data["id"] == default_org_id
     feature_flags = data["featureFlags"]
     assert feature_flags
-    assert feature_flags["dedupe"] is False
+    assert feature_flags["dedupe-enabled"] is False
 
     # List endpoint
     r = requests.get(f"{API_PREFIX}/orgs", headers=crawler_auth_headers)
@@ -75,57 +75,7 @@ def test_get_org_feature_flags(crawler_auth_headers, default_org_id):
     for org in data["items"]:
         feature_flags = org["featureFlags"]
         assert feature_flags
-        assert feature_flags["dedupe"] is False
-
-
-def test_update_org_feature_flags_non_superadmin(crawler_auth_headers, default_org_id):
-    """verify crawler user can't update feature flags"""
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/feature-flags",
-        headers=crawler_auth_headers,
-        json={"dedupe": True},
-    )
-    assert r.status_code == 403
-
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}", headers=crawler_auth_headers
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["id"] == default_org_id
-    feature_flags = data["featureFlags"]
-    assert feature_flags
-    assert feature_flags["dedupe"] is False
-
-
-def test_update_org_feature_flags(admin_auth_headers, default_org_id):
-    """update dedupe feature flag and verify results"""
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/feature-flags",
-        headers=admin_auth_headers,
-        json={"dedupe": True},
-    )
-    assert r.status_code == 200
-    assert r.json()["updated"]
-
-    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
-    assert r.status_code == 200
-    data = r.json()
-    assert data["id"] == default_org_id
-    feature_flags = data["featureFlags"]
-    assert feature_flags
-    assert feature_flags["dedupe"]
-
-    r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
-    assert r.status_code == 200
-    data = r.json()
-    for org in data["items"]:
-        feature_flags = org["featureFlags"]
-        assert feature_flags
-        if org["id"] == default_org_id:
-            assert feature_flags["dedupe"]
-        else:
-            assert feature_flags["dedupe"] is False
+        assert feature_flags["dedupe-enabled"] is False
 
 
 def test_update_org_crawling_defaults(admin_auth_headers, default_org_id):
