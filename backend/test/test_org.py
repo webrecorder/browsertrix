@@ -65,7 +65,7 @@ def test_get_org_feature_flags(crawler_auth_headers, default_org_id):
     data = r.json()
     assert data["id"] == default_org_id
     feature_flags = data["featureFlags"]
-    assert feature_flags
+    assert feature_flags == {}
     assert feature_flags["dedupe-enabled"] is False
 
     # List endpoint
@@ -74,7 +74,7 @@ def test_get_org_feature_flags(crawler_auth_headers, default_org_id):
     data = r.json()
     for org in data["items"]:
         feature_flags = org["featureFlags"]
-        assert feature_flags
+        assert feature_flags == {}
         assert feature_flags["dedupe-enabled"] is False
 
 
