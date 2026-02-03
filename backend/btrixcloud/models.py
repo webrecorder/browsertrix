@@ -2228,15 +2228,27 @@ class FeatureFlag(BaseModel):
     model_config = ConfigDict(use_attribute_docstrings=True)
 
     description: str
-    """Detailed description of the feature flag. It should explain what the flag does and why it is needed."""
+    """
+    Detailed description of the feature flag. It should explain what the flag
+    does and why it is needed.
+    """
     owner: str
     """The owner of the feature flag. GitHub username, email address, etc."""
     expiry: date
-    """Expiry date for the feature flag. Warnings will be shown if the flag is still active after this date."""
+    """
+    Expiry date for the feature flag. Warnings will be shown if the flag is
+    still active after this date.
+    """
     scope: FeatureFlagScope
-    """Scope of the feature flag. This should be 'org' for organization-level flags."""
+    """
+    Scope of the feature flag. This should be 'org' for organization-level
+    flags.
+    """
     defaultValue: bool
-    """Default value for the feature flag. This is the value that will be used if the flag is not set."""
+    """
+    Default value for the feature flag. This is the value that will be used if
+    the flag is not set.
+    """
 
 
 class FeatureFlags(StrEnum):
@@ -2257,16 +2269,26 @@ FLAG_METADATA: dict[FeatureFlags, FeatureFlag] = {
 
 
 class FeatureFlagOut(BaseModel):
+    """Output model for feature flags"""
+
     model_config = ConfigDict(use_attribute_docstrings=True)
 
     name: FeatureFlags
     """Name of the feature flag."""
     description: str
-    """Detailed description of the feature flag. It should explain what the flag does and why it is needed."""
+    """
+    Detailed description of the feature flag. It should explain what the flag
+    does and why it is needed.
+    """
     scope: FeatureFlagScope
-    """Scope of the feature flag. This should be 'org' for organization-level flags."""
+    """
+    Scope of the feature flag. This should be 'org' for organization-level flags.
+    """
     defaultValue: bool
-    """Default value for the feature flag. This is the value that will be used if the flag is not set."""
+    """
+    Default value for the feature flag. This is the value that will be used if
+    the flag is not set.
+    """
     count: int
     """Number of organizations that have this feature flag enabled."""
 

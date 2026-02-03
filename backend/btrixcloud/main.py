@@ -187,7 +187,7 @@ def main() -> None:
     )
 
     feature_flag_ops = init_feature_flags_api(
-        app, dbclient, mdb, current_active_user, org_ops, user_manager
+        mdb, current_active_user, org_ops, user_manager
     )
 
     init_subs_api(app, mdb, org_ops, user_manager, shared_secret_or_superuser)
