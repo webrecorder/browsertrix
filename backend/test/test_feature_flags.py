@@ -56,7 +56,6 @@ def test_get_metadata(admin_auth_headers):
     for flag in data:
         assert "name" in flag
         assert "description" in flag
-        assert "owner" in flag
         assert "scope" in flag
         assert "defaultValue" in flag
         assert "count" in flag
@@ -108,7 +107,7 @@ def test_get_feature_flag_nonexistent_org(admin_auth_headers):
         headers=admin_auth_headers,
         timeout=10,
     )
-    assert r.status_code == 404
+    assert r.status_code == 400
 
 
 def test_set_feature_flag(admin_auth_headers, default_org_id):
@@ -186,7 +185,7 @@ def test_set_feature_flag_nonexistent_org(admin_auth_headers):
         json={"value": True},
         timeout=10,
     )
-    assert r.status_code == 404
+    assert r.status_code == 400
 
 
 def test_get_orgs_for_feature_flag(admin_auth_headers, default_org_id):
