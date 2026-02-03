@@ -37,6 +37,9 @@ export class TabGroup extends TailwindElement {
   @property({ type: Boolean })
   sticky = true;
 
+  @property({ type: Boolean })
+  scrim = true;
+
   @property({ type: String, noAccessor: true, reflect: true })
   role = "tablist";
 
@@ -75,6 +78,7 @@ export class TabGroup extends TailwindElement {
       action: html`<slot name="action"></slot>`,
       placement: this.placement,
       sticky: this.sticky,
+      scrim: this.scrim,
     });
   }
 

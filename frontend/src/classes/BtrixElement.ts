@@ -4,6 +4,7 @@ import { APIController } from "@/controllers/api";
 import { LocalizeController } from "@/controllers/localize";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
+import { type FeatureFlags } from "@/types/featureFlags";
 import appState, { use } from "@/utils/state";
 
 export class BtrixElement extends TailwindElement {
@@ -38,5 +39,11 @@ export class BtrixElement extends TailwindElement {
 
   protected get org() {
     return this.appState.org;
+  }
+
+  protected get featureFlags() {
+    return {
+      has: (flag: FeatureFlags) => this.org?.featureFlags[flag] ?? false,
+    };
   }
 }

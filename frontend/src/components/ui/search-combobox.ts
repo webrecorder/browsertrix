@@ -5,7 +5,7 @@ import type {
   SlMenuItem,
 } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
-import { html, nothing, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -76,8 +76,19 @@ export class SearchCombobox<T> extends TailwindElement {
   @property({ type: Boolean })
   createNew = false;
 
+  @property({ type: Number })
+  minSearchLength = MIN_SEARCH_LENGTH;
+
+  @property({ attribute: false })
+  renderResult:
+    | ((item: Fuse.FuseResult<T>) => TemplateResult | string | undefined | null)
+    | null = null;
+
+  @property({ type: Boolean })
+  showResultsWhenEmpty = false;
+
   private get hasSearchStr() {
-    return this.searchByValue.length >= MIN_SEARCH_LENGTH;
+    return this.searchByValue.length >= this.minSearchLength;
   }
 
   @state()
@@ -165,6 +176,9 @@ export class SearchCombobox<T> extends TailwindElement {
           @sl-input=${this.onSearchInput as UnderlyingFunction<
             typeof this.onSearchInput
           >}
+          @sl-focus=${() => {
+            if (this.showResultsWhenEmpty) this.searchResultsOpen = true;
+          }}
         >
           ${when(
             this.selectedKey && this.keyLabels?.[this.selectedKey],
@@ -188,12 +202,20 @@ export class SearchCombobox<T> extends TailwindElement {
   }
 
   private renderSearchResults() {
-    if (!this.hasSearchStr) {
+    if (!this.hasSearchStr && !this.showResultsWhenEmpty) {
       return html`
         <sl-menu-item slot="menu-item" disabled
           >${msg("Keep typing to search.")}</sl-menu-item
         >
       `;
+    }
+
+    if (!this.hasSearchStr && this.showResultsWhenEmpty && this.renderResult) {
+      return this.searchOptions
+        .slice(0, MAX_SEARCH_RESULTS)
+        .map((option, index) =>
+          this.renderResult!({ item: option, refIndex: index }),
+        );
     }
 
     const searchResults = this.fuse.search(this.searchByValue, {
@@ -230,21 +252,33 @@ export class SearchCombobox<T> extends TailwindElement {
 
     return html`
       ${when(
-        searchResults.length,
-        () => html`
-          ${searchResults.map(({ matches }) => matches?.map(match))}
-          ${showCreateNew
-            ? html`<sl-divider slot="menu-item"></sl-divider>`
-            : nothing}
-        `,
+        this.searchByValue !== "",
         () =>
-          showCreateNew
-            ? nothing
-            : html`
-                <sl-menu-item slot="menu-item" disabled
-                  >${msg("No matches found.")}</sl-menu-item
-                >
-              `,
+          when(
+            searchResults.length,
+            () => html`
+              ${typeof this.renderResult === "function"
+                ? searchResults.map((result) => this.renderResult!(result))
+                : searchResults.map(({ matches }) => matches?.map(match))}
+              ${showCreateNew
+                ? html`<sl-divider slot="menu-item"></sl-divider>`
+                : nothing}
+            `,
+            () =>
+              showCreateNew
+                ? nothing
+                : html`
+                    <sl-menu-item slot="menu-item" disabled
+                      >${msg("No matches found.")}</sl-menu-item
+                    >
+                  `,
+          ),
+        () =>
+          this.searchOptions
+            .slice(0, MAX_SEARCH_RESULTS)
+            .map((option, index) =>
+              this.renderResult!({ item: option, refIndex: index }),
+            ),
       )}
       ${when(showCreateNew, () => {
         return html`

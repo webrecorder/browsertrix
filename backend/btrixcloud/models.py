@@ -4,8 +4,8 @@ Crawl-related models and types
 
 # pylint: disable=invalid-name, too-many-lines
 
-from datetime import datetime
-from enum import Enum, IntEnum
+from datetime import datetime, date
+from enum import Enum, IntEnum, StrEnum
 from uuid import UUID
 import base64
 import hashlib
@@ -29,6 +29,7 @@ from pydantic import (
     ConfigDict,
 )
 from slugify import slugify
+
 
 # from fastapi_users import models as fastapi_users_models
 
@@ -2214,6 +2215,86 @@ class UserOut(UserOutNoId):
 
 
 # ============================================================================
+# Feature Flags
+# ============================================================================
+
+
+type FeatureFlagScope = Literal["org"]
+
+
+class FeatureFlag(BaseModel):
+    """Feature flag model"""
+
+    model_config = ConfigDict(use_attribute_docstrings=True)
+
+    description: str
+    """Detailed description of the feature flag. It should explain what the flag does and why it is needed."""
+    owner: str
+    """The owner of the feature flag. GitHub username, email address, etc."""
+    expiry: date
+    """Expiry date for the feature flag. Warnings will be shown if the flag is still active after this date."""
+    scope: FeatureFlagScope
+    """Scope of the feature flag. This should be 'org' for organization-level flags."""
+    defaultValue: bool
+    """Default value for the feature flag. This is the value that will be used if the flag is not set."""
+
+
+class FeatureFlags(StrEnum):
+    """Feature flag names"""
+
+    DEDUPE_ENABLED = "dedupe-enabled"
+
+
+FLAG_METADATA: dict[FeatureFlags, FeatureFlag] = {
+    FeatureFlags.DEDUPE_ENABLED: FeatureFlag(
+        description="Enable deduplication options for an org. Intended for beta-testing dedupe.",
+        owner="@ikreymer",
+        expiry=date(2026, 1, 29),
+        scope="org",
+        defaultValue=False,
+    ),
+}
+
+
+class FeatureFlagOut(BaseModel):
+    model_config = ConfigDict(use_attribute_docstrings=True)
+
+    name: FeatureFlags
+    """Name of the feature flag."""
+    description: str
+    """Detailed description of the feature flag. It should explain what the flag does and why it is needed."""
+    scope: FeatureFlagScope
+    """Scope of the feature flag. This should be 'org' for organization-level flags."""
+    defaultValue: bool
+    """Default value for the feature flag. This is the value that will be used if the flag is not set."""
+    count: int
+    """Number of organizations that have this feature flag enabled."""
+
+
+class FeatureFlagOrgUpdate(BaseModel):
+    """Update a feature flag for an organization"""
+
+    value: bool
+    """Value of the feature flag."""
+
+
+class FeatureFlagOrgsUpdate(BaseModel):
+    """Update a feature flag's organizations"""
+
+    orgs: list[UUID]
+    """List of organization IDs to enable the flag for."""
+
+
+class FeatureFlagUpdatedResponse(BaseModel):
+    """Response when a feature flag is updated"""
+
+    feature: FeatureFlags
+    """Feature flag that was updated."""
+    updated: bool
+    """Whether the feature flag was updated successfully."""
+
+
+# ============================================================================
 # ORGS
 # ============================================================================
 class OrgReadOnlyOnCancel(BaseModel):
@@ -2282,13 +2363,6 @@ class OrgWebhookUrls(BaseModel):
 
 
 # ============================================================================
-class OrgFeatureFlags(BaseModel):
-    """Organization feature flags"""
-
-    dedupe: bool = False
-
-
-# ============================================================================
 class OrgOut(BaseMongoModel):
     """Organization API output model"""
 
@@ -2347,7 +2421,7 @@ class OrgOut(BaseMongoModel):
     publicDescription: str = ""
     publicUrl: str = ""
 
-    featureFlags: Optional[OrgFeatureFlags] = OrgFeatureFlags()
+    featureFlags: dict[str, bool] = {}
 
 
 # ============================================================================
@@ -2412,7 +2486,7 @@ class Organization(BaseMongoModel):
     publicDescription: Optional[str] = None
     publicUrl: Optional[str] = None
 
-    featureFlags: Optional[OrgFeatureFlags] = OrgFeatureFlags()
+    featureFlags: dict[str, bool] = {}
 
     def is_owner(self, user):
         """Check if user is owner"""
@@ -2436,6 +2510,12 @@ class Organization(BaseMongoModel):
             return False
 
         return res >= value
+
+    def has_feature(self, feature_name: FeatureFlags) -> bool:
+        """Check if a feature is enabled for the organization"""
+        return self.featureFlags.get(
+            feature_name, FLAG_METADATA[feature_name].defaultValue
+        )
 
     async def serialize_for_user(self, user: User, user_manager) -> OrgOut:
         """Serialize result based on current user access"""

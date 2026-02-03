@@ -10,6 +10,7 @@ export function pageSectionsWithNav({
   placement = "start",
   sticky = false,
   stickyTopClassname,
+  scrim,
 }: {
   nav: TemplateResult;
   main: TemplateResult;
@@ -17,6 +18,7 @@ export function pageSectionsWithNav({
   placement?: "start" | "top";
   sticky?: boolean;
   stickyTopClassname?: string; // e.g. `lg:top-0`
+  scrim: boolean;
 }) {
   return html`
     <div
@@ -29,7 +31,8 @@ export function pageSectionsWithNav({
         class=${clsx(
           tw`flex w-full flex-1 flex-col gap-2`,
           sticky && [
-            tw`scrim scrim-to-b relative z-20 before:-top-2 lg:sticky lg:self-start`,
+            scrim && tw`scrim scrim-to-b`,
+            tw`relative z-20 before:-top-2 lg:sticky lg:self-start`,
             stickyTopClassname || tw`lg:top-2`,
           ],
           placement === "start"
