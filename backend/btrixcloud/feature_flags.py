@@ -1,36 +1,37 @@
-from typing import Awaitable, Callable
+"""Feature flag operations."""
+
+from typing import Awaitable, Callable, Annotated
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException
 from motor.motor_asyncio import (
-    AsyncIOMotorClient,
     AsyncIOMotorClientSession,
     AsyncIOMotorDatabase,
 )
 
-from .users import UserManager
 from .models import (
     FLAG_METADATA,
-    FeatureFlagOrgUpdate,
     FeatureFlagOrgsUpdate,
+    FeatureFlagOrgUpdate,
     FeatureFlagOut,
-    FeatureFlagUpdatedResponse,
     FeatureFlags,
+    FeatureFlagUpdatedResponse,
     Organization,
     User,
 )
 from .orgs import OrgOps
+from .users import UserManager
 
 
 class FeatureFlagOps:
-    """Feature flag operations"""
+    """Feature flag operations."""
 
     router: APIRouter
 
     def __init__(
         self,
-        dbclient: AsyncIOMotorClient,
         mdb: AsyncIOMotorDatabase,
-    ):
+    ) -> None:
         self.orgs = mdb["organizations"]
 
     async def set_feature_flag_for_org(
@@ -39,8 +40,8 @@ class FeatureFlagOps:
         feature_name: FeatureFlags,
         value: bool,
         session: AsyncIOMotorClientSession | None = None,
-    ):
-        """Set a feature flag for an organization"""
+    ) -> None:
+        """Set a feature flag for an organization."""
         await self.orgs.update_one(
             {"_id": org_id},
             {"$set": {f"featureFlags.{feature_name}": value}},
@@ -52,8 +53,8 @@ class FeatureFlagOps:
         org_ids: list[UUID],
         feature_name: FeatureFlags,
         session: AsyncIOMotorClientSession | None = None,
-    ):
-        """Set a feature flag for all organizations in a list, and unset it for all others"""
+    ) -> None:
+        """Set a feature flag for all organizations in a list, and unset it for all others."""
         await self.orgs.update_many(
             {"_id": {"$in": org_ids}, f"featureFlags.{feature_name}": {"$ne": True}},
             {"$set": {f"featureFlags.{feature_name}": True}},
@@ -70,7 +71,7 @@ class FeatureFlagOps:
         feature_name: FeatureFlags,
         session: AsyncIOMotorClientSession | None = None,
     ):
-        """Get all organizations that have a feature flag set"""
+        """Get all organizations that have a feature flag set."""
         orgs = await self.orgs.find(
             {f"featureFlags.{feature_name}": True},
             session=session,
@@ -81,7 +82,7 @@ class FeatureFlagOps:
         self,
         session: AsyncIOMotorClientSession | None = None,
     ):
-        """Get the number of organizations that have each feature flag enabled"""
+        """Get the number of organizations that have each feature flag enabled."""
         counts = await self.orgs.aggregate(
             [
                 {"$match": {"featureFlags": {"$exists": True, "$ne": {}}}},
@@ -97,23 +98,20 @@ class FeatureFlagOps:
 
 
 def init_feature_flags_api(
-    app: APIRouter,
-    dbclient: AsyncIOMotorClient,
     mdb: AsyncIOMotorDatabase,
     user_dep: Callable[[str], Awaitable[User]],
     org_ops: OrgOps,
     user_manager: UserManager,
 ):
-    """Initialize feature flags for all organizations"""
-
-    ops = FeatureFlagOps(dbclient, mdb)
+    """Initialize feature flags for all organizations."""
+    ops = FeatureFlagOps(mdb)
 
     async def superuser_dep(user: User = Depends(user_dep)):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not a superuser")
         return user
 
-    async def org_dep(org_id: UUID, user: User = Depends(superuser_dep)):
+    async def org_dep(org_id: UUID, _user: User = Depends(superuser_dep)):
         org = await org_ops.get_org_by_id(org_id)
         if not org:
             raise HTTPException(status_code=404, detail="Organization not found")
@@ -142,7 +140,7 @@ def init_feature_flags_api(
 
     @router.get("/{feature}/org/{org_id}")
     async def get_feature_flag(
-        feature: FeatureFlags, org: Organization = Depends(org_dep)
+        feature: FeatureFlags, org: Annotated[Organization, Depends(org_dep)]
     ):
         return org.has_feature(feature)
 
@@ -150,14 +148,14 @@ def init_feature_flags_api(
     async def set_feature_flag(
         feature: FeatureFlags,
         update: FeatureFlagOrgUpdate,
-        org: Organization = Depends(org_dep),
+        org: Annotated[Organization, Depends(org_dep)],
     ):
         await ops.set_feature_flag_for_org(org.id, feature, update.value)
         return FeatureFlagUpdatedResponse(feature=feature, updated=True)
 
     @router.get("/{feature}/orgs")
     async def get_orgs_for_feature_flag(
-        feature: FeatureFlags, user: User = Depends(superuser_dep)
+        feature: FeatureFlags, user: Annotated[User, Depends(superuser_dep)]
     ):
         results = await ops.get_orgs_for_feature_flag(feature)
         serialized_results = [
