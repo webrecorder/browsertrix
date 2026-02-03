@@ -22,13 +22,17 @@ import {
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
-import { WorkflowScopeType, type StorageSeedFile } from "@/types/workflow";
+import {
+  NewWorkflowOnlyScopeType,
+  WorkflowScopeType,
+  type StorageSeedFile,
+} from "@/types/workflow";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
-import { getServerDefaults } from "@/utils/workflow";
+import { getServerDefaults, regexScopeConfig } from "@/utils/workflow";
 
 /**
  * Usage:
@@ -129,6 +133,10 @@ export class ConfigDetails extends BtrixElement {
                         seeds.length > 1
                       ) {
                         return scopeTypeLabel[WorkflowScopeType.PageList];
+                      }
+                      const primarySeedConfig = seeds[0];
+                      if (regexScopeConfig(primarySeedConfig)) {
+                        return scopeTypeLabel[NewWorkflowOnlyScopeType.Regex];
                       }
                       return scopeTypeLabel[config.scopeType];
                     }),
@@ -497,7 +505,7 @@ export class ConfigDetails extends BtrixElement {
     const additionalUrlList = this.seeds.slice(1);
     const primarySeedConfig = this.seeds[0] as SeedConfig | Seed | undefined;
     const primarySeedUrl = (primarySeedConfig as Seed | undefined)?.url;
-    const includeUrlList = primarySeedConfig?.include || config.include || [];
+    const includeRegexList = primarySeedConfig?.include || config.include || [];
     const scopeType = config.scopeType!;
 
     return html`
@@ -524,22 +532,40 @@ export class ConfigDetails extends BtrixElement {
           : undefined,
         true,
       )}
-      ${when(scopeType === WorkflowScopeType.Custom, () =>
-        this.renderSetting(
-          msg("Page URL Prefixes"),
-          includeUrlList.length
-            ? html`
-                <btrix-data-table
-                  .columns=${[msg("URL Prefix")]}
-                  .rows=${includeUrlList.map((url) => [
-                    unescapeCustomPrefix(url),
-                  ])}
-                >
-                </btrix-data-table>
-              `
-            : none,
-          true,
-        ),
+      ${when(
+        scopeType === WorkflowScopeType.Custom && primarySeedConfig,
+        (config) =>
+          regexScopeConfig(config)
+            ? this.renderSetting(
+                msg("Page Regex Patterns"),
+                includeRegexList.length
+                  ? html`
+                      <btrix-data-table
+                        .columns=${[msg("Regex Pattern")]}
+                        .rows=${includeRegexList.map((str) => [
+                          html`<btrix-regex value=${str}></btrix-regex>`,
+                        ])}
+                      >
+                      </btrix-data-table>
+                    `
+                  : none,
+                true,
+              )
+            : this.renderSetting(
+                msg("Page Prefixes"),
+                includeRegexList.length
+                  ? html`
+                      <btrix-data-table
+                        .columns=${[msg("URL Prefix")]}
+                        .rows=${includeRegexList.map((url) => [
+                          unescapeCustomPrefix(url),
+                        ])}
+                      >
+                      </btrix-data-table>
+                    `
+                  : none,
+                true,
+              ),
       )}
       ${when(DEPTH_SUPPORTED_SCOPES.includes(scopeType), () =>
         this.renderSetting(

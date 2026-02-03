@@ -18,10 +18,7 @@ import {
   type WorkflowParams,
 } from "@/types/crawler";
 import type { OrgData } from "@/types/org";
-import {
-  WorkflowScopeType,
-  type NewWorkflowOnlyScopeType,
-} from "@/types/workflow";
+import { NewWorkflowOnlyScopeType, WorkflowScopeType } from "@/types/workflow";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEFAULT_MAX_SCALE, isPageScopeType } from "@/utils/crawler";
 import { getNextDate, getScheduleInterval } from "@/utils/cron";
@@ -108,6 +105,31 @@ export function defaultSeedListFileName() {
     .toISOString()
     .split(".")[0]
     .replace(/[^0-9]/g, "")}.${SEED_LIST_FILE_EXT}`;
+}
+
+export function apiScopeType(scope: string): scope is ScopeType {
+  return Object.values(ScopeType).includes(scope as ScopeType);
+}
+
+export function regexScopeConfig(config?: SeedConfig | Seed): config is (
+  | SeedConfig
+  | Seed
+) & {
+  scopeType: NewWorkflowOnlyScopeType.Regex;
+} {
+  return (
+    config?.scopeType === WorkflowScopeType.Custom &&
+    Boolean(
+      config.include?.some((url) => {
+        try {
+          new URL(unescapeCustomPrefix(url));
+          return false;
+        } catch {
+          return true;
+        }
+      }),
+    )
+  );
 }
 
 export type FormState = {
@@ -275,13 +297,19 @@ export function getInitialFormState(params: {
       }
     }
     if (primarySeedConfig.include?.length) {
-      formState.customIncludeUrlList = primarySeedConfig.include
-        // Unescape regex
-        .map(unescapeCustomPrefix)
-        .join("\n");
-      // if we have additional include URLs, set to "custom" scope here
-      // to indicate 'Pages with URL Prefix' option
-      formState.scopeType = ScopeType.Custom;
+      // The "custom" scope can be displayed in the UI as either a custom prefix
+      // scope (all valid URLs) or custom regex scope
+      const isRegex = regexScopeConfig(primarySeedConfig);
+
+      if (isRegex) {
+        formState.scopeType = NewWorkflowOnlyScopeType.Regex;
+        formState.customIncludeUrlList = primarySeedConfig.include.join("\n");
+      } else {
+        formState.scopeType = ScopeType.Custom;
+        formState.customIncludeUrlList = primarySeedConfig.include
+          .map(unescapeCustomPrefix)
+          .join("\n");
+      }
     }
     const additionalSeeds = params.initialSeeds?.slice(1);
     if (additionalSeeds?.length) {

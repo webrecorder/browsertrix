@@ -83,7 +83,7 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 
 ##### Pages with URL Prefix
 
-: This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_Page URL Prefixes_](#url-prefixes-in-scope).
+: This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_Page Prefixes_](#url-prefixes-in-scope).
 
 ### Crawl Start URL / URL(s) to Crawl
 
@@ -130,11 +130,11 @@ When enabled, the crawler will fail the entire crawl if any of the provided URLs
 
 Instructs the crawler to stop visiting new links past a specified depth.
 
-### Page URL Prefixes
+### Page Prefixes
 
 When using a scope of `Pages with URL Prefix`, this field accepts URLs or domains that will be crawled if URLs that lead to them are found.
 
-By default, _Page URL Prefixes_ will be prefilled with the _Crawl Start URL_ up to the last slash (`/`). For example, if `https://example.com/path/page` is set as the _Crawl Start URL_, `https://example.com/path/` will be automatically added to _Page URL Prefixes_. This URL prefix can then be removed or modified as needed.
+By default, _Page Prefixes_ will be prefilled with the _Crawl Start URL_ up to the last slash (`/`). For example, if `https://example.com/path/page` is set as the _Crawl Start URL_, `https://example.com/path/` will be automatically added to _Page Prefixes_. This URL prefix can then be removed or modified as needed.
 
 This field can also be useful for crawling websites that span multiple domains such as `https://example.org` and `https://example.net`. To crawl websites outside of scope for scope types other than `Pages with URL Prefix`, see [_Additional Pages_](#additional-pages).
 

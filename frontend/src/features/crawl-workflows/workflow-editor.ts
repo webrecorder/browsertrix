@@ -125,6 +125,7 @@ import { AppStateService } from "@/utils/state";
 import { regexEscape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
 import {
+  apiScopeType,
   appDefaults,
   BYTES_PER_GB,
   DEFAULT_AUTOCLICK_SELECTOR,
@@ -1436,10 +1437,10 @@ https://replayweb.page/docs`}
         );
         break;
       case ScopeType.Custom:
-        helpText = custom(msg("Page URL Prefixes"));
+        helpText = custom(msg("Page Prefixes"));
         break;
       case NewWorkflowOnlyScopeType.Regex:
-        helpText = custom(msg("Page URL Regexes"));
+        helpText = custom(msg("Page Regex Patterns"));
         break;
       default:
         helpText = "";
@@ -1546,7 +1547,7 @@ https://replayweb.page/docs`}
           ${inputCol(html`
             <sl-textarea
               name="customIncludeUrlList"
-              label=${msg("Page URL Prefixes")}
+              label=${msg("Page Prefixes")}
               rows="3"
               autocomplete="off"
               inputmode="url"
@@ -1592,7 +1593,7 @@ https://archiveweb.page/es/`}
             <sl-textarea
               class="part-[textarea]:font-mono"
               name="customIncludeUrlList"
-              label=${msg("Page URL Regexes")}
+              label=${msg("Page Regex Patterns")}
               rows="3"
               autocomplete="off"
               inputmode="url"
@@ -3460,13 +3461,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
           return newSeed;
         })
       : [];
+    const scopeType = apiScopeType(this.formState.scopeType)
+      ? this.formState.scopeType
+      : ScopeType.Custom;
     const primarySeed: Seed = {
       url: primarySeedUrl,
-      scopeType: this.formState.scopeType as ScopeType,
+      scopeType,
       include:
-        this.formState.scopeType === ScopeType.Custom
-          ? [...includeUrlList.map((url) => "^" + regexEscape(url))]
-          : [],
+        this.formState.scopeType === NewWorkflowOnlyScopeType.Regex
+          ? includeUrlList
+          : this.formState.scopeType === ScopeType.Custom
+            ? includeUrlList.map((url) => "^" + regexEscape(url))
+            : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
 
@@ -3476,7 +3482,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     const config = {
       seeds: [primarySeed, ...additionalSeedUrlList],
-      scopeType: this.formState.scopeType as ScopeType,
+      scopeType,
       useSitemap: this.formState.useSitemap,
       failOnFailedSeed: false,
       failOnContentCheck: this.formState.failOnContentCheck,
