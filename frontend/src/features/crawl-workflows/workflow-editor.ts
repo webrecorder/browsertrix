@@ -108,6 +108,7 @@ import {
 } from "@/types/workflow";
 import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
+import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import {
   getUTCSchedule,
@@ -1511,26 +1512,17 @@ https://replayweb.page/docs`}
                 true,
               );
             }
+            const { primarySeedUrl } = this.formState;
             if (
-              this.formState.primarySeedUrl &&
-              this.formState.scopeType === ScopeType.Custom &&
+              primarySeedUrl &&
+              (this.formState.scopeType === NewWorkflowOnlyScopeType.Regex ||
+                this.formState.scopeType === ScopeType.Custom) &&
               !this.formState.customIncludeUrlList
             ) {
-              let prefixUrl = this.formState.primarySeedUrl;
-              try {
-                const startingUrl = new URL(this.formState.primarySeedUrl);
-                prefixUrl =
-                  startingUrl.origin +
-                  startingUrl.pathname.slice(
-                    0,
-                    startingUrl.pathname.lastIndexOf("/") + 1,
-                  );
-              } catch (e) {
-                // ignore
-              }
               this.updateFormState(
                 {
-                  customIncludeUrlList: prefixUrl,
+                  customIncludeUrlList:
+                    this.customIncludeListFromSeed(primarySeedUrl),
                 },
                 true,
               );
@@ -2675,6 +2667,40 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }
     }
 
+    if (
+      value === ScopeType.Custom ||
+      value === NewWorkflowOnlyScopeType.Regex
+    ) {
+      if (prevScopeType === NewWorkflowOnlyScopeType.Regex) {
+        // Convert to valid URL
+        formState.customIncludeUrlList = urlListToArray(
+          this.formState.customIncludeUrlList,
+        )
+          .map((regex) => {
+            const url = unescapeCustomPrefix(regex);
+            try {
+              new URL(url);
+              return url;
+            } catch {
+              return;
+            }
+          })
+          .filter((v) => v)
+          .join("\n");
+      } else if (prevScopeType === ScopeType.Custom) {
+        // Convert to regex
+        formState.customIncludeUrlList = urlListToArray(
+          this.formState.customIncludeUrlList,
+        )
+          .map((url) => `^${url}`)
+          .join("\n");
+      } else {
+        formState.customIncludeUrlList = this.customIncludeListFromSeed(
+          formState.primarySeedUrl || this.formState.primarySeedUrl,
+        );
+      }
+    }
+
     if (!this.configId) {
       // Remember scope type for new workflows
       this.updatingScopeType = true;
@@ -2684,6 +2710,25 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
 
     this.updateFormState(formState);
+  }
+
+  private customIncludeListFromSeed(primarySeedUrl: string) {
+    let prefixUrl = primarySeedUrl;
+    try {
+      const startingUrl = new URL(prefixUrl);
+      prefixUrl =
+        startingUrl.origin +
+        startingUrl.pathname.slice(
+          0,
+          startingUrl.pathname.lastIndexOf("/") + 1,
+        );
+    } catch (e) {
+      // ignore
+    }
+
+    return this.formState.scopeType === NewWorkflowOnlyScopeType.Regex
+      ? `^${prefixUrl}`
+      : prefixUrl;
   }
 
   // Store the panel to focus or scroll to temporarily
