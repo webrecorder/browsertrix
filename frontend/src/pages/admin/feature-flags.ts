@@ -1,17 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html } from "lit";
 import { customElement } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
-import { map } from "lit/directives/map.js";
-import { repeat } from "lit/directives/repeat.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import needLogin from "@/decorators/needLogin";
 import { type APIPaginatedList } from "@/types/api";
 import { type OrgData } from "@/types/org";
-import { cached } from "@/utils/weakCache";
 
 export type FlagMetadata = {
   name: string;
@@ -76,7 +72,7 @@ export class AdminOrgs extends BtrixElement {
     `;
   }
 
-  updateOrgsAndFlags(e: CustomEvent<string>) {
+  updateOrgsAndFlags() {
     void this.orgs.run([]);
     void this.flags.run([]);
   }

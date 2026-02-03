@@ -121,6 +121,7 @@ export class AdminOrgs extends BtrixElement {
             .orgList=${this.orgList}
             @update-quotas=${this.onUpdateOrgQuotas}
             @update-proxies=${this.onUpdateOrgProxies}
+            @btrix-update-feature-flags=${this.onUpdateOrgFeatureFlags}
             class="grid grid-rows-[auto_auto_1fr]"
           ></btrix-orgs-list>
         </section>
@@ -357,6 +358,10 @@ export class AdminOrgs extends BtrixElement {
         allowedProxies: org.allowedProxies,
       }),
     });
+  }
+
+  async onUpdateOrgFeatureFlags() {
+    await this.fetchOrgs();
   }
 
   async checkFormValidity(formEl: HTMLFormElement) {

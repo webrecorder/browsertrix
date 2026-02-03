@@ -1,0 +1,94 @@
+import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
+import { type SlDialog, type SlSwitch } from "@shoelace-style/shoelace";
+import { html, type PropertyValues } from "lit";
+import { customElement, property } from "lit/decorators.js";
+import { createRef, ref, type Ref } from "lit/directives/ref.js";
+
+import { BtrixElement } from "@/classes/BtrixElement";
+import { type FlagMetadata } from "@/pages/admin/feature-flags";
+import { type OrgData } from "@/utils/orgs";
+import { pluralOf } from "@/utils/pluralize";
+
+@customElement("btrix-org-feature-flags")
+@localized()
+export class OrgQuotaEditor extends BtrixElement {
+  @property({ type: Object })
+  activeOrg?: OrgData | null = null;
+
+  dialog: Ref<SlDialog> = createRef();
+
+  show() {
+    void this.flags.run();
+    void this.dialog.value?.show();
+  }
+
+  hide() {
+    void this.dialog.value?.hide();
+  }
+
+  flags = new Task(this, {
+    task: async () => {
+      return await this.api.fetch<FlagMetadata[]>("/flags/metadata");
+    },
+    autoRun: false,
+  });
+
+  willUpdate(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("activeOrg")) {
+      void this.flags.run();
+    }
+  }
+
+  render() {
+    return html` <btrix-dialog
+      ${ref(this.dialog)}
+      .label=${msg(str`Feature flags for: ${this.activeOrg?.name || ""}`)}
+    >
+      ${this.flags.value?.map((flag) => {
+        const organizationPlural = pluralOf("organizations", flag.count);
+        const organizationCount = flag.count;
+        return html`<sl-switch
+          class="part-base w-full part-[label]:me-2 part-[label]:ms-0 part-[base]:flex part-[base]:flex-row-reverse part-[base]:justify-between part-[label]:font-mono part-[label]:text-base"
+          .checked=${!!this.activeOrg?.featureFlags[flag.name]}
+          @sl-change=${async (e: Event) => {
+            void this.setFlag(flag.name, (e.target as SlSwitch).checked);
+          }}
+        >
+          ${flag.name}
+          <span slot="help-text"
+            >${flag.description}
+            <br />
+            ${msg(
+              html`Enabled for ${organizationCount} ${organizationPlural}.`,
+            )}
+          </span>
+        </sl-switch>`;
+      }) ??
+      html`<div class="my-4 text-center">No feature flags available</div>`}
+    </btrix-dialog>`;
+  }
+
+  async setFlag(name: string, value: boolean) {
+    try {
+      await this.api.fetch(`/flags/${name}/org/${this.activeOrg!.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ value }),
+      });
+    } catch (e) {
+      console.error("Failed to update feature flag", { name, value, error: e });
+      this.notify.toast({
+        message: msg(str`Failed to update feature flag ${name}`),
+        variant: "danger",
+        id: "flag-update-error",
+      });
+    }
+    this.dispatchEvent(
+      new CustomEvent("btrix-update-feature-flags", {
+        detail: this.activeOrg,
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+}
