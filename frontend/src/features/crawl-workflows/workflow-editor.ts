@@ -1437,7 +1437,7 @@ https://replayweb.page/docs`}
         );
         break;
       case ScopeType.Custom:
-        helpText = custom(msg("Page Prefixes"));
+        helpText = custom(msg("Page Prefix URLs"));
         break;
       case NewWorkflowOnlyScopeType.Regex:
         helpText = custom(msg("Page Regex Patterns"));
@@ -1547,7 +1547,7 @@ https://replayweb.page/docs`}
           ${inputCol(html`
             <sl-textarea
               name="customIncludeUrlList"
-              label=${msg("Page Prefixes")}
+              label=${msg("Page Prefix URLs")}
               rows="3"
               autocomplete="off"
               inputmode="url"
@@ -1603,11 +1603,13 @@ https://archiveweb.page/es/`}
               required
             ></sl-textarea>
           `)}
-          ${this.renderHelpTextCol(
-            msg(
-              `Only crawl the page if the URL matches a regular expression pattern listed here.`,
-            ),
-          )}
+          ${this.renderHelpTextCol(html`
+            ${infoTextFor.customIncludeUrlList}
+            ${this.renderUserGuideLink({
+              hash: "page-regex-patterns",
+              content: msg("More details"),
+            })}
+          `)}
         `,
       )}
       ${when(

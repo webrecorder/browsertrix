@@ -74,7 +74,7 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 :   This scope will crawl all pages on the domain and any subdomains found. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
 
 ##### Pages with URL Prefix
-:   This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_Page Prefixes_](#page-prefixes).
+:   This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_Page Prefix URLs_](#page-prefix-urls).
 
 ##### Custom Page Match
 :   This scope will crawl the _Crawl Start URL_ and then include only those pages with URLs that match the regular expression patterns listed in [_Page Regex Patterns_](#page-regex-patterns).
@@ -125,7 +125,7 @@ When enabled, the crawler will fail the entire crawl if any of the provided URLs
 
 Instructs the crawler to stop visiting new links past a specified depth.
 
-### Page Prefixes
+### Page Prefix URLs
 
 When using a scope of `Pages with URL Prefix`, this field accepts a list of URLs that a page URL should begin with if it is to be crawled.
 
@@ -134,7 +134,7 @@ For example, specifying `https://example.com/new` will capture the following:
 - `https://example.com/new?page=1`
 - `https://example.com/newsworthy`
 
-By default, _Page Prefixes_ will be prefilled with the _Crawl Start URL_ up to the last slash (`/`). That is, if `https://example.com/path/page` is set as the _Crawl Start URL_, `https://example.com/path/` will be automatically added to _Page Prefixes_. This URL prefix can then be removed or modified as needed.
+By default, _Page Prefix URLs_ will be prefilled with the _Crawl Start URL_ up to the last slash (`/`). That is, if `https://example.com/path/page` is set as the _Crawl Start URL_, `https://example.com/path/` will be automatically added to _Page Prefix URLs_. This URL prefix can then be removed or modified as needed.
 
 !!! tip "Use Case: Crawl website that uses multiple TLDs"
     This field can be useful for crawling websites that span multiple top-level domains (e.g. `example.org` and `example.net`) by specifying each domain in the list.

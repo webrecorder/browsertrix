@@ -552,7 +552,7 @@ export class ConfigDetails extends BtrixElement {
                 true,
               )
             : this.renderSetting(
-                msg("Page Prefixes"),
+                msg("Page Prefix URLs"),
                 includeRegexList.length
                   ? html`
                       <btrix-data-table

@@ -88,6 +88,9 @@ export const infoTextFor = {
   useRobots: msg(
     `Check for a robots.txt file for each host and skip any disallowed pages.`,
   ),
+  customIncludeUrlList: msg(
+    "Only crawl the page if the URL matches a regular expression pattern listed here.",
+  ),
 } as const satisfies Partial<Record<Field, string | TemplateResult>>;
 
 export default infoTextFor;
