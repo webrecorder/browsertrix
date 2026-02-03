@@ -1593,6 +1593,32 @@ https://archiveweb.page/es/`}
               placeholder=${`/blog/.*browsertrix
 ^https?://example`}
               required
+              @keyup=${async (e: KeyboardEvent) => {
+                if (e.key === "Enter") {
+                  await (e.target as SlInput).updateComplete;
+                  this.doValidateRegexList(e);
+                }
+              }}
+              @sl-input=${(e: CustomEvent) => {
+                const inputEl = e.target as SlInput;
+                const value = inputEl.value;
+
+                if (value) {
+                  if (!this.stickyFooter) {
+                    const { isValid } = this.validateRegexList(inputEl.value);
+
+                    if (isValid) {
+                      this.animateStickyFooter();
+                    }
+                  }
+                } else {
+                  inputEl.helpText = msg(
+                    "At least 1 regex pattern is required.",
+                  );
+                }
+              }}
+              @sl-change=${this.doValidateRegexList}
+              @sl-blur=${this.doValidateRegexList}
             ></sl-textarea>
           `)}
           ${this.renderHelpTextCol(html`
@@ -1735,6 +1761,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const inputEl = e.target as SlInput;
     if (!inputEl.value) return;
     const { isValid, helpText } = this.validateUrlList(inputEl.value);
+    inputEl.helpText = helpText;
+    if (isValid) {
+      inputEl.setCustomValidity("");
+    } else {
+      inputEl.setCustomValidity(helpText);
+    }
+  };
+
+  private readonly doValidateRegexList = (e: Event) => {
+    const inputEl = e.target as SlInput;
+    if (!inputEl.value) return;
+    const { isValid, helpText } = this.validateRegexList(inputEl.value);
     inputEl.helpText = helpText;
     if (isValid) {
       inputEl.setCustomValidity("");
@@ -3361,6 +3399,29 @@ https://archiveweb.page/images/${"logo.svg"}`}
         }
       }
     }
+    return { isValid, helpText };
+  }
+
+  private validateRegexList(value: string): {
+    isValid: boolean;
+    helpText: string;
+  } {
+    const regexList = urlListToArray(value);
+    let isValid = true;
+    let helpText = `${this.localize.number(regexList.length)} ${msg("entered")}`;
+    const invalidRegex = regexList.find((str) => {
+      try {
+        new RegExp(str);
+      } catch {
+        return true;
+      }
+    });
+
+    if (invalidRegex) {
+      isValid = false;
+      helpText = `${msg("Please remove or fix the following invalid regex:")} ${invalidRegex}`;
+    }
+
     return { isValid, helpText };
   }
 
