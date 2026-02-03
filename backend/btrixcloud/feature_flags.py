@@ -103,15 +103,39 @@ class FeatureFlagOps:
             [
                 # find all flags defined in orgs that don't match flags listed in FLAG_METADATA
                 {"$match": {"featureFlags": {"$exists": True, "$ne": {}}}},
-                {"$project": {"flags": {"$objectToArray": "$featureFlags"}}},
+                {
+                    "$project": {
+                        "flags": {"$objectToArray": "$featureFlags"},
+                        "orgId": "$_id",
+                        "orgName": "$name",
+                    }
+                },
                 {"$unwind": "$flags"},
                 {"$match": {"flags.k": {"$nin": list(FLAG_METADATA.keys())}}},
-                {"$group": {"_id": "$flags.k", "count": {"$sum": 1}}},
+                {
+                    "$group": {
+                        "_id": "$flags.k",
+                        "count": {"$sum": 1},
+                        "orgs": {"$push": {"id": "$orgId", "name": "$orgName"}},
+                    }
+                },
                 {"$sort": {"_id": 1}},
             ]
         ).to_list(None)
         if orphaned_flags:
-            print("Warning: Orphaned feature flags found: %s", orphaned_flags)
+            warning_lines = ["Warning: Orphaned feature flags found in database:"]
+            for flag in orphaned_flags:
+                org_list = "\n  - ".join(
+                    [
+                        f"{org['id']}"
+                        + (f" ({org['name']})" if org.get("name") else "")
+                        for org in flag.get("orgs", [])
+                    ]
+                )
+                warning_lines.append(
+                    f"  Flag '{flag['_id']}' ({flag['count']} orgs):\n  - {org_list}"
+                )
+            print("\n".join(warning_lines))
 
 
 def init_feature_flags_api(
