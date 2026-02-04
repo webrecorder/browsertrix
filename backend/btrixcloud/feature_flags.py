@@ -9,9 +9,9 @@ from motor.motor_asyncio import (
     AsyncIOMotorClientSession,
     AsyncIOMotorDatabase,
 )
+from pydantic import AfterValidator
 
 from .models import (
-    FeatureFlagName,
     FeatureFlagOrgsUpdate,
     FeatureFlagOrgUpdate,
     FeatureFlagOut,
@@ -35,10 +35,14 @@ class FeatureFlagOps:
     ) -> None:
         self.orgs = mdb["organizations"]
 
+    def check_valid_feature_name(self, feature_name: str) -> bool:
+        """Check if a feature name is valid."""
+        return feature_name in FeatureFlags.model_fields
+
     async def set_feature_flag_for_org(
         self,
         org_id: UUID,
-        feature_name: FeatureFlagName,
+        feature_name: str,
         value: bool,
         session: AsyncIOMotorClientSession | None = None,
     ) -> None:
@@ -52,7 +56,7 @@ class FeatureFlagOps:
     async def set_orgs_for_feature_flag(
         self,
         org_ids: list[UUID],
-        feature_name: FeatureFlagName,
+        feature_name: str,
         session: AsyncIOMotorClientSession | None = None,
     ) -> None:
         """Set a feature flag for all organizations in a list, and unset it for all others."""
@@ -69,7 +73,7 @@ class FeatureFlagOps:
 
     async def get_orgs_for_feature_flag(
         self,
-        feature_name: FeatureFlagName,
+        feature_name: str,
         session: AsyncIOMotorClientSession | None = None,
     ):
         """Get all organizations that have a feature flag set."""
@@ -187,13 +191,14 @@ def init_feature_flags_api(
 
     @router.get("/{feature}/org/{org_id}")
     async def get_feature_flag(
-        feature: FeatureFlagName, org: Annotated[Organization, Depends(org_dep)]
+        feature: Annotated[str, AfterValidator(ops.check_valid_feature_name)],
+        org: Annotated[Organization, Depends(org_dep)],
     ):
         return getattr(org.featureFlags, feature, False)
 
     @router.patch("/{feature}/org/{org_id}", response_model=FeatureFlagUpdatedResponse)
     async def set_feature_flag(
-        feature: FeatureFlagName,
+        feature: Annotated[str, AfterValidator(ops.check_valid_feature_name)],
         update: FeatureFlagOrgUpdate,
         org: Annotated[Organization, Depends(org_dep)],
     ):
@@ -202,7 +207,8 @@ def init_feature_flags_api(
 
     @router.get("/{feature}/orgs")
     async def get_orgs_for_feature_flag(
-        feature: FeatureFlagName, user: Annotated[User, Depends(superuser_dep)]
+        feature: Annotated[str, AfterValidator(ops.check_valid_feature_name)],
+        user: Annotated[User, Depends(superuser_dep)],
     ):
         results = await ops.get_orgs_for_feature_flag(feature)
         serialized_results = [
@@ -213,7 +219,8 @@ def init_feature_flags_api(
 
     @router.patch("/{feature}/orgs", response_model=FeatureFlagUpdatedResponse)
     async def set_orgs_for_feature_flag(
-        feature: FeatureFlagName, update: FeatureFlagOrgsUpdate
+        feature: Annotated[str, AfterValidator(ops.check_valid_feature_name)],
+        update: FeatureFlagOrgsUpdate,
     ):
         await ops.set_orgs_for_feature_flag(update.orgs, feature)
         return FeatureFlagUpdatedResponse(feature=feature, updated=True)
