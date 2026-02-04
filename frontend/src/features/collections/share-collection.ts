@@ -69,8 +69,10 @@ export class ShareCollection extends BtrixElement {
     return html`
       <div class="flex items-center gap-2">
         <btrix-copy-button
+          name="link"
+          size="medium"
           .getValue=${() => this.shareLink}
-          content=${msg("Copy Link")}
+          content=${msg("Copy Public Link")}
           @click=${() => {
             void this.clipboardController.copy(this.shareLink);
 
