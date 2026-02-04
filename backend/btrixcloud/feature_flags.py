@@ -35,9 +35,11 @@ class FeatureFlagOps:
     ) -> None:
         self.orgs = mdb["organizations"]
 
-    def check_valid_feature_name(self, feature_name: str) -> bool:
+    def check_valid_feature_name(self, feature_name: str) -> str:
         """Check if a feature name is valid."""
-        return feature_name in FeatureFlags.model_fields
+        if feature_name not in FeatureFlags.model_fields:
+            raise ValueError("Invalid feature name")
+        return feature_name
 
     async def set_feature_flag_for_org(
         self,
