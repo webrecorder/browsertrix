@@ -46,6 +46,7 @@ export class FeatureFlagEditor extends BtrixElement {
 
   render() {
     if (!this.feature) return html``;
+    const orgCount = this.orgs.value?.length ?? this.feature.count;
     return html`<sl-details
       ?open=${this.open}
       @sl-show=${() => (this.open = true)}
@@ -55,11 +56,7 @@ export class FeatureFlagEditor extends BtrixElement {
         <div class="inline-flex flex-wrap items-center gap-4">
           <h3 class="font-mono text-lg">${this.feature.name}</h3>
           <btrix-badge
-            >${this.feature.count}
-            ${pluralOf(
-              "organizations",
-              this.orgs.value?.length ?? this.feature.count,
-            )}</btrix-badge
+            >${orgCount} ${pluralOf("organizations", orgCount)}</btrix-badge
           >
         </div>
         <p>${this.feature.description}</p>
