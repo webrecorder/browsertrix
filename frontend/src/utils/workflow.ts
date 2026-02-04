@@ -142,7 +142,7 @@ export type FormState = {
   useSitemap: boolean;
   failOnFailedSeed: boolean;
   failOnContentCheck: boolean;
-  customIncludeUrlList: string;
+  customIncludeList: string;
   crawlTimeoutMinutes: number;
   behaviorTimeoutSeconds: number | null;
   pageLoadTimeoutSeconds: number | null;
@@ -232,7 +232,7 @@ export const getDefaultFormState = (): FormState => ({
   useSitemap: false,
   failOnFailedSeed: false,
   failOnContentCheck: false,
-  customIncludeUrlList: "",
+  customIncludeList: "",
   crawlTimeoutMinutes: 0,
   maxCrawlSizeGB: 0,
   behaviorTimeoutSeconds: null,
@@ -303,10 +303,10 @@ export function getInitialFormState(params: {
 
       if (isRegex) {
         formState.scopeType = NewWorkflowOnlyScopeType.Regex;
-        formState.customIncludeUrlList = primarySeedConfig.include.join("\n");
+        formState.customIncludeList = primarySeedConfig.include.join("\n");
       } else {
         formState.scopeType = ScopeType.Custom;
-        formState.customIncludeUrlList = primarySeedConfig.include
+        formState.customIncludeList = primarySeedConfig.include
           .map(unescapeCustomPrefix)
           .join("\n");
       }
@@ -385,7 +385,7 @@ export function getInitialFormState(params: {
     ...defaultFormState,
     primarySeedUrl: defaultFormState.primarySeedUrl,
     urlList: defaultFormState.urlList,
-    customIncludeUrlList: defaultFormState.customIncludeUrlList,
+    customIncludeList: defaultFormState.customIncludeList,
     crawlTimeoutMinutes: secondsToMinutes(
       params.initialWorkflow.crawlTimeout,
       defaultFormState.crawlTimeoutMinutes,

@@ -1517,11 +1517,11 @@ https://replayweb.page/docs`}
               primarySeedUrl &&
               (this.formState.scopeType === NewWorkflowOnlyScopeType.Regex ||
                 this.formState.scopeType === ScopeType.Custom) &&
-              !this.formState.customIncludeUrlList
+              !this.formState.customIncludeList
             ) {
               this.updateFormState(
                 {
-                  customIncludeUrlList:
+                  customIncludeList:
                     this.customIncludeListFromSeed(primarySeedUrl),
                 },
                 true,
@@ -1538,12 +1538,12 @@ https://replayweb.page/docs`}
         () => html`
           ${inputCol(html`
             <sl-textarea
-              name="customIncludeUrlList"
+              name="customIncludeList"
               label=${msg("Page Prefix URLs")}
               rows="3"
               autocomplete="off"
               inputmode="url"
-              value=${this.formState.customIncludeUrlList}
+              value=${this.formState.customIncludeList}
               placeholder=${`https://webrecoder.net/blog/2025-
 https://archiveweb.page/es/`}
               required
@@ -1584,12 +1584,12 @@ https://archiveweb.page/es/`}
           ${inputCol(html`
             <sl-textarea
               class="part-[textarea]:font-mono"
-              name="customIncludeUrlList"
+              name="customIncludeList"
               label=${msg("Page Regex Patterns")}
               rows="3"
               autocomplete="off"
               inputmode="url"
-              value=${this.formState.customIncludeUrlList}
+              value=${this.formState.customIncludeList}
               placeholder=${`/blog/.*browsertrix
 ^https?://example`}
               required
@@ -1622,7 +1622,7 @@ https://archiveweb.page/es/`}
             ></sl-textarea>
           `)}
           ${this.renderHelpTextCol(html`
-            ${infoTextFor.customIncludeUrlList}
+            ${infoTextFor.customIncludeList}
             ${this.renderUserGuideLink({
               hash: "page-regex-patterns",
               content: msg("More details"),
@@ -2711,8 +2711,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
     ) {
       if (prevScopeType === NewWorkflowOnlyScopeType.Regex) {
         // Convert to valid URL
-        formState.customIncludeUrlList = urlListToArray(
-          this.formState.customIncludeUrlList,
+        formState.customIncludeList = urlListToArray(
+          this.formState.customIncludeList,
         )
           .map((regex) => {
             const url = unescapeCustomPrefix(regex);
@@ -2727,13 +2727,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
           .join("\n");
       } else if (prevScopeType === ScopeType.Custom) {
         // Convert to regex
-        formState.customIncludeUrlList = urlListToArray(
-          this.formState.customIncludeUrlList,
+        formState.customIncludeList = urlListToArray(
+          this.formState.customIncludeList,
         )
           .map((url) => `^${regexEscape(url)}`)
           .join("\n");
       } else {
-        formState.customIncludeUrlList = this.customIncludeListFromSeed(
+        formState.customIncludeList = this.customIncludeListFromSeed(
           formState.primarySeedUrl || this.formState.primarySeedUrl,
         );
       }
@@ -3560,8 +3560,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
     | "useRobots"
   > {
     const primarySeedUrl = this.formState.primarySeedUrl;
-    const includeUrlList = this.formState.customIncludeUrlList
-      ? urlListToArray(this.formState.customIncludeUrlList)
+    const includeUrlList = this.formState.customIncludeList
+      ? urlListToArray(this.formState.customIncludeList)
       : [];
     const additionalSeedUrlList = this.formState.urlList
       ? urlListToArray(this.formState.urlList).map((seedUrl) => {
