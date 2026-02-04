@@ -2405,12 +2405,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
     >
       ${msg("Auto-Add to Collections")}
     </button>`;
-    const showAutoAddWarning =
-      this.formState.dedupeType === "none" &&
-      this.initialWorkflow?.dedupeCollId &&
-      this.formState.autoAddCollections.includes(
-        this.initialWorkflow.dedupeCollId,
-      );
 
     return html` ${inputCol(html`
       <sl-radio-group
@@ -2427,25 +2421,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
             dedupeCollectionName: null,
           };
 
-          if (dedupeType === "none") {
-            if (
-              this.formState.dedupeCollectionId &&
-              !this.initialWorkflow?.dedupeCollId
-            ) {
-              // Remove from auto-add list if dedupe ID hasn't been saved yet
-              formState.autoAddCollections = without(
-                [this.formState.dedupeCollectionId],
-                this.formState.autoAddCollections,
-              );
-            }
-          } else {
-            if (this.initialWorkflow?.dedupeCollId) {
-              formState.dedupeCollectionId = this.initialWorkflow.dedupeCollId;
-              formState.autoAddCollections = union(
-                formState.autoAddCollections,
-                [formState.dedupeCollectionId],
-              );
-            }
+          if (dedupeType === "none" && this.formState.dedupeCollectionId) {
+            formState.autoAddCollections = without(
+              [this.formState.dedupeCollectionId],
+              this.formState.autoAddCollections,
+            );
           }
 
           this.updateFormState(formState, true);
@@ -2457,18 +2437,22 @@ https://archiveweb.page/images/${"logo.svg"}`}
         >
 
         ${when(
-          showAutoAddWarning,
+          this.formState.dedupeType === "none" &&
+            this.initialWorkflow?.dedupeCollId,
           () => html`
-            <div slot="help-text" class="pt-2">
+            <div slot="help-text" class="mt-2">
               <sl-icon
                 class="mr-0.5 align-[-.175em]"
                 name="exclamation-triangle"
               ></sl-icon>
 
-              ${msg("Auto-add will remain enabled.")}
+              ${msg(
+                "Disabling deduplication will also disable auto-adding to the collection.",
+              )}
               <br />
               ${msg(
-                html`To disable auto-adding to the collection, update the
+                html`To continue to auto-add to the collection without
+                deduplication enabled, update the
                 ${link_to_collections_settings} setting.`,
               )}
             </div>
@@ -2572,13 +2556,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
       this.formState.dedupeType === "collection" &&
       !this.formState.dedupeCollectionId &&
       this.formState.dedupeCollectionName;
-    const showDedupeWarning = newDedupeCollectionName
-      ? // New collections don't have an ID to add to list yet;
-        // check if list has any items
-        this.formState.autoAddCollections.length
-      : this.formState.dedupeCollectionId
-        ? this.formState.autoAddCollections.length > 1
-        : false;
+    const showDedupeWarning =
+      !isEqual(
+        this.initialWorkflow?.autoAddCollections,
+        this.formState.autoAddCollections,
+      ) &&
+      (this.formState.dedupeCollectionId || newDedupeCollectionName);
 
     return html`
       ${inputCol(html`
