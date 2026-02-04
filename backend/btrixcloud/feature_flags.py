@@ -10,6 +10,7 @@ from motor.motor_asyncio import (
     AsyncIOMotorDatabase,
 )
 from pydantic import AfterValidator
+from pydantic.fields import FieldInfo
 
 from .models import (
     FeatureFlagOrgsUpdate,
@@ -37,7 +38,9 @@ class FeatureFlagOps:
 
     def check_valid_feature_name(self, feature_name: str) -> str:
         """Check if a feature name is valid."""
-        if feature_name not in FeatureFlags.model_fields:
+        # Not sure why the cast is needed here, but pylint complains about
+        # 'FeatureFlags.model_fields' not supporting membership test in CI
+        if feature_name not in cast(dict[str, FieldInfo], FeatureFlags.model_fields):
             raise ValueError("Invalid feature name")
         return feature_name
 
