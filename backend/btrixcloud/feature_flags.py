@@ -1,7 +1,7 @@
 """Feature flag operations."""
 
 import asyncio
-from typing import Annotated, Awaitable, Callable
+from typing import Annotated, Awaitable, Callable, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -11,7 +11,7 @@ from motor.motor_asyncio import (
 )
 
 from .models import (
-    FLAG_METADATA,
+    FeatureFlagName,
     FeatureFlagOrgsUpdate,
     FeatureFlagOrgUpdate,
     FeatureFlagOut,
@@ -38,7 +38,7 @@ class FeatureFlagOps:
     async def set_feature_flag_for_org(
         self,
         org_id: UUID,
-        feature_name: FeatureFlags,
+        feature_name: FeatureFlagName,
         value: bool,
         session: AsyncIOMotorClientSession | None = None,
     ) -> None:
@@ -52,7 +52,7 @@ class FeatureFlagOps:
     async def set_orgs_for_feature_flag(
         self,
         org_ids: list[UUID],
-        feature_name: FeatureFlags,
+        feature_name: FeatureFlagName,
         session: AsyncIOMotorClientSession | None = None,
     ) -> None:
         """Set a feature flag for all organizations in a list, and unset it for all others."""
@@ -69,7 +69,7 @@ class FeatureFlagOps:
 
     async def get_orgs_for_feature_flag(
         self,
-        feature_name: FeatureFlags,
+        feature_name: FeatureFlagName,
         session: AsyncIOMotorClientSession | None = None,
     ):
         """Get all organizations that have a feature flag set."""
@@ -111,7 +111,11 @@ class FeatureFlagOps:
                     }
                 },
                 {"$unwind": "$flags"},
-                {"$match": {"flags.k": {"$nin": list(FLAG_METADATA.keys())}}},
+                {
+                    "$match": {
+                        "flags.k": {"$nin": list(FeatureFlags.model_fields.keys())}
+                    }
+                },
                 {
                     "$group": {
                         "_id": "$flags.k",
@@ -174,20 +178,22 @@ def init_feature_flags_api(
         # omit owner and expiry from metadata
         return [
             FeatureFlagOut(
-                name=name, count=org_counts.get(name, 0), **flag.model_dump()
+                name=name,
+                count=org_counts.get(name, 0),
+                description=cast(str, flag.description),
             )
-            for name, flag in FLAG_METADATA.items()
+            for name, flag in FeatureFlags.model_fields.items()
         ]
 
     @router.get("/{feature}/org/{org_id}")
     async def get_feature_flag(
-        feature: FeatureFlags, org: Annotated[Organization, Depends(org_dep)]
+        feature: FeatureFlagName, org: Annotated[Organization, Depends(org_dep)]
     ):
-        return org.has_feature(feature)
+        return getattr(org.featureFlags, feature, False)
 
     @router.patch("/{feature}/org/{org_id}", response_model=FeatureFlagUpdatedResponse)
     async def set_feature_flag(
-        feature: FeatureFlags,
+        feature: FeatureFlagName,
         update: FeatureFlagOrgUpdate,
         org: Annotated[Organization, Depends(org_dep)],
     ):
@@ -196,7 +202,7 @@ def init_feature_flags_api(
 
     @router.get("/{feature}/orgs")
     async def get_orgs_for_feature_flag(
-        feature: FeatureFlags, user: Annotated[User, Depends(superuser_dep)]
+        feature: FeatureFlagName, user: Annotated[User, Depends(superuser_dep)]
     ):
         results = await ops.get_orgs_for_feature_flag(feature)
         serialized_results = [
@@ -207,7 +213,7 @@ def init_feature_flags_api(
 
     @router.patch("/{feature}/orgs", response_model=FeatureFlagUpdatedResponse)
     async def set_orgs_for_feature_flag(
-        feature: FeatureFlags, update: FeatureFlagOrgsUpdate
+        feature: FeatureFlagName, update: FeatureFlagOrgsUpdate
     ):
         await ops.set_orgs_for_feature_flag(update.orgs, feature)
         return FeatureFlagUpdatedResponse(feature=feature, updated=True)
