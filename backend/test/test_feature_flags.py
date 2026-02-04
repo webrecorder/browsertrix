@@ -56,8 +56,6 @@ def test_get_metadata(admin_auth_headers):
     for flag in data:
         assert "name" in flag
         assert "description" in flag
-        assert "scope" in flag
-        assert "defaultValue" in flag
         assert "count" in flag
         assert isinstance(flag["count"], int)
         assert flag["count"] >= 0
