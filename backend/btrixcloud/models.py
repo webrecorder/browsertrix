@@ -3,9 +3,10 @@ Crawl-related models and types
 """
 
 # pylint: disable=invalid-name, too-many-lines
-
+from __future__ import annotations
 from datetime import datetime, date
 from enum import Enum, IntEnum, StrEnum
+from this import d
 from uuid import UUID
 import base64
 import hashlib
@@ -13,7 +14,7 @@ import mimetypes
 import math
 import os
 
-from typing import Optional, List, Dict, Union, Literal, Any, get_args
+from typing import Optional, List, Dict, Self, Union, Literal, Any, get_args, get_origin
 from typing_extensions import Annotated
 
 from pydantic import (
@@ -22,6 +23,7 @@ from pydantic import (
     HttpUrl as HttpUrlNonStr,
     AnyHttpUrl as AnyHttpUrlNonStr,
     EmailStr as CasedEmailStr,
+    model_validator,
     validate_email,
     RootModel,
     BeforeValidator,
@@ -2233,53 +2235,56 @@ class UserOut(UserOutNoId):
 # ============================================================================
 
 
-type FeatureFlagScope = Literal["org"]
+class ValidatedFeatureFlags(BaseModel):
+    """Base class for feature flags with validation."""
+
+    @model_validator(mode="after")
+    def validate_all_fields(self) -> Self:
+        """Ensure all fields have descriptions and are bools."""
+        missing_descriptions = []
+        non_bool_fields = []
+
+        for field_name, field_info in self.model_fields.items():
+            # Check for missing descriptions
+            if not field_info.description:
+                missing_descriptions.append(field_name)
+
+            # Check if field type is bool (handles Annotated[bool, ...])
+            annotation = field_info.annotation
+            if get_origin(annotation) is Annotated:
+                actual_type = get_args(annotation)[0]
+            else:
+                actual_type = annotation
+
+            if actual_type is not bool:
+                non_bool_fields.append(f"{field_name} (type: {actual_type})")
+
+        if missing_descriptions:
+            raise ValueError(
+                f"The following fields are missing descriptions: {', '.join(missing_descriptions)}"
+            )
+
+        if non_bool_fields:
+            raise ValueError(
+                f"The following fields must be bool type: {', '.join(non_bool_fields)}"
+            )
+
+        return self
 
 
-class FeatureFlag(BaseModel):
-    """Feature flag model"""
+# ============================================================================
+# Feature Flags - Edit here
+# ============================================================================
+class FeatureFlags(ValidatedFeatureFlags):
+    """Feature flags for an organization"""
 
-    model_config = ConfigDict(use_attribute_docstrings=True)
-
-    description: str
-    """
-    Detailed description of the feature flag. It should explain what the flag
-    does and why it is needed.
-    """
-    owner: str
-    """The owner of the feature flag. GitHub username, email address, etc."""
-    expiry: date
-    """
-    Expiry date for the feature flag. Warnings will be shown if the flag is
-    still active after this date.
-    """
-    scope: FeatureFlagScope
-    """
-    Scope of the feature flag. This should be 'org' for organization-level
-    flags.
-    """
-    defaultValue: bool
-    """
-    Default value for the feature flag. This is the value that will be used if
-    the flag is not set.
-    """
-
-
-class FeatureFlags(StrEnum):
-    """Feature flag names"""
-
-    DEDUPE_ENABLED = "dedupe-enabled"
-
-
-FLAG_METADATA: dict[FeatureFlags, FeatureFlag] = {
-    FeatureFlags.DEDUPE_ENABLED: FeatureFlag(
+    dedupeEnabled: bool = Field(
         description="Enable deduplication options for an org. Intended for beta-testing dedupe.",
-        owner="@ikreymer",
-        expiry=date(2026, 1, 29),
-        scope="org",
-        defaultValue=False,
-    ),
-}
+        default=False,
+    )
+
+
+type FeatureFlagName = Literal[tuple(FeatureFlags.model_fields.keys())]  # pyright: ignore[reportInvalidTypeForm]
 
 
 class FeatureFlagOut(BaseModel):
@@ -2287,21 +2292,12 @@ class FeatureFlagOut(BaseModel):
 
     model_config = ConfigDict(use_attribute_docstrings=True)
 
-    name: FeatureFlags
+    name: FeatureFlagName
     """Name of the feature flag."""
     description: str
     """
     Detailed description of the feature flag. It should explain what the flag
     does and why it is needed.
-    """
-    scope: FeatureFlagScope
-    """
-    Scope of the feature flag. This should be 'org' for organization-level flags.
-    """
-    defaultValue: bool
-    """
-    Default value for the feature flag. This is the value that will be used if
-    the flag is not set.
     """
     count: int
     """Number of organizations that have this feature flag enabled."""
@@ -2324,7 +2320,7 @@ class FeatureFlagOrgsUpdate(BaseModel):
 class FeatureFlagUpdatedResponse(BaseModel):
     """Response when a feature flag is updated"""
 
-    feature: FeatureFlags
+    feature: FeatureFlagName
     """Feature flag that was updated."""
     updated: bool
     """Whether the feature flag was updated successfully."""
@@ -2457,7 +2453,7 @@ class OrgOut(BaseMongoModel):
     publicDescription: str = ""
     publicUrl: str = ""
 
-    featureFlags: dict[str, bool] = {}
+    featureFlags: FeatureFlags = FeatureFlags()
 
 
 # ============================================================================
@@ -2522,7 +2518,7 @@ class Organization(BaseMongoModel):
     publicDescription: Optional[str] = None
     publicUrl: Optional[str] = None
 
-    featureFlags: dict[str, bool] = {}
+    featureFlags: FeatureFlags = FeatureFlags()
 
     def is_owner(self, user):
         """Check if user is owner"""
@@ -2546,12 +2542,6 @@ class Organization(BaseMongoModel):
             return False
 
         return res >= value
-
-    def has_feature(self, feature_name: FeatureFlags) -> bool:
-        """Check if a feature is enabled for the organization"""
-        return self.featureFlags.get(
-            feature_name, FLAG_METADATA[feature_name].defaultValue
-        )
 
     async def serialize_for_user(self, user: User, user_manager) -> OrgOut:
         """Serialize result based on current user access"""

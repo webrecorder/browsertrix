@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from .conftest import API_PREFIX
 
-# TODO: build these tests in a way that doesn't rely on `dedupe-enabled`
+# TODO: build these tests in a way that doesn't rely on `dedupeEnabled`
 
 
 @pytest.fixture(autouse=True)
@@ -14,7 +14,7 @@ def cleanup_feature_flags(admin_auth_headers):
     This runs before each test to prevent state pollution between tests.
     """
     # Reset all feature flags for all organizations by setting empty org list
-    feature_name = "dedupe-enabled"
+    feature_name = "dedupeEnabled"
     try:
         requests.patch(
             f"{API_PREFIX}/flags/{feature_name}/orgs",
@@ -75,7 +75,7 @@ def test_get_metadata_viewer_forbidden(viewer_auth_headers):
 
 def test_get_feature_flag_default(admin_auth_headers, default_org_id):
     """Test checking the default value of a feature flag for an organization"""
-    feature_name = "dedupe-enabled"
+    feature_name = "dedupeEnabled"
     r = requests.get(
         f"{API_PREFIX}/flags/{feature_name}/org/{default_org_id}",
         headers=admin_auth_headers,
@@ -89,7 +89,7 @@ def test_get_feature_flag_default(admin_auth_headers, default_org_id):
 
 def test_get_feature_flag_viewer_forbidden(viewer_auth_headers, default_org_id):
     """Test that non-superuser cannot check feature flag for org"""
-    feature_name = "dedupe-enabled"
+    feature_name = "dedupeEnabled"
     r = requests.get(
         f"{API_PREFIX}/flags/{feature_name}/org/{default_org_id}",
         headers=viewer_auth_headers,
@@ -101,7 +101,7 @@ def test_get_feature_flag_viewer_forbidden(viewer_auth_headers, default_org_id):
 def test_get_feature_flag_nonexistent_org(admin_auth_headers):
     """Test checking feature flag for non-existent organization"""
     nonexistent_org_id = str(uuid4())
-    feature_name = "dedupe-enabled"
+    feature_name = "dedupeEnabled"
     r = requests.get(
         f"{API_PREFIX}/flags/{feature_name}/org/{nonexistent_org_id}",
         headers=admin_auth_headers,
@@ -112,7 +112,7 @@ def test_get_feature_flag_nonexistent_org(admin_auth_headers):
 
 def test_set_feature_flag(admin_auth_headers, default_org_id):
     """Test setting a feature flag for an organization"""
-    feature_name = "dedupe-enabled"
+    feature_name = "dedupeEnabled"
 
     # Verify initial state is False
     r = requests.get(
@@ -165,7 +165,7 @@ def test_set_feature_flag(admin_auth_headers, default_org_id):
 
 def test_set_feature_flag_viewer_forbidden(viewer_auth_headers, default_org_id):
     """Test that non-superuser cannot set feature flag for org"""
-    feature_name = "dedupe-enabled"
+    feature_name = "dedupeEnabled"
     r = requests.patch(
         f"{API_PREFIX}/flags/{feature_name}/org/{default_org_id}",
         headers=viewer_auth_headers,
@@ -178,7 +178,7 @@ def test_set_feature_flag_viewer_forbidden(viewer_auth_headers, default_org_id):
 def test_set_feature_flag_nonexistent_org(admin_auth_headers):
     """Test setting feature flag for non-existent organization"""
     nonexistent_org_id = str(uuid4())
-    feature_name = "dedupe-enabled"
+    feature_name = "dedupeEnabled"
     r = requests.patch(
         f"{API_PREFIX}/flags/{feature_name}/org/{nonexistent_org_id}",
         headers=admin_auth_headers,
@@ -190,7 +190,7 @@ def test_set_feature_flag_nonexistent_org(admin_auth_headers):
 
 def test_get_orgs_for_feature_flag(admin_auth_headers, default_org_id):
     """Test getting all organizations that have a feature flag set"""
-    feature_name = "dedupe-enabled"
+    feature_name = "dedupeEnabled"
 
     # Verify initial state - no orgs should have the flag
     r = requests.get(
@@ -231,7 +231,7 @@ def test_get_orgs_for_feature_flag(admin_auth_headers, default_org_id):
 
 def test_get_orgs_for_feature_flag_viewer_forbidden(viewer_auth_headers):
     """Test that non-superuser cannot get orgs list for feature flag"""
-    feature_name = "dedupe-enabled"
+    feature_name = "dedupeEnabled"
     r = requests.get(
         f"{API_PREFIX}/flags/{feature_name}/orgs",
         headers=viewer_auth_headers,
@@ -244,7 +244,7 @@ def test_set_orgs_for_feature_flag(
     admin_auth_headers, default_org_id, non_default_org_id
 ):
     """Test setting feature flag for multiple organizations"""
-    feature_name = "dedupe-enabled"
+    feature_name = "dedupeEnabled"
 
     # Get initial count
     r = requests.get(
@@ -313,7 +313,7 @@ def test_set_orgs_for_feature_flag(
 
 def test_set_orgs_for_feature_flag_viewer_forbidden(viewer_auth_headers):
     """Test that non-superuser cannot set feature flag for multiple orgs"""
-    feature_name = "dedupe-enabled"
+    feature_name = "dedupeEnabled"
     r = requests.patch(
         f"{API_PREFIX}/flags/{feature_name}/orgs",
         headers=viewer_auth_headers,
@@ -325,7 +325,7 @@ def test_set_orgs_for_feature_flag_viewer_forbidden(viewer_auth_headers):
 
 def test_metadata_counts_update(admin_auth_headers, default_org_id):
     """Test that metadata counts are updated when flags are set"""
-    feature_name = "dedupe-enabled"
+    feature_name = "dedupeEnabled"
 
     # Get initial metadata
     r = requests.get(
@@ -440,7 +440,7 @@ def test_invalid_feature_name(admin_auth_headers, default_org_id):
 
 def test_set_feature_flag_idempotent(admin_auth_headers, default_org_id):
     """Test that setting a feature flag to the same value multiple times is idempotent"""
-    feature_name = "dedupe-enabled"
+    feature_name = "dedupeEnabled"
 
     # Verify initial state is False
     r = requests.get(
@@ -498,7 +498,7 @@ def test_set_orgs_for_feature_flag_empty_list(
     admin_auth_headers, default_org_id, non_default_org_id
 ):
     """Test that setting feature flag with empty org list unsets flag for all orgs"""
-    feature_name = "dedupe-enabled"
+    feature_name = "dedupeEnabled"
 
     # Set flag for both orgs
     r = requests.patch(
