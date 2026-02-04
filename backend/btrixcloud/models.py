@@ -4,9 +4,8 @@ Crawl-related models and types
 
 # pylint: disable=invalid-name, too-many-lines
 from __future__ import annotations
-from datetime import datetime, date
-from enum import Enum, IntEnum, StrEnum
-from this import d
+from datetime import datetime
+from enum import Enum, IntEnum
 from uuid import UUID
 import base64
 import hashlib
@@ -2284,15 +2283,12 @@ class FeatureFlags(ValidatedFeatureFlags):
     )
 
 
-type FeatureFlagName = Literal[tuple(FeatureFlags.model_fields.keys())]  # pyright: ignore[reportInvalidTypeForm]
-
-
 class FeatureFlagOut(BaseModel):
     """Output model for feature flags"""
 
     model_config = ConfigDict(use_attribute_docstrings=True)
 
-    name: FeatureFlagName
+    name: str
     """Name of the feature flag."""
     description: str
     """
@@ -2320,7 +2316,7 @@ class FeatureFlagOrgsUpdate(BaseModel):
 class FeatureFlagUpdatedResponse(BaseModel):
     """Response when a feature flag is updated"""
 
-    feature: FeatureFlagName
+    feature: str
     """Feature flag that was updated."""
     updated: bool
     """Whether the feature flag was updated successfully."""
