@@ -262,6 +262,7 @@ class K8sAPI:
             await self.batch_api.delete_namespaced_job(
                 name=name,
                 namespace=self.namespace,
+                propagation_policy="Background",
             )
             return True
 
@@ -276,8 +277,8 @@ class K8sAPI:
         return await self.delete_custom_object(name, "crawljobs")
 
     async def delete_profile_browser(self, browserid):
-        """delete custom crawljob object"""
-        name = f"profilejobs-{browserid}"
+        """delete custom profilejob object"""
+        name = f"profilejob-{browserid}"
 
         res = await self.delete_custom_object(name, "profilejobs")
 
