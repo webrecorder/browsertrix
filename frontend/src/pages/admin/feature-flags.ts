@@ -12,9 +12,7 @@ import { type OrgData } from "@/types/org";
 export type FlagMetadata = {
   name: string;
   description: string;
-  scope: "org";
   count: number;
-  defaultValue: boolean;
 };
 
 /**
