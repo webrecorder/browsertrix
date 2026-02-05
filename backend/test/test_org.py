@@ -75,7 +75,9 @@ def test_get_org_feature_flags(crawler_auth_headers, default_org_id):
     data = r.json()
     for org in data["items"]:
         feature_flags = org["featureFlags"]
-        assert feature_flags == {}
+        assert feature_flags == {
+            "dedupeEnabled": False,
+        }
 
 
 def test_update_org_crawling_defaults(admin_auth_headers, default_org_id):
