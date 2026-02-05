@@ -19,10 +19,10 @@ import { formatAPIUser } from "@/utils/user";
 /**
  * Browsertrix superadmin dashboard
  */
-@customElement("btrix-admin")
+@customElement("btrix-admin-orgs")
 @localized()
 @needLogin
-export class Admin extends BtrixElement {
+export class AdminOrgs extends BtrixElement {
   @state()
   private orgList?: OrgData[];
 
@@ -84,14 +84,6 @@ export class Admin extends BtrixElement {
         title=${msg("Dashboard – Admin")}
       ></btrix-document-title>
 
-      <div class="bg-white">
-        <header
-          class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4 md:py-8"
-        >
-          <h1 class="text-xl font-medium">${msg("Welcome")}</h1>
-        </header>
-        <hr />
-      </div>
       <main class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4">
         ${this.renderAdminOrgs()}
       </main>
@@ -129,6 +121,7 @@ export class Admin extends BtrixElement {
             .orgList=${this.orgList}
             @update-quotas=${this.onUpdateOrgQuotas}
             @update-proxies=${this.onUpdateOrgProxies}
+            @btrix-update-feature-flags=${this.onUpdateOrgFeatureFlags}
             class="grid grid-rows-[auto_auto_1fr]"
           ></btrix-orgs-list>
         </section>
@@ -365,6 +358,10 @@ export class Admin extends BtrixElement {
         allowedProxies: org.allowedProxies,
       }),
     });
+  }
+
+  async onUpdateOrgFeatureFlags() {
+    await this.fetchOrgs();
   }
 
   async checkFormValidity(formEl: HTMLFormElement) {

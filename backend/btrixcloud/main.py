@@ -16,6 +16,8 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from pydantic import BaseModel
 
+from .feature_flags import init_feature_flags_api
+
 from .db import init_db, await_db_and_migrations
 
 from .emailsender import EmailSender
@@ -184,6 +186,10 @@ def main() -> None:
         current_active_user,
     )
 
+    feature_flag_ops = init_feature_flags_api(
+        mdb, current_active_user, org_ops, user_manager
+    )
+
     init_subs_api(app, mdb, org_ops, user_manager, shared_secret_or_superuser)
 
     event_webhook_ops = init_event_webhooks_api(mdb, org_ops, app_root)
@@ -301,6 +307,7 @@ def main() -> None:
     asyncio.create_task(background_job_ops.ensure_cron_cleanup_jobs_exist())
 
     app.include_router(org_ops.router)
+    app.include_router(feature_flag_ops.router)
 
     @app.get("/settings", tags=["settings"], response_model=SettingsResponse)
     async def get_settings() -> SettingsResponse:
