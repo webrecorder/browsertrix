@@ -748,36 +748,44 @@
       <trans-unit id="sdc8e0ecdba53dccc">
         <source>Slug:</source>
       </trans-unit>
-      <trans-unit id="see2872cc86489f3e">
+      <trans-unit id="see2872cc86489f3e" xml:space="preserve">
         <source>Members:</source>
+        <target state="translated">成员：</target>
       </trans-unit>
-      <trans-unit id="saa29a2ac03cd9d19">
+      <trans-unit id="saa29a2ac03cd9d19" xml:space="preserve">
         <source>Reason</source>
+        <target state="translated">原因</target>
       </trans-unit>
-      <trans-unit id="s67f9c55472e78c8a">
+      <trans-unit id="s67f9c55472e78c8a" xml:space="preserve">
         <source>Enter reason for disabling archiving</source>
+        <target state="translated">输入禁用存档的原因</target>
       </trans-unit>
-      <trans-unit id="s159812ca2edc12a2">
+      <trans-unit id="s159812ca2edc12a2" xml:space="preserve">
         <source>Disable Archiving</source>
+        <target state="translated">禁用归档</target>
       </trans-unit>
-      <trans-unit id="s2f2866981870fee3">
+      <trans-unit id="s2f2866981870fee3" xml:space="preserve">
         <source>Confirm Org Deletion: <x id="0" equiv-text="${this.currOrg?.name || &quot;&quot;}"/></source>
+        <target state="translated">确认删除组织：<x id="0" equiv-text="${this.currOrg?.name || &quot;&quot;}"/></target>
       </trans-unit>
-      <trans-unit id="s039b6434e8a75560">
+      <trans-unit id="s039b6434e8a75560" xml:space="preserve">
         <source>Delete <x id="0" equiv-text="${org.name}"/></source>
+        <target state="translated">删除<x id="0" equiv-text="${org.name}"/></target>
       </trans-unit>
-      <trans-unit id="hbc605ddee9667ea5">
+      <trans-unit id="hbc605ddee9667ea5" xml:space="preserve">
         <source>Are you sure you want to delete
                   <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;"/>? This
                   cannot be undone.</source>
+        <target state="translated">你确定你要删除<x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;"/>？此操作无法撤销。</target>
       </trans-unit>
       <trans-unit id="h30ddaf03878f27b9">
         <source>Deleting an org will delete all
                   <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    ${this.localize.bytes(org.bytesStored)}&#10;                  &lt;/strong&gt;"/>
                   of data associated with the org.</source>
       </trans-unit>
-      <trans-unit id="s271e65e1451601ef">
+      <trans-unit id="s271e65e1451601ef" xml:space="preserve">
         <source>Crawls: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredCrawls)}"/></source>
+        <target state="translated">爬取：<x id="0" equiv-text="${this.localize.bytes(org.bytesStoredCrawls)}"/></target>
       </trans-unit>
       <trans-unit id="s6fc1df91bcc961d3" xml:space="preserve">
         <source>Uploads: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredUploads)}"/></source>
@@ -815,35 +823,45 @@
         <source>Sorry, couldn't get all proxies at this time.</source>
         <target state="translated">抱歉，目前没法获取到所有代理。</target>
       </trans-unit>
-      <trans-unit id="s081029829332df74">
+      <trans-unit id="s081029829332df74" xml:space="preserve">
         <source>Org "<x id="0" equiv-text="${org.name}"/>" has been deleted.</source>
+        <target state="translated"><x id="0" equiv-text="${org.name}"/>组织正在被删除。</target>
       </trans-unit>
-      <trans-unit id="s4de74a2a08a74bff">
+      <trans-unit id="s4de74a2a08a74bff" xml:space="preserve">
         <source>Sorry, couldn't delete org at this time.</source>
+        <target state="translated">抱歉，现在无法删除该组织。</target>
       </trans-unit>
-      <trans-unit id="sc40cd77e0d29dbf8">
+      <trans-unit id="sc40cd77e0d29dbf8" xml:space="preserve">
         <source>Good</source>
+        <target state="translated">好</target>
       </trans-unit>
-      <trans-unit id="s454fc453e983e6ca">
+      <trans-unit id="s454fc453e983e6ca" xml:space="preserve">
         <source>Active with issue</source>
+        <target state="translated">有问题的活动</target>
       </trans-unit>
-      <trans-unit id="s9dbcb696452981eb">
+      <trans-unit id="s9dbcb696452981eb" xml:space="preserve">
         <source>Active with issue: Storage quota reached</source>
+        <target state="translated">有问题的活动：已达到存储配额</target>
       </trans-unit>
-      <trans-unit id="sf86e8d4cc5fbc13d">
+      <trans-unit id="sf86e8d4cc5fbc13d" xml:space="preserve">
         <source>Active with issue: Execution minutes quota reached</source>
+        <target state="translated">有问题的活动：已达到执行分钟配额</target>
       </trans-unit>
-      <trans-unit id="s66722bc2ea775e05">
+      <trans-unit id="s66722bc2ea775e05" xml:space="preserve">
         <source>Disabled</source>
+        <target state="translated">禁用</target>
       </trans-unit>
-      <trans-unit id="s37e449970d4403d8">
+      <trans-unit id="s37e449970d4403d8" xml:space="preserve">
         <source>Archiving Disabled:</source>
+        <target state="translated">已禁用的归档：</target>
       </trans-unit>
-      <trans-unit id="s020efa9f4b5c78e0">
+      <trans-unit id="s020efa9f4b5c78e0" xml:space="preserve">
         <source>Archiving Disabled (no reason specified)</source>
+        <target state="translated">归档已禁用（未指定原因）</target>
       </trans-unit>
-      <trans-unit id="sb9e424bd9e3e2723">
+      <trans-unit id="sb9e424bd9e3e2723" xml:space="preserve">
         <source>No Subscription</source>
+        <target state="translated">无需订阅</target>
       </trans-unit>
       <trans-unit id="sf15c7a44fe1edf18">
         <source>Subscription Cancellation Scheduled</source>
