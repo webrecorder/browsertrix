@@ -36,7 +36,7 @@ import {
   type Workflow,
 } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
-import { SortDirection } from "@/types/utils";
+import { SortDirection, type RequireAllKeys } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { isNotEqual } from "@/utils/is-not-equal";
@@ -338,7 +338,12 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                 : undefined,
             )}
             @btrix-start-browser=${(e: BtrixStartBrowserEvent) => {
-              void this.openBrowser(e.detail);
+              void this.openBrowser({
+                url: e.detail.url,
+                crawlerChannel: e.detail.crawlerChannel,
+                proxyId: e.detail.proxyId,
+                replaceBrowser: e.detail.replaceBrowser,
+              });
             }}
             @sl-after-hide=${() => {
               if (this.openDialog?.startsWith("start-browser")) {
@@ -361,7 +366,13 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           <li class="flex items-center gap-2">
             <button
               class="flex h-8 flex-1 items-center overflow-hidden border-r text-left transition-colors duration-fast hover:bg-cyan-50/50"
-              @click=${() => void this.openBrowser({ url: origin })}
+              @click=${() =>
+                void this.openBrowser({
+                  url: origin,
+                  crawlerChannel: profile.crawlerChannel,
+                  proxyId: profile.proxyId,
+                  replaceBrowser: false,
+                })}
             >
               <sl-tooltip placement="left" content=${msg("Load URL")}>
                 <sl-icon name="window" class="mx-2 block"></sl-icon>
@@ -685,7 +696,12 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                     <sl-menu slot="menu">
                       <sl-menu-item
                         @click=${() =>
-                          void this.openBrowser({ url: workflow.firstSeed })}
+                          void this.openBrowser({
+                            url: workflow.firstSeed,
+                            crawlerChannel: workflow.crawlerChannel,
+                            proxyId: workflow.proxyId ?? undefined,
+                            replaceBrowser: false,
+                          })}
                       >
                         <sl-icon
                           slot="prefix"
@@ -791,7 +807,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
   };
 
   private readonly openBrowser = async (
-    opts: BrowserProfilesProfilePage["browserLoadParams"],
+    opts: RequireAllKeys<BrowserProfilesProfilePage["browserLoadParams"]>,
   ) => {
     let { url } = opts;
 
