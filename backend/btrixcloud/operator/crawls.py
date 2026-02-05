@@ -744,7 +744,7 @@ class CrawlOperator(BaseOperator):
             )
         return False
 
-    def get_related(self, _data: MCBaseRequest):
+    def get_related(self, data: MCBaseRequest):
         """return objects related to crawl pods"""
         related_resources = [
             {
@@ -756,7 +756,6 @@ class CrawlOperator(BaseOperator):
         spec = data.parent.get("spec", {})
         coll_id = spec.get("dedupeCollId")
         oid = spec.get("oid")
-        crawl_id = spec["id"]
 
         if coll_id:
             related_resources.append(
@@ -1457,7 +1456,12 @@ class CrawlOperator(BaseOperator):
                         continue
 
                 # out of storage
-                if pod_info and pod_info.isNewExit and pod_info.exitCode == 3:
+                if (
+                    pod_info
+                    and pod_info.isNewExit
+                    and pod_info.exitCode == 3
+                    and allocated_storage
+                ):
                     used_storage = allocated_storage
 
                 if (
