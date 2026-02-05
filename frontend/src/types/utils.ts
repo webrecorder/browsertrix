@@ -26,3 +26,10 @@ export enum SortDirection {
   Descending = -1,
   Ascending = 1,
 }
+
+/**
+ * Require all properties in an object type, but still allow them to be null/undefined
+ */
+export type RequireAllKeys<T> = {
+  [K in keyof Required<T>]: T[K];
+};
