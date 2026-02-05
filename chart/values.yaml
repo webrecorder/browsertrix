@@ -106,7 +106,7 @@ replica_deletion_delay_days: 0
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.22.0-beta.0"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.22.0-beta.1"
 backend_pull_policy: "IfNotPresent"
 
 backend_password_secret: "PASSWORD!"
@@ -171,7 +171,7 @@ cleanup_files_after_minutes: 1440
 
 # Emails Image
 # =========================================
-emails_image: "docker.io/webrecorder/browsertrix-emails:1.22.0-beta.0"
+emails_image: "docker.io/webrecorder/browsertrix-emails:1.22.0-beta.1"
 emails_pull_policy: "IfNotPresent"
 
 emails_cpu: "10m"
@@ -185,7 +185,7 @@ local_emails_port: 30872
 
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.22.0-beta.0"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.22.0-beta.1"
 frontend_pull_policy: "IfNotPresent"
 
 frontend_cpu: "10m"
