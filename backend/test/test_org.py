@@ -65,7 +65,9 @@ def test_get_org_feature_flags(crawler_auth_headers, default_org_id):
     data = r.json()
     assert data["id"] == default_org_id
     feature_flags = data["featureFlags"]
-    assert feature_flags == {}
+    assert feature_flags == {
+        "dedupeEnabled": False,
+    }
 
     # List endpoint
     r = requests.get(f"{API_PREFIX}/orgs", headers=crawler_auth_headers)
