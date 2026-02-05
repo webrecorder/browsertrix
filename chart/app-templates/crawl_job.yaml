@@ -15,7 +15,7 @@ spec:
     matchLabels:
       crawl: "{{ id }}"
 
-  selectorLabels: crawl={{ id }},role=crawler
+  selectorLabels: crawl={{ id }}
 
   id: "{{ id }}"
   userid: "{{ userid }}"

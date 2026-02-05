@@ -117,9 +117,10 @@ spec:
           mountPath: /redis-conf
 
       resources:
+{% if memory_limit and not enable_auto_resize %}
         limits:
-          memory: {{ memory }}
-
+          memory: "{{ memory_limit }}"
+{% endif %}
         requests:
           cpu: {{ cpu }}
           memory: {{ memory }}
@@ -266,6 +267,43 @@ spec:
       env: *rclone_env
       resources: *rclone_resources
 {% endif %}
+{% endif %}
+
+{% if enable_auto_resize %}
+# -------
+# VPA
+# -------
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  labels:
+    crawl: {{ id }}
+    role: vpa
+
+spec:
+  targetRef:
+    apiVersion: "btrix.cloud/v1"
+    kind: CrawlJob
+    name: crawljob-{{ id }}
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+    - containerName: "redis"
+      minAllowed:
+        cpu: "{{ cpu / 2.0 }}"
+        memory: "{{ memory / 2 }}"
+      maxAllowed:
+      {% if cpu_limit %}
+        cpu: "{{ cpu_limit }}"
+      {% endif %}
+      {% if memory_limit %}
+        memory: "{{ memory_limit }}"
+      {% endif %}
 {% endif %}
 
 {% endif %}
