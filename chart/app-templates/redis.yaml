@@ -117,7 +117,7 @@ spec:
           mountPath: /redis-conf
 
       resources:
-{% if memory_limit and not enable_auto_resize %}
+{% if memory_limit %}
         limits:
           memory: "{{ memory_limit }}"
 {% endif %}

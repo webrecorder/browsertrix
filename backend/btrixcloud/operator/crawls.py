@@ -108,6 +108,9 @@ class CrawlOperator(BaseOperator):
 
         self.paused_expires_delta = timedelta(minutes=paused_crawl_limit_minutes)
 
+        self.k8s.shared_params["memory_min"], self.k8s.shared_params["cpu_min"] = self.k8s.compute_for_num_browsers(1)
+
+
     def init_routes(self, app):
         """init routes for this operator"""
 
@@ -416,13 +419,24 @@ class CrawlOperator(BaseOperator):
             )
 
         if self.k8s.enable_auto_resize:
-            children.extend(self.load_from_yaml("crawler-vpa.yaml", params))
+            children.extend(self._load_vpa(params))
 
         return {
             "status": status.dict(exclude_none=True),
             "children": children,
             "resyncAfterSeconds": status.resync_after,
         }
+
+    def _load_vpa(self, params: dict[str, Any]):
+        """create vpa for all crawl pods for this crawl, if autoresizing"""
+        params["name"] = f"crawl-{params['id']}"
+
+        params["enable_auto_resize"] = self.k8s.enable_auto_resize
+
+        params["cpu_limit"] = self.k8s.max_crawler_cpu_size
+        params["memory_limit"] = self.k8s.max_crawler_memory_size
+
+        return self.load_from_yaml("vpa-crawl.yaml", params)
 
     def _load_redis(
         self,
@@ -441,10 +455,9 @@ class CrawlOperator(BaseOperator):
         params["memory"] = params.get("redis_memory")
         params["no_pvc"] = crawl.is_single_page
 
-        params["enable_auto_resize"] = self.k8s.enable_auto_resize
-
-        params["cpu_limit"] = self.k8s.max_crawler_cpu_size
-        params["memory_limit"] = self.k8s.max_crawler_memory_size
+        # if not auto-resize, just set limit to request for redis memory
+        if not self.k8s.enable_auto_resize:
+            params["memory_limit"] = params["memory"]
 
         restart_reason = None
         if has_pod:
@@ -612,10 +625,9 @@ class CrawlOperator(BaseOperator):
         params["workers"] = workers
         params["save_profile"] = has_profile and (i == 0)
 
-        params["enable_auto_resize"] = self.k8s.enable_auto_resize
-
-        params["cpu_limit"] = self.k8s.max_crawler_cpu_size
-        params["memory_limit"] = self.k8s.max_crawler_memory_size
+        # if not auto-resize, just set limit to max crawler memory
+        if not self.k8s.enable_auto_resize:
+            params["memory_limit"] = self.k8s.max_crawler_memory_size
 
         params["storage"] = pod_info.newStorage or params.get("crawler_storage")
 
