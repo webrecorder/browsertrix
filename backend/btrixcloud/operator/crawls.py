@@ -415,6 +415,9 @@ class CrawlOperator(BaseOperator):
                 )
             )
 
+        if self.k8s.enable_auto_resize:
+            children.extend(self.load_from_yaml("crawler-vpa.yaml", params))
+
         return {
             "status": status.dict(exclude_none=True),
             "children": children,
