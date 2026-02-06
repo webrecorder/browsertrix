@@ -254,9 +254,6 @@ spec:
         allowPrivilegeEscalation: false
         readOnlyRootFilesystem: true
 
-{% endif %}
-
-
 {% if enable_auto_resize %}
 # -------
 # VPA
@@ -292,4 +289,20 @@ spec:
       {% if memory_limit %}
         memory: "{{ memory_limit }}"
       {% endif %}
+
+    - containerName: "redis"
+      minAllowed:
+        cpu: "{{ redis_cpu }}"
+        memory: "{{ redis_memory }}"
+      maxAllowed:
+      {% if cpu_limit %}
+        cpu: "{{ cpu_limit }}"
+      {% endif %}
+      {% if memory_limit %}
+        memory: "{{ memory_limit }}"
+      {% endif %}
+
 {% endif %}
+
+{% endif %}
+
