@@ -254,7 +254,9 @@ spec:
         allowPrivilegeEscalation: false
         readOnlyRootFilesystem: true
 
-{% if enable_auto_resize %}
+{% endif %}
+
+{% if enable_auto_resize and (init_redis or init_crawler) %}
 # -------
 # VPA
 # -------
@@ -278,6 +280,7 @@ spec:
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
+{% if init_crawler %}
     - containerName: "crawler"
       minAllowed:
         cpu: "{{ cpu / 2.0 }}"
@@ -289,7 +292,9 @@ spec:
       {% if memory_limit %}
         memory: "{{ memory_limit }}"
       {% endif %}
+{% endif %}
 
+{% if init_redis %}
     - containerName: "redis"
       minAllowed:
         cpu: "{{ redis_cpu }}"
