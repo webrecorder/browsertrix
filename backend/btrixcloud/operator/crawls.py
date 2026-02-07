@@ -451,6 +451,10 @@ class CrawlOperator(BaseOperator):
         params["obj_type"] = "crawl"
         params["cpu"] = pod_info.newCpu or params.get("redis_cpu")
         params["memory"] = pod_info.newMemory or params.get("redis_memory")
+        if self.k8s.enable_auto_resize:
+            params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
+        else:
+            params["memory_limit"] = self.k8s.max_crawler_memory_size
         params["no_pvc"] = crawl.is_single_page
 
         restart_reason = None
@@ -1377,8 +1381,9 @@ class CrawlOperator(BaseOperator):
                 send_sig = True
 
             # avoid resending SIGTERM multiple times after it already succeeded
-            if send_sig and await self.k8s.send_signal_to_pod(name, "SIGTERM"):
-                pod.signalAtMem = pod.newMemory
+            if send_sig:
+                if self.k8s.inplace_resize or await self.k8s.send_signal_to_pod(name, "SIGTERM"):
+                    pod.signalAtMem = pod.newMemory
 
     async def log_crashes(self, crawl_id, pod_status: dict[str, PodInfo], redis):
         """report/log any pod crashes here"""

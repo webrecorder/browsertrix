@@ -79,6 +79,7 @@ data:
   NUM_BROWSERS: "{{ .Values.crawler_browser_instances }}"
 
   MAX_CRAWLER_MEMORY: "{{ .Values.max_crawler_memory }}"
+  MAX_CRAWLER_CPU: "{{ .Values.max_crawler_cpu }}"
 
   CRAWLER_MIN_AVAIL_STORAGE_RATIO: "{{ .Values.crawler_min_avail_storage_ratio }}"
 
@@ -111,6 +112,8 @@ data:
   CLEANUP_FILES_AFTER_MINUTES: "{{ .Values.cleanup_files_after_minutes | default 1440 }}"
 
   DEDUPE_IMPORTER_CHANNEL: "{{ .Values.dedupe.importer_channel }}"
+
+  INPLACE_RESIZE: "{{ .Values.inplace_resize | default 1 }}"
 
 
   {{- if .Values.available_plans }}
