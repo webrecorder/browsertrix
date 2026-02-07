@@ -1382,7 +1382,9 @@ class CrawlOperator(BaseOperator):
 
             # avoid resending SIGTERM multiple times after it already succeeded
             if send_sig:
-                if self.k8s.inplace_resize or await self.k8s.send_signal_to_pod(name, "SIGTERM"):
+                if self.k8s.inplace_resize or await self.k8s.send_signal_to_pod(
+                    name, "SIGTERM"
+                ):
                     pod.signalAtMem = pod.newMemory
 
     async def log_crashes(self, crawl_id, pod_status: dict[str, PodInfo], redis):
