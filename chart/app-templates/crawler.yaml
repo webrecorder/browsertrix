@@ -230,8 +230,10 @@ spec:
           value: "{{ warc_prefix }}"
 
       resources:
+{% if memory_limit %}
         limits:
           memory: "{{ memory_limit }}"
+{% endif %}
 
         requests:
           cpu: "{{ cpu }}"
@@ -253,3 +255,4 @@ spec:
         readOnlyRootFilesystem: true
 
 {% endif %}
+

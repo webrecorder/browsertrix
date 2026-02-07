@@ -117,9 +117,10 @@ spec:
           mountPath: /redis-conf
 
       resources:
+{% if memory_limit %}
         limits:
-          memory: {{ memory }}
-
+          memory: "{{ memory_limit }}"
+{% endif %}
         requests:
           cpu: {{ cpu }}
           memory: {{ memory }}

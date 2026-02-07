@@ -35,6 +35,7 @@ class K8sOpAPI(K8sAPI):
     has_pod_metrics: bool
     enable_auto_resize: bool
     max_crawler_memory_size: int
+    inplace_resize: bool
 
     def __init__(self):
         super().__init__()
@@ -85,6 +86,9 @@ class K8sOpAPI(K8sAPI):
         p["qa_cpu"] = qa_cpu
         p["qa_memory"] = qa_memory
         p["qa_workers"] = qa_num_workers
+
+        p["redis_memory"] = int(parse_quantity(p["redis_memory"]))
+        p["redis_cpu"] = float(parse_quantity(p["redis_cpu"]))
 
     def compute_for_num_browsers(
         self, num_browsers, crawler_memory_fixed="", crawler_cpu_fixed=""
@@ -139,6 +143,9 @@ class K8sOpAPI(K8sAPI):
             os.environ.get("ENABLE_AUTO_RESIZE_CRAWLERS")
         )
         print("Auto-Resize Enabled", self.enable_auto_resize)
+
+        self.inplace_resize = is_bool(os.environ.get("INPLACE_RESIZE", "0"))
+        print(f"Inplace Resize: {self.inplace_resize}")
 
 
 # pylint: disable=too-many-instance-attributes, too-many-arguments
