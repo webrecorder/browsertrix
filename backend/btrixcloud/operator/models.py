@@ -196,13 +196,16 @@ class PodInfo(BaseModel):
             else 0
         )
 
-    def should_restart_pod(self, forced: bool = False) -> Optional[str]:
+    def should_restart_pod(
+        self, inplace_resize: bool, forced: bool = False
+    ) -> Optional[str]:
         """return true if pod should be restarted"""
-        if self.newMemory and self.newMemory != self.allocated.memory:
-            return "newMemory"
+        if not inplace_resize:
+            if self.newMemory and self.newMemory != self.allocated.memory:
+                return "newMemory"
 
-        if self.newCpu and self.newCpu != self.allocated.cpu:
-            return "newCpu"
+            if self.newCpu and self.newCpu != self.allocated.cpu:
+                return "newCpu"
 
         if self.evicted:
             return "evicted"

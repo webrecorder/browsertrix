@@ -459,7 +459,7 @@ class CrawlOperator(BaseOperator):
 
         restart_reason = None
         if has_pod:
-            restart_reason = pod_info.should_restart_pod()
+            restart_reason = pod_info.should_restart_pod(self.k8s.inplace_resize)
             if restart_reason:
                 print(f"Restarting {name}, reason: {restart_reason}")
 
@@ -624,7 +624,9 @@ class CrawlOperator(BaseOperator):
 
         params["init_crawler"] = not is_paused
         if has_pod and not is_paused:
-            restart_reason = pod_info.should_restart_pod(params.get("force_restart"))
+            restart_reason = pod_info.should_restart_pod(
+                self.k8s.inplace_resize, params.get("force_restart")
+            )
             if not restart_reason and workers_changed:
                 restart_reason = "pod_resized"
 
