@@ -12,7 +12,7 @@ import { pluralOf } from "@/utils/pluralize";
 
 @customElement("btrix-org-feature-flags")
 @localized()
-export class OrgQuotaEditor extends BtrixElement {
+export class OrgFeatureFlags extends BtrixElement {
   @property({ type: Object })
   activeOrg?: OrgData | null = null;
 
@@ -43,11 +43,11 @@ export class OrgQuotaEditor extends BtrixElement {
   render() {
     return html` <btrix-dialog
       ${ref(this.dialog)}
-      .label=${msg(str`Feature flags for: ${this.activeOrg?.name || ""}`)}
+      .label="${msg("Feature flags for")}: ${this.activeOrg?.name || ""}"
     >
       ${this.flags.value?.map((flag) => {
-        const organizationPlural = pluralOf("organizations", flag.count);
-        const organizationCount = flag.count;
+        const organization_plural = pluralOf("organizations", flag.count);
+        const organization_count = flag.count;
         return html`<sl-switch
           class="part-base w-full part-[label]:me-2 part-[label]:ms-0 part-[base]:flex part-[base]:flex-row-reverse part-[base]:justify-between part-[label]:font-mono part-[label]:text-base"
           .checked=${!!this.activeOrg?.featureFlags[flag.name]}
@@ -60,12 +60,14 @@ export class OrgQuotaEditor extends BtrixElement {
             >${flag.description}
             <br />
             ${msg(
-              html`Enabled for ${organizationCount} ${organizationPlural}.`,
+              html`Enabled for ${organization_count} ${organization_plural}.`,
             )}
           </span>
         </sl-switch>`;
       }) ??
-      html`<div class="my-4 text-center">No feature flags available</div>`}
+      html`<div class="my-4 text-center">
+        ${msg("No feature flags available")}
+      </div>`}
     </btrix-dialog>`;
   }
 

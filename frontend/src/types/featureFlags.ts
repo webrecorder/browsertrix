@@ -1,3 +1,6 @@
 // TODO generate this file from backend
 
-export type FeatureFlags = "dedupeEnabled";
+import { z } from "zod";
+
+export const featureFlagSchema = z.enum(["dedupeEnabled"]);
+export type FeatureFlags = z.infer<typeof featureFlagSchema>;

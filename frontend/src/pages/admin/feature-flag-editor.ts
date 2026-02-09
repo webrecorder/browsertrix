@@ -14,12 +14,13 @@ import { type FlagMetadata } from "@/pages/admin/feature-flags";
 import { type OrgData } from "@/types/org";
 import { stopProp } from "@/utils/events";
 import { pluralOf } from "@/utils/pluralize";
+import { tw } from "@/utils/tailwind";
 
 @customElement("btrix-feature-flag-editor")
 @localized()
 export class FeatureFlagEditor extends BtrixElement {
   @state()
-  open = false;
+  private open = false;
 
   @property({ type: Object })
   feature?: FlagMetadata;
@@ -27,7 +28,7 @@ export class FeatureFlagEditor extends BtrixElement {
   @property({ type: Array })
   availableOrgs?: OrgData[];
 
-  orgs = new Task(this, {
+  private readonly orgs = new Task(this, {
     task: async ([visible, feature]) => {
       if (!visible || !feature) return;
       const orgs = await this.api.fetch<OrgData[]>(`/flags/${feature}/orgs`);
@@ -38,11 +39,6 @@ export class FeatureFlagEditor extends BtrixElement {
 
   @query("btrix-search-combobox")
   combobox!: SearchCombobox<OrgData>;
-
-  constructor() {
-    super();
-    console.log("FeatureFlagEditor constructor", this.open);
-  }
 
   render() {
     if (!this.feature) return html``;
@@ -56,14 +52,15 @@ export class FeatureFlagEditor extends BtrixElement {
         <div class="inline-flex flex-wrap items-center gap-4">
           <h3 class="font-mono text-lg">${this.feature.name}</h3>
           <btrix-badge
-            >${orgCount} ${pluralOf("organizations", orgCount)}</btrix-badge
+            >${this.localize.number(orgCount)}
+            ${pluralOf("organizations", orgCount)}</btrix-badge
           >
         </div>
         <p>${this.feature.description}</p>
       </div>
       <div @sl-hide=${stopProp} @sl-after-hide=${stopProp}>
         ${this.orgs.status === TaskStatus.ERROR
-          ? html`<p>Error loading organizations</p>`
+          ? html`<p>${msg("Error loading organizations")}</p>`
           : nothing}
         <h3 class="font-base mb-4 font-medium lg:text-lg">
           ${msg("Organizations")}
@@ -92,9 +89,9 @@ export class FeatureFlagEditor extends BtrixElement {
                         ><a
                           class=${clsx(
                             org.readOnly
-                              ? "text-neutral-500"
-                              : "text-neutral-900",
-                            "truncate",
+                              ? tw`text-neutral-500`
+                              : tw`text-neutral-900`,
+                            tw`truncate`,
                           )}
                           href="/orgs/${org.slug}/dashboard"
                           @click=${this.navigate.link}

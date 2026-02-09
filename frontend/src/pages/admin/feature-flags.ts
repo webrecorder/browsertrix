@@ -51,7 +51,7 @@ export class AdminOrgs extends BtrixElement {
   }
   renderFlags() {
     return html`
-      <div @btrix-feature-flag-updated=${this.updateOrgsAndFlags.bind(this)}>
+      <div @btrix-feature-flag-updated=${this.updateOrgsAndFlags}>
         ${this.flags.value?.map((flag) => {
           const availableOrgs = this.orgs.value?.items.filter(
             (org) => !org.featureFlags[flag.name],
@@ -70,8 +70,8 @@ export class AdminOrgs extends BtrixElement {
     `;
   }
 
-  updateOrgsAndFlags() {
+  private readonly updateOrgsAndFlags = () => {
     void this.orgs.run([]);
     void this.flags.run([]);
-  }
+  };
 }
