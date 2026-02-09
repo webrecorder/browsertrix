@@ -7,10 +7,11 @@ import { keyed } from "lit/directives/keyed.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import needLogin from "@/decorators/needLogin";
 import { type APIPaginatedList } from "@/types/api";
+import type { FeatureFlags } from "@/types/featureFlags";
 import { type OrgData } from "@/types/org";
 
 export type FlagMetadata = {
-  name: string;
+  name: FeatureFlags;
   description: string;
   count: number;
 };
