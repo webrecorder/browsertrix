@@ -1147,7 +1147,10 @@ export class ArchivedItemDetail extends BtrixElement {
               <btrix-linked-collections-list
                 class="mt-1 block"
                 .collections=${item.collections}
-                dedupeId=${ifDefined(dedupeId || undefined)}
+                dedupeId=${ifDefined(
+                  (this.featureFlags.has("dedupeEnabled") && dedupeId) ||
+                    undefined,
+                )}
                 baseUrl="${this.navigate.orgBasePath}/collections/view"
               ></btrix-linked-collections-list>
             `,

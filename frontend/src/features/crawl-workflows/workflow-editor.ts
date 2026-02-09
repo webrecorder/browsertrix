@@ -620,9 +620,9 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private renderNav() {
-    const button = (tab: StepName) => {
+    const button = (section: (typeof this.formSections)[number]) => {
+      const tab = section.name;
       const isActive = tab === this.progressState?.activeTab;
-      const section = this.formSections.find(({ name }) => name === tab);
       return html`
         <btrix-tab-list-tab
           class="part-[base]:flex part-[base]:items-center part-[base]:gap-2"
@@ -631,10 +631,7 @@ export class WorkflowEditor extends BtrixElement {
           @click=${this.tabClickHandler(tab)}
         >
           ${this.tabLabels[tab]}
-          ${when(
-            section?.beta,
-            () => html`<btrix-beta-icon></btrix-beta-icon>`,
-          )}
+          ${when(section.beta, () => html`<btrix-beta-icon></btrix-beta-icon>`)}
         </btrix-tab-list-tab>
       `;
     };
@@ -644,7 +641,7 @@ export class WorkflowEditor extends BtrixElement {
         class="mb-10 hidden lg:block"
         tab=${ifDefined(this.progressState?.activeTab)}
       >
-        ${STEPS.map(button)}
+        ${this.formSections.map(button)}
       </btrix-tab-list>
     `;
   }
@@ -2740,11 +2737,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
     >`;
   }
 
-  private readonly formSections: {
+  private readonly FormSections: {
     name: StepName;
     desc: string;
     render: () => TemplateResult<1>;
     required?: boolean;
+    hidden?: boolean;
     beta?: boolean;
   }[] = [
     {
@@ -2777,6 +2775,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       name: "deduplication",
       desc: msg("Prevent duplicate content from being crawled and stored."),
       render: this.renderDeduplication,
+      hidden: this.featureFlags.excludes("dedupeEnabled"),
       beta: true,
     },
     {
@@ -2789,7 +2788,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       desc: msg("Describe and tag this workflow and its crawls."),
       render: this.renderJobMetadata,
     },
-  ];
+  ] as const;
+
+  private get formSections() {
+    return this.FormSections.filter(({ hidden }) => !hidden);
+  }
 
   private readonly onInputMinMax = async (e: CustomEvent) => {
     const inputEl = e.target as SlInput;
