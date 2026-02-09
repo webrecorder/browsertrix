@@ -48,9 +48,10 @@ class FeatureFlags(ValidatedFeatureFlags):
 3. In `frontend/src/types/featureFlags.ts`, add a new value to the `FeatureFlags` type:
 
 ```typescript
-export type FeatureFlags = 
+export const featureFlagSchema = z.enum([
   // ...
-  | "newFeature";
+  "newFeature",
+]);
 ```
 
 ## Best Practices
