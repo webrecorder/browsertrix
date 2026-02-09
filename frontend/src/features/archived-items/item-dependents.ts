@@ -1,15 +1,14 @@
 import { localized, msg } from "@lit/localize";
-import clsx from "clsx";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+
+import { collectionStatusIcon } from "./templates/collection-status-icon";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/archived-item-detail";
 import { OrgTab, WorkflowTab } from "@/routes";
 import type { ArchivedItem } from "@/types/crawler";
-import type { IconLibrary } from "@/types/shoelace";
-import { isActive, isCrawl, renderName } from "@/utils/crawler";
-import { tw } from "@/utils/tailwind";
+import { isCrawl, renderName } from "@/utils/crawler";
 
 @customElement("btrix-item-dependents")
 @localized()
@@ -63,44 +62,14 @@ export class ItemDependents extends BtrixElement {
   private readonly renderRow = (item: ArchivedItem) => {
     const crawled = isCrawl(item);
 
-    const collectionId = this.collectionId;
-    const inCollection =
-      collectionId && item.collectionIds.includes(collectionId);
-
-    const status = () => {
-      let icon = "dash-circle";
-      let library: IconLibrary = "default";
-      let variant = tw`text-neutral-400`;
-      let tooltip = msg("Not in Collection");
-
-      if (inCollection) {
-        icon = "check-circle";
-        variant = tw`text-cyan-500`;
-
-        if (collectionId) {
-          tooltip = msg("In Same Collection");
-        } else {
-          tooltip = msg("In Collection");
-        }
-      } else if (isCrawl(item) && isActive(item)) {
-        icon = "dot";
-        library = "app";
-        variant = tw`animate-pulse text-success`;
-        tooltip = msg("Active Run");
-      }
-
-      return html`<sl-tooltip content=${tooltip} hoist placement="left">
-        <sl-icon
-          name=${icon}
-          class=${clsx(variant, tw`text-base`)}
-          library=${library}
-        ></sl-icon>
-      </sl-tooltip>`;
-    };
-
     return html`<btrix-table-row>
-      <btrix-table-cell> ${status()} </btrix-table-cell>
-      <btrix-table-cell class="pl-0"> ${renderName(item)} </btrix-table-cell>
+      <btrix-table-cell
+        >${collectionStatusIcon({
+          item,
+          collectionId: this.collectionId,
+        })}</btrix-table-cell
+      >
+      <btrix-table-cell class="pl-0">${renderName(item)}</btrix-table-cell>
       <btrix-table-cell>
         ${this.localize.number(item.requiredByCrawls.length, {
           notation: "compact",
