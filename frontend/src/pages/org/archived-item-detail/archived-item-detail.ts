@@ -479,11 +479,13 @@ export class ArchivedItemDetail extends BtrixElement {
         );
         break;
       case "dependencies":
-        sectionContent = this.renderPanel(
-          html`
-            ${this.renderTitle(this.tabLabels.dependencies, { beta: true })}
-          `,
-          this.renderDependencies(),
+        sectionContent = when(this.featureFlags.has("dedupeEnabled"), () =>
+          this.renderPanel(
+            html`
+              ${this.renderTitle(this.tabLabels.dependencies, { beta: true })}
+            `,
+            this.renderDependencies(),
+          ),
         );
         break;
       default:
@@ -747,14 +749,16 @@ export class ArchivedItemDetail extends BtrixElement {
             })}
           `,
         )}
-        ${this.item?.requiresCrawls.length
-          ? renderNavItem({
-              section: "dependencies",
-              iconLibrary: "default",
-              icon: "layers-fill",
-              beta: true,
-            })
-          : nothing}
+        ${when(this.featureFlags.has("dedupeEnabled"), () =>
+          this.item?.requiresCrawls.length
+            ? renderNavItem({
+                section: "dependencies",
+                iconLibrary: "default",
+                icon: "layers-fill",
+                beta: true,
+              })
+            : nothing,
+        )}
       </nav>
     `;
   }
