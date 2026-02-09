@@ -1206,12 +1206,11 @@ export class ArchivedItemDetail extends BtrixElement {
                     )}
                   </div>
                 </div>
-                <btrix-item-dependency-tree
+                <btrix-item-dependents
                   .items=${deps.items}
                   collectionId=${ifDefined(dedupeCollId || undefined)}
-                  showHeader
                 >
-                </btrix-item-dependency-tree>`
+                </btrix-item-dependents>`
             : noDeps,
       })}
     `;
