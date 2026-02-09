@@ -163,9 +163,11 @@ export class OrgSettings extends BtrixElement {
           this.renderTab("billing", "settings/billing"),
         )}
         ${this.renderTab("crawling-defaults", "settings/crawling-defaults")}
-        ${this.renderTab("deduplication", "settings/deduplication", {
-          beta: true,
-        })}
+        ${when(this.featureFlags.has("dedupeEnabled"), () =>
+          this.renderTab("deduplication", "settings/deduplication", {
+            beta: true,
+          }),
+        )}
 
         <btrix-tab-group-panel name="information">
           ${this.renderPanelHeader({ title: msg("General") })}
@@ -218,13 +220,18 @@ export class OrgSettings extends BtrixElement {
           })}
           <btrix-org-settings-crawling-defaults></btrix-org-settings-crawling-defaults>
         </btrix-tab-group-panel>
-        <btrix-tab-group-panel name="deduplication">
-          ${this.renderPanelHeader({
-            title: msg("Deduplication Sources"),
-            beta: true,
-          })}
-          <btrix-org-settings-deduplication></btrix-org-settings-deduplication>
-        </btrix-tab-group-panel>
+        ${when(
+          this.featureFlags.has("dedupeEnabled"),
+          () => html`
+            <btrix-tab-group-panel name="deduplication">
+              ${this.renderPanelHeader({
+                title: msg("Deduplication Sources"),
+                beta: true,
+              })}
+              <btrix-org-settings-deduplication></btrix-org-settings-deduplication>
+            </btrix-tab-group-panel>
+          `,
+        )}
       </btrix-tab-group>`;
   }
 
