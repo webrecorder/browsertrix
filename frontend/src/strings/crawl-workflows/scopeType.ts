@@ -15,7 +15,7 @@ const scopeType: Record<
   domain: msg("Pages on Same Domain + Subdomains"),
   "page-spa": msg("In-Page Links"),
   page: msg("Single Page"),
-  custom: msg("Pages with URL Prefix"),
+  custom: msg("Custom Page Prefix"),
   [NewWorkflowOnlyScopeType.Regex]: msg("Custom Page Match"),
   any: msg("Any Page"),
 };

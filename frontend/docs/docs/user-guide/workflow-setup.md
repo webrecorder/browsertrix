@@ -73,7 +73,7 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 ##### Pages on Same Domain + Subdomains
 :   This scope will crawl all pages on the domain and any subdomains found. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
 
-##### Pages with URL Prefix
+##### Custom Page Prefix
 :   This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_Page Prefix URLs_](#page-prefix-urls).
 
 ##### Custom Page Match
@@ -127,7 +127,7 @@ Instructs the crawler to stop visiting new links past a specified depth.
 
 ### Page Prefix URLs
 
-When using a scope of `Pages with URL Prefix`, this field accepts a list of URLs that a page URL should begin with if it is to be crawled.
+When using a scope of `Custom Page Prefix`, this field accepts a list of URLs that a page URL should begin with if it is to be crawled.
 
 For example, specifying `https://example.com/new` will capture the following:
 
