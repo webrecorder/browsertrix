@@ -1245,8 +1245,18 @@ export class OrgsList extends BtrixElement {
                   void this.orgFeatureFlagsDialog?.show();
                 }}
               >
-                <sl-icon slot="prefix" name="flag"></sl-icon>
-                ${msg("Feature Flags")}
+                <sl-icon slot="prefix" name="toggles"></sl-icon>
+                ${msg("Toggle Feature Flags")}
+                ${Object.values(org.featureFlags).filter(Boolean).length
+                  ? html`
+                      <btrix-badge slot="suffix" variant="high-contrast" pill>
+                        ${this.localize.number(
+                          Object.values(org.featureFlags).filter(Boolean)
+                            .length,
+                        )}
+                      </btrix-badge>
+                    `
+                  : nothing}
               </sl-menu-item>
               <sl-divider></sl-divider>
               <sl-menu-item
