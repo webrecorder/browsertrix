@@ -154,7 +154,7 @@ export class DedupeWorkflows extends BtrixElement {
             <sl-tooltip content=${msg("Workflow Name")} hoist>
               <sl-icon
                 name="file-code-fill"
-                class="text-base text-neutral-600"
+                class="shrink-0 text-base text-neutral-600"
               ></sl-icon>
             </sl-tooltip>
             ${renderName(workflow)}
