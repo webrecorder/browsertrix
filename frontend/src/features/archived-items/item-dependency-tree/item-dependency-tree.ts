@@ -27,6 +27,9 @@ const styles = unsafeCSS(stylesheet);
 const dependenciesWithoutSelf = (item: ArchivedItem) =>
   item.requiresCrawls.filter((id) => id !== item.id);
 
+/**
+ * @cssPart tree
+ */
 @customElement("btrix-item-dependency-tree")
 @localized()
 export class ItemDependencyTree extends BtrixElement {
@@ -127,6 +130,7 @@ export class ItemDependencyTree extends BtrixElement {
           this.showHeader && tw`rounded border`,
         )}
         selection="leaf"
+        part="tree"
       >
         ${repeat(this.items, ({ id }) => id, this.renderItem)}
       </sl-tree>
