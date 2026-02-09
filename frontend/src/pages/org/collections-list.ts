@@ -653,15 +653,17 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
                           )}
                         `)
                       : nothing}
-                    ${col.indexStats
-                      ? detail(html`
+                    ${when(
+                      this.featureFlags.has("dedupeEnabled") && col.indexStats,
+                      () =>
+                        detail(html`
                           <sl-icon
                             name="stack"
                             label=${msg("Deduplication")}
                           ></sl-icon>
                           ${msg("Dedupe source")}
-                        `)
-                      : nothing}
+                        `),
+                    )}
                   </div>
                 `
               : nothing}

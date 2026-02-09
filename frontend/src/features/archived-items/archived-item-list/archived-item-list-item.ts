@@ -3,6 +3,7 @@ import type { SlCheckbox, SlHideEvent } from "@shoelace-style/shoelace";
 import { css, html, nothing } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 
 import { dedupeStatusIcon } from "../templates/dedupe-status-icon";
 
@@ -186,7 +187,10 @@ export class ArchivedItemListItem extends BtrixElement {
                   ></sl-icon>
                 `}
           </sl-tooltip>
-          ${dedupeStatusIcon(this.item)}
+
+          ${when(this.featureFlags.has("dedupeEnabled") && this.item, (item) =>
+            dedupeStatusIcon(item),
+          )}
         </btrix-table-cell>
         <btrix-table-cell
           rowClickTarget=${ifDefined(
