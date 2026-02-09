@@ -271,7 +271,21 @@ export class CollectionDetailDedupe extends BtrixElement {
             ? tw`xl:row-start-1`
             : tw`xl:row-start-2`} col-span-full row-span-1 xl:col-span-4 xl:col-start-1"
         >
-          ${panelHeader({ heading: msg("Deduplicated Crawls") })}
+          ${panelHeader({
+            heading: msg("Deduplicated Crawls"),
+            actions: infoPopover({
+              content: html`
+                ${msg(
+                  "Deduplication creates interdependence between crawled and indexed items.",
+                )}
+                <br /><br />
+                ${msg(
+                  "Crawl dependencies are indexed items that are required by a deduplicated crawled item in order to provide a complete replay.",
+                )}
+              `,
+              placement: "left-start",
+            }),
+          })}
           ${this.renderDeduped()}
         </section>
       </div>`;
@@ -569,7 +583,7 @@ export class CollectionDetailDedupe extends BtrixElement {
                 slot="prefix"
                 name=${dedupeIconFor["dependency"].name}
               ></sl-icon>
-              ${msg("Dependencies")}
+              ${msg("Crawl Dependencies")}
             </sl-radio-button>
           </sl-radio-group>
         </div>
@@ -797,7 +811,8 @@ export class CollectionDetailDedupe extends BtrixElement {
       ${when(
         // TODO More accurate warning by checking if all required IDs exist
         this.dedupeCrawlsTask.value?.total &&
-          !this.dependenciesTask.value?.total &&
+          this.dependenciesTask.value &&
+          !this.dependenciesTask.value.total &&
           this.collection?.indexStats?.removedCrawls,
         deletedItemsWarning,
       )}
