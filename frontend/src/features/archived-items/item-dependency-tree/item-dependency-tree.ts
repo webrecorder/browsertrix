@@ -8,6 +8,8 @@ import { repeat } from "lit/directives/repeat.js";
 import { until } from "lit/directives/until.js";
 import queryString from "query-string";
 
+import { collectionStatusIcon } from "../templates/collection-status-icon";
+
 import stylesheet from "./item-dependency-tree.stylesheet.css";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -16,8 +18,7 @@ import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/a
 import { OrgTab, WorkflowTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import type { ArchivedItem } from "@/types/crawler";
-import type { IconLibrary } from "@/types/shoelace";
-import { isActive, isCrawl, renderName } from "@/utils/crawler";
+import { isCrawl, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -219,37 +220,6 @@ export class ItemDependencyTree extends BtrixElement {
     const inCollection =
       collectionId && item.collectionIds.includes(collectionId);
 
-    const status = () => {
-      let icon = "dash-circle";
-      let library: IconLibrary = "default";
-      let variant = tw`text-neutral-400`;
-      let tooltip = msg("Not in Collection");
-
-      if (inCollection) {
-        icon = "check-circle";
-        variant = tw`text-cyan-500`;
-
-        if (collectionId) {
-          tooltip = msg("In Same Collection");
-        } else {
-          tooltip = msg("In Collection");
-        }
-      } else if (isCrawl(item) && isActive(item)) {
-        icon = "dot";
-        library = "app";
-        variant = tw`animate-pulse text-success`;
-        tooltip = msg("Active Run");
-      }
-
-      return html`<sl-tooltip content=${tooltip} hoist placement="left">
-        <sl-icon
-          name=${icon}
-          class=${clsx(variant, tw`text-base`)}
-          library=${library}
-        ></sl-icon>
-      </sl-tooltip>`;
-    };
-
     const date = (value: string) =>
       this.localize.date(value, {
         month: "2-digit",
@@ -266,7 +236,7 @@ export class ItemDependencyTree extends BtrixElement {
         this.showHeader && "component--withHeader",
       )}
     >
-      ${status()}
+      ${collectionStatusIcon({ item, collectionId })}
       <div class="component--detail">${renderName(item)}</div>
 
       <sl-tooltip content=${msg("Dependencies")} hoist placement="left">
