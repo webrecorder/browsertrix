@@ -368,29 +368,35 @@ export class CollectionDetail extends BtrixElement {
         [
           Tab.Deduplication,
           () =>
-            html`<btrix-collection-detail-dedupe
-              .collectionId=${this.collectionId}
-              .collection=${this.collection}
-              @btrix-open-dialog=${(e: CustomEvent<OpenDialogEventDetail>) => {
-                if (e.detail === "editItems") {
-                  this.editing.setValue(EditingSearchParamValue.Items);
-                } else {
-                  this.openDialogName = e.detail;
-                }
-              }}
-              @btrix-request-update=${() => void this.fetchCollection()}
-            >
-              ${when(
-                this.appState.isAdmin,
-                () =>
-                  html`<btrix-overflow-dropdown
-                    slot="actions"
-                    placement="bottom-end"
-                  >
-                    <sl-menu>${this.renderDedupeMenuItems()}</sl-menu>
-                  </btrix-overflow-dropdown>`,
-              )}
-            </btrix-collection-detail-dedupe> `,
+            when(
+              this.featureFlags.has("dedupeEnabled"),
+              () =>
+                html`<btrix-collection-detail-dedupe
+                  .collectionId=${this.collectionId}
+                  .collection=${this.collection}
+                  @btrix-open-dialog=${(
+                    e: CustomEvent<OpenDialogEventDetail>,
+                  ) => {
+                    if (e.detail === "editItems") {
+                      this.editing.setValue(EditingSearchParamValue.Items);
+                    } else {
+                      this.openDialogName = e.detail;
+                    }
+                  }}
+                  @btrix-request-update=${() => void this.fetchCollection()}
+                >
+                  ${when(
+                    this.appState.isAdmin,
+                    () =>
+                      html`<btrix-overflow-dropdown
+                        slot="actions"
+                        placement="bottom-end"
+                      >
+                        <sl-menu>${this.renderDedupeMenuItems()}</sl-menu>
+                      </btrix-overflow-dropdown>`,
+                  )}
+                </btrix-collection-detail-dedupe>`,
+            ),
         ],
       ])}
 
@@ -654,9 +660,15 @@ export class CollectionDetail extends BtrixElement {
   };
 
   private readonly renderTabs = () => {
+    let tabs = Object.values(Tab);
+
+    if (this.featureFlags.excludes("dedupeEnabled")) {
+      tabs = tabs.filter((tab) => tab !== Tab.Deduplication);
+    }
+
     return html`
       <nav class="flex gap-2">
-        ${Object.values(Tab).map((tabName) => {
+        ${tabs.map((tabName) => {
           const isSelected = tabName === this.collectionTab;
           const tab = this.tabLabels[tabName];
 
@@ -755,27 +767,31 @@ export class CollectionDetail extends BtrixElement {
             <sl-icon name="ui-checks" slot="prefix"></sl-icon>
             ${msg("Configure Items")}
           </sl-menu-item>
-          ${this.appState.isAdmin
-            ? html`<sl-menu-item>
-                <sl-icon name="stack" slot="prefix"></sl-icon>
-                ${msg("Deduplication Settings")}
-                <sl-menu slot="submenu">
-                  ${this.renderDedupeMenuItems()}
-                </sl-menu>
-              </sl-menu-item>`
-            : when(
-                this.isCrawler &&
-                  this.collection &&
-                  !this.collection.indexStats,
-                () =>
-                  html`<sl-menu-item
-                    class="menu-item-success"
-                    @click=${() => (this.openDialogName = "createIndex")}
-                  >
-                    <sl-icon slot="prefix" name="table"></sl-icon>
-                    ${msg("Create Index")}
-                  </sl-menu-item>`,
-              )}
+
+          ${when(this.featureFlags.has("dedupeEnabled"), () =>
+            this.appState.isAdmin
+              ? html`<sl-menu-item>
+                  <sl-icon name="stack" slot="prefix"></sl-icon>
+                  ${msg("Deduplication Settings")}
+                  <sl-menu slot="submenu">
+                    ${this.renderDedupeMenuItems()}
+                  </sl-menu>
+                </sl-menu-item>`
+              : when(
+                  this.isCrawler &&
+                    this.collection &&
+                    !this.collection.indexStats,
+                  () =>
+                    html`<sl-menu-item
+                      class="menu-item-success"
+                      @click=${() => (this.openDialogName = "createIndex")}
+                    >
+                      <sl-icon slot="prefix" name="table"></sl-icon>
+                      ${msg("Create Index")}
+                    </sl-menu-item>`,
+                ),
+          )}
+
           <sl-divider></sl-divider>
           ${when(
             this.collection?.totalSize,
