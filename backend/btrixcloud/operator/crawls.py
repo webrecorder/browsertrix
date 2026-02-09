@@ -31,6 +31,7 @@ from btrixcloud.models import (
     CrawlFile,
     CrawlCompleteIn,
     StorageRef,
+    CrawlDedupeStats,
 )
 
 from btrixcloud.utils import (
@@ -1718,6 +1719,34 @@ class CrawlOperator(BaseOperator):
 
         return status
 
+    async def add_crawl_dedupe_stats(self, crawl: CrawlSpec):
+        """Add crawl dedupe stats to db"""
+        if not crawl.dedupe_coll_id:
+            return
+
+        try:
+            redis = await self.k8s.get_redis_connected(
+                "coll-" + str(crawl.dedupe_coll_id)
+            )
+            if not redis:
+                return
+
+            num_unique_hashes = await redis.hlen(f"h:{crawl.id}")
+            crawl_counts = await redis.hgetall(f"h:{crawl.id}:counts")
+
+            stats = CrawlDedupeStats(
+                uniqueHashes=num_unique_hashes,
+                totalUrls=int(crawl_counts.get("totalUrls", 0)),
+                dedupedUrls=int(crawl_counts.get("dupeUrls", 0)),
+                conservedSize=int(crawl_counts.get("conservedSize", 0)),
+            )
+            await self.crawl_ops.add_dedupe_stats(crawl.oid, crawl.id, stats)
+
+        # pylint: disable=broad-exception-caught
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+
     # pylint: disable=too-many-arguments
     async def mark_finished(
         self,
@@ -1795,6 +1824,9 @@ class CrawlOperator(BaseOperator):
                 await self.crawl_ops.link_required_crawls(
                     crawl.oid, crawl.id, stats.req_crawls
                 )
+
+            if crawl.dedupe_coll_id:
+                await self.add_crawl_dedupe_stats(crawl)
 
         if state in FAILED_STATES:
             await self.crawl_config_ops.stats_recompute_last(crawl.cid, 0, 1, 0)

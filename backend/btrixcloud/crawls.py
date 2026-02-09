@@ -84,6 +84,7 @@ from .models import (
     TagsResponse,
     TYPE_AUTO_PAUSED_STATES,
     UserRole,
+    CrawlDedupeStats,
 )
 
 
@@ -1313,6 +1314,12 @@ class CrawlOps(BaseCrawlOps):
         await self.crawls.update_many(
             {"_id": {"$in": required_crawls}, "oid": oid},
             {"$addToSet": {"requiredByCrawls": crawl_id}},
+        )
+
+    async def add_dedupe_stats(self, oid: UUID, crawl_id: str, stats: CrawlDedupeStats):
+        """Add dedupe stats to crawl in db"""
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "oid": oid}, {"$set": {"dedupeStats": stats.dict()}}
         )
 
 
