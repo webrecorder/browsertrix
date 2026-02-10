@@ -18,13 +18,17 @@ def do_something(org: Organization):
         # do something
 ```
 
-On the front-end, you can access feature flags using the `featureFlags.has` method on any element inheriting from `BtrixElement`:
+On the front-end, you can access feature flags using the `featureFlags.has` and `featureFlags.excludes` method on any element inheriting from `BtrixElement`:
 
 ```typescript
 class MyElement extends BtrixElement {
   render() {
-    if (this.featureFlags.has('newFeature')) {
+    if (this.featureFlags.has("newFeature")) {
       // render new feature
+    }
+    // or
+    if (this.featureFlags.excludes("newFeature")) {
+      // render old feature
     }
   }
 }
