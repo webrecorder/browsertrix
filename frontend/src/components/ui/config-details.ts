@@ -323,16 +323,20 @@ export class ConfigDetails extends BtrixElement {
           )}
         `,
       })}
-      ${this.renderSection({
-        id: "deduplication",
-        heading: sectionStrings.deduplication,
-        renderDescItems: () => html`
-          ${this.renderSetting(
-            html`<span class="mb-1 inline-block">${labelFor.dedupeType}</span>`,
-            crawlConfig?.dedupeCollId ? msg("Enabled") : msg("Disabled"),
-          )}
-        `,
-      })}
+      ${when(this.featureFlags.has("dedupeEnabled"), () =>
+        this.renderSection({
+          id: "deduplication",
+          heading: sectionStrings.deduplication,
+          renderDescItems: () => html`
+            ${this.renderSetting(
+              html`<span class="mb-1 inline-block"
+                >${labelFor.dedupeType}</span
+              >`,
+              crawlConfig?.dedupeCollId ? msg("Enabled") : msg("Disabled"),
+            )}
+          `,
+        }),
+      )}
       ${when(!this.hideMetadata, () =>
         this.renderSection({
           id: "collection",
@@ -345,7 +349,11 @@ export class ConfigDetails extends BtrixElement {
               crawlConfig?.autoAddCollections.length
                 ? html`<btrix-linked-collections
                     .collections=${crawlConfig.autoAddCollections}
-                    dedupeId=${ifDefined(crawlConfig.dedupeCollId || undefined)}
+                    dedupeId=${ifDefined(
+                      (this.featureFlags.has("dedupeEnabled") &&
+                        crawlConfig.dedupeCollId) ||
+                        undefined,
+                    )}
                   ></btrix-linked-collections>`
                 : undefined,
             )}

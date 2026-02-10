@@ -64,7 +64,7 @@ export const collectionSchema = publicCollectionSchema.extend({
   access: z.nativeEnum(CollectionAccess),
   indexLastSavedAt: z.string().datetime().nullable(),
   indexState: z.enum(DEDUPE_INDEX_STATES).nullable(),
-  indexStats: dedupeIndexStatsSchema.optional(),
+  indexStats: dedupeIndexStatsSchema.optional().nullable(),
 });
 export type Collection = z.infer<typeof collectionSchema>;
 

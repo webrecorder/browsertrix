@@ -169,6 +169,9 @@ export class OrgSettingsDeduplication extends BtrixElement {
 
   private readonly renderSource = (item: DedupeSource) => {
     const { indexStats, indexState } = item;
+
+    if (!indexStats) return;
+
     const updating =
       indexStats.updateProgress > 0 && indexStats.updateProgress < 1;
     const available = indexAvailable(indexState);
