@@ -340,7 +340,10 @@ export class WorkflowListItem extends BtrixElement {
                 </div>
               `);
             }
-            if (workflow.dedupeCollId) {
+            if (
+              this.featureFlags.has("dedupeEnabled") &&
+              workflow.dedupeCollId
+            ) {
               badges.push(html`
                 <div class="flex items-center gap-1.5">
                   <sl-icon name="stack" label=${msg("Deduplication")}></sl-icon>
