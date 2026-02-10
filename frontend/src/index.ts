@@ -835,9 +835,14 @@ export class App extends BtrixElement {
         ></btrix-reset-password>`;
 
       case "admin":
+      case "adminOrgs":
+      case "adminFeatureFlags":
         return this.renderAdminPage(
           () => html`
-            <btrix-admin class="w-full bg-neutral-50"></btrix-admin>
+            <btrix-admin
+              page=${this.viewState.route}
+              class="w-full bg-neutral-50"
+            ></btrix-admin>
           `,
         );
 

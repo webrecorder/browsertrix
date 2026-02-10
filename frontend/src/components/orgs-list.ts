@@ -50,6 +50,7 @@ const none = html`
 /**
  * @fires update-quotas
  * @fires update-proxies
+ * @fires btrix-update-feature-flags
  */
 @customElement("btrix-orgs-list")
 @localized()
@@ -92,6 +93,9 @@ export class OrgsList extends BtrixElement {
 
   @query("#orgDeleteButton")
   private readonly orgDeleteButton?: SlButton | null;
+
+  @query("#orgFeatureFlagsDialog")
+  private readonly orgFeatureFlagsDialog?: Dialog | null;
 
   // For fuzzy search:
   private readonly fuse = new Fuse(this.orgList ?? [], {
@@ -298,6 +302,7 @@ export class OrgsList extends BtrixElement {
 
       ${this.renderOrgQuotas()} ${this.renderOrgProxies()}
       ${this.renderOrgReadOnly()} ${this.renderOrgDelete()}
+      ${this.renderOrgFeatureFlags()}
     `;
   }
 
@@ -623,6 +628,19 @@ export class OrgsList extends BtrixElement {
           `;
         })}
       </btrix-dialog>
+    `;
+  }
+
+  private renderOrgFeatureFlags() {
+    return html`
+      <btrix-org-feature-flags
+        id="orgFeatureFlagsDialog"
+        .activeOrg=${this.currOrg}
+        @btrix-update-feature-flags=${async (e: CustomEvent<OrgData>) => {
+          this.currOrg = await this.fetchOrg(e.detail.id);
+          this.dispatchEvent(e);
+        }}
+      ></btrix-org-feature-flags>
     `;
   }
 
@@ -1221,6 +1239,34 @@ export class OrgsList extends BtrixElement {
                       ${msg("Disable Archiving")}
                     </sl-menu-item>
                   `}
+              ${when(
+                Object.keys(org.featureFlags).length > 0,
+                () => html`
+                  <sl-menu-item
+                    @click=${() => {
+                      this.currOrg = org;
+                      void this.orgFeatureFlagsDialog?.show();
+                    }}
+                  >
+                    <sl-icon slot="prefix" name="toggles"></sl-icon>
+                    ${msg("Toggle Feature Flags")}
+                    ${Object.values(org.featureFlags).filter(Boolean).length
+                      ? html`
+                          <btrix-badge
+                            slot="suffix"
+                            variant="high-contrast"
+                            pill
+                          >
+                            ${this.localize.number(
+                              Object.values(org.featureFlags).filter(Boolean)
+                                .length,
+                            )}
+                          </btrix-badge>
+                        `
+                      : nothing}
+                  </sl-menu-item>
+                `,
+              )}
               <sl-divider></sl-divider>
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--danger)"
@@ -1252,5 +1298,9 @@ export class OrgsList extends BtrixElement {
   async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;
     return !formEl.querySelector("[data-invalid]");
+  }
+
+  private async fetchOrg(oid: string) {
+    return await this.api.fetch<OrgData>(`/orgs/${oid}`);
   }
 }

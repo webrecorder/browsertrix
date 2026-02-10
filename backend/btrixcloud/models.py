@@ -3,7 +3,7 @@ Crawl-related models and types
 """
 
 # pylint: disable=invalid-name, too-many-lines
-
+from __future__ import annotations
 from datetime import datetime
 from enum import Enum, IntEnum
 from uuid import UUID
@@ -13,7 +13,7 @@ import mimetypes
 import math
 import os
 
-from typing import Optional, List, Dict, Union, Literal, Any, get_args
+from typing import Optional, List, Dict, Self, Union, Literal, Any, get_args, get_origin
 from typing_extensions import Annotated
 
 from pydantic import (
@@ -22,6 +22,7 @@ from pydantic import (
     HttpUrl as HttpUrlNonStr,
     AnyHttpUrl as AnyHttpUrlNonStr,
     EmailStr as CasedEmailStr,
+    model_validator,
     validate_email,
     RootModel,
     BeforeValidator,
@@ -29,6 +30,7 @@ from pydantic import (
     ConfigDict,
 )
 from slugify import slugify
+
 
 # from fastapi_users import models as fastapi_users_models
 
@@ -2228,6 +2230,99 @@ class UserOut(UserOutNoId):
 
 
 # ============================================================================
+# Feature Flags
+# ============================================================================
+
+
+class ValidatedFeatureFlags(BaseModel):
+    """Base class for feature flags with validation."""
+
+    @model_validator(mode="after")
+    def validate_all_fields(self) -> Self:
+        """Ensure all fields have descriptions and are bools."""
+        missing_descriptions = []
+        non_bool_fields = []
+
+        for field_name, field_info in self.model_fields.items():
+            # Check for missing descriptions
+            if not field_info.description:
+                missing_descriptions.append(field_name)
+
+            # Check if field type is bool (handles Annotated[bool, ...])
+            annotation = field_info.annotation
+            if get_origin(annotation) is Annotated:
+                actual_type = get_args(annotation)[0]
+            else:
+                actual_type = annotation
+
+            if actual_type is not bool:
+                non_bool_fields.append(f"{field_name} (type: {actual_type})")
+
+        if missing_descriptions:
+            raise ValueError(
+                f"The following fields are missing descriptions: {', '.join(missing_descriptions)}"
+            )
+
+        if non_bool_fields:
+            raise ValueError(
+                f"The following fields must be bool type: {', '.join(non_bool_fields)}"
+            )
+
+        return self
+
+
+# ============================================================================
+# Feature Flags - Edit here
+# ============================================================================
+class FeatureFlags(ValidatedFeatureFlags):
+    """Feature flags for an organization"""
+
+    dedupeEnabled: bool = Field(
+        description="Enable deduplication options for an org. Intended for beta-testing dedupe.",
+        default=False,
+    )
+
+
+class FeatureFlagOut(BaseModel):
+    """Output model for feature flags"""
+
+    model_config = ConfigDict(use_attribute_docstrings=True)
+
+    name: str
+    """Name of the feature flag."""
+    description: str
+    """
+    Detailed description of the feature flag. It should explain what the flag
+    does and why it is needed.
+    """
+    count: int
+    """Number of organizations that have this feature flag enabled."""
+
+
+class FeatureFlagOrgUpdate(BaseModel):
+    """Update a feature flag for an organization"""
+
+    value: bool
+    """Value of the feature flag."""
+
+
+class FeatureFlagOrgsUpdate(BaseModel):
+    """Update a feature flag's organizations"""
+
+    orgs: list[UUID]
+    """List of organization IDs to enable the flag for."""
+
+
+class FeatureFlagUpdatedResponse(BaseModel):
+    """Response when a feature flag is updated"""
+
+    feature: str
+    """Feature flag that was updated."""
+    updated: bool
+    """Whether the feature flag was updated successfully."""
+
+
+# ============================================================================
 # ORGS
 # ============================================================================
 class OrgReadOnlyOnCancel(BaseModel):
@@ -2354,6 +2449,8 @@ class OrgOut(BaseMongoModel):
     publicDescription: str = ""
     publicUrl: str = ""
 
+    featureFlags: FeatureFlags = FeatureFlags()
+
 
 # ============================================================================
 class Organization(BaseMongoModel):
@@ -2416,6 +2513,8 @@ class Organization(BaseMongoModel):
     enablePublicProfile: bool = False
     publicDescription: Optional[str] = None
     publicUrl: Optional[str] = None
+
+    featureFlags: FeatureFlags = FeatureFlags()
 
     def is_owner(self, user):
         """Check if user is owner"""
