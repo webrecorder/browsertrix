@@ -1737,7 +1737,7 @@ class CrawlOperator(BaseOperator):
             stats = CrawlDedupeStats(
                 uniqueHashes=num_unique_hashes,
                 totalUrls=int(crawl_counts.get("totalUrls", 0)),
-                dedupedUrls=int(crawl_counts.get("dupeUrls", 0)),
+                dupeUrls=int(crawl_counts.get("dupeUrls", 0)),
                 conservedSize=int(crawl_counts.get("conservedSize", 0)),
             )
             await self.crawl_ops.add_dedupe_stats(crawl.oid, crawl.id, stats)
@@ -1801,6 +1801,11 @@ class CrawlOperator(BaseOperator):
     ) -> None:
         """Run tasks after crawl completes in asyncio.task coroutine."""
         if state in SUCCESSFUL_STATES and crawl.oid:
+            # do this first, in case dedupe index may become idle
+            # and redis pod will be shut down eventually
+            if crawl.dedupe_coll_id:
+                await self.add_crawl_dedupe_stats(crawl)
+
             await self.crawl_config_ops.stats_recompute_last(
                 crawl.cid, status.filesAddedSize, 1, 1
             )
@@ -1824,9 +1829,6 @@ class CrawlOperator(BaseOperator):
                 await self.crawl_ops.link_required_crawls(
                     crawl.oid, crawl.id, stats.req_crawls
                 )
-
-            if crawl.dedupe_coll_id:
-                await self.add_crawl_dedupe_stats(crawl)
 
         if state in FAILED_STATES:
             await self.crawl_config_ops.stats_recompute_last(crawl.cid, 0, 1, 0)

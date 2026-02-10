@@ -839,7 +839,7 @@ class CrawlDedupeStats(BaseModel):
 
     uniqueHashes: int = 0
     totalUrls: int = 0
-    dedupedUrls: int = 0
+    dupeUrls: int = 0
     conservedSize: int = 0
 
 
