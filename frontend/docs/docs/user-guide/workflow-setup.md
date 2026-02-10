@@ -74,7 +74,10 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 :   This scope will crawl all pages on the domain and any subdomains found. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
 
 ##### Custom Page Prefix
-:   This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_URL Prefixes in Scope_](#url-prefixes-in-scope).
+:   This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_Page Prefix URLs_](#page-prefix-urls).
+
+##### Custom Page Match
+:   This scope will crawl the _Crawl Start URL_ and then include only those pages with URLs that match the regular expression patterns listed in [_Page Regex Patterns_](#page-regex-patterns).
 
 ### Crawl Start URL / URL(s) to Crawl
 
@@ -122,13 +125,35 @@ When enabled, the crawler will fail the entire crawl if any of the provided URLs
 
 Instructs the crawler to stop visiting new links past a specified depth.
 
-### URL Prefixes in Scope
+### Page Prefix URLs
 
-When using a scope of `Custom Page Prefix`, this field accepts URLs or domains that will be crawled if URLs that lead to them are found.
+When using a scope of `Custom Page Prefix`, this field accepts a list of URLs that a page URL should begin with if it is to be crawled.
 
-By default, _URL Prefixes in Scope_ will be prefilled with the _Crawl Start URL_ up to the last slash (`/`). For example, if `https://example.com/path/page` is set as the _Crawl Start URL_, `https://example.com/path/` will be automatically added to _URL Prefixes in Scope_. This URL prefix can then be removed or modified as needed.
+For example, specifying `https://example.com/new` will capture the following:
 
-This field can also be useful for crawling websites that span multiple domains such as `https://example.org` and `https://example.net`. To crawl websites outside of scope for scope types other than `Custom Page Prefix`, see [_Additional Pages_](#additional-pages).
+- `https://example.com/new?page=1`
+- `https://example.com/newsworthy`
+
+By default, _Page Prefix URLs_ will be prefilled with the _Crawl Start URL_ up to the last slash (`/`). That is, if `https://example.com/path/page` is set as the _Crawl Start URL_, `https://example.com/path/` will be automatically added to _Page Prefix URLs_. This URL prefix can then be removed or modified as needed.
+
+!!! tip "Use Case: Crawl website that uses multiple TLDs"
+    This field can be useful for crawling websites that span multiple top-level domains (e.g. `example.org` and `example.net`) by specifying each domain in the list.
+
+### Page Regex Patterns
+
+When using a scope of `Custom Page Match`, this field accepts a list of regular expressions (regexes) that will be matched against page URLs to be crawled.
+
+For example, specifying `/new$` will capture the following:
+
+- `https://example.com/new`
+- `https://example.com/blog/new`
+
+A URL like `https://example.com/newsworthy` would not be captured due to the `$` assertion indicating that the URL should end with `new`.
+
+Patterns should be written in the JavaScript regular expression syntax without the enclosed slashes, as it would be passed to a [`RegExp` constructor](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/RegExp). See [Writing a Regular Expression Pattern (MDN)](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions#writing_a_regular_expression_pattern) for examples.
+
+!!! tip "Use Case: Crawl website that uses multiple protocols"
+    This field can be useful for crawling websites that link to both `http` and `https` pages by using a regex pattern like `^https?://example.com`. The `?` quantifier indicates that that the preceding character `s` is to be matched 0 times (in the case of `http`) or 1 time (in the case of `https`.)
 
 ### Include Any Linked Page ("one hop out")
 

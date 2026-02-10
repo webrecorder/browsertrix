@@ -5,6 +5,7 @@ import { ScopeType } from "@/types/crawler";
 
 export enum NewWorkflowOnlyScopeType {
   PageList = "page-list",
+  Regex = "custom-regex",
 }
 
 export const WorkflowScopeType = { ...ScopeType, ...NewWorkflowOnlyScopeType };

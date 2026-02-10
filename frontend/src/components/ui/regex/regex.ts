@@ -1,7 +1,7 @@
 import { unsafeCSS } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
-import RegexColorize from "regex-colorize";
+import { colorizePattern } from "regex-colorizer";
 
 import stylesheet from "./regex.stylesheet.css";
 
@@ -23,8 +23,8 @@ export class Component extends TailwindElement {
   render() {
     if (!this.value) return;
 
-    return staticHtml`<span class="regex ${tw`font-mono leading-none text-neutral-600`}">${unsafeStatic(
-      new RegexColorize().colorizeText(this.value) as string,
+    return staticHtml`<span class="regex ${tw`break-all font-mono leading-none text-neutral-600`}">${unsafeStatic(
+      colorizePattern(this.value) as string,
     )}</span>`;
   }
 }
