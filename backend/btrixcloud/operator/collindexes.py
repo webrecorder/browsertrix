@@ -310,8 +310,8 @@ class CollIndexOperator(BaseOperator):
             if not redis:
                 return
 
-            # readd appendonly
-            if status.state == "initing":
+            # readd appendonly if using redis
+            if status.state == "initing" and self.backend_type == "redis":
                 await redis.config_set("appendonly", "yes")
 
             elif status.state == "ready":

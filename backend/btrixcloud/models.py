@@ -834,6 +834,16 @@ class CrawlFileOut(BaseModel):
 
 
 # ============================================================================
+class CrawlDedupeStats(BaseModel):
+    """Dedupe stats for crawl"""
+
+    uniqueHashes: int = 0
+    totalUrls: int = 0
+    dupeUrls: int = 0
+    conservedSize: int = 0
+
+
+# ============================================================================
 class CoreCrawlable(BaseModel):
     # pylint: disable=too-few-public-methods
     """Core properties for crawlable run (crawl or qa run)"""
@@ -983,6 +993,8 @@ class CrawlOut(BaseMongoModel):
     requiresCrawls: Optional[list[str]] = []
     requiredByCrawls: Optional[list[str]] = []
 
+    dedupeStats: Optional[CrawlDedupeStats] = None
+
 
 # ============================================================================
 class UpdateCrawl(BaseModel):
@@ -1122,6 +1134,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     pendingSize: int = 0
 
     autoPausedEmailsSent: bool = False
+
+    dedupeStats: Optional[CrawlDedupeStats] = None
 
 
 # ============================================================================

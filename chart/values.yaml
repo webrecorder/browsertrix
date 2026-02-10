@@ -267,7 +267,7 @@ dedupe:
 
   # time until index is considered 'idle'
   # redis pod is backed up and shutdown
-  idle_secs: 10
+  idle_secs: 180
 
   # set this to custom crawler channel (from one of options below)
   # used for dedupe index importing
