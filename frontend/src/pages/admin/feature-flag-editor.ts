@@ -10,7 +10,7 @@ import {
   type BtrixSearchComboboxSelectEvent,
   type SearchCombobox,
 } from "@/components/ui/search-combobox";
-import { type FlagMetadata } from "@/pages/admin/feature-flags";
+import { type FeatureFlagMetadata } from "@/types/featureFlags";
 import { type OrgData } from "@/types/org";
 import { stopProp } from "@/utils/events";
 import { pluralOf } from "@/utils/pluralize";
@@ -23,7 +23,7 @@ export class FeatureFlagEditor extends BtrixElement {
   private open = false;
 
   @property({ type: Object })
-  feature?: FlagMetadata;
+  feature?: FeatureFlagMetadata;
 
   @property({ type: Array })
   availableOrgs?: OrgData[];

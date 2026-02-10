@@ -1,20 +1,14 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html } from "lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import needLogin from "@/decorators/needLogin";
 import { type APIPaginatedList } from "@/types/api";
-import type { FeatureFlags } from "@/types/featureFlags";
+import type { FeatureFlagMetadata } from "@/types/featureFlags";
 import { type OrgData } from "@/types/org";
-
-export type FlagMetadata = {
-  name: FeatureFlags;
-  description: string;
-  count: number;
-};
 
 /**
  * Browsertrix superadmin dashboard
@@ -23,12 +17,8 @@ export type FlagMetadata = {
 @localized()
 @needLogin
 export class AdminOrgs extends BtrixElement {
-  flags = new Task(this, {
-    task: async () => {
-      return await this.api.fetch<FlagMetadata[]>("/flags/metadata");
-    },
-    args: () => [] as const,
-  });
+  @property({ type: Object })
+  flags!: Task<readonly [], FeatureFlagMetadata[]>;
 
   orgs = new Task(this, {
     task: async () => {
@@ -53,20 +43,24 @@ export class AdminOrgs extends BtrixElement {
   renderFlags() {
     return html`
       <div @btrix-feature-flag-updated=${this.updateOrgsAndFlags}>
-        ${this.flags.value?.map((flag) => {
-          const availableOrgs = this.orgs.value?.items.filter(
-            (org) => !org.featureFlags[flag.name],
-          );
-          return keyed(
-            flag.name,
-            html`
-              <btrix-feature-flag-editor
-                .feature=${flag}
-                .availableOrgs=${availableOrgs}
-              ></btrix-feature-flag-editor>
-            `,
-          );
-        })}
+        ${this.flags.value?.length
+          ? this.flags.value.map((flag) => {
+              const availableOrgs = this.orgs.value?.items.filter(
+                (org) => !org.featureFlags[flag.name],
+              );
+              return keyed(
+                flag.name,
+                html`
+                  <btrix-feature-flag-editor
+                    .feature=${flag}
+                    .availableOrgs=${availableOrgs}
+                  ></btrix-feature-flag-editor>
+                `,
+              );
+            })
+          : html`<div class="my-4 text-center">
+              ${msg("No feature flags available")}
+            </div>`}
       </div>
     `;
   }

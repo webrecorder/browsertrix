@@ -3,11 +3,17 @@ import "./orgs";
 import "./feature-flag-editor";
 
 import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
 import { html, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import needLogin from "@/decorators/needLogin";
+import {
+  featureFlagsMetadataSchema,
+  type FeatureFlagMetadata,
+} from "@/types/featureFlags";
 
 /**
  * Browsertrix superadmin dashboard
@@ -26,6 +32,15 @@ export class Admin extends BtrixElement {
       }
     }
   }
+
+  flags = new Task(this, {
+    task: async () => {
+      return featureFlagsMetadataSchema.parse(
+        await this.api.fetch<FeatureFlagMetadata[]>("/flags/metadata"),
+      );
+    },
+    args: () => [] as const,
+  });
 
   render() {
     if (!this.userInfo?.isSuperAdmin) {
@@ -63,14 +78,21 @@ export class Admin extends BtrixElement {
           <btrix-tab-group-tab slot="nav" panel="adminOrgs"
             >${msg("Organizations")}</btrix-tab-group-tab
           >
-          <btrix-tab-group-tab slot="nav" panel="adminFeatureFlags"
-            >${msg("Feature Flags")}</btrix-tab-group-tab
-          >
+          ${when(
+            this.flags.value?.length || this.page === "adminFeatureFlags",
+            () =>
+              html`<btrix-tab-group-tab slot="nav" panel="adminFeatureFlags"
+                >${msg("Feature Flags")}</btrix-tab-group-tab
+              >`,
+          )}
+
           <btrix-tab-group-panel name="adminOrgs"
             ><btrix-admin-orgs></btrix-admin-orgs
           ></btrix-tab-group-panel>
           <btrix-tab-group-panel name="adminFeatureFlags"
-            ><btrix-admin-feature-flags></btrix-admin-feature-flags
+            ><btrix-admin-feature-flags
+              .flags=${this.flags}
+            ></btrix-admin-feature-flags
           ></btrix-tab-group-panel>
         </btrix-tab-group>
       </main>

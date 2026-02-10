@@ -6,7 +6,10 @@ import { customElement, property } from "lit/decorators.js";
 import { createRef, ref, type Ref } from "lit/directives/ref.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { type FlagMetadata } from "@/pages/admin/feature-flags";
+import {
+  featureFlagsMetadataSchema,
+  type FeatureFlagMetadata,
+} from "@/types/featureFlags";
 import { type OrgData } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 
@@ -29,7 +32,9 @@ export class OrgFeatureFlags extends BtrixElement {
 
   flags = new Task(this, {
     task: async () => {
-      return await this.api.fetch<FlagMetadata[]>("/flags/metadata");
+      return featureFlagsMetadataSchema.parse(
+        await this.api.fetch<FeatureFlagMetadata[]>("/flags/metadata"),
+      );
     },
     autoRun: false,
   });
@@ -45,29 +50,30 @@ export class OrgFeatureFlags extends BtrixElement {
       ${ref(this.dialog)}
       .label="${msg("Feature flags for")}: ${this.activeOrg?.name || ""}"
     >
-      ${this.flags.value?.map((flag) => {
-        const organization_plural = pluralOf("organizations", flag.count);
-        const organization_count = flag.count;
-        return html`<sl-switch
-          class="part-base w-full part-[label]:me-2 part-[label]:ms-0 part-[base]:flex part-[base]:flex-row-reverse part-[base]:justify-between part-[label]:font-mono part-[label]:text-base"
-          .checked=${!!this.activeOrg?.featureFlags[flag.name]}
-          @sl-change=${async (e: Event) => {
-            void this.setFlag(flag.name, (e.target as SlSwitch).checked);
-          }}
-        >
-          ${flag.name}
-          <span slot="help-text"
-            >${flag.description}
-            <br />
-            ${msg(
-              html`Enabled for ${organization_count} ${organization_plural}.`,
-            )}
-          </span>
-        </sl-switch>`;
-      }) ??
-      html`<div class="my-4 text-center">
-        ${msg("No feature flags available")}
-      </div>`}
+      ${this.flags.value?.length
+        ? this.flags.value.map((flag) => {
+            const organization_plural = pluralOf("organizations", flag.count);
+            const organization_count = flag.count;
+            return html`<sl-switch
+              class="part-base w-full part-[label]:me-2 part-[label]:ms-0 part-[base]:flex part-[base]:flex-row-reverse part-[base]:justify-between part-[label]:font-mono part-[label]:text-base"
+              .checked=${!!this.activeOrg?.featureFlags[flag.name]}
+              @sl-change=${async (e: Event) => {
+                void this.setFlag(flag.name, (e.target as SlSwitch).checked);
+              }}
+            >
+              ${flag.name}
+              <span slot="help-text"
+                >${flag.description}
+                <br />
+                ${msg(
+                  html`Enabled for ${organization_count} ${organization_plural}.`,
+                )}
+              </span>
+            </sl-switch>`;
+          })
+        : html`<div class="my-4 text-center">
+            ${msg("No feature flags available")}
+          </div>`}
     </btrix-dialog>`;
   }
 
