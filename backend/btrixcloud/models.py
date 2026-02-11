@@ -383,6 +383,8 @@ class RawCrawlConfig(BaseModel):
     pageExtraDelay: Optional[int] = 0
     postLoadDelay: Optional[int] = 0
 
+    normRemoveQuery: Optional[bool] = None
+
     workers: Optional[int] = None
 
     headless: Optional[bool] = None
