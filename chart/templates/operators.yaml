@@ -13,7 +13,7 @@ spec:
   - apiVersion: v1
     resource: pods
     updateStrategy:
-      method: InPlace
+      method: OnDelete
 
   - apiVersion: v1
     resource: persistentvolumeclaims
