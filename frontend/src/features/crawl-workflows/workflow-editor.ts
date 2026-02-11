@@ -112,6 +112,7 @@ import {
 } from "@/types/workflow";
 import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
+import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import {
   getUTCSchedule,
@@ -129,6 +130,7 @@ import { AppStateService } from "@/utils/state";
 import { regexEscape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
 import {
+  apiScopeType,
   appDefaults,
   BYTES_PER_GB,
   DEFAULT_AUTOCLICK_SELECTOR,
@@ -956,6 +958,9 @@ export class WorkflowEditor extends BtrixElement {
           <sl-option value=${ScopeType.Custom}>
             ${scopeTypeLabels[ScopeType.Custom]}
           </sl-option>
+          <sl-option value=${NewWorkflowOnlyScopeType.Regex}>
+            ${scopeTypeLabels[NewWorkflowOnlyScopeType.Regex]}
+          </sl-option>
         </sl-select>
       `)}
       ${this.renderHelpTextCol(html`
@@ -1403,6 +1408,18 @@ https://replayweb.page/docs`}
 
     let helpText: TemplateResult | string;
 
+    const custom = (customRegexFieldLabel: string) => {
+      const example_url = html`<span class="break-word text-blue-500"
+        >${exampleDomain}${examplePathname}</span
+      >`;
+      const custom_regexes = html`<em>${customRegexFieldLabel}</em>`;
+
+      return msg(
+        html`Will start crawl with ${example_url} and only follow links that
+        match the ${custom_regexes} listed below.`,
+      );
+    };
+
     switch (this.formState.scopeType) {
       case ScopeType.Prefix:
         helpText = msg(
@@ -1443,14 +1460,10 @@ https://replayweb.page/docs`}
         );
         break;
       case ScopeType.Custom:
-        helpText = msg(
-          html`Will start with
-            <span class="break-word text-blue-500"
-              >${exampleDomain}${examplePathname}</span
-            >
-            and include <em>only</em> URLs that start with the
-            <em>URL Prefixes in Scope</em> listed below.`,
-        );
+        helpText = custom(msg("Page Prefix URLs"));
+        break;
+      case NewWorkflowOnlyScopeType.Regex:
+        helpText = custom(msg("Page Regex Patterns"));
         break;
       default:
         helpText = "";
@@ -1521,26 +1534,17 @@ https://replayweb.page/docs`}
                 true,
               );
             }
+            const { primarySeedUrl } = this.formState;
             if (
-              this.formState.primarySeedUrl &&
-              this.formState.scopeType === ScopeType.Custom &&
+              primarySeedUrl &&
+              (this.formState.scopeType === NewWorkflowOnlyScopeType.Regex ||
+                this.formState.scopeType === ScopeType.Custom) &&
               !this.formState.customIncludeUrlList
             ) {
-              let prefixUrl = this.formState.primarySeedUrl;
-              try {
-                const startingUrl = new URL(this.formState.primarySeedUrl);
-                prefixUrl =
-                  startingUrl.origin +
-                  startingUrl.pathname.slice(
-                    0,
-                    startingUrl.pathname.lastIndexOf("/") + 1,
-                  );
-              } catch (e) {
-                // ignore
-              }
               this.updateFormState(
                 {
-                  customIncludeUrlList: prefixUrl,
+                  customIncludeUrlList:
+                    this.customIncludeListFromSeed(primarySeedUrl),
                 },
                 true,
               );
@@ -1557,19 +1561,95 @@ https://replayweb.page/docs`}
           ${inputCol(html`
             <sl-textarea
               name="customIncludeUrlList"
-              label=${msg("URL Prefixes in Scope")}
+              label=${msg("Page Prefix URLs")}
               rows="3"
               autocomplete="off"
               inputmode="url"
               value=${this.formState.customIncludeUrlList}
-              placeholder=${`https://example.org
-https://example.net`}
+              placeholder=${`https://webrecoder.net/blog/2025-
+https://archiveweb.page/es/`}
               required
+              @keyup=${async (e: KeyboardEvent) => {
+                if (e.key === "Enter") {
+                  await (e.target as SlInput).updateComplete;
+                  this.doValidateUrlList(e);
+                }
+              }}
+              @sl-input=${(e: CustomEvent) => {
+                const inputEl = e.target as SlInput;
+                const value = inputEl.value;
+
+                if (value) {
+                  if (!this.stickyFooter) {
+                    const { isValid } = this.validateUrlList(inputEl.value);
+
+                    if (isValid) {
+                      this.animateStickyFooter();
+                    }
+                  }
+                } else {
+                  inputEl.helpText = msg("At least 1 URL is required.");
+                }
+              }}
+              @sl-change=${this.doValidateUrlList}
+              @sl-blur=${this.doValidateUrlList}
             ></sl-textarea>
           `)}
           ${this.renderHelpTextCol(
             msg(`Only crawl pages that begin with URLs listed here.`),
           )}
+        `,
+      )}
+      ${when(
+        this.formState.scopeType === NewWorkflowOnlyScopeType.Regex,
+        () => html`
+          ${inputCol(html`
+            <sl-textarea
+              class="part-[textarea]:font-mono"
+              name="customIncludeUrlList"
+              label=${msg("Page Regex Patterns")}
+              rows="3"
+              autocomplete="off"
+              inputmode="url"
+              value=${this.formState.customIncludeUrlList}
+              placeholder=${`/blog/.*browsertrix
+^https?://example`}
+              required
+              @keyup=${async (e: KeyboardEvent) => {
+                if (e.key === "Enter") {
+                  await (e.target as SlInput).updateComplete;
+                  this.doValidateRegexList(e);
+                }
+              }}
+              @sl-input=${(e: CustomEvent) => {
+                const inputEl = e.target as SlInput;
+                const value = inputEl.value;
+
+                if (value) {
+                  if (!this.stickyFooter) {
+                    const { isValid } = this.validateRegexList(inputEl.value);
+
+                    if (isValid) {
+                      this.animateStickyFooter();
+                    }
+                  }
+                } else {
+                  inputEl.helpText = msg(
+                    "At least 1 regex pattern is required.",
+                  );
+                }
+              }}
+              @sl-change=${this.doValidateRegexList}
+              @sl-blur=${this.doValidateRegexList}
+            ></sl-textarea>
+          `)}
+          ${this.renderHelpTextCol(html`
+            ${infoTextFor.customIncludeUrlList}
+            ${this.renderUserGuideLink({
+              hash: "page-regex-patterns",
+              content: msg("More details"),
+            })}
+          `)}
         `,
       )}
       ${when(
@@ -1703,6 +1783,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const inputEl = e.target as SlInput;
     if (!inputEl.value) return;
     const { isValid, helpText } = this.validateUrlList(inputEl.value);
+    inputEl.helpText = helpText;
+    if (isValid) {
+      inputEl.setCustomValidity("");
+    } else {
+      inputEl.setCustomValidity(helpText);
+    }
+  };
+
+  private readonly doValidateRegexList = (e: Event) => {
+    const inputEl = e.target as SlInput;
+    if (!inputEl.value) return;
+    const { isValid, helpText } = this.validateRegexList(inputEl.value);
     inputEl.helpText = helpText;
     if (isValid) {
       inputEl.setCustomValidity("");
@@ -2834,6 +2926,40 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }
     }
 
+    if (
+      value === ScopeType.Custom ||
+      value === NewWorkflowOnlyScopeType.Regex
+    ) {
+      if (prevScopeType === NewWorkflowOnlyScopeType.Regex) {
+        // Convert to valid URL
+        formState.customIncludeUrlList = urlListToArray(
+          this.formState.customIncludeUrlList,
+        )
+          .map((regex) => {
+            const url = unescapeCustomPrefix(regex);
+            try {
+              new URL(url);
+              return url;
+            } catch {
+              return;
+            }
+          })
+          .filter((v) => v)
+          .join("\n");
+      } else if (prevScopeType === ScopeType.Custom) {
+        // Convert to regex
+        formState.customIncludeUrlList = urlListToArray(
+          this.formState.customIncludeUrlList,
+        )
+          .map((url) => `^${regexEscape(url)}`)
+          .join("\n");
+      } else {
+        formState.customIncludeUrlList = this.customIncludeListFromSeed(
+          formState.primarySeedUrl || this.formState.primarySeedUrl,
+        );
+      }
+    }
+
     if (!this.configId) {
       // Remember scope type for new workflows
       this.updatingScopeType = true;
@@ -2843,6 +2969,25 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
 
     this.updateFormState(formState);
+  }
+
+  private customIncludeListFromSeed(primarySeedUrl: string) {
+    let prefixUrl = primarySeedUrl;
+    try {
+      const startingUrl = new URL(prefixUrl);
+      prefixUrl =
+        startingUrl.origin +
+        startingUrl.pathname.slice(
+          0,
+          startingUrl.pathname.lastIndexOf("/") + 1,
+        );
+    } catch (e) {
+      // ignore
+    }
+
+    return this.formState.scopeType === NewWorkflowOnlyScopeType.Regex
+      ? `^${regexEscape(prefixUrl)}`
+      : prefixUrl;
   }
 
   // Store the panel to focus or scroll to temporarily
@@ -3497,6 +3642,29 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return { isValid, helpText };
   }
 
+  private validateRegexList(value: string): {
+    isValid: boolean;
+    helpText: string;
+  } {
+    const regexList = urlListToArray(value);
+    let isValid = true;
+    let helpText = `${this.localize.number(regexList.length)} ${msg("entered")}`;
+    const invalidRegex = regexList.find((str) => {
+      try {
+        new RegExp(str);
+      } catch {
+        return true;
+      }
+    });
+
+    if (invalidRegex) {
+      isValid = false;
+      helpText = `${msg("Please remove or fix the following invalid regex:")} ${invalidRegex}`;
+    }
+
+    return { isValid, helpText };
+  }
+
   private readonly onTagInput = (e: TagInputEvent) => {
     const { value } = e.detail;
     if (!value) return;
@@ -3642,13 +3810,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
           return newSeed;
         })
       : [];
+    const scopeType = apiScopeType(this.formState.scopeType)
+      ? this.formState.scopeType
+      : ScopeType.Custom;
     const primarySeed: Seed = {
       url: primarySeedUrl,
-      scopeType: this.formState.scopeType as ScopeType,
+      scopeType,
       include:
-        this.formState.scopeType === ScopeType.Custom
-          ? [...includeUrlList.map((url) => "^" + regexEscape(url))]
-          : [],
+        this.formState.scopeType === NewWorkflowOnlyScopeType.Regex
+          ? includeUrlList
+          : this.formState.scopeType === ScopeType.Custom
+            ? includeUrlList.map((url) => "^" + regexEscape(url))
+            : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
 
@@ -3658,7 +3831,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     const config = {
       seeds: [primarySeed, ...additionalSeedUrlList],
-      scopeType: this.formState.scopeType as ScopeType,
+      scopeType,
       useSitemap: this.formState.useSitemap,
       failOnFailedSeed: false,
       failOnContentCheck: this.formState.failOnContentCheck,
