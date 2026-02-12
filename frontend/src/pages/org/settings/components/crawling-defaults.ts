@@ -173,7 +173,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           type="number"
           inputmode="numeric"
           label=${msg("Page Load Timeout")}
-          value=${ifDefined(orgDefaults.pageLoadTimeout)}
+          value=${ifDefined(orgDefaults.pageLoadTimeout ?? undefined)}
           placeholder=${defaultLabel(this.defaults.pageLoadTimeoutSeconds)}
           min="0"
         >
@@ -187,7 +187,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           type="number"
           inputmode="numeric"
           label=${msg("Delay After Page Load")}
-          value=${ifDefined(orgDefaults.postLoadDelay)}
+          value=${ifDefined(orgDefaults.postLoadDelay ?? undefined)}
           placeholder=${defaultLabel(0)}
           min="0"
         >
@@ -201,7 +201,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           type="number"
           inputmode="numeric"
           label=${msg("Behavior Timeout")}
-          value=${ifDefined(orgDefaults.behaviorTimeout)}
+          value=${ifDefined(orgDefaults.behaviorTimeout ?? undefined)}
           placeholder=${defaultLabel(this.defaults.behaviorTimeoutSeconds)}
           min="0"
         >
@@ -215,7 +215,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           type="number"
           inputmode="numeric"
           label=${msg("Delay Before Next Page")}
-          value=${ifDefined(orgDefaults.pageExtraDelay)}
+          value=${ifDefined(orgDefaults.pageExtraDelay ?? undefined)}
           placeholder=${defaultLabel(0)}
           min="0"
         >
@@ -229,7 +229,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     const browserSettings = {
       browserProfile: html`
         <btrix-select-browser-profile
-          profileId=${ifDefined(orgDefaults.profileid)}
+          profileId=${ifDefined(orgDefaults.profileid ?? undefined)}
           size="small"
         ></btrix-select-browser-profile>
       `,
@@ -245,7 +245,9 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
         crawlerChannels && crawlerChannels.length > 1
           ? html`
               <btrix-select-crawler
-                crawlerChannel=${ifDefined(orgDefaults.crawlerChannel)}
+                crawlerChannel=${ifDefined(
+                  orgDefaults.crawlerChannel ?? undefined,
+                )}
                 size="small"
               ></btrix-select-crawler>
             `
@@ -262,7 +264,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           size="small"
           name="userAgent"
           label=${msg("User Agent")}
-          value=${ifDefined(orgDefaults.userAgent)}
+          value=${ifDefined(orgDefaults.userAgent ?? undefined)}
           autocomplete="off"
           placeholder=${msg("Default: Browser User Agent")}
         >
@@ -354,7 +356,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
 
     const values = serialize(form) as Record<string, string>;
     const parseNumber = (value: string) => (value ? Number(value) : undefined);
-    const parsedValues: CrawlingDefaults = {
+    const parsedValues: Partial<CrawlingDefaults> = {
       crawlTimeout: values.crawlTimeoutMinutes
         ? Number(values.crawlTimeoutMinutes) * 60
         : undefined,
@@ -366,13 +368,14 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       behaviorTimeout: parseNumber(values.behaviorTimeoutSeconds),
       pageExtraDelay: parseNumber(values.pageExtraDelaySeconds),
       blockAds: values.blockAds === "on",
-      profileid: this.browserProfileSelect?.value || undefined,
+      profileid: this.browserProfileSelect?.value ?? undefined,
       crawlerChannel: values.crawlerChannel,
-      proxyId: this.proxySelect?.value || undefined,
+      proxyId: this.proxySelect?.value ?? undefined,
       userAgent: values.userAgent,
-      lang: this.languageSelect?.value || undefined,
+      lang: this.languageSelect?.value ?? undefined,
       exclude: this.exclusionTable?.exclusions?.filter((v) => v) || [],
       customBehaviors: this.customBehaviorsTable?.value || [],
+      dedupeCollId: values.dedupeCollectionId || "",
     };
 
     // Set null or empty strings to undefined
@@ -385,7 +388,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       parsedValues,
     );
 
-    crawlingDefaultsSchema.parse(params);
+    crawlingDefaultsSchema.partial().parse(params);
 
     this.submitButton?.setAttribute("loading", "true");
 
