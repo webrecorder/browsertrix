@@ -88,6 +88,12 @@ export const infoTextFor = {
   useRobots: msg(
     `Check for a robots.txt file for each host and skip any disallowed pages.`,
   ),
+  dedupeType: msg(
+    "Enable deduplication to prevent content that has already been crawled from being stored.",
+  ),
+  dedupeCollection: msg(
+    "All crawls of this workflow will be deduplicated against this collection.",
+  ),
 } as const satisfies Partial<Record<Field, string | TemplateResult>>;
 
 export default infoTextFor;

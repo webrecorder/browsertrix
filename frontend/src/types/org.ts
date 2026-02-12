@@ -34,20 +34,21 @@ const YEAR_MONTH_REGEX = /^\d{4}-\d{2}$/;
 export const yearMonthSchema = z.string().regex(YEAR_MONTH_REGEX);
 
 export const crawlingDefaultsSchema = z.object({
-  crawlTimeout: z.number().optional(),
-  maxCrawlSize: z.number().optional(),
-  pageLoadTimeout: z.number().optional(),
-  postLoadDelay: z.number().optional(),
-  behaviorTimeout: z.number().optional(),
-  pageExtraDelay: z.number().optional(),
-  blockAds: z.boolean().optional(),
-  profileid: z.string().optional(),
-  crawlerChannel: z.string().optional(),
-  proxyId: z.string().optional(),
-  lang: z.string().optional(),
-  userAgent: z.string().optional(),
+  crawlTimeout: z.number().nullable(),
+  maxCrawlSize: z.number().nullable(),
+  pageLoadTimeout: z.number().nullable(),
+  postLoadDelay: z.number().nullable(),
+  behaviorTimeout: z.number().nullable(),
+  pageExtraDelay: z.number().nullable(),
+  blockAds: z.boolean().nullable(),
+  profileid: z.string().nullable(),
+  crawlerChannel: z.string().nullable(),
+  proxyId: z.string().nullable(),
+  lang: z.string().nullable(),
+  userAgent: z.string().nullable(),
   exclude: z.array(z.string()),
   customBehaviors: z.array(z.string()),
+  dedupeCollId: z.string().nullable(),
 });
 export type CrawlingDefaults = z.infer<typeof crawlingDefaultsSchema>;
 
