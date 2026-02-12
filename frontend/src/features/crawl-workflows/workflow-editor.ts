@@ -2546,7 +2546,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       this.formState.dedupeType === DedupeType.Collection &&
       (dedupeId
         ? !isEqual(
-            this.initialWorkflow?.autoAddCollections,
+            this.initialWorkflow?.autoAddCollections.filter(
+              (id) => id !== dedupeId,
+            ),
             this.formState.autoAddCollections.filter((id) => id !== dedupeId),
           )
         : newDedupeCollectionName &&
