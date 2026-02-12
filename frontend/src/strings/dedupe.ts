@@ -1,8 +1,8 @@
 import { msg } from "@lit/localize";
 
-import type { FormState } from "@/utils/workflow";
+import type { DedupeType } from "@/utils/workflow";
 
-export const dedupeTypeLabelFor: Record<FormState["dedupeType"], string> = {
+export const dedupeTypeLabelFor: Record<DedupeType, string> = {
   collection: msg("Deduplicate using a collection"),
   none: msg("No deduplication"),
 };

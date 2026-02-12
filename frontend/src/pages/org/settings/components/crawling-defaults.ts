@@ -1,12 +1,12 @@
 import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
-import type { SlButton } from "@shoelace-style/shoelace";
+import type { SlButton, SlRadio } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { LanguageCode } from "iso-639-1";
 import { css, html, type TemplateResult } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
-import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import type { Entries } from "type-fest";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -27,11 +27,13 @@ import { columns, type Cols } from "@/layouts/columns";
 import { infoTextFor } from "@/strings/crawl-workflows/infoText";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import sectionStrings from "@/strings/crawl-workflows/section";
+import { dedupeTypeLabelFor } from "@/strings/dedupe";
 import { crawlingDefaultsSchema, type CrawlingDefaults } from "@/types/org";
 import { formValidator } from "@/utils/form";
 import {
   appDefaults,
   BYTES_PER_GB,
+  DedupeType,
   defaultLabel,
   getServerDefaults,
   type FormState,
@@ -70,6 +72,9 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
 
   @state()
   private defaults: WorkflowDefaults = appDefaults;
+
+  @state()
+  private dedupeType?: DedupeType;
 
   @query("btrix-queue-exclusion-table")
   exclusionTable?: QueueExclusionTable | null;
@@ -276,13 +281,31 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
             orgDefaults.lang ? (orgDefaults.lang as LanguageCode) : undefined,
           )}
           size="small"
-          @on-change=${(e: CustomEvent<{ value: string | undefined }>) => {
-            console.log(e.detail.value);
-          }}
         >
           <span slot="label">${msg("Language")}</span>
         </btrix-language-select>
       `,
+    };
+
+    const deduplication = {
+      dedupeType: html`<sl-radio-group
+          label=${labelFor.dedupeType}
+          name="dedupeType"
+          value=${this.dedupeType ||
+          (orgDefaults.dedupeCollId ? DedupeType.Collection : DedupeType.None)}
+          @sl-change=${(e: Event) => {
+            this.dedupeType = (e.target as SlRadio)
+              .value as FormState["dedupeType"];
+          }}
+        >
+          <sl-radio value=${DedupeType.None}>
+            ${dedupeTypeLabelFor[DedupeType.None]}
+          </sl-radio>
+          <sl-radio value=${DedupeType.Collection}>
+            ${dedupeTypeLabelFor[DedupeType.Collection]}
+          </sl-radio>
+        </sl-radio-group>
+        ${when(this.dedupeType === DedupeType.Collection, () => html`TODO`)} `,
     };
 
     return {
@@ -290,6 +313,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       limits,
       behaviors,
       browserSettings,
+      deduplication,
     } as const satisfies Partial<Record<SectionsEnum, Partial<Field>>>;
   }
 
@@ -297,24 +321,22 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     return html`
       <div class="rounded-lg border">
         <form @submit=${this.onSubmit}>
-          ${guard([this.defaults, this.org], () =>
-            Object.entries(this.fields).map(([sectionName, fields]) => {
-              const cols: Cols = [];
+          ${Object.entries(this.fields).map(([sectionName, fields]) => {
+            const cols: Cols = [];
 
-              (Object.entries(fields) as Entries<Field>).forEach(
-                ([fieldName, field]) => {
-                  if (field) {
-                    cols.push([
-                      field,
-                      infoTextFor[fieldName as keyof typeof infoTextFor],
-                    ]);
-                  }
-                },
-              );
+            (Object.entries(fields) as Entries<Field>).forEach(
+              ([fieldName, field]) => {
+                if (field) {
+                  cols.push([
+                    field,
+                    infoTextFor[fieldName as keyof typeof infoTextFor],
+                  ]);
+                }
+              },
+            );
 
-              return section(sectionName as SectionsEnum, cols);
-            }),
-          )}
+            return section(sectionName as SectionsEnum, cols);
+          })}
           <footer class="flex justify-end border-t px-4 py-3">
             <sl-button type="submit" size="small" variant="primary">
               ${msg("Save Changes")}

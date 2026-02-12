@@ -113,6 +113,11 @@ export function defaultSeedListFileName() {
     .replace(/[^0-9]/g, "")}.${SEED_LIST_FILE_EXT}`;
 }
 
+export enum DedupeType {
+  None = "none",
+  Collection = "collection",
+}
+
 export type FormState = {
   primarySeedUrl: string;
   urlList: string;
@@ -173,7 +178,7 @@ export type FormState = {
    * Custom schedule in cron format.
    */
   scheduleCustom?: string;
-  dedupeType: "none" | "collection";
+  dedupeType: DedupeType;
   dedupeCollectionId: string | null;
   dedupeCollectionName: string | null;
   jobName: WorkflowParams["name"];
@@ -239,7 +244,7 @@ export const getDefaultFormState = (): FormState => ({
     minute: 0,
     period: "AM",
   },
-  dedupeType: "none",
+  dedupeType: DedupeType.None,
   dedupeCollectionId: null,
   dedupeCollectionName: null,
   jobName: "",
@@ -348,7 +353,7 @@ export function getInitialFormState(params: {
   }
 
   if (params.initialWorkflow.dedupeCollId) {
-    formState.dedupeType = "collection";
+    formState.dedupeType = DedupeType.Collection;
     formState.dedupeCollectionId = params.initialWorkflow.dedupeCollId;
   }
 
