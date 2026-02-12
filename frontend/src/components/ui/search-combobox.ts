@@ -84,7 +84,7 @@ export class SearchCombobox<T> extends TailwindElement {
   private searchResultsOpen = false;
 
   @query("sl-input")
-  private readonly input!: SlInput;
+  public readonly input!: SlInput;
 
   protected fuse = new Fuse<T>(this.searchOptions, {
     ...defaultFuseOptions,

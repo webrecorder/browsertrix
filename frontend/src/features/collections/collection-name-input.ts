@@ -22,10 +22,15 @@ import {
 } from "@/types/collection";
 import appState from "@/utils/state";
 
-export type CollectionNameInputChangeEvent = BtrixChangeEvent<{
-  id: string | null;
-  name: string;
-}>;
+export type CollectionNameInputLoadedEvent =
+  BtrixChangeEvent<Collection | null>;
+
+export type CollectionNameInputChangeEvent = BtrixChangeEvent<
+  | Collection
+  | {
+      name: string;
+    }
+>;
 
 /**
  * Combination input for an existing or new collection name.
@@ -35,6 +40,8 @@ export type CollectionNameInputChangeEvent = BtrixChangeEvent<{
  * @attr placeholder
  * @attr size
  * @attr disableSearch
+ * @fires btrix-change
+ * @fires btrix-loaded
  */
 @customElement("btrix-collection-name-input")
 @localized()
@@ -112,8 +119,7 @@ export class CollectionNameInput extends WithSearchOrgContext(
           "btrix-change",
           {
             detail: {
-              value: {
-                id: this.#collection?.id || null,
+              value: this.#collection || {
                 name: value,
               },
             },
@@ -154,6 +160,17 @@ export class CollectionNameInput extends WithSearchOrgContext(
       if (this.#collection) {
         this.searchByValue = this.#collection.name;
       }
+
+      await this.updateComplete;
+
+      this.dispatchEvent(
+        new CustomEvent<CollectionNameInputLoadedEvent["detail"]>(
+          "btrix-loaded",
+          {
+            detail: { value: this.#collection || null },
+          },
+        ),
+      );
     } catch (err) {
       console.debug(err);
     }
