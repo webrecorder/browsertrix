@@ -83,7 +83,7 @@ export class SelectCrawler extends LiteElement {
             </sl-option>`,
         )}
         <div slot="help-text">
-          ${msg("Version:")}
+          ${msg("Current version")}:
           ${selectedCrawler
             ? html`
                 <span class="font-monospace leading-tight"

@@ -26,6 +26,7 @@ import { columns, type Cols } from "@/layouts/columns";
 import { infoTextFor } from "@/strings/crawl-workflows/infoText";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import sectionStrings from "@/strings/crawl-workflows/section";
+import { CrawlerChannelImage } from "@/types/crawler";
 import { crawlingDefaultsSchema, type CrawlingDefaults } from "@/types/org";
 import { formValidator } from "@/utils/form";
 import {
@@ -244,7 +245,8 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
         crawlerChannels && crawlerChannels.length > 1
           ? html`
               <btrix-select-crawler
-                crawlerChannel=${ifDefined(orgDefaults.crawlerChannel)}
+                crawlerChannel=${orgDefaults.crawlerChannel ??
+                CrawlerChannelImage.Default}
                 size="small"
               ></btrix-select-crawler>
             `
