@@ -5,7 +5,6 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { LanguageCode } from "iso-639-1";
 import { css, html, type TemplateResult } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
-import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import type { Entries } from "type-fest";
 
@@ -295,24 +294,22 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     return html`
       <div class="rounded-lg border">
         <form @submit=${this.onSubmit}>
-          ${guard([this.defaults, this.org], () =>
-            Object.entries(this.fields).map(([sectionName, fields]) => {
-              const cols: Cols = [];
+          ${Object.entries(this.fields).map(([sectionName, fields]) => {
+            const cols: Cols = [];
 
-              (Object.entries(fields) as Entries<Field>).forEach(
-                ([fieldName, field]) => {
-                  if (field) {
-                    cols.push([
-                      field,
-                      infoTextFor[fieldName as keyof typeof infoTextFor],
-                    ]);
-                  }
-                },
-              );
+            (Object.entries(fields) as Entries<Field>).forEach(
+              ([fieldName, field]) => {
+                if (field) {
+                  cols.push([
+                    field,
+                    infoTextFor[fieldName as keyof typeof infoTextFor],
+                  ]);
+                }
+              },
+            );
 
-              return section(sectionName as SectionsEnum, cols);
-            }),
-          )}
+            return section(sectionName as SectionsEnum, cols);
+          })}
           <footer class="flex justify-end border-t px-4 py-3">
             <sl-button type="submit" size="small" variant="primary">
               ${msg("Save Changes")}
