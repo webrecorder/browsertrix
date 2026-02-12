@@ -145,6 +145,10 @@ export class WorkflowsNew extends BtrixElement {
             maxCrawlSize: org.crawlingDefaults?.maxCrawlSize,
             crawlerChannel: org.crawlingDefaults?.crawlerChannel ?? undefined,
             proxyId: org.crawlingDefaults?.proxyId,
+            dedupeCollId: org.crawlingDefaults?.dedupeCollId,
+            autoAddCollections: org.crawlingDefaults?.dedupeCollId
+              ? [org.crawlingDefaults.dedupeCollId]
+              : [],
           } satisfies PartialDeep<WorkflowParams>,
           this.initialWorkflow || {},
         );
