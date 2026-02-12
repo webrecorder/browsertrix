@@ -91,6 +91,9 @@ export const infoTextFor = {
   customIncludeList: msg(
     "Only crawl the page if the URL matches a regular expression pattern listed here.",
   ),
+  dedupeType: msg(
+    "Enable deduplication to prevent content that has already been crawled from being stored.",
+  ),
 } as const satisfies Partial<Record<Field, string | TemplateResult>>;
 
 export default infoTextFor;

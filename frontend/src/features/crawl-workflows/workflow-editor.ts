@@ -95,6 +95,7 @@ import { infoTextFor } from "@/strings/crawl-workflows/infoText";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
+import { dedupeTypeLabelFor } from "@/strings/dedupe";
 import { AnalyticsTrackEvent } from "@/trackEvents";
 import { APIErrorDetail } from "@/types/api";
 import {
@@ -133,6 +134,7 @@ import {
   apiScopeType,
   appDefaults,
   BYTES_PER_GB,
+  DedupeType,
   DEFAULT_AUTOCLICK_SELECTOR,
   DEFAULT_SELECT_LINKS,
   defaultLabel,
@@ -402,11 +404,6 @@ export class WorkflowEditor extends BtrixElement {
     weekly: msg("Weekly"),
     monthly: msg("Monthly"),
     "": "",
-  };
-
-  private readonly dedupeTypeLabels: Record<FormState["dedupeType"], string> = {
-    collection: msg("Deduplicate using a collection"),
-    none: msg("No deduplication"),
   };
 
   @query(`form[name="${formName}"]`)
@@ -2513,7 +2510,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
             dedupeCollectionName: null,
           };
 
-          if (dedupeType === "none" && this.formState.dedupeCollectionId) {
+          if (
+            dedupeType === DedupeType.None &&
+            this.formState.dedupeCollectionId
+          ) {
             formState.autoAddCollections = without(
               [this.formState.dedupeCollectionId],
               this.formState.autoAddCollections,
@@ -2523,13 +2523,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
           this.updateFormState(formState, true);
         }}
       >
-        <sl-radio value="none">${this.dedupeTypeLabels["none"]}</sl-radio>
-        <sl-radio value="collection"
-          >${this.dedupeTypeLabels["collection"]}</sl-radio
-        >
+        <sl-radio value=${DedupeType.None}>
+          ${dedupeTypeLabelFor[DedupeType.None]}
+        </sl-radio>
+        <sl-radio value=${DedupeType.Collection}>
+          ${dedupeTypeLabelFor[DedupeType.Collection]}
+        </sl-radio>
 
         ${when(
-          this.formState.dedupeType === "none" &&
+          this.formState.dedupeType === DedupeType.None &&
             this.initialWorkflow?.dedupeCollId,
           () => html`
             <div slot="help-text" class="mt-2">
@@ -2552,13 +2554,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
         )}
       </sl-radio-group>
     `)}
-    ${this.renderHelpTextCol(
-      msg(
-        `Enable deduplication to prevent content that has already been crawled from being stored.`,
-      ),
-    )}
+    ${this.renderHelpTextCol(infoTextFor.dedupeType)}
     ${when(
-      this.formState.dedupeType === "collection",
+      this.formState.dedupeType === DedupeType.Collection,
       this.renderDedupeCollection,
     )}`;
   }
@@ -2645,7 +2643,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private renderCollections() {
     const newDedupeCollectionName =
-      this.formState.dedupeType === "collection" &&
+      this.formState.dedupeType === DedupeType.Collection &&
       !this.formState.dedupeCollectionId &&
       this.formState.dedupeCollectionName;
     const showDedupeWarning =
@@ -3393,7 +3391,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     // Create new collection if needed
     if (
-      this.formState.dedupeType === "collection" &&
+      this.formState.dedupeType === DedupeType.Collection &&
       this.formState.dedupeCollectionName &&
       !this.formState.dedupeCollectionId
     ) {
