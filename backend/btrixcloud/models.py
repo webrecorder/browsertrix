@@ -2292,7 +2292,7 @@ def make_feature_flags_partial(model_cls: type[BaseModel]) -> type[BaseModel]:
             None,
         )
 
-    return create_model(
+    return create_model(  # type: ignore
         f"{model_cls.__name__}Partial",
         **new_fields,
     )
