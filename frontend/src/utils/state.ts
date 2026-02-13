@@ -7,6 +7,7 @@ import { locked, options, transaction, use } from "lit-shared-state";
 import { persist } from "./persist";
 
 import { authSchema, type Auth } from "@/types/auth";
+import type { FeatureFlags } from "@/types/featureFlags";
 import type { OrgData } from "@/types/org";
 import {
   userInfoSchema,
@@ -82,6 +83,11 @@ export function makeAppStateService() {
       if (userOrg) return isCrawler(userOrg.role);
       return false;
     }
+
+    readonly featureFlags = {
+      has: (flag: FeatureFlags) => this.org?.featureFlags[flag] ?? false,
+      excludes: (flag: FeatureFlags) => !this.featureFlags.has(flag),
+    } as const;
   }
 
   const appState = new AppState();
