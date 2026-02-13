@@ -777,12 +777,12 @@ class OrgOps(BaseOrgs):
     async def update_feature_flags(
         self,
         org: Organization,
-        feature_flags: FeatureFlagsPartial,
+        feature_flags: FeatureFlagsPartial,  # type: ignore
         session: AsyncIOMotorClientSession | None = None,
     ):
         """Update organization feature flag"""
         update = {"$set": {}}
-        for feature, enabled in feature_flags.model_dump(exclude_none=True).items():
+        for feature, enabled in feature_flags.model_dump(exclude_none=True).items():  # type: ignore
             update["$set"][f"featureFlags.{feature}"] = enabled
         await self.orgs.find_one_and_update({"_id": org.id}, update, session=session)
 
@@ -1807,7 +1807,7 @@ def init_orgs_api(
         "/feature-flags", tags=["organizations"], response_model=UpdatedResponse
     )
     async def update_feature_flags(
-        feature_flags: FeatureFlagsPartial,
+        feature_flags: FeatureFlagsPartial,  # type: ignore
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
