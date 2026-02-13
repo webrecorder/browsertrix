@@ -39,4 +39,6 @@ export class BtrixElement extends TailwindElement {
   protected get org() {
     return this.appState.org;
   }
+
+  protected readonly featureFlags = this.appState.featureFlags;
 }
