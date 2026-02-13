@@ -2286,8 +2286,10 @@ def make_feature_flags_partial(model_cls: type[BaseModel]) -> type[BaseModel]:
         # Create a new field that's bool | None with the same description
         new_fields[f_name] = (
             Annotated[
-                bool | None,
-                Field(description=f_dct.get("description"), default=None),
+                (
+                    bool | None,
+                    Field(description=f_dct.get("description"), default=None),
+                )
             ],
             None,
         )
