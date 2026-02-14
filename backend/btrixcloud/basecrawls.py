@@ -170,6 +170,7 @@ class BaseCrawlOps:
         skip_resources=False,
         headers: Optional[dict] = None,
         cid: Optional[UUID] = None,
+        include_dependencies=True,
     ) -> CrawlOutWithResources:
         """Get crawl data for api output"""
         res = await self.get_crawl_raw(crawlid, org, type_)
@@ -208,13 +209,24 @@ class BaseCrawlOps:
 
         crawl = CrawlOutWithResources.from_dict(res)
 
+        if not org:
+            org = await self.orgs.get_org_by_id(crawl.oid)
+
         if not skip_resources:
             crawl = await self._resolve_crawl_refs(crawl, org, files)
             if crawl.config and crawl.config.seeds:
                 crawl.config.seeds = None
 
-        if not org:
-            org = await self.orgs.get_org_by_id(crawl.oid)
+            # add dependencies
+            if crawl.requiresCrawls and include_dependencies:
+                all_req_crawls = await self.get_all_dependency_crawls(crawl.id)
+                if all_req_crawls:
+                    match = {"_id": {"$in": all_req_crawls}}
+                    resources, _ = await self.get_presigned_files(match, org)
+                    if not crawl.resources:
+                        crawl.resources = resources
+                    else:
+                        crawl.resources.extend(resources)
 
         crawl.storageQuotaReached = self.orgs.storage_quota_reached(org)
         crawl.execMinutesQuotaReached = self.orgs.exec_mins_quota_reached(org)
@@ -922,6 +934,26 @@ class BaseCrawlOps:
             crawls.append(crawl)
 
         return crawls, total
+
+    async def get_all_dependency_crawls(self, crawl_id: str) -> list[str]:
+        """get flat list of all crawl dependencies using mongo graphLookup aggregation"""
+        aggregate = [
+            {"$match": {"_id": crawl_id}},
+            {
+                "$graphLookup": {
+                    "from": "crawls",
+                    "startWith": "$requiresCrawls",
+                    "connectFromField": "requiresCrawls",
+                    "connectToField": "_id",
+                    "as": "allReq",
+                }
+            },
+            {"$project": {"allReqArray": "$allReq._id"}},
+        ]
+
+        cursor = self.crawls.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        return results[0]["allReqArray"]
 
     async def delete_crawls_all_types(
         self,
