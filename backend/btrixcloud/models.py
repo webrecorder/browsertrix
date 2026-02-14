@@ -1591,7 +1591,7 @@ class CrawlOutWithResources(CrawlOut):
 ### COLLECTIONS ###
 
 TYPE_DEDUPE_INDEX_STATES = Literal[
-    "initing", "importing", "ready", "purging", "idle", "saving", "crawling"
+    "initing", "importing", "ready", "purging", "idle", "saving", "saved", "crawling"
 ]
 DEDUPE_INDEX_STATES = get_args(TYPE_DEDUPE_INDEX_STATES)
 

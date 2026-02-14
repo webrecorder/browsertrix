@@ -142,21 +142,26 @@ spec:
             - -c
             - "res=$(redis-cli ping); [[ $res = 'PONG' ]]"
 
-  initContainers:
 {% if save_dump %}
     - name: save
       image: rclone/rclone:latest
-
       command: ["sh", "-c"]
       args:
         - |
-          echo "Waiting until redis is done";
-          while [ ! -f /tmp/done ]; do 
-            sleep 1;
-          done;
+          # wait for SIGUSR1
+          trap ':' SIGUSR1
+
+          echo "Waiting for signal (SIGUSR1) when pod is done..."
+
+          sleep 1000000 &
+          sleep_pid=$!
+
+          wait $sleep_pid
+
+          # ignore any future signals
+          trap "" SIGUSR1
 
           set -e
-
 
         {% if use_kvrocks %}
           if [ ! -d /data/{{ local_file_src }} ]; then
@@ -168,10 +173,13 @@ spec:
 
           set -o pipefail
 
-          until tar cvfz - . | tee >(sha256sum > /tmp/hash.txt) | tee >(wc -c > /tmp/size.txt) | rclone --config '' rcat remote:{{ remote_file_path }} --s3-chunk-size 100M; do
+          until tar cvfz - . | tee >(sha256sum > /tmp/hash.txt) | tee >(wc -c > /tmp/size.txt) | rclone --config '' rcat remote:{{ remote_file_path }}.tmp --s3-chunk-size 100M; do
             echo "retrying upload..."
             sleep 1;
           done
+
+          # move to final location after upload, just in case
+          rclone moveto --config '' remote:{{ remote_file_path }}.tmp remote:{{ remote_file_path }}
 
         {% else %}
           if [ ! -f /data/{{ local_file_src }} ]; then
@@ -191,14 +199,6 @@ spec:
 
           echo ""
           echo "STATS: (size,hash): $size,$hash"
-
-          rm /tmp/done
-
-      restartPolicy: Always
-      lifecycle:
-        preStop:
-          exec:
-            command: ["touch", "/tmp/done"]
 
       volumeMounts: &rclone_volumes
         - name: redis-data
@@ -244,6 +244,7 @@ spec:
           cpu: "50m"
 
 {% if load_dump %}
+  initContainers:
     - name: load
       image: rclone/rclone:latest
 
