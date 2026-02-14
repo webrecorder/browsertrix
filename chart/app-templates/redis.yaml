@@ -104,7 +104,7 @@ spec:
       imagePullPolicy: {{ redis_image_pull_policy }}
 
       {% if use_kvrocks %}
-      args: ["-c", "/redis-conf/kvrocks.conf", "--dir", "/data", "--appendonly", "{{ 'no' if load_dump else 'yes' }}"]
+      args: ["-c", "/redis-conf/kvrocks.conf", "--dir", "/data"]
       {% else %}
       args: ["/redis-conf/redis.conf", "--appendonly", "{{ 'no' if load_dump else 'yes' }}"]
       {% endif %}
@@ -142,21 +142,26 @@ spec:
             - -c
             - "res=$(redis-cli ping); [[ $res = 'PONG' ]]"
 
-  initContainers:
 {% if save_dump %}
     - name: save
       image: rclone/rclone:latest
-
       command: ["sh", "-c"]
       args:
         - |
-          echo "Waiting until redis is done";
-          while [ ! -f /tmp/done ]; do 
-            sleep 1;
-          done;
+          # wait for SIGUSR1
+          trap ':' SIGUSR1
+
+          echo "Waiting for signal (SIGUSR1) when pod is done..."
+
+          sleep 1000000 &
+          sleep_pid=$!
+
+          wait $sleep_pid
+
+          # ignore any future signals
+          trap "" SIGUSR1
 
           set -e
-
 
         {% if use_kvrocks %}
           if [ ! -d /data/{{ local_file_src }} ]; then
@@ -168,10 +173,13 @@ spec:
 
           set -o pipefail
 
-          until tar cvfz - . | tee >(sha256sum > /tmp/hash.txt) | tee >(wc -c > /tmp/size.txt) | rclone --config '' rcat remote:{{ remote_file_path }} --s3-chunk-size 100M; do
+          until tar cvfz - . | tee >(sha256sum > /tmp/hash.txt) | tee >(wc -c > /tmp/size.txt) | rclone --config '' rcat remote:{{ remote_file_path }}.tmp --s3-chunk-size 64M --s3-upload-concurrency 4; do
             echo "retrying upload..."
             sleep 1;
           done
+
+          # move to final location after upload, just in case
+          rclone moveto --config '' remote:{{ remote_file_path }}.tmp remote:{{ remote_file_path }}
 
         {% else %}
           if [ ! -f /data/{{ local_file_src }} ]; then
@@ -179,7 +187,7 @@ spec:
             exit 1
           fi
 
-          until rclone -vv copyto --checksum /data/{{ local_file_src }} remote:{{ remote_file_path }} --s3-chunk-size 100M; do
+          until rclone -vv copyto --checksum /data/{{ local_file_src }} remote:{{ remote_file_path }} --s3-chunk-size 64M --s3-upload-concurrency 4; do
             echo "retrying upload..."
             sleep 1;
           done
@@ -191,14 +199,6 @@ spec:
 
           echo ""
           echo "STATS: (size,hash): $size,$hash"
-
-          rm /tmp/done
-
-      restartPolicy: Always
-      lifecycle:
-        preStop:
-          exec:
-            command: ["touch", "/tmp/done"]
 
       volumeMounts: &rclone_volumes
         - name: redis-data
@@ -237,13 +237,14 @@ spec:
 
       resources: &rclone_resources
         limits:
-          memory: "200Mi"
+          memory: "2000Mi"
 
         requests:
-          memory: "200Mi"
+          memory: "300Mi"
           cpu: "50m"
 
 {% if load_dump %}
+  initContainers:
     - name: load
       image: rclone/rclone:latest
 
@@ -252,11 +253,33 @@ spec:
         - |
           set -e
 
-        {% if use_kvrocks %}
-          mkdir -p /data/{{ local_file_dest }}
-          cd /data/{{ local_file_dest }}
+          # if remote file doesn't exist, just return success (nothing to load)
+          if ! rclone lsf remote:{{ remote_file_path }} > /dev/null 2>&1; then
+            echo "Remote {{ remote_file_path }} does not exist, nothing to load, done"
+            exit 0
+          fi
 
-          rclone --config "" cat remote:{{ remote_file_path }} | tar xzf -
+        {% if use_kvrocks %}
+          # only run if target dir doesn't exist yet
+          if [ ! -d "/data/{{ local_file_dest }}" ]; then
+
+            # remove existing + create new empty tmp dir
+            rm -rf /data/{{ local_file_dest }}.tmp
+            mkdir -p /data/{{ local_file_dest }}.tmp
+
+            cd /data/{{ local_file_dest }}.tmp
+
+            echo "Downloading from {{ remote_file_path }}"
+
+            rclone --config "" cat remote:{{ remote_file_path }} | tar xzf -
+
+            # move to final dest only if tar extract succeeds
+            mv /data/{{ local_file_dest }}.tmp /data/{{ local_file_dest }}
+
+            echo "Downloaded to /data/{{ local_file_dest }} successfully!"
+          else
+            echo "/data/{{ local_file_dest }} already present (likely pod restarted), not overwriting"
+          fi
 
         {% else %}
           rclone --config "" copyto remote:{{ remote_file_path }} /data/{{ local_file_dest }}
