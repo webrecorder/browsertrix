@@ -3,7 +3,7 @@ Crawl-related models and types
 """
 
 # pylint: disable=invalid-name, too-many-lines
-
+from __future__ import annotations
 from datetime import datetime
 from enum import Enum, IntEnum
 from uuid import UUID
@@ -13,7 +13,7 @@ import mimetypes
 import math
 import os
 
-from typing import Optional, List, Dict, Union, Literal, Any, get_args
+from typing import Optional, List, Dict, Self, Union, Literal, Any, get_args, get_origin
 from typing_extensions import Annotated
 
 from pydantic import (
@@ -22,6 +22,8 @@ from pydantic import (
     HttpUrl as HttpUrlNonStr,
     AnyHttpUrl as AnyHttpUrlNonStr,
     EmailStr as CasedEmailStr,
+    create_model,
+    model_validator,
     validate_email,
     RootModel,
     BeforeValidator,
@@ -2228,6 +2230,110 @@ class UserOut(UserOutNoId):
 
 
 # ============================================================================
+# Feature Flags
+# ============================================================================
+
+
+class ValidatedFeatureFlags(BaseModel):
+    """Base class for feature flags with validation."""
+
+    @model_validator(mode="after")
+    def validate_all_fields(self) -> Self:
+        """Ensure all fields have descriptions and are bools."""
+        missing_descriptions = []
+        non_bool_fields = []
+
+        for field_name, field_info in self.model_fields.items():
+            # Check for missing descriptions
+            if not field_info.description:
+                missing_descriptions.append(field_name)
+
+            # Check if field type is bool (handles Annotated[bool, ...])
+            annotation = field_info.annotation
+            if get_origin(annotation) is Annotated:
+                actual_type = get_args(annotation)[0]
+            else:
+                actual_type = annotation
+
+            if actual_type is not bool:
+                non_bool_fields.append(f"{field_name} (type: {actual_type})")
+
+        if missing_descriptions:
+            raise ValueError(
+                f"The following fields are missing descriptions: {', '.join(missing_descriptions)}"
+            )
+
+        if non_bool_fields:
+            raise ValueError(
+                f"The following fields must be bool type: {', '.join(non_bool_fields)}"
+            )
+
+        return self
+
+
+def make_feature_flags_partial(model_cls: type[BaseModel]) -> type[BaseModel]:
+    """Return a partial model for feature flags without validation inheritance.
+
+    This creates a model where all fields are optional (bool | None) but doesn't
+    inherit from the original model to avoid the ValidatedFeatureFlags validator
+    that checks for exact bool types.
+    """
+    new_fields = {}
+
+    for f_name, f_info in model_cls.model_fields.items():
+        f_dct = f_info.asdict()  # type: ignore
+
+        # Create a new field that's bool | None with the same description
+        new_fields[f_name] = (
+            Annotated[
+                (
+                    bool | None,
+                    Field(description=f_dct.get("description"), default=None),  # type: ignore
+                )
+            ],
+            None,
+        )
+
+    return create_model(  # type: ignore
+        f"{model_cls.__name__}Partial",
+        **new_fields,
+    )
+
+
+# ============================================================================
+# Feature Flags - Edit here
+# ============================================================================
+
+
+class FeatureFlags(ValidatedFeatureFlags):
+    """Feature flags for an organization"""
+
+    dedupeEnabled: bool = Field(
+        description="Enable deduplication options for an org. Intended for beta-testing dedupe.",
+        default=False,
+    )
+
+
+# ============================================================================
+
+
+FeatureFlagsPartial = make_feature_flags_partial(FeatureFlags)
+
+
+class FeatureFlagOut(BaseModel):
+    """Output model for feature flags"""
+
+    model_config = ConfigDict(use_attribute_docstrings=True)
+
+    name: str
+
+    description: str
+
+    count: int
+    """Number of organizations that have this feature flag enabled."""
+
+
+# ============================================================================
 # ORGS
 # ============================================================================
 class OrgReadOnlyOnCancel(BaseModel):
@@ -2354,6 +2460,8 @@ class OrgOut(BaseMongoModel):
     publicDescription: str = ""
     publicUrl: str = ""
 
+    featureFlags: FeatureFlags = FeatureFlags()
+
 
 # ============================================================================
 class Organization(BaseMongoModel):
@@ -2416,6 +2524,8 @@ class Organization(BaseMongoModel):
     enablePublicProfile: bool = False
     publicDescription: Optional[str] = None
     publicUrl: Optional[str] = None
+
+    featureFlags: FeatureFlags = FeatureFlags()
 
     def is_owner(self, user):
         """Check if user is owner"""

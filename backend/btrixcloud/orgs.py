@@ -22,6 +22,7 @@ from typing import (
     Literal,
     AsyncGenerator,
     Any,
+    cast,
 )
 
 from motor.motor_asyncio import (
@@ -43,6 +44,9 @@ from .models import (
     RUNNING_STATES,
     WAITING_STATES,
     BaseCrawl,
+    FeatureFlagOut,
+    FeatureFlags,
+    FeatureFlagsPartial,
     Organization,
     PlansResponse,
     StorageRef,
@@ -769,6 +773,46 @@ class OrgOps(BaseOrgs):
             except Exception as e:
                 print(f"Error updating organization quotas: {e}")
                 raise HTTPException(status_code=500, detail=str(e)) from e
+
+    async def update_feature_flags(
+        self,
+        org: Organization,
+        feature_flags: FeatureFlagsPartial,  # type: ignore
+        session: AsyncIOMotorClientSession | None = None,
+    ):
+        """Update organization feature flag"""
+        update = {"$set": {}}
+        for feature, enabled in feature_flags.model_dump(exclude_none=True).items():  # type: ignore
+            update["$set"][f"featureFlags.{feature}"] = enabled
+        await self.orgs.find_one_and_update({"_id": org.id}, update, session=session)
+
+    async def get_feature_flags(
+        self,
+        session: AsyncIOMotorClientSession | None = None,
+    ):
+        """Get feature flags, with their metadata and org counts."""
+        # get number of organizations that have each feature flag enabled
+        counts = await self.orgs.aggregate(
+            [
+                {"$match": {"featureFlags": {"$exists": True, "$ne": {}}}},
+                {"$project": {"flags": {"$objectToArray": "$featureFlags"}}},
+                {"$unwind": "$flags"},
+                {"$match": {"flags.v": True}},
+                {"$group": {"_id": "$flags.k", "count": {"$sum": 1}}},
+                {"$sort": {"_id": 1}},
+            ],
+            session=session,
+        ).to_list(None)
+        org_counts = {count["_id"]: count["count"] for count in counts}
+        # omit owner and expiry from metadata
+        return [
+            FeatureFlagOut(
+                name=name,
+                count=org_counts.get(name, 0),
+                description=cast(str, flag.description),
+            )
+            for name, flag in FeatureFlags.model_fields.items()
+        ]
 
     async def update_event_webhook_urls(
         self, org: Organization, urls: OrgWebhookUrls
@@ -1758,6 +1802,34 @@ def init_orgs_api(
         await ops.update_proxies(org, proxies)
 
         return {"updated": True}
+
+    @router.post(
+        "/feature-flags", tags=["organizations"], response_model=UpdatedResponse
+    )
+    async def update_feature_flags(
+        feature_flags: FeatureFlagsPartial,  # type: ignore
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        await ops.update_feature_flags(org, feature_flags)
+
+        return {"updated": True}
+
+    @app.get(
+        "/orgs/feature-flags",
+        tags=["organizations"],
+        response_model=list[FeatureFlagOut],
+    )
+    async def get_feature_flags(
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return await ops.get_feature_flags()
 
     @router.post("/read-only", tags=["organizations"], response_model=UpdatedResponse)
     async def update_read_only(
