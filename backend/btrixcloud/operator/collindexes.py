@@ -11,7 +11,7 @@ from uuid import UUID
 from pydantic import BaseModel
 from redis.asyncio.client import Redis
 
-from btrixcloud.utils import str_to_date, date_to_str, dt_now
+from btrixcloud.utils import str_to_date, date_to_str, dt_now, gb_storage
 from btrixcloud.models import (
     TYPE_DEDUPE_INDEX_STATES,
     DedupeIndexStats,
@@ -21,6 +21,10 @@ from btrixcloud.models import (
 
 from .models import MCSyncData, MCBaseRequest, POD, JOB, CJS, BTRIX_API
 from .baseoperator import BaseOperator
+
+
+USED_DISK_THRESHOLD = 0.75
+USED_DISK_TARGET = 0.50
 
 
 # ============================================================================
@@ -51,6 +55,10 @@ class CollIndexStatus(BaseModel):
     # redis pod states
     index: IndexPodState = IndexPodState()
 
+    storageCapacity: str = ""
+    storageUsed: str = ""
+    storageDesired: str = ""
+
 
 # ============================================================================
 class CollIndexSpec(BaseModel):
@@ -70,7 +78,6 @@ class CollIndexOperator(BaseOperator):
     def __init__(self, *args):
         super().__init__(*args)
         self.shared_params.update(self.k8s.shared_params)
-        self.shared_params["redis_storage"] = self.shared_params["dedupe_storage"]
         self.shared_params["memory"] = self.shared_params["dedupe_memory"]
         self.shared_params["cpu"] = self.shared_params["dedupe_cpu"]
 
@@ -380,11 +387,31 @@ class CollIndexOperator(BaseOperator):
             )
             return True
 
+            await self.check_disk_size(redis, status)
+
         # pylint: disable=broad-exception-caught
         except Exception as e:
             print(e)
             traceback.print_exc()
             return False
+
+    async def check_disk_size(self, redis: Redis, status: CollIndexStatus):
+        """adjust disk capacity as dedupe index grows to meet min threshold"""
+        keyspace = await redis.info("keyspace") or {}
+        if not keyspace:
+            return
+
+        capacity = float(keyspace["disk_capacity"])
+        used = float(keyspace["used_disk_size"])
+
+        status.storageCapacity = gb_storage(capacity)
+        status.storageUsed = gb_storage(used)
+
+        if used < capacity and (used / capacity) > USED_DISK_THRESHOLD:
+            status.storageDesired = gb_storage(used / USED_DISK_TARGET)
+            print(
+                f"Expanding Dedupe Index Capacity {status.storageCapacity} -> {status.storageDesired}"
+            )
 
     def get_related(self, data: MCBaseRequest):
         """return crawljobs that use this dedupe index"""
@@ -440,6 +467,8 @@ class CollIndexOperator(BaseOperator):
         params["remote_file_path"] = parts.path[1:] + self.get_index_storage_filename(
             spec.id, org
         )
+
+        params["redis_storage"] = status.storageDesired or params["dedupe_storage"]
 
         return self.load_from_yaml("redis.yaml", params)
 
