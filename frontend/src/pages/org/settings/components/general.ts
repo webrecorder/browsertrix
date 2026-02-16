@@ -6,9 +6,10 @@ import { customElement, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
-import { UPDATED_STATUS_TOAST_ID, type UpdateOrgDetail } from "../settings";
+import { UPDATED_STATUS_TOAST_ID } from "../settings";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import type { APIUser } from "@/index";
 import { columns } from "@/layouts/columns";
 import { RouteNamespace } from "@/routes";
@@ -30,9 +31,6 @@ type ProfileParams = {
   publicUrl: string;
 };
 
-/**
- * @fires btrix-update-org
- */
 @localized()
 @customElement("btrix-org-settings-general")
 export class OrgSettingsGeneral extends BtrixElement {
@@ -389,14 +387,16 @@ export class OrgSettingsGeneral extends BtrixElement {
     }
 
     this.dispatchEvent(
-      new CustomEvent<UpdateOrgDetail>("btrix-update-org", {
-        detail: {
-          publicDescription,
-          publicUrl,
+      new CustomEvent<BtrixRequestOrgUpdate["detail"]>(
+        "btrix-request-org-update",
+        {
+          detail: {
+            org: { publicDescription, publicUrl },
+          },
+          bubbles: true,
+          composed: true,
         },
-        bubbles: true,
-        composed: true,
-      }),
+      ),
     );
   }
 

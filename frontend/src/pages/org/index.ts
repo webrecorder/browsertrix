@@ -13,7 +13,6 @@ import type { Tab as CollectionTab } from "./collection-detail/types";
 import type {
   Member,
   OrgRemoveMemberEvent,
-  UpdateOrgDetail,
   UserRoleChangeEvent,
 } from "./settings/settings";
 
@@ -30,6 +29,7 @@ import { SearchOrgContextController } from "@/context/search-org/SearchOrgContex
 import { searchOrgContextKey } from "@/context/search-org/types";
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
+import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { CommonTab, OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
@@ -685,14 +685,16 @@ export class Org extends BtrixElement {
     return html`<btrix-org-settings
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
-      @btrix-update-org=${(e: CustomEvent<UpdateOrgDetail>) => {
+      @btrix-request-org-update=${(e: BtrixRequestOrgUpdate) => {
         e.stopPropagation();
 
         // Optimistic update
-        AppStateService.partialUpdateOrg({
-          id: this.orgId,
-          ...e.detail,
-        });
+        if (Object.keys(e.detail.org).length) {
+          AppStateService.partialUpdateOrg({
+            id: this.orgId,
+            ...e.detail.org,
+          });
+        }
 
         void this.updateOrg();
       }}

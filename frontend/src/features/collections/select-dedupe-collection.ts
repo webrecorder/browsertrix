@@ -62,6 +62,13 @@ export class SelectDedupeCollection extends FormControl(BtrixElement) {
     }
   }
 
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("dedupeId") && this.dedupeId) {
+      this.selectedCollection = undefined;
+      this.newCollectionName = undefined;
+    }
+  }
+
   protected updated(changedProperties: PropertyValues): void {
     if (
       changedProperties.has("selectedCollection") ||

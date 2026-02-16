@@ -19,6 +19,7 @@ import {
   orgProxiesContext,
   type OrgProxiesContext,
 } from "@/context/org-proxies";
+import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import type { SelectBrowserProfile } from "@/features/browser-profiles/select-browser-profile";
 import {
   isExistingCollection,
@@ -499,6 +500,17 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
         icon: "check2-circle",
         id: "crawl-defaults-update-status",
       });
+
+      this.dispatchEvent(
+        new CustomEvent<BtrixRequestOrgUpdate["detail"]>(
+          "btrix-request-org-update",
+          {
+            detail: { org: {} },
+            bubbles: true,
+            composed: true,
+          },
+        ),
+      );
     } catch (e) {
       console.debug(e);
 
