@@ -6,13 +6,17 @@
   /* Regex Colorizer no bg theme */
   /* https://stevenlevithan.com/regex/colorizer/themes/nobg.css */
 
+  /* escaped literal */
+  .regex span {
+    @apply bg-neutral-50 text-neutral-500;
+  }
   /* metasequence */
   .regex b {
-    @apply bg-violet-50/80 text-violet-500;
+    @apply bg-violet-50/80 font-normal text-violet-500;
   }
   /* char class */
   .regex i {
-    @apply bg-lime-50/80 text-lime-500;
+    @apply bg-lime-50/80 not-italic text-lime-500;
   }
   /* char class: metasequence */
   .regex i b {
@@ -46,9 +50,7 @@
   .regex b.err {
     @apply text-danger;
   }
-  .regex b,
-  .regex i,
   .regex u {
-    @apply font-normal not-italic no-underline;
+    @apply no-underline;
   }
 }
