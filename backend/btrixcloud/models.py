@@ -833,6 +833,7 @@ class CrawlFileOut(BaseModel):
     crawlId: Optional[str] = None
     numReplicas: int = 0
     expireAt: Optional[str] = None
+    fromDependency: Optional[bool] = False
 
 
 # ============================================================================

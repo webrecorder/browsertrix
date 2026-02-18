@@ -170,7 +170,7 @@ class BaseCrawlOps:
         skip_resources=False,
         headers: Optional[dict] = None,
         cid: Optional[UUID] = None,
-        include_dependencies=True,
+        with_dependencies=False,
     ) -> CrawlOutWithResources:
         """Get crawl data for api output"""
         res = await self.get_crawl_raw(crawlid, org, type_)
@@ -218,15 +218,16 @@ class BaseCrawlOps:
                 crawl.config.seeds = None
 
             # add dependencies
-            if crawl.requiresCrawls and include_dependencies:
-                all_req_crawls = await self.get_all_dependency_crawls(crawl.id)
-                if all_req_crawls:
-                    match = {"_id": {"$in": all_req_crawls}}
-                    resources, _ = await self.get_presigned_files(match, org)
-                    if not crawl.resources:
-                        crawl.resources = resources
-                    else:
-                        crawl.resources.extend(resources)
+            if crawl.requiresCrawls and with_dependencies:
+                match = {"_id": {"$in": crawl.requiresCrawls}}
+                resources, _ = await self.get_presigned_files(match, org)
+                for resource in resources:
+                    resource.fromDependency = True
+
+                if not crawl.resources:
+                    crawl.resources = resources
+                else:
+                    crawl.resources.extend(resources)
 
         crawl.storageQuotaReached = self.orgs.storage_quota_reached(org)
         crawl.execMinutesQuotaReached = self.orgs.exec_mins_quota_reached(org)
@@ -935,26 +936,6 @@ class BaseCrawlOps:
 
         return crawls, total
 
-    async def get_all_dependency_crawls(self, crawl_id: str) -> list[str]:
-        """get flat list of all crawl dependencies using mongo graphLookup aggregation"""
-        aggregate = [
-            {"$match": {"_id": crawl_id}},
-            {
-                "$graphLookup": {
-                    "from": "crawls",
-                    "startWith": "$requiresCrawls",
-                    "connectFromField": "requiresCrawls",
-                    "connectToField": "_id",
-                    "as": "allReq",
-                }
-            },
-            {"$project": {"allReqArray": "$allReq._id"}},
-        ]
-
-        cursor = self.crawls.aggregate(aggregate)
-        results = await cursor.to_list(length=1)
-        return results[0]["allReqArray"]
-
     async def delete_crawls_all_types(
         self,
         delete_list: DeleteCrawlList,
@@ -1056,7 +1037,11 @@ class BaseCrawlOps:
         }
 
     async def download_crawl_as_single_wacz(
-        self, crawl_id: str, org: Organization, prefer_single_wacz: bool = False
+        self,
+        crawl_id: str,
+        org: Organization,
+        prefer_single_wacz: bool = False,
+        with_dependencies=False,
     ):
         """Download archived item as a single WACZ file
 
@@ -1064,7 +1049,9 @@ class BaseCrawlOps:
         If prefer_single_wacz is true and archived item has only one WACZ,
         returns that instead
         """
-        crawl = await self.get_crawl_out(crawl_id, org)
+        crawl = await self.get_crawl_out(
+            crawl_id, org, with_dependencies=with_dependencies
+        )
 
         if not crawl.resources:
             raise HTTPException(status_code=400, detail="no_crawl_resources")
@@ -1290,22 +1277,39 @@ def init_base_crawls_api(app, user_dep, *args):
         response_model=CrawlOutWithResources,
     )
     async def get_base_crawl(
-        crawl_id: str, request: Request, org: Organization = Depends(org_crawl_dep)
+        crawl_id: str,
+        request: Request,
+        org: Organization = Depends(org_crawl_dep),
+        with_dependencies=False,
     ):
-        return await ops.get_crawl_out(crawl_id, org, headers=dict(request.headers))
+        return await ops.get_crawl_out(
+            crawl_id,
+            org,
+            headers=dict(request.headers),
+            with_dependencies=with_dependencies,
+        )
 
     @app.get(
         "/orgs/all/all-crawls/{crawl_id}/replay.json",
         tags=["all-crawls"],
         response_model=CrawlOutWithResources,
+        with_dependencies=False,
     )
     async def get_base_crawl_admin(
-        crawl_id, request: Request, user: User = Depends(user_dep)
+        crawl_id,
+        request: Request,
+        user: User = Depends(user_dep),
+        with_dependencies=False,
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return await ops.get_crawl_out(crawl_id, None, headers=dict(request.headers))
+        return await ops.get_crawl_out(
+            crawl_id,
+            None,
+            headers=dict(request.headers),
+            with_dependencies=with_dependencies,
+        )
 
     @app.get(
         "/orgs/{oid}/all-crawls/{crawl_id}/replay.json",
@@ -1313,9 +1317,17 @@ def init_base_crawls_api(app, user_dep, *args):
         response_model=CrawlOutWithResources,
     )
     async def get_crawl_out(
-        crawl_id, request: Request, org: Organization = Depends(org_viewer_dep)
+        crawl_id,
+        request: Request,
+        org: Organization = Depends(org_viewer_dep),
+        with_dependencies=False,
     ):
-        return await ops.get_crawl_out(crawl_id, org, headers=dict(request.headers))
+        return await ops.get_crawl_out(
+            crawl_id,
+            org,
+            headers=dict(request.headers),
+            with_dependencies=with_dependencies,
+        )
 
     @app.get(
         "/orgs/{oid}/all-crawls/{crawl_id}/download",
@@ -1326,9 +1338,13 @@ def init_base_crawls_api(app, user_dep, *args):
         crawl_id: str,
         preferSingleWACZ: bool = False,
         org: Organization = Depends(org_viewer_dep),
+        with_dependencies=False,
     ):
         return await ops.download_crawl_as_single_wacz(
-            crawl_id, org, prefer_single_wacz=preferSingleWACZ
+            crawl_id,
+            org,
+            prefer_single_wacz=preferSingleWACZ,
+            with_dependencies=with_dependencies,
         )
 
     @app.patch(
