@@ -234,9 +234,11 @@ class BaseCrawlOps:
 
         return crawl
 
-    async def get_internal_crawl_out(self, crawl_id):
+    async def get_internal_crawl_out(self, crawl_id, with_dependencies=False):
         """add internal prefix for relative paths"""
-        crawl_out = await self.get_crawl_out(crawl_id)
+        crawl_out = await self.get_crawl_out(
+            crawl_id, with_dependencies=with_dependencies
+        )
         resources = crawl_out.resources or []
         for file_ in resources:
             file_.path = self.storage_ops.resolve_internal_access_path(file_.path)
