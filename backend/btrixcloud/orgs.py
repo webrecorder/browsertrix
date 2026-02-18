@@ -44,7 +44,7 @@ from .models import (
     RUNNING_STATES,
     WAITING_STATES,
     BaseCrawl,
-    FeatureFlagOut,
+    FeatureFlagStats,
     FeatureFlags,
     FeatureFlagsPartial,
     Organization,
@@ -804,9 +804,8 @@ class OrgOps(BaseOrgs):
             session=session,
         ).to_list(None)
         org_counts = {count["_id"]: count["count"] for count in counts}
-        # omit owner and expiry from metadata
         return [
-            FeatureFlagOut(
+            FeatureFlagStats(
                 name=name,
                 count=org_counts.get(name, 0),
                 description=cast(str, flag.description),
@@ -1821,7 +1820,7 @@ def init_orgs_api(
     @app.get(
         "/orgs/feature-flags",
         tags=["organizations"],
-        response_model=list[FeatureFlagOut],
+        response_model=list[FeatureFlagStats],
     )
     async def get_feature_flags(
         user: User = Depends(user_dep),

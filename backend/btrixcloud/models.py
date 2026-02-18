@@ -2320,7 +2320,7 @@ class FeatureFlags(ValidatedFeatureFlags):
 FeatureFlagsPartial = make_feature_flags_partial(FeatureFlags)
 
 
-class FeatureFlagOut(BaseModel):
+class FeatureFlagStats(BaseModel):
     """Output model for feature flags"""
 
     model_config = ConfigDict(use_attribute_docstrings=True)
