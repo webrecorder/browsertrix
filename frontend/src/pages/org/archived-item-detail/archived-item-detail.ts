@@ -384,7 +384,7 @@ export class ArchivedItemDetail extends BtrixElement {
         sectionContent = this.renderPanel(
           html`${this.renderTitle(this.tabLabels.qa, { beta: true })}
             <div class="ml-auto flex flex-wrap justify-end gap-2">
-              ${when(!dedupeDependent && this.qaRuns, this.renderQAHeader)}
+              ${when(this.qaRuns, this.renderQAHeader)}
             </div> `,
           html`
             ${dedupeDependent
