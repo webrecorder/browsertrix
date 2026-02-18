@@ -1572,13 +1572,20 @@ def init_crawls_api(
         response_model=CrawlOutWithResources,
     )
     async def get_crawl_admin(
-        crawl_id, request: Request, user: User = Depends(user_dep)
+        crawl_id,
+        request: Request,
+        user: User = Depends(user_dep),
+        with_dependencies=False,
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         return await ops.get_crawl_out(
-            crawl_id, None, "crawl", headers=dict(request.headers)
+            crawl_id,
+            None,
+            "crawl",
+            headers=dict(request.headers),
+            with_dependencies=with_dependencies,
         )
 
     @app.get(
@@ -1587,10 +1594,17 @@ def init_crawls_api(
         response_model=CrawlOutWithResources,
     )
     async def get_crawl_out(
-        crawl_id, request: Request, org: Organization = Depends(org_viewer_dep)
+        crawl_id,
+        request: Request,
+        org: Organization = Depends(org_viewer_dep),
+        with_dependencies=False,
     ):
         return await ops.get_crawl_out(
-            crawl_id, org, "crawl", headers=dict(request.headers)
+            crawl_id,
+            org,
+            "crawl",
+            headers=dict(request.headers),
+            with_dependencies=with_dependencies,
         )
 
     @app.get(
@@ -1600,9 +1614,13 @@ def init_crawls_api(
         crawl_id: str,
         preferSingleWACZ: bool = False,
         org: Organization = Depends(org_viewer_dep),
+        with_dependencies=False,
     ):
         return await ops.download_crawl_as_single_wacz(
-            crawl_id, org, prefer_single_wacz=preferSingleWACZ
+            crawl_id,
+            org,
+            prefer_single_wacz=preferSingleWACZ,
+            with_dependencies=with_dependencies,
         )
 
     # QA APIs
