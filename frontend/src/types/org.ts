@@ -3,6 +3,7 @@ import { z } from "zod";
 import { apiDateSchema } from "./api";
 import { subscriptionSchema } from "./billing";
 import { publicCollectionSchema } from "./collection";
+import { featureFlagSchema } from "./featureFlags";
 
 export enum OrgReadOnlyReason {
   SubscriptionPaused = "subscriptionPaused",
@@ -99,6 +100,7 @@ export const orgDataSchema = z.object({
   enablePublicProfile: z.boolean(),
   publicDescription: z.string().nullable(),
   publicUrl: z.string().nullable(),
+  featureFlags: z.record(featureFlagSchema, z.boolean()),
 });
 export type OrgData = z.infer<typeof orgDataSchema>;
 
