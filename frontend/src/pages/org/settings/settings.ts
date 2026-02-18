@@ -20,7 +20,7 @@ import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { formValidator } from "@/utils/form";
-import { AccessCode, isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
+import { AccessCode, isAdmin, isCrawler } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
 import "./components/general";
@@ -56,8 +56,6 @@ export type OrgRemoveMemberEvent = CustomEvent<{
   member: Member;
 }>;
 
-export type UpdateOrgDetail = Partial<OrgData>;
-
 export const UPDATED_STATUS_TOAST_ID = "org-updated-status";
 
 /**
@@ -69,7 +67,6 @@ export const UPDATED_STATUS_TOAST_ID = "org-updated-status";
  * ></btrix-org-settings>
  * ```
  *
- * @fires btrix-update-org
  * @fires org-user-role-change
  * @fires org-remove-member
  */
