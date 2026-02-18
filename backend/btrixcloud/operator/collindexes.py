@@ -169,7 +169,7 @@ class CollIndexOperator(BaseOperator):
                 # Saving process
                 # 1. run bgsave while redis is active
                 if status.index.running:
-                    await self.do_ve(spec.id, status)
+                    await self.do_save_redis(spec.id, status)
 
                 elif status.index.finished and not status.index.savedAt:
                     await self.k8s.send_signal_to_pod(redis_name, "SIGUSR1", "save")
@@ -318,7 +318,7 @@ class CollIndexOperator(BaseOperator):
         print(f"Deleting collindex {coll_id}")
         await self.k8s.delete_custom_object(f"collindex-{coll_id}", "collindexes")
 
-    async def do_ve(self, coll_id: UUID, status: CollIndexStatus):
+    async def do_save_redis(self, coll_id: UUID, status: CollIndexStatus):
         """shutdown save redis"""
         try:
             redis = await self.k8s.get_redis_connected(f"coll-{coll_id}")

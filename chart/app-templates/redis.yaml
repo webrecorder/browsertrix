@@ -271,6 +271,8 @@ spec:
 
             echo "Downloading from {{ remote_file_path }}"
 
+            set -o pipefail
+
             rclone --config "" cat remote:{{ remote_file_path }} | tar xzf -
 
             # move to final dest only if tar extract succeeds
