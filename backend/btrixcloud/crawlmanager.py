@@ -16,6 +16,7 @@ from .models import (
     CrawlConfig,
     BgJobType,
     ProfileBrowserMetadata,
+    TYPE_INDEX_JOB_TYPES,
 )
 
 
@@ -227,16 +228,17 @@ class CrawlManager(K8sAPI):
         oid: str,
         image: str,
         image_pull_policy: str,
-        is_purging: bool,
+        job_type: TYPE_INDEX_JOB_TYPES,
+        crawl_id: Optional[str] = None,
     ):
-        """create dedupe index import/purge job"""
+        """create dedupe index import/purge/post-crawl job"""
 
         # create unique import job or fixed purge job, as can only have one purge job
         # at a time
         name = (
-            f"import-{coll_id}-{secrets.token_hex(5)}"
-            if not is_purging
-            else f"purge-{coll_id}"
+            f"{job_type}-index-{coll_id}-{secrets.token_hex(5)}"
+            if job_type != "purge"
+            else f"purge-index-{coll_id}"
         )
 
         params = {
@@ -245,8 +247,9 @@ class CrawlManager(K8sAPI):
             "oid": oid,
             "crawler_image": image,
             "crawler_image_pull_policy": image_pull_policy,
-            "is_purging": is_purging,
+            "job_type": job_type,
             "redis_url": self.get_redis_url("coll-" + str(coll_id)),
+            "crawl_id": crawl_id,
         }
 
         data = self.templates.env.get_template("index-import-job.yaml").render(params)

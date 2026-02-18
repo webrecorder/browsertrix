@@ -1598,6 +1598,11 @@ TYPE_DEDUPE_INDEX_STATES = Literal[
 DEDUPE_INDEX_STATES = get_args(TYPE_DEDUPE_INDEX_STATES)
 
 
+TYPE_INDEX_JOB_TYPES = Literal["import", "purge", "commit", "cancel"]
+
+INDEX_JOB_TYPES = get_args(TYPE_INDEX_JOB_TYPES)
+
+
 # ============================================================================
 class CollAccessType(str, Enum):
     """Collection access types"""

@@ -8,6 +8,7 @@ metadata:
   name: {{ name }}
   labels:
     role: index-import-job
+    type: {{ job_type }}
     coll: {{ id }}
     oid: {{ oid }}
 
@@ -19,7 +20,7 @@ spec:
 
 # if purging, set completions to disallow changing parallelism
 # for import, omit to allow increasing later
-{% if is_purging %}
+{% if job_type == "import" %}
   completions: 1
 {% endif %}
 
@@ -28,12 +29,15 @@ spec:
     metadata:
       labels:
         role: index-import-job
+        type: {{ job_type }}
         coll: {{ id }}
         oid: {{ oid }}
 
     spec:
       restartPolicy: OnFailure
       priorityClassName: index-import-job
+
+      {% if job_type == "import" or job_type == "purge" %}
       volumes:
         - name: config
           configMap:
@@ -41,6 +45,7 @@ spec:
 
         - name: tmpdir
           emptyDir: {}
+      {% endif %}
 
       containers:
         - name: indexer
@@ -48,14 +53,29 @@ spec:
           imagePullPolicy: {{ crawler_image_pull_policy }}
           command:
             - indexer
-            - --sourceUrl
-            - /btrix-config/config.json
             - --redisDedupeUrl
             - {{ redis_url }}
-          {% if is_purging %}
+
+          {% if job_type == "import" %}
+            - --sourceUrl
+            - /btrix-config/config.json
+
+          {% elif job_type == "purge" %}
+            - --sourceUrl
+            - /btrix-config/config.json
             - --removing
+
+          {% elif job_type == "commit" %}
+            - --commitCrawlId
+            - {{ crawl_id }}
+
+          {% elif job_type == "cancel" %}
+            - --cancelCrawlId
+            - {{ crawl_id }}
+
           {% endif %}
 
+          {% if job_type == "import" or job_type == "purge" %}
           volumeMounts:
             - name: tmpdir
               mountPath: /tmp
@@ -63,6 +83,7 @@ spec:
             - name: config
               mountPath: /btrix-config/
               readOnly: True
+          {% endif %}
 
           resources:
             limits:
