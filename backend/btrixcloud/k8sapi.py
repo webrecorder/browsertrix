@@ -408,9 +408,9 @@ class K8sAPI:
         except Exception:
             return False
 
-    async def send_signal_to_pod(self, pod_name, signame) -> bool:
+    async def send_signal_to_pod(self, pod_name, signame, container=None) -> bool:
         """send signal to all pods"""
-        command = ["bash", "-c", f"kill -s {signame} 1"]
+        command = ["sh", "-c", f"kill -s {signame} 1"]
         signaled = False
 
         try:
@@ -420,6 +420,7 @@ class K8sAPI:
                 name=pod_name,
                 namespace=self.namespace,
                 command=command,
+                container=container,
                 stdout=True,
             )
             if res:
