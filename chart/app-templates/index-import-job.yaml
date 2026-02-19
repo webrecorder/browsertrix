@@ -20,7 +20,7 @@ spec:
 
 # if purging, set completions to disallow changing parallelism
 # for import, omit to allow increasing later
-{% if job_type == "import" %}
+{% if job_type == "purge" %}
   completions: 1
 {% endif %}
 
