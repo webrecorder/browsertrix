@@ -1319,7 +1319,6 @@ def init_base_crawls_api(app, user_dep, *args):
         "/orgs/all/all-crawls/{crawl_id}/replay.json",
         tags=["all-crawls"],
         response_model=CrawlOutWithResources,
-        with_dependencies=False,
     )
     async def get_base_crawl_admin(
         crawl_id,
