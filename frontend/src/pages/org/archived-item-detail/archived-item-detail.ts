@@ -9,6 +9,7 @@ import capitalize from "lodash/fp/capitalize";
 import queryString from "query-string";
 
 import { badges, badgesSkeleton } from "./templates/badges";
+import { fileList } from "./templates/file-list";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
@@ -1207,46 +1208,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderFiles() {
     return html`
       ${this.hasFiles
-        ? html`
-            <ul class="rounded-lg border text-sm">
-              ${this.item!.resources!.map(
-                (file) => html`
-                  <li
-                    class="flex justify-between border-t p-3 first:border-t-0"
-                  >
-                    <div class="flex items-center truncate whitespace-nowrap">
-                      <sl-icon
-                        name="file-earmark-zip-fill"
-                        class="h-4 shrink-0 pr-2 text-neutral-600"
-                      ></sl-icon>
-                      <a
-                        class="mr-2 truncate text-blue-600 hover:text-blue-500 hover:underline"
-                        href=${file.path}
-                        download
-                        title=${file.name}
-                        >${file.name.slice(file.name.lastIndexOf("/") + 1)}
-                      </a>
-                    </div>
-                    <div
-                      class="whitespace-nowrap font-mono text-sm text-neutral-400"
-                    >
-                      ${when(
-                        file.numReplicas > 0,
-                        () =>
-                          html` <sl-tooltip content=${msg("Backed up")}>
-                            <sl-icon
-                              name="clouds-fill"
-                              class="mr-2 size-4 shrink-0 align-text-bottom text-success"
-                            ></sl-icon>
-                          </sl-tooltip>`,
-                      )}
-                      ${this.localize.bytes(Number(file.size))}
-                    </div>
-                  </li>
-                `,
-              )}
-            </ul>
-          `
+        ? html` ${when(this.item?.resources, (files) => fileList({ files }))} `
         : html`
             <p class="text-sm text-neutral-400">
               ${msg("No files to download.")}
