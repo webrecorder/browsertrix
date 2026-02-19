@@ -53,6 +53,7 @@ from .models import (
     ResourcesOnly,
     DeleteDedupeIndex,
     TYPE_DEDUPE_INDEX_STATES,
+    TYPE_INDEX_JOB_TYPES,
 )
 from .utils import (
     dt_now,
@@ -757,11 +758,17 @@ class CollectionOps:
         if coll.indexState not in ("ready", "idle"):
             raise HTTPException(status_code=400, detail="dedupe_index_not_ready")
 
-        await self.run_index_import_job(coll.id, org.id, is_purge=True)
+        await self.run_index_import_job(coll.id, org.id, "purge")
         return {"updated": True}
 
-    async def run_index_import_job(self, coll_id: UUID, oid: UUID, is_purge=False):
-        """update index with import / purge job"""
+    async def run_index_import_job(
+        self,
+        coll_id: UUID,
+        oid: UUID,
+        job_type: TYPE_INDEX_JOB_TYPES = "import",
+        crawl_id: Optional[str] = None,
+    ):
+        """update index with import / purge / post-crawl job"""
 
         crawler_image = self.crawl_ops.crawl_configs.get_channel_crawler_image(
             self.dedupe_importer_channel
@@ -779,13 +786,14 @@ class CollectionOps:
         )
 
         await self.crawl_manager.run_index_import_job(
-            str(coll_id), str(oid), crawler_image, pull_policy, is_purge
+            str(coll_id), str(oid), crawler_image, pull_policy, job_type, crawl_id
         )
 
-        # if job created, update state here so its reflected in the UI more quickly
-        await self.update_dedupe_index_info(
-            coll_id, state="purging" if is_purge else "importing"
-        )
+        if job_type in ("import", "purge"):
+            # if job created, update state here so its reflected in the UI more quickly
+            await self.update_dedupe_index_info(
+                coll_id, state="purging" if job_type == "purge" else "importing"
+            )
 
     async def delete_dedupe_index(
         self, coll: Collection, org: Organization, remove_from_workflows: bool = False

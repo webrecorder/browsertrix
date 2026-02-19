@@ -1802,11 +1802,15 @@ class CrawlOperator(BaseOperator):
         stats: Optional[OpCrawlStats],
     ) -> None:
         """Run tasks after crawl completes in asyncio.task coroutine."""
-        if state in SUCCESSFUL_STATES and crawl.oid:
+        if state in SUCCESSFUL_STATES:
             # do this first, in case dedupe index may become idle
             # and redis pod will be shut down eventually
             if crawl.dedupe_coll_id:
                 await self.add_crawl_dedupe_stats(crawl)
+
+                await self.coll_ops.run_index_import_job(
+                    UUID(crawl.dedupe_coll_id), crawl.oid, "commit", crawl.id
+                )
 
             await self.crawl_config_ops.stats_recompute_last(
                 crawl.cid, status.filesAddedSize, 1, 1
@@ -1832,10 +1836,16 @@ class CrawlOperator(BaseOperator):
                     crawl.oid, crawl.id, stats.req_crawls
                 )
 
-        if state in FAILED_STATES:
+        # failed states
+        else:
             await self.crawl_config_ops.stats_recompute_last(crawl.cid, 0, 1, 0)
             await self.crawl_ops.delete_failed_crawl_files(crawl.id, crawl.oid)
             await self.page_ops.delete_crawl_pages(crawl.id, crawl.oid)
+
+            if crawl.dedupe_coll_id:
+                await self.coll_ops.run_index_import_job(
+                    UUID(crawl.dedupe_coll_id), crawl.oid, "cancel", crawl.id
+                )
 
         await self.event_webhook_ops.create_crawl_finished_notification(
             crawl.id, crawl.oid, state
