@@ -47,7 +47,7 @@ export class Alert extends TailwindElement {
           success: "bg-success-50 text-success-800 border-success-200",
           warning: "bg-warning-50 text-warning-800 border-warning-200",
           danger: "bg-danger-50 text-danger-800 border-danger-200",
-          info: "bg-primary-50 text-primary-600 border-primary-100",
+          info: "bg-primary-50 text-primary-600 border-primary-200",
         }[this.variant],
       )}"
       role="alert"

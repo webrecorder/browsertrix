@@ -22,6 +22,7 @@ import { renderText, renderTextDiff } from "./ui/text";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
 import { isQaPage } from "@/features/qa/page-list/helpers/page";
 import {
   type QaFilterChangeDetail,
@@ -434,6 +435,10 @@ export class ArchivedItemQA extends BtrixElement {
       ${this.renderHidden()}
 
       <div class="mb-4 flex items-center">${this.renderBackLink()}</div>
+
+      ${when(this.item?.missingRequiresCrawls, (ids) =>
+        ids.length ? missingDependenciesNotice({ ids }) : nothing,
+      )}
 
       <article class="qa-grid grid min-h-screen gap-x-6 gap-y-0 lg:snap-start">
         <header
@@ -1154,7 +1159,8 @@ export class ArchivedItemQA extends BtrixElement {
   private readonly renderRWP = (rwpId: string, { qa }: { qa: boolean }) => {
     if (!rwpId) return;
 
-    const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json?withDependencies=true`;
+    const query = queryString.stringify({ withDependencies: true });
+    const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json?${query}`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
     console.debug("rendering rwp", rwpId);
@@ -1334,8 +1340,9 @@ export class ArchivedItemQA extends BtrixElement {
   }
 
   private async getCrawl(): Promise<ArchivedItem> {
+    const query = queryString.stringify({ withDependencies: true });
     return this.api.fetch<ArchivedItem>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}`,
+      `/orgs/${this.orgId}/all-crawls/${this.itemId}?${query}`,
     );
   }
 

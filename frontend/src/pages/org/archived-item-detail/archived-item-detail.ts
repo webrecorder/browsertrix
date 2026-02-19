@@ -15,9 +15,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
-// import { dedupeFilesNotice } from "@/features/archived-items/templates/dedupe-files-notice";
-import { dedupeQANotice } from "@/features/archived-items/templates/dedupe-qa-notice";
-// import { dedupeReplayNotice } from "@/features/archived-items/templates/dedupe-replay-notice";
+import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import {
   pageBack,
@@ -175,6 +173,10 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private get dependenciesUrl(): string {
     return `${new URL(window.location.href).pathname}${window.location.search}#${"dependencies" satisfies SectionName}`;
+  }
+
+  private get dedupeSourceUrl(): string {
+    return `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${(this.item && isCrawl(this.item) && this.item.dedupeCollId) || ""}`;
   }
 
   private timerId?: number;
@@ -372,7 +374,13 @@ export class ArchivedItemDetail extends BtrixElement {
   render() {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
     const isSuccess = this.item && isSuccessfullyFinished(this.item);
-    const dedupeDependent = this.item?.requiresCrawls.length;
+    const ids = this.item?.missingRequiresCrawls;
+    const missingDepsNotice = ids?.length
+      ? missingDependenciesNotice({
+          ids,
+          dependenciesHref: this.dependenciesUrl,
+        })
+      : nothing;
 
     let sectionContent: string | TemplateResult<1> = "";
 
@@ -388,11 +396,8 @@ export class ArchivedItemDetail extends BtrixElement {
               ${when(this.qaRuns, this.renderQAHeader)}
             </div> `,
           html`
-            ${dedupeDependent
-              ? dedupeQANotice({
-                  dependenciesHref: this.dependenciesUrl,
-                })
-              : nothing}
+            ${missingDepsNotice}
+
             <btrix-archived-item-detail-qa
               .crawlId=${this.itemId}
               .workflowId=${this.workflowId}
@@ -410,14 +415,14 @@ export class ArchivedItemDetail extends BtrixElement {
       case "replay":
         sectionContent = this.renderPanel(
           this.tabLabels.replay,
-          this.renderReplay(),
+          html` ${missingDepsNotice} ${this.renderReplay()} `,
         );
         break;
       case "files":
         sectionContent = this.renderPanel(
           html` ${this.renderTitle(this.tabLabels.files)}
           ${this.renderFilesAction()}`,
-          this.renderFiles(),
+          html` ${missingDepsNotice} ${this.renderFiles()} `,
         );
         break;
       case "logs":
@@ -758,7 +763,7 @@ export class ArchivedItemDetail extends BtrixElement {
       secondary: when(this.item, badges, badgesSkeleton),
       actions: this.isCrawler
         ? this.item
-          ? this.renderMenu()
+          ? this.renderActions()
           : html`<sl-skeleton
               class="h-8 w-24 [--border-radius:theme(borderRadius.sm)]"
             ></sl-skeleton>`
@@ -766,7 +771,7 @@ export class ArchivedItemDetail extends BtrixElement {
     });
   }
 
-  private renderMenu() {
+  private renderActions() {
     if (!this.item) return;
 
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
@@ -775,6 +780,14 @@ export class ArchivedItemDetail extends BtrixElement {
     const isWorkflowCrawl = this.item.cid === this.workflowId;
 
     return html`
+      ${when(this.item.missingRequiresCrawls, (ids) =>
+        ids.length
+          ? html`<div class="flex h-8 items-center">
+              ${missingDependenciesNotice({ ids, truncate: true })}
+            </div>`
+          : nothing,
+      )}
+
       <sl-dropdown placement="bottom-end" distance="4" hoist>
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
@@ -921,7 +934,9 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private renderRWP() {
     if (!this.item) return;
-    const replaySource = `/api/orgs/${this.item.oid}/all-crawls/${this.itemId}/replay.json?withDependencies=true`;
+
+    const query = queryString.stringify({ withDependencies: true });
+    const replaySource = `/api/orgs/${this.item.oid}/all-crawls/${this.itemId}/replay.json?${query}`;
 
     const headers = this.authState?.headers;
 
@@ -1197,10 +1212,14 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderFiles() {
+    if (!this.item) {
+      return html`<sl-skeleton class="h-9"></sl-skeleton>`;
+    }
+
     return html`
       ${this.hasFiles
         ? html`
-            ${when(this.item?.resources, (resources) =>
+            ${when(this.item.resources, (resources) =>
               fileList({
                 files: resources.filter(
                   ({ fromDependency }) => !fromDependency,
@@ -1226,11 +1245,14 @@ export class ArchivedItemDetail extends BtrixElement {
     }
 
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
-    const downloadHref = `/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}&preferSingleWACZ=true`;
+    const queryParams = { auth_bearer: authToken, preferSingleWACZ: true };
+    const downloadUrl = `/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download`;
+    const downloadHref = `${downloadUrl}?${queryString.stringify(queryParams)}`;
     const downloadButton = html`<btrix-popover
       content=${this.localize.bytes(this.item.fileSize, {
         unitDisplay: "narrow",
       })}
+      placement="top"
     >
       <sl-button
         href=${downloadHref}
@@ -1261,7 +1283,10 @@ export class ArchivedItemDetail extends BtrixElement {
               </btrix-badge>
             </btrix-menu-item-link>
             <btrix-menu-item-link
-              href=${`${downloadHref}&withDependencies=true`}
+              href=${`${downloadUrl}?${queryString.stringify({
+                ...queryParams,
+                withDependencies: true,
+              })}`}
               download
             >
               <sl-icon slot="prefix" name="cloud-download"></sl-icon>
@@ -1475,7 +1500,8 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private async getCrawl() {
-    const apiPath = `/orgs/${this.orgId}/all-crawls/${this.itemId}/replay.json?withDependencies=true`;
+    const query = queryString.stringify({ withDependencies: true });
+    const apiPath = `/orgs/${this.orgId}/all-crawls/${this.itemId}/replay.json?${query}`;
     return this.api.fetch<CrawlReplay>(apiPath);
   }
 

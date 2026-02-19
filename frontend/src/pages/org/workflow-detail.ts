@@ -21,7 +21,7 @@ import type { Alert } from "@/components/ui/alert";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
-import { dedupeReplayNotice } from "@/features/archived-items/templates/dedupe-replay-notice";
+import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { ShareableNotice } from "@/features/crawl-workflows/templates/shareable-notice";
 import {
@@ -31,7 +31,7 @@ import {
 import type { BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
 import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
-import { CommonTab, OrgTab, WorkflowTab } from "@/routes";
+import { OrgTab, WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
@@ -738,6 +738,7 @@ export class WorkflowDetail extends BtrixElement {
           <sl-button-group>
             <btrix-popover
               content=${this.localize.bytes(latestCrawl.fileSize || 0)}
+              placement="top"
               ?disabled=${disableReplay}
             >
               <sl-button
@@ -1733,13 +1734,11 @@ export class WorkflowDetail extends BtrixElement {
 
     return html`
       ${when(this.latestCrawlTask.value, (crawl) =>
-        crawl.requiresCrawls.length
-          ? dedupeReplayNotice({
-              topClass: tw`top-12`, // Sticky below tabs
+        crawl.missingRequiresCrawls?.length
+          ? missingDependenciesNotice({
+              ids: crawl.missingRequiresCrawls,
               dependenciesHref: `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${crawl.cid}/${WorkflowTab.Crawls}/${crawl.id}#${"dependencies" satisfies ArchivedItemSectionName}`,
-              collectionHref: this.workflow?.dedupeCollId
-                ? `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${this.workflow.dedupeCollId}`
-                : undefined,
+              topCss: tw`top-12`,
             })
           : nothing,
       )}
@@ -1818,7 +1817,8 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private readonly renderReplay = (latestCrawl: Crawl) => {
-    const replaySource = `/api/orgs/${latestCrawl.oid}/crawls/${this.lastCrawlId}/replay.json?withDependencies=true`;
+    const query = queryString.stringify({ withDependencies: true });
+    const replaySource = `/api/orgs/${latestCrawl.oid}/crawls/${this.lastCrawlId}/replay.json?${query}`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
@@ -2131,8 +2131,9 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private async getCrawl(crawlId: Crawl["id"], signal: AbortSignal) {
+    const query = queryString.stringify({ withDependencies: true });
     const data = await this.api.fetch<Crawl>(
-      `/orgs/${this.orgId}/crawls/${crawlId}/replay.json`,
+      `/orgs/${this.orgId}/crawls/${crawlId}/replay.json?${query}`,
       { signal },
     );
 

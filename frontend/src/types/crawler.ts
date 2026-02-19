@@ -198,6 +198,7 @@ type ArchivedItemBase = {
   errorPageCount?: number;
   requiresCrawls: string[];
   requiredByCrawls: string[];
+  missingRequiresCrawls: string[] | null;
   fileSizeWithDeps: number | null;
 };
 
