@@ -58,7 +58,7 @@ For more details on navigating web archives within ReplayWeb.page, see the [Repl
 
 View downloadable files to save the archived item to a local device or to export the item from Browsertrix for use in another system.
 
-One or more WACZ files may be created depending on the size and scale of the crawl. To combine them all into a single WACZ file, choose _Export as Combined WACZ_ at the top of the tab. The combined file will automatically begin downloading.
+One or more WACZ files may be present depending on the size and scale of the crawl. To combine them all into a single WACZ file, choose _Export as Combined WACZ_ at the top of the tab. The combined file will automatically begin downloading.
 
 Combining multiple WACZ files is the default behavior when choosing _Download_ and _Download Item_ from the archived item and workflow action menus, respectively.
 
