@@ -51,6 +51,10 @@ spec:
   terminationGracePeriodSeconds: 300
   restartPolicy: {{ "OnFailure" if save_dump else "Always" }}
 
+  {% if priorityClassName %}
+  priorityClassName: {{ priorityClassName }}
+  {% endif %}
+
   volumes:
     - name: shared-redis-conf
       configMap:
