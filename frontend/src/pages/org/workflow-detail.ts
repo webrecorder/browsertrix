@@ -1467,6 +1467,7 @@ export class WorkflowDetail extends BtrixElement {
             </strong>
           </span>
           <sl-button
+            class="part-[base]:min-h-5 part-[base]:leading-5"
             size="small"
             variant="text"
             @click=${() => this.pausedNotice?.hide()}

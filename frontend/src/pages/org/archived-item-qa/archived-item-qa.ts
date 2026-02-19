@@ -164,6 +164,9 @@ export class ArchivedItemQA extends BtrixElement {
     sortDirection: 1,
   };
 
+  @state()
+  showMissingDependenciesNotice = true;
+
   private readonly replaySwReg =
     navigator.serviceWorker.getRegistration("/replay/");
   private readonly validateItemDescriptionMax = maxLengthValidator(500);
@@ -436,10 +439,6 @@ export class ArchivedItemQA extends BtrixElement {
 
       <div class="mb-4 flex items-center">${this.renderBackLink()}</div>
 
-      ${when(this.item?.missingRequiresCrawls, (ids) =>
-        ids.length ? missingDependenciesNotice({ ids }) : nothing,
-      )}
-
       <article class="qa-grid grid min-h-screen gap-x-6 gap-y-0 lg:snap-start">
         <header
           class="grid--header flex flex-wrap items-center justify-between gap-2 border-b py-2 md:flex-nowrap"
@@ -451,7 +450,19 @@ export class ArchivedItemQA extends BtrixElement {
               ${msg("Review")} ${itemName}
             </h1>
           </div>
-          <sl-button-group class="ml-auto">
+
+          ${when(
+            !this.showMissingDependenciesNotice &&
+              this.item?.missingRequiresCrawls,
+            (ids) =>
+              ids.length
+                ? html`<div class="ml-auto flex h-8 items-center">
+                    ${missingDependenciesNotice({ ids, truncate: true })}
+                  </div>`
+                : nothing,
+          )}
+
+          <sl-button-group>
             <sl-button
               variant="success"
               size="small"
@@ -528,6 +539,22 @@ export class ArchivedItemQA extends BtrixElement {
         </div>
 
         <div class="grid--tabGroup flex min-w-0 flex-col">
+          ${when(
+            this.showMissingDependenciesNotice &&
+              this.item?.missingRequiresCrawls,
+            (ids) =>
+              ids.length
+                ? html`<div class="mt-3">
+                    ${missingDependenciesNotice({
+                      ids,
+                      bottomCss: tw`part-[base]:mb-1`,
+                      dismiss: () =>
+                        (this.showMissingDependenciesNotice = false),
+                    })}
+                  </div>`
+                : nothing,
+          )}
+
           <nav
             aria-label="${msg("Page heuristics")}"
             class="-mx-3 my-0 flex flex-wrap items-center gap-2 overflow-x-auto px-3 py-2 lg:mx-0 lg:px-0"

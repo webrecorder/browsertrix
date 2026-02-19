@@ -396,8 +396,6 @@ export class ArchivedItemDetail extends BtrixElement {
               ${when(this.qaRuns, this.renderQAHeader)}
             </div> `,
           html`
-            ${missingDepsNotice}
-
             <btrix-archived-item-detail-qa
               .crawlId=${this.itemId}
               .workflowId=${this.workflowId}
