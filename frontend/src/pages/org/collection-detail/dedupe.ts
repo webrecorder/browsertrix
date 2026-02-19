@@ -271,7 +271,21 @@ export class CollectionDetailDedupe extends BtrixElement {
             ? tw`xl:row-start-1`
             : tw`xl:row-start-2`} col-span-full row-span-1 xl:col-span-4 xl:col-start-1"
         >
-          ${panelHeader({ heading: msg("Deduplicated Crawls") })}
+          ${panelHeader({
+            heading: msg("Deduplicated Crawls"),
+            actions: infoPopover({
+              content: html`
+                ${msg(
+                  "Deduplication creates interdependence between crawled and indexed items.",
+                )}
+                <br /><br />
+                ${msg(
+                  "Crawl dependencies are indexed items that are required by a deduplicated crawled item in order to provide a complete replay.",
+                )}
+              `,
+              placement: "left-start",
+            }),
+          })}
           ${this.renderDeduped()}
         </section>
       </div>`;
@@ -569,7 +583,7 @@ export class CollectionDetailDedupe extends BtrixElement {
                 slot="prefix"
                 name=${dedupeIconFor["dependency"].name}
               ></sl-icon>
-              ${msg("Dependencies")}
+              ${msg("Crawl Dependencies")}
             </sl-radio-button>
           </sl-radio-group>
         </div>
@@ -640,6 +654,40 @@ export class CollectionDetailDedupe extends BtrixElement {
     const enableInWorkflow =
       this.dedupeWorkflowsTask.value && !this.dedupeWorkflowsTask.value.total;
 
+    const loading = () => html`
+      <sl-skeleton effect="sheen" class="h-9"></sl-skeleton>
+    `;
+    const items = (items?: APIPaginatedList<ArchivedItem>) =>
+      items?.items.length
+        ? html`
+            <btrix-item-dependency-tree
+              class="part-[tree]:rounded part-[tree]:border"
+              .items=${items.items}
+              collectionId=${this.collectionId}
+            ></btrix-item-dependency-tree>
+
+            <footer class="mt-6 flex justify-center">
+              <btrix-pagination
+                name=${CRAWLS_PAGE_NAME}
+                page=${items.page}
+                totalCount=${items.total}
+                size=${items.pageSize}
+                @page-change=${async (e: PageChangeEvent) => {
+                  this.crawlsPagination = {
+                    ...this.crawlsPagination,
+                    page: e.detail.page,
+                  };
+
+                  await this.dedupeCrawlsTask.taskComplete;
+
+                  // Scroll to top of list
+                  // TODO once deep-linking is implemented, scroll to top of pushstate
+                  this.scrollIntoView({ behavior: "smooth" });
+                }}
+              ></btrix-pagination>
+            </footer>
+          `
+        : empty();
     const empty = () => {
       return panelBody({
         content: emptyMessage({
@@ -675,10 +723,50 @@ export class CollectionDetailDedupe extends BtrixElement {
       });
     };
 
-    return html`${this.renderDependencyTree(this.dedupeCrawlsTask, empty)}`;
+    return html`${this.dedupeCrawlsTask.render({
+      initial: loading,
+      pending: () =>
+        this.dedupeCrawlsTask.value
+          ? items(this.dedupeCrawlsTask.value)
+          : loading(),
+      complete: items,
+    })}`;
   };
 
   private readonly renderDependenciesView = () => {
+    const loading = () => html`
+      <sl-skeleton effect="sheen" class="h-9"></sl-skeleton>
+    `;
+    const items = (items?: APIPaginatedList<ArchivedItem>) =>
+      items?.items.length
+        ? html`
+            <btrix-item-dependents
+              collectionId=${this.collectionId}
+              .items=${items.items}
+            ></btrix-item-dependents>
+
+            <footer class="mt-6 flex justify-center">
+              <btrix-pagination
+                name=${DEPENDENCIES_PAGE_NAME}
+                page=${items.page}
+                totalCount=${items.total}
+                size=${items.pageSize}
+                @page-change=${async (e: PageChangeEvent) => {
+                  this.dependenciesPagination = {
+                    ...this.dependenciesPagination,
+                    page: e.detail.page,
+                  };
+
+                  await this.dependenciesTask.taskComplete;
+
+                  // Scroll to top of list
+                  // TODO once deep-linking is implemented, scroll to top of pushstate
+                  this.scrollIntoView({ behavior: "smooth" });
+                }}
+              ></btrix-pagination>
+            </footer>
+          `
+        : empty();
     const empty = () =>
       panelBody({
         content: emptyMessage({
@@ -719,71 +807,24 @@ export class CollectionDetailDedupe extends BtrixElement {
       `;
     };
 
-    return html` ${when(
-      // TODO More accurate warning by checking if all required IDs exist
-      this.dedupeCrawlsTask.value?.total &&
-        !this.dependenciesTask.value?.total &&
-        this.collection?.indexStats?.removedCrawls,
-      deletedItemsWarning,
-    )}
-    ${this.renderDependencyTree(this.dependenciesTask, empty)}`;
-  };
-
-  private readonly renderDependencyTree = (
-    itemsTask: CollectionDetailDedupe["dedupeCrawlsTask"],
-    empty: () => TemplateResult,
-  ) => {
-    const dependenciesView =
-      this.view.value[ITEMS_VIEW_PARAM] === ItemsView.Dependencies;
-    const loading = () => html`
-      <sl-skeleton effect="sheen" class="h-9"></sl-skeleton>
+    return html`
+      ${when(
+        // TODO More accurate warning by checking if all required IDs exist
+        this.dedupeCrawlsTask.value?.total &&
+          this.dependenciesTask.value &&
+          !this.dependenciesTask.value.total &&
+          this.collection?.indexStats?.removedCrawls,
+        deletedItemsWarning,
+      )}
+      ${this.dependenciesTask.render({
+        initial: loading,
+        pending: () =>
+          this.dependenciesTask.value
+            ? items(this.dependenciesTask.value)
+            : loading(),
+        complete: items,
+      })}
     `;
-    const items = (items?: APIPaginatedList<ArchivedItem>) =>
-      items?.items.length
-        ? html`
-            <btrix-item-dependency-tree
-              .items=${items.items}
-              collectionId=${this.collectionId}
-              showHeader
-            ></btrix-item-dependency-tree>
-
-            <footer class="mt-6 flex justify-center">
-              <btrix-pagination
-                name=${dependenciesView
-                  ? DEPENDENCIES_PAGE_NAME
-                  : CRAWLS_PAGE_NAME}
-                page=${items.page}
-                totalCount=${items.total}
-                size=${items.pageSize}
-                @page-change=${async (e: PageChangeEvent) => {
-                  if (dependenciesView) {
-                    this.dependenciesPagination = {
-                      ...this.dependenciesPagination,
-                      page: e.detail.page,
-                    };
-                  } else {
-                    this.crawlsPagination = {
-                      ...this.crawlsPagination,
-                      page: e.detail.page,
-                    };
-                  }
-
-                  await itemsTask.taskComplete;
-
-                  // Scroll to top of list
-                  // TODO once deep-linking is implemented, scroll to top of pushstate
-                  this.scrollIntoView({ behavior: "smooth" });
-                }}
-              ></btrix-pagination>
-            </footer>
-          `
-        : empty();
-
-    return html`${itemsTask.render({
-      initial: loading,
-      pending: () => (itemsTask.value ? items(itemsTask.value) : loading()),
-      complete: items,
-    })}`;
   };
 
   private renderOverview() {

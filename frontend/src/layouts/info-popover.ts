@@ -11,7 +11,7 @@ export function infoPopover({
   placement?: Popover["placement"];
 }) {
   return html`<btrix-popover placement=${ifDefined(placement)} hoist>
-    <sl-icon class="text-neutral-500" name="info-circle"></sl-icon>
+    <sl-icon class="text-base text-neutral-500" name="info-circle"></sl-icon>
     <div slot="content">${content}</div>
   </btrix-popover>`;
 }
