@@ -221,13 +221,21 @@ class BaseCrawlOps:
             if crawl.requiresCrawls and with_dependencies:
                 match = {"_id": {"$in": crawl.requiresCrawls}}
                 resources, _ = await self.get_presigned_files(match, org)
+
+                crawl.fileSizeWithDeps = crawl.fileSize
+
                 for resource in resources:
                     resource.fromDependency = True
+                    crawl.fileSizeWithDeps += resource.size
 
                 if not crawl.resources:
                     crawl.resources = resources
                 else:
                     crawl.resources.extend(resources)
+
+                crawl.missingRequiresCrawls = await self.find_missing_crawls(
+                    crawl.requiresCrawls, org.id
+                )
 
         crawl.storageQuotaReached = self.orgs.storage_quota_reached(org)
         crawl.execMinutesQuotaReached = self.orgs.exec_mins_quota_reached(org)
@@ -246,6 +254,16 @@ class BaseCrawlOps:
             file_.path = self.storage_ops.resolve_internal_access_path(file_.path)
 
         return crawl_out
+
+    async def find_missing_crawls(self, crawl_ids: list[str], oid: UUID) -> list[str]:
+        """returns a list of crawl ids that are no longer in the db from a given list"""
+        cursor = self.crawls.find(
+            {"_id": {"$in": crawl_ids}, "oid": oid}, {"$project": {"_id": 1}}
+        )
+        found_crawls = await cursor.to_list(len(crawl_ids))
+        existing = {found["_id"] for found in found_crawls}
+        missing = [crawl_id for crawl_id in crawl_ids if crawl_id not in existing]
+        return missing
 
     async def _update_crawl_collections(
         self, crawl_id: str, org: Organization, collection_ids: List[UUID]

@@ -943,6 +943,9 @@ class CrawlOut(BaseMongoModel):
     fileCount: int = 0
     pendingSize: int = 0
 
+    # computed only if dependencies are looked up
+    fileSizeWithDeps: Optional[int] = None
+
     tags: Optional[List[str]] = []
 
     dedupeCollId: Optional[UUID] = None
@@ -995,6 +998,9 @@ class CrawlOut(BaseMongoModel):
     # Linked Crawls for dedupe
     requiresCrawls: Optional[list[str]] = []
     requiredByCrawls: Optional[list[str]] = []
+
+    # computed only if dependencies are looked up
+    missingRequiresCrawls: Optional[list[str]] = None
 
     dedupeStats: Optional[CrawlDedupeStats] = None
 
