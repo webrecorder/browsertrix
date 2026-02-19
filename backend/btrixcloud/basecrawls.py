@@ -258,7 +258,7 @@ class BaseCrawlOps:
     async def find_missing_crawls(self, crawl_ids: list[str], oid: UUID) -> list[str]:
         """returns a list of crawl ids that are no longer in the db from a given list"""
         cursor = self.crawls.find(
-            {"_id": {"$in": crawl_ids}, "oid": oid}, {"$project": {"_id": 1}}
+            {"_id": {"$in": crawl_ids}, "oid": oid}, projection=["_id"]
         )
         found_crawls = await cursor.to_list(len(crawl_ids))
         existing = {found["_id"] for found in found_crawls}
