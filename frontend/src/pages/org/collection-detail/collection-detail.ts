@@ -636,7 +636,7 @@ export class CollectionDetail extends BtrixElement {
   private refreshReplay() {
     if (this.replayEmbed) {
       try {
-        void this.replayEmbed.fullReload();
+        this.replayEmbed.fullReload();
       } catch (e) {
         console.warn("Full reload not available in RWP");
       }
@@ -1233,7 +1233,7 @@ export class CollectionDetail extends BtrixElement {
             this.isRwpLoaded = true;
           }
           if (this.rwpDoFullReload && this.replayEmbed) {
-            void this.replayEmbed.fullReload();
+            this.replayEmbed.fullReload();
             this.rwpDoFullReload = false;
           }
         }}
