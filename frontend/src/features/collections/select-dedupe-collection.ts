@@ -45,7 +45,7 @@ export class SelectDedupeCollection extends FormControl(BtrixElement) {
   required?: boolean;
 
   @state()
-  private selectedCollection?: Collection;
+  private selectedCollection?: Collection | { id: string; name: string };
 
   @state()
   private newCollectionName?: string;
@@ -64,7 +64,12 @@ export class SelectDedupeCollection extends FormControl(BtrixElement) {
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("dedupeId") && this.dedupeId) {
-      this.selectedCollection = undefined;
+      if (
+        this.selectedCollection &&
+        this.dedupeId !== this.selectedCollection.id
+      ) {
+        this.selectedCollection = undefined;
+      }
       this.newCollectionName = undefined;
     }
   }
