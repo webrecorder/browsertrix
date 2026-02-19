@@ -17,7 +17,7 @@ import { ClipboardController } from "@/controllers/clipboard";
 import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
 // import { dedupeFilesNotice } from "@/features/archived-items/templates/dedupe-files-notice";
 import { dedupeQANotice } from "@/features/archived-items/templates/dedupe-qa-notice";
-import { dedupeReplayNotice } from "@/features/archived-items/templates/dedupe-replay-notice";
+// import { dedupeReplayNotice } from "@/features/archived-items/templates/dedupe-replay-notice";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import {
   pageBack,
@@ -913,24 +913,13 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private renderReplay() {
     return html`
-      ${this.item?.requiresCrawls.length
-        ? dedupeReplayNotice({
-            dependenciesHref: this.dependenciesUrl,
-            collectionHref:
-              isCrawl(this.item) && this.item.dedupeCollId
-                ? `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${this.item.dedupeCollId}`
-                : undefined,
-          })
-        : nothing}
       <div class="overflow-hidden rounded-lg border">${this.renderRWP()}</div>
     `;
   }
 
   private renderRWP() {
     if (!this.item) return;
-    const replaySource = `/api/orgs/${this.item.oid}/${
-      this.item.type === "upload" ? "uploads" : "crawls"
-    }/${this.itemId}/replay.json`;
+    const replaySource = `/api/orgs/${this.item.oid}/all-crawls/${this.itemId}/replay.json?with_dependencies=true`;
 
     const headers = this.authState?.headers;
 
@@ -1206,6 +1195,7 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderFiles() {
+    console.log(this.item?.resources);
     return html`
       ${this.hasFiles
         ? html` ${when(this.item?.resources, (files) => fileList({ files }))} `
@@ -1252,7 +1242,7 @@ export class ArchivedItemDetail extends BtrixElement {
             <sl-visually-hidden>${msg("Export options")}</sl-visually-hidden>
           </sl-button>
           <sl-menu>
-            <sl-menu-item>
+            <btrix-menu-item-link href=${downloadHref} download>
               <sl-icon slot="prefix" name="cloud-download"></sl-icon>
               ${msg("Without Dependencies")}
               <btrix-badge slot="suffix">
@@ -1260,8 +1250,11 @@ export class ArchivedItemDetail extends BtrixElement {
                   notation: "compact",
                 })}
               </btrix-badge>
-            </sl-menu-item>
-            <sl-menu-item>
+            </btrix-menu-item-link>
+            <btrix-menu-item-link
+              href=${`${downloadHref}&with_dependencies=true`}
+              download
+            >
               <sl-icon slot="prefix" name="cloud-download"></sl-icon>
               ${msg("With Dependencies")}
               <btrix-badge slot="suffix">
@@ -1269,7 +1262,7 @@ export class ArchivedItemDetail extends BtrixElement {
                   notation: "compact",
                 })}
               </btrix-badge>
-            </sl-menu-item>
+            </btrix-menu-item-link>
           </sl-menu>
         </sl-dropdown>
       </sl-button-group>`;
@@ -1473,9 +1466,7 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private async getCrawl() {
-    const apiPath = `/orgs/${this.orgId}/${
-      this.itemType === "upload" ? "uploads" : "crawls"
-    }/${this.itemId}/replay.json`;
+    const apiPath = `/orgs/${this.orgId}/all-crawls/${this.itemId}/replay.json?with_dependencies=true`;
     return this.api.fetch<CrawlReplay>(apiPath);
   }
 

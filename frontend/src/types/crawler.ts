@@ -215,7 +215,10 @@ export type Crawl = ArchivedItemBase &
     scale: number;
     browserWindows: number;
     shouldPause: boolean | null;
-    resources?: (StorageFile & { numReplicas: number })[];
+    resources?: (StorageFile & {
+      numReplicas: number;
+      fromDependency: boolean;
+    })[];
   };
 
 export type CrawlReplay = Crawl & Pick<CrawlConfig, "config">;
