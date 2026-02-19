@@ -45,7 +45,7 @@ export class SelectDedupeCollection extends FormControl(BtrixElement) {
   required?: boolean;
 
   @state()
-  private selectedCollection?: Collection | { id: string; name: string };
+  private selectedCollection?: Collection;
 
   @state()
   private newCollectionName?: string;
