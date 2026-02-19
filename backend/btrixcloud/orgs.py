@@ -1638,9 +1638,8 @@ class OrgOps(BaseOrgs):
         except Exception as err:
             print(
                 f"Error removing coll {coll_id} from org {org.id} defaults: {err}",
-                flush=True
+                flush=True,
             )
-
 
 
 # ============================================================================
