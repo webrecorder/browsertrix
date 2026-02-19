@@ -316,38 +316,45 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       `,
     };
 
-    const deduplication = {
-      dedupeType: html`<sl-radio-group
-        label=${labelFor.dedupeType}
-        name="dedupeType"
-        value=${this.dedupeCollection || orgDefaults.dedupeCollId
-          ? DedupeType.Collection
-          : DedupeType.None}
-        @sl-change=${(e: Event) => {
-          const value = (e.target as SlRadio).value as FormState["dedupeType"];
-
-          if (value === DedupeType.Collection) {
-            this.dedupeCollection = { name: "" };
-          } else {
-            this.dedupeCollection = null;
-          }
-        }}
-      >
-        <sl-radio value=${DedupeType.None}>
-          ${dedupeTypeLabelFor[DedupeType.None]}
-        </sl-radio>
-        <sl-radio value=${DedupeType.Collection}>
-          ${dedupeTypeLabelFor[DedupeType.Collection]}
-        </sl-radio>
-      </sl-radio-group>`,
-    };
-
-    if (this.dedupeCollection) {
-      (
-        deduplication as typeof deduplication & {
-          dedupeCollectionName: TemplateResult;
+    let deduplication:
+      | {
+          dedupeType: TemplateResult<1>;
+          dedupeCollectionName?: TemplateResult<1>;
         }
-      ).dedupeCollectionName = this.renderDedupeCollection(orgDefaults);
+      | undefined = undefined;
+
+    if (this.featureFlags.has("dedupeEnabled")) {
+      deduplication = {
+        dedupeType: html`<sl-radio-group
+          label=${labelFor.dedupeType}
+          name="dedupeType"
+          value=${this.dedupeCollection || orgDefaults.dedupeCollId
+            ? DedupeType.Collection
+            : DedupeType.None}
+          @sl-change=${(e: Event) => {
+            const value = (e.target as SlRadio)
+              .value as FormState["dedupeType"];
+
+            if (value === DedupeType.Collection) {
+              this.dedupeCollection = { name: "" };
+            } else {
+              this.dedupeCollection = null;
+            }
+          }}
+        >
+          <sl-radio value=${DedupeType.None}>
+            ${dedupeTypeLabelFor[DedupeType.None]}
+          </sl-radio>
+          <sl-radio value=${DedupeType.Collection}>
+            ${dedupeTypeLabelFor[DedupeType.Collection]}
+          </sl-radio>
+        </sl-radio-group>`,
+      };
+
+      if (this.dedupeCollection) {
+        deduplication.dedupeCollectionName =
+          this.renderDedupeCollection(orgDefaults);
+      }
     }
 
     return {
@@ -356,7 +363,9 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       behaviors,
       browserSettings,
       deduplication,
-    } as const satisfies Partial<Record<SectionsEnum, Partial<Field>>>;
+    } as const satisfies Partial<
+      Record<SectionsEnum, Partial<Field> | undefined>
+    >;
   }
 
   private readonly renderDedupeCollection = (
@@ -384,6 +393,8 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       <div class="rounded-lg border">
         <form @submit=${this.onSubmit}>
           ${Object.entries(this.fields).map(([sectionName, fields]) => {
+            if (!fields) return;
+
             const cols: Cols = [];
 
             (Object.entries(fields) as Entries<Field>).forEach(
@@ -470,11 +481,14 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       lang: this.languageSelect?.value ?? undefined,
       exclude: this.exclusionTable?.exclusions?.filter((v) => v) || [],
       customBehaviors: this.customBehaviorsTable?.value || [],
-      dedupeCollId:
+    };
+
+    if (this.featureFlags.has("dedupeEnabled")) {
+      parsedValues.dedupeCollId =
         (isExistingCollection(this.dedupeCollection) &&
           this.dedupeCollection.id) ||
-        "",
-    };
+        "";
+    }
 
     // Set null or empty strings to undefined
     const params = Object.entries(parsedValues).reduce(

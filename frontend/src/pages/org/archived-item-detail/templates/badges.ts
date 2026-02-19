@@ -1,12 +1,14 @@
 import { msg, str } from "@lit/localize";
 import { html, nothing } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 
 import { iconFor, labelFor, variantFor } from "@/features/qa/review-status";
 import { type ArchivedItem } from "@/types/crawler";
 import { isCrawl } from "@/utils/crawler";
 import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
+import appState from "@/utils/state";
 
 export const itemTypeBadge = (itemType: ArchivedItem["type"]) => {
   const upload = itemType === "upload";
@@ -60,10 +62,15 @@ export const badges = (item: ArchivedItem) => {
   return html`<div class="flex flex-wrap gap-3 whitespace-nowrap">
     ${itemTypeBadge(item.type)} ${collectionBadge(item.collectionIds.length)}
     ${isCrawl(item) ? html`${qaReviewBadge(item.reviewStatus)} ` : nothing}
-    <btrix-dedupe-badge
-      .dependencies=${item.requiresCrawls}
-      .dependents=${item.requiredByCrawls}
-    ></btrix-dedupe-badge>
+    ${when(
+      appState.featureFlags.has("dedupeEnabled"),
+      () => html`
+        <btrix-dedupe-badge
+          .dependencies=${item.requiresCrawls}
+          .dependents=${item.requiredByCrawls}
+        ></btrix-dedupe-badge>
+      `,
+    )}
   </div>`;
 };
 
