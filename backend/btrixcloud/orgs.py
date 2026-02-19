@@ -1625,7 +1625,7 @@ class OrgOps(BaseOrgs):
     ):
         """Remove collection from crawling defaults
 
-        At this point, only dedupeCollId is supported in crawloing defaults.
+        At this point, only dedupeCollId is supported in crawling defaults.
         If we add auto-add collections to defaults, we'll need to clean that
         up here as well.
         """
