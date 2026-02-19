@@ -768,7 +768,7 @@ class CollectionOps:
         job_type: TYPE_INDEX_JOB_TYPES = "import",
         crawl_id: Optional[str] = None,
     ):
-        """update index with import / purge job"""
+        """update index with import / purge / post-crawl job"""
 
         crawler_image = self.crawl_ops.crawl_configs.get_channel_crawler_image(
             self.dedupe_importer_channel
