@@ -448,6 +448,7 @@ class CrawlOperator(BaseOperator):
 
         pod_info = status.podStatus[name]
         params["name"] = name
+        params["priorityClassName"] = ""
         params["obj_type"] = "crawl"
         params["cpu"] = pod_info.newCpu or params.get("redis_cpu")
         params["memory"] = pod_info.newMemory or params.get("redis_memory")

@@ -80,6 +80,7 @@ class CollIndexOperator(BaseOperator):
         ]
 
         self.shared_params["obj_type"] = "coll"
+        self.shared_params["priorityClassName"] = "dedupe-index"
 
         self.shared_params["use_kvrocks"] = self.shared_params["dedupe_use_kvrocks"]
 
@@ -274,7 +275,9 @@ class CollIndexOperator(BaseOperator):
 
         # update stats if redis is available
         if status.index.running:
-            await self.update_stats_from_redis(status, coll_id)
+            # if redis not available, reset state back to 'initing' until it is
+            if not await self.update_stats_from_redis(status, coll_id):
+                desired_state = "initing"
 
         if desired_state != status.state:
             await self.set_state(desired_state, status, coll_id)
@@ -344,13 +347,15 @@ class CollIndexOperator(BaseOperator):
 
         return "bgsave_in_progress:0" in info and "last_bgsave_status:ok" in info
 
-    async def update_stats_from_redis(self, status: CollIndexStatus, coll_id: UUID):
+    async def update_stats_from_redis(
+        self, status: CollIndexStatus, coll_id: UUID
+    ) -> bool:
         """update stats from redis, set other changes based on prev and new state"""
         # attempt to set the last updated from redis when import is finished
         try:
             redis = await self.k8s.get_redis_connected("coll-" + str(coll_id))
             if not redis:
-                return
+                return False
 
             # readd appendonly if using redis
             if status.state == "initing" and self.backend_type == "redis":
@@ -373,11 +378,13 @@ class CollIndexOperator(BaseOperator):
                     **stats,
                 ),
             )
+            return True
 
         # pylint: disable=broad-exception-caught
         except Exception as e:
             print(e)
             traceback.print_exc()
+            return False
 
     def get_related(self, data: MCBaseRequest):
         """return crawljobs that use this dedupe index"""
