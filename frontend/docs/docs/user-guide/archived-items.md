@@ -54,15 +54,16 @@ View a high-fidelity replay of the website at the time it was archived.
 
 For more details on navigating web archives within ReplayWeb.page, see the [ReplayWeb.page user documentation.](https://replayweb.page/docs/user-guide/exploring/)
 
-### Exporting Files
+### WACZ Files
 
-While crawling, Browsertrix will output one or more WACZ files — the crawler aims to output files in consistently sized chunks, and each crawler will output separate WACZ files.
+View downloadable files to save the archived item to a local device or to export the item from Browsertrix for use in another system.
 
-The **WACZ Files** tab lists the individually downloadable WACZ files that make up the archived item as well as their file sizes and backup status.
+One or more WACZ files may be created depending on the size and scale of the crawl. To combine them all into a single WACZ file, choose _Export as Combined WACZ_ at the top of the tab. The combined file will automatically begin downloading.
 
-To download an entire archived item as a single WACZ file, click the _Download Item_ button at the top of the **WACZ Files** tab or the _Download Item_ entry in the crawl's _Actions_ menu.
+Combining multiple WACZ files is the default behavior when choosing _Download_ and _Download Item_ from the archived item and workflow action menus, respectively.
 
-To combine multiple archived items and download them all as a single WACZ file, add them to a collection and [download the collection](collection.md#download-a-collection).
+???+ Question "What is WACZ?"
+    [WACZ](https://specs.webrecorder.net/wacz/latest/) is a media type that allows web archive collections to be packaged and shared on the web as a discrete file. A WACZ file includes the data that is needed for the rendering of archived content as well as contextual information.
 
 ### Logs
 
