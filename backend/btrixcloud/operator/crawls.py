@@ -543,7 +543,9 @@ class CrawlOperator(BaseOperator):
             }
             return [configmap]
 
-        crawl_replay = await self.crawl_ops.get_internal_crawl_out(qa_source_crawl_id)
+        crawl_replay = await self.crawl_ops.get_internal_crawl_out(
+            qa_source_crawl_id, with_dependencies=True
+        )
 
         params["name"] = name
         params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})

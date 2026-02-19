@@ -170,6 +170,7 @@ class BaseCrawlOps:
         skip_resources=False,
         headers: Optional[dict] = None,
         cid: Optional[UUID] = None,
+        with_dependencies: bool = False,
     ) -> CrawlOutWithResources:
         """Get crawl data for api output"""
         res = await self.get_crawl_raw(crawlid, org, type_)
@@ -208,27 +209,61 @@ class BaseCrawlOps:
 
         crawl = CrawlOutWithResources.from_dict(res)
 
+        if not org:
+            org = await self.orgs.get_org_by_id(crawl.oid)
+
         if not skip_resources:
             crawl = await self._resolve_crawl_refs(crawl, org, files)
             if crawl.config and crawl.config.seeds:
                 crawl.config.seeds = None
 
-        if not org:
-            org = await self.orgs.get_org_by_id(crawl.oid)
+            # add dependencies
+            if crawl.requiresCrawls and with_dependencies:
+                match = {"_id": {"$in": crawl.requiresCrawls}}
+                resources, _ = await self.get_presigned_files(match, org)
+
+                crawl.fileSizeWithDeps = crawl.fileSize
+
+                for resource in resources:
+                    resource.fromDependency = True
+                    crawl.fileSizeWithDeps += resource.size
+
+                if not crawl.resources:
+                    crawl.resources = resources
+                else:
+                    crawl.resources.extend(resources)
+
+                crawl.missingRequiresCrawls = await self.find_missing_crawls(
+                    crawl.requiresCrawls, org.id
+                )
 
         crawl.storageQuotaReached = self.orgs.storage_quota_reached(org)
         crawl.execMinutesQuotaReached = self.orgs.exec_mins_quota_reached(org)
 
         return crawl
 
-    async def get_internal_crawl_out(self, crawl_id):
+    async def get_internal_crawl_out(
+        self, crawl_id: str, with_dependencies: bool = False
+    ):
         """add internal prefix for relative paths"""
-        crawl_out = await self.get_crawl_out(crawl_id)
+        crawl_out = await self.get_crawl_out(
+            crawl_id, with_dependencies=with_dependencies
+        )
         resources = crawl_out.resources or []
         for file_ in resources:
             file_.path = self.storage_ops.resolve_internal_access_path(file_.path)
 
         return crawl_out
+
+    async def find_missing_crawls(self, crawl_ids: list[str], oid: UUID) -> list[str]:
+        """returns a list of crawl ids that are no longer in the db from a given list"""
+        cursor = self.crawls.find(
+            {"_id": {"$in": crawl_ids}, "oid": oid}, projection=["_id"]
+        )
+        found_crawls = await cursor.to_list(len(crawl_ids))
+        existing = {found["_id"] for found in found_crawls}
+        missing = [crawl_id for crawl_id in crawl_ids if crawl_id not in existing]
+        return missing
 
     async def _update_crawl_collections(
         self, crawl_id: str, org: Organization, collection_ids: List[UUID]
@@ -1024,7 +1059,11 @@ class BaseCrawlOps:
         }
 
     async def download_crawl_as_single_wacz(
-        self, crawl_id: str, org: Organization, prefer_single_wacz: bool = False
+        self,
+        crawl_id: str,
+        org: Organization,
+        prefer_single_wacz: bool = False,
+        with_dependencies: bool = False,
     ):
         """Download archived item as a single WACZ file
 
@@ -1032,7 +1071,9 @@ class BaseCrawlOps:
         If prefer_single_wacz is true and archived item has only one WACZ,
         returns that instead
         """
-        crawl = await self.get_crawl_out(crawl_id, org)
+        crawl = await self.get_crawl_out(
+            crawl_id, org, with_dependencies=with_dependencies
+        )
 
         if not crawl.resources:
             raise HTTPException(status_code=400, detail="no_crawl_resources")
@@ -1048,7 +1089,11 @@ class BaseCrawlOps:
             metadata, crawl.resources, prefer_single_wacz=prefer_single_wacz
         )
 
-        filename = f"{crawl_id}.wacz"
+        filename = (
+            f"{crawl_id}.wacz"
+            if not with_dependencies
+            else f"{crawl_id}-with-deps.wacz"
+        )
         if len(crawl.resources) == 1 and prefer_single_wacz:
             filename = crawl.resources[0].name
 
@@ -1258,9 +1303,17 @@ def init_base_crawls_api(app, user_dep, *args):
         response_model=CrawlOutWithResources,
     )
     async def get_base_crawl(
-        crawl_id: str, request: Request, org: Organization = Depends(org_crawl_dep)
+        crawl_id: str,
+        request: Request,
+        org: Organization = Depends(org_crawl_dep),
+        withDependencies: bool = False,
     ):
-        return await ops.get_crawl_out(crawl_id, org, headers=dict(request.headers))
+        return await ops.get_crawl_out(
+            crawl_id,
+            org,
+            headers=dict(request.headers),
+            with_dependencies=withDependencies,
+        )
 
     @app.get(
         "/orgs/all/all-crawls/{crawl_id}/replay.json",
@@ -1268,12 +1321,20 @@ def init_base_crawls_api(app, user_dep, *args):
         response_model=CrawlOutWithResources,
     )
     async def get_base_crawl_admin(
-        crawl_id, request: Request, user: User = Depends(user_dep)
+        crawl_id,
+        request: Request,
+        user: User = Depends(user_dep),
+        withDependencies: bool = False,
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return await ops.get_crawl_out(crawl_id, None, headers=dict(request.headers))
+        return await ops.get_crawl_out(
+            crawl_id,
+            None,
+            headers=dict(request.headers),
+            with_dependencies=withDependencies,
+        )
 
     @app.get(
         "/orgs/{oid}/all-crawls/{crawl_id}/replay.json",
@@ -1281,9 +1342,17 @@ def init_base_crawls_api(app, user_dep, *args):
         response_model=CrawlOutWithResources,
     )
     async def get_crawl_out(
-        crawl_id, request: Request, org: Organization = Depends(org_viewer_dep)
+        crawl_id,
+        request: Request,
+        org: Organization = Depends(org_viewer_dep),
+        withDependencies: bool = False,
     ):
-        return await ops.get_crawl_out(crawl_id, org, headers=dict(request.headers))
+        return await ops.get_crawl_out(
+            crawl_id,
+            org,
+            headers=dict(request.headers),
+            with_dependencies=withDependencies,
+        )
 
     @app.get(
         "/orgs/{oid}/all-crawls/{crawl_id}/download",
@@ -1294,9 +1363,13 @@ def init_base_crawls_api(app, user_dep, *args):
         crawl_id: str,
         preferSingleWACZ: bool = False,
         org: Organization = Depends(org_viewer_dep),
+        withDependencies: bool = False,
     ):
         return await ops.download_crawl_as_single_wacz(
-            crawl_id, org, prefer_single_wacz=preferSingleWACZ
+            crawl_id,
+            org,
+            prefer_single_wacz=preferSingleWACZ,
+            with_dependencies=withDependencies,
         )
 
     @app.patch(
