@@ -1089,7 +1089,11 @@ class BaseCrawlOps:
             metadata, crawl.resources, prefer_single_wacz=prefer_single_wacz
         )
 
-        filename = f"{crawl_id}.wacz" if not with_dependencies else f"{crawl_id}-with-deps.wacz"
+        filename = (
+            f"{crawl_id}.wacz"
+            if not with_dependencies
+            else f"{crawl_id}-with-deps.wacz"
+        )
         if len(crawl.resources) == 1 and prefer_single_wacz:
             filename = crawl.resources[0].name
 
