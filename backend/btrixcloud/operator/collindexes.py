@@ -347,7 +347,9 @@ class CollIndexOperator(BaseOperator):
 
         return "bgsave_in_progress:0" in info and "last_bgsave_status:ok" in info
 
-    async def update_stats_from_redis(self, status: CollIndexStatus, coll_id: UUID) -> bool:
+    async def update_stats_from_redis(
+        self, status: CollIndexStatus, coll_id: UUID
+    ) -> bool:
         """update stats from redis, set other changes based on prev and new state"""
         # attempt to set the last updated from redis when import is finished
         try:
