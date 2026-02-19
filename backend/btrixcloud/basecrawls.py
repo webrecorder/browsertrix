@@ -170,7 +170,7 @@ class BaseCrawlOps:
         skip_resources=False,
         headers: Optional[dict] = None,
         cid: Optional[UUID] = None,
-        with_dependencies=False,
+        with_dependencies: bool = False,
     ) -> CrawlOutWithResources:
         """Get crawl data for api output"""
         res = await self.get_crawl_raw(crawlid, org, type_)
@@ -234,7 +234,9 @@ class BaseCrawlOps:
 
         return crawl
 
-    async def get_internal_crawl_out(self, crawl_id, with_dependencies=False):
+    async def get_internal_crawl_out(
+        self, crawl_id: str, with_dependencies: bool = False
+    ):
         """add internal prefix for relative paths"""
         crawl_out = await self.get_crawl_out(
             crawl_id, with_dependencies=with_dependencies
@@ -1043,7 +1045,7 @@ class BaseCrawlOps:
         crawl_id: str,
         org: Organization,
         prefer_single_wacz: bool = False,
-        with_dependencies=False,
+        with_dependencies: bool = False,
     ):
         """Download archived item as a single WACZ file
 
@@ -1282,13 +1284,13 @@ def init_base_crawls_api(app, user_dep, *args):
         crawl_id: str,
         request: Request,
         org: Organization = Depends(org_crawl_dep),
-        with_dependencies=False,
+        withDependencies: bool = False,
     ):
         return await ops.get_crawl_out(
             crawl_id,
             org,
             headers=dict(request.headers),
-            with_dependencies=with_dependencies,
+            with_dependencies=withDependencies,
         )
 
     @app.get(
@@ -1301,7 +1303,7 @@ def init_base_crawls_api(app, user_dep, *args):
         crawl_id,
         request: Request,
         user: User = Depends(user_dep),
-        with_dependencies=False,
+        withDependencies: bool = False,
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
@@ -1310,7 +1312,7 @@ def init_base_crawls_api(app, user_dep, *args):
             crawl_id,
             None,
             headers=dict(request.headers),
-            with_dependencies=with_dependencies,
+            with_dependencies=withDependencies,
         )
 
     @app.get(
@@ -1322,13 +1324,13 @@ def init_base_crawls_api(app, user_dep, *args):
         crawl_id,
         request: Request,
         org: Organization = Depends(org_viewer_dep),
-        with_dependencies=False,
+        withDependencies: bool = False,
     ):
         return await ops.get_crawl_out(
             crawl_id,
             org,
             headers=dict(request.headers),
-            with_dependencies=with_dependencies,
+            with_dependencies=withDependencies,
         )
 
     @app.get(
@@ -1340,13 +1342,13 @@ def init_base_crawls_api(app, user_dep, *args):
         crawl_id: str,
         preferSingleWACZ: bool = False,
         org: Organization = Depends(org_viewer_dep),
-        with_dependencies=False,
+        withDependencies: bool = False,
     ):
         return await ops.download_crawl_as_single_wacz(
             crawl_id,
             org,
             prefer_single_wacz=preferSingleWACZ,
-            with_dependencies=with_dependencies,
+            with_dependencies=withDependencies,
         )
 
     @app.patch(
