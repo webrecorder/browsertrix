@@ -198,6 +198,7 @@ type ArchivedItemBase = {
   errorPageCount?: number;
   requiresCrawls: string[];
   requiredByCrawls: string[];
+  fileSizeWithDeps: number | null;
 };
 
 export type Crawl = ArchivedItemBase &

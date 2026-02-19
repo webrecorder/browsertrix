@@ -10,7 +10,7 @@ function fileItem(file: StorageFile) {
     <div class="flex flex-1 items-center gap-2 overflow-hidden px-2">
       <sl-icon
         name="file-earmark-zip-fill"
-        class="textprimary size-4 shrink-0 text-neutral-600"
+        class="size-4 shrink-0 text-neutral-600"
         label=${msg("File")}
       ></sl-icon>
       <btrix-link

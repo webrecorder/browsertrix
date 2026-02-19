@@ -810,7 +810,9 @@ export class ArchivedItemDetail extends BtrixElement {
                 ${msg("Download")}
                 ${this.item?.fileSize
                   ? html` <btrix-badge slot="suffix"
-                      >${this.localize.bytes(this.item.fileSize)}</btrix-badge
+                      >${this.localize.bytes(this.item.fileSize, {
+                        unitDisplay: "narrow",
+                      })}</btrix-badge
                     >`
                   : nothing}
               </btrix-menu-item-link>
@@ -1195,10 +1197,17 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderFiles() {
-    console.log(this.item?.resources);
     return html`
       ${this.hasFiles
-        ? html` ${when(this.item?.resources, (files) => fileList({ files }))} `
+        ? html`
+            ${when(this.item?.resources, (resources) =>
+              fileList({
+                files: resources.filter(
+                  ({ fromDependency }) => !fromDependency,
+                ),
+              }),
+            )}
+          `
         : html`
             <p class="text-sm text-neutral-400">
               ${msg("No files to download.")}
@@ -1220,7 +1229,7 @@ export class ArchivedItemDetail extends BtrixElement {
     const downloadHref = `/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}&preferSingleWACZ=true`;
     const downloadButton = html`<btrix-popover
       content=${this.localize.bytes(this.item.fileSize, {
-        notation: "compact",
+        unitDisplay: "narrow",
       })}
     >
       <sl-button
@@ -1234,7 +1243,7 @@ export class ArchivedItemDetail extends BtrixElement {
       </sl-button>
     </btrix-popover>`;
 
-    if (this.item.requiresCrawls.length) {
+    if (this.item.fileSizeWithDeps) {
       return html`<sl-button-group>
         ${downloadButton}
         <sl-dropdown distance="4" placement="bottom-end">
@@ -1247,7 +1256,7 @@ export class ArchivedItemDetail extends BtrixElement {
               ${msg("Without Dependencies")}
               <btrix-badge slot="suffix">
                 ${this.localize.bytes(this.item.fileSize, {
-                  notation: "compact",
+                  unitDisplay: "narrow",
                 })}
               </btrix-badge>
             </btrix-menu-item-link>
@@ -1258,8 +1267,8 @@ export class ArchivedItemDetail extends BtrixElement {
               <sl-icon slot="prefix" name="cloud-download"></sl-icon>
               ${msg("With Dependencies")}
               <btrix-badge slot="suffix">
-                ${this.localize.bytes(this.item.fileSize, {
-                  notation: "compact",
+                ${this.localize.bytes(this.item.fileSizeWithDeps, {
+                  unitDisplay: "narrow",
                 })}
               </btrix-badge>
             </btrix-menu-item-link>
