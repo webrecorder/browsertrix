@@ -10,6 +10,7 @@ import queryString from "query-string";
 
 import { badges, badgesSkeleton } from "./templates/badges";
 import { fileList } from "./templates/file-list";
+import { missingDependenciesPanel } from "./templates/missing-dependencies-panel";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
@@ -131,6 +132,9 @@ export class ArchivedItemDetail extends BtrixElement {
   @state()
   private mostRecentSuccessQARun?: QARun;
 
+  @state()
+  private missingDependenciesOpen = false;
+
   @query("#stopQARunDialog")
   private readonly stopQARunDialog?: Dialog | null;
 
@@ -169,14 +173,6 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private get reviewUrl(): string {
     return `${new URL(window.location.href).pathname}/review/screenshots${this.mostRecentSuccessQARun ? `?qaRunId=${this.mostRecentSuccessQARun.id}` : ""}`;
-  }
-
-  private get dependenciesUrl(): string {
-    return `${new URL(window.location.href).pathname}${window.location.search}#${"dependencies" satisfies SectionName}`;
-  }
-
-  private get dedupeSourceUrl(): string {
-    return `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${(this.item && isCrawl(this.item) && this.item.dedupeCollId) || ""}`;
   }
 
   private timerId?: number;
@@ -378,7 +374,7 @@ export class ArchivedItemDetail extends BtrixElement {
     const missingDepsNotice = ids?.length
       ? missingDependenciesNotice({
           ids,
-          dependenciesHref: this.dependenciesUrl,
+          viewMore: () => (this.missingDependenciesOpen = true),
         })
       : nothing;
 
@@ -431,7 +427,6 @@ export class ArchivedItemDetail extends BtrixElement {
                 href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/logs?auth_bearer=${authToken}`}
                 download=${`browsertrix-${this.itemId}-logs.log`}
                 size="small"
-                variant="primary"
               >
                 <sl-icon slot="prefix" name="download"></sl-icon>
                 ${msg("Download Logs")}
@@ -456,7 +451,6 @@ export class ArchivedItemDetail extends BtrixElement {
             `)}
             <sl-button
               size="small"
-              variant="primary"
               href="${this.navigate.orgBasePath}/workflows/${this.item
                 ?.cid}?edit"
               ?disabled=${!this.item}
@@ -475,6 +469,19 @@ export class ArchivedItemDetail extends BtrixElement {
           this.renderPanel(
             html`
               ${this.renderTitle(this.tabLabels.dependencies, { beta: true })}
+              ${when(
+                this.item && isCrawl(this.item) && this.item.dedupeCollId,
+                (id) => html`
+                  <sl-button
+                    size="small"
+                    href="${this.navigate
+                      .orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${id}/${CollectionTab.Deduplication}"
+                  >
+                    <sl-icon slot="prefix" name="stack"></sl-icon>
+                    ${msg("Go to Source")}
+                  </sl-button>
+                `,
+              )}
             `,
             this.renderDependencies(),
           ),
@@ -587,6 +594,14 @@ export class ArchivedItemDetail extends BtrixElement {
             >`
           : nothing}
       </btrix-delete-item-dialog>
+
+      ${when(this.item?.missingRequiresCrawls, (ids) =>
+        missingDependenciesPanel({
+          ids,
+          open: this.missingDependenciesOpen,
+          hide: () => (this.missingDependenciesOpen = false),
+        }),
+      )}
     `;
   }
 
@@ -1165,7 +1180,7 @@ export class ArchivedItemDetail extends BtrixElement {
     const { requiresCrawls } = this.item;
     const noDeps = panelBody({
       content: emptyMessage({
-        message: msg("This crawl doesn't have any dependencies."),
+        message: msg("No dependencies found."),
       }),
     });
 
@@ -1173,37 +1188,48 @@ export class ArchivedItemDetail extends BtrixElement {
       return noDeps;
     }
 
+    const missingDeps = (ids: string[]) => {
+      if (!ids.length) return;
+
+      const dependencies_count = this.localize.number(ids.length);
+      const plural_of_dependencies = pluralOf("dependencies", ids.length);
+
+      return html`<btrix-alert class="part-[base]:mb-3" variant="warning">
+        <div class="flex items-center gap-1.5">
+          <sl-icon
+            class="text-base text-warning-700"
+            name="exclamation-diamond-fill"
+            label=${msg("Warning")}
+          ></sl-icon>
+          ${msg(
+            str`${dependencies_count} ${msg("missing")} ${plural_of_dependencies} ${msg("not shown")}`,
+          )}
+          <sl-button
+            class="ml-auto part-[base]:min-h-5 part-[base]:leading-5 part-[base]:!text-warning-700 part-[base]:hover:!text-warning-800"
+            size="small"
+            variant="text"
+            @click=${() => (this.missingDependenciesOpen = true)}
+          >
+            ${msg("More Details")}
+          </sl-button>
+        </div>
+      </btrix-alert>`;
+    };
+
     const dedupeCollId = isCrawl(this.item) && this.item.dedupeCollId;
 
     return html`
+      ${when(this.item.missingRequiresCrawls, missingDeps)}
       ${this.dependenciesTask.render({
         complete: (deps) =>
-          deps
-            ? html`<div
-                  class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 p-3"
-                >
-                  <div class="text-neutral-500">
-                    ${msg("Dependent on")} ${this.localize.number(deps.total)}
-                    ${pluralOf("items", deps.total)}
-                    ${when(
-                      dedupeCollId,
-                      (id) => html`
-                        ${msg("in")}
-                        <btrix-link
-                          href="${this.navigate
-                            .orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${id}/${CollectionTab.Deduplication}"
-                        >
-                          ${msg("deduplication source")}
-                        </btrix-link>
-                      `,
-                    )}
-                  </div>
-                </div>
+          deps?.total
+            ? html`
                 <btrix-item-dependents
                   .items=${deps.items}
                   collectionId=${ifDefined(dedupeCollId || undefined)}
                 >
-                </btrix-item-dependents>`
+                </btrix-item-dependents>
+              `
             : noDeps,
       })}
     `;
@@ -1252,22 +1278,20 @@ export class ArchivedItemDetail extends BtrixElement {
       })}
       placement="top"
     >
-      <sl-button
-        href=${downloadHref}
-        download=""
-        size="small"
-        variant="primary"
-      >
+      <sl-button href=${downloadHref} download="" size="small">
         <sl-icon slot="prefix" name="file-earmark-arrow-down"></sl-icon>
         ${msg("Export as Combined WACZ")}
       </sl-button>
     </btrix-popover>`;
 
-    if (this.item.fileSizeWithDeps) {
+    if (
+      this.item.fileSizeWithDeps &&
+      this.item.fileSizeWithDeps > this.item.fileSize
+    ) {
       return html`<sl-button-group>
         ${downloadButton}
         <sl-dropdown distance="4" placement="bottom-end">
-          <sl-button slot="trigger" size="small" variant="primary" caret>
+          <sl-button slot="trigger" size="small" caret>
             <sl-visually-hidden>${msg("Export options")}</sl-visually-hidden>
           </sl-button>
           <sl-menu>

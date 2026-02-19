@@ -179,7 +179,7 @@ export class ItemDependencyTree extends BtrixElement {
         </div>
       </div>
     `;
-    const noItem = () => html`
+    const noItem = (id: string) => html`
       <div class="inline-flex h-9 w-full items-center gap-2">
         <sl-tooltip content=${msg("Deleted from Org")} hoist>
           <sl-icon
@@ -190,6 +190,12 @@ export class ItemDependencyTree extends BtrixElement {
         <div class="font-monostyle text-neutral-400">
           (${msg("deleted item")})
         </div>
+        <btrix-copy-button
+          class="ml-auto inline-flex size-8 items-center justify-center"
+          value=${id}
+          content=${msg("Copy ID")}
+          hoist
+        ></btrix-copy-button>
       </div>
     `;
 
@@ -206,8 +212,10 @@ export class ItemDependencyTree extends BtrixElement {
     >
       ${until(
         this.dependenciesTask.taskComplete
-          .then(() => this.dependenciesMap.get(id))
-          .then((item) => (item ? this.renderContent(item) : noItem())),
+          .then(() => this.dependenciesMap.get(id) || id)
+          .then((item) =>
+            typeof item === "string" ? noItem(id) : this.renderContent(item),
+          ),
         skeleton(),
       )}
     </sl-tree-item>`;

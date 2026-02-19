@@ -19,7 +19,9 @@ export function collectionStatusIcon({
   let icon = "dash-circle";
   let library: IconLibrary = "default";
   let variant = tw`text-neutral-400`;
-  let tooltip = msg("Not in Collection");
+  let tooltip = collectionId
+    ? msg("Not in Same Collection")
+    : msg("Not in Collection");
 
   if (inCollection) {
     icon = "check-circle";

@@ -1,7 +1,6 @@
 import { msg, str } from "@lit/localize";
 import clsx from "clsx";
-import { html } from "lit";
-import { when } from "lit/directives/when.js";
+import { html, nothing, type TemplateResult } from "lit";
 
 import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
@@ -14,6 +13,7 @@ export function missingDependenciesNotice({
   bottomCss,
   truncate,
   dismiss,
+  viewMore,
 }: {
   ids: string[];
   dependenciesHref?: string;
@@ -21,6 +21,7 @@ export function missingDependenciesNotice({
   bottomCss?: string;
   truncate?: boolean;
   dismiss?: () => void;
+  viewMore?: () => void;
 }) {
   const dependencies_count = localize.number(ids.length);
   const plural_of_dependencies = pluralOf("dependencies", ids.length);
@@ -43,6 +44,40 @@ export function missingDependenciesNotice({
     </btrix-popover>`;
   }
 
+  let action: typeof nothing | TemplateResult = nothing;
+
+  if (dismiss) {
+    action = html`<sl-button
+      class="part-[base]:min-h-5 part-[base]:leading-5 part-[base]:!text-warning-700 part-[base]:hover:!text-warning-800"
+      size="small"
+      variant="text"
+      @click=${dismiss}
+    >
+      <sl-icon slot="prefix" name="check-lg"></sl-icon>
+      ${msg("Dismiss")}
+    </sl-button>`;
+  }
+
+  if (dependenciesHref) {
+    action = html`<btrix-link
+      class="part-[base]:font-medium"
+      variant="warning"
+      href=${dependenciesHref}
+      >${msg("Go to Dependencies")}</btrix-link
+    >`;
+  }
+
+  if (viewMore) {
+    action = html`<sl-button
+      class="ml-auto part-[base]:min-h-5 part-[base]:leading-5 part-[base]:!text-warning-700 part-[base]:hover:!text-warning-800"
+      size="small"
+      variant="text"
+      @click=${viewMore}
+    >
+      ${msg("More Details")}
+    </sl-button>`;
+  }
+
   return html`<btrix-alert
     class=${clsx(
       tw`sticky z-50 mx-auto`,
@@ -59,34 +94,10 @@ export function missingDependenciesNotice({
         </strong>
       </span>
 
-      ${dismiss
-        ? html`<sl-button
-            class="part-[base]:min-h-5 part-[base]:leading-5 part-[base]:!text-warning-700 part-[base]:hover:!text-warning-800"
-            size="small"
-            variant="text"
-            @click=${dismiss}
-          >
-            <sl-icon slot="prefix" name="check-lg"></sl-icon>
-            ${msg("Dismiss")}
-          </sl-button>`
-        : html`${when(
-            dependenciesHref,
-            (href) =>
-              html`<btrix-link
-                class="part-[base]:font-medium"
-                variant="warning"
-                href=${href}
-                >${msg("Review Dependencies")}</btrix-link
-              >`,
-          )}`}
+      ${action}
     </div>
     <div class="text-pretty text-warning-800">
-      <p class="max-w-prose">
-        ${msg(
-          "Archived items required by this crawl have been deleted and are no longer available.",
-        )}
-        ${description}
-      </p>
+      <p>${description}</p>
     </div>
   </btrix-alert>`;
 }
