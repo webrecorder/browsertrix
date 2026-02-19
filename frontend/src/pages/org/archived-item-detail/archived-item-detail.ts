@@ -430,7 +430,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 size="small"
                 variant="primary"
               >
-                <sl-icon slot="prefix" name="file-earmark-arrow-down"></sl-icon>
+                <sl-icon slot="prefix" name="download"></sl-icon>
                 ${msg("Download Logs")}
               </sl-button>
             </sl-tooltip>`,
@@ -807,7 +807,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 download
               >
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-                ${msg("Download Item")}
+                ${msg("Download")}
                 ${this.item?.fileSize
                   ? html` <btrix-badge slot="suffix"
                       >${this.localize.bytes(this.item.fileSize)}</btrix-badge
@@ -1221,30 +1221,37 @@ export class ArchivedItemDetail extends BtrixElement {
     if (
       !this.item?.fileSize ||
       !this.item.fileCount ||
-      this.item.fileCount === 1
-    )
+      (this.item.fileCount === 1 && !this.item.requiresCrawls.length)
+    ) {
       return;
+    }
 
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
     const downloadHref = `/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}&preferSingleWACZ=true`;
+    const downloadButton = html`<btrix-popover
+      content=${this.localize.bytes(this.item.fileSize, {
+        notation: "compact",
+      })}
+    >
+      <sl-button
+        href=${downloadHref}
+        download=""
+        size="small"
+        variant="primary"
+      >
+        <sl-icon slot="prefix" name="file-earmark-arrow-down"></sl-icon>
+        ${msg("Export as Combined WACZ")}
+      </sl-button>
+    </btrix-popover>`;
 
     if (this.item.requiresCrawls.length) {
       return html`<sl-button-group>
-        <sl-button
-          href=${downloadHref}
-          download=""
-          size="small"
-          variant="primary"
-        >
-          <sl-icon slot="prefix" name="file-earmark-arrow-down"></sl-icon>
-          ${msg("Export")}
-        </sl-button>
+        ${downloadButton}
         <sl-dropdown distance="4" placement="bottom-end">
           <sl-button slot="trigger" size="small" variant="primary" caret>
             <sl-visually-hidden>${msg("Export options")}</sl-visually-hidden>
           </sl-button>
           <sl-menu>
-            <sl-menu-label> ${msg("Export as Combined WACZ")} </sl-menu-label>
             <sl-menu-item>
               <sl-icon slot="prefix" name="cloud-download"></sl-icon>
               ${msg("Without Dependencies")}
@@ -1268,21 +1275,7 @@ export class ArchivedItemDetail extends BtrixElement {
       </sl-button-group>`;
     }
 
-    return html`<btrix-popover
-      content=${this.localize.bytes(this.item.fileSize, {
-        notation: "compact",
-      })}
-    >
-      <sl-button
-        href=${downloadHref}
-        download=""
-        size="small"
-        variant="primary"
-      >
-        <sl-icon slot="prefix" name="file-earmark-arrow-down"></sl-icon>
-        ${msg("Export as Combined WACZ")}
-      </sl-button>
-    </btrix-popover>`;
+    return downloadButton;
   }
 
   private renderLogs() {

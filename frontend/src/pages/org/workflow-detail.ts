@@ -736,10 +736,8 @@ export class WorkflowDetail extends BtrixElement {
           ?disabled=${!disableDownload}
         >
           <sl-button-group>
-            <sl-tooltip
-              content="${msg("Download Item as WACZ")} (${this.localize.bytes(
-                latestCrawl.fileSize || 0,
-              )})"
+            <btrix-popover
+              content=${this.localize.bytes(latestCrawl.fileSize || 0)}
               ?disabled=${disableReplay}
             >
               <sl-button
@@ -751,7 +749,7 @@ export class WorkflowDetail extends BtrixElement {
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                 ${msg("Download")}
               </sl-button>
-            </sl-tooltip>
+            </btrix-popover>
             <sl-dropdown distance="4" placement="bottom-end" hoist>
               <sl-button
                 slot="trigger"
@@ -783,11 +781,8 @@ export class WorkflowDetail extends BtrixElement {
                   href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
                   download
                 >
-                  <sl-icon
-                    name="file-earmark-arrow-down"
-                    slot="prefix"
-                  ></sl-icon>
-                  ${msg("Log")}
+                  <sl-icon name="download" slot="prefix"></sl-icon>
+                  ${msg("Logs")}
                 </btrix-menu-item-link>
               </sl-menu>
             </sl-dropdown>

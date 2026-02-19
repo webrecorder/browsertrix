@@ -240,8 +240,8 @@ export class WorkflowActionMenu extends BtrixElement {
           ?disabled=${!(logTotals?.errors || logTotals?.behaviors)}
           download
         >
-          <sl-icon name="file-earmark-arrow-down" slot="prefix"></sl-icon>
-          ${msg("Download Log")}
+          <sl-icon name="download" slot="prefix"></sl-icon>
+          ${msg("Download Logs")}
         </btrix-menu-item-link>
 
         ${when(

@@ -32,7 +32,7 @@ function fileItem(file: StorageFile) {
     <div class="p-0.5">
       <sl-icon-button
         class="text-base"
-        name="download"
+        name="cloud-download"
         label=${msg("Download file")}
         title=${fileName}
         download=${fileName}
