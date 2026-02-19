@@ -919,7 +919,7 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private renderRWP() {
     if (!this.item) return;
-    const replaySource = `/api/orgs/${this.item.oid}/all-crawls/${this.itemId}/replay.json?with_dependencies=true`;
+    const replaySource = `/api/orgs/${this.item.oid}/all-crawls/${this.itemId}/replay.json?withDependencies=true`;
 
     const headers = this.authState?.headers;
 
@@ -1252,7 +1252,7 @@ export class ArchivedItemDetail extends BtrixElement {
               </btrix-badge>
             </btrix-menu-item-link>
             <btrix-menu-item-link
-              href=${`${downloadHref}&with_dependencies=true`}
+              href=${`${downloadHref}&withDependencies=true`}
               download
             >
               <sl-icon slot="prefix" name="cloud-download"></sl-icon>
@@ -1466,7 +1466,7 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private async getCrawl() {
-    const apiPath = `/orgs/${this.orgId}/all-crawls/${this.itemId}/replay.json?with_dependencies=true`;
+    const apiPath = `/orgs/${this.orgId}/all-crawls/${this.itemId}/replay.json?withDependencies=true`;
     return this.api.fetch<CrawlReplay>(apiPath);
   }
 

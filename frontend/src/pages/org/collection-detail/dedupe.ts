@@ -458,7 +458,7 @@ export class CollectionDetailDedupe extends BtrixElement {
           </div>
           ${stat({
             label: msg("Total Indexed Items"),
-            icon: "file-earmark-zip",
+            icon: "file-zip",
             value: indexStats.totalCrawlSize,
             format: "byte",
           })}
@@ -490,7 +490,7 @@ export class CollectionDetailDedupe extends BtrixElement {
           })}
           ${stat({
             label: msg("Total Indexed Items"),
-            icon: "file-earmark-zip",
+            icon: "file-zip",
             value: indexStats.totalCrawls,
           })}
           ${stat({

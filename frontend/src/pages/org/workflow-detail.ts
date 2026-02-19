@@ -1818,7 +1818,7 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private readonly renderReplay = (latestCrawl: Crawl) => {
-    const replaySource = `/api/orgs/${latestCrawl.oid}/crawls/${this.lastCrawlId}/replay.json?with_dependencies=true`;
+    const replaySource = `/api/orgs/${latestCrawl.oid}/crawls/${this.lastCrawlId}/replay.json?withDependencies=true`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
