@@ -393,9 +393,9 @@ class CollIndexOperator(BaseOperator):
                 DedupeIndexStats(
                     uniqueHashes=num_unique_hashes,
                     totalCrawls=num_crawls,
-                    indexDiskSpaceUsed=disk_space_used,
                     **stats,
                 ),
+                disk_space_used=disk_space_used,
             )
             return True
 

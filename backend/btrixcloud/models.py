@@ -1673,9 +1673,6 @@ class DedupeIndexStats(BaseModel):
     uniqueHashes: int = 0
     estimatedRedundantSize: int = 0
 
-    # size of db on disk when in use
-    indexDiskSpaceUsed: int = 0
-
 
 # ============================================================================
 class Collection(BaseMongoModel):
@@ -1721,6 +1718,9 @@ class Collection(BaseMongoModel):
     indexState: Optional[TYPE_DEDUPE_INDEX_STATES] = None
 
     indexStats: Optional[DedupeIndexStats] = None
+
+    # size of db on disk when in use
+    indexDiskSpaceUsed: int = 0
 
 
 # ============================================================================
