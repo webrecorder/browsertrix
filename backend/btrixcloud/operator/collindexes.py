@@ -23,7 +23,7 @@ from btrixcloud.models import (
 from .models import MCSyncData, MCBaseRequest, POD, JOB, CJS, BTRIX_API
 from .baseoperator import BaseOperator
 
-USED_DISK_THRESHOLD = 0.60
+USED_DISK_THRESHOLD = 0.55
 USED_DISK_TARGET = 0.50
 
 
