@@ -21,7 +21,7 @@ from btrixcloud.models import (
 
 from .models import MCSyncData, MCBaseRequest, POD, JOB, CJS, BTRIX_API
 from .baseoperator import BaseOperator
-
+from kubernetes.utils import parse_quantity
 
 USED_DISK_THRESHOLD = 0.75
 USED_DISK_TARGET = 0.50
@@ -373,6 +373,8 @@ class CollIndexOperator(BaseOperator):
                 if last_update_ts:
                     status.updated = last_update_ts
 
+            disk_space_used = await self.check_disk_size(redis, status)
+
             # update db stats from redis
             stats = await redis.hgetall("allcounts")
             num_unique_hashes = await redis.hlen("alldupes")
@@ -382,12 +384,11 @@ class CollIndexOperator(BaseOperator):
                 DedupeIndexStats(
                     uniqueHashes=num_unique_hashes,
                     totalCrawls=num_crawls,
+                    indexDiskSpaceUsed=disk_space_used,
                     **stats,
                 ),
             )
             return True
-
-            await self.check_disk_size(redis, status)
 
         # pylint: disable=broad-exception-caught
         except Exception as e:
@@ -401,17 +402,25 @@ class CollIndexOperator(BaseOperator):
         if not keyspace:
             return
 
-        capacity = float(keyspace["disk_capacity"])
-        used = float(keyspace["used_disk_size"])
+        capacity = keyspace["disk_capacity"]
+        used = keyspace["used_disk_size"]
+        self.update_desired_storage(used, capacity, status)
+        return used
 
+    def update_desired_storage(self, used: int, capacity: int, status: CollIndexStatus):
+        """set desired storage based on used and current capacity"""
         status.storageCapacity = gb_storage(capacity)
         status.storageUsed = gb_storage(used)
 
-        if used < capacity and (used / capacity) > USED_DISK_THRESHOLD:
-            status.storageDesired = gb_storage(used / USED_DISK_TARGET)
+        if used < capacity and (float(used) / capacity) > USED_DISK_THRESHOLD:
+            status.storageDesired = gb_storage(float(used) / USED_DISK_TARGET)
             print(
                 f"Expanding Dedupe Index Capacity {status.storageCapacity} -> {status.storageDesired}"
             )
+
+        print(f"used: {status.storageUsed}")
+        print(f"capacity: {status.storageCapacity}")
+        print(f"desired: {status.storageDesired}")
 
     def get_related(self, data: MCBaseRequest):
         """return crawljobs that use this dedupe index"""
@@ -468,7 +477,16 @@ class CollIndexOperator(BaseOperator):
             spec.id, org
         )
 
-        params["redis_storage"] = status.storageDesired or params["dedupe_storage"]
+        if not status.storageCapacity or not status.storageDesired:
+            status.storageDesired = params["dedupe_storage"]
+            initial_disk_usage = await self.coll_ops.get_dedupe_index_disk_size(coll_id)
+            self.update_desired_storage(
+                initial_disk_usage,
+                int(parse_quantity(params["dedupe_storage"])),
+                status,
+            )
+
+        params["redis_storage"] = status.storageDesired
 
         return self.load_from_yaml("redis.yaml", params)
 

@@ -867,6 +867,17 @@ class CollectionOps:
             return coll.get("indexLastSavedAt")
         return None
 
+    async def get_dedupe_index_disk_size(self, coll_id: UUID) -> int:
+        """return min disk size for dedupe index when uncompressed on disk.
+        only return if index has been saved"""
+        coll = await self.collections.find_one(
+            {"_id": coll_id, "indexLastSavedAt": {"$ne": None}},
+            projection={"diskSpace": "$indexStats.indexDiskSpaceUsed"},
+        )
+        if coll:
+            return coll.get("diskSpace", 0)
+        return 0
+
     # END DEDUPE OPS
 
     async def recalculate_org_collection_stats(self, org: Organization):
