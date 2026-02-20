@@ -34,6 +34,7 @@ function fileItem(file: StorageFile) {
         class="text-base"
         name="cloud-download"
         label=${msg("Download file")}
+        href=${file.path}
         title=${fileName}
         download=${fileName}
       ></sl-icon-button>
