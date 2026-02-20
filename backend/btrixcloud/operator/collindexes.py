@@ -10,6 +10,7 @@ from urllib.parse import urlsplit
 from uuid import UUID
 from pydantic import BaseModel
 from redis.asyncio.client import Redis
+from kubernetes.utils import parse_quantity
 
 from btrixcloud.utils import str_to_date, date_to_str, dt_now, gb_storage
 from btrixcloud.models import (
@@ -21,7 +22,6 @@ from btrixcloud.models import (
 
 from .models import MCSyncData, MCBaseRequest, POD, JOB, CJS, BTRIX_API
 from .baseoperator import BaseOperator
-from kubernetes.utils import parse_quantity
 
 USED_DISK_THRESHOLD = 0.75
 USED_DISK_TARGET = 0.50
@@ -415,7 +415,10 @@ class CollIndexOperator(BaseOperator):
         if used < capacity and (float(used) / capacity) > USED_DISK_THRESHOLD:
             status.storageDesired = gb_storage(float(used) / USED_DISK_TARGET)
             print(
-                f"Expanding Dedupe Index Capacity {status.storageCapacity} -> {status.storageDesired}"
+                (
+                    "Expanding Dedupe Index Capacity "
+                    + f"{status.storageCapacity} -> {status.storageDesired}"
+                )
             )
 
         print(f"used: {status.storageUsed}")
