@@ -12,7 +12,13 @@ from pydantic import BaseModel
 from redis.asyncio.client import Redis
 from kubernetes.utils import parse_quantity
 
-from btrixcloud.utils import str_to_date, date_to_str, dt_now, gb_storage
+from btrixcloud.utils import (
+    str_to_date,
+    date_to_str,
+    dt_now,
+    gb_storage_ceil,
+    gb_storage_floor,
+)
 from btrixcloud.models import (
     TYPE_DEDUPE_INDEX_STATES,
     DedupeIndexStats,
@@ -409,22 +415,18 @@ class CollIndexOperator(BaseOperator):
 
     def update_desired_storage(self, used: int, capacity: int, status: CollIndexStatus):
         """set desired storage based on used and current capacity"""
-        status.storageCapacity = gb_storage(capacity)
-        status.storageUsed = gb_storage(used)
-        print("used / capacity", used, capacity, float(used) / capacity)
+        status.storageCapacity = gb_storage_floor(capacity)
+        status.storageUsed = gb_storage_ceil(used)
 
         if used < capacity and (float(used) / capacity) > USED_DISK_THRESHOLD:
-            status.storageDesired = gb_storage(float(used) / USED_DISK_TARGET)
+            status.storageDesired = gb_storage_ceil(float(used) / USED_DISK_TARGET)
+            print("used / capacity", used, capacity, float(used) / capacity)
             print(
                 (
                     "Expanding Dedupe Index Capacity "
                     + f"{status.storageCapacity} -> {status.storageDesired}"
                 )
             )
-
-        print(f"used: {status.storageUsed}")
-        print(f"capacity: {status.storageCapacity}")
-        print(f"desired: {status.storageDesired}")
 
     def get_related(self, data: MCBaseRequest):
         """return crawljobs that use this dedupe index"""
