@@ -1285,6 +1285,7 @@ export class ArchivedItemDetail extends BtrixElement {
     </btrix-popover>`;
 
     if (
+      this.featureFlags.has("dedupeEnabled") &&
       this.item.fileSizeWithDeps &&
       this.item.fileSizeWithDeps > this.item.fileSize
     ) {
