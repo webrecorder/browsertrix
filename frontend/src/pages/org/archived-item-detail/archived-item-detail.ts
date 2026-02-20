@@ -476,6 +476,7 @@ export class ArchivedItemDetail extends BtrixElement {
                     size="small"
                     href="${this.navigate
                       .orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${id}/${CollectionTab.Deduplication}"
+                    @click=${this.navigate.link}
                   >
                     <sl-icon slot="prefix" name="stack"></sl-icon>
                     ${msg("Go to Source")}
