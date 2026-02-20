@@ -29,7 +29,10 @@ from btrixcloud.models import (
 from .models import MCSyncData, MCBaseRequest, POD, JOB, CJS, BTRIX_API
 from .baseoperator import BaseOperator
 
-USED_DISK_THRESHOLD = 0.55
+# Threshold used / capacity at which a resize should happen
+USED_DISK_THRESHOLD = 0.70
+
+# Target used / capacity ratio
 USED_DISK_TARGET = 0.50
 
 
