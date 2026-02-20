@@ -411,6 +411,7 @@ class CollIndexOperator(BaseOperator):
         """set desired storage based on used and current capacity"""
         status.storageCapacity = gb_storage(capacity)
         status.storageUsed = gb_storage(used)
+        print("used / capacity", used, capacity, float(used) / capacity)
 
         if used < capacity and (float(used) / capacity) > USED_DISK_THRESHOLD:
             status.storageDesired = gb_storage(float(used) / USED_DISK_TARGET)
@@ -483,6 +484,7 @@ class CollIndexOperator(BaseOperator):
         if not status.storageCapacity or not status.storageDesired:
             status.storageDesired = params["dedupe_storage"]
             initial_disk_usage = await self.coll_ops.get_dedupe_index_disk_size(coll_id)
+            print("initial_disk_usage", initial_disk_usage)
             self.update_desired_storage(
                 initial_disk_usage,
                 int(parse_quantity(params["dedupe_storage"])),
