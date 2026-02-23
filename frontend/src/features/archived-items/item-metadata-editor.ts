@@ -1,18 +1,13 @@
 import { localized, msg } from "@lit/localize";
 import type { SlTextarea } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import Fuse from "fuse.js";
 import { html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { TagCount, TagCounts } from "@/components/ui/tag-filter/types";
-import type {
-  TagInputEvent,
-  Tags,
-  TagsChangeEvent,
-} from "@/components/ui/tag-input";
+import type { Tags } from "@/components/ui/tag-input";
+import type { BtrixTagsChangeEvent } from "@/features/archived-items/item-tags-input";
 import type {
   CollectionsAdd,
   CollectionsChangeEvent,
@@ -54,9 +49,6 @@ export class CrawlMetadataEditor extends BtrixElement {
   private includeName = false;
 
   @state()
-  private tagOptions: TagCount[] = [];
-
-  @state()
   private tagsToSave: Tags = [];
 
   @state()
@@ -68,19 +60,9 @@ export class CrawlMetadataEditor extends BtrixElement {
   @query("#collection-input")
   public readonly collectionInput?: CollectionsAdd | null;
 
-  // For fuzzy search:
-  private readonly fuse = new Fuse<TagCount>([], {
-    keys: ["tag"],
-    shouldSort: false,
-    threshold: 0.2, // stricter; default is 0.6
-  });
-
   private readonly validateCrawlDescriptionMax = maxLengthValidator(500);
 
   willUpdate(changedProperties: Map<string, never>) {
-    if (changedProperties.has("open") && this.open) {
-      void this.fetchTags();
-    }
     if (changedProperties.has("crawl") && this.crawl) {
       this.includeName = this.crawl.type === "upload";
       this.tagsToSave = this.crawl.tags;
@@ -137,13 +119,12 @@ export class CrawlMetadataEditor extends BtrixElement {
           help-text=${helpText}
           @sl-input=${validate}
         ></sl-textarea>
-        <btrix-tag-input
-          .initialTags=${item.tags}
-          .tagOptions=${this.tagOptions}
-          @tag-input=${this.onTagInput}
-          @tags-change=${(e: TagsChangeEvent) =>
-            (this.tagsToSave = e.detail.tags)}
-        ></btrix-tag-input>
+        <btrix-item-tags-input
+          .tags=${item.tags}
+          @btrix-tags-change=${(e: BtrixTagsChangeEvent) => {
+            this.tagsToSave = e.detail.value;
+          }}
+        ></btrix-item-tags-input>
         ${when(
           isSuccess,
           () => html`
@@ -179,27 +160,6 @@ export class CrawlMetadataEditor extends BtrixElement {
 
   private requestClose() {
     this.dispatchEvent(new CustomEvent("request-close"));
-  }
-
-  private readonly onTagInput = (e: TagInputEvent) => {
-    const { value } = e.detail;
-    if (!value) return;
-    this.tagOptions = this.fuse.search(value).map(({ item }) => item);
-  };
-
-  private async fetchTags() {
-    if (!this.crawl) return;
-    try {
-      const { tags } = await this.api.fetch<TagCounts>(
-        `/orgs/${this.crawl.oid}/crawlconfigs/tagCounts`,
-      );
-
-      // Update search/filter collection
-      this.fuse.setCollection(tags);
-    } catch (e) {
-      // Fail silently, since users can still enter tags
-      console.debug(e);
-    }
   }
 
   private async onSubmitMetadata(e: SubmitEvent) {
