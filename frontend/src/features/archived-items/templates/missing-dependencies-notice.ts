@@ -26,7 +26,7 @@ export function missingDependenciesNotice({
   const dependencies_count = localize.number(ids.length);
   const plural_of_dependencies = pluralOf("dependencies", ids.length);
   const description = msg(
-    "Some archived content may be missing or incomplete.",
+    "Some archived content will be missing or incomplete.",
   );
 
   if (truncate) {
