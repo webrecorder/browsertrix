@@ -112,6 +112,8 @@ data:
 
   DEDUPE_IMPORTER_CHANNEL: "{{ .Values.dedupe.importer_channel }}"
 
+  ENABLE_AUTO_RESIZE_INDEX_STORAGE: "{{ .Values.dedupe.enable_auto_resize }}"
+
 
   {{- if .Values.available_plans }}
   AVAILABLE_PLANS: {{ .Values.available_plans | toJson }}

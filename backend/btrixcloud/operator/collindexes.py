@@ -3,6 +3,7 @@
 import re
 import datetime
 import traceback
+import os
 
 from typing import Literal
 from urllib.parse import urlsplit
@@ -18,6 +19,7 @@ from btrixcloud.utils import (
     dt_now,
     gb_storage_ceil,
     gb_storage_floor,
+    is_bool,
 )
 from btrixcloud.models import (
     TYPE_DEDUPE_INDEX_STATES,
@@ -84,6 +86,8 @@ class CollIndexOperator(BaseOperator):
     backend_type: Literal["redis", "kvrocks"]
     shared_params = {}
 
+    enable_auto_resize_index_storage: bool
+
     def __init__(self, *args):
         super().__init__(*args)
         self.shared_params.update(self.k8s.shared_params)
@@ -116,6 +120,10 @@ class CollIndexOperator(BaseOperator):
         self.idle_expire_time = datetime.timedelta(seconds=self.idle_secs)
 
         self.rclone_save = "save"
+
+        self.enable_auto_resize_index_storage = is_bool(
+            os.environ.get("ENABLE_AUTO_RESIZE_INDEX_STORAGE")
+        )
 
     def init_routes(self, app):
         """init routes for this operator"""
@@ -420,6 +428,8 @@ class CollIndexOperator(BaseOperator):
         """set desired storage based on used and current capacity"""
         status.storageCapacity = gb_storage_floor(capacity)
         status.storageUsed = gb_storage_ceil(used)
+        if not self.enable_auto_resize_index_storage:
+            return
 
         if used < capacity and (float(used) / capacity) > USED_DISK_THRESHOLD:
             status.storageDesired = gb_storage_ceil(float(used) / USED_DISK_TARGET)
@@ -489,7 +499,6 @@ class CollIndexOperator(BaseOperator):
         if not status.storageCapacity or not status.storageDesired:
             status.storageDesired = params["dedupe_storage"]
             initial_disk_usage = await self.coll_ops.get_dedupe_index_disk_size(coll_id)
-            print("initial_disk_usage", initial_disk_usage)
             self.update_desired_storage(
                 initial_disk_usage,
                 int(parse_quantity(params["dedupe_storage"])),
