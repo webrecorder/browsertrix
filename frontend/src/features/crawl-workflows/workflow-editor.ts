@@ -14,7 +14,6 @@ import type {
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { createParser } from "css-selector-parser";
-import Fuse from "fuse.js";
 import { mergeDeep } from "immutable";
 import type { LanguageCode } from "iso-639-1";
 import {
@@ -64,8 +63,6 @@ import type { SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
 import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
 import type { SyntaxInput } from "@/components/ui/syntax-input";
 import type { TabListTab } from "@/components/ui/tab-list";
-import type { TagCount, TagCounts } from "@/components/ui/tag-filter/types";
-import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { validURL } from "@/components/ui/url-input";
 import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
@@ -83,6 +80,7 @@ import {
 } from "@/controllers/observable";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
 import type { BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
+import type { BtrixTagsChangeEvent } from "@/features/archived-items/item-tags-input";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type { CustomBehaviorsTable } from "@/features/crawl-workflows/custom-behaviors-table";
@@ -317,9 +315,6 @@ export class WorkflowEditor extends BtrixElement {
   initialSeedFile?: StorageSeedFile;
 
   @state()
-  private tagOptions: TagCount[] = [];
-
-  @state()
   private isSubmitting = false;
 
   @state()
@@ -352,13 +347,6 @@ export class WorkflowEditor extends BtrixElement {
   private readonly observable = new ObservableController(this, {
     // Add some padding to account for stickied elements
     rootMargin: "-100px 0px -100px 0px",
-  });
-
-  // For fuzzy search:
-  private readonly fuse = new Fuse<TagCount>([], {
-    keys: ["tag"],
-    shouldSort: false,
-    threshold: 0.2, // stricter; default is 0.6
   });
 
   private readonly seedFileReader = new FileReader();
@@ -452,7 +440,6 @@ export class WorkflowEditor extends BtrixElement {
     super.connectedCallback();
 
     void this.fetchOrgDefaults();
-    void this.fetchTags();
 
     this.addEventListener(
       "btrix-intersect",
@@ -2767,18 +2754,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(msg(`Provide details about this Workflow.`))}
       ${inputCol(html`
-        <btrix-tag-input
-          .initialTags=${this.formState.tags}
-          .tagOptions=${this.tagOptions}
-          @tag-input=${this.onTagInput}
-          @tags-change=${(e: TagsChangeEvent) =>
+        <btrix-item-tags-input
+          tagType="workflow"
+          .tags=${this.formState.tags}
+          @btrix-tags-change=${(e: BtrixTagsChangeEvent) => {
             this.updateFormState(
               {
-                tags: e.detail.tags,
+                tags: e.detail.value,
               },
               true,
-            )}
-        ></btrix-tag-input>
+            );
+          }}
+        ></btrix-item-tags-input>
       `)}
       ${this.renderHelpTextCol(
         msg(`Create or assign this crawl (and its outputs) to one or more tags
@@ -3660,27 +3647,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
 
     return { isValid, helpText };
-  }
-
-  private readonly onTagInput = (e: TagInputEvent) => {
-    const { value } = e.detail;
-    if (!value) return;
-    this.tagOptions = this.fuse.search(value).map(({ item }) => item);
-  };
-
-  private async fetchTags() {
-    this.tagOptions = [];
-    try {
-      const { tags } = await this.api.fetch<TagCounts>(
-        `/orgs/${this.orgId}/crawlconfigs/tagCounts`,
-      );
-
-      // Update search/filter collection
-      this.fuse.setCollection(tags);
-    } catch (e) {
-      // Fail silently, since users can still enter tags
-      console.debug(e);
-    }
   }
 
   private parseConfig(uploadParams?: {
