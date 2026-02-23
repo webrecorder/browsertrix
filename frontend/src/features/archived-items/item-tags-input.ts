@@ -8,23 +8,17 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { TagCount, TagCounts } from "@/components/ui/tag-filter/types";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
+import { FormControl } from "@/mixins/FormControl";
 
-const MAX_SEARCH_RESULTS = 5;
+const MAX_SEARCH_RESULTS = 10;
 
 export type BtrixTagsChangeEvent = BtrixChangeEvent<string[]>;
 
-type TagType = "workflow" | "archived-item";
-
-const apiPathForTagType: Record<TagType, string> = {
-  workflow: "crawlconfigs",
-  "archived-item": "all-crawls",
-};
-
 @customElement("btrix-item-tags-input")
 @localized()
-export class ItemTagsInput extends BtrixElement {
+export class ItemTagsInput extends FormControl(BtrixElement) {
   @property({ type: String })
-  tagType: TagType = "archived-item";
+  name = "tags";
 
   @property({ type: Array })
   tags?: string[];
@@ -39,29 +33,20 @@ export class ItemTagsInput extends BtrixElement {
   });
 
   private readonly orgTagsTask = new Task(this, {
-    task: async ([tagType], { signal }) => {
-      let { tags } = await this.api.fetch<TagCounts>(
-        `/orgs/${this.orgId}/${apiPathForTagType[tagType]}/tagCounts`,
+    task: async (_args, { signal }) => {
+      const { tags } = await this.api.fetch<TagCounts>(
+        `/orgs/${this.orgId}/crawlconfigs/tagCounts`,
         { signal },
       );
-
-      if (tagType === "archived-item" && !tags.length) {
-        // Check workflow tags
-        ({ tags } = await this.api.fetch<TagCounts>(
-          `/orgs/${this.orgId}/${apiPathForTagType["workflow"]}/tagCounts`,
-          { signal },
-        ));
-      }
-
       this.fuse.setCollection(tags);
 
       return tags;
     },
-    args: () => [this.tagType] as const,
+    args: () => [] as const,
   });
 
   render() {
-    return html` <btrix-tag-input
+    return html`<btrix-tag-input
       .initialTags=${this.tags}
       .tagOptions=${this.tagOptions}
       @tag-input=${this.onTagInput}
@@ -79,6 +64,12 @@ export class ItemTagsInput extends BtrixElement {
 
   private readonly onTagsChange = async (e: TagsChangeEvent) => {
     const { tags } = e.detail;
+
+    const formData = new FormData();
+
+    tags.forEach((tag) => formData.append(this.name, tag));
+
+    this.setFormValue(formData);
 
     await this.updateComplete;
 

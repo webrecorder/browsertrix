@@ -2755,7 +2755,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${this.renderHelpTextCol(msg(`Provide details about this Workflow.`))}
       ${inputCol(html`
         <btrix-item-tags-input
-          tagType="workflow"
           .tags=${this.formState.tags}
           @btrix-tags-change=${(e: BtrixTagsChangeEvent) => {
             this.updateFormState(
