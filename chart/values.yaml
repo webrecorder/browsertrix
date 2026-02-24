@@ -262,8 +262,12 @@ dedupe:
   # dedupe_image: redis
 
   memory: "1Gi"
-  storage: "5Gi"
   cpu: "100m"
+
+  storage: "5Gi"
+  # allow auto resizing the storage used for dedupe index
+  # if enabled, will be resized upwards from above 'storage' value
+  enable_auto_resize: true
 
   # time until index is considered 'idle'
   # redis pod is backed up and shutdown
@@ -272,6 +276,7 @@ dedupe:
   # set this to custom crawler channel (from one of options below)
   # used for dedupe index importing
   importer_channel: "default"
+
 
 # Crawler Channels
 # =========================================

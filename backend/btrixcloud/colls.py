@@ -835,11 +835,18 @@ class CollectionOps:
 
         return {"deleted": True}
 
-    async def update_dedupe_index_stats(self, coll_id: UUID, stats: DedupeIndexStats):
+    async def update_dedupe_index_stats(
+        self, coll_id: UUID, stats: DedupeIndexStats, disk_space_used: int = 0
+    ):
         """update dedupe index stats for specified collection"""
         self.collections.find_one_and_update(
             {"_id": coll_id},
-            {"$set": {"indexStats": stats.dict()}},
+            {
+                "$set": {
+                    "indexStats": stats.dict(),
+                    "indexDiskSpaceUsed": disk_space_used,
+                }
+            },
         )
 
     async def update_dedupe_index_info(
@@ -867,6 +874,17 @@ class CollectionOps:
         if coll:
             return coll.get("indexLastSavedAt")
         return None
+
+    async def get_dedupe_index_disk_size(self, coll_id: UUID) -> int:
+        """return min disk size for dedupe index when uncompressed on disk.
+        only return if index has been saved"""
+        coll = await self.collections.find_one(
+            {"_id": coll_id, "indexLastSavedAt": {"$ne": None}},
+            projection={"indexDiskSpaceUsed": 1},
+        )
+        if coll:
+            return coll.get("indexDiskSpaceUsed", 0)
+        return 0
 
     # END DEDUPE OPS
 
