@@ -25,6 +25,7 @@ import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import type { EditDialogTab } from "@/features/collections/collection-edit-dialog";
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
@@ -1273,6 +1274,18 @@ export class CollectionDetail extends BtrixElement {
         icon: "check2-circle",
         id: "collection-delete-status",
       });
+
+      // Collection may be used in crawling default, request update
+      this.dispatchEvent(
+        new CustomEvent<BtrixRequestOrgUpdate["detail"]>(
+          "btrix-request-org-update",
+          {
+            detail: { org: {} },
+            bubbles: true,
+            composed: true,
+          },
+        ),
+      );
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't delete Collection at this time."),

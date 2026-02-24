@@ -19,6 +19,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { WithSearchOrgContext } from "@/context/search-org/WithSearchOrgContext";
 import { ClipboardController } from "@/controllers/clipboard";
+import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { emptyMessage } from "@/layouts/emptyMessage";
@@ -846,6 +847,18 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         icon: "check2-circle",
         id: "collection-delete-status",
       });
+
+      // Collection may be used in crawling default, request update
+      this.dispatchEvent(
+        new CustomEvent<BtrixRequestOrgUpdate["detail"]>(
+          "btrix-request-org-update",
+          {
+            detail: { org: {} },
+            bubbles: true,
+            composed: true,
+          },
+        ),
+      );
     } catch (err) {
       const message =
         getIndexErrorMessage(err) ||

@@ -685,6 +685,7 @@ class CollectionOps:
             )
 
         await self.crawl_ops.remove_collection_from_all_crawls(coll_id, org)
+        await self.orgs.remove_collection_from_crawling_defaults(coll_id, org)
 
         if coll.thumbnail:
             await self.delete_thumbnail(coll, org)

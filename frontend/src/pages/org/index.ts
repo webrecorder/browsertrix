@@ -246,6 +246,20 @@ export class Org extends BtrixElement {
     }
   }
 
+  private readonly onRequestUpdateOrg = (e: BtrixRequestOrgUpdate) => {
+    e.stopPropagation();
+
+    // Optimistic update
+    if (Object.keys(e.detail.org).length) {
+      AppStateService.partialUpdateOrg({
+        id: this.orgId,
+        ...e.detail.org,
+      });
+    }
+
+    void this.updateOrg();
+  };
+
   private async updateOrg(e?: CustomEvent) {
     if (e) {
       e.stopPropagation();
@@ -292,6 +306,8 @@ export class Org extends BtrixElement {
     // Sync URL to create dialog
     const dialogName = this.getDialogName();
     if (dialogName) this.openDialog(dialogName);
+
+    this.addEventListener("btrix-request-org-update", this.onRequestUpdateOrg);
   }
 
   private getDialogName() {
@@ -685,19 +701,6 @@ export class Org extends BtrixElement {
     return html`<btrix-org-settings
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
-      @btrix-request-org-update=${(e: BtrixRequestOrgUpdate) => {
-        e.stopPropagation();
-
-        // Optimistic update
-        if (Object.keys(e.detail.org).length) {
-          AppStateService.partialUpdateOrg({
-            id: this.orgId,
-            ...e.detail.org,
-          });
-        }
-
-        void this.updateOrg();
-      }}
       @org-user-role-change=${this.onUserRoleChange}
       @org-remove-member=${this.onOrgRemoveMember}
     ></btrix-org-settings>`;

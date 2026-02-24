@@ -1620,6 +1620,27 @@ class OrgOps(BaseOrgs):
         except Exception as err:
             print(f"Error updating field {field} on org {oid}: {err}", flush=True)
 
+    async def remove_collection_from_crawling_defaults(
+        self, coll_id: UUID, org: Organization
+    ):
+        """Remove collection from crawling defaults
+
+        At this point, only dedupeCollId is supported in crawling defaults.
+        If we add auto-add collections to defaults, we'll need to clean that
+        up here as well.
+        """
+        try:
+            await self.orgs.find_one_and_update(
+                {"_id": org.id, "crawlingDefaults.dedupeCollId": coll_id},
+                {"$set": {"crawlingDefaults.dedupeCollId": None}},
+            )
+        # pylint: disable=broad-exception-caught
+        except Exception as err:
+            print(
+                f"Error removing coll {coll_id} from org {org.id} defaults: {err}",
+                flush=True,
+            )
+
 
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-arguments
