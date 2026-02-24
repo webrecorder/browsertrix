@@ -25,6 +25,9 @@ export class Link extends BtrixElement {
   @property({ type: Boolean })
   hideIcon = false;
 
+  @property({ type: String })
+  download?: string;
+
   render() {
     if (!this.href) return;
 
@@ -46,6 +49,7 @@ export class Link extends BtrixElement {
         href=${this.href}
         target=${ifDefined(this.target)}
         rel=${ifDefined(this.rel)}
+        download=${ifDefined(this.download)}
         @click=${this.target === "_blank" ||
         this.href.startsWith("http") ||
         isHashChange()

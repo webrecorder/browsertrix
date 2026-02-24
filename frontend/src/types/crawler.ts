@@ -198,6 +198,8 @@ type ArchivedItemBase = {
   errorPageCount?: number;
   requiresCrawls: string[];
   requiredByCrawls: string[];
+  missingRequiresCrawls: string[] | null;
+  fileSizeWithDeps: number | null;
 };
 
 export type Crawl = ArchivedItemBase &
@@ -215,7 +217,10 @@ export type Crawl = ArchivedItemBase &
     scale: number;
     browserWindows: number;
     shouldPause: boolean | null;
-    resources?: (StorageFile & { numReplicas: number })[];
+    resources?: (StorageFile & {
+      numReplicas: number;
+      fromDependency: boolean;
+    })[];
   };
 
 export type CrawlReplay = Crawl & Pick<CrawlConfig, "config">;

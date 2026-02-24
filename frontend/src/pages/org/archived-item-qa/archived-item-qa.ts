@@ -22,6 +22,7 @@ import { renderText, renderTextDiff } from "./ui/text";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
 import { isQaPage } from "@/features/qa/page-list/helpers/page";
 import {
   type QaFilterChangeDetail,
@@ -162,6 +163,9 @@ export class ArchivedItemQA extends BtrixElement {
     sortBy: "screenshotMatch",
     sortDirection: 1,
   };
+
+  @state()
+  showMissingDependenciesNotice = true;
 
   private readonly replaySwReg =
     navigator.serviceWorker.getRegistration("/replay/");
@@ -446,7 +450,19 @@ export class ArchivedItemQA extends BtrixElement {
               ${msg("Review")} ${itemName}
             </h1>
           </div>
-          <sl-button-group class="ml-auto">
+
+          ${when(
+            !this.showMissingDependenciesNotice &&
+              this.item?.missingRequiresCrawls,
+            (ids) =>
+              ids.length
+                ? html`<div class="ml-auto flex h-8 items-center">
+                    ${missingDependenciesNotice({ ids, truncate: true })}
+                  </div>`
+                : nothing,
+          )}
+
+          <sl-button-group>
             <sl-button
               variant="success"
               size="small"
@@ -523,6 +539,22 @@ export class ArchivedItemQA extends BtrixElement {
         </div>
 
         <div class="grid--tabGroup flex min-w-0 flex-col">
+          ${when(
+            this.showMissingDependenciesNotice &&
+              this.item?.missingRequiresCrawls,
+            (ids) =>
+              ids.length
+                ? html`<div class="mt-3">
+                    ${missingDependenciesNotice({
+                      ids,
+                      bottomCss: tw`part-[base]:mb-1`,
+                      dismiss: () =>
+                        (this.showMissingDependenciesNotice = false),
+                    })}
+                  </div>`
+                : nothing,
+          )}
+
           <nav
             aria-label="${msg("Page heuristics")}"
             class="-mx-3 my-0 flex flex-wrap items-center gap-2 overflow-x-auto px-3 py-2 lg:mx-0 lg:px-0"
@@ -1154,7 +1186,8 @@ export class ArchivedItemQA extends BtrixElement {
   private readonly renderRWP = (rwpId: string, { qa }: { qa: boolean }) => {
     if (!rwpId) return;
 
-    const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json`;
+    const query = queryString.stringify({ withDependencies: true });
+    const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json?${query}`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
     console.debug("rendering rwp", rwpId);
@@ -1334,8 +1367,9 @@ export class ArchivedItemQA extends BtrixElement {
   }
 
   private async getCrawl(): Promise<ArchivedItem> {
+    const query = queryString.stringify({ withDependencies: true });
     return this.api.fetch<ArchivedItem>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}`,
+      `/orgs/${this.orgId}/all-crawls/${this.itemId}?${query}`,
     );
   }
 

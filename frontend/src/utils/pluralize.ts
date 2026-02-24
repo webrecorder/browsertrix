@@ -403,6 +403,32 @@ const plurals = {
       id: "dependencies.plural.other",
     }),
   },
+  dependents: {
+    zero: msg("dependents", {
+      desc: 'plural form of "dependent" for zero dependents',
+      id: "dependents.plural.zero",
+    }),
+    one: msg("dependent", {
+      desc: 'singular form for "dependent"',
+      id: "dependents.plural.one",
+    }),
+    two: msg("dependents", {
+      desc: 'plural form of "dependent" for two dependents',
+      id: "dependents.plural.two",
+    }),
+    few: msg("dependents", {
+      desc: 'plural form of "dependent" for few dependents',
+      id: "dependents.plural.few",
+    }),
+    many: msg("dependents", {
+      desc: 'plural form of "dependent" for many dependents',
+      id: "dependents.plural.many",
+    }),
+    other: msg("dependents", {
+      desc: 'plural form of "dependent" for multiple/other dependents',
+      id: "dependents.plural.other",
+    }),
+  },
   organizations: {
     zero: msg("organizations", {
       desc: 'plural form of "organization" for zero organizations',

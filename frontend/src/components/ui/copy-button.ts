@@ -5,6 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { ClipboardController } from "@/controllers/clipboard";
+import { stopProp } from "@/utils/events";
 import { tw } from "@/utils/tailwind";
 
 /**
@@ -60,6 +61,10 @@ export class CopyButton extends TailwindElement {
             : ClipboardController.text.copy}
         ?hoist=${this.hoist}
         placement=${this.placement}
+        @sl-show=${stopProp}
+        @sl-hide=${stopProp}
+        @sl-after-show=${stopProp}
+        @sl-after-hide=${stopProp}
       >
         <btrix-button
           size=${this.size}
