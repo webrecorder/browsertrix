@@ -557,7 +557,7 @@ export class Dashboard extends BtrixElement {
   }
 
   private renderNoPublicCollections() {
-    if (!this.org || !this.metrics) return;
+    if (!this.org || !this.metrics || !this.appState.isCrawler) return;
 
     let button: TemplateResult;
 
