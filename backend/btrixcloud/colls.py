@@ -803,9 +803,11 @@ class CollectionOps:
         if not coll.indexState:
             raise HTTPException(status_code=404, detail="no_dedupe_index")
 
-        # if index is not idle, can't delete it yet
-        if coll.indexState != "idle":
-            raise HTTPException(status_code=400, detail="dedupe_index_is_in_use")
+        # if index is not idle/ready, check if any crawls running
+        if coll.indexState not in ("idle", "ready"):
+            # if crawls running using index, can't delete
+            if await self.crawl_ops.has_active_crawls_with_dedupe_coll(org.id, coll.id):
+                raise HTTPException(status_code=400, detail="dedupe_index_is_in_use")
 
         if coll.indexFile:
             if not await self.storage_ops.delete_file_object(org, coll.indexFile):
@@ -816,7 +818,7 @@ class CollectionOps:
                 raise HTTPException(status_code=400, detail="file_deletion_error")
 
         await self.collections.find_one_and_update(
-            {"_id": coll.id, "indexState": "idle"},
+            {"_id": coll.id},
             {
                 "$set": {
                     "indexStats": None,
@@ -826,6 +828,12 @@ class CollectionOps:
                 }
             },
         )
+
+        # if not idle, delete k8s dedupe resources
+        if coll.indexState != "idle":
+            await self.crawl_manager.delete_dedupe_index_resources(
+                str(org.id), str(coll.id)
+            )
 
         if remove_from_workflows:
             await self.crawl_configs.update_many(
@@ -855,6 +863,7 @@ class CollectionOps:
         state: TYPE_DEDUPE_INDEX_STATES,
         index_file: Optional[DedupeIndexFile] = None,
         dt: Optional[datetime] = None,
+        if_exists=False,
     ):
         """update the state, and optionally, dedupe index file info"""
         query: dict[str, Any] = {"indexState": state}
@@ -862,7 +871,12 @@ class CollectionOps:
             query["indexLastSavedAt"] = dt
             query["indexFile"] = index_file.model_dump()
 
-        res = self.collections.find_one_and_update({"_id": coll_id}, {"$set": query})
+        match: dict[str, Any] = {"_id": coll_id}
+        # only update if index already exists
+        if if_exists:
+            match["indexState"] = {"$ne": None}
+
+        res = self.collections.find_one_and_update(match, {"$set": query})
         return res is not None
 
     async def get_dedupe_index_saved(self, coll_id: UUID) -> Optional[datetime]:

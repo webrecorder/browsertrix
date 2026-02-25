@@ -140,7 +140,7 @@ class CollIndexOperator(BaseOperator):
         async def mc_related(data: MCBaseRequest):
             return self.get_related(data)
 
-    # pylint: disable=too-many-locals, too-many-branches
+    # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     async def sync_index(self, data: MCSyncData):
         """sync CollIndex object with existing state"""
         spec = CollIndexSpec(**data.parent.get("spec", {}))
@@ -168,7 +168,11 @@ class CollIndexOperator(BaseOperator):
                 is_done = True
             else:
                 try:
-                    await self.coll_ops.get_collection_raw(spec.id, spec.oid)
+                    coll = await self.coll_ops.get_collection_raw(spec.id, spec.oid)
+                    # if index state is not set, index has been deleted
+                    # also delete immediately
+                    if not coll.get("indexState"):
+                        is_done = True
                 # pylint: disable=bare-except
                 except:
                     # collection not found, delete index
@@ -338,7 +342,7 @@ class CollIndexOperator(BaseOperator):
         status.lastStateChangeAt = date_to_str(dt_now())
 
         # self.run_task(self.coll_ops.update_dedupe_index_info(coll_id, state))
-        await self.coll_ops.update_dedupe_index_info(coll_id, state)
+        await self.coll_ops.update_dedupe_index_info(coll_id, state, if_exists=True)
 
     async def do_delete(self, coll_id: UUID):
         """delete the CollIndex object"""

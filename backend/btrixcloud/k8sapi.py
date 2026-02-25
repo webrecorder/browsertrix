@@ -461,6 +461,13 @@ class K8sAPI:
         )
         return resp.get("items", [])
 
+    async def _delete_jobs(self, label: str) -> None:
+        """Delete namespaced jobs"""
+        await self.batch_api.delete_collection_namespaced_job(
+            namespace=self.namespace,
+            label_selector=label,
+        )
+
     async def _delete_cron_jobs(self, label: str) -> None:
         """Delete namespaced cron jobs (e.g. crawl configs, bg jobs)"""
         await self.batch_api.delete_collection_namespaced_cron_job(
