@@ -88,12 +88,18 @@ export class OrgFeatureFlags extends BtrixElement {
         method: "POST",
         body: JSON.stringify({ [name]: value }),
       });
+
+      this.notify.toast({
+        message: `${value ? msg("Feature turned on") : msg("Feature turned off")}: ${name}`,
+        variant: "success",
+        id: "flag-update-status",
+      });
     } catch (e) {
       console.error("Failed to update feature flag", { name, value, error: e });
       this.notify.toast({
         message: msg(str`Failed to update feature flag ${name}`),
         variant: "danger",
-        id: "flag-update-error",
+        id: "flag-update-status",
       });
     }
     this.dispatchEvent(
