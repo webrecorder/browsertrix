@@ -3,6 +3,7 @@ import type { SlSwitch } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
@@ -62,58 +63,26 @@ export class CollectionWorkflowListSettings extends BtrixElement {
         )}
       >
         <div class="flex grow basis-0 transition-all">
-          <sl-switch
-            class="mx-[2px] inline-block"
-            size="small"
-            ?checked=${this.autoAdd}
-            ?disabled=${!this.workflowId}
-            @sl-change=${(e: CustomEvent) => {
-              e.stopPropagation();
-
-              this.autoAdd = (e.target as SlSwitch).checked;
-
-              this.dispatchEvent(
-                new CustomEvent<
-                  CollectionWorkflowListSettingChangeEvent["detail"]
-                >("btrix-change", {
-                  detail: {
-                    value: {
-                      autoAdd: this.autoAdd,
-                    },
-                  },
-                }),
-              );
-            }}
-          >
-            <span class="text-neutral-500">${msg("Auto-Add")}</span>
-          </sl-switch>
-        </div>
-        <div
-          class=${clsx(
-            tw`basis-0 overflow-hidden transition-all`,
-            this.autoAdd ? tw`grow` : tw`shrink`,
-            this.collapse && tw`w-0`,
-          )}
-        >
           <btrix-popover
-            content=${msg(
-              "This workflow is using another collection to dedupe.",
-            )}
+            content="${msg(
+              "This workflow is using another collection as its deduplication source.",
+            )} ${msg(
+              "Auto-adding new crawls to this collection may result in missing content.",
+            )}"
             ?disabled=${!disableDedupe}
+            placement="left"
             hoist
           >
             <sl-switch
               class="mx-[2px] inline-block"
               size="small"
-              ?checked=${Boolean(
-                this.dedupeCollId && this.dedupeCollId === this.collectionId,
-              )}
-              ?disabled=${!this.workflowId || disableDedupe}
-              @click=${(e: MouseEvent) => {
-                e.stopPropagation();
-              }}
+              ?checked=${this.autoAdd}
+              ?disabled=${!this.workflowId}
               @sl-change=${(e: CustomEvent) => {
                 e.stopPropagation();
+
+                this.autoAdd = (e.target as SlSwitch).checked;
+
                 this.dispatchEvent(
                   new CustomEvent<
                     CollectionWorkflowListSettingChangeEvent["detail"]
@@ -121,17 +90,66 @@ export class CollectionWorkflowListSettings extends BtrixElement {
                     detail: {
                       value: {
                         autoAdd: this.autoAdd,
-                        dedupe: (e.target as SlSwitch).checked,
                       },
                     },
                   }),
                 );
               }}
             >
-              <span class="text-neutral-500">${msg("Dedupe")}</span>
+              <span class="text-neutral-500">${msg("Auto-Add")}</span>
             </sl-switch>
           </btrix-popover>
         </div>
+        ${when(
+          this.featureFlags.has("dedupeEnabled"),
+          () =>
+            html`<div
+              class=${clsx(
+                tw`basis-0 overflow-hidden transition-all`,
+                this.autoAdd ? tw`grow` : tw`shrink`,
+                this.collapse && tw`w-0`,
+              )}
+            >
+              <btrix-popover
+                content=${msg(
+                  "This workflow is using another collection as its deduplication source.",
+                )}
+                ?disabled=${!disableDedupe}
+                placement="bottom-end"
+                hoist
+              >
+                <sl-switch
+                  class="mx-[2px] inline-block"
+                  size="small"
+                  ?checked=${Boolean(
+                    this.dedupeCollId &&
+                      this.dedupeCollId === this.collectionId,
+                  )}
+                  ?disabled=${!this.workflowId || disableDedupe}
+                  @click=${(e: MouseEvent) => {
+                    e.stopPropagation();
+                  }}
+                  @sl-change=${(e: CustomEvent) => {
+                    e.stopPropagation();
+                    this.dispatchEvent(
+                      new CustomEvent<
+                        CollectionWorkflowListSettingChangeEvent["detail"]
+                      >("btrix-change", {
+                        detail: {
+                          value: {
+                            autoAdd: this.autoAdd,
+                            dedupe: (e.target as SlSwitch).checked,
+                          },
+                        },
+                      }),
+                    );
+                  }}
+                >
+                  <span class="text-neutral-500">${msg("Dedupe")}</span>
+                </sl-switch>
+              </btrix-popover>
+            </div>`,
+        )}
       </div>
     `;
   }
