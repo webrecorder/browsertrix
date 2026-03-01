@@ -1001,23 +1001,6 @@ export class WorkflowEditor extends BtrixElement {
   };
 
   private readonly renderPageScope = () => {
-    const linkToBrowserSettings = (label: string) =>
-      html`<button
-        type="button"
-        class="text-blue-600 hover:text-blue-500"
-        @click=${async () => {
-          this.updateProgressState({ activeTab: "browserSettings" });
-
-          await this.updateComplete;
-
-          void this.scrollToActivePanel();
-        }}
-      >
-        ${label}
-      </button>`;
-    const link_to_browser_profile = linkToBrowserSettings(
-      msg("Browser Profile"),
-    );
     return html`
       ${this.formState.scopeType === ScopeType.Page
         ? html`
@@ -1094,32 +1077,6 @@ export class WorkflowEditor extends BtrixElement {
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(infoTextFor["useRobots"], false)}
-      ${inputCol(html`
-        <sl-checkbox
-          name="failOnContentCheck"
-          ?checked=${this.formState.failOnContentCheck &&
-          this.formState.browserProfile !== null}
-          ?disabled=${this.formState.browserProfile === null}
-        >
-          ${this.formState.browserProfile === null
-            ? html`<span slot="help-text">
-                ${msg(
-                  html`Custom logged in ${link_to_browser_profile} is required
-                  to use this option.`,
-                )}
-              </span>`
-            : nothing}
-          ${msg("Fail crawl if not logged in")}
-        </sl-checkbox>
-      `)}
-      ${this.renderHelpTextCol(
-        html`${infoTextFor["failOnContentCheck"]}
-        ${this.renderUserGuideLink({
-          hash: "fail-crawl-if-not-logged-in",
-          content: msg("More details"),
-        })}.`,
-        false,
-      )}
       ${when(this.formState.includeLinkedPages, () =>
         this.renderLinkSelectors(),
       )}
@@ -1471,24 +1428,6 @@ https://replayweb.page/docs`}
     const additionalUrlList = urlListToArray(this.formState.urlList);
     const maxUrls = this.localize.number(URL_LIST_MAX_URLS);
 
-    const linkToBrowserSettings = (label: string) =>
-      html`<button
-        type="button"
-        class="text-blue-600 hover:text-blue-500"
-        @click=${async () => {
-          this.updateProgressState({ activeTab: "browserSettings" });
-
-          await this.updateComplete;
-
-          void this.scrollToActivePanel();
-        }}
-      >
-        ${label}
-      </button>`;
-    const link_to_browser_profile = linkToBrowserSettings(
-      msg("Browser Profile"),
-    );
-
     return html`
       ${inputCol(html`
         <sl-input
@@ -1701,31 +1640,6 @@ https://archiveweb.page/es/`}
         msg(
           `If checked, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if present.`,
         ),
-        false,
-      )}
-      ${inputCol(html`
-        <sl-checkbox
-          name="failOnContentCheck"
-          ?checked=${this.formState.failOnContentCheck &&
-          this.formState.browserProfile !== null}
-          ?disabled=${this.formState.browserProfile === null}
-        >
-          ${this.formState.browserProfile === null
-            ? html`<span slot="help-text">
-                ${msg(
-                  html`Select a ${link_to_browser_profile} to use this option.`,
-                )}
-              </span>`
-            : nothing}
-          ${msg("Fail crawl if not logged in")}
-        </sl-checkbox>
-      `)}
-      ${this.renderHelpTextCol(
-        html`${infoTextFor["failOnContentCheck"]}
-        ${this.renderUserGuideLink({
-          hash: "fail-crawl-if-not-logged-in",
-          content: msg("More details"),
-        })}.`,
         false,
       )}
       ${this.renderLinkSelectors()}
@@ -2164,6 +2078,28 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(infoTextFor["browserProfile"])}
+      ${when(
+        this.formState.browserProfile,
+        () => html`
+          ${inputCol(html`
+            <sl-checkbox
+              name="failOnContentCheck"
+              ?checked=${this.formState.failOnContentCheck &&
+              this.formState.browserProfile !== null}
+            >
+              ${msg("Fail crawl if not logged in")}
+            </sl-checkbox>
+          `)}
+          ${this.renderHelpTextCol(
+            html`${infoTextFor["failOnContentCheck"]}
+            ${this.renderUserGuideLink({
+              hash: "fail-crawl-if-not-logged-in",
+              content: msg("More details"),
+            })}.`,
+            false,
+          )}
+        `,
+      )}
       ${proxies?.servers.length
         ? [
             inputCol(html`
