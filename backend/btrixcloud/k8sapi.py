@@ -262,7 +262,6 @@ class K8sAPI:
             await self.batch_api.delete_namespaced_job(
                 name=name,
                 namespace=self.namespace,
-                propagation_policy="Background",
             )
             return True
 
