@@ -260,7 +260,9 @@ class K8sAPI:
         """delete job by name"""
         try:
             await self.batch_api.delete_namespaced_job(
-                name=name, namespace=self.namespace, propagation_policy="Foreground"
+                name=name,
+                namespace=self.namespace,
+                propagation_policy="Background",
             )
             return True
 
@@ -464,6 +466,7 @@ class K8sAPI:
         await self.batch_api.delete_collection_namespaced_job(
             namespace=self.namespace,
             label_selector=label,
+            propagation_policy="Foreground",
         )
 
     async def _delete_cron_jobs(self, label: str) -> None:
