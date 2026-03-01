@@ -848,7 +848,7 @@ class CollectionOps:
     ):
         """update dedupe index stats for specified collection"""
         self.collections.find_one_and_update(
-            {"_id": coll_id},
+            {"_id": coll_id, "indexState": {"$ne": None}},
             {
                 "$set": {
                     "indexStats": stats.dict(),
