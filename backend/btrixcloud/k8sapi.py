@@ -260,9 +260,7 @@ class K8sAPI:
         """delete job by name"""
         try:
             await self.batch_api.delete_namespaced_job(
-                name=name,
-                namespace=self.namespace,
-                propagation_policy="Foreground"
+                name=name, namespace=self.namespace, propagation_policy="Foreground"
             )
             return True
 
