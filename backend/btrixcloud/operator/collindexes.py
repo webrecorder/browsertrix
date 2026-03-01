@@ -174,7 +174,9 @@ class CollIndexOperator(BaseOperator):
                     if not coll.get("indexState"):
                         # if pod still exists, send SIGUSR2 to exit immediately
                         if redis_pod:
-                            await self.k8s.send_signal_to_pod(redis_name, "SIGUSR2", "save")
+                            await self.k8s.send_signal_to_pod(
+                                redis_name, "SIGUSR2", "save"
+                            )
                         is_done = True
                 # pylint: disable=bare-except
                 except:
