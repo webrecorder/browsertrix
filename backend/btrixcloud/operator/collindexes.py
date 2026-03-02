@@ -185,7 +185,11 @@ class CollIndexOperator(BaseOperator):
 
             if is_done:
                 print(f"CollIndex removed: {spec.id}")
-                return {"status": status.dict(), "children": [], "finalized": True}
+                return {
+                    "status": status.dict(),
+                    "children": [],
+                    "finalized": not redis_pod,
+                }
 
         try:
             # determine if index was previously saved before initing redis
