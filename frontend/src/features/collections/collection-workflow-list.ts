@@ -5,9 +5,11 @@ import { customElement, property, queryAll, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { until } from "lit/directives/until.js";
+import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { dedupeStatusIcon } from "@/features/archived-items/templates/dedupe-status-icon";
 import type { CollectionWorkflowListSettingChangeEvent } from "@/features/collections/collection-workflow-list/settings";
 import type {
   APIPaginatedList,
@@ -228,19 +230,15 @@ export class CollectionWorkflowList extends BtrixElement {
         >
           <div class="flex-1 overflow-hidden">${this.renderName(workflow)}</div>
           <div
-            class="flex-none whitespace-nowrap text-neutral-500 md:text-right"
+            class="flex flex-none items-center gap-3 whitespace-nowrap text-neutral-500 md:text-right"
           >
             ${until(
-              countAsync.then(({ total, selected }) =>
-                total === 1
-                  ? msg(
-                      str`${this.localize.number(selected)} / ${this.localize.number(total)} crawl`,
-                    )
-                  : total
-                    ? msg(
-                        str`${this.localize.number(selected)} / ${this.localize.number(total)} crawls`,
-                      )
-                    : msg("0 crawls"),
+              countAsync.then(
+                ({ total, selected }) =>
+                  html`${total
+                    ? `${this.localize.number(selected)} / ${this.localize.number(total)}`
+                    : 0}
+                  ${pluralOf("crawls", total)}`,
               ),
             )}
           </div>
@@ -282,7 +280,10 @@ export class CollectionWorkflowList extends BtrixElement {
         data-crawl-id=${crawl.id}
       >
         <div class="grid flex-1 grid-cols-5 items-center">
-          <div class="col-span-3 md:col-span-1">
+          <div class="col-span-4 flex items-center gap-2 md:col-span-2">
+            ${when(this.featureFlags.has("dedupeEnabled"), () =>
+              dedupeStatusIcon(crawl),
+            )}
             <btrix-format-date
               .date=${crawl.finished}
               month="2-digit"
@@ -292,21 +293,20 @@ export class CollectionWorkflowList extends BtrixElement {
               minute="2-digit"
             ></btrix-format-date>
           </div>
-          <div class="col-span-2 md:col-span-1">
-            <btrix-crawl-status state=${crawl.state}></btrix-crawl-status>
-          </div>
-          <div class="col-span-3 md:col-span-1">
+          <div class="col-span-1 md:col-span-1">
             ${this.localize.bytes(crawl.fileSize || 0, {
               unitDisplay: "narrow",
             })}
           </div>
-          <div class="col-span-2 md:col-span-1">
+          <div class="col-span-5 md:col-span-1">
             ${pageCount === 1
               ? msg(str`${this.localize.number(pageCount)} page`)
               : msg(str`${this.localize.number(pageCount)} pages`)}
           </div>
-          <div class="col-span-5 truncate md:col-span-1">
-            ${msg(str`Started by ${crawl.userName}`)}
+          <div class="col-span-35md:col-span-1">
+            <btrix-qa-review-status
+              status=${ifDefined(crawl.reviewStatus)}
+            ></btrix-qa-review-status>
           </div>
         </div>
       </sl-tree-item>

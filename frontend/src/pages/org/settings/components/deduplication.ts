@@ -26,6 +26,7 @@ import { indexAvailable } from "@/utils/dedupe";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { pluralOf } from "@/utils/pluralize";
 
+const POLL_INTERVAL_SECONDS = 30;
 const INITIAL_PAGE_SIZE = 10;
 
 type DedupeSource = RequireExactlyOne<Collection, "indexStats">;
@@ -69,6 +70,24 @@ export class OrgSettingsDeduplication extends BtrixElement {
     },
     args: () => [this.pagination] as const,
   });
+
+  private readonly pollTask = new Task(this, {
+    task: async ([sources]) => {
+      if (!sources) return;
+
+      window.clearTimeout(this.pollTask.value);
+
+      return window.setTimeout(() => {
+        void this.sources.run();
+      }, POLL_INTERVAL_SECONDS * 1000);
+    },
+    args: () => [this.sources.value] as const,
+  });
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    window.clearTimeout(this.pollTask.value);
+  }
 
   render() {
     return html`
@@ -291,6 +310,8 @@ export class OrgSettingsDeduplication extends BtrixElement {
           method: "POST",
         },
       );
+
+      window.clearTimeout(this.pollTask.value);
       await this.sources.run();
 
       this.notify.toast({
@@ -325,6 +346,8 @@ export class OrgSettingsDeduplication extends BtrixElement {
           body: JSON.stringify(params),
         },
       );
+
+      window.clearTimeout(this.pollTask.value);
       await this.sources.run();
 
       this.notify.toast({

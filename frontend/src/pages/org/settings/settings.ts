@@ -220,18 +220,18 @@ export class OrgSettings extends BtrixElement {
           })}
           <btrix-org-settings-crawling-defaults></btrix-org-settings-crawling-defaults>
         </btrix-tab-group-panel>
-        ${when(
-          this.featureFlags.has("dedupeEnabled"),
-          () => html`
-            <btrix-tab-group-panel name="deduplication">
+        <btrix-tab-group-panel name="deduplication">
+          ${when(
+            this.featureFlags.has("dedupeEnabled"),
+            () => html`
               ${this.renderPanelHeader({
                 title: msg("Deduplication Sources"),
                 beta: true,
               })}
               <btrix-org-settings-deduplication></btrix-org-settings-deduplication>
-            </btrix-tab-group-panel>
-          `,
-        )}
+            `,
+          )}
+        </btrix-tab-group-panel>
       </btrix-tab-group>`;
   }
 
