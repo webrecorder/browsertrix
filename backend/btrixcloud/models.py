@@ -2434,6 +2434,7 @@ class OrgOut(BaseMongoModel):
     bytesStoredProfiles: int
     bytesStoredSeedFiles: int = 0
     bytesStoredThumbnails: int = 0
+    bytesStoredDedupeIndexes: int = 0
     origin: Optional[AnyHttpUrl] = None
 
     storageQuotaReached: Optional[bool] = False
@@ -2501,6 +2502,7 @@ class Organization(BaseMongoModel):
     bytesStoredProfiles: int = 0
     bytesStoredSeedFiles: int = 0
     bytesStoredThumbnails: int = 0
+    bytesStoredDedupeIndexes: int = 0
 
     # total usage + exec time
     usage: Dict[str, int] = {}

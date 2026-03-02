@@ -817,6 +817,10 @@ class CollectionOps:
                 )
                 raise HTTPException(status_code=400, detail="file_deletion_error")
 
+            await self.orgs.inc_org_bytes_stored_field(
+                org.id, "bytesStoredDedupeIndexes", -coll.indexFile.size
+            )
+
         await self.collections.find_one_and_update(
             {"_id": coll.id},
             {
@@ -865,7 +869,7 @@ class CollectionOps:
         index_file: Optional[DedupeIndexFile] = None,
         dt: Optional[datetime] = None,
         if_exists=False,
-    ):
+    ) -> Collection | None:
         """update the state, and optionally, dedupe index file info"""
         query: dict[str, Any] = {"indexState": state}
         if index_file and dt:
@@ -877,8 +881,12 @@ class CollectionOps:
         if if_exists:
             match["indexState"] = {"$ne": None}
 
-        res = self.collections.find_one_and_update(match, {"$set": query})
-        return res is not None
+        res = self.collections.find_one_and_update(
+            match,
+            {"$set": query},
+            return_document=pymongo.ReturnDocument.BEFORE,
+        )
+        return Collection.from_dict(res) if res else None
 
     async def get_dedupe_index_saved(self, coll_id: UUID) -> Optional[datetime]:
         """return datetime for when index was last saved, if any"""

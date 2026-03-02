@@ -575,6 +575,16 @@ class CollIndexOperator(BaseOperator):
             storage=org.storage,
         )
 
-        await self.coll_ops.update_dedupe_index_info(
+        prev_coll = await self.coll_ops.update_dedupe_index_info(
             coll_id, "idle", index_file, finished_at
+        )
+
+        # Update org storage totals with size of index file, or difference
+        # from previous saved index file if one existed
+        size_diff = size
+        if prev_coll and prev_coll.indexFile:
+            size_diff = size - prev_coll.indexFile.size
+
+        await self.coll_ops.orgs.inc_org_bytes_stored_field(
+            oid, "bytesStoredDedupeIndexes", size_diff
         )
