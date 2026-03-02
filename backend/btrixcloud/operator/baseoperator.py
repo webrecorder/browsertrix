@@ -4,8 +4,8 @@ import asyncio
 import os
 import json
 from typing import TYPE_CHECKING, Any
-from kubernetes.utils import parse_quantity
 from uuid import UUID
+from kubernetes.utils import parse_quantity
 
 import yaml
 from btrixcloud.k8sapi import K8sAPI
