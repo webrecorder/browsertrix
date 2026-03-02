@@ -852,7 +852,7 @@ class CollectionOps:
         self, coll_id: UUID, stats: DedupeIndexStats, disk_space_used: int = 0
     ):
         """update dedupe index stats for specified collection"""
-        self.collections.find_one_and_update(
+        await self.collections.find_one_and_update(
             {"_id": coll_id, "indexState": {"$ne": None}},
             {
                 "$set": {
@@ -881,7 +881,7 @@ class CollectionOps:
         if if_exists:
             match["indexState"] = {"$ne": None}
 
-        res = self.collections.find_one_and_update(
+        res = await self.collections.find_one_and_update(
             match,
             {"$set": query},
             return_document=pymongo.ReturnDocument.BEFORE,
