@@ -350,7 +350,6 @@ class CollIndexOperator(BaseOperator):
         status.state = state
         status.lastStateChangeAt = date_to_str(dt_now())
 
-        # self.run_task(self.coll_ops.update_dedupe_index_info(coll_id, state))
         await self.coll_ops.update_dedupe_index_info(coll_id, state, if_exists=True)
 
     async def do_delete(self, coll_id: UUID):
