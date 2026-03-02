@@ -804,11 +804,22 @@ export class ArchivedItemQA extends BtrixElement {
                 name="description"
                 value=${this.item?.description ?? ""}
                 placeholder=${msg("Add a description")}
-                rows="10"
+                rows="5"
                 autocomplete="off"
                 help-text=${helpText}
                 @sl-input=${validate}
               ></sl-textarea>
+              ${when(
+                this.item,
+                (item) => html`
+                  <div class="mt-5">
+                    <btrix-item-tags-input
+                      name="tags"
+                      .tags=${item.tags}
+                    ></btrix-item-tags-input>
+                  </div>
+                `,
+              )}
             </div>
           </div>
         </form>
@@ -1659,6 +1670,11 @@ export class ArchivedItemQA extends BtrixElement {
           body: JSON.stringify({
             reviewStatus: +params.reviewStatus,
             description: params.description,
+            tags: params.tags
+              ? Array.isArray(params.tags)
+                ? params.tags
+                : [params.tags]
+              : [],
           }),
         },
       );

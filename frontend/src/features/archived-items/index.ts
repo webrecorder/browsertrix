@@ -11,5 +11,6 @@ import("./file-uploader");
 import("./item-dependency-tree");
 import("./item-dependents");
 import("./item-list-controls");
+import("./item-tags-input");
 import("./qa-rating-filter");
 import("./upload-status");
