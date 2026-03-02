@@ -2654,6 +2654,7 @@ class OrgMetrics(BaseModel):
     storageUsedProfiles: int
     storageUsedSeedFiles: int
     storageUsedThumbnails: int
+    storageUsedDedupeIndexes: int
     storageQuotaBytes: int
     archivedItemCount: int
     crawlCount: int
