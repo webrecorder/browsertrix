@@ -1720,7 +1720,7 @@ class Collection(BaseMongoModel):
     indexStats: Optional[DedupeIndexStats] = None
 
     # size of db on disk when in use
-    indexDiskSpaceUsed: int = 0
+    indexDiskSpaceUsed: Optional[int] = None
 
 
 # ============================================================================

@@ -5,6 +5,7 @@ import os
 import json
 from typing import TYPE_CHECKING, Any
 from kubernetes.utils import parse_quantity
+from uuid import UUID
 
 import yaml
 from btrixcloud.k8sapi import K8sAPI
@@ -238,7 +239,9 @@ class BaseOperator:
 
         # if index not found, create it
         if not found:
-            await self.k8s.create_or_update_coll_index(coll_id, oid)
+            # ensure dedupe index exists
+            if await self.coll_ops.has_dedupe_index(UUID(coll_id), UUID(oid)):
+                await self.k8s.create_or_update_coll_index(coll_id, oid)
 
         return False
 

@@ -825,6 +825,7 @@ class CollectionOps:
                     "indexState": None,
                     "indexFile": None,
                     "indexLastSavedAt": None,
+                    "indexDiskSpaceUsed": None,
                 }
             },
         )
@@ -899,6 +900,13 @@ class CollectionOps:
         if coll:
             return coll.get("indexDiskSpaceUsed", 0)
         return 0
+
+    async def has_dedupe_index(self, coll_id: UUID, oid: UUID) -> bool:
+        """return true if collection exists and indexState is set on collection"""
+        coll = await self.collections.find_one(
+            {"_id": coll_id, "oid": oid}, projection={"indexState"}
+        )
+        return coll and coll.get("indexState") is not None
 
     # END DEDUPE OPS
 
