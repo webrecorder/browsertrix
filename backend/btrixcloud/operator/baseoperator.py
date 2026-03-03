@@ -4,6 +4,7 @@ import asyncio
 import os
 import json
 from typing import TYPE_CHECKING, Any
+from uuid import UUID
 from kubernetes.utils import parse_quantity
 
 import yaml
@@ -238,7 +239,9 @@ class BaseOperator:
 
         # if index not found, create it
         if not found:
-            await self.k8s.create_or_update_coll_index(coll_id, oid)
+            # ensure dedupe index exists
+            if await self.coll_ops.has_dedupe_index(UUID(coll_id), UUID(oid)):
+                await self.k8s.create_or_update_coll_index(coll_id, oid)
 
         return False
 

@@ -412,6 +412,19 @@ class CrawlOps(BaseCrawlOps):
 
         return results[0].get("totalSum") or 0
 
+    async def has_active_crawls_with_dedupe_coll(
+        self, oid: UUID, coll_id: UUID
+    ) -> bool:
+        """return true/false if any active crawls exist that use given coll_id for dedupe"""
+        res = await self.crawls.find_one(
+            {
+                "state": {"$in": RUNNING_AND_WAITING_STATES},
+                "oid": oid,
+                "dedupeCollId": coll_id,
+            }
+        )
+        return bool(res)
+
     async def delete_crawls(
         self,
         org: Organization,

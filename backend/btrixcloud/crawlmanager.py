@@ -269,6 +269,12 @@ class CrawlManager(K8sAPI):
 
         return name
 
+    async def delete_dedupe_index_resources(self, oid: str, coll_id: str) -> None:
+        """Delete dedupe index-related jobs and index itself"""
+        await self._delete_jobs(f"role=index-import-job,oid={oid},coll={coll_id}")
+
+        await self.delete_custom_object(f"collindex-{coll_id}", "collindexes")
+
     async def ensure_cleanup_seed_file_cron_job_exists(self):
         """ensure cron background job to clean up unused seed files weekly exists"""
 

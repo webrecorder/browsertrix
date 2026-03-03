@@ -152,6 +152,9 @@ spec:
       command: ["sh", "-c"]
       args:
         - |
+          # exit on SIGUSR2
+          trap 'echo "SIGUSR2, aborting save" && exit 0' SIGUSR2
+
           # wait for SIGUSR1
           trap ':' SIGUSR1
 
