@@ -111,12 +111,6 @@ When enabled, the crawler will visit all the links it finds within each URL defi
 ??? example "Crawling tags & search queries with Page List crawls"
     This setting can be useful for crawling a list of specific pages and pages they link to, such as a list of search queries. For example, you can add a list of multiple URLs such as: `https://example.com/search?q=search_this`, `https://example.com/search?q=also_search_this`, etc... to the _URLs to Crawl_ text box and enable _Include Any Linked Page_ to crawl all the content present on these search query pages.
 
-### Fail Crawl if Not Logged In
-
-When enabled, the crawl will fail if a [page behavior](#page-behavior) detects the presence or absence of content on supported pages indicating that the browser is not logged in.
-
-For details about which websites are supported and how to add this functionality to your own [custom behaviors](#use-custom-behaviors), see the [Browsertrix Crawler documentation for Fail on Content Check](https://crawler.docs.browsertrix.com/user-guide/behaviors/#fail-on-content-check).
-
 ### Fail Crawl on Failed URL
 
 When enabled, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled. The resulting archived item will have a status of "Failed".
@@ -292,6 +286,12 @@ Configure the browser used to visit URLs during the crawl.
 ### Browser Profile
 
 Sets the [_Browser Profile_](browser-profiles/browser-profiles-overview.md) to be used for this crawl.
+
+### Fail Crawl if Not Logged In
+
+When enabled, the crawl will fail if a [page behavior](#page-behavior) detects the presence or absence of content on supported pages indicating that the browser is not logged in.
+
+For details about which websites are supported and how to add this functionality to your own [custom behaviors](#use-custom-behaviors), see the [Browsertrix Crawler documentation for Fail on Content Check](https://crawler.docs.browsertrix.com/user-guide/behaviors/#fail-on-content-check).
 
 ### Crawler Proxy Server
 
