@@ -549,7 +549,9 @@ export class Dashboard extends BtrixElement {
         </dt>
         <dd class="font-monostyle text-xs text-neutral-500">
           ${this.localize.bytes(
-            metrics.storageUsedSeedFiles + metrics.storageUsedThumbnails,
+            metrics.storageUsedSeedFiles +
+              metrics.storageUsedThumbnails +
+              metrics.storageUsedDedupeIndexes,
           )}
         </dd>
       </div>
