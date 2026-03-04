@@ -185,7 +185,7 @@ class CollIndexOperator(BaseOperator):
                     is_done = True
 
             if is_done:
-                print(f"CollIndex removed: {coll_id.id}")
+                print(f"CollIndex removed: {coll_id}")
                 return {
                     "status": status.dict(),
                     "children": [],
