@@ -268,7 +268,9 @@ export class Dashboard extends BtrixElement {
                     url: "/browser-profiles",
                   },
                 })}
-                ${metrics.storageUsedSeedFiles || metrics.storageUsedThumbnails
+                ${metrics.storageUsedSeedFiles ||
+                metrics.storageUsedThumbnails ||
+                metrics.storageUsedDedupeIndexes
                   ? this.renderMiscStorage(metrics)
                   : nothing}
 
