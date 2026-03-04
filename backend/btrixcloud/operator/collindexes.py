@@ -159,7 +159,7 @@ class CollIndexOperator(BaseOperator):
         # allow deletion only if idle
         if data.finalizing:
             is_done = False
-            if status.state == "saved" and status.index.savedAt:
+            if status.state == "saved" and status.finishedAt:
                 await self.set_state("idle", status, coll_id, oid)
                 is_done = True
             elif status.state == "idle" and status.index.notFound:
