@@ -126,6 +126,7 @@ export type Metrics = {
   storageUsedProfiles: number;
   storageUsedSeedFiles: number;
   storageUsedThumbnails: number;
+  storageUsedDedupeIndexes: number;
   storageQuotaBytes: number;
   archivedItemCount: number;
   crawlCount: number;

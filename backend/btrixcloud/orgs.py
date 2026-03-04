@@ -1129,6 +1129,7 @@ class OrgOps(BaseOrgs):
             "storageUsedProfiles": org.bytesStoredProfiles,
             "storageUsedSeedFiles": org.bytesStoredSeedFiles or 0,
             "storageUsedThumbnails": org.bytesStoredThumbnails or 0,
+            "storageUsedDedupeIndexes": org.bytesStoredDedupeIndexes or 0,
             "storageQuotaBytes": storage_quota,
             "archivedItemCount": archived_item_count,
             "crawlCount": crawl_count,

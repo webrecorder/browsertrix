@@ -147,6 +147,7 @@ class CollIndexOperator(BaseOperator):
         status = CollIndexStatus(**data.parent.get("status", {}))
 
         coll_id = spec.id
+        oid = spec.oid
         redis_name = f"redis-coll-{coll_id}"
         new_children = []
 
@@ -159,7 +160,7 @@ class CollIndexOperator(BaseOperator):
         if data.finalizing:
             is_done = False
             if status.state == "saved" and status.finishedAt:
-                await self.set_state("idle", status, coll_id)
+                await self.set_state("idle", status, coll_id, oid)
                 is_done = True
             elif status.state == "idle" and status.index.notFound:
                 is_done = True
@@ -168,7 +169,7 @@ class CollIndexOperator(BaseOperator):
                 is_done = True
             else:
                 try:
-                    coll = await self.coll_ops.get_collection_raw(spec.id, spec.oid)
+                    coll = await self.coll_ops.get_collection_raw(coll_id, oid)
                     # if index state is not set, index has been deleted
                     # also delete immediately
                     if not coll.get("indexState"):
@@ -184,7 +185,7 @@ class CollIndexOperator(BaseOperator):
                     is_done = True
 
             if is_done:
-                print(f"CollIndex removed: {spec.id}")
+                print(f"CollIndex removed: {coll_id}")
                 return {
                     "status": status.dict(),
                     "children": [],
@@ -195,19 +196,19 @@ class CollIndexOperator(BaseOperator):
             # determine if index was previously saved before initing redis
             if not redis_pod:
                 if not status.indexLastSavedAt:
-                    res = await self.coll_ops.get_dedupe_index_saved(spec.id)
+                    res = await self.coll_ops.get_dedupe_index_saved(coll_id)
                     if res:
                         status.indexLastSavedAt = date_to_str(res)
 
             if self.is_expired(status) or data.finalizing:
                 # do actual deletion here
                 if not data.finalizing:
-                    self.run_task(self.do_delete(spec.id))
+                    self.run_task(self.do_delete(coll_id))
 
                 # Saving process
                 # 1. run bgsave while redis is active
                 if status.index.running:
-                    await self.do_save_redis(spec.id, status)
+                    await self.do_save_redis(coll_id, oid, status)
 
                 elif status.index.finished and not status.index.savedAt:
                     await self.k8s.send_signal_to_pod(redis_name, "SIGUSR1", "save")
@@ -217,7 +218,7 @@ class CollIndexOperator(BaseOperator):
                     await self.mark_index_saved(redis_name, spec, status)
 
             else:
-                await self.update_state(data, spec.id, status)
+                await self.update_state(data, coll_id, oid, status)
 
         # pylint: disable=broad-exception-caught
         except Exception as e:
@@ -289,7 +290,9 @@ class CollIndexOperator(BaseOperator):
             except:
                 pass
 
-    async def update_state(self, data, coll_id: UUID, status: CollIndexStatus):
+    async def update_state(
+        self, data, coll_id: UUID, oid: UUID, status: CollIndexStatus
+    ):
         """update state"""
         desired_state = status.state
         if not status.index.loaded:
@@ -317,7 +320,7 @@ class CollIndexOperator(BaseOperator):
                 desired_state = "initing"
 
         if desired_state != status.state:
-            await self.set_state(desired_state, status, coll_id)
+            await self.set_state(desired_state, status, coll_id, oid)
 
     def is_expired(self, status: CollIndexStatus):
         """return true if collindex is considered expired and should be deleted"""
@@ -343,21 +346,27 @@ class CollIndexOperator(BaseOperator):
         return False
 
     async def set_state(
-        self, state: TYPE_DEDUPE_INDEX_STATES, status: CollIndexStatus, coll_id: UUID
+        self,
+        state: TYPE_DEDUPE_INDEX_STATES,
+        status: CollIndexStatus,
+        coll_id: UUID,
+        oid: UUID,
     ):
         """set state after updating db"""
         print(f"Setting coll index state {status.state} -> {state} {coll_id}")
         status.state = state
         status.lastStateChangeAt = date_to_str(dt_now())
 
-        await self.coll_ops.update_dedupe_index_info(coll_id, state, if_exists=True)
+        await self.coll_ops.update_dedupe_index_info(
+            coll_id, oid, state, if_exists=True
+        )
 
     async def do_delete(self, coll_id: UUID):
         """delete the CollIndex object"""
         print(f"Deleting collindex {coll_id}")
         await self.k8s.delete_custom_object(f"collindex-{coll_id}", "collindexes")
 
-    async def do_save_redis(self, coll_id: UUID, status: CollIndexStatus):
+    async def do_save_redis(self, coll_id: UUID, oid: UUID, status: CollIndexStatus):
         """shutdown save redis"""
         try:
             redis = await self.k8s.get_redis_connected(f"coll-{coll_id}")
@@ -367,14 +376,14 @@ class CollIndexOperator(BaseOperator):
             if status.state not in ("saving", "saved"):
                 await redis.bgsave(False)
 
-                await self.set_state("saving", status, coll_id)
+                await self.set_state("saving", status, coll_id, oid)
 
             if await self.is_bgsave_done(redis):
                 await redis.shutdown()
 
         # pylint: disable=broad-exception-caught
         except Exception:
-            await self.set_state("ready", status, coll_id)
+            await self.set_state("ready", status, coll_id, oid)
             traceback.print_exc()
 
     async def is_bgsave_done(self, redis: Redis) -> bool:
@@ -576,5 +585,5 @@ class CollIndexOperator(BaseOperator):
         )
 
         await self.coll_ops.update_dedupe_index_info(
-            coll_id, "idle", index_file, finished_at
+            coll_id, oid, "idle", index_file, finished_at
         )

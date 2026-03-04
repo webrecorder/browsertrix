@@ -731,7 +731,7 @@ class CollectionOps:
         # enable index by setting indexState to a non-null value
         # and setting stats to zeroed out default
         await self.update_dedupe_index_info(
-            coll.id, state="initing" if coll.crawlCount else "idle"
+            coll.id, org.id, state="initing" if coll.crawlCount else "idle"
         )
 
         await self.update_dedupe_index_stats(coll.id, DedupeIndexStats())
@@ -793,7 +793,7 @@ class CollectionOps:
         if job_type in ("import", "purge"):
             # if job created, update state here so its reflected in the UI more quickly
             await self.update_dedupe_index_info(
-                coll_id, state="purging" if job_type == "purge" else "importing"
+                coll_id, oid, state="purging" if job_type == "purge" else "importing"
             )
 
     async def delete_dedupe_index(
@@ -816,6 +816,10 @@ class CollectionOps:
                     + f"{coll.indexFile.filename}"
                 )
                 raise HTTPException(status_code=400, detail="file_deletion_error")
+
+            await self.orgs.inc_org_bytes_stored_field(
+                org.id, "bytesStoredDedupeIndexes", -coll.indexFile.size
+            )
 
         await self.collections.find_one_and_update(
             {"_id": coll.id},
@@ -848,7 +852,7 @@ class CollectionOps:
         self, coll_id: UUID, stats: DedupeIndexStats, disk_space_used: int = 0
     ):
         """update dedupe index stats for specified collection"""
-        self.collections.find_one_and_update(
+        await self.collections.find_one_and_update(
             {"_id": coll_id, "indexState": {"$ne": None}},
             {
                 "$set": {
@@ -861,11 +865,12 @@ class CollectionOps:
     async def update_dedupe_index_info(
         self,
         coll_id: UUID,
+        oid: UUID,
         state: TYPE_DEDUPE_INDEX_STATES,
         index_file: Optional[DedupeIndexFile] = None,
         dt: Optional[datetime] = None,
         if_exists=False,
-    ):
+    ) -> bool:
         """update the state, and optionally, dedupe index file info"""
         query: dict[str, Any] = {"indexState": state}
         if index_file and dt:
@@ -877,7 +882,23 @@ class CollectionOps:
         if if_exists:
             match["indexState"] = {"$ne": None}
 
-        res = self.collections.find_one_and_update(match, {"$set": query})
+        res = await self.collections.find_one_and_update(
+            match,
+            {"$set": query},
+            return_document=pymongo.ReturnDocument.BEFORE,
+        )
+
+        if index_file:
+            size_diff = index_file.size
+
+            prev_coll = Collection.from_dict(res) if res else None
+            if prev_coll and prev_coll.indexFile:
+                size_diff = index_file.size - prev_coll.indexFile.size
+
+            await self.orgs.inc_org_bytes_stored_field(
+                oid, "bytesStoredDedupeIndexes", size_diff
+            )
+
         return res is not None
 
     async def get_dedupe_index_saved(self, coll_id: UUID) -> Optional[datetime]:

@@ -31,7 +31,10 @@ export class StorageMeter extends BtrixElement {
     const hasQuota = Boolean(metrics.storageQuotaBytes);
     const isStorageFull =
       hasQuota && metrics.storageUsedBytes >= metrics.storageQuotaBytes;
-    const misc = metrics.storageUsedSeedFiles + metrics.storageUsedThumbnails;
+    const misc =
+      metrics.storageUsedSeedFiles +
+      metrics.storageUsedThumbnails +
+      metrics.storageUsedDedupeIndexes;
 
     const values = {
       crawls: metrics.storageUsedCrawls,
