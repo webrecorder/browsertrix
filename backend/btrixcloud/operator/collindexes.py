@@ -357,9 +357,6 @@ class CollIndexOperator(BaseOperator):
         status.state = state
         status.lastStateChangeAt = date_to_str(dt_now())
 
-        # self.run_task(self.coll_ops.update_dedupe_index_info(
-        #     coll_id, oid, state, if_exists=True
-        # ))
         await self.coll_ops.update_dedupe_index_info(
             coll_id, oid, state, if_exists=True
         )
