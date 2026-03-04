@@ -870,7 +870,7 @@ class CollectionOps:
         index_file: Optional[DedupeIndexFile] = None,
         dt: Optional[datetime] = None,
         if_exists=False,
-    ) -> Collection | None:
+    ) -> bool:
         """update the state, and optionally, dedupe index file info"""
         query: dict[str, Any] = {"indexState": state}
         if index_file and dt:
