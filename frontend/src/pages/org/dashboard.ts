@@ -540,7 +540,7 @@ export class Dashboard extends BtrixElement {
           ${msg("Miscellaneous")}
           <btrix-popover
             content=${msg(
-              "Total size of all supplementary files in use by your organization, such as workflow URL list files and custom collection thumbnails.",
+              "Total size of all supplementary files in use by your organization, such as workflow URL list files, custom collection thumbnails, and deduplication indexes.",
             )}
           >
             <sl-icon
