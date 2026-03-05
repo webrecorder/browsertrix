@@ -235,7 +235,7 @@ def test_purge_index(default_org_id, dedupe_coll_id, admin_auth_headers, crawler
     assert stats["totalCrawls"] == 1
     assert stats["totalUrls"] == 50
     assert stats["uniqueHashes"] == 48
-    assert stats["updateProgress"] == 0
+    assert stats["updateProgress"] == 1.0
     assert stats["estimatedRedundantSize"] == 0
     assert stats["removedCrawlSize"] == 0
     assert stats["removedCrawls"] == 0
