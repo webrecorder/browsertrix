@@ -66,6 +66,7 @@ nav:
           - user-guide/collection.md
           - user-guide/public-collections-gallery.md
           - user-guide/presentation-sharing.md
+          - user-guide/deduplication.md
       - Quality Assurance:
         - user-guide/quality-assurance.md
         - user-guide/qa-review.md
