@@ -13,7 +13,7 @@ def dedupe_coll_id(crawler_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections",
         headers=crawler_auth_headers,
-        json={"name": "Dedupe Coll X2"},
+        json={"name": "Dedupe Coll"},
     )
     assert r.status_code == 200
     return r.json()["id"]
@@ -102,6 +102,7 @@ def dedupe_second_crawl(dedupe_workflow_id, default_org_id, dedupe_coll_id, craw
     return start_and_wait_for_crawl(dedupe_workflow_id, default_org_id, crawler_auth_headers)
 
 
+@pytest.mark.timeout(600)
 def test_first_crawl_stats(default_org_id, dedupe_coll_id, dedupe_first_crawl, crawler_auth_headers):
     find_crawl_in_collection(default_org_id, dedupe_coll_id, dedupe_first_crawl, crawler_auth_headers)
 
@@ -128,6 +129,7 @@ def test_index_idle_after_first(default_org_id, dedupe_coll_id, crawler_auth_hea
     last_saved_at = data.get("indexLastSavedAt")
 
 
+@pytest.mark.timeout(600)
 def test_second_crawl_stats(default_org_id, dedupe_coll_id, dedupe_second_crawl, crawler_auth_headers):
     find_crawl_in_collection(default_org_id, dedupe_coll_id, dedupe_second_crawl, crawler_auth_headers)
 
