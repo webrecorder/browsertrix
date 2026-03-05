@@ -378,6 +378,10 @@ def test_can_delete_while_indexing(
     crawler_auth_headers,
     admin_auth_headers,
 ):
+    data = wait_index_status(
+        default_org_id, dedupe_coll_id, crawler_auth_headers, "idle"
+    )
+
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/remove",
         json={"crawlIds": [dedupe_first_crawl]},
@@ -393,15 +397,13 @@ def test_can_delete_while_indexing(
     )
     data = res.json()
     state = data.get("indexState")
-    print(state)
-    assert state and state != "idle"
+    assert state == "importing"
 
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/dedupeIndex/delete",
         json={"removeFromWorkflows": True},
         headers=admin_auth_headers,
     )
-    print(r.json())
     assert r.status_code == 200
 
 
@@ -448,3 +450,13 @@ def test_delete_coll(
     )
     assert r.status_code == 200
     assert r.json()["success"]
+
+
+def test_removed_from_workflow(
+    default_org_id, dedupe_workflow_id, crawler_auth_headers
+):
+    res = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{dedupe_workflow_id}",
+        headers=crawler_auth_headers,
+    )
+    assert res.json()["dedupeCollId"] == None
