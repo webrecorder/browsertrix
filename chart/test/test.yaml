@@ -39,7 +39,7 @@ crawler_channels:
 
   - id: dedupe
     image: "docker.io/webrecorder/browsertrix-crawler:1.12.0-beta.2"
-
+    imagePullPolicy: Always
 
 mongo_image: "docker.io/library/mongo:8.0"
 
