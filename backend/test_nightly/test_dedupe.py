@@ -13,7 +13,7 @@ def dedupe_coll_id(crawler_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections",
         headers=crawler_auth_headers,
-        json={"name": "Dedupe Coll N"},
+        json={"name": "Dedupe Collection"},
     )
     assert r.status_code == 200
     return r.json()["id"]
@@ -102,7 +102,6 @@ def dedupe_second_crawl(dedupe_workflow_id, default_org_id, dedupe_coll_id, craw
     return start_and_wait_for_crawl(dedupe_workflow_id, default_org_id, crawler_auth_headers)
 
 
-@pytest.mark.timeout(600)
 def test_first_crawl_stats(default_org_id, dedupe_coll_id, dedupe_first_crawl, crawler_auth_headers):
     find_crawl_in_collection(default_org_id, dedupe_coll_id, dedupe_first_crawl, crawler_auth_headers)
 
@@ -130,7 +129,6 @@ def test_index_idle_after_first(default_org_id, dedupe_coll_id, crawler_auth_hea
     last_saved_at = data.get("indexLastSavedAt")
 
 
-@pytest.mark.timeout(600)
 def test_second_crawl_stats(default_org_id, dedupe_coll_id, dedupe_second_crawl, crawler_auth_headers):
     find_crawl_in_collection(default_org_id, dedupe_coll_id, dedupe_second_crawl, crawler_auth_headers)
 
@@ -157,3 +155,118 @@ def test_index_idle_after_second(default_org_id, dedupe_coll_id, crawler_auth_he
     saved_at = data.get("indexLastSavedAt")
 
     assert saved_at > last_saved_at
+
+def test_crawl_dependency_links(default_org_id, dedupe_coll_id, crawler_auth_headers, dedupe_first_crawl, dedupe_second_crawl):
+    resp = requests.get(f"{API_PREFIX}/orgs/{default_org_id}/crawls/{dedupe_first_crawl}/replay.json", headers=crawler_auth_headers)
+    first = resp.json()
+    assert first["fileSize"] >= 51000000
+
+    assert first["dedupeCollId"] == dedupe_coll_id
+    assert first["requiredByCrawls"] == [dedupe_second_crawl]
+    assert first["requiresCrawls"] == []
+
+    stats = first["dedupeStats"]
+    assert stats["conservedSize"] >= 2500
+    assert stats["dupeUrls"] == 2
+    assert stats["totalUrls"] == 50
+
+
+    resp = requests.get(f"{API_PREFIX}/orgs/{default_org_id}/crawls/{dedupe_second_crawl}/replay.json", headers=crawler_auth_headers)
+    second = resp.json()
+
+    assert second["fileSize"] < 2100000
+    assert second["dedupeCollId"] == dedupe_coll_id
+    assert second["requiredByCrawls"] == []
+    assert second["requiresCrawls"] == [dedupe_first_crawl]
+
+    stats = second["dedupeStats"]
+    assert stats["conservedSize"] >= 49000000
+    assert stats["dupeUrls"] == 50
+    assert stats["totalUrls"] == 50
+
+def test_remove_crawl_from_collection(default_org_id, dedupe_coll_id, crawler_auth_headers, dedupe_second_crawl):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/remove",
+        json={"crawlIds": [dedupe_second_crawl]},
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = wait_index_status(default_org_id, dedupe_coll_id, crawler_auth_headers, "idle")
+
+    stats = data.get("indexStats")
+    print(stats)
+    assert stats["conservedSize"] > 49000000
+    assert stats["dupeUrls"] == 52
+    assert stats["totalCrawlSize"] > 53000000
+    assert stats["totalCrawls"] == 2
+    assert stats["totalUrls"] == 100
+    assert stats["uniqueHashes"] == 48
+    assert stats["updateProgress"] == 1.0
+    assert stats["estimatedRedundantSize"] == 0
+
+    assert stats["removedCrawlSize"] < 2100000
+    assert stats["removedCrawls"] == 1
+
+def test_purge_index(default_org_id, dedupe_coll_id, admin_auth_headers, crawler_auth_headers):
+    # requires admin
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/dedupeIndex/purge",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 403
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/dedupeIndex/purge",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = wait_index_status(default_org_id, dedupe_coll_id, crawler_auth_headers, "idle")
+
+    # back to stats after only 1 crawl
+    stats = data.get("indexStats")
+    print(stats)
+    assert stats["conservedSize"] > 2500
+    assert stats["conservedSize"] <= 3000
+    assert stats["dupeUrls"] == 2
+    assert stats["totalCrawlSize"] > 51000000
+    assert stats["totalCrawlSize"] <= 52000000
+    assert stats["totalCrawls"] == 1
+    assert stats["totalUrls"] == 50
+    assert stats["uniqueHashes"] == 48
+    assert stats["updateProgress"] == 0
+    assert stats["estimatedRedundantSize"] == 0
+    assert stats["removedCrawlSize"] == 0
+    assert stats["removedCrawls"] == 0
+
+def test_delete_coll(default_org_id, dedupe_coll_id, admin_auth_headers, crawler_auth_headers):
+    # need to delete index first
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "not_allowed_while_dedupe_index_exists"
+
+    # not allowed for crawler
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/dedupeIndex/delete",
+        json={"removeFromWorkflows": True},
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 403
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/dedupeIndex/delete",
+        json={"removeFromWorkflows": True},
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]

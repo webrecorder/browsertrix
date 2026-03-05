@@ -25,6 +25,12 @@ registration_enabled: "1"
 dedupe:
   idle_secs: 0
 
+  importer_channel: dedupe
+
+  memory: "1Gi"
+  cpu: "100m"
+  storage: "1Gi"
+ 
 storages:
   - name: "default"
     type: "s3"
