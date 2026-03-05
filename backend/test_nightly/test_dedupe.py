@@ -13,7 +13,7 @@ def dedupe_coll_id(crawler_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections",
         headers=crawler_auth_headers,
-        json={"name": "Dedupe Coll"},
+        json={"name": "Dedupe Coll N"},
     )
     assert r.status_code == 200
     return r.json()["id"]
@@ -82,7 +82,7 @@ def wait_index_status(default_org_id, dedupe_coll_id, crawler_auth_headers, stat
     while count < max_wait:
         coll = requests.get(f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}", headers=crawler_auth_headers)
         data = coll.json()
-        if data.get("indexState") != status and (status != "idle" or data.get("indexLastSavedAt")):
+        if data.get("indexState") != status or (status == "idle" and not data.get("indexLastSavedAt")):
             count += 1
             time.sleep(5)
             continue
@@ -111,6 +111,7 @@ def test_first_crawl_stats(default_org_id, dedupe_coll_id, dedupe_first_crawl, c
     assert data.get("indexLastSavedAt") == None
 
     stats = data.get("indexStats")
+    print(stats)
     assert stats["conservedSize"] > 2500
     assert stats["dupeUrls"] == 2
     assert stats["totalCrawlSize"] > 51000000
@@ -138,6 +139,7 @@ def test_second_crawl_stats(default_org_id, dedupe_coll_id, dedupe_second_crawl,
     assert data.get("indexLastSavedAt") == last_saved_at
 
     stats = data.get("indexStats")
+    print(stats)
     assert stats["conservedSize"] > 49000000
     assert stats["dupeUrls"] == 52
     assert stats["totalCrawlSize"] > 53000000
