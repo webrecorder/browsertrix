@@ -713,7 +713,7 @@ def test_get_crawler_channels(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     crawler_channels = r.json()["channels"]
     assert crawler_channels
-    assert len(crawler_channels) == 2
+    assert len(crawler_channels) == 3
     for crawler_channel in crawler_channels:
         assert crawler_channel["id"]
         assert crawler_channel["image"]
@@ -1081,7 +1081,6 @@ def test_shareable_workflow(admin_auth_headers, default_org_id, admin_crawl_id):
 
 
 def test_update_profile(crawler_auth_headers, default_org_id, profile_id, profile_2_id):
-
     def get_profile():
         r = requests.get(
             f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
