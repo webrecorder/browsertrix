@@ -43,3 +43,9 @@ Collections can be set to one of the one following access modes.
 
 !!! tip "Note: About Public Collections Gallery"
     If the public collections gallery page is not enabled, any existing public collections are treated the same as unlisted collections. Check out [enabling public collection gallery](./public-collections-gallery.md) for a guide on how to enable this page.
+
+## Deduplicate Content
+
+Deduplication (or “dedupe”) is the process of preventing duplicate content from being stored. When deduplication is enabled, the crawler will reference a collection’s existing items when checking for new content and URLs. Content that is identical, even when found at a different URL, will be deduplicated by writing "revisit" records rather than the full resource in the resulting crawl WACZ files. This results in a smaller, space-saving collection and smaller archived items.
+
+The [Deduplication](./deduplication.md) page goes into further detail on how deduplication works in Browsertrix, some of the tradeoffs and considerations for replay and download to keep in mind, and how to create and manage the deduplication index for a collection.

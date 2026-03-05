@@ -62,6 +62,8 @@ One or more WACZ files may be present depending on the size and scale of the cra
 
 Combining multiple WACZ files is the default behavior when choosing _Download_ and _Download Item_ from the archived item and workflow action menus, respectively.
 
+For archived items that were created using deduplication, download the item as a combined WACZ with all of the dependencies from other items necessary for high fidelity replay by clicking the dropdown menu next to _Export as Combined WACZ_ and selecting _With Dependencies_.
+
 ???+ Question "What is WACZ?"
     [WACZ](https://specs.webrecorder.net/wacz/latest/) is a media type that allows web archive collections to be packaged and shared on the web as a discrete file. A WACZ file includes the data that is needed for the rendering of archived content as well as contextual information.
 
