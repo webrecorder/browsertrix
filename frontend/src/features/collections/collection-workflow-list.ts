@@ -45,6 +45,10 @@ export class CollectionWorkflowList extends BtrixElement {
       --border: 1px solid var(--sl-panel-border-color);
     }
 
+    sl-tree-item {
+      min-width: 0;
+    }
+
     sl-tree-item::part(expand-button) {
       /* Move expand button to end */
       order: 2;

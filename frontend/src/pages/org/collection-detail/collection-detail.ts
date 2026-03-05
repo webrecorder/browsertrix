@@ -313,7 +313,7 @@ export class CollectionDetail extends BtrixElement {
       >
         ${this.renderInfoBar()}
       </div>
-      <div class="flex items-center justify-between py-3">
+      <div class="flex flex-wrap items-center justify-between gap-y-2 py-3">
         ${this.renderTabs()}
         ${when(this.isCrawler, () =>
           choose(this.collectionTab, [
@@ -668,31 +668,35 @@ export class CollectionDetail extends BtrixElement {
     }
 
     return html`
-      <nav class="flex gap-2">
-        ${tabs.map((tabName) => {
-          const isSelected = tabName === this.collectionTab;
-          const tab = this.tabLabels[tabName];
+      <btrix-overflow-scroll
+        class="-mx-3 max-w-[calc(100%+theme(spacing.6))] part-[content]:px-3"
+      >
+        <nav class="flex min-w-max gap-2">
+          ${tabs.map((tabName) => {
+            const isSelected = tabName === this.collectionTab;
+            const tab = this.tabLabels[tabName];
 
-          return html`
-            <btrix-navigation-button
-              .active=${isSelected}
-              aria-selected="${isSelected}"
-              href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${tabName}`}
-              @click=${this.navigate.link}
-            >
-              <sl-icon
-                name=${tab.icon.name}
-                library=${tab.icon.library}
-              ></sl-icon>
-              ${tab.text}
-              ${when(
-                tab.beta,
-                () => html`<btrix-beta-badge></btrix-beta-badge>`,
-              )}
-            </btrix-navigation-button>
-          `;
-        })}
-      </nav>
+            return html`
+              <btrix-navigation-button
+                .active=${isSelected}
+                aria-selected="${isSelected}"
+                href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${tabName}`}
+                @click=${this.navigate.link}
+              >
+                <sl-icon
+                  name=${tab.icon.name}
+                  library=${tab.icon.library}
+                ></sl-icon>
+                ${tab.text}
+                ${when(
+                  tab.beta,
+                  () => html`<btrix-beta-badge></btrix-beta-badge>`,
+                )}
+              </btrix-navigation-button>
+            `;
+          })}
+        </nav>
+      </btrix-overflow-scroll>
     `;
   };
 

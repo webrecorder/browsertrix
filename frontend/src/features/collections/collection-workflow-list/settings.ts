@@ -58,7 +58,7 @@ export class CollectionWorkflowListSettings extends BtrixElement {
     return html`
       <div
         class=${clsx(
-          tw`flex h-11 w-max items-center whitespace-nowrap rounded border px-4`,
+          tw`flex h-11 w-full items-center whitespace-nowrap rounded border px-4`,
           !this.collapse && tw`gap-4`,
         )}
       >
