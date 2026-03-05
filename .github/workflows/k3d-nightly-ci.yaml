@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v3
       - id: set-matrix
         run: |
-          echo matrix="$(ls ./backend/test_nightly/ | grep -o "^test_dedupe.*" | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+          echo matrix="$(ls ./backend/test_nightly/ | grep -o "^test_.*" | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
   btrix-k3d-nightly-test:
     name: ${{ matrix.module }}
