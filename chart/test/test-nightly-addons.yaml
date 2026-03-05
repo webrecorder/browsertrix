@@ -23,7 +23,7 @@ minio_local_bucket_name: &local_bucket_name "btrix-test-data"
 registration_enabled: "1"
 
 dedupe:
-  idle_secs: 0
+  idle_secs: 30
 
   importer_channel: dedupe
 

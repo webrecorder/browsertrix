@@ -1,11 +1,15 @@
 import time
 import pytest
 import requests
+import random
+import string
 
 from .conftest import API_PREFIX
 
 
 last_saved_at = None
+
+suffix = "".join(random.choices(string.ascii_letters + string.digits, k=3))
 
 
 @pytest.fixture(scope="session")
@@ -13,7 +17,18 @@ def dedupe_coll_id(crawler_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections",
         headers=crawler_auth_headers,
-        json={"name": "Dedupe Collection"},
+        json={"name": "Dedupe Collection " + suffix},
+    )
+    assert r.status_code == 200
+    return r.json()["id"]
+
+
+@pytest.fixture(scope="session")
+def dedupe_coll_id_2(crawler_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={"name": "Dedupe Collection Copy " + suffix},
     )
     assert r.status_code == 200
     return r.json()["id"]
@@ -29,16 +44,17 @@ def dedupe_workflow_id(crawler_auth_headers, default_org_id, dedupe_coll_id):
             "seeds": [{"url": "https://old.webrecorder.net/"}],
             "scopeType": "domain",
             "limit": 10,
-            "exclude": "community"
+            "exclude": "community",
         },
         "crawlerChannel": "dedupe",
-        "dedupeCollId": dedupe_coll_id
+        "dedupeCollId": dedupe_coll_id,
     }
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=crawler_auth_headers,
         json=crawl_data,
     )
+    assert r.status_code == 200
     data = r.json()
     return data["id"]
 
@@ -53,8 +69,7 @@ def start_and_wait_for_crawl(workflow_id, org_id, headers):
     # Wait for it to complete and then return crawl ID
     while True:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{org_id}/crawls/{crawl_id}/replay.json",
-            headers=headers
+            f"{API_PREFIX}/orgs/{org_id}/crawls/{crawl_id}/replay.json", headers=headers
         )
         data = r.json()
         if data["state"] in ("complete", "failed"):
@@ -62,7 +77,9 @@ def start_and_wait_for_crawl(workflow_id, org_id, headers):
         time.sleep(5)
 
 
-def find_crawl_in_collection(default_org_id, dedupe_coll_id, crawl_id, crawler_auth_headers):
+def find_crawl_in_collection(
+    default_org_id, dedupe_coll_id, crawl_id, crawler_auth_headers
+):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls?collectionId={dedupe_coll_id}",
         headers=crawler_auth_headers,
@@ -77,12 +94,19 @@ def find_crawl_in_collection(default_org_id, dedupe_coll_id, crawl_id, crawler_a
     assert found
 
 
-def wait_index_status(default_org_id, dedupe_coll_id, crawler_auth_headers, status, max_wait=30):
+def wait_index_status(
+    default_org_id, dedupe_coll_id, crawler_auth_headers, status, max_wait=30
+):
     count = 0
     while count < max_wait:
-        coll = requests.get(f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}", headers=crawler_auth_headers)
+        coll = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}",
+            headers=crawler_auth_headers,
+        )
         data = coll.json()
-        if data.get("indexState") != status or (status == "idle" and not data.get("indexLastSavedAt")):
+        if data.get("indexState") != status or (
+            status == "idle" and not data.get("indexLastSavedAt")
+        ):
             count += 1
             time.sleep(5)
             continue
@@ -93,19 +117,33 @@ def wait_index_status(default_org_id, dedupe_coll_id, crawler_auth_headers, stat
 
 
 @pytest.fixture(scope="session")
-def dedupe_first_crawl(dedupe_workflow_id, default_org_id, dedupe_coll_id, crawler_auth_headers):
-    return start_and_wait_for_crawl(dedupe_workflow_id, default_org_id, crawler_auth_headers)
+def dedupe_first_crawl(
+    dedupe_workflow_id, default_org_id, dedupe_coll_id, crawler_auth_headers
+):
+    return start_and_wait_for_crawl(
+        dedupe_workflow_id, default_org_id, crawler_auth_headers
+    )
 
 
 @pytest.fixture(scope="session")
-def dedupe_second_crawl(dedupe_workflow_id, default_org_id, dedupe_coll_id, crawler_auth_headers):
-    return start_and_wait_for_crawl(dedupe_workflow_id, default_org_id, crawler_auth_headers)
+def dedupe_second_crawl(
+    dedupe_workflow_id, default_org_id, dedupe_coll_id, crawler_auth_headers
+):
+    return start_and_wait_for_crawl(
+        dedupe_workflow_id, default_org_id, crawler_auth_headers
+    )
 
 
-def test_first_crawl_stats(default_org_id, dedupe_coll_id, dedupe_first_crawl, crawler_auth_headers):
-    find_crawl_in_collection(default_org_id, dedupe_coll_id, dedupe_first_crawl, crawler_auth_headers)
+def test_first_crawl_stats(
+    default_org_id, dedupe_coll_id, dedupe_first_crawl, crawler_auth_headers
+):
+    find_crawl_in_collection(
+        default_org_id, dedupe_coll_id, dedupe_first_crawl, crawler_auth_headers
+    )
 
-    data = wait_index_status(default_org_id, dedupe_coll_id, crawler_auth_headers, "ready")
+    data = wait_index_status(
+        default_org_id, dedupe_coll_id, crawler_auth_headers, "ready"
+    )
 
     assert data.get("indexLastSavedAt") == None
 
@@ -125,14 +163,22 @@ def test_first_crawl_stats(default_org_id, dedupe_coll_id, dedupe_first_crawl, c
 
 def test_index_idle_after_first(default_org_id, dedupe_coll_id, crawler_auth_headers):
     global last_saved_at
-    data = wait_index_status(default_org_id, dedupe_coll_id, crawler_auth_headers, "idle")
+    data = wait_index_status(
+        default_org_id, dedupe_coll_id, crawler_auth_headers, "idle"
+    )
     last_saved_at = data.get("indexLastSavedAt")
 
 
-def test_second_crawl_stats(default_org_id, dedupe_coll_id, dedupe_second_crawl, crawler_auth_headers):
-    find_crawl_in_collection(default_org_id, dedupe_coll_id, dedupe_second_crawl, crawler_auth_headers)
+def test_second_crawl_stats(
+    default_org_id, dedupe_coll_id, dedupe_second_crawl, crawler_auth_headers
+):
+    find_crawl_in_collection(
+        default_org_id, dedupe_coll_id, dedupe_second_crawl, crawler_auth_headers
+    )
 
-    data = wait_index_status(default_org_id, dedupe_coll_id, crawler_auth_headers, "ready")
+    data = wait_index_status(
+        default_org_id, dedupe_coll_id, crawler_auth_headers, "ready"
+    )
 
     assert data.get("indexLastSavedAt") == last_saved_at
 
@@ -149,15 +195,30 @@ def test_second_crawl_stats(default_org_id, dedupe_coll_id, dedupe_second_crawl,
     assert stats["removedCrawlSize"] == 0
     assert stats["removedCrawls"] == 0
 
+    global orig_stats
+    orig_stats = stats
+
 
 def test_index_idle_after_second(default_org_id, dedupe_coll_id, crawler_auth_headers):
-    data = wait_index_status(default_org_id, dedupe_coll_id, crawler_auth_headers, "idle")
+    data = wait_index_status(
+        default_org_id, dedupe_coll_id, crawler_auth_headers, "idle"
+    )
     saved_at = data.get("indexLastSavedAt")
 
     assert saved_at > last_saved_at
 
-def test_crawl_dependency_links(default_org_id, dedupe_coll_id, crawler_auth_headers, dedupe_first_crawl, dedupe_second_crawl):
-    resp = requests.get(f"{API_PREFIX}/orgs/{default_org_id}/crawls/{dedupe_first_crawl}/replay.json", headers=crawler_auth_headers)
+
+def test_crawl_dependency_links(
+    default_org_id,
+    dedupe_coll_id,
+    crawler_auth_headers,
+    dedupe_first_crawl,
+    dedupe_second_crawl,
+):
+    resp = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{dedupe_first_crawl}/replay.json",
+        headers=crawler_auth_headers,
+    )
     first = resp.json()
     assert first["fileSize"] >= 51000000
 
@@ -170,8 +231,10 @@ def test_crawl_dependency_links(default_org_id, dedupe_coll_id, crawler_auth_hea
     assert stats["dupeUrls"] == 2
     assert stats["totalUrls"] == 50
 
-
-    resp = requests.get(f"{API_PREFIX}/orgs/{default_org_id}/crawls/{dedupe_second_crawl}/replay.json", headers=crawler_auth_headers)
+    resp = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{dedupe_second_crawl}/replay.json",
+        headers=crawler_auth_headers,
+    )
     second = resp.json()
 
     assert second["fileSize"] < 2100000
@@ -184,7 +247,39 @@ def test_crawl_dependency_links(default_org_id, dedupe_coll_id, crawler_auth_hea
     assert stats["dupeUrls"] == 50
     assert stats["totalUrls"] == 50
 
-def test_remove_crawl_from_collection(default_org_id, dedupe_coll_id, crawler_auth_headers, dedupe_second_crawl):
+
+def test_import_into_another_coll(
+    default_org_id,
+    dedupe_first_crawl,
+    dedupe_second_crawl,
+    dedupe_coll_id_2,
+    crawler_auth_headers,
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id_2}/add",
+        json={"crawlIds": [dedupe_first_crawl, dedupe_second_crawl]},
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id_2}/dedupeIndex/create",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = wait_index_status(
+        default_org_id, dedupe_coll_id_2, crawler_auth_headers, "idle"
+    )
+
+    stats = data.get("indexStats")
+    print(stats)
+    assert stats == {**orig_stats, "updateProgress": 1.0}
+
+
+def test_remove_crawl_from_collection(
+    default_org_id, dedupe_coll_id, crawler_auth_headers, dedupe_second_crawl
+):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/remove",
         json={"crawlIds": [dedupe_second_crawl]},
@@ -192,7 +287,9 @@ def test_remove_crawl_from_collection(default_org_id, dedupe_coll_id, crawler_au
     )
     assert r.status_code == 200
 
-    data = wait_index_status(default_org_id, dedupe_coll_id, crawler_auth_headers, "idle")
+    data = wait_index_status(
+        default_org_id, dedupe_coll_id, crawler_auth_headers, "idle"
+    )
 
     stats = data.get("indexStats")
     print(stats)
@@ -208,7 +305,10 @@ def test_remove_crawl_from_collection(default_org_id, dedupe_coll_id, crawler_au
     assert stats["removedCrawlSize"] < 2100000
     assert stats["removedCrawls"] == 1
 
-def test_purge_index(default_org_id, dedupe_coll_id, admin_auth_headers, crawler_auth_headers):
+
+def test_purge_index(
+    default_org_id, dedupe_coll_id, admin_auth_headers, crawler_auth_headers
+):
     # requires admin
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/dedupeIndex/purge",
@@ -222,7 +322,9 @@ def test_purge_index(default_org_id, dedupe_coll_id, admin_auth_headers, crawler
     )
     assert r.status_code == 200
 
-    data = wait_index_status(default_org_id, dedupe_coll_id, crawler_auth_headers, "idle")
+    data = wait_index_status(
+        default_org_id, dedupe_coll_id, crawler_auth_headers, "idle"
+    )
 
     # back to stats after only 1 crawl
     stats = data.get("indexStats")
@@ -240,10 +342,86 @@ def test_purge_index(default_org_id, dedupe_coll_id, admin_auth_headers, crawler
     assert stats["removedCrawlSize"] == 0
     assert stats["removedCrawls"] == 0
 
-def test_delete_coll(default_org_id, dedupe_coll_id, admin_auth_headers, crawler_auth_headers):
+
+def test_cant_delete_while_crawling(
+    default_org_id, dedupe_workflow_id, dedupe_coll_id, admin_auth_headers
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{dedupe_workflow_id}/run",
+        headers=admin_auth_headers,
+    )
+    crawl_id = r.json()["started"]
+
+    data = wait_index_status(
+        default_org_id, dedupe_coll_id, admin_auth_headers, "crawling"
+    )
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/dedupeIndex/delete",
+        json={"removeFromWorkflows": True},
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 400
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/cancel",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    assert data["success"] == True
+
+
+def test_can_delete_while_indexing(
+    default_org_id,
+    dedupe_coll_id,
+    dedupe_first_crawl,
+    crawler_auth_headers,
+    admin_auth_headers,
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/remove",
+        json={"crawlIds": [dedupe_first_crawl]},
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    time.sleep(1)
+
+    res = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}",
+        headers=crawler_auth_headers,
+    )
+    data = res.json()
+    state = data.get("indexState")
+    print(state)
+    assert state and state != "idle"
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/dedupeIndex/delete",
+        json={"removeFromWorkflows": True},
+        headers=admin_auth_headers,
+    )
+    print(r.json())
+    assert r.status_code == 200
+
+
+def test_index_data_deleted(default_org_id, dedupe_coll_id, crawler_auth_headers):
+    res = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}",
+        headers=crawler_auth_headers,
+    )
+    data = res.json()
+    assert data["indexStats"] == None
+    assert data["indexState"] == None
+    assert data["indexLastSavedAt"] == None
+
+
+def test_delete_coll(
+    default_org_id, dedupe_coll_id_2, admin_auth_headers, crawler_auth_headers
+):
     # need to delete index first
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id_2}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 400
@@ -251,21 +429,21 @@ def test_delete_coll(default_org_id, dedupe_coll_id, admin_auth_headers, crawler
 
     # not allowed for crawler
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/dedupeIndex/delete",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id_2}/dedupeIndex/delete",
         json={"removeFromWorkflows": True},
         headers=crawler_auth_headers,
     )
     assert r.status_code == 403
 
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/dedupeIndex/delete",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id_2}/dedupeIndex/delete",
         json={"removeFromWorkflows": True},
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
 
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id_2}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
