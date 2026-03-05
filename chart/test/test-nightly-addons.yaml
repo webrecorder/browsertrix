@@ -3,6 +3,7 @@
 invite_expire_seconds: 10
 
 max_pages_per_crawl: 300
+mongo_drop_indexes: 1
 
 # Every minute, for use in testing cleaning up seed files
 cleanup_job_cron_schedule: "* * * * *"
@@ -20,6 +21,9 @@ minio_local_bucket_name: &local_bucket_name "btrix-test-data"
 
 # for checking registration
 registration_enabled: "1"
+
+dedupe:
+  idle_secs: 0
 
 storages:
   - name: "default"
