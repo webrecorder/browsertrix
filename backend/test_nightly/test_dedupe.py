@@ -8,6 +8,7 @@ from .conftest import API_PREFIX
 
 
 last_saved_at = None
+orig_stats = None
 
 suffix = "".join(random.choices(string.ascii_letters + string.digits, k=3))
 
