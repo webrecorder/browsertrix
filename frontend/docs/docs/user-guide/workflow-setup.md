@@ -429,6 +429,22 @@ Cron schedules are always in [UTC](https://en.wikipedia.org/wiki/Coordinated_Uni
 
 Prevent duplicate content from being crawled and stored.
 
+### Crawl Deduplication
+
+#### No Deduplication
+:   When selected, deduplication will not be enabled in crawls of this workflow.
+
+#### Deduplicate using a collection
+:   When selected, crawls of this workflow will reference items in the specified Collection to Use when checking for new content and URLs.
+
+### Collection to Use
+
+Specify the collection to use as the deduplication source. All crawls of the workflow will be automatically added to this collection.
+
+#### Collection Name
+
+Name of the collection to use. If the name entered does not belong to an existing collection, a new collection will be created upon saving the workflow.
+
 ## Collections
 
 ### Auto-Add to Collection

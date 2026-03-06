@@ -29,6 +29,10 @@ View and manage your org's current payment plan and associated quotas. Usage his
 
 Set default suggested settings for all new crawl workflows. When creating a new workflow, org members will see the form pre-filled with these default values. Org members can still change or remove these settings when configuring the workflow. Removing a default setting will revert the setting back to Browsertrix' defaults.
 
+## Deduplication
+
+View and manage deduplication indexes for all collections used as [deduplication sources](deduplication.md) in the org. Each entry includes information such as how many archived items and URLs are included in the index and how many deleted archived items are purgeable from the index. From the action menu, purge or delete the deduplication index for each collection.
+
 <!-- ## Limits
 
 This tab lets organization admins set an additional number of allowed overage minutes when the organization's monthly execution minutes quota has been reached. If set, this serves as a hard cap after which all running crawls will be stopped. When set at the default of 0, crawls will be stopped as soon as the monthly quota is reached. -->
