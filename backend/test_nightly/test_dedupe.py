@@ -167,6 +167,7 @@ def test_index_idle_after_first(default_org_id, dedupe_coll_id, crawler_auth_hea
         default_org_id, dedupe_coll_id, crawler_auth_headers, "idle"
     )
     last_saved_at = data.get("indexLastSavedAt")
+    assert last_saved_at
 
 
 def test_second_crawl_stats(
@@ -362,13 +363,14 @@ def test_cant_delete_while_crawling(
         headers=admin_auth_headers,
     )
     assert r.status_code == 400
+    assert r.json()["detail"] == "dedupe_index_is_in_use"
 
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/cancel",
         headers=admin_auth_headers,
     )
     data = r.json()
-    assert data["success"] == True
+    assert data["success"]
 
 
 def test_can_delete_while_indexing(
@@ -413,9 +415,9 @@ def test_index_data_deleted(default_org_id, dedupe_coll_id, crawler_auth_headers
         headers=crawler_auth_headers,
     )
     data = res.json()
-    assert data["indexStats"] == None
-    assert data["indexState"] == None
-    assert data["indexLastSavedAt"] == None
+    assert data["indexStats"] is None
+    assert data["indexState"] is None
+    assert data["indexLastSavedAt"] is None
 
 
 def test_delete_coll(
