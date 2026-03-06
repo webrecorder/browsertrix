@@ -21,6 +21,15 @@ minio_local_bucket_name: &local_bucket_name "btrix-test-data"
 # for checking registration
 registration_enabled: "1"
 
+dedupe:
+  idle_secs: 30
+
+  importer_channel: dedupe
+
+  memory: "1Gi"
+  cpu: "100m"
+  storage: "1Gi"
+
 storages:
   - name: "default"
     type: "s3"
