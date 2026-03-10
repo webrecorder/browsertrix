@@ -4,7 +4,7 @@
 
 Deduplication (or “dedupe”) is the process of preventing duplicate content from being stored during crawling. When deduplication is enabled, the crawler will reference a collection’s existing items when checking for new content and URLs. Content that is identical, even when found at a different URL, will be deduplicated by writing "revisit" records rather than the full resource in the resulting crawl WACZ files. This results in a smaller, space-saving collection and smaller archived items.
 
-Deduplication is facilitated by a _deduplication index_ on the collection, which contains information for every resource and URL in the collection’s archived items. Detailed technical information about how deduplication is implemented in Browsertrix is available in the [crawler’s developer documentation](https://crawler.docs.browsertrix.com/develop/dedupe/).
+Deduplication in Browsertrix is facilitated by a _deduplication index_ associated with a given collection, which contains information for every resource and URL in the collection’s archived items. 
 
 ## Tradeoffs and Considerations
 
