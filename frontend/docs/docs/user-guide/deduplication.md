@@ -47,3 +47,7 @@ It is possible to deduplicate all crawls in your org by taking advantage of **cr
 If you already have existing archived items and crawl workflows in your org, be sure to add them all to this collection. This can be done in the collection’s **Select Items** dialog, or one-by-one by individually editing the archived items and crawl workflows.
 
 Finally, have an org admin set the collection as the default deduplication source in the **Crawling Defaults** section of [Org Settings](./org-settings.md). Once this is done, all new crawl workflows will have deduplication enabled, and all crawls run with these workflows will be deduplicated against the collection containing all of the items in your org.
+
+## Technical Details
+
+More information about how deduplication is implemented in Browsertrix Crawler is available in the [crawler documentation](https://crawler.docs.browsertrix.com/user-guide/dedupe/).
