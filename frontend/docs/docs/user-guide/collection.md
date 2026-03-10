@@ -1,6 +1,6 @@
 # Intro to Collections
 
-A collection is a specific, user-directed grouping of archived items from either crawls or WACZ files. You can create a collection, add content to your collection, include a description to your collection, download your collection, and share your collection whichever way you need to others in your community.
+A collection is a specific, user-directed grouping of either crawls or uploaded WACZ files, both [archived items](./archived-items.md). You can create a collection, add content to your collection, include a description to your collection, download your collection, and share your collection whichever way you need to others in your community.
 
 ## Create a Collection
 
