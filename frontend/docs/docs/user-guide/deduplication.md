@@ -2,7 +2,7 @@
 
 ## Overview
 
-Deduplication (or “dedupe”) is the process of preventing duplicate content from being stored during crawling. In Browsertrix, deduplication is faciliated through [collections](./collection.md), which allow arbitrary grouping of crawled content as needed.
+Deduplication (or “dedupe”) is the process of preventing duplicate content from being stored during crawling. In Browsertrix, deduplication is facilitated through [collections](./collection.md), which allow arbitrary grouping of crawled content as needed.
 
 After deduplication is enabled on a collection, a _deduplication index_ is created for the collection, containing all the unique content hashes for every URL in every archived item in the collection.
 
@@ -45,7 +45,7 @@ While deduplication can help save storage space, the process also creates depend
 Browsertrix tracks the crawl dependencies on the collection's **Deduplication** section, and all dependencies / previous crawls are also added to the same collection.
 
 To view the complete, deduplicated content of a crawled site, more than one archived item may need to be loaded.
-By default, the collection should aready have all the dependencies needed for replay (unless manually removed).
+By default, the collection should already have all the dependencies needed for replay (unless manually removed).
 
 For individual crawls, Browsertrix will automatically pull in the required dependent crawls to make replay work.
 
