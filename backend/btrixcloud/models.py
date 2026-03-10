@@ -2,6 +2,8 @@
 Crawl-related models and types
 """
 
+# pylint: disable=invalid-name, too-many-lines
+from __future__ import annotations
 from datetime import datetime
 from enum import Enum, IntEnum
 from uuid import UUID
@@ -11,7 +13,7 @@ import mimetypes
 import math
 import os
 
-from typing import Optional, List, Dict, Union, Literal, Any, get_args
+from typing import Optional, List, Dict, Self, Union, Literal, Any, get_args, get_origin
 from typing_extensions import Annotated
 
 from pydantic import (
@@ -20,6 +22,8 @@ from pydantic import (
     HttpUrl as HttpUrlNonStr,
     AnyHttpUrl as AnyHttpUrlNonStr,
     EmailStr as CasedEmailStr,
+    create_model,
+    model_validator,
     validate_email,
     RootModel,
     BeforeValidator,
@@ -90,7 +94,6 @@ class EmailStr(CasedEmailStr):
         return validate_email(value)[1].lower()
 
 
-# pylint: disable=invalid-name, too-many-lines
 # ============================================================================
 class UserRole(IntEnum):
     """User role"""
@@ -244,6 +247,7 @@ TYPE_AUTO_PAUSED_STATES = Literal[
     "paused_time_quota_reached",
     "paused_org_readonly",
 ]
+
 AUTO_PAUSED_STATES = get_args(TYPE_AUTO_PAUSED_STATES)
 
 TYPE_PAUSED_STATES = Literal[
@@ -253,9 +257,7 @@ TYPE_PAUSED_STATES = Literal[
 PAUSED_STATES = get_args(TYPE_PAUSED_STATES)
 
 TYPE_WAITING_NOT_PAUSED_STATES = Literal[
-    "starting",
-    "waiting_capacity",
-    "waiting_org_limit",
+    "starting", "waiting_capacity", "waiting_org_limit", "waiting_dedupe_index"
 ]
 WAITING_NOT_PAUSED_STATES = get_args(TYPE_WAITING_NOT_PAUSED_STATES)
 
@@ -312,6 +314,8 @@ class CrawlStats(BaseModel):
     found: int = 0
     done: int = 0
     size: int = 0
+
+    req_crawls: list[str] = []
 
 
 # ============================================================================
@@ -426,6 +430,8 @@ class CrawlConfigIn(BaseModel):
     proxyId: Optional[str] = None
 
     autoAddCollections: Optional[List[UUID]] = []
+    dedupeCollId: Union[UUID, EmptyStr, None] = None
+
     tags: Optional[List[str]] = []
 
     crawlTimeout: int = 0
@@ -491,6 +497,8 @@ class CrawlConfigCore(BaseMongoModel):
 
     firstSeed: str = ""
     seedCount: int = 0
+
+    dedupeCollId: Optional[UUID] = None
 
 
 # ============================================================================
@@ -577,6 +585,7 @@ class UpdateCrawlConfig(BaseModel):
     tags: Optional[List[str]] = None
     description: Optional[str] = None
     autoAddCollections: Optional[List[UUID]] = None
+    dedupeCollId: Union[UUID, EmptyStr, None] = None
     runNow: bool = False
     updateRunning: bool = False
 
@@ -619,6 +628,8 @@ class CrawlConfigDefaults(BaseModel):
     exclude: Optional[List[str]] = None
 
     customBehaviors: List[str] = []
+
+    dedupeCollId: Optional[UUID] = None
 
 
 # ============================================================================
@@ -822,6 +833,17 @@ class CrawlFileOut(BaseModel):
     crawlId: Optional[str] = None
     numReplicas: int = 0
     expireAt: Optional[str] = None
+    fromDependency: bool = False
+
+
+# ============================================================================
+class CrawlDedupeStats(BaseModel):
+    """Dedupe stats for crawl"""
+
+    uniqueHashes: int = 0
+    totalUrls: int = 0
+    dupeUrls: int = 0
+    conservedSize: int = 0
 
 
 # ============================================================================
@@ -879,6 +901,9 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
     isMigrating: Optional[bool] = None
     version: Optional[int] = None
 
+    requiresCrawls: Optional[list[str]] = []
+    requiredByCrawls: Optional[list[str]] = []
+
 
 # ============================================================================
 class CollIdName(BaseModel):
@@ -918,8 +943,12 @@ class CrawlOut(BaseMongoModel):
     fileCount: int = 0
     pendingSize: int = 0
 
+    # computed only if dependencies are looked up
+    fileSizeWithDeps: Optional[int] = None
+
     tags: Optional[List[str]] = []
 
+    dedupeCollId: Optional[UUID] = None
     collectionIds: Optional[List[UUID]] = []
 
     crawlExecSeconds: int = 0
@@ -966,6 +995,15 @@ class CrawlOut(BaseMongoModel):
     errors: Optional[List[str]] = Field(default=[], deprecated=True)
     behaviorLogs: Optional[List[str]] = Field(default=[], deprecated=True)
 
+    # Linked Crawls for dedupe
+    requiresCrawls: Optional[list[str]] = []
+    requiredByCrawls: Optional[list[str]] = []
+
+    # computed only if dependencies are looked up
+    missingRequiresCrawls: Optional[list[str]] = None
+
+    dedupeStats: Optional[CrawlDedupeStats] = None
+
 
 # ============================================================================
 class UpdateCrawl(BaseModel):
@@ -996,6 +1034,7 @@ class DeleteQARunList(BaseModel):
 class CrawlSearchValuesResponse(BaseModel):
     """Response model for crawl search values"""
 
+    ids: List[str]
     names: List[str]
     descriptions: List[str]
     firstSeeds: List[str]
@@ -1104,6 +1143,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     pendingSize: int = 0
 
     autoPausedEmailsSent: bool = False
+
+    dedupeStats: Optional[CrawlDedupeStats] = None
 
 
 # ============================================================================
@@ -1536,6 +1577,13 @@ class PageUrlCount(BaseModel):
 
 
 # ============================================================================
+class ResourcesOnly(BaseModel):
+    """Resources-only response"""
+
+    resources: Optional[List[CrawlFileOut]] = []
+
+
+# ============================================================================
 class CrawlOutWithResources(CrawlOut):
     """Crawl output model including resources"""
 
@@ -1550,6 +1598,16 @@ class CrawlOutWithResources(CrawlOut):
 # ============================================================================
 
 ### COLLECTIONS ###
+
+TYPE_DEDUPE_INDEX_STATES = Literal[
+    "initing", "importing", "ready", "purging", "idle", "saving", "saved", "crawling"
+]
+DEDUPE_INDEX_STATES = get_args(TYPE_DEDUPE_INDEX_STATES)
+
+
+TYPE_INDEX_JOB_TYPES = Literal["import", "purge", "commit", "cancel"]
+
+INDEX_JOB_TYPES = get_args(TYPE_INDEX_JOB_TYPES)
 
 
 # ============================================================================
@@ -1584,6 +1642,36 @@ class HostCount(BaseModel):
 
     host: str
     count: int
+
+
+# ============================================================================
+class DedupeIndexFile(BaseFile):
+    """serialize dedupe index"""
+
+    type: Literal["redis", "kvrocks"] = "kvrocks"
+
+
+# ============================================================================
+class DedupeIndexStats(BaseModel):
+    """stats from collection dedupe index"""
+
+    totalUrls: int = 0
+    dupeUrls: int = 0
+
+    conservedSize: int = 0
+
+    totalCrawls: int = 0
+    totalCrawlSize: int = 0
+
+    removedCrawls: int = 0
+    removedCrawlSize: int = 0
+
+    # import / purge progress
+    updateProgress: float = 0
+
+    # for internal use for now
+    uniqueHashes: int = 0
+    estimatedRedundantSize: int = 0
 
 
 # ============================================================================
@@ -1625,6 +1713,15 @@ class Collection(BaseMongoModel):
 
     previousSlugs: List[str] = []
 
+    indexLastSavedAt: Optional[datetime] = None
+    indexFile: Optional[DedupeIndexFile] = None
+    indexState: Optional[TYPE_DEDUPE_INDEX_STATES] = None
+
+    indexStats: Optional[DedupeIndexStats] = None
+
+    # size of db on disk when in use
+    indexDiskSpaceUsed: Optional[int] = None
+
 
 # ============================================================================
 class CollIn(BaseModel):
@@ -1640,6 +1737,8 @@ class CollIn(BaseModel):
 
     defaultThumbnailName: Optional[str] = None
     allowPublicDownload: bool = True
+
+    hasDedupeIndex: bool = False
 
 
 # ============================================================================
@@ -1685,6 +1784,11 @@ class CollOut(BaseMongoModel):
     downloadUrl: Optional[str] = None
 
     topPageHosts: List[HostCount] = []
+
+    indexLastSavedAt: Optional[datetime] = None
+    indexState: Optional[TYPE_DEDUPE_INDEX_STATES] = None
+
+    indexStats: Optional[DedupeIndexStats] = None
 
 
 # ============================================================================
@@ -1736,6 +1840,7 @@ class UpdateColl(BaseModel):
     defaultThumbnailName: Optional[str] = None
     allowPublicDownload: Optional[bool] = None
     thumbnailSource: Optional[CollectionThumbnailSource] = None
+    hasDedupeIndex: Optional[bool] = None
 
 
 # ============================================================================
@@ -1764,6 +1869,13 @@ class CollectionAllResponse(BaseModel):
     """Response model for '$all' collection endpoint"""
 
     resources: List[CrawlFileOut] = []
+
+
+# ============================================================================
+class DeleteDedupeIndex(BaseModel):
+    """Options for deleting dedupe index on collection"""
+
+    removeFromWorkflows: bool = False
 
 
 # ============================================================================
@@ -2133,6 +2245,110 @@ class UserOut(UserOutNoId):
 
 
 # ============================================================================
+# Feature Flags
+# ============================================================================
+
+
+class ValidatedFeatureFlags(BaseModel):
+    """Base class for feature flags with validation."""
+
+    @model_validator(mode="after")
+    def validate_all_fields(self) -> Self:
+        """Ensure all fields have descriptions and are bools."""
+        missing_descriptions = []
+        non_bool_fields = []
+
+        for field_name, field_info in self.model_fields.items():
+            # Check for missing descriptions
+            if not field_info.description:
+                missing_descriptions.append(field_name)
+
+            # Check if field type is bool (handles Annotated[bool, ...])
+            annotation = field_info.annotation
+            if get_origin(annotation) is Annotated:
+                actual_type = get_args(annotation)[0]
+            else:
+                actual_type = annotation
+
+            if actual_type is not bool:
+                non_bool_fields.append(f"{field_name} (type: {actual_type})")
+
+        if missing_descriptions:
+            raise ValueError(
+                f"The following fields are missing descriptions: {', '.join(missing_descriptions)}"
+            )
+
+        if non_bool_fields:
+            raise ValueError(
+                f"The following fields must be bool type: {', '.join(non_bool_fields)}"
+            )
+
+        return self
+
+
+def make_feature_flags_partial(model_cls: type[BaseModel]) -> type[BaseModel]:
+    """Return a partial model for feature flags without validation inheritance.
+
+    This creates a model where all fields are optional (bool | None) but doesn't
+    inherit from the original model to avoid the ValidatedFeatureFlags validator
+    that checks for exact bool types.
+    """
+    new_fields = {}
+
+    for f_name, f_info in model_cls.model_fields.items():
+        f_dct = f_info.asdict()  # type: ignore
+
+        # Create a new field that's bool | None with the same description
+        new_fields[f_name] = (
+            Annotated[
+                (
+                    bool | None,
+                    Field(description=f_dct.get("description"), default=None),  # type: ignore
+                )
+            ],
+            None,
+        )
+
+    return create_model(  # type: ignore
+        f"{model_cls.__name__}Partial",
+        **new_fields,
+    )
+
+
+# ============================================================================
+# Feature Flags - Edit here
+# ============================================================================
+
+
+class FeatureFlags(ValidatedFeatureFlags):
+    """Feature flags for an organization"""
+
+    dedupeEnabled: bool = Field(
+        description="Enable deduplication options for an org. Intended for beta-testing dedupe.",
+        default=False,
+    )
+
+
+# ============================================================================
+
+
+FeatureFlagsPartial = make_feature_flags_partial(FeatureFlags)
+
+
+class FeatureFlagStats(BaseModel):
+    """Output model for feature flags"""
+
+    model_config = ConfigDict(use_attribute_docstrings=True)
+
+    name: str
+
+    description: str
+
+    count: int
+    """Number of organizations that have this feature flag enabled."""
+
+
+# ============================================================================
 # ORGS
 # ============================================================================
 class OrgReadOnlyOnCancel(BaseModel):
@@ -2218,6 +2434,7 @@ class OrgOut(BaseMongoModel):
     bytesStoredProfiles: int
     bytesStoredSeedFiles: int = 0
     bytesStoredThumbnails: int = 0
+    bytesStoredDedupeIndexes: int = 0
     origin: Optional[AnyHttpUrl] = None
 
     storageQuotaReached: Optional[bool] = False
@@ -2259,6 +2476,8 @@ class OrgOut(BaseMongoModel):
     publicDescription: str = ""
     publicUrl: str = ""
 
+    featureFlags: FeatureFlags = FeatureFlags()
+
 
 # ============================================================================
 class Organization(BaseMongoModel):
@@ -2283,6 +2502,7 @@ class Organization(BaseMongoModel):
     bytesStoredProfiles: int = 0
     bytesStoredSeedFiles: int = 0
     bytesStoredThumbnails: int = 0
+    bytesStoredDedupeIndexes: int = 0
 
     # total usage + exec time
     usage: Dict[str, int] = {}
@@ -2321,6 +2541,8 @@ class Organization(BaseMongoModel):
     enablePublicProfile: bool = False
     publicDescription: Optional[str] = None
     publicUrl: Optional[str] = None
+
+    featureFlags: FeatureFlags = FeatureFlags()
 
     def is_owner(self, user):
         """Check if user is owner"""
@@ -2432,6 +2654,7 @@ class OrgMetrics(BaseModel):
     storageUsedProfiles: int
     storageUsedSeedFiles: int
     storageUsedThumbnails: int
+    storageUsedDedupeIndexes: int
     storageQuotaBytes: int
     archivedItemCount: int
     crawlCount: int

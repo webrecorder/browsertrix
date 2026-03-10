@@ -18,10 +18,7 @@ import {
   type WorkflowParams,
 } from "@/types/crawler";
 import type { OrgData } from "@/types/org";
-import {
-  WorkflowScopeType,
-  type NewWorkflowOnlyScopeType,
-} from "@/types/workflow";
+import { NewWorkflowOnlyScopeType, WorkflowScopeType } from "@/types/workflow";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEFAULT_MAX_SCALE, isPageScopeType } from "@/utils/crawler";
 import { getNextDate, getScheduleInterval } from "@/utils/cron";
@@ -40,6 +37,7 @@ export const SECTIONS = [
   "behaviors",
   "browserSettings",
   "scheduling",
+  "deduplication",
   "collections",
   "metadata",
 ] as const;
@@ -52,6 +50,7 @@ export enum GuideHash {
   Behaviors = "page-behavior",
   BrowserSettings = "browser-settings",
   Scheduling = "scheduling",
+  Deduplication = "deduplication",
   Collections = "collections",
   Metadata = "metadata",
 }
@@ -67,6 +66,7 @@ export const workflowTabToGuideHash: Record<SectionsEnum, GuideHash> = {
   behaviors: GuideHash.Behaviors,
   browserSettings: GuideHash.BrowserSettings,
   scheduling: GuideHash.Scheduling,
+  deduplication: GuideHash.Deduplication,
   collections: GuideHash.Collections,
   metadata: GuideHash.Metadata,
 };
@@ -110,6 +110,36 @@ export function defaultSeedListFileName() {
     .replace(/[^0-9]/g, "")}.${SEED_LIST_FILE_EXT}`;
 }
 
+export function apiScopeType(scope: string): scope is ScopeType {
+  return Object.values(ScopeType).includes(scope as ScopeType);
+}
+
+export function regexScopeConfig(config?: SeedConfig | Seed): config is (
+  | SeedConfig
+  | Seed
+) & {
+  scopeType: NewWorkflowOnlyScopeType.Regex;
+} {
+  return (
+    config?.scopeType === WorkflowScopeType.Custom &&
+    Boolean(
+      config.include?.some((url) => {
+        try {
+          new URL(unescapeCustomPrefix(url));
+          return false;
+        } catch {
+          return true;
+        }
+      }),
+    )
+  );
+}
+
+export enum DedupeType {
+  None = "none",
+  Collection = "collection",
+}
+
 export type FormState = {
   primarySeedUrl: string;
   urlList: string;
@@ -120,7 +150,7 @@ export type FormState = {
   useSitemap: boolean;
   failOnFailedSeed: boolean;
   failOnContentCheck: boolean;
-  customIncludeUrlList: string;
+  customIncludeList: string;
   crawlTimeoutMinutes: number;
   behaviorTimeoutSeconds: number | null;
   pageLoadTimeoutSeconds: number | null;
@@ -170,6 +200,8 @@ export type FormState = {
    * Custom schedule in cron format.
    */
   scheduleCustom?: string;
+  dedupeType: DedupeType;
+  dedupeCollection: { id: string } | { name: string } | null;
   jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
@@ -210,7 +242,7 @@ export const getDefaultFormState = (): FormState => ({
   useSitemap: false,
   failOnFailedSeed: false,
   failOnContentCheck: false,
-  customIncludeUrlList: "",
+  customIncludeList: "",
   crawlTimeoutMinutes: 0,
   maxCrawlSizeGB: 0,
   behaviorTimeoutSeconds: null,
@@ -233,6 +265,8 @@ export const getDefaultFormState = (): FormState => ({
     minute: 0,
     period: "AM",
   },
+  dedupeType: DedupeType.None,
+  dedupeCollection: null,
   jobName: "",
   browserProfile: null,
   tags: [],
@@ -275,13 +309,19 @@ export function getInitialFormState(params: {
       }
     }
     if (primarySeedConfig.include?.length) {
-      formState.customIncludeUrlList = primarySeedConfig.include
-        // Unescape regex
-        .map(unescapeCustomPrefix)
-        .join("\n");
-      // if we have additional include URLs, set to "custom" scope here
-      // to indicate 'Custom Page Prefix' option
-      formState.scopeType = ScopeType.Custom;
+      // The "custom" scope can be displayed in the UI as either a custom prefix
+      // scope (all valid URLs) or custom regex scope
+      const isRegex = regexScopeConfig(primarySeedConfig);
+
+      if (isRegex) {
+        formState.scopeType = NewWorkflowOnlyScopeType.Regex;
+        formState.customIncludeList = primarySeedConfig.include.join("\n");
+      } else {
+        formState.scopeType = ScopeType.Custom;
+        formState.customIncludeList = primarySeedConfig.include
+          .map(unescapeCustomPrefix)
+          .join("\n");
+      }
     }
     const additionalSeeds = params.initialSeeds?.slice(1);
     if (additionalSeeds?.length) {
@@ -338,6 +378,11 @@ export function getInitialFormState(params: {
     formState.autoAddCollections = params.initialWorkflow.autoAddCollections;
   }
 
+  if (params.initialWorkflow.dedupeCollId) {
+    formState.dedupeType = DedupeType.Collection;
+    formState.dedupeCollection = { id: params.initialWorkflow.dedupeCollId };
+  }
+
   const secondsToMinutes = (value: unknown, fallback = 0) => {
     if (typeof value === "number" && value > 0) return value / 60;
     return fallback;
@@ -357,7 +402,7 @@ export function getInitialFormState(params: {
     ...defaultFormState,
     primarySeedUrl: defaultFormState.primarySeedUrl,
     urlList: defaultFormState.urlList,
-    customIncludeUrlList: defaultFormState.customIncludeUrlList,
+    customIncludeList: defaultFormState.customIncludeList,
     crawlTimeoutMinutes: secondsToMinutes(
       params.initialWorkflow.crawlTimeout,
       defaultFormState.crawlTimeoutMinutes,

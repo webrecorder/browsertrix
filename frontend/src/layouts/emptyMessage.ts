@@ -17,7 +17,12 @@ export function emptyMessage({
   classNames?: typeof tw | string;
 }) {
   return html`
-    <div class=${clsx(tw`flex flex-col items-center gap-5 py-9`, classNames)}>
+    <div
+      class=${clsx(
+        tw`flex flex-col items-center gap-5 py-9 text-center`,
+        classNames,
+      )}
+    >
       ${icon
         ? html`<sl-icon
             name=${icon.name}

@@ -238,3 +238,15 @@ def crawler_image_below_minimum(crawler_image: str, min_image: str):
         return True
 
     return False
+
+
+def gb_storage_ceil(storage: float) -> str:
+    """approx min GB storage, rounded up"""
+    gb = math.ceil(storage / 1_000_000_000)
+    return f"{gb}Gi"
+
+
+def gb_storage_floor(storage: float) -> str:
+    """approx min GB storage, rounded up"""
+    gb = math.floor(storage / 1_000_000_000)
+    return f"{gb}Gi"

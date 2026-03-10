@@ -118,7 +118,7 @@ export class ArchivedItemList extends TailwindElement {
             .join(" ")};
         }
       </style>
-      <btrix-overflow-scroll class="-mx-5 part-[content]:px-5">
+      <btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
         <btrix-table>
           <btrix-table-head class="mb-2">
             <slot

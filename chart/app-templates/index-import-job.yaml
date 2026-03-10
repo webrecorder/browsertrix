@@ -1,0 +1,123 @@
+# -------
+# INDEXER
+# -------
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ name }}
+  labels:
+    role: index-import-job
+    type: {{ job_type }}
+    coll: {{ id }}
+    oid: {{ oid }}
+
+spec:
+  ttlSecondsAfterFinished: 300
+
+  # keep retrying indefinitely
+  backoffLimit: 1000000
+
+# if purging, set completions to disallow changing parallelism
+# for import, omit to allow increasing later
+{% if job_type == "purge" %}
+  completions: 1
+{% endif %}
+
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        role: index-import-job
+        type: {{ job_type }}
+        coll: {{ id }}
+        oid: {{ oid }}
+
+    spec:
+      restartPolicy: OnFailure
+      priorityClassName: index-import-job
+
+      {% if job_type == "import" or job_type == "purge" %}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ name }}
+
+        - name: tmpdir
+          emptyDir: {}
+      {% endif %}
+
+      containers:
+        - name: indexer
+          image: {{ crawler_image }}
+          imagePullPolicy: {{ crawler_image_pull_policy }}
+          command:
+            - indexer
+            - --redisDedupeUrl
+            - {{ redis_url }}
+
+          {% if job_type == "import" %}
+            - --sourceUrl
+            - /btrix-config/config.json
+
+          {% elif job_type == "purge" %}
+            - --sourceUrl
+            - /btrix-config/config.json
+            - --removing
+
+          {% elif job_type == "commit" %}
+            - --commitCrawlId
+            - {{ crawl_id }}
+
+          {% elif job_type == "cancel" %}
+            - --cancelCrawlId
+            - {{ crawl_id }}
+
+          {% endif %}
+
+          {% if job_type == "import" or job_type == "purge" %}
+          volumeMounts:
+            - name: tmpdir
+              mountPath: /tmp
+
+            - name: config
+              mountPath: /btrix-config/
+              readOnly: True
+          {% endif %}
+
+          resources:
+            limits:
+              memory: "200Mi"
+
+            requests:
+              cpu: "500m"
+              memory: "50Mi"
+
+          {% if crawler_liveness_port and crawler_liveness_port != '0' %}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ crawler_liveness_port }}
+
+            initialDelaySeconds: 15
+            periodSeconds: 120
+            failureThreshold: 3
+          {% endif %}
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+
+      tolerations:
+        - key: nodeType
+          operator: Equal
+          value: crawling
+          effect: NoSchedule
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          tolerationSeconds: 300
+          effect: NoExecute
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300

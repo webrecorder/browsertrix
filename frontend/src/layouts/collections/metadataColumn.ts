@@ -1,4 +1,4 @@
-import { html, type TemplateResult } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { when } from "lit/directives/when.js";
 
 import { metadata } from "@/strings/collections/metadata";
@@ -29,7 +29,10 @@ export function metadataItemWithCollection(
   };
 }
 
-export function metadataColumn(collection?: Collection | PublicCollection) {
+export function metadataColumn(
+  collection?: Collection | PublicCollection,
+  { publicView } = { publicView: false },
+) {
   const metadataItem = metadataItemWithCollection(collection);
 
   return html`
@@ -52,10 +55,12 @@ export function metadataColumn(collection?: Collection | PublicCollection) {
         render: (col) =>
           `${localize.number(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
       })}
-      ${metadataItem({
-        label: metadata.totalSize,
-        render: (col) => `${localize.bytes(col.totalSize)}`,
-      })}
+      ${publicView
+        ? metadataItem({
+            label: metadata.totalSize,
+            render: (col) => `${localize.bytes(col.totalSize)}`,
+          })
+        : nothing}
       ${metadataItem({
         label: metadata.topPageHosts,
         render: (col) =>
@@ -64,7 +69,9 @@ export function metadataColumn(collection?: Collection | PublicCollection) {
               (x) => html`
                 <tr>
                   <td>${x.host}</td>
-                  <td class="pl-4">${x.count}</td>
+                  <td class="pl-4">
+                    ${localize.number(x.count, { notation: "compact" })}
+                  </td>
                 </tr>
               `,
             )}

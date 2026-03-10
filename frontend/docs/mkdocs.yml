@@ -66,9 +66,11 @@ nav:
           - user-guide/collection.md
           - user-guide/public-collections-gallery.md
           - user-guide/presentation-sharing.md
+      - Deduplication:
+          - user-guide/deduplication.md
       - Quality Assurance:
-        - user-guide/quality-assurance.md
-        - user-guide/qa-review.md
+          - user-guide/quality-assurance.md
+          - user-guide/qa-review.md
       - Browser Profiles:
           - user-guide/browser-profiles/browser-profiles-overview.md
           - user-guide/browser-profiles/create-browser-profile.md
@@ -99,6 +101,7 @@ nav:
       - develop/local-dev-setup.md
       - develop/docs.md
       - develop/emails.md
+      - develop/feature-flags.md
       - UI Development:
         - develop/frontend-dev.md
         - develop/ui/components.md

@@ -25,6 +25,8 @@ from .models import (
     CollIdName,
     CollectionThumbnailSource,
     UpdateColl,
+    DedupeIndexStats,
+    DedupeIndexFile,
     AddRemoveCrawlList,
     BaseCrawl,
     CrawlFileOut,
@@ -48,6 +50,10 @@ from .models import (
     UserFilePreparer,
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
+    ResourcesOnly,
+    DeleteDedupeIndex,
+    TYPE_DEDUPE_INDEX_STATES,
+    TYPE_INDEX_JOB_TYPES,
 )
 from .utils import (
     dt_now,
@@ -56,6 +62,8 @@ from .utils import (
     get_origin,
     case_insensitive_collation,
 )
+
+from .crawlmanager import CrawlManager
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -81,8 +89,16 @@ class CollectionOps:
     event_webhook_ops: EventWebhookOps
     crawl_ops: CrawlOps
     page_ops: PageOps
+    crawl_manager: CrawlManager
 
-    def __init__(self, mdb, storage_ops, orgs, event_webhook_ops):
+    def __init__(
+        self,
+        mdb,
+        orgs: OrgOps,
+        storage_ops: StorageOps,
+        crawl_manager: CrawlManager,
+        event_webhook_ops: EventWebhookOps,
+    ):
         self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
@@ -91,7 +107,12 @@ class CollectionOps:
 
         self.orgs = orgs
         self.storage_ops = storage_ops
+        self.crawl_manager = crawl_manager
         self.event_webhook_ops = event_webhook_ops
+
+        self.dedupe_importer_channel = os.environ.get(
+            "DEDUPE_IMPORTER_CHANNEL", "default"
+        )
 
     def set_crawl_ops(self, ops):
         """set crawl ops"""
@@ -240,10 +261,14 @@ class CollectionOps:
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
+        # do this after checking if collection exists
         await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
 
         await self.update_collection_counts_and_tags(coll_id)
         await self.update_collection_dates(coll_id, org.id)
+
+        if result.get("indexState"):
+            await self.run_index_import_job(coll_id, org.id)
 
         asyncio.create_task(
             self.event_webhook_ops.create_added_to_collection_notification(
@@ -273,6 +298,9 @@ class CollectionOps:
 
         await self.update_collection_counts_and_tags(coll_id)
         await self.update_collection_dates(coll_id, org.id)
+
+        if result.get("indexState"):
+            await self.run_index_import_job(coll_id, org.id)
 
         asyncio.create_task(
             self.event_webhook_ops.create_removed_from_collection_notification(
@@ -398,6 +426,16 @@ class CollectionOps:
 
         return CollOut.from_dict(result)
 
+    async def get_internal_replay_list(self, coll_id: UUID, oid: UUID) -> ResourcesOnly:
+        """get list of internally resolved signed WACZ files"""
+        org = await self.orgs.get_org_by_id(oid)
+        resources, _, _ = await self.get_collection_crawl_resources(coll_id, org)
+
+        for file_ in resources:
+            file_.path = self.storage_ops.resolve_internal_access_path(file_.path)
+
+        return ResourcesOnly(resources=resources)
+
     async def get_public_collection_out(
         self,
         coll_id: UUID,
@@ -473,6 +511,7 @@ class CollectionOps:
         sort_direction: int = 1,
         name: Optional[str] = None,
         name_prefix: Optional[str] = None,
+        has_dedupe_index: Optional[bool] = None,
         access: Optional[str] = None,
         headers: Optional[dict] = None,
     ):
@@ -489,6 +528,9 @@ class CollectionOps:
         elif name_prefix:
             regex_pattern = f"^{name_prefix}"
             match_query["name"] = {"$regex": regex_pattern, "$options": "i"}
+
+        if has_dedupe_index is not None:
+            match_query["indexState"] = {"$ne" if has_dedupe_index else "$eq": None}
 
         if public_colls_out:
             match_query["access"] = CollAccessType.PUBLIC
@@ -635,11 +677,18 @@ class CollectionOps:
 
     async def delete_collection(self, coll_id: UUID, org: Organization):
         """Delete collection and remove from associated crawls."""
-        await self.crawl_ops.remove_collection_from_all_crawls(coll_id, org)
-
         coll = await self.get_collection(coll_id, org.id)
+
+        if coll.indexState:
+            raise HTTPException(
+                status_code=400, detail="not_allowed_while_dedupe_index_exists"
+            )
+
+        await self.crawl_ops.remove_collection_from_all_crawls(coll_id, org)
+        await self.orgs.remove_collection_from_crawling_defaults(coll_id, org)
+
         if coll.thumbnail:
-            await self.delete_thumbnail(coll_id, org)
+            await self.delete_thumbnail(coll, org)
 
         result = await self.collections.delete_one({"_id": coll_id, "oid": org.id})
         if result.deleted_count < 1:
@@ -670,6 +719,217 @@ class CollectionOps:
         return StreamingResponse(
             resp, headers=headers, media_type="application/wacz+zip"
         )
+
+    # DEDUPE INDEX OPS
+
+    async def create_dedupe_index(self, coll: Collection, org: Organization):
+        """create collection dedupe index, raise or ignore existing.
+        for API use"""
+        if coll.indexState:
+            raise HTTPException(status_code=400, detail="index_already_exists")
+
+        # enable index by setting indexState to a non-null value
+        # and setting stats to zeroed out default
+        await self.update_dedupe_index_info(
+            coll.id, org.id, state="initing" if coll.crawlCount else "idle"
+        )
+
+        await self.update_dedupe_index_stats(coll.id, DedupeIndexStats())
+
+        # run import job only if collection not empty
+        if coll.crawlCount:
+            await self.run_index_import_job(coll.id, org.id)
+
+        return {"success": True}
+
+    async def enable_dedupe_index(self, coll_id: UUID, org: Organization):
+        """create dedupe index if not already enabled, do nothing otherwise
+        for internal use from crawl workflows"""
+        coll = await self.get_collection(coll_id, org.id)
+        if coll.indexState:
+            return
+
+        await self.create_dedupe_index(coll, org)
+
+    async def purge_dedupe_index(self, coll: Collection, org: Organization):
+        """purge dedupe index on collection, raise exception if no index or not ready"""
+        if not coll.indexState:
+            raise HTTPException(status_code=404, detail="no_dedupe_index")
+
+        if coll.indexState not in ("ready", "idle"):
+            raise HTTPException(status_code=400, detail="dedupe_index_not_ready")
+
+        await self.run_index_import_job(coll.id, org.id, "purge")
+        return {"updated": True}
+
+    async def run_index_import_job(
+        self,
+        coll_id: UUID,
+        oid: UUID,
+        job_type: TYPE_INDEX_JOB_TYPES = "import",
+        crawl_id: Optional[str] = None,
+    ):
+        """update index with import / purge / post-crawl job"""
+
+        crawler_image = self.crawl_ops.crawl_configs.get_channel_crawler_image(
+            self.dedupe_importer_channel
+        )
+        if not crawler_image:
+            raise HTTPException(
+                status_code=500, detail="dedupe_crawler_image_not_defined"
+            )
+
+        pull_policy = (
+            self.crawl_ops.crawl_configs.get_channel_crawler_image_pull_policy(
+                self.dedupe_importer_channel
+            )
+            or "IfNotPresent"
+        )
+
+        await self.crawl_manager.run_index_import_job(
+            str(coll_id), str(oid), crawler_image, pull_policy, job_type, crawl_id
+        )
+
+        if job_type in ("import", "purge"):
+            # if job created, update state here so its reflected in the UI more quickly
+            await self.update_dedupe_index_info(
+                coll_id, oid, state="purging" if job_type == "purge" else "importing"
+            )
+
+    async def delete_dedupe_index(
+        self, coll: Collection, org: Organization, remove_from_workflows: bool = False
+    ):
+        """delete coll dedupe index, if possible"""
+        if not coll.indexState:
+            raise HTTPException(status_code=404, detail="no_dedupe_index")
+
+        # if index is not idle/ready, check if any crawls running
+        if coll.indexState not in ("idle", "ready"):
+            # if crawls running using index, can't delete
+            if await self.crawl_ops.has_active_crawls_with_dedupe_coll(org.id, coll.id):
+                raise HTTPException(status_code=400, detail="dedupe_index_is_in_use")
+
+        if coll.indexFile:
+            if not await self.storage_ops.delete_file_object(org, coll.indexFile):
+                print(
+                    "Unable to delete collection dedupe index: "
+                    + f"{coll.indexFile.filename}"
+                )
+                raise HTTPException(status_code=400, detail="file_deletion_error")
+
+            await self.orgs.inc_org_bytes_stored_field(
+                org.id, "bytesStoredDedupeIndexes", -coll.indexFile.size
+            )
+
+        await self.collections.find_one_and_update(
+            {"_id": coll.id},
+            {
+                "$set": {
+                    "indexStats": None,
+                    "indexState": None,
+                    "indexFile": None,
+                    "indexLastSavedAt": None,
+                    "indexDiskSpaceUsed": None,
+                }
+            },
+        )
+
+        # if not idle, delete k8s dedupe resources
+        if coll.indexState != "idle":
+            await self.crawl_manager.delete_dedupe_index_resources(
+                str(org.id), str(coll.id)
+            )
+
+        if remove_from_workflows:
+            await self.crawl_configs.update_many(
+                {"oid": org.id, "dedupeCollId": coll.id},
+                {"$set": {"dedupeCollId": None}},
+            )
+
+        return {"deleted": True}
+
+    async def update_dedupe_index_stats(
+        self, coll_id: UUID, stats: DedupeIndexStats, disk_space_used: int = 0
+    ):
+        """update dedupe index stats for specified collection"""
+        await self.collections.find_one_and_update(
+            {"_id": coll_id, "indexState": {"$ne": None}},
+            {
+                "$set": {
+                    "indexStats": stats.dict(),
+                    "indexDiskSpaceUsed": disk_space_used,
+                }
+            },
+        )
+
+    async def update_dedupe_index_info(
+        self,
+        coll_id: UUID,
+        oid: UUID,
+        state: TYPE_DEDUPE_INDEX_STATES,
+        index_file: Optional[DedupeIndexFile] = None,
+        dt: Optional[datetime] = None,
+        if_exists=False,
+    ) -> bool:
+        """update the state, and optionally, dedupe index file info"""
+        query: dict[str, Any] = {"indexState": state}
+        if index_file and dt:
+            query["indexLastSavedAt"] = dt
+            query["indexFile"] = index_file.model_dump()
+
+        match: dict[str, Any] = {"_id": coll_id}
+        # only update if index already exists
+        if if_exists:
+            match["indexState"] = {"$ne": None}
+
+        res = await self.collections.find_one_and_update(
+            match,
+            {"$set": query},
+            return_document=pymongo.ReturnDocument.BEFORE,
+        )
+
+        if index_file:
+            size_diff = index_file.size
+
+            prev_coll = Collection.from_dict(res) if res else None
+            if prev_coll and prev_coll.indexFile:
+                size_diff = index_file.size - prev_coll.indexFile.size
+
+            await self.orgs.inc_org_bytes_stored_field(
+                oid, "bytesStoredDedupeIndexes", size_diff
+            )
+
+        return res is not None
+
+    async def get_dedupe_index_saved(self, coll_id: UUID) -> Optional[datetime]:
+        """return datetime for when index was last saved, if any"""
+        coll = await self.collections.find_one(
+            {"_id": coll_id, "indexLastSavedAt": {"$ne": None}},
+            projection={"indexLastSavedAt": 1},
+        )
+        if coll:
+            return coll.get("indexLastSavedAt")
+        return None
+
+    async def get_dedupe_index_disk_size(self, coll_id: UUID) -> int:
+        """return min disk size for dedupe index when uncompressed on disk.
+        only return if index has been saved"""
+        coll = await self.collections.find_one(
+            {"_id": coll_id, "indexLastSavedAt": {"$ne": None}},
+            projection={"indexDiskSpaceUsed": 1},
+        )
+        if coll:
+            return coll.get("indexDiskSpaceUsed", 0)
+        return 0
+
+    async def has_dedupe_index(self, coll_id: UUID, oid: UUID) -> bool:
+        """return true if collection exists and indexState is set on collection"""
+        coll = await self.collections.find_one(
+            {"_id": coll_id, "oid": oid}, projection={"indexState"}
+        )
+        return coll and coll.get("indexState") is not None
+
+    # END DEDUPE OPS
 
     async def recalculate_org_collection_stats(self, org: Organization):
         """recalculate counts, tags and dates for all collections in an org"""
@@ -785,18 +1045,25 @@ class CollectionOps:
 
     async def update_crawl_collections(self, crawl_id: str, oid: UUID):
         """Update counts, dates, and modified for all collections in crawl"""
+        # accessing directly to handle both crawls and uploads
         crawl = await self.crawls.find_one({"_id": crawl_id})
-        crawl_coll_ids = crawl.get("collectionIds")
+        crawl_coll_ids = crawl.get("collectionIds") or []
         modified = dt_now()
 
         for coll_id in crawl_coll_ids:
             await self.update_collection_counts_and_tags(coll_id)
             await self.update_collection_dates(coll_id, oid)
-            await self.collections.find_one_and_update(
+
+            result = await self.collections.find_one_and_update(
                 {"_id": coll_id},
                 {"$set": {"modified": modified}},
                 return_document=pymongo.ReturnDocument.AFTER,
             )
+
+            # if this is a collection that has an index and its *not* the collection that the crawl
+            # was deduped against, need to import this crawl into the collection index
+            if crawl.get("dedupeCollId") != coll_id and result.get("indexState"):
+                await self.run_index_import_job(coll_id, oid)
 
     async def add_successful_crawl_to_collections(
         self, crawl_id: str, cid: UUID, oid: UUID
@@ -963,10 +1230,8 @@ class CollectionOps:
 
         return {"added": True}
 
-    async def delete_thumbnail(self, coll_id: UUID, org: Organization):
+    async def delete_thumbnail(self, coll: Collection, org: Organization):
         """Delete collection thumbnail"""
-        coll = await self.get_collection(coll_id, org.id)
-
         if not coll.thumbnail:
             raise HTTPException(status_code=404, detail="thumbnail_not_found")
 
@@ -976,7 +1241,7 @@ class CollectionOps:
 
         # Delete from database
         await self.collections.find_one_and_update(
-            {"_id": coll_id, "oid": org.id},
+            {"_id": coll.id, "oid": org.id},
             {"$set": {"thumbnail": None}},
         )
 
@@ -1002,13 +1267,22 @@ class CollectionOps:
 # ============================================================================
 # pylint: disable=too-many-locals
 def init_collections_api(
-    app, mdb, orgs, storage_ops, event_webhook_ops, user_dep
+    app,
+    mdb,
+    orgs: OrgOps,
+    storage_ops: StorageOps,
+    crawl_manager: CrawlManager,
+    event_webhook_ops: EventWebhookOps,
+    user_dep,
 ) -> CollectionOps:
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
 
-    colls: CollectionOps = CollectionOps(mdb, storage_ops, orgs, event_webhook_ops)
+    colls: CollectionOps = CollectionOps(
+        mdb, orgs, storage_ops, crawl_manager, event_webhook_ops
+    )
 
+    org_owner_dep = orgs.org_owner_dep
     org_crawl_dep = orgs.org_crawl_dep
     org_viewer_dep = orgs.org_viewer_dep
     org_public = orgs.org_public
@@ -1037,6 +1311,7 @@ def init_collections_api(
         sortDirection: int = 1,
         name: Optional[str] = None,
         namePrefix: Optional[str] = None,
+        hasDedupeIndex: Optional[bool] = None,
         access: Optional[str] = None,
     ):
         # pylint: disable=duplicate-code
@@ -1048,6 +1323,7 @@ def init_collections_api(
             sort_direction=sortDirection,
             name=name,
             name_prefix=namePrefix,
+            has_dedupe_index=hasDedupeIndex,
             access=access,
             headers=dict(request.headers),
         )
@@ -1325,6 +1601,52 @@ def init_collections_api(
         coll_id: UUID,
         org: Organization = Depends(org_crawl_dep),
     ):
-        return await colls.delete_thumbnail(coll_id, org)
+        coll = await colls.get_collection(coll_id, org.id)
+
+        return await colls.delete_thumbnail(coll, org)
+
+    # DEDUPE API
+
+    @app.post(
+        "/orgs/{oid}/collections/{coll_id}/dedupeIndex/create",
+        tags=["collections", "dedupe"],
+        response_model=SuccessResponse,
+    )
+    async def create_dedupe_index(
+        coll_id: UUID,
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        coll = await colls.get_collection(coll_id, org.id)
+
+        return await colls.create_dedupe_index(coll, org)
+
+    @app.post(
+        "/orgs/{oid}/collections/{coll_id}/dedupeIndex/purge",
+        tags=["collections", "dedupe"],
+        response_model=UpdatedResponse,
+    )
+    async def purge_dedupe_index(
+        coll_id: UUID,
+        org: Organization = Depends(org_owner_dep),
+    ):
+        coll = await colls.get_collection(coll_id, org.id)
+
+        return await colls.purge_dedupe_index(coll, org)
+
+    @app.post(
+        "/orgs/{oid}/collections/{coll_id}/dedupeIndex/delete",
+        tags=["collections", "dedupe"],
+        response_model=DeletedResponse,
+    )
+    async def delete_dedupe_index(
+        coll_id: UUID,
+        delete: DeleteDedupeIndex,
+        org: Organization = Depends(org_owner_dep),
+    ):
+        coll = await colls.get_collection(coll_id, org.id)
+
+        return await colls.delete_dedupe_index(
+            coll, org, remove_from_workflows=delete.removeFromWorkflows
+        )
 
     return colls

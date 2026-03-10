@@ -84,6 +84,7 @@ from .models import (
     TagsResponse,
     TYPE_AUTO_PAUSED_STATES,
     UserRole,
+    CrawlDedupeStats,
 )
 
 
@@ -180,6 +181,12 @@ class CrawlOps(BaseCrawlOps):
         tags: list[str] | None = None,
         tag_match: ListFilterType | None = ListFilterType.AND,
         collection_id: Optional[UUID] = None,
+        dedupe_coll_id: Optional[UUID] = None,
+        requires_crawls: list[str] | None = None,
+        required_by_crawls: list[str] | None = None,
+        has_requires_crawls: Optional[bool] = None,
+        has_required_by_crawls: Optional[bool] = None,
+        crawl_ids: Optional[List[str]] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: Optional[str] = None,
@@ -212,6 +219,20 @@ class CrawlOps(BaseCrawlOps):
             query_type = "$all" if tag_match == ListFilterType.AND else "$in"
             query["tags"] = {query_type: tags}
 
+        if requires_crawls:
+            query["requiresCrawls"] = {"$in": requires_crawls}
+        elif has_requires_crawls:
+            query["requiresCrawls"] = {"$nin": [None, []]}
+        elif has_requires_crawls is False:
+            query["requiresCrawls"] = {"$in": [None, []]}
+
+        if required_by_crawls:
+            query["requiredByCrawls"] = {"$in": required_by_crawls}
+        elif has_required_by_crawls:
+            query["requiredByCrawls"] = {"$nin": [None, []]}
+        elif has_required_by_crawls is False:
+            query["requiredByCrawls"] = {"$in": [None, []]}
+
         # Override running_only if state list is explicitly passed
         if state:
             validated_states = [value for value in state if value in ALL_CRAWL_STATES]
@@ -219,6 +240,8 @@ class CrawlOps(BaseCrawlOps):
 
         if crawl_id:
             query["_id"] = crawl_id
+        elif crawl_ids:
+            query["_id"] = {"$in": crawl_ids}
 
         # pylint: disable=duplicate-code
         aggregate = [
@@ -295,6 +318,9 @@ class CrawlOps(BaseCrawlOps):
 
         if first_seed:
             aggregate.extend([{"$match": {"firstSeed": first_seed}}])
+
+        if dedupe_coll_id:
+            aggregate.extend([{"$match": {"dedupeCollId": dedupe_coll_id}}])
 
         if collection_id:
             aggregate.extend([{"$match": {"collectionIds": {"$in": [collection_id]}}}])
@@ -386,6 +412,19 @@ class CrawlOps(BaseCrawlOps):
 
         return results[0].get("totalSum") or 0
 
+    async def has_active_crawls_with_dedupe_coll(
+        self, oid: UUID, coll_id: UUID
+    ) -> bool:
+        """return true/false if any active crawls exist that use given coll_id for dedupe"""
+        res = await self.crawls.find_one(
+            {
+                "state": {"$in": RUNNING_AND_WAITING_STATES},
+                "oid": oid,
+                "dedupeCollId": coll_id,
+            }
+        )
+        return bool(res)
+
     async def delete_crawls(
         self,
         org: Organization,
@@ -456,6 +495,7 @@ class CrawlOps(BaseCrawlOps):
             version=2,
             firstSeed=crawlconfig.firstSeed,
             seedCount=crawlconfig.seedCount,
+            dedupeCollId=crawlconfig.dedupeCollId,
         )
 
         try:
@@ -1275,6 +1315,26 @@ class CrawlOps(BaseCrawlOps):
             return res.get("autoPausedEmailsSent", False)
         return False
 
+    async def link_required_crawls(
+        self, oid: UUID, crawl_id: str, required_crawls: list[str]
+    ):
+        """link current crawl to dependent crawls (for duplicates)"""
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "oid": oid},
+            {"$addToSet": {"requiresCrawls": {"$each": required_crawls}}},
+        )
+
+        await self.crawls.update_many(
+            {"_id": {"$in": required_crawls}, "oid": oid},
+            {"$addToSet": {"requiredByCrawls": crawl_id}},
+        )
+
+    async def add_dedupe_stats(self, oid: UUID, crawl_id: str, stats: CrawlDedupeStats):
+        """Add dedupe stats to crawl in db"""
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "oid": oid}, {"$set": {"dedupeStats": stats.dict()}}
+        )
+
 
 # ============================================================================
 async def recompute_crawl_file_count_and_size(crawls, crawl_id: str):
@@ -1325,6 +1385,7 @@ def init_crawls_api(
         name: Optional[str] = None,
         description: Optional[str] = None,
         collectionId: Optional[UUID] = None,
+        ids: Annotated[list[str] | None, Query()] = None,
         sortBy: Optional[str] = None,
         sortDirection: int = -1,
         runningOnly: Optional[bool] = True,
@@ -1355,6 +1416,7 @@ def init_crawls_api(
             name=name,
             description=description,
             collection_id=collectionId,
+            crawl_ids=ids,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
@@ -1385,6 +1447,12 @@ def init_crawls_api(
             ),
         ] = ListFilterType.AND,
         collectionId: Optional[UUID] = None,
+        dedupeCollId: Optional[UUID] = None,
+        requiresCrawls: Annotated[list[str] | None, Query()] = None,
+        requiredByCrawls: Annotated[list[str] | None, Query()] = None,
+        hasRequiresCrawls: Optional[bool] = None,
+        hasRequiredByCrawls: Optional[bool] = None,
+        ids: Annotated[list[str] | None, Query()] = None,
         sortBy: Optional[str] = None,
         sortDirection: int = -1,
     ):
@@ -1416,6 +1484,12 @@ def init_crawls_api(
             tags=tags,
             tag_match=tag_match,
             collection_id=collectionId,
+            dedupe_coll_id=dedupeCollId,
+            requires_crawls=requiresCrawls,
+            required_by_crawls=requiredByCrawls,
+            has_requires_crawls=hasRequiresCrawls,
+            has_required_by_crawls=hasRequiredByCrawls,
+            crawl_ids=ids,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
@@ -1511,13 +1585,20 @@ def init_crawls_api(
         response_model=CrawlOutWithResources,
     )
     async def get_crawl_admin(
-        crawl_id, request: Request, user: User = Depends(user_dep)
+        crawl_id,
+        request: Request,
+        user: User = Depends(user_dep),
+        withDependencies: bool = False,
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         return await ops.get_crawl_out(
-            crawl_id, None, "crawl", headers=dict(request.headers)
+            crawl_id,
+            None,
+            "crawl",
+            headers=dict(request.headers),
+            with_dependencies=withDependencies,
         )
 
     @app.get(
@@ -1526,10 +1607,17 @@ def init_crawls_api(
         response_model=CrawlOutWithResources,
     )
     async def get_crawl_out(
-        crawl_id, request: Request, org: Organization = Depends(org_viewer_dep)
+        crawl_id,
+        request: Request,
+        org: Organization = Depends(org_viewer_dep),
+        withDependencies: bool = False,
     ):
         return await ops.get_crawl_out(
-            crawl_id, org, "crawl", headers=dict(request.headers)
+            crawl_id,
+            org,
+            "crawl",
+            headers=dict(request.headers),
+            with_dependencies=withDependencies,
         )
 
     @app.get(
@@ -1539,9 +1627,13 @@ def init_crawls_api(
         crawl_id: str,
         preferSingleWACZ: bool = False,
         org: Organization = Depends(org_viewer_dep),
+        withDependencies: bool = False,
     ):
         return await ops.download_crawl_as_single_wacz(
-            crawl_id, org, prefer_single_wacz=preferSingleWACZ
+            crawl_id,
+            org,
+            prefer_single_wacz=preferSingleWACZ,
+            with_dependencies=withDependencies,
         )
 
     # QA APIs

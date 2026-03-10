@@ -188,7 +188,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
                         this.mostRecentNonFailedQARun.stats.found || 1}
                       ?indeterminate=${this.mostRecentNonFailedQARun.stats
                         .found === 0}
-                      style="--height: 0.5rem;"
                       class="mt-2 w-32"
                     ></sl-progress-bar>
                   </sl-tooltip>

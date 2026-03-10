@@ -54,7 +54,7 @@ jobs:
       - name: Create k3d Cluster
         uses: AbsaOSS/k3d-action@v2
         with:
-          k3d-version: v5.6.0
+          k3d-version: v5.8.3
           cluster-name: btrix-1
           args: >-
             -p "30870:30870@agent:0:direct"

@@ -320,7 +320,7 @@ export class ProfileBrowser extends BtrixElement {
           </div>
 
           <sl-progress-bar
-            class="w-20 [--height:.5rem] [--indicator-color:var(--sl-color-primary-400)] [--track-color:rgba(255,255,255,0.1)]"
+            class="w-20 [--track-color:rgba(255,255,255,0.1)] part-[base]:shadow-none"
             indeterminate
           ></sl-progress-bar>
         </div>`,

@@ -5,6 +5,8 @@ import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import mapValues from "lodash/fp/mapValues";
+import uniq from "lodash/fp/uniq";
 import type { PartialDeep } from "type-fest";
 
 import {
@@ -25,6 +27,15 @@ import {
   type SectionsEnum,
   type FormState as WorkflowFormState,
 } from "@/utils/workflow";
+
+// Make array values unique since mergeDeep will concatenate arrays
+const makeArrUniq = mapValues((val: unknown) => {
+  if (Array.isArray(val)) {
+    return uniq(val) as unknown[];
+  }
+
+  return val;
+});
 
 /**
  * Usage:
@@ -77,6 +88,7 @@ export class WorkflowsNew extends BtrixElement {
       jobType: "custom",
       browserWindows: this.appState.settings?.numBrowsersPerInstance || 1,
       autoAddCollections: [],
+      dedupeCollId: null,
       crawlerChannel: CrawlerChannelImage.Default,
       proxyId: null,
     };
@@ -125,7 +137,7 @@ export class WorkflowsNew extends BtrixElement {
         </sl-button>
       </header>
       ${when(this.org, (org) => {
-        const initialWorkflow = mergeDeep(
+        const mergedWorkflow = mergeDeep(
           this.defaultNewWorkflow,
           {
             profileid: org.crawlingDefaults?.profileid,
@@ -136,17 +148,26 @@ export class WorkflowsNew extends BtrixElement {
               pageExtraDelay: org.crawlingDefaults?.pageExtraDelay ?? null,
               postLoadDelay: org.crawlingDefaults?.postLoadDelay ?? null,
               userAgent: org.crawlingDefaults?.userAgent,
-              blockAds: org.crawlingDefaults?.blockAds,
+              blockAds: org.crawlingDefaults?.blockAds ?? undefined,
               lang: org.crawlingDefaults?.lang,
               customBehaviors: org.crawlingDefaults?.customBehaviors || [],
             },
             crawlTimeout: org.crawlingDefaults?.crawlTimeout,
             maxCrawlSize: org.crawlingDefaults?.maxCrawlSize,
-            crawlerChannel: org.crawlingDefaults?.crawlerChannel,
+            crawlerChannel: org.crawlingDefaults?.crawlerChannel ?? undefined,
             proxyId: org.crawlingDefaults?.proxyId,
+            dedupeCollId: org.crawlingDefaults?.dedupeCollId,
+            autoAddCollections: org.crawlingDefaults?.dedupeCollId
+              ? [org.crawlingDefaults.dedupeCollId]
+              : [],
           } satisfies PartialDeep<WorkflowParams>,
           this.initialWorkflow || {},
         );
+
+        const initialWorkflow = makeArrUniq({
+          ...mergedWorkflow,
+          config: makeArrUniq(mergedWorkflow.config),
+        }) as WorkflowParams;
 
         const scopeType = this.scopeType || initialWorkflow.config.scopeType;
 

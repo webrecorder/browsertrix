@@ -76,6 +76,7 @@ export type WorkflowParams = {
   autoAddCollections: string[];
   crawlerChannel: string;
   proxyId: string | null;
+  dedupeCollId?: string | null;
 };
 
 export type CrawlConfig = WorkflowParams & {
@@ -108,7 +109,7 @@ export type Workflow = CrawlConfig & {
   lastCrawlPausedAt: string | null;
   lastCrawlPausedExpiry: string | null;
   lastRun: string;
-  totalSize: string | null;
+  totalSize: string | number | null;
   inactive: boolean;
   firstSeed: string;
   isCrawlRunning: boolean | null;
@@ -117,7 +118,9 @@ export type Workflow = CrawlConfig & {
   shareable?: boolean;
 };
 
-export type ListWorkflow = Omit<Workflow, "config">;
+export type ListWorkflow = Omit<Workflow, "config" | "image"> & {
+  config: Workflow["config"] | null;
+};
 
 export type ProfileReplica = {
   name: string;
@@ -193,19 +196,34 @@ type ArchivedItemBase = {
   uniquePageCount?: number;
   filePageCount?: number;
   errorPageCount?: number;
+  requiresCrawls: string[];
+  requiredByCrawls: string[];
+  missingRequiresCrawls: string[] | null;
+  fileSizeWithDeps: number | null;
 };
 
 export type Crawl = ArchivedItemBase &
-  CrawlConfig & {
+  Omit<
+    CrawlConfig,
+    | "config"
+    | "autoAddCollections"
+    | "schedule"
+    | "crawlTimeout"
+    | "maxCrawlSize"
+  > & {
     type: "crawl";
     cid: string;
-    schedule: string;
     manual: boolean;
     scale: number;
     browserWindows: number;
     shouldPause: boolean | null;
-    resources?: (StorageFile & { numReplicas: number })[];
+    resources?: (StorageFile & {
+      numReplicas: number;
+      fromDependency: boolean;
+    })[];
   };
+
+export type CrawlReplay = Crawl & Pick<CrawlConfig, "config">;
 
 export type Upload = ArchivedItemBase & {
   type: "upload";

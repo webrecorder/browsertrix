@@ -20,17 +20,23 @@ import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { formValidator } from "@/utils/form";
-import { AccessCode, isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
+import { AccessCode, isAdmin, isCrawler } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
 import "./components/general";
 import "./components/billing";
 import "./components/crawling-defaults";
 import "./components/billing-addon-link";
+import "./components/deduplication";
 
 const styles = unsafeCSS(stylesheet);
 
-type Tab = "information" | "members" | "billing" | "crawling-defaults";
+type Tab =
+  | "information"
+  | "members"
+  | "billing"
+  | "crawling-defaults"
+  | "deduplication";
 type User = {
   email: string;
   role: AccessCode;
@@ -50,8 +56,6 @@ export type OrgRemoveMemberEvent = CustomEvent<{
   member: Member;
 }>;
 
-export type UpdateOrgDetail = Partial<OrgData>;
-
 export const UPDATED_STATUS_TOAST_ID = "org-updated-status";
 
 /**
@@ -63,7 +67,6 @@ export const UPDATED_STATUS_TOAST_ID = "org-updated-status";
  * ></btrix-org-settings>
  * ```
  *
- * @fires btrix-update-org
  * @fires org-user-role-change
  * @fires org-remove-member
  */
@@ -93,6 +96,7 @@ export class OrgSettings extends BtrixElement {
       members: msg("Members"),
       billing: msg("Billing & Usage"),
       "crawling-defaults": msg("Crawling Defaults"),
+      deduplication: msg("Deduplication"),
     };
   }
 
@@ -159,6 +163,11 @@ export class OrgSettings extends BtrixElement {
           this.renderTab("billing", "settings/billing"),
         )}
         ${this.renderTab("crawling-defaults", "settings/crawling-defaults")}
+        ${when(this.featureFlags.has("dedupeEnabled"), () =>
+          this.renderTab("deduplication", "settings/deduplication", {
+            beta: true,
+          }),
+        )}
 
         <btrix-tab-group-panel name="information">
           ${this.renderPanelHeader({ title: msg("General") })}
@@ -195,7 +204,7 @@ export class OrgSettings extends BtrixElement {
         </btrix-tab-group-panel>
         <btrix-tab-group-panel name="crawling-defaults">
           ${this.renderPanelHeader({
-            title: msg("Crawling Defaults"),
+            title: this.tabLabels["crawling-defaults"],
             actions: html`
               <sl-tooltip
                 content=${msg(
@@ -211,25 +220,42 @@ export class OrgSettings extends BtrixElement {
           })}
           <btrix-org-settings-crawling-defaults></btrix-org-settings-crawling-defaults>
         </btrix-tab-group-panel>
+        <btrix-tab-group-panel name="deduplication">
+          ${when(
+            this.featureFlags.has("dedupeEnabled"),
+            () => html`
+              ${this.renderPanelHeader({
+                title: msg("Deduplication Sources"),
+                beta: true,
+              })}
+              <btrix-org-settings-deduplication></btrix-org-settings-deduplication>
+            `,
+          )}
+        </btrix-tab-group-panel>
       </btrix-tab-group>`;
   }
 
   private renderPanelHeader({
     title,
     actions,
+    beta,
   }: {
     title: string;
     actions?: TemplateResult;
+    beta?: boolean;
   }) {
     return html`
       <header class="mb-2 flex items-center justify-between">
-        <h3 class="text-lg font-medium">${title}</h3>
+        <div class="flex items-center gap-2">
+          <h3 class="text-lg font-medium">${title}</h3>
+          ${when(beta, () => html`<btrix-beta-badge></btrix-beta-badge>`)}
+        </div>
         ${actions}
       </header>
     `;
   }
 
-  private renderTab(name: Tab, path: string) {
+  private renderTab(name: Tab, path: string, { beta } = { beta: false }) {
     return html`
       <btrix-tab-group-tab
         slot="nav"
@@ -248,8 +274,10 @@ export class OrgSettings extends BtrixElement {
             "crawling-defaults",
             () => html`<sl-icon name="file-code-fill"></sl-icon>`,
           ],
+          ["deduplication", () => html`<sl-icon name="stack"></sl-icon>`],
         ])}
         ${this.tabLabels[name]}
+        ${when(beta, () => html`<btrix-beta-icon></btrix-beta-icon>`)}
       </btrix-tab-group-tab>
     `;
   }
@@ -482,12 +510,13 @@ export class OrgSettings extends BtrixElement {
                   ${msg("All Viewer permissions, plus:")}
                 </p>
                 <ul class="ms-4 list-disc text-gray-500">
-                  <li>${msg("Create crawl workflows")}</li>
-                  <li>${msg("Create browser profiles")}</li>
+                  <li>${msg("Manage crawl workflows and browser profiles")}</li>
                   <li>${msg("Upload archived items")}</li>
-                  <li>${msg("Run QA analysis")}</li>
-                  <li>${msg("Rate and review archived items")}</li>
+                  <li>
+                    ${msg("Run QA analysis, rate, and review archived items")}
+                  </li>
                   <li>${msg("Create, edit, and share collections")}</li>
+                  <li>${msg("Enable crawl deduplication")}</li>
                 </ul>
               </sl-details>
             </sl-radio>
@@ -520,6 +549,7 @@ export class OrgSettings extends BtrixElement {
                     <li class="text-warning">
                       ${msg("Manage billing details")}
                     </li>`}
+                  <li>${msg("Purge and delete deduplication indices")}</li>
                   <li>${msg("Edit org name and URL")}</li>
                   <li>${msg("Manage org members")}</li>
                   <li>${msg("View and edit org defaults")}</li>

@@ -56,6 +56,30 @@ def test_get_org_crawler(crawler_auth_headers, default_org_id):
     assert data.get("users") == {}
 
 
+def test_get_org_feature_flags(crawler_auth_headers, default_org_id):
+    """feature flags should be available for all users"""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}", headers=crawler_auth_headers
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == default_org_id
+    feature_flags = data["featureFlags"]
+    assert feature_flags == {
+        "dedupeEnabled": False,
+    }
+
+    # List endpoint
+    r = requests.get(f"{API_PREFIX}/orgs", headers=crawler_auth_headers)
+    assert r.status_code == 200
+    data = r.json()
+    for org in data["items"]:
+        feature_flags = org["featureFlags"]
+        assert feature_flags == {
+            "dedupeEnabled": False,
+        }
+
+
 def test_update_org_crawling_defaults(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/defaults/crawling",
@@ -496,9 +520,10 @@ def test_org_metrics(crawler_auth_headers, default_org_id):
     assert data["storageUsedBytes"] > 0
     assert data["storageUsedCrawls"] > 0
     assert data["storageUsedUploads"] >= 0
-    assert data["storageUsedThumbnails"] >= 0
-    assert data["storageUsedThumbnails"] >= 0
     assert data["storageUsedProfiles"] >= 0
+    assert data["storageUsedSeedFiles"] >= 0
+    assert data["storageUsedThumbnails"] >= 0
+    assert data["storageUsedDedupeIndexes"] >= 0
     assert (
         data["storageUsedBytes"]
         == data["storageUsedCrawls"]
@@ -506,6 +531,7 @@ def test_org_metrics(crawler_auth_headers, default_org_id):
         + data["storageUsedProfiles"]
         + data["storageUsedSeedFiles"]
         + data["storageUsedThumbnails"]
+        + data["storageUsedDedupeIndexes"]
     )
     assert data["storageQuotaBytes"] >= 0
     assert data["archivedItemCount"] > 0

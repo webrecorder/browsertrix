@@ -22,6 +22,7 @@ import { renderText, renderTextDiff } from "./ui/text";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
 import { isQaPage } from "@/features/qa/page-list/helpers/page";
 import {
   type QaFilterChangeDetail,
@@ -162,6 +163,9 @@ export class ArchivedItemQA extends BtrixElement {
     sortBy: "screenshotMatch",
     sortDirection: 1,
   };
+
+  @state()
+  showMissingDependenciesNotice = true;
 
   private readonly replaySwReg =
     navigator.serviceWorker.getRegistration("/replay/");
@@ -446,7 +450,19 @@ export class ArchivedItemQA extends BtrixElement {
               ${msg("Review")} ${itemName}
             </h1>
           </div>
-          <sl-button-group class="ml-auto">
+
+          ${when(
+            !this.showMissingDependenciesNotice &&
+              this.item?.missingRequiresCrawls,
+            (ids) =>
+              ids.length
+                ? html`<div class="ml-auto flex h-8 items-center">
+                    ${missingDependenciesNotice({ ids, truncate: true })}
+                  </div>`
+                : nothing,
+          )}
+
+          <sl-button-group>
             <sl-button
               variant="success"
               size="small"
@@ -523,6 +539,22 @@ export class ArchivedItemQA extends BtrixElement {
         </div>
 
         <div class="grid--tabGroup flex min-w-0 flex-col">
+          ${when(
+            this.showMissingDependenciesNotice &&
+              this.item?.missingRequiresCrawls,
+            (ids) =>
+              ids.length
+                ? html`<div class="mt-3">
+                    ${missingDependenciesNotice({
+                      ids,
+                      bottomCss: tw`part-[base]:mb-1`,
+                      dismiss: () =>
+                        (this.showMissingDependenciesNotice = false),
+                    })}
+                  </div>`
+                : nothing,
+          )}
+
           <nav
             aria-label="${msg("Page heuristics")}"
             class="-mx-3 my-0 flex flex-wrap items-center gap-2 overflow-x-auto px-3 py-2 lg:mx-0 lg:px-0"
@@ -772,11 +804,22 @@ export class ArchivedItemQA extends BtrixElement {
                 name="description"
                 value=${this.item?.description ?? ""}
                 placeholder=${msg("Add a description")}
-                rows="10"
+                rows="5"
                 autocomplete="off"
                 help-text=${helpText}
                 @sl-input=${validate}
               ></sl-textarea>
+              ${when(
+                this.item,
+                (item) => html`
+                  <div class="mt-5">
+                    <btrix-item-tags-input
+                      name="tags"
+                      .tags=${item.tags}
+                    ></btrix-item-tags-input>
+                  </div>
+                `,
+              )}
             </div>
           </div>
         </form>
@@ -1129,10 +1172,7 @@ export class ArchivedItemQA extends BtrixElement {
           @sl-request-close=${(e: SlRequestCloseEvent) => e.preventDefault()}
         >
           <div class="sr-only">${msg("Loading page")}</div>
-          <sl-progress-bar
-            indeterminate
-            class="[--height:0.5rem]"
-          ></sl-progress-bar>
+          <sl-progress-bar indeterminate></sl-progress-bar>
         </btrix-dialog>
         <btrix-dialog
           class="clickPreventedDialog"
@@ -1157,7 +1197,8 @@ export class ArchivedItemQA extends BtrixElement {
   private readonly renderRWP = (rwpId: string, { qa }: { qa: boolean }) => {
     if (!rwpId) return;
 
-    const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json`;
+    const query = queryString.stringify({ withDependencies: true });
+    const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json?${query}`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
     console.debug("rendering rwp", rwpId);
@@ -1337,8 +1378,9 @@ export class ArchivedItemQA extends BtrixElement {
   }
 
   private async getCrawl(): Promise<ArchivedItem> {
+    const query = queryString.stringify({ withDependencies: true });
     return this.api.fetch<ArchivedItem>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}`,
+      `/orgs/${this.orgId}/all-crawls/${this.itemId}?${query}`,
     );
   }
 
@@ -1628,6 +1670,11 @@ export class ArchivedItemQA extends BtrixElement {
           body: JSON.stringify({
             reviewStatus: +params.reviewStatus,
             description: params.description,
+            tags: params.tags
+              ? Array.isArray(params.tags)
+                ? params.tags
+                : [params.tags]
+              : [],
           }),
         },
       );

@@ -9,9 +9,15 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException
 
 from .utils import dt_now, date_to_str, scale_from_browser_windows
-from .k8sapi import K8sAPI
+from .k8sapi import K8sAPI, ApiException
 
-from .models import StorageRef, CrawlConfig, BgJobType, ProfileBrowserMetadata
+from .models import (
+    StorageRef,
+    CrawlConfig,
+    BgJobType,
+    ProfileBrowserMetadata,
+    TYPE_INDEX_JOB_TYPES,
+)
 
 
 # ============================================================================
@@ -216,6 +222,59 @@ class CrawlManager(K8sAPI):
 
         return job_id
 
+    async def run_index_import_job(
+        self,
+        coll_id: str,
+        oid: str,
+        image: str,
+        image_pull_policy: str,
+        job_type: TYPE_INDEX_JOB_TYPES,
+        crawl_id: Optional[str] = None,
+    ):
+        """create dedupe index import/purge/post-crawl job"""
+
+        # create unique import job or fixed purge job, as can only have one purge job
+        # at a time
+        name = (
+            f"{job_type}-index-{coll_id}-{secrets.token_hex(5)}"
+            if job_type != "purge"
+            else f"purge-index-{coll_id}"
+        )
+
+        params = {
+            "name": name,
+            "id": coll_id,
+            "oid": oid,
+            "crawler_image": image,
+            "crawler_image_pull_policy": image_pull_policy,
+            "job_type": job_type,
+            "redis_url": self.get_redis_url("coll-" + str(coll_id)),
+            "crawl_id": crawl_id,
+        }
+
+        data = self.templates.env.get_template("index-import-job.yaml").render(params)
+
+        try:
+            await self.create_from_yaml(data)
+
+        # pylint: disable=duplicate-code
+        except ApiException as e:
+            # 409 if object already exists
+            if e.status != 409:
+                raise
+
+            raise HTTPException(
+                status_code=400, detail="purge_job_already_running"
+            ) from e
+
+        return name
+
+    async def delete_dedupe_index_resources(self, oid: str, coll_id: str) -> None:
+        """Delete dedupe index-related jobs and index itself"""
+        await self._delete_jobs(f"role=index-import-job,oid={oid},coll={coll_id}")
+
+        await self.delete_custom_object(f"collindex-{coll_id}", "collindexes")
+
     async def ensure_cleanup_seed_file_cron_job_exists(self):
         """ensure cron background job to clean up unused seed files weekly exists"""
 
@@ -310,6 +369,9 @@ class CrawlManager(K8sAPI):
             profile_filename=profile_filename,
             profileid=profileid,
             proxy_id=crawlconfig.proxyId or DEFAULT_PROXY_ID,
+            dedupe_coll_id=(
+                str(crawlconfig.dedupeCollId) if crawlconfig.dedupeCollId else ""
+            ),
             is_single_page=is_single_page,
             seed_file_url=seed_file_url,
         )
@@ -489,6 +551,8 @@ class CrawlManager(K8sAPI):
         """Delete all crawl configs for given org"""
         await self._delete_cron_jobs(f"btrix.org={oid_str},role=cron-job")
 
+    # ========================================================================
+    # Internal Methods
     async def delete_bg_job_cron_jobs_for_org(self, oid_str: str) -> None:
         """Delete all background cron jobs for given org"""
         await self._delete_cron_jobs(f"btrix.org={oid_str},role=cron-background-job")

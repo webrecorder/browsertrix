@@ -1805,7 +1805,11 @@ def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_i
     )
     assert _second_coll_id not in r.json()["collectionIds"]
 
-    # Make a new empty (no crawls) collection and delete it
+
+def test_deleted_collection_removed_from_crawling_defaults(
+    admin_auth_headers, crawler_auth_headers, default_org_id
+):
+    # Make a new empty (no crawls) collection
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections",
         headers=crawler_auth_headers,
@@ -1819,9 +1823,30 @@ def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_i
     assert data["added"]
     coll_id = data["id"]
 
+    # Set collection as default dedupeCollId for org
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/defaults/crawling",
+        headers=admin_auth_headers,
+        json={"dedupeCollId": coll_id},
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    data = r.json()
+    assert data["crawlingDefaults"]
+    assert data["crawlingDefaults"]["dedupeCollId"] == coll_id
+
+    # Delete collection
     r = requests.delete(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     assert r.json()["success"]
+
+    # Ensure collection was removed from crawling defaults
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    data = r.json()
+    assert data["crawlingDefaults"]
+    assert data["crawlingDefaults"]["dedupeCollId"] is None

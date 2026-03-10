@@ -1,6 +1,6 @@
 {
   "name": "browsertrix-frontend",
-  "version": "1.21.3",
+  "version": "1.22.0",
   "main": "index.ts",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
@@ -79,8 +79,8 @@
     "prettier": "^3.2.4",
     "pretty-ms": "^7.0.1",
     "query-string": "^8.1.0",
-    "regex-colorize": "^0.0.3",
-    "replaywebpage": "^2.2.4",
+    "regex-colorizer": "^1.0.2",
+    "replaywebpage": "^2.4.3",
     "slugify": "^1.6.6",
     "style-loader": "^3.3.0",
     "tabbable": "^6.2.0",
@@ -142,6 +142,8 @@
     "concurrently": "^9.1.2",
     "husky": "^8.0.3",
     "lint-staged": "^13.1.0",
+    "msw": "^2.12.4",
+    "msw-storybook-addon": "^2.0.6",
     "prettier-plugin-tailwindcss": "^0.5.12",
     "remark-gfm": "^4.0.1",
     "rollup-plugin-typescript-paths": "^1.4.0",
@@ -180,5 +182,10 @@
   "browserslist": [
     "defaults"
   ],
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "msw": {
+    "workerDirectory": [
+      "src/__generated__/static"
+    ]
+  }
 }

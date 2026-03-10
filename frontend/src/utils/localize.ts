@@ -295,7 +295,11 @@ export class Localize {
   /**
    * From https://github.com/shoelace-style/shoelace/blob/v2.18.0/src/components/format-bytes/format-bytes.component.ts
    */
-  readonly bytes = (value: number, options?: Intl.NumberFormatOptions) => {
+  readonly bytes = (
+    value: number,
+    options?: Intl.NumberFormatOptions,
+    precision = 3,
+  ) => {
     if (isNaN(value)) {
       return "";
     }
@@ -314,7 +318,7 @@ export class Localize {
     );
     const unit = prefix[index] + opts.unit;
     const valueToFormat = parseFloat(
-      (value / Math.pow(1000, index)).toPrecision(3),
+      (value / Math.pow(1000, index)).toPrecision(precision),
     );
 
     return localize.number(valueToFormat, {

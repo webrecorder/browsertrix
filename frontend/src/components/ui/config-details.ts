@@ -3,6 +3,7 @@ import { localized, msg, str } from "@lit/localize";
 import ISO6391 from "iso-639-1";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 
@@ -22,13 +23,17 @@ import {
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
-import { WorkflowScopeType, type StorageSeedFile } from "@/types/workflow";
+import {
+  NewWorkflowOnlyScopeType,
+  WorkflowScopeType,
+  type StorageSeedFile,
+} from "@/types/workflow";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
-import { getServerDefaults } from "@/utils/workflow";
+import { getServerDefaults, regexScopeConfig } from "@/utils/workflow";
 
 /**
  * Usage:
@@ -130,6 +135,10 @@ export class ConfigDetails extends BtrixElement {
                       ) {
                         return scopeTypeLabel[WorkflowScopeType.PageList];
                       }
+                      const primarySeedConfig = seeds[0];
+                      if (regexScopeConfig(primarySeedConfig)) {
+                        return scopeTypeLabel[NewWorkflowOnlyScopeType.Regex];
+                      }
                       return scopeTypeLabel[config.scopeType];
                     }),
               )}
@@ -179,7 +188,7 @@ export class ConfigDetails extends BtrixElement {
         heading: sectionStrings.behaviors,
         renderDescItems: (seedsConfig) => html`
           ${this.renderSetting(
-            labelFor.behaviors,
+            sectionStrings.behaviors,
             [
               seedsConfig?.behaviors?.includes(Behavior.AutoScroll) &&
                 labelFor.autoscrollBehavior,
@@ -202,7 +211,7 @@ export class ConfigDetails extends BtrixElement {
               ),
           )}
           ${this.renderSetting(
-            labelFor.customBehaviors,
+            labelFor.customBehavior,
             seedsConfig?.customBehaviors.length
               ? html`
                   <btrix-custom-behaviors-table
@@ -322,6 +331,20 @@ export class ConfigDetails extends BtrixElement {
           )}
         `,
       })}
+      ${when(this.featureFlags.has("dedupeEnabled"), () =>
+        this.renderSection({
+          id: "deduplication",
+          heading: sectionStrings.deduplication,
+          renderDescItems: () => html`
+            ${this.renderSetting(
+              html`<span class="mb-1 inline-block"
+                >${labelFor.dedupeType}</span
+              >`,
+              crawlConfig?.dedupeCollId ? msg("Enabled") : msg("Disabled"),
+            )}
+          `,
+        }),
+      )}
       ${when(!this.hideMetadata, () =>
         this.renderSection({
           id: "collection",
@@ -334,6 +357,11 @@ export class ConfigDetails extends BtrixElement {
               crawlConfig?.autoAddCollections.length
                 ? html`<btrix-linked-collections
                     .collections=${crawlConfig.autoAddCollections}
+                    dedupeId=${ifDefined(
+                      (this.featureFlags.has("dedupeEnabled") &&
+                        crawlConfig.dedupeCollId) ||
+                        undefined,
+                    )}
                   ></btrix-linked-collections>`
                 : undefined,
             )}
@@ -497,7 +525,7 @@ export class ConfigDetails extends BtrixElement {
     const additionalUrlList = this.seeds.slice(1);
     const primarySeedConfig = this.seeds[0] as SeedConfig | Seed | undefined;
     const primarySeedUrl = (primarySeedConfig as Seed | undefined)?.url;
-    const includeUrlList = primarySeedConfig?.include || config.include || [];
+    const includeRegexList = primarySeedConfig?.include || config.include || [];
     const scopeType = config.scopeType!;
 
     return html`
@@ -524,22 +552,40 @@ export class ConfigDetails extends BtrixElement {
           : undefined,
         true,
       )}
-      ${when(scopeType === WorkflowScopeType.Custom, () =>
-        this.renderSetting(
-          msg("URL Prefixes in Scope"),
-          includeUrlList.length
-            ? html`
-                <btrix-data-table
-                  .columns=${[msg("URL Prefix")]}
-                  .rows=${includeUrlList.map((url) => [
-                    unescapeCustomPrefix(url),
-                  ])}
-                >
-                </btrix-data-table>
-              `
-            : none,
-          true,
-        ),
+      ${when(
+        scopeType === WorkflowScopeType.Custom && primarySeedConfig,
+        (config) =>
+          regexScopeConfig(config)
+            ? this.renderSetting(
+                msg("Page Regex Patterns"),
+                includeRegexList.length
+                  ? html`
+                      <btrix-data-table
+                        .columns=${[msg("Regex Pattern")]}
+                        .rows=${includeRegexList.map((str) => [
+                          html`<btrix-regex value=${str}></btrix-regex>`,
+                        ])}
+                      >
+                      </btrix-data-table>
+                    `
+                  : none,
+                true,
+              )
+            : this.renderSetting(
+                msg("Page Prefix URLs"),
+                includeRegexList.length
+                  ? html`
+                      <btrix-data-table
+                        .columns=${[msg("URL Prefix")]}
+                        .rows=${includeRegexList.map((url) => [
+                          unescapeCustomPrefix(url),
+                        ])}
+                      >
+                      </btrix-data-table>
+                    `
+                  : none,
+                true,
+              ),
       )}
       ${when(DEPTH_SUPPORTED_SCOPES.includes(scopeType), () =>
         this.renderSetting(
@@ -596,7 +642,7 @@ export class ConfigDetails extends BtrixElement {
     const selectors = this.crawlConfig?.config.selectLinks || [];
 
     return this.renderSetting(
-      labelFor.selectLink,
+      labelFor.selectLinks,
       selectors.length
         ? html`
             <div class="mb-2">

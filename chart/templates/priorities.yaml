@@ -35,4 +35,23 @@ value: -1000
 globalDefault: false
 description: "Priority for background jobs"
 
+# Higher Priorities for Indexing
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: index-import-job
+value: 5
+globalDefault: false
+description: "Priority for indexing"
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: dedupe-index
+value: 6
+globalDefault: false
+description: "Priority for dedupe index pod"
+
 

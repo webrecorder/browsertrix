@@ -1,11 +1,10 @@
 import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
-import type { SlButton } from "@shoelace-style/shoelace";
+import type { SlButton, SlRadio } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { LanguageCode } from "iso-639-1";
-import { css, html, type TemplateResult } from "lit";
+import { css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
-import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import type { Entries } from "type-fest";
 
@@ -20,18 +19,27 @@ import {
   orgProxiesContext,
   type OrgProxiesContext,
 } from "@/context/org-proxies";
+import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import type { SelectBrowserProfile } from "@/features/browser-profiles/select-browser-profile";
+import {
+  isExistingCollection,
+  isNewCollection,
+  type SelectDedupeCollectionChangeEvent,
+} from "@/features/collections/select-dedupe-collection";
 import type { CustomBehaviorsTable } from "@/features/crawl-workflows/custom-behaviors-table";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
 import { columns, type Cols } from "@/layouts/columns";
 import { infoTextFor } from "@/strings/crawl-workflows/infoText";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import sectionStrings from "@/strings/crawl-workflows/section";
+import { dedupeTypeLabelFor } from "@/strings/dedupe";
+import { CrawlerChannelImage } from "@/types/crawler";
 import { crawlingDefaultsSchema, type CrawlingDefaults } from "@/types/org";
 import { formValidator } from "@/utils/form";
 import {
   appDefaults,
   BYTES_PER_GB,
+  DedupeType,
   defaultLabel,
   getServerDefaults,
   type FormState,
@@ -71,6 +79,9 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
   @state()
   private defaults: WorkflowDefaults = appDefaults;
 
+  @state()
+  private dedupeCollection: { id: string } | { name: string } | null = null;
+
   @query("btrix-queue-exclusion-table")
   exclusionTable?: QueueExclusionTable | null;
 
@@ -91,10 +102,37 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
 
   private readonly checkFormValidity = formValidator(this);
 
+  private get orgDefaults(): Partial<CrawlingDefaults> {
+    return (
+      this.org?.crawlingDefaults || {
+        exclude: PLACEHOLDER_EXCLUSIONS,
+      }
+    );
+  }
+
   connectedCallback() {
     super.connectedCallback();
 
     void this.fetchServerDefaults();
+    this.setDedupeCollection();
+  }
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("appState.org")) {
+      this.setDedupeCollection();
+    }
+  }
+
+  private setDedupeCollection() {
+    if (!this.org) return;
+
+    const { dedupeCollId } = this.orgDefaults;
+
+    if (dedupeCollId) {
+      this.dedupeCollection = {
+        id: dedupeCollId,
+      };
+    }
   }
 
   render() {
@@ -102,10 +140,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
   }
 
   get fields() {
-    const orgDefaults: Partial<CrawlingDefaults> = this.org
-      ?.crawlingDefaults || {
-      exclude: PLACEHOLDER_EXCLUSIONS,
-    };
+    const orgDefaults = this.orgDefaults;
     const scope = {
       exclusions: html`
         <btrix-queue-exclusion-table
@@ -160,7 +195,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     };
     const behaviors = {
       customBehavior: html`
-        <label class="form-label text-xs">${labelFor.customBehaviors}</label>
+        <label class="form-label text-xs">${labelFor.customBehavior}</label>
         <btrix-custom-behaviors-table
           .customBehaviors=${orgDefaults.customBehaviors || []}
           editable
@@ -173,7 +208,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           type="number"
           inputmode="numeric"
           label=${msg("Page Load Timeout")}
-          value=${ifDefined(orgDefaults.pageLoadTimeout)}
+          value=${ifDefined(orgDefaults.pageLoadTimeout ?? undefined)}
           placeholder=${defaultLabel(this.defaults.pageLoadTimeoutSeconds)}
           min="0"
         >
@@ -187,7 +222,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           type="number"
           inputmode="numeric"
           label=${msg("Delay After Page Load")}
-          value=${ifDefined(orgDefaults.postLoadDelay)}
+          value=${ifDefined(orgDefaults.postLoadDelay ?? undefined)}
           placeholder=${defaultLabel(0)}
           min="0"
         >
@@ -201,7 +236,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           type="number"
           inputmode="numeric"
           label=${msg("Behavior Timeout")}
-          value=${ifDefined(orgDefaults.behaviorTimeout)}
+          value=${ifDefined(orgDefaults.behaviorTimeout ?? undefined)}
           placeholder=${defaultLabel(this.defaults.behaviorTimeoutSeconds)}
           min="0"
         >
@@ -215,7 +250,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           type="number"
           inputmode="numeric"
           label=${msg("Delay Before Next Page")}
-          value=${ifDefined(orgDefaults.pageExtraDelay)}
+          value=${ifDefined(orgDefaults.pageExtraDelay ?? undefined)}
           placeholder=${defaultLabel(0)}
           min="0"
         >
@@ -229,7 +264,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     const browserSettings = {
       browserProfile: html`
         <btrix-select-browser-profile
-          profileId=${ifDefined(orgDefaults.profileid)}
+          profileId=${ifDefined(orgDefaults.profileid ?? undefined)}
           size="small"
         ></btrix-select-browser-profile>
       `,
@@ -245,7 +280,8 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
         crawlerChannels && crawlerChannels.length > 1
           ? html`
               <btrix-select-crawler
-                crawlerChannel=${ifDefined(orgDefaults.crawlerChannel)}
+                crawlerChannel=${orgDefaults.crawlerChannel ??
+                CrawlerChannelImage.Default}
                 size="small"
               ></btrix-select-crawler>
             `
@@ -262,7 +298,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           size="small"
           name="userAgent"
           label=${msg("User Agent")}
-          value=${ifDefined(orgDefaults.userAgent)}
+          value=${ifDefined(orgDefaults.userAgent ?? undefined)}
           autocomplete="off"
           placeholder=${msg("Default: Browser User Agent")}
         >
@@ -274,45 +310,106 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
             orgDefaults.lang ? (orgDefaults.lang as LanguageCode) : undefined,
           )}
           size="small"
-          @on-change=${(e: CustomEvent<{ value: string | undefined }>) => {
-            console.log(e.detail.value);
-          }}
         >
           <span slot="label">${msg("Language")}</span>
         </btrix-language-select>
       `,
     };
 
+    let deduplication:
+      | {
+          dedupeType: TemplateResult<1>;
+          dedupeCollectionName?: TemplateResult<1>;
+        }
+      | undefined = undefined;
+
+    if (this.featureFlags.has("dedupeEnabled")) {
+      deduplication = {
+        dedupeType: html`<sl-radio-group
+          label=${labelFor.dedupeType}
+          name="dedupeType"
+          value=${this.dedupeCollection || orgDefaults.dedupeCollId
+            ? DedupeType.Collection
+            : DedupeType.None}
+          @sl-change=${(e: Event) => {
+            const value = (e.target as SlRadio)
+              .value as FormState["dedupeType"];
+
+            if (value === DedupeType.Collection) {
+              this.dedupeCollection = { name: "" };
+            } else {
+              this.dedupeCollection = null;
+            }
+          }}
+        >
+          <sl-radio value=${DedupeType.None}>
+            ${dedupeTypeLabelFor[DedupeType.None]}
+          </sl-radio>
+          <sl-radio value=${DedupeType.Collection}>
+            ${dedupeTypeLabelFor[DedupeType.Collection]}
+          </sl-radio>
+        </sl-radio-group>`,
+      };
+
+      if (this.dedupeCollection) {
+        deduplication.dedupeCollectionName =
+          this.renderDedupeCollection(orgDefaults);
+      }
+    }
+
     return {
       scope,
       limits,
       behaviors,
       browserSettings,
-    } as const satisfies Partial<Record<SectionsEnum, Partial<Field>>>;
+      deduplication,
+    } as const satisfies Partial<
+      Record<SectionsEnum, Partial<Field> | undefined>
+    >;
   }
+
+  private readonly renderDedupeCollection = (
+    orgDefaults: Partial<CrawlingDefaults>,
+  ) => {
+    return html`
+      <btrix-select-dedupe-collection
+        dedupeId=${ifDefined(orgDefaults.dedupeCollId ?? undefined)}
+        required
+        @btrix-change=${(e: SelectDedupeCollectionChangeEvent) => {
+          const { value } = e.detail;
+
+          if (value) {
+            this.dedupeCollection = value;
+          } else {
+            this.dedupeCollection = { name: "" };
+          }
+        }}
+      ></btrix-select-dedupe-collection>
+    `;
+  };
 
   private renderWorkflowDefaults() {
     return html`
       <div class="rounded-lg border">
         <form @submit=${this.onSubmit}>
-          ${guard([this.defaults, this.org], () =>
-            Object.entries(this.fields).map(([sectionName, fields]) => {
-              const cols: Cols = [];
+          ${Object.entries(this.fields).map(([sectionName, fields]) => {
+            if (!fields) return;
 
-              (Object.entries(fields) as Entries<Field>).forEach(
-                ([fieldName, field]) => {
-                  if (field) {
-                    cols.push([
-                      field,
-                      infoTextFor[fieldName as keyof typeof infoTextFor],
-                    ]);
-                  }
-                },
-              );
+            const cols: Cols = [];
 
-              return section(sectionName as SectionsEnum, cols);
-            }),
-          )}
+            (Object.entries(fields) as Entries<Field>).forEach(
+              ([fieldName, field]) => {
+                if (field) {
+                  cols.push([
+                    field,
+                    infoTextFor[fieldName as keyof typeof infoTextFor],
+                  ]);
+                }
+              },
+            );
+
+            return section(sectionName as SectionsEnum, cols);
+          })}
           <footer class="flex justify-end border-t px-4 py-3">
             <sl-button type="submit" size="small" variant="primary">
               ${msg("Save Changes")}
@@ -352,9 +449,20 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       return;
     }
 
+    this.submitButton?.setAttribute("loading", "true");
+
+    // Create new collection if needed
+    if (isNewCollection(this.dedupeCollection) && this.dedupeCollection.name) {
+      const { id } = await this.createCollection({
+        name: this.dedupeCollection.name,
+      });
+
+      this.dedupeCollection = { id };
+    }
+
     const values = serialize(form) as Record<string, string>;
     const parseNumber = (value: string) => (value ? Number(value) : undefined);
-    const parsedValues: CrawlingDefaults = {
+    const parsedValues: Partial<CrawlingDefaults> = {
       crawlTimeout: values.crawlTimeoutMinutes
         ? Number(values.crawlTimeoutMinutes) * 60
         : undefined,
@@ -366,14 +474,21 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       behaviorTimeout: parseNumber(values.behaviorTimeoutSeconds),
       pageExtraDelay: parseNumber(values.pageExtraDelaySeconds),
       blockAds: values.blockAds === "on",
-      profileid: this.browserProfileSelect?.value || undefined,
+      profileid: this.browserProfileSelect?.value ?? undefined,
       crawlerChannel: values.crawlerChannel,
-      proxyId: this.proxySelect?.value || undefined,
+      proxyId: this.proxySelect?.value ?? undefined,
       userAgent: values.userAgent,
-      lang: this.languageSelect?.value || undefined,
+      lang: this.languageSelect?.value ?? undefined,
       exclude: this.exclusionTable?.exclusions?.filter((v) => v) || [],
       customBehaviors: this.customBehaviorsTable?.value || [],
     };
+
+    if (this.featureFlags.has("dedupeEnabled")) {
+      parsedValues.dedupeCollId =
+        (isExistingCollection(this.dedupeCollection) &&
+          this.dedupeCollection.id) ||
+        "";
+    }
 
     // Set null or empty strings to undefined
     const params = Object.entries(parsedValues).reduce(
@@ -385,9 +500,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       parsedValues,
     );
 
-    crawlingDefaultsSchema.parse(params);
-
-    this.submitButton?.setAttribute("loading", "true");
+    crawlingDefaultsSchema.partial().parse(params);
 
     try {
       await this.api.fetch(`/orgs/${this.orgId}/defaults/crawling`, {
@@ -401,6 +514,17 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
         icon: "check2-circle",
         id: "crawl-defaults-update-status",
       });
+
+      this.dispatchEvent(
+        new CustomEvent<BtrixRequestOrgUpdate["detail"]>(
+          "btrix-request-org-update",
+          {
+            detail: { org: {} },
+            bubbles: true,
+            composed: true,
+          },
+        ),
+      );
     } catch (e) {
       console.debug(e);
 
@@ -417,5 +541,19 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
 
   private async fetchServerDefaults() {
     this.defaults = await getServerDefaults();
+  }
+
+  private async createCollection(
+    params: { name: string },
+    signal?: AbortSignal,
+  ) {
+    return this.api.fetch<{ added: boolean; id: string; name: string }>(
+      `/orgs/${this.orgId}/collections`,
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+        signal,
+      },
+    );
   }
 }

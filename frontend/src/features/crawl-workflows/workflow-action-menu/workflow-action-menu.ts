@@ -180,7 +180,7 @@ export class WorkflowActionMenu extends BtrixElement {
       <sl-menu-item
         @click=${() => ClipboardController.copyToClipboard(workflow.firstSeed)}
       >
-        <sl-icon name="link" slot="prefix"></sl-icon>
+        <sl-icon name="link-45deg" slot="prefix"></sl-icon>
         ${msg("Copy Crawl Start URL")}
       </sl-menu-item>
 
@@ -240,8 +240,8 @@ export class WorkflowActionMenu extends BtrixElement {
           ?disabled=${!(logTotals?.errors || logTotals?.behaviors)}
           download
         >
-          <sl-icon name="file-earmark-arrow-down" slot="prefix"></sl-icon>
-          ${msg("Download Log")}
+          <sl-icon name="download" slot="prefix"></sl-icon>
+          ${msg("Download Logs")}
         </btrix-menu-item-link>
 
         ${when(

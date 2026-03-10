@@ -121,6 +121,9 @@ export class TagInput extends LitElement {
   @property({ type: Array })
   tagOptions: WorkflowTag[] = [];
 
+  @property({ type: Number })
+  maxTagOptions = 3;
+
   @property({ type: Boolean })
   disabled = false;
 
@@ -186,6 +189,10 @@ export class TagInput extends LitElement {
 
   render() {
     const placeholder = msg("Tags separated by comma");
+    const tagOptions = this.tagOptions
+      .filter(({ tag }) => !this.tags.includes(tag))
+      .slice(0, this.maxTagOptions);
+
     return html`
       <div class="form-control form-control--has-label">
         <label
@@ -266,20 +273,17 @@ export class TagInput extends LitElement {
                 }}
                 @sl-select=${this.onSelect}
               >
-                ${this.tagOptions
-                  .slice(0, 3)
-                  .filter(({ tag }) => !this.tags.includes(tag))
-                  .map(
-                    ({ tag, count }) => html`
-                      <sl-menu-item role="option" value=${tag}
-                        >${tag}
-                        <btrix-badge pill variant="cyan" slot="suffix"
-                          >${count}</btrix-badge
-                        ></sl-menu-item
-                      >
-                    `,
-                  )}
-                ${this.tagOptions.length ? html`<sl-divider></sl-divider>` : ""}
+                ${tagOptions.map(
+                  ({ tag, count }) => html`
+                    <sl-menu-item role="option" value=${tag}
+                      >${tag}
+                      <btrix-badge pill variant="cyan" slot="suffix"
+                        >${count}</btrix-badge
+                      ></sl-menu-item
+                    >
+                  `,
+                )}
+                ${tagOptions.length ? html`<sl-divider></sl-divider>` : ""}
 
                 <sl-menu-item role="option" value=${this.inputValue}>
                   ${msg(str`Add “${this.inputValue.toLocaleLowerCase()}”`)}

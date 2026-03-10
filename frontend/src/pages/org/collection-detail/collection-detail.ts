@@ -5,29 +5,46 @@ import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 import type { Embed as ReplayWebPage } from "replaywebpage";
+
+import {
+  CollectionSearchParam,
+  EditingSearchParamValue,
+  Tab,
+  type Dialog,
+  type OpenDialogEventDetail,
+} from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
 import { ClipboardController } from "@/controllers/clipboard";
+import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import type { EditDialogTab } from "@/features/collections/collection-edit-dialog";
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
+import { createIndexDialog } from "@/features/collections/templates/create-index-dialog";
+import { deleteIndexDialog } from "@/features/collections/templates/delete-index-dialog";
+import { purgeIndexDialog } from "@/features/collections/templates/purge-index-dialog";
 import {
   metadataColumn,
   metadataItemWithCollection,
 } from "@/layouts/collections/metadataColumn";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
-import type {
-  APIPaginatedList,
-  APIPaginationQuery,
-  APISortQuery,
+import { panelBody, panelHeader } from "@/layouts/panel";
+import { getIndexErrorMessage } from "@/strings/collections/index-error";
+import {
+  type APIPaginatedList,
+  type APIPaginationQuery,
+  type APISortQuery,
 } from "@/types/api";
 import {
   CollectionAccess,
@@ -36,6 +53,9 @@ import {
 } from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
+import type { DedupeIndexState } from "@/types/dedupe";
+import { isCrawlReplay, renderName } from "@/utils/crawler";
+import { indexAvailable, indexInUse, indexUpdating } from "@/utils/dedupe";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { richText } from "@/utils/rich-text";
@@ -43,12 +63,6 @@ import { tw } from "@/utils/tailwind";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_ITEMS_PAGE_SIZE = 20;
-
-export enum Tab {
-  Replay = "replay",
-  About = "about",
-  Items = "items",
-}
 
 @customElement("btrix-collection-detail")
 @localized()
@@ -66,7 +80,10 @@ export class CollectionDetail extends BtrixElement {
   private archivedItems?: APIPaginatedList<ArchivedItem>;
 
   @state()
-  private openDialogName?: "delete" | "edit" | "replaySettings" | "editItems";
+  private openDialogName?: Dialog;
+
+  @state()
+  private itemToRemove?: ArchivedItem;
 
   @state()
   private editTab?: EditDialogTab;
@@ -95,9 +112,28 @@ export class CollectionDetail extends BtrixElement {
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
 
+  private readonly editing =
+    new SearchParamsValue<EditingSearchParamValue | null>(
+      this,
+      (value, params) => {
+        if (value === EditingSearchParamValue.Items) {
+          params.set(CollectionSearchParam.Editing, value);
+        } else {
+          params.delete(CollectionSearchParam.Editing);
+        }
+        return params;
+      },
+      (params) => {
+        return params.get(CollectionSearchParam.Editing) ===
+          EditingSearchParamValue.Items
+          ? EditingSearchParamValue.Items
+          : null;
+      },
+    );
+
   private readonly tabLabels: Record<
     Tab,
-    { icon: { name: string; library: string }; text: string }
+    { icon: { name: string; library: string }; text: string; beta?: boolean }
   > = {
     [Tab.Replay]: {
       icon: { name: "replaywebpage", library: "app" },
@@ -110,6 +146,11 @@ export class CollectionDetail extends BtrixElement {
     [Tab.About]: {
       icon: { name: "info-square-fill", library: "default" },
       text: msg("About"),
+    },
+    [Tab.Deduplication]: {
+      icon: { name: "stack", library: "default" },
+      text: msg("Deduplication"),
+      beta: true,
     },
   };
 
@@ -134,8 +175,15 @@ export class CollectionDetail extends BtrixElement {
         page: parsePage(new URLSearchParams(location.search).get("page")),
       });
     }
-    if (changedProperties.has("collectionTab") && this.collectionTab === null) {
-      this.collectionTab = Tab.Replay;
+    if (changedProperties.has("collectionTab")) {
+      if (this.collectionTab === null) {
+        this.collectionTab = Tab.Replay;
+      }
+
+      if (this.collectionTab === Tab.Deduplication) {
+        // Get latest stats
+        void this.fetchCollection();
+      }
     }
   }
 
@@ -156,6 +204,17 @@ export class CollectionDetail extends BtrixElement {
   }
 
   render() {
+    const collection_name = html`<strong class="font-semibold"
+      >${this.collection?.name}</strong
+    >`;
+    const caption = (text?: Collection["caption"]) => {
+      if (text) {
+        return html`<div class="text-pretty text-neutral-600">
+          ${richText(text)}
+        </div>`;
+      }
+    };
+
     return html`
       <div class="mb-7 flex justify-between align-baseline">
         ${this.renderBreadcrumbs()}
@@ -182,7 +241,12 @@ export class CollectionDetail extends BtrixElement {
             `
           : nothing}
       </div>
-      <header class="mt-5 flex min-h-16 flex-col gap-3  lg:flex-row">
+      <header
+        class=${clsx(
+          tw`mt-5 flex flex-col gap-3 lg:flex-row`,
+          this.isCrawler && tw`min-h-16`,
+        )}
+      >
         <div
           class="-mb-1 -ml-2 -mr-1 -mt-1 flex flex-none flex-col gap-2 self-start rounded-lg pb-1 pl-2 pr-1 pt-1 transition-colors has-[.addSummary:hover]:bg-primary-50 has-[sl-icon-button:hover]:bg-primary-50"
         >
@@ -191,32 +255,38 @@ export class CollectionDetail extends BtrixElement {
               this.collection?.name,
               tw`mb-2 h-6 w-60`,
             )}
-            ${this.collection &&
-            html`<sl-icon-button
-              name="pencil"
-              aria-label=${msg("Edit Collection Name and Description")}
-              @click=${() => {
-                this.openDialogName = "edit";
-                this.editTab = "general";
-              }}
-            ></sl-icon-button>`}
-          </div>
-          ${this.collection
-            ? this.collection.caption
-              ? html`<div class="text-pretty text-neutral-600">
-                  ${richText(this.collection.caption)}
-                </div>`
-              : html`<div
-                  class="addSummary text-pretty rounded-md px-1 font-light text-neutral-500"
-                  role="button"
+            ${this.collection && this.isCrawler
+              ? html`<sl-icon-button
+                  name="pencil"
+                  aria-label=${msg("Edit Collection Name and Description")}
                   @click=${() => {
                     this.openDialogName = "edit";
                     this.editTab = "general";
                   }}
-                >
-                  ${msg("Add a summary...")}
-                </div>`
-            : html`<sl-skeleton></sl-skeleton>`}
+                ></sl-icon-button>`
+              : nothing}
+          </div>
+          ${this.isCrawler
+            ? when(
+                this.collection,
+                (col) =>
+                  col.caption
+                    ? caption(col.caption)
+                    : html`
+                        <div
+                          class="addSummary text-pretty rounded-md px-1 font-light text-neutral-500"
+                          role="button"
+                          @click=${() => {
+                            this.openDialogName = "edit";
+                            this.editTab = "general";
+                          }}
+                        >
+                          ${msg("Add a summary...")}
+                        </div>
+                      `,
+                () => html`<sl-skeleton></sl-skeleton>`,
+              )
+            : caption(this.collection?.caption)}
         </div>
 
         <div class="ml-auto flex flex-shrink-0 items-center gap-2">
@@ -243,46 +313,46 @@ export class CollectionDetail extends BtrixElement {
       >
         ${this.renderInfoBar()}
       </div>
-      <div class="flex items-center justify-between py-3">
+      <div class="flex flex-wrap items-center justify-between gap-y-2 py-3">
         ${this.renderTabs()}
         ${when(this.isCrawler, () =>
           choose(this.collectionTab, [
             [
               Tab.Replay,
-              () => html`
-                <sl-tooltip
-                  content=${this.collection?.crawlCount
-                    ? msg("Choose what page viewers see first in replay")
-                    : msg("Add items to select a home page")}
-                  ?disabled=${Boolean(this.collection?.crawlCount)}
-                >
-                  <sl-button
-                    size="small"
-                    @click=${() => {
-                      this.openDialogName = "replaySettings";
-                    }}
-                    ?disabled=${!this.collection?.crawlCount ||
-                    !this.isRwpLoaded}
-                  >
-                    ${!this.collection ||
-                    Boolean(this.collection.crawlCount && !this.isRwpLoaded)
-                      ? html`<sl-spinner slot="prefix"></sl-spinner>`
-                      : html`<sl-icon name="house" slot="prefix"></sl-icon>`}
-                    ${msg("Set Initial View")}
-                  </sl-button>
-                </sl-tooltip>
-              `,
+              () =>
+                this.collection?.crawlCount
+                  ? html`
+                      <sl-button
+                        size="small"
+                        @click=${() => {
+                          this.openDialogName = "replaySettings";
+                        }}
+                        title=${ifDefined(
+                          this.isRwpLoaded
+                            ? undefined
+                            : msg("Please wait for replay load"),
+                        )}
+                        ?disabled=${!this.isRwpLoaded}
+                      >
+                        ${this.isRwpLoaded
+                          ? html`<sl-icon name="house" slot="prefix"></sl-icon>`
+                          : html`<sl-spinner slot="prefix"></sl-spinner>`}
+                        ${msg("Set Initial View")}
+                      </sl-button>
+                    `
+                  : nothing,
             ],
             [
               Tab.Items,
               () => html`
                 <sl-button
                   size="small"
-                  @click=${() => (this.openDialogName = "editItems")}
+                  @click=${() =>
+                    this.editing.setValue(EditingSearchParamValue.Items)}
                   ?disabled=${!this.collection}
                 >
                   <sl-icon name="ui-checks" slot="prefix"></sl-icon>
-                  ${msg("Select Items")}
+                  ${msg("Configure Items")}
                 </sl-button>
               `,
             ],
@@ -296,17 +366,82 @@ export class CollectionDetail extends BtrixElement {
           () => guard([this.archivedItems], this.renderArchivedItems),
         ],
         [Tab.About, () => this.renderAbout()],
+        [
+          Tab.Deduplication,
+          () =>
+            when(
+              this.featureFlags.has("dedupeEnabled"),
+              () =>
+                html`<btrix-collection-detail-dedupe
+                  .collectionId=${this.collectionId}
+                  .collection=${this.collection}
+                  @btrix-open-dialog=${(
+                    e: CustomEvent<OpenDialogEventDetail>,
+                  ) => {
+                    if (e.detail === "editItems") {
+                      this.editing.setValue(EditingSearchParamValue.Items);
+                    } else {
+                      this.openDialogName = e.detail;
+                    }
+                  }}
+                  @btrix-request-update=${() => void this.fetchCollection()}
+                >
+                  ${when(
+                    this.appState.isAdmin,
+                    () =>
+                      html`<btrix-overflow-dropdown
+                        slot="actions"
+                        placement="bottom-end"
+                      >
+                        <sl-menu>${this.renderDedupeMenuItems()}</sl-menu>
+                      </btrix-overflow-dropdown>`,
+                  )}
+                </btrix-collection-detail-dedupe>`,
+            ),
+        ],
       ])}
 
       <btrix-dialog
-        .label=${msg("Delete Collection?")}
-        .open=${this.openDialogName === "delete"}
+        .label=${msg("Remove Dependency from Collection?")}
+        .open=${this.openDialogName === "removeItem"}
         @sl-hide=${() => (this.openDialogName = undefined)}
+        @sl-after-hide=${() => (this.itemToRemove = undefined)}
       >
-        ${msg(
-          html`Are you sure you want to delete
-            <strong>${this.collection?.name}</strong>?`,
-        )}
+        ${when(this.itemToRemove, (item) => {
+          const archived_item_name = html`<strong class="font-semibold"
+            >${renderName(item)}</strong
+          >`;
+          const dependenciesCount =
+            isCrawlReplay(item) && item.requiredByCrawls.length;
+
+          return html`
+            <p>
+              ${msg(
+                html`Are you sure you want to remove ${archived_item_name} from
+                this collection?`,
+              )}
+            </p>
+            ${when(dependenciesCount, (count) => {
+              const number_of_items = this.localize.number(count);
+              const plural_of_items = pluralOf("items", count);
+
+              return html`
+                <p class="my-2">
+                  ${msg(
+                    str`${number_of_items} ${plural_of_items} depend on this
+                    item.`,
+                  )}
+                </p>
+              `;
+            })}
+            <p class="mt-2">
+              ${msg(
+                "Removing this item may result in incomplete replay and downloads until dependent URLs are crawled again.",
+              )}
+            </p>
+          `;
+        })}
+
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
@@ -317,19 +452,74 @@ export class CollectionDetail extends BtrixElement {
             size="small"
             variant="danger"
             @click=${async () => {
-              await this.deleteCollection();
+              if (this.itemToRemove) {
+                await this.removeArchivedItem(this.itemToRemove.id);
+              }
+
               this.openDialogName = undefined;
             }}
-            >${msg("Delete Collection")}</sl-button
+            >${msg("Remove Item")}</sl-button
           >
         </div>
+      </btrix-dialog>
+
+      <btrix-dialog
+        .label=${this.collection?.indexStats
+          ? msg("Deletion Not Allowed")
+          : msg("Delete Collection?")}
+        .open=${this.openDialogName === "delete"}
+        @sl-hide=${() => (this.openDialogName = undefined)}
+      >
+        ${when(this.collection, (col) =>
+          col.indexStats
+            ? html`${msg(
+                  html`${collection_name} cannot be deleted because it is being
+                  used as a deduplication source.`,
+                )}
+                ${this.appState.isAdmin
+                  ? msg(
+                      "To delete this collection, delete the deduplication index first.",
+                    )
+                  : nothing}
+                <div slot="footer" class="flex justify-end">
+                  <sl-button
+                    size="small"
+                    @click=${() => {
+                      this.openDialogName = undefined;
+                    }}
+                    >${msg("Close")}</sl-button
+                  >
+                </div>`
+            : html`${msg(
+                  html`Are you sure you want to delete ${collection_name}?`,
+                )}
+                <div slot="footer" class="flex justify-between">
+                  <sl-button
+                    size="small"
+                    @click=${() => (this.openDialogName = undefined)}
+                    >${msg("Cancel")}</sl-button
+                  >
+                  <sl-button
+                    size="small"
+                    variant="danger"
+                    @click=${async () => {
+                      await this.deleteCollection();
+                      this.openDialogName = undefined;
+                    }}
+                    >${msg("Delete Collection")}</sl-button
+                  >
+                </div>`,
+        )}
       </btrix-dialog>
       <btrix-collection-items-dialog
         collectionId=${this.collectionId}
         collectionName=${this.collection?.name || ""}
         ?isCrawler=${this.isCrawler}
-        ?open=${this.openDialogName === "editItems"}
-        @sl-hide=${() => (this.openDialogName = undefined)}
+        ?open=${Boolean(
+          this.editing.value === EditingSearchParamValue.Items &&
+            this.collection,
+        )}
+        @sl-hide=${() => this.editing.setValue(null)}
         @btrix-collection-saved=${() => {
           this.refreshReplay();
           void this.fetchCollection();
@@ -372,6 +562,25 @@ export class CollectionDetail extends BtrixElement {
         .replayWebPage=${this.replayEmbed}
         ?replayLoaded=${this.isRwpLoaded}
       ></btrix-collection-edit-dialog>
+
+      ${createIndexDialog({
+        open: this.openDialogName === "createIndex",
+        collection: this.collection,
+        hide: () => (this.openDialogName = undefined),
+        confirm: async () => this.createIndex(),
+      })}
+      ${purgeIndexDialog({
+        open: this.openDialogName === "purgeIndex",
+        collection: this.collection,
+        hide: () => (this.openDialogName = undefined),
+        confirm: async () => this.purgeIndex(),
+      })}
+      ${deleteIndexDialog({
+        open: this.openDialogName === "deleteIndex",
+        collection: this.collection,
+        hide: () => (this.openDialogName = undefined),
+        confirm: async (args) => this.deleteIndex(args),
+      })}
     `;
   }
 
@@ -428,7 +637,7 @@ export class CollectionDetail extends BtrixElement {
   private refreshReplay() {
     if (this.replayEmbed) {
       try {
-        this.replayEmbed.fullReload();
+        void this.replayEmbed.fullReload();
       } catch (e) {
         console.warn("Full reload not available in RWP");
       }
@@ -452,28 +661,42 @@ export class CollectionDetail extends BtrixElement {
   };
 
   private readonly renderTabs = () => {
-    return html`
-      <nav class="flex gap-2">
-        ${Object.values(Tab).map((tabName) => {
-          const isSelected = tabName === this.collectionTab;
-          const tab = this.tabLabels[tabName];
+    let tabs = Object.values(Tab);
 
-          return html`
-            <btrix-navigation-button
-              .active=${isSelected}
-              aria-selected="${isSelected}"
-              href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${tabName}`}
-              @click=${this.navigate.link}
-            >
-              <sl-icon
-                name=${tab.icon.name}
-                library=${tab.icon.library}
-              ></sl-icon>
-              ${tab.text}</btrix-navigation-button
-            >
-          `;
-        })}
-      </nav>
+    if (this.featureFlags.excludes("dedupeEnabled")) {
+      tabs = tabs.filter((tab) => tab !== Tab.Deduplication);
+    }
+
+    return html`
+      <btrix-overflow-scroll
+        class="-mx-3 max-w-[calc(100%+theme(spacing.6))] part-[content]:px-3"
+      >
+        <nav class="flex min-w-max gap-2">
+          ${tabs.map((tabName) => {
+            const isSelected = tabName === this.collectionTab;
+            const tab = this.tabLabels[tabName];
+
+            return html`
+              <btrix-navigation-button
+                .active=${isSelected}
+                aria-selected="${isSelected}"
+                href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${tabName}`}
+                @click=${this.navigate.link}
+              >
+                <sl-icon
+                  name=${tab.icon.name}
+                  library=${tab.icon.library}
+                ></sl-icon>
+                ${tab.text}
+                ${when(
+                  tab.beta,
+                  () => html`<btrix-beta-badge></btrix-beta-badge>`,
+                )}
+              </btrix-navigation-button>
+            `;
+          })}
+        </nav>
+      </btrix-overflow-scroll>
     `;
   };
 
@@ -509,30 +732,26 @@ export class CollectionDetail extends BtrixElement {
 
               this.openDialogName = "edit";
             }}
-            ?disabled=${!this.collection?.crawlCount}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
             ${msg("Edit Collection Settings")}
           </sl-menu-item>
-          <sl-tooltip
-            content=${this.collection?.crawlCount
-              ? msg("Choose what page viewers see first in replay")
-              : msg("Add items to select a home page")}
-            ?disabled=${Boolean(this.collection?.crawlCount)}
-          >
-            <sl-menu-item
-              @click=${() => {
-                this.openDialogName = "replaySettings";
-              }}
-              ?disabled=${!this.collection?.crawlCount || !this.isRwpLoaded}
-            >
-              ${!this.collection ||
-              Boolean(this.collection.crawlCount && !this.isRwpLoaded)
-                ? html`<sl-spinner slot="prefix"></sl-spinner>`
-                : html`<sl-icon name="house" slot="prefix"></sl-icon>`}
-              ${msg("Set Initial View")}
-            </sl-menu-item>
-          </sl-tooltip>
+          ${when(
+            this.collection?.crawlCount,
+            () => html`
+              <sl-menu-item
+                @click=${() => {
+                  this.openDialogName = "replaySettings";
+                }}
+                ?disabled=${!this.isRwpLoaded}
+              >
+                ${this.isRwpLoaded
+                  ? html`<sl-icon name="house" slot="prefix"></sl-icon>`
+                  : html`<sl-spinner slot="prefix"></sl-spinner>`}
+                ${msg("Set Initial View")}
+              </sl-menu-item>
+            `,
+          )}
           <sl-menu-item
             @click=${async () => {
               this.navigate.to(
@@ -547,30 +766,55 @@ export class CollectionDetail extends BtrixElement {
             <sl-icon name="pencil" slot="prefix"></sl-icon>
             ${msg("Edit Description")}
           </sl-menu-item>
-          <sl-menu-item @click=${() => (this.openDialogName = "editItems")}>
-            <sl-icon name="ui-checks" slot="prefix"></sl-icon>
-            ${msg("Select Archived Items")}
-          </sl-menu-item>
-          <sl-divider></sl-divider>
-          <btrix-menu-item-link
-            href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
-            download
-            ?disabled=${!this.collection?.totalSize}
+          <sl-menu-item
+            @click=${() => this.editing.setValue(EditingSearchParamValue.Items)}
           >
-            <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-            ${msg("Download Collection")}
-            ${when(
-              this.collection,
-              (collection) => html`
-                <btrix-badge slot="suffix"
-                  >${this.localize.bytes(
-                    collection.totalSize || 0,
-                  )}</btrix-badge
-                >
-              `,
-            )}
-          </btrix-menu-item-link>
+            <sl-icon name="ui-checks" slot="prefix"></sl-icon>
+            ${msg("Configure Items")}
+          </sl-menu-item>
+
+          ${when(this.featureFlags.has("dedupeEnabled"), () =>
+            this.appState.isAdmin
+              ? html`<sl-menu-item>
+                  <sl-icon name="stack" slot="prefix"></sl-icon>
+                  ${msg("Deduplication Settings")}
+                  <sl-menu slot="submenu">
+                    ${this.renderDedupeMenuItems()}
+                  </sl-menu>
+                </sl-menu-item>`
+              : when(
+                  this.isCrawler &&
+                    this.collection &&
+                    !this.collection.indexStats,
+                  () =>
+                    html`<sl-menu-item
+                      class="menu-item-success"
+                      @click=${() => (this.openDialogName = "createIndex")}
+                    >
+                      <sl-icon slot="prefix" name="table"></sl-icon>
+                      ${msg("Create Index")}
+                    </sl-menu-item>`,
+                ),
+          )}
+
           <sl-divider></sl-divider>
+          ${when(
+            this.collection?.totalSize,
+            (size) => html`
+              <btrix-menu-item-link
+                href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
+                download
+                ?disabled=${!this.collection?.totalSize}
+              >
+                <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+                ${msg("Download Collection")}
+                <btrix-badge slot="suffix"
+                  >${this.localize.bytes(size)}</btrix-badge
+                >
+              </btrix-menu-item-link>
+              <sl-divider></sl-divider>
+            `,
+          )}
           <sl-menu-item
             @click=${() =>
               ClipboardController.copyToClipboard(
@@ -581,10 +825,7 @@ export class CollectionDetail extends BtrixElement {
             ${msg("Copy Collection ID")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
-            @click=${this.confirmDelete}
-          >
+          <sl-menu-item class="menu-item-danger" @click=${this.confirmDelete}>
             <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${msg("Delete Collection")}
           </sl-menu-item>
@@ -592,6 +833,53 @@ export class CollectionDetail extends BtrixElement {
       </sl-dropdown>
     `;
   };
+
+  private renderDedupeMenuItems() {
+    if (!this.collection) return;
+
+    if (this.collection.indexStats) {
+      const purgeMenuItem = (indexState: DedupeIndexState) => {
+        const available = indexAvailable(indexState);
+        const pending = indexInUse(indexState) || indexUpdating(indexState);
+
+        return html`
+          <sl-menu-item
+            class="menu-item-warning"
+            ?disabled=${!available}
+            title=${ifDefined(
+              pending ? msg("Please wait for pending update") : undefined,
+            )}
+            @click=${() => (this.openDialogName = "purgeIndex")}
+          >
+            ${pending
+              ? html`<sl-spinner slot="prefix"></sl-spinner>`
+              : html`<sl-icon slot="prefix" name="trash2"></sl-icon>`}
+            ${msg("Purge Index")}
+          </sl-menu-item>
+        `;
+      };
+      return html`${when(
+          this.collection.indexStats.removedCrawls &&
+            this.collection.indexState,
+          purgeMenuItem,
+        )}
+        <sl-menu-item
+          class="menu-item-danger"
+          @click=${() => (this.openDialogName = "deleteIndex")}
+        >
+          <sl-icon slot="prefix" name="trash3"></sl-icon>
+          ${msg("Delete Index")}
+        </sl-menu-item>`;
+    }
+
+    return html`<sl-menu-item
+      class="menu-item-success"
+      @click=${() => (this.openDialogName = "createIndex")}
+    >
+      <sl-icon slot="prefix" name="table"></sl-icon>
+      ${msg("Create Index")}
+    </sl-menu-item>`;
+  }
 
   private renderInfoBar() {
     if (!this.collection) {
@@ -617,7 +905,11 @@ export class CollectionDetail extends BtrixElement {
         ${this.renderDetailItem(
           msg("Total Pages"),
           (col) =>
-            `${this.localize.number(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
+            `${this.localize.number(col.pageCount, { notation: "compact" })} ${pluralOf("pages", col.pageCount)}`,
+        )}
+        ${this.renderDetailItem(
+          msg("Total Size"),
+          (col) => html` ${this.localize.bytes(col.totalSize)} `,
         )}
         ${createdDate
           ? this.renderDetailItem(msg("Created"), () =>
@@ -646,48 +938,52 @@ export class CollectionDetail extends BtrixElement {
     const metadata = metadataColumn(this.collection);
 
     return html`
-      <div class="flex flex-1 flex-col gap-10 lg:flex-row">
-        <section class="flex w-full max-w-4xl flex-col leading-relaxed">
-          <header class="mb-2 flex min-h-8 items-center justify-between">
-            <div class="flex items-center gap-2">
-              <h2 class="text-base font-medium">
-                ${msg("About This Collection")}
-              </h2>
-              <sl-tooltip>
-                <div slot="content">
-                  <p class="mb-3">
-                    ${msg(
-                      html`Describe your collection in long-form rich text (e.g.
-                        <strong>bold</strong> and <em>italicized</em> text.)`,
-                    )}
-                  </p>
-                  <p>
-                    ${msg(
-                      html`If this collection is shareable, this will appear in
-                      the “About This Collection” section of the shared
-                      collection.`,
-                    )}
-                  </p>
-                </div>
-                <sl-icon
-                  name="info-circle"
-                  class="size-4 text-base text-neutral-500 [vertical-align:-.175em]"
-                ></sl-icon>
-              </sl-tooltip>
-            </div>
-            ${when(
-              this.collection?.description && !this.isEditingDescription,
-              () => html`
-                <sl-tooltip content=${msg("Edit Description")}>
-                  <sl-icon-button
-                    class="text-base"
-                    name="pencil"
-                    @click=${() => (this.isEditingDescription = true)}
-                  >
-                  </sl-icon-button>
-                </sl-tooltip>
-              `,
-            )}
+      <div class="grid grid-cols-7 gap-7">
+        <section
+          class="col-span-full flex flex-col leading-relaxed lg:col-span-5"
+        >
+          <header class="flex items-center justify-between">
+            ${panelHeader({
+              heading: msg("Description"),
+            })}
+            ${this.isEditingDescription
+              ? html`
+                  <btrix-popover placement="right-start">
+                    <div slot="content">
+                      <p class="mb-3">
+                        ${msg(
+                          html`Describe your collection in long-form rich text
+                            (e.g. <strong>bold</strong> and
+                            <em>italicized</em> text.)`,
+                        )}
+                      </p>
+                      <p>
+                        ${msg(
+                          html`If this collection is shareable, this will appear
+                          in the “About This Collection” section of the shared
+                          collection.`,
+                        )}
+                      </p>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-neutral-500">
+                      ${msg("Help")}
+                      <sl-icon
+                        name="question-circle"
+                        class="size-4 text-base"
+                      ></sl-icon>
+                    </div>
+                  </btrix-popover>
+                `
+              : this.isCrawler
+                ? html`<sl-tooltip content=${msg("Edit Description")}>
+                    <sl-icon-button
+                      class="text-base"
+                      name="pencil"
+                      @click=${() => (this.isEditingDescription = true)}
+                    >
+                    </sl-icon-button>
+                  </sl-tooltip>`
+                : nothing}
           </header>
           ${when(
             this.collection,
@@ -713,15 +1009,23 @@ export class CollectionDetail extends BtrixElement {
                               <p class="mb-3 max-w-prose">
                                 ${msg("No description provided.")}
                               </p>
-                              <sl-button
-                                size="small"
-                                @click=${() =>
-                                  (this.isEditingDescription = true)}
-                                ?disabled=${!this.collection}
-                              >
-                                <sl-icon name="pencil" slot="prefix"></sl-icon>
-                                ${msg("Add Description")}
-                              </sl-button>
+                              ${when(
+                                this.isCrawler,
+                                () => html`
+                                  <sl-button
+                                    size="small"
+                                    @click=${() =>
+                                      (this.isEditingDescription = true)}
+                                    ?disabled=${!this.collection}
+                                  >
+                                    <sl-icon
+                                      name="pencil"
+                                      slot="prefix"
+                                    ></sl-icon>
+                                    ${msg("Add Description")}
+                                  </sl-button>
+                                `,
+                              )}
                             </div>
                           `}
                     </div>
@@ -729,11 +1033,11 @@ export class CollectionDetail extends BtrixElement {
             this.renderSpinner,
           )}
         </section>
-        <section class="flex-1">
-          <btrix-section-heading>
-            <h2>${msg("Details")}</h2>
-          </btrix-section-heading>
-          <div class="mt-5">${metadata}</div>
+        <section class="col-span-full flex-1 lg:col-span-2">
+          ${panelHeader({
+            heading: msg("Details"),
+          })}
+          <div>${metadata}</div>
         </section>
       </div>
     `;
@@ -826,34 +1130,39 @@ export class CollectionDetail extends BtrixElement {
   }
 
   private renderEmptyState() {
-    return html`
-      <div class="rounded border px-3 py-12">
-        <p class="text-center text-neutral-500">
-          ${this.archivedItems?.page && this.archivedItems.page > 1
-            ? msg("Page not found.")
-            : html`
-                ${msg("This Collection doesn’t have any archived items, yet.")}
-                ${this.isCrawler &&
-                html`
-                  <div class="mt-3">
-                    <sl-button
-                      variant="primary"
-                      @click=${() => (this.openDialogName = "editItems")}
-                    >
-                      <sl-icon name="ui-checks" slot="prefix"></sl-icon>
-                      ${msg("Add Archived Items")}
-                    </sl-button>
-                  </div>
-                `}
-              `}
-        </p>
-      </div>
-    `;
+    const notFound = this.archivedItems?.page && this.archivedItems.page > 1;
+
+    return panelBody({
+      content: emptyMessage({
+        message: notFound
+          ? msg("Page not found.")
+          : msg("No archived items yet"),
+        detail: notFound
+          ? undefined
+          : msg(
+              "Select individual items or automatically add new crawled items.",
+            ),
+        actions:
+          !notFound && this.isCrawler
+            ? html`
+                <sl-button
+                  size="small"
+                  variant="primary"
+                  @click=${() =>
+                    this.editing.setValue(EditingSearchParamValue.Items)}
+                >
+                  <sl-icon name="ui-checks" slot="prefix"></sl-icon>
+                  ${msg("Add Archived Items")}
+                </sl-button>
+              `
+            : undefined,
+      }),
+    });
   }
 
   private readonly renderArchivedItem = (
     item: ArchivedItem,
-    idx: number,
+    _idx: number,
   ) => html`
     <btrix-archived-item-list-item
       href=${`${this.navigate.orgBasePath}/${item.type === "crawl" ? `workflows/${item.cid}/crawls` : `items/${item.type}`}/${item.id}?collectionId=${this.collectionId}`}
@@ -872,7 +1181,14 @@ export class CollectionDetail extends BtrixElement {
                 <sl-menu>
                   <sl-menu-item
                     style="--sl-color-neutral-700: var(--warning)"
-                    @click=${() => void this.removeArchivedItem(item.id, idx)}
+                    @click=${() => {
+                      if (item.requiredByCrawls.length) {
+                        this.itemToRemove = item;
+                        this.openDialogName = "removeItem";
+                      } else {
+                        void this.removeArchivedItem(item.id);
+                      }
+                    }}
                   >
                     <sl-icon name="folder-minus" slot="prefix"></sl-icon>
                     ${msg("Remove from Collection")}
@@ -922,7 +1238,7 @@ export class CollectionDetail extends BtrixElement {
             this.isRwpLoaded = true;
           }
           if (this.rwpDoFullReload && this.replayEmbed) {
-            this.replayEmbed.fullReload();
+            void this.replayEmbed.fullReload();
             this.rwpDoFullReload = false;
           }
         }}
@@ -962,6 +1278,18 @@ export class CollectionDetail extends BtrixElement {
         icon: "check2-circle",
         id: "collection-delete-status",
       });
+
+      // Collection may be used in crawling default, request update
+      this.dispatchEvent(
+        new CustomEvent<BtrixRequestOrgUpdate["detail"]>(
+          "btrix-request-org-update",
+          {
+            detail: { org: {} },
+            bubbles: true,
+            composed: true,
+          },
+        ),
+      );
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't delete Collection at this time."),
@@ -999,7 +1327,17 @@ export class CollectionDetail extends BtrixElement {
   private async fetchArchivedItems(params?: APIPaginationQuery): Promise<void> {
     this.cancelInProgressGetArchivedItems();
     try {
-      this.archivedItems = await this.getArchivedItems(params);
+      this.archivedItems = await this.getArchivedItems({
+        ...params,
+        page:
+          params?.page ||
+          this.archivedItems?.page ||
+          parsePage(new URLSearchParams(location.search).get("page")),
+        pageSize:
+          params?.pageSize ||
+          this.archivedItems?.pageSize ||
+          INITIAL_ITEMS_PAGE_SIZE,
+      });
     } catch (e) {
       if ((e as Error).name === "AbortError") {
         console.debug("Fetch web captures aborted to throttle");
@@ -1021,37 +1359,34 @@ export class CollectionDetail extends BtrixElement {
     }
   }
 
-  private async getArchivedItems(
+  private async getArchivedItems<T extends "crawl" | "upload">(
     params?: Partial<{
+      crawlType: T;
       state: CrawlState[];
     }> &
       APIPaginationQuery &
       APISortQuery,
+    signal?: AbortSignal,
   ) {
     const query = queryString.stringify(
-      {
-        ...params,
-        page:
-          params?.page ||
-          this.archivedItems?.page ||
-          parsePage(new URLSearchParams(location.search).get("page")),
-        pageSize:
-          params?.pageSize ||
-          this.archivedItems?.pageSize ||
-          INITIAL_ITEMS_PAGE_SIZE,
-      },
+      { ...params },
       {
         arrayFormat: "comma",
       },
     );
-    const data = await this.api.fetch<APIPaginatedList<Crawl | Upload>>(
+    const data = await this.api.fetch<
+      APIPaginatedList<
+        T extends "crawl" ? Crawl : T extends "upload" ? Upload : Crawl | Upload
+      >
+    >(
       `/orgs/${this.orgId}/all-crawls?collectionId=${this.collectionId}&${query}`,
+      { signal },
     );
 
     return data;
   }
 
-  private async removeArchivedItem(id: string, _pageIndex: number) {
+  private async removeArchivedItem(id: string) {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
@@ -1131,6 +1466,110 @@ export class CollectionDetail extends BtrixElement {
         ),
         variant: "danger",
         icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async createIndex() {
+    try {
+      await this.api.fetch(
+        `/orgs/${this.orgId}/collections/${this.collectionId}/dedupeIndex/create`,
+        {
+          method: "POST",
+        },
+      );
+      await this.fetchCollection();
+
+      const count = this.collection?.crawlCount || 0;
+      const items_count = this.localize.number(count);
+      const plural_of_items = pluralOf("items", count);
+
+      this.notify.toast({
+        ...(count
+          ? {
+              title: msg("Created deduplication index."),
+              message: msg(
+                str`Importing ${items_count} archived ${plural_of_items}.`,
+              ),
+            }
+          : {
+              message: msg("Created deduplication index."),
+            }),
+        variant: "success",
+        icon: "check2-circle",
+        id: "dedupe-index-update-status",
+      });
+    } catch (err) {
+      console.debug(err);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't created index at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "dedupe-index-update-status",
+      });
+    }
+  }
+
+  private async purgeIndex() {
+    try {
+      await this.api.fetch(
+        `/orgs/${this.orgId}/collections/${this.collectionId}/dedupeIndex/purge`,
+        {
+          method: "POST",
+        },
+      );
+      this.refreshReplay();
+      await this.fetchCollection();
+
+      this.notify.toast({
+        message: msg("Purging deduplication index..."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "dedupe-index-update-status",
+      });
+    } catch (err) {
+      const message =
+        getIndexErrorMessage(err) ||
+        msg("Sorry, couldn’t purge index at this time.");
+
+      this.notify.toast({
+        message,
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "dedupe-index-update-status",
+      });
+    }
+  }
+
+  private async deleteIndex(params: { removeFromWorkflows: boolean }) {
+    try {
+      await this.api.fetch(
+        `/orgs/${this.orgId}/collections/${this.collectionId}/dedupeIndex/delete`,
+        {
+          method: "POST",
+          body: JSON.stringify(params),
+        },
+      );
+      this.refreshReplay();
+      await this.fetchCollection();
+
+      this.notify.toast({
+        message: msg("Deleted deduplication index."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "dedupe-index-update-status",
+      });
+    } catch (err) {
+      const message =
+        getIndexErrorMessage(err) ||
+        msg("Sorry, couldn’t delete index at this time.");
+
+      this.notify.toast({
+        message,
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "dedupe-index-update-status",
       });
     }
   }

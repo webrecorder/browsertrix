@@ -48,6 +48,7 @@ export class Dialog extends SlDialog {
 
       .dialog__body {
         line-height: var(--sl-line-height-normal);
+        text-wrap: pretty;
       }
 
       .dialog__footer {

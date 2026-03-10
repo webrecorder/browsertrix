@@ -13,6 +13,7 @@ import omitBy from "lodash/fp/omitBy";
 import isNil from "lodash/isNil";
 import queryString from "query-string";
 
+import type { ArchivedItemSectionName } from "./archived-item-detail/archived-item-detail";
 import type { Crawl, CrawlLog, Seed, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -20,6 +21,7 @@ import type { Alert } from "@/components/ui/alert";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { ShareableNotice } from "@/features/crawl-workflows/templates/shareable-notice";
 import {
@@ -29,7 +31,7 @@ import {
 import type { BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
 import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
-import { WorkflowTab } from "@/routes";
+import { OrgTab, WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
@@ -683,7 +685,12 @@ export class WorkflowDetail extends BtrixElement {
       <header
         class="mb-2 flex h-7 items-end justify-between text-lg font-medium"
       >
-        <h3>${this.tabLabels[tab]}</h3>
+        <div class="flex items-center gap-2">
+          <h3>${this.tabLabels[tab]}</h3>
+          ${tab === WorkflowTab.LatestCrawl
+            ? this.renderDedupeBadge()
+            : nothing}
+        </div>
         <div class="flex items-center gap-2">${this.renderPanelAction()}</div>
       </header>
 
@@ -729,10 +736,9 @@ export class WorkflowDetail extends BtrixElement {
           ?disabled=${!disableDownload}
         >
           <sl-button-group>
-            <sl-tooltip
-              content="${msg("Download Item as WACZ")} (${this.localize.bytes(
-                latestCrawl.fileSize || 0,
-              )})"
+            <btrix-popover
+              content=${this.localize.bytes(latestCrawl.fileSize || 0)}
+              placement="top"
               ?disabled=${disableReplay}
             >
               <sl-button
@@ -744,7 +750,7 @@ export class WorkflowDetail extends BtrixElement {
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                 ${msg("Download")}
               </sl-button>
-            </sl-tooltip>
+            </btrix-popover>
             <sl-dropdown distance="4" placement="bottom-end" hoist>
               <sl-button
                 slot="trigger"
@@ -776,11 +782,8 @@ export class WorkflowDetail extends BtrixElement {
                   href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
                   download
                 >
-                  <sl-icon
-                    name="file-earmark-arrow-down"
-                    slot="prefix"
-                  ></sl-icon>
-                  ${msg("Log")}
+                  <sl-icon name="download" slot="prefix"></sl-icon>
+                  ${msg("Logs")}
                 </btrix-menu-item-link>
               </sl-menu>
             </sl-dropdown>
@@ -1387,6 +1390,17 @@ export class WorkflowDetail extends BtrixElement {
     `;
   };
 
+  private readonly renderDedupeBadge = () => {
+    const latestCrawl = this.latestCrawlTask.value;
+
+    if (!latestCrawl) return;
+
+    return html`<btrix-dedupe-badge
+      .dependencies=${latestCrawl.requiresCrawls}
+      .dependents=${latestCrawl.requiredByCrawls}
+    ></btrix-dedupe-badge>`;
+  };
+
   private readonly renderPausedNotice = (
     { truncate } = { truncate: false },
   ) => {
@@ -1453,6 +1467,7 @@ export class WorkflowDetail extends BtrixElement {
             </strong>
           </span>
           <sl-button
+            class="part-[base]:min-h-5 part-[base]:leading-5"
             size="small"
             variant="text"
             @click=${() => this.pausedNotice?.hide()}
@@ -1663,6 +1678,10 @@ export class WorkflowDetail extends BtrixElement {
           );
           break;
 
+        case "waiting_dedupe_index":
+          waitingMsg = msg("Crawl waiting for deduplication index...");
+          break;
+
         case "pending-wait":
         case "generate-wacz":
         case "uploading-wacz":
@@ -1715,6 +1734,16 @@ export class WorkflowDetail extends BtrixElement {
     }
 
     return html`
+      ${when(this.latestCrawlTask.value, (crawl) =>
+        crawl.missingRequiresCrawls?.length
+          ? missingDependenciesNotice({
+              ids: crawl.missingRequiresCrawls,
+              dependenciesHref: `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${crawl.cid}/${WorkflowTab.Crawls}/${crawl.id}#${"dependencies" satisfies ArchivedItemSectionName}`,
+              topCss: tw`top-12`,
+            })
+          : nothing,
+      )}
+
       <div class="aspect-video overflow-hidden rounded-lg border">
         ${guard([this.lastCrawlId], () =>
           when(this.latestCrawlTask.value, this.renderReplay),
@@ -1789,7 +1818,8 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private readonly renderReplay = (latestCrawl: Crawl) => {
-    const replaySource = `/api/orgs/${latestCrawl.oid}/crawls/${this.lastCrawlId}/replay.json`;
+    const query = queryString.stringify({ withDependencies: true });
+    const replaySource = `/api/orgs/${latestCrawl.oid}/crawls/${this.lastCrawlId}/replay.json?${query}`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
@@ -2102,8 +2132,9 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private async getCrawl(crawlId: Crawl["id"], signal: AbortSignal) {
+    const query = queryString.stringify({ withDependencies: true });
     const data = await this.api.fetch<Crawl>(
-      `/orgs/${this.orgId}/crawls/${crawlId}/replay.json`,
+      `/orgs/${this.orgId}/crawls/${crawlId}/replay.json?${query}`,
       { signal },
     );
 

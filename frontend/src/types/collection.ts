@@ -1,6 +1,10 @@
 import { z } from "zod";
 
+import { DEDUPE_INDEX_STATES, dedupeIndexStatsSchema } from "./dedupe";
 import { storageFileSchema } from "./storage";
+
+export const COLLECTION_NAME_MAX_LENGTH = 50;
+export const COLLECTION_CAPTION_MAX_LENGTH = 150;
 
 export enum CollectionAccess {
   Private = "private",
@@ -58,6 +62,9 @@ export const collectionSchema = publicCollectionSchema.extend({
   orgPublicProfile: z.boolean().optional(),
   tags: z.array(z.string()),
   access: z.nativeEnum(CollectionAccess),
+  indexLastSavedAt: z.string().datetime().nullable(),
+  indexState: z.enum(DEDUPE_INDEX_STATES).nullable(),
+  indexStats: dedupeIndexStatsSchema.optional().nullable(),
 });
 export type Collection = z.infer<typeof collectionSchema>;
 

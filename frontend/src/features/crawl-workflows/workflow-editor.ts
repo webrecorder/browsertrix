@@ -14,7 +14,6 @@ import type {
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { createParser } from "css-selector-parser";
-import Fuse from "fuse.js";
 import { mergeDeep } from "immutable";
 import type { LanguageCode } from "iso-639-1";
 import {
@@ -42,8 +41,16 @@ import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
 import isEqual from "lodash/fp/isEqual";
 import throttle from "lodash/fp/throttle";
+import union from "lodash/fp/union";
 import uniq from "lodash/fp/uniq";
+import without from "lodash/fp/without";
 import queryString from "query-string";
+
+import {
+  isExistingCollection,
+  isNewCollection,
+  type SelectDedupeCollectionChangeEvent,
+} from "../collections/select-dedupe-collection";
 
 import {
   SELECTOR_DELIMITER,
@@ -56,8 +63,6 @@ import type { SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
 import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
 import type { SyntaxInput } from "@/components/ui/syntax-input";
 import type { TabListTab } from "@/components/ui/tab-list";
-import type { TagCount, TagCounts } from "@/components/ui/tag-filter/types";
-import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { validURL } from "@/components/ui/url-input";
 import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
@@ -75,6 +80,7 @@ import {
 } from "@/controllers/observable";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
 import type { BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
+import type { BtrixTagsChangeEvent } from "@/features/archived-items/item-tags-input";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type { CustomBehaviorsTable } from "@/features/crawl-workflows/custom-behaviors-table";
@@ -91,6 +97,7 @@ import { infoTextFor } from "@/strings/crawl-workflows/infoText";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
+import { dedupeTypeLabelFor } from "@/strings/dedupe";
 import { AnalyticsTrackEvent } from "@/trackEvents";
 import { APIErrorDetail } from "@/types/api";
 import {
@@ -108,6 +115,7 @@ import {
 } from "@/types/workflow";
 import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
+import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import {
   getUTCSchedule,
@@ -125,8 +133,10 @@ import { AppStateService } from "@/utils/state";
 import { regexEscape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
 import {
+  apiScopeType,
   appDefaults,
   BYTES_PER_GB,
+  DedupeType,
   DEFAULT_AUTOCLICK_SELECTOR,
   DEFAULT_SELECT_LINKS,
   defaultLabel,
@@ -209,6 +219,10 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
         completed: hasConfigId,
       },
       scheduling: {
+        error: false,
+        completed: hasConfigId,
+      },
+      deduplication: {
         error: false,
         completed: hasConfigId,
       },
@@ -301,9 +315,6 @@ export class WorkflowEditor extends BtrixElement {
   initialSeedFile?: StorageSeedFile;
 
   @state()
-  private tagOptions: TagCount[] = [];
-
-  @state()
   private isSubmitting = false;
 
   @state()
@@ -336,13 +347,6 @@ export class WorkflowEditor extends BtrixElement {
   private readonly observable = new ObservableController(this, {
     // Add some padding to account for stickied elements
     rootMargin: "-100px 0px -100px 0px",
-  });
-
-  // For fuzzy search:
-  private readonly fuse = new Fuse<TagCount>([], {
-    keys: ["tag"],
-    shouldSort: false,
-    threshold: 0.2, // stricter; default is 0.6
   });
 
   private readonly seedFileReader = new FileReader();
@@ -436,7 +440,6 @@ export class WorkflowEditor extends BtrixElement {
     super.connectedCallback();
 
     void this.fetchOrgDefaults();
-    void this.fetchTags();
 
     this.addEventListener(
       "btrix-intersect",
@@ -606,15 +609,18 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private renderNav() {
-    const button = (tab: StepName) => {
+    const button = (section: (typeof this.formSections)[number]) => {
+      const tab = section.name;
       const isActive = tab === this.progressState?.activeTab;
       return html`
         <btrix-tab-list-tab
+          class="part-[base]:flex part-[base]:items-center part-[base]:gap-2"
           name=${tab}
           .active=${isActive}
           @click=${this.tabClickHandler(tab)}
         >
           ${this.tabLabels[tab]}
+          ${when(section.beta, () => html`<btrix-beta-icon></btrix-beta-icon>`)}
         </btrix-tab-list-tab>
       `;
     };
@@ -624,7 +630,7 @@ export class WorkflowEditor extends BtrixElement {
         class="mb-10 hidden lg:block"
         tab=${ifDefined(this.progressState?.activeTab)}
       >
-        ${STEPS.map(button)}
+        ${this.formSections.map(button)}
       </btrix-tab-list>
     `;
   }
@@ -680,20 +686,15 @@ export class WorkflowEditor extends BtrixElement {
           const el = e.currentTarget as SlDetails;
 
           // Check if there's any invalid elements before hiding
-          let invalidEl: SlInput | null = null;
-
-          if (required) {
-            invalidEl = el.querySelector<SlInput>("[required][data-invalid]");
-          }
-
-          invalidEl =
-            invalidEl || el.querySelector<SlInput>("[data-user-invalid]");
+          const invalidEl =
+            el.querySelector<SlInput>("[data-invalid]") ||
+            el.querySelector<HTMLFormElement>(":invalid");
 
           if (invalidEl) {
             e.preventDefault();
 
             invalidEl.focus();
-            invalidEl.checkValidity();
+            invalidEl.reportValidity();
           }
         })}
         @sl-after-show=${this.handleCurrentTarget(
@@ -760,7 +761,15 @@ export class WorkflowEditor extends BtrixElement {
             `${formName}${panelSuffix}--active`,
           tw`scroll-mt-7`,
         ),
-        heading: this.tabLabels[section.name],
+        heading: {
+          content: html`<div class="inline-flex items-center gap-2">
+            ${this.tabLabels[section.name]}
+            ${when(
+              section.beta,
+              () => html`<btrix-beta-badge></btrix-beta-badge>`,
+            )}
+          </div>`,
+        },
         body: panelBody(section),
         actions: section.required
           ? html`<p class="text-xs font-normal text-neutral-500">
@@ -934,6 +943,9 @@ export class WorkflowEditor extends BtrixElement {
           <sl-option value=${ScopeType.Custom}>
             ${scopeTypeLabels[ScopeType.Custom]}
           </sl-option>
+          <sl-option value=${NewWorkflowOnlyScopeType.Regex}>
+            ${scopeTypeLabels[NewWorkflowOnlyScopeType.Regex]}
+          </sl-option>
         </sl-select>
       `)}
       ${this.renderHelpTextCol(html`
@@ -976,23 +988,6 @@ export class WorkflowEditor extends BtrixElement {
   };
 
   private readonly renderPageScope = () => {
-    const linkToBrowserSettings = (label: string) =>
-      html`<button
-        type="button"
-        class="text-blue-600 hover:text-blue-500"
-        @click=${async () => {
-          this.updateProgressState({ activeTab: "browserSettings" });
-
-          await this.updateComplete;
-
-          void this.scrollToActivePanel();
-        }}
-      >
-        ${label}
-      </button>`;
-    const link_to_browser_profile = linkToBrowserSettings(
-      msg("Browser Profile"),
-    );
     return html`
       ${this.formState.scopeType === ScopeType.Page
         ? html`
@@ -1069,32 +1064,6 @@ export class WorkflowEditor extends BtrixElement {
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(infoTextFor["useRobots"], false)}
-      ${inputCol(html`
-        <sl-checkbox
-          name="failOnContentCheck"
-          ?checked=${this.formState.failOnContentCheck &&
-          this.formState.browserProfile !== null}
-          ?disabled=${this.formState.browserProfile === null}
-        >
-          ${this.formState.browserProfile === null
-            ? html`<span slot="help-text">
-                ${msg(
-                  html`Custom logged in ${link_to_browser_profile} is required
-                  to use this option.`,
-                )}
-              </span>`
-            : nothing}
-          ${msg("Fail crawl if not logged in")}
-        </sl-checkbox>
-      `)}
-      ${this.renderHelpTextCol(
-        html`${infoTextFor["failOnContentCheck"]}
-        ${this.renderUserGuideLink({
-          hash: "fail-crawl-if-not-logged-in",
-          content: msg("More details"),
-        })}.`,
-        false,
-      )}
       ${when(this.formState.includeLinkedPages, () =>
         this.renderLinkSelectors(),
       )}
@@ -1381,6 +1350,18 @@ https://replayweb.page/docs`}
 
     let helpText: TemplateResult | string;
 
+    const custom = (customRegexFieldLabel: string) => {
+      const example_url = html`<span class="break-word text-blue-500"
+        >${exampleDomain}${examplePathname}</span
+      >`;
+      const custom_regexes = html`<em>${customRegexFieldLabel}</em>`;
+
+      return msg(
+        html`Will start crawl with ${example_url} and only follow links that
+        match the ${custom_regexes} listed below.`,
+      );
+    };
+
     switch (this.formState.scopeType) {
       case ScopeType.Prefix:
         helpText = msg(
@@ -1421,14 +1402,10 @@ https://replayweb.page/docs`}
         );
         break;
       case ScopeType.Custom:
-        helpText = msg(
-          html`Will start with
-            <span class="break-word text-blue-500"
-              >${exampleDomain}${examplePathname}</span
-            >
-            and include <em>only</em> URLs that start with the
-            <em>URL Prefixes in Scope</em> listed below.`,
-        );
+        helpText = custom(msg("Page Prefix URLs"));
+        break;
+      case NewWorkflowOnlyScopeType.Regex:
+        helpText = custom(msg("Page Regex Patterns"));
         break;
       default:
         helpText = "";
@@ -1437,24 +1414,6 @@ https://replayweb.page/docs`}
 
     const additionalUrlList = urlListToArray(this.formState.urlList);
     const maxUrls = this.localize.number(URL_LIST_MAX_URLS);
-
-    const linkToBrowserSettings = (label: string) =>
-      html`<button
-        type="button"
-        class="text-blue-600 hover:text-blue-500"
-        @click=${async () => {
-          this.updateProgressState({ activeTab: "browserSettings" });
-
-          await this.updateComplete;
-
-          void this.scrollToActivePanel();
-        }}
-      >
-        ${label}
-      </button>`;
-    const link_to_browser_profile = linkToBrowserSettings(
-      msg("Browser Profile"),
-    );
 
     return html`
       ${inputCol(html`
@@ -1499,26 +1458,17 @@ https://replayweb.page/docs`}
                 true,
               );
             }
+            const { primarySeedUrl } = this.formState;
             if (
-              this.formState.primarySeedUrl &&
-              this.formState.scopeType === ScopeType.Custom &&
-              !this.formState.customIncludeUrlList
+              primarySeedUrl &&
+              (this.formState.scopeType === NewWorkflowOnlyScopeType.Regex ||
+                this.formState.scopeType === ScopeType.Custom) &&
+              !this.formState.customIncludeList
             ) {
-              let prefixUrl = this.formState.primarySeedUrl;
-              try {
-                const startingUrl = new URL(this.formState.primarySeedUrl);
-                prefixUrl =
-                  startingUrl.origin +
-                  startingUrl.pathname.slice(
-                    0,
-                    startingUrl.pathname.lastIndexOf("/") + 1,
-                  );
-              } catch (e) {
-                // ignore
-              }
               this.updateFormState(
                 {
-                  customIncludeUrlList: prefixUrl,
+                  customIncludeList:
+                    this.customIncludeListFromSeed(primarySeedUrl),
                 },
                 true,
               );
@@ -1534,20 +1484,96 @@ https://replayweb.page/docs`}
         () => html`
           ${inputCol(html`
             <sl-textarea
-              name="customIncludeUrlList"
-              label=${msg("URL Prefixes in Scope")}
+              name="customIncludeList"
+              label=${msg("Page Prefix URLs")}
               rows="3"
               autocomplete="off"
               inputmode="url"
-              value=${this.formState.customIncludeUrlList}
-              placeholder=${`https://example.org
-https://example.net`}
+              value=${this.formState.customIncludeList}
+              placeholder=${`https://webrecoder.net/blog/2025-
+https://archiveweb.page/es/`}
               required
+              @keyup=${async (e: KeyboardEvent) => {
+                if (e.key === "Enter") {
+                  await (e.target as SlInput).updateComplete;
+                  this.doValidateUrlList(e);
+                }
+              }}
+              @sl-input=${(e: CustomEvent) => {
+                const inputEl = e.target as SlInput;
+                const value = inputEl.value;
+
+                if (value) {
+                  if (!this.stickyFooter) {
+                    const { isValid } = this.validateUrlList(inputEl.value);
+
+                    if (isValid) {
+                      this.animateStickyFooter();
+                    }
+                  }
+                } else {
+                  inputEl.helpText = msg("At least 1 URL is required.");
+                }
+              }}
+              @sl-change=${this.doValidateUrlList}
+              @sl-blur=${this.doValidateUrlList}
             ></sl-textarea>
           `)}
           ${this.renderHelpTextCol(
             msg(`Only crawl pages that begin with URLs listed here.`),
           )}
+        `,
+      )}
+      ${when(
+        this.formState.scopeType === NewWorkflowOnlyScopeType.Regex,
+        () => html`
+          ${inputCol(html`
+            <sl-textarea
+              class="part-[textarea]:font-mono"
+              name="customIncludeList"
+              label=${msg("Page Regex Patterns")}
+              rows="3"
+              autocomplete="off"
+              inputmode="url"
+              value=${this.formState.customIncludeList}
+              placeholder=${`/blog/.*browsertrix
+^https?://example`}
+              required
+              @keyup=${async (e: KeyboardEvent) => {
+                if (e.key === "Enter") {
+                  await (e.target as SlInput).updateComplete;
+                  this.doValidateRegexList(e);
+                }
+              }}
+              @sl-input=${(e: CustomEvent) => {
+                const inputEl = e.target as SlInput;
+                const value = inputEl.value;
+
+                if (value) {
+                  if (!this.stickyFooter) {
+                    const { isValid } = this.validateRegexList(inputEl.value);
+
+                    if (isValid) {
+                      this.animateStickyFooter();
+                    }
+                  }
+                } else {
+                  inputEl.helpText = msg(
+                    "At least 1 regex pattern is required.",
+                  );
+                }
+              }}
+              @sl-change=${this.doValidateRegexList}
+              @sl-blur=${this.doValidateRegexList}
+            ></sl-textarea>
+          `)}
+          ${this.renderHelpTextCol(html`
+            ${infoTextFor.customIncludeList}
+            ${this.renderUserGuideLink({
+              hash: "page-regex-patterns",
+              content: msg("More details"),
+            })}
+          `)}
         `,
       )}
       ${when(
@@ -1601,31 +1627,6 @@ https://example.net`}
         msg(
           `If checked, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if present.`,
         ),
-        false,
-      )}
-      ${inputCol(html`
-        <sl-checkbox
-          name="failOnContentCheck"
-          ?checked=${this.formState.failOnContentCheck &&
-          this.formState.browserProfile !== null}
-          ?disabled=${this.formState.browserProfile === null}
-        >
-          ${this.formState.browserProfile === null
-            ? html`<span slot="help-text">
-                ${msg(
-                  html`Select a ${link_to_browser_profile} to use this option.`,
-                )}
-              </span>`
-            : nothing}
-          ${msg("Fail crawl if not logged in")}
-        </sl-checkbox>
-      `)}
-      ${this.renderHelpTextCol(
-        html`${infoTextFor["failOnContentCheck"]}
-        ${this.renderUserGuideLink({
-          hash: "fail-crawl-if-not-logged-in",
-          content: msg("More details"),
-        })}.`,
         false,
       )}
       ${this.renderLinkSelectors()}
@@ -1689,6 +1690,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   };
 
+  private readonly doValidateRegexList = (e: Event) => {
+    const inputEl = e.target as SlInput;
+    if (!inputEl.value) return;
+    const { isValid, helpText } = this.validateRegexList(inputEl.value);
+    inputEl.helpText = helpText;
+    if (isValid) {
+      inputEl.setCustomValidity("");
+    } else {
+      inputEl.setCustomValidity(helpText);
+    }
+  };
+
   private renderLinkSelectors() {
     const selectors = this.formState.selectLinks;
     const isCustom = !isEqual(defaultFormState.selectLinks, selectors);
@@ -1706,7 +1719,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       <div class="col-span-5">
         <btrix-details ?open=${isCustom}>
           <span slot="title">
-            ${labelFor.selectLink}
+            ${labelFor.selectLinks}
             ${isCustom
               ? html`<btrix-badge>${selectors.length}</btrix-badge>`
               : ""}
@@ -1824,7 +1837,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
 
     return html`
-      ${this.renderSectionHeading(labelFor.behaviors)}
+      ${this.renderSectionHeading(sectionStrings.behaviors)}
       ${inputCol(
         html`<sl-checkbox
           name="autoscrollBehavior"
@@ -2052,6 +2065,28 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(infoTextFor["browserProfile"])}
+      ${when(
+        this.formState.browserProfile,
+        () => html`
+          ${inputCol(html`
+            <sl-checkbox
+              name="failOnContentCheck"
+              ?checked=${this.formState.failOnContentCheck &&
+              this.formState.browserProfile !== null}
+            >
+              ${msg("Fail crawl if not logged in")}
+            </sl-checkbox>
+          `)}
+          ${this.renderHelpTextCol(
+            html`${infoTextFor["failOnContentCheck"]}
+            ${this.renderUserGuideLink({
+              hash: "fail-crawl-if-not-logged-in",
+              content: msg("More details"),
+            })}.`,
+            false,
+          )}
+        `,
+      )}
       ${proxies?.servers.length
         ? [
             inputCol(html`
@@ -2371,13 +2406,175 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   };
 
+  private renderDeduplication() {
+    const link_to_collections_settings = html`<button
+      type="button"
+      class="text-blue-600 hover:text-blue-500"
+      @click=${async () => {
+        this.updateProgressState({ activeTab: "collections" });
+        await this.updateComplete;
+        void this.scrollToActivePanel();
+      }}
+    >
+      ${msg("Auto-Add to Collections")}
+    </button>`;
+
+    return html` ${inputCol(html`
+      <sl-radio-group
+        label=${labelFor.dedupeType}
+        name="dedupeType"
+        value=${this.formState.dedupeType}
+        @sl-change=${(e: Event) => {
+          const dedupeType = (e.target as SlRadio)
+            .value as FormState["dedupeType"];
+
+          const formState: Partial<FormState> = {
+            dedupeType,
+            dedupeCollection: null,
+          };
+
+          if (
+            dedupeType === DedupeType.None &&
+            isExistingCollection(this.formState.dedupeCollection) &&
+            this.formState.dedupeCollection.id
+          ) {
+            formState.autoAddCollections = without(
+              [this.formState.dedupeCollection.id],
+              this.formState.autoAddCollections,
+            );
+          }
+
+          this.updateFormState(formState, true);
+        }}
+      >
+        <sl-radio value=${DedupeType.None}>
+          ${dedupeTypeLabelFor[DedupeType.None]}
+        </sl-radio>
+        <sl-radio value=${DedupeType.Collection}>
+          ${dedupeTypeLabelFor[DedupeType.Collection]}
+        </sl-radio>
+
+        ${when(
+          this.formState.dedupeType === DedupeType.None &&
+            this.initialWorkflow?.dedupeCollId,
+          () => html`
+            <div slot="help-text" class="mt-2">
+              <sl-icon
+                class="mr-0.5 align-[-.175em]"
+                name="exclamation-triangle"
+              ></sl-icon>
+
+              ${msg(
+                "Disabling deduplication will also disable auto-adding to the collection.",
+              )}
+              <br />
+              ${msg(
+                html`To continue to auto-add to the collection without
+                deduplication enabled, update the
+                ${link_to_collections_settings} setting.`,
+              )}
+            </div>
+          `,
+        )}
+      </sl-radio-group>
+    `)}
+    ${this.renderHelpTextCol(infoTextFor.dedupeType)}
+    ${when(
+      this.formState.dedupeType === DedupeType.Collection,
+      this.renderDedupeCollection,
+    )}`;
+  }
+
+  private readonly renderDedupeCollection = () => {
+    return html`
+      ${this.renderSectionHeading(msg("Collection to Use"))}
+      ${inputCol(html`
+        <btrix-select-dedupe-collection
+          dedupeId=${ifDefined(
+            isExistingCollection(this.formState.dedupeCollection)
+              ? this.formState.dedupeCollection.id
+              : undefined,
+          )}
+          required
+          @btrix-change=${(e: SelectDedupeCollectionChangeEvent) => {
+            const { value } = e.detail;
+
+            if (value) {
+              if ("id" in value) {
+                this.updateFormState(
+                  {
+                    dedupeCollection: { id: value.id },
+                    autoAddCollections: union(
+                      this.formState.autoAddCollections,
+                      [value.id],
+                    ),
+                  },
+                  true,
+                );
+              } else if ("name" in value) {
+                this.updateFormState(
+                  {
+                    dedupeCollection: { name: value.name },
+                  },
+                  true,
+                );
+              }
+            } else {
+              if (
+                isExistingCollection(this.formState.dedupeCollection) &&
+                this.formState.dedupeCollection.id
+              ) {
+                this.updateFormState(
+                  {
+                    dedupeCollection: null,
+                    autoAddCollections: without(
+                      [this.formState.dedupeCollection.id],
+                      this.formState.autoAddCollections,
+                    ),
+                  },
+                  true,
+                );
+              } else {
+                this.updateFormState({
+                  dedupeCollection: null,
+                });
+              }
+            }
+          }}
+        ></btrix-select-dedupe-collection>
+      `)}
+      ${this.renderHelpTextCol(infoTextFor.dedupeCollection)}
+    `;
+  };
+
   private renderCollections() {
+    const dedupeId =
+      isExistingCollection(this.formState.dedupeCollection) &&
+      this.formState.dedupeCollection.id;
+    const newDedupeCollectionName =
+      isNewCollection(this.formState.dedupeCollection) &&
+      this.formState.dedupeCollection.name;
+    const showDedupeWarning =
+      this.formState.dedupeType === DedupeType.Collection &&
+      (dedupeId
+        ? !isEqual(
+            this.initialWorkflow?.autoAddCollections.filter(
+              (id) => id !== dedupeId,
+            ),
+            this.formState.autoAddCollections.filter((id) => id !== dedupeId),
+          )
+        : newDedupeCollectionName &&
+          !isEqual(
+            this.initialWorkflow?.autoAddCollections,
+            this.formState.autoAddCollections,
+          ));
+
     return html`
       ${inputCol(html`
         <btrix-collections-add
           .label=${msg("Auto-Add to Collection")}
-          .initialCollections=${this.formState.autoAddCollections}
-          .configId=${this.configId}
+          .collectionIds=${this.formState.autoAddCollections}
+          .dedupeId=${dedupeId || undefined}
           @collections-change=${(e: CollectionsChangeEvent) =>
             this.updateFormState(
               {
@@ -2385,14 +2582,37 @@ https://archiveweb.page/images/${"logo.svg"}`}
               },
               true,
             )}
-        ></btrix-collections-add>
+        >
+          ${when(
+            showDedupeWarning,
+            () => html`
+              <btrix-alert class="mt-2" variant="warning">
+                ${msg(
+                  "Adding deduplicated crawls to a collection other than the deduplication source may result in incomplete replay of the non-deduplicated collection.",
+                )}
+              </btrix-alert>
+            `,
+          )}
+        </btrix-collections-add>
         ${when(
-          !this.formState.autoAddCollections.length,
-          () => html`
-            <div class="mt-2 rounded-lg border p-3 text-neutral-500">
-              <p class="text-center">${msg("No collections selected.")}</p>
-            </div>
+          newDedupeCollectionName,
+          (name) => html`
+            <ul class="mt-2 rounded border">
+              <btrix-linked-collections-list-item
+                .item=${{ id: "", name }}
+                dedupeSource
+              ></btrix-linked-collections-list-item>
+            </ul>
           `,
+          () =>
+            when(
+              !this.formState.autoAddCollections.length,
+              () => html`
+                <div class="mt-2 rounded-lg border p-3 text-neutral-500">
+                  <p class="text-center">${msg("No collections selected.")}</p>
+                </div>
+              `,
+            ),
         )}
       `)}
       ${this.renderHelpTextCol(
@@ -2470,18 +2690,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(msg(`Provide details about this Workflow.`))}
       ${inputCol(html`
-        <btrix-tag-input
-          .initialTags=${this.formState.tags}
-          .tagOptions=${this.tagOptions}
-          @tag-input=${this.onTagInput}
-          @tags-change=${(e: TagsChangeEvent) =>
+        <btrix-item-tags-input
+          .tags=${this.formState.tags}
+          @btrix-tags-change=${(e: BtrixTagsChangeEvent) => {
             this.updateFormState(
               {
-                tags: e.detail.tags,
+                tags: e.detail.value,
               },
               true,
-            )}
-        ></btrix-tag-input>
+            );
+          }}
+        ></btrix-item-tags-input>
       `)}
       ${this.renderHelpTextCol(
         msg(`Create or assign this crawl (and its outputs) to one or more tags
@@ -2525,11 +2744,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
     >`;
   }
 
-  private readonly formSections: {
+  private readonly FormSections: {
     name: StepName;
     desc: string;
     render: () => TemplateResult<1>;
     required?: boolean;
+    hidden?: boolean;
+    beta?: boolean;
   }[] = [
     {
       name: "scope",
@@ -2558,6 +2779,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
       render: this.renderJobScheduling,
     },
     {
+      name: "deduplication",
+      desc: msg("Prevent duplicate content from being crawled and stored."),
+      render: this.renderDeduplication,
+      hidden: this.featureFlags.excludes("dedupeEnabled"),
+      beta: true,
+    },
+    {
       name: "collections",
       desc: msg("Add crawls from this workflow to one or more collections."),
       render: this.renderCollections,
@@ -2567,7 +2795,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       desc: msg("Describe and tag this workflow and its crawls."),
       render: this.renderJobMetadata,
     },
-  ];
+  ] as const;
+
+  private get formSections() {
+    return this.FormSections.filter(({ hidden }) => !hidden);
+  }
 
   private readonly onInputMinMax = async (e: CustomEvent) => {
     const inputEl = e.target as SlInput;
@@ -2613,6 +2845,40 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }
     }
 
+    if (
+      value === ScopeType.Custom ||
+      value === NewWorkflowOnlyScopeType.Regex
+    ) {
+      if (prevScopeType === NewWorkflowOnlyScopeType.Regex) {
+        // Convert to valid URL
+        formState.customIncludeList = urlListToArray(
+          this.formState.customIncludeList,
+        )
+          .map((regex) => {
+            const url = unescapeCustomPrefix(regex);
+            try {
+              new URL(url);
+              return url;
+            } catch {
+              return;
+            }
+          })
+          .filter((v) => v)
+          .join("\n");
+      } else if (prevScopeType === ScopeType.Custom) {
+        // Convert to regex
+        formState.customIncludeList = urlListToArray(
+          this.formState.customIncludeList,
+        )
+          .map((url) => `^${regexEscape(url)}`)
+          .join("\n");
+      } else {
+        formState.customIncludeList = this.customIncludeListFromSeed(
+          formState.primarySeedUrl || this.formState.primarySeedUrl,
+        );
+      }
+    }
+
     if (!this.configId) {
       // Remember scope type for new workflows
       this.updatingScopeType = true;
@@ -2622,6 +2888,25 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
 
     this.updateFormState(formState);
+  }
+
+  private customIncludeListFromSeed(primarySeedUrl: string) {
+    let prefixUrl = primarySeedUrl;
+    try {
+      const startingUrl = new URL(prefixUrl);
+      prefixUrl =
+        startingUrl.origin +
+        startingUrl.pathname.slice(
+          0,
+          startingUrl.pathname.lastIndexOf("/") + 1,
+        );
+    } catch (e) {
+      // ignore
+    }
+
+    return this.formState.scopeType === NewWorkflowOnlyScopeType.Regex
+      ? `^${regexEscape(prefixUrl)}`
+      : prefixUrl;
   }
 
   // Store the panel to focus or scroll to temporarily
@@ -3025,6 +3310,25 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     this.isSubmitting = true;
 
+    // Create new collection if needed
+    if (
+      this.formState.dedupeType === DedupeType.Collection &&
+      isNewCollection(this.formState.dedupeCollection) &&
+      this.formState.dedupeCollection.name
+    ) {
+      const { id } = await this.createCollection({
+        name: this.formState.dedupeCollection.name,
+      });
+
+      this.updateFormState(
+        {
+          dedupeCollection: { id },
+          autoAddCollections: union(this.formState.autoAddCollections, [id]),
+        },
+        true,
+      );
+    }
+
     const uploadParams: Parameters<WorkflowEditor["parseConfig"]>[0] = {};
 
     // Upload seed file first if it exists, since ID will be used to
@@ -3257,25 +3561,27 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return { isValid, helpText };
   }
 
-  private readonly onTagInput = (e: TagInputEvent) => {
-    const { value } = e.detail;
-    if (!value) return;
-    this.tagOptions = this.fuse.search(value).map(({ item }) => item);
-  };
+  private validateRegexList(value: string): {
+    isValid: boolean;
+    helpText: string;
+  } {
+    const regexList = urlListToArray(value);
+    let isValid = true;
+    let helpText = `${this.localize.number(regexList.length)} ${msg("entered")}`;
+    const invalidRegex = regexList.find((str) => {
+      try {
+        new RegExp(str);
+      } catch {
+        return true;
+      }
+    });
 
-  private async fetchTags() {
-    this.tagOptions = [];
-    try {
-      const { tags } = await this.api.fetch<TagCounts>(
-        `/orgs/${this.orgId}/crawlconfigs/tagCounts`,
-      );
-
-      // Update search/filter collection
-      this.fuse.setCollection(tags);
-    } catch (e) {
-      // Fail silently, since users can still enter tags
-      console.debug(e);
+    if (invalidRegex) {
+      isValid = false;
+      helpText = `${msg("Please remove or fix the following invalid regex:")} ${invalidRegex}`;
     }
+
+    return { isValid, helpText };
   }
 
   private parseConfig(uploadParams?: {
@@ -3298,6 +3604,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       maxCrawlSize: this.formState.maxCrawlSizeGB * BYTES_PER_GB,
       tags: this.formState.tags,
       autoAddCollections: this.formState.autoAddCollections,
+      dedupeCollId:
+        (isExistingCollection(this.formState.dedupeCollection) &&
+          this.formState.dedupeCollection.id) ||
+        "",
       config: {
         ...(isPageScopeType(this.formState.scopeType)
           ? this.parseUrlListConfig(uploadParams)
@@ -3392,8 +3702,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
     | "useRobots"
   > {
     const primarySeedUrl = this.formState.primarySeedUrl;
-    const includeUrlList = this.formState.customIncludeUrlList
-      ? urlListToArray(this.formState.customIncludeUrlList)
+    const includeUrlList = this.formState.customIncludeList
+      ? urlListToArray(this.formState.customIncludeList)
       : [];
     const additionalSeedUrlList = this.formState.urlList
       ? urlListToArray(this.formState.urlList).map((seedUrl) => {
@@ -3401,13 +3711,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
           return newSeed;
         })
       : [];
+    const scopeType = apiScopeType(this.formState.scopeType)
+      ? this.formState.scopeType
+      : ScopeType.Custom;
     const primarySeed: Seed = {
       url: primarySeedUrl,
-      scopeType: this.formState.scopeType as ScopeType,
+      scopeType,
       include:
-        this.formState.scopeType === ScopeType.Custom
-          ? [...includeUrlList.map((url) => "^" + regexEscape(url))]
-          : [],
+        this.formState.scopeType === NewWorkflowOnlyScopeType.Regex
+          ? includeUrlList
+          : this.formState.scopeType === ScopeType.Custom
+            ? includeUrlList.map((url) => "^" + regexEscape(url))
+            : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
 
@@ -3417,7 +3732,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     const config = {
       seeds: [primarySeed, ...additionalSeedUrlList],
-      scopeType: this.formState.scopeType as ScopeType,
+      scopeType,
       useSitemap: this.formState.useSitemap,
       failOnFailedSeed: false,
       failOnContentCheck: this.formState.failOnContentCheck,
@@ -3492,5 +3807,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
     );
 
     return data;
+  }
+
+  private async createCollection(
+    params: { name: string },
+    signal?: AbortSignal,
+  ) {
+    return this.api.fetch<{ added: boolean; id: string; name: string }>(
+      `/orgs/${this.orgId}/collections`,
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+        signal,
+      },
+    );
   }
 }

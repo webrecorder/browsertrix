@@ -268,7 +268,9 @@ export class Dashboard extends BtrixElement {
                     url: "/browser-profiles",
                   },
                 })}
-                ${metrics.storageUsedSeedFiles || metrics.storageUsedThumbnails
+                ${metrics.storageUsedSeedFiles ||
+                metrics.storageUsedThumbnails ||
+                metrics.storageUsedDedupeIndexes
                   ? this.renderMiscStorage(metrics)
                   : nothing}
 
@@ -538,7 +540,7 @@ export class Dashboard extends BtrixElement {
           ${msg("Miscellaneous")}
           <btrix-popover
             content=${msg(
-              "Total size of all supplementary files in use by your organization, such as workflow URL list files and custom collection thumbnails.",
+              "Total size of all supplementary files in use by your organization, such as workflow URL list files, custom collection thumbnails, and deduplication indexes.",
             )}
           >
             <sl-icon
@@ -549,7 +551,9 @@ export class Dashboard extends BtrixElement {
         </dt>
         <dd class="font-monostyle text-xs text-neutral-500">
           ${this.localize.bytes(
-            metrics.storageUsedSeedFiles + metrics.storageUsedThumbnails,
+            metrics.storageUsedSeedFiles +
+              metrics.storageUsedThumbnails +
+              metrics.storageUsedDedupeIndexes,
           )}
         </dd>
       </div>
@@ -557,7 +561,7 @@ export class Dashboard extends BtrixElement {
   }
 
   private renderNoPublicCollections() {
-    if (!this.org || !this.metrics) return;
+    if (!this.org || !this.metrics || !this.appState.isCrawler) return;
 
     let button: TemplateResult;
 

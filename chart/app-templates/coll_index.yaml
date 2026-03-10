@@ -1,0 +1,16 @@
+apiVersion: btrix.cloud/v1
+kind: CollIndex
+metadata:
+  name: collindex-{{ id }}
+  labels:
+    role: "collindex"
+    oid: {{ oid }}
+    coll: {{ id }}
+
+spec:
+  selector:
+    matchLabels:
+      coll: "{{ id }}"
+
+  id: "{{ id }}"
+  oid: "{{ oid }}"

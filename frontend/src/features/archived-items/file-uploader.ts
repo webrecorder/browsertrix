@@ -1,7 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import type { SlButton } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import Fuse from "fuse.js";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, queryAsync, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -11,12 +10,8 @@ import queryString from "query-string";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { FileRemoveEvent } from "@/components/ui/file-list";
 import type { BtrixFileChangeEvent } from "@/components/ui/file-list/events";
-import type { TagCount, TagCounts } from "@/components/ui/tag-filter/types";
-import type {
-  TagInputEvent,
-  Tags,
-  TagsChangeEvent,
-} from "@/components/ui/tag-input";
+import type { Tags } from "@/components/ui/tag-input";
+import type { BtrixTagsChangeEvent } from "@/features/archived-items/item-tags-input";
 import { type CollectionsChangeEvent } from "@/features/collections/collections-add";
 import { APIError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
@@ -71,9 +66,6 @@ export class FileUploader extends BtrixElement {
   private collectionIds: string[] = [];
 
   @state()
-  private tagOptions: TagCount[] = [];
-
-  @state()
   private tagsToSave: Tags = [];
 
   @state()
@@ -85,13 +77,6 @@ export class FileUploader extends BtrixElement {
   @queryAsync("#fileUploadForm")
   private readonly form!: Promise<HTMLFormElement>;
 
-  // For fuzzy search:
-  private readonly fuse = new Fuse<TagCount>([], {
-    keys: ["tag"],
-    shouldSort: false,
-    threshold: 0.2, // stricter; default is 0.6
-  });
-
   private readonly validateDescriptionMax = maxLengthValidator(500);
 
   // Use to cancel requests
@@ -99,8 +84,6 @@ export class FileUploader extends BtrixElement {
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (changedProperties.has("open") && this.open) {
-      void this.fetchTags();
-
       if (changedProperties.get("open") === undefined) {
         this.isDialogVisible = true;
       }
@@ -229,15 +212,14 @@ export class FileUploader extends BtrixElement {
         help-text=${helpText}
         @sl-input=${validate}
       ></sl-textarea>
-      <btrix-tag-input
-        .tagOptions=${this.tagOptions}
-        @tag-input=${this.onTagInput}
-        @tags-change=${(e: TagsChangeEvent) =>
-          (this.tagsToSave = e.detail.tags)}
-      ></btrix-tag-input>
+      <btrix-item-tags-input
+        @btrix-tags-change=${(e: BtrixTagsChangeEvent) => {
+          this.tagsToSave = e.detail.value;
+        }}
+      ></btrix-item-tags-input>
       <div class="mt-4">
         <btrix-collections-add
-          .initialCollections=${this.collectionIds}
+          .collectionIds=${this.collectionIds}
           label=${msg("Add to Collection")}
           @collections-change=${(e: CollectionsChangeEvent) =>
             (this.collectionIds = e.detail.collections)}
@@ -352,26 +334,6 @@ export class FileUploader extends BtrixElement {
     this.dispatchEvent(
       new CustomEvent("request-close") as FileUploaderRequestCloseEvent,
     );
-  }
-
-  private readonly onTagInput = (e: TagInputEvent) => {
-    const { value } = e.detail;
-    if (!value) return;
-    this.tagOptions = this.fuse.search(value).map(({ item }) => item);
-  };
-
-  private async fetchTags() {
-    try {
-      const { tags } = await this.api.fetch<TagCounts>(
-        `/orgs/${this.orgId}/crawlconfigs/tagCounts`,
-      );
-
-      // Update search/filter collection
-      this.fuse.setCollection(tags);
-    } catch (e) {
-      // Fail silently, since users can still enter tags
-      console.debug(e);
-    }
   }
 
   private async onSubmit(e: SubmitEvent) {

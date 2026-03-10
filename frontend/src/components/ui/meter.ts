@@ -319,7 +319,7 @@ export class Meter extends TailwindElement {
           </div>
           ${this.max
             ? html`<div class="label max">
-                <span class="maxText withSeparator">
+                <span class="maxText">
                   <slot name="maxLabel"></slot>
                 </span>
               </div>`

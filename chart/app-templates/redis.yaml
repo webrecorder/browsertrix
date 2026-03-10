@@ -9,7 +9,7 @@ metadata:
   name: {{ name }}
   namespace: {{ namespace }}
   labels:
-    crawl: {{ id }}
+    {{ obj_type }}: {{ id }}
     role: redis
 
 spec:
@@ -36,7 +36,7 @@ metadata:
   name: {{ name }}
   namespace: {{ namespace }}
   labels:
-    crawl: {{ id }}
+    {{ obj_type }}: {{ id }}
     role: redis
 
 spec:
@@ -48,14 +48,17 @@ spec:
     runAsGroup: 999
     fsGroup: 999
 
-  terminationGracePeriodSeconds: 10
+  terminationGracePeriodSeconds: 300
+  restartPolicy: {{ "OnFailure" if save_dump else "Always" }}
+
+  {% if priorityClassName %}
+  priorityClassName: {{ priorityClassName }}
+  {% endif %}
+
   volumes:
     - name: shared-redis-conf
       configMap:
         name: shared-redis-conf
-        items:
-          - key: redis.conf
-            path: redis.conf
 
     - name: redis-data
       {% if not no_pvc %}
@@ -83,7 +86,7 @@ spec:
             topologyKey: "failure-domain.beta.kubernetes.io/zone"
             labelSelector:
               matchLabels:
-                crawl: {{ id }}
+                {{ obj_type }}: {{ id }}
 
   tolerations:
     - key: nodeType
@@ -104,7 +107,12 @@ spec:
       image: {{ redis_image }}
       imagePullPolicy: {{ redis_image_pull_policy }}
 
-      args: ["/redis-conf/redis.conf", "--appendonly", "yes"]
+      {% if use_kvrocks %}
+      args: ["-c", "/redis-conf/kvrocks.conf", "--dir", "/data"]
+      {% else %}
+      args: ["/redis-conf/redis.conf", "--appendonly", "{{ 'no' if load_dump else 'yes' }}"]
+      {% endif %}
+
       volumeMounts:
         - name: redis-data
           mountPath: /data
@@ -137,5 +145,159 @@ spec:
             - bash
             - -c
             - "res=$(redis-cli ping); [[ $res = 'PONG' ]]"
+
+{% if save_dump %}
+    - name: save
+      image: rclone/rclone:latest
+      command: ["sh", "-c"]
+      args:
+        - |
+          # exit on SIGUSR2
+          trap 'echo "SIGUSR2, aborting save" && exit 0' SIGUSR2
+
+          # wait for SIGUSR1
+          trap ':' SIGUSR1
+
+          echo "Waiting for signal (SIGUSR1) when pod is done..."
+
+          sleep 1000000 &
+          sleep_pid=$!
+
+          wait $sleep_pid
+
+          # ignore any future signals
+          trap "" SIGUSR1
+
+          set -e
+
+        {% if use_kvrocks %}
+          if [ ! -d /data/{{ local_file_src }} ]; then
+            echo "directory /data/{{ local_file_src }} doesn't exist, erroring"
+            exit 1
+          fi
+
+          cd /data/{{ local_file_src }}
+
+          set -o pipefail
+
+          until tar cvfz - . | tee >(sha256sum > /tmp/hash.txt) | tee >(wc -c > /tmp/size.txt) | rclone --config '' rcat remote:{{ remote_file_path }}.tmp --s3-chunk-size 64M --s3-upload-concurrency 4; do
+            echo "retrying upload..."
+            sleep 1;
+          done
+
+          # move to final location after upload, just in case
+          rclone moveto --config '' remote:{{ remote_file_path }}.tmp remote:{{ remote_file_path }}
+
+        {% else %}
+          if [ ! -f /data/{{ local_file_src }} ]; then
+            echo "/data/{{ local_file_src }} doesn't exist!"
+            exit 1
+          fi
+
+          until rclone -vv copyto --checksum /data/{{ local_file_src }} remote:{{ remote_file_path }} --s3-chunk-size 64M --s3-upload-concurrency 4; do
+            echo "retrying upload..."
+            sleep 1;
+          done
+
+        {% endif %}
+
+          size=$(cat /tmp/size.txt)
+          hash=$(awk '{ print $1 }' /tmp/hash.txt)
+
+          echo ""
+          echo "STATS: (size,hash): $size,$hash"
+
+      volumeMounts: &rclone_volumes
+        - name: redis-data
+          mountPath: /data
+
+      env: &rclone_env
+      - name: RCLONE_CONFIG_REMOTE_TYPE
+        value: "s3"
+
+      - name: RCLONE_CONFIG_REMOTE_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_ACCESS_KEY
+
+      - name: RCLONE_CONFIG_REMOTE_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_SECRET_KEY
+
+      - name: RCLONE_CONFIG_REMOTE_REGION
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_REGION
+
+      - name: RCLONE_CONFIG_REMOTE_PROVIDER
+        valueFrom:
+          secretKeyRef:
+            name: "{{ storage_secret_name }}"
+            key: STORE_S3_PROVIDER
+
+      - name: RCLONE_CONFIG_REMOTE_ENDPOINT
+        value: "{{ storage_endpoint }}"
+
+      resources: &rclone_resources
+        limits:
+          memory: "2000Mi"
+
+        requests:
+          memory: "300Mi"
+          cpu: "50m"
+
+{% if load_dump %}
+  initContainers:
+    - name: load
+      image: rclone/rclone:latest
+
+      command: ["sh", "-c"]
+      args:
+        - |
+          set -e
+
+          # if remote file doesn't exist, just return success (nothing to load)
+          if ! rclone lsf remote:{{ remote_file_path }} > /dev/null 2>&1; then
+            echo "Remote {{ remote_file_path }} does not exist, nothing to load, done"
+            exit 0
+          fi
+
+        {% if use_kvrocks %}
+          # only run if target dir doesn't exist yet
+          if [ ! -d "/data/{{ local_file_dest }}" ]; then
+
+            # remove existing + create new empty tmp dir
+            rm -rf /data/{{ local_file_dest }}.tmp
+            mkdir -p /data/{{ local_file_dest }}.tmp
+
+            cd /data/{{ local_file_dest }}.tmp
+
+            echo "Downloading from {{ remote_file_path }}"
+
+            set -o pipefail
+
+            rclone --config "" cat remote:{{ remote_file_path }} | tar xzf -
+
+            # move to final dest only if tar extract succeeds
+            mv /data/{{ local_file_dest }}.tmp /data/{{ local_file_dest }}
+
+            echo "Downloaded to /data/{{ local_file_dest }} successfully!"
+          else
+            echo "/data/{{ local_file_dest }} already present (likely pod restarted), not overwriting"
+          fi
+
+        {% else %}
+          rclone --config "" copyto remote:{{ remote_file_path }} /data/{{ local_file_dest }}
+
+        {% endif %}
+      volumeMounts: *rclone_volumes
+      env: *rclone_env
+      resources: *rclone_resources
+{% endif %}
+{% endif %}
 
 {% endif %}

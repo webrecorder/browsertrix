@@ -153,4 +153,5 @@ export default {
   enablePublicProfile: false,
   publicDescription: "This is an example org.",
   publicUrl: "https://example.com",
+  featureFlags: {},
 };

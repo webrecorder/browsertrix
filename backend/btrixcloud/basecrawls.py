@@ -170,6 +170,7 @@ class BaseCrawlOps:
         skip_resources=False,
         headers: Optional[dict] = None,
         cid: Optional[UUID] = None,
+        with_dependencies: bool = False,
     ) -> CrawlOutWithResources:
         """Get crawl data for api output"""
         res = await self.get_crawl_raw(crawlid, org, type_)
@@ -208,27 +209,61 @@ class BaseCrawlOps:
 
         crawl = CrawlOutWithResources.from_dict(res)
 
+        if not org:
+            org = await self.orgs.get_org_by_id(crawl.oid)
+
         if not skip_resources:
             crawl = await self._resolve_crawl_refs(crawl, org, files)
             if crawl.config and crawl.config.seeds:
                 crawl.config.seeds = None
 
-        if not org:
-            org = await self.orgs.get_org_by_id(crawl.oid)
+            # add dependencies
+            if crawl.requiresCrawls and with_dependencies:
+                match = {"_id": {"$in": crawl.requiresCrawls}}
+                resources, _ = await self.get_presigned_files(match, org)
+
+                crawl.fileSizeWithDeps = crawl.fileSize
+
+                for resource in resources:
+                    resource.fromDependency = True
+                    crawl.fileSizeWithDeps += resource.size
+
+                if not crawl.resources:
+                    crawl.resources = resources
+                else:
+                    crawl.resources.extend(resources)
+
+                crawl.missingRequiresCrawls = await self.find_missing_crawls(
+                    crawl.requiresCrawls, org.id
+                )
 
         crawl.storageQuotaReached = self.orgs.storage_quota_reached(org)
         crawl.execMinutesQuotaReached = self.orgs.exec_mins_quota_reached(org)
 
         return crawl
 
-    async def get_internal_crawl_out(self, crawl_id):
+    async def get_internal_crawl_out(
+        self, crawl_id: str, with_dependencies: bool = False
+    ):
         """add internal prefix for relative paths"""
-        crawl_out = await self.get_crawl_out(crawl_id)
+        crawl_out = await self.get_crawl_out(
+            crawl_id, with_dependencies=with_dependencies
+        )
         resources = crawl_out.resources or []
         for file_ in resources:
             file_.path = self.storage_ops.resolve_internal_access_path(file_.path)
 
         return crawl_out
+
+    async def find_missing_crawls(self, crawl_ids: list[str], oid: UUID) -> list[str]:
+        """returns a list of crawl ids that are no longer in the db from a given list"""
+        cursor = self.crawls.find(
+            {"_id": {"$in": crawl_ids}, "oid": oid}, projection=["_id"]
+        )
+        found_crawls = await cursor.to_list(len(crawl_ids))
+        existing = {found["_id"] for found in found_crawls}
+        missing = [crawl_id for crawl_id in crawl_ids if crawl_id not in existing]
+        return missing
 
     async def _update_crawl_collections(
         self, crawl_id: str, org: Organization, collection_ids: List[UUID]
@@ -709,6 +744,12 @@ class BaseCrawlOps:
         tags: list[str] | None = None,
         tag_match: ListFilterType | None = None,
         collection_id: Optional[UUID] = None,
+        dedupe_coll_id: Optional[UUID] = None,
+        requires_crawls: list[str] | None = None,
+        required_by_crawls: list[str] | None = None,
+        has_requires_crawls: Optional[bool] = None,
+        has_required_by_crawls: Optional[bool] = None,
+        crawl_ids: Optional[List[str]] = None,
         states: Optional[List[str]] = None,
         first_seed: Optional[str] = None,
         type_: Optional[TYPE_CRAWL_TYPES] = None,
@@ -747,6 +788,9 @@ class BaseCrawlOps:
         if cid:
             query["cid"] = cid
 
+        if crawl_ids:
+            query["_id"] = {"$in": crawl_ids}
+
         if tags:
             query_type = "$all" if tag_match == ListFilterType.AND else "$in"
             query["tags"] = {query_type: tags}
@@ -756,6 +800,20 @@ class BaseCrawlOps:
                 "$gte": review_status_range[0],
                 "$lte": review_status_range[1],
             }
+
+        if requires_crawls:
+            query["requiresCrawls"] = {"$in": requires_crawls}
+        elif has_requires_crawls:
+            query["requiresCrawls"] = {"$nin": [None, []]}
+        elif has_requires_crawls is False:
+            query["requiresCrawls"] = {"$in": [None, []]}
+
+        if required_by_crawls:
+            query["requiredByCrawls"] = {"$in": required_by_crawls}
+        elif has_required_by_crawls:
+            query["requiredByCrawls"] = {"$nin": [None, []]}
+        elif has_required_by_crawls is False:
+            query["requiredByCrawls"] = {"$in": [None, []]}
 
         aggregate = [
             {"$match": query},
@@ -831,6 +889,9 @@ class BaseCrawlOps:
 
         if description:
             aggregate.extend([{"$match": {"description": description}}])
+
+        if dedupe_coll_id:
+            aggregate.extend([{"$match": {"dedupeCollId": dedupe_coll_id}}])
 
         if collection_id:
             aggregate.extend([{"$match": {"collectionIds": {"$in": [collection_id]}}}])
@@ -952,13 +1013,20 @@ class BaseCrawlOps:
         return {"deleted": True, "storageQuotaReached": quota_reached}
 
     async def get_all_crawl_search_values(
-        self, org: Organization, type_: Optional[TYPE_CRAWL_TYPES] = None
+        self,
+        org: Organization,
+        type_: Optional[TYPE_CRAWL_TYPES] = None,
+        collection_id: Optional[UUID] = None,
     ):
         """List unique names, first seeds, and descriptions from all captures in org"""
         match_query: dict[str, object] = {"oid": org.id}
         if type_:
             match_query["type"] = type_
 
+        if collection_id:
+            match_query["collectionIds"] = {"$in": [collection_id]}
+
+        ids = await self.crawls.distinct("_id", match_query)
         names = await self.crawls.distinct("name", match_query)
         descriptions = await self.crawls.distinct("description", match_query)
         cids = (
@@ -984,13 +1052,18 @@ class BaseCrawlOps:
                 pass
 
         return {
+            "ids": ids,
             "names": names,
             "descriptions": descriptions,
             "firstSeeds": list(first_seeds),
         }
 
     async def download_crawl_as_single_wacz(
-        self, crawl_id: str, org: Organization, prefer_single_wacz: bool = False
+        self,
+        crawl_id: str,
+        org: Organization,
+        prefer_single_wacz: bool = False,
+        with_dependencies: bool = False,
     ):
         """Download archived item as a single WACZ file
 
@@ -998,7 +1071,9 @@ class BaseCrawlOps:
         If prefer_single_wacz is true and archived item has only one WACZ,
         returns that instead
         """
-        crawl = await self.get_crawl_out(crawl_id, org)
+        crawl = await self.get_crawl_out(
+            crawl_id, org, with_dependencies=with_dependencies
+        )
 
         if not crawl.resources:
             raise HTTPException(status_code=400, detail="no_crawl_resources")
@@ -1014,7 +1089,11 @@ class BaseCrawlOps:
             metadata, crawl.resources, prefer_single_wacz=prefer_single_wacz
         )
 
-        filename = f"{crawl_id}.wacz"
+        filename = (
+            f"{crawl_id}.wacz"
+            if not with_dependencies
+            else f"{crawl_id}-with-deps.wacz"
+        )
         if len(crawl.resources) == 1 and prefer_single_wacz:
             filename = crawl.resources[0].name
 
@@ -1125,6 +1204,12 @@ def init_base_crawls_api(app, user_dep, *args):
             ),
         ] = ListFilterType.AND,
         collectionId: Optional[UUID] = None,
+        dedupeCollId: Optional[UUID] = None,
+        requiresCrawls: Annotated[list[str] | None, Query()] = None,
+        requiredByCrawls: Annotated[list[str] | None, Query()] = None,
+        hasRequiresCrawls: Optional[bool] = None,
+        hasRequiredByCrawls: Optional[bool] = None,
+        ids: Annotated[list[str] | None, Query()] = None,
         crawlType: Optional[TYPE_CRAWL_TYPES] = None,
         cid: Optional[UUID] = None,
         reviewStatus: Annotated[list[int] | None, Query()] = None,
@@ -1165,6 +1250,12 @@ def init_base_crawls_api(app, user_dep, *args):
             tags=tags,
             tag_match=tag_match,
             collection_id=collectionId,
+            dedupe_coll_id=dedupeCollId,
+            requires_crawls=requiresCrawls,
+            required_by_crawls=requiredByCrawls,
+            has_requires_crawls=hasRequiresCrawls,
+            has_required_by_crawls=hasRequiredByCrawls,
+            crawl_ids=ids,
             states=states,
             first_seed=firstSeed,
             type_=crawlType,
@@ -1185,8 +1276,11 @@ def init_base_crawls_api(app, user_dep, *args):
     async def get_all_crawls_search_values(
         org: Organization = Depends(org_viewer_dep),
         crawlType: Optional[TYPE_CRAWL_TYPES] = None,
+        collectionId: Optional[UUID] = None,
     ):
-        return await ops.get_all_crawl_search_values(org, type_=crawlType)
+        return await ops.get_all_crawl_search_values(
+            org, type_=crawlType, collection_id=collectionId
+        )
 
     @app.get(
         "/orgs/{oid}/all-crawls/tagCounts",
@@ -1209,9 +1303,17 @@ def init_base_crawls_api(app, user_dep, *args):
         response_model=CrawlOutWithResources,
     )
     async def get_base_crawl(
-        crawl_id: str, request: Request, org: Organization = Depends(org_crawl_dep)
+        crawl_id: str,
+        request: Request,
+        org: Organization = Depends(org_crawl_dep),
+        withDependencies: bool = False,
     ):
-        return await ops.get_crawl_out(crawl_id, org, headers=dict(request.headers))
+        return await ops.get_crawl_out(
+            crawl_id,
+            org,
+            headers=dict(request.headers),
+            with_dependencies=withDependencies,
+        )
 
     @app.get(
         "/orgs/all/all-crawls/{crawl_id}/replay.json",
@@ -1219,12 +1321,20 @@ def init_base_crawls_api(app, user_dep, *args):
         response_model=CrawlOutWithResources,
     )
     async def get_base_crawl_admin(
-        crawl_id, request: Request, user: User = Depends(user_dep)
+        crawl_id,
+        request: Request,
+        user: User = Depends(user_dep),
+        withDependencies: bool = False,
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return await ops.get_crawl_out(crawl_id, None, headers=dict(request.headers))
+        return await ops.get_crawl_out(
+            crawl_id,
+            None,
+            headers=dict(request.headers),
+            with_dependencies=withDependencies,
+        )
 
     @app.get(
         "/orgs/{oid}/all-crawls/{crawl_id}/replay.json",
@@ -1232,9 +1342,17 @@ def init_base_crawls_api(app, user_dep, *args):
         response_model=CrawlOutWithResources,
     )
     async def get_crawl_out(
-        crawl_id, request: Request, org: Organization = Depends(org_viewer_dep)
+        crawl_id,
+        request: Request,
+        org: Organization = Depends(org_viewer_dep),
+        withDependencies: bool = False,
     ):
-        return await ops.get_crawl_out(crawl_id, org, headers=dict(request.headers))
+        return await ops.get_crawl_out(
+            crawl_id,
+            org,
+            headers=dict(request.headers),
+            with_dependencies=withDependencies,
+        )
 
     @app.get(
         "/orgs/{oid}/all-crawls/{crawl_id}/download",
@@ -1245,9 +1363,13 @@ def init_base_crawls_api(app, user_dep, *args):
         crawl_id: str,
         preferSingleWACZ: bool = False,
         org: Organization = Depends(org_viewer_dep),
+        withDependencies: bool = False,
     ):
         return await ops.download_crawl_as_single_wacz(
-            crawl_id, org, prefer_single_wacz=preferSingleWACZ
+            crawl_id,
+            org,
+            prefer_single_wacz=preferSingleWACZ,
+            with_dependencies=withDependencies,
         )
 
     @app.patch(

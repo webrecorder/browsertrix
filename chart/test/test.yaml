@@ -37,6 +37,9 @@ crawler_channels:
   - id: test
     image: "docker.io/webrecorder/browsertrix-crawler:latest"
 
+  - id: dedupe
+    image: "docker.io/webrecorder/browsertrix-crawler:1.12.0-beta.2"
+    imagePullPolicy: Always
 
 mongo_image: "docker.io/library/mongo:8.0"
 
@@ -66,3 +69,8 @@ log_failed_crawl_lines: 200
 
 # disable for tests
 disk_utilization_threshold: 0
+
+
+redis_dedup_memory: "50Mi"
+
+redis_dedup_storage: "1Gi"

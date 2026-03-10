@@ -29,6 +29,7 @@ export class TabListTab extends TailwindElement {
         aria-controls=${ifDefined(this.name)}
         aria-disabled=${ifDefined(this.disabled)}
         tabindex=${this.disabled ? "-1" : "0"}
+        part="base"
       >
         <slot></slot>
       </li>

@@ -2,7 +2,13 @@ import { msg } from "@lit/localize";
 import clsx from "clsx";
 import { html, type TemplateResult } from "lit";
 
-import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
+import type {
+  ArchivedItem,
+  Crawl,
+  CrawlReplay,
+  Upload,
+  Workflow,
+} from "@/types/crawler";
 import {
   FAILED_STATES,
   PAUSED_STATES,
@@ -32,6 +38,12 @@ export const DEPTH_SUPPORTED_SCOPES = [
 
 export function isCrawl(item: Crawl | Upload): item is Crawl {
   return item.type === "crawl";
+}
+
+export function isCrawlReplay(
+  item: ArchivedItem | CrawlReplay,
+): item is CrawlReplay {
+  return isCrawl(item) && "config" in item;
 }
 
 export function isActive({ state }: Partial<Crawl | QARun>) {
@@ -86,7 +98,7 @@ export function renderName(
       </span>`;
     }
     return html`
-      <span class="inline-flex w-full overflow-hidden whitespace-nowrap">
+      <span class="inline-flex overflow-hidden whitespace-nowrap">
         <span class=${clsx("min-w-0 truncate", className)}>
           ${item.firstSeed}
         </span>
