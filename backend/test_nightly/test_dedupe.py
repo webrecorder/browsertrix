@@ -279,6 +279,19 @@ def test_import_into_another_coll(
     assert stats == {**orig_stats, "updateProgress": 1.0}
 
 
+def test_cant_remove_dependency_crawl(
+    default_org_id, dedupe_coll_id, crawler_auth_headers, dedupe_first_crawl
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/remove",
+        json={"crawlIds": [dedupe_first_crawl]},
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 400
+
+    assert r.json()["detail"] == "cant_remove_required_crawls"
+
+
 def test_remove_crawl_from_collection(
     default_org_id, dedupe_coll_id, crawler_auth_headers, dedupe_second_crawl
 ):
@@ -372,7 +385,6 @@ def test_cant_delete_while_crawling(
     )
     data = r.json()
     assert data["success"]
-
 
 def test_can_delete_while_indexing(
     default_org_id,

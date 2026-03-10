@@ -286,6 +286,19 @@ class CollectionOps:
         headers: Optional[dict] = None,
     ) -> CollOut:
         """Remove crawls from collection"""
+        num_req_crawls = await self.crawls.count_documents(
+            {
+                "dedupeCollId": coll_id,
+                "requiresCrawls": {"$in": crawl_ids},
+                "collectionIds": coll_id,
+                "_id": {"$nin": crawl_ids},
+            }
+        )
+        # if any of the crawls have crawls that dependent on them, and aren't being removed themselves
+        # don't allow remove
+        if num_req_crawls > 0:
+            raise HTTPException(status_code=400, detail="cant_remove_required_crawls")
+
         await self.crawl_ops.remove_from_collection(crawl_ids, coll_id)
         modified = dt_now()
         result = await self.collections.find_one_and_update(
