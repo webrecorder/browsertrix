@@ -26,6 +26,8 @@ dedupe:
 
   importer_channel: dedupe
 
+  default_enabled: false
+
   memory: "1Gi"
   cpu: "100m"
   storage: "1Gi"
