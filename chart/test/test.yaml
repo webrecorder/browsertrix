@@ -74,3 +74,15 @@ disk_utilization_threshold: 0
 redis_dedup_memory: "50Mi"
 
 redis_dedup_storage: "1Gi"
+
+# metacontroller overrodes
+metacontroller-helm:
+  commandArgs:
+    # default settings
+    - --zap-log-level=4
+    - --discovery-interval=20s
+    - --cache-flush-interval=30m
+    - --health-probe-bind-address=:8081
+
+    # use SSA
+    - --apply-strategy=server-side-apply
