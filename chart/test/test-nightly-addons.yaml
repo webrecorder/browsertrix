@@ -24,8 +24,6 @@ registration_enabled: "1"
 dedupe:
   idle_secs: 30
 
-  importer_channel: dedupe
-
   default_enabled: false
 
   memory: "1Gi"
