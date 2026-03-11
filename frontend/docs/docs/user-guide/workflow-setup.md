@@ -429,7 +429,7 @@ Cron schedules are always in [UTC](https://en.wikipedia.org/wiki/Coordinated_Uni
 
 !!! info "Deduplication is in Beta"
 
-    As of current release, the feature is still beta and may not be available to all users.
+    As of the current release, the feature is still in beta and may not be available to all users.
     If you don't see the options below, consult your admin or reach out to support to request access.
 
 Prevent duplicate content from being crawled and stored.
