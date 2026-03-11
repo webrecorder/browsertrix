@@ -47,7 +47,6 @@ def dedupe_workflow_id(crawler_auth_headers, default_org_id, dedupe_coll_id):
             "limit": 10,
             "exclude": "community",
         },
-        "crawlerChannel": "dedupe",
         "dedupeCollId": dedupe_coll_id,
     }
     r = requests.post(

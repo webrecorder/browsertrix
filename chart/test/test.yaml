@@ -37,9 +37,6 @@ crawler_channels:
   - id: test
     image: "docker.io/webrecorder/browsertrix-crawler:latest"
 
-  - id: dedupe
-    image: "docker.io/webrecorder/browsertrix-crawler:latest"
-
 mongo_image: "docker.io/library/mongo:8.0"
 
 

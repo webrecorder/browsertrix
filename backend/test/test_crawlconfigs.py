@@ -713,7 +713,7 @@ def test_get_crawler_channels(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     crawler_channels = r.json()["channels"]
     assert crawler_channels
-    assert len(crawler_channels) == 3
+    assert len(crawler_channels) == 2
     for crawler_channel in crawler_channels:
         assert crawler_channel["id"]
         assert crawler_channel["image"]
