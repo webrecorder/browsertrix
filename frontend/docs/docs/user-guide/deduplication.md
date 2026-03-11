@@ -1,5 +1,10 @@
 # Deduplication
 
+!!! info "Deduplication is in Beta"
+
+    As of current release, the feature is still beta and may not be available to all users.
+    If you don't see the options below, consult your admin or reach out to support to request access.
+
 ## Overview
 
 Deduplication (or “dedupe”) is the process of preventing duplicate content from being stored during crawling. In Browsertrix, deduplication is facilitated through [collections](./collection.md), which allow arbitrary grouping of crawled content as needed.

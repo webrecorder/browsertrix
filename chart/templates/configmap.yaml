@@ -114,6 +114,8 @@ data:
 
   ENABLE_AUTO_RESIZE_INDEX_STORAGE: "{{ .Values.dedupe.enable_auto_resize }}"
 
+  DEDUPE_FEATURE_ENABLED_DEFAULT: "{{ .Values.dedupe.default_enabled }}"
+
 
   {{- if .Values.available_plans }}
   AVAILABLE_PLANS: {{ .Values.available_plans | toJson }}

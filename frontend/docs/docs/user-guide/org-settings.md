@@ -31,6 +31,11 @@ Set default suggested settings for all new crawl workflows. When creating a new 
 
 ## Deduplication
 
+!!! info "Deduplication is in Beta"
+
+    As of current release, the feature is still beta and may not be available to all users.
+    If you don't see the options below, consult your admin or reach out to support to request access.
+
 View and manage deduplication indexes for all collections used as [deduplication sources](deduplication.md) in the org. Each entry includes information such as how many archived items and URLs are included in the index and how many deleted archived items are purgeable from the index. From the action menu, purge or delete the deduplication index for each collection.
 
 <!-- ## Limits
