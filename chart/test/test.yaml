@@ -33,6 +33,7 @@ crawler_extra_memory_per_browser: 256Mi
 crawler_channels:
   - id: default
     image: "docker.io/webrecorder/browsertrix-crawler:latest"
+    imagePullPolicy: Always
 
   - id: test
     image: "docker.io/webrecorder/browsertrix-crawler:latest"
