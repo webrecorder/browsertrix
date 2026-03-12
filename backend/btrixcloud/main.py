@@ -172,9 +172,7 @@ def main() -> None:
 
     user_manager = init_user_manager(mdb, email, invites)
 
-    current_active_user, shared_secret_or_superuser, custom_access = init_users_api(
-        app, user_manager
-    )
+    current_active_user, shared_secret_or_superuser = init_users_api(app, user_manager)
 
     org_ops = init_orgs_api(
         app,
@@ -247,7 +245,6 @@ def main() -> None:
         crawl_manager,
         event_webhook_ops,
         current_active_user,
-        custom_access("coll"),
     )
 
     base_crawl_init = (

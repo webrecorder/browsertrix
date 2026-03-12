@@ -10,7 +10,7 @@ from fastapi import HTTPException
 
 from .utils import dt_now, date_to_str, scale_from_browser_windows
 from .k8sapi import K8sAPI, ApiException
-from .auth import create_internal_crawler_access_token
+from .auth import create_custom_jwt_token
 
 from .models import (
     StorageRef,
@@ -245,7 +245,9 @@ class CrawlManager(K8sAPI):
         )
 
         if job_type in ("purge", "import"):
-            auth_bearer = create_internal_crawler_access_token(coll_id, "coll")
+            auth_bearer = create_custom_jwt_token(
+                coll_id, {"sub_type": "coll", "scope_type": "job", "scope": name}
+            )
             import_source_url = (
                 f"{BACKEND_ORIGIN}/api/orgs/{oid}/collections/{coll_id}"
                 + f"/internal/replay.json?auth_bearer={auth_bearer}"
@@ -281,6 +283,13 @@ class CrawlManager(K8sAPI):
             ) from e
 
         return name
+
+    async def validate_k8s_obj_exists(self, obj_type: str, name: str) -> bool:
+        """return true/false if specified k8s object exists"""
+        if obj_type == "job":
+            return await self.has_job(name)
+
+        return False
 
     async def delete_dedupe_index_resources(self, oid: str, coll_id: str) -> None:
         """Delete dedupe index-related jobs and index itself"""

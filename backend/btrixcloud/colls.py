@@ -63,6 +63,8 @@ from .utils import (
     case_insensitive_collation,
 )
 
+from .auth import get_custom_jwt_token
+
 from .crawlmanager import CrawlManager
 
 if TYPE_CHECKING:
@@ -1274,7 +1276,6 @@ def init_collections_api(
     crawl_manager: CrawlManager,
     event_webhook_ops: EventWebhookOps,
     user_dep,
-    coll_dep,
 ) -> CollectionOps:
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
@@ -1288,10 +1289,20 @@ def init_collections_api(
     org_viewer_dep = orgs.org_viewer_dep
     org_public = orgs.org_public
 
-    def coll_access_dep(coll_id: UUID, coll_access_id=Depends(coll_dep)) -> UUID:
-        if coll_access_id == str(coll_id):
-            return coll_id
+    async def coll_access_dep(
+        coll_id: UUID, token_data: dict[str, str] = Depends(get_custom_jwt_token)
+    ) -> UUID:
+        # first, check subject match collection id and type is collection
+        if token_data.get("sub_type") == "coll" and token_data.get("sub") == str(
+            coll_id
+        ):
+            # second, check that the k8s object access is scoped to exists
+            if await crawl_manager.validate_k8s_obj_exists(
+                token_data.get("scope_type", ""), token_data.get("scope", "")
+            ):
+                return coll_id
 
+        # otherwise, deny access
         raise HTTPException(status_code=403, detail="access_denied")
 
     @app.post(

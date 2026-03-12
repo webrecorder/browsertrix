@@ -348,6 +348,17 @@ class K8sAPI:
             traceback.print_exc()
             return {"error": str(exc)}
 
+    async def has_job(self, name) -> bool:
+        """return true/false if job exists"""
+        try:
+            await self.batch_api.read_namespaced_job(
+                name=name, namespace=self.namespace
+            )
+            return True
+        # pylint: disable=bare-except
+        except:
+            return False
+
     async def print_pod_logs(self, pod_names, lines=100):
         """print pod logs"""
         for pod in pod_names:

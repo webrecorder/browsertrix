@@ -4,7 +4,7 @@ import os
 from uuid import UUID, uuid4
 import asyncio
 from datetime import timedelta
-from typing import Optional, Tuple, List, Callable
+from typing import Optional, Tuple, List
 from passlib import pwd
 from passlib.context import CryptContext
 
@@ -42,6 +42,7 @@ RESET_VERIFY_TOKEN_LIFETIME_MINUTES = 60
 PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Audiences
+CUSTOM_AUTH_AUD = "btrix:custom-auth"
 AUTH_AUD = "btrix:auth"
 RESET_AUD = "btrix:reset"
 VERIFY_AUD = "btrix:verify"
@@ -121,12 +122,20 @@ def create_access_token(user: User) -> str:
 
 
 # ============================================================================
-def create_internal_crawler_access_token(sub: str, role: str) -> str:
+def create_custom_jwt_token(sub: str, data: dict[str, str]) -> str:
     """create jwt token for internal crawler access"""
     return generate_jwt(
-        {"sub": sub, "internal_role": role, "aud": AUTH_AUD},
+        {**data, "sub": sub, "aud": CUSTOM_AUTH_AUD},
         INTERNAL_JWT_TOKEN_LIFETIME,
     )
+
+
+# ============================================================================
+def get_custom_jwt_token(request: Request) -> dict[str, str]:
+    """return data from custom jwt token"""
+    token = request.query_params.get("auth_bearer") or ""
+    payload = decode_jwt(token, [CUSTOM_AUTH_AUD])
+    return payload
 
 
 # ============================================================================
@@ -157,7 +166,7 @@ def generate_password() -> str:
 
 # ============================================================================
 # pylint: disable=raise-missing-from
-def init_jwt_auth(user_manager) -> tuple[Callable, Callable, Callable, Callable]:
+def init_jwt_auth(user_manager):
     """init jwt auth router + current_active_user dependency"""
     oauth2_scheme = OA2BearerOrQuery(tokenUrl="/api/auth/jwt/login", auto_error=False)
 
@@ -167,8 +176,6 @@ def init_jwt_auth(user_manager) -> tuple[Callable, Callable, Callable, Callable]
         try:
             payload = decode_jwt(token, AUTH_ALLOW_AUD)
             uid: Optional[str] = payload.get("sub") or payload.get("user_id")
-            # insure not an internal token
-            assert not payload.get("internal_role")
             user = await user_manager.get_by_id(UUID(uid))
             assert user
             return user
@@ -193,17 +200,6 @@ def init_jwt_auth(user_manager) -> tuple[Callable, Callable, Callable, Callable]
             raise HTTPException(status_code=403, detail="not_allowed")
 
         return user
-
-    def get_custom_access(role: str) -> Callable[[str], str]:
-        def get_access_dep(token: str = Depends(oauth2_scheme)) -> str:
-            payload = decode_jwt(token, AUTH_ALLOW_AUD)
-            sub = payload.get("sub")
-            if not sub or payload.get("internal_role") != role:
-                raise HTTPException(status_code=401, detail="invalid_credentials")
-
-            return sub
-
-        return get_access_dep
 
     current_active_user = get_current_user
 
@@ -284,9 +280,4 @@ def init_jwt_auth(user_manager) -> tuple[Callable, Callable, Callable, Callable]
         user_info = await user_manager.get_user_info_with_orgs(user)
         return get_bearer_response(user, user_info)
 
-    return (
-        auth_jwt_router,
-        current_active_user,
-        shared_secret_or_superuser,
-        get_custom_access,
-    )
+    return auth_jwt_router, current_active_user, shared_secret_or_superuser
