@@ -9,6 +9,3 @@ metadata:
   labels:
     coll: {{ id }}
     role: configmap
-
-data:
-  config.json: {{ config | tojson }}

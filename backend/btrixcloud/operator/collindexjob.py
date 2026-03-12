@@ -1,7 +1,5 @@
 """Operator handler for Dedupe Index Import Job"""
 
-from uuid import UUID
-
 from .models import (
     MCBaseRequest,
     MCDecoratorSyncData,
@@ -70,11 +68,9 @@ class CollIndexImportJobOperator(BaseOperator):
             data, coll_id, oid, allowed_states
         )
 
-        # keep configmap if already exists, or add if index is ready
+        # keep configmap if exists or add only if index is ready
         if configmap or index_ready:
-            attachments = await self.load_import_configmap(
-                coll_id, name, oid, configmap
-            )
+            attachments = self.create_configmap(coll_id, name)
 
         # delete succeeded job
         if data.object.get("status", {}).get("succeeded", 0) >= 1:
@@ -83,26 +79,11 @@ class CollIndexImportJobOperator(BaseOperator):
 
         return MCDecoratorSyncResponse(attachments=attachments)
 
-    async def load_import_configmap(self, coll_id: str, name: str, oid: str, configmap):
-        """create configmap for import job, lookup resources only on first init"""
-        # pylint: disable=duplicate-code
-        if configmap and not self.is_configmap_update_needed("config.json", configmap):
-            metadata = configmap["metadata"]
-            configmap["metadata"] = {
-                "name": metadata["name"],
-                "namespace": metadata["namespace"],
-                "labels": metadata["labels"],
-            }
-            return [configmap]
-
-        replay_list = await self.coll_ops.get_internal_replay_list(
-            UUID(coll_id), UUID(oid)
-        )
-
+    def create_configmap(self, coll_id: str, name: str) -> list[str]:
+        """create configmap as a semaphore for when job is ready. no actual data"""
         params = {}
         params["name"] = name
         params["namespace"] = self.k8s.shared_params["namespace"]
         params["id"] = coll_id
-        params["config"] = replay_list.json()
 
         return self.load_from_yaml("index-import-configmap.yaml", params)

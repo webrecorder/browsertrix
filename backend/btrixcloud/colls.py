@@ -1274,6 +1274,7 @@ def init_collections_api(
     crawl_manager: CrawlManager,
     event_webhook_ops: EventWebhookOps,
     user_dep,
+    coll_dep,
 ) -> CollectionOps:
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
@@ -1286,6 +1287,12 @@ def init_collections_api(
     org_crawl_dep = orgs.org_crawl_dep
     org_viewer_dep = orgs.org_viewer_dep
     org_public = orgs.org_public
+
+    def coll_access_dep(coll_id: UUID, coll_access_id=Depends(coll_dep)) -> UUID:
+        if coll_access_id == str(coll_id):
+            return coll_id
+
+        raise HTTPException(status_code=403, detail="access_denied")
 
     @app.post(
         "/orgs/{oid}/collections",
@@ -1372,6 +1379,14 @@ def init_collections_api(
         return await colls.get_collection_out(
             coll_id, org, resources=True, headers=dict(request.headers)
         )
+
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/internal/replay.json",
+        tags=["collections"],
+        response_model=ResourcesOnly,
+    )
+    async def get_internal_replay(oid: UUID, coll_id: UUID = Depends(coll_access_dep)):
+        return await colls.get_internal_replay_list(coll_id, oid)
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/public/replay.json",

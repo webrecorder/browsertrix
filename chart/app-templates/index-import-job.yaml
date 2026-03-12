@@ -58,11 +58,11 @@ spec:
 
           {% if job_type == "import" %}
             - --sourceUrl
-            - /btrix-config/config.json
+            - {{ import_source_url }}
 
           {% elif job_type == "purge" %}
             - --sourceUrl
-            - /btrix-config/config.json
+            - {{ import_source_url }}
             - --removing
 
           {% elif job_type == "commit" %}

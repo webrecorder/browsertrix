@@ -10,6 +10,7 @@ from fastapi import HTTPException
 
 from .utils import dt_now, date_to_str, scale_from_browser_windows
 from .k8sapi import K8sAPI, ApiException
+from .auth import create_internal_crawler_access_token
 
 from .models import (
     StorageRef,
@@ -24,6 +25,8 @@ from .models import (
 DEFAULT_PROXY_ID: str = os.environ.get("DEFAULT_PROXY_ID", "")
 
 DEFAULT_NAMESPACE: str = os.environ.get("DEFAULT_NAMESPACE", "default")
+
+BACKEND_ORIGIN: str = os.environ.get("BACKEND_ORIGIN", "")
 
 
 # ============================================================================
@@ -241,6 +244,15 @@ class CrawlManager(K8sAPI):
             else f"purge-index-{coll_id}"
         )
 
+        if job_type in ("purge", "import"):
+            auth_bearer = create_internal_crawler_access_token(coll_id, "coll")
+            import_source_url = (
+                f"{BACKEND_ORIGIN}/api/orgs/{oid}/collections/{coll_id}"
+                + f"/internal/replay.json?auth_bearer={auth_bearer}"
+            )
+        else:
+            import_source_url = ""
+
         params = {
             "name": name,
             "id": coll_id,
@@ -250,6 +262,7 @@ class CrawlManager(K8sAPI):
             "job_type": job_type,
             "redis_url": self.get_redis_url("coll-" + str(coll_id)),
             "crawl_id": crawl_id,
+            "import_source_url": import_source_url,
         }
 
         data = self.templates.env.get_template("index-import-job.yaml").render(params)

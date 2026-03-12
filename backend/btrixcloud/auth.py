@@ -4,7 +4,7 @@ import os
 from uuid import UUID, uuid4
 import asyncio
 from datetime import timedelta
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Callable
 from passlib import pwd
 from passlib.context import CryptContext
 
@@ -29,6 +29,9 @@ from .utils import dt_now
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid4().hex)
 
 JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60))
+
+# set to one year
+INTERNAL_JWT_TOKEN_LIFETIME = 60 * 24 * 365
 
 BTRIX_SUBS_APP_API_KEY = os.environ.get("BTRIX_SUBS_APP_API_KEY", "")
 
@@ -118,6 +121,15 @@ def create_access_token(user: User) -> str:
 
 
 # ============================================================================
+def create_internal_crawler_access_token(sub: str, role: str) -> str:
+    """create jwt token for internal crawler access"""
+    return generate_jwt(
+        {"sub": sub, "internal_role": role, "aud": AUTH_AUD},
+        INTERNAL_JWT_TOKEN_LIFETIME,
+    )
+
+
+# ============================================================================
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """verify password by hash"""
     return PWD_CONTEXT.verify(plain_password, hashed_password)
@@ -145,7 +157,7 @@ def generate_password() -> str:
 
 # ============================================================================
 # pylint: disable=raise-missing-from
-def init_jwt_auth(user_manager):
+def init_jwt_auth(user_manager) -> tuple[Callable, Callable, Callable, Callable]:
     """init jwt auth router + current_active_user dependency"""
     oauth2_scheme = OA2BearerOrQuery(tokenUrl="/api/auth/jwt/login", auto_error=False)
 
@@ -155,6 +167,8 @@ def init_jwt_auth(user_manager):
         try:
             payload = decode_jwt(token, AUTH_ALLOW_AUD)
             uid: Optional[str] = payload.get("sub") or payload.get("user_id")
+            # insure not an internal token
+            assert not payload.get("internal_role")
             user = await user_manager.get_by_id(UUID(uid))
             assert user
             return user
@@ -179,6 +193,17 @@ def init_jwt_auth(user_manager):
             raise HTTPException(status_code=403, detail="not_allowed")
 
         return user
+
+    def get_custom_access(role: str) -> Callable[[str], str]:
+        def get_access_dep(token: str = Depends(oauth2_scheme)) -> str:
+            payload = decode_jwt(token, AUTH_ALLOW_AUD)
+            sub = payload.get("sub")
+            if not sub or payload.get("internal_role") != role:
+                raise HTTPException(status_code=401, detail="invalid_credentials")
+
+            return sub
+
+        return get_access_dep
 
     current_active_user = get_current_user
 
@@ -259,4 +284,9 @@ def init_jwt_auth(user_manager):
         user_info = await user_manager.get_user_info_with_orgs(user)
         return get_bearer_response(user, user_info)
 
-    return auth_jwt_router, current_active_user, shared_secret_or_superuser
+    return (
+        auth_jwt_router,
+        current_active_user,
+        shared_secret_or_superuser,
+        get_custom_access,
+    )
