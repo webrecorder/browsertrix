@@ -134,8 +134,11 @@ def create_custom_jwt_token(sub: str, data: dict[str, str]) -> str:
 def get_custom_jwt_token(request: Request) -> dict[str, str]:
     """return data from custom jwt token"""
     token = request.query_params.get("auth_bearer") or ""
-    payload = decode_jwt(token, [CUSTOM_AUTH_AUD])
-    return payload
+    try:
+        return decode_jwt(token, [CUSTOM_AUTH_AUD])
+    # pylint: disable=bare-except
+    except:
+        return {}
 
 
 # ============================================================================

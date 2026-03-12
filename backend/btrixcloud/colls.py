@@ -1289,7 +1289,7 @@ def init_collections_api(
     org_viewer_dep = orgs.org_viewer_dep
     org_public = orgs.org_public
 
-    async def coll_access_dep(
+    async def coll_internal_access_dep(
         coll_id: UUID, token_data: dict[str, str] = Depends(get_custom_jwt_token)
     ) -> UUID:
         # first, check subject match collection id and type is collection
@@ -1396,7 +1396,9 @@ def init_collections_api(
         tags=["collections"],
         response_model=ResourcesOnly,
     )
-    async def get_internal_replay(oid: UUID, coll_id: UUID = Depends(coll_access_dep)):
+    async def get_internal_replay(
+        oid: UUID, coll_id: UUID = Depends(coll_internal_access_dep)
+    ):
         return await colls.get_internal_replay_list(coll_id, oid)
 
     @app.get(

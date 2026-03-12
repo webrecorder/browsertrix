@@ -70,7 +70,7 @@ server {
     # serve a 404 page for /replay/ path, as that should be taken over by RWP
     location /replay/ {
       default_type application/json;
-      return 404 "{\"error\": \"placeholder_for_replay\"}";
+      return 404 "{\"detail\":\"placeholder_for_replay\"}";
     }
 
     # used by docker only: k8s deployment handles /api directly via ingress
@@ -88,6 +88,10 @@ server {
       # for larger uploads to not timeout
       proxy_http_version 1.1;
       proxy_read_timeout 300;
+    }
+
+    location ~* /internal/ {
+      return 403 "{\"detail\":\"access_denied\"}";
     }
 
     location ~* /watch/([^/]+)/([^/]+)/([^/]+)/ws {
