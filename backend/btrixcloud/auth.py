@@ -30,6 +30,9 @@ PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid4().hex)
 
 JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60))
 
+# set to one year
+INTERNAL_JWT_TOKEN_LIFETIME = 60 * 24 * 365
+
 BTRIX_SUBS_APP_API_KEY = os.environ.get("BTRIX_SUBS_APP_API_KEY", "")
 
 ALGORITHM = "HS256"
@@ -39,6 +42,7 @@ RESET_VERIFY_TOKEN_LIFETIME_MINUTES = 60
 PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Audiences
+CUSTOM_AUTH_AUD = "btrix:custom-auth"
 AUTH_AUD = "btrix:auth"
 RESET_AUD = "btrix:reset"
 VERIFY_AUD = "btrix:verify"
@@ -115,6 +119,26 @@ def decode_jwt(token: str, audience: Optional[List[str]] = None) -> dict:
 def create_access_token(user: User) -> str:
     """get jwt token"""
     return generate_jwt({"sub": str(user.id), "aud": AUTH_AUD}, JWT_TOKEN_LIFETIME)
+
+
+# ============================================================================
+def create_custom_jwt_token(sub: str, data: dict[str, str]) -> str:
+    """create jwt token for internal crawler access"""
+    return generate_jwt(
+        {**data, "sub": sub, "aud": CUSTOM_AUTH_AUD},
+        INTERNAL_JWT_TOKEN_LIFETIME,
+    )
+
+
+# ============================================================================
+def get_custom_jwt_token(request: Request) -> dict[str, str]:
+    """return data from custom jwt token"""
+    token = request.query_params.get("auth_bearer") or ""
+    try:
+        return decode_jwt(token, [CUSTOM_AUTH_AUD])
+    # pylint: disable=bare-except
+    except:
+        return {}
 
 
 # ============================================================================

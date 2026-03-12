@@ -16,6 +16,8 @@ data:
 
   CRAWLER_FQDN_SUFFIX: ".{{ .Values.crawler_namespace }}{{ .Values.fqdn_suffix }}"
 
+  BACKEND_ORIGIN: "http://browsertrix-cloud-backend.{{ .Release.Namespace }}{{ .Values.fqdn_suffix }}:8000"
+
   DEFAULT_ORG: "{{ .Values.default_org }}"
 
   INVITE_EXPIRE_SECONDS: "{{ .Values.invite_expire_seconds }}"
