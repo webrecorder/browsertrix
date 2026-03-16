@@ -31,7 +31,7 @@ export type AutoAddChangeDetail = {
   dedupe?: boolean;
 };
 
-const CRAWLS_PAGE_SIZE = 50;
+const CRAWLS_PAGE_SIZE = 1000;
 
 /**
  * @fires btrix-selection-change
