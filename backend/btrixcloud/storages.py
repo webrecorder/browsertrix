@@ -847,13 +847,44 @@ class StorageOps:
         metadata: dict[str, str],
         all_files: List[CrawlFileOut],
         prefer_single_wacz: bool = False,
+        max_retries=5,
     ) -> Iterator[bytes]:
         """generate streaming zip as sync"""
 
         def get_file(path: str) -> Iterator[bytes]:
             path = self.resolve_internal_access_path(path)
-            r = requests.get(path, stream=True, timeout=None)
-            yield from r.iter_content(CHUNK_SIZE)
+            bytes_read = 0
+            retries = 0
+            while retries < max_retries:
+                headers = {"Range": f"bytes={bytes_read}-"} if bytes_read > 0 else None
+
+                try:
+                    with requests.get(
+                        path, headers=headers, stream=True, timeout=30
+                    ) as resp:
+                        resp.raise_for_status()
+
+                        for chunk in resp.iter_content(CHUNK_SIZE):
+                            if chunk:
+                                bytes_read += len(chunk)
+                                yield chunk
+                                retries = 0
+
+                        # successfully streamed, done
+                        return
+
+                except Exception as e:
+                    print(
+                        f"Streaming DL Error: {path}, Processed {bytes_read} - "
+                        + f"retrying ({retries + 1}/{max_retries})...",
+                        e,
+                    )
+                    time.sleep(2)
+                    retries += 1
+
+            raise HTTPException(
+                status_code=503, detail="download_failed_too_many_retries"
+            )
 
         if len(all_files) == 1 and prefer_single_wacz:
             wacz_file = all_files[0]
