@@ -354,6 +354,71 @@ def test_add_remove_crawl_from_collection(
     )
     assert _coll_id not in r.json()["collectionIds"]
 
+
+def test_add_remove_config_crawls_from_collection(
+    crawler_auth_headers,
+    default_org_id,
+    crawler_crawl_id,
+    crawler_config_id,
+    admin_crawl_id,
+    admin_config_id,
+):
+    # Add crawls by config and crawl id
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/add",
+        json={"crawlIds": [admin_crawl_id], "crawlconfigIds": [crawler_config_id]},
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == _coll_id
+    assert data["crawlCount"] == 2
+    assert data["pageCount"] > 0
+    assert data["uniquePageCount"] > 0
+    assert data["totalSize"] > 0
+    assert data["modified"] >= modified
+    assert data["tags"] == ["wr-test-2", "wr-test-1"]
+    assert data["dateEarliest"]
+    assert data["dateLatest"]
+    assert data["topPageHosts"]
+
+    # Remove crawls by crawl and config id, and test that specifying a
+    # config and also a crawl in that config separately is handled
+    # gracefully
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/remove",
+        json={
+            "crawlIds": [crawler_crawl_id],
+            "crawlconfigIds": [admin_config_id, crawler_config_id],
+        },
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == _coll_id
+    assert data["crawlCount"] == 0
+    assert data["pageCount"] == 0
+    assert data["uniquePageCount"] == 0
+    assert data["totalSize"] == 0
+    assert data["modified"] >= modified
+    assert data.get("tags", []) == []
+    assert data.get("dateEarliest") is None
+    assert data.get("dateLatest") is None
+    assert data["topPageHosts"] == []
+
+    # Verify crawls were removed
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert _coll_id not in r.json()["collectionIds"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert _coll_id not in r.json()["collectionIds"]
+
     # Add crawls back for further tests
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/add",

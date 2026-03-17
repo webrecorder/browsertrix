@@ -27,7 +27,7 @@ from .models import (
     UpdateColl,
     DedupeIndexStats,
     DedupeIndexFile,
-    AddRemoveCrawlList,
+    CollectionAddRemove,
     BaseCrawl,
     CrawlFileOut,
     Organization,
@@ -1452,13 +1452,19 @@ def init_collections_api(
         response_model=CollOut,
     )
     async def add_crawl_to_collection(
-        crawlList: AddRemoveCrawlList,
+        add_remove: CollectionAddRemove,
         coll_id: UUID,
         request: Request,
         org: Organization = Depends(org_crawl_dep),
     ) -> CollOut:
+        crawl_ids = set(add_remove.crawlIds)
+
+        for config_id in add_remove.crawlconfigIds:
+            for crawl_id in await colls.crawl_ops.get_config_crawl_ids(config_id):
+                crawl_ids.add(crawl_id)
+
         return await colls.add_crawls_to_collection(
-            coll_id, crawlList.crawlIds, org, headers=dict(request.headers)
+            coll_id, list(crawl_ids), org, headers=dict(request.headers)
         )
 
     @app.post(
@@ -1467,13 +1473,19 @@ def init_collections_api(
         response_model=CollOut,
     )
     async def remove_crawl_from_collection(
-        crawlList: AddRemoveCrawlList,
+        add_remove: CollectionAddRemove,
         coll_id: UUID,
         request: Request,
         org: Organization = Depends(org_crawl_dep),
     ) -> CollOut:
+        crawl_ids = set(add_remove.crawlIds)
+
+        for config_id in add_remove.crawlconfigIds:
+            for crawl_id in await colls.crawl_ops.get_config_crawl_ids(config_id):
+                crawl_ids.add(crawl_id)
+
         return await colls.remove_crawls_from_collection(
-            coll_id, crawlList.crawlIds, org, headers=dict(request.headers)
+            coll_id, list(crawl_ids), org, headers=dict(request.headers)
         )
 
     @app.delete(
