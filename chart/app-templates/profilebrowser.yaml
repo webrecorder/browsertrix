@@ -18,11 +18,9 @@ spec:
     runAsUser: {{ crawler_uid}}
     runAsGroup: {{ crawler_gid}}
     fsGroup: {{ crawler_fsgroup }}
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
 
   volumes:
-    - name: crawler-workdir
+    - name: tmpdir
       emptyDir:
         sizeLimit: {{ profile_browser_workdir_size }}
 
@@ -98,8 +96,8 @@ spec:
       {% endif %}
 
       volumeMounts:
-        - name: crawler-workdir
-          mountPath: /tmp/home
+        - name: tmpdir
+          mountPath: /tmp
       {% if proxy_id %}
       {% if proxy_ssh_private_key %}
         - name: proxies
@@ -149,3 +147,7 @@ spec:
         requests:
           cpu: "{{ profile_cpu }}"
           memory: "{{ profile_memory }}"
+
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
