@@ -1458,12 +1458,9 @@ def init_collections_api(
         org: Organization = Depends(org_crawl_dep),
     ) -> CollOut:
         crawl_ids = set(add_remove.crawlIds)
-
-        for crawl_id in await colls.crawl_ops.get_config_crawl_ids(
-            add_remove.crawlconfigIds
-        ):
-            crawl_ids.add(crawl_id)
-
+        crawl_ids.update(
+            await colls.crawl_ops.get_config_crawl_ids(add_remove.crawlconfigIds)
+        )
         return await colls.add_crawls_to_collection(
             coll_id, list(crawl_ids), org, headers=dict(request.headers)
         )
@@ -1480,12 +1477,9 @@ def init_collections_api(
         org: Organization = Depends(org_crawl_dep),
     ) -> CollOut:
         crawl_ids = set(add_remove.crawlIds)
-
-        for crawl_id in await colls.crawl_ops.get_config_crawl_ids(
-            add_remove.crawlconfigIds
-        ):
-            crawl_ids.add(crawl_id)
-
+        crawl_ids.update(
+            await colls.crawl_ops.get_config_crawl_ids(add_remove.crawlconfigIds)
+        )
         return await colls.remove_crawls_from_collection(
             coll_id, list(crawl_ids), org, headers=dict(request.headers)
         )
