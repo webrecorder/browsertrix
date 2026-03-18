@@ -386,6 +386,12 @@ class CrawlOps(BaseCrawlOps):
 
         return crawls, total
 
+    async def get_config_crawl_ids(self, cids: list[UUID]) -> list[str]:
+        """get list of crawl ids belonging to given crawlconfigs"""
+        res = self.crawls.find({"cid": {"$in": cids}}, {"_id": 1})
+        res_list = await res.to_list()
+        return [res["_id"] for res in res_list]
+
     async def get_active_crawls(self, oid: UUID, limit: int) -> list[str]:
         """get list of waiting crawls, sorted from earliest to latest"""
         res = (

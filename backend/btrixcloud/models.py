@@ -1859,10 +1859,11 @@ class UpdateCollHomeUrl(BaseModel):
 
 
 # ============================================================================
-class AddRemoveCrawlList(BaseModel):
-    """Collections to add or remove from collection"""
+class CollectionAddRemove(BaseModel):
+    """Items to add or remove from collection"""
 
     crawlIds: List[str] = []
+    crawlconfigIds: List[UUID] = []
 
 
 # ============================================================================
