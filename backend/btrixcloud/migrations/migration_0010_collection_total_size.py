@@ -40,7 +40,7 @@ class Migration(BaseMigration):
         async for coll in coll_ops.collections.find({}):
             coll_id = coll["_id"]
             try:
-                await coll_ops.update_collection_counts_and_tags(coll_id)
+                await coll_ops.update_collection_stats(coll_id, coll["oid"])
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(f"Unable to update collection {coll_id}: {err}", flush=True)
