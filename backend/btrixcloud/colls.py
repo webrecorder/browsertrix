@@ -116,6 +116,16 @@ class CollectionOps:
             "DEDUPE_IMPORTER_CHANNEL", "default"
         )
 
+        # to avoid background tasks being garbage collected
+        # see: https://stackoverflow.com/a/74059981
+        self.bg_tasks = set()
+
+    def _run_task(self, func) -> None:
+        """add bg tasks to set to avoid premature garbage collection"""
+        task = asyncio.create_task(func)
+        self.bg_tasks.add(task)
+        task.add_done_callback(self.bg_tasks.discard)
+
     def set_crawl_ops(self, ops):
         """set crawl ops"""
         self.crawl_ops = ops
@@ -172,9 +182,8 @@ class CollectionOps:
 
             if crawl_ids:
                 await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
-                await self.update_collection_counts_and_tags(coll_id)
-                await self.update_collection_dates(coll_id, org.id)
-                asyncio.create_task(
+                self._run_task(self.update_collection_stats(coll_id, org.id))
+                self._run_task(
                     self.event_webhook_ops.create_added_to_collection_notification(
                         crawl_ids, coll_id, org
                     )
@@ -266,13 +275,12 @@ class CollectionOps:
         # do this after checking if collection exists
         await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
 
-        await self.update_collection_counts_and_tags(coll_id)
-        await self.update_collection_dates(coll_id, org.id)
+        self._run_task(self.update_collection_stats(coll_id, org.id))
 
         if result.get("indexState"):
             await self.run_index_import_job(coll_id, org.id)
 
-        asyncio.create_task(
+        self._run_task(
             self.event_webhook_ops.create_added_to_collection_notification(
                 crawl_ids, coll_id, org
             )
@@ -298,13 +306,12 @@ class CollectionOps:
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        await self.update_collection_counts_and_tags(coll_id)
-        await self.update_collection_dates(coll_id, org.id)
+        self._run_task(self.update_collection_stats(coll_id, org.id))
 
         if result.get("indexState"):
             await self.run_index_import_job(coll_id, org.id)
 
-        asyncio.create_task(
+        self._run_task(
             self.event_webhook_ops.create_removed_from_collection_notification(
                 crawl_ids, coll_id, org
             )
@@ -696,7 +703,7 @@ class CollectionOps:
         if result.deleted_count < 1:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        asyncio.create_task(
+        self._run_task(
             self.event_webhook_ops.create_collection_deleted_notification(coll_id, org)
         )
 
@@ -936,10 +943,13 @@ class CollectionOps:
     async def recalculate_org_collection_stats(self, org: Organization):
         """recalculate counts, tags and dates for all collections in an org"""
         async for coll in self.collections.find({"oid": org.id}, projection={"_id": 1}):
-            await self.update_collection_counts_and_tags(coll.get("_id"))
-            await self.update_collection_dates(coll.get("_id"), org.id)
+            await self.update_collection_stats(coll.get("_id"), org.id)
 
-    async def update_collection_counts_and_tags(self, collection_id: UUID):
+    async def update_collection_stats(self, collection_id: UUID, oid: UUID):
+        await self._update_collection_counts_and_tags(collection_id)
+        await self._update_collection_dates(collection_id, oid)
+
+    async def _update_collection_counts_and_tags(self, collection_id: UUID):
         """Set current crawl info in config when crawl begins"""
         # pylint: disable=too-many-locals
         crawl_count = 0
@@ -1004,7 +1014,7 @@ class CollectionOps:
             },
         )
 
-    async def update_collection_dates(self, coll_id: UUID, oid: UUID):
+    async def _update_collection_dates(self, coll_id: UUID, oid: UUID):
         """Update collection earliest and latest dates from page timestamps"""
         # pylint: disable=too-many-locals
         coll = await self.get_collection(coll_id, oid)
@@ -1053,8 +1063,7 @@ class CollectionOps:
         modified = dt_now()
 
         for coll_id in crawl_coll_ids:
-            await self.update_collection_counts_and_tags(coll_id)
-            await self.update_collection_dates(coll_id, oid)
+            self._run_task(self.update_collection_stats(coll_id, oid))
 
             result = await self.collections.find_one_and_update(
                 {"_id": coll_id},
