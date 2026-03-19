@@ -1017,15 +1017,15 @@ class CollectionOps:
             },
         )
 
-    async def _get_collection_dates(self, crawl_ids: list[str], oid: UUID) -> tuple(
-        datetime, datetime
-    ):
+    async def _get_collection_dates(
+        self, crawl_ids: list[str], oid: UUID
+    ) -> tuple[datetime | None, datetime | None]:
         """Determine earliest and latest dates for collection items"""
-        earliest_ts = None
-        latest_ts = None
+        earliest_ts: datetime | None = None
+        latest_ts: datetime | None = None
 
         match_query = {
-            "oid": coll.oid,
+            "oid": oid,
             "crawl_id": {"$in": crawl_ids},
             "ts": {"$ne": None},
         }

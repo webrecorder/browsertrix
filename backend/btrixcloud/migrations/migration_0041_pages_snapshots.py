@@ -34,7 +34,7 @@ class Migration(BaseMigration):
         async for coll in colls_mdb.find({}):
             coll_id = coll["_id"]
             try:
-                await self.coll_ops._update_collection_stats(coll_id, coll["oid"])
+                await self.coll_ops.update_collection_stats(coll_id, coll["oid"])
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(
