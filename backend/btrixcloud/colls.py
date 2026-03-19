@@ -946,11 +946,7 @@ class CollectionOps:
             await self.update_collection_stats(coll.get("_id"), org.id)
 
     async def update_collection_stats(self, collection_id: UUID, oid: UUID):
-        await self._update_collection_counts_and_tags(collection_id)
-        await self._update_collection_dates(collection_id, oid)
-
-    async def _update_collection_counts_and_tags(self, collection_id: UUID):
-        """Set current crawl info in config when crawl begins"""
+        """recalculate counts, tags, and dates for collection"""
         # pylint: disable=too-many-locals
         crawl_count = 0
         page_count = 0
@@ -960,7 +956,9 @@ class CollectionOps:
         crawl_ids = []
         preload_resources = []
 
-        async for crawl_raw in self.crawls.find({"collectionIds": collection_id}):
+        async for crawl_raw in self.crawls.find(
+            {"oid": oid, "collectionIds": collection_id}
+        ):
             crawl = BaseCrawl.from_dict(crawl_raw)
             if crawl.state not in SUCCESSFUL_STATES:
                 continue
@@ -999,6 +997,9 @@ class CollectionOps:
 
         top_page_hosts = await self.page_ops.get_top_page_hosts(crawl_ids)
 
+        earliest_ts, latest_ts = await self._get_collection_dates(crawl_ids, oid)
+
+        # Update collection
         await self.collections.find_one_and_update(
             {"_id": collection_id},
             {
@@ -1010,16 +1011,16 @@ class CollectionOps:
                     "tags": sorted_tags,
                     "preloadResources": preload_resources,
                     "topPageHosts": top_page_hosts,
+                    "dateEarliest": earliest_ts,
+                    "dateLatest": latest_ts,
                 }
             },
         )
 
-    async def _update_collection_dates(self, coll_id: UUID, oid: UUID):
-        """Update collection earliest and latest dates from page timestamps"""
-        # pylint: disable=too-many-locals
-        coll = await self.get_collection(coll_id, oid)
-        crawl_ids = await self.get_collection_crawl_ids(coll_id, oid)
-
+    async def _get_collection_dates(self, crawl_ids: list[str], oid: UUID) -> tuple(
+        datetime, datetime
+    ):
+        """Determine earliest and latest dates for collection items"""
         earliest_ts = None
         latest_ts = None
 
@@ -1045,15 +1046,7 @@ class CollectionOps:
         except IndexError:
             pass
 
-        await self.collections.find_one_and_update(
-            {"_id": coll_id},
-            {
-                "$set": {
-                    "dateEarliest": earliest_ts,
-                    "dateLatest": latest_ts,
-                }
-            },
-        )
+        return earliest_ts, latest_ts
 
     async def update_crawl_collections(self, crawl_id: str, oid: UUID):
         """Update counts, dates, and modified for all collections in crawl"""
