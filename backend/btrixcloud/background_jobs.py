@@ -26,6 +26,7 @@ from .models import (
     ReAddOrgPagesJob,
     OptimizePagesJob,
     CleanupSeedFilesJob,
+    UpdateCollStatsJob,
     PaginatedBackgroundJobResponse,
     AnyJob,
     StorageRef,
@@ -59,7 +60,7 @@ class BackgroundJobOps:
 
     migration_jobs_scale: int
 
-    # pylint: disable=too-many-locals, too-many-arguments, invalid-name
+    # pylint: disable=too-many-locals, too-many-arguments, invalid-name, too-many-lines
 
     def __init__(self, mdb, email, user_manager, org_ops, crawl_manager, storage_ops):
         self.jobs = mdb["jobs"]
@@ -486,6 +487,51 @@ class BackgroundJobOps:
             print(f"warning: optimize pages job could not be started: {exc}")
             return None
 
+    async def create_update_collection_stats_job(
+        self,
+        oid: UUID,
+        collection_id: UUID,
+        existing_job_id: Optional[str] = None,
+    ):
+        """Create job to update collection stats"""
+        try:
+            job_id = await self.crawl_manager.run_update_coll_stats_job(
+                oid=str(oid),
+                collection_id=str(collection_id),
+                existing_job_id=existing_job_id,
+            )
+            if existing_job_id:
+                update_coll_job = await self.get_background_job(existing_job_id)
+                previous_attempt = {
+                    "started": update_coll_job.started,
+                    "finished": update_coll_job.finished,
+                }
+                if update_coll_job.previousAttempts:
+                    update_coll_job.previousAttempts.append(previous_attempt)
+                else:
+                    update_coll_job.previousAttempts = [previous_attempt]
+                update_coll_job.started = dt_now()
+                update_coll_job.finished = None
+                update_coll_job.success = None
+            else:
+                update_coll_job = UpdateCollStatsJob(
+                    id=job_id,
+                    oid=oid,
+                    collection_id=collection_id,
+                    started=dt_now(),
+                )
+
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": update_coll_job.to_dict()}, upsert=True
+            )
+
+            return job_id
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            print(f"warning: update collection stats job could not be started: {exc}")
+            return None
+
     async def ensure_cron_cleanup_jobs_exist(self):
         """Ensure background job to clean up unused seed files weekly exists"""
         await self.crawl_manager.ensure_cleanup_seed_file_cron_job_exists()
@@ -578,6 +624,7 @@ class BackgroundJobOps:
         ReAddOrgPagesJob,
         OptimizePagesJob,
         CleanupSeedFilesJob,
+        UpdateCollStatsJob,
     ]:
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
@@ -610,6 +657,9 @@ class BackgroundJobOps:
 
         if data["type"] == BgJobType.CLEANUP_SEED_FILES:
             return CleanupSeedFilesJob.from_dict(data)
+
+        if data["type"] == BgJobType.UPDATE_COLL_STATS:
+            return UpdateCollStatsJob.from_dict(data)
 
         return DeleteOrgJob.from_dict(data)
 
@@ -787,6 +837,14 @@ class BackgroundJobOps:
                 existing_job_id=job.id,
             )
             return {"success": True}
+
+        if job.type == BgJobType.UPDATE_COLL_STATS:
+            job = cast(UpdateCollStatsJob, job)
+            await self.create_update_collection_stats_job(
+                org.id,
+                job.collection_id,
+                existing_job_id=job.id,
+            )
 
         if job.type == BgJobType.CLEANUP_SEED_FILES:
             raise HTTPException(status_code=400, detail="cron_job_retry_not_supported")

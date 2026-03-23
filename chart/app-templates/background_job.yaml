@@ -52,6 +52,11 @@ spec:
             value: {{ crawl_id }}
 {% endif %}
 
+{% if collection_id %}
+          - name: COLLECTION_ID
+            value: {{ collection_id }}
+{% endif %}
+
           envFrom:
             - configMapRef:
                 name: backend-env-config

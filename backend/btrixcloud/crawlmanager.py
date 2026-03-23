@@ -199,6 +199,26 @@ class CrawlManager(K8sAPI):
             job_id, job_type=BgJobType.OPTIMIZE_PAGES.value, scale=scale
         )
 
+    async def run_update_coll_stats_job(
+        self,
+        oid: str,
+        collection_id: str,
+        existing_job_id: Optional[str] = None,
+    ) -> str:
+        """run job to update collection stats"""
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"update-coll-{secrets.token_hex(5)}"
+
+        return await self._run_bg_job_with_ops_classes(
+            job_id,
+            job_type=BgJobType.UPDATE_COLL_STATS.value,
+            oid=oid,
+            collection_id=collection_id,
+        )
+
     async def _run_bg_job_with_ops_classes(
         self,
         job_id: str,
