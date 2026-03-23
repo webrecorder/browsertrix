@@ -244,6 +244,7 @@ def main() -> None:
         storage_ops,
         crawl_manager,
         event_webhook_ops,
+        background_job_ops,
         current_active_user,
     )
 

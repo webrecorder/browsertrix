@@ -7,6 +7,7 @@ from typing import cast
 from btrixcloud.colls import CollectionOps
 from btrixcloud.migrations import BaseMigration
 
+from btrixcloud.background_jobs import BackgroundJobOps
 from btrixcloud.orgs import OrgOps
 from btrixcloud.storages import StorageOps
 from btrixcloud.webhooks import EventWebhookOps
@@ -35,6 +36,7 @@ class Migration(BaseMigration):
             cast(StorageOps, None),
             cast(CrawlManager, None),
             cast(EventWebhookOps, None),
+            cast(BackgroundJobOps, None),
         )
 
         async for coll in coll_ops.collections.find({}):

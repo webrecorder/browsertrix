@@ -481,7 +481,9 @@ class BaseCrawlOps:
 
         if collection_ids_to_update:
             for coll_id in collection_ids_to_update:
-                self._run_task(self.colls.update_collection_stats(coll_id, org.id))
+                await self.background_job_ops.create_update_collection_stats_job(
+                    org.id, coll_id
+                )
 
         quota_reached = self.orgs.storage_quota_reached(org)
 
