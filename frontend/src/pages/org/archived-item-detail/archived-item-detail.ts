@@ -214,7 +214,7 @@ export class ArchivedItemDetail extends BtrixElement {
       if (!item?.requiresCrawls.length) return;
 
       const query = queryString.stringify({
-        ids: item.requiresCrawls,
+        requiredByCrawls: [item.id],
         sortBy: "started",
         sortDirection: SortDirection.Descending,
       });
