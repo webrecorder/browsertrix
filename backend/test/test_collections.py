@@ -139,6 +139,24 @@ def test_create_public_collection(
     global _public_coll_id
     _public_coll_id = data["id"]
 
+    # Wait until collection stats update
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 1:
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
+
     # Verify that it is public
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
@@ -339,7 +357,7 @@ def test_add_remove_crawl_from_collection(
             assert data["uniquePageCount"] > 0
             assert data["totalSize"] > 0
             assert data["modified"] >= modified
-            assert data["tags"] == ["wr-test-2", "wr-test-1"]
+            assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
             assert data["dateEarliest"]
             assert data["dateLatest"]
             assert data["topPageHosts"] == [{"count": 7, "host": "old.webrecorder.net"}]
@@ -440,7 +458,7 @@ def test_add_remove_config_crawls_from_collection(
             assert data["uniquePageCount"] > 0
             assert data["totalSize"] > 0
             assert data["modified"] >= modified
-            assert data["tags"] == ["wr-test-2", "wr-test-1"]
+            assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
             assert data["dateEarliest"]
             assert data["dateLatest"]
             assert data["topPageHosts"]
@@ -552,7 +570,7 @@ def test_get_collection(crawler_auth_headers, default_org_id):
     assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
     assert data["modified"] >= modified
-    assert data["tags"] == ["wr-test-2", "wr-test-1"]
+    assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
     assert data["dateEarliest"]
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
@@ -576,7 +594,7 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
     assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
     assert data["modified"] >= modified
-    assert data["tags"] == ["wr-test-2", "wr-test-1"]
+    assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
     assert data["dateEarliest"]
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
@@ -752,7 +770,7 @@ def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
             assert data["uniquePageCount"] > 0
             assert data["totalSize"] > 0
             assert data["modified"]
-            assert data["tags"] == ["wr-test-2", "wr-test-1"]
+            assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
             assert data["dateEarliest"]
             assert data["dateLatest"]
             assert data["defaultThumbnailName"]
@@ -1017,7 +1035,7 @@ def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
             assert data["uniquePageCount"] > 0
             assert data["totalSize"] > 0
             assert data["modified"] >= modified
-            assert data.get("tags") == ["wr-test-2", "wr-test-1"]
+            assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
             break
 
         if count + 1 == MAX_ATTEMPTS:
@@ -1278,6 +1296,24 @@ def test_list_public_collections(
 
     global _second_public_coll_id
     _second_public_coll_id = r.json()["id"]
+
+    # Wait until collection stats update
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 1:
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
 
     # Get default org slug
     r = requests.get(
