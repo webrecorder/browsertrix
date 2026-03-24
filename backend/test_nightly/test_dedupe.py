@@ -7,6 +7,8 @@ import string
 from .conftest import API_PREFIX
 
 
+MAX_ATTEMPTS = 24
+
 last_saved_at = None
 orig_stats = None
 
@@ -263,6 +265,24 @@ def test_import_into_another_coll(
     )
     assert r.status_code == 200
 
+    # Wait until collection stats update
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id_2}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 2:
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
+
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id_2}/dedupeIndex/create",
         headers=crawler_auth_headers,
@@ -287,6 +307,24 @@ def test_remove_crawl_from_collection(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
+
+    # Wait until collection stats update
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 1:
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
 
     data = wait_index_status(
         default_org_id, dedupe_coll_id, crawler_auth_headers, "idle"
