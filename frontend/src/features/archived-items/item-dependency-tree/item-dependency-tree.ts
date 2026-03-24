@@ -56,30 +56,32 @@ export class ItemDependencyTree extends BtrixElement {
   >();
 
   private readonly dependenciesTask = new Task(this, {
-    task: async ([items], { signal }) => {
-      if (!items?.length) return;
+    task: async ([_], { signal }) => {
+      //if (!items?.length) return;
 
-      const itemsMap = new Map(items.map((item) => [item.id, item]));
+      //const itemsMap = new Map(items.map((item) => [item.id, item]));
       const newIds: string[] = [];
 
-      items.forEach((item) => {
-        dependenciesWithoutSelf(item).forEach((id) => {
-          if (!this.dependenciesMap.get(id)) {
-            const cachedItem = itemsMap.get(id);
-            if (cachedItem) {
-              this.dependenciesMap.set(id, cachedItem);
-            } else {
-              newIds.push(id);
-            }
-          }
-        });
-      });
+      // items.forEach((item) => {
+      //   dependenciesWithoutSelf(item).forEach((id) => {
+      //     if (!this.dependenciesMap.get(id)) {
+      //       const cachedItem = itemsMap.get(id);
+      //       if (cachedItem) {
+      //         this.dependenciesMap.set(id, cachedItem);
+      //       } else {
+      //         newIds.push(id);
+      //       }
+      //     }
+      //   });
+      // });
 
-      if (!newIds.length) return;
+      //if (!newIds.length) return;
 
       const query = queryString.stringify(
         {
-          ids: newIds,
+          //ids: newIds,
+          collectionId: this.collectionId,
+          hasRequiresCrawls: true,
         },
         {
           arrayFormat: "none",
