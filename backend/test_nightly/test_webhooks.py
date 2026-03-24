@@ -403,7 +403,7 @@ def test_webhooks_sent(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["id"]
+    assert data["updated"]
 
     # Delete upload
     r = requests.post(
@@ -423,7 +423,7 @@ def test_webhooks_sent(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["id"]
+    assert data["updated"]
 
     # Delete crawl
     r = requests.post(
