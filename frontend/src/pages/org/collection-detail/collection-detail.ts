@@ -63,6 +63,7 @@ import { tw } from "@/utils/tailwind";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_ITEMS_PAGE_SIZE = 20;
+const POLL_INTERVAL_SECONDS = 10;
 
 @customElement("btrix-collection-detail")
 @localized()
@@ -111,6 +112,8 @@ export class CollectionDetail extends BtrixElement {
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
+
+  private timerId?: number;
 
   private readonly editing =
     new SearchParamsValue<EditingSearchParamValue | null>(
@@ -1303,6 +1306,16 @@ export class CollectionDetail extends BtrixElement {
   private async fetchCollection() {
     try {
       this.collection = await this.getCollection();
+
+      // Clear current timer, if it exists
+      if (this.timerId != null) {
+        window.clearTimeout(this.timerId);
+      }
+
+      // Restart timer for next poll
+      this.timerId = window.setTimeout(() => {
+        void this.fetchCollection();
+      }, 1000 * POLL_INTERVAL_SECONDS);
     } catch (e) {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve Collection at this time."),
