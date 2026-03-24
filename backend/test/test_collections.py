@@ -863,7 +863,7 @@ def test_list_collections(
     assert first_coll["uniquePageCount"] > 0
     assert first_coll["totalSize"] > 0
     assert first_coll["modified"]
-    assert first_coll["tags"] == ["wr-test-2", "wr-test-1"]
+    assert sorted(first_coll["tags"]) == ["wr-test-1", "wr-test-2"]
     assert first_coll["access"] == "private"
     assert first_coll["dateEarliest"]
     assert first_coll["dateLatest"]
