@@ -59,29 +59,27 @@ export class ItemDependencyTree extends BtrixElement {
     task: async ([items], { signal }) => {
       if (!items?.length) return;
 
-      //const itemsMap = new Map(items.map((item) => [item.id, item]));
-      //const newIds: string[] = [];
+      const itemsMap = new Map(items.map((item) => [item.id, item]));
+      const newIds: string[] = [];
 
-      // items.forEach((item) => {
-      //   dependenciesWithoutSelf(item).forEach((id) => {
-      //     if (!this.dependenciesMap.get(id)) {
-      //       const cachedItem = itemsMap.get(id);
-      //       if (cachedItem) {
-      //         this.dependenciesMap.set(id, cachedItem);
-      //       } else {
-      //         newIds.push(id);
-      //       }
-      //     }
-      //   });
-      // });
+      items.forEach((item) => {
+        dependenciesWithoutSelf(item).forEach((id) => {
+          if (!this.dependenciesMap.get(id)) {
+            const cachedItem = itemsMap.get(id);
+            if (cachedItem) {
+              this.dependenciesMap.set(id, cachedItem);
+            } else {
+              newIds.push(id);
+            }
+          }
+        });
+      });
 
-      //if (!newIds.length) return;
+      if (!newIds.length) return;
 
       const query = queryString.stringify(
         {
-          //ids: newIds,
-          collectionId: this.collectionId,
-          requiredByCrawls: items.map((item) => item.id),
+          ids: newIds,
         },
         {
           arrayFormat: "none",
@@ -92,16 +90,12 @@ export class ItemDependencyTree extends BtrixElement {
         APIPaginatedList<ArchivedItem>
       >(`/orgs/${this.orgId}/all-crawls?${query}`, { signal });
 
-      dependencies.forEach((item) => {
-        this.dependenciesMap.set(item.id, item);
+      newIds.forEach((id) => {
+        this.dependenciesMap.set(
+          id,
+          dependencies.find((item) => item.id === id),
+        );
       });
-
-      // newIds.forEach((id) => {
-      //   this.dependenciesMap.set(
-      //     id,
-      //     dependencies.find((item) => item.id === id),
-      //   );
-      // });
     },
     args: () => [this.items] as const,
   });
