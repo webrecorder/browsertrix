@@ -198,7 +198,7 @@ class SubOps:
         )
 
         if not org.subscription.readOnlyOnCancel:
-            await self.org_ops.delete_org_and_data(org, self.user_manager)
+            await self.org_ops.background_job_ops.create_delete_org_job(org)
             deleted = True
 
         await self.add_sub_event("cancel", cancel, org.id)

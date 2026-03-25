@@ -7,6 +7,7 @@ from uuid import UUID
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from btrixcloud.migrations import BaseMigration
+from btrixcloud.models import BgJobType
 
 MIGRATION_VERSION = "0057"
 
@@ -44,7 +45,12 @@ class Migration(BaseMigration):
             )
 
             try:
-                await jobs_mdb.delete_many({"oid": {"$in": job_orgs_to_delete}})
+                await jobs_mdb.delete_many(
+                    {
+                        "oid": {"$in": job_orgs_to_delete},
+                        "type": {"$ne": BgJobType.DELETE_ORG},
+                    }
+                )
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(f"Error deleting jobs from deleted orgs: {err}", flush=True)
