@@ -144,46 +144,22 @@ export class CollectionDetailDedupe extends BtrixElement {
   });
 
   /**
-   * Crawled items that are a dependency of an archived item
-   * currently in the collection
+   * All collection dependencies:
+   * Crawled items in the collection that are a dependency of another
+   * archived item currently in the collection
    */
   private readonly dependenciesTask = new Task(this, {
     task: async ([collectionId, pagination], { signal }) => {
       if (!collectionId) return;
 
-      const crawlsQuery = queryString.stringify({
-        sortBy: "finished",
-        sortDirection: SortDirection.Descending,
-        collectionId,
-        dedupeCollId: collectionId,
-        state: finishedCrawlStates,
-        hasRequiresCrawls: true,
-      });
-
-      const { items } = await this.api.fetch<APIPaginatedList<ArchivedItem>>(
-        `/orgs/${this.orgId}/crawls?${crawlsQuery}`,
-        { signal },
-      );
-
-      const crawlIds = items.map(({ id }) => id);
-
-      if (!crawlIds.length) return;
-
-      // FIXME Prevent API from returning 431 by limiting IDs
-      // should be an edge case that there are more that 100
-      // dependencies in a collection but we would want a more
-      // robust solution if this becomes more common.
-      const limit = 100;
       const query = queryString.stringify({
         ...pagination,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
-        requiredByCrawls: crawlIds.slice(0, limit),
+        collectionId,
+        state: finishedCrawlStates,
+        hasRequiredByCrawls: true,
       });
-
-      if (crawlIds.length > limit) {
-        console.warn(`up to ${limit} dependencies queried`);
-      }
 
       return await this.api.fetch<APIPaginatedList<ArchivedItem>>(
         `/orgs/${this.orgId}/all-crawls?${query}`,
