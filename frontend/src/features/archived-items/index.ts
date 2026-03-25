@@ -8,7 +8,7 @@ import("./crawl-pending-exclusions");
 import("./crawl-queue");
 import("./crawl-status");
 import("./file-uploader");
-import("./item-dependency-tree");
+import("./item-dependency-list");
 import("./item-dependents");
 import("./item-list-controls");
 import("./item-tags-input");

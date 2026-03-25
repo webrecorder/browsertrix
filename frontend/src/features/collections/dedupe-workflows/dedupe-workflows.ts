@@ -230,10 +230,10 @@ export class DedupeWorkflows extends BtrixElement {
       ${when(
         crawls?.items,
         (items) =>
-          html`<btrix-item-dependency-tree
+          html`<btrix-item-dependency-list
             .items=${items}
             collectionId=${ifDefined(workflow.dedupeCollId || undefined)}
-          ></btrix-item-dependency-tree>`,
+          ></btrix-item-dependency-list>`,
       )}
     </div>`;
   };

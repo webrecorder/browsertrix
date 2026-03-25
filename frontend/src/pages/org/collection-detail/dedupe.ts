@@ -636,11 +636,13 @@ export class CollectionDetailDedupe extends BtrixElement {
     const items = (items?: APIPaginatedList<ArchivedItem>) =>
       items?.items.length
         ? html`
-            <btrix-item-dependency-tree
-              class="part-[tree]:rounded part-[tree]:border"
-              .items=${items.items}
-              collectionId=${this.collectionId}
-            ></btrix-item-dependency-tree>
+            <btrix-overflow-scroll class="-mx-5 part-[content]:px-5">
+              <btrix-item-dependency-list
+                class="block min-w-max part-[tree]:rounded part-[tree]:border"
+                .items=${items.items}
+                collectionId=${this.collectionId}
+              ></btrix-item-dependency-list>
+            </btrix-overflow-scroll>
 
             <footer class="mt-6 flex justify-center">
               <btrix-pagination
