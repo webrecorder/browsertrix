@@ -56,11 +56,11 @@ export class ItemDependencyTree extends BtrixElement {
   >();
 
   private readonly dependenciesTask = new Task(this, {
-    task: async ([_], { signal }) => {
-      //if (!items?.length) return;
+    task: async ([items], { signal }) => {
+      if (!items?.length) return;
 
       //const itemsMap = new Map(items.map((item) => [item.id, item]));
-      const newIds: string[] = [];
+      //const newIds: string[] = [];
 
       // items.forEach((item) => {
       //   dependenciesWithoutSelf(item).forEach((id) => {
@@ -81,7 +81,7 @@ export class ItemDependencyTree extends BtrixElement {
         {
           //ids: newIds,
           collectionId: this.collectionId,
-          hasRequiresCrawls: true,
+          requiredByCrawls: items.map((item) => item.id),
         },
         {
           arrayFormat: "none",
@@ -92,12 +92,16 @@ export class ItemDependencyTree extends BtrixElement {
         APIPaginatedList<ArchivedItem>
       >(`/orgs/${this.orgId}/all-crawls?${query}`, { signal });
 
-      newIds.forEach((id) => {
-        this.dependenciesMap.set(
-          id,
-          dependencies.find((item) => item.id === id),
-        );
+      dependencies.forEach((item) => {
+        this.dependenciesMap.set(item.id, item);
       });
+
+      // newIds.forEach((id) => {
+      //   this.dependenciesMap.set(
+      //     id,
+      //     dependencies.find((item) => item.id === id),
+      //   );
+      // });
     },
     args: () => [this.items] as const,
   });
