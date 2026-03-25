@@ -10,6 +10,8 @@ new_subs_oid_2 = None
 new_user_invite_token = None
 existing_user_invite_token = None
 
+MAX_ATTEMPTS = 24
+
 VALID_PASSWORD = "ValidPassW0rd!"
 
 invite_email = "test-User@EXample.com"
@@ -357,9 +359,20 @@ def test_cancel_sub_and_delete_org(admin_auth_headers):
     assert r.status_code == 200
     assert r.json() == {"canceled": True, "deleted": True}
 
-    r = requests.get(f"{API_PREFIX}/orgs/{new_subs_oid}", headers=admin_auth_headers)
-    assert r.status_code == 404
-    assert r.json()["detail"] == "org_not_found"
+    # Wait for org to be deleted
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{new_subs_oid}", headers=admin_auth_headers
+        )
+        if r.status_code == 404:
+            assert r.json().get("detail") == "org_not_found"
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
 
 
 def test_cancel_sub_and_no_delete_org(admin_auth_headers):
