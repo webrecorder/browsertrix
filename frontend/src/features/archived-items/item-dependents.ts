@@ -62,7 +62,7 @@ export class ItemDependents extends BtrixElement {
   private readonly renderRow = (item: ArchivedItem) => {
     const crawled = isCrawl(item);
 
-    return html`<btrix-table-row>
+    return html`<btrix-table-row class="h-10">
       <btrix-table-cell
         >${collectionStatusIcon({
           item,
@@ -70,18 +70,18 @@ export class ItemDependents extends BtrixElement {
         })}</btrix-table-cell
       >
       <btrix-table-cell class="pl-0">${renderName(item)}</btrix-table-cell>
-      <btrix-table-cell>
+      <btrix-table-cell class="tabular-nums">
         ${this.localize.number(item.requiredByCrawls.length, {
           notation: "compact",
         })}
       </btrix-table-cell>
-      <btrix-table-cell>
+      <btrix-table-cell class="tabular-nums">
         ${this.localize.date(item.finished || item.started, {
           dateStyle: "short",
           timeStyle: "short",
         })}
       </btrix-table-cell>
-      <btrix-table-cell>
+      <btrix-table-cell class="tabular-nums">
         ${this.localize.bytes(item.fileSize || 0, { unitDisplay: "short" })}
       </btrix-table-cell>
       <btrix-table-cell>
