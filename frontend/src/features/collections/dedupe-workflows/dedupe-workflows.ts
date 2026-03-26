@@ -1,4 +1,4 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import clsx from "clsx";
 import { html, nothing, unsafeCSS } from "lit";
@@ -18,7 +18,7 @@ import type { APIPaginatedList } from "@/types/api";
 import type { Crawl, ListWorkflow } from "@/types/crawler";
 import { SortDirection } from "@/types/utils";
 import { finishedCrawlStates, renderName } from "@/utils/crawler";
-import { pluralOf } from "@/utils/pluralize";
+import { pluralize, pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 const styles = unsafeCSS(stylesheet);
@@ -66,7 +66,7 @@ export class DedupeWorkflows extends BtrixElement {
   });
 
   render() {
-    return html`<btrix-overflow-scroll>
+    return html`<btrix-overflow-scroll class="-mx-5 part-[content]:px-5">
       ${this.showHeader
         ? html`<div
             class=${clsx(
@@ -83,7 +83,7 @@ export class DedupeWorkflows extends BtrixElement {
           </div>`
         : nothing}
 
-      <div class="divide-y rounded border">
+      <div class="min-w-max divide-y rounded border">
         ${when(this.workflows, (workflows) =>
           repeat(workflows, ({ id }) => id, this.renderWorkflow),
         )}
@@ -93,19 +93,23 @@ export class DedupeWorkflows extends BtrixElement {
 
   private readonly renderWorkflow = (workflow: ListWorkflow) => {
     const totalCrawls = workflow.crawlSuccessfulCount;
-    // TOOD Virtualize scroll
+    // TODO Virtualize scroll
     const content = () => html`
       <div class="max-h-96 overflow-y-auto border-t">
         <div class="min-h-4 pl-3 pt-3 text-xs leading-none text-neutral-500">
           ${until(
-            this.workflowCrawlsMap
-              .get(workflow.id)
-              ?.then((crawls) =>
-                crawls?.total
-                  ? html`${this.localize.number(crawls.total)} ${msg("deduped")}
-                    ${pluralOf("crawls", crawls.total)}`
-                  : msg("No deduped crawls."),
-              ),
+            this.workflowCrawlsMap.get(workflow.id)?.then((crawls) => {
+              const count = crawls?.total ?? 0;
+              const number_of_crawls = this.localize.number(count);
+              return pluralize(count, {
+                zero: msg("No deduped crawls."),
+                one: msg("1 deduped crawl."),
+                two: msg("2 deduped crawls."),
+                few: msg(str`${number_of_crawls} deduped crawls`),
+                many: msg(str`${number_of_crawls} deduped crawls`),
+                other: msg(str`${number_of_crawls} deduped crawls`),
+              });
+            }),
           )}
         </div>
 
@@ -113,12 +117,12 @@ export class DedupeWorkflows extends BtrixElement {
           this.workflowCrawlsMap
             .get(workflow.id)
             ?.then((crawls) => this.renderCrawls(workflow, crawls)),
-          html`<div class="m-3 flex flex-col gap-1.5">
+          html`<div class="m-3 mt-6 flex flex-col gap-6">
             ${Array.from({ length: totalCrawls }).map(
               () => html`
                 <sl-skeleton
                   effect="sheen"
-                  class="h-6 [--color:var(--sl-color-neutral-100)]"
+                  class="h-4 [--color:var(--sl-color-neutral-100)]"
                 ></sl-skeleton>
               `,
             )}
@@ -226,14 +230,16 @@ export class DedupeWorkflows extends BtrixElement {
     workflow: ListWorkflow,
     crawls?: APIPaginatedList<Crawl>,
   ) => {
-    return html`<div class=${clsx(crawls?.items.length ? tw`mt-1` : tw`mt-3`)}>
+    return html`<div
+      class=${clsx(crawls?.items.length ? tw`mt-1` : tw`mt-3`, tw`p-3`)}
+    >
       ${when(
         crawls?.items,
         (items) =>
-          html`<btrix-item-dependency-tree
+          html`<btrix-item-dependency-list
             .items=${items}
             collectionId=${ifDefined(workflow.dedupeCollId || undefined)}
-          ></btrix-item-dependency-tree>`,
+          ></btrix-item-dependency-list>`,
       )}
     </div>`;
   };

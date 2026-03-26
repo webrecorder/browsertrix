@@ -529,40 +529,42 @@ export class CollectionDetailDedupe extends BtrixElement {
 
   private renderDeduped() {
     return html`
-      <div
-        class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 p-3"
-      >
-        <div class="flex items-center gap-2">
-          <label for="view" class="whitespace-nowrap text-neutral-500"
-            >${msg("View:")}</label
-          >
-          <sl-radio-group
-            id="view"
-            size="small"
-            value=${this.view.value.itemsView || DEFAULT_ITEMS_VIEW}
-            @sl-change=${(e: SlChangeEvent) => {
-              this.view.setValue({
-                itemsView: (e.target as SlRadioGroup).value as ItemsView,
-              });
-            }}
-          >
-            <sl-radio-button pill value=${DEFAULT_ITEMS_VIEW}>
-              <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
-              ${msg("By Workflow")}
-            </sl-radio-button>
-            <sl-radio-button pill value=${ItemsView.Crawls}>
-              <sl-icon slot="prefix" name="gear-wide-connected"></sl-icon>
-              ${msg("By Crawl Run")}
-            </sl-radio-button>
-            <sl-radio-button pill value=${ItemsView.Dependencies}>
-              <sl-icon
-                slot="prefix"
-                name=${dedupeIconFor["dependency"].name}
-              ></sl-icon>
-              ${msg("Crawl Dependencies")}
-            </sl-radio-button>
-          </sl-radio-group>
-        </div>
+      <div class="mb-3 rounded-lg border bg-neutral-50 p-3">
+        <btrix-overflow-scroll
+          class="-mx-3 [--btrix-overflow-scroll-scrim-color:theme(colors.neutral.50)] part-[content]:px-3"
+        >
+          <div class="flex min-w-max items-center gap-2">
+            <label for="view" class="whitespace-nowrap text-neutral-500"
+              >${msg("View:")}</label
+            >
+            <sl-radio-group
+              id="view"
+              size="small"
+              value=${this.view.value.itemsView || DEFAULT_ITEMS_VIEW}
+              @sl-change=${(e: SlChangeEvent) => {
+                this.view.setValue({
+                  itemsView: (e.target as SlRadioGroup).value as ItemsView,
+                });
+              }}
+            >
+              <sl-radio-button pill value=${DEFAULT_ITEMS_VIEW}>
+                <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
+                ${msg("By Workflow")}
+              </sl-radio-button>
+              <sl-radio-button pill value=${ItemsView.Crawls}>
+                <sl-icon slot="prefix" name="gear-wide-connected"></sl-icon>
+                ${msg("By Crawl Run")}
+              </sl-radio-button>
+              <sl-radio-button pill value=${ItemsView.Dependencies}>
+                <sl-icon
+                  slot="prefix"
+                  name=${dedupeIconFor["dependency"].name}
+                ></sl-icon>
+                ${msg("Crawl Dependencies")}
+              </sl-radio-button>
+            </sl-radio-group>
+          </div>
+        </btrix-overflow-scroll>
       </div>
 
       <div class="mx-2">
@@ -636,11 +638,13 @@ export class CollectionDetailDedupe extends BtrixElement {
     const items = (items?: APIPaginatedList<ArchivedItem>) =>
       items?.items.length
         ? html`
-            <btrix-item-dependency-tree
-              class="part-[tree]:rounded part-[tree]:border"
-              .items=${items.items}
-              collectionId=${this.collectionId}
-            ></btrix-item-dependency-tree>
+            <btrix-overflow-scroll class="-mx-5 part-[content]:px-5">
+              <btrix-item-dependency-list
+                class="block min-w-max part-[tree]:rounded part-[tree]:border"
+                .items=${items.items}
+                collectionId=${this.collectionId}
+              ></btrix-item-dependency-list>
+            </btrix-overflow-scroll>
 
             <footer class="mt-6 flex justify-center">
               <btrix-pagination
@@ -716,10 +720,13 @@ export class CollectionDetailDedupe extends BtrixElement {
     const items = (items?: APIPaginatedList<ArchivedItem>) =>
       items?.items.length
         ? html`
-            <btrix-item-dependents
-              collectionId=${this.collectionId}
-              .items=${items.items}
-            ></btrix-item-dependents>
+            <btrix-overflow-scroll class="-mx-5 part-[content]:px-5">
+              <btrix-item-dependents
+                class="block min-w-max"
+                collectionId=${this.collectionId}
+                .items=${items.items}
+              ></btrix-item-dependents>
+            </btrix-overflow-scroll>
 
             <footer class="mt-6 flex justify-center">
               <btrix-pagination

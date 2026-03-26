@@ -16,7 +16,7 @@ import type { Crawl } from "@/types/crawler";
 const meta = {
   title: "Features/Collections/Dedupe Workflows",
   component: "btrix-dedupe-workflows",
-  subcomponents: { ItemDependencyTree: "btrix-item-dependency-tree" },
+  subcomponents: { ItemDependencyList: "btrix-item-dependency-list" },
   tags: ["autodocs"],
   decorators: [
     userDecorator as DecoratorFunction,
