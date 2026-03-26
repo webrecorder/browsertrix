@@ -367,6 +367,7 @@ def test_cancel_sub_and_delete_org(admin_auth_headers):
         )
         if r.status_code == 404:
             assert r.json().get("detail") == "org_not_found"
+            break
 
         if count + 1 == MAX_ATTEMPTS:
             assert False
