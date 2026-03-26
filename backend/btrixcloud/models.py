@@ -1585,6 +1585,9 @@ class PageQACompare(BaseModel):
     textMatch: float | None = None
     resourceCounts: dict[str, int] | None = None
 
+    rawTextMatch: float | None = None
+    csrClues: dict[str, dict[str, int]] | None = None
+
 
 # ============================================================================
 class Page(BaseMongoModel):
