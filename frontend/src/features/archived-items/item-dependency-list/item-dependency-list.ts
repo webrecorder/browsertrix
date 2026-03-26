@@ -1,9 +1,7 @@
 import { localized, msg } from "@lit/localize";
-import { Task } from "@lit/task";
 import { html, nothing, unsafeCSS } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
-import queryString from "query-string";
 
 import { collectionStatusIcon } from "../templates/collection-status-icon";
 
@@ -14,16 +12,11 @@ import { dedupeIcon } from "@/features/collections/templates/dedupe-icon";
 import { dedupeStatusText } from "@/features/collections/templates/dedupe-status-text";
 import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/archived-item-detail";
 import { OrgTab, WorkflowTab } from "@/routes";
-import type { APIPaginatedList } from "@/types/api";
 import type { ArchivedItem } from "@/types/crawler";
 import { isCrawl, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 
 const styles = unsafeCSS(stylesheet);
-
-// FIXME Sometimes the API returns circular dependencies
-const dependenciesWithoutSelf = (item: ArchivedItem) =>
-  item.requiresCrawls.filter((id) => id !== item.id);
 
 @customElement("btrix-item-dependency-list")
 @localized()
@@ -42,51 +35,6 @@ export class ItemDependencyList extends BtrixElement {
     string,
     ArchivedItem | undefined
   >();
-
-  private readonly dependenciesTask = new Task(this, {
-    task: async ([items], { signal }) => {
-      if (!items?.length) return;
-
-      const itemsMap = new Map(items.map((item) => [item.id, item]));
-      const newIds: string[] = [];
-
-      items.forEach((item) => {
-        dependenciesWithoutSelf(item).forEach((id) => {
-          if (!this.dependenciesMap.get(id)) {
-            const cachedItem = itemsMap.get(id);
-            if (cachedItem) {
-              this.dependenciesMap.set(id, cachedItem);
-            } else {
-              newIds.push(id);
-            }
-          }
-        });
-      });
-
-      if (!newIds.length) return;
-
-      const query = queryString.stringify(
-        {
-          ids: newIds,
-        },
-        {
-          arrayFormat: "none",
-        },
-      );
-
-      const { items: dependencies } = await this.api.fetch<
-        APIPaginatedList<ArchivedItem>
-      >(`/orgs/${this.orgId}/all-crawls?${query}`, { signal });
-
-      newIds.forEach((id) => {
-        this.dependenciesMap.set(
-          id,
-          dependencies.find((item) => item.id === id),
-        );
-      });
-    },
-    args: () => [this.items] as const,
-  });
 
   disconnectedCallback(): void {
     this.timerIds.forEach(window.clearTimeout);
@@ -143,7 +91,7 @@ export class ItemDependencyList extends BtrixElement {
   };
 
   private readonly renderContent = (item: ArchivedItem) => {
-    const dependencies = dependenciesWithoutSelf(item);
+    const numDependencies = item.requiresCrawls.length;
     const crawled = isCrawl(item);
     const collectionId = this.collectionId;
 
@@ -177,20 +125,20 @@ export class ItemDependencyList extends BtrixElement {
         <sl-tooltip
           content=${dedupeStatusText(
             item.requiredByCrawls.length,
-            dependencies.length,
+            numDependencies,
           )}
           placement="left"
           hoist
         >
         ${
-          dependencies.length
+          numDependencies
             ? html`
                 ${dedupeIcon({
                   hasDependencies: true,
                   hasDependents: !!item.requiredByCrawls.length,
                 })}
-                ${this.localize.number(dependencies.length)}
-                ${pluralOf("dependencies", dependencies.length)}
+                ${this.localize.number(numDependencies)}
+                ${pluralOf("dependencies", numDependencies)}
               `
             : nothing
         }
