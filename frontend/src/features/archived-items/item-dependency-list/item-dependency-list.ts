@@ -1,8 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import type { SlTree } from "@shoelace-style/shoelace";
 import { html, nothing, unsafeCSS } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import queryString from "query-string";
 
@@ -12,6 +11,7 @@ import stylesheet from "./item-dependency-list.stylesheet.css";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { dedupeIcon } from "@/features/collections/templates/dedupe-icon";
+import { dedupeStatusText } from "@/features/collections/templates/dedupe-status-text";
 import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/archived-item-detail";
 import { OrgTab, WorkflowTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
@@ -38,9 +38,6 @@ export class ItemDependencyTree extends BtrixElement {
 
   @property({ type: Array })
   items?: ArchivedItem[];
-
-  @query("sl-tree")
-  private readonly tree?: SlTree | null;
 
   private readonly timerIds: number[] = [];
 
@@ -107,6 +104,7 @@ export class ItemDependencyTree extends BtrixElement {
         style="--btrix-table-grid-template-columns: ${[
           "[clickable-start] min-content",
           "repeat(4, auto) [clickable-end]",
+          "min-content",
         ].join(" ")}"
       >
         <btrix-table-head
@@ -171,26 +169,38 @@ export class ItemDependencyTree extends BtrixElement {
           href=${
             crawled
               ? `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}#${"dependencies" as ArchivedItemSectionName}`
-              : `${this.navigate.orgBasePath}/${OrgTab.Items}/${item.type}/${item.id}`
+              : `${this.navigate.orgBasePath}/${OrgTab.Items}/${item.type}/${item.id}#${"dependencies" as ArchivedItemSectionName}`
           }
     @click=${this.navigate.link}
         >
           ${renderName(item)}
         </a>
       </btrix-table-cell>
-      <btrix-table-cell class="flex items-center gap-1.5 truncate">
+      <btrix-table-cell class="flex items-center gap-1.5 truncate tabular-nums">
+        <sl-tooltip
+          content=${dedupeStatusText(
+            item.requiredByCrawls.length,
+            dependencies.length,
+          )}
+          placement="left"
+          hoist
+        >
         ${
           dependencies.length
             ? html`
-                ${dedupeIcon({ hasDependencies: true, hasDependents: true })}
+                ${dedupeIcon({
+                  hasDependencies: true,
+                  hasDependents: !!item.requiredByCrawls.length,
+                })}
                 ${this.localize.number(dependencies.length)}
                 ${pluralOf("dependencies", dependencies.length)}
               `
             : nothing
         }
+        </sl-tooltip>
       </btrix-table-cell>
 
-      <btrix-table-cell class="flex items-center gap-1.5 truncate">
+      <btrix-table-cell class="flex items-center gap-1.5 truncate tabular-nums">
         ${
           crawled
             ? html`<sl-tooltip
@@ -218,6 +228,30 @@ export class ItemDependencyTree extends BtrixElement {
       <btrix-table-cell class="flex items-center gap-1.5 truncate">
         <sl-icon name="file-earmark-binary"></sl-icon>
         ${this.localize.bytes(item.fileSize || 0, { unitDisplay: "short" })}
+      </btrix-table-cell>
+      <btrix-table-cell>
+        <btrix-overflow-dropdown>
+          <sl-menu>
+            <btrix-menu-item-link
+              href="${
+                crawled
+                  ? `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}`
+                  : `${this.navigate.orgBasePath}/${OrgTab.Items}/${item.type}/${item.id}`
+              }"
+            >
+              <sl-icon slot="prefix" name=${crawled ? "gear-wide-connected" : "arrow-return-right"}></sl-icon>
+              ${crawled ? msg("Go to Crawl Run") : msg("Go to Item")}
+            </btrix-menu-item-link>
+            <btrix-menu-item-link
+              href="${
+                this.navigate.orgBasePath
+              }/${OrgTab.Workflows}/${item.cid}"
+            >
+              <sl-icon slot="prefix" name="arrow-return-right"></sl-icon>
+              ${msg("Go to Workflow")}
+            </btrix-menu-item-link>
+          </sl-menu>
+        </btrix-overflow-dropdown>
       </btrix-table-cell>
     </div>`;
   };

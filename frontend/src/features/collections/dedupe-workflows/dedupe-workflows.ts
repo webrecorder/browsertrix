@@ -117,12 +117,12 @@ export class DedupeWorkflows extends BtrixElement {
           this.workflowCrawlsMap
             .get(workflow.id)
             ?.then((crawls) => this.renderCrawls(workflow, crawls)),
-          html`<div class="m-3 flex flex-col gap-1.5">
+          html`<div class="m-3 mt-6 flex flex-col gap-6">
             ${Array.from({ length: totalCrawls }).map(
               () => html`
                 <sl-skeleton
                   effect="sheen"
-                  class="h-6 [--color:var(--sl-color-neutral-100)]"
+                  class="h-4 [--color:var(--sl-color-neutral-100)]"
                 ></sl-skeleton>
               `,
             )}

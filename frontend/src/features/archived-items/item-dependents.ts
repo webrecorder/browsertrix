@@ -2,13 +2,17 @@ import { localized, msg } from "@lit/localize";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
+import { dedupeStatusText } from "../collections/templates/dedupe-status-text";
+
 import { collectionStatusIcon } from "./templates/collection-status-icon";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { dedupeIcon } from "@/features/collections/templates/dedupe-icon";
 import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/archived-item-detail";
 import { OrgTab, WorkflowTab } from "@/routes";
 import type { ArchivedItem } from "@/types/crawler";
 import { isCrawl, renderName } from "@/utils/crawler";
+import { pluralOf } from "@/utils/pluralize";
 
 @customElement("btrix-item-dependents")
 @localized()
@@ -69,13 +73,35 @@ export class ItemDependents extends BtrixElement {
           collectionId: this.collectionId,
         })}</btrix-table-cell
       >
-      <btrix-table-cell class="pl-0">${renderName(item)}</btrix-table-cell>
-      <btrix-table-cell class="tabular-nums">
-        ${this.localize.number(item.requiredByCrawls.length, {
-          notation: "compact",
-        })}
+      <btrix-table-cell class="pl-0" rowClickTarget="a">
+        <a
+          href=${crawled
+            ? `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}#${"overview" as ArchivedItemSectionName}`
+            : `${this.navigate.orgBasePath}/${OrgTab.Items}/${item.type}/${item.id}`}
+        >
+          ${renderName(item)}
+        </a>
       </btrix-table-cell>
-      <btrix-table-cell class="tabular-nums">
+      <btrix-table-cell class="flex items-center gap-1.5 truncate tabular-nums">
+        <sl-tooltip
+          content=${dedupeStatusText(
+            item.requiredByCrawls.length,
+            item.requiresCrawls.length,
+          )}
+          placement="left"
+          hoist
+        >
+          ${dedupeIcon({
+            hasDependencies: !!item.requiresCrawls.length,
+            hasDependents: true,
+          })}
+          ${this.localize.number(item.requiredByCrawls.length, {
+            notation: "compact",
+          })}
+          ${pluralOf("dependents", item.requiredByCrawls.length)}
+        </sl-tooltip>
+      </btrix-table-cell>
+      <btrix-table-cell class="flex items-center gap-1.5 truncate tabular-nums">
         ${this.localize.date(item.finished || item.started, {
           dateStyle: "short",
           timeStyle: "short",
@@ -83,13 +109,6 @@ export class ItemDependents extends BtrixElement {
       </btrix-table-cell>
       <btrix-table-cell class="tabular-nums">
         ${this.localize.bytes(item.fileSize || 0, { unitDisplay: "short" })}
-      </btrix-table-cell>
-      <btrix-table-cell>
-        ${this.renderLink(
-          crawled
-            ? `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}#${"overview" as ArchivedItemSectionName}`
-            : `${this.navigate.orgBasePath}/${OrgTab.Items}/${item.type}/${item.id}`,
-        )}
       </btrix-table-cell>
     </btrix-table-row>`;
   };
