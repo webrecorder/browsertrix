@@ -25,12 +25,9 @@ const styles = unsafeCSS(stylesheet);
 const dependenciesWithoutSelf = (item: ArchivedItem) =>
   item.requiresCrawls.filter((id) => id !== item.id);
 
-/**
- * @cssPart tree
- */
 @customElement("btrix-item-dependency-list")
 @localized()
-export class ItemDependencyTree extends BtrixElement {
+export class ItemDependencyList extends BtrixElement {
   static styles = styles;
 
   @property({ type: String })
