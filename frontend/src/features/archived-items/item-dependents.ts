@@ -55,7 +55,7 @@ export class ItemDependents extends BtrixElement {
           </btrix-table-header-cell>
         </btrix-table-head>
         <btrix-table-body
-          class="divide-y rounded border [--btrix-table-cell-padding-x:var(--sl-spacing-x-small)] [--btrix-table-cell-padding-y:var(--sl-spacing-2x-small)]"
+          class="divide-y overflow-clip rounded border [--btrix-table-cell-padding-x:var(--sl-spacing-x-small)] [--btrix-table-cell-padding-y:var(--sl-spacing-2x-small)]"
         >
           ${this.items.map(this.renderRow)}
         </btrix-table-body>
@@ -66,7 +66,9 @@ export class ItemDependents extends BtrixElement {
   private readonly renderRow = (item: ArchivedItem) => {
     const crawled = isCrawl(item);
 
-    return html`<btrix-table-row class="h-10">
+    return html`<btrix-table-row
+      class="h-10 cursor-pointer select-none whitespace-nowrap transition-colors duration-fast focus-within:bg-neutral-50 hover:bg-neutral-50"
+    >
       <btrix-table-cell
         >${collectionStatusIcon({
           item,

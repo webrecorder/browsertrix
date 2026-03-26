@@ -126,7 +126,7 @@ export class ItemDependencyTree extends BtrixElement {
           </btrix-table-header-cell>
         </btrix-table-head>
         <btrix-table-body
-          class="divide-y rounded border [--btrix-table-cell-padding-x:var(--sl-spacing-x-small)] [--btrix-table-cell-padding-y:var(--sl-spacing-2x-small)]"
+          class="divide-y overflow-clip rounded border [--btrix-table-cell-padding-x:var(--sl-spacing-x-small)] [--btrix-table-cell-padding-y:var(--sl-spacing-2x-small)]"
         >
           ${repeat(this.items, ({ id }) => id, this.renderItem)}
         </btrix-table-body>
