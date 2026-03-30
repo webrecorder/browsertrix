@@ -5,8 +5,11 @@ from uuid import UUID, uuid4
 import asyncio
 from datetime import timedelta
 from typing import Optional, Tuple, List
-from passlib import pwd
-from passlib.context import CryptContext
+import string
+import secrets
+from pwdlib import PasswordHash
+from pwdlib.hashers.argon2 import Argon2Hasher
+from pwdlib.hashers.bcrypt import BcryptHasher
 
 from pydantic import BaseModel
 import jwt
@@ -39,7 +42,12 @@ ALGORITHM = "HS256"
 
 RESET_VERIFY_TOKEN_LIFETIME_MINUTES = 60
 
-PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
+PWD_CONTEXT = PasswordHash(
+    (
+        Argon2Hasher(),
+        BcryptHasher(),
+    )
+)
 
 # Audiences
 CUSTOM_AUTH_AUD = "btrix:custom-auth"
@@ -164,7 +172,8 @@ def get_password_hash(password: str) -> str:
 # ============================================================================
 def generate_password() -> str:
     """generate new secure password"""
-    return pwd.genword()
+    alphabet = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alphabet) for i in range(20))
 
 
 # ============================================================================
