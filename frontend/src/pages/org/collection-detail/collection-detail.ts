@@ -169,6 +169,11 @@ export class CollectionDetail extends BtrixElement {
     return this.appState.isCrawler;
   }
 
+  disconnectedCallback(): void {
+    window.clearTimeout(this.timerId);
+    super.disconnectedCallback();
+  }
+
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
