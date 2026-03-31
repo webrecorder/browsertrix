@@ -250,7 +250,7 @@ class PageOps:
 
             compare = PageQACompare(**compare_dict)
 
-            await self.add_qa_run_for_page(page.id, oid, qa_run_id, compare)
+            await self.add_qa_run_for_page(page.id, oid, qa_run_id, crawl_id, compare)
 
     async def update_crawl_file_and_error_counts(
         self, crawl_id: str, pages: Optional[List[Page]] = None
@@ -371,14 +371,19 @@ class PageOps:
         return PageOut.from_dict(page_raw)
 
     async def add_qa_run_for_page(
-        self, page_id: UUID, oid: UUID, qa_run_id: str, compare: PageQACompare
+        self,
+        page_id: UUID,
+        oid: UUID,
+        qa_run_id: str,
+        crawl_id: str,
+        compare: PageQACompare,
     ) -> bool:
         """Update page heuristics and mime/type from QA run"""
 
         # modified = dt_now()
 
         result = await self.pages.find_one_and_update(
-            {"_id": page_id, "oid": oid},
+            {"_id": page_id, "oid": oid, "crawl_id": crawl_id},
             {"$set": {f"qa.{qa_run_id}": compare.dict()}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
