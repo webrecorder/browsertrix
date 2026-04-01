@@ -29,7 +29,7 @@ import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { isActive, isSuccessfullyFinished } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { pluralOf } from "@/utils/pluralize";
+import { pluralize, pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 type QAStatsThreshold = {
@@ -143,6 +143,8 @@ export class ArchivedItemDetailQA extends BtrixElement {
       : 0;
     const htmlCount = doneCount - fileCount - errorCount;
 
+    let count: TemplateResult;
+
     return html`
       <div class="mb-5 rounded-lg border p-2">
         <btrix-desc-list horizontal>
@@ -177,7 +179,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                       str`${
                         this.mostRecentNonFailedQARun.stats.found === 0
                           ? msg("Loading")
-                          : `${this.mostRecentNonFailedQARun.stats.done}/${this.mostRecentNonFailedQARun.stats.found}`
+                          : `${this.localize.number(this.mostRecentNonFailedQARun.stats.done)}/${this.localize.number(this.mostRecentNonFailedQARun.stats.found)}`
                       } ${pluralOf("pages", this.mostRecentNonFailedQARun.stats.found)}`,
                     )}"
                     placement="bottom"
@@ -251,22 +253,49 @@ export class ArchivedItemDetailQA extends BtrixElement {
             ${this.crawl
               ? html`<div class="tabular-nums">
                   <p>
-                    ${msg(html`
-                      <span class="text-primary">${htmlCount}</span>
-                      HTML ${pluralOf("pages", htmlCount)}
-                    `)}
+                    ${((count = html`<span class="text-primary"
+                      >${this.localize.number(htmlCount)}</span
+                    >`),
+                    pluralize<string | TemplateResult>(htmlCount, {
+                      zero: msg(html`${count} HTML pages`),
+                      one: msg(html`${count} HTML page`),
+                      two: msg(html`${count} HTML pages`),
+                      few: msg(html`${count} HTML pages`),
+                      many: msg(html`${count} HTML pages`),
+                      other: msg(html`${count} HTML pages`),
+                    }))}
                   </p>
                   <p>
-                    ${msg(html`
-                      <span class="text-neutral-600">${fileCount}</span>
-                      Non-HTML files captured as ${pluralOf("pages", fileCount)}
-                    `)}
+                    ${((count = html`<span class="text-neutral-600"
+                      >${this.localize.number(fileCount)}</span
+                    >`),
+                    pluralize<string | TemplateResult>(fileCount, {
+                      zero: msg(
+                        html`${count} Non-HTML files captured as pages`,
+                      ),
+                      one: msg(html`${count} Non-HTML files captured as page`),
+                      two: msg(html`${count} Non-HTML files captured as pages`),
+                      few: msg(html`${count} Non-HTML files captured as pages`),
+                      many: msg(
+                        html`${count} Non-HTML files captured as pages`,
+                      ),
+                      other: msg(
+                        html`${count} Non-HTML files captured as pages`,
+                      ),
+                    }))}
                   </p>
                   <p>
-                    ${msg(html`
-                      <span class="text-danger">${errorCount}</span>
-                      Failed ${pluralOf("pages", errorCount)}
-                    `)}
+                    ${((count = html`<span class="text-danger"
+                      >${this.localize.number(errorCount)}</span
+                    >`),
+                    pluralize<string | TemplateResult>(errorCount, {
+                      zero: msg(html`${count} Failed pages`),
+                      one: msg(html`${count} Failed page`),
+                      two: msg(html`${count} Failed pages`),
+                      few: msg(html`${count} Failed pages`),
+                      many: msg(html`${count} Failed pages`),
+                      other: msg(html`${count} Failed pages`),
+                    }))}
                     ${errorCount > 0
                       ? html`—
                           <a
@@ -336,7 +365,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
           class="col-span-4 flex h-full flex-col items-center justify-center gap-2 p-3 text-xs text-neutral-500"
         >
           <sl-icon name="slash-circle"></sl-icon>
-          ${msg("No analysis runs, yet")}
+          ${msg("No analysis runs yet")}
         </div>
       `;
     }

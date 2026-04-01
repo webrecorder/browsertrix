@@ -2,9 +2,9 @@ import { msg } from "@lit/localize";
 
 import localize from "./localize";
 
-export const pluralize = (
+export const pluralize = <T>(
   number: number,
-  strings: { [k in Intl.LDMLPluralRule]: string },
+  strings: { [k in Intl.LDMLPluralRule]: T },
   options?: Intl.PluralRulesOptions,
 ) =>
   strings[
