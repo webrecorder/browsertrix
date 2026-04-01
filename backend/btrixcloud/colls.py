@@ -297,14 +297,13 @@ class CollectionOps:
 
         return UpdatedResponse(updated=True)
 
-    async def remove_crawls_from_collection(
+    async def update_collection_post_remove(
         self,
-        coll_id: UUID,
+        coll_id,
         crawl_ids: List[str],
         org: Organization,
-    ) -> UpdatedResponse:
-        """Remove crawls from collection"""
-        await self.crawl_ops.remove_from_collection(crawl_ids, coll_id)
+    ):
+        """Update collection after crawls are removed or deleted outright"""
         modified = dt_now()
         result = await self.collections.find_one_and_update(
             {"_id": coll_id},
@@ -327,6 +326,15 @@ class CollectionOps:
             )
         )
 
+    async def remove_crawls_from_collection(
+        self,
+        coll_id: UUID,
+        crawl_ids: List[str],
+        org: Organization,
+    ) -> UpdatedResponse:
+        """Remove crawls from collection"""
+        await self.crawl_ops.remove_from_collection(crawl_ids, coll_id)
+        await self.update_collection_post_remove(coll_id, crawl_ids, org)
         return UpdatedResponse(updated=True)
 
     async def get_collection_raw(
