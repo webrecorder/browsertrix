@@ -410,7 +410,7 @@ class BaseCrawlOps:
     ) -> tuple[int, dict[UUID, dict[str, int]], bool]:
         """Delete a list of crawls by id for given org"""
         cids_to_update: dict[UUID, dict[str, int]] = {}
-        collection_ids_to_update = set()
+        colls_to_update = dict[UUID, list[str]]
 
         size = 0
 
@@ -439,7 +439,10 @@ class BaseCrawlOps:
 
             if crawl.collectionIds:
                 for coll_id in crawl.collectionIds:
-                    collection_ids_to_update.add(coll_id)
+                    if coll_id in colls_to_update:
+                        colls_to_update[coll_id].append(crawl_id)
+                    else:
+                        colls_to_update[coll_id] = [crawl_id]
 
             if type_ == "crawl":
                 await self.delete_all_crawl_qa_files(crawl_id, org)
@@ -484,10 +487,10 @@ class BaseCrawlOps:
 
         await self.orgs.set_last_crawl_finished(org.id)
 
-        if collection_ids_to_update:
-            for coll_id in collection_ids_to_update:
-                await self.background_job_ops.create_update_collection_stats_job(
-                    org.id, coll_id
+        if colls_to_update:
+            for coll_id, coll_crawl_ids in colls_to_update.items():
+                await self.colls.update_collection_post_remove(
+                    coll_id, coll_crawl_ids, org
                 )
 
         quota_reached = self.orgs.storage_quota_reached(org)
