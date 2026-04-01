@@ -1,6 +1,5 @@
 """Base Operator class for all operators"""
 
-import asyncio
 import os
 import json
 from typing import TYPE_CHECKING, Any
@@ -186,19 +185,10 @@ class BaseOperator:
         self.user_ops = crawl_config_ops.user_manager
         self.crawl_log_ops = crawl_log_ops
 
-        # to avoid background tasks being garbage collected
-        # see: https://stackoverflow.com/a/74059981
-        self.bg_tasks = set()
         self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
     def init_routes(self, app) -> None:
         """init routes for this operator"""
-
-    def run_task(self, func) -> None:
-        """add bg tasks to set to avoid premature garbage collection"""
-        task = asyncio.create_task(func)
-        self.bg_tasks.add(task)
-        task.add_done_callback(self.bg_tasks.discard)
 
     def is_configmap_update_needed(self, path: str, configmap: dict[str, Any]):
         """check if any presigned resources in this configmap have expired"""

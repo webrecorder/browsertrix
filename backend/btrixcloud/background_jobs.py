@@ -1,6 +1,5 @@
 """k8s background jobs"""
 
-import asyncio
 import os
 import secrets
 from datetime import datetime
@@ -36,7 +35,7 @@ from .models import (
     CRAWL_TYPES,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import dt_now
+from .utils import dt_now, run_async_task
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -83,20 +82,10 @@ class BackgroundJobOps:
             responses={404: {"description": "Not found"}},
         )
 
-        # to avoid background tasks being garbage collected
-        # see: https://stackoverflow.com/a/74059981
-        self.bg_tasks = set()
-
     def set_ops(self, base_crawl_ops: BaseCrawlOps, profile_ops: ProfileOps) -> None:
         """basecrawlops and profileops for updating files"""
         self.base_crawl_ops = base_crawl_ops
         self.profile_ops = profile_ops
-
-    def _run_task(self, func) -> None:
-        """add bg tasks to set to avoid premature garbage collection"""
-        task = asyncio.create_task(func)
-        self.bg_tasks.add(task)
-        task.add_done_callback(self.bg_tasks.discard)
 
     def strip_bucket(self, endpoint_url: str) -> tuple[str, str]:
         """split the endpoint_url into the origin and return rest of endpoint as bucket path"""
@@ -602,7 +591,7 @@ class BackgroundJobOps:
             if job.oid:
                 org = await self.org_ops.get_org_by_id(job.oid)
 
-            self._run_task(
+            run_async_task(
                 self.email.send_background_job_failed(
                     job, finished, superuser.email, org
                 )
@@ -854,28 +843,20 @@ class BackgroundJobOps:
     async def retry_failed_org_background_jobs(
         self, org: Organization
     ) -> Dict[str, Union[bool, Optional[str]]]:
-        """Retry all failed background jobs in an org
-
-        Keep track of tasks in set to prevent them from being garbage collected
-        See: https://stackoverflow.com/a/74059981
-        """
+        """Retry all failed background jobs in an org"""
         async for job in self.jobs.find({"oid": org.id, "success": False}):
-            self._run_task(self.retry_background_job(job["_id"], org))
+            run_async_task(self.retry_background_job(job["_id"], org))
         return {"success": True}
 
     async def retry_all_failed_background_jobs(
         self,
     ) -> Dict[str, Union[bool, Optional[str]]]:
-        """Retry all failed background jobs from all orgs
-
-        Keep track of tasks in set to prevent them from being garbage collected
-        See: https://stackoverflow.com/a/74059981
-        """
+        """Retry all failed background jobs from all orgs"""
         async for job in self.jobs.find({"success": False}):
             org = None
             if job.get("oid"):
                 org = await self.org_ops.get_org_by_id(job["oid"])
-            self._run_task(self.retry_background_job(job["_id"], org))
+            run_async_task(self.retry_background_job(job["_id"], org))
         return {"success": True}
 
 

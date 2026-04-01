@@ -79,6 +79,7 @@ from .utils import (
     browser_windows_from_scale,
     case_insensitive_collation,
     crawler_image_below_minimum,
+    run_async_task,
 )
 
 if TYPE_CHECKING:
@@ -1996,7 +1997,7 @@ def init_crawl_config_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        asyncio.create_task(ops.re_add_all_scheduled_cron_jobs())
+        run_async_task(ops.re_add_all_scheduled_cron_jobs())
         return {"success": True}
 
     @router.post("/validate/custom-behavior", response_model=SuccessResponse)

@@ -9,7 +9,6 @@ from uuid import UUID, uuid4
 from typing import Optional, List, TYPE_CHECKING, cast, Dict, Any, Union
 import os
 
-import asyncio
 import pymongo
 import aiohttp
 from fastapi import Depends, HTTPException, Response
@@ -62,6 +61,7 @@ from .utils import (
     get_duplicate_key_error_field,
     get_origin,
     case_insensitive_collation,
+    run_async_task,
 )
 
 from .auth import get_custom_jwt_token
@@ -123,16 +123,6 @@ class CollectionOps:
             "DEDUPE_IMPORTER_CHANNEL", "default"
         )
 
-        # to avoid background tasks being garbage collected
-        # see: https://stackoverflow.com/a/74059981
-        self.bg_tasks = set()
-
-    def _run_task(self, func) -> None:
-        """add bg tasks to set to avoid premature garbage collection"""
-        task = asyncio.create_task(func)
-        self.bg_tasks.add(task)
-        task.add_done_callback(self.bg_tasks.discard)
-
     def set_crawl_ops(self, ops):
         """set crawl ops"""
         self.crawl_ops = ops
@@ -192,7 +182,7 @@ class CollectionOps:
                 await self.background_job_ops.create_update_collection_stats_job(
                     org.id, coll_id
                 )
-                self._run_task(
+                run_async_task(
                     self.event_webhook_ops.create_added_to_collection_notification(
                         crawl_ids, coll_id, org
                     )
@@ -290,7 +280,7 @@ class CollectionOps:
         if result.get("indexState"):
             await self.run_index_import_job(coll_id, org.id)
 
-        self._run_task(
+        run_async_task(
             self.event_webhook_ops.create_added_to_collection_notification(
                 crawl_ids, coll_id, org
             )
@@ -321,7 +311,7 @@ class CollectionOps:
         if result.get("indexState"):
             await self.run_index_import_job(coll_id, org.id)
 
-        self._run_task(
+        run_async_task(
             self.event_webhook_ops.create_removed_from_collection_notification(
                 crawl_ids, coll_id, org
             )
@@ -732,7 +722,7 @@ class CollectionOps:
         if result.deleted_count < 1:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        self._run_task(
+        run_async_task(
             self.event_webhook_ops.create_collection_deleted_notification(coll_id, org)
         )
 

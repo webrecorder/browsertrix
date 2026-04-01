@@ -1,6 +1,5 @@
 """Webhook management"""
 
-import asyncio
 from typing import List, Union, Optional, TYPE_CHECKING, cast
 from uuid import UUID, uuid4
 
@@ -27,7 +26,7 @@ from .models import (
     Organization,
     QARun,
 )
-from .utils import dt_now
+from .utils import dt_now, run_async_task
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -601,7 +600,7 @@ def init_event_webhooks_api(mdb, org_ops, app):
         org: Organization = Depends(org_owner_dep),
     ):
         notification = await ops.get_notification(org, notificationid)
-        asyncio.create_task(ops.send_notification(org, notification))
+        run_async_task(ops.send_notification(org, notification))
         return {"success": True}
 
     init_openapi_webhooks(app)

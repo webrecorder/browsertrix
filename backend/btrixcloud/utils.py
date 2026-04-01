@@ -30,6 +30,10 @@ browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
 
 case_insensitive_collation = Collation(locale="en", strength=1)
 
+# to avoid background tasks being garbage collected
+# see: https://stackoverflow.com/a/74059981
+bg_tasks = set()
+
 
 class JSONSerializer(json.JSONEncoder):
     """Serializer class for json.dumps with UUID and datetime support"""
@@ -250,3 +254,10 @@ def gb_storage_floor(storage: float) -> str:
     """approx min GB storage, rounded up"""
     gb = math.floor(storage / 1_000_000_000)
     return f"{gb}Gi"
+
+
+def run_async_task(func) -> None:
+    """add bg task to set to avoid premature garbage collection"""
+    task = asyncio.create_task(func)
+    bg_tasks.add(task)
+    task.add_done_callback(bg_tasks.discard)

@@ -4,7 +4,6 @@ import uuid
 from urllib.parse import unquote
 from uuid import UUID
 
-import asyncio
 from io import BufferedReader
 from typing import Optional, List, Any
 from fastapi import Depends, UploadFile, File
@@ -31,7 +30,7 @@ from .models import (
     TagsResponse,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
-from .utils import dt_now
+from .utils import dt_now, run_async_task
 
 
 # ============================================================================
@@ -188,11 +187,11 @@ class UploadOps(BaseCrawlOps):
             {"_id": crawl_id}, {"$set": uploaded.to_dict()}, upsert=True
         )
 
-        asyncio.create_task(
+        run_async_task(
             self.event_webhook_ops.create_upload_finished_notification(crawl_id, org.id)
         )
 
-        asyncio.create_task(
+        run_async_task(
             self._add_pages_and_update_collections(crawl_id, org.id, collections)
         )
 

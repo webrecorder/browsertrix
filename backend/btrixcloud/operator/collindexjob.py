@@ -1,5 +1,7 @@
 """Operator handler for Dedupe Index Import Job"""
 
+from btrixcloud.utils import run_async_task
+
 from .models import (
     MCBaseRequest,
     MCDecoratorSyncData,
@@ -74,7 +76,7 @@ class CollIndexImportJobOperator(BaseOperator):
 
         # delete succeeded job
         if data.object.get("status", {}).get("succeeded", 0) >= 1:
-            self.run_task(self.k8s.delete_job(name))
+            run_async_task(self.k8s.delete_job(name))
             attachments = []
 
         return MCDecoratorSyncResponse(attachments=attachments)

@@ -2,7 +2,6 @@
 
 import os
 from uuid import UUID, uuid4
-import asyncio
 from datetime import timedelta
 from typing import Optional, Tuple, List
 from passlib import pwd
@@ -22,7 +21,7 @@ from fastapi import (
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from .models import User, UserOut
-from .utils import dt_now
+from .utils import dt_now, run_async_task
 
 
 # ============================================================================
@@ -250,7 +249,7 @@ def init_jwt_auth(user_manager):
                             flush=True,
                         )
 
-                asyncio.create_task(send_reset_if_needed())
+                run_async_task(send_reset_if_needed())
 
             # any further attempt is a failure, increment to track further attempts
             # and avoid sending email again

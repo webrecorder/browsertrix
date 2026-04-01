@@ -13,7 +13,6 @@ from typing import (
 )
 from uuid import UUID, uuid4
 import os
-import asyncio
 import json
 
 from urllib.parse import urlencode
@@ -49,7 +48,7 @@ from .models import (
     ListFilterType,
     ProfileSearchValuesResponse,
 )
-from .utils import dt_now, str_to_date, case_insensitive_collation
+from .utils import dt_now, str_to_date, case_insensitive_collation, run_async_task
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -79,8 +78,6 @@ class ProfileOps:
     browser_fqdn_suffix: str
     router: APIRouter
 
-    bg_tasks: set
-
     def __init__(self, mdb, orgs, crawl_manager, storage_ops, background_job_ops):
         self.profiles = mdb["profiles"]
         self.orgs = orgs
@@ -98,10 +95,6 @@ class ProfileOps:
         )
 
         self.crawlconfigs = cast(CrawlConfigOps, None)
-
-        # to avoid background tasks being garbage collected
-        # see: https://stackoverflow.com/a/74059981
-        self.bg_tasks = set()
 
     def set_crawlconfigs(self, crawlconfigs):
         """set crawlconfigs ops"""
@@ -253,7 +246,7 @@ class ProfileOps:
         self.orgs.can_write_data(org, include_time=False)
 
         if not metadata.committing:
-            self._run_task(
+            run_async_task(
                 self.do_commit_to_profile(
                     metadata=metadata,
                     browser_commit=browser_commit,
@@ -701,12 +694,6 @@ class ProfileOps:
         # Remove empty strings
         names = [name for name in names if name]
         return {"names": names}
-
-    def _run_task(self, func) -> None:
-        """add bg tasks to set to avoid premature garbage collection"""
-        task = asyncio.create_task(func)
-        self.bg_tasks.add(task)
-        task.add_done_callback(self.bg_tasks.discard)
 
 
 # ============================================================================

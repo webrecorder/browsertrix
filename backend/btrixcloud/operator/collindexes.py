@@ -20,6 +20,7 @@ from btrixcloud.utils import (
     gb_storage_ceil,
     gb_storage_floor,
     is_bool,
+    run_async_task,
 )
 from btrixcloud.models import (
     TYPE_DEDUPE_INDEX_STATES,
@@ -203,7 +204,7 @@ class CollIndexOperator(BaseOperator):
             if self.is_expired(status) or data.finalizing:
                 # do actual deletion here
                 if not data.finalizing:
-                    self.run_task(self.do_delete(coll_id))
+                    run_async_task(self.do_delete(coll_id))
 
                 # Saving process
                 # 1. run bgsave while redis is active

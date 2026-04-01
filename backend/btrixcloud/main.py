@@ -4,7 +4,6 @@ supports docker and kubernetes based deployments of multiple browsertrix-crawler
 """
 
 import os
-import asyncio
 import sys
 from typing import List, Optional
 
@@ -40,7 +39,7 @@ from .subs import init_subs_api
 from .file_uploads import init_file_uploads_api
 
 from .crawlmanager import CrawlManager
-from .utils import register_exit_handler, is_bool
+from .utils import register_exit_handler, is_bool, run_async_task
 from .version import __version__
 
 API_PREFIX = "/api"
@@ -50,7 +49,6 @@ OPENAPI_URL = API_PREFIX + "/openapi.json"
 app_root = FastAPI(docs_url=None, redoc_url=None, OPENAPI_URL=OPENAPI_URL)
 
 db_inited = {"inited": False}
-
 
 tags = [
     "crawlconfigs",
@@ -298,9 +296,9 @@ def main() -> None:
     coll_ops.set_page_ops(page_ops)
 
     # await db init, migrations should have already completed in init containers
-    asyncio.create_task(await_db_and_migrations(mdb, db_inited))
+    run_async_task(await_db_and_migrations(mdb, db_inited))
 
-    asyncio.create_task(background_job_ops.ensure_cron_cleanup_jobs_exist())
+    run_async_task(background_job_ops.ensure_cron_cleanup_jobs_exist())
 
     app.include_router(org_ops.router)
 

@@ -1,6 +1,6 @@
 """Operator handler for ProfileJobs"""
 
-from btrixcloud.utils import str_to_date, dt_now
+from btrixcloud.utils import str_to_date, dt_now, run_async_task
 
 from btrixcloud.models import StorageRef
 
@@ -27,7 +27,7 @@ class ProfileOperator(BaseOperator):
         browserid = spec.get("id")
 
         if expire_time and dt_now() >= expire_time:
-            self.run_task(self.k8s.delete_profile_browser(browserid))
+            run_async_task(self.k8s.delete_profile_browser(browserid))
             return {"status": {}, "children": []}
 
         params = {}

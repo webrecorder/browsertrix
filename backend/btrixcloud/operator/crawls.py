@@ -40,6 +40,7 @@ from btrixcloud.utils import (
     dt_now,
     scale_from_browser_windows,
     crawler_image_below_minimum,
+    run_async_task,
 )
 
 from .baseoperator import BaseOperator, Redis
@@ -221,7 +222,7 @@ class CrawlOperator(BaseOperator):
             print(
                 f"warn crawl {crawl_id} finished but not deleted, post-finish taking too long?"
             )
-            self.run_task(self.k8s.delete_crawl_job(crawl.id))
+            run_async_task(self.k8s.delete_crawl_job(crawl.id))
             return await self.finalize_response(
                 crawl,
                 status,
@@ -909,7 +910,7 @@ class CrawlOperator(BaseOperator):
             print(f"============== POD STATUS: {name} ==============")
             pprint(pods[name]["status"])
 
-        self.run_task(self.k8s.print_pod_logs(pod_names, self.log_failed_crawl_lines))
+        run_async_task(self.k8s.print_pod_logs(pod_names, self.log_failed_crawl_lines))
 
         return True
 
@@ -959,7 +960,7 @@ class CrawlOperator(BaseOperator):
                 finalized = True
 
         if finalized and crawl.is_qa:
-            self.run_task(self.crawl_ops.qa_run_finished(crawl.db_crawl_id))
+            run_async_task(self.crawl_ops.qa_run_finished(crawl.db_crawl_id))
 
         return {
             "status": status.dict(exclude_none=True),
@@ -1196,13 +1197,13 @@ class CrawlOperator(BaseOperator):
             print("Crawl first started, webhooks called", now, crawl.id)
             # call initial running webhook
             if not crawl.qa_source_crawl_id:
-                self.run_task(
+                run_async_task(
                     self.event_webhook_ops.create_crawl_started_notification(
                         crawl.id, crawl.oid, scheduled=crawl.scheduled
                     )
                 )
             else:
-                self.run_task(
+                run_async_task(
                     self.event_webhook_ops.create_qa_analysis_started_notification(
                         crawl.id, crawl.oid, crawl.qa_source_crawl_id
                     )
@@ -1496,7 +1497,7 @@ class CrawlOperator(BaseOperator):
             return reason
 
         print(f"request pause for {reason}")
-        self.run_task(self.crawl_ops.pause_crawl(crawl.id, crawl.org, pause=True))
+        run_async_task(self.crawl_ops.pause_crawl(crawl.id, crawl.org, pause=True))
         return None
 
     async def get_redis_crawl_stats(
@@ -1786,11 +1787,11 @@ class CrawlOperator(BaseOperator):
 
         # Regular Crawl Finished
         if not crawl.is_qa:
-            self.run_task(self.do_crawl_finished_tasks(crawl, status, state, stats))
+            run_async_task(self.do_crawl_finished_tasks(crawl, status, state, stats))
 
         # QA Run Finished
         else:
-            self.run_task(self.do_qa_run_finished_tasks(crawl, state))
+            run_async_task(self.do_qa_run_finished_tasks(crawl, state))
 
         return True
 
