@@ -128,6 +128,17 @@ function makeTheme() {
     outlineOffset: {
       3: "3px",
     },
+    animation: {
+      // Useful for showing a loading state after a short delay
+      "delayed-fade":
+        "fade-in var(--sl-transition-fast) var(--sl-transition-medium) both",
+    },
+    keyframes: {
+      "fade-in": {
+        from: { opacity: 0 },
+        to: { opacity: 1 },
+      },
+    },
   };
 }
 

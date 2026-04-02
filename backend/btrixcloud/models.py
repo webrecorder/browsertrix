@@ -36,6 +36,8 @@ from slugify import slugify
 
 from .db import BaseMongoModel
 
+from .utils import is_bool
+
 # num browsers per crawler instance
 NUM_BROWSERS = int(os.environ.get("NUM_BROWSERS", 2))
 
@@ -64,6 +66,12 @@ PRESIGN_DURATION_SECONDS = min(PRESIGN_DURATION_MINUTES, PRESIGN_MINUTES_MAX) * 
 
 # Minimum part size for file uploads
 MIN_UPLOAD_PART_SIZE = 10000000
+
+# enable dedupe by default
+DEDUPE_FEATURE_ENABLED_DEFAULT = is_bool(
+    os.environ.get("DEDUPE_FEATURE_ENABLED_DEFAULT")
+)
+
 
 # annotated types
 # ============================================================================
@@ -1851,10 +1859,11 @@ class UpdateCollHomeUrl(BaseModel):
 
 
 # ============================================================================
-class AddRemoveCrawlList(BaseModel):
-    """Collections to add or remove from collection"""
+class CollectionAddRemove(BaseModel):
+    """Items to add or remove from collection"""
 
     crawlIds: List[str] = []
+    crawlconfigIds: List[UUID] = []
 
 
 # ============================================================================
@@ -2325,7 +2334,7 @@ class FeatureFlags(ValidatedFeatureFlags):
 
     dedupeEnabled: bool = Field(
         description="Enable deduplication options for an org. Intended for beta-testing dedupe.",
-        default=False,
+        default=DEDUPE_FEATURE_ENABLED_DEFAULT,
     )
 
 

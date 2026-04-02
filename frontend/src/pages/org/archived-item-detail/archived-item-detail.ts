@@ -14,6 +14,7 @@ import { missingDependenciesPanel } from "./templates/missing-dependencies-panel
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
+import { type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
 import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
@@ -27,7 +28,11 @@ import {
 import { panelBody } from "@/layouts/panel";
 import { Tab as CollectionTab } from "@/pages/org/collection-detail/types";
 import { CommonTab, OrgTab, WorkflowTab } from "@/routes";
-import type { APIPaginatedList } from "@/types/api";
+import type {
+  APIPaginatedList,
+  APIPaginationQuery,
+  APISortQuery,
+} from "@/types/api";
 import type {
   ArchivedItem,
   Crawl,
@@ -68,6 +73,7 @@ const SECTIONS = [
 type SectionName = (typeof SECTIONS)[number];
 
 const POLL_INTERVAL_SECONDS = 5;
+const DEPENDENCY_PAGE_SIZE = 20;
 
 export type { SectionName as ArchivedItemSectionName };
 
@@ -209,22 +215,30 @@ export class ArchivedItemDetail extends BtrixElement {
     args: () => [this.item] as const,
   });
 
+  @state()
+  private dependenciesPage = 1;
+
   private readonly dependenciesTask = new Task(this, {
-    task: async ([item], { signal }) => {
+    task: async ([item, page], { signal }) => {
       if (!item?.requiresCrawls.length) return;
 
-      const query = queryString.stringify({
-        ids: item.requiresCrawls,
+      const queryData: APISortQuery<Crawl> &
+        APIPaginationQuery & { requiredByCrawls: string[] } = {
+        requiredByCrawls: [item.id],
         sortBy: "started",
         sortDirection: SortDirection.Descending,
-      });
+        page,
+        pageSize: DEPENDENCY_PAGE_SIZE,
+      };
+
+      const query = queryString.stringify(queryData);
 
       return this.api.fetch<APIPaginatedList<Crawl>>(
         `/orgs/${this.orgId}/all-crawls?${query}`,
         { signal },
       );
     },
-    args: () => [this.item] as const,
+    args: () => [this.item, this.dependenciesPage] as const,
   });
 
   willUpdate(changedProperties: PropertyValues<this>) {
@@ -241,6 +255,7 @@ export class ArchivedItemDetail extends BtrixElement {
       if (this.activeTab === "qa") {
         void this.fetchQARuns();
       }
+      this.dependenciesPage = 1;
     }
     if (
       (changedProperties.has("workflowId") && this.workflowId) ||
@@ -690,7 +705,7 @@ export class ArchivedItemDetail extends BtrixElement {
         <btrix-navigation-button
           class="whitespace-nowrap md:whitespace-normal"
           .active=${isActive}
-          href=${`${baseUrl}${window.location.search}#${section}`}
+          href=${`${baseUrl}#${section}`}
           @click=${() => {
             this.activeTab = section;
           }}
@@ -1221,18 +1236,37 @@ export class ArchivedItemDetail extends BtrixElement {
 
     return html`
       ${when(this.item.missingRequiresCrawls, missingDeps)}
-      ${this.dependenciesTask.render({
-        complete: (deps) =>
-          deps?.total
-            ? html`
-                <btrix-item-dependents
-                  .items=${deps.items}
-                  collectionId=${ifDefined(dedupeCollId || undefined)}
-                >
-                </btrix-item-dependents>
-              `
-            : noDeps,
-      })}
+      ${this.dependenciesTask.value?.total
+        ? html`
+            <div class="relative">
+              <btrix-item-dependents
+                .items=${this.dependenciesTask.value.items}
+                collectionId=${ifDefined(dedupeCollId || undefined)}
+              >
+              </btrix-item-dependents>
+              ${this.dependenciesTask.status === TaskStatus.PENDING
+                ? html`<div
+                    class="absolute inset-0 top-[26px] z-10 grid animate-delayed-fade cursor-progress place-content-center rounded border border-[--sl-panel-border-color] bg-gray-50/50 text-3xl"
+                  >
+                    <sl-spinner></sl-spinner>
+                  </div>`
+                : nothing}
+            </div>
+            <btrix-pagination
+              class="my-4 block justify-self-center"
+              name="dependenciesPage"
+              .page=${this.dependenciesTask.value.page}
+              .size=${this.dependenciesTask.value.pageSize}
+              .totalCount=${this.dependenciesTask.value.total}
+              @page-change=${(e: PageChangeEvent) => {
+                this.dependenciesPage = e.detail.page;
+              }}
+            >
+            </btrix-pagination>
+          `
+        : this.dependenciesTask.status === TaskStatus.COMPLETE
+          ? noDeps
+          : html`<sl-spinner class="m-8 place-self-center"></sl-spinner>`}
     `;
   }
 

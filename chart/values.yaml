@@ -55,6 +55,7 @@ crawler_extra_args: ""
 # max allowed browser windows per crawl
 max_browser_windows: 8
 
+
 # Cluster Settings
 # =========================================
 name: browsertrix-cloud
@@ -106,7 +107,7 @@ replica_deletion_delay_days: 0
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.22.0"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.22.3"
 backend_pull_policy: "IfNotPresent"
 
 backend_password_secret: "PASSWORD!"
@@ -171,7 +172,7 @@ cleanup_files_after_minutes: 1440
 
 # Emails Image
 # =========================================
-emails_image: "docker.io/webrecorder/browsertrix-emails:1.22.0"
+emails_image: "docker.io/webrecorder/browsertrix-emails:1.22.3"
 emails_pull_policy: "IfNotPresent"
 
 emails_cpu: "10m"
@@ -185,7 +186,7 @@ local_emails_port: 30872
 
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.22.0"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.22.3"
 frontend_pull_policy: "IfNotPresent"
 
 frontend_cpu: "10m"
@@ -240,7 +241,7 @@ mongo_auth:
 
 # Redis Image
 # =========================================
-redis_image: "redis"
+redis_image: "redis:8.6.1"
 redis_pull_policy: "IfNotPresent"
 
 redis_cpu: "10m"
@@ -250,16 +251,19 @@ redis_memory: "200Mi"
 redis_storage: "3Gi"
 
 
-# Redis Dedup Index
+# Dedupe Index
 # =========================================
 dedupe:
   backend_type: kvrocks
-  image: apache/kvrocks
+  image: apache/kvrocks:2.15.0
   image_pull_policy: IfNotPresent
 
   # to use redis:
   # backend_type: redis
   # dedupe_image: redis
+
+  # enabled by default without feature flag
+  default_enabled: true
 
   memory: "1Gi"
   cpu: "100m"
@@ -443,7 +447,6 @@ minio_scheme: "http"
 minio_host: "local-minio:9000"
 
 minio_image: docker.io/minio/minio:RELEASE.2022-10-24T18-35-07Z
-minio_mc_image: minio/mc
 minio_pull_policy: "IfNotPresent"
 
 minio_local_bucket_name: &local_bucket_name "btrix-data"

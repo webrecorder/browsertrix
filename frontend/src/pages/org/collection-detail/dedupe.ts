@@ -144,46 +144,22 @@ export class CollectionDetailDedupe extends BtrixElement {
   });
 
   /**
-   * Crawled items that are a dependency of an archived item
-   * currently in the collection
+   * All collection dependencies:
+   * Crawled items in the collection that are a dependency of another
+   * archived item currently in the collection
    */
   private readonly dependenciesTask = new Task(this, {
     task: async ([collectionId, pagination], { signal }) => {
       if (!collectionId) return;
 
-      const crawlsQuery = queryString.stringify({
-        sortBy: "finished",
-        sortDirection: SortDirection.Descending,
-        collectionId,
-        dedupeCollId: collectionId,
-        state: finishedCrawlStates,
-        hasRequiresCrawls: true,
-      });
-
-      const { items } = await this.api.fetch<APIPaginatedList<ArchivedItem>>(
-        `/orgs/${this.orgId}/crawls?${crawlsQuery}`,
-        { signal },
-      );
-
-      const crawlIds = items.map(({ id }) => id);
-
-      if (!crawlIds.length) return;
-
-      // FIXME Prevent API from returning 431 by limiting IDs
-      // should be an edge case that there are more that 100
-      // dependencies in a collection but we would want a more
-      // robust solution if this becomes more common.
-      const limit = 100;
       const query = queryString.stringify({
         ...pagination,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
-        requiredByCrawls: crawlIds.slice(0, limit),
+        collectionId,
+        state: finishedCrawlStates,
+        hasRequiredByCrawls: true,
       });
-
-      if (crawlIds.length > limit) {
-        console.warn(`up to ${limit} dependencies queried`);
-      }
 
       return await this.api.fetch<APIPaginatedList<ArchivedItem>>(
         `/orgs/${this.orgId}/all-crawls?${query}`,
@@ -553,40 +529,42 @@ export class CollectionDetailDedupe extends BtrixElement {
 
   private renderDeduped() {
     return html`
-      <div
-        class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 p-3"
-      >
-        <div class="flex items-center gap-2">
-          <label for="view" class="whitespace-nowrap text-neutral-500"
-            >${msg("View:")}</label
-          >
-          <sl-radio-group
-            id="view"
-            size="small"
-            value=${this.view.value.itemsView || DEFAULT_ITEMS_VIEW}
-            @sl-change=${(e: SlChangeEvent) => {
-              this.view.setValue({
-                itemsView: (e.target as SlRadioGroup).value as ItemsView,
-              });
-            }}
-          >
-            <sl-radio-button pill value=${DEFAULT_ITEMS_VIEW}>
-              <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
-              ${msg("By Workflow")}
-            </sl-radio-button>
-            <sl-radio-button pill value=${ItemsView.Crawls}>
-              <sl-icon slot="prefix" name="gear-wide-connected"></sl-icon>
-              ${msg("By Crawl Run")}
-            </sl-radio-button>
-            <sl-radio-button pill value=${ItemsView.Dependencies}>
-              <sl-icon
-                slot="prefix"
-                name=${dedupeIconFor["dependency"].name}
-              ></sl-icon>
-              ${msg("Crawl Dependencies")}
-            </sl-radio-button>
-          </sl-radio-group>
-        </div>
+      <div class="mb-3 rounded-lg border bg-neutral-50 p-3">
+        <btrix-overflow-scroll
+          class="-mx-3 [--btrix-overflow-scroll-scrim-color:theme(colors.neutral.50)] part-[content]:px-3"
+        >
+          <div class="flex min-w-max items-center gap-2">
+            <label for="view" class="whitespace-nowrap text-neutral-500"
+              >${msg("View:")}</label
+            >
+            <sl-radio-group
+              id="view"
+              size="small"
+              value=${this.view.value.itemsView || DEFAULT_ITEMS_VIEW}
+              @sl-change=${(e: SlChangeEvent) => {
+                this.view.setValue({
+                  itemsView: (e.target as SlRadioGroup).value as ItemsView,
+                });
+              }}
+            >
+              <sl-radio-button pill value=${DEFAULT_ITEMS_VIEW}>
+                <sl-icon slot="prefix" name="file-code-fill"></sl-icon>
+                ${msg("By Workflow")}
+              </sl-radio-button>
+              <sl-radio-button pill value=${ItemsView.Crawls}>
+                <sl-icon slot="prefix" name="gear-wide-connected"></sl-icon>
+                ${msg("By Crawl Run")}
+              </sl-radio-button>
+              <sl-radio-button pill value=${ItemsView.Dependencies}>
+                <sl-icon
+                  slot="prefix"
+                  name=${dedupeIconFor["dependency"].name}
+                ></sl-icon>
+                ${msg("Crawl Dependencies")}
+              </sl-radio-button>
+            </sl-radio-group>
+          </div>
+        </btrix-overflow-scroll>
       </div>
 
       <div class="mx-2">
@@ -660,11 +638,13 @@ export class CollectionDetailDedupe extends BtrixElement {
     const items = (items?: APIPaginatedList<ArchivedItem>) =>
       items?.items.length
         ? html`
-            <btrix-item-dependency-tree
-              class="part-[tree]:rounded part-[tree]:border"
-              .items=${items.items}
-              collectionId=${this.collectionId}
-            ></btrix-item-dependency-tree>
+            <btrix-overflow-scroll class="-mx-5 part-[content]:px-5">
+              <btrix-item-dependency-list
+                class="block min-w-max part-[tree]:rounded part-[tree]:border"
+                .items=${items.items}
+                collectionId=${this.collectionId}
+              ></btrix-item-dependency-list>
+            </btrix-overflow-scroll>
 
             <footer class="mt-6 flex justify-center">
               <btrix-pagination
@@ -740,10 +720,13 @@ export class CollectionDetailDedupe extends BtrixElement {
     const items = (items?: APIPaginatedList<ArchivedItem>) =>
       items?.items.length
         ? html`
-            <btrix-item-dependents
-              collectionId=${this.collectionId}
-              .items=${items.items}
-            ></btrix-item-dependents>
+            <btrix-overflow-scroll class="-mx-5 part-[content]:px-5">
+              <btrix-item-dependents
+                class="block min-w-max"
+                collectionId=${this.collectionId}
+                .items=${items.items}
+              ></btrix-item-dependents>
+            </btrix-overflow-scroll>
 
             <footer class="mt-6 flex justify-center">
               <btrix-pagination

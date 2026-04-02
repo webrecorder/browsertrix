@@ -457,6 +457,23 @@ const plurals = {
   },
 };
 
+/**
+ * Pluralizes a word based on the given count.
+ * Important: Do not use this to form sentence fragments that are later combined
+ * into full sentences; always localize full sentences instead. Pluralization is
+ * very context-sensitive and only complete sentences allow translators to
+ * properly translate plural forms.
+ *
+ * @example
+ * ```ts
+ * // Correct: label is not used in a sentence
+ * const label = `${this.localize.number(pages)} ${pluralOf("pages", pages)}`;
+ *
+ * // Incorrect: used in a sentence fragment, then composed into a full sentence
+ * const pagesFragment = `${this.localize.number(pages)} ${pluralOf("pages", pages)}`;
+ * const label = `There are ${pagesFragment} remaining.`;
+ * ```
+ */
 export const pluralOf = (word: keyof typeof plurals, count: number) => {
   return pluralize(count, plurals[word]);
 };

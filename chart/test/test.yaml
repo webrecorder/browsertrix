@@ -24,6 +24,9 @@ redis_storage: "100Mi"
 profile_browser_workdir_size: "100Mi"
 crawler_storage: "500Mi"
 
+# dedupe
+dedupe:
+  default_enabled: false
 
 # for testing only
 crawler_extra_cpu_per_browser: 300m
@@ -33,13 +36,10 @@ crawler_extra_memory_per_browser: 256Mi
 crawler_channels:
   - id: default
     image: "docker.io/webrecorder/browsertrix-crawler:latest"
+    imagePullPolicy: Always
 
   - id: test
     image: "docker.io/webrecorder/browsertrix-crawler:latest"
-
-  - id: dedupe
-    image: "docker.io/webrecorder/browsertrix-crawler:1.12.0-beta.2"
-    imagePullPolicy: Always
 
 mongo_image: "docker.io/library/mongo:8.0"
 

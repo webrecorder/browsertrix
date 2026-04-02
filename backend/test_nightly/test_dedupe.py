@@ -47,7 +47,6 @@ def dedupe_workflow_id(crawler_auth_headers, default_org_id, dedupe_coll_id):
             "limit": 10,
             "exclude": "community",
         },
-        "crawlerChannel": "dedupe",
         "dedupeCollId": dedupe_coll_id,
     }
     r = requests.post(
@@ -392,15 +391,16 @@ def test_can_delete_while_indexing(
     )
     assert r.status_code == 200
 
-    time.sleep(1)
-
-    res = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}",
-        headers=crawler_auth_headers,
-    )
-    data = res.json()
-    state = data.get("indexState")
-    assert state == "importing"
+    while True:
+        time.sleep(1)
+        res = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}",
+            headers=crawler_auth_headers,
+        )
+        data = res.json()
+        state = data.get("indexState")
+        if state == "importing":
+            break
 
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{dedupe_coll_id}/dedupeIndex/delete",

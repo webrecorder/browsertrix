@@ -137,16 +137,19 @@ spec:
         - "{{ workers }}"
         - --redisStoreUrl
         - {{ redis_url }}
+      {% if qa_source_crawl_id %}
+        - --qaSource
+        - /tmp/qa/qa-config.json
+      {% else %}
       {% if redis_dedupe_url %}
         - --redisDedupeUrl
         - {{ redis_dedupe_url }}
-      {% elif qa_source_crawl_id %}
-        - --qaSource
-        - /tmp/qa/qa-config.json
-      {% elif profile_filename %}
+      {% endif %}
+      {% if profile_filename %}
         - --profile
         - "@{{ profile_filename }}"
-      {% if save_profile %}
+      {% endif %}
+      {% if profile_filename and save_profile %}
         - --saveProfile
       {% endif %}
       {% endif %}

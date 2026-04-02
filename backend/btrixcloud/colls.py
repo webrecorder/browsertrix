@@ -27,7 +27,7 @@ from .models import (
     UpdateColl,
     DedupeIndexStats,
     DedupeIndexFile,
-    AddRemoveCrawlList,
+    CollectionAddRemove,
     BaseCrawl,
     CrawlFileOut,
     Organization,
@@ -62,6 +62,8 @@ from .utils import (
     get_origin,
     case_insensitive_collation,
 )
+
+from .auth import get_custom_jwt_token
 
 from .crawlmanager import CrawlManager
 
@@ -1287,6 +1289,22 @@ def init_collections_api(
     org_viewer_dep = orgs.org_viewer_dep
     org_public = orgs.org_public
 
+    async def coll_internal_access_dep(
+        coll_id: UUID, token_data: dict[str, str] = Depends(get_custom_jwt_token)
+    ) -> UUID:
+        # first, check subject match collection id and type is collection
+        if token_data.get("sub_type") == "coll" and token_data.get("sub") == str(
+            coll_id
+        ):
+            # second, check that the k8s object access is scoped to exists
+            if await crawl_manager.validate_k8s_obj_exists(
+                token_data.get("scope_type", ""), token_data.get("scope", "")
+            ):
+                return coll_id
+
+        # otherwise, deny access
+        raise HTTPException(status_code=403, detail="access_denied")
+
     @app.post(
         "/orgs/{oid}/collections",
         tags=["collections"],
@@ -1374,6 +1392,16 @@ def init_collections_api(
         )
 
     @app.get(
+        "/orgs/{oid}/collections/{coll_id}/internal/replay.json",
+        tags=["collections"],
+        response_model=ResourcesOnly,
+    )
+    async def get_internal_replay(
+        oid: UUID, coll_id: UUID = Depends(coll_internal_access_dep)
+    ):
+        return await colls.get_internal_replay_list(coll_id, oid)
+
+    @app.get(
         "/orgs/{oid}/collections/{coll_id}/public/replay.json",
         tags=["collections"],
         response_model=CollOut,
@@ -1424,13 +1452,17 @@ def init_collections_api(
         response_model=CollOut,
     )
     async def add_crawl_to_collection(
-        crawlList: AddRemoveCrawlList,
+        add_remove: CollectionAddRemove,
         coll_id: UUID,
         request: Request,
         org: Organization = Depends(org_crawl_dep),
     ) -> CollOut:
+        crawl_ids = set(add_remove.crawlIds)
+        crawl_ids.update(
+            await colls.crawl_ops.get_config_crawl_ids(add_remove.crawlconfigIds)
+        )
         return await colls.add_crawls_to_collection(
-            coll_id, crawlList.crawlIds, org, headers=dict(request.headers)
+            coll_id, list(crawl_ids), org, headers=dict(request.headers)
         )
 
     @app.post(
@@ -1439,13 +1471,17 @@ def init_collections_api(
         response_model=CollOut,
     )
     async def remove_crawl_from_collection(
-        crawlList: AddRemoveCrawlList,
+        add_remove: CollectionAddRemove,
         coll_id: UUID,
         request: Request,
         org: Organization = Depends(org_crawl_dep),
     ) -> CollOut:
+        crawl_ids = set(add_remove.crawlIds)
+        crawl_ids.update(
+            await colls.crawl_ops.get_config_crawl_ids(add_remove.crawlconfigIds)
+        )
         return await colls.remove_crawls_from_collection(
-            coll_id, crawlList.crawlIds, org, headers=dict(request.headers)
+            coll_id, list(crawl_ids), org, headers=dict(request.headers)
         )
 
     @app.delete(
