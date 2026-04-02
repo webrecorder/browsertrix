@@ -58,19 +58,9 @@
         <source>Private</source>
         <target state="translated">Privé</target>
       </trans-unit>
-      <trans-unit id="s833f0d71eaa06739" xml:space="preserve">
-        <source>Select Items</source>
-        <target state="translated">Sélectionner des items</target>
-      </trans-unit>
       <trans-unit id="s0e6ebc9cdd39780b" xml:space="preserve">
         <source>Delete Collection?</source>
         <target state="translated">Supprimer la collection ?</target>
-      </trans-unit>
-      <trans-unit id="h05165b87bf66fe02" xml:space="preserve">
-        <source>Are you sure you want to delete
-            <x id="0" equiv-text="&lt;strong&gt;${this.collection?.name}&lt;/strong&gt;"/>?</source>
-        <target state="translated">Êtes-vous certain de vouloir supprimer
-             <x id="0" equiv-text="&lt;strong&gt;${this.collection?.name}&lt;/strong&gt;"/> ?</target>
       </trans-unit>
       <trans-unit id="s2ceb11be2290bb1b" xml:space="preserve">
         <source>Cancel</source>
@@ -112,10 +102,6 @@
         <source>Edit Metadata</source>
         <target state="translated">Éditer les métadonnées</target>
       </trans-unit>
-      <trans-unit id="s8975026acabb194d" xml:space="preserve">
-        <source>Select Archived Items</source>
-        <target state="translated">Sélectionner les items archivés</target>
-      </trans-unit>
       <trans-unit id="s2fe988430f978df3" xml:space="preserve">
         <source>Download Collection</source>
         <target state="translated">Télécharger la collection</target>
@@ -139,10 +125,6 @@
       <trans-unit id="s27914822b37139fb" xml:space="preserve">
         <source>Page not found.</source>
         <target state="translated">Page introuvable.</target>
-      </trans-unit>
-      <trans-unit id="s6f6715b26a9dd225" xml:space="preserve">
-        <source>This Collection doesn’t have any archived items, yet.</source>
-        <target state="translated">Cette collection contient aucun item présentement.</target>
       </trans-unit>
       <trans-unit id="sf3f1aa4156bb5055" xml:space="preserve">
         <source>Remove from Collection</source>
@@ -666,25 +648,9 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>All Viewer permissions, plus:</source>
         <target state="translated">Visionner toutes les permissions, et :</target>
       </trans-unit>
-      <trans-unit id="s2305e925ed4b2d44" xml:space="preserve">
-        <source>Create crawl workflows</source>
-        <target state="translated">Créer une configurations de collecte</target>
-      </trans-unit>
-      <trans-unit id="sc194ca87fef5ac61" xml:space="preserve">
-        <source>Create browser profiles</source>
-        <target state="translated">Créer un profil de navigation</target>
-      </trans-unit>
       <trans-unit id="sb600cf68d73b98ca" xml:space="preserve">
         <source>Upload archived items</source>
         <target state="translated">Charger des items archivés</target>
-      </trans-unit>
-      <trans-unit id="s226f8bd25872aa3e" xml:space="preserve">
-        <source>Run QA analysis</source>
-        <target state="translated">Rouler l'analyse de contrôle de qualité (QA)</target>
-      </trans-unit>
-      <trans-unit id="s3881ec7953629fbc" xml:space="preserve">
-        <source>Rate and review archived items</source>
-        <target state="translated">Évaluer et réviser les items archivés</target>
       </trans-unit>
       <trans-unit id="s626234b5b44929cc" xml:space="preserve">
         <source>Create, edit, and share collections</source>
@@ -1668,10 +1634,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Crawler Channel (Exact Crawler Version)</source>
         <target state="translated">Canal de collecte (version du navigateur)</target>
       </trans-unit>
-      <trans-unit id="se1933d9b37b72bcc" xml:space="preserve">
-        <source>Backed up</source>
-        <target state="translated">Mis à jour</target>
-      </trans-unit>
       <trans-unit id="s0ebf17b26bf14b0c" xml:space="preserve">
         <source>No files to download.</source>
         <target state="translated">Aucun fichier à télécharger.</target>
@@ -1845,10 +1807,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       <trans-unit id="sa9c9e33629402ea8" xml:space="preserve">
         <source>Something unexpected went wrong while retrieving Collections.</source>
         <target state="translated">Une erreur s'est produite pendant le repérage de la collection.</target>
-      </trans-unit>
-      <trans-unit id="sb4f8acbd7f3df4eb" xml:space="preserve">
-        <source>Sorry, couldn't retrieve Collections at this time.</source>
-        <target state="translated">Désolé, impossible de récupérer les collections présentement.</target>
       </trans-unit>
       <trans-unit id="sf4d494dc33755beb" xml:space="preserve">
         <source>Interactive Browser</source>
@@ -2478,10 +2436,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Latest</source>
         <target state="translated">Dernier</target>
       </trans-unit>
-      <trans-unit id="se19df7d58cd5fff7" xml:space="preserve">
-        <source>Version:</source>
-        <target state="translated">Version :</target>
-      </trans-unit>
       <trans-unit id="s237f0a38a4c51a36" xml:space="preserve">
         <source>Crawler Proxy Server</source>
         <target state="translated">Serveur Proxy du robot moissonneur</target>
@@ -2895,18 +2849,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Create profile</source>
         <target state="translated">Créer un profil</target>
       </trans-unit>
-      <trans-unit id="sfd20092783b9309d" xml:space="preserve">
-        <source><x id="0" equiv-text="${this.localize.number(selected)}"/> / <x id="1" equiv-text="${this.localize.number(total)}"/> crawl</source>
-        <target state="translated"><x id="0" equiv-text="${this.localize.number(selected)}"/> / <x id="1" equiv-text="${this.localize.number(total)}"/> collecte</target>
-      </trans-unit>
-      <trans-unit id="sd6a07c24d3ae246a" xml:space="preserve">
-        <source><x id="0" equiv-text="${this.localize.number(selected)}"/> / <x id="1" equiv-text="${this.localize.number(total)}"/> crawls</source>
-        <target state="translated"><x id="0" equiv-text="${this.localize.number(selected)}"/> / <x id="1" equiv-text="${this.localize.number(total)}"/> collectes</target>
-      </trans-unit>
-      <trans-unit id="sea0ac3af5d7a3071" xml:space="preserve">
-        <source>0 crawls</source>
-        <target state="translated">0 collecte</target>
-      </trans-unit>
       <trans-unit id="sdfbbc387c71bad18" xml:space="preserve">
         <source>Auto-Add</source>
         <target state="translated">Ajout automatique</target>
@@ -2919,10 +2861,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source><x id="0" equiv-text="${this.localize.number(pageCount)}"/> pages</source>
         <target state="translated"><x id="0" equiv-text="${this.localize.number(pageCount)}"/> pages</target>
       </trans-unit>
-      <trans-unit id="s514cde9d19a9adc5" xml:space="preserve">
-        <source>Started by <x id="0" equiv-text="${crawl.userName}"/></source>
-        <target state="translated">Démarré par <x id="0" equiv-text="${crawl.userName}"/></target>
-      </trans-unit>
       <trans-unit id="s9b31004ff434426e" xml:space="preserve">
         <source>Crawl Finished</source>
         <target state="translated">Collecte terminée</target>
@@ -2930,14 +2868,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       <trans-unit id="saa33768e03c45fc8" xml:space="preserve">
         <source>File Size</source>
         <target state="translated">Taille du fichier</target>
-      </trans-unit>
-      <trans-unit id="sf27239dda9b1416d" xml:space="preserve">
-        <source>Crawls in Collection (<x id="0" equiv-text="${this.localize.number(data!.total)}"/>)</source>
-        <target state="translated">Collectes dans la collection (<x id="0" equiv-text="${this.localize.number(data!.total)}"/>)</target>
-      </trans-unit>
-      <trans-unit id="sa3d5a7186b818303" xml:space="preserve">
-        <source>All Workflows (<x id="0" equiv-text="${this.localize.number(data!.total)}"/>)</source>
-        <target state="translated">Tous les flux de tâches (<x id="0" equiv-text="${this.localize.number(data!.total)}"/>)</target>
       </trans-unit>
       <trans-unit id="s49730f3d5751a433" xml:space="preserve">
         <source>Loading...</source>
@@ -2959,17 +2889,9 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>No matching uploads found.</source>
         <target state="translated">Aucun chargement correspondant a été trouvé.</target>
       </trans-unit>
-      <trans-unit id="s06d6c6dc05578422" xml:space="preserve">
-        <source>Only items in Collection</source>
-        <target state="translated">Items seulement dans la collection</target>
-      </trans-unit>
       <trans-unit id="s8a6f4e542c686466" xml:space="preserve">
         <source>Only mine</source>
         <target state="translated">Seulement les miens</target>
-      </trans-unit>
-      <trans-unit id="s13e37d380ccd180d" xml:space="preserve">
-        <source>No changes to save</source>
-        <target state="translated">Aucun changement à sauvegarder</target>
       </trans-unit>
       <trans-unit id="s8ad4a17ab2b75854" xml:space="preserve">
         <source>Adding <x id="0" equiv-text="${this.localize.number(addCount)} ${pluralOf(&quot;items&quot;, addCount)}"/></source>
@@ -2982,10 +2904,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       <trans-unit id="s4a0cbea3f0b22976" xml:space="preserve">
         <source>Save Selection</source>
         <target state="translated">Sauvegarder la sélection</target>
-      </trans-unit>
-      <trans-unit id="sc9e34cb12aab0e3a" xml:space="preserve">
-        <source>Updated.</source>
-        <target state="translated">Mis à jour.</target>
       </trans-unit>
       <trans-unit id="s83c70a729f1dd241" xml:space="preserve">
         <source>Something unexpected went wrong, couldn't save auto-add setting.</source>
@@ -3194,14 +3112,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       <trans-unit id="s40b5b363fefc9199" xml:space="preserve">
         <source>Please remove or fix the following invalid URL: <x id="0" equiv-text="${invalidUrl}"/></source>
         <target state="translated">Veuillez supprimer ou corriger l'URL invalide suivante : <x id="0" equiv-text="${invalidUrl}"/></target>
-      </trans-unit>
-      <trans-unit id="s136b21dec9a221bd" xml:space="preserve">
-        <source>Manual run by <x id="0" equiv-text="${workflow.lastStartedByName}"/></source>
-        <target state="translated">Exécution manuelle par <x id="0" equiv-text="${workflow.lastStartedByName}"/></target>
-      </trans-unit>
-      <trans-unit id="sde7cc417de1b3246" xml:space="preserve">
-        <source>---</source>
-        <target state="translated">---</target>
       </trans-unit>
       <trans-unit id="sc154fb69dffcdef9" xml:space="preserve">
         <source>billing settings</source>
@@ -4005,10 +3915,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>View error logs</source>
         <target state="translated">Consulter les erreurs dans le journal de bord</target>
       </trans-unit>
-      <trans-unit id="h8eb4021572d41d99" xml:space="preserve">
-        <source>Name &amp; Schedule</source>
-        <target state="translated">Nom &amp; Calendrier</target>
-      </trans-unit>
       <trans-unit id="s8be75efeafa7ffe1" xml:space="preserve">
         <source>Your org will be deleted within one day</source>
         <target state="translated">Votre organisme sera effacé dans les prochaines 24 heures</target>
@@ -4282,14 +4188,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
             for more details.</source>
         <target state="translated">Voir <x id="0" equiv-text="&lt;a class=&quot;text-primary&quot; href=&quot;https://replayweb.page/docs/embedding&quot; target=&quot;_blank&quot;&gt;"/> notre guide d'intégration <x id="1" equiv-text="&lt;/a&gt;"/> pour plus de détails.</target>
       </trans-unit>
-      <trans-unit id="sf39becada022c325" xml:space="preserve">
-        <source>Choose what page viewers see first in replay</source>
-        <target state="translated">Choisir la page qui sera vue en premier lors de la rediffusion</target>
-      </trans-unit>
-      <trans-unit id="s1cb226f223599f56" xml:space="preserve">
-        <source>Add items to select a home page</source>
-        <target state="translated">Ajouter des éléments pour sélectionner une page d'accueil</target>
-      </trans-unit>
       <trans-unit id="s3f65af47b6c8cdff" xml:space="preserve">
         <source>No description provided.</source>
         <target state="translated">Aucune description n'est fournie.</target>
@@ -4504,10 +4402,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Unique Pages in Collection</source>
         <target state="translated">Pages uniques dans la collection</target>
       </trans-unit>
-      <trans-unit id="s97a904f2a41ddc4b" xml:space="preserve">
-        <source>Total Pages Crawled</source>
-        <target state="translated">Nombre total de pages collectées</target>
-      </trans-unit>
       <trans-unit id="s37cc328c4da4b137" xml:space="preserve">
         <source>Anyone can view from the org public collections gallery</source>
         <target state="translated">Tout le monde peut consulter la galerie des collections publiques de l'organisation</target>
@@ -4536,17 +4430,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Enter a page URL to choose timestamp</source>
         <target state="translated">Saisir l'URL d'une page pour choisir l'horodatage</target>
       </trans-unit>
-      <trans-unit id="hb4d7d27dcde87b24" xml:space="preserve">
-        <source>Describe your collection in long-form rich text (e.g.
-                        <x id="0" equiv-text="&lt;strong&gt;"/>bold<x id="1" equiv-text="&lt;/strong&gt;"/> and <x id="2" equiv-text="&lt;em&gt;"/>italicized<x id="3" equiv-text="&lt;/em&gt;"/> text.)</source>
-        <target state="translated">Décrivez votre collection en texte enrichi (par ex. <x id="0" equiv-text="&lt;strong&gt;"/>gras<x id="1" equiv-text="&lt;/strong&gt;"/> et <x id="2" equiv-text="&lt;em&gt;"/>en italique<x id="3" equiv-text="&lt;/em&gt;"/> texte.)</target>
-      </trans-unit>
-      <trans-unit id="h46ac9a2331d608e2" xml:space="preserve">
-        <source>If this collection is shareable, this will appear in
-                      the “About This Collection” section of the shared
-                      collection.</source>
-        <target state="translated">Si cette collection est partageable, elle apparaîtra dans la section « À propos de cette collection » de la collection partagée.</target>
-      </trans-unit>
       <trans-unit id="s492c3c47283fe263" xml:space="preserve">
         <source>Updated org settings.</source>
         <target state="translated">Mise à jour des paramètres de l'organisation.</target>
@@ -4566,10 +4449,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       <trans-unit id="se90868439a248884" xml:space="preserve">
         <source>This org URL is invalid. Please use alphanumeric characters and dashes (-) only.</source>
         <target state="translated">L'URL de cet organisme n'est pas valide. Veuillez utiliser uniquement des caractères alphanumériques et des tirets (-).</target>
-      </trans-unit>
-      <trans-unit id="h33ab0b911e13ad09" xml:space="preserve">
-        <source>Name &amp; Collection Period</source>
-        <target state="translated">Nom &amp; période de la collection</target>
       </trans-unit>
       <trans-unit id="sd1aa96c20f885a8f" xml:space="preserve">
         <source>This is a private preview of the public collections gallery</source>
@@ -4970,9 +4849,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       <trans-unit id="s05b81abc9475a254">
         <source>Page Behavior</source>
       </trans-unit>
-      <trans-unit id="s548daf0e6fcc5b75">
-        <source>URL Prefixes in Scope</source>
-      </trans-unit>
       <trans-unit id="s1e91c74b6b748a7e">
         <source>URL Prefix</source>
       </trans-unit>
@@ -5225,12 +5101,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       <trans-unit id="s238db453282b913f">
         <source>Update Crawl</source>
       </trans-unit>
-      <trans-unit id="h897208c319c5e1a6">
-        <source>Will start with
-            <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;"/>
-            and include <x id="1" equiv-text="&lt;em&gt;"/>only<x id="2" equiv-text="&lt;/em&gt;"/> URLs that start with the
-            <x id="3" equiv-text="&lt;em&gt;"/>URL Prefixes in Scope<x id="4" equiv-text="&lt;/em&gt;"/> listed below.</source>
-      </trans-unit>
       <trans-unit id="s01c361a1dbd3a5f3">
         <source>Only crawl pages that begin with URLs listed here.</source>
       </trans-unit>
@@ -5414,9 +5284,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       <trans-unit id="sf7817bcbec073cc2">
         <source>Downloads are disabled while running. Pause the crawl or wait for the crawl to finish to download.</source>
       </trans-unit>
-      <trans-unit id="s96c14e921f8f5789">
-        <source>Download Item as WACZ</source>
-      </trans-unit>
       <trans-unit id="sd3386a2ef42e80b9">
         <source>Download</source>
       </trans-unit>
@@ -5425,9 +5292,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       </trans-unit>
       <trans-unit id="s52cfa1d198476806">
         <source>Item</source>
-      </trans-unit>
-      <trans-unit id="s24f39319b8853791">
-        <source>Log</source>
       </trans-unit>
       <trans-unit id="s89118d3a7be870ca">
         <source>Resume</source>
@@ -5440,9 +5304,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       </trans-unit>
       <trans-unit id="sa09f17b6ca51459a">
         <source>Pause Crawl</source>
-      </trans-unit>
-      <trans-unit id="s00b9ca852bcdfb8b">
-        <source>Download Log</source>
       </trans-unit>
       <trans-unit id="sf8c2169fe8bac095">
         <source>View Item Details</source>
@@ -5572,10 +5433,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       </trans-unit>
       <trans-unit id="s76d1628d0e8b9245">
         <source>Clear All</source>
-      </trans-unit>
-      <trans-unit id="hd3a8e2a369b53f21">
-        <source>Started crawl from <x id="0" equiv-text="&lt;strong&gt;${renderName(workflow)}&lt;/strong&gt;"/>.
-            <x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate&#10;    .orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}&quot; @click=&quot;${this.navigate.link.bind(this)}&quot;&gt;"/>Watch crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
       </trans-unit>
       <trans-unit id="sbe3c410d493d34c2">
         <source>Download Entire Log File</source>
@@ -5860,9 +5717,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       <trans-unit id="s2a75c946ef4dcab7">
         <source>Miscellaneous</source>
       </trans-unit>
-      <trans-unit id="s8b2403f9bd76ba9e">
-        <source>Total size of all supplementary files in use by your organization, such as workflow URL list files and custom collection thumbnails.</source>
-      </trans-unit>
       <trans-unit id="s74770d66bf7310b8">
         <source>available</source>
       </trans-unit>
@@ -5978,14 +5832,8 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       <trans-unit id="h637bb7431c59c381">
         <source>Are you sure you want to delete <x id="0" equiv-text="${item_name}"/>?</source>
       </trans-unit>
-      <trans-unit id="s2ff72cd0b6ea50f3">
-        <source>All associated files and logs will be deleted.</source>
-      </trans-unit>
       <trans-unit id="s721f86fee2741707">
         <source>Delete Archived Item</source>
-      </trans-unit>
-      <trans-unit id="s6bd910fc5e8f1896">
-        <source>The archived item will be removed from <x id="0" equiv-text="${number_of_collections} ${plural_of_collections}"/>:</source>
       </trans-unit>
       <trans-unit id="s8cc79503c60009c6">
         <source>Search for collection by name</source>
@@ -6163,13 +6011,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       </trans-unit>
       <trans-unit id="s4ce9e72f4056aa46">
         <source>Skip pages disallowed by robots.txt</source>
-      </trans-unit>
-      <trans-unit id="hf3e2b5a9aaead6ed">
-        <source>Custom logged in <x id="0" equiv-text="${link_to_browser_profile}"/> is required
-                  to use this option.</source>
-      </trans-unit>
-      <trans-unit id="hc4b6c7730b083773">
-        <source>Select a <x id="0" equiv-text="${link_to_browser_profile}"/> to use this option.</source>
       </trans-unit>
       <trans-unit id="s7abd11b65abb263d">
         <source>Set by profile</source>
@@ -6411,12 +6252,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       <trans-unit id="s1135a9c142ea380b">
         <source>Not in Collection</source>
       </trans-unit>
-      <trans-unit id="s3d2bf3d0ba36b9d5">
-        <source>Download all files as a single WACZ file</source>
-      </trans-unit>
-      <trans-unit id="s1d093e853c7fbc9e">
-        <source>Download All</source>
-      </trans-unit>
       <trans-unit id="s69e24e857ec2f238">
         <source>Edit Collections</source>
       </trans-unit>
@@ -6429,9 +6264,6 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       </trans-unit>
       <trans-unit id="s09240e07b5b8d640">
         <source>ID</source>
-      </trans-unit>
-      <trans-unit id="sd8714841cf547f48">
-        <source>Included In</source>
       </trans-unit>
       <trans-unit id="s0f75e437f51744e2">
         <source>Sorry, couldn’t retrieve archived items at this time.</source>
@@ -6664,6 +6496,807 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
       <trans-unit id="workflows.plural.one">
         <source>workflow</source>
         <note from="lit-localize">singular form for "workflow"</note>
+      </trans-unit>
+      <trans-unit id="sc592307ea80f16b9">
+        <source>Unknown</source>
+      </trans-unit>
+      <trans-unit id="s61feb971f13601d1">
+        <source>Crawl Deduplication</source>
+      </trans-unit>
+      <trans-unit id="s59753e9e60f7f934">
+        <source>Custom Page Match</source>
+      </trans-unit>
+      <trans-unit id="s476c01301bb7bcf2">
+        <source>Deduplication</source>
+      </trans-unit>
+      <trans-unit id="s965c503c3e42fdfe">
+        <source>Enabled</source>
+      </trans-unit>
+      <trans-unit id="s970586f5559421ec">
+        <source>Page Regex Patterns</source>
+      </trans-unit>
+      <trans-unit id="s8995604904ac64c2">
+        <source>Regex Pattern</source>
+      </trans-unit>
+      <trans-unit id="s401d8d8bde16a938">
+        <source>Page Prefix URLs</source>
+      </trans-unit>
+      <trans-unit id="s382a2aa3984474dd">
+        <source>Create</source>
+      </trans-unit>
+      <trans-unit id="s0326820e5dcdbe32">
+        <source>Current version</source>
+      </trans-unit>
+      <trans-unit id="s2720ad85d0d875d0">
+        <source>Toggle Feature Flags</source>
+      </trans-unit>
+      <trans-unit id="sd49249dfa30d8c8e">
+        <source>Dedupe Index</source>
+      </trans-unit>
+      <trans-unit id="s79b05bfcbcd937d0">
+        <source>Dependent</source>
+      </trans-unit>
+      <trans-unit id="s9fc5ff74e500a434">
+        <source>Dependency</source>
+      </trans-unit>
+      <trans-unit id="s99150fb768bb67ec">
+        <source>Dependent/Dependency</source>
+      </trans-unit>
+      <trans-unit id="s8329c8fbd6f37f2b">
+        <source>No Dependencies</source>
+      </trans-unit>
+      <trans-unit id="sb98f89577d96bb02">
+        <source>Included in <x id="0" equiv-text="${number_of_collections} ${plural_of_collections}"/>.</source>
+      </trans-unit>
+      <trans-unit id="sd1f81284eeb7b503">
+        <source>File</source>
+      </trans-unit>
+      <trans-unit id="s05edf371f15f3715">
+        <source>Download file</source>
+      </trans-unit>
+      <trans-unit id="s6b22ae1b14c14ea0">
+        <source>Missing Dependencies</source>
+      </trans-unit>
+      <trans-unit id="s78e18e0d3cbb0f07">
+        <source>The following is a list of IDs for archived items required by this crawl that are no longer available.</source>
+      </trans-unit>
+      <trans-unit id="sf62e7848b5487a44">
+        <source>Some archived content will be missing or incomplete.</source>
+      </trans-unit>
+      <trans-unit id="s8661ec508368b697">
+        <source>Missing <x id="0" equiv-text="${dependencies_count} ${plural_of_dependencies}"/></source>
+      </trans-unit>
+      <trans-unit id="s34be76c6b1eadbef">
+        <source>Warning</source>
+      </trans-unit>
+      <trans-unit id="sb7ccfdffba9089cd">
+        <source>Go to Dependencies</source>
+      </trans-unit>
+      <trans-unit id="s6d84a4a9decdd036">
+        <source>More Details</source>
+      </trans-unit>
+      <trans-unit id="scbd13dc939a8ace0">
+        <source>Dependencies</source>
+      </trans-unit>
+      <trans-unit id="s30714f92102cd3b5">
+        <source>Go to Source</source>
+      </trans-unit>
+      <trans-unit id="s48995f467ed9fb99">
+        <source>This item is not included in any collections.</source>
+      </trans-unit>
+      <trans-unit id="s75737e034c9ede6f">
+        <source>No dependencies found.</source>
+      </trans-unit>
+      <trans-unit id="s5c787861231c0307">
+        <source>
+          <x id="0" equiv-text="${dependencies_count} ${msg(&quot;missing&quot;)} ${plural_of_dependencies} ${msg(&quot;not shown&quot;)}"/>
+        </source>
+      </trans-unit>
+      <trans-unit id="s8a56a8c8bd19c9c7">
+        <source>missing</source>
+      </trans-unit>
+      <trans-unit id="s59aa6c9af6d15597">
+        <source>not shown</source>
+      </trans-unit>
+      <trans-unit id="s2d206a49edb46f45">
+        <source>Export as Combined WACZ</source>
+      </trans-unit>
+      <trans-unit id="s826a77b7eb34f371">
+        <source>Export options</source>
+      </trans-unit>
+      <trans-unit id="s679aa63e6bff01e4">
+        <source>Without Dependencies</source>
+      </trans-unit>
+      <trans-unit id="s3a0d5f2c457d0dc6">
+        <source>With Dependencies</source>
+      </trans-unit>
+      <trans-unit id="s21b481b915557440">
+        <source>Please confirm impact on dependents to continue.</source>
+      </trans-unit>
+      <trans-unit id="s02c3b5e3f3f4f37d">
+        <source>Impact on Collections</source>
+      </trans-unit>
+      <trans-unit id="sdd608ed342e9a087">
+        <source>This item will be removed from <x id="0" equiv-text="${number_of_collections} ${plural_of_collections}"/>:</source>
+      </trans-unit>
+      <trans-unit id="s9ea0da5336e10580">
+        <source>Impact on Dependents</source>
+      </trans-unit>
+      <trans-unit id="s70ecd9aff4336c66">
+        <source>This item has <x id="0" equiv-text="${number_of_dependents} ${plural_of_dependents}"/>.</source>
+      </trans-unit>
+      <trans-unit id="s1533b6986ad7b595">
+        <source>Deleting this item may result in missing or incomplete content.</source>
+      </trans-unit>
+      <trans-unit id="s0a89cfd5cf733453">
+        <source>To prevent permanent data loss, downloading the item first is highly recommended.</source>
+      </trans-unit>
+      <trans-unit id="s267008906c113789">
+        <source>Go to downloads</source>
+      </trans-unit>
+      <trans-unit id="s1733349bb52f8cb4">
+        <source>I understand the impact of item deletion on dependents.</source>
+      </trans-unit>
+      <trans-unit id="s16a152c3f835dbf7">
+        <source>Not in Same Collection</source>
+      </trans-unit>
+      <trans-unit id="sa2b8519a0dcbf330">
+        <source>In Same Collection</source>
+      </trans-unit>
+      <trans-unit id="s05a4f5d91fbe6742">
+        <source>Active Run</source>
+      </trans-unit>
+      <trans-unit id="scbef6fe1e9404f53">
+        <source>This item depends on no items</source>
+      </trans-unit>
+      <trans-unit id="s6c13498940885d3e">
+        <source>This item depends on 1 item</source>
+      </trans-unit>
+      <trans-unit id="s7092e455fcab4722">
+        <source>This item depends on 2 items</source>
+      </trans-unit>
+      <trans-unit id="s6b01dc619208bef6">
+        <source>This item depends on <x id="0" equiv-text="${number_of_dependency_items}"/> items</source>
+      </trans-unit>
+      <trans-unit id="sce650dcc2a4c8d21">
+        <source>it is a dependency of 0 items.</source>
+      </trans-unit>
+      <trans-unit id="s29cc23906a40f78d">
+        <source>it is a dependency of 1 item.</source>
+      </trans-unit>
+      <trans-unit id="sdede1bda20ddd08f">
+        <source>it is a dependency of 2 items.</source>
+      </trans-unit>
+      <trans-unit id="s4243a39d7d75448b">
+        <source>it is a dependency of <x id="0" equiv-text="${number_of_dependent_items}"/> items.</source>
+      </trans-unit>
+      <trans-unit id="s392abfb8fc4e4c37">
+        <source>This item is dependent on no items</source>
+      </trans-unit>
+      <trans-unit id="sb81588c496c53dc2">
+        <source>This item is dependent on 1 item</source>
+      </trans-unit>
+      <trans-unit id="s54c3a8f66a45b92e">
+        <source>This item is dependent on 2 items</source>
+      </trans-unit>
+      <trans-unit id="s3a4a0d8364dd24ca">
+        <source>This item is dependent on <x id="0" equiv-text="${number_of_dependency_items}"/> items</source>
+      </trans-unit>
+      <trans-unit id="sa70ef2da38a02002">
+        <source>No items depend on this item</source>
+      </trans-unit>
+      <trans-unit id="s5de1a2dcfa86eb96">
+        <source>1 item depends on this item</source>
+      </trans-unit>
+      <trans-unit id="s0eeeee43c8602299">
+        <source>2 items depend on this item</source>
+      </trans-unit>
+      <trans-unit id="s09c4c672deaca865">
+        <source><x id="0" equiv-text="${number_of_dependent_items}"/> items depend on this item</source>
+      </trans-unit>
+      <trans-unit id="s0f79f221e898f22f">
+        <source>Date Uploaded</source>
+      </trans-unit>
+      <trans-unit id="s4b16de016775ce8e">
+        <source>Go to Crawl Run</source>
+      </trans-unit>
+      <trans-unit id="s69605b545c6c397f">
+        <source>Go to Item</source>
+      </trans-unit>
+      <trans-unit id="s9fe3f174e51989f9">
+        <source>Dependents</source>
+      </trans-unit>
+      <trans-unit id="s3cf89cb47fdde7e9">
+        <source>Link</source>
+      </trans-unit>
+      <trans-unit id="sbbb20677f3affcd9">
+        <source>Rated</source>
+      </trans-unit>
+      <trans-unit id="s03325fb85a53cac7">
+        <source>Filter by QA Rating</source>
+      </trans-unit>
+      <trans-unit id="s27b039e731e6cf86">
+        <source>Enter existing or new collection name</source>
+      </trans-unit>
+      <trans-unit id="s8056a5afb4b7ced8">
+        <source>Enter new collection name</source>
+      </trans-unit>
+      <trans-unit id="sa0e9515393ce09d7">
+        <source>This workflow is using another collection as its deduplication source.</source>
+      </trans-unit>
+      <trans-unit id="s8d0114d6162161fb">
+        <source>Auto-adding new crawls to this collection may result in missing content.</source>
+      </trans-unit>
+      <trans-unit id="s7dac3e31f0b2eb5e">
+        <source>Dedupe</source>
+      </trans-unit>
+      <trans-unit id="s6026f1f2a793df3b">
+        <source>Configure Items</source>
+      </trans-unit>
+      <trans-unit id="s891750bdab5a4a42">
+        <source>Only items in collection</source>
+      </trans-unit>
+      <trans-unit id="s9535d0403761eaee">
+        <source>Deduplication settings updated.</source>
+      </trans-unit>
+      <trans-unit id="sbe0c562b222a0760">
+        <source>Auto-add settings updated.</source>
+      </trans-unit>
+      <trans-unit id="sd250d3312eac3905">
+        <source>This collection is used as a deduplication source.</source>
+      </trans-unit>
+      <trans-unit id="sa4c9cfbc556c7a7b">
+        <source>Workflow Name</source>
+      </trans-unit>
+      <trans-unit id="s4036edde0971cf31">
+        <source>No deduped crawls.</source>
+      </trans-unit>
+      <trans-unit id="s8a0d074b3dfbe4c4">
+        <source>1 deduped crawl.</source>
+      </trans-unit>
+      <trans-unit id="s3cd70b1363c36686">
+        <source>2 deduped crawls.</source>
+      </trans-unit>
+      <trans-unit id="s88f97e02beb66000">
+        <source><x id="0" equiv-text="${number_of_crawls}"/> deduped crawls</source>
+      </trans-unit>
+      <trans-unit id="s09399c3311b63a5e">
+        <source>Successful Crawl Runs</source>
+      </trans-unit>
+      <trans-unit id="s913ef19ec3da93c0">
+        <source>crawl</source>
+      </trans-unit>
+      <trans-unit id="s7d8a6ef19268aceb">
+        <source>Index Import Progress</source>
+      </trans-unit>
+      <trans-unit id="s5402ef404a019244">
+        <source>Visit Link</source>
+      </trans-unit>
+      <trans-unit id="sf9f0ebf420423d35">
+        <source>This collection cannot be removed because it is being used for deduplication. Either disable deduplication or choose another deduplicating collection to remove this collection.</source>
+      </trans-unit>
+      <trans-unit id="sd42e6da409e67dce">
+        <source>Collection used for deduplicating</source>
+      </trans-unit>
+      <trans-unit id="scd67e2d22e89af48">
+        <source>Collection Name</source>
+      </trans-unit>
+      <trans-unit id="h3ab83948a914924b">
+        <source>A new collection named “<x id="0" equiv-text="${workflow_name}"/>” will be created.</source>
+      </trans-unit>
+      <trans-unit id="sadc0e97674b04390">
+        <source>Only crawl the page if the URL matches a regular expression pattern listed here.</source>
+      </trans-unit>
+      <trans-unit id="sd1c7b8de12858a44">
+        <source>Enable deduplication to prevent content that has already been crawled from being stored.</source>
+      </trans-unit>
+      <trans-unit id="s4de912b3d341098e">
+        <source>All crawls of this workflow will be deduplicated against this collection.</source>
+      </trans-unit>
+      <trans-unit id="s0eeab8d3dab1351c">
+        <source>Deduplicate using a collection</source>
+      </trans-unit>
+      <trans-unit id="s3445ea18e4094d17">
+        <source>No deduplication</source>
+      </trans-unit>
+      <trans-unit id="h2af994277a0ff0d0">
+        <source>Will start crawl with <x id="0" equiv-text="${example_url}"/> and only follow links that
+        match the <x id="1" equiv-text="${custom_regexes}"/> listed below.</source>
+      </trans-unit>
+      <trans-unit id="s150e25caf7785744">
+        <source>At least 1 regex pattern is required.</source>
+      </trans-unit>
+      <trans-unit id="se28b4634fe74aaa8">
+        <source>Auto-Add to Collections</source>
+      </trans-unit>
+      <trans-unit id="s2427a6b2021022cf">
+        <source>Disabling deduplication will also disable auto-adding to the collection.</source>
+      </trans-unit>
+      <trans-unit id="h14368ea9daefaf21">
+        <source>To continue to auto-add to the collection without
+                deduplication enabled, update the
+                <x id="0" equiv-text="${link_to_collections_settings}"/> setting.</source>
+      </trans-unit>
+      <trans-unit id="s62ef673d39a982cd">
+        <source>Collection to Use</source>
+      </trans-unit>
+      <trans-unit id="s2a477fdbb009db3a">
+        <source>Adding deduplicated crawls to a collection other than the deduplication source may result in incomplete replay of the non-deduplicated collection.</source>
+      </trans-unit>
+      <trans-unit id="sf60f16bd6c2eb044">
+        <source>Prevent duplicate content from being crawled and stored.</source>
+      </trans-unit>
+      <trans-unit id="s76334f0e93d81299">
+        <source>Please remove or fix the following invalid regex:</source>
+      </trans-unit>
+      <trans-unit id="sb91bf92eb36b2275">
+        <source>Crawl run</source>
+      </trans-unit>
+      <trans-unit id="sb23c959ed9573aa6">
+        <source>Manual run</source>
+      </trans-unit>
+      <trans-unit id="se662c0d1564b3bf7">
+        <source>Dedupe enabled</source>
+      </trans-unit>
+      <trans-unit id="hfb76c65ee43c5fa2">
+        <source>Name &amp; Details</source>
+      </trans-unit>
+      <trans-unit id="saf1c48966ff74969">
+        <source>Feature flags for</source>
+      </trans-unit>
+      <trans-unit id="hc5b0590ec9d58457">
+        <source>Enabled for <x id="0" equiv-text="${organization_count}&#10;                    ${organization_plural}"/>.</source>
+      </trans-unit>
+      <trans-unit id="sd544c967b1fdf664">
+        <source>No feature flags available</source>
+      </trans-unit>
+      <trans-unit id="sb422ed60e05e59de">
+        <source>Failed to load feature flags</source>
+      </trans-unit>
+      <trans-unit id="s2abb67a6bef571fa">
+        <source>Feature turned on</source>
+      </trans-unit>
+      <trans-unit id="s91c78c567af8f2cc">
+        <source>Feature turned off</source>
+      </trans-unit>
+      <trans-unit id="s836a5628ae5d0fbc">
+        <source>Failed to update feature flag <x id="0" equiv-text="${name}"/></source>
+      </trans-unit>
+      <trans-unit id="sb0e198553e119dfc">
+        <source>Delete Deduplication Index?</source>
+      </trans-unit>
+      <trans-unit id="hdd93551bccfc2f4f">
+        <source>Are you sure you want to delete the index and disable
+            deduplication for <x id="0" equiv-text="${collection_name}"/>?</source>
+      </trans-unit>
+      <trans-unit id="sf25a98c2a8a965cd">
+        <source>This action cannot be reversed and may result in the loss of archived content.</source>
+      </trans-unit>
+      <trans-unit id="sefa8ee2e165f4f5e">
+        <source>More Options</source>
+      </trans-unit>
+      <trans-unit id="s1c22aae081db68ad">
+        <source>If unchecked, deduplication will be re-enabled after the next crawl run.</source>
+      </trans-unit>
+      <trans-unit id="s5c21af6d35740fcf">
+        <source>Remove as deduplication source from workflows</source>
+      </trans-unit>
+      <trans-unit id="sa6e39bd3a93e3062">
+        <source>Delete Index</source>
+      </trans-unit>
+      <trans-unit id="sd158a5fc0f062f18">
+        <source>Available</source>
+      </trans-unit>
+      <trans-unit id="s0e9bf23a1a602f1b">
+        <source>Purging Index</source>
+      </trans-unit>
+      <trans-unit id="s7cc704595b63f0ab">
+        <source>Updating Index</source>
+      </trans-unit>
+      <trans-unit id="s5b75d8d56a97f5b6">
+        <source>Creating Index</source>
+      </trans-unit>
+      <trans-unit id="sd4ee91fb1d2223fe">
+        <source>Purge Deduplication Index?</source>
+      </trans-unit>
+      <trans-unit id="habb6543346af1116">
+        <source>Are you sure you want to purge the deduplication index for
+            <x id="0" equiv-text="${collection_name}"/>?</source>
+      </trans-unit>
+      <trans-unit id="ha3f896de47c101c2">
+        <source>This will purge the index of <x id="0" equiv-text="${items_count}"/> deleted
+              <x id="1" equiv-text="${plural_of_items}"/> items and rebuild the index using items
+              currently in the deduplication source.</source>
+      </trans-unit>
+      <trans-unit id="s6b4eff699b799808">
+        <source>Purge Index</source>
+      </trans-unit>
+      <trans-unit id="s7dff984f0a839d90">
+        <source>Index does not exist.</source>
+      </trans-unit>
+      <trans-unit id="sf6da6577bff85d49">
+        <source>Please wait for collection to finish indexing to continue.</source>
+      </trans-unit>
+      <trans-unit id="saf876f0b9c5b9aa1">
+        <source>No deduplication sources found.</source>
+      </trans-unit>
+      <trans-unit id="s8aa7efefbbc392d4">
+        <source>Indexed URLs</source>
+      </trans-unit>
+      <trans-unit id="sb6c72ef3ff8ac88a">
+        <source>Indexed Items</source>
+      </trans-unit>
+      <trans-unit id="sbe65f580b5f75228">
+        <source>Purgeable Items</source>
+      </trans-unit>
+      <trans-unit id="s881848fde1f4fb20">
+        <source>Purged</source>
+      </trans-unit>
+      <trans-unit id="s9082c8006bafc3c5">
+        <source>Imported</source>
+      </trans-unit>
+      <trans-unit id="sfef1b18e83ce0e36">
+        <source>duplicate</source>
+      </trans-unit>
+      <trans-unit id="se259bd7d39cd70ec">
+        <source>Go to Collection</source>
+      </trans-unit>
+      <trans-unit id="sbcc3283c822ac998">
+        <source>Purging deduplication index...</source>
+      </trans-unit>
+      <trans-unit id="s1279f51e483a78d7">
+        <source>Sorry, couldn’t purge index at this time.</source>
+      </trans-unit>
+      <trans-unit id="s6509fde92e89541f">
+        <source>Deleted deduplication index.</source>
+      </trans-unit>
+      <trans-unit id="s07e8ea9eb99c1eaf">
+        <source>Sorry, couldn’t delete index at this time.</source>
+      </trans-unit>
+      <trans-unit id="sbeb08a996dce3478">
+        <source>Deduplication Sources</source>
+      </trans-unit>
+      <trans-unit id="s407bfee03ccb2d94">
+        <source>Manage crawl workflows and browser profiles</source>
+      </trans-unit>
+      <trans-unit id="s6cf47b353ec62e4b">
+        <source>Run QA analysis, rate, and review archived items</source>
+      </trans-unit>
+      <trans-unit id="s63129b44989f8274">
+        <source>Enable crawl deduplication</source>
+      </trans-unit>
+      <trans-unit id="sa4b4abd80b1c564c">
+        <source>Purge and delete deduplication indices</source>
+      </trans-unit>
+      <trans-unit id="sa652182f9f0fd515">
+        <source>Crawl waiting for deduplication index...</source>
+      </trans-unit>
+      <trans-unit id="he3b5fa4158dd13f3">
+        <source>Started crawl from <x id="0" equiv-text="&lt;strong&gt;${renderName(workflow)}&lt;/strong&gt;&#10;            &lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate&#10;    .orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}&quot; @click=&quot;${this.navigate.link.bind(this)}&quot;&gt;"/>Watch crawl<x id="1" equiv-text="&lt;/a&gt;"/></source>
+      </trans-unit>
+      <trans-unit id="sea05550c32f47d50">
+        <source>Date range</source>
+      </trans-unit>
+      <trans-unit id="s615dd6124cc60027">
+        <source>Dedupe source</source>
+      </trans-unit>
+      <trans-unit id="se52d0508d7ec7801">
+        <source>Sorry, couldn’t delete collection at this time.</source>
+      </trans-unit>
+      <trans-unit id="s97e1d95426203d8c">
+        <source>Sorry, couldn’t retrieve collection at this time.</source>
+      </trans-unit>
+      <trans-unit id="sea274e702c6f3d20">
+        <source>Create Deduplication Index</source>
+      </trans-unit>
+      <trans-unit id="hf9394bbcde685022">
+        <source>Are you sure you want to manually create a deduplication index
+            for <x id="0" equiv-text="${collection_name}"/>?</source>
+      </trans-unit>
+      <trans-unit id="h893bdf452e294da1">
+        <source><x id="0" equiv-text="${items_count}"/> archived <x id="1" equiv-text="${plural_of_items}"/> will be imported
+              into the index.</source>
+      </trans-unit>
+      <trans-unit id="sb392bac0d378574d">
+        <source>Create Index</source>
+      </trans-unit>
+      <trans-unit id="sa53d4f555afca49a">
+        <source>Please wait for replay load</source>
+      </trans-unit>
+      <trans-unit id="s2f9cd3faa2ea0023">
+        <source>Remove Dependency from Collection?</source>
+      </trans-unit>
+      <trans-unit id="h854732622e82b644">
+        <source>Are you sure you want to remove <x id="0" equiv-text="${archived_item_name}"/> from
+                this collection?</source>
+      </trans-unit>
+      <trans-unit id="s39c775d68145b8b1">
+        <source><x id="0" equiv-text="${number_of_items} ${plural_of_items}"/> depend on this
+                    item.</source>
+      </trans-unit>
+      <trans-unit id="sbb246f12f3750a30">
+        <source>Removing this item may result in incomplete replay and downloads until dependent URLs are crawled again.</source>
+      </trans-unit>
+      <trans-unit id="s336c8e1678a8ff80">
+        <source>Remove Item</source>
+      </trans-unit>
+      <trans-unit id="s38345a63bf10de0a">
+        <source>Deletion Not Allowed</source>
+      </trans-unit>
+      <trans-unit id="hef7bb50bc3af9666">
+        <source><x id="0" equiv-text="${collection_name}"/> cannot be deleted because it is being
+                  used as a deduplication source.</source>
+      </trans-unit>
+      <trans-unit id="s52790b83835b5026">
+        <source>To delete this collection, delete the deduplication index first.</source>
+      </trans-unit>
+      <trans-unit id="s7684fc61ca474263">
+        <source>Deduplication Settings</source>
+      </trans-unit>
+      <trans-unit id="sd093dd03e3cb1161">
+        <source>Please wait for pending update</source>
+      </trans-unit>
+      <trans-unit id="hab987d2897bb3e8e">
+        <source>Describe your collection in long-form rich text
+                            (e.g. <x id="0" equiv-text="&lt;strong&gt;"/>bold<x id="1" equiv-text="&lt;/strong&gt;"/> and
+                            <x id="2" equiv-text="&lt;em&gt;"/>italicized<x id="3" equiv-text="&lt;/em&gt;"/> text.)</source>
+      </trans-unit>
+      <trans-unit id="h126df4202a8e492e">
+        <source>If this collection is shareable, this will appear
+                          in the “About This Collection” section of the shared
+                          collection.</source>
+      </trans-unit>
+      <trans-unit id="s352719d86112de9a">
+        <source>Help</source>
+      </trans-unit>
+      <trans-unit id="s8fb30ee49bfe5176">
+        <source>No archived items yet</source>
+      </trans-unit>
+      <trans-unit id="sedeb63cccbbeff43">
+        <source>Select individual items or automatically add new crawled items.</source>
+      </trans-unit>
+      <trans-unit id="sca91d7c3d969e858">
+        <source>Created deduplication index.</source>
+      </trans-unit>
+      <trans-unit id="s010013e283716998">
+        <source>Importing <x id="0" equiv-text="${items_count}"/> archived <x id="1" equiv-text="${plural_of_items}"/>.</source>
+      </trans-unit>
+      <trans-unit id="se44833ed5fef92c2">
+        <source>Sorry, couldn't created index at this time.</source>
+      </trans-unit>
+      <trans-unit id="s9d45eccec5887a48">
+        <source>Space Conserved</source>
+      </trans-unit>
+      <trans-unit id="sbd9ad15bd36b8bce">
+        <source>Actual Stored</source>
+      </trans-unit>
+      <trans-unit id="sb93513b15292739b">
+        <source>Estimated Total</source>
+      </trans-unit>
+      <trans-unit id="s6a851d5ab9a25433">
+        <source>Deduplicated Crawls</source>
+      </trans-unit>
+      <trans-unit id="sea47c2a10d9bd694">
+        <source>Deduplication creates interdependence between crawled and indexed items.</source>
+      </trans-unit>
+      <trans-unit id="s574e210fa92a10e5">
+        <source>Crawl dependencies are indexed items that are required by a deduplicated crawled item in order to provide a complete replay.</source>
+      </trans-unit>
+      <trans-unit id="s16efddceb8416b7a">
+        <source>Deduplication is not enabled</source>
+      </trans-unit>
+      <trans-unit id="s15504d46fa1f8bfc">
+        <source>Deduplication can help conserve storage space and reduce crawl time.</source>
+      </trans-unit>
+      <trans-unit id="sa4222ef3fb3027d6">
+        <source>Configure with Auto-Add</source>
+      </trans-unit>
+      <trans-unit id="s21242bcdcb7f2754">
+        <source>Create Dedupe Index</source>
+      </trans-unit>
+      <trans-unit id="se57e5d1695ed4035">
+        <source>An index update is currently in progress.</source>
+      </trans-unit>
+      <trans-unit id="sa500a53996b8fd41">
+        <source>Statistics last updated</source>
+      </trans-unit>
+      <trans-unit id="s615529b0ef463a27">
+        <source>Updating</source>
+      </trans-unit>
+      <trans-unit id="s60e9e18df67750c8">
+        <source>Storage Impact</source>
+      </trans-unit>
+      <trans-unit id="sba86d5ee9ea10020">
+        <source>How much storage space has been conserved by deduplicating crawls.</source>
+      </trans-unit>
+      <trans-unit id="se004dc7617057b18">
+        <source>The total storage space used by indexed items, including indexed and then removed archived items.</source>
+      </trans-unit>
+      <trans-unit id="s0438fb413ca980b4">
+        <source>Estimated total size of collection if items were not deduplicated.</source>
+      </trans-unit>
+      <trans-unit id="sf23d85834a29ece0">
+        <source>Total Indexed Items</source>
+      </trans-unit>
+      <trans-unit id="s9bd45001756b1d1a">
+        <source>Removed Items in Index</source>
+      </trans-unit>
+      <trans-unit id="sa99a0281532e1892">
+        <source>Deduplication Summary</source>
+      </trans-unit>
+      <trans-unit id="s62d6662ca1e4d307">
+        <source>Original Resources</source>
+      </trans-unit>
+      <trans-unit id="s21f79d3094fac23b">
+        <source>Duplicate Resources</source>
+      </trans-unit>
+      <trans-unit id="se84bf52fef6423b2">
+        <source>Total Indexed URLs</source>
+      </trans-unit>
+      <trans-unit id="sc407df73e43a6fb6">
+        <source>Items in Index</source>
+      </trans-unit>
+      <trans-unit id="se6098c70b587cef4">
+        <source>Kept in Collection</source>
+      </trans-unit>
+      <trans-unit id="s9c893a9ab79a7813">
+        <source>Removed from Collection</source>
+      </trans-unit>
+      <trans-unit id="s7a392f912f59b36a">
+        <source>Estimated Space Conserved</source>
+      </trans-unit>
+      <trans-unit id="sb9b50520169ccbe9">
+        <source>By Workflow</source>
+      </trans-unit>
+      <trans-unit id="se0dd3e39232ca872">
+        <source>By Crawl Run</source>
+      </trans-unit>
+      <trans-unit id="s3781d6d9f9961d5d">
+        <source>Crawl Dependencies</source>
+      </trans-unit>
+      <trans-unit id="s1a555f5ab07921ca">
+        <source>No workflows with dedupe enabled found</source>
+      </trans-unit>
+      <trans-unit id="sac1a880db70b7c4a">
+        <source>Dedupe can be enabled on workflows that auto-add crawls to this collection.</source>
+      </trans-unit>
+      <trans-unit id="s5686a3a78320bb64">
+        <source>Configure Auto-Add</source>
+      </trans-unit>
+      <trans-unit id="sa69b67699d4fb613">
+        <source>No deduped crawls yet</source>
+      </trans-unit>
+      <trans-unit id="s9e21dba4902d2927">
+        <source>You’ll see deduplicated crawls here after running a workflow with dedupe enabled.</source>
+      </trans-unit>
+      <trans-unit id="sc2be800e8533cbf2">
+        <source>No dedupe dependencies found</source>
+      </trans-unit>
+      <trans-unit id="sbaf822b43508dffe">
+        <source>Dependencies are archived items that are indexed and required by deduped crawls.</source>
+      </trans-unit>
+      <trans-unit id="sbdda8359384335c1">
+        <source>Add Items to Index</source>
+      </trans-unit>
+      <trans-unit id="s17bb0819a30532c6">
+        <source>Some dependencies were deleted and cannot be displayed.</source>
+      </trans-unit>
+      <trans-unit id="sc661e83eab695076">
+        <source>Index Overview</source>
+      </trans-unit>
+      <trans-unit id="s9750c95a2918f953">
+        <source>Index Status</source>
+      </trans-unit>
+      <trans-unit id="sfed64af19fb19a77">
+        <source>Update Progress</source>
+      </trans-unit>
+      <trans-unit id="s750fc773579e4804">
+        <source>Purge</source>
+      </trans-unit>
+      <trans-unit id="s3914cb410fca44d4">
+        <source>Import</source>
+      </trans-unit>
+      <trans-unit id="sb461ae756d878a9e">
+        <source>Index Last Updated</source>
+      </trans-unit>
+      <trans-unit id="sd085179f993a00af">
+        <source>Total size of all supplementary files in use by your organization, such as workflow URL list files, custom collection thumbnails, and deduplication indexes.</source>
+      </trans-unit>
+      <trans-unit id="dependencies.plural.few">
+        <source>dependencies</source>
+        <note from="lit-localize">plural form of "dependency" for few dependencies</note>
+      </trans-unit>
+      <trans-unit id="dependencies.plural.many">
+        <source>dependencies</source>
+        <note from="lit-localize">plural form of "dependency" for many dependencies</note>
+      </trans-unit>
+      <trans-unit id="dependencies.plural.other">
+        <source>dependencies</source>
+        <note from="lit-localize">plural form of "dependency" for multiple/other dependencies</note>
+      </trans-unit>
+      <trans-unit id="dependencies.plural.two">
+        <source>dependencies</source>
+        <note from="lit-localize">plural form of "dependency" for two dependencies</note>
+      </trans-unit>
+      <trans-unit id="dependencies.plural.zero">
+        <source>dependencies</source>
+        <note from="lit-localize">plural form of "dependency" for zero dependencies</note>
+      </trans-unit>
+      <trans-unit id="dependents.plural.few">
+        <source>dependents</source>
+        <note from="lit-localize">plural form of "dependent" for few dependents</note>
+      </trans-unit>
+      <trans-unit id="dependents.plural.many">
+        <source>dependents</source>
+        <note from="lit-localize">plural form of "dependent" for many dependents</note>
+      </trans-unit>
+      <trans-unit id="dependents.plural.other">
+        <source>dependents</source>
+        <note from="lit-localize">plural form of "dependent" for multiple/other dependents</note>
+      </trans-unit>
+      <trans-unit id="dependents.plural.two">
+        <source>dependents</source>
+        <note from="lit-localize">plural form of "dependent" for two dependents</note>
+      </trans-unit>
+      <trans-unit id="dependents.plural.zero">
+        <source>dependents</source>
+        <note from="lit-localize">plural form of "dependent" for zero dependents</note>
+      </trans-unit>
+      <trans-unit id="organizations.plural.few">
+        <source>organizations</source>
+        <note from="lit-localize">plural form of "organization" for few organizations</note>
+      </trans-unit>
+      <trans-unit id="organizations.plural.many">
+        <source>organizations</source>
+        <note from="lit-localize">plural form of "organization" for many organizations</note>
+      </trans-unit>
+      <trans-unit id="organizations.plural.other">
+        <source>organizations</source>
+        <note from="lit-localize">plural form of "organization" for multiple/other organizations</note>
+      </trans-unit>
+      <trans-unit id="organizations.plural.two">
+        <source>organizations</source>
+        <note from="lit-localize">plural form of "organization" for two organizations</note>
+      </trans-unit>
+      <trans-unit id="organizations.plural.zero">
+        <source>organizations</source>
+        <note from="lit-localize">plural form of "organization" for zero organizations</note>
+      </trans-unit>
+      <trans-unit id="runs.plural.few">
+        <source>runs</source>
+        <note from="lit-localize">plural form of "run" for few runs</note>
+      </trans-unit>
+      <trans-unit id="runs.plural.many">
+        <source>runs</source>
+        <note from="lit-localize">plural form of "run" for many runs</note>
+      </trans-unit>
+      <trans-unit id="runs.plural.other">
+        <source>runs</source>
+        <note from="lit-localize">plural form of "run" for multiple/other runs</note>
+      </trans-unit>
+      <trans-unit id="runs.plural.two">
+        <source>runs</source>
+        <note from="lit-localize">plural form of "run" for two runs</note>
+      </trans-unit>
+      <trans-unit id="runs.plural.zero">
+        <source>runs</source>
+        <note from="lit-localize">plural form of "run" for zero runs</note>
+      </trans-unit>
+      <trans-unit id="dependencies.plural.one">
+        <source>dependency</source>
+        <note from="lit-localize">singular form for "dependency"</note>
+      </trans-unit>
+      <trans-unit id="dependents.plural.one">
+        <source>dependent</source>
+        <note from="lit-localize">singular form for "dependent"</note>
+      </trans-unit>
+      <trans-unit id="organizations.plural.one">
+        <source>organization</source>
+        <note from="lit-localize">singular form for "organization"</note>
+      </trans-unit>
+      <trans-unit id="runs.plural.one">
+        <source>run</source>
+        <note from="lit-localize">singular form for "run"</note>
       </trans-unit>
     </body>
   </file>
