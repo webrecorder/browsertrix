@@ -299,7 +299,7 @@ class CollectionOps:
 
     async def update_collection_post_remove(
         self,
-        coll_id,
+        coll_id: UUID,
         crawl_ids: List[str],
         org: Organization,
     ):
