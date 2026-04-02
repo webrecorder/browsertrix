@@ -969,7 +969,7 @@ class CollectionOps:
         crawl_count = 0
         page_count = 0
         total_size = 0
-        tags = set()
+        tags = []
 
         crawl_ids = []
         preload_resources = []
@@ -1006,11 +1006,11 @@ class CollectionOps:
                 pass
 
             if crawl.tags:
-                tags.update(crawl.tags)
+                tags.extend(crawl.tags)
 
             crawl_ids.append(crawl.id)
 
-        sorted_tags = [tag for tag, _ in Counter(list(tags)).most_common()]
+        sorted_tags = [tag for tag, _ in Counter(tags).most_common()]
 
         unique_page_count = await self.page_ops.get_unique_page_count(crawl_ids)
 
