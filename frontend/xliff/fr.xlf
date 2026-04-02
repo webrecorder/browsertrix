@@ -5087,7 +5087,10 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Choose a proxy to crawl through.</source>
       </trans-unit>
       <trans-unit id="h79e3c0954fe19439">
-        <source>Customize how URLs are extracted from a page. The crawler will use the specified <x id="0" equiv-text="&lt;a href=&quot;https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors&quot; class=&quot;text-blue-600 hover:text-blue-500&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;"/>CSS selectors<x id="1" equiv-text="&lt;/a&gt;"/> to find URLs that are defined in custom HTML attributes.</source>
+        <source>Customize how URLs are extracted from a page. The crawler will use the
+      specified
+      <x id="0" equiv-text="&lt;a href=&quot;https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors&quot; class=&quot;text-blue-600 hover:text-blue-500&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;"/>CSS selectors<x id="1" equiv-text="&lt;/a&gt;"/>
+      to find URLs that are defined in custom HTML attributes.</source>
       </trans-unit>
       <trans-unit id="s1d4605483a8f58c8">
         <source>Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.</source>
@@ -5102,7 +5105,8 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Only crawl pages that begin with URLs listed here.</source>
       </trans-unit>
       <trans-unit id="h359a6ab58f25e9b9">
-        <source>If none are specified, the crawler will default to <x id="0" equiv-text="${defaultValue}"/>.</source>
+        <source>If none are specified, the crawler will default to
+                  <x id="0" equiv-text="${defaultValue}"/>.</source>
       </trans-unit>
       <trans-unit id="s12821c3d3ee21ff4">
         <source>May be overridden by custom behaviors.</source>
@@ -5216,13 +5220,15 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Your free trial ends on <x id="0" equiv-text="${trialEndDate}"/>.</source>
       </trans-unit>
       <trans-unit id="h7fd7360a8ca3cf56">
-        <source>To continue using Browsertrix, select <x id="0" equiv-text="&lt;strong&gt;"/>Subscribe Now<x id="1" equiv-text="&lt;/strong&gt;"/> in <x id="2" equiv-text="${billingTabLink}"/>.</source>
+        <source>To continue using Browsertrix, select
+                        <x id="0" equiv-text="&lt;strong&gt;"/>Subscribe Now<x id="1" equiv-text="&lt;/strong&gt;"/> in <x id="2" equiv-text="${billingTabLink}"/>.</source>
       </trans-unit>
       <trans-unit id="s2dc0cf608ab631a2">
         <source>Afterwards, your subscription will continue automatically.</source>
       </trans-unit>
       <trans-unit id="h3bc88bf930dc05eb">
-        <source>View and manage your subscription in <x id="0" equiv-text="${billingTabLink}"/>.</source>
+        <source>View and manage your subscription in
+                      <x id="0" equiv-text="${billingTabLink}"/>.</source>
       </trans-unit>
       <trans-unit id="s0c5cbc6552d94f10">
         <source>Total duration of workflow and QA analysis runs.</source>
@@ -5450,7 +5456,9 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Sorry, couldn't delete browser profile at this time.</source>
       </trans-unit>
       <trans-unit id="ha5332522cefc9ed8">
-        <source>Could not delete <x id="0" equiv-text="&lt;strong&gt;${profile.name}&lt;/strong&gt;"/>, currently in use. Please remove browser profile from all crawl workflows to continue.</source>
+        <source>Could not delete <x id="0" equiv-text="&lt;strong&gt;${profile.name}&lt;/strong&gt;"/>, currently in
+              use. Please remove browser profile from all crawl workflows to
+              continue.</source>
       </trans-unit>
       <trans-unit id="sae0b06618cf27f2b">
         <source>View All</source>
@@ -6026,7 +6034,8 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Specify a schedule in Cron format.</source>
       </trans-unit>
       <trans-unit id="hade4ec3c41cb3680">
-        <source>Supports Unix cron syntax and certain macros like <x id="0" equiv-text="${hourly_macro_code}"/> and <x id="1" equiv-text="${yearly_macro_code}"/>.</source>
+        <source>Supports Unix cron syntax and certain macros like
+              <x id="0" equiv-text="${hourly_macro_code}"/> and <x id="1" equiv-text="${yearly_macro_code}"/>.</source>
       </trans-unit>
       <trans-unit id="sa5781d5768343c36">
         <source>No collections selected.</source>
@@ -6035,13 +6044,16 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Customize the name of this workflow.</source>
       </trans-unit>
       <trans-unit id="hb3f6c6856c9590d1">
-        <source>If omitted, the workflow will be named after the URL specified in <x id="0" equiv-text="${link_to_scope}"/>.</source>
+        <source>If omitted, the workflow will be named after the URL
+                specified in <x id="0" equiv-text="${link_to_scope}"/>.</source>
       </trans-unit>
       <trans-unit id="h8e9613ac20c20d2f">
-        <source>If omitted, the workflow will be named after the first URL specified in <x id="0" equiv-text="${link_to_scope}"/>.</source>
+        <source>If omitted, the workflow will be named after the first URL
+                specified in <x id="0" equiv-text="${link_to_scope}"/>.</source>
       </trans-unit>
       <trans-unit id="h9d2cfbc7314d4749">
-        <source>If omitted, the workflow will be named after the <x id="0" equiv-text="${link_to_crawl_start_url}"/>.</source>
+        <source>If omitted, the workflow will be named after the
+              <x id="0" equiv-text="${link_to_crawl_start_url}"/>.</source>
       </trans-unit>
       <trans-unit id="s0acc469adf928ca1">
         <source>Add crawls from this workflow to one or more collections.</source>
@@ -6065,7 +6077,9 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Your org is out of execution minutes</source>
       </trans-unit>
       <trans-unit id="hd013e4264dcdbfcf">
-        <source>Any running crawls have been paused. To resume crawling, you can purchase additional minutes or upgrade your monthly plan from <x id="0" equiv-text="${billingTabLink}"/>.</source>
+        <source>Any running crawls have been paused. To resume crawling, you
+            can purchase additional minutes or upgrade your monthly plan from
+            <x id="0" equiv-text="${billingTabLink}"/>.</source>
       </trans-unit>
       <trans-unit id="sf4c6ada1da322126">
         <source>No Review</source>
@@ -6245,7 +6259,8 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Copy ID</source>
       </trans-unit>
       <trans-unit id="ha613f31dc34b55b7">
-        <source>Manual start by <x id="0" equiv-text="&lt;span&gt;${item.userName || item.userid}&lt;/span&gt;"/></source>
+        <source>Manual start by
+                          <x id="0" equiv-text="&lt;span&gt;${item.userName || item.userid}&lt;/span&gt;"/></source>
       </trans-unit>
       <trans-unit id="s09240e07b5b8d640">
         <source>ID</source>
@@ -6380,7 +6395,8 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Cannot delete browser profile in use</source>
       </trans-unit>
       <trans-unit id="h6e2e61aee7c55f63">
-        <source>Please remove <x id="0" equiv-text="${name_of_browser_profile}"/> from all crawl workflows to continue.</source>
+        <source>Please remove <x id="0" equiv-text="${name_of_browser_profile}"/> from all crawl
+                workflows to continue.</source>
       </trans-unit>
       <trans-unit id="s00334fec14a79958">
         <source>Please remove this browser profile from all crawl workflows to continue.</source>
@@ -6572,7 +6588,9 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>No dependencies found.</source>
       </trans-unit>
       <trans-unit id="s5c787861231c0307">
-        <source><x id="0" equiv-text="${dependencies_count} ${msg(&quot;missing&quot;)} ${plural_of_dependencies} ${msg(&quot;not shown&quot;)}"/> </source>
+        <source>
+          <x id="0" equiv-text="${dependencies_count} ${msg(&quot;missing&quot;)} ${plural_of_dependencies} ${msg(&quot;not shown&quot;)}"/>
+        </source>
       </trans-unit>
       <trans-unit id="s8a56a8c8bd19c9c7">
         <source>missing</source>
@@ -6782,7 +6800,8 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>No deduplication</source>
       </trans-unit>
       <trans-unit id="h2af994277a0ff0d0">
-        <source>Will start crawl with <x id="0" equiv-text="${example_url}"/> and only follow links that match the <x id="1" equiv-text="${custom_regexes}"/> listed below.</source>
+        <source>Will start crawl with <x id="0" equiv-text="${example_url}"/> and only follow links that
+        match the <x id="1" equiv-text="${custom_regexes}"/> listed below.</source>
       </trans-unit>
       <trans-unit id="s150e25caf7785744">
         <source>At least 1 regex pattern is required.</source>
@@ -6794,7 +6813,9 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Disabling deduplication will also disable auto-adding to the collection.</source>
       </trans-unit>
       <trans-unit id="h14368ea9daefaf21">
-        <source>To continue to auto-add to the collection without deduplication enabled, update the <x id="0" equiv-text="${link_to_collections_settings}"/> setting.</source>
+        <source>To continue to auto-add to the collection without
+                deduplication enabled, update the
+                <x id="0" equiv-text="${link_to_collections_settings}"/> setting.</source>
       </trans-unit>
       <trans-unit id="s62ef673d39a982cd">
         <source>Collection to Use</source>
@@ -6845,7 +6866,8 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Delete Deduplication Index?</source>
       </trans-unit>
       <trans-unit id="hdd93551bccfc2f4f">
-        <source>Are you sure you want to delete the index and disable deduplication for <x id="0" equiv-text="${collection_name}"/>?</source>
+        <source>Are you sure you want to delete the index and disable
+            deduplication for <x id="0" equiv-text="${collection_name}"/>?</source>
       </trans-unit>
       <trans-unit id="sf25a98c2a8a965cd">
         <source>This action cannot be reversed and may result in the loss of archived content.</source>
@@ -6878,10 +6900,13 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Purge Deduplication Index?</source>
       </trans-unit>
       <trans-unit id="habb6543346af1116">
-        <source>Are you sure you want to purge the deduplication index for <x id="0" equiv-text="${collection_name}"/>?</source>
+        <source>Are you sure you want to purge the deduplication index for
+            <x id="0" equiv-text="${collection_name}"/>?</source>
       </trans-unit>
       <trans-unit id="ha3f896de47c101c2">
-        <source>This will purge the index of <x id="0" equiv-text="${items_count}"/> deleted <x id="1" equiv-text="${plural_of_items}"/> items and rebuild the index using items currently in the deduplication source.</source>
+        <source>This will purge the index of <x id="0" equiv-text="${items_count}"/> deleted
+              <x id="1" equiv-text="${plural_of_items}"/> items and rebuild the index using items
+              currently in the deduplication source.</source>
       </trans-unit>
       <trans-unit id="s6b4eff699b799808">
         <source>Purge Index</source>
@@ -6965,10 +6990,12 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Create Deduplication Index</source>
       </trans-unit>
       <trans-unit id="hf9394bbcde685022">
-        <source>Are you sure you want to manually create a deduplication index for <x id="0" equiv-text="${collection_name}"/>?</source>
+        <source>Are you sure you want to manually create a deduplication index
+            for <x id="0" equiv-text="${collection_name}"/>?</source>
       </trans-unit>
       <trans-unit id="h893bdf452e294da1">
-        <source><x id="0" equiv-text="${items_count}"/> archived <x id="1" equiv-text="${plural_of_items}"/> will be imported into the index.</source>
+        <source><x id="0" equiv-text="${items_count}"/> archived <x id="1" equiv-text="${plural_of_items}"/> will be imported
+              into the index.</source>
       </trans-unit>
       <trans-unit id="sb392bac0d378574d">
         <source>Create Index</source>
@@ -6980,10 +7007,12 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Remove Dependency from Collection?</source>
       </trans-unit>
       <trans-unit id="h854732622e82b644">
-        <source>Are you sure you want to remove <x id="0" equiv-text="${archived_item_name}"/> from this collection?</source>
+        <source>Are you sure you want to remove <x id="0" equiv-text="${archived_item_name}"/> from
+                this collection?</source>
       </trans-unit>
       <trans-unit id="s39c775d68145b8b1">
-        <source><x id="0" equiv-text="${number_of_items} ${plural_of_items}"/> depend on this item.</source>
+        <source><x id="0" equiv-text="${number_of_items} ${plural_of_items}"/> depend on this
+                    item.</source>
       </trans-unit>
       <trans-unit id="sbb246f12f3750a30">
         <source>Removing this item may result in incomplete replay and downloads until dependent URLs are crawled again.</source>
@@ -6995,7 +7024,8 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Deletion Not Allowed</source>
       </trans-unit>
       <trans-unit id="hef7bb50bc3af9666">
-        <source><x id="0" equiv-text="${collection_name}"/> cannot be deleted because it is being used as a deduplication source.</source>
+        <source><x id="0" equiv-text="${collection_name}"/> cannot be deleted because it is being
+                  used as a deduplication source.</source>
       </trans-unit>
       <trans-unit id="s52790b83835b5026">
         <source>To delete this collection, delete the deduplication index first.</source>
@@ -7007,10 +7037,14 @@ comptes connectés. Notez que les sites web peuvent déconnecter les profils apr
         <source>Please wait for pending update</source>
       </trans-unit>
       <trans-unit id="hab987d2897bb3e8e">
-        <source>Describe your collection in long-form rich text (e.g. <x id="0" equiv-text="&lt;strong&gt;"/>bold<x id="1" equiv-text="&lt;/strong&gt;"/> and <x id="2" equiv-text="&lt;em&gt;"/>italicized<x id="3" equiv-text="&lt;/em&gt;"/> text.)</source>
+        <source>Describe your collection in long-form rich text
+                            (e.g. <x id="0" equiv-text="&lt;strong&gt;"/>bold<x id="1" equiv-text="&lt;/strong&gt;"/> and
+                            <x id="2" equiv-text="&lt;em&gt;"/>italicized<x id="3" equiv-text="&lt;/em&gt;"/> text.)</source>
       </trans-unit>
       <trans-unit id="h126df4202a8e492e">
-        <source>If this collection is shareable, this will appear in the “About This Collection” section of the shared collection.</source>
+        <source>If this collection is shareable, this will appear
+                          in the “About This Collection” section of the shared
+                          collection.</source>
       </trans-unit>
       <trans-unit id="s352719d86112de9a">
         <source>Help</source>
