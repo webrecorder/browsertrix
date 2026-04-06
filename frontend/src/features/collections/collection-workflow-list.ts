@@ -1,6 +1,12 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlTreeItem } from "@shoelace-style/shoelace";
-import { css, html, type PropertyValues, type TemplateResult } from "lit";
+import {
+  css,
+  html,
+  nothing,
+  type PropertyValues,
+  type TemplateResult,
+} from "lit";
 import { customElement, property, queryAll, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -135,7 +141,7 @@ export class CollectionWorkflowList extends BtrixElement {
 
   private readonly crawlsMap = new Map<
     /* workflow ID: */ string,
-    Promise<Crawl[]>
+    Promise<APIPaginatedList<Crawl> | null>
   >();
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
@@ -187,10 +193,11 @@ export class CollectionWorkflowList extends BtrixElement {
   }
 
   private readonly renderWorkflow = (workflow: Workflow) => {
-    const crawlsAsync = this.crawlsMap.get(workflow.id) || Promise.resolve([]);
-    const countAsync = crawlsAsync.then((crawls) => ({
-      total: crawls.length,
-      selected: crawls.filter(({ id }) => this.selection[id]).length,
+    const crawlsAsync =
+      this.crawlsMap.get(workflow.id) || Promise.resolve(null);
+    const countAsync = crawlsAsync.then((res) => ({
+      total: res?.total ?? 0,
+      selected: res?.items.filter(({ id }) => this.selection[id]).length ?? 0,
     }));
 
     return html`
@@ -247,7 +254,11 @@ export class CollectionWorkflowList extends BtrixElement {
             )}
           </div>
         </div>
-        ${until(crawlsAsync.then((crawls) => crawls.map(this.renderCrawl)))}
+        ${until(
+          crawlsAsync.then((res) =>
+            res ? res.items.map(this.renderCrawl) : nothing,
+          ),
+        )}
       </sl-tree-item>
       <btrix-collection-workflow-list-settings
         collectionId=${ifDefined(this.collectionId)}
@@ -325,9 +336,13 @@ export class CollectionWorkflowList extends BtrixElement {
       this.workflows.forEach((workflow) => {
         this.crawlsMap.set(
           workflow.id,
-          this.getCrawls({ cid: workflow.id, pageSize: CRAWLS_PAGE_SIZE }).then(
-            ({ items }) => items,
-          ),
+          this.getCrawls({
+            cid: workflow.id,
+            pageSize: CRAWLS_PAGE_SIZE,
+          }).catch((err) => {
+            console.debug(err);
+            return null;
+          }),
         );
       });
     } catch (e: unknown) {
