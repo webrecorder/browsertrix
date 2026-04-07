@@ -1511,6 +1511,7 @@ class CrawlOperator(BaseOperator):
         pipe.hgetall(f"{crawl_id}:size")
         pipe.get(f"{crawl_id}:profileUploaded")
         pipe.smembers(f"{crawl_id}:reqCrawls")
+        pipe.get(f"{crawl_id}:rateLimited")
 
         results = await pipe.execute()
 
@@ -1530,6 +1531,7 @@ class CrawlOperator(BaseOperator):
 
         profile_update = results[5]
         req_crawls = results[6]
+        rate_limited = results[7] == "1"
 
         stats = OpCrawlStats(
             found=pages_found,
@@ -1537,6 +1539,7 @@ class CrawlOperator(BaseOperator):
             size=archive_size,
             profile_update=profile_update,
             req_crawls=req_crawls,
+            rate_limited=rate_limited,
         )
         return stats, sizes
 
@@ -1709,6 +1712,8 @@ class CrawlOperator(BaseOperator):
         else:
             new_status: TYPE_RUNNING_STATES = "running"
 
+            if stats.rate_limited:
+                new_status = "rate-limited"
             if status_count.get("generate-wacz"):
                 new_status = "generate-wacz"
             elif status_count.get("uploading-wacz"):

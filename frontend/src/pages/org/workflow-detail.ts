@@ -365,7 +365,8 @@ export class WorkflowDetail extends BtrixElement {
     return (
       this.workflow?.isCrawlRunning &&
       !this.workflow.lastCrawlStopping &&
-      this.workflow.lastCrawlState === "running"
+      this.workflow.lastCrawlState &&
+      ["running", "rate-limited"].includes(this.workflow.lastCrawlState)
     );
   }
 
@@ -702,7 +703,8 @@ export class WorkflowDetail extends BtrixElement {
         ${this.renderCrawls()}
       </btrix-tab-group-panel>
       <btrix-tab-group-panel name=${WorkflowTab.LatestCrawl}>
-        ${this.renderPausedNotice()} ${this.renderLatestCrawl()}
+        ${this.renderRateLimitedNotice()} ${this.renderPausedNotice()}
+        ${this.renderLatestCrawl()}
       </btrix-tab-group-panel>
       <btrix-tab-group-panel name=${WorkflowTab.Settings}>
         ${this.renderSettings()}
@@ -1492,6 +1494,35 @@ export class WorkflowDetail extends BtrixElement {
       </btrix-alert>
     `;
   };
+
+  private renderRateLimitedNotice() {
+    if (this.workflow?.lastCrawlState !== "rate-limited") {
+      return html``;
+    }
+    return html`
+      <btrix-alert
+        id="pausedNotice"
+        class="sticky top-2 z-50 part-[base]:mb-5"
+        variant="info"
+      >
+        <div class="mb-2 flex justify-between">
+          <span class="inline-flex items-center gap-1.5">
+            <sl-icon class="text-base" name="exclamation-triangle"></sl-icon>
+            <strong class="font-medium">
+              ${msg("The site is blocking or rate limiting our crawling")}
+            </strong>
+          </span>
+        </div>
+        <div class="text-pretty text-neutral-600">
+          <p class="mb-2">
+            ${msg(
+              "The crawl has encountered error or CAPTCHA pages and is skipping them. See our guide for more info",
+            )}
+          </p>
+        </div>
+      </btrix-alert>
+    `;
+  }
 
   private renderLatestCrawlAction() {
     if (!this.workflow || !this.lastCrawlId) return;

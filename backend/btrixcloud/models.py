@@ -244,7 +244,7 @@ class UserOrgInfoOut(BaseModel):
 
 # ============================================================================
 TYPE_RUNNING_STATES = Literal[
-    "running", "pending-wait", "generate-wacz", "uploading-wacz"
+    "running", "pending-wait", "generate-wacz", "uploading-wacz", "rate-limited"
 ]
 RUNNING_STATES = get_args(TYPE_RUNNING_STATES)
 
