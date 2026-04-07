@@ -26,6 +26,7 @@ import type {
   APISortQuery,
 } from "@/types/api";
 import type { Crawl, Workflow } from "@/types/crawler";
+import { SortDirection } from "@/types/utils";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { pluralize, pluralOf } from "@/utils/pluralize";
 
@@ -445,6 +446,8 @@ export class CollectionWorkflowList extends BtrixElement {
     const query = queryString.stringify(
       {
         state: finishedCrawlStates,
+        sortBy: "started",
+        sortDirection: SortDirection.Descending,
         ...params,
       },
       {

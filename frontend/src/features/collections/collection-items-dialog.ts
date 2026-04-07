@@ -34,6 +34,7 @@ import type {
   APISortQuery,
 } from "@/types/api";
 import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
+import { SortDirection } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
@@ -828,6 +829,8 @@ export class CollectionItemsDialog extends BtrixElement {
     const query = queryString.stringify(
       {
         state: finishedCrawlStates,
+        sortBy: "started",
+        sortDirection: SortDirection.Descending,
         ...params,
       },
       {
