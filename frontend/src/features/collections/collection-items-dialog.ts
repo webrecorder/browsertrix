@@ -675,7 +675,7 @@ export class CollectionItemsDialog extends BtrixElement {
           `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
           {
             method: "POST",
-            body: JSON.stringify({ workflowIds }),
+            body: JSON.stringify({ crawlconfigIds: workflowIds }),
           },
         ),
       );
