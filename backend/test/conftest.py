@@ -29,6 +29,7 @@ _crawler_config_id = None
 _auto_add_config_id = None
 _all_crawls_config_id = None
 _all_crawls_delete_config_id = None
+_canceled_crawl_config_id = None
 
 NON_DEFAULT_ORG_NAME = "Non-default org"
 NON_DEFAULT_ORG_SLUG = "non-default-org"
@@ -586,6 +587,9 @@ def canceled_crawl_id(admin_auth_headers, default_org_id):
     )
     data = r.json()
 
+    global _canceled_crawl_config_id
+    _canceled_crawl_config_id = data["id"]
+
     crawl_id = data["run_now_job"]
 
     # Cancel crawl after it's started
@@ -618,6 +622,11 @@ def canceled_crawl_id(admin_auth_headers, default_org_id):
         time.sleep(5)
 
     return crawl_id
+
+
+@pytest.fixture(scope="session")
+def canceled_crawl_config_id(canceled_crawl_id):
+    return _canceled_crawl_config_id
 
 
 @pytest.fixture(scope="session")

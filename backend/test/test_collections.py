@@ -362,11 +362,16 @@ def test_add_remove_config_crawls_from_collection(
     crawler_config_id,
     admin_crawl_id,
     admin_config_id,
+    canceled_crawl_id,
+    canceled_crawl_config_id,
 ):
     # Add crawls by config and crawl id
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/add",
-        json={"crawlIds": [admin_crawl_id], "crawlconfigIds": [crawler_config_id]},
+        json={
+            "crawlIds": [admin_crawl_id],
+            "crawlconfigIds": [crawler_config_id, canceled_crawl_config_id],
+        },
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -381,6 +386,26 @@ def test_add_remove_config_crawls_from_collection(
     assert data["dateEarliest"]
     assert data["dateLatest"]
     assert data["topPageHosts"]
+
+    # Verify crawls were added to collection
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert _coll_id in r.json()["collectionIds"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert _coll_id in r.json()["collectionIds"]
+
+    # Verify non-successful crawl from workflow wasn't added to collection
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{canceled_crawl_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert _coll_id not in r.json()["collectionIds"]
 
     # Remove crawls by crawl and config id, and test that specifying a
     # config and also a crawl in that config separately is handled
