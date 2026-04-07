@@ -219,6 +219,7 @@ class OpCrawlStats(CrawlStats):
     """crawl stats + internal profile update"""
 
     profile_update: Optional[str] = ""
+    rate_limited: Optional[bool] = False
 
 
 # ============================================================================
