@@ -42,7 +42,7 @@ export type AutoAddChangeDetail = {
   dedupe?: boolean;
 };
 
-const CRAWLS_PAGE_SIZE = 2;
+const CRAWLS_PAGE_SIZE = 1;
 
 /**
  * @fires btrix-selection-change
@@ -142,7 +142,8 @@ export class CollectionWorkflowList extends BtrixElement {
   selection: { [itemID: string]: boolean } = {};
 
   /**
-   * Number of all crawls to select by workflow, even crawls not visible in UI.
+   * Number of all successfully finished crawls to select by workflow,
+   * including crawls not visible in UI, keyed by workflow ID.
    */
   @property({ type: Object })
   workflowSelection: { [workflowID: string]: number } = {};
@@ -291,7 +292,7 @@ export class CollectionWorkflowList extends BtrixElement {
                   html`${total
                     ? `${this.localize.number(selected)} / ${this.localize.number(total)}`
                     : 0}
-                  ${pluralOf("crawls", total)}`,
+                  ${pluralOf("items", total)}`,
               ),
             )}
           </div>
@@ -336,12 +337,12 @@ export class CollectionWorkflowList extends BtrixElement {
 
       if (this.workflowSelection[res.items[0].cid]) {
         const plural = msg(
-          str`All crawls selected, including ${number_of_older_crawls} older crawls.`,
+          str`All crawls selected, including ${number_of_older_crawls} older crawled items.`,
         );
 
         message = pluralize(older, {
           zero: plural,
-          one: msg(str`All crawls selected, including 1 older crawl.`),
+          one: msg(str`All crawls selected, including 1 older crawled item.`),
           two: plural,
           few: plural,
           many: plural,
@@ -349,12 +350,12 @@ export class CollectionWorkflowList extends BtrixElement {
         });
       } else {
         const plural = msg(
-          str`${number_of_older_crawls} older crawls are hidden.`,
+          str`${number_of_older_crawls} older crawled items are hidden.`,
         );
 
         message = pluralize(older, {
           zero: plural,
-          one: msg(str`1 older crawl is hidden.`),
+          one: msg(str`1 older crawled item is hidden.`),
           two: plural,
           few: plural,
           many: plural,

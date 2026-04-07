@@ -154,7 +154,8 @@ export class CollectionItemsDialog extends BtrixElement {
   private selection: { [itemID: string]: boolean } = {};
 
   /**
-   * Number of all crawls to select by workflow, even crawls not visible in UI.
+   * Number of all successfully finished crawls to select by workflow,
+   * including crawls not visible in UI, keyed by workflow ID.
    */
   @property({ type: Object })
   workflowSelection: { [workflowID: string]: number } = {};
@@ -170,11 +171,11 @@ export class CollectionItemsDialog extends BtrixElement {
   private readonly tabLabels: Record<Tab, { icon: string; label: string }> = {
     crawl: {
       icon: "gear-wide-connected",
-      label: msg("Crawls"),
+      label: msg("Crawled Items"),
     },
     upload: {
       icon: "upload",
-      label: msg("Uploads"),
+      label: msg("Uploaded Items"),
     },
   };
 
@@ -294,7 +295,6 @@ export class CollectionItemsDialog extends BtrixElement {
   };
 
   private readonly renderCrawls = () => {
-    const data = this.showOnlyInCollection ? this.crawls : this.workflows;
     return html`
       <header class="sticky top-0 z-20 bg-white">
         <div class="border-y bg-neutral-50 p-3">
@@ -316,22 +316,13 @@ export class CollectionItemsDialog extends BtrixElement {
             }}
           ></btrix-item-list-controls>
         </div>
-        <btrix-section-heading>
-          <div class="px-3">
-            ${when(
-              data,
-              ({ total }) =>
-                this.showOnlyInCollection
-                  ? html`${msg("Crawled Items")}
-                      <btrix-badge>${this.localize.number(total)}</btrix-badge>`
-                  : html`${msg("Crawl Workflows")}
-                      <btrix-badge
-                        >${this.localize.number(total)}</btrix-badge
-                      >`,
-              () => msg("Loading..."),
-            )}
-          </div>
-        </btrix-section-heading>
+        ${when(
+          !this.showOnlyInCollection,
+          () =>
+            html`<btrix-section-heading>
+              <h3 class="px-3">${msg("By Workflow")}</h3>
+            </btrix-section-heading>`,
+        )}
       </header>
       ${cache(
         this.showOnlyInCollection
@@ -367,22 +358,6 @@ export class CollectionItemsDialog extends BtrixElement {
             }}
           ></btrix-item-list-controls>
         </div>
-        <btrix-section-heading>
-          <div class="px-3">
-            ${when(
-              this.uploads,
-              () =>
-                this.showOnlyInCollection
-                  ? msg(
-                      str`Uploads in Collection (${this.localize.number(this.uploads!.total)})`,
-                    )
-                  : msg(
-                      str`All Uploads (${this.localize.number(this.uploads!.total)})`,
-                    ),
-              () => msg("Loading..."),
-            )}
-          </div>
-        </btrix-section-heading>
       </header>
       <section class="flex-1 overflow-hidden px-3 pb-3 pt-2">
         <btrix-archived-item-list listType="upload">
