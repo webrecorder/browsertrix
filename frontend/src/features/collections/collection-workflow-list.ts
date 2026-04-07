@@ -34,7 +34,7 @@ import "@/features/collections/collection-workflow-list/settings";
 
 export type SelectionChangeDetail = {
   selection: Record<string, boolean>;
-  workflowSelection: Record<string, boolean>;
+  workflowSelection: Record<string, number>;
 };
 export type AutoAddChangeDetail = {
   id: string;
@@ -42,7 +42,7 @@ export type AutoAddChangeDetail = {
   dedupe?: boolean;
 };
 
-const CRAWLS_PAGE_SIZE = 50;
+const CRAWLS_PAGE_SIZE = 2;
 
 /**
  * @fires btrix-selection-change
@@ -142,10 +142,10 @@ export class CollectionWorkflowList extends BtrixElement {
   selection: { [itemID: string]: boolean } = {};
 
   /**
-   * Whether to select all crawls of a workflow, even crawls not visible in UI
+   * Number of all crawls to select by workflow, even crawls not visible in UI.
    */
   @property({ type: Object })
-  workflowSelection: { [workflowID: string]: boolean } = {};
+  workflowSelection: { [workflowID: string]: number } = {};
 
   @queryAll(".workflow:not([disabled])")
   private readonly selectableWorkflows?: NodeListOf<SlTreeItem>;
@@ -172,21 +172,26 @@ export class CollectionWorkflowList extends BtrixElement {
     return html`<sl-tree
       class="part-[base]:grid part-[base]:grid-cols-[1fr_min-content] part-[base]:gap-2"
       selection="multiple"
-      @sl-selection-change=${(e: SlSelectionChangeEvent) => {
+      @sl-selection-change=${async (e: SlSelectionChangeEvent) => {
         e.stopPropagation();
 
         const selection: CollectionWorkflowList["selection"] = {};
-        const workflowSelection: Record<string, boolean> = {};
+        const workflowSelection: CollectionWorkflowList["workflowSelection"] =
+          {};
 
-        this.selectableWorkflows?.forEach((workflow) => {
+        await this.selectableWorkflows?.forEach(async (workflow) => {
           const workflowId = workflow.dataset.workflowId;
           if (!workflowId) return;
 
           if (workflow.selected) {
-            workflowSelection[workflowId] = true;
+            const crawls = await this.crawlsMap.get(workflowId);
+
+            if (crawls) {
+              workflowSelection[workflowId] = crawls.total;
+            }
           } else {
             if (this.workflowSelection[workflowId]) {
-              workflowSelection[workflowId] = false;
+              workflowSelection[workflowId] = 0;
             }
 
             const crawls = workflow.querySelectorAll<SlTreeItem>(".crawl");

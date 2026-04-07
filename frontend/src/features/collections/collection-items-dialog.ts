@@ -154,10 +154,10 @@ export class CollectionItemsDialog extends BtrixElement {
   private selection: { [itemID: string]: boolean } = {};
 
   /**
-   * Whether to select all crawls of a workflow, even crawls not visible in UI
+   * Number of all crawls to select by workflow, even crawls not visible in UI.
    */
-  @state()
-  private workflowSelection: { [workflowID: string]: boolean } = {};
+  @property({ type: Object })
+  workflowSelection: { [workflowID: string]: number } = {};
 
   @state()
   private isReady = false;
@@ -566,7 +566,11 @@ export class CollectionItemsDialog extends BtrixElement {
 
   private readonly renderSave = () => {
     const { add, remove } = this.difference;
-    const addCount = add.length;
+    const addWorkflowCrawlsCount = Object.values(this.workflowSelection).reduce(
+      (acc, v) => acc + v,
+      0,
+    );
+    const addCount = add.length + addWorkflowCrawlsCount;
     const removeCount = remove.length;
     const hasChange = addCount || removeCount;
     let selectionMessage = "";
@@ -659,7 +663,23 @@ export class CollectionItemsDialog extends BtrixElement {
   private async save() {
     await this.updateComplete;
     const { add, remove } = this.difference;
+    const workflowIds = Object.entries(this.workflowSelection)
+      .filter(([_id, total]) => total)
+      .map(([id]) => id);
+
     const requests = [];
+
+    if (workflowIds.length) {
+      requests.push(
+        this.api.fetch(
+          `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
+          {
+            method: "POST",
+            body: JSON.stringify({ workflowIds }),
+          },
+        ),
+      );
+    }
     if (add.length) {
       requests.push(
         this.api.fetch(
