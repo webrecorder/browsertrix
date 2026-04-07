@@ -152,6 +152,12 @@ export class CollectionItemsDialog extends BtrixElement {
   @state()
   private selection: { [itemID: string]: boolean } = {};
 
+  /**
+   * Whether to select all crawls of a workflow, even crawls not visible in UI
+   */
+  @state()
+  private workflowSelection: { [workflowID: string]: boolean } = {};
+
   @state()
   private isReady = false;
 
@@ -467,11 +473,13 @@ export class CollectionItemsDialog extends BtrixElement {
           collectionId=${this.collectionId}
           .workflows=${this.workflows.items}
           .selection=${this.selection}
+          .workflowSelection=${this.workflowSelection}
           @btrix-selection-change=${(e: CustomEvent<SelectionChangeDetail>) => {
             this.selection = {
               ...this.selection,
               ...e.detail.selection,
             };
+            this.workflowSelection = e.detail.workflowSelection;
           }}
           @btrix-auto-add-change=${(e: CustomEvent<AutoAddChangeDetail>) => {
             const { id, checked, dedupe } = e.detail;

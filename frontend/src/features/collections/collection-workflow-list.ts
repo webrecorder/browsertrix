@@ -1,5 +1,8 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlTreeItem } from "@shoelace-style/shoelace";
+import type {
+  SlSelectionChangeEvent,
+  SlTreeItem,
+} from "@shoelace-style/shoelace";
 import {
   css,
   html,
@@ -24,12 +27,13 @@ import type {
 } from "@/types/api";
 import type { Crawl, Workflow } from "@/types/crawler";
 import { finishedCrawlStates } from "@/utils/crawler";
-import { pluralOf } from "@/utils/pluralize";
+import { pluralize, pluralOf } from "@/utils/pluralize";
 
 import "@/features/collections/collection-workflow-list/settings";
 
 export type SelectionChangeDetail = {
   selection: Record<string, boolean>;
+  workflowSelection: Record<string, boolean>;
 };
 export type AutoAddChangeDetail = {
   id: string;
@@ -89,7 +93,7 @@ export class CollectionWorkflowList extends BtrixElement {
     sl-tree-item::part(item--disabled) {
       opacity: 1;
     }
-    sl-tree-item.workflow:not(.selectable)::part(checkbox) {
+    sl-tree-item[disabled]::part(checkbox) {
       opacity: 0;
     }
 
@@ -136,8 +140,14 @@ export class CollectionWorkflowList extends BtrixElement {
   @property({ type: Object })
   selection: { [itemID: string]: boolean } = {};
 
-  @queryAll(".crawl")
-  private readonly crawlItems?: NodeListOf<SlTreeItem>;
+  /**
+   * Whether to select all crawls of a workflow, even crawls not visible in UI
+   */
+  @property({ type: Object })
+  workflowSelection: { [workflowID: string]: boolean } = {};
+
+  @queryAll(".workflow:not([disabled])")
+  private readonly selectableWorkflows?: NodeListOf<SlTreeItem>;
 
   private readonly crawlsMap = new Map<
     /* workflow ID: */ string,
@@ -161,29 +171,50 @@ export class CollectionWorkflowList extends BtrixElement {
     return html`<sl-tree
       class="part-[base]:grid part-[base]:grid-cols-[1fr_min-content] part-[base]:gap-2"
       selection="multiple"
+      @sl-selection-change=${(e: SlSelectionChangeEvent) => {
+        e.stopPropagation();
+
+        const selection: CollectionWorkflowList["selection"] = {};
+        const workflowSelection: Record<string, boolean> = {};
+
+        this.selectableWorkflows?.forEach((workflow) => {
+          const workflowId = workflow.dataset.workflowId;
+          if (!workflowId) return;
+
+          if (workflow.selected) {
+            workflowSelection[workflowId] = true;
+          } else {
+            if (this.workflowSelection[workflowId]) {
+              workflowSelection[workflowId] = false;
+            }
+
+            const crawls = workflow.querySelectorAll<SlTreeItem>(".crawl");
+
+            crawls.forEach((crawl) => {
+              const crawlId = crawl.dataset.crawlId;
+              if (!crawlId) return;
+
+              if (crawl.selected) {
+                selection[crawlId] = true;
+              } else if (this.selection[crawlId]) {
+                selection[crawlId] = false;
+              }
+            });
+          }
+        });
+
+        this.dispatchEvent(
+          new CustomEvent<SelectionChangeDetail>("btrix-selection-change", {
+            detail: { selection, workflowSelection },
+          }),
+        );
+      }}
       @mousedown=${(e: MouseEvent) => {
         if ((e.target as HTMLElement).tagName !== "SL-TREE-ITEM") {
           // Prevent sl-tree from switching focusing
           // https://github.com/shoelace-style/shoelace/blob/370727c7bf70d427ad0cbb80d95df226c87dc77a/src/components/tree/tree.component.ts#L404C10-L404C19
           e.preventDefault();
         }
-      }}
-      @sl-selection-change=${(e: CustomEvent<{ selection: SlTreeItem[] }>) => {
-        if (!this.crawlItems) {
-          console.debug("no crawl items with classname `crawl`");
-          return;
-        }
-        e.stopPropagation();
-        const selection: CollectionWorkflowList["selection"] = {};
-        Array.from(this.crawlItems).forEach((item) => {
-          if (!item.dataset.crawlId) return;
-          selection[item.dataset.crawlId] = item.selected;
-        });
-        this.dispatchEvent(
-          new CustomEvent<SelectionChangeDetail>("btrix-selection-change", {
-            detail: { selection },
-          }),
-        );
       }}
     >
       <sl-icon slot="expand-icon" name="chevron-double-down"></sl-icon>
@@ -195,17 +226,20 @@ export class CollectionWorkflowList extends BtrixElement {
   private readonly renderWorkflow = (workflow: Workflow) => {
     const crawlsAsync =
       this.crawlsMap.get(workflow.id) || Promise.resolve(null);
-    const countAsync = crawlsAsync.then((res) => ({
-      total: res?.total ?? 0,
-      selected: res?.items.filter(({ id }) => this.selection[id]).length ?? 0,
-    }));
+    const countAsync = crawlsAsync.then((res) => {
+      const total = res?.total ?? 0;
+      return {
+        total,
+        selected: this.workflowSelection[workflow.id]
+          ? total
+          : res?.items.filter(({ id }) => this.selection[id]).length ?? 0,
+      };
+    });
 
     return html`
       <sl-tree-item
-        class="workflow ${until(
-          countAsync.then(({ total }) => (total > 0 ? "selectable" : "")),
-          "",
-        )} !mt-0"
+        class="workflow !mt-0"
+        data-workflow-id=${workflow.id}
         ?selected=${until(
           countAsync.then(
             ({ total, selected }) => selected > 0 && selected === total,
@@ -217,8 +251,8 @@ export class CollectionWorkflowList extends BtrixElement {
           // we're manually setting it since async child tree-items
           // doesn't work as of shoelace 2.8.0
           until(
-            countAsync.then(
-              ({ total, selected }) => selected > 0 && selected < total,
+            countAsync.then(({ selected }) =>
+              this.workflowSelection[workflow.id] ? false : selected > 0,
             ),
             false,
           )
@@ -239,7 +273,9 @@ export class CollectionWorkflowList extends BtrixElement {
         <div
           class="pointer-events-none flex min-h-5 flex-1 items-center gap-2 overflow-hidden leading-none md:gap-x-6"
         >
-          <div class="flex-1 overflow-hidden">${this.renderName(workflow)}</div>
+          <div class="min-h-4 flex-1 overflow-hidden">
+            ${this.renderName(workflow)}
+          </div>
           <div
             class="flex flex-none items-center gap-3 whitespace-nowrap text-neutral-500 md:text-right"
           >
@@ -254,11 +290,7 @@ export class CollectionWorkflowList extends BtrixElement {
             )}
           </div>
         </div>
-        ${until(
-          crawlsAsync.then((res) =>
-            res ? res.items.map(this.renderCrawl) : nothing,
-          ),
-        )}
+        ${until(crawlsAsync.then(this.renderCrawls))}
       </sl-tree-item>
       <btrix-collection-workflow-list-settings
         collectionId=${ifDefined(this.collectionId)}
@@ -284,6 +316,57 @@ export class CollectionWorkflowList extends BtrixElement {
         }}
       ></btrix-collection-workflow-list-settings>
     `;
+  };
+
+  private readonly renderCrawls = (res: APIPaginatedList<Crawl> | null) => {
+    if (!res?.items.length) return nothing;
+
+    let selectOlderCrawls: TemplateResult | typeof nothing = nothing;
+
+    if (res.total > res.pageSize) {
+      const older = res.total - res.pageSize;
+      const number_of_older_crawls = this.localize.number(older);
+      let message = "";
+
+      if (this.workflowSelection[res.items[0].cid]) {
+        const plural = msg(
+          str`All crawls selected, including ${number_of_older_crawls} older crawls.`,
+        );
+
+        message = pluralize(older, {
+          zero: plural,
+          one: msg(str`All crawls selected, including 1 older crawl.`),
+          two: plural,
+          few: plural,
+          many: plural,
+          other: plural,
+        });
+      } else {
+        const plural = msg(
+          str`${number_of_older_crawls} older crawls are hidden.`,
+        );
+
+        message = pluralize(older, {
+          zero: plural,
+          one: msg(str`1 older crawl is hidden.`),
+          two: plural,
+          few: plural,
+          many: plural,
+          other: plural,
+        });
+      }
+
+      // Include in tree selection so that workflow tree item correctly displays
+      // as indeterminate, but prevent user selection
+      selectOlderCrawls = html`<sl-tree-item
+        class="group part-[label]:text-neutral-500 part-[checkbox]:opacity-0"
+        @click=${(e: MouseEvent) => e.stopPropagation()}
+      >
+        ${message}
+      </sl-tree-item>`;
+    }
+
+    return html`${res.items.map(this.renderCrawl)}${selectOlderCrawls}`;
   };
 
   private readonly renderCrawl = (crawl: Crawl) => {
