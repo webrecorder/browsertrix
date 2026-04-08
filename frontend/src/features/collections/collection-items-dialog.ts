@@ -7,6 +7,7 @@ import { cache } from "lit/directives/cache.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import difference from "lodash/fp/difference";
+import groupBy from "lodash/fp/groupBy";
 import union from "lodash/fp/union";
 import without from "lodash/fp/without";
 import queryString from "query-string";
@@ -36,7 +37,7 @@ import type {
 import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import { SortDirection } from "@/types/utils";
 import { isApiError } from "@/utils/api";
-import { finishedCrawlStates } from "@/utils/crawler";
+import { finishedCrawlStates, isCrawl } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -151,14 +152,13 @@ export class CollectionItemsDialog extends BtrixElement {
    * Whether item is selected or not, keyed by ID
    */
   @state()
-  private selection: { [itemID: string]: boolean } = {};
+  private crawlSelection: { [itemID: string]: boolean } = {};
 
-  /**
-   * Number of all successfully finished crawls to select by workflow,
-   * including crawls not visible in UI, keyed by workflow ID.
-   */
-  @property({ type: Object })
-  workflowSelection: { [workflowID: string]: number } = {};
+  @state()
+  private uploadSelection: { [itemID: string]: boolean } = {};
+
+  @state()
+  private workflowSelection: { [workflowID: string]: boolean } = {};
 
   @state()
   private isReady = false;
@@ -166,7 +166,9 @@ export class CollectionItemsDialog extends BtrixElement {
   @query("btrix-dialog")
   private readonly dialog!: Dialog;
 
+  // Cache collection items to compare when saving
   private savedCollectionItemIDs: string[] = [];
+  private savedAllCrawlWorkflowIDs: string[] = [];
 
   private readonly tabLabels: Record<Tab, { icon: string; label: string }> = {
     crawl: {
@@ -190,17 +192,30 @@ export class CollectionItemsDialog extends BtrixElement {
       changedProperties.has("showOnlyMine") ||
       changedProperties.has("showOnlyInCollection")
     ) {
-      void this.fetchCrawls();
-      void this.fetchUploads();
+      if (this.showOnlyInCollection) {
+        void this.fetchCrawls({ page: 1 });
+      } else {
+        void this.fetchWorkflows({ page: 1 });
+      }
+
+      void this.fetchUploads({ page: 1 });
     } else {
       if (changedProperties.has("sortCrawlsBy")) {
-        void this.fetchCrawls();
+        if (this.showOnlyInCollection) {
+          void this.fetchCrawls({ page: 1 });
+        } else {
+          void this.fetchWorkflows({ page: 1 });
+        }
       } else if (changedProperties.has("filterCrawlsBy")) {
-        void this.fetchCrawls({ page: 1 });
+        if (this.showOnlyInCollection) {
+          void this.fetchCrawls({ page: 1 });
+        } else {
+          void this.fetchWorkflows({ page: 1 });
+        }
       }
 
       if (changedProperties.has("sortUploadsBy")) {
-        void this.fetchUploads();
+        void this.fetchUploads({ page: 1 });
       } else if (changedProperties.has("filterUploadsBy")) {
         void this.fetchUploads({ page: 1 });
       }
@@ -379,6 +394,7 @@ export class CollectionItemsDialog extends BtrixElement {
           this.uploads.total > this.uploads.pageSize,
           () => html`
             <btrix-pagination
+              name="uploadsPage"
               page=${this.uploads!.page}
               size=${this.uploads!.pageSize}
               totalCount=${this.uploads!.total}
@@ -423,6 +439,7 @@ export class CollectionItemsDialog extends BtrixElement {
           this.crawls.total > this.crawls.pageSize,
           () => html`
             <btrix-pagination
+              name="crawlsPage"
               page=${this.crawls!.page}
               size=${this.crawls!.pageSize}
               totalCount=${this.crawls!.total}
@@ -448,13 +465,10 @@ export class CollectionItemsDialog extends BtrixElement {
         <btrix-collection-workflow-list
           collectionId=${this.collectionId}
           .workflows=${this.workflows.items}
-          .selection=${this.selection}
+          .selection=${this.crawlSelection}
           .workflowSelection=${this.workflowSelection}
           @btrix-selection-change=${(e: CustomEvent<SelectionChangeDetail>) => {
-            this.selection = {
-              ...this.selection,
-              ...e.detail.selection,
-            };
+            this.crawlSelection = e.detail.selection;
             this.workflowSelection = e.detail.workflowSelection;
           }}
           @btrix-auto-add-change=${(e: CustomEvent<AutoAddChangeDetail>) => {
@@ -480,11 +494,12 @@ export class CollectionItemsDialog extends BtrixElement {
           this.workflows.total > this.workflows.pageSize,
           () => html`
             <btrix-pagination
+              name="workflowsPage"
               page=${this.workflows!.page}
               size=${this.workflows!.pageSize}
               totalCount=${this.workflows!.total}
               @page-change=${(e: PageChangeEvent) => {
-                void this.fetchCrawls({
+                void this.fetchWorkflows({
                   page: e.detail.page,
                 });
               }}
@@ -529,10 +544,17 @@ export class CollectionItemsDialog extends BtrixElement {
         showStatus
         ?checked=${isInCollection}
         @btrix-change=${(e: ArchivedItemCheckedEvent) => {
-          this.selection = {
-            ...this.selection,
-            [item.id]: e.detail.value.checked,
-          };
+          if (isCrawl(item)) {
+            this.crawlSelection = {
+              ...this.crawlSelection,
+              [item.id]: e.detail.value.checked,
+            };
+          } else {
+            this.uploadSelection = {
+              ...this.uploadSelection,
+              [item.id]: e.detail.value.checked,
+            };
+          }
         }}
       >
       </btrix-archived-item-list-item>
@@ -540,29 +562,26 @@ export class CollectionItemsDialog extends BtrixElement {
   };
 
   private readonly renderSave = () => {
-    const { add, remove } = this.difference;
-    const addWorkflowCrawlsCount = Object.values(this.workflowSelection).reduce(
-      (acc, v) => acc + v,
-      0,
-    );
-    const addCount = add.length + addWorkflowCrawlsCount;
-    const removeCount = remove.length;
-    const hasChange = addCount || removeCount;
+    const { addItems, removeItems } = this.difference;
+    const addItemCount = addItems.length;
+    const removeItemCount = removeItems.length;
+
+    const hasChange = addItemCount || removeItemCount;
     let selectionMessage = "";
 
     if (hasChange) {
       const messages: string[] = [];
-      if (addCount) {
+      if (removeItemCount) {
         messages.push(
           msg(
-            str`Adding ${this.localize.number(addCount)} ${pluralOf("items", addCount)}`,
+            str`Removing ${this.localize.number(removeItemCount)} ${pluralOf("items", removeItemCount)}`,
           ),
         );
       }
-      if (removeCount) {
+      if (addItemCount) {
         messages.push(
           msg(
-            str`Removing ${this.localize.number(removeCount)} ${pluralOf("items", removeCount)}`,
+            str`Adding ${this.localize.number(addItemCount)} ${pluralOf("items", addItemCount)}`,
           ),
         );
       }
@@ -613,66 +632,77 @@ export class CollectionItemsDialog extends BtrixElement {
     };
     this.filterCrawlsBy = {};
     this.filterUploadsBy = {};
-    this.selection = {};
-  }
-
-  private selectAllItems(items: ArchivedItem[]) {
-    const selection = { ...this.selection };
-    items.forEach((item) => {
-      if (!Object.prototype.hasOwnProperty.call(selection, item.id)) {
-        selection[item.id] = true;
-      }
-    });
-    this.selection = selection;
+    this.crawlSelection = {};
+    this.uploadSelection = {};
+    this.workflowSelection = {};
   }
 
   private get difference() {
-    const itemIds = Object.entries(this.selection)
+    const itemIds = Object.entries({
+      ...this.crawlSelection,
+      ...this.uploadSelection,
+    })
       .filter(([, isSelected]) => isSelected)
       .map(([id]) => id);
-    const add = difference(itemIds)(this.savedCollectionItemIDs);
-    const remove = difference(this.savedCollectionItemIDs)(itemIds);
-    return { add, remove };
+    const workflowIds = Object.entries(this.workflowSelection)
+      .filter(([, isSelected]) => isSelected)
+      .map(([id]) => id);
+
+    return {
+      addItems: difference(itemIds)(this.savedCollectionItemIDs),
+      removeItems: difference(this.savedCollectionItemIDs)(itemIds),
+      addWorkflows: difference(workflowIds)(this.savedAllCrawlWorkflowIDs),
+      removeWorkflows: difference(this.savedAllCrawlWorkflowIDs)(workflowIds),
+    };
   }
 
   private async save() {
     await this.updateComplete;
-    const { add, remove } = this.difference;
-    const workflowIds = Object.entries(this.workflowSelection)
-      .filter(([_id, total]) => total)
-      .map(([id]) => id);
+    const { addItems, removeItems, addWorkflows, removeWorkflows } =
+      this.difference;
+    const workflowRequests = [];
+    const itemRequests = [];
 
-    const requests = [];
-
-    if (workflowIds.length) {
-      requests.push(
+    if (addWorkflows.length) {
+      workflowRequests.push(
         this.api.fetch(
           `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
           {
             method: "POST",
-            body: JSON.stringify({ crawlconfigIds: workflowIds }),
+            body: JSON.stringify({ crawlconfigIds: addWorkflows }),
           },
         ),
       );
     }
-    if (add.length) {
-      requests.push(
-        this.api.fetch(
-          `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
-          {
-            method: "POST",
-            body: JSON.stringify({ crawlIds: add }),
-          },
-        ),
-      );
-    }
-    if (remove.length) {
-      requests.push(
+    if (removeWorkflows.length) {
+      workflowRequests.push(
         this.api.fetch(
           `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
           {
             method: "POST",
-            body: JSON.stringify({ crawlIds: remove }),
+            body: JSON.stringify({ crawlconfigIds: removeWorkflows }),
+          },
+        ),
+      );
+    }
+    if (addItems.length) {
+      itemRequests.push(
+        this.api.fetch(
+          `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
+          {
+            method: "POST",
+            body: JSON.stringify({ crawlIds: addItems }),
+          },
+        ),
+      );
+    }
+    if (removeItems.length) {
+      itemRequests.push(
+        this.api.fetch(
+          `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
+          {
+            method: "POST",
+            body: JSON.stringify({ crawlIds: removeItems }),
           },
         ),
       );
@@ -681,7 +711,8 @@ export class CollectionItemsDialog extends BtrixElement {
     this.isSubmitting = true;
 
     try {
-      await Promise.all(requests);
+      await Promise.all(workflowRequests);
+      await Promise.all(itemRequests);
 
       this.close();
       this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
@@ -707,32 +738,70 @@ export class CollectionItemsDialog extends BtrixElement {
 
   private async initSelection() {
     void this.fetchCrawls({
-      page: parsePage(new URLSearchParams(location.search).get("page")),
+      page: parsePage(new URLSearchParams(location.search).get("crawlsPage")),
       pageSize: DEFAULT_PAGE_SIZE,
     });
     void this.fetchUploads({
-      page: parsePage(new URLSearchParams(location.search).get("page")),
+      page: parsePage(new URLSearchParams(location.search).get("crawlsPage")),
       pageSize: DEFAULT_PAGE_SIZE,
     });
     void this.fetchSearchValues();
 
     const [crawls, uploads] = await Promise.all([
       this.getCrawls({
-        page: parsePage(new URLSearchParams(location.search).get("page")),
         pageSize: COLLECTION_ITEMS_MAX,
         collectionId: this.collectionId,
       }).then(({ items }) => items),
       this.getUploads({
-        page: parsePage(new URLSearchParams(location.search).get("page")),
         pageSize: COLLECTION_ITEMS_MAX,
         collectionId: this.collectionId,
       }).then(({ items }) => items),
     ]);
 
-    const items = [...crawls, ...uploads];
-    this.selectAllItems(items);
-    // Cache collection items to compare when saving
-    this.savedCollectionItemIDs = items.map(({ id }) => id);
+    const crawlSelection: CollectionItemsDialog["crawlSelection"] = {};
+    const uploadSelection: CollectionItemsDialog["uploadSelection"] = {};
+
+    uploads.forEach(({ id }) => (uploadSelection[id] = true));
+
+    await this.fetchWorkflows({
+      page: parsePage(
+        new URLSearchParams(location.search).get("workflowsPage"),
+      ),
+      pageSize: DEFAULT_PAGE_SIZE,
+    });
+
+    if (this.workflows) {
+      const countByWorkflow = new Map<string, number>();
+
+      this.workflows.items.forEach((workflow) => {
+        countByWorkflow.set(workflow.id, workflow.crawlSuccessfulCount);
+      });
+
+      const crawlsByWorkflow = groupBy<Crawl>("cid")(crawls);
+      const savedAllCrawlWorkflowIDs: CollectionItemsDialog["savedAllCrawlWorkflowIDs"] =
+        [];
+      const workflowSelection: CollectionItemsDialog["workflowSelection"] = {};
+
+      Object.entries(crawlsByWorkflow).forEach(([workflowId, crawls]) => {
+        if (crawls.length === countByWorkflow.get(workflowId)) {
+          workflowSelection[workflowId] = true;
+          savedAllCrawlWorkflowIDs.push(workflowId);
+        } else {
+          crawls.forEach(({ id }) => (crawlSelection[id] = true));
+        }
+      });
+      this.workflowSelection = workflowSelection;
+      this.savedAllCrawlWorkflowIDs = savedAllCrawlWorkflowIDs;
+    } else {
+      crawls.forEach(({ id }) => (crawlSelection[id] = true));
+    }
+
+    this.crawlSelection = crawlSelection;
+    this.uploadSelection = uploadSelection;
+    this.savedCollectionItemIDs = [
+      ...Object.keys(this.crawlSelection),
+      ...Object.keys(this.uploadSelection),
+    ];
   }
 
   private async fetchCrawls(pageParams: APIPaginationQuery = {}) {
@@ -744,14 +813,11 @@ export class CollectionItemsDialog extends BtrixElement {
         collectionId: this.collectionId,
         sortBy: this.sortCrawlsBy.field,
         sortDirection: this.sortCrawlsBy.direction,
-        page: this.crawls?.page,
-        pageSize: this.crawls?.pageSize,
+        page: this.crawls?.page ?? 1,
+        pageSize: this.crawls?.pageSize ?? DEFAULT_PAGE_SIZE,
         ...pageParams,
         ...this.filterCrawlsBy,
       });
-      if (!this.showOnlyInCollection) {
-        await this.fetchWorkflows(pageParams);
-      }
     } catch (e: unknown) {
       console.debug(e);
     }
@@ -770,8 +836,8 @@ export class CollectionItemsDialog extends BtrixElement {
             ? "lastRun"
             : this.sortCrawlsBy.field,
         sortDirection: this.sortCrawlsBy.direction,
-        page: this.workflows?.page,
-        pageSize: this.workflows?.pageSize,
+        page: this.workflows?.page ?? 1,
+        pageSize: this.workflows?.pageSize ?? DEFAULT_PAGE_SIZE,
         ...pageParams,
         ...this.filterCrawlsBy,
       });

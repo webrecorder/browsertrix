@@ -34,7 +34,7 @@ import "@/features/collections/collection-workflow-list/settings";
 
 export type SelectionChangeDetail = {
   selection: Record<string, boolean>;
-  workflowSelection: Record<string, number>;
+  workflowSelection: Record<string, boolean>;
 };
 export type AutoAddChangeDetail = {
   id: string;
@@ -42,7 +42,7 @@ export type AutoAddChangeDetail = {
   dedupe?: boolean;
 };
 
-const CRAWLS_PAGE_SIZE = 1;
+const CRAWLS_PAGE_SIZE = 2;
 
 /**
  * @fires btrix-selection-change
@@ -141,12 +141,8 @@ export class CollectionWorkflowList extends BtrixElement {
   @property({ type: Object })
   selection: { [itemID: string]: boolean } = {};
 
-  /**
-   * Number of all successfully finished crawls to select by workflow,
-   * including crawls not visible in UI, keyed by workflow ID.
-   */
   @property({ type: Object })
-  workflowSelection: { [workflowID: string]: number } = {};
+  workflowSelection: { [workflowID: string]: boolean } = {};
 
   @queryAll(".workflow:not([disabled])")
   private readonly selectableWorkflows?: NodeListOf<SlTreeItem>;
@@ -173,49 +169,7 @@ export class CollectionWorkflowList extends BtrixElement {
     return html`<sl-tree
       class="part-[base]:grid part-[base]:grid-cols-[1fr_min-content] part-[base]:gap-2"
       selection="multiple"
-      @sl-selection-change=${async (e: SlSelectionChangeEvent) => {
-        e.stopPropagation();
-
-        const selection: CollectionWorkflowList["selection"] = {};
-        const workflowSelection: CollectionWorkflowList["workflowSelection"] =
-          {};
-
-        await this.selectableWorkflows?.forEach(async (workflow) => {
-          const workflowId = workflow.dataset.workflowId;
-          if (!workflowId) return;
-
-          if (workflow.selected) {
-            const crawls = await this.crawlsMap.get(workflowId);
-
-            if (crawls) {
-              workflowSelection[workflowId] = crawls.total;
-            }
-          } else {
-            if (this.workflowSelection[workflowId]) {
-              workflowSelection[workflowId] = 0;
-            }
-
-            const crawls = workflow.querySelectorAll<SlTreeItem>(".crawl");
-
-            crawls.forEach((crawl) => {
-              const crawlId = crawl.dataset.crawlId;
-              if (!crawlId) return;
-
-              if (crawl.selected) {
-                selection[crawlId] = true;
-              } else if (this.selection[crawlId]) {
-                selection[crawlId] = false;
-              }
-            });
-          }
-        });
-
-        this.dispatchEvent(
-          new CustomEvent<SelectionChangeDetail>("btrix-selection-change", {
-            detail: { selection, workflowSelection },
-          }),
-        );
-      }}
+      @sl-selection-change=${this.onSelectionChange}
       @mousedown=${(e: MouseEvent) => {
         if ((e.target as HTMLElement).tagName !== "SL-TREE-ITEM") {
           // Prevent sl-tree from switching focusing
@@ -233,48 +187,33 @@ export class CollectionWorkflowList extends BtrixElement {
   private readonly renderWorkflow = (workflow: Workflow) => {
     const crawlsAsync =
       this.crawlsMap.get(workflow.id) || Promise.resolve(null);
-    const countAsync = crawlsAsync.then((res) => {
-      const total = res?.total ?? 0;
-      return {
-        total,
-        selected: this.workflowSelection[workflow.id]
-          ? total
-          : res?.items.filter(({ id }) => this.selection[id]).length ?? 0,
-      };
-    });
+    const allSelected = this.workflowSelection[workflow.id];
+    const total = workflow.crawlSuccessfulCount;
+    const selectedAsync = allSelected
+      ? Promise.resolve(total)
+      : crawlsAsync.then((crawls) =>
+          crawls
+            ? crawls.items.filter(({ id }) => this.selection[id]).length
+            : 0,
+        );
 
     return html`
       <sl-tree-item
         class="workflow !mt-0"
         data-workflow-id=${workflow.id}
-        ?selected=${until(
-          countAsync.then(
-            ({ total, selected }) => selected > 0 && selected === total,
-          ),
-          false,
-        )}
+        ?selected=${allSelected}
         .indeterminate=${
           // NOTE `indeterminate` is not a documented public property,
           // we're manually setting it since async child tree-items
           // doesn't work as of shoelace 2.8.0
-          until(
-            countAsync.then(({ selected }) =>
-              this.workflowSelection[workflow.id] ? false : selected > 0,
-            ),
-            false,
-          )
+          until(selectedAsync.then((selected) => selected && selected < total))
         }
-        ?disabled=${until(
-          countAsync.then(({ total }) => total === 0),
-          true,
-        )}
+        ?disabled=${!total}
         @click=${(e: MouseEvent) => {
-          void countAsync.then(({ total }) => {
-            if (!total) {
-              // Prevent selection since we're just allowing auto-add
-              e.stopPropagation();
-            }
-          });
+          if ((e.target as SlTreeItem).disabled) {
+            // Prevent selection since we're just allowing auto-add
+            e.stopPropagation();
+          }
         }}
       >
         <div
@@ -286,15 +225,15 @@ export class CollectionWorkflowList extends BtrixElement {
           <div
             class="flex flex-none items-center gap-3 whitespace-nowrap text-neutral-500 md:text-right"
           >
-            ${until(
-              countAsync.then(
-                ({ total, selected }) =>
-                  html`${total
-                    ? `${this.localize.number(selected)} / ${this.localize.number(total)}`
-                    : 0}
-                  ${pluralOf("items", total)}`,
-              ),
-            )}
+            ${html`${total
+              ? until(
+                  selectedAsync.then(
+                    (selected) =>
+                      `${this.localize.number(selected)} / ${this.localize.number(total)}`,
+                  ),
+                )
+              : 0}
+            ${pluralOf("items", total)}`}
           </div>
         </div>
         ${until(crawlsAsync.then(this.renderCrawls))}
@@ -328,6 +267,7 @@ export class CollectionWorkflowList extends BtrixElement {
   private readonly renderCrawls = (res: APIPaginatedList<Crawl> | null) => {
     if (!res?.items.length) return nothing;
 
+    const allSelected = this.workflowSelection[res.items[0].cid];
     let selectOlderCrawls: TemplateResult | typeof nothing = nothing;
 
     if (res.total > res.pageSize) {
@@ -335,7 +275,7 @@ export class CollectionWorkflowList extends BtrixElement {
       const number_of_older_crawls = this.localize.number(older);
       let message = "";
 
-      if (this.workflowSelection[res.items[0].cid]) {
+      if (allSelected) {
         const plural = msg(
           str`All crawls selected, including ${number_of_older_crawls} older crawled items.`,
         );
@@ -367,6 +307,7 @@ export class CollectionWorkflowList extends BtrixElement {
       // as indeterminate, but prevent user selection
       selectOlderCrawls = html`<sl-tree-item
         class="group part-[label]:text-neutral-500 part-[checkbox]:opacity-0"
+        ?selected=${allSelected}
         @click=${(e: MouseEvent) => e.stopPropagation()}
       >
         ${message}
@@ -378,9 +319,11 @@ export class CollectionWorkflowList extends BtrixElement {
 
   private readonly renderCrawl = (crawl: Crawl) => {
     const pageCount = +(crawl.stats?.done || 0);
+    const allSelected = this.workflowSelection[crawl.cid];
+
     return html`
       <sl-tree-item
-        ?selected=${this.selection[crawl.id]}
+        ?selected=${allSelected || this.selection[crawl.id]}
         class="crawl"
         data-crawl-id=${crawl.id}
       >
@@ -416,6 +359,47 @@ export class CollectionWorkflowList extends BtrixElement {
         </div>
       </sl-tree-item>
     `;
+  };
+
+  private readonly onSelectionChange = async (e: SlSelectionChangeEvent) => {
+    e.stopPropagation();
+
+    const selection: CollectionWorkflowList["selection"] = {};
+    const workflowSelection: CollectionWorkflowList["workflowSelection"] = {};
+
+    await this.selectableWorkflows?.forEach(async (workflowEl) => {
+      const workflowId = workflowEl.dataset.workflowId;
+      if (!workflowId) {
+        console.debug("no workflowId");
+        return;
+      }
+
+      if (workflowEl.selected) {
+        workflowSelection[workflowId] = true;
+      }
+
+      const crawlElems = workflowEl.querySelectorAll<SlTreeItem>(".crawl");
+
+      crawlElems.forEach((crawlEl) => {
+        const crawlId = crawlEl.dataset.crawlId;
+        if (!crawlId) return;
+
+        if (crawlEl.selected) {
+          selection[crawlId] = true;
+        } else if (
+          this.workflowSelection[workflowId] ||
+          this.selection[crawlId]
+        ) {
+          selection[crawlId] = false;
+        }
+      });
+    });
+
+    this.dispatchEvent(
+      new CustomEvent<SelectionChangeDetail>("btrix-selection-change", {
+        detail: { selection, workflowSelection },
+      }),
+    );
   };
 
   /**
