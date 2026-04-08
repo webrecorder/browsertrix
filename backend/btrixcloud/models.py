@@ -1798,6 +1798,8 @@ class CollOut(BaseMongoModel):
 
     indexStats: Optional[DedupeIndexStats] = None
 
+    runningUpdatesCount: int = 0
+
 
 # ============================================================================
 class PublicCollOut(BaseMongoModel):

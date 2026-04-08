@@ -578,6 +578,15 @@ class CrawlManager(K8sAPI):
             crawl_id, {"pausedAt": date_to_str(paused_at) if paused_at else ""}
         )
 
+    async def get_running_background_job_count(self, labels: str) -> int:
+        """return count of background jobs matching labels"""
+        resp = await self.batch_api.list_namespaced_job(
+            namespace=DEFAULT_NAMESPACE,
+            label_selector=f"role=background-job,{labels}",
+        )
+        items = resp.items or []
+        return len(items)
+
     async def delete_all_k8s_resources_for_org(self, oid_str: str) -> None:
         """Delete all k8s resources related to org"""
         await self.delete_crawl_config_cron_jobs_for_org(oid_str)
