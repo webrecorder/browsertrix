@@ -501,6 +501,10 @@ class CollectionOps:
                 org, self.storage_ops, headers
             )
 
+        result["runningUpdatesCount"] = await self.get_running_updates_count(
+            coll_id, org
+        )
+
         return PublicCollOut.from_dict(result)
 
     async def get_public_thumbnail(

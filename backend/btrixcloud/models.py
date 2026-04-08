@@ -1837,6 +1837,8 @@ class PublicCollOut(BaseMongoModel):
 
     topPageHosts: List[HostCount] = []
 
+    runningUpdatesCount: int = 0
+
 
 # ============================================================================
 class UpdateColl(BaseModel):
