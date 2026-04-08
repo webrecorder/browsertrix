@@ -462,7 +462,7 @@ class K8sAPI:
         return resp.items
 
     async def list_crawl_jobs(self, label: str = "") -> List[dict[str, Any]]:
-        """Return list of all crawl jobs, optionally filtered by label)"""
+        """Return list of all crawl jobs, optionally filtered by label"""
         resp = await self.custom_api.list_namespaced_custom_object(
             group="btrix.cloud",
             version="v1",

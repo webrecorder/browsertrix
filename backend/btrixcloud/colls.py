@@ -52,6 +52,7 @@ from .models import (
     PublicCollOut,
     ResourcesOnly,
     DeleteDedupeIndex,
+    BgJobType,
     TYPE_DEDUPE_INDEX_STATES,
     TYPE_INDEX_JOB_TYPES,
 )
@@ -407,6 +408,7 @@ class CollectionOps:
         org: Organization,
         resources=False,
         public_or_unlisted_only=False,
+        updates_count=True,
         headers: Optional[dict] = None,
     ) -> CollOut:
         """Get CollOut by id"""
@@ -449,6 +451,11 @@ class CollectionOps:
             image_file = UserFile(**thumbnail)
             result["thumbnail"] = await image_file.get_file_out(
                 org, self.storage_ops, headers
+            )
+
+        if updates_count:
+            result["runningUpdatesCount"] = await self.get_running_updates_count(
+                coll_id, org
             )
 
         return CollOut.from_dict(result)
@@ -729,7 +736,9 @@ class CollectionOps:
 
     async def download_collection(self, coll_id: UUID, org: Organization):
         """Download all WACZs in collection as streaming nested WACZ"""
-        coll = await self.get_collection_out(coll_id, org, resources=True)
+        coll = await self.get_collection_out(
+            coll_id, org, resources=True, updates_count=False
+        )
 
         metadata = {
             "type": "collection",
@@ -1287,6 +1296,15 @@ class CollectionOps:
                 total_size += file_.get("size", 0)
 
         return total_size
+
+    async def get_running_updates_count(self, coll_id: UUID, org: Organization) -> int:
+        """Return count of running collection stats update background jobs"""
+        btrix_ids = f"btrix.collid={coll_id},btrix.org={org.id}"
+        job_type = BgJobType.UPDATE_COLL_STATS.value
+
+        return await self.crawl_manager.get_running_background_job_count(
+            f"job_type={job_type},{btrix_ids}"
+        )
 
 
 # ============================================================================

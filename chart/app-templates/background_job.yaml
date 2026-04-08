@@ -8,9 +8,12 @@ metadata:
 {% if oid %}
     btrix.org: {{ oid }}
 {% endif %}
+{% if collection_id %}
+    btrix.collid: {{ collection_id }}
+{% endif %}
 
 spec:
-  ttlSecondsAfterFinished: 90
+  ttlSecondsAfterFinished: 0
   backoffLimit: 3
   {% if scale %}
   parallelism: {{ scale }}
