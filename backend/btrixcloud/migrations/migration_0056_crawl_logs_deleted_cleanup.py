@@ -21,11 +21,14 @@ class Migration(BaseMigration):
         """Perform migration up.
 
         Delete crawl logs from database for crawls and orgs that
-        have since been deleted.
+        have since been deleted, as well as for QA runs that were
+        deleted for still-existing crawls.
         """
-        # pylint: disable=duplicate-code
+        # pylint: disable=duplicate-code, too-many-locals
         crawl_logs_mdb = self.mdb["crawl_logs"]
         crawls_mdb = self.mdb["crawls"]
+
+        # DELETED CRAWLS
 
         crawl_logs_to_delete: list[str] = []
 
@@ -57,9 +60,46 @@ class Migration(BaseMigration):
                 res = await crawl_logs_mdb.delete_many(
                     {"crawlId": {"$in": crawl_logs_to_delete}}
                 )
-                print(f"Deleted {res.deleted_count} log lines", flush=True)
+                print(f"Deleted {res.deleted_count} crawl log lines", flush=True)
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(
                     f"Error deleting crawl logs from deleted crawls: {err}", flush=True
                 )
+
+        # DELETED QA RUNS
+
+        qa_run_logs_to_delete: list[str] = []
+
+        log_qa_run_ids = await crawl_logs_mdb.distinct("qaRunId", {})
+
+        qa_run_count = len(log_qa_run_ids)
+        qa_index = 0
+
+        for qa_run_id in log_qa_run_ids:
+            qa_index += 1
+            res = await crawls_mdb.find_one({f"qaFinished.{qa_run_id}": {"$exists": 1}})
+            if res is None:
+                qa_run_logs_to_delete.append(qa_run_id)
+
+            if qa_index % 100 == 0:
+                print(
+                    f"Checked {qa_index} of {qa_run_count} QA runs for logs to delete",
+                    flush=True,
+                )
+
+        if qa_run_logs_to_delete:
+            qa_del_count = len(qa_run_logs_to_delete)
+            print(
+                f"Checked {qa_index} QA runs, deleting logs for {qa_del_count} deleted runs",
+                flush=True,
+            )
+
+            try:
+                res = await crawl_logs_mdb.delete_many(
+                    {"qaRunId": {"$in": qa_run_logs_to_delete}}
+                )
+                print(f"Deleted {res.deleted_count} QA run log lines", flush=True)
+            # pylint: disable=broad-exception-caught
+            except Exception as err:
+                print(f"Error deleting logs from deleted QA runs: {err}", flush=True)
