@@ -54,9 +54,10 @@ class Migration(BaseMigration):
             )
 
             try:
-                await crawl_logs_mdb.delete_many(
+                res = await crawl_logs_mdb.delete_many(
                     {"crawlId": {"$in": crawl_logs_to_delete}}
                 )
+                print(f"Deleted {res.deleted_count} log lines", flush=True)
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(
