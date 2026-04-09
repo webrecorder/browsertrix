@@ -1073,6 +1073,7 @@ class CrawlOps(BaseCrawlOps):
         for qa_run_id in delete_list.qa_run_ids:
             await self.page_ops.delete_qa_run_from_pages(crawl_id, qa_run_id)
             await self.delete_crawl_qa_run_files(crawl_id, qa_run_id, org)
+            await self.crawl_log_ops.delete_crawl_logs(crawl_id, org.id, qa_run_id)
 
             res = await self.crawls.find_one_and_update(
                 {"_id": crawl_id, "type": "crawl"},
