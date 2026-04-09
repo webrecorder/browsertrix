@@ -45,12 +45,13 @@ class Migration(BaseMigration):
             )
 
             try:
-                await jobs_mdb.delete_many(
+                res = await jobs_mdb.delete_many(
                     {
                         "oid": {"$in": job_orgs_to_delete},
                         "type": {"$ne": BgJobType.DELETE_ORG},
                     }
                 )
+                print(f"Deleted {res.deleted_count} jobs from database", flush=True)
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(f"Error deleting jobs from deleted orgs: {err}", flush=True)
