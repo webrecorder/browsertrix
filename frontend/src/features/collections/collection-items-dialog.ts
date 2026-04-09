@@ -6,7 +6,6 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
-import difference from "lodash/fp/difference";
 import groupBy from "lodash/fp/groupBy";
 import union from "lodash/fp/union";
 import without from "lodash/fp/without";
@@ -148,27 +147,23 @@ export class CollectionItemsDialog extends BtrixElement {
   @state()
   private uploadSearchValues?: SearchValues;
 
-  /**
-   * Whether item is selected or not, keyed by ID
-   */
-  @state()
-  private crawlSelection: { [itemID: string]: boolean } = {};
-
-  @state()
-  private uploadSelection: { [itemID: string]: boolean } = {};
-
-  @state()
-  private workflowSelection: { [workflowID: string]: boolean } = {};
-
   @state()
   private isReady = false;
+
+  @state()
+  private selectedCrawlsSet = new Set<string>();
+
+  @state()
+  private selectedUploadsSet = new Set<string>();
+
+  @state()
+  private selectedWorkflowsSet = new Set<string>();
 
   @query("btrix-dialog")
   private readonly dialog!: Dialog;
 
-  // Cache collection items to compare when saving
-  private savedCollectionItemIDs: string[] = [];
-  private savedAllCrawlWorkflowIDs: string[] = [];
+  private savedItemsSet = new Set<string>();
+  private savedWorkflowsSet = new Set<string>();
 
   private readonly tabLabels: Record<Tab, { icon: string; label: string }> = {
     crawl: {
@@ -465,11 +460,14 @@ export class CollectionItemsDialog extends BtrixElement {
         <btrix-collection-workflow-list
           collectionId=${this.collectionId}
           .workflows=${this.workflows.items}
-          .selection=${this.crawlSelection}
-          .workflowSelection=${this.workflowSelection}
           @btrix-selection-change=${(e: CustomEvent<SelectionChangeDetail>) => {
-            this.crawlSelection = e.detail.selection;
-            this.workflowSelection = e.detail.workflowSelection;
+            const { addCrawlIds, removeCrawlIds, selectedWorkflowIds } =
+              e.detail;
+
+            addCrawlIds.forEach((id) => this.selectedCrawlsSet.add(id));
+            removeCrawlIds.forEach((id) => this.selectedCrawlsSet.delete(id));
+
+            this.selectedWorkflowsSet = new Set(selectedWorkflowIds);
           }}
           @btrix-auto-add-change=${(e: CustomEvent<AutoAddChangeDetail>) => {
             const { id, checked, dedupe } = e.detail;
@@ -544,16 +542,14 @@ export class CollectionItemsDialog extends BtrixElement {
         showStatus
         ?checked=${isInCollection}
         @btrix-change=${(e: ArchivedItemCheckedEvent) => {
-          if (isCrawl(item)) {
-            this.crawlSelection = {
-              ...this.crawlSelection,
-              [item.id]: e.detail.value.checked,
-            };
+          const set = isCrawl(item)
+            ? this.selectedCrawlsSet
+            : this.selectedUploadsSet;
+
+          if (e.detail.value.checked) {
+            set.add(item.id);
           } else {
-            this.uploadSelection = {
-              ...this.uploadSelection,
-              [item.id]: e.detail.value.checked,
-            };
+            set.delete(item.id);
           }
         }}
       >
@@ -562,35 +558,75 @@ export class CollectionItemsDialog extends BtrixElement {
   };
 
   private readonly renderSave = () => {
-    const { addItems, removeItems } = this.difference;
-    const addItemCount = addItems.length;
-    const removeItemCount = removeItems.length;
+    const { addItems, removeItems, addWorkflows, removeWorkflows } =
+      this.difference;
+    const addItemCount = addItems.size;
+    const removeItemCount = removeItems.size;
+    const addWorkflowCount = addWorkflows.size;
+    const removeWorkflowCount = removeWorkflows.size;
 
-    const hasChange = addItemCount || removeItemCount;
+    const hasChange =
+      addItemCount ||
+      removeItemCount ||
+      addWorkflowCount ||
+      removeWorkflowCount;
     let selectionMessage = "";
 
     if (hasChange) {
       const messages: string[] = [];
-      if (removeItemCount) {
-        messages.push(
-          msg(
-            str`Removing ${this.localize.number(removeItemCount)} ${pluralOf("items", removeItemCount)}`,
-          ),
-        );
-      }
-      if (addItemCount) {
-        messages.push(
-          msg(
-            str`Adding ${this.localize.number(addItemCount)} ${pluralOf("items", addItemCount)}`,
-          ),
-        );
-      }
 
-      selectionMessage = messages.join(" / ");
+      if (this.showOnlyInCollection || this.activeTab === "upload") {
+        if (removeItemCount) {
+          messages.push(
+            msg(
+              str`Removing ${this.localize.number(removeItemCount)} ${pluralOf("items", removeItemCount)}`,
+            ),
+          );
+        }
+        if (addItemCount) {
+          messages.push(
+            msg(
+              str`Adding ${this.localize.number(addItemCount)} ${pluralOf("items", addItemCount)}`,
+            ),
+          );
+        }
+
+        selectionMessage = messages.join(" / ");
+      } else {
+        selectionMessage = msg("Unsaved changes.");
+
+        // if (removeWorkflowCount) {
+        //   const number_of_workflows = this.localize.number(removeWorkflowCount);
+        //   const plural_of_workflows = pluralOf(
+        //     "workflows",
+        //     removeWorkflowCount,
+        //   );
+
+        //   console.log(removeItemCount);
+
+        //   messages.push(
+        //     msg(
+        //       str`Removing all crawls of ${number_of_workflows} ${plural_of_workflows}`,
+        //     ),
+        //   );
+        // }
+        // if (addWorkflowCount) {
+        //   const number_of_workflows = this.localize.number(addWorkflowCount);
+        //   const plural_of_workflows = pluralOf("workflows", addWorkflowCount);
+
+        //   console.log(addItemCount);
+
+        //   messages.push(
+        //     msg(
+        //       str`Adding all crawls of ${number_of_workflows} ${plural_of_workflows}`,
+        //     ),
+        //   );
+        // }
+      }
     }
 
     return html`
-      <span class="text-neutral-500">${selectionMessage}</span>
+      <span class="text-warning">${selectionMessage}</span>
       <sl-button
         variant="primary"
         size="small"
@@ -632,27 +668,25 @@ export class CollectionItemsDialog extends BtrixElement {
     };
     this.filterCrawlsBy = {};
     this.filterUploadsBy = {};
-    this.crawlSelection = {};
-    this.uploadSelection = {};
-    this.workflowSelection = {};
+    this.selectedCrawlsSet = new Set();
+    this.selectedUploadsSet = new Set();
+    this.selectedWorkflowsSet = new Set();
+    this.savedItemsSet = new Set();
+    this.savedWorkflowsSet = new Set();
   }
 
   private get difference() {
-    const itemIds = Object.entries({
-      ...this.crawlSelection,
-      ...this.uploadSelection,
-    })
-      .filter(([, isSelected]) => isSelected)
-      .map(([id]) => id);
-    const workflowIds = Object.entries(this.workflowSelection)
-      .filter(([, isSelected]) => isSelected)
-      .map(([id]) => id);
+    const selectedItems = this.selectedCrawlsSet.union(this.selectedUploadsSet);
 
     return {
-      addItems: difference(itemIds)(this.savedCollectionItemIDs),
-      removeItems: difference(this.savedCollectionItemIDs)(itemIds),
-      addWorkflows: difference(workflowIds)(this.savedAllCrawlWorkflowIDs),
-      removeWorkflows: difference(this.savedAllCrawlWorkflowIDs)(workflowIds),
+      addItems: selectedItems.difference(this.savedItemsSet),
+      removeItems: this.savedItemsSet.difference(selectedItems),
+      addWorkflows: this.selectedWorkflowsSet.difference(
+        this.savedWorkflowsSet,
+      ),
+      removeWorkflows: this.savedWorkflowsSet.difference(
+        this.selectedWorkflowsSet,
+      ),
     };
   }
 
@@ -660,59 +694,40 @@ export class CollectionItemsDialog extends BtrixElement {
     await this.updateComplete;
     const { addItems, removeItems, addWorkflows, removeWorkflows } =
       this.difference;
-    const workflowRequests = [];
-    const itemRequests = [];
 
-    if (addWorkflows.length) {
-      workflowRequests.push(
-        this.api.fetch(
-          `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
-          {
-            method: "POST",
-            body: JSON.stringify({ crawlconfigIds: addWorkflows }),
-          },
-        ),
+    let addRequest;
+    let removeRequest;
+
+    if (addItems.size || addWorkflows.size) {
+      addRequest = this.api.fetch(
+        `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            crawlIds: [...addItems],
+            crawlconfigIds: [...addWorkflows],
+          }),
+        },
       );
     }
-    if (removeWorkflows.length) {
-      workflowRequests.push(
-        this.api.fetch(
-          `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
-          {
-            method: "POST",
-            body: JSON.stringify({ crawlconfigIds: removeWorkflows }),
-          },
-        ),
-      );
-    }
-    if (addItems.length) {
-      itemRequests.push(
-        this.api.fetch(
-          `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
-          {
-            method: "POST",
-            body: JSON.stringify({ crawlIds: addItems }),
-          },
-        ),
-      );
-    }
-    if (removeItems.length) {
-      itemRequests.push(
-        this.api.fetch(
-          `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
-          {
-            method: "POST",
-            body: JSON.stringify({ crawlIds: removeItems }),
-          },
-        ),
+    if (removeItems.size || removeWorkflows.size) {
+      removeRequest = this.api.fetch(
+        `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            crawlIds: [...removeItems],
+            crawlconfigIds: [...removeWorkflows],
+          }),
+        },
       );
     }
 
     this.isSubmitting = true;
 
     try {
-      await Promise.all(workflowRequests);
-      await Promise.all(itemRequests);
+      await removeRequest;
+      await addRequest;
 
       this.close();
       this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
@@ -737,6 +752,10 @@ export class CollectionItemsDialog extends BtrixElement {
   }
 
   private async initSelection() {
+    this.selectedCrawlsSet.clear();
+    this.selectedUploadsSet.clear();
+    this.selectedWorkflowsSet.clear();
+
     void this.fetchCrawls({
       page: parsePage(new URLSearchParams(location.search).get("crawlsPage")),
       pageSize: DEFAULT_PAGE_SIZE,
@@ -758,11 +777,6 @@ export class CollectionItemsDialog extends BtrixElement {
       }).then(({ items }) => items),
     ]);
 
-    const crawlSelection: CollectionItemsDialog["crawlSelection"] = {};
-    const uploadSelection: CollectionItemsDialog["uploadSelection"] = {};
-
-    uploads.forEach(({ id }) => (uploadSelection[id] = true));
-
     await this.fetchWorkflows({
       page: parsePage(
         new URLSearchParams(location.search).get("workflowsPage"),
@@ -770,38 +784,32 @@ export class CollectionItemsDialog extends BtrixElement {
       pageSize: DEFAULT_PAGE_SIZE,
     });
 
-    if (this.workflows) {
-      const countByWorkflow = new Map<string, number>();
+    const crawlsByWorkflow = groupBy("cid")(crawls);
 
-      this.workflows.items.forEach((workflow) => {
-        countByWorkflow.set(workflow.id, workflow.crawlSuccessfulCount);
-      });
+    Object.entries(crawlsByWorkflow).forEach(([workflowId, crawls]) => {
+      const workflow = this.workflows?.items.find(
+        ({ id }) => id === workflowId,
+      );
+      if (!workflow) {
+        console.debug("no workflow");
+        return;
+      }
 
-      const crawlsByWorkflow = groupBy<Crawl>("cid")(crawls);
-      const savedAllCrawlWorkflowIDs: CollectionItemsDialog["savedAllCrawlWorkflowIDs"] =
-        [];
-      const workflowSelection: CollectionItemsDialog["workflowSelection"] = {};
+      // FIXME: This method for checking whether all items of a workflow are selected
+      // isn't fullproof since there's a COLLECTION_ITEMS_MAX limit.
+      if (crawls.length && crawls.length === workflow.crawlSuccessfulCount) {
+        this.selectedWorkflowsSet.add(workflowId);
+      }
+    });
 
-      Object.entries(crawlsByWorkflow).forEach(([workflowId, crawls]) => {
-        if (crawls.length === countByWorkflow.get(workflowId)) {
-          workflowSelection[workflowId] = true;
-          savedAllCrawlWorkflowIDs.push(workflowId);
-        } else {
-          crawls.forEach(({ id }) => (crawlSelection[id] = true));
-        }
-      });
-      this.workflowSelection = workflowSelection;
-      this.savedAllCrawlWorkflowIDs = savedAllCrawlWorkflowIDs;
-    } else {
-      crawls.forEach(({ id }) => (crawlSelection[id] = true));
-    }
+    crawls.forEach(({ id }) => this.selectedCrawlsSet.add(id));
+    uploads.forEach(({ id }) => this.selectedUploadsSet.add(id));
 
-    this.crawlSelection = crawlSelection;
-    this.uploadSelection = uploadSelection;
-    this.savedCollectionItemIDs = [
-      ...Object.keys(this.crawlSelection),
-      ...Object.keys(this.uploadSelection),
-    ];
+    this.savedItemsSet = this.selectedCrawlsSet.union(this.selectedUploadsSet);
+    this.savedWorkflowsSet = new Set(this.selectedWorkflowsSet);
+    this.selectedCrawlsSet = new Set(this.selectedCrawlsSet);
+    this.selectedUploadsSet = new Set(this.selectedUploadsSet);
+    this.selectedWorkflowsSet = new Set(this.selectedWorkflowsSet);
   }
 
   private async fetchCrawls(pageParams: APIPaginationQuery = {}) {
