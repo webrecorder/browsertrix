@@ -1,6 +1,6 @@
 """crawl logs"""
 
-from typing import TYPE_CHECKING, Any, Optional, Dict, Tuple, List, Union
+from typing import TYPE_CHECKING, Any, Optional, Dict, Tuple, List
 
 import json
 from uuid import UUID, uuid4
