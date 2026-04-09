@@ -48,6 +48,9 @@ class Migration(BaseMigration):
                 res = await jobs_mdb.delete_many(
                     {
                         "oid": {"$in": job_orgs_to_delete},
+                        # Maintain consistency with behavior moving forward, to
+                        # retain only the one org deletion background job from
+                        # deleted orgs
                         "type": {"$ne": BgJobType.DELETE_ORG},
                     }
                 )
