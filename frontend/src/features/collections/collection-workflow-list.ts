@@ -1,6 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import type {
   SlSelectionChangeEvent,
+  SlTree,
   SlTreeItem,
 } from "@shoelace-style/shoelace";
 import {
@@ -10,7 +11,7 @@ import {
   type PropertyValues,
   type TemplateResult,
 } from "lit";
-import { customElement, property, queryAll, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { until } from "lit/directives/until.js";
@@ -32,10 +33,14 @@ import { pluralize, pluralOf } from "@/utils/pluralize";
 
 import "@/features/collections/collection-workflow-list/settings";
 
+export type SelectionLoadDetail = {
+  selectedWorkflows: string[];
+};
 export type SelectionChangeDetail = {
-  addCrawlIds: string[];
-  removeCrawlIds: string[];
-  selectedWorkflowIds: string[];
+  addCrawls: { id: string; cid: string }[];
+  removeCrawls: { id: string; cid: string }[];
+  addWorkflows: Set<string>;
+  removeWorkflows: Set<string>;
 };
 export type AutoAddChangeDetail = {
   id: string;
@@ -43,9 +48,10 @@ export type AutoAddChangeDetail = {
   dedupe?: boolean;
 };
 
-const CRAWLS_PAGE_SIZE = 50;
+const CRAWLS_PAGE_SIZE = 5;
 
 /**
+ * @fires btrix-selection-load
  * @fires btrix-selection-change
  * @fires btrix-auto-add-change
  */
@@ -140,23 +146,22 @@ export class CollectionWorkflowList extends BtrixElement {
   @state()
   expandWorkflowSettings = false;
 
-  @queryAll(".workflow:not([disabled])")
-  private readonly selectableWorkflows?: NodeListOf<SlTreeItem>;
-
-  /**
-   * Keep track of crawls explicitly added or removed (vs. add/remove an entire workflow)
-   * to prevent crawls outside of current page range from being marked as removed
-   */
-  private readonly explicitAddCrawlsSet = new Set<string>();
-  private readonly explicitRemoveCrawlsSet = new Set<string>();
-
   /**
    * Map of count of all selected crawls, even ones not visible in current page
    */
-  private readonly selectionCountMap = new Map<
+  @state()
+  private selectionCountMap = new Map<
     /* workflow ID: */ string,
     Promise<number>
   >();
+
+  @query("sl-tree")
+  private readonly tree?: SlTree | null;
+
+  /**
+   * Track previous selection to compare
+   */
+  private previousSelection = new Set<SlTreeItem>();
 
   /**
    * Map of first page of crawls
@@ -167,6 +172,10 @@ export class CollectionWorkflowList extends BtrixElement {
   >();
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("collectionId")) {
+      this.previousSelection = new Set();
+    }
+
     if (changedProperties.has("workflows")) {
       if (this.collectionId) {
         const collId = this.collectionId;
@@ -177,6 +186,41 @@ export class CollectionWorkflowList extends BtrixElement {
 
       void this.fetchCrawls();
     }
+  }
+
+  protected updated(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("workflows")) {
+      void this.setPreviousSelection();
+    }
+  }
+
+  private async setPreviousSelection() {
+    if (!this.tree) {
+      console.debug("no this.tree");
+      return;
+    }
+
+    await Promise.all([
+      ...this.crawlsMap.values(),
+      ...this.selectionCountMap.values(),
+    ]);
+    await this.tree.updateComplete;
+
+    this.previousSelection = new Set(this.tree.selectedItems);
+
+    const workflows = this.tree.selectedItems.filter((el) =>
+      el.classList.contains("workflow"),
+    );
+
+    this.dispatchEvent(
+      new CustomEvent<SelectionLoadDetail>("btrix-selection-load", {
+        detail: {
+          selectedWorkflows: workflows
+            .map((el) => el.dataset.workflowId)
+            .filter((id): id is string => !!id),
+        },
+      }),
+    );
   }
 
   render() {
@@ -204,14 +248,15 @@ export class CollectionWorkflowList extends BtrixElement {
     const total = workflow.crawlSuccessfulCount;
     const selectionCountAsync =
       this.selectionCountMap.get(workflow.id) || Promise.resolve(0);
+    const allSelected = selectionCountAsync.then((count) =>
+      Boolean(count && count === total),
+    );
 
     return html`
       <sl-tree-item
         class="workflow !mt-0"
         data-workflow-id=${workflow.id}
-        ?selected=${until(
-          selectionCountAsync.then((count) => count && count === total),
-        )}
+        ?selected=${until(allSelected)}
         .indeterminate=${until(
           selectionCountAsync.then((count) => count && count < total),
         )}
@@ -235,7 +280,10 @@ export class CollectionWorkflowList extends BtrixElement {
           </div>
         </div>
         ${until(
-          crawlsAsync.then((crawls) => this.renderCrawls(workflow, crawls)),
+          Promise.all([allSelected, crawlsAsync]).then(
+            ([allSelected, crawls]) =>
+              this.renderCrawls(crawls, { allSelected }),
+          ),
         )}
       </sl-tree-item>
       <btrix-collection-workflow-list-settings
@@ -284,43 +332,37 @@ export class CollectionWorkflowList extends BtrixElement {
   };
 
   private readonly renderCrawls = (
-    workflow: Workflow,
     res: APIPaginatedList<Crawl> | null,
+    { allSelected }: { allSelected: boolean },
   ) => {
     if (!res?.items.length) return nothing;
 
     let selectOlderCrawls: TemplateResult | typeof nothing = nothing;
 
     if (res.total > res.pageSize) {
-      const allSelectedAsync = (
-        this.selectionCountMap.get(workflow.id) || Promise.resolve(0)
-      ).then((count) => count === total);
-      const total = workflow.crawlSuccessfulCount;
+      const older = res.total - res.pageSize;
+      const number_of_older_crawls = this.localize.number(older);
+      let message = "";
 
-      const renderMessage = (allSelected: boolean) => {
-        const older = res.total - res.pageSize;
-        const number_of_older_crawls = this.localize.number(older);
+      if (allSelected) {
+        const plural = msg(
+          str`All items selected, including ${number_of_older_crawls} older crawled items.`,
+        );
 
-        if (allSelected) {
-          const plural = msg(
-            str`All items selected, including ${number_of_older_crawls} older crawled items.`,
-          );
-
-          return pluralize(older, {
-            zero: plural,
-            one: msg(str`All items selected, including 1 older crawled item.`),
-            two: plural,
-            few: plural,
-            many: plural,
-            other: plural,
-          });
-        }
-
+        message = pluralize(older, {
+          zero: plural,
+          one: msg(str`All items selected, including 1 older crawled item.`),
+          two: plural,
+          few: plural,
+          many: plural,
+          other: plural,
+        });
+      } else {
         const plural = msg(
           str`${number_of_older_crawls} older crawled items are hidden.`,
         );
 
-        return pluralize(older, {
+        message = pluralize(older, {
           zero: plural,
           one: msg(str`1 older crawled item is hidden.`),
           two: plural,
@@ -328,16 +370,16 @@ export class CollectionWorkflowList extends BtrixElement {
           many: plural,
           other: plural,
         });
-      };
+      }
 
       // Include in tree selection so that workflow tree item correctly displays
       // as indeterminate, but prevent user selection
       selectOlderCrawls = html`<sl-tree-item
         class="part-[label]:text-neutral-500 part-[checkbox]:opacity-0"
-        ?selected=${until(allSelectedAsync)}
+        ?selected=${allSelected}
         @click=${(e: MouseEvent) => e.stopPropagation()}
       >
-        ${until(allSelectedAsync.then(renderMessage))}
+        ${message}
       </sl-tree-item>`;
     }
 
@@ -356,48 +398,8 @@ export class CollectionWorkflowList extends BtrixElement {
         data-crawl-id=${crawl.id}
         data-workflow-id=${crawl.cid}
         @click=${async (e: MouseEvent) => {
-          const el = e.currentTarget as SlTreeItem;
-          if (el.disabled) {
+          if ((e.currentTarget as SlTreeItem).disabled) {
             e.stopPropagation();
-            return;
-          }
-
-          const selectedAsync = this.selectionCountMap.get(crawl.cid);
-
-          if (!selectedAsync) {
-            console.debug("no selectedAsync for ", crawl.cid);
-            return;
-          }
-
-          const nextSelected = !el.selected;
-
-          const add = (id: string) => {
-            this.explicitAddCrawlsSet.add(id);
-            this.explicitRemoveCrawlsSet.delete(id);
-          };
-          const remove = (id: string) => {
-            this.explicitRemoveCrawlsSet.add(id);
-            this.explicitAddCrawlsSet.delete(id);
-          };
-
-          if (nextSelected) {
-            add(crawl.id);
-
-            // TODO Handle removing all and then adding one
-
-            this.selectionCountMap.set(
-              crawl.cid,
-              selectedAsync.then((count) => count + 1),
-            );
-          } else {
-            remove(crawl.id);
-
-            // TODO Handle adding all and then removing
-
-            this.selectionCountMap.set(
-              crawl.cid,
-              selectedAsync.then((count) => count - 1),
-            );
           }
         }}
       >
@@ -438,54 +440,127 @@ export class CollectionWorkflowList extends BtrixElement {
   private readonly onSelectionChange = async (e: SlSelectionChangeEvent) => {
     e.stopPropagation();
 
-    const selectedWorkflowIds = new Set<string>();
+    const currSelection = new Set(e.detail.selection);
+    const deselected = this.previousSelection.difference(currSelection);
+    const selected = currSelection.difference(this.previousSelection);
 
-    // Update selection counts based on selected or deselected workflows
-    this.selectableWorkflows?.forEach((el) => {
+    const addCrawls: SelectionChangeDetail["addCrawls"] = [];
+    const removeCrawls: SelectionChangeDetail["removeCrawls"] = [];
+    const addWorkflows: SelectionChangeDetail["addWorkflows"] = new Set();
+    const removeWorkflows: SelectionChangeDetail["removeWorkflows"] = new Set();
+
+    selected.forEach((el) => {
       const workflowId = el.dataset.workflowId;
       if (!workflowId) {
-        console.debug("no workflowId");
         return;
       }
 
-      const workflow = this.workflows.find(({ id }) => id === workflowId);
-      if (!workflow) {
-        console.debug("no workflow");
-        return;
-      }
+      const crawlId = el.dataset.crawlId;
 
-      if (el.selected) {
+      if (crawlId) {
+        const parent = el.closest<SlTreeItem>("sl-tree-item.workflow");
+
+        addCrawls.push({ id: crawlId, cid: workflowId });
+
+        if (!parent?.selected) {
+          this.selectionCountMap.set(
+            workflowId,
+            (this.selectionCountMap.get(workflowId) || Promise.resolve(0)).then(
+              (count) => count + 1,
+            ),
+          );
+        }
+      } else {
         const children = el.getChildrenItems({ includeDisabled: false });
 
-        if (children.length === 1) {
+        if (children.length === 1 && children[0].dataset.crawlId) {
           // Treat like individual crawl selection
-          const crawlId = children[0].dataset.crawlId;
+          addCrawls.push({ id: children[0].dataset.crawlId, cid: workflowId });
 
-          if (crawlId) {
-            this.explicitAddCrawlsSet.add(crawlId);
-          }
+          this.selectionCountMap.set(
+            workflowId,
+            (this.selectionCountMap.get(workflowId) || Promise.resolve(0)).then(
+              (count) => count + 1,
+            ),
+          );
         } else {
-          selectedWorkflowIds.add(workflowId);
-        }
+          addWorkflows.add(workflowId);
 
-        this.selectionCountMap.set(
-          workflowId,
-          Promise.resolve(workflow.crawlSuccessfulCount),
-        );
-      } else if (!el.indeterminate) {
-        this.selectionCountMap.set(workflowId, Promise.resolve(0));
+          const workflow = this.workflows.find(({ id }) => id === workflowId);
+          if (!workflow) {
+            console.debug("no workflow");
+            return;
+          }
+
+          this.selectionCountMap.set(
+            workflowId,
+            Promise.resolve(workflow.crawlSuccessfulCount),
+          );
+        }
       }
     });
+
+    deselected.forEach((el) => {
+      const workflowId = el.dataset.workflowId;
+      if (!workflowId) {
+        return;
+      }
+
+      const crawlId = el.dataset.crawlId;
+
+      if (crawlId) {
+        removeCrawls.push({ id: crawlId, cid: workflowId });
+
+        const parent = el.closest<SlTreeItem>("sl-tree-item.workflow");
+
+        if (parent?.indeterminate) {
+          this.selectionCountMap.set(
+            workflowId,
+            (this.selectionCountMap.get(workflowId) || Promise.resolve(1)).then(
+              (count) => count - 1,
+            ),
+          );
+        }
+      } else if (!el.indeterminate) {
+        const children = el.getChildrenItems({ includeDisabled: false });
+
+        if (children.length === 1 && children[0].dataset.crawlId) {
+          // Treat like individual crawl selection
+          removeCrawls.push({
+            id: children[0].dataset.crawlId,
+            cid: workflowId,
+          });
+
+          this.selectionCountMap.set(
+            workflowId,
+            (this.selectionCountMap.get(workflowId) || Promise.resolve(1)).then(
+              (count) => count - 1,
+            ),
+          );
+        } else {
+          removeWorkflows.add(workflowId);
+
+          this.selectionCountMap.set(workflowId, Promise.resolve(0));
+        }
+      }
+    });
+
+    this.selectionCountMap = new Map(this.selectionCountMap);
 
     this.dispatchEvent(
       new CustomEvent<SelectionChangeDetail>("btrix-selection-change", {
         detail: {
-          addCrawlIds: [...this.explicitAddCrawlsSet],
-          removeCrawlIds: [...this.explicitRemoveCrawlsSet],
-          selectedWorkflowIds: [...selectedWorkflowIds],
+          addCrawls: addCrawls.filter(({ cid }) => !addWorkflows.has(cid)),
+          removeCrawls: removeCrawls.filter(
+            ({ cid }) => !removeWorkflows.has(cid),
+          ),
+          addWorkflows,
+          removeWorkflows,
         },
       }),
     );
+
+    this.previousSelection = new Set(e.detail.selection);
   };
 
   /**
