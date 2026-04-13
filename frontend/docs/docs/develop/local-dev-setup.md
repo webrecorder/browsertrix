@@ -28,6 +28,7 @@ frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
 backend_pull_policy: 'Never'
 emails_pull_policy: 'Never'
 frontend_pull_policy: 'Never'
+crawler_pull_policy: 'Never'
 ```
 
     ??? info "MicroK8S"
