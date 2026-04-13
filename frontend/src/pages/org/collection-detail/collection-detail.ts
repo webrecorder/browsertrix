@@ -1312,13 +1312,8 @@ export class CollectionDetail extends BtrixElement {
     try {
       this.collection = await this.getCollection();
 
-      // Clear current timer, if it exists
-      if (this.timerId != null) {
-        window.clearTimeout(this.timerId);
-      }
-
-      // Restart timer for next poll
-      this.timerId = window.setTimeout(() => {
+      // Start polling if not already
+      this.timerId ??= window.setInterval(() => {
         void this.fetchCollection();
       }, 1000 * POLL_INTERVAL_SECONDS);
     } catch (e) {
