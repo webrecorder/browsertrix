@@ -42,7 +42,6 @@ from .utils import (
 )
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
-from .crawl_logs import CrawlLogOps
 from .models import (
     ListFilterType,
     UpdateCrawl,
@@ -102,12 +101,10 @@ class CrawlOps(BaseCrawlOps):
     def __init__(
         self,
         crawl_manager: CrawlManager,
-        log_ops: CrawlLogOps,
         *args,
     ):
         super().__init__(*args)
         self.crawl_manager = crawl_manager
-        self.log_ops = log_ops
         self.crawl_configs.set_crawl_ops(self)
         self.colls.set_crawl_ops(self)
         self.event_webhook_ops.set_crawl_ops(self)
@@ -1076,6 +1073,7 @@ class CrawlOps(BaseCrawlOps):
         for qa_run_id in delete_list.qa_run_ids:
             await self.page_ops.delete_qa_run_from_pages(crawl_id, qa_run_id)
             await self.delete_crawl_qa_run_files(crawl_id, qa_run_id, org)
+            await self.crawl_log_ops.delete_crawl_logs(crawl_id, org.id, qa_run_id)
 
             res = await self.crawls.find_one_and_update(
                 {"_id": crawl_id, "type": "crawl"},
@@ -1258,7 +1256,7 @@ class CrawlOps(BaseCrawlOps):
         qa_run_id: Optional[str] = None,
     ) -> Tuple[list[CrawlLogLine], int]:
         """get crawl logs"""
-        return await self.log_ops.get_crawl_logs(
+        return await self.crawl_log_ops.get_crawl_logs(
             org,
             crawl_id,
             page_size=page_size,
@@ -1364,7 +1362,6 @@ async def recompute_crawl_file_count_and_size(crawls, crawl_id: str):
 # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
 def init_crawls_api(
     crawl_manager: CrawlManager,
-    crawl_log_ops: CrawlLogOps,
     app,
     user_dep,
     *args,
@@ -1372,7 +1369,7 @@ def init_crawls_api(
     """API for crawl management, including crawl done callback"""
     # pylint: disable=invalid-name, duplicate-code
 
-    ops = CrawlOps(crawl_manager, crawl_log_ops, *args)
+    ops = CrawlOps(crawl_manager, *args)
 
     org_viewer_dep = ops.orgs.org_viewer_dep
     org_crawl_dep = ops.orgs.org_crawl_dep

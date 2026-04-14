@@ -179,3 +179,13 @@ class CrawlLogOps:
         log_lines = [CrawlLogLine.from_dict(res) for res in items]
 
         return log_lines, total
+
+    async def delete_crawl_logs(
+        self, crawl_id: str, oid: UUID, qa_run_id: Optional[str] = None
+    ):
+        """Delete all logs from a specific crawl"""
+        query: dict[str, str | UUID] = {"crawlId": crawl_id, "oid": oid}
+        if qa_run_id:
+            query["qaRunId"] = qa_run_id
+
+        return await self.logs.delete_many(query)
