@@ -78,7 +78,7 @@ class Migration(BaseMigration):
 
         for qa_run_id in log_qa_run_ids:
             qa_index += 1
-            res = await crawls_mdb.find_one({f"qaFinished.{qa_run_id}": {"$exists": 1}})
+            res = await crawls_mdb.find_one({f"qaFinished.{qa_run_id}": {"$exists": True}})
             if res is None:
                 qa_run_logs_to_delete.append(qa_run_id)
 
