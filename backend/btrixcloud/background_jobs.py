@@ -519,8 +519,13 @@ class BackgroundJobOps:
                 await self._send_bg_job_failure_email(cleanup_job, finished)
             return
 
+        # If org has been successfully deleted in job, delete k8s resources
+        # associated with this org now that no jobs are running
+        if job_type == BgJobType.DELETE_ORG and oid and success:
+            await self.crawl_manager.delete_all_k8s_resources_for_org(str(oid))
+
         job = await self.get_background_job(job_id)
-        if job.finished:
+        if not job or job.finished:
             return
 
         if job.type != job_type:

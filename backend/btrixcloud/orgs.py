@@ -101,6 +101,7 @@ from .models import (
     OrgPublicProfileUpdate,
     MAX_BROWSER_WINDOWS,
     MAX_CRAWL_SCALE,
+    BgJobType,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
@@ -228,6 +229,7 @@ class OrgOps(BaseOrgs):
         self.pages_db = mdb["pages"]
         self.version_db = mdb["version"]
         self.invites_db = mdb["invites"]
+        self.jobs_db = mdb["jobs"]
 
         self.router = None
         self.org_viewer_dep = None
@@ -1494,7 +1496,13 @@ class OrgOps(BaseOrgs):
     async def delete_org_and_data(
         self, org: Organization, user_manager: UserManager
     ) -> None:
-        """Delete org and all of its associated data."""
+        """Delete org and all of its associated data.
+
+        This method should only be run in a background job. The operator
+        will delete associated k8s resources for this org when the job
+        successfully completes to prevent deleting this job before it
+        completes.
+        """
         print(f"Deleting org: {org.slug} {org.name} {org.id}")
 
         # Delete archived items
@@ -1549,8 +1557,12 @@ class OrgOps(BaseOrgs):
         # Delete org
         await self.orgs.delete_one({"_id": org.id})
 
-        # Delete related k8s objects
-        await self.crawl_manager.delete_all_k8s_resources_for_org(str(org.id))
+        # Delete all background jobs except this one from database,
+        # so that we are left with some record of the org having
+        # existed and successfully deleted
+        await self.orgs.delete_one(
+            {"_id": org.id, "type": {"$ne": BgJobType.DELETE_ORG}}
+        )
 
     async def recalculate_storage(self, org: Organization) -> dict[str, bool]:
         """Recalculate org storage use"""
