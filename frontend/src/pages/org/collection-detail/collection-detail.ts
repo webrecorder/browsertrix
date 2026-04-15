@@ -66,6 +66,7 @@ import { tw } from "@/utils/tailwind";
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_ITEMS_PAGE_SIZE = 20;
 const POLL_INTERVAL_SECONDS = 10;
+const POLL_INTERVAL_ACTIVE_SECONDS = 1;
 
 @customElement("btrix-collection-detail")
 @localized()
@@ -1325,10 +1326,16 @@ export class CollectionDetail extends BtrixElement {
     try {
       this.collection = await this.getCollection();
 
-      // Start polling if not already
-      this.timerId ??= window.setInterval(() => {
-        void this.fetchCollection();
-      }, 1000 * POLL_INTERVAL_SECONDS);
+      if (this.timerId) window.clearTimeout(this.timerId);
+      if (this.collection.runningUpdatesCount > 0) {
+        this.timerId = window.setTimeout(() => {
+          void this.fetchCollection();
+        }, 1000 * POLL_INTERVAL_ACTIVE_SECONDS);
+      } else {
+        this.timerId = window.setTimeout(() => {
+          void this.fetchCollection();
+        }, 1000 * POLL_INTERVAL_SECONDS);
+      }
     } catch (e) {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve Collection at this time."),
