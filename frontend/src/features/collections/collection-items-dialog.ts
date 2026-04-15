@@ -183,7 +183,7 @@ export class CollectionItemsDialog extends BtrixElement {
     string,
     {
       operation: "add" | "remove";
-      omitCrawls: Set<String>;
+      omitCrawls: Set<string>;
     }
   >();
 
@@ -516,18 +516,13 @@ export class CollectionItemsDialog extends BtrixElement {
                 } else {
                   this.batchWorkflows.delete(id);
                 }
-              } else {
-                if (selection.addCrawls) {
-                  this.selectedItems = this.selectedItems.union(
-                    selection.addCrawls,
-                  );
-                }
+              } else if (selection.addCrawls || selection.removeCrawls) {
+                const addCrawls = selection.addCrawls || new Set();
+                const removeCrawls = selection.removeCrawls || new Set();
 
-                if (selection.removeCrawls) {
-                  this.selectedItems = this.selectedItems.difference(
-                    selection.removeCrawls,
-                  );
-                }
+                this.selectedItems = this.selectedItems
+                  .difference(removeCrawls)
+                  .union(addCrawls);
 
                 const batchWorkflow = this.batchWorkflows.get(id);
 
@@ -537,11 +532,11 @@ export class CollectionItemsDialog extends BtrixElement {
                     omitCrawls:
                       batchWorkflow.operation === "add"
                         ? batchWorkflow.omitCrawls
-                            .difference(selection.addCrawls || new Set())
-                            .union(selection.removeCrawls || new Set())
+                            .difference(addCrawls)
+                            .union(removeCrawls)
                         : batchWorkflow.omitCrawls
-                            .difference(selection.removeCrawls || new Set())
-                            .union(selection.addCrawls || new Set()),
+                            .difference(removeCrawls)
+                            .union(addCrawls),
                   });
                 }
               }
@@ -805,69 +800,93 @@ export class CollectionItemsDialog extends BtrixElement {
 
   private async save() {
     await this.updateComplete;
-    const { addItems, removeItems, addWorkflows, removeWorkflows } =
-      this.difference;
-
-    const workflowRequests = [];
-    const itemRequests = [];
-
-    if (addWorkflows.size) {
-      workflowRequests.push(
-        this.api.fetch(
-          `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              crawlconfigIds: [...addWorkflows],
-            }),
-          },
-        ),
-      );
-    }
-    if (removeWorkflows.size) {
-      workflowRequests.push(
-        this.api.fetch(
-          `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              crawlconfigIds: [...removeWorkflows],
-            }),
-          },
-        ),
-      );
-    }
-    if (addItems.size) {
-      itemRequests.push(
-        this.api.fetch(
-          `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              crawlIds: [...addItems],
-            }),
-          },
-        ),
-      );
-    }
-    if (removeItems.size) {
-      itemRequests.push(
-        this.api.fetch(
-          `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              crawlIds: [...removeItems],
-            }),
-          },
-        ),
-      );
-    }
 
     this.isSubmitting = true;
 
     try {
-      // await Promise.all(workflowRequests);
+      const diff = this.difference;
+
+      let omitFromBatchAdd = new Set<string>();
+      let omitFromBatchRemove = new Set<string>();
+
+      const workflowRequests = [];
+      const itemRequests = [];
+
+      if (diff.addWorkflows.size) {
+        diff.addWorkflows.forEach((id) => {
+          const batch = this.batchWorkflows.get(id);
+
+          if (batch?.omitCrawls) {
+            omitFromBatchAdd = omitFromBatchAdd.union(batch.omitCrawls);
+          }
+        });
+
+        workflowRequests.push(
+          this.api.fetch(
+            `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                crawlconfigIds: [...diff.addWorkflows],
+              }),
+            },
+          ),
+        );
+      }
+      if (diff.removeWorkflows.size) {
+        diff.removeWorkflows.forEach((id) => {
+          const batch = this.batchWorkflows.get(id);
+
+          if (batch?.omitCrawls) {
+            omitFromBatchRemove = omitFromBatchRemove.union(batch.omitCrawls);
+          }
+        });
+
+        workflowRequests.push(
+          this.api.fetch(
+            `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                crawlconfigIds: [...diff.removeWorkflows],
+              }),
+            },
+          ),
+        );
+      }
+
+      await Promise.all(workflowRequests);
+
+      const addItems = diff.addItems.union(omitFromBatchRemove);
+      const removeItems = diff.removeItems.union(omitFromBatchAdd);
+
+      if (addItems.size) {
+        itemRequests.push(
+          this.api.fetch(
+            `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                crawlIds: [...addItems],
+              }),
+            },
+          ),
+        );
+      }
+      if (removeItems.size) {
+        itemRequests.push(
+          this.api.fetch(
+            `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                crawlIds: [...removeItems],
+              }),
+            },
+          ),
+        );
+      }
+
       await Promise.all(itemRequests);
 
       this.close();
