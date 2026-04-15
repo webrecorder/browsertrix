@@ -385,7 +385,10 @@ class CrawlOps(BaseCrawlOps):
 
     async def get_config_crawl_ids(self, cids: list[UUID]) -> list[str]:
         """get list of crawl ids belonging to given crawlconfigs"""
-        res = self.crawls.find({"cid": {"$in": cids}}, {"_id": 1})
+        res = self.crawls.find(
+            {"cid": {"$in": cids}, "state": {"$in": SUCCESSFUL_STATES}},
+            {"_id": 1},
+        )
         res_list = await res.to_list()
         return [res["_id"] for res in res_list]
 
