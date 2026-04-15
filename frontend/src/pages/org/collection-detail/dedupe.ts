@@ -554,7 +554,7 @@ export class CollectionDetailDedupe extends BtrixElement {
   private renderDeduped() {
     return html`
       <div
-        class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 p-3"
+        class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 py-3"
       >
         <div class="flex items-center gap-2">
           <label for="view" class="whitespace-nowrap text-neutral-500"

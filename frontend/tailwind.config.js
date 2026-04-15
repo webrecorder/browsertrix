@@ -128,6 +128,12 @@ function makeTheme() {
     outlineOffset: {
       3: "3px",
     },
+    backdropBlur: {
+      px: "1px",
+    },
+    backgroundImage: {
+      radial: "radial-gradient(var(--tw-gradient-stops))",
+    },
   };
 }
 
