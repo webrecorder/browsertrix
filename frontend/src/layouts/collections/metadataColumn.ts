@@ -1,6 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { when } from "lit/directives/when.js";
 
+import { updatingOverlay } from "@/layouts/updatingOverlay";
 import { metadata } from "@/strings/collections/metadata";
 import { monthYearDateRange } from "@/strings/utils";
 import type { Collection, PublicCollection } from "@/types/collection";
@@ -34,9 +35,13 @@ export function metadataColumn(
   { publicView } = { publicView: false },
 ) {
   const metadataItem = metadataItemWithCollection(collection);
+  const isUpdating =
+    collection &&
+    "runningUpdatesCount" in collection &&
+    collection.runningUpdatesCount;
 
   return html`
-    <btrix-desc-list>
+    <btrix-desc-list class="relative" aria-busy="${isUpdating}">
       ${metadataItem({
         label: metadata.dateLatest,
         render: (col) => html`
@@ -77,6 +82,7 @@ export function metadataColumn(
             )}
           </table>`,
       })}
+      ${isUpdating ? updatingOverlay() : nothing}
     </btrix-desc-list>
   `;
 }
