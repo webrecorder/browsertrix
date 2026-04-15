@@ -13,7 +13,6 @@ import queryString from "query-string";
 import type {
   AutoAddChangeDetail,
   SelectionChangeDetail,
-  SelectionLoadDetail,
 } from "./collection-workflow-list";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -36,7 +35,7 @@ import type {
 import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import { SortDirection } from "@/types/utils";
 import { isApiError } from "@/utils/api";
-import { finishedCrawlStates } from "@/utils/crawler";
+import { finishedCrawlStates, isCrawl } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -70,6 +69,7 @@ const uploadSortOptions: SortOptions = [
   },
 ];
 const COLLECTION_ITEMS_MAX = 1000;
+const WORKFLOW_CRAWLS_PAGE_SIZE = 5;
 const DEFAULT_PAGE_SIZE = 10;
 
 @customElement("btrix-collection-items-dialog")
@@ -150,24 +150,49 @@ export class CollectionItemsDialog extends BtrixElement {
   @state()
   private isReady = false;
 
+  /**
+   * Selection state for individual archived items by ID
+   */
   @state()
-  private selectedItemsSet = new Set<string>();
+  private selectedItems = new Set<string>();
 
+  /**
+   * Selection state for workflows
+   */
   @state()
-  private selectedWorkflowsSet = new Set<string>();
+  private workflowSelection = new Map<
+    string,
+    {
+      checked: boolean | "indeterminate";
+      selectionCount: number;
+    }
+  >();
 
   @query("btrix-dialog")
   private readonly dialog!: Dialog;
 
-  private crawlCidMap = new Map<
-    /* crawl.id */ string,
-    /* crawl.cid */ string
+  private workflowCrawls = new Map<
+    string,
+    {
+      selectedCrawls: APIPaginatedList<Crawl> | null;
+      allCrawls: APIPaginatedList<Crawl> | null;
+    }
   >();
 
-  private omitCrawlsFromRemoveSet = new Set<string>();
-  private omitCrawlsFromAddSet = new Set<string>();
-  private savedItemsSet = new Set<string>();
-  private savedWorkflowsSet = new Set<string>();
+  private batchWorkflows = new Map<
+    string,
+    {
+      operation: "add" | "remove";
+      omitCrawls: Set<String>;
+    }
+  >();
+
+  /**
+   * Store previously saved selection to compare
+   */
+  private savedSelectedItems = new Set<string>();
+  private savedWorkflowSelection: CollectionItemsDialog["workflowSelection"] =
+    new Map();
 
   private readonly tabLabels: Record<Tab, { icon: string; label: string }> = {
     crawl: {
@@ -464,57 +489,75 @@ export class CollectionItemsDialog extends BtrixElement {
         <btrix-collection-workflow-list
           collectionId=${this.collectionId}
           .workflows=${this.workflows.items}
-          @btrix-selection-load=${(e: CustomEvent<SelectionLoadDetail>) => {
-            this.selectedWorkflowsSet = new Set(e.detail.selectedWorkflows);
-            this.savedWorkflowsSet = new Set(this.selectedWorkflowsSet);
-          }}
+          .selectedItems=${this.selectedItems}
+          .workflowSelection=${this.workflowSelection}
+          .workflowDataMap=${this.workflowCrawls}
           @btrix-selection-change=${(e: CustomEvent<SelectionChangeDetail>) => {
-            const { addCrawls, removeCrawls, addWorkflows, removeWorkflows } =
-              e.detail;
+            const { workflowSelection } = e.detail;
 
-            this.selectedWorkflowsSet = this.selectedWorkflowsSet
-              .difference(removeWorkflows)
-              .union(addWorkflows);
+            for (const [id, selection] of workflowSelection) {
+              const savedSelection = this.savedWorkflowSelection.get(id);
 
-            const diff = this.difference;
-
-            addCrawls.forEach(({ id, cid }) => {
-              this.crawlCidMap.set(id, cid);
-
-              if (diff.removeWorkflows.has(cid)) {
-                this.omitCrawlsFromRemoveSet.add(id);
+              if (selection.checked === true) {
+                if (savedSelection?.checked === true) {
+                  this.batchWorkflows.delete(id);
+                } else {
+                  this.batchWorkflows.set(id, {
+                    operation: "add",
+                    omitCrawls: new Set(),
+                  });
+                }
+              } else if (selection.checked === false) {
+                if (savedSelection?.checked) {
+                  this.batchWorkflows.set(id, {
+                    operation: "remove",
+                    omitCrawls: new Set(),
+                  });
+                } else {
+                  this.batchWorkflows.delete(id);
+                }
               } else {
-                this.selectedItemsSet.add(id);
-              }
-            });
+                if (selection.addCrawls) {
+                  this.selectedItems = this.selectedItems.union(
+                    selection.addCrawls,
+                  );
+                }
 
-            removeCrawls.forEach(({ id, cid }) => {
-              this.crawlCidMap.set(id, cid);
+                if (selection.removeCrawls) {
+                  this.selectedItems = this.selectedItems.difference(
+                    selection.removeCrawls,
+                  );
+                }
 
-              if (diff.addWorkflows.has(cid)) {
-                this.omitCrawlsFromAddSet.add(id);
-              } else {
-                this.selectedItemsSet.delete(id);
-              }
-            });
+                const batchWorkflow = this.batchWorkflows.get(id);
 
-            diff.addItems.forEach((id) => {
-              const workflowId = this.crawlCidMap.get(id);
-              if (workflowId && removeWorkflows.has(workflowId)) {
-                // Reset to remove all
-                this.omitCrawlsFromRemoveSet.delete(id);
-                this.selectedItemsSet.delete(id);
+                if (batchWorkflow) {
+                  this.batchWorkflows.set(id, {
+                    operation: batchWorkflow.operation,
+                    omitCrawls:
+                      batchWorkflow.operation === "add"
+                        ? batchWorkflow.omitCrawls
+                            .difference(selection.addCrawls || new Set())
+                            .union(selection.removeCrawls || new Set())
+                        : batchWorkflow.omitCrawls
+                            .difference(selection.removeCrawls || new Set())
+                            .union(selection.addCrawls || new Set()),
+                  });
+                }
               }
-            });
 
-            diff.removeItems.forEach((id) => {
-              const workflowId = this.crawlCidMap.get(id);
-              if (workflowId && addWorkflows.has(workflowId)) {
-                // Reset to add all
-                this.omitCrawlsFromAddSet.delete(id);
-                this.selectedItemsSet.add(id);
+              if (
+                this.workflowSelection.get(id)?.selectionCount !==
+                selection.selectionCount
+              ) {
+                this.workflowSelection.set(id, {
+                  checked: selection.checked,
+                  selectionCount: selection.selectionCount,
+                });
               }
-            });
+            }
+
+            this.workflowSelection = new Map(this.workflowSelection);
           }}
           @btrix-auto-add-change=${(e: CustomEvent<AutoAddChangeDetail>) => {
             const { id, checked, dedupe } = e.detail;
@@ -589,11 +632,37 @@ export class CollectionItemsDialog extends BtrixElement {
         showStatus
         ?checked=${isInCollection}
         @btrix-change=${(e: ArchivedItemCheckedEvent) => {
-          if (e.detail.value.checked) {
-            this.selectedItemsSet.add(item.id);
+          const { checked } = e.detail.value;
+
+          if (checked) {
+            this.selectedItems.add(item.id);
           } else {
-            this.selectedItemsSet.add(item.id);
+            this.selectedItems.delete(item.id);
           }
+
+          if (isCrawl(item)) {
+            const workflowSelection = this.workflowSelection.get(item.cid);
+            const workflowCrawls = this.workflowCrawls.get(item.cid);
+
+            if (workflowSelection && workflowCrawls) {
+              const selectionCount = checked
+                ? workflowSelection.selectionCount + 1
+                : workflowSelection.selectionCount - 1;
+              this.workflowSelection.set(item.cid, {
+                checked: selectionCount
+                  ? selectionCount === workflowCrawls.allCrawls?.total
+                    ? true
+                    : "indeterminate"
+                  : false,
+                selectionCount,
+              });
+            } else {
+              console.debug("no workflowSelection or workflowCrawls");
+            }
+          }
+
+          this.selectedItems = new Set(this.selectedItems);
+          this.workflowSelection = new Map(this.workflowSelection);
         }}
       >
       </btrix-archived-item-list-item>
@@ -603,71 +672,63 @@ export class CollectionItemsDialog extends BtrixElement {
   private readonly renderSave = () => {
     const { addItems, removeItems, addWorkflows, removeWorkflows } =
       this.difference;
-    const addItemCount = addItems.size;
-    const removeItemCount = removeItems.size;
-    const addWorkflowCount = addWorkflows.size;
-    const removeWorkflowCount = removeWorkflows.size;
 
-    const hasChange =
-      addItemCount ||
-      removeItemCount ||
-      addWorkflowCount ||
-      removeWorkflowCount;
+    const workflowIdToSelectedCount = (ids: Set<string>, add = true) => {
+      let diff = 0;
+
+      ids.forEach((id) => {
+        const workflow = this.workflowSelection.get(id);
+        if (!workflow) {
+          console.debug("no workflow or savedWorkflow");
+          return;
+        }
+
+        const savedWorkflow = this.savedWorkflowSelection.get(id);
+
+        if (add) {
+          diff +=
+            workflow.selectionCount - (savedWorkflow?.selectionCount || 0);
+        } else {
+          diff += savedWorkflow
+            ? savedWorkflow.selectionCount - workflow.selectionCount
+            : workflow.selectionCount;
+        }
+      });
+
+      return diff;
+    };
+
+    const addWorkflowCrawlsCount = workflowIdToSelectedCount(addWorkflows);
+    const removeWorkflowCrawlsCount = workflowIdToSelectedCount(
+      removeWorkflows,
+      false,
+    );
+
+    const addItemCount = addItems.size + addWorkflowCrawlsCount;
+    const removeItemCount = removeItems.size + removeWorkflowCrawlsCount;
+
+    const hasChange = addItemCount || removeItemCount;
     let selectionMessage = "";
 
     if (hasChange) {
       const messages: string[] = [];
 
-      if (this.showOnlyInCollection || this.activeTab === "upload") {
-        if (removeItemCount) {
-          messages.push(
-            msg(
-              str`Removing ${this.localize.number(removeItemCount)} ${pluralOf("items", removeItemCount)}`,
-            ),
-          );
-        }
-        if (addItemCount) {
-          messages.push(
-            msg(
-              str`Adding ${this.localize.number(addItemCount)} ${pluralOf("items", addItemCount)}`,
-            ),
-          );
-        }
-
-        selectionMessage = messages.join(" / ");
-      } else {
-        selectionMessage = msg("Unsaved changes.");
-
-        // TODO more detailed message
-
-        // if (removeWorkflowCount) {
-        //   const number_of_workflows = this.localize.number(removeWorkflowCount);
-        //   const plural_of_workflows = pluralOf(
-        //     "workflows",
-        //     removeWorkflowCount,
-        //   );
-
-        //   console.log(removeItemCount);
-
-        //   messages.push(
-        //     msg(
-        //       str`Removing all crawls of ${number_of_workflows} ${plural_of_workflows}`,
-        //     ),
-        //   );
-        // }
-        // if (addWorkflowCount) {
-        //   const number_of_workflows = this.localize.number(addWorkflowCount);
-        //   const plural_of_workflows = pluralOf("workflows", addWorkflowCount);
-
-        //   console.log(addItemCount);
-
-        //   messages.push(
-        //     msg(
-        //       str`Adding all crawls of ${number_of_workflows} ${plural_of_workflows}`,
-        //     ),
-        //   );
-        // }
+      if (removeItemCount) {
+        messages.push(
+          msg(
+            str`Removing ${this.localize.number(removeItemCount)} ${pluralOf("items", removeItemCount)}`,
+          ),
+        );
       }
+      if (addItemCount) {
+        messages.push(
+          msg(
+            str`Adding ${this.localize.number(addItemCount)} ${pluralOf("items", addItemCount)}`,
+          ),
+        );
+      }
+
+      selectionMessage = messages.join(" / ");
     }
 
     return html`
@@ -713,29 +774,32 @@ export class CollectionItemsDialog extends BtrixElement {
     };
     this.filterCrawlsBy = {};
     this.filterUploadsBy = {};
-    this.selectedItemsSet = new Set();
-    this.savedItemsSet = new Set();
-    this.omitCrawlsFromRemoveSet = new Set();
-    this.omitCrawlsFromAddSet = new Set();
-    this.selectedWorkflowsSet = new Set();
-    this.savedWorkflowsSet = new Set();
-    this.crawlCidMap = new Map();
+    this.selectedItems = new Set();
+    this.savedSelectedItems = new Set();
+    this.workflowSelection = new Map();
+    this.savedWorkflowSelection = new Map();
+    this.batchWorkflows = new Map();
   }
 
   private get difference() {
+    const addItems = this.selectedItems.difference(this.savedSelectedItems);
+    const removeItems = this.savedSelectedItems.difference(this.selectedItems);
+    const addWorkflows = new Set<string>();
+    const removeWorkflows = new Set<string>();
+
+    for (const [id, { operation }] of this.batchWorkflows) {
+      if (operation === "add") {
+        addWorkflows.add(id);
+      } else {
+        removeWorkflows.add(id);
+      }
+    }
+
     return {
-      addItems: this.selectedItemsSet
-        .difference(this.savedItemsSet)
-        .union(this.omitCrawlsFromRemoveSet),
-      removeItems: this.savedItemsSet
-        .difference(this.selectedItemsSet)
-        .union(this.omitCrawlsFromAddSet),
-      addWorkflows: this.selectedWorkflowsSet.difference(
-        this.savedWorkflowsSet,
-      ),
-      removeWorkflows: this.savedWorkflowsSet.difference(
-        this.selectedWorkflowsSet,
-      ),
+      addItems,
+      removeItems,
+      addWorkflows,
+      removeWorkflows,
     };
   }
 
@@ -829,12 +893,11 @@ export class CollectionItemsDialog extends BtrixElement {
   }
 
   private async initSelection() {
-    this.selectedItemsSet.clear();
-    this.savedItemsSet.clear();
-    this.selectedWorkflowsSet.clear();
-    this.savedWorkflowsSet.clear();
-    this.omitCrawlsFromRemoveSet.clear();
-    this.omitCrawlsFromAddSet.clear();
+    this.workflowCrawls = new Map();
+    this.workflowSelection = new Map();
+    this.savedWorkflowSelection = new Map();
+    this.selectedItems.clear();
+    this.savedSelectedItems.clear();
 
     void this.fetchWorkflows({
       page: parsePage(
@@ -863,13 +926,11 @@ export class CollectionItemsDialog extends BtrixElement {
       }).then(({ items }) => items),
     ]);
 
-    crawls.forEach(({ id }) => this.selectedItemsSet.add(id));
-    uploads.forEach(({ id }) => this.selectedItemsSet.add(id));
+    crawls.forEach(({ id }) => this.selectedItems.add(id));
+    uploads.forEach(({ id }) => this.selectedItems.add(id));
 
-    this.omitCrawlsFromRemoveSet = new Set(this.omitCrawlsFromRemoveSet);
-    this.omitCrawlsFromAddSet = new Set(this.omitCrawlsFromAddSet);
-    this.savedItemsSet = new Set(this.selectedItemsSet);
-    this.selectedItemsSet = new Set(this.selectedItemsSet);
+    this.savedSelectedItems = new Set(this.selectedItems);
+    this.selectedItems = new Set(this.selectedItems);
   }
 
   private async fetchCrawls(pageParams: APIPaginationQuery = {}) {
@@ -895,7 +956,7 @@ export class CollectionItemsDialog extends BtrixElement {
     const userId = this.userInfo!.id;
 
     try {
-      this.workflows = await this.getWorkflows({
+      const workflows = await this.getWorkflows({
         userid: this.showOnlyMine ? userId : undefined,
         sortBy:
           // NOTE "finished" field doesn't exist in crawlconfigs,
@@ -909,6 +970,52 @@ export class CollectionItemsDialog extends BtrixElement {
         ...pageParams,
         ...this.filterCrawlsBy,
       });
+
+      await Promise.all(
+        workflows.items.map(async (workflow) => {
+          if (this.workflowCrawls.has(workflow.id)) return;
+
+          const selectedCrawls = workflow.crawlSuccessfulCount
+            ? await this.getCrawls({
+                pageSize: COLLECTION_ITEMS_MAX,
+                cid: workflow.id,
+                collectionId: this.collectionId,
+              })
+            : null;
+          const allCrawls = workflow.crawlSuccessfulCount
+            ? await this.getCrawls({
+                pageSize: WORKFLOW_CRAWLS_PAGE_SIZE,
+                cid: workflow.id,
+              })
+            : null;
+
+          const selection: {
+            checked: boolean | "indeterminate";
+            selectionCount: number;
+          } = {
+            checked: false,
+            selectionCount: selectedCrawls?.total || 0,
+          };
+
+          if (allCrawls?.total && selectedCrawls?.total) {
+            if (selectedCrawls.total === allCrawls.total) {
+              selection.checked = true;
+            } else {
+              selection.checked = "indeterminate";
+            }
+          }
+
+          this.workflowSelection.set(workflow.id, selection);
+          this.savedWorkflowSelection.set(workflow.id, selection);
+          this.workflowCrawls.set(workflow.id, {
+            selectedCrawls,
+            allCrawls,
+          });
+        }),
+      );
+
+      this.workflows = workflows;
+      this.workflowCrawls = new Map(this.workflowCrawls);
     } catch (e: unknown) {
       console.debug(e);
     }
@@ -951,6 +1058,7 @@ export class CollectionItemsDialog extends BtrixElement {
     params: {
       userid?: string;
       collectionId?: string;
+      cid?: string;
       firstSeed?: string;
     } & APIPaginationQuery &
       APISortQuery = {},
