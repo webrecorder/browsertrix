@@ -401,6 +401,7 @@ class BaseCrawlOps:
     async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
         """placeholder, implemented in crawls, base version does nothing"""
 
+    # pylint: disable=too-many-statements
     async def delete_crawls(
         self,
         org: Organization,
