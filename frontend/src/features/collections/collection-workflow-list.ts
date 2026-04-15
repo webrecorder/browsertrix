@@ -153,8 +153,8 @@ export class CollectionWorkflowList extends BtrixElement {
   >();
 
   @property({ attribute: false })
-  workflowDataMap = new Map<
-    string,
+  workflowCrawls = new Map<
+    /* workflow ID: */ string,
     {
       selectedCrawls: APIPaginatedList<Crawl> | null;
       allCrawls: APIPaginatedList<Crawl> | null;
@@ -181,7 +181,7 @@ export class CollectionWorkflowList extends BtrixElement {
   }
 
   protected updated(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("workflowDataMap")) {
+    if (changedProperties.has("workflowCrawls")) {
       void this.setPreviousSelection();
     }
   }
@@ -219,7 +219,7 @@ export class CollectionWorkflowList extends BtrixElement {
   private readonly renderWorkflow = (workflow: Workflow) => {
     const total = workflow.crawlSuccessfulCount;
     const selection = this.workflowSelection.get(workflow.id);
-    const workflowData = this.workflowDataMap.get(workflow.id);
+    const workflowData = this.workflowCrawls.get(workflow.id);
     const allCrawls = workflowData?.allCrawls;
     const allSelected = selection?.checked === true;
 
@@ -426,7 +426,7 @@ export class CollectionWorkflowList extends BtrixElement {
         workflowSelection.set(workflowId, {
           checked: true,
           selectionCount:
-            this.workflowDataMap.get(workflowId)?.allCrawls?.total || 0,
+            this.workflowCrawls.get(workflowId)?.allCrawls?.total || 0,
         });
       } else if (el.indeterminate) {
         const addCrawls = new Set<string>();

@@ -179,6 +179,9 @@ export class CollectionItemsDialog extends BtrixElement {
     }
   >();
 
+  /**
+   * Workflow batch operations to apply on save
+   */
   private batchWorkflows = new Map<
     string,
     {
@@ -491,7 +494,7 @@ export class CollectionItemsDialog extends BtrixElement {
           .workflows=${this.workflows.items}
           .selectedItems=${this.selectedItems}
           .workflowSelection=${this.workflowSelection}
-          .workflowDataMap=${this.workflowCrawls}
+          .workflowCrawls=${this.workflowCrawls}
           @btrix-selection-change=${(e: CustomEvent<SelectionChangeDetail>) => {
             const { workflowSelection } = e.detail;
 
@@ -699,26 +702,24 @@ export class CollectionItemsDialog extends BtrixElement {
       false,
     );
 
-    const addItemCount = addItems.size + addWorkflowCrawlsCount;
-    const removeItemCount = removeItems.size + removeWorkflowCrawlsCount;
-
-    const hasChange = addItemCount || removeItemCount;
+    const addCount = addItems.size + addWorkflowCrawlsCount;
+    const removeCount = removeItems.size + removeWorkflowCrawlsCount;
+    const hasChange = addCount || removeCount;
     let selectionMessage = "";
 
     if (hasChange) {
       const messages: string[] = [];
-
-      if (removeItemCount) {
+      if (addCount) {
         messages.push(
           msg(
-            str`Removing ${this.localize.number(removeItemCount)} ${pluralOf("items", removeItemCount)}`,
+            str`Adding ${this.localize.number(addCount)} ${pluralOf("items", addCount)}`,
           ),
         );
       }
-      if (addItemCount) {
+      if (removeCount) {
         messages.push(
           msg(
-            str`Adding ${this.localize.number(addItemCount)} ${pluralOf("items", addItemCount)}`,
+            str`Removing ${this.localize.number(removeCount)} ${pluralOf("items", removeCount)}`,
           ),
         );
       }
