@@ -17,14 +17,19 @@ import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { PageChangeEvent } from "@/components/ui/pagination";
 import { dedupeStatusIcon } from "@/features/archived-items/templates/dedupe-status-icon";
 import type { CollectionWorkflowListSettingChangeEvent } from "@/features/collections/collection-workflow-list/settings";
 import type { APIPaginatedList } from "@/types/api";
 import type { Crawl, Workflow } from "@/types/crawler";
-import { pluralize, pluralOf } from "@/utils/pluralize";
+import { pluralOf } from "@/utils/pluralize";
 
 import "@/features/collections/collection-workflow-list/settings";
 
+export type CrawlsPageChangeDetail = {
+  workflowId: string;
+  page: number;
+};
 export type SelectionChangeDetail = {
   workflowSelection: Map<
     string,
@@ -44,6 +49,7 @@ export type AutoAddChangeDetail = {
 
 /**
  * @fires btrix-selection-change
+ * @fires btrix-crawls-page-change
  * @fires btrix-auto-add-change
  */
 @customElement("btrix-collection-workflow-list")
@@ -157,7 +163,7 @@ export class CollectionWorkflowList extends BtrixElement {
     /* workflow ID: */ string,
     {
       selectedCrawls: APIPaginatedList<Crawl> | null;
-      allCrawls: APIPaginatedList<Crawl> | null;
+      paginatedCrawls: APIPaginatedList<Crawl> | null;
     }
   >();
 
@@ -219,8 +225,8 @@ export class CollectionWorkflowList extends BtrixElement {
   private readonly renderWorkflow = (workflow: Workflow) => {
     const total = workflow.crawlSuccessfulCount;
     const selection = this.workflowSelection.get(workflow.id);
-    const workflowData = this.workflowCrawls.get(workflow.id);
-    const allCrawls = workflowData?.allCrawls;
+    const crawls = this.workflowCrawls.get(workflow.id);
+    const paginatedCrawls = crawls?.paginatedCrawls;
     const allSelected = selection?.checked === true;
 
     return html`
@@ -229,7 +235,18 @@ export class CollectionWorkflowList extends BtrixElement {
         data-workflow-id=${workflow.id}
         ?selected=${allSelected}
         .indeterminate=${selection?.checked === "indeterminate"}
-        ?disabled=${!total || !workflowData}
+        ?disabled=${!total || !crawls}
+        @sl-after-collapse=${() => {
+          // Reset crawls page
+          this.dispatchEvent(
+            new CustomEvent<CrawlsPageChangeDetail>(
+              "btrix-crawls-page-change",
+              {
+                detail: { workflowId: workflow.id, page: 1 },
+              },
+            ),
+          );
+        }}
         @click=${(e: MouseEvent) => {
           if ((e.currentTarget as SlTreeItem).disabled) {
             e.stopPropagation();
@@ -248,7 +265,9 @@ export class CollectionWorkflowList extends BtrixElement {
             ${this.renderSelectionMessage(workflow)}
           </div>
         </div>
-        ${when(allCrawls, (crawls) => this.renderCrawls(workflow, crawls))}
+        ${when(paginatedCrawls, (crawls) =>
+          this.renderCrawls(workflow, crawls),
+        )}
       </sl-tree-item>
       <btrix-collection-workflow-list-settings
         collectionId=${ifDefined(this.collectionId)}
@@ -299,63 +318,61 @@ export class CollectionWorkflowList extends BtrixElement {
   ) => {
     if (!res?.items.length) return nothing;
 
+    let pagination: TemplateResult | typeof nothing = nothing;
     const selection = this.workflowSelection.get(workflow.id);
-    const allSelected = selection?.checked === true;
-    let selectOlderCrawls: TemplateResult | typeof nothing = nothing;
+    const crawls = this.workflowCrawls.get(workflow.id);
+    const paginatedCrawlIds = new Set(
+      crawls?.paginatedCrawls?.items.map(({ id }) => id) || [],
+    );
+    const hiddenSelection =
+      selection?.selectionCount &&
+      crawls?.selectedCrawls?.items.some(
+        ({ id }) => !paginatedCrawlIds.has(id),
+      );
 
     if (res.total > res.pageSize) {
-      const older = res.total - res.pageSize;
-      const number_of_older_crawls = this.localize.number(older);
-      let message = "";
-
-      if (allSelected) {
-        const plural = msg(
-          str`All items selected, including ${number_of_older_crawls} older crawled items.`,
-        );
-
-        message = pluralize(older, {
-          zero: plural,
-          one: msg(str`All items selected, including 1 older crawled item.`),
-          two: plural,
-          few: plural,
-          many: plural,
-          other: plural,
-        });
-      } else {
-        const plural = msg(
-          str`${number_of_older_crawls} older crawled items are hidden.`,
-        );
-
-        message = pluralize(older, {
-          zero: plural,
-          one: msg(str`1 older crawled item is hidden.`),
-          two: plural,
-          few: plural,
-          many: plural,
-          other: plural,
-        });
-      }
-
       // Include in tree selection so that workflow tree item correctly displays
       // as indeterminate, but prevent user selection
-      selectOlderCrawls = html`<sl-tree-item
-        class="part-[label]:text-neutral-500 part-[checkbox]:opacity-0"
-        ?selected=${Boolean(
-          selection?.selectionCount && selection.selectionCount > res.pageSize,
-        )}
+      pagination = html`<sl-tree-item
+        class="pagination part-[item]:cursor-default part-[label]:justify-center part-[checkbox]:opacity-50 part-[item]:hover:!bg-transparent"
+        ?selected=${Boolean(hiddenSelection)}
         @click=${(e: MouseEvent) => e.stopPropagation()}
       >
-        ${message}
+        <btrix-pagination
+          class="mr-3"
+          page=${res.page}
+          size=${res.pageSize}
+          totalCount=${res.total}
+          disablePersist
+          @page-change=${(e: PageChangeEvent) => {
+            this.dispatchEvent(
+              new CustomEvent<CrawlsPageChangeDetail>(
+                "btrix-crawls-page-change",
+                {
+                  detail: { workflowId: workflow.id, page: e.detail.page },
+                },
+              ),
+            );
+          }}
+        >
+        </btrix-pagination>
       </sl-tree-item>`;
     }
 
-    return html`${selectOlderCrawls}
-    ${repeat(res.items, ({ id }) => id, this.renderCrawl)}`;
+    return html`${repeat(
+      res.items,
+      ({ id }) => id,
+      this.renderCrawl,
+    )}${pagination}`;
   };
 
   private readonly renderCrawl = (crawl: Crawl) => {
     const pageCount = +(crawl.stats?.done || 0);
-    const selected = this.selectedItems.has(crawl.id);
+    const selection = this.workflowSelection.get(crawl.cid);
+    const selected =
+      selection?.checked === "indeterminate"
+        ? this.selectedItems.has(crawl.id)
+        : selection?.checked;
 
     return html`
       <sl-tree-item
@@ -364,8 +381,42 @@ export class CollectionWorkflowList extends BtrixElement {
         data-crawl-id=${crawl.id}
         data-workflow-id=${crawl.cid}
         @click=${async (e: MouseEvent) => {
-          if ((e.currentTarget as SlTreeItem).disabled) {
+          const el = e.currentTarget as SlTreeItem;
+          if (el.disabled) {
             e.stopPropagation();
+            return;
+          }
+
+          const pagination = el
+            .closest<SlTreeItem>(".workflow")
+            ?.querySelector<SlTreeItem>(".pagination");
+          const workflowSelection = this.workflowSelection.get(crawl.cid);
+          const workflow = this.workflows.find(({ id }) => id === crawl.cid);
+
+          if (pagination && workflowSelection && workflow) {
+            // HACK Render parent tree item (i.e. workflow) as indeterminate
+            // by making invisible checkbox the opposite of current checkbox
+            if (
+              (el.selected && workflowSelection.selectionCount - 1) ||
+              workflowSelection.selectionCount + 1 <
+                workflow.crawlSuccessfulCount
+            ) {
+              if (workflowSelection.selectionCount - 1) {
+                pagination.selected = el.selected;
+              } else {
+                // Select none
+                pagination.selected = false;
+              }
+            } else {
+              if (
+                !el.selected &&
+                workflowSelection.selectionCount + 1 ===
+                  workflow.crawlSuccessfulCount
+              ) {
+                // Select all
+                pagination.selected = true;
+              }
+            }
           }
         }}
       >
@@ -422,38 +473,40 @@ export class CollectionWorkflowList extends BtrixElement {
         return;
       }
 
+      const addCrawls = new Set<string>();
+      const removeCrawls = new Set<string>();
+
+      const crawlEls = el.getChildrenItems({ includeDisabled: false });
+      let selectionCount =
+        this.workflowSelection.get(workflowId)?.selectionCount || 0;
+
+      crawlEls.forEach((el) => {
+        const crawlId = el.dataset.crawlId;
+        if (!crawlId) {
+          console.debug("no crawlId");
+          return;
+        }
+
+        if (itemChanged(el)) {
+          if (el.selected) {
+            selectionCount += 1;
+            addCrawls.add(crawlId);
+          } else {
+            selectionCount = selectionCount ? selectionCount - 1 : 0;
+            removeCrawls.add(crawlId);
+          }
+        }
+      });
+
       if (el.selected) {
         workflowSelection.set(workflowId, {
           checked: true,
           selectionCount:
-            this.workflowCrawls.get(workflowId)?.allCrawls?.total || 0,
+            this.workflowCrawls.get(workflowId)?.paginatedCrawls?.total || 0,
+          addCrawls,
+          removeCrawls,
         });
       } else if (el.indeterminate) {
-        const addCrawls = new Set<string>();
-        const removeCrawls = new Set<string>();
-
-        const crawlEls = el.getChildrenItems({ includeDisabled: false });
-        let selectionCount =
-          this.workflowSelection.get(workflowId)?.selectionCount || 0;
-
-        crawlEls.forEach((el) => {
-          const crawlId = el.dataset.crawlId;
-          if (!crawlId) {
-            console.debug("no crawlId");
-            return;
-          }
-
-          if (itemChanged(el)) {
-            if (el.selected) {
-              selectionCount += 1;
-              addCrawls.add(crawlId);
-            } else {
-              selectionCount = selectionCount ? selectionCount - 1 : 0;
-              removeCrawls.add(crawlId);
-            }
-          }
-        });
-
         workflowSelection.set(workflowId, {
           checked: "indeterminate",
           selectionCount,
@@ -464,6 +517,8 @@ export class CollectionWorkflowList extends BtrixElement {
         workflowSelection.set(workflowId, {
           checked: false,
           selectionCount: 0,
+          addCrawls,
+          removeCrawls,
         });
       }
     });

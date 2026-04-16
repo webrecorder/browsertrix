@@ -12,6 +12,7 @@ import queryString from "query-string";
 
 import type {
   AutoAddChangeDetail,
+  CrawlsPageChangeDetail,
   SelectionChangeDetail,
 } from "./collection-workflow-list";
 
@@ -69,8 +70,11 @@ const uploadSortOptions: SortOptions = [
   },
 ];
 const COLLECTION_ITEMS_MAX = 1000;
-const WORKFLOW_CRAWLS_PAGE_SIZE = 5;
 const DEFAULT_PAGE_SIZE = 10;
+
+const isID = (v: string | Symbol): v is string => typeof v === "string";
+const unpackSymbolID = (v: string | Symbol) =>
+  isID(v) ? v : v.description || "";
 
 @customElement("btrix-collection-items-dialog")
 @localized()
@@ -154,7 +158,7 @@ export class CollectionItemsDialog extends BtrixElement {
    * Selection state for individual archived items by ID
    */
   @state()
-  private selectedItems = new Set<string>();
+  private selectedItems = new Set<string | Symbol>();
 
   /**
    * Selection state for workflows
@@ -168,16 +172,17 @@ export class CollectionItemsDialog extends BtrixElement {
     }
   >();
 
-  @query("btrix-dialog")
-  private readonly dialog!: Dialog;
-
+  @state()
   private workflowCrawls = new Map<
     string,
     {
       selectedCrawls: APIPaginatedList<Crawl> | null;
-      allCrawls: APIPaginatedList<Crawl> | null;
+      paginatedCrawls: APIPaginatedList<Crawl> | null;
     }
   >();
+
+  @query("btrix-dialog")
+  private readonly dialog!: Dialog;
 
   /**
    * Workflow batch operations to apply on save
@@ -191,9 +196,15 @@ export class CollectionItemsDialog extends BtrixElement {
   >();
 
   /**
+   * Map crawl IDs to workflow IDs to look up
+   */
+  private readonly crawlToWorkflow = new Map<string, string>();
+
+  /**
    * Store previously saved selection to compare
    */
-  private savedSelectedItems = new Set<string>();
+  private savedSelectedItems: CollectionItemsDialog["selectedItems"] =
+    new Set();
   private savedWorkflowSelection: CollectionItemsDialog["workflowSelection"] =
     new Map();
 
@@ -495,31 +506,120 @@ export class CollectionItemsDialog extends BtrixElement {
           .selectedItems=${this.selectedItems}
           .workflowSelection=${this.workflowSelection}
           .workflowCrawls=${this.workflowCrawls}
+          @btrix-crawls-page-change=${async (
+            e: CustomEvent<CrawlsPageChangeDetail>,
+          ) => {
+            const { workflowId, page } = e.detail;
+
+            const workflowCrawls = this.workflowCrawls.get(workflowId);
+            const workflowSelection = this.workflowSelection.get(workflowId);
+            if (!workflowCrawls || !workflowSelection) {
+              console.debug("no workflowCrawls or workflowSelection");
+              return;
+            }
+
+            const { paginatedCrawls, selectedCrawls } = workflowCrawls;
+            const nextPaginatedCrawls = await this.getCrawls({
+              pageSize:
+                workflowCrawls.paginatedCrawls?.pageSize || DEFAULT_PAGE_SIZE,
+              cid: workflowId,
+              page,
+            });
+
+            nextPaginatedCrawls.items.forEach(({ id, cid }) => {
+              this.crawlToWorkflow.set(id, cid);
+            });
+
+            // Update selection if totals have changed
+            if (
+              paginatedCrawls &&
+              selectedCrawls &&
+              nextPaginatedCrawls.total !== paginatedCrawls.total
+            ) {
+              this.workflowSelection.set(workflowId, {
+                ...workflowSelection,
+                checked:
+                  nextPaginatedCrawls.total && selectedCrawls.total
+                    ? selectedCrawls.total === nextPaginatedCrawls.total
+                      ? true
+                      : "indeterminate"
+                    : false,
+              });
+            }
+
+            this.workflowCrawls.set(workflowId, {
+              selectedCrawls: workflowCrawls.selectedCrawls,
+              paginatedCrawls: nextPaginatedCrawls,
+            });
+            this.workflowCrawls = new Map(this.workflowCrawls);
+          }}
           @btrix-selection-change=${(e: CustomEvent<SelectionChangeDetail>) => {
             const { workflowSelection } = e.detail;
 
-            for (const [id, selection] of workflowSelection) {
-              const savedSelection = this.savedWorkflowSelection.get(id);
+            for (const [workflowId, selection] of workflowSelection) {
+              const savedSelection =
+                this.savedWorkflowSelection.get(workflowId);
 
               if (selection.checked === true) {
                 if (savedSelection?.checked === true) {
-                  this.batchWorkflows.delete(id);
+                  this.batchWorkflows.delete(workflowId);
                 } else {
-                  this.batchWorkflows.set(id, {
+                  // Create placeholder crawls for correct add/remove counts
+                  const existingCrawls = new Set<string>();
+
+                  this.savedSelectedItems.forEach((v) => {
+                    const id = unpackSymbolID(v);
+                    if (this.crawlToWorkflow.get(id) === workflowId) {
+                      existingCrawls.add(id);
+                    }
+                  });
+
+                  const paginatedCrawls =
+                    this.workflowCrawls.get(workflowId)?.paginatedCrawls;
+                  const total = paginatedCrawls?.total || 0;
+
+                  const placeholderCrawlIds = Array.from({
+                    length: total - existingCrawls.size,
+                  }).map(
+                    (_, i) =>
+                      paginatedCrawls?.items[i]?.id || Symbol(workflowId),
+                  );
+
+                  this.batchWorkflows.set(workflowId, {
                     operation: "add",
                     omitCrawls: new Set(),
                   });
+
+                  this.selectedItems = this.selectedItems.union(
+                    new Set(placeholderCrawlIds),
+                  );
                 }
               } else if (selection.checked === false) {
                 if (savedSelection?.checked) {
-                  this.batchWorkflows.set(id, {
+                  this.savedSelectedItems.forEach((v) => {
+                    const id = unpackSymbolID(v);
+                    if (this.crawlToWorkflow.get(id) === workflowId) {
+                      this.selectedItems.delete(id);
+                    }
+                  });
+
+                  // Remove all placeholders
+                  this.selectedItems.forEach((v) => {
+                    if (typeof v === "symbol") {
+                      this.selectedItems.delete(v);
+                    }
+                  });
+
+                  this.batchWorkflows.set(workflowId, {
                     operation: "remove",
                     omitCrawls: new Set(),
                   });
                 } else {
-                  this.batchWorkflows.delete(id);
+                  this.batchWorkflows.delete(workflowId);
                 }
-              } else if (selection.addCrawls || selection.removeCrawls) {
+              }
+
+              if (selection.addCrawls || selection.removeCrawls) {
                 const addCrawls = selection.addCrawls || new Set();
                 const removeCrawls = selection.removeCrawls || new Set();
 
@@ -527,10 +627,10 @@ export class CollectionItemsDialog extends BtrixElement {
                   .difference(removeCrawls)
                   .union(addCrawls);
 
-                const batchWorkflow = this.batchWorkflows.get(id);
+                const batchWorkflow = this.batchWorkflows.get(workflowId);
 
                 if (batchWorkflow) {
-                  this.batchWorkflows.set(id, {
+                  this.batchWorkflows.set(workflowId, {
                     operation: batchWorkflow.operation,
                     omitCrawls:
                       batchWorkflow.operation === "add"
@@ -545,10 +645,10 @@ export class CollectionItemsDialog extends BtrixElement {
               }
 
               if (
-                this.workflowSelection.get(id)?.selectionCount !==
+                this.workflowSelection.get(workflowId)?.selectionCount !==
                 selection.selectionCount
               ) {
-                this.workflowSelection.set(id, {
+                this.workflowSelection.set(workflowId, {
                   checked: selection.checked,
                   selectionCount: selection.selectionCount,
                 });
@@ -556,6 +656,7 @@ export class CollectionItemsDialog extends BtrixElement {
             }
 
             this.workflowSelection = new Map(this.workflowSelection);
+            this.selectedItems = new Set(this.selectedItems);
           }}
           @btrix-auto-add-change=${(e: CustomEvent<AutoAddChangeDetail>) => {
             const { id, checked, dedupe } = e.detail;
@@ -648,7 +749,7 @@ export class CollectionItemsDialog extends BtrixElement {
                 : workflowSelection.selectionCount - 1;
               this.workflowSelection.set(item.cid, {
                 checked: selectionCount
-                  ? selectionCount === workflowCrawls.allCrawls?.total
+                  ? selectionCount === workflowCrawls.paginatedCrawls?.total
                     ? true
                     : "indeterminate"
                   : false,
@@ -668,42 +769,10 @@ export class CollectionItemsDialog extends BtrixElement {
   };
 
   private readonly renderSave = () => {
-    const { addItems, removeItems, addWorkflows, removeWorkflows } =
-      this.difference;
+    const { addItems, removeItems } = this.difference;
 
-    const workflowIdToSelectedCount = (ids: Set<string>, add = true) => {
-      let diff = 0;
-
-      ids.forEach((id) => {
-        const workflow = this.workflowSelection.get(id);
-        if (!workflow) {
-          console.debug("no workflow or savedWorkflow");
-          return;
-        }
-
-        const savedWorkflow = this.savedWorkflowSelection.get(id);
-
-        if (add) {
-          diff +=
-            workflow.selectionCount - (savedWorkflow?.selectionCount || 0);
-        } else {
-          diff += savedWorkflow
-            ? savedWorkflow.selectionCount - workflow.selectionCount
-            : workflow.selectionCount;
-        }
-      });
-
-      return diff;
-    };
-
-    const addWorkflowCrawlsCount = workflowIdToSelectedCount(addWorkflows);
-    const removeWorkflowCrawlsCount = workflowIdToSelectedCount(
-      removeWorkflows,
-      false,
-    );
-
-    const addCount = addItems.size + addWorkflowCrawlsCount;
-    const removeCount = removeItems.size + removeWorkflowCrawlsCount;
+    const addCount = addItems.size;
+    const removeCount = removeItems.size;
     const hasChange = addCount || removeCount;
     let selectionMessage = "";
 
@@ -783,11 +852,11 @@ export class CollectionItemsDialog extends BtrixElement {
     const addWorkflows = new Set<string>();
     const removeWorkflows = new Set<string>();
 
-    for (const [id, { operation }] of this.batchWorkflows) {
+    for (const [workflowId, { operation }] of this.batchWorkflows) {
       if (operation === "add") {
-        addWorkflows.add(id);
+        addWorkflows.add(workflowId);
       } else {
-        removeWorkflows.add(id);
+        removeWorkflows.add(workflowId);
       }
     }
 
@@ -858,30 +927,44 @@ export class CollectionItemsDialog extends BtrixElement {
 
       await Promise.all(workflowRequests);
 
-      const addItems = diff.addItems.union(omitFromBatchRemove);
-      const removeItems = diff.removeItems.union(omitFromBatchAdd);
+      const addItems = Array.from(
+        diff.addItems.union(omitFromBatchRemove),
+      ).filter((v) => {
+        if (!isID(v)) return;
+        const workflowId = this.crawlToWorkflow.get(v);
+        if (workflowId) return !diff.addWorkflows.has(workflowId);
+        return true;
+      });
+      const removeItems = Array.from(
+        diff.removeItems.union(omitFromBatchAdd),
+      ).filter((v) => {
+        if (!isID(v)) return;
+        const workflowId = this.crawlToWorkflow.get(v);
+        if (workflowId) return !diff.removeWorkflows.has(workflowId);
+        return true;
+      });
 
-      if (addItems.size) {
+      if (addItems.length) {
         itemRequests.push(
           this.api.fetch(
             `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
             {
               method: "POST",
               body: JSON.stringify({
-                crawlIds: [...addItems],
+                crawlIds: addItems,
               }),
             },
           ),
         );
       }
-      if (removeItems.size) {
+      if (removeItems.length) {
         itemRequests.push(
           this.api.fetch(
             `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
             {
               method: "POST",
               body: JSON.stringify({
-                crawlIds: [...removeItems],
+                crawlIds: removeItems,
               }),
             },
           ),
@@ -935,19 +1018,13 @@ export class CollectionItemsDialog extends BtrixElement {
     });
     void this.fetchSearchValues();
 
-    const [crawls, uploads] = await Promise.all([
-      this.getCrawls({
-        pageSize: COLLECTION_ITEMS_MAX,
-        collectionId: this.collectionId,
-      }).then(({ items }) => items),
-      this.getUploads({
-        pageSize: COLLECTION_ITEMS_MAX,
-        collectionId: this.collectionId,
-      }).then(({ items }) => items),
-    ]);
+    // FIXME Better handling of collections with more than 1,000 uploads
+    const { items } = await this.getUploads({
+      pageSize: COLLECTION_ITEMS_MAX,
+      collectionId: this.collectionId,
+    });
 
-    crawls.forEach(({ id }) => this.selectedItems.add(id));
-    uploads.forEach(({ id }) => this.selectedItems.add(id));
+    items.forEach(({ id }) => this.selectedItems.add(id));
 
     this.savedSelectedItems = new Set(this.selectedItems);
     this.selectedItems = new Set(this.selectedItems);
@@ -995,6 +1072,8 @@ export class CollectionItemsDialog extends BtrixElement {
         workflows.items.map(async (workflow) => {
           if (this.workflowCrawls.has(workflow.id)) return;
 
+          // FIXME Better handling of collections with more than 1,000
+          // crawls per workflow
           const selectedCrawls = workflow.crawlSuccessfulCount
             ? await this.getCrawls({
                 pageSize: COLLECTION_ITEMS_MAX,
@@ -1002,9 +1081,9 @@ export class CollectionItemsDialog extends BtrixElement {
                 collectionId: this.collectionId,
               })
             : null;
-          const allCrawls = workflow.crawlSuccessfulCount
+          const paginatedCrawls = workflow.crawlSuccessfulCount
             ? await this.getCrawls({
-                pageSize: WORKFLOW_CRAWLS_PAGE_SIZE,
+                pageSize: DEFAULT_PAGE_SIZE,
                 cid: workflow.id,
               })
             : null;
@@ -1017,25 +1096,36 @@ export class CollectionItemsDialog extends BtrixElement {
             selectionCount: selectedCrawls?.total || 0,
           };
 
-          if (allCrawls?.total && selectedCrawls?.total) {
-            if (selectedCrawls.total === allCrawls.total) {
+          if (paginatedCrawls?.total && selectedCrawls?.total) {
+            if (selectedCrawls.total === paginatedCrawls.total) {
               selection.checked = true;
             } else {
               selection.checked = "indeterminate";
             }
           }
 
+          selectedCrawls?.items.forEach(({ id, cid }) => {
+            this.crawlToWorkflow.set(id, cid);
+            this.selectedItems.add(id);
+            this.savedSelectedItems.add(id);
+          });
+
+          paginatedCrawls?.items.forEach(({ id, cid }) => {
+            this.crawlToWorkflow.set(id, cid);
+          });
+
           this.workflowSelection.set(workflow.id, selection);
           this.savedWorkflowSelection.set(workflow.id, selection);
           this.workflowCrawls.set(workflow.id, {
             selectedCrawls,
-            allCrawls,
+            paginatedCrawls,
           });
         }),
       );
 
       this.workflows = workflows;
       this.workflowCrawls = new Map(this.workflowCrawls);
+      this.selectedItems = new Set(this.selectedItems);
     } catch (e: unknown) {
       console.debug(e);
     }
