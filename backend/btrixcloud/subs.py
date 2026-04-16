@@ -50,7 +50,7 @@ from .models import (
     REASON_CANCELED,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import dt_now
+from .utils import dt_now, run_async_task
 
 
 # if set, will enable this api
@@ -141,7 +141,7 @@ class SubOps:
             )
 
         if update.futureCancelDate and self.should_send_cancel_email(org, update):
-            asyncio.create_task(self.send_cancel_emails(update.futureCancelDate, org))
+            run_async_task(self.send_cancel_emails(update.futureCancelDate, org))
 
         return {"updated": True}
 

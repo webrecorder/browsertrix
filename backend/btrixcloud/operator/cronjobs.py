@@ -4,7 +4,7 @@ from uuid import UUID
 from typing import Optional
 import yaml
 
-from btrixcloud.utils import date_to_str, dt_now
+from btrixcloud.utils import date_to_str, dt_now, run_async_task
 from .models import MCDecoratorSyncData, CJS, MCDecoratorSyncResponse
 from .baseoperator import BaseOperator
 
@@ -43,7 +43,7 @@ class CronJobOperator(BaseOperator):
                 "completionTime": finished,
             }
 
-        self.run_task(self.k8s.unsuspend_k8s_job(metadata.get("name")))
+        run_async_task(self.k8s.unsuspend_k8s_job(metadata.get("name")))
 
         return MCDecoratorSyncResponse(
             attachments=[],

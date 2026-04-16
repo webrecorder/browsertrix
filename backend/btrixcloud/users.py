@@ -4,7 +4,6 @@ FastAPI user handling (via fastapi-users)
 
 import os
 from uuid import UUID, uuid4
-import asyncio
 
 from typing import Optional, List, TYPE_CHECKING, cast, Callable, Tuple, Type
 
@@ -39,7 +38,7 @@ from .models import (
     PaginatedUserOutResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import is_bool, dt_now
+from .utils import is_bool, dt_now, run_async_task
 
 from .auth import (
     init_jwt_auth,
@@ -161,7 +160,7 @@ class UserManager:
                 default_register_org, user.id, UserRole.CRAWLER
             )
 
-            asyncio.create_task(self.request_verify(user, request))
+            run_async_task(self.request_verify(user, request))
 
         return user
 
