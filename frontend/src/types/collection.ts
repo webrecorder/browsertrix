@@ -14,7 +14,7 @@ export enum CollectionAccess {
 
 export const collectionThumbnailSourceSchema = z.object({
   url: z.string().url(),
-  urlPageId: z.string().url(),
+  urlPageId: z.string().uuid(),
   urlTs: z.string().datetime(),
 });
 
