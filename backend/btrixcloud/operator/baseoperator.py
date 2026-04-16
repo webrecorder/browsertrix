@@ -79,6 +79,12 @@ class K8sOpAPI(K8sAPI):
 
         print(f"max crawler memory size: {self.max_crawler_memory_size}")
 
+        if self.max_crawler_memory_size < crawler_memory:
+            raise ValueError(
+                "Invalid memory config: max crawler memory "
+                + f"{self.max_crawler_memory_size} < crawler memory {crawler_memory}"
+            )
+
         p["crawler_cpu"] = crawler_cpu
         p["crawler_memory"] = crawler_memory
         p["crawler_workers"] = num_workers
@@ -130,6 +136,12 @@ class K8sOpAPI(K8sAPI):
         print("profile browser resources")
         print(f"cpu = {profile_cpu}")
         print(f"memory = {profile_memory}")
+
+        if self.max_crawler_memory_size < profile_memory:
+            raise ValueError(
+                "Invalid memory config: max crawler memory "
+                + f"{self.max_crawler_memory_size} < profile memory {profile_memory}"
+            )
 
     async def async_init(self) -> None:
         """perform any async init here"""
