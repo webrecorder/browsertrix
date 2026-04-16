@@ -334,7 +334,7 @@ export class CollectionWorkflowList extends BtrixElement {
       // Include in tree selection so that workflow tree item correctly displays
       // as indeterminate, but prevent user selection
       pagination = html`<sl-tree-item
-        class="pagination part-[item]:cursor-default part-[label]:justify-center part-[checkbox]:opacity-50 part-[item]:hover:!bg-transparent"
+        class="pagination part-[item]:cursor-default part-[label]:justify-center part-[checkbox]:opacity-0 part-[item]:hover:!bg-transparent"
         ?selected=${Boolean(hiddenSelection)}
         @click=${(e: MouseEvent) => e.stopPropagation()}
       >
