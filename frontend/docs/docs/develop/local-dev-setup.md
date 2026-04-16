@@ -43,8 +43,16 @@ frontend_pull_policy: 'Never'
         This will ensure images are pulled from the MicroK8S registry (configured in next section).
 
 
+3. Uncomment `crawler_channels` in `./chart/local.yml` and set `imagePullPolicy` to `Never`, which will ensure the local image is not overridden:
+```yaml
+crawler_channels:
+  - id: default
+    image: "docker.io/webrecorder/browsertrix-crawler:latest"
+    imagePullPolicy: Never
+```
 
-3. Build the local backend and frontend images. The exact process depends on the Kubernetes environment you've selected in your initial deployment. Environment specific build instructions are as follows:
+
+4. Build the local backend and frontend images. The exact process depends on the Kubernetes environment you've selected in your initial deployment. Environment specific build instructions are as follows:
 
     ??? info "Docker Desktop"
 
@@ -107,7 +115,7 @@ frontend_pull_policy: 'Never'
         k3s ctr images import --base-name webrecorder/browsertrix-frontend:latest ./frontend.tar
         ```
 
-4. To change other options, uncomment them as needed in `./chart/local.yaml` or add additional overrides from `./chart/values.yaml`.
+5. To change other options, uncomment them as needed in `./chart/local.yaml` or add additional overrides from `./chart/values.yaml`.
 
     For example, to set a superuser email to `my_super_user_email@example.com` and password to `MySecretPassword!`, uncomment that block and set:
     ```yaml
@@ -120,7 +128,7 @@ frontend_pull_policy: 'Never'
     password: MySecretPassword!
     ```
 
-5. Once the images have been built and config changes made in `./chart/local.yaml`, the cluster can be re-deployed by running:
+6. Once the images have been built and config changes made in `./chart/local.yaml`, the cluster can be re-deployed by running:
 ```sh
 helm upgrade --install -f ./chart/values.yaml \
 -f ./chart/local.yaml btrix ./chart/
