@@ -85,6 +85,7 @@ class K8sOpAPI(K8sAPI):
         p["qa_cpu"] = qa_cpu
         p["qa_memory"] = qa_memory
         p["qa_workers"] = qa_num_workers
+        p["memory_limit"] = self.max_crawler_memory_size
 
     def compute_for_num_browsers(
         self, num_browsers, crawler_memory_fixed="", crawler_cpu_fixed=""
