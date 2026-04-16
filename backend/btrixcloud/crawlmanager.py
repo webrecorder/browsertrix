@@ -199,6 +199,26 @@ class CrawlManager(K8sAPI):
             job_id, job_type=BgJobType.OPTIMIZE_PAGES.value, scale=scale
         )
 
+    async def run_update_coll_stats_job(
+        self,
+        oid: str,
+        collection_id: str,
+        existing_job_id: Optional[str] = None,
+    ) -> str:
+        """run job to update collection stats"""
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"update-coll-{secrets.token_hex(5)}"
+
+        return await self._run_bg_job_with_ops_classes(
+            job_id,
+            job_type=BgJobType.UPDATE_COLL_STATS.value,
+            oid=oid,
+            collection_id=collection_id,
+        )
+
     async def _run_bg_job_with_ops_classes(
         self,
         job_id: str,
@@ -557,6 +577,15 @@ class CrawlManager(K8sAPI):
         return await self._patch_job(
             crawl_id, {"pausedAt": date_to_str(paused_at) if paused_at else ""}
         )
+
+    async def get_running_background_job_count(self, labels: str) -> int:
+        """return count of background jobs matching labels"""
+        resp = await self.batch_api.list_namespaced_job(
+            namespace=DEFAULT_NAMESPACE,
+            label_selector=f"role=background-job,{labels}",
+        )
+        items = resp.items or []
+        return len(items)
 
     async def delete_all_k8s_resources_for_org(self, oid_str: str) -> None:
         """Delete all k8s resources related to org"""

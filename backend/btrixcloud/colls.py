@@ -52,6 +52,7 @@ from .models import (
     PublicCollOut,
     ResourcesOnly,
     DeleteDedupeIndex,
+    BgJobType,
     TYPE_DEDUPE_INDEX_STATES,
     TYPE_INDEX_JOB_TYPES,
 )
@@ -73,8 +74,11 @@ if TYPE_CHECKING:
     from .webhooks import EventWebhookOps
     from .crawls import CrawlOps
     from .pages import PageOps
+    from .background_jobs import BackgroundJobOps
 else:
-    OrgOps = StorageOps = EventWebhookOps = CrawlOps = PageOps = object
+    OrgOps = StorageOps = EventWebhookOps = CrawlOps = PageOps = BackgroundJobOps = (
+        object
+    )
 
 
 THUMBNAIL_MAX_SIZE = 2_000_000
@@ -91,6 +95,7 @@ class CollectionOps:
     event_webhook_ops: EventWebhookOps
     crawl_ops: CrawlOps
     page_ops: PageOps
+    background_job_ops: BackgroundJobOps
     crawl_manager: CrawlManager
 
     def __init__(
@@ -100,6 +105,7 @@ class CollectionOps:
         storage_ops: StorageOps,
         crawl_manager: CrawlManager,
         event_webhook_ops: EventWebhookOps,
+        background_job_ops: BackgroundJobOps,
     ):
         self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
@@ -111,10 +117,21 @@ class CollectionOps:
         self.storage_ops = storage_ops
         self.crawl_manager = crawl_manager
         self.event_webhook_ops = event_webhook_ops
+        self.background_job_ops = background_job_ops
 
         self.dedupe_importer_channel = os.environ.get(
             "DEDUPE_IMPORTER_CHANNEL", "default"
         )
+
+        # to avoid background tasks being garbage collected
+        # see: https://stackoverflow.com/a/74059981
+        self.bg_tasks = set()
+
+    def _run_task(self, func) -> None:
+        """add bg tasks to set to avoid premature garbage collection"""
+        task = asyncio.create_task(func)
+        self.bg_tasks.add(task)
+        task.add_done_callback(self.bg_tasks.discard)
 
     def set_crawl_ops(self, ops):
         """set crawl ops"""
@@ -172,9 +189,10 @@ class CollectionOps:
 
             if crawl_ids:
                 await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
-                await self.update_collection_counts_and_tags(coll_id)
-                await self.update_collection_dates(coll_id, org.id)
-                asyncio.create_task(
+                await self.background_job_ops.create_update_collection_stats_job(
+                    org.id, coll_id
+                )
+                self._run_task(
                     self.event_webhook_ops.create_added_to_collection_notification(
                         crawl_ids, coll_id, org
                     )
@@ -249,8 +267,7 @@ class CollectionOps:
         coll_id: UUID,
         crawl_ids: List[str],
         org: Organization,
-        headers: Optional[dict] = None,
-    ) -> CollOut:
+    ) -> UpdatedResponse:
         """Add crawls to collection"""
         await self.crawl_ops.validate_all_crawls_successful(crawl_ids, org)
 
@@ -266,29 +283,28 @@ class CollectionOps:
         # do this after checking if collection exists
         await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
 
-        await self.update_collection_counts_and_tags(coll_id)
-        await self.update_collection_dates(coll_id, org.id)
+        await self.background_job_ops.create_update_collection_stats_job(
+            org.id, coll_id
+        )
 
         if result.get("indexState"):
             await self.run_index_import_job(coll_id, org.id)
 
-        asyncio.create_task(
+        self._run_task(
             self.event_webhook_ops.create_added_to_collection_notification(
                 crawl_ids, coll_id, org
             )
         )
 
-        return await self.get_collection_out(coll_id, org, headers)
+        return UpdatedResponse(updated=True)
 
-    async def remove_crawls_from_collection(
+    async def update_collection_post_remove(
         self,
         coll_id: UUID,
         crawl_ids: List[str],
         org: Organization,
-        headers: Optional[dict] = None,
-    ) -> CollOut:
-        """Remove crawls from collection"""
-        await self.crawl_ops.remove_from_collection(crawl_ids, coll_id)
+    ):
+        """Update collection after crawls are removed or deleted outright"""
         modified = dt_now()
         result = await self.collections.find_one_and_update(
             {"_id": coll_id},
@@ -298,19 +314,29 @@ class CollectionOps:
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        await self.update_collection_counts_and_tags(coll_id)
-        await self.update_collection_dates(coll_id, org.id)
+        await self.background_job_ops.create_update_collection_stats_job(
+            org.id, coll_id
+        )
 
         if result.get("indexState"):
             await self.run_index_import_job(coll_id, org.id)
 
-        asyncio.create_task(
+        self._run_task(
             self.event_webhook_ops.create_removed_from_collection_notification(
                 crawl_ids, coll_id, org
             )
         )
 
-        return await self.get_collection_out(coll_id, org, headers)
+    async def remove_crawls_from_collection(
+        self,
+        coll_id: UUID,
+        crawl_ids: List[str],
+        org: Organization,
+    ) -> UpdatedResponse:
+        """Remove crawls from collection"""
+        await self.crawl_ops.remove_from_collection(crawl_ids, coll_id)
+        await self.update_collection_post_remove(coll_id, crawl_ids, org)
+        return UpdatedResponse(updated=True)
 
     async def get_collection_raw(
         self, coll_id: UUID, oid: UUID, public_or_unlisted_only: bool = False
@@ -382,6 +408,7 @@ class CollectionOps:
         org: Organization,
         resources=False,
         public_or_unlisted_only=False,
+        updates_count=True,
         headers: Optional[dict] = None,
     ) -> CollOut:
         """Get CollOut by id"""
@@ -426,6 +453,11 @@ class CollectionOps:
                 org, self.storage_ops, headers
             )
 
+        if updates_count:
+            result["runningUpdatesCount"] = await self.get_running_updates_count(
+                coll_id, org
+            )
+
         return CollOut.from_dict(result)
 
     async def get_internal_replay_list(self, coll_id: UUID, oid: UUID) -> ResourcesOnly:
@@ -468,6 +500,10 @@ class CollectionOps:
             result["thumbnail"] = await image_file.get_public_file_out(
                 org, self.storage_ops, headers
             )
+
+        result["runningUpdatesCount"] = await self.get_running_updates_count(
+            coll_id, org
+        )
 
         return PublicCollOut.from_dict(result)
 
@@ -696,7 +732,7 @@ class CollectionOps:
         if result.deleted_count < 1:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        asyncio.create_task(
+        self._run_task(
             self.event_webhook_ops.create_collection_deleted_notification(coll_id, org)
         )
 
@@ -704,7 +740,9 @@ class CollectionOps:
 
     async def download_collection(self, coll_id: UUID, org: Organization):
         """Download all WACZs in collection as streaming nested WACZ"""
-        coll = await self.get_collection_out(coll_id, org, resources=True)
+        coll = await self.get_collection_out(
+            coll_id, org, resources=True, updates_count=False
+        )
 
         metadata = {
             "type": "collection",
@@ -936,11 +974,10 @@ class CollectionOps:
     async def recalculate_org_collection_stats(self, org: Organization):
         """recalculate counts, tags and dates for all collections in an org"""
         async for coll in self.collections.find({"oid": org.id}, projection={"_id": 1}):
-            await self.update_collection_counts_and_tags(coll.get("_id"))
-            await self.update_collection_dates(coll.get("_id"), org.id)
+            await self.update_collection_stats(coll.get("_id"), org.id)
 
-    async def update_collection_counts_and_tags(self, collection_id: UUID):
-        """Set current crawl info in config when crawl begins"""
+    async def update_collection_stats(self, collection_id: UUID, oid: UUID):
+        """recalculate counts, tags, and dates for collection"""
         # pylint: disable=too-many-locals
         crawl_count = 0
         page_count = 0
@@ -950,8 +987,11 @@ class CollectionOps:
         crawl_ids = []
         preload_resources = []
 
-        async for crawl_raw in self.crawls.find({"collectionIds": collection_id}):
+        async for crawl_raw in self.crawls.find(
+            {"oid": oid, "collectionIds": collection_id}
+        ):
             crawl = BaseCrawl.from_dict(crawl_raw)
+
             if crawl.state not in SUCCESSFUL_STATES:
                 continue
             crawl_count += 1
@@ -983,12 +1023,15 @@ class CollectionOps:
 
             crawl_ids.append(crawl.id)
 
-        sorted_tags = [tag for tag, count in Counter(tags).most_common()]
+        sorted_tags = [tag for tag, _ in Counter(tags).most_common()]
 
         unique_page_count = await self.page_ops.get_unique_page_count(crawl_ids)
 
         top_page_hosts = await self.page_ops.get_top_page_hosts(crawl_ids)
 
+        earliest_ts, latest_ts = await self._get_collection_dates(crawl_ids, oid)
+
+        # Update collection
         await self.collections.find_one_and_update(
             {"_id": collection_id},
             {
@@ -1000,21 +1043,21 @@ class CollectionOps:
                     "tags": sorted_tags,
                     "preloadResources": preload_resources,
                     "topPageHosts": top_page_hosts,
+                    "dateEarliest": earliest_ts,
+                    "dateLatest": latest_ts,
                 }
             },
         )
 
-    async def update_collection_dates(self, coll_id: UUID, oid: UUID):
-        """Update collection earliest and latest dates from page timestamps"""
-        # pylint: disable=too-many-locals
-        coll = await self.get_collection(coll_id, oid)
-        crawl_ids = await self.get_collection_crawl_ids(coll_id, oid)
-
-        earliest_ts = None
-        latest_ts = None
+    async def _get_collection_dates(
+        self, crawl_ids: list[str], oid: UUID
+    ) -> tuple[datetime | None, datetime | None]:
+        """Determine earliest and latest dates for collection items"""
+        earliest_ts: datetime | None = None
+        latest_ts: datetime | None = None
 
         match_query = {
-            "oid": coll.oid,
+            "oid": oid,
             "crawl_id": {"$in": crawl_ids},
             "ts": {"$ne": None},
         }
@@ -1035,15 +1078,7 @@ class CollectionOps:
         except IndexError:
             pass
 
-        await self.collections.find_one_and_update(
-            {"_id": coll_id},
-            {
-                "$set": {
-                    "dateEarliest": earliest_ts,
-                    "dateLatest": latest_ts,
-                }
-            },
-        )
+        return earliest_ts, latest_ts
 
     async def update_crawl_collections(self, crawl_id: str, oid: UUID):
         """Update counts, dates, and modified for all collections in crawl"""
@@ -1053,8 +1088,9 @@ class CollectionOps:
         modified = dt_now()
 
         for coll_id in crawl_coll_ids:
-            await self.update_collection_counts_and_tags(coll_id)
-            await self.update_collection_dates(coll_id, oid)
+            await self.background_job_ops.create_update_collection_stats_job(
+                oid, coll_id
+            )
 
             result = await self.collections.find_one_and_update(
                 {"_id": coll_id},
@@ -1265,6 +1301,15 @@ class CollectionOps:
 
         return total_size
 
+    async def get_running_updates_count(self, coll_id: UUID, org: Organization) -> int:
+        """Return count of running collection stats update background jobs"""
+        btrix_ids = f"btrix.collid={coll_id},btrix.org={org.id}"
+        job_type = BgJobType.UPDATE_COLL_STATS.value
+
+        return await self.crawl_manager.get_running_background_job_count(
+            f"job_type={job_type},{btrix_ids}"
+        )
+
 
 # ============================================================================
 # pylint: disable=too-many-locals
@@ -1275,13 +1320,14 @@ def init_collections_api(
     storage_ops: StorageOps,
     crawl_manager: CrawlManager,
     event_webhook_ops: EventWebhookOps,
+    background_job_ops: BackgroundJobOps,
     user_dep,
 ) -> CollectionOps:
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
 
     colls: CollectionOps = CollectionOps(
-        mdb, orgs, storage_ops, crawl_manager, event_webhook_ops
+        mdb, orgs, storage_ops, crawl_manager, event_webhook_ops, background_job_ops
     )
 
     org_owner_dep = orgs.org_owner_dep
@@ -1449,40 +1495,34 @@ def init_collections_api(
     @app.post(
         "/orgs/{oid}/collections/{coll_id}/add",
         tags=["collections"],
-        response_model=CollOut,
+        response_model=UpdatedResponse,
     )
     async def add_crawl_to_collection(
         add_remove: CollectionAddRemove,
         coll_id: UUID,
-        request: Request,
         org: Organization = Depends(org_crawl_dep),
-    ) -> CollOut:
+    ) -> UpdatedResponse:
         crawl_ids = set(add_remove.crawlIds)
         crawl_ids.update(
             await colls.crawl_ops.get_config_crawl_ids(add_remove.crawlconfigIds)
         )
-        return await colls.add_crawls_to_collection(
-            coll_id, list(crawl_ids), org, headers=dict(request.headers)
-        )
+        return await colls.add_crawls_to_collection(coll_id, list(crawl_ids), org)
 
     @app.post(
         "/orgs/{oid}/collections/{coll_id}/remove",
         tags=["collections"],
-        response_model=CollOut,
+        response_model=UpdatedResponse,
     )
     async def remove_crawl_from_collection(
         add_remove: CollectionAddRemove,
         coll_id: UUID,
-        request: Request,
         org: Organization = Depends(org_crawl_dep),
-    ) -> CollOut:
+    ) -> UpdatedResponse:
         crawl_ids = set(add_remove.crawlIds)
         crawl_ids.update(
             await colls.crawl_ops.get_config_crawl_ids(add_remove.crawlconfigIds)
         )
-        return await colls.remove_crawls_from_collection(
-            coll_id, list(crawl_ids), org, headers=dict(request.headers)
-        )
+        return await colls.remove_crawls_from_collection(coll_id, list(crawl_ids), org)
 
     @app.delete(
         "/orgs/{oid}/collections/{coll_id}",

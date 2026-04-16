@@ -14,7 +14,7 @@ export enum CollectionAccess {
 
 export const collectionThumbnailSourceSchema = z.object({
   url: z.string().url(),
-  urlPageId: z.string().url(),
+  urlPageId: z.string().uuid(),
   urlTs: z.string().datetime(),
 });
 
@@ -33,7 +33,18 @@ export const publicCollectionSchema = z.object({
   modified: z.string().datetime().nullable(),
   caption: z.string().nullable(),
   description: z.string().nullable(),
-  resources: z.array(z.string()),
+  resources: z.array(
+    z.object({
+      name: z.string(),
+      path: z.string(),
+      hash: z.string(),
+      size: z.number(),
+      crawlId: z.string().nullable(),
+      numReplicas: z.number(),
+      expireAt: z.string().datetime().nullable(),
+      fromDependency: z.boolean(),
+    }),
+  ),
   dateEarliest: z.string().datetime().nullable(),
   dateLatest: z.string().datetime().nullable(),
   thumbnail: storageFileSchema.nullable(),
@@ -65,6 +76,19 @@ export const collectionSchema = publicCollectionSchema.extend({
   indexLastSavedAt: z.string().datetime().nullable(),
   indexState: z.enum(DEDUPE_INDEX_STATES).nullable(),
   indexStats: dedupeIndexStatsSchema.optional().nullable(),
+  /**
+   * The number of running updates for this collection.
+   * Updates may affect:
+   * - {@linkcode collectionSchema._type.crawlCount | crawlCount}
+   * - {@linkcode collectionSchema._type.pageCount | pageCount}
+   * - {@linkcode collectionSchema._type.uniquePageCount | uniquePageCount}
+   * - {@linkcode collectionSchema._type.totalSize | totalSize}
+   * - {@linkcode collectionSchema._type.tags | tags}
+   * - {@linkcode collectionSchema._type.topPageHosts | topPageHosts}
+   * - {@linkcode collectionSchema._type.dateEarliest | dateEarliest}
+   * - {@linkcode collectionSchema._type.dateLatest | dateLatest}
+   */
+  runningUpdatesCount: z.number(),
 });
 export type Collection = z.infer<typeof collectionSchema>;
 

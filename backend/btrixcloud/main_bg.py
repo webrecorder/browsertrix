@@ -14,6 +14,7 @@ job_type = os.environ.get("BG_JOB_TYPE")
 oid = os.environ.get("OID")
 crawl_type = os.environ.get("CRAWL_TYPE")
 crawl_id = os.environ.get("CRAWL_ID")
+coll_id = os.environ.get("COLLECTION_ID")
 
 
 # ============================================================================
@@ -106,6 +107,16 @@ async def main():
                 await page_ops.re_add_crawl_pages(crawl_id=crawl_id, oid=org.id)
 
             await coll_ops.recalculate_org_collection_stats(org)
+            return 0
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            traceback.print_exc()
+            return 1
+
+    if job_type == BgJobType.UPDATE_COLL_STATS:
+        print(f"Updating collection {coll_id}", flush=True)
+        try:
+            await coll_ops.update_collection_stats(UUID(coll_id), org.id)
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:

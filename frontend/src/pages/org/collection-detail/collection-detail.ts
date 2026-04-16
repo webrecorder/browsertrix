@@ -40,6 +40,7 @@ import {
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
 import { panelBody, panelHeader } from "@/layouts/panel";
+import { updatingOverlay } from "@/layouts/updatingOverlay";
 import { getIndexErrorMessage } from "@/strings/collections/index-error";
 import {
   type APIPaginatedList,
@@ -48,6 +49,7 @@ import {
 } from "@/types/api";
 import {
   CollectionAccess,
+  collectionSchema,
   type Collection,
   type PublicCollection,
 } from "@/types/collection";
@@ -63,6 +65,8 @@ import { tw } from "@/utils/tailwind";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_ITEMS_PAGE_SIZE = 20;
+const POLL_INTERVAL_SECONDS = 10;
+const POLL_INTERVAL_ACTIVE_SECONDS = 1;
 
 @customElement("btrix-collection-detail")
 @localized()
@@ -111,6 +115,8 @@ export class CollectionDetail extends BtrixElement {
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
+
+  private timerId?: number;
 
   private readonly editing =
     new SearchParamsValue<EditingSearchParamValue | null>(
@@ -164,6 +170,11 @@ export class CollectionDetail extends BtrixElement {
 
   private get isCrawler() {
     return this.appState.isCrawler;
+  }
+
+  disconnectedCallback(): void {
+    window.clearTimeout(this.timerId);
+    super.disconnectedCallback();
   }
 
   protected async willUpdate(
@@ -305,10 +316,10 @@ export class CollectionDetail extends BtrixElement {
       </header>
 
       <div
-        class="mt-3 rounded-lg border px-4 py-2"
+        class="relative mt-3 rounded-lg border bg-white px-4 py-2"
         aria-busy="${
           // TODO Switch to task and use task status
-          this.collection === undefined
+          this.collection === undefined || this.collection.runningUpdatesCount
         }"
       >
         ${this.renderInfoBar()}
@@ -332,15 +343,19 @@ export class CollectionDetail extends BtrixElement {
                             ? undefined
                             : msg("Please wait for replay load"),
                         )}
-                        ?disabled=${!this.isRwpLoaded}
+                        ?disabled=${!this.isRwpLoaded ||
+                        this.collection.runningUpdatesCount}
                       >
-                        ${this.isRwpLoaded
+                        ${this.isRwpLoaded &&
+                        !this.collection.runningUpdatesCount
                           ? html`<sl-icon name="house" slot="prefix"></sl-icon>`
                           : html`<sl-spinner slot="prefix"></sl-spinner>`}
                         ${msg("Set Initial View")}
                       </sl-button>
                     `
-                  : nothing,
+                  : this.collection?.runningUpdatesCount
+                    ? html`<sl-spinner slot="prefix"></sl-spinner>`
+                    : nothing,
             ],
             [
               Tab.Items,
@@ -669,7 +684,7 @@ export class CollectionDetail extends BtrixElement {
 
     return html`
       <btrix-overflow-scroll
-        class="-mx-3 max-w-[calc(100%+theme(spacing.6))] part-[content]:px-3"
+        class="-mx-3 -my-2 max-w-[calc(100%+theme(spacing.6))] part-[content]:px-3 part-[content]:py-2"
       >
         <nav class="flex min-w-max gap-2">
           ${tabs.map((tabName) => {
@@ -751,6 +766,10 @@ export class CollectionDetail extends BtrixElement {
                 ${msg("Set Initial View")}
               </sl-menu-item>
             `,
+            () =>
+              this.collection?.runningUpdatesCount
+                ? html`<sl-spinner slot="prefix"></sl-spinner>`
+                : nothing,
           )}
           <sl-menu-item
             @click=${async () => {
@@ -918,6 +937,9 @@ export class CollectionDetail extends BtrixElement {
           : this.renderDetailItem(msg("Last Modified"), (col) =>
               col.modified ? this.localize.relativeDate(col.modified) : "",
             )}
+        ${this.collection.runningUpdatesCount
+          ? updatingOverlay({ class: "rounded-lg" })
+          : nothing}
       </btrix-desc-list>
     `;
   }
@@ -1303,6 +1325,17 @@ export class CollectionDetail extends BtrixElement {
   private async fetchCollection() {
     try {
       this.collection = await this.getCollection();
+
+      if (this.timerId) window.clearTimeout(this.timerId);
+      if (this.collection.runningUpdatesCount > 0) {
+        this.timerId = window.setTimeout(() => {
+          void this.fetchCollection();
+        }, 1000 * POLL_INTERVAL_ACTIVE_SECONDS);
+      } else {
+        this.timerId = window.setTimeout(() => {
+          void this.fetchCollection();
+        }, 1000 * POLL_INTERVAL_SECONDS);
+      }
     } catch (e) {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve Collection at this time."),
@@ -1310,6 +1343,7 @@ export class CollectionDetail extends BtrixElement {
         icon: "exclamation-octagon",
         id: "collection-retrieve-status",
       });
+      console.error(e);
     }
   }
 
@@ -1318,7 +1352,7 @@ export class CollectionDetail extends BtrixElement {
       `/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`,
     );
 
-    return data;
+    return collectionSchema.parse(data);
   }
 
   /**

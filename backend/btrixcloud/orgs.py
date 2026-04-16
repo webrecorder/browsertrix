@@ -1491,7 +1491,7 @@ class OrgOps(BaseOrgs):
 
             collection = Collection.from_dict(coll_raw)
             await self.colls_db.insert_one(collection.to_dict())
-            await self.coll_ops.update_collection_counts_and_tags(collection.id)
+            await self.coll_ops.update_collection_stats(collection.id, collection.oid)
 
     async def delete_org_and_data(
         self, org: Organization, user_manager: UserManager

@@ -3,6 +3,8 @@ import time
 
 from .conftest import API_PREFIX
 
+MAX_ATTEMPTS = 24
+
 
 def test_workflow_crawl_auto_added_to_collection(
     crawler_auth_headers,
@@ -18,6 +20,24 @@ def test_workflow_crawl_auto_added_to_collection(
     assert r.status_code == 200
     assert auto_add_collection_id in r.json()["collectionIds"]
 
+    # Wait until collection stats update
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{auto_add_collection_id}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 1:
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
+
 
 def test_workflow_crawl_auto_added_subsequent_runs(
     crawler_auth_headers,
@@ -26,13 +46,6 @@ def test_workflow_crawl_auto_added_subsequent_runs(
     auto_add_crawl_id,
     auto_add_config_id,
 ):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{auto_add_collection_id}",
-        headers=crawler_auth_headers,
-    )
-    assert r.status_code == 200
-    crawl_count = r.json()["crawlCount"]
-
     # Run workflow again and make sure new crawl is also in collection
     # and crawl count has been incremented.
     r = requests.post(
@@ -61,13 +74,23 @@ def test_workflow_crawl_auto_added_subsequent_runs(
     assert r.status_code == 200
     assert auto_add_collection_id in r.json()["collectionIds"]
 
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{auto_add_collection_id}",
-        headers=crawler_auth_headers,
-    )
-    assert r.status_code == 200
-    new_crawl_count = r.json()["crawlCount"]
-    assert new_crawl_count == crawl_count + 1
+    # Wait until collection stats update
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{auto_add_collection_id}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 2:
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
 
 
 def test_workflow_autoadd_collection_removed_on_delete(

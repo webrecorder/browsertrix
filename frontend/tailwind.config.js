@@ -139,6 +139,12 @@ function makeTheme() {
         to: { opacity: 1 },
       },
     },
+    backdropBlur: {
+      px: "1px",
+    },
+    backgroundImage: {
+      radial: "radial-gradient(var(--tw-gradient-stops))",
+    },
   };
 }
 

@@ -1798,6 +1798,8 @@ class CollOut(BaseMongoModel):
 
     indexStats: Optional[DedupeIndexStats] = None
 
+    runningUpdatesCount: int = 0
+
 
 # ============================================================================
 class PublicCollOut(BaseMongoModel):
@@ -1834,6 +1836,8 @@ class PublicCollOut(BaseMongoModel):
     allowPublicDownload: bool = True
 
     topPageHosts: List[HostCount] = []
+
+    runningUpdatesCount: int = 0
 
 
 # ============================================================================
@@ -3120,6 +3124,7 @@ class BgJobType(str, Enum):
     READD_ORG_PAGES = "readd-org-pages"
     OPTIMIZE_PAGES = "optimize-pages"
     CLEANUP_SEED_FILES = "cleanup-seed-files"
+    UPDATE_COLL_STATS = "update-coll-stats"
 
 
 # ============================================================================
@@ -3197,6 +3202,15 @@ class CleanupSeedFilesJob(BackgroundJob):
 
 
 # ============================================================================
+class UpdateCollStatsJob(BackgroundJob):
+    """Model for tracking jobs to readd pages for an org or single crawl"""
+
+    type: Literal[BgJobType.UPDATE_COLL_STATS] = BgJobType.UPDATE_COLL_STATS
+    oid: UUID
+    collection_id: UUID
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
@@ -3209,6 +3223,7 @@ AnyJob = RootModel[
         ReAddOrgPagesJob,
         OptimizePagesJob,
         CleanupSeedFilesJob,
+        UpdateCollStatsJob,
     ]
 ]
 

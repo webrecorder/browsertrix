@@ -108,6 +108,16 @@ class BaseCrawlOps:
         self.crawl_log_ops = crawl_log_ops
         self.page_ops = cast(PageOps, None)
 
+        # to avoid background tasks being garbage collected
+        # see: https://stackoverflow.com/a/74059981
+        self.bg_tasks = set()
+
+    def _run_task(self, func) -> None:
+        """add bg tasks to set to avoid premature garbage collection"""
+        task = asyncio.create_task(func)
+        self.bg_tasks.add(task)
+        task.add_done_callback(self.bg_tasks.discard)
+
     def set_page_ops(self, page_ops):
         """set page ops reference"""
         self.page_ops = page_ops
@@ -318,7 +328,7 @@ class BaseCrawlOps:
         if update_values.get("reviewStatus"):
             crawl = BaseCrawl.from_dict(result)
 
-            asyncio.create_task(
+            self._run_task(
                 self.event_webhook_ops.create_crawl_reviewed_notification(
                     crawl.id,
                     crawl.oid,
@@ -391,6 +401,7 @@ class BaseCrawlOps:
     async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
         """placeholder, implemented in crawls, base version does nothing"""
 
+    # pylint: disable=too-many-statements
     async def delete_crawls(
         self,
         org: Organization,
@@ -400,7 +411,7 @@ class BaseCrawlOps:
     ) -> tuple[int, dict[UUID, dict[str, int]], bool]:
         """Delete a list of crawls by id for given org"""
         cids_to_update: dict[UUID, dict[str, int]] = {}
-        collection_ids_to_update = set()
+        colls_to_update: dict[UUID, list[str]] = {}
 
         size = 0
 
@@ -429,7 +440,10 @@ class BaseCrawlOps:
 
             if crawl.collectionIds:
                 for coll_id in crawl.collectionIds:
-                    collection_ids_to_update.add(coll_id)
+                    if coll_id in colls_to_update:
+                        colls_to_update[coll_id].append(crawl_id)
+                    else:
+                        colls_to_update[coll_id] = [crawl_id]
 
             if type_ == "crawl":
                 await self.delete_all_crawl_qa_files(crawl_id, org)
@@ -455,13 +469,13 @@ class BaseCrawlOps:
                         cids_to_update[cid]["successful"] = 0
 
             if type_ == "crawl":
-                asyncio.create_task(
+                self._run_task(
                     self.event_webhook_ops.create_crawl_deleted_notification(
                         crawl_id, org
                     )
                 )
             if type_ == "upload":
-                asyncio.create_task(
+                self._run_task(
                     self.event_webhook_ops.create_upload_deleted_notification(
                         crawl_id, org
                     )
@@ -474,9 +488,8 @@ class BaseCrawlOps:
 
         await self.orgs.set_last_crawl_finished(org.id)
 
-        if collection_ids_to_update:
-            for coll_id in collection_ids_to_update:
-                await self.colls.update_collection_counts_and_tags(coll_id)
+        for coll_id, coll_crawl_ids in colls_to_update.items():
+            await self.colls.update_collection_post_remove(coll_id, coll_crawl_ids, org)
 
         quota_reached = self.orgs.storage_quota_reached(org)
 

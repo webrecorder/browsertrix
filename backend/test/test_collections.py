@@ -1,5 +1,6 @@
 import requests
 import os
+import time
 from uuid import uuid4
 
 from zipfile import ZipFile, ZIP_STORED
@@ -25,6 +26,8 @@ NON_PUBLIC_COLL_FIELDS = (
     "homeUrlPageId",
 )
 NON_PUBLIC_IMAGE_FIELDS = ("originalFilename", "userid", "userName", "created")
+
+MAX_ATTEMPTS = 24
 
 
 _coll_id = None
@@ -76,25 +79,41 @@ def test_create_collection(
     assert r.status_code == 200
     data = r.json()
 
-    assert data["id"] == _coll_id
-    assert data["name"] == COLLECTION_NAME
-    assert data["slug"] == COLLECTION_SLUG
-    assert data["caption"] == CAPTION
-    assert data["crawlCount"] == 1
-    assert data["pageCount"] > 0
-    assert data["uniquePageCount"] > 0
-    assert data["totalSize"] > 0
-    modified = data["modified"]
-    assert modified
-    assert modified.endswith("Z")
+    # Wait for and validate collection stats update (update happens async)
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+            headers=crawler_auth_headers,
+        )
 
-    assert data["dateEarliest"]
-    assert data["dateLatest"]
+        data = r.json()
+        if data.get("crawlCount") == 1:
+            assert data["id"] == _coll_id
+            assert data["name"] == COLLECTION_NAME
+            assert data["slug"] == COLLECTION_SLUG
+            assert data["caption"] == CAPTION
+            assert data["pageCount"] > 0
+            assert data["uniquePageCount"] > 0
+            assert data["totalSize"] > 0
+            modified = data["modified"]
+            assert modified
+            assert modified.endswith("Z")
 
-    assert data["defaultThumbnailName"] == default_thumbnail_name
-    assert data["allowPublicDownload"]
+            assert data["dateEarliest"]
+            assert data["dateLatest"]
 
-    assert data["topPageHosts"] == [{"count": 3, "host": "old.webrecorder.net"}]
+            assert data["defaultThumbnailName"] == default_thumbnail_name
+            assert data["allowPublicDownload"]
+
+            assert data["topPageHosts"] == [{"count": 3, "host": "old.webrecorder.net"}]
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
 
 
 def test_create_public_collection(
@@ -119,6 +138,24 @@ def test_create_public_collection(
 
     global _public_coll_id
     _public_coll_id = data["id"]
+
+    # Wait until collection stats update
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 1:
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
 
     # Verify that it is public
     r = requests.get(
@@ -303,17 +340,34 @@ def test_add_remove_crawl_from_collection(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    data = r.json()
-    assert data["id"] == _coll_id
-    assert data["crawlCount"] == 2
-    assert data["pageCount"] > 0
-    assert data["uniquePageCount"] > 0
-    assert data["totalSize"] > 0
-    assert data["modified"] >= modified
-    assert data["tags"] == ["wr-test-2", "wr-test-1"]
-    assert data["dateEarliest"]
-    assert data["dateLatest"]
-    assert data["topPageHosts"] == [{"count": 7, "host": "old.webrecorder.net"}]
+    assert r.json()["updated"]
+
+    # Wait for and validate collection stats update (update happens async)
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 2:
+            assert data["id"] == _coll_id
+            assert data["pageCount"] > 0
+            assert data["uniquePageCount"] > 0
+            assert data["totalSize"] > 0
+            assert data["modified"] >= modified
+            assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
+            assert data["dateEarliest"]
+            assert data["dateLatest"]
+            assert data["topPageHosts"] == [{"count": 7, "host": "old.webrecorder.net"}]
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
 
     # Verify it was added
     r = requests.get(
@@ -329,17 +383,34 @@ def test_add_remove_crawl_from_collection(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    data = r.json()
-    assert data["id"] == _coll_id
-    assert data["crawlCount"] == 0
-    assert data["pageCount"] == 0
-    assert data["uniquePageCount"] == 0
-    assert data["totalSize"] == 0
-    assert data["modified"] >= modified
-    assert data.get("tags", []) == []
-    assert data.get("dateEarliest") is None
-    assert data.get("dateLatest") is None
-    assert data["topPageHosts"] == []
+    assert r.json()["updated"]
+
+    # Wait for and validate collection stats update (update happens async)
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 0:
+            assert data["id"] == _coll_id
+            assert data["pageCount"] == 0
+            assert data["uniquePageCount"] == 0
+            assert data["totalSize"] == 0
+            assert data["modified"] >= modified
+            assert data.get("tags", []) == []
+            assert data.get("dateEarliest") is None
+            assert data.get("dateLatest") is None
+            assert data["topPageHosts"] == []
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
 
     # Verify they were removed
     r = requests.get(
@@ -375,17 +446,34 @@ def test_add_remove_config_crawls_from_collection(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    data = r.json()
-    assert data["id"] == _coll_id
-    assert data["crawlCount"] == 2
-    assert data["pageCount"] > 0
-    assert data["uniquePageCount"] > 0
-    assert data["totalSize"] > 0
-    assert data["modified"] >= modified
-    assert data["tags"] == ["wr-test-2", "wr-test-1"]
-    assert data["dateEarliest"]
-    assert data["dateLatest"]
-    assert data["topPageHosts"]
+    assert r.json()["updated"]
+
+    # Wait for and validate collection stats update (update happens async)
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 2:
+            assert data["id"] == _coll_id
+            assert data["pageCount"] > 0
+            assert data["uniquePageCount"] > 0
+            assert data["totalSize"] > 0
+            assert data["modified"] >= modified
+            assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
+            assert data["dateEarliest"]
+            assert data["dateLatest"]
+            assert data["topPageHosts"]
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
 
     # Verify crawls were added to collection
     r = requests.get(
@@ -419,17 +507,34 @@ def test_add_remove_config_crawls_from_collection(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    data = r.json()
-    assert data["id"] == _coll_id
-    assert data["crawlCount"] == 0
-    assert data["pageCount"] == 0
-    assert data["uniquePageCount"] == 0
-    assert data["totalSize"] == 0
-    assert data["modified"] >= modified
-    assert data.get("tags", []) == []
-    assert data.get("dateEarliest") is None
-    assert data.get("dateLatest") is None
-    assert data["topPageHosts"] == []
+    assert r.json()["updated"]
+
+    # Wait for and validate collection stats update (update happens async)
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 0:
+            assert data["id"] == _coll_id
+            assert data["pageCount"] == 0
+            assert data["uniquePageCount"] == 0
+            assert data["totalSize"] == 0
+            assert data["modified"] >= modified
+            assert data.get("tags", []) == []
+            assert data.get("dateEarliest") is None
+            assert data.get("dateLatest") is None
+            assert data["topPageHosts"] == []
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
 
     # Verify crawls were removed
     r = requests.get(
@@ -451,17 +556,25 @@ def test_add_remove_config_crawls_from_collection(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    data = r.json()
-    assert data["id"] == _coll_id
-    assert data["crawlCount"] == 2
-    assert data["pageCount"] > 0
-    assert data["uniquePageCount"] > 0
-    assert data["totalSize"] > 0
-    assert data["modified"] >= modified
-    assert data["tags"] == ["wr-test-2", "wr-test-1"]
-    assert data["dateEarliest"]
-    assert data["dateLatest"]
-    assert data["topPageHosts"]
+    assert r.json()["updated"]
+
+    # Wait for and validate collection stats update (update happens async)
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 2:
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
 
 
 def test_get_collection(crawler_auth_headers, default_org_id):
@@ -482,7 +595,7 @@ def test_get_collection(crawler_auth_headers, default_org_id):
     assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
     assert data["modified"] >= modified
-    assert data["tags"] == ["wr-test-2", "wr-test-1"]
+    assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
     assert data["dateEarliest"]
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
@@ -506,7 +619,7 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
     assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
     assert data["modified"] >= modified
-    assert data["tags"] == ["wr-test-2", "wr-test-1"]
+    assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
     assert data["dateEarliest"]
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
@@ -665,17 +778,34 @@ def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    data = r.json()
-    assert data["id"] == _coll_id
-    assert data["crawlCount"] == 3
-    assert data["pageCount"] > 0
-    assert data["uniquePageCount"] > 0
-    assert data["totalSize"] > 0
-    assert data["modified"]
-    assert data["tags"] == ["wr-test-2", "wr-test-1"]
-    assert data["dateEarliest"]
-    assert data["dateLatest"]
-    assert data["defaultThumbnailName"]
+    assert r.json()["updated"]
+
+    # Wait for and validate collection stats update (update happens async)
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 3:
+            assert data["id"] == _coll_id
+            assert data["pageCount"] > 0
+            assert data["uniquePageCount"] > 0
+            assert data["totalSize"] > 0
+            assert data["modified"]
+            assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
+            assert data["dateEarliest"]
+            assert data["dateLatest"]
+            assert data["defaultThumbnailName"]
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
 
     # Verify it was added
     r = requests.get(
@@ -733,7 +863,7 @@ def test_list_collections(
     assert first_coll["uniquePageCount"] > 0
     assert first_coll["totalSize"] > 0
     assert first_coll["modified"]
-    assert first_coll["tags"] == ["wr-test-2", "wr-test-1"]
+    assert sorted(first_coll["tags"]) == ["wr-test-1", "wr-test-2"]
     assert first_coll["access"] == "private"
     assert first_coll["dateEarliest"]
     assert first_coll["dateLatest"]
@@ -913,14 +1043,31 @@ def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    data = r.json()
-    assert data["id"] == _coll_id
-    assert data["crawlCount"] == 2
-    assert data["pageCount"] > 0
-    assert data["uniquePageCount"] > 0
-    assert data["totalSize"] > 0
-    assert data["modified"] >= modified
-    assert data.get("tags") == ["wr-test-2", "wr-test-1"]
+    assert r.json()["updated"]
+
+    # Wait for and validate collection stats update (update happens async)
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 2:
+            assert data["id"] == _coll_id
+            assert data["pageCount"] > 0
+            assert data["uniquePageCount"] > 0
+            assert data["totalSize"] > 0
+            assert data["modified"] >= modified
+            assert sorted(data["tags"]) == ["wr-test-1", "wr-test-2"]
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
 
     # Verify it was removed
     r = requests.get(
@@ -1174,6 +1321,24 @@ def test_list_public_collections(
 
     global _second_public_coll_id
     _second_public_coll_id = r.json()["id"]
+
+    # Wait until collection stats update
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("crawlCount") == 1:
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(10)
+        count += 1
 
     # Get default org slug
     r = requests.get(
