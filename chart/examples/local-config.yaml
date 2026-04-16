@@ -35,7 +35,6 @@
 # emails_pull_policy: "Never"
 # frontend_pull_policy: "Never"
 # crawler_pull_policy: "Never"
-# redis_pull_policy: "Never"
 
 # microk8s: if developing locally, can override these to use images from local microk8s repository (on localhost:32000)
 # backend_image: "localhost:32000/webrecorder/browsertrix-backend:latest"
