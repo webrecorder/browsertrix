@@ -142,7 +142,7 @@ spec:
 
       resources:
         limits:
-          memory: "{{ profile_memory }}"
+          memory: "{{ memory_limit }}"
 
         requests:
           cpu: "{{ profile_cpu }}"
