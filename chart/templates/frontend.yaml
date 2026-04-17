@@ -112,6 +112,7 @@ spec:
   selector:
     app: {{ .Values.name }}
     role: frontend
+  type: {{ .Values.service.type }}
 
   ports:
     - protocol: TCP

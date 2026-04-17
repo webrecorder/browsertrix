@@ -227,6 +227,8 @@ mongo_host: "local-mongo"
 mongo_image: "docker.io/library/mongo:7.0"
 mongo_pull_policy: "IfNotPresent"
 
+mongo_volume_size: "2Gi"
+
 mongo_cpu: "12m"
 
 mongo_memory: "512Mi"
@@ -570,8 +572,10 @@ signer_memory: "50Mi"
 # default FQDN suffix, shouldn't need to change
 fqdn_suffix: .svc.cluster.local
 
+service:
+  type: ClusterIP
+
 # Optional: configure load balancing annotations
-# service:
 #   annotations:
 #     service.beta.kubernetes.io/aws-load-balancer-internal: "true"
 #     helm.sh/resource-policy: keep

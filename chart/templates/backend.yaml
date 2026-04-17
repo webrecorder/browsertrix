@@ -279,6 +279,7 @@ spec:
   selector:
     app: {{ .Values.name }}
     role: backend
+    type: {{ .Values.service.type }}
 
   ports:
     - protocol: TCP
