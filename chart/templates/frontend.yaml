@@ -112,19 +112,13 @@ spec:
   selector:
     app: {{ .Values.name }}
     role: frontend
+
   type: {{ .Values.service.type }}
 
   ports:
     - protocol: TCP
       port: 80
       name: frontend
-
-  {{- if and .Values.local_service_port (not .Values.ingress.host) }}
-      nodePort: {{ .Values.local_service_port }}
-
-  type: NodePort
-  {{- end }}
-
 
 {{- if gt (int .Values.frontend_max_replicas) 1 }}
 ---
