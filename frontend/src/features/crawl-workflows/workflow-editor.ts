@@ -353,7 +353,7 @@ export class WorkflowEditor extends BtrixElement {
 
   private readonly handleCurrentTarget = makeCurrentTargetHandler(this);
   private readonly checkFormValidity = formValidator(this);
-  private readonly validateNameMax = maxLengthValidator(50);
+  private readonly validateNameMax = maxLengthValidator(80);
   private readonly validateDescriptionMax = maxLengthValidator(350);
 
   private readonly tabLabels = sectionStrings;

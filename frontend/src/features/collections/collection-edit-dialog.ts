@@ -23,6 +23,8 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { type TabGroupPanel } from "@/components/ui/tab-group/tab-panel";
 import {
+  COLLECTION_CAPTION_MAX_LENGTH,
+  COLLECTION_NAME_MAX_LENGTH,
   type Collection,
   type CollectionThumbnailSource,
 } from "@/types/collection";
@@ -37,8 +39,10 @@ export type CollectionSavedEvent = CustomEvent<{
   id: string;
 }>;
 
-export const validateNameMax = maxLengthValidator(50);
-export const validateCaptionMax = maxLengthValidator(150);
+export const validateNameMax = maxLengthValidator(COLLECTION_NAME_MAX_LENGTH);
+export const validateCaptionMax = maxLengthValidator(
+  COLLECTION_CAPTION_MAX_LENGTH,
+);
 
 /**
  * @fires btrix-collection-saved CollectionSavedEvent Fires
