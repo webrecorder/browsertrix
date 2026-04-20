@@ -300,14 +300,7 @@ export class CrawlsList extends BtrixElement {
   }
 
   private clearFilters() {
-    this.filterBy.setValue({
-      ...this.filterBy.value,
-      id: undefined,
-      firstSeed: undefined,
-      name: undefined,
-      state: undefined,
-      reviewStatus: undefined,
-    });
+    this.filterBy.setValue({});
     this.filterByCurrentUser.setValue(false);
     this.filterByTags.setValue([]);
     this.filterByTagsType.setValue("or");
@@ -412,7 +405,6 @@ export class CrawlsList extends BtrixElement {
         changedProperties.has("itemType") &&
         changedProperties.get("itemType")
       ) {
-        this.filterBy.setValue({});
         this.orderBy.setValue({
           field: "finished",
           direction: sortableFields["finished"].defaultDirection!,
@@ -429,6 +421,7 @@ export class CrawlsList extends BtrixElement {
     }
 
     if (changedProperties.has("itemType")) {
+      this.filterBy.setValue({});
       void this.fetchConfigSearchValues();
     }
   }
