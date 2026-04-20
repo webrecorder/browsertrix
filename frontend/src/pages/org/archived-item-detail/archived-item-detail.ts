@@ -889,7 +889,7 @@ export class ArchivedItemDetail extends BtrixElement {
               )}
           >
             <sl-icon name="copy" slot="prefix"></sl-icon>
-            ${msg("Copy ID")}
+            ${msg("Copy Item ID")}
           </sl-menu-item>
           <sl-menu-item
             @click=${() =>

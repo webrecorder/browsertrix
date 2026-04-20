@@ -213,8 +213,8 @@ export class SearchCombobox<T> extends TailwindElement {
               : nothing}
             ${value}
             ${value === this.searchByValue
-              ? html`<sl-tag slot="prefix" size="small" pill variant="success"
-                  >${msg("Exact")}</sl-tag
+              ? html`<btrix-badge slot="suffix" variant="success" outline
+                  >${msg("Exact match")}</btrix-badge
                 >`
               : nothing}
           </sl-menu-item>
