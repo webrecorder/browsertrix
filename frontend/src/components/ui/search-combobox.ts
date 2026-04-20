@@ -212,6 +212,11 @@ export class SearchCombobox<T> extends TailwindElement {
                 >`
               : nothing}
             ${value}
+            ${value === this.searchByValue
+              ? html`<sl-tag slot="prefix" size="small" pill variant="success"
+                  >${msg("Exact")}</sl-tag
+                >`
+              : nothing}
           </sl-menu-item>
         `;
       }
