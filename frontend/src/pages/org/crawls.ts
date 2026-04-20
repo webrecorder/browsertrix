@@ -82,6 +82,7 @@ const DEFAULT_SORT_BY: SortBy = {
 };
 
 type FilterBy = {
+  id?: string;
   name?: string;
   firstSeed?: string;
   state?: CrawlState[];
@@ -186,12 +187,13 @@ export class OrgCrawls extends BtrixElement {
   private readonly filterBy = new SearchParamsValue<FilterBy>(
     this,
     (value, params) => {
-      const keys = ["name", "firstSeed", "state"] as (keyof FilterBy)[];
+      const keys = ["id", "name", "firstSeed", "state"] as (keyof FilterBy)[];
       keys.forEach((key) => {
         if (value[key] == null) {
           params.delete(key);
         } else {
           switch (key) {
+            case "id":
             case "firstSeed":
             case "name":
               params.set(key, value[key]);
@@ -211,6 +213,7 @@ export class OrgCrawls extends BtrixElement {
       const state = params.getAll("status") as CrawlState[];
 
       return {
+        id: params.get("id") ?? undefined,
         name: params.get("name") ?? undefined,
         firstSeed: params.get("firstSeed") ?? undefined,
         state: state.length ? state : undefined,
@@ -235,6 +238,7 @@ export class OrgCrawls extends BtrixElement {
 
   private get hasFiltersSet() {
     return [
+      this.filterBy.value.id,
       this.filterBy.value.firstSeed,
       this.filterBy.value.name,
       this.filterBy.value.state?.length || undefined,
@@ -246,6 +250,7 @@ export class OrgCrawls extends BtrixElement {
   private clearFilters() {
     this.filterBy.setValue({
       ...this.filterBy.value,
+      id: undefined,
       firstSeed: undefined,
       name: undefined,
       state: undefined,
@@ -318,7 +323,7 @@ export class OrgCrawls extends BtrixElement {
   private getArchivedItemsTimeout?: number;
 
   // For fuzzy search:
-  private readonly searchKeys = ["name", "firstSeed"];
+  private readonly searchKeys = ["id", "name", "firstSeed"];
 
   private get selectedSearchFilterKey() {
     return (
@@ -594,7 +599,9 @@ export class OrgCrawls extends BtrixElement {
           this.selectedSearchFilterKey &&
             this.filterBy.value[this.selectedSearchFilterKey],
         )}
-        placeholder=${msg("Search by workflow name or crawl start URL")}
+        placeholder=${msg(
+          "Search by workflow name, crawl start URL, or crawl ID",
+        )}
         @btrix-select=${(e: BtrixSearchComboboxSelectEvent) => {
           const { key, value } = e.detail.item;
           console.log(key, value);
@@ -606,6 +613,7 @@ export class OrgCrawls extends BtrixElement {
         }}
         @btrix-clear=${() => {
           const {
+            id: _id,
             name: _name,
             firstSeed: _firstSeed,
             ...otherFilters
@@ -776,10 +784,11 @@ export class OrgCrawls extends BtrixElement {
     },
     signal: AbortSignal,
   ) {
+    const { id, ...filterBy } = params.filterBy;
     const query = queryString.stringify(
       {
-        ...params.filterBy,
-        state: params.filterBy.state,
+        ...filterBy,
+        ids: id ? [id] : undefined,
         page: params.pagination.page,
         pageSize: params.pagination.pageSize,
         tags: params.filterByTags,
@@ -806,7 +815,7 @@ export class OrgCrawls extends BtrixElement {
         crawlType: "crawl",
       });
       const data: {
-        crawlIds: string[];
+        ids: string[];
         names: string[];
         descriptions: string[];
         firstSeeds: string[];
@@ -819,6 +828,7 @@ export class OrgCrawls extends BtrixElement {
         [key]: value,
       });
       this.searchOptions = [
+        ...data.ids.map(toSearchItem("id")),
         ...data.names.map(toSearchItem("name")),
         ...data.firstSeeds.map(toSearchItem("firstSeed")),
       ];
