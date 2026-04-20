@@ -36,6 +36,7 @@ export type SelectionChangeDetail = {
     {
       checked: boolean | "indeterminate";
       selectionCount: number;
+      allSelected?: boolean;
       addCrawls?: Set<string>;
       removeCrawls?: Set<string>;
     }
@@ -147,6 +148,12 @@ export class CollectionWorkflowList extends BtrixElement {
   selectedItems = new Set<string>();
 
   /**
+   * Deselected items when workflow is in "select all" mode
+   */
+  @property({ attribute: false })
+  deselectedItems = new Set<string>();
+
+  /**
    * Selection state for workflows
    */
   @property({ attribute: false })
@@ -155,6 +162,7 @@ export class CollectionWorkflowList extends BtrixElement {
     {
       checked: boolean | "indeterminate";
       selectionCount: number;
+      allSelected?: boolean;
     }
   >();
 
@@ -369,10 +377,18 @@ export class CollectionWorkflowList extends BtrixElement {
   private readonly renderCrawl = (crawl: Crawl) => {
     const pageCount = +(crawl.stats?.done || 0);
     const selection = this.workflowSelection.get(crawl.cid);
-    const selected =
-      selection?.checked === "indeterminate"
-        ? this.selectedItems.has(crawl.id)
-        : selection?.checked;
+
+    // Determine if crawl is selected:
+    // - If workflow is in allSelected mode: selected unless in deselectedItems
+    // - Otherwise: use previous logic
+    let selected: boolean | undefined;
+    if (selection?.allSelected) {
+      selected = !this.deselectedItems.has(crawl.id);
+    } else if (selection?.checked === "indeterminate") {
+      selected = this.selectedItems.has(crawl.id);
+    } else {
+      selected = selection?.checked;
+    }
 
     return html`
       <sl-tree-item
@@ -503,13 +519,16 @@ export class CollectionWorkflowList extends BtrixElement {
           checked: true,
           selectionCount:
             this.workflowCrawls.get(workflowId)?.paginatedCrawls?.total || 0,
+          allSelected: true,
           addCrawls,
           removeCrawls,
         });
       } else if (el.indeterminate) {
+        const currentSelection = this.workflowSelection.get(workflowId);
         workflowSelection.set(workflowId, {
           checked: "indeterminate",
           selectionCount,
+          allSelected: currentSelection?.allSelected,
           addCrawls,
           removeCrawls,
         });
@@ -517,6 +536,7 @@ export class CollectionWorkflowList extends BtrixElement {
         workflowSelection.set(workflowId, {
           checked: false,
           selectionCount: 0,
+          allSelected: false,
           addCrawls,
           removeCrawls,
         });
