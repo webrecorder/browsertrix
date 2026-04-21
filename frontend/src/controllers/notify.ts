@@ -31,6 +31,7 @@ export type NotifyEventDetail = {
   variant?: "success" | "warning" | "danger" | "primary" | "info";
   duration?: number;
   id?: string | number | symbol;
+  notifyType: "toast" | "progress";
 };
 
 export interface NotifyEventMap {
@@ -53,12 +54,15 @@ export class NotifyController implements ReactiveController {
   hostConnected() {}
   hostDisconnected() {}
 
-  toast(detail: NotifyEventDetail) {
+  toast(detail: Omit<NotifyEventDetail, "notifyType">) {
     this.host.dispatchEvent(
       new CustomEvent<NotifyEventDetail>(NOTIFY_EVENT_NAME, {
         bubbles: true,
         composed: true,
-        detail,
+        detail: {
+          ...detail,
+          notifyType: "toast",
+        },
       }),
     );
   }
