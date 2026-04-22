@@ -31,7 +31,7 @@ export type NotifyEventDetail = {
   variant?: "success" | "warning" | "danger" | "primary" | "info";
   duration?: number;
   id?: string | number | symbol;
-  notifyType: "toast" | "progress";
+  type: "toast";
 };
 
 export interface NotifyEventMap {
@@ -40,8 +40,16 @@ export interface NotifyEventMap {
 
 const NOTIFY_EVENT_NAME: keyof NotifyEventMap = "btrix-notify";
 
+const iconMap = {
+  info: "info-circle",
+  primary: "info-circle",
+  success: "check2-circle",
+  warning: "exclamation-diamond",
+  danger: "x-octagon",
+} as const;
+
 /**
- * Manage global app notifications
+ * Display an informational message to the user that persists through navigation
  */
 export class NotifyController implements ReactiveController {
   private readonly host: ReactiveControllerHost & EventTarget;
@@ -54,14 +62,19 @@ export class NotifyController implements ReactiveController {
   hostConnected() {}
   hostDisconnected() {}
 
-  toast(detail: Omit<NotifyEventDetail, "notifyType">) {
+  toast(detail: Omit<NotifyEventDetail, "type">) {
+    const variant = detail.variant || "primary";
+
     this.host.dispatchEvent(
       new CustomEvent<NotifyEventDetail>(NOTIFY_EVENT_NAME, {
         bubbles: true,
         composed: true,
         detail: {
           ...detail,
-          notifyType: "toast",
+          variant,
+          type: "toast",
+          icon: detail.icon ?? iconMap[variant],
+          duration: detail.duration ?? 5000,
         },
       }),
     );

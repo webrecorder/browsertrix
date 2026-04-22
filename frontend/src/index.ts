@@ -20,6 +20,8 @@ import "./features";
 import "./pages";
 
 import { docsUrlContext } from "./context/docs-url";
+import { NotificationsContextController } from "./context/notifications/NotificationsContextController";
+import { notificationsContextKey } from "./context/notifications/types";
 import { viewStateContext } from "./context/view-state";
 import type { BtrixUserGuideShowEvent } from "./events/btrix-user-guide-show";
 import { OrgTab, RouteNamespace } from "./routes";
@@ -34,7 +36,6 @@ import AuthService, {
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
-import type { NotifyEventDetail } from "@/controllers/notify";
 import { type Auth } from "@/types/auth";
 import {
   translatedLocales,
@@ -43,7 +44,6 @@ import {
 import { type AppSettings } from "@/utils/app";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import localize from "@/utils/localize";
-import { toast } from "@/utils/notify";
 import router, { urlForName } from "@/utils/router";
 import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
@@ -111,6 +111,9 @@ export class App extends BtrixElement {
     return this.viewState.params.slug || "";
   }
 
+  private readonly [notificationsContextKey] =
+    new NotificationsContextController(this);
+
   private get homePath() {
     let path = "/log-in";
     if (this.authState) {
@@ -151,7 +154,6 @@ export class App extends BtrixElement {
     super.connectedCallback();
 
     this.addEventListener("btrix-navigate", this.onNavigateTo);
-    this.addEventListener("btrix-notify", this.onNotify);
     this.addEventListener("btrix-need-login", this.onNeedLogin);
     this.addEventListener("btrix-logged-in", this.onLoggedIn);
     this.addEventListener("btrix-log-out", this.onLogOut);
@@ -355,6 +357,8 @@ export class App extends BtrixElement {
       >
 
       ${this.renderUserGuide()}
+
+      <btrix-notification-stack></btrix-notification-stack>
     `;
   }
 
@@ -916,7 +920,6 @@ export class App extends BtrixElement {
           () =>
             html`<btrix-crawls
               class="w-full"
-              @notify=${this.onNotify}
               crawlId=${this.viewState.params.crawlId}
             ></btrix-crawls>`,
         );
@@ -1067,15 +1070,6 @@ export class App extends BtrixElement {
       ...event.detail,
     } as UserInfo);
   }
-
-  /**
-   * Show global toast alert
-   */
-  onNotify = (event: CustomEvent<NotifyEventDetail>) => {
-    event.stopPropagation();
-
-    void toast(event.detail);
-  };
 
   async getUserInfo(): Promise<APIUser> {
     return this.api.fetch("/users/me");

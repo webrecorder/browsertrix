@@ -1,29 +1,16 @@
 import { ContextProvider } from "@lit/context";
-import type { SlAlert } from "@shoelace-style/shoelace";
-import clsx from "clsx";
 import { html, nothing, type ReactiveController } from "lit";
-import { ifDefined } from "lit/directives/if-defined.js";
-import { ref } from "lit/directives/ref.js";
-import { repeat } from "lit/directives/repeat.js";
+import { nanoid } from "nanoid";
 
 import {
   notificationsContext,
   notificationsInitialValue,
   type NotificationsContext,
 } from "./notifications";
-import type { Notification } from "./types";
+import type { AppNotification, NotificationEventDetail } from "./types";
 
 import type { BtrixElement } from "@/classes/BtrixElement";
 import type { NotifyEventDetail } from "@/controllers/notify";
-import { tw } from "@/utils/tailwind";
-
-const iconMap = {
-  info: "info-circle",
-  primary: "info-circle",
-  success: "check2-circle",
-  warning: "exclamation-diamond",
-  danger: "x-octagon",
-} as const;
 
 /**
  * Provides global notifications to subscribed descendents of a component.
@@ -38,7 +25,6 @@ const iconMap = {
 export class NotificationsContextController implements ReactiveController {
   readonly #host: BtrixElement;
   readonly #context: ContextProvider<{ __context__: NotificationsContext }>;
-  readonly #toastsWithIds = new Map<string | number | symbol, SlAlert>();
 
   constructor(host: BtrixElement) {
     this.#host = host;
@@ -52,76 +38,58 @@ export class NotificationsContextController implements ReactiveController {
 
   hostConnected(): void {
     this.#host.addEventListener("btrix-notify", this.onNotify);
+    this.#host.addEventListener(
+      "btrix-remove-notification",
+      this.onRemoveNotification,
+    );
   }
   hostDisconnected(): void {
     this.#host.removeEventListener("btrix-notify", this.onNotify);
+    this.#host.removeEventListener(
+      "btrix-remove-notification",
+      this.onRemoveNotification,
+    );
   }
-
-  readonly renderNotifications = () => {
-    return html` ${repeat(
-      this.#context.value,
-      ({ notifyId }) => notifyId,
-      this.renderNotification,
-    )}`;
-  };
-
-  private readonly renderNotification = (notification: Notification) => {
-    const id = notification.notifyId;
-    const variant =
-      notification.variant === "info" ? undefined : notification.variant;
-
-    return html`<sl-alert
-      ${ref(
-        id
-          ? (el) => (el ? this.#toastsWithIds.set(id, el as SlAlert) : null)
-          : undefined,
-      )}
-      class=${clsx(
-        tw`[--sl-spacing-large:var(--sl-spacing-medium)]`,
-        notification.notifyType === "toast" &&
-          tw`[--sl-color-neutral-700:var(--sl-color-neutral-0)] [--sl-panel-background-color:var(--sl-color-neutral-1000)]`,
-      )}
-      variant=${ifDefined(variant)}
-      duration=${ifDefined(notification.duration)}
-      ?closable=${notification.closable}
-    >
-      ${notification.content}
-    </sl-alert>`;
-  };
 
   private readonly onNotify = (e: CustomEvent<NotifyEventDetail>) => {
     e.stopPropagation();
 
     const { id, message, title, icon, ...notification } = e.detail;
 
-    if (notification.notifyType == "toast") {
-      void this.addToast({
-        ...notification,
-        notifyId: id,
-        content: html` <sl-icon
-            name=${icon || iconMap[notification.variant || "primary"]}
-            slot="icon"
-          ></sl-icon>
-          ${title
-            ? html`<strong class="font-semibold">${title}</strong>`
-            : nothing}
-          ${message ? html`<div>${message}</div>` : nothing}`,
-      });
+    this.addNotification({
+      closable: true,
+      ...notification,
+      id: nanoid(),
+      messageId: id ? id.toString() : undefined,
+      message: html`${icon
+        ? html`<sl-icon name=${icon} slot="icon"></sl-icon>`
+        : nothing}
+      ${title ? html`<strong class="font-semibold">${title}</strong>` : nothing}
+      ${message ? html`<div>${message}</div>` : nothing}`,
+    });
+  };
+
+  private readonly onRemoveNotification = (
+    e: CustomEvent<NotificationEventDetail>,
+  ) => {
+    e.stopPropagation();
+
+    const notifications = this.#context.value;
+    const idx = notifications.findIndex(
+      ({ messageId }) => messageId === e.detail.messageId,
+    );
+
+    if (idx > -1) {
+      this.#context.setValue([
+        ...notifications.slice(0, idx),
+        ...notifications.slice(idx + 1),
+      ]);
+    } else {
+      console.debug("no notification with messageId"), e.detail.messageId;
     }
   };
 
-  private async addToast(notification: Notification) {
-    const id = notification.notifyId;
-    const oldToast = id && this.#toastsWithIds.get(id);
-    if (oldToast) {
-      oldToast.addEventListener(
-        "sl-after-hide",
-        () => this.#toastsWithIds.delete(id),
-        { once: true },
-      );
-      await oldToast.hide();
-    }
-
+  private addNotification(notification: AppNotification) {
     this.#context.setValue([...this.#context.value, notification]);
   }
 }

@@ -1,8 +1,8 @@
 import { createContext } from "@lit/context";
 
-import { notificationsContextKey, type Notification } from "./types";
+import { notificationsContextKey, type AppNotification } from "./types";
 
-export type NotificationsContext = Notification[];
+export type NotificationsContext = AppNotification[];
 
 export const notificationsInitialValue = [] satisfies NotificationsContext;
 
