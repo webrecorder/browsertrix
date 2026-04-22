@@ -42,7 +42,7 @@ import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;
-type SearchFields = "name" | "firstSeed";
+type SearchFields = "id" | "name" | "firstSeed";
 type SortField =
   | "finished"
   | "fileSize"
@@ -98,6 +98,7 @@ const DEFAULT_SORT_BY: SortBy = {
 };
 
 type FilterBy = {
+  id?: string;
   name?: string;
   firstSeed?: string;
   state?: CrawlState[];
@@ -113,6 +114,7 @@ type FilterBy = {
 @localized()
 export class CrawlsList extends BtrixElement {
   static FieldLabels: Record<SearchFields, string> = {
+    id: msg("ID"),
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
   };
@@ -215,6 +217,7 @@ export class CrawlsList extends BtrixElement {
     this,
     (value, params) => {
       const keys = [
+        "id",
         "name",
         "firstSeed",
         "state",
@@ -225,6 +228,7 @@ export class CrawlsList extends BtrixElement {
           params.delete(key);
         } else {
           switch (key) {
+            case "id":
             case "firstSeed":
             case "name":
               params.set(key, value[key]);
@@ -256,6 +260,7 @@ export class CrawlsList extends BtrixElement {
         : undefined;
 
       return {
+        id: params.get("id") ?? undefined,
         name: params.get("name") ?? undefined,
         firstSeed: params.get("firstSeed") ?? undefined,
         state: state.length ? state : undefined,
@@ -284,6 +289,7 @@ export class CrawlsList extends BtrixElement {
 
   private get hasFiltersSet() {
     return [
+      this.filterBy.value.id,
       this.filterBy.value.firstSeed,
       this.filterBy.value.name,
       this.filterBy.value.state?.length || undefined,
@@ -294,13 +300,7 @@ export class CrawlsList extends BtrixElement {
   }
 
   private clearFilters() {
-    this.filterBy.setValue({
-      ...this.filterBy.value,
-      firstSeed: undefined,
-      name: undefined,
-      state: undefined,
-      reviewStatus: undefined,
-    });
+    this.filterBy.setValue({});
     this.filterByCurrentUser.setValue(false);
     this.filterByTags.setValue([]);
     this.filterByTagsType.setValue("or");
@@ -374,7 +374,7 @@ export class CrawlsList extends BtrixElement {
   private getArchivedItemsTimeout?: number;
 
   // For fuzzy search:
-  private readonly searchKeys = ["name", "firstSeed"];
+  private readonly searchKeys = ["id", "name", "firstSeed"];
 
   private get selectedSearchFilterKey() {
     return (
@@ -405,7 +405,6 @@ export class CrawlsList extends BtrixElement {
         changedProperties.has("itemType") &&
         changedProperties.get("itemType")
       ) {
-        this.filterBy.setValue({});
         this.orderBy.setValue({
           field: "finished",
           direction: sortableFields["finished"].defaultDirection!,
@@ -422,6 +421,7 @@ export class CrawlsList extends BtrixElement {
     }
 
     if (changedProperties.has("itemType")) {
+      this.filterBy.setValue({});
       void this.fetchConfigSearchValues();
     }
   }
@@ -757,10 +757,10 @@ export class CrawlsList extends BtrixElement {
             this.filterBy.value[this.selectedSearchFilterKey],
         )}
         placeholder=${this.itemType === "upload"
-          ? msg("Search all uploads by name")
+          ? msg("Search all uploads by name or ID")
           : this.itemType === "crawl"
-            ? msg("Search all crawls by name or crawl start URL")
-            : msg("Search all items by name or crawl start URL")}
+            ? msg("Search all crawls by name, crawl start URL, or ID")
+            : msg("Search all items by name, crawl start URL, or ID")}
         @btrix-select=${(e: BtrixSearchComboboxSelectEvent) => {
           const { key, value } = e.detail.item;
 
@@ -773,6 +773,7 @@ export class CrawlsList extends BtrixElement {
         }}
         @btrix-clear=${() => {
           const {
+            id: _id,
             name: _name,
             firstSeed: _firstSeed,
             ...otherFilters
@@ -959,12 +960,12 @@ export class CrawlsList extends BtrixElement {
     },
     signal: AbortSignal,
   ) {
+    const { id, ...filterBy } = params.filterBy;
     const query = queryString.stringify(
       {
-        ...params.filterBy,
-        state: params.filterBy.state?.length
-          ? params.filterBy.state
-          : finishedCrawlStates,
+        ...filterBy,
+        ids: id ? [id] : undefined,
+        state: filterBy.state?.length ? filterBy.state : finishedCrawlStates,
         page: params.pagination.page,
         pageSize: params.pagination.pageSize,
         tags: params.filterByTags,
@@ -973,7 +974,6 @@ export class CrawlsList extends BtrixElement {
         sortBy: params.orderBy.field,
         sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
         crawlType: params.itemType ?? undefined,
-        reviewStatus: params.filterBy.reviewStatus,
       },
       {
         arrayFormat: "none",
@@ -992,7 +992,7 @@ export class CrawlsList extends BtrixElement {
         crawlType: this.itemType ?? undefined,
       });
       const data: {
-        crawlIds: string[];
+        ids: string[];
         names: string[];
         descriptions: string[];
         firstSeeds: string[];
@@ -1005,6 +1005,7 @@ export class CrawlsList extends BtrixElement {
         [key]: value,
       });
       this.searchOptions = [
+        ...data.ids.map(toSearchItem("id")),
         ...data.names.map(toSearchItem("name")),
         ...data.firstSeeds.map(toSearchItem("firstSeed")),
       ];

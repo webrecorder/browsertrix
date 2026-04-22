@@ -92,6 +92,7 @@ const DEFAULT_SORT_BY = {
 } as const;
 
 type FilterBy = {
+  id?: string;
   name?: string;
   firstSeed?: string;
   schedule?: boolean;

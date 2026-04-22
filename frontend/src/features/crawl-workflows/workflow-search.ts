@@ -3,12 +3,13 @@ import { customElement, property } from "lit/decorators.js";
 
 import { SearchCombobox } from "@/components/ui/search-combobox";
 
-export type SearchFields = "name" | "firstSeed";
+export type SearchFields = "id" | "name" | "firstSeed";
 
 @customElement("btrix-workflow-search")
 @localized()
 export class WorkflowSearch extends SearchCombobox<{ [x: string]: string }> {
   static FieldLabels: Record<SearchFields, string> = {
+    id: msg("ID"),
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
   };
@@ -19,7 +20,7 @@ export class WorkflowSearch extends SearchCombobox<{ [x: string]: string }> {
   @property({ type: String })
   selectedKey?: string;
 
-  readonly searchKeys = ["name", "firstSeed"];
+  readonly searchKeys = ["id", "name", "firstSeed"];
   readonly keyLabels = WorkflowSearch.FieldLabels;
 
   placeholder = msg("Search by workflow name or crawl start URL");

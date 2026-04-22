@@ -89,6 +89,7 @@ export class SearchCombobox<T> extends TailwindElement {
   protected fuse = new Fuse<T>(this.searchOptions, {
     ...defaultFuseOptions,
     keys: this.searchKeys,
+    shouldSort: true,
   });
 
   disconnectedCallback(): void {
@@ -211,6 +212,11 @@ export class SearchCombobox<T> extends TailwindElement {
                 >`
               : nothing}
             ${value}
+            ${value === this.searchByValue
+              ? html`<btrix-badge slot="suffix" variant="success" outline
+                  >${msg("Exact match")}</btrix-badge
+                >`
+              : nothing}
           </sl-menu-item>
         `;
       }

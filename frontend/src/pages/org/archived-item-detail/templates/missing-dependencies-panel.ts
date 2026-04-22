@@ -44,7 +44,7 @@ export function missingDependenciesPanel({
             <div class="font-monostyle text-neutral-700">${id}</div>
             <btrix-copy-button
               value=${id}
-              content=${msg("Copy ID")}
+              content=${msg("Copy Item ID")}
               hoist
             ></btrix-copy-button>
           </li>`,
