@@ -12,6 +12,8 @@ import type { AppNotification, NotificationEventDetail } from "./types";
 import type { BtrixElement } from "@/classes/BtrixElement";
 import type { NotifyEventDetail } from "@/controllers/notify";
 
+const MIN_DURATION = 5000;
+
 /**
  * Provides global notifications to subscribed descendents of a component.
  *
@@ -54,10 +56,9 @@ export class NotificationsContextController implements ReactiveController {
   private readonly onNotify = (e: CustomEvent<NotifyEventDetail>) => {
     e.stopPropagation();
 
-    const { id, message, title, icon, ...notification } = e.detail;
+    const { id, message, title, icon, duration, ...notification } = e.detail;
 
     this.addNotification({
-      closable: true,
       ...notification,
       id: nanoid(),
       messageId: id ? id.toString() : undefined,
@@ -66,6 +67,8 @@ export class NotificationsContextController implements ReactiveController {
         : nothing}
       ${title ? html`<strong class="font-semibold">${title}</strong>` : nothing}
       ${message ? html`<div>${message}</div>` : nothing}`,
+      closable: true,
+      duration: duration ? Math.max(duration, MIN_DURATION) : MIN_DURATION,
     });
   };
 
