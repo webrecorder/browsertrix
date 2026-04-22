@@ -68,6 +68,7 @@ export class NotificationStack extends BtrixElement {
       data-id=${notification.id}
       class=${clsx(
         tw`[--sl-spacing-large:var(--sl-spacing-medium)]`,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- will add new notification types
         notification.type === "toast" &&
           tw`[--sl-color-neutral-700:var(--sl-color-neutral-0)] [--sl-panel-background-color:var(--sl-color-neutral-1000)]`,
       )}
