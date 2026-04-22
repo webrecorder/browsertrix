@@ -89,6 +89,12 @@ export default {
             "@shoelace-style/shoelace/dist/themes/light.css": fileURLToPath(
               new URL("./src/__mocks__/_empty.js", import.meta.url),
             ),
+            nanoid: fileURLToPath(
+              new URL(
+                "./node_modules/nanoid/index.browser.js",
+                import.meta.url,
+              ),
+            ),
           },
         },
       },
