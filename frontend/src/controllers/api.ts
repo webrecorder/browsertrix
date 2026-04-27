@@ -37,9 +37,13 @@ export enum AbortReason {
 export class APIController implements ReactiveController {
   host: ReactiveControllerHost & EventTarget;
 
-  uploadProgress = 0;
+  #uploadProgress = 0;
 
   private uploadRequest: XMLHttpRequest | null = null;
+
+  public get uploadProgress() {
+    return this.#uploadProgress;
+  }
 
   constructor(host: APIController["host"]) {
     this.host = host;
@@ -248,17 +252,18 @@ export class APIController implements ReactiveController {
   }
 
   readonly onUploadProgress = throttle(100)((e: ProgressEvent) => {
-    this.uploadProgress = (e.loaded / e.total) * 100;
+    this.#uploadProgress = (e.loaded / e.total) * 100;
 
     this.host.requestUpdate();
   });
 
-  private cancelUpload() {
+  public cancelUpload() {
     if (this.uploadRequest) {
       this.uploadRequest.abort();
       this.uploadRequest = null;
     }
 
     this.onUploadProgress.cancel();
+    this.#uploadProgress = 0;
   }
 }
