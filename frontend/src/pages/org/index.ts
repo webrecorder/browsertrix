@@ -25,6 +25,9 @@ import {
   orgProxiesContext,
   type OrgProxiesContext,
 } from "@/context/org-proxies";
+import orgUploadsContext, {
+  type OrgUploadsContext,
+} from "@/context/org-uploads";
 import { SearchOrgContextController } from "@/context/search-org/SearchOrgContextController";
 import { searchOrgContextKey } from "@/context/search-org/types";
 import type { QuotaUpdateDetail } from "@/controllers/api";
@@ -113,6 +116,9 @@ export class Org extends BtrixElement {
 
   @provide({ context: orgCrawlerChannelsContext })
   crawlerChannels: OrgCrawlerChannelsContext = null;
+
+  @provide({ context: orgUploadsContext })
+  orgUploads: OrgUploadsContext = [];
 
   @property({ type: Object })
   viewStateData?: ViewState["data"];
