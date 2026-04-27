@@ -36,24 +36,34 @@ export enum AbortReason {
  */
 export class APIController implements ReactiveController {
   host: ReactiveControllerHost & EventTarget;
+  readonly #hostId: string;
 
-  #uploadProgress = 0;
+  readonly #uploadProgress = new Map</** ID: **/ string, number>();
 
-  private uploadRequest: XMLHttpRequest | null = null;
+  readonly #uploadRequest = new Map</** ID: **/ string, XMLHttpRequest>();
 
   public get uploadProgress() {
-    return this.#uploadProgress;
+    return this.#uploadProgress.get(this.#hostId);
   }
 
   constructor(host: APIController["host"]) {
     this.host = host;
+    this.#hostId = window.crypto.randomUUID();
     host.addController(this);
   }
 
   hostConnected() {}
 
   hostDisconnected() {
-    this.cancelUpload();
+    for (const request of this.#uploadRequest.values()) {
+      try {
+        request.abort();
+      } catch (e) {
+        console.debug(e);
+      }
+    }
+
+    this.#uploadRequest.clear();
   }
 
   async fetch<T = unknown>(path: string, options?: RequestInit): Promise<T> {
@@ -184,16 +194,18 @@ export class APIController implements ReactiveController {
   async upload(
     path: string,
     file: File,
+    uploadId?: string,
     abortSignal?: AbortSignal,
   ): Promise<{ id: string; added: boolean; storageQuotaReached: boolean }> {
     const auth = appState.auth;
 
     if (!auth) throw new Error("auth not in state");
 
-    // TODO handle multiple uploads
-    if (this.uploadRequest) {
+    const id = uploadId || this.#hostId;
+
+    if (this.#uploadRequest.get(id)) {
       console.debug("upload request exists");
-      this.cancelUpload();
+      this.cancelUpload(id);
     }
 
     return new Promise((resolve, reject) => {
@@ -228,6 +240,8 @@ export class APIController implements ReactiveController {
             }),
           );
         }
+
+        this.#uploadRequest.delete(id);
       });
       xhr.addEventListener("error", () => {
         reject(AbortReason.NetworkError);
@@ -238,32 +252,49 @@ export class APIController implements ReactiveController {
       xhr.addEventListener("abort", () => {
         reject(AbortReason.UserCancel);
       });
-      xhr.upload.addEventListener("progress", this.onUploadProgress);
+
+      const onUploadProgress = throttle(100)((e: ProgressEvent) => {
+        this.#uploadProgress.set(id, (e.loaded / e.total) * 100);
+
+        this.host.requestUpdate();
+      });
+
+      xhr.upload.addEventListener("progress", onUploadProgress);
 
       xhr.send(file);
 
       abortSignal?.addEventListener("abort", () => {
         xhr.abort();
+        onUploadProgress.cancel();
         reject(AbortReason.UserCancel);
       });
 
-      this.uploadRequest = xhr;
+      this.#uploadRequest.set(id, xhr);
     });
   }
 
-  readonly onUploadProgress = throttle(100)((e: ProgressEvent) => {
-    this.#uploadProgress = (e.loaded / e.total) * 100;
+  cancelUpload(uploadId?: string) {
+    const cancel = (id: string) => {
+      const request = this.#uploadRequest.get(id);
 
-    this.host.requestUpdate();
-  });
+      if (request) {
+        request.abort();
+      }
 
-  public cancelUpload() {
-    if (this.uploadRequest) {
-      this.uploadRequest.abort();
-      this.uploadRequest = null;
+      this.#uploadProgress.delete(id);
+      this.#uploadRequest.delete(id);
+    };
+
+    if (uploadId) {
+      cancel(uploadId);
+    } else {
+      for (const id in this.#uploadRequest.keys()) {
+        cancel(id);
+      }
     }
+  }
 
-    this.onUploadProgress.cancel();
-    this.#uploadProgress = 0;
+  uploadProgressFor(uploadId: string) {
+    return this.#uploadProgress.get(uploadId);
   }
 }
