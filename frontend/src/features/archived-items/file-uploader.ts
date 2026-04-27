@@ -4,7 +4,6 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, queryAsync, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
-import throttle from "lodash/fp/throttle";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -13,7 +12,6 @@ import type { BtrixFileChangeEvent } from "@/components/ui/file-list/events";
 import type { Tags } from "@/components/ui/tag-input";
 import type { BtrixTagsChangeEvent } from "@/features/archived-items/item-tags-input";
 import { type CollectionsChangeEvent } from "@/features/collections/collections-add";
-import { APIError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 
 export type FileUploaderRequestCloseEvent = CustomEvent<NonNullable<unknown>>;
@@ -40,8 +38,6 @@ enum AbortReason {
  *   @uploaded=${this.uploaded}
  * ></btrix-file-uploader>
  * ```
- *
- * @TODO Refactor to use this.api.upload
  *
  * @event request-close
  * @event upload-start
@@ -71,16 +67,10 @@ export class FileUploader extends BtrixElement {
   @state()
   private fileList: File[] = [];
 
-  @state()
-  private progress = 0;
-
   @queryAsync("#fileUploadForm")
   private readonly form!: Promise<HTMLFormElement>;
 
   private readonly validateDescriptionMax = maxLengthValidator(500);
-
-  // Use to cancel requests
-  private uploadRequest: XMLHttpRequest | null = null;
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (changedProperties.has("open") && this.open) {
@@ -242,7 +232,7 @@ export class FileUploader extends BtrixElement {
                 (file) =>
                   html`<btrix-file-list-item
                     .file=${file}
-                    progressValue=${this.progress}
+                    progressValue=${this.api.uploadProgress}
                     @btrix-remove=${this.handleRemoveFile}
                   ></btrix-file-list-item>`,
               )}
@@ -259,7 +249,7 @@ export class FileUploader extends BtrixElement {
               variant="primary"
               size="small"
               @click=${() => {
-                this.cancelUpload();
+                this.api.cancelUpload();
                 this.requestClose();
               }}
             >
@@ -283,7 +273,7 @@ export class FileUploader extends BtrixElement {
               (file) =>
                 html`<btrix-file-list-item
                   .file=${file}
-                  progressValue=${this.progress}
+                  progressValue=${this.api.uploadProgress}
                   @btrix-remove=${this.handleRemoveFile}
                 ></btrix-file-list-item>`,
             )}
@@ -299,7 +289,7 @@ export class FileUploader extends BtrixElement {
   }
 
   private readonly handleRemoveFile = (e: FileRemoveEvent) => {
-    this.cancelUpload();
+    this.api.cancelUpload();
     const idx = this.fileList.indexOf(e.detail.item as File);
     if (idx === -1) return;
     this.fileList = [
@@ -308,17 +298,11 @@ export class FileUploader extends BtrixElement {
     ];
   };
 
-  private cancelUpload() {
-    this.uploadRequest?.abort();
-    this.onUploadProgress.cancel();
-  }
-
   private resetState() {
     this.fileList = [];
     this.tagsToSave = [];
     this.isUploading = false;
     this.isConfirmingCancel = false;
-    this.progress = 0;
   }
 
   private tryRequestClose(e?: CustomEvent) {
@@ -365,12 +349,10 @@ export class FileUploader extends BtrixElement {
         tags: this.tagsToSave,
       });
 
-      const data = await this.upload(
+      const data = await this.api.upload(
         `orgs/${this.orgId}/uploads/stream?${query}`,
         file,
       );
-
-      this.uploadRequest = null;
 
       // Dispatch event here because we're not using apiFetch() for uploads
       if (data.storageQuotaReached) {
@@ -436,56 +418,6 @@ export class FileUploader extends BtrixElement {
     }
     this.isUploading = false;
   }
-
-  // Use XHR to get upload progress
-  private async upload(
-    url: string,
-    file: File,
-  ): Promise<{ id: string; added: boolean; storageQuotaReached: boolean }> {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-
-      xhr.open("PUT", `/api/${url}`);
-      xhr.setRequestHeader("Content-Type", "application/octet-stream");
-      Object.entries(this.authState!.headers).forEach(([k, v]) => {
-        xhr.setRequestHeader(k, v);
-      });
-      xhr.addEventListener("load", () => {
-        if (xhr.status === 200) {
-          resolve(
-            JSON.parse(xhr.response as string) as {
-              id: string;
-              added: boolean;
-              storageQuotaReached: boolean;
-            },
-          );
-        }
-        if (xhr.status === 403) {
-          reject(AbortReason.QuotaReached);
-        }
-      });
-      xhr.addEventListener("error", () => {
-        reject(
-          new APIError({
-            message: xhr.statusText,
-            status: xhr.status,
-          }),
-        );
-      });
-      xhr.addEventListener("abort", () => {
-        reject(AbortReason.UserCancel);
-      });
-      xhr.upload.addEventListener("progress", this.onUploadProgress);
-
-      xhr.send(file);
-
-      this.uploadRequest = xhr;
-    });
-  }
-
-  private readonly onUploadProgress = throttle(100)((e: ProgressEvent) => {
-    this.progress = (e.loaded / e.total) * 100;
-  });
 
   private async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;
