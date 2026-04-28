@@ -96,6 +96,11 @@
     --sl-focus-ring-color: var(--sl-color-primary-200);
     --sl-focus-ring-width: 2px;
 
+    /* Z index */
+
+    /* Place dialog above toast */
+    --sl-z-index-dialog: 1000;
+
     /*
      * Forms
      */
