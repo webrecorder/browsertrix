@@ -19,6 +19,7 @@ import("./copy-field");
 import("./tag-container");
 import("./data-grid");
 import("./details");
+import("./editable-text-field");
 import("./file-input");
 import("./file-list");
 import("./filter-chip");

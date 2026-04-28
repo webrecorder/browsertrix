@@ -83,12 +83,13 @@ export function pageBack({ href, content }: Breadcrumb) {
 export function pageTitle(
   title?: string | TemplateResult | typeof nothing,
   skeletonClass?: string,
+  headerClass?: string,
 ) {
   return html`
-    <h1 class="min-w-0 text-xl font-semibold leading-8">
+    <h1 class=${clsx(tw`min-w-0 text-xl font-semibold leading-8`, headerClass)}>
       ${title ||
       html`<sl-skeleton
-        class=${skeletonClass ?? "my-.5 h-5 w-60"}
+        class=${skeletonClass ?? tw`my-.5 h-5 w-60`}
         effect="sheen"
       ></sl-skeleton>`}
     </h1>
