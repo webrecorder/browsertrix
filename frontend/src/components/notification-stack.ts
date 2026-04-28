@@ -21,6 +21,10 @@ import { tw } from "@/utils/tailwind";
 /**
  * Global notifications to stack in bottom end of the viewport.
  *
+ * This component reuses `.sl-toast-stack` styles instead of using Shoelace's
+ * `SlAlert.toast()` to reactively render the toast state of a notification
+ * instead of relocating it in the DOM.
+ *
  * @fires btrix-remove-notification
  */
 @customElement("btrix-notification-stack")
@@ -33,31 +37,32 @@ export class NotificationStack extends BtrixElement {
   readonly #namedNotifications = new Map<string, SlAlert>();
 
   protected updated(changedProperties: PropertyValues): void {
-    if (changedProperties.has("notifications") && this.notifications.length) {
-      void this.handleChange();
-    }
-  }
+    if (changedProperties.has("notifications")) {
+      const prevNotifications = changedProperties.get("notifications") as
+        | NotificationsContext
+        | undefined;
 
-  private async handleChange() {
-    const newItem = this.notifications[this.notifications.length - 1];
+      const newNotifications = prevNotifications
+        ? new Set(this.notifications).difference(new Set(prevNotifications))
+        : this.notifications;
 
-    if (newItem.messageId) {
-      await this.#namedNotifications.get(newItem.messageId)?.hide();
-    }
-
-    const el = this.shadowRoot?.querySelector<SlAlert>(
-      `sl-alert[data-id="${newItem.id}"]`,
-    );
-
-    if (el) {
-      void el.toast();
-    } else {
-      console.debug("no el with index", this.notifications.length - 1);
+      newNotifications.forEach((item) => {
+        void this.showAlert(item);
+      });
     }
   }
 
   render() {
-    return repeat(this.notifications, ({ id }) => id, this.renderNotification);
+    return html`
+      <div
+        class=${clsx(
+          tw`sl-toast-stack`,
+          this.notifications.length && tw`min-h-24`,
+        )}
+      >
+        ${repeat(this.notifications, ({ id }) => id, this.renderNotification)}
+      </div>
+    `;
   }
 
   private readonly renderNotification = (notification: AppNotification) => {
@@ -76,15 +81,6 @@ export class NotificationStack extends BtrixElement {
       variant=${ifDefined(variant)}
       duration=${ifDefined(notification.duration)}
       ?closable=${notification.closable}
-      @sl-show=${(e: CustomEvent) => {
-        e.stopPropagation();
-        if (notification.messageId) {
-          this.#namedNotifications.set(
-            notification.messageId,
-            e.target as SlAlert,
-          );
-        }
-      }}
       @sl-hide=${(e: CustomEvent) => {
         e.stopPropagation();
         if (notification.messageId) {
@@ -97,7 +93,7 @@ export class NotificationStack extends BtrixElement {
           new CustomEvent<NotificationEventDetail>(
             "btrix-remove-notification",
             {
-              detail: { messageId: notification.messageId },
+              detail: { id: notification.id },
               composed: true,
               bubbles: true,
             },
@@ -108,4 +104,39 @@ export class NotificationStack extends BtrixElement {
       ${notification.message}
     </sl-alert>`;
   };
+
+  private async showAlert(item: AppNotification) {
+    const messageId = item.messageId;
+    const oldAlert = messageId && this.#namedNotifications.get(messageId);
+
+    if (oldAlert) {
+      await this.hideAlert(oldAlert);
+    }
+
+    const el = this.shadowRoot?.querySelector<SlAlert>(
+      `sl-alert[data-id="${item.id}"]`,
+    );
+
+    if (!el) {
+      console.debug("no sl-alert to show");
+      return;
+    }
+
+    if (messageId) {
+      this.#namedNotifications.set(messageId, el);
+    }
+
+    await el.updateComplete;
+    await el.show();
+  }
+
+  private async hideAlert(el?: SlAlert) {
+    if (!el) {
+      console.debug("no sl-alert to hide");
+      return;
+    }
+
+    await el.updateComplete;
+    await el.hide();
+  }
 }

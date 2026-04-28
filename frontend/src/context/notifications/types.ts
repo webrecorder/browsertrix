@@ -15,7 +15,7 @@ export type AppNotification = {
 };
 
 export type NotificationEventDetail = {
-  messageId: AppNotification["messageId"];
+  id: AppNotification["id"];
 };
 
 declare global {
