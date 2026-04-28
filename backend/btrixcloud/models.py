@@ -1844,7 +1844,7 @@ class PublicCollOut(BaseMongoModel):
 class UpdateColl(BaseModel):
     """Update collection"""
 
-    name: Optional[str] = None
+    name: Annotated[str | None, min_length=1] = None
     slug: Optional[str] = None
     description: Optional[str] = None
     caption: Optional[str] = None

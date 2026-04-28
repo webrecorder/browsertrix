@@ -48,6 +48,8 @@ import {
   type APISortQuery,
 } from "@/types/api";
 import {
+  COLLECTION_CAPTION_MAX_LENGTH,
+  COLLECTION_NAME_MAX_LENGTH,
   CollectionAccess,
   collectionSchema,
   type Collection,
@@ -258,13 +260,23 @@ export class CollectionDetail extends BtrixElement {
           this.isCrawler && tw`min-h-16`,
         )}
       >
-        <div
-          class="-mb-1 -ml-2 -mr-1 -mt-1 flex flex-none flex-col gap-2 self-start rounded-lg pb-1 pl-2 pr-1 pt-1 transition-colors has-[.addSummary:hover]:bg-primary-50 has-[sl-icon-button:hover]:bg-primary-50"
-        >
+        <div class="-m-3 grid overflow-hidden p-3">
           <div class="flex flex-wrap items-center gap-2.5">
             ${this.renderAccessIcon()}${pageTitle(
-              this.collection?.name,
+              this.isCrawler
+                ? html`<btrix-editable-text-field
+                    class="overflow-hidden p-3"
+                    minLength=${1}
+                    maxLength=${COLLECTION_NAME_MAX_LENGTH}
+                    .value=${this.collection?.name}
+                    placeholder=${msg("Collection name")}
+                    @btrix-change=${(e: CustomEvent<string>) => {
+                      void this.updateName(e.detail);
+                    }}
+                  ></btrix-editable-text-field>`
+                : this.collection?.name,
               tw`mb-2 h-6 w-60`,
+              tw`-m-3 grid`,
             )}
             ${this.collection && this.isCrawler
               ? html`<sl-icon-button
@@ -281,21 +293,16 @@ export class CollectionDetail extends BtrixElement {
             ? when(
                 this.collection,
                 (col) =>
-                  col.caption
-                    ? caption(col.caption)
-                    : html`
-                        <div
-                          class="addSummary text-pretty rounded-md px-1 font-light text-neutral-500"
-                          role="button"
-                          @click=${() => {
-                            this.openDialogName = "edit";
-                            this.editTab = "general";
-                          }}
-                        >
-                          ${msg("Add a summary...")}
-                        </div>
-                      `,
-                () => html`<sl-skeleton></sl-skeleton>`,
+                  html`<btrix-editable-text-field
+                    class="-mx-3 overflow-hidden p-3"
+                    maxLength=${COLLECTION_CAPTION_MAX_LENGTH}
+                    .value=${col.caption}
+                    placeholder=${msg("Add a summary...")}
+                    .renderContent=${(text: string) => caption(text)}
+                    @btrix-change=${(e: CustomEvent<string>) => {
+                      void this.updateSummary(e.detail);
+                    }}
+                  ></btrix-editable-text-field>`,
               )
             : caption(this.collection?.caption)}
         </div>
@@ -1447,7 +1454,7 @@ export class CollectionDetail extends BtrixElement {
         message: msg(str`Successfully removed item from Collection.`),
         variant: "success",
         icon: "check2-circle",
-        id: "collection-item-remove-status",
+        id: "update",
       });
       this.refreshReplay();
       void this.fetchCollection();
@@ -1464,6 +1471,86 @@ export class CollectionDetail extends BtrixElement {
         variant: "danger",
         icon: "exclamation-octagon",
         id: "collection-item-remove-status",
+      });
+    }
+  }
+
+  private async updateName(name: string) {
+    name = name.trim();
+    if (name === this.collection?.name) return;
+    try {
+      await this.api.fetch<Collection>(
+        `/orgs/${this.orgId}/collections/${this.collectionId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            name,
+          }),
+        },
+      );
+
+      this.notify.toast({
+        message: msg("Name updated."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "update",
+      });
+
+      if (this.collection) {
+        this.collection = {
+          ...this.collection,
+          name,
+        };
+      }
+
+      void this.fetchCollection();
+    } catch (err) {
+      console.debug(err);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't save collection name at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async updateSummary(caption: string) {
+    caption = caption.trim();
+    if (caption === this.collection?.caption) return;
+    try {
+      await this.api.fetch<Collection>(
+        `/orgs/${this.orgId}/collections/${this.collectionId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            caption,
+          }),
+        },
+      );
+
+      this.notify.toast({
+        message: msg("Summary updated."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "update",
+      });
+
+      if (this.collection) {
+        this.collection = {
+          ...this.collection,
+          caption,
+        };
+      }
+
+      void this.fetchCollection();
+    } catch (err) {
+      console.debug(err);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't save collection summary at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
       });
     }
   }
@@ -1491,6 +1578,7 @@ export class CollectionDetail extends BtrixElement {
         message: msg("Description updated."),
         variant: "success",
         icon: "check2-circle",
+        id: "update",
       });
 
       if (this.collection) {
