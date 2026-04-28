@@ -74,7 +74,7 @@ export class NotifyController implements ReactiveController {
           variant,
           type: "toast",
           icon: detail.icon ?? iconMap[variant],
-          duration: detail.duration ?? 5000,
+          duration: detail.duration ?? (variant === "danger" ? 10000 : 5000),
         },
       }),
     );
