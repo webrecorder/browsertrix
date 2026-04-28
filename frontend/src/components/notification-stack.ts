@@ -56,7 +56,7 @@ export class NotificationStack extends BtrixElement {
     return html`
       <div
         class=${clsx(
-          tw`sl-toast-stack`,
+          "btrix-toast-stack",
           this.notifications.length && tw`min-h-24`,
         )}
       >
