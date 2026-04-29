@@ -584,6 +584,11 @@ export class CollectionDetail extends BtrixElement {
           // TODO maybe we can return the updated collection from the update endpoint, and avoid an extra fetch?
           void this.fetchCollection();
         }}
+        @btrix-collection-edit-dialog-tab-change=${(
+          e: CustomEvent<EditDialogTab>,
+        ) => {
+          this.editTab = e.detail;
+        }}
         @btrix-change=${() => {
           // Don't do full refresh of rwp so that rwp-url-change fires
           this.isRwpLoaded = false;
