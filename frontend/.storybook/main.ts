@@ -35,6 +35,7 @@ const config: StorybookConfig = {
             sideEffects: true,
             include: [
               path.resolve(__dirname, "../src"),
+              path.resolve(__dirname, "../node_modules/@awesome.me/webawesome"),
               path.resolve(
                 __dirname,
                 "../node_modules/@shoelace-style/shoelace",
