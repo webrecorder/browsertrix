@@ -279,16 +279,6 @@ export class CollectionDetail extends BtrixElement {
             tw`mb-2 h-6 w-60`,
             tw`grid`,
           )}
-          ${this.collection && this.isCrawler
-            ? html`<sl-icon-button
-                name="pencil"
-                aria-label=${msg("Edit Collection Name and Description")}
-                @click=${() => {
-                  this.openDialogName = "edit";
-                  this.editTab = "general";
-                }}
-              ></sl-icon-button>`
-            : nothing}
         </div>
         <div
           class="-mx-3 -mb-3 -mt-3 grid overflow-clip px-3 pb-3 lg:col-span-2"
