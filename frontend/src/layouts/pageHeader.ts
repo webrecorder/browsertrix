@@ -56,7 +56,7 @@ function breadcrumbLink({ href, content }: Breadcrumb, classNames?: string) {
 
 function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
   return html`
-    <nav class="flex flex-wrap items-center gap-2 text-neutral-500">
+    <nav class="flex max-w-full flex-wrap items-center gap-2 text-neutral-500">
       ${breadcrumbs.length
         ? breadcrumbs.map(
             (breadcrumb, i) => html`
