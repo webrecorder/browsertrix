@@ -231,7 +231,7 @@ export class CollectionDetail extends BtrixElement {
     };
 
     return html`
-      <div class="mb-7 flex justify-between align-baseline">
+      <div class="mb-7 flex flex-wrap justify-between gap-y-3 align-baseline">
         ${this.renderBreadcrumbs()}
         ${this.collection &&
         (this.collection.access === CollectionAccess.Unlisted ||
@@ -305,7 +305,7 @@ export class CollectionDetail extends BtrixElement {
         </div>
 
         <div
-          class="mb-0.5 ml-auto flex flex-shrink-0 items-center gap-2 lg:col-start-2 lg:row-start-1"
+          class="mb-0.5 ml-auto flex flex-shrink-0 flex-wrap items-center justify-end gap-2 lg:col-start-2 lg:row-start-1"
         >
           <btrix-share-collection
             orgSlug=${this.orgSlugState || ""}
