@@ -1,4 +1,4 @@
-import { localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
 import { css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -41,8 +41,6 @@ export class EditableTextField extends TailwindElement {
     :host {
       display: inline-block;
       position: relative;
-      cursor: text;
-      border-radius: var(--sl-border-radius-medium);
     }
   `;
 
@@ -61,10 +59,12 @@ export class EditableTextField extends TailwindElement {
   @state()
   valid: boolean | undefined = true;
 
-  private readonly handleClick = () => {
-    this.editing = true;
-    this.updateWidth();
-  };
+  /**
+   * Used to show an unsaved warning when the user blurs the field with an
+   * invalid value.
+   */
+  @state()
+  showUnsavedWarning = false;
 
   private readonly handleKeydown = (e: KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -80,12 +80,10 @@ export class EditableTextField extends TailwindElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.addEventListener("click", this.handleClick);
     this.addEventListener("keydown", this.handleKeydown);
   }
 
   disconnectedCallback() {
-    this.removeEventListener("click", this.handleClick);
     this.removeEventListener("keydown", this.handleKeydown);
     super.disconnectedCallback();
   }
@@ -105,6 +103,7 @@ export class EditableTextField extends TailwindElement {
 
   endEditing(save = true) {
     this.editing = false;
+    this.showUnsavedWarning = false;
     if (!save) {
       this.inputValue = this.value;
     }
@@ -164,10 +163,13 @@ export class EditableTextField extends TailwindElement {
     // text measurements, rather than element measurements which cause reflows
     this.updateWidth();
     this.updatePlaceholderWidth();
+
+    const minWidth = Math.max(this.placeholderWidth, this.width, 1);
+
     return html`<input
         class=${clsx(
-          tw`absolute inset-4 rounded bg-transparent`,
-          !this.valid && tw`outline outline-danger`,
+          tw`peer absolute inset-4 rounded bg-transparent`,
+          !this.valid && tw`z-[11] outline outline-danger`,
         )}
         type="text"
         .value=${this.inputValue}
@@ -175,6 +177,9 @@ export class EditableTextField extends TailwindElement {
         @input=${(e: Event) => {
           this.inputValue = (e.target as HTMLInputElement).value;
           this.checkValidity();
+        }}
+        @focus=${() => {
+          this.startEditing();
         }}
         @blur=${() => {
           if (this.checkValidity()) {
@@ -187,23 +192,23 @@ export class EditableTextField extends TailwindElement {
               }),
             );
           } else {
-            // this.endEditing(false);
+            this.showUnsavedWarning = true;
           }
         }}
         style=${styleMap({
           color: this.editing ? undefined : "transparent",
-          width: `min(${Math.max(this.placeholderWidth, this.width)}px, calc(100% - 2rem))`,
+          width: `min(${minWidth}px, calc(100% - 2rem))`,
           minWidth: `${this.placeholderWidth}px`,
         })}
       />
       <span
         class=${clsx(
-          tw`pointer-events-none block select-none truncate whitespace-pre rounded outline-1 outline-offset-[--sl-focus-ring-offset] outline-[--sl-input-border-color] host-hover:outline host-active:outline-none host-focus-within:outline-none`,
+          tw`pointer-events-none block cursor-text select-none truncate whitespace-pre rounded outline-1 outline-offset-[--sl-focus-ring-offset] outline-[--sl-input-border-color] peer-hover:outline peer-active:outline-none host-focus-within:outline-none`,
           !this.inputValue && tw`text-neutral-500`,
         )}
         style=${styleMap({
           visibility: this.editing ? "hidden" : "visible",
-          width: `min(${Math.max(this.placeholderWidth, this.width)}px, auto)`,
+          width: this.editing ? `${minWidth}px` : "auto",
         })}
         >${this.inputValue
           ? this.renderContent
@@ -213,8 +218,9 @@ export class EditableTextField extends TailwindElement {
       >
       ${this.maxLength && !this.valid
         ? html`<span
-            class="absolute bottom-0 right-4 text-xs leading-none text-danger"
+            class="absolute bottom-0 right-4 z-10 rounded-b-sm bg-white pt-1 text-xs font-semibold leading-none text-danger"
           >
+            ${this.showUnsavedWarning ? html`${msg("Unsaved")} - ` : null}
             ${localize.number(this.inputValue.length)} /
             ${localize.number(this.maxLength)}
           </span>`
