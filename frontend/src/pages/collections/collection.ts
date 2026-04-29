@@ -117,7 +117,9 @@ export class Collection extends BtrixElement {
 
     if (collection.caption) {
       header.secondary = html`
-        <div class="text-pretty text-stone-500">
+        <div
+          class="max-w-full hyphens-auto text-pretty break-words text-neutral-600"
+        >
           ${richText(collection.caption)}
         </div>
       `;

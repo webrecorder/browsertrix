@@ -634,7 +634,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         </btrix-table-cell>
         <btrix-table-cell rowClickTarget="a">
           <a
-            class="block truncate py-3"
+            class="max-w-lg! block truncate py-3"
             href=${`${this.navigate.orgBasePath}/collections/view/${col.id}`}
             @click=${this.navigate.link}
           >

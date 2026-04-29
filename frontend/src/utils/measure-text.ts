@@ -49,5 +49,8 @@ export function measureTextWithElement(
 ) {
   const result = measureText(text, getFontFromElement(element));
   if (log) console.log("measureTextWithElement", { text }, result);
+  if (result.width == undefined) {
+    console.error("measureTextWithElement empty", { text }, result);
+  }
   return result;
 }

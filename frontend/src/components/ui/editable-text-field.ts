@@ -6,6 +6,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { styleMap } from "lit/directives/style-map.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import localize from "@/utils/localize";
 import { measureTextWithElement } from "@/utils/measure-text";
 import { tw } from "@/utils/tailwind";
 
@@ -60,11 +61,11 @@ export class EditableTextField extends TailwindElement {
   @state()
   valid: boolean | undefined = true;
 
-  connectedCallback(): void {
+  connectedCallback() {
     super.connectedCallback();
     this.addEventListener("click", async () => {
       this.editing = true;
-      void this.updateWidth();
+      this.updateWidth();
     });
     this.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
@@ -77,10 +78,6 @@ export class EditableTextField extends TailwindElement {
         this.startEditing();
       }
     });
-    setTimeout(() => {
-      void this.updateWidth();
-      void this.updatePlaceholderWidth();
-    }, 0);
   }
 
   toggleEditing() {
@@ -93,7 +90,7 @@ export class EditableTextField extends TailwindElement {
 
   startEditing() {
     this.editing = true;
-    void this.updateWidth();
+    this.updateWidth();
   }
 
   endEditing(save = true) {
@@ -101,11 +98,12 @@ export class EditableTextField extends TailwindElement {
     if (!save) {
       this.inputValue = this.value;
     }
-    void this.updateWidth();
+    this.valid = true;
+    this.updateWidth();
   }
 
-  async updateWidth() {
-    await this.updateComplete;
+  updateWidth() {
+    // await this.updateComplete;
     if (!this.label) return;
     const width = measureTextWithElement(
       this.inputValue || this.placeholder || "",
@@ -115,9 +113,9 @@ export class EditableTextField extends TailwindElement {
     if (width) this.width = width;
   }
 
-  async updatePlaceholderWidth() {
+  updatePlaceholderWidth() {
     if (!this.placeholder) return;
-    await this.updateComplete;
+    // await this.updateComplete;
     if (!this.label) return;
     const width = measureTextWithElement(this.placeholder, this.label).width;
     if (width) this.placeholderWidth = width;
@@ -133,15 +131,10 @@ export class EditableTextField extends TailwindElement {
     if (changedProperties.has("editing") && this.editing) {
       this.input?.focus();
       setTimeout(() => {
-        void this.updateWidth();
-        void this.updatePlaceholderWidth();
+        this.updateWidth();
+        this.updatePlaceholderWidth();
       }, 0);
     }
-  }
-
-  firstUpdated() {
-    void this.updateWidth();
-    void this.updatePlaceholderWidth();
   }
 
   checkValidity() {
@@ -157,14 +150,22 @@ export class EditableTextField extends TailwindElement {
   }
 
   render() {
+    // Normally we wouldn't want to run code like this on every render, but it's
+    // a) cached by args already, and b) very quick to run - these use canvas
+    // text measurements, rather than element measurements which cause reflows
+    this.updateWidth();
+    this.updatePlaceholderWidth();
     return html`<input
-        class="absolute inset-3 rounded bg-transparent"
+        class=${clsx(
+          tw`absolute inset-4 rounded bg-transparent`,
+          !this.valid && tw`outline outline-danger`,
+        )}
         type="text"
         .value=${this.inputValue}
         placeholder=${ifDefined(this.placeholder)}
         @input=${(e: Event) => {
           this.inputValue = (e.target as HTMLInputElement).value;
-          void this.updateWidth();
+          this.checkValidity();
         }}
         @blur=${() => {
           if (this.checkValidity()) {
@@ -177,30 +178,37 @@ export class EditableTextField extends TailwindElement {
               }),
             );
           } else {
-            this.endEditing(false);
+            // this.endEditing(false);
           }
         }}
         style=${styleMap({
           color: this.editing ? undefined : "transparent",
-          width: `${this.width}px`,
+          width: `min(${Math.max(this.placeholderWidth, this.width)}px, calc(100% - 2rem))`,
           minWidth: `${this.placeholderWidth}px`,
         })}
       />
       <span
         class=${clsx(
-          tw`pointer-events-none block truncate rounded outline-1 outline-offset-[--sl-focus-ring-offset] outline-[--sl-input-border-color] host-hover:outline`,
+          tw`pointer-events-none block select-none truncate whitespace-pre rounded outline-1 outline-offset-[--sl-focus-ring-offset] outline-[--sl-input-border-color] host-hover:outline host-active:outline-none host-focus-within:outline-none`,
           !this.inputValue && tw`text-neutral-500`,
         )}
         style=${styleMap({
           visibility: this.editing ? "hidden" : "visible",
-          minWidth: this.editing ? `${this.placeholderWidth}px` : undefined,
+          width: `min(${Math.max(this.placeholderWidth, this.width)}px, auto)`,
         })}
-      >
-        ${this.inputValue
+        >${this.inputValue
           ? this.renderContent
             ? this.renderContent(this.inputValue)
             : this.inputValue
-          : this.placeholder}
-      </span>`;
+          : this.placeholder}</span
+      >
+      ${this.maxLength && !this.valid
+        ? html`<span
+            class="absolute bottom-0 right-4 text-xs leading-none text-danger"
+          >
+            ${localize.number(this.inputValue.length)} /
+            ${localize.number(this.maxLength)}
+          </span>`
+        : null}`;
   }
 }

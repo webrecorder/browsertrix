@@ -37,7 +37,8 @@ function breadcrumbLink({ href, content }: Breadcrumb, classNames?: string) {
   return html`
     <a
       class=${clsx(
-        tw`flex h-5 items-center gap-1 truncate whitespace-nowrap leading-5`,
+        typeof content === "string" ? tw`block` : tw`flex`,
+        tw`h-5 items-center gap-1 truncate whitespace-nowrap leading-5`,
         href
           ? tw`font-medium text-neutral-500 transition-colors hover:text-neutral-700`
           : tw`font-medium text-primary`,
