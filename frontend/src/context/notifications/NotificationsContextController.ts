@@ -1,6 +1,5 @@
 import { ContextProvider } from "@lit/context";
 import { html, nothing, type ReactiveController } from "lit";
-import { nanoid } from "nanoid";
 
 import {
   notificationsContext,
@@ -60,7 +59,7 @@ export class NotificationsContextController implements ReactiveController {
 
     this.addNotification({
       ...notification,
-      id: nanoid(),
+      id: window.crypto.randomUUID(),
       messageId: id ? id.toString() : undefined,
       message: html`${icon
         ? html`<sl-icon name=${icon} slot="icon"></sl-icon>`
@@ -78,9 +77,7 @@ export class NotificationsContextController implements ReactiveController {
     e.stopPropagation();
 
     const notifications = this.#context.value;
-    const idx = notifications.findIndex(
-      ({ messageId }) => messageId === e.detail.messageId,
-    );
+    const idx = notifications.findIndex(({ id }) => id === e.detail.id);
 
     if (idx > -1) {
       this.#context.setValue([
@@ -88,11 +85,11 @@ export class NotificationsContextController implements ReactiveController {
         ...notifications.slice(idx + 1),
       ]);
     } else {
-      console.debug("no notification with messageId"), e.detail.messageId;
+      console.debug("no notification with id"), e.detail.id;
     }
   };
 
   private addNotification(notification: AppNotification) {
-    this.#context.setValue([...this.#context.value, notification]);
+    this.#context.setValue([notification, ...this.#context.value]);
   }
 }
