@@ -222,7 +222,9 @@ export class CollectionDetail extends BtrixElement {
     >`;
     const caption = (text?: Collection["caption"]) => {
       if (text) {
-        return html`<div class="text-pretty text-neutral-600">
+        return html`<div
+          class="max-w-full hyphens-auto text-pretty break-words text-neutral-600"
+        >
           ${richText(text)}
         </div>`;
       }
@@ -256,49 +258,52 @@ export class CollectionDetail extends BtrixElement {
       </div>
       <header
         class=${clsx(
-          tw`mt-5 flex flex-col gap-3 lg:flex-row`,
+          tw`mt-5 grid gap-3 lg:grid-cols-[1fr_auto]`,
           this.isCrawler && tw`min-h-16`,
         )}
       >
-        <div class="-m-3 grid overflow-hidden p-3">
-          <div class="flex flex-wrap items-center gap-2.5">
-            ${this.renderAccessIcon()}${pageTitle(
-              this.isCrawler
-                ? html`<btrix-editable-text-field
-                    class="overflow-hidden p-3"
-                    minLength=${1}
-                    maxLength=${COLLECTION_NAME_MAX_LENGTH}
-                    .value=${this.collection?.name}
-                    placeholder=${msg("Collection name")}
-                    @btrix-change=${(e: CustomEvent<string>) => {
-                      void this.updateName(e.detail);
-                    }}
-                  ></btrix-editable-text-field>`
-                : this.collection?.name,
-              tw`mb-2 h-6 w-60`,
-              tw`-m-3 grid`,
-            )}
-            ${this.collection && this.isCrawler
-              ? html`<sl-icon-button
-                  name="pencil"
-                  aria-label=${msg("Edit Collection Name and Description")}
-                  @click=${() => {
-                    this.openDialogName = "edit";
-                    this.editTab = "general";
+        <div class="flex items-center gap-2.5">
+          ${this.renderAccessIcon()}${pageTitle(
+            this.isCrawler
+              ? html`<btrix-editable-text-field
+                  class="-m-4 overflow-hidden p-4"
+                  minLength=${1}
+                  maxLength=${COLLECTION_NAME_MAX_LENGTH}
+                  .value=${this.collection?.name}
+                  placeholder=${msg("Collection name")}
+                  @btrix-change=${(e: CustomEvent<string>) => {
+                    void this.updateName(e.detail);
                   }}
-                ></sl-icon-button>`
-              : nothing}
-          </div>
+                ></btrix-editable-text-field>`
+              : this.collection?.name,
+            tw`mb-2 h-6 w-60`,
+            tw`grid`,
+          )}
+          ${this.collection && this.isCrawler
+            ? html`<sl-icon-button
+                name="pencil"
+                aria-label=${msg("Edit Collection Name and Description")}
+                @click=${() => {
+                  this.openDialogName = "edit";
+                  this.editTab = "general";
+                }}
+              ></sl-icon-button>`
+            : nothing}
+        </div>
+        <div class="-mx-3 -mt-3 grid overflow-clip px-3 lg:col-span-2">
           ${this.isCrawler
             ? when(
                 this.collection,
                 (col) =>
                   html`<btrix-editable-text-field
-                    class="-mx-3 overflow-hidden p-3"
+                    class="-mx-4 -my-3 -mb-2 overflow-hidden p-4 text-neutral-600"
                     maxLength=${COLLECTION_CAPTION_MAX_LENGTH}
                     .value=${col.caption}
                     placeholder=${msg("Add a summary...")}
-                    .renderContent=${(text: string) => caption(text)}
+                    .renderContent=${(text: string) =>
+                      richText(text, {
+                        linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
+                      })}
                     @btrix-change=${(e: CustomEvent<string>) => {
                       void this.updateSummary(e.detail);
                     }}
@@ -307,7 +312,9 @@ export class CollectionDetail extends BtrixElement {
             : caption(this.collection?.caption)}
         </div>
 
-        <div class="ml-auto flex flex-shrink-0 items-center gap-2">
+        <div
+          class="mb-0.5 ml-auto flex flex-shrink-0 items-center gap-2 lg:col-start-2 lg:row-start-1"
+        >
           <btrix-share-collection
             orgSlug=${this.orgSlugState || ""}
             collectionId=${this.collectionId}
@@ -1476,7 +1483,6 @@ export class CollectionDetail extends BtrixElement {
   }
 
   private async updateName(name: string) {
-    name = name.trim();
     if (name === this.collection?.name) return;
     try {
       await this.api.fetch<Collection>(
