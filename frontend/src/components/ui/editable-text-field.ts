@@ -68,13 +68,10 @@ export class EditableTextField extends TailwindElement {
 
   private readonly handleKeydown = (e: KeyboardEvent) => {
     if (e.key === "Enter") {
-      this.toggleEditing();
+      this.save();
     }
     if (e.key === "Escape") {
       this.endEditing(false);
-    }
-    if (e.key === "Space") {
-      this.startEditing();
     }
   };
 
@@ -109,6 +106,21 @@ export class EditableTextField extends TailwindElement {
     }
     this.valid = true;
     this.updateWidth();
+  }
+
+  save() {
+    if (this.checkValidity()) {
+      this.endEditing();
+      this.dispatchEvent(
+        new CustomEvent("btrix-change", {
+          detail: this.inputValue,
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    } else {
+      this.showUnsavedWarning = true;
+    }
   }
 
   updateWidth() {
@@ -181,20 +193,8 @@ export class EditableTextField extends TailwindElement {
         @focus=${() => {
           this.startEditing();
         }}
-        @blur=${() => {
-          if (this.checkValidity()) {
-            this.endEditing();
-            this.dispatchEvent(
-              new CustomEvent("btrix-change", {
-                detail: this.inputValue,
-                bubbles: true,
-                composed: true,
-              }),
-            );
-          } else {
-            this.showUnsavedWarning = true;
-          }
-        }}
+        @blur=${this.save}
+        @keydown=${this.handleKeydown}
         style=${styleMap({
           color: this.editing ? undefined : "transparent",
           width: `min(${minWidth}px, calc(100% - 2rem))`,
