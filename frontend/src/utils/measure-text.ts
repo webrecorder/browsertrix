@@ -42,13 +42,8 @@ export const measureText = cached(function measureText(
 export function getFontFromElement(element: HTMLElement): string {
   return window.getComputedStyle(element).font;
 }
-export function measureTextWithElement(
-  text: string,
-  element: HTMLElement,
-  log = false,
-) {
+export function measureTextWithElement(text: string, element: HTMLElement) {
   const result = measureText(text, getFontFromElement(element));
-  if (log) console.log("measureTextWithElement", { text }, result);
   if (result.width == undefined) {
     console.error("measureTextWithElement empty", { text }, result);
   }
