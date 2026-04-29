@@ -9,6 +9,8 @@ from btrixcloud.migrations import BaseMigration
 
 MIGRATION_VERSION = "0056"
 
+NOT_NULLISH = {"$nin": [None, ""]}
+
 
 class Migration(BaseMigration):
     """Migration class."""
@@ -32,19 +34,15 @@ class Migration(BaseMigration):
 
         crawl_logs_to_delete: list[str] = []
 
-        log_crawl_ids = await crawl_logs_mdb.distinct("crawlId", {})
-        log_crawl_ids = [id_ for id_ in log_crawl_ids if id_ is not None]
+        log_crawl_ids = await crawl_logs_mdb.distinct(
+            "crawlId", {"crawlId": NOT_NULLISH}
+        )
 
         crawl_count = len(log_crawl_ids)
         index = 0
 
         for crawl_id in log_crawl_ids:
             index += 1
-
-            # Probably overkill but just in case of empty strings, etc
-            if not crawl_id:
-                continue
-
             res = await crawls_mdb.find_one({"_id": crawl_id})
             if res is None:
                 crawl_logs_to_delete.append(crawl_id)
@@ -77,19 +75,15 @@ class Migration(BaseMigration):
 
         qa_run_logs_to_delete: list[str] = []
 
-        log_qa_run_ids = await crawl_logs_mdb.distinct("qaRunId", {})
-        log_qa_run_ids = [id_ for id_ in log_qa_run_ids if id_ is not None]
+        log_qa_run_ids = await crawl_logs_mdb.distinct(
+            "qaRunId", {"qaRunId": NOT_NULLISH}
+        )
 
         qa_run_count = len(log_qa_run_ids)
         qa_index = 0
 
         for qa_run_id in log_qa_run_ids:
             qa_index += 1
-
-            # Probably overkill but just in case of empty strings, etc
-            if not qa_run_id:
-                continue
-
             res = await crawls_mdb.find_one(
                 {f"qaFinished.{qa_run_id}": {"$exists": True}}
             )
