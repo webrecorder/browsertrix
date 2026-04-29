@@ -44,8 +44,11 @@ export function getFontFromElement(element: HTMLElement): string {
 }
 export function measureTextWithElement(text: string, element: HTMLElement) {
   const result = measureText(text, getFontFromElement(element));
-  if (result.width == undefined) {
+  if (
+    (result as { width: number | undefined } | undefined)?.width == undefined
+  ) {
     console.error("measureTextWithElement empty", { text }, result);
+    throw new Error(`text measurement unexpectedly returned nothing`);
   }
   return result;
 }
