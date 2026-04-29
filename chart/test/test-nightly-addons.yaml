@@ -1,6 +1,6 @@
 # additional settings for nightly tests
 
-invite_expire_seconds: 10
+invite_expire_seconds: "10"
 
 max_pages_per_crawl: 300
 
