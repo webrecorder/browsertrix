@@ -624,11 +624,25 @@ export class CollectionDetail extends BtrixElement {
             content=${SelectCollectionAccess.Options[CollectionAccess.Private]
               .label}
           >
-            <sl-icon
-              class="text-lg text-neutral-600"
-              name=${SelectCollectionAccess.Options[CollectionAccess.Private]
-                .icon}
-            ></sl-icon>
+            ${this.isCrawler
+              ? html` <sl-icon-button
+                  class="-m-2 text-lg text-neutral-600"
+                  name=${SelectCollectionAccess.Options[
+                    CollectionAccess.Private
+                  ].icon}
+                  @click=${() => {
+                    this.openDialogName = "edit";
+                    this.editTab = "sharing";
+                  }}
+                ></sl-icon-button>`
+              : html`
+                  <sl-icon
+                    class="text-lg text-neutral-600"
+                    name=${SelectCollectionAccess.Options[
+                      CollectionAccess.Private
+                    ].icon}
+                  ></sl-icon>
+                `}
           </sl-tooltip>
         `,
       ],
@@ -639,11 +653,27 @@ export class CollectionDetail extends BtrixElement {
             content=${SelectCollectionAccess.Options[CollectionAccess.Unlisted]
               .label}
           >
-            <sl-icon
-              class="text-lg text-neutral-600"
-              name=${SelectCollectionAccess.Options[CollectionAccess.Unlisted]
-                .icon}
-            ></sl-icon>
+            ${this.isCrawler
+              ? html`
+                  <sl-icon-button
+                    class="-m-2 text-lg text-neutral-600"
+                    name=${SelectCollectionAccess.Options[
+                      CollectionAccess.Unlisted
+                    ].icon}
+                    @click=${() => {
+                      this.openDialogName = "edit";
+                      this.editTab = "sharing";
+                    }}
+                  ></sl-icon-button>
+                `
+              : html`
+                  <sl-icon
+                    class="text-lg text-neutral-600"
+                    name=${SelectCollectionAccess.Options[
+                      CollectionAccess.Unlisted
+                    ].icon}
+                  ></sl-icon>
+                `}
           </sl-tooltip>
         `,
       ],
@@ -654,11 +684,27 @@ export class CollectionDetail extends BtrixElement {
             content=${SelectCollectionAccess.Options[CollectionAccess.Public]
               .label}
           >
-            <sl-icon
-              class="text-lg text-success-600"
-              name=${SelectCollectionAccess.Options[CollectionAccess.Public]
-                .icon}
-            ></sl-icon>
+            ${this.isCrawler
+              ? html`
+                  <sl-icon-button
+                    class="-m-2 text-lg text-success-600"
+                    name=${SelectCollectionAccess.Options[
+                      CollectionAccess.Public
+                    ].icon}
+                    @click=${() => {
+                      this.openDialogName = "edit";
+                      this.editTab = "sharing";
+                    }}
+                  ></sl-icon-button>
+                `
+              : html`
+                  <sl-icon
+                    class="text-lg text-success-600"
+                    name=${SelectCollectionAccess.Options[
+                      CollectionAccess.Public
+                    ].icon}
+                  ></sl-icon>
+                `}
           </sl-tooltip>
         `,
       ],
