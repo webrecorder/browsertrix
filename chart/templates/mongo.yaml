@@ -57,7 +57,7 @@ spec:
 
         resources:
           requests:
-            storage: 2Gi
+            storage: "{{ .Values.mongo_storage }}"
 
         {{- if .Values.volume_storage_class }}
         storageClassName: {{ .Values.volume_storage_class }}

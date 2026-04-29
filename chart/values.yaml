@@ -231,6 +231,8 @@ mongo_cpu: "12m"
 
 mongo_memory: "512Mi"
 
+mongo_storage: "2Gi"
+
 mongo_auth:
   # specify either username + password (for local mongo)
   username: root
