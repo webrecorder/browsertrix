@@ -621,7 +621,7 @@ export class CollectionDetail extends BtrixElement {
           >
             ${this.isCrawler
               ? html` <sl-icon-button
-                  class="z-10 -mx-2 text-lg text-neutral-600"
+                  class="z-10 -mx-2 -mb-0.5 text-lg text-neutral-600"
                   name=${SelectCollectionAccess.Options[
                     CollectionAccess.Private
                   ].icon}
@@ -651,7 +651,7 @@ export class CollectionDetail extends BtrixElement {
             ${this.isCrawler
               ? html`
                   <sl-icon-button
-                    class="z-10 -mx-2 text-lg text-neutral-600"
+                    class="z-10 -mx-2 -mb-0.5 text-lg text-neutral-600"
                     name=${SelectCollectionAccess.Options[
                       CollectionAccess.Unlisted
                     ].icon}
@@ -682,7 +682,7 @@ export class CollectionDetail extends BtrixElement {
             ${this.isCrawler
               ? html`
                   <sl-icon-button
-                    class="z-10 -mx-2 text-lg text-success-600"
+                    class="z-10 -mx-2 -mb-0.5 text-lg text-success-600"
                     name=${SelectCollectionAccess.Options[
                       CollectionAccess.Public
                     ].icon}
