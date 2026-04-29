@@ -795,17 +795,6 @@ export class CollectionDetail extends BtrixElement {
           }}
         ></sl-icon-button>
       </sl-tooltip>
-      <sl-tooltip content=${msg("Edit Collection Settings")}>
-        <sl-icon-button
-          name="gear"
-          @click=${() => {
-            this.openDialogName = "edit";
-            this.editTab = "general";
-          }}
-        >
-          <sl-icon slot="prefix"></sl-icon>
-        </sl-icon-button>
-      </sl-tooltip>
       <sl-dropdown distance="4">
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
