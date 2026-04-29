@@ -227,11 +227,11 @@ mongo_host: "local-mongo"
 mongo_image: "docker.io/library/mongo:7.0"
 mongo_pull_policy: "IfNotPresent"
 
-mongo_volume_size: "2Gi"
-
 mongo_cpu: "12m"
 
 mongo_memory: "512Mi"
+
+mongo_storage: "2Gi"
 
 mongo_auth:
   # specify either username + password (for local mongo)
