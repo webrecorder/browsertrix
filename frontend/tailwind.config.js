@@ -4,6 +4,7 @@ import { tailwindTransform } from "postcss-lit";
 import attributes from "./config/tailwind/plugins/attributes";
 import containPlugin from "./config/tailwind/plugins/contain";
 import contentVisibilityPlugin from "./config/tailwind/plugins/content-visibility";
+import cssHostPlugin from "./config/tailwind/plugins/host";
 import cssPartsPlugin from "./config/tailwind/plugins/parts";
 
 /**
@@ -171,5 +172,6 @@ module.exports = {
     containPlugin,
     contentVisibilityPlugin,
     cssPartsPlugin,
+    cssHostPlugin,
   ],
 };

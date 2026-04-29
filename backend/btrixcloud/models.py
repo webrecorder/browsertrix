@@ -13,8 +13,18 @@ import mimetypes
 import math
 import os
 
-from typing import Optional, List, Dict, Self, Union, Literal, Any, get_args, get_origin
-from typing_extensions import Annotated
+from typing import (
+    Optional,
+    List,
+    Dict,
+    Self,
+    Union,
+    Literal,
+    Any,
+    get_args,
+    get_origin,
+    Annotated,
+)
 
 from pydantic import (
     BaseModel,
@@ -1844,7 +1854,7 @@ class PublicCollOut(BaseMongoModel):
 class UpdateColl(BaseModel):
     """Update collection"""
 
-    name: Optional[str] = None
+    name: Annotated[str | None, Field(min_length=1)] = None
     slug: Optional[str] = None
     description: Optional[str] = None
     caption: Optional[str] = None
