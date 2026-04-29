@@ -740,9 +740,7 @@ export class CollectionDetail extends BtrixElement {
             this.openDialogName = "edit";
             this.editTab = "sharing";
           }}
-        >
-          <sl-icon slot="prefix"></sl-icon>
-        </sl-icon-button>
+        ></sl-icon-button>
       </sl-tooltip>
       <sl-tooltip content=${msg("Edit Collection Settings")}>
         <sl-icon-button
@@ -1323,7 +1321,7 @@ export class CollectionDetail extends BtrixElement {
         message: msg(html`Deleted <strong>${name}</strong> Collection.`),
         variant: "success",
         icon: "check2-circle",
-        id: "collection-delete-status",
+        id: "update",
       });
 
       // Collection may be used in crawling default, request update
@@ -1339,10 +1337,10 @@ export class CollectionDetail extends BtrixElement {
       );
     } catch {
       this.notify.toast({
-        message: msg("Sorry, couldn't delete Collection at this time."),
+        message: msg("Sorry, couldn’t delete Collection at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "collection-delete-status",
+        id: "update",
       });
     }
   }
@@ -1363,10 +1361,10 @@ export class CollectionDetail extends BtrixElement {
       }
     } catch (e) {
       this.notify.toast({
-        message: msg("Sorry, couldn't retrieve Collection at this time."),
+        message: msg("Sorry, couldn’t retrieve Collection at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "collection-retrieve-status",
+        id: "update",
       });
       console.error(e);
     }
@@ -1402,10 +1400,10 @@ export class CollectionDetail extends BtrixElement {
         console.debug("Fetch web captures aborted to throttle");
       } else {
         this.notify.toast({
-          message: msg("Sorry, couldn't retrieve web captures at this time."),
+          message: msg("Sorry, couldn’t retrieve web captures at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
-          id: "collection-retrieve-status",
+          id: "update",
         });
       }
     }
@@ -1473,11 +1471,10 @@ export class CollectionDetail extends BtrixElement {
       console.debug((e as Error | undefined)?.message);
       this.notify.toast({
         message: msg(
-          "Sorry, couldn't remove item from Collection at this time.",
+          "Sorry, couldn’t remove item from Collection at this time.",
         ),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "collection-item-remove-status",
       });
     }
   }
@@ -1514,7 +1511,7 @@ export class CollectionDetail extends BtrixElement {
       console.debug(err);
 
       this.notify.toast({
-        message: msg("Sorry, couldn't save collection name at this time."),
+        message: msg("Sorry, couldn’t save collection name at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -1554,9 +1551,10 @@ export class CollectionDetail extends BtrixElement {
       console.debug(err);
 
       this.notify.toast({
-        message: msg("Sorry, couldn't save collection summary at this time."),
+        message: msg("Sorry, couldn’t save collection summary at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "update",
       });
     }
   }
@@ -1601,10 +1599,11 @@ export class CollectionDetail extends BtrixElement {
 
       this.notify.toast({
         message: msg(
-          "Sorry, couldn't save collection description at this time.",
+          "Sorry, couldn’t save collection description at this time.",
         ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "update",
       });
     }
   }
@@ -1636,16 +1635,16 @@ export class CollectionDetail extends BtrixElement {
             }),
         variant: "success",
         icon: "check2-circle",
-        id: "dedupe-index-update-status",
+        id: "update",
       });
     } catch (err) {
       console.debug(err);
 
       this.notify.toast({
-        message: msg("Sorry, couldn't created index at this time."),
+        message: msg("Sorry, couldn’t create index at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "dedupe-index-update-status",
+        id: "update",
       });
     }
   }
@@ -1665,7 +1664,7 @@ export class CollectionDetail extends BtrixElement {
         message: msg("Purging deduplication index..."),
         variant: "success",
         icon: "check2-circle",
-        id: "dedupe-index-update-status",
+        id: "update",
       });
     } catch (err) {
       const message =
@@ -1676,7 +1675,7 @@ export class CollectionDetail extends BtrixElement {
         message,
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "dedupe-index-update-status",
+        id: "update",
       });
     }
   }
@@ -1697,7 +1696,7 @@ export class CollectionDetail extends BtrixElement {
         message: msg("Deleted deduplication index."),
         variant: "success",
         icon: "check2-circle",
-        id: "dedupe-index-update-status",
+        id: "update",
       });
     } catch (err) {
       const message =
@@ -1708,7 +1707,7 @@ export class CollectionDetail extends BtrixElement {
         message,
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "dedupe-index-update-status",
+        id: "update",
       });
     }
   }

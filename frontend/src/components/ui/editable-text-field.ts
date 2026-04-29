@@ -17,7 +17,7 @@ export class EditableTextField extends TailwindElement {
   value = "";
 
   @state()
-  inputValue = this.value;
+  inputValue = "";
 
   @property({ type: String })
   innerClass = "";
@@ -61,23 +61,33 @@ export class EditableTextField extends TailwindElement {
   @state()
   valid: boolean | undefined = true;
 
+  private readonly handleClick = () => {
+    this.editing = true;
+    this.updateWidth();
+  };
+
+  private readonly handleKeydown = (e: KeyboardEvent) => {
+    if (e.key === "Enter") {
+      this.toggleEditing();
+    }
+    if (e.key === "Escape") {
+      this.endEditing(false);
+    }
+    if (e.key === "Space") {
+      this.startEditing();
+    }
+  };
+
   connectedCallback() {
     super.connectedCallback();
-    this.addEventListener("click", async () => {
-      this.editing = true;
-      this.updateWidth();
-    });
-    this.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        this.toggleEditing();
-      }
-      if (e.key === "Escape") {
-        this.endEditing(false);
-      }
-      if (e.key === "Space") {
-        this.startEditing();
-      }
-    });
+    this.addEventListener("click", this.handleClick);
+    this.addEventListener("keydown", this.handleKeydown);
+  }
+
+  disconnectedCallback() {
+    this.removeEventListener("click", this.handleClick);
+    this.removeEventListener("keydown", this.handleKeydown);
+    super.disconnectedCallback();
   }
 
   toggleEditing() {
