@@ -572,10 +572,8 @@ signer_memory: "50Mi"
 # default FQDN suffix, shouldn't need to change
 fqdn_suffix: .svc.cluster.local
 
-service:
-  type: ClusterIP
-
 # Optional: configure load balancing annotations
+# service:
 #   annotations:
 #     service.beta.kubernetes.io/aws-load-balancer-internal: "true"
 #     helm.sh/resource-policy: keep
