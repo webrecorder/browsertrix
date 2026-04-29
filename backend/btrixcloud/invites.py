@@ -47,9 +47,9 @@ class InviteOps:
         """Create TTL index so that invites auto-expire"""
         while True:
             try:
-                # Default to 7 days
+                # Default to 14 days
                 expire_after_seconds = int(
-                    os.environ.get("INVITE_EXPIRE_SECONDS", "604800")
+                    os.environ.get("INVITE_EXPIRE_SECONDS", "1209600")
                 )
                 await self.invites.create_index(
                     "created", expireAfterSeconds=expire_after_seconds
