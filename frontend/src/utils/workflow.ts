@@ -19,12 +19,13 @@ import {
 } from "@/types/crawler";
 import type { OrgData } from "@/types/org";
 import { NewWorkflowOnlyScopeType, WorkflowScopeType } from "@/types/workflow";
+import { BYTES_PER_GB } from "@/utils/bytes";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { DEFAULT_MAX_SCALE, isPageScopeType } from "@/utils/crawler";
 import { getNextDate, getScheduleInterval } from "@/utils/cron";
 import localize, { getDefaultLang } from "@/utils/localize";
 
-export const BYTES_PER_GB = 1e9;
+export { BYTES_PER_GB };
 export const DEFAULT_SELECT_LINKS = ["a[href]->href" as const];
 export const DEFAULT_AUTOCLICK_SELECTOR = "a";
 export const SEED_LIST_FILE_EXT = "txt";
