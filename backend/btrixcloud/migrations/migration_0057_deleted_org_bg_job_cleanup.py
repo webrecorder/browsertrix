@@ -30,7 +30,7 @@ class Migration(BaseMigration):
 
         job_orgs_to_delete: list[UUID] = []
 
-        job_oids = await jobs_mdb.distinct("oid", {})
+        job_oids = await jobs_mdb.distinct("oid", {"oid": {"$ne": None}})
 
         for oid in job_oids:
             res = await orgs_mdb.find_one({"_id": oid})
