@@ -4,16 +4,13 @@ import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import union from "lodash/fp/union";
+import without from "lodash/fp/without";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { BtrixChangeEvent } from "@/events/btrix-change";
+import type { Workflow } from "@/types/crawler";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
-
-export type CollectionWorkflowListSettingChangeEvent = BtrixChangeEvent<{
-  autoAdd: boolean;
-  dedupe?: boolean;
-}>;
 
 /**
  * Additional settings for each workflow in `<btrix-collection-workflow-list>`
@@ -39,6 +36,14 @@ export class CollectionWorkflowListSettings extends BtrixElement {
   @state()
   private autoAdd = false;
 
+  @state()
+  private dedupe = false;
+
+  @state()
+  private saveStatus?: "success" | "error";
+
+  #timerId?: number;
+
   protected willUpdate(changedProperties: PropertyValues): void {
     if (
       changedProperties.has("collectionId") ||
@@ -47,10 +52,51 @@ export class CollectionWorkflowListSettings extends BtrixElement {
       this.autoAdd = this.autoAddCollections.some(
         (id) => id === this.collectionId,
       );
+      this.dedupe = Boolean(
+        this.dedupeCollId && this.dedupeCollId === this.collectionId,
+      );
     }
   }
 
+  protected updated(changedProperties: PropertyValues): void {
+    if (changedProperties.has("saveStatus") && this.saveStatus !== undefined) {
+      // Reset success status
+      this.#timerId = window.setTimeout(() => {
+        this.saveStatus = undefined;
+      }, 5000);
+    }
+  }
+
+  disconnectedCallback(): void {
+    window.clearTimeout(this.#timerId);
+    super.disconnectedCallback();
+  }
+
   render() {
+    return html`<sl-tooltip
+      placement="left"
+      trigger="manual"
+      ?open=${this.saveStatus !== undefined}
+      hoist
+      @click=${() => (this.saveStatus = undefined)}
+    >
+      ${this.saveStatus === "success"
+        ? html`<div slot="content" class="flex items-center gap-2">
+            <sl-icon
+              name="check-lg"
+              class="text-base text-success-400"
+            ></sl-icon>
+            ${msg("Saved Change")}
+          </div>`
+        : html`<div slot="content" class="flex items-center gap-2">
+            <sl-icon name="x-lg" class="text-base text-danger-400"></sl-icon>
+            ${msg("Could Not Save")}
+          </div>`}
+      ${this.renderToggles()}
+    </sl-tooltip>`;
+  }
+
+  private renderToggles() {
     const disableDedupe = Boolean(
       this.dedupeCollId && this.dedupeCollId !== this.collectionId,
     );
@@ -81,19 +127,15 @@ export class CollectionWorkflowListSettings extends BtrixElement {
               @sl-change=${(e: CustomEvent) => {
                 e.stopPropagation();
 
-                this.autoAdd = (e.target as SlSwitch).checked;
+                window.clearTimeout(this.#timerId);
+                this.saveStatus = undefined;
 
-                this.dispatchEvent(
-                  new CustomEvent<
-                    CollectionWorkflowListSettingChangeEvent["detail"]
-                  >("btrix-change", {
-                    detail: {
-                      value: {
-                        autoAdd: this.autoAdd,
-                      },
-                    },
-                  }),
-                );
+                this.autoAdd = (e.target as SlSwitch).checked;
+                this.collapse = !this.autoAdd;
+
+                void this.saveAutoAdd({
+                  autoAdd: this.autoAdd,
+                });
               }}
             >
               <span class="text-neutral-500">${msg("Auto-Add")}</span>
@@ -121,28 +163,22 @@ export class CollectionWorkflowListSettings extends BtrixElement {
                 <sl-switch
                   class="mx-[2px] inline-block"
                   size="small"
-                  ?checked=${Boolean(
-                    this.dedupeCollId &&
-                      this.dedupeCollId === this.collectionId,
-                  )}
+                  ?checked=${this.dedupe}
                   ?disabled=${!this.workflowId || disableDedupe}
                   @click=${(e: MouseEvent) => {
                     e.stopPropagation();
                   }}
                   @sl-change=${(e: CustomEvent) => {
                     e.stopPropagation();
-                    this.dispatchEvent(
-                      new CustomEvent<
-                        CollectionWorkflowListSettingChangeEvent["detail"]
-                      >("btrix-change", {
-                        detail: {
-                          value: {
-                            autoAdd: this.autoAdd,
-                            dedupe: (e.target as SlSwitch).checked,
-                          },
-                        },
-                      }),
-                    );
+
+                    window.clearTimeout(this.#timerId);
+                    this.saveStatus = undefined;
+
+                    this.dedupe = (e.target as SlSwitch).checked;
+
+                    void this.saveAutoAdd({
+                      dedupe: this.dedupe,
+                    });
                   }}
                 >
                   <span class="text-neutral-500">${msg("Dedupe")}</span>
@@ -152,5 +188,67 @@ export class CollectionWorkflowListSettings extends BtrixElement {
         )}
       </div>
     `;
+  }
+
+  private async saveAutoAdd({
+    autoAdd,
+    dedupe,
+  }: {
+    autoAdd?: boolean;
+    dedupe?: boolean;
+  }) {
+    const params: {
+      autoAddCollections?: Workflow["autoAddCollections"];
+      dedupeCollId?: string;
+    } = {};
+
+    if (dedupe === true) {
+      params.dedupeCollId = this.collectionId;
+    } else if (dedupe === false) {
+      params.dedupeCollId = "";
+    }
+
+    if (autoAdd === true) {
+      params.autoAddCollections = union(
+        [this.collectionId],
+        this.autoAddCollections,
+      );
+    } else if (autoAdd === false) {
+      params.autoAddCollections = without(
+        [this.collectionId],
+        this.autoAddCollections,
+      );
+
+      if (this.dedupe) {
+        params.dedupeCollId = "";
+      }
+    }
+
+    try {
+      await this.api.fetch(
+        `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(params),
+        },
+      );
+
+      this.saveStatus = "success";
+
+      this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
+    } catch (e: unknown) {
+      console.debug(e);
+
+      this.saveStatus = "error";
+
+      this.notify.toast({
+        message: msg(
+          "Something unexpected went wrong, couldn't save auto-add setting.",
+        ),
+        variant: "warning",
+        icon: "exclamation-circle",
+        id: "auto-add-status",
+      });
+    }
   }
 }

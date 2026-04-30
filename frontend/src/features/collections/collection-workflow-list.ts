@@ -19,7 +19,6 @@ import { when } from "lit/directives/when.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { dedupeStatusIcon } from "@/features/archived-items/templates/dedupe-status-icon";
-import type { CollectionWorkflowListSettingChangeEvent } from "@/features/collections/collection-workflow-list/settings";
 import type { APIPaginatedList } from "@/types/api";
 import type { Crawl, Workflow } from "@/types/crawler";
 import { pluralOf } from "@/utils/pluralize";
@@ -42,16 +41,10 @@ export type SelectionChangeDetail = {
     }
   >;
 };
-export type AutoAddChangeDetail = {
-  id: string;
-  checked: boolean;
-  dedupe?: boolean;
-};
 
 /**
  * @fires btrix-selection-change
  * @fires btrix-crawls-page-change
- * @fires btrix-auto-add-change
  */
 @customElement("btrix-collection-workflow-list")
 @localized()
@@ -283,22 +276,6 @@ export class CollectionWorkflowList extends BtrixElement {
         dedupeCollId=${ifDefined(workflow.dedupeCollId || undefined)}
         .autoAddCollections=${workflow.autoAddCollections}
         ?collapse=${!this.expandWorkflowSettings}
-        @btrix-change=${(e: CollectionWorkflowListSettingChangeEvent) => {
-          e.stopPropagation();
-
-          const { autoAdd, dedupe } = e.detail.value;
-
-          this.dispatchEvent(
-            new CustomEvent<AutoAddChangeDetail>("btrix-auto-add-change", {
-              detail: {
-                id: workflow.id,
-                checked: autoAdd,
-                dedupe,
-              },
-              composed: true,
-            }),
-          );
-        }}
       ></btrix-collection-workflow-list-settings>
     `;
   };
