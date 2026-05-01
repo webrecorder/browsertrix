@@ -524,14 +524,6 @@ export class CrawlsList extends BtrixElement {
           <btrix-file-uploader
             ?open=${this.isUploadingArchive}
             @request-close=${() => (this.isUploadingArchive = false)}
-            @uploaded=${() => {
-              if (this.itemType !== "crawl") {
-                this.pagination = {
-                  ...this.pagination,
-                  page: 1,
-                };
-              }
-            }}
           ></btrix-file-uploader>
         `,
       )}

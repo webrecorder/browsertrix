@@ -14,6 +14,7 @@ import {
   type PublicCollection,
 } from "@/types/collection";
 import type { OrgData, PublicOrgCollections } from "@/types/org";
+import type { UserInfo } from "@/types/user";
 import { SortDirection } from "@/types/utils";
 import { richText } from "@/utils/rich-text";
 import { toShortUrl } from "@/utils/url-helpers";
@@ -298,7 +299,9 @@ export class PublicOrg extends BtrixElement {
 
   private async getUserOrg(): Promise<PublicOrgCollections | null> {
     try {
-      const userInfo = this.userInfo || (await this.api.fetch("/users/me"));
+      const userInfo =
+        this.userInfo ||
+        (await this.api.fetch<UserInfo | undefined>("/users/me"));
       const userOrg = userInfo?.orgs.find((org) => org.slug === this.orgSlug);
 
       if (!userOrg) {

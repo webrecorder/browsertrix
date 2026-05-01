@@ -8,6 +8,7 @@ import {
   type OrgUploadsContext,
 } from "./org-uploads";
 import type {
+  OrgUpload,
   OrgUploadCancelRemoveEventDetail,
   OrgUploadEventDetail,
 } from "./types";
@@ -29,6 +30,27 @@ export class OrgUploadsContextController implements ReactiveController {
   readonly #host: BtrixElement;
   readonly #context: ContextProvider<{ __context__: OrgUploadsContext }>;
   readonly #uploadRequests = new Map<string, XMLHttpRequest>();
+
+  static uploadsByStatus(context: OrgUploadsContext) {
+    const uploads = Object.entries(context);
+    const all: (OrgUpload & { uploadId: string })[] = [];
+    const canceled: (OrgUpload & { uploadId: string })[] = [];
+    const inProgress: (OrgUpload & { uploadId: string })[] = [];
+
+    uploads.forEach(([uploadId, upload]) => {
+      const item = { uploadId, ...upload };
+
+      all.push(item);
+
+      if (upload.canceled) {
+        canceled.push(item);
+      } else if (!upload.itemId) {
+        inProgress.push(item);
+      }
+    });
+
+    return { all, canceled, inProgress };
+  }
 
   constructor(host: BtrixElement) {
     this.#host = host;

@@ -54,7 +54,6 @@ export default function submitTask(
           this.api.upload(
             `/orgs/${this.orgId}/collections/${this.collection.id}/thumbnail?${searchParams.toString()}`,
             file,
-            undefined,
             signal,
           ),
         );
