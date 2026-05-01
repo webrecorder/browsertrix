@@ -19,7 +19,7 @@ import {
 import { tw } from "@/utils/tailwind";
 
 /**
- * Global notifications to stack in bottom end of the viewport.
+ * Global toast notifications to stack in bottom end of the viewport.
  *
  * This component reuses `.sl-toast-stack` styles instead of using Shoelace's
  * `SlAlert.toast()` to reactively render the toast state of a notification
@@ -27,7 +27,7 @@ import { tw } from "@/utils/tailwind";
  *
  * @fires btrix-remove-notification
  */
-@customElement("btrix-notification-stack")
+@customElement("btrix-toast-stack")
 export class NotificationStack extends BtrixElement {
   @consume({ context: notificationsContext, subscribe: true })
   @state()
