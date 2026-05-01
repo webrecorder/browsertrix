@@ -1,3 +1,3 @@
 import("./org-status-banner");
-import("./org-uploads-overlay");
+import("./org-uploads-dialog");
 import("./usage-history-table");

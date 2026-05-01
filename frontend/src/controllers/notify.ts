@@ -41,6 +41,7 @@ export interface NotifyEventMap {
 const NOTIFY_EVENT_NAME: keyof NotifyEventMap = "btrix-notify";
 
 export const notifyIconFor = {
+  neutral: "info-circle",
   info: "info-circle",
   primary: "info-circle",
   success: "check2-circle",

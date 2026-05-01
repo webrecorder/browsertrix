@@ -57,7 +57,7 @@ export class NotificationStack extends BtrixElement {
       <div
         class=${clsx(
           "btrix-toast-stack",
-          this.notifications.length && tw`min-h-24`,
+          this.notifications.length && tw`min-h-20`,
         )}
       >
         ${repeat(this.notifications, ({ id }) => id, this.renderNotification)}
@@ -72,7 +72,6 @@ export class NotificationStack extends BtrixElement {
     return html`<sl-alert
       data-id=${notification.id}
       class=${clsx(
-        tw`[--sl-spacing-large:var(--sl-spacing-medium)]`,
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- will add new notification types
         notification.type === "toast" &&
           (variant === "danger" || variant === "warning") &&

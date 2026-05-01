@@ -1,4 +1,4 @@
-import { consume, ContextConsumer } from "@lit/context";
+import { ContextConsumer } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type { SlAlert } from "@shoelace-style/shoelace";
 import clsx from "clsx";
@@ -9,9 +9,9 @@ import sum from "lodash/fp/sum";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import notificationsContext from "@/context/notifications";
-import orgUploadsContext, {
-  type OrgUploadsContext,
-} from "@/context/org-uploads";
+import orgUploadsContext from "@/context/org-uploads";
+import { orgUploadsInitialValue } from "@/context/org-uploads/org-uploads";
+import { OrgUploadsContextController } from "@/context/org-uploads/OrgUploadsContextController";
 import type {
   OrgUpload,
   OrgUploadCancelRemoveEventDetail,
@@ -21,61 +21,76 @@ import { OrgTab } from "@/routes";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
-@customElement("btrix-org-uploads-overlay")
+/**
+ * Displays status of org-wide uploads in a non-modal dialog.
+ */
+@customElement("btrix-org-uploads-dialog")
 @localized()
-export class OrgUploadsOverlay extends BtrixElement {
+export class OrgUploadsDialog extends BtrixElement {
   readonly #notifications = new ContextConsumer(this, {
     context: notificationsContext,
     subscribe: true,
     callback: () => this.updateToastStackOffset(),
   });
 
-  @consume({ context: orgUploadsContext, subscribe: true })
+  readonly #orgUploads = new ContextConsumer(this, {
+    context: orgUploadsContext,
+    subscribe: true,
+    callback: (value) => {
+      this.uploadsByStatus = OrgUploadsContextController.uploadsByStatus(value);
+
+      if (this.cancelIds.size) {
+        // Remove IDs that have been removed
+        this.cancelIds = new Set(Object.keys(value)).intersection(
+          this.cancelIds,
+        );
+      }
+    },
+  });
+
   @state()
-  private readonly orgUploads: OrgUploadsContext = {};
+  private uploadsByStatus = OrgUploadsContextController.uploadsByStatus(
+    orgUploadsInitialValue,
+  );
+
+  @state()
+  private open = false;
 
   @state()
   private minimized = false;
 
   @state()
-  private canceling?: string;
+  private cancelIds = new Set<string>();
 
   @query("sl-alert")
   private readonly alert?: SlAlert;
 
-  protected willUpdate(changedProperties: PropertyValues): void {
-    if (changedProperties.has("orgUploads")) {
-      if (
-        this.canceling &&
-        this.canceling in this.orgUploads &&
-        this.orgUploads[this.canceling].canceled
-      ) {
-        this.canceling = undefined;
-      }
-    }
+  get uploadIds() {
+    return this.uploadsByStatus.all.map(({ uploadId }) => uploadId);
   }
 
   protected updated(changedProperties: PropertyValues): void {
     if (
-      changedProperties.has("orgUploads") ||
+      changedProperties.has("uploadsByStatus") ||
       changedProperties.has("minimized")
     ) {
       this.updateToastStackOffset();
     }
 
-    if (changedProperties.has("orgUploads")) {
+    if (changedProperties.has("uploadsByStatus")) {
       void this.updateAlertVisibility();
     }
   }
 
   private async updateAlertVisibility() {
-    const uploadIds = Object.keys(this.orgUploads);
+    await this.alert?.updateComplete;
+
+    const uploadIds = this.uploadIds;
 
     if (uploadIds.length) {
-      await this.alert?.updateComplete;
-      await this.alert?.show();
+      this.open = true;
     } else {
-      await this.alert?.hide();
+      this.open = false;
     }
   }
 
@@ -83,7 +98,7 @@ export class OrgUploadsOverlay extends BtrixElement {
    * Offset app notification stack so that org uploads are always pinned to the bottom.
    */
   private readonly updateToastStackOffset = () => {
-    const uploadIds = Object.keys(this.orgUploads);
+    const uploadIds = this.uploadIds;
 
     if (uploadIds.length && this.#notifications.value?.length) {
       document.body.style.setProperty(
@@ -98,26 +113,15 @@ export class OrgUploadsOverlay extends BtrixElement {
   };
 
   render() {
-    const canceledUploads = [];
-    const uploadsInProgress = [];
-
-    Object.entries(this.orgUploads).forEach(([id, upload]) => {
-      if (upload.canceled) {
-        canceledUploads.push(id);
-      } else if (!upload.itemId) {
-        uploadsInProgress.push(id);
-      }
-    });
-
-    const uploads = Object.entries(this.orgUploads);
-    const totalCount = uploads.length;
-    const inProgressCount = uploadsInProgress.length;
-    const canceledCount = canceledUploads.length;
+    const { all, canceled, inProgress } = this.uploadsByStatus;
+    const totalCount = all.length;
+    const inProgressCount = inProgress.length;
+    const canceledCount = canceled.length;
     const allDone = inProgressCount === 0;
     const allCanceled = canceledCount === totalCount;
 
-    const sumLoaded = sum(uploads.map(([_id, { loaded }]) => loaded));
-    const sumTotal = sum(uploads.map(([_id, { total }]) => total));
+    const sumLoaded = sum(all.map(({ loaded }) => loaded));
+    const sumTotal = sum(all.map(({ total }) => total));
 
     const number_of_files_in_progress = this.localize.number(inProgressCount);
     const plural_of_files_in_progress = pluralOf("files", inProgressCount);
@@ -133,14 +137,13 @@ export class OrgUploadsOverlay extends BtrixElement {
           variant=${allDone && !allCanceled ? "success" : "primary"}
           class="pointer-events-auto m-4 part-[base]:shadow-lg"
           duration=${allCanceled ? 5000 : Infinity}
+          ?open=${this.open}
           @sl-after-hide=${() => {
-            const uploadIds = Object.keys(this.orgUploads);
-
             this.dispatchEvent(
               new CustomEvent<OrgUploadCancelRemoveEventDetail>(
                 "btrix-org-upload-remove",
                 {
-                  detail: { uploadIds },
+                  detail: { uploadIds: this.uploadIds },
                   bubbles: true,
                   composed: true,
                 },
@@ -177,20 +180,27 @@ export class OrgUploadsOverlay extends BtrixElement {
                 </div>`
               : nothing}
             <sl-icon-button
-              class="text-base"
+              class="shrink-0 text-base"
               name=${this.minimized
                 ? "chevron-bar-expand"
                 : "chevron-bar-contract"}
               label=${this.minimized ? msg("Expand") : msg("Minimize")}
               @click=${() => (this.minimized = !this.minimized)}
             ></sl-icon-button>
-            ${allDone
-              ? html`<sl-icon-button
-                  name="x-lg"
-                  label=${msg("Close")}
-                  @click=${() => void this.alert?.hide()}
-                ></sl-icon-button>`
-              : nothing}
+            <sl-icon-button
+              class="shrink-0 text-base"
+              name="x-lg"
+              label=${msg("Close")}
+              @click=${() => {
+                if (inProgressCount) {
+                  this.cancelIds = new Set(
+                    inProgress.map(({ uploadId }) => uploadId),
+                  );
+                } else {
+                  this.open = false;
+                }
+              }}
+            ></sl-icon-button>
           </div>
 
           <div
@@ -199,11 +209,7 @@ export class OrgUploadsOverlay extends BtrixElement {
               this.minimized && tw`max-h-0 opacity-0`,
             )}
           >
-            ${repeat(
-              uploads,
-              ([id]) => id,
-              ([id, upload]) => this.renderUpload(id, upload),
-            )}
+            ${repeat(all, ({ uploadId }) => uploadId, this.renderUpload)}
           </div>
         </sl-alert>
       </div>
@@ -212,22 +218,24 @@ export class OrgUploadsOverlay extends BtrixElement {
     `;
   }
 
-  private readonly renderUpload = (uploadId: string, upload: OrgUpload) => {
+  private readonly renderUpload = (
+    upload: OrgUpload & { uploadId: string },
+  ) => {
     const progress = (upload.loaded / upload.total) * 100;
     const removeOrHide = () => {
-      if (Object.keys(this.orgUploads).length > 1) {
+      if (this.uploadIds.length > 1) {
         this.dispatchEvent(
           new CustomEvent<OrgUploadCancelRemoveEventDetail>(
             "btrix-org-upload-remove",
             {
-              detail: { uploadIds: [uploadId] },
+              detail: { uploadIds: [upload.uploadId] },
               bubbles: true,
               composed: true,
             },
           ),
         );
       } else {
-        void this.alert?.hide();
+        this.open = false;
       }
     };
 
@@ -267,13 +275,14 @@ export class OrgUploadsOverlay extends BtrixElement {
               }}
             ></sl-icon-button>`
           : html`<sl-icon-button
-              name="x-lg"
+              name="x"
+              class="text-base"
               label=${msg("Cancel Upload")}
               @click=${() => {
                 if (upload.canceled) {
                   removeOrHide();
                 } else {
-                  this.canceling = uploadId;
+                  this.cancelIds = new Set([upload.uploadId]);
                 }
               }}
             ></sl-icon-button>`}
@@ -282,31 +291,53 @@ export class OrgUploadsOverlay extends BtrixElement {
   };
 
   private renderDialog() {
-    const upload = this.canceling ? this.orgUploads[this.canceling] : undefined;
-    const upload_name = upload?.itemName;
+    const cancelCount = this.cancelIds.size;
+    const someCanceled = new Set(
+      this.uploadsByStatus.canceled.map(({ uploadId }) => uploadId),
+    ).intersection(this.cancelIds);
+    const isSomeCanceling = Boolean(someCanceled.size);
+
+    const message = () => {
+      if (cancelCount === 1) {
+        const uploadId = this.cancelIds.values().next().value;
+        const orgUploads = this.#orgUploads.value;
+
+        if (uploadId && orgUploads?.[uploadId]) {
+          const upload_name = orgUploads[uploadId].itemName;
+          return msg(
+            str`Are you sure you want to cancel uploading “${upload_name}”?`,
+          );
+        }
+      }
+
+      const number_of_files = this.localize.number(cancelCount);
+      const plural_of_files = pluralOf("files", cancelCount);
+
+      return msg(
+        str`Are you sure you want to cancel uploading ${number_of_files} ${plural_of_files}?`,
+      );
+    };
 
     return html`<btrix-dialog
       label=${msg("Cancel Upload?")}
-      ?open=${Boolean(upload)}
+      ?open=${Boolean(cancelCount)}
     >
-      <p>
-        ${msg(str`Are you sure you want to cancel uploading “${upload_name}”?`)}
-      </p>
+      <p>${message()}</p>
       <div slot="footer" class="flex justify-between">
-        <sl-button size="small" @click=${() => (this.canceling = undefined)}
+        <sl-button size="small" @click=${() => (this.cancelIds = new Set())}
           >${msg("Continue Upload")}</sl-button
         >
         <sl-button
           variant="danger"
           size="small"
+          ?loading=${isSomeCanceling}
+          ?disabled=${isSomeCanceling}
           @click=${async () => {
-            if (!this.canceling) return;
-
             this.dispatchEvent(
               new CustomEvent<OrgUploadCancelRemoveEventDetail>(
                 "btrix-org-upload-cancel",
                 {
-                  detail: { uploadIds: [this.canceling] },
+                  detail: { uploadIds: Array.from(this.cancelIds.values()) },
                   bubbles: true,
                   composed: true,
                 },

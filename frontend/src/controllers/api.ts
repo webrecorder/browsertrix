@@ -4,6 +4,7 @@ import throttle from "lodash/fp/throttle";
 
 import { APIError } from "@/utils/api";
 import AuthService from "@/utils/AuthService";
+import { BYTES_PER_GB, BYTES_PER_MB } from "@/utils/bytes";
 import appState from "@/utils/state";
 
 export type QuotaUpdateDetail = { reached: boolean };
@@ -19,6 +20,12 @@ export enum AbortReason {
   NetworkError = "network-error",
   RequestTimeout = "request-timeout",
 }
+
+type UploadResponseBody = {
+  id: string;
+  added: boolean;
+  storageQuotaReached: boolean;
+};
 
 /**
  * Utilities for interacting with the Browsertrix backend API
@@ -36,37 +43,24 @@ export enum AbortReason {
  */
 export class APIController implements ReactiveController {
   host: ReactiveControllerHost & EventTarget;
-  readonly #hostId: string;
 
-  readonly #uploadProgress = new Map</** ID: **/ string, number>();
-
-  readonly #uploadRequest = new Map</** ID: **/ string, XMLHttpRequest>();
-
-  public get uploadProgress() {
-    return this.#uploadProgress.get(this.#hostId);
-  }
+  private uploadRequest: XMLHttpRequest | null = null;
 
   constructor(host: APIController["host"]) {
     this.host = host;
-    this.#hostId = window.crypto.randomUUID();
     host.addController(this);
   }
 
   hostConnected() {}
 
   hostDisconnected() {
-    for (const request of this.#uploadRequest.values()) {
-      try {
-        request.abort();
-      } catch (e) {
-        console.debug(e);
-      }
-    }
-
-    this.#uploadRequest.clear();
+    this.cancelUpload();
   }
 
-  async fetch<T = unknown>(path: string, options?: RequestInit): Promise<T> {
+  async fetch<T extends {} | undefined>(
+    path: string,
+    options?: RequestInit,
+  ): Promise<T> {
     const auth = appState.auth;
 
     if (!auth) throw new Error("auth not in state");
@@ -82,9 +76,122 @@ export class APIController implements ReactiveController {
     });
 
     if (resp.ok) {
-      const body = await resp.json();
+      const body = (await resp.json()) as NonNullable<T>;
+      return this.handleOk<NonNullable<T>>(body);
+    }
+
+    let errorDetail;
+    try {
+      errorDetail = (await resp.json()).detail;
+    } catch {
+      /* empty */
+    }
+
+    const error = this.handleError(resp.status, errorDetail);
+    throw new APIError(error);
+  }
+
+  upload(
+    path: string,
+    file: File,
+    abortSignal?: AbortSignal,
+    /**
+     * Custom XMLHttpRequest['upload'] loadstart and progress event callback,
+     * which need to be attached before `send`.
+     */
+    uploadCallback?: (e: ProgressEvent) => void,
+  ): Promise<UploadResponseBody> & { request?: XMLHttpRequest } {
+    const auth = appState.auth;
+
+    if (!auth) throw new Error("auth not in state");
+
+    let request: XMLHttpRequest | undefined;
+
+    const promise: Promise<UploadResponseBody> & { request?: XMLHttpRequest } =
+      new Promise((resolve, reject) => {
+        if (abortSignal?.aborted) {
+          reject(AbortReason.UserCancel);
+        }
+        const xhr = new XMLHttpRequest();
+
+        xhr.open("PUT", `/api${path}`);
+        xhr.setRequestHeader("Content-Type", "application/octet-stream");
+        Object.entries(auth.headers).forEach(([k, v]) => {
+          xhr.setRequestHeader(k, v);
+        });
+        xhr.addEventListener("load", () => {
+          if (xhr.status === 200) {
+            resolve(
+              JSON.parse(xhr.response as string) as {
+                id: string;
+                added: boolean;
+                storageQuotaReached: boolean;
+              },
+            );
+          }
+          if (xhr.status >= 401) {
+            reject(
+              new APIError(
+                this.handleError(
+                  xhr.status,
+                  xhr.responseType === "json" && xhr.response,
+                ),
+              ),
+            );
+          }
+        });
+        xhr.addEventListener("error", () => {
+          reject(AbortReason.NetworkError);
+        });
+        xhr.addEventListener("timeout", () => {
+          reject(AbortReason.RequestTimeout);
+        });
+        xhr.addEventListener("abort", () => {
+          reject(AbortReason.UserCancel);
+        });
+
+        if (uploadCallback) {
+          const onUploadProgress = throttle(
+            file.size > BYTES_PER_GB
+              ? 800
+              : file.size > BYTES_PER_MB
+                ? 400
+                : 200,
+          )(uploadCallback);
+
+          xhr.upload.addEventListener("loadstart", onUploadProgress);
+          xhr.upload.addEventListener("progress", onUploadProgress);
+          xhr.upload.addEventListener("load", (e: ProgressEvent) => {
+            onUploadProgress.cancel();
+            uploadCallback(e);
+          });
+          xhr.upload.addEventListener("abort", () => onUploadProgress.cancel());
+          xhr.upload.addEventListener("error", () => onUploadProgress.cancel());
+          xhr.upload.addEventListener("timeout", () =>
+            onUploadProgress.cancel(),
+          );
+        }
+
+        xhr.send(file);
+
+        abortSignal?.addEventListener("abort", () => {
+          xhr.abort();
+          reject(AbortReason.UserCancel);
+        });
+
+        request = xhr;
+      });
+
+    promise.request = request;
+    this.uploadRequest = request ?? null;
+
+    return promise;
+  }
+
+  private readonly handleOk = <T extends {}>(body: T) => {
+    if ("storageQuotaReached" in body) {
       const storageQuotaReached = body.storageQuotaReached;
-      const executionMinutesQuotaReached = body.execMinutesQuotaReached;
+
       if (typeof storageQuotaReached === "boolean") {
         if (storageQuotaReached !== appState.org?.storageQuotaReached) {
           this.host.dispatchEvent(
@@ -96,6 +203,11 @@ export class APIController implements ReactiveController {
           );
         }
       }
+    }
+
+    if ("execMinutesQuotaReached" in body) {
+      const executionMinutesQuotaReached = body.execMinutesQuotaReached;
+
       if (typeof executionMinutesQuotaReached === "boolean") {
         if (
           executionMinutesQuotaReached != appState.org?.execMinutesQuotaReached
@@ -112,21 +224,19 @@ export class APIController implements ReactiveController {
           );
         }
       }
-
-      return body as T;
     }
 
-    let errorDetail;
+    return body;
+  };
+
+  private readonly handleError = (
+    status: Response["status"],
+    errorDetail?: unknown,
+  ) => {
     let errorDetails = null;
-    try {
-      errorDetail = (await resp.json()).detail;
-    } catch {
-      /* empty */
-    }
-
     let errorMessage: string = msg("Unknown API error");
 
-    switch (resp.status) {
+    switch (status) {
       case 401: {
         this.host.dispatchEvent(AuthService.createNeedLoginEvent());
         errorMessage = msg("Need login");
@@ -183,118 +293,18 @@ export class APIController implements ReactiveController {
       }
     }
 
-    throw new APIError({
+    return {
       message: errorMessage,
-      status: resp.status,
+      status: status,
       details: errorDetails,
-      errorCode: errorDetail,
-    });
-  }
-
-  async upload(
-    path: string,
-    file: File,
-    uploadId?: string,
-    abortSignal?: AbortSignal,
-  ): Promise<{ id: string; added: boolean; storageQuotaReached: boolean }> {
-    const auth = appState.auth;
-
-    if (!auth) throw new Error("auth not in state");
-
-    const id = uploadId || this.#hostId;
-
-    if (this.#uploadRequest.get(id)) {
-      console.debug("upload request exists");
-      this.cancelUpload(id);
-    }
-
-    return new Promise((resolve, reject) => {
-      if (abortSignal?.aborted) {
-        reject(AbortReason.UserCancel);
-      }
-      const xhr = new XMLHttpRequest();
-
-      xhr.open("PUT", `/api${path}`);
-      xhr.setRequestHeader("Content-Type", "application/octet-stream");
-      Object.entries(auth.headers).forEach(([k, v]) => {
-        xhr.setRequestHeader(k, v);
-      });
-      xhr.addEventListener("load", () => {
-        if (xhr.status === 200) {
-          resolve(
-            JSON.parse(xhr.response as string) as {
-              id: string;
-              added: boolean;
-              storageQuotaReached: boolean;
-            },
-          );
-        }
-        if (xhr.status === 403) {
-          reject(AbortReason.QuotaReached);
-        }
-        if (xhr.status >= 404) {
-          reject(
-            new APIError({
-              message: xhr.statusText,
-              status: xhr.status,
-            }),
-          );
-        }
-
-        this.#uploadRequest.delete(id);
-      });
-      xhr.addEventListener("error", () => {
-        reject(AbortReason.NetworkError);
-      });
-      xhr.addEventListener("timeout", () => {
-        reject(AbortReason.RequestTimeout);
-      });
-      xhr.addEventListener("abort", () => {
-        reject(AbortReason.UserCancel);
-      });
-
-      const onUploadProgress = throttle(100)((e: ProgressEvent) => {
-        this.#uploadProgress.set(id, (e.loaded / e.total) * 100);
-
-        this.host.requestUpdate();
-      });
-
-      xhr.upload.addEventListener("progress", onUploadProgress);
-
-      xhr.send(file);
-
-      abortSignal?.addEventListener("abort", () => {
-        xhr.abort();
-        onUploadProgress.cancel();
-        reject(AbortReason.UserCancel);
-      });
-
-      this.#uploadRequest.set(id, xhr);
-    });
-  }
-
-  cancelUpload(uploadId?: string) {
-    const cancel = (id: string) => {
-      const request = this.#uploadRequest.get(id);
-
-      if (request) {
-        request.abort();
-      }
-
-      this.#uploadProgress.delete(id);
-      this.#uploadRequest.delete(id);
+      errorCode: errorDetail as APIError["errorCode"],
     };
+  };
 
-    if (uploadId) {
-      cancel(uploadId);
-    } else {
-      for (const id in this.#uploadRequest.keys()) {
-        cancel(id);
-      }
+  private cancelUpload() {
+    if (this.uploadRequest) {
+      this.uploadRequest.abort();
+      this.uploadRequest = null;
     }
-  }
-
-  uploadProgressFor(uploadId: string) {
-    return this.#uploadProgress.get(uploadId);
   }
 }
