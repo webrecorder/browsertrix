@@ -45,7 +45,7 @@ from .models import (
     TagsResponse,
     CrawlOut,
     CrawlOutWithResources,
-    CrawlConfigUpdate,
+    UpdateCrawlConfig,
     Organization,
     User,
     PaginatedCrawlConfigOutResponse,
@@ -510,7 +510,7 @@ class CrawlConfigOps:
         )
 
     def check_attr_changed(
-        self, crawlconfig: CrawlConfig, update: CrawlConfigUpdate, attr_name: str
+        self, crawlconfig: CrawlConfig, update: UpdateCrawlConfig, attr_name: str
     ) -> bool:
         """check if attribute is set and has changed. if not changed, clear it on the update"""
         if getattr(update, attr_name) is not None:
@@ -520,7 +520,7 @@ class CrawlConfigOps:
         return False
 
     async def update_crawl_config(
-        self, cid: UUID, org: Organization, user: User, update: CrawlConfigUpdate
+        self, cid: UUID, org: Organization, user: User, update: UpdateCrawlConfig
     ) -> CrawlConfigUpdateResponse:
         # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
@@ -1255,7 +1255,7 @@ class CrawlConfigOps:
 
         crawl_config.config.exclude = exclude
 
-        update_config = CrawlConfigUpdate(config=crawl_config.config)
+        update_config = UpdateCrawlConfig(config=crawl_config.config)
 
         await self.update_crawl_config(cid, org, user, update_config)
 
@@ -1968,7 +1968,7 @@ def init_crawl_config_api(
         response_model=CrawlConfigUpdateResponse,
     )
     async def update_crawl_config(
-        update: CrawlConfigUpdate,
+        update: UpdateCrawlConfig,
         cid: UUID,
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
