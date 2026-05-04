@@ -2,7 +2,7 @@ gunicorn
 uvicorn[standard]
 fastapi==0.128.0
 motor
-passlib
+pwdlib[argon2,bcrypt]
 PyJWT==2.8.0
 pydantic==2.12.5
 email-validator
@@ -29,4 +29,4 @@ remotezip
 json-stream
 aiostream
 iso639-lang>=2.6.0
-setuptools<82.0.0
+setuptools
