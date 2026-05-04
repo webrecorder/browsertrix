@@ -1,6 +1,6 @@
 import { ContextConsumer } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
-import type { SlAlert } from "@shoelace-style/shoelace";
+import type { SlAlert, SlIconButton } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
@@ -18,6 +18,7 @@ import type {
 } from "@/context/org-uploads/types";
 import { notifyIconFor } from "@/controllers/notify";
 import { OrgTab } from "@/routes";
+import { stopProp } from "@/utils/events";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -172,12 +173,15 @@ export class OrgUploadsDialog extends BtrixElement {
             </div>
 
             ${this.minimized && !allCanceled
-              ? html`<div class="font-monostyle text-xs text-neutral-500">
+              ? html`<button
+                  class="font-monostyle text-xs text-neutral-500"
+                  @click=${() => (this.minimized = false)}
+                >
                   ${sumLoaded < sumTotal
                     ? `${this.localize.bytes(sumLoaded)} / `
                     : nothing}
                   ${this.localize.bytes(sumTotal)}
-                </div>`
+                </button>`
               : nothing}
             <sl-icon-button
               class="shrink-0 text-base"
@@ -222,6 +226,9 @@ export class OrgUploadsDialog extends BtrixElement {
     upload: OrgUpload & { uploadId: string },
   ) => {
     const progress = (upload.loaded / upload.total) * 100;
+    const uploaded = upload.loaded === upload.total;
+    const isItem = Boolean(upload.itemId);
+
     const removeOrHide = () => {
       if (this.uploadIds.length > 1) {
         this.dispatchEvent(
@@ -250,30 +257,53 @@ export class OrgUploadsDialog extends BtrixElement {
               ${upload.itemName}
             </div>
             <div class="font-monostyle text-neutral-500">
-              ${upload.canceled
-                ? msg("Canceled")
-                : html`${upload.loaded < upload.total
-                    ? `${this.localize.bytes(upload.loaded)} / `
-                    : nothing}
-                  ${this.localize.bytes(upload.total)}`}
+              ${isItem
+                ? msg("Uploaded")
+                : upload.canceled
+                  ? msg("Canceled")
+                  : uploaded
+                    ? msg("Finishing")
+                    : html`${this.localize.bytes(upload.loaded)} /
+                      ${this.localize.bytes(upload.total)}`}
             </div>
           </div>
           <sl-progress-bar
+            class=${clsx(
+              // Handle delay between when file is uploaded but item
+              // hasn't been created yet
+              uploaded && !isItem && tw`part-[indicator]:animate-pulse`,
+              isItem &&
+                tw`[--btrix-indicator-border-color:var(--sl-color-success-700)] [--indicator-color:var(--sl-color-success-500)]`,
+            )}
             value=${upload.canceled ? 0 : progress}
-            ?indeterminate=${!progress}
           ></sl-progress-bar>
         </div>
-        ${upload.itemId
-          ? html`<sl-icon-button
-              href=${`${this.navigate.orgBasePath}/${OrgTab.Items}/upload/${upload.itemId}`}
-              name="link"
-              class="text-base"
-              label=${msg("Visit Link")}
-              @click=${(e: MouseEvent) => {
-                removeOrHide();
-                this.navigate.link(e);
-              }}
-            ></sl-icon-button>`
+        ${uploaded
+          ? html`<btrix-popover
+              content=${msg("Link will be available when finished")}
+              ?disabled=${isItem}
+              @sl-show=${stopProp}
+              @sl-after-show=${stopProp}
+              @sl-hide=${stopProp}
+              @sl-after-hide=${stopProp}
+              hoist
+            >
+              <sl-icon-button
+                href=${`${this.navigate.orgBasePath}/${OrgTab.Items}/upload/${upload.itemId}`}
+                name="link"
+                class=${clsx(tw`text-base`, !isItem && tw`opacity-30`)}
+                label=${msg("Visit Link")}
+                ?disabled=${!isItem}
+                @click=${(e: MouseEvent) => {
+                  if ((e.target as SlIconButton).disabled) {
+                    e.preventDefault();
+                    return;
+                  }
+                  removeOrHide();
+                  this.navigate.link(e);
+                }}
+              ></sl-icon-button>
+            </btrix-popover>`
           : html`<sl-icon-button
               name="x"
               class="text-base"
