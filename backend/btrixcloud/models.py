@@ -95,9 +95,14 @@ HttpUrl = Annotated[
 Name = Annotated[str, Field(min_length=1, max_length=1000)]
 NameOrEmptyStr = Annotated[str, Field(min_length=0, max_length=1000)]
 Description = Annotated[str | None, Field(max_length=5000)]
-Tag = Annotated[str, Field(min_length=1, max_length=150)]
+Tag = Annotated[str, Field(min_length=1, max_length=80)]
+
+CollectionName = Annotated[str, Field(min_length=1, max_length=80)]
+CollectionSlug = Annotated[str, Field(min_length=1, max_length=80)]
+CollectionCaption = Annotated[str | None, Field(max_length=1000)]
 
 OrgName = Annotated[str, Field(min_length=1, max_length=50)]
+OrgPublicDescription = Annotated[str | None, Field(max_length=400)]
 
 
 # pylint: disable=too-few-public-methods
@@ -1746,10 +1751,10 @@ class Collection(BaseMongoModel):
 class CollIn(BaseModel):
     """Collection Passed in By User"""
 
-    name: Name
-    slug: Annotated[str | None, Field(min_length=1, max_length=1000)] = None
+    name: CollectionName
+    slug: CollectionSlug | None = None
     description: Description = None
-    caption: Annotated[str | None, Field(max_length=1000)] = None
+    caption: CollectionCaption = None
     crawlIds: Optional[List[str]] = []
 
     access: CollAccessType = CollAccessType.PRIVATE
@@ -1855,10 +1860,10 @@ class PublicCollOut(BaseMongoModel):
 class UpdateColl(BaseModel):
     """Update collection"""
 
-    name: Name | None = None
-    slug: Annotated[str | None, Field(min_length=1, max_length=1000)] = None
+    name: CollectionName | None = None
+    slug: CollectionSlug | None = None
     description: Description = None
-    caption: Annotated[str | None, Field(max_length=1000)] = None
+    caption: CollectionCaption = None
     access: Optional[CollAccessType] = None
     defaultThumbnailName: Optional[str] = None
     allowPublicDownload: Optional[bool] = None
