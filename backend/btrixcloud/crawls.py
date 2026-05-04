@@ -47,7 +47,7 @@ from .models import (
     UpdateCrawl,
     DeleteCrawlList,
     CrawlConfig,
-    UpdateCrawlConfig,
+    CrawlConfigUpdate,
     CrawlScale,
     CrawlStats,
     CrawlFile,
@@ -521,7 +521,7 @@ class CrawlOps(BaseCrawlOps):
         """Update crawl scale in the db"""
         crawl = await self.get_crawl(crawl_id, org)
 
-        update = UpdateCrawlConfig(browserWindows=browser_windows)
+        update = CrawlConfigUpdate(browserWindows=browser_windows)
         await self.crawl_configs.update_crawl_config(crawl.cid, org, user, update)
 
         result = await self.crawls.find_one_and_update(

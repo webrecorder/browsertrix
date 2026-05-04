@@ -3,8 +3,8 @@ import { z } from "zod";
 import { DEDUPE_INDEX_STATES, dedupeIndexStatsSchema } from "./dedupe";
 import { storageFileSchema } from "./storage";
 
-export const COLLECTION_NAME_MAX_LENGTH = 80;
-export const COLLECTION_CAPTION_MAX_LENGTH = 150;
+export const COLLECTION_NAME_MAX_LENGTH = 1000;
+export const COLLECTION_CAPTION_MAX_LENGTH = 1000;
 
 export enum CollectionAccess {
   Private = "private",

@@ -7,6 +7,7 @@ import { customElement, property, query } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type APIUser } from "@/index";
+import { ORG_NAME_MAX_LENGTH } from "@/types/org";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import slugifyStrict from "@/utils/slugify";
@@ -40,7 +41,7 @@ export class OrgForm extends BtrixElement {
   @query("#orgForm")
   private readonly form?: HTMLFormElement | null;
 
-  private readonly validateOrgNameMax = maxLengthValidator(40);
+  private readonly validateOrgNameMax = maxLengthValidator(ORG_NAME_MAX_LENGTH);
 
   readonly _renameOrgTask = new Task(this, {
     autoRun: false,

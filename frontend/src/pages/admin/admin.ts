@@ -9,6 +9,7 @@ import needLogin from "@/decorators/needLogin";
 import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
 import type { APIUser } from "@/index";
 import type { APIPaginatedList } from "@/types/api";
+import { ORG_NAME_MAX_LENGTH } from "@/types/org";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import { type OrgData } from "@/utils/orgs";
@@ -45,7 +46,7 @@ export class Admin extends BtrixElement {
     return this.appState.orgSlug;
   }
 
-  private readonly validateOrgNameMax = maxLengthValidator(40);
+  private readonly validateOrgNameMax = maxLengthValidator(ORG_NAME_MAX_LENGTH);
 
   protected firstUpdated(): void {
     this.initSuperAdmin();

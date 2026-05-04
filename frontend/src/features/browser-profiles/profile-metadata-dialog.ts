@@ -10,6 +10,7 @@ import type { Dialog } from "@/components/ui/dialog";
 import type { TagInput } from "@/components/ui/tag-input";
 import type { ProfileUpdatedEvent } from "@/features/browser-profiles/types";
 import type { Profile } from "@/types/crawler";
+import { DESCRIPTION_MAX_LENGTH, NAME_MAX_LENGTH } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 
@@ -46,8 +47,10 @@ export class ProfileMetadataDialog extends BtrixElement {
   @query(`btrix-tag-input`)
   private readonly tagInput?: TagInput | null;
 
-  private readonly validateNameMax = maxLengthValidator(50);
-  private readonly validateDescriptionMax = maxLengthValidator(500);
+  private readonly validateNameMax = maxLengthValidator(NAME_MAX_LENGTH);
+  private readonly validateDescriptionMax = maxLengthValidator(
+    DESCRIPTION_MAX_LENGTH,
+  );
 
   private readonly submitTask = new Task(this, {
     autoRun: false,

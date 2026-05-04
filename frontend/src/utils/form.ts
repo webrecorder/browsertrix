@@ -9,23 +9,61 @@ import isEqual from "lodash/fp/isEqual";
 import type { EmptyObject } from "type-fest";
 
 import localize from "./localize";
+import { pluralize } from "./pluralize";
 
 export type MaxLengthValidator = {
   helpText: string;
   validate: (e: CustomEvent) => boolean;
 };
 
-export function getHelpText(maxLength: number, currentLength: number) {
-  const helpText = msg(str`Maximum ${localize.number(maxLength)} characters`);
+const helpTextNormal = (maxLength: number) => {
+  const max = localize.number(maxLength);
+  return pluralize(maxLength, {
+    zero: msg(str`Maximum ${max} characters`, {
+      id: "maxLengthValidator.helpText.zero",
+    }),
+    one: msg(str`Maximum ${max} character`, {
+      id: "maxLengthValidator.helpText.one",
+    }),
+    two: msg(str`Maximum ${max} characters`, {
+      id: "maxLengthValidator.helpText.two",
+    }),
+    few: msg(str`Maximum ${max} characters`, {
+      id: "maxLengthValidator.helpText.few",
+    }),
+    many: msg(str`Maximum ${max} characters`, {
+      id: "maxLengthValidator.helpText.many",
+    }),
+    other: msg(str`Maximum ${max} characters`, {
+      id: "maxLengthValidator.helpText.other",
+    }),
+  });
+};
 
+export function getHelpText(maxLength: number, currentLength: number) {
   if (currentLength > maxLength) {
-    const overMax = currentLength - maxLength;
-    return overMax === 1
-      ? msg(str`${localize.number(overMax)} character over limit`)
-      : msg(str`${localize.number(overMax)} characters over limit`);
+    const overMax = localize.number(currentLength - maxLength);
+    return pluralize(currentLength - maxLength, {
+      zero: "",
+      one: msg(str`${overMax} character over limit`, {
+        id: "maxLengthValidator.helpTextError.one",
+      }),
+      two: msg(str`${overMax} characters over limit`, {
+        id: "maxLengthValidator.helpTextError.two",
+      }),
+      few: msg(str`${overMax} characters over limit`, {
+        id: "maxLengthValidator.helpTextError.few",
+      }),
+      many: msg(str`${overMax} characters over limit`, {
+        id: "maxLengthValidator.helpTextError.many",
+      }),
+      other: msg(str`${overMax} characters over limit`, {
+        id: "maxLengthValidator.helpTextError.other",
+      }),
+    });
   }
 
-  return helpText;
+  return helpTextNormal(maxLength);
 }
 
 /**
@@ -41,7 +79,8 @@ export function getHelpText(maxLength: number, currentLength: number) {
  * ```
  */
 export function maxLengthValidator(maxLength: number): MaxLengthValidator {
-  const validityHelpText = msg(str`Maximum ${maxLength} characters`);
+  const max = localize.number(maxLength);
+  const validityHelpText = helpTextNormal(maxLength);
   let origHelpText: null | string = null;
 
   const validate = (e: CustomEvent) => {
@@ -56,9 +95,7 @@ export function maxLengthValidator(maxLength: number): MaxLengthValidator {
 
     el.setCustomValidity(
       isInvalid
-        ? msg(
-            str`Please shorten this text to ${maxLength} or fewer characters.`,
-          )
+        ? msg(str`Please shorten this text to ${max} or fewer characters.`)
         : "",
     );
 

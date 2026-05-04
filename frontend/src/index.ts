@@ -25,6 +25,7 @@ import { notificationsContextKey } from "./context/notifications/types";
 import { viewStateContext } from "./context/view-state";
 import type { BtrixUserGuideShowEvent } from "./events/btrix-user-guide-show";
 import { OrgTab, RouteNamespace } from "./routes";
+import { ORG_NAME_MAX_LENGTH } from "./types/org";
 import type { UserInfo, UserOrg } from "./types/user";
 import { pageView, type AnalyticsTrackProps } from "./utils/analytics";
 import { type ViewState } from "./utils/APIRouter";
@@ -628,7 +629,7 @@ export class App extends BtrixElement {
     }
 
     // Limit org name display for orgs created before org name max length restriction
-    const orgNameLength = 50;
+    const orgNameLength = ORG_NAME_MAX_LENGTH;
 
     return html`
       <div role="separator" class="mx-2.5 h-7 w-0 border-l"></div>
