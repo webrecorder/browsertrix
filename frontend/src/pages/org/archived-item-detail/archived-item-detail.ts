@@ -588,7 +588,7 @@ export class ArchivedItemDetail extends BtrixElement {
       </main>
 
       <btrix-item-metadata-editor
-        .crawl=${this.item}
+        .item=${this.item}
         ?open=${this.openDialogName === "metadata"}
         @request-close=${() => (this.openDialogName = undefined)}
         @updated=${() => void this.fetchCrawl()}

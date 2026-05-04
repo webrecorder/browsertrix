@@ -110,6 +110,8 @@ import {
 } from "@/types/crawler";
 import type { UnderlyingFunction } from "@/types/utils";
 import {
+  DESCRIPTION_MAX_LENGTH,
+  NAME_MAX_LENGTH,
   NewWorkflowOnlyScopeType,
   type StorageSeedFile,
 } from "@/types/workflow";
@@ -353,8 +355,10 @@ export class WorkflowEditor extends BtrixElement {
 
   private readonly handleCurrentTarget = makeCurrentTargetHandler(this);
   private readonly checkFormValidity = formValidator(this);
-  private readonly validateNameMax = maxLengthValidator(80);
-  private readonly validateDescriptionMax = maxLengthValidator(350);
+  private readonly validateNameMax = maxLengthValidator(NAME_MAX_LENGTH);
+  private readonly validateDescriptionMax = maxLengthValidator(
+    DESCRIPTION_MAX_LENGTH,
+  );
 
   private readonly tabLabels = sectionStrings;
 

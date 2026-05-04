@@ -29,3 +29,5 @@ export type ArchivedItemQAPage = ArchivedItemPage & {
     } | null;
   };
 };
+
+export const PAGE_COMMENT_MAX_LENGTH = 500;

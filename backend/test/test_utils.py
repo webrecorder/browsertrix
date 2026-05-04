@@ -14,6 +14,7 @@ from btrixcloud.utils import slug_from_name, crawler_image_below_minimum
         ("Org with åccénted charactêrs", "org-with-accented-characters"),
         ("Org with åccénted! charactêrs@!", "org-with-accented-characters"),
         ("cATs! 🐈🐈‍⬛", "cats"),
+        ("非拉丁语系的测试名称", "fei-la-ding-yu-xi-de-ce-shi-ming-cheng"),
     ],
 )
 def test_slug_from_name(name: str, expected_slug: str):

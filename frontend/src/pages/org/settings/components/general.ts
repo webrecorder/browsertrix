@@ -14,6 +14,7 @@ import type { APIUser } from "@/index";
 import { columns } from "@/layouts/columns";
 import { RouteNamespace } from "@/routes";
 import { alerts } from "@/strings/orgs/alerts";
+import { ORG_DESCRIPTION_MAX_LENGTH, ORG_NAME_MAX_LENGTH } from "@/types/org";
 import { isApiError } from "@/utils/api";
 import { formValidator, maxLengthValidator } from "@/utils/form";
 import slugifyStrict from "@/utils/slugify";
@@ -41,8 +42,10 @@ export class OrgSettingsGeneral extends BtrixElement {
   private slugValue = "";
 
   private readonly checkFormValidity = formValidator(this);
-  private readonly validateOrgNameMax = maxLengthValidator(40);
-  private readonly validateDescriptionMax = maxLengthValidator(150);
+  private readonly validateOrgNameMax = maxLengthValidator(ORG_NAME_MAX_LENGTH);
+  private readonly validateDescriptionMax = maxLengthValidator(
+    ORG_DESCRIPTION_MAX_LENGTH,
+  );
 
   private get baseUrl() {
     return `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;

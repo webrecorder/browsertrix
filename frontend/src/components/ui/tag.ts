@@ -3,7 +3,7 @@ import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
-export const TAG_MAX_CHARACTERS = 40;
+export const TAG_MAX_CHARACTERS = 150;
 
 /**
  * Customized <sl-tag>
