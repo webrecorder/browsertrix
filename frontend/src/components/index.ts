@@ -7,5 +7,5 @@ import("./not-found");
 import("./screencast");
 import("./beta-badges");
 import("./detail-page-title");
-import("./notification-stack");
+import("./toast-stack");
 import("./verified-badge");
