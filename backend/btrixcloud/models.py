@@ -597,7 +597,7 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
 
 
 # ============================================================================
-class CrawlConfigUpdate(BaseModel):
+class UpdateCrawlConfig(BaseModel):
     """Update crawl config name, crawl schedule, or tags"""
 
     # metadata: not revision tracked
