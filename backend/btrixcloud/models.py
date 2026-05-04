@@ -1480,7 +1480,9 @@ class PageQACompare(BaseModel):
 
     screenshotMatch: Optional[float] = None
     textMatch: Optional[float] = None
+    rawTextMatch: float | None = None
     resourceCounts: Optional[Dict[str, int]] = None
+    csrClues: dict[str, dict[str, int]] | None = None
 
 
 # ============================================================================
