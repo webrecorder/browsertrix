@@ -1703,11 +1703,11 @@ class Collection(BaseMongoModel):
     """Org collection structure"""
 
     id: UUID
-    name: Name
-    slug: Annotated[str, Field(min_length=1, max_length=1000)]
+    name: CollectionName
+    slug: CollectionSlug
     oid: UUID
-    description: Optional[str] = None
-    caption: Optional[str] = None
+    description: Description = None
+    caption: CollectionCaption = None
 
     created: Optional[datetime] = None
     modified: Optional[datetime] = None
