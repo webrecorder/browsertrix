@@ -9,6 +9,7 @@ import without from "lodash/fp/without";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Workflow } from "@/types/crawler";
+import { stopProp } from "@/utils/events";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
@@ -40,6 +41,9 @@ export class CollectionWorkflowListSettings extends BtrixElement {
   private dedupe = false;
 
   @state()
+  private showSaveStatus = false;
+
+  @state()
   private saveStatus?: "success" | "error";
 
   #timerId?: number;
@@ -62,7 +66,7 @@ export class CollectionWorkflowListSettings extends BtrixElement {
     if (changedProperties.has("saveStatus") && this.saveStatus !== undefined) {
       // Reset success status
       this.#timerId = window.setTimeout(() => {
-        this.saveStatus = undefined;
+        this.showSaveStatus = false;
       }, 5000);
     }
   }
@@ -76,9 +80,10 @@ export class CollectionWorkflowListSettings extends BtrixElement {
     return html`<sl-tooltip
       placement="left"
       trigger="manual"
-      ?open=${this.saveStatus !== undefined}
+      ?open=${Boolean(this.showSaveStatus && this.saveStatus)}
       hoist
-      @click=${() => (this.saveStatus = undefined)}
+      @click=${() => (this.showSaveStatus = false)}
+      @sl-after-hide=${() => (this.saveStatus = undefined)}
     >
       ${this.saveStatus === "success"
         ? html`<div slot="content" class="flex items-center gap-2">
@@ -118,6 +123,8 @@ export class CollectionWorkflowListSettings extends BtrixElement {
             ?disabled=${!disableDedupe}
             placement="left"
             hoist
+            @sl-hide=${stopProp}
+            @sl-after-hide=${stopProp}
           >
             <sl-switch
               class="mx-[2px] inline-block"
@@ -126,9 +133,6 @@ export class CollectionWorkflowListSettings extends BtrixElement {
               ?disabled=${!this.workflowId}
               @sl-change=${(e: CustomEvent) => {
                 e.stopPropagation();
-
-                window.clearTimeout(this.#timerId);
-                this.saveStatus = undefined;
 
                 this.autoAdd = (e.target as SlSwitch).checked;
                 this.collapse = !this.autoAdd;
@@ -159,6 +163,8 @@ export class CollectionWorkflowListSettings extends BtrixElement {
                 ?disabled=${!disableDedupe}
                 placement="bottom-end"
                 hoist
+                @sl-hide=${stopProp}
+                @sl-after-hide=${stopProp}
               >
                 <sl-switch
                   class="mx-[2px] inline-block"
@@ -170,9 +176,6 @@ export class CollectionWorkflowListSettings extends BtrixElement {
                   }}
                   @sl-change=${(e: CustomEvent) => {
                     e.stopPropagation();
-
-                    window.clearTimeout(this.#timerId);
-                    this.saveStatus = undefined;
 
                     this.dedupe = (e.target as SlSwitch).checked;
 
@@ -224,6 +227,9 @@ export class CollectionWorkflowListSettings extends BtrixElement {
       }
     }
 
+    window.clearTimeout(this.#timerId);
+    this.showSaveStatus = false;
+
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}`,
@@ -250,5 +256,7 @@ export class CollectionWorkflowListSettings extends BtrixElement {
         id: "auto-add-status",
       });
     }
+
+    this.showSaveStatus = true;
   }
 }
