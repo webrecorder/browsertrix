@@ -42,11 +42,13 @@ export class DescListItem extends LitElement {
       font-variation-settings: var(--font-monostyle-variation);
       line-height: 1.5rem;
       min-height: 1.5rem;
+      word-wrap: break-word;
     }
 
     .item {
       display: flex;
       justify-content: var(--justify-item, initial);
+      min-width: 0;
     }
 
     .content {
