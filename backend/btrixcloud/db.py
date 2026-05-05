@@ -6,6 +6,7 @@ import importlib.util
 import os
 import urllib.parse
 import asyncio
+import contextvars
 from uuid import UUID, uuid4
 
 from typing import (
@@ -17,7 +18,7 @@ from typing import (
 )
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from pydantic import BaseModel
+from pydantic import BaseModel, WrapValidator, ValidationError
 from pymongo.errors import InvalidName
 
 from .migrations import BaseMigration
@@ -316,6 +317,38 @@ async def create_indexes(
     await profile_ops.init_index()
 
 
+_LENIENT_CTX = contextvars.ContextVar("_lenient_ctx", default=False)
+
+
+def _lenient_str(v, handler, info):
+    """WrapValidator: skip string validation when reading from DB."""
+    ctx = _LENIENT_CTX.get()
+    if ctx and isinstance(v, str):
+        try:
+            return handler(v)
+        except ValidationError as e:
+            # pylint: disable=fixme
+            # TODO: replace with logger.warning once we have structured logging in place
+            doc_id = ctx.get("id", "?")
+            model = ctx.get("model", "?")
+            field = getattr(info, "field_name", "?")
+            print(
+                f"WARNING: lenient read - "
+                f"{model}.{field!r} value exceeds constraints in "
+                f"document id={doc_id!r}",
+                e,
+            )
+            return v
+    return handler(v)
+
+
+LENIENT_ON_READ = WrapValidator(_lenient_str)
+"""
+Marker for fields that allow validations to fail when read from the database.
+Useful for adding new validations without breaking existing data, e.g. max
+length constraints on text fields.
+"""
+
 # ============================================================================
 T = TypeVar("T")
 
@@ -337,7 +370,11 @@ class BaseMongoModel(BaseModel):
         if not data:
             return cls()
         data["id"] = data.pop("_id")
-        return cls(**data)
+        _LENIENT_CTX.set({"id": data.get("id"), "model": cls.__name__})
+        try:
+            return cls(**data)
+        finally:
+            _LENIENT_CTX.set(False)
 
     def serialize(self, **opts):
         """convert class to dict"""
