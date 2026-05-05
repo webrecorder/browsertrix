@@ -2067,9 +2067,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${this.renderHelpTextCol(html`
         ${infoTextFor["browserProfile"]}
         ${this.renderUserGuideLink({
-          hash: "browser-profile-best-practices",
-          content: msg("Read best practices"),
-        })}.
+          hash: "browser-profile",
+          content: msg("More details"),
+        })}
       `)}
       ${when(
         this.formState.browserProfile,
@@ -2095,13 +2095,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${inputCol(html`
         <sl-checkbox name="saveStorage" ?checked=${this.formState.saveStorage}>
-          ${msg("Include browser storage data")}
+          ${labelFor["saveStorage"]}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(
         html`${infoTextFor["saveStorage"]}
         ${this.renderUserGuideLink({
-          hash: "save-local-and-session-storage",
+          hash: "include-browser-storage-data",
           content: msg("More details"),
         })}.`,
         false,
