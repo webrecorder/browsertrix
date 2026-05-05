@@ -81,6 +81,7 @@ export class WorkflowsNew extends BtrixElement {
         selectLinks: DEFAULT_SELECT_LINKS,
         customBehaviors: [],
         clickSelector: DEFAULT_AUTOCLICK_SELECTOR,
+        saveStorage: true,
       },
       tags: [],
       crawlTimeout: null,
