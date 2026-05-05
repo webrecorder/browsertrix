@@ -375,20 +375,6 @@ export class App extends BtrixElement {
         ?open=${this.appState.userGuideOpen}
         contained
         @sl-hide=${() => AppStateService.updateUserGuideOpen(false)}
-        @sl-after-hide=${() => {
-          // FIXME There might be a way to handle this in Mkdocs, but updating
-          // only the hash doesn't seem to update the docs view
-          const iframe = this.userGuideDrawer.querySelector("iframe");
-
-          if (!iframe) return;
-
-          const src = iframe.src;
-          const hashIdx = src.indexOf("#");
-
-          if (hashIdx > -1) {
-            iframe.src = src.slice(0, src.indexOf("#"));
-          }
-        }}
       >
         <span slot="label" class="flex items-center gap-3">
           <sl-icon name="book"></sl-icon>
