@@ -1199,7 +1199,7 @@ class CrawlScaleResponse(BaseModel):
 class UploadedCrawl(BaseCrawl):
     """Store State of a Crawl Upload"""
 
-    name: Name | None = ""
+    name: Name | None
     description: Description = ""
     tags: list[Tag] | None = []
 
@@ -2424,7 +2424,7 @@ class OrgPublicProfileUpdate(BaseModel):
     """Organization enablePublicProfile update"""
 
     enablePublicProfile: Optional[bool] = None
-    publicDescription: Optional[str] = None
+    publicDescription: OrgPublicDescription = None
     publicUrl: Optional[str] = None
 
 
@@ -2502,7 +2502,7 @@ class OrgOut(BaseMongoModel):
     lastCrawlFinished: Optional[datetime] = None
 
     enablePublicProfile: bool = False
-    publicDescription: str = ""
+    publicDescription: OrgPublicDescription = ""
     publicUrl: str = ""
 
     featureFlags: FeatureFlags = FeatureFlags()
@@ -2568,7 +2568,7 @@ class Organization(BaseMongoModel):
     lastCrawlFinished: Optional[datetime] = None
 
     enablePublicProfile: bool = False
-    publicDescription: Optional[str] = None
+    publicDescription: OrgPublicDescription = None
     publicUrl: Optional[str] = None
 
     featureFlags: FeatureFlags = FeatureFlags()
