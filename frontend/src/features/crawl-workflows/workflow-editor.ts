@@ -2064,7 +2064,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
           }}
         ></btrix-select-browser-profile>
       `)}
-      ${this.renderHelpTextCol(infoTextFor["browserProfile"])}
+      ${this.renderHelpTextCol(html`
+        ${infoTextFor["browserProfile"]}
+        ${this.renderUserGuideLink({
+          hash: "browser-profile-best-practices",
+          content: msg("Read best practices"),
+        })}.
+      `)}
       ${when(
         this.formState.browserProfile,
         () => html`
@@ -2086,6 +2092,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
             false,
           )}
         `,
+      )}
+      ${inputCol(html`
+        <sl-checkbox name="saveStorage" ?checked=${this.formState.saveStorage}>
+          ${msg("Include browser storage data")}
+        </sl-checkbox>
+      `)}
+      ${this.renderHelpTextCol(
+        html`${infoTextFor["saveStorage"]}
+        ${this.renderUserGuideLink({
+          hash: "save-local-and-session-storage",
+          content: msg("More details"),
+        })}.`,
+        false,
       )}
       ${proxies?.servers.length
         ? [
@@ -2163,19 +2182,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(infoTextFor["blockAds"], false)}
-      ${inputCol(html`
-        <sl-checkbox name="saveStorage" ?checked=${this.formState.saveStorage}>
-          ${msg("Save local and session storage")}
-        </sl-checkbox>
-      `)}
-      ${this.renderHelpTextCol(
-        html`${infoTextFor["saveStorage"]}
-        ${this.renderUserGuideLink({
-          hash: "save-local-and-session-storage",
-          content: msg("Implications for shared archives"),
-        })}.`,
-        false,
-      )}
       ${inputCol(html`
         <sl-input
           name="userAgent"
