@@ -6,7 +6,7 @@ import { publicCollectionSchema } from "./collection";
 import { featureFlagSchema } from "./featureFlags";
 
 export const ORG_NAME_MAX_LENGTH = 50;
-export const ORG_DESCRIPTION_MAX_LENGTH = 150;
+export const ORG_DESCRIPTION_MAX_LENGTH = 400;
 
 export enum OrgReadOnlyReason {
   SubscriptionPaused = "subscriptionPaused",
