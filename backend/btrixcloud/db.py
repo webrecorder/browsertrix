@@ -374,11 +374,11 @@ class BaseMongoModel(BaseModel):
         if not data:
             return cls()
         data["id"] = data.pop("_id")
-        _LENIENT_CTX.set({"id": data.get("id"), "model": cls.__name__})
+        token = _LENIENT_CTX.set({"id": data.get("id"), "model": cls.__name__})
         try:
             return cls(**data)
         finally:
-            _LENIENT_CTX.set(False)
+            _LENIENT_CTX.reset(token)
 
     def serialize(self, **opts):
         """convert class to dict"""
