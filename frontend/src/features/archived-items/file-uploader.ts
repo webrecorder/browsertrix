@@ -13,6 +13,7 @@ import type { BtrixFileChangeEvent } from "@/components/ui/file-list/events";
 import type { Tags } from "@/components/ui/tag-input";
 import type { BtrixTagsChangeEvent } from "@/features/archived-items/item-tags-input";
 import { type CollectionsChangeEvent } from "@/features/collections/collections-add";
+import { DESCRIPTION_MAX_LENGTH } from "@/types/archivedItems";
 import { APIError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 
@@ -77,7 +78,9 @@ export class FileUploader extends BtrixElement {
   @queryAsync("#fileUploadForm")
   private readonly form!: Promise<HTMLFormElement>;
 
-  private readonly validateDescriptionMax = maxLengthValidator(500);
+  private readonly validateDescriptionMax = maxLengthValidator(
+    DESCRIPTION_MAX_LENGTH,
+  );
 
   // Use to cancel requests
   private uploadRequest: XMLHttpRequest | null = null;

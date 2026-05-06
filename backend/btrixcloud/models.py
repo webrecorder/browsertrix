@@ -92,6 +92,18 @@ HttpUrl = Annotated[
     str, BeforeValidator(lambda value: str(http_url_adapter.validate_python(value)))
 ]
 
+Name = Annotated[str, Field(min_length=1, max_length=1000)]
+NameOrEmptyStr = Annotated[str, Field(min_length=0, max_length=1000)]
+Description = Annotated[str | None, Field(max_length=5000)]
+Tag = Annotated[str, Field(min_length=1, max_length=80)]
+
+CollectionName = Annotated[str, Field(min_length=1, max_length=80)]
+CollectionSlug = Annotated[str, Field(min_length=1, max_length=80)]
+CollectionCaption = Annotated[str | None, Field(max_length=1000)]
+
+OrgName = Annotated[str, Field(min_length=1, max_length=50)]
+OrgPublicDescription = Annotated[str | None, Field(max_length=400)]
+
 
 # pylint: disable=too-few-public-methods
 class EmailStr(CasedEmailStr):
@@ -427,9 +439,9 @@ class CrawlConfigIn(BaseModel):
 
     config: RawCrawlConfig
 
-    name: str
+    name: NameOrEmptyStr
 
-    description: Optional[str] = ""
+    description: Description = ""
 
     jobType: Optional[JobType] = JobType.CUSTOM
 
@@ -440,7 +452,7 @@ class CrawlConfigIn(BaseModel):
     autoAddCollections: Optional[List[UUID]] = []
     dedupeCollId: Union[UUID, EmptyStr, None] = None
 
-    tags: Optional[List[str]] = []
+    tags: list[Tag] | None = []
 
     crawlTimeout: int = 0
     maxCrawlSize: int = 0
@@ -589,9 +601,9 @@ class UpdateCrawlConfig(BaseModel):
     """Update crawl config name, crawl schedule, or tags"""
 
     # metadata: not revision tracked
-    name: Optional[str] = None
-    tags: Optional[List[str]] = None
-    description: Optional[str] = None
+    name: NameOrEmptyStr | None = None
+    tags: list[Tag] | None = None
+    description: Description = None
     autoAddCollections: Optional[List[UUID]] = None
     dedupeCollId: Union[UUID, EmptyStr, None] = None
     runNow: bool = False
@@ -1017,9 +1029,9 @@ class CrawlOut(BaseMongoModel):
 class UpdateCrawl(BaseModel):
     """Update crawl"""
 
-    name: Optional[str] = None
-    description: Optional[str] = None
-    tags: Optional[List[str]] = None
+    name: NameOrEmptyStr | None = None
+    description: Description = None
+    tags: list[Tag] | None = None
     collectionIds: Optional[List[UUID]] = []
     reviewStatus: ReviewStatus = None
 
@@ -1186,6 +1198,10 @@ class CrawlScaleResponse(BaseModel):
 # ============================================================================
 class UploadedCrawl(BaseCrawl):
     """Store State of a Crawl Upload"""
+
+    name: Name | None
+    description: Description = ""
+    tags: list[Tag] | None = []
 
     type: Literal["upload"] = "upload"
     image: None = None
@@ -1687,11 +1703,11 @@ class Collection(BaseMongoModel):
     """Org collection structure"""
 
     id: UUID
-    name: str = Field(..., min_length=1)
-    slug: str = Field(..., min_length=1)
+    name: CollectionName
+    slug: CollectionSlug
     oid: UUID
-    description: Optional[str] = None
-    caption: Optional[str] = None
+    description: Description = None
+    caption: CollectionCaption = None
 
     created: Optional[datetime] = None
     modified: Optional[datetime] = None
@@ -1735,10 +1751,10 @@ class Collection(BaseMongoModel):
 class CollIn(BaseModel):
     """Collection Passed in By User"""
 
-    name: str = Field(..., min_length=1)
-    slug: Optional[str] = None
-    description: Optional[str] = None
-    caption: Optional[str] = None
+    name: CollectionName
+    slug: CollectionSlug | None = None
+    description: Description = None
+    caption: CollectionCaption = None
     crawlIds: Optional[List[str]] = []
 
     access: CollAccessType = CollAccessType.PRIVATE
@@ -1844,10 +1860,10 @@ class PublicCollOut(BaseMongoModel):
 class UpdateColl(BaseModel):
     """Update collection"""
 
-    name: Optional[str] = None
-    slug: Optional[str] = None
-    description: Optional[str] = None
-    caption: Optional[str] = None
+    name: CollectionName | None = None
+    slug: CollectionSlug | None = None
+    description: Description = None
+    caption: CollectionCaption = None
     access: Optional[CollAccessType] = None
     defaultThumbnailName: Optional[str] = None
     allowPublicDownload: Optional[bool] = None
@@ -1915,7 +1931,7 @@ class RemovePendingInvite(InviteRequest):
 class RenameOrg(BaseModel):
     """Rename an existing org"""
 
-    name: str
+    name: OrgName
     slug: Optional[str] = None
 
 
@@ -2374,7 +2390,7 @@ class OrgReadOnlyOnCancel(BaseModel):
 class OrgCreate(BaseModel):
     """Create a new org"""
 
-    name: str
+    name: OrgName
     slug: Optional[str] = None
 
 
@@ -2408,7 +2424,7 @@ class OrgPublicProfileUpdate(BaseModel):
     """Organization enablePublicProfile update"""
 
     enablePublicProfile: Optional[bool] = None
-    publicDescription: Optional[str] = None
+    publicDescription: OrgPublicDescription = None
     publicUrl: Optional[str] = None
 
 
@@ -2486,7 +2502,7 @@ class OrgOut(BaseMongoModel):
     lastCrawlFinished: Optional[datetime] = None
 
     enablePublicProfile: bool = False
-    publicDescription: str = ""
+    publicDescription: OrgPublicDescription = ""
     publicUrl: str = ""
 
     featureFlags: FeatureFlags = FeatureFlags()
@@ -2552,7 +2568,7 @@ class Organization(BaseMongoModel):
     lastCrawlFinished: Optional[datetime] = None
 
     enablePublicProfile: bool = False
-    publicDescription: Optional[str] = None
+    publicDescription: OrgPublicDescription = None
     publicUrl: Optional[str] = None
 
     featureFlags: FeatureFlags = FeatureFlags()
@@ -2848,9 +2864,9 @@ class ProfileCreate(BaseModel):
     """Create new profile for browser id"""
 
     browserid: str
-    name: str
-    description: Optional[str] = ""
-    tags: Optional[List[str]] = []
+    name: Name
+    description: Description = ""
+    tags: list[Tag] | None = []
 
 
 # ============================================================================

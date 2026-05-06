@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import type { SlTextarea } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
@@ -12,6 +12,7 @@ import type {
   CollectionsAdd,
   CollectionsChangeEvent,
 } from "@/features/collections/collections-add";
+import { DESCRIPTION_MAX_LENGTH, NAME_MAX_LENGTH } from "@/types/archivedItems";
 import type { ArchivedItem } from "@/types/crawler";
 import { isSuccessfullyFinished } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
@@ -20,7 +21,7 @@ import { maxLengthValidator } from "@/utils/form";
  * Usage:
  * ```ts
  * <btrix-item-metadata-editor
- *   .crawl=${this.crawl}
+ *   .item=${this.crawl}
  *   ?open=${this.open}
  *   @request-close=${this.requestClose}
  *   @updated=${this.updated}
@@ -34,7 +35,7 @@ import { maxLengthValidator } from "@/utils/form";
 @localized()
 export class CrawlMetadataEditor extends BtrixElement {
   @property({ type: Object })
-  crawl?: ArchivedItem;
+  item?: ArchivedItem;
 
   @property({ type: Boolean })
   open = false;
@@ -60,18 +61,22 @@ export class CrawlMetadataEditor extends BtrixElement {
   @query("#collection-input")
   public readonly collectionInput?: CollectionsAdd | null;
 
-  private readonly validateCrawlDescriptionMax = maxLengthValidator(500);
+  private readonly validateItemNameMax = maxLengthValidator(NAME_MAX_LENGTH);
 
-  willUpdate(changedProperties: Map<string, never>) {
-    if (changedProperties.has("crawl") && this.crawl) {
-      this.includeName = this.crawl.type === "upload";
-      this.tagsToSave = this.crawl.tags;
-      this.collectionsToSave = this.crawl.collectionIds;
+  private readonly validateItemDescriptionMax = maxLengthValidator(
+    DESCRIPTION_MAX_LENGTH,
+  );
+
+  willUpdate(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("item") && this.item) {
+      this.includeName = this.item.type === "upload";
+      this.tagsToSave = this.item.tags;
+      this.collectionsToSave = this.item.collectionIds;
     }
   }
 
   render() {
-    const isSuccess = this.crawl && isSuccessfullyFinished(this.crawl);
+    const isSuccess = this.item && isSuccessfullyFinished(this.item);
 
     return html`
       <btrix-dialog
@@ -87,12 +92,11 @@ export class CrawlMetadataEditor extends BtrixElement {
   }
 
   private renderEditMetadata() {
-    if (!this.crawl) return;
+    if (!this.item) return;
 
-    const item = this.crawl;
+    const item = this.item;
     const isSuccess = isSuccessfullyFinished(item);
 
-    const { helpText, validate } = this.validateCrawlDescriptionMax;
     return html`
       <form
         id="crawlDetailsForm"
@@ -102,7 +106,14 @@ export class CrawlMetadataEditor extends BtrixElement {
         ${this.includeName
           ? html`
               <div class="mb-3">
-                <sl-input label="Name" name="name" value="${item.name}">
+                <sl-input
+                  label="Name"
+                  name="name"
+                  value="${item.name}"
+                  help-text=${this.validateItemNameMax.helpText}
+                  @sl-input=${this.validateItemNameMax.validate}
+                  placeholder="${item.name}"
+                >
                 </sl-input>
               </div>
             `
@@ -116,8 +127,8 @@ export class CrawlMetadataEditor extends BtrixElement {
           rows="3"
           autocomplete="off"
           resize="auto"
-          help-text=${helpText}
-          @sl-input=${validate}
+          help-text=${this.validateItemDescriptionMax.helpText}
+          @sl-input=${this.validateItemDescriptionMax.validate}
         ></sl-textarea>
         <btrix-item-tags-input
           .tags=${item.tags}
@@ -164,7 +175,7 @@ export class CrawlMetadataEditor extends BtrixElement {
 
   private async onSubmitMetadata(e: SubmitEvent) {
     e.preventDefault();
-    if (!this.crawl) return;
+    if (!this.item) return;
 
     const formEl = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(formEl))) return;
@@ -176,21 +187,21 @@ export class CrawlMetadataEditor extends BtrixElement {
       description?: string;
       name?: string;
     } = {};
-    if (this.includeName && name && name !== this.crawl.name) {
+    if (this.includeName && name && name !== this.item.name) {
       params.name = name as string;
     }
     if (
       crawlDescription &&
-      crawlDescription !== (this.crawl.description ?? "")
+      crawlDescription !== (this.item.description ?? "")
     ) {
       params.description = crawlDescription as string;
     }
-    if (JSON.stringify(this.tagsToSave) !== JSON.stringify(this.crawl.tags)) {
+    if (JSON.stringify(this.tagsToSave) !== JSON.stringify(this.item.tags)) {
       params.tags = this.tagsToSave;
     }
     if (
       JSON.stringify(this.collectionsToSave) !==
-      JSON.stringify(this.crawl.collectionIds)
+      JSON.stringify(this.item.collectionIds)
     ) {
       params.collectionIds = this.collectionsToSave;
     }
@@ -205,7 +216,7 @@ export class CrawlMetadataEditor extends BtrixElement {
 
     try {
       const data = await this.api.fetch<{ updated: boolean }>(
-        `/orgs/${this.crawl.oid}/all-crawls/${this.crawl.id}`,
+        `/orgs/${this.item.oid}/all-crawls/${this.item.id}`,
         {
           method: "PATCH",
           body: JSON.stringify(params),
