@@ -462,6 +462,7 @@ export class WorkflowEditor extends BtrixElement {
 
   disconnectedCallback(): void {
     this.onPanelIntersect.cancel();
+    AppStateService.updateUserGuideOpen(false);
     super.disconnectedCallback();
   }
 
