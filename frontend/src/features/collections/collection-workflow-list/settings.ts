@@ -1,9 +1,11 @@
 import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
 import type { SlSwitch } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import debounce from "lodash/fp/debounce";
 import union from "lodash/fp/union";
 import without from "lodash/fp/without";
 
@@ -47,6 +49,31 @@ export class CollectionWorkflowListSettings extends BtrixElement {
   private saveStatus?: "success" | "error";
 
   #timerId?: number;
+
+  private readonly saveAutoAddTask = new Task(this, {
+    autoRun: false,
+    task: async ([autoAdd, dedupe], { signal }) => {
+      window.clearTimeout(this.#timerId);
+      this.showSaveStatus = false;
+
+      try {
+        await this.saveAutoAdd({ autoAdd, dedupe }, signal);
+
+        this.saveStatus = "success";
+        this.showSaveStatus = true;
+
+        this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
+      } catch (err) {
+        console.debug(err);
+
+        if (!signal.aborted) {
+          this.saveStatus = "error";
+          this.showSaveStatus = true;
+        }
+      }
+    },
+    args: () => [this.autoAdd, this.dedupe] as const,
+  });
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (
@@ -137,9 +164,7 @@ export class CollectionWorkflowListSettings extends BtrixElement {
                 this.autoAdd = (e.target as SlSwitch).checked;
                 this.collapse = !this.autoAdd;
 
-                void this.saveAutoAdd({
-                  autoAdd: this.autoAdd,
-                });
+                this.debouncedSaveAutoAdd();
               }}
             >
               <span class="text-neutral-500">${msg("Auto-Add")}</span>
@@ -179,9 +204,7 @@ export class CollectionWorkflowListSettings extends BtrixElement {
 
                     this.dedupe = (e.target as SlSwitch).checked;
 
-                    void this.saveAutoAdd({
-                      dedupe: this.dedupe,
-                    });
+                    this.debouncedSaveAutoAdd();
                   }}
                 >
                   <span class="text-neutral-500">${msg("Dedupe")}</span>
@@ -193,13 +216,21 @@ export class CollectionWorkflowListSettings extends BtrixElement {
     `;
   }
 
-  private async saveAutoAdd({
-    autoAdd,
-    dedupe,
-  }: {
-    autoAdd?: boolean;
-    dedupe?: boolean;
-  }) {
+  // Debounce auto add to prevent multiple requests when toggling too quickly
+  private readonly debouncedSaveAutoAdd = debounce(200)(() => {
+    void this.saveAutoAddTask.run();
+  });
+
+  private async saveAutoAdd(
+    {
+      autoAdd,
+      dedupe,
+    }: {
+      autoAdd?: boolean;
+      dedupe?: boolean;
+    },
+    signal: AbortSignal,
+  ) {
     const params: {
       autoAddCollections?: Workflow["autoAddCollections"];
       dedupeCollId?: string;
@@ -227,36 +258,13 @@ export class CollectionWorkflowListSettings extends BtrixElement {
       }
     }
 
-    window.clearTimeout(this.#timerId);
-    this.showSaveStatus = false;
-
-    try {
-      await this.api.fetch(
-        `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify(params),
-        },
-      );
-
-      this.saveStatus = "success";
-
-      this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
-    } catch (e: unknown) {
-      console.debug(e);
-
-      this.saveStatus = "error";
-
-      this.notify.toast({
-        message: msg(
-          "Something unexpected went wrong, couldn't save auto-add setting.",
-        ),
-        variant: "warning",
-        icon: "exclamation-circle",
-        id: "auto-add-status",
-      });
-    }
-
-    this.showSaveStatus = true;
+    return this.api.fetch(
+      `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(params),
+        signal,
+      },
+    );
   }
 }
