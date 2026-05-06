@@ -288,7 +288,7 @@ Configure the browser used to visit URLs during the crawl.
 Sets the [_Browser Profile_](browser-profiles/browser-profiles-overview.md) to be used for this crawl.
 
 !!! Tip "Best Practices: Use login profiles dedicated to crawling"
-    We highly recommend avoiding use of your personal accounts when logging into websites during the profile creation process. Crawling with a browser profile that uses your personal account may expose you to risks such as compromised private tokens and unwanted sharing of user preferences. Although accounts dedicated to crawling are not required to benefit from browser profiles, they can address these potential issues and more. [Continue reading about dedicated accounts](browser-profiles/browser-profiles-overview.md#use-logins-dedicated-to-web-archiving)
+    We highly recommend avoiding use of your personal accounts when logging into websites during the profile creation process. Crawling with a browser profile that uses your personal account may expose you to risks such as compromised private tokens and unwanted sharing of user preferences. Although accounts dedicated to crawling are not necessary to benefit from browser profiles, they can address these potential issues and more. [Continue reading about dedicated accounts](browser-profiles/browser-profiles-overview.md#use-logins-dedicated-to-web-archiving)
 
 ### Fail Crawl if Not Logged In
 
@@ -303,7 +303,7 @@ When enabled, instructs the crawler to save the browser's `localStorage` and `se
 !!! Warning "Privacy & security implications when used with browser profiles"
     Websites can use browser storage to store arbitrary data. During the browser profile creation process, some websites may save sensitive data such as login information and user-identifying preferences in browser storage. Since every website can implement browser storage differently, Browsertrix does not attempt to detect whether the information stored is potentially sensitive.
     
-    Use caution when sharing WACZ files created with this option enabled, especially if pages that require login are crawled. We always recommend creating dedicated website logins to be used only for crawling to mitigate the risk of compromised login information.
+    Use caution when sharing WACZ files created with this option enabled, especially if you’re crawling pages that require login. We always recommend creating dedicated website logins to be used only for crawling to mitigate the risk of compromised login information.
 
 ### Crawler Proxy Server
 
