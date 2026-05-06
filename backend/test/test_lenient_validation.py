@@ -1,28 +1,21 @@
-"""Tests for BaseMongoModel.from_dict lenient read via WrapValidator"""
+"""Tests for BaseMongoModel.from_dict lenient read via LENIENT_ON_READ"""
 
 from typing import Annotated
 from uuid import uuid4
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError, WrapValidator
+from pydantic import BaseModel, Field, ValidationError
 
-from btrixcloud.db import BaseMongoModel, _LENIENT_CTX
-
-
-def _lenient_str(v, handler, info):
-    """WrapValidator: skip string-length validation when reading from DB."""
-    if _LENIENT_CTX.get() and isinstance(v, str):
-        return v
-    return handler(v)
+from btrixcloud.db import LENIENT_ON_READ, BaseMongoModel
 
 
 # ---------------------------------------------------------------------------
 # Minimal test models
 # ---------------------------------------------------------------------------
 
-LenientStr = Annotated[str, Field(max_length=10), WrapValidator(_lenient_str)]
+LenientStr = Annotated[str, Field(max_length=10), LENIENT_ON_READ]
 StrictStr = Annotated[str, Field(max_length=10)]
-LenientOptionalStr = Annotated[str | None, Field(max_length=10), WrapValidator(_lenient_str)]
+LenientOptionalStr = Annotated[str | None, Field(max_length=10), LENIENT_ON_READ]
 
 
 class _LenientModel(BaseMongoModel):
@@ -40,16 +33,19 @@ class _NonLenientModel(BaseMongoModel):
 
 class _AllOptionalModel(BaseMongoModel):
     id: str | None = None
-    name: LenientStr = "default"
-    strict_field: StrictStr = "default"
+    name: LenientStr | None = "default"
+    strict_field: StrictStr | None = "default"
 
 
 # ---------------------------------------------------------------------------
 # from_dict -- normal path
 # ---------------------------------------------------------------------------
 
+
 def test_from_dict_valid():
-    obj = _LenientModel.from_dict({"_id": str(uuid4()), "name": "hello", "strict_field": "world"})
+    obj = _LenientModel.from_dict(
+        {"_id": str(uuid4()), "name": "hello", "strict_field": "world"}
+    )
     assert obj.name == "hello"
     assert obj.strict_field == "world"
 
@@ -64,6 +60,7 @@ def test_from_dict_empty():
 # from_dict -- lenient path (over-limit data is allowed)
 # ---------------------------------------------------------------------------
 
+
 def test_from_dict_lenient_field_over_limit():
     obj = _LenientModel.from_dict(
         {"_id": str(uuid4()), "name": "x" * 50, "strict_field": "ok"}
@@ -73,15 +70,14 @@ def test_from_dict_lenient_field_over_limit():
 
 
 def test_from_dict_lenient_optional_over_limit():
-    obj = _LenientOptionalModel.from_dict(
-        {"_id": str(uuid4()), "name": "x" * 50}
-    )
+    obj = _LenientOptionalModel.from_dict({"_id": str(uuid4()), "name": "x" * 50})
     assert len(obj.name) == 50
 
 
 # ---------------------------------------------------------------------------
 # from_dict -- non-lenient field errors still propagate
 # ---------------------------------------------------------------------------
+
 
 def test_from_dict_non_lenient_field_raises():
     with pytest.raises(ValidationError):
@@ -99,20 +95,17 @@ def test_from_dict_mixed_errors_raises():
 
 def test_from_dict_non_lenient_model_raises():
     with pytest.raises(ValidationError):
-        _NonLenientModel.from_dict(
-            {"_id": str(uuid4()), "strict_field": "x" * 50}
-        )
+        _NonLenientModel.from_dict({"_id": str(uuid4()), "strict_field": "x" * 50})
 
 
 # ---------------------------------------------------------------------------
 # Strict constructor -- validation always enforced
 # ---------------------------------------------------------------------------
 
+
 def test_strict_constructor_lenient_field_over_limit_raises():
     with pytest.raises(ValidationError):
-        _LenientModel(
-            id=uuid4(), name="x" * 50, strict_field="ok"
-        )
+        _LenientModel(id=uuid4(), name="x" * 50, strict_field="ok")
 
 
 def test_strict_constructor_optional_lenient_over_limit_raises():
