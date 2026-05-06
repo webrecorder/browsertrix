@@ -34,9 +34,11 @@ export const infoTextFor = {
   pageExtraDelaySeconds: msg(
     `Waits on the page after behaviors are complete before moving onto the next page. Can be helpful for rate limiting.`,
   ),
-  browserProfile:
-    msg(`Choose a custom profile to make use of saved cookies and logged-in
-  accounts. Note that websites may log profiles out after a period of time.`),
+  browserProfile: html`${msg(`Choose a custom profile to make use of saved cookies and logged-in
+    accounts.`)}<br /><br />
+    ${msg(
+      "For websites that require login, we always recommend using a profile that's logged-in to an account created specifically for crawling.",
+    )} `,
   crawlerChannel: msg(
     `Choose a Browsertrix Crawler release channel. If available, other versions may provide new or experimental crawling features.`,
   ),
@@ -79,12 +81,19 @@ export const infoTextFor = {
   customBehavior: msg(
     `Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.`,
   ),
-  failOnContentCheck: msg(
-    `Fail the crawl if a page behavior detects the browser is not logged in on supported pages.`,
-  ),
-  saveStorage: msg(
-    `Include data from the browser's local and session storage in the web archive.`,
-  ),
+  failOnContentCheck: html`${msg(
+    "Fail the crawl if a page behavior detects the browser is not logged in on supported pages.",
+  )}
+  ${msg("Note that websites may log profiles out after a period of time.")}`,
+  saveStorage: html`${msg(
+    "During a crawl, websites may store data in the browser itself, e.g. to persist logins.",
+  )}
+  ${msg(
+    "Checking this will include data from the browser’s local and session storage in the archive.",
+  )}
+  ${msg(
+    "This can improve replay quality, but may come with security implications.",
+  )}`,
   useRobots: msg(
     `Check for a robots.txt file for each host and skip any disallowed pages.`,
   ),

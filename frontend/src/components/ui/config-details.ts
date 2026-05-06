@@ -292,7 +292,7 @@ export class ConfigDetails extends BtrixElement {
             seedsConfig?.blockAds,
           )}
           ${this.renderSetting(
-            msg("Save Local and Session Storage"),
+            labelFor["saveStorage"],
             seedsConfig?.saveStorage,
           )}
           ${this.renderSetting(
