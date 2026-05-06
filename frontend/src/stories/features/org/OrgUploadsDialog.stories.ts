@@ -100,7 +100,86 @@ export const Minimized: Story = {
   `,
 };
 
-export const MultipleUploadsInProgress: Story = {
+export const Finishing: Story = {
+  render: () => html`
+    <btrix-org-uploads-dialog
+      .uploadsByStatus=${{
+        all: [
+          {
+            uploadId: "upload-id-1",
+            itemName: "Test WACZ File",
+            filename: "test_file.wacz",
+            loaded: 50.15 * BYTES_PER_MB,
+            total: 50.15 * BYTES_PER_MB,
+          },
+        ],
+        canceled: [],
+        inProgress: [
+          {
+            uploadId: "upload-id-1",
+            itemName: "Test WACZ File",
+            filename: "test_file.wacz",
+            loaded: 50.15 * BYTES_PER_MB,
+            total: 50.15 * BYTES_PER_MB,
+          },
+        ],
+      } satisfies OrgUploadsDialog["uploadsByStatus"]}
+    ></btrix-org-uploads-dialog>
+  `,
+};
+
+export const Done: Story = {
+  render: () => html`
+    <btrix-org-uploads-dialog
+      .uploadsByStatus=${{
+        all: [
+          {
+            uploadId: "upload-id-1",
+            itemName: "Test WACZ File",
+            filename: "test_file.wacz",
+            loaded: 50.15 * BYTES_PER_MB,
+            total: 50.15 * BYTES_PER_MB,
+            itemId: "upload-id-1-item-id",
+          },
+        ],
+        canceled: [],
+        inProgress: [],
+      } satisfies OrgUploadsDialog["uploadsByStatus"]}
+    ></btrix-org-uploads-dialog>
+  `,
+};
+
+export const Canceled: Story = {
+  render: () => html`
+    <btrix-org-uploads-dialog
+      .uploadsByStatus=${{
+        all: [
+          {
+            uploadId: "upload-id-1",
+            itemName: "Test WACZ File",
+            filename: "test_file.wacz",
+            loaded: 9.005 * BYTES_PER_MB,
+            total: 50.15 * BYTES_PER_MB,
+            canceled: true,
+          },
+        ],
+        canceled: [
+          {
+            uploadId: "upload-id-1",
+            itemName: "Test WACZ File",
+            filename: "test_file.wacz",
+            loaded: 9.005 * BYTES_PER_MB,
+            total: 50.15 * BYTES_PER_MB,
+            canceled: true,
+          },
+        ],
+        inProgress: [],
+      } satisfies OrgUploadsDialog["uploadsByStatus"]}
+    ></btrix-org-uploads-dialog>
+  `,
+};
+
+export const MultipleInProgress: Story = {
   render: () => html`
     <btrix-org-uploads-dialog
       .uploadsByStatus=${{
@@ -186,7 +265,7 @@ export const SomeInProgress: Story = {
   `,
 };
 
-export const AllDone: Story = {
+export const MultipleDone: Story = {
   render: () => html`
     <btrix-org-uploads-dialog
       .uploadsByStatus=${{
@@ -217,7 +296,7 @@ export const AllDone: Story = {
   `,
 };
 
-export const Cancel: Story = {
+export const CancelDialog: Story = {
   render: () => html`
     <btrix-org-uploads-dialog
       .cancelIds=${new Set([
@@ -261,56 +340,6 @@ export const Cancel: Story = {
             total: 4.85 * BYTES_PER_GB,
           },
         ],
-      } satisfies OrgUploadsDialog["uploadsByStatus"]}
-    ></btrix-org-uploads-dialog>
-  `,
-};
-
-export const WithCanceled: Story = {
-  render: () => html`
-    <btrix-org-uploads-dialog
-      .uploadsByStatus=${{
-        all: [
-          {
-            uploadId: "upload-id-1",
-            itemName: "Test WACZ File",
-            filename: "test_file.wacz",
-            loaded: 9.005 * BYTES_PER_MB,
-            total: 50.15 * BYTES_PER_MB,
-            canceled: true,
-          },
-          {
-            uploadId: "upload-id-2",
-            itemName:
-              "Test WACZ file with longer file name for testing long file name",
-            filename:
-              "test_file_with_longer_file_name_for_testing_long_file_name.wacz",
-            loaded: 310 * BYTES_PER_MB,
-            total: 4.85 * BYTES_PER_GB,
-            canceled: true,
-          },
-        ],
-        canceled: [
-          {
-            uploadId: "upload-id-1",
-            itemName: "Test WACZ File",
-            filename: "test_file.wacz",
-            loaded: 9.005 * BYTES_PER_MB,
-            total: 50.15 * BYTES_PER_MB,
-            canceled: true,
-          },
-          {
-            uploadId: "upload-id-2",
-            itemName:
-              "Test WACZ file with longer file name for testing long file name",
-            filename:
-              "test_file_with_longer_file_name_for_testing_long_file_name.wacz",
-            loaded: 310 * BYTES_PER_MB,
-            total: 4.85 * BYTES_PER_GB,
-            canceled: true,
-          },
-        ],
-        inProgress: [],
       } satisfies OrgUploadsDialog["uploadsByStatus"]}
     ></btrix-org-uploads-dialog>
   `,
