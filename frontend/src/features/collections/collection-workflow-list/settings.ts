@@ -94,7 +94,7 @@ export class CollectionWorkflowListSettings extends BtrixElement {
       // Reset success status
       this.#timerId = window.setTimeout(() => {
         this.showSaveStatus = false;
-      }, 5000);
+      }, 4000);
     }
   }
 
@@ -105,7 +105,7 @@ export class CollectionWorkflowListSettings extends BtrixElement {
 
   render() {
     return html`<sl-tooltip
-      placement="left"
+      placement="right"
       trigger="manual"
       ?open=${Boolean(this.showSaveStatus && this.saveStatus)}
       hoist
@@ -136,7 +136,7 @@ export class CollectionWorkflowListSettings extends BtrixElement {
     return html`
       <div
         class=${clsx(
-          tw`flex h-11 w-full items-center whitespace-nowrap rounded border px-4`,
+          tw`flex h-11 w-full items-center whitespace-nowrap rounded border px-3`,
           !this.collapse && tw`gap-4`,
         )}
       >
