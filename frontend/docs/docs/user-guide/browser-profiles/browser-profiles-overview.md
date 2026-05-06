@@ -18,11 +18,11 @@ Websites may prompt users for a number of reasons before displaying the rest of 
 
 Websites may require user registration to view content at URLs that are otherwise public. This practice is sometimes referred to as a login wall. Login walls are commonly used by social media and publishing platforms.
 
-We highly recommend avoiding use of your personal accounts when logging into websites during the profile creation process. Instead, sign up for a new account dedicated to archiving and use that dedicated account in your browser profile. Although dedicated accounts are not required to benefit from browser profiles, they can address the following potential issues:
+We highly recommend avoiding use of your personal accounts when logging into websites during the profile creation process. Instead, sign up for a new account dedicated to archiving and use that dedicated account in your browser profile. Although dedicated accounts are not necessary to benefit from browser profiles, they can address the following potential issues:
 
-- While usernames and passwords are never saved by Browsertrix, the private tokens that enable access to logged in content _are_ stored. Thus, anyone with access to your Browsertrix account, intentional or malicious, may be able to access the logged in content.
+- While usernames and passwords are never saved by Browsertrix, the private tokens that enable access to logged-in content _are_ stored in WACZ. Thus, anyone with access to your Browsertrix account or WACZ files, intentional or malicious, may be able to view and use the token to log in to your account.
 - Some websites may rate limit or lock accounts for reasons they deem to be suspicious, such as logging in from a new geographical location or if the site determines crawls to be robot activity.
 - Personalized data such as cookies, location, etc. may be included in the resulting crawl.
-- The logged in interface may display unwanted personally identifiable information such as a username or profile picture.
+- The logged-in interface may display unwanted personally identifiable information such as a username or profile picture.
 
-An exception to this practice is if your goal is to archive personalized or private content accessible only from designated accounts. In these instances we recommend changing the account's password after crawling is complete.
+An exception to this practice is if your goal is to archive personalized or private content accessible only from designated accounts. In these instances we recommend changing the account's password or logging out of all active sessions after crawling is complete.
