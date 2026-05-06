@@ -10,6 +10,9 @@ from fastapi import Depends, UploadFile, File
 from fastapi import HTTPException
 from starlette.requests import Request
 
+from remotezip import RemoteZip
+from zipfile import ZipInfo
+
 from .basecrawls import BaseCrawlOps
 from .storages import CHUNK_SIZE
 from .models import (
@@ -173,7 +176,7 @@ class UploadOps(BaseCrawlOps):
             userName=user.name,
             oid=org.id,
             files=files,
-            state="complete",
+            state="processing-upload",
             fileCount=len(files),
             fileSize=file_size,
             started=now,
@@ -181,8 +184,6 @@ class UploadOps(BaseCrawlOps):
             version=2,
         )
 
-        # result = await self.crawls.insert_one(uploaded.to_dict())
-        # return {"id": str(result.inserted_id), "added": True}
         await self.crawls.find_one_and_update(
             {"_id": crawl_id}, {"$set": uploaded.to_dict()}, upsert=True
         )
@@ -191,24 +192,90 @@ class UploadOps(BaseCrawlOps):
             self.event_webhook_ops.create_upload_finished_notification(crawl_id, org.id)
         )
 
-        run_async_task(
-            self._add_pages_and_update_collections(crawl_id, org.id, collections)
-        )
+        # TODO: Move into background job
+        await self.post_process_upload(crawl_id, org)
 
+        # TODO: Move into background job?
         await self.orgs.inc_org_bytes_stored(org.id, file_size, "upload")
-
         quota_reached = self.orgs.storage_quota_reached(org)
-
-        await self.replicate_crawl_files(crawl_id, org, "upload")
 
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 
-    async def _add_pages_and_update_collections(
-        self, crawl_id: str, oid: UUID, collections: Optional[List[str]] = None
+    async def post_process_upload(
+        self,
+        crawl_id: str,
+        org: Organization
     ):
+        """Perform upload post-processing. This should be called from background job"""
+        upload = await self.get_upload(crawl_id, org)
+
+        # If there's only one file, check if it's a multi-wacz and split it up if so
+        if upload.files and len(upload.files) == 1:
+            resources = await self.resolve_signed_urls(upload.files, org, crawl_id)
+            upload_wacz = resources[0]
+            wacz_url = self.storage_ops.resolve_internal_access_path(upload_wacz.path)
+
+            child_waczs = await self._get_child_wacz_files(wacz_url)
+            if child_waczs:
+                await self._split_multiwacz(crawl_id, org.id, wacz_url, child_waczs)
+
         await self.page_ops.add_crawl_pages_to_db_from_wacz(crawl_id)
-        if collections:
-            await self.colls.update_crawl_collections(crawl_id, oid)
+        await self.colls.update_crawl_collections(crawl_id, org.id)
+
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id}, {"$set": {"state": "complete"}}, upsert=True
+        )
+
+        await self.replicate_crawl_files(crawl_id, org, "upload")
+
+    async def _get_child_wacz_files(self, wacz_url: str) -> List[ZipInfo]:
+        with RemoteZip(wacz_url) as remote_zip:
+            wacz_files: List[ZipInfo] = [
+                f
+                for f in remote_zip.infolist()
+                if f.filename.endswith(".wacz")
+                and not f.is_dir()
+            ]
+            return wacz_files
+
+    async def _split_multiwacz(
+        self,
+        crawl_id: str,
+        org: Organization,
+        wacz_url: str,
+        child_waczs: List[ZipInfo]
+    ):
+        prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{crawl_id}"
+
+        new_upload_files = []
+
+        for child_wacz in child_waczs:
+            print(f"Processing child WACZ {child_wacz.filename} (size: {child_wacz.file_size})")
+            
+            # Upload file
+            file_prep = FilePreparer(prefix, filename)
+
+            def sync_wacz_stream_iter():
+                with RemoteZip(wacz_url) as remote_zip:
+                    with remote_zip.open(child_wacz.filename) as stream:
+                        for chunk in stream:
+                            file_prep.add_chunk(chunk)
+                            yield chunk
+
+            if not await self.storage_ops.do_upload_multipart(
+                org,
+                file_prep.upload_name,
+                # Nope, not gonna work, needs an async iterator
+                sync_wacz_stream_iter(),
+                MIN_UPLOAD_PART_SIZE,
+            ):
+                print("Child WACZ stream upload failed", flush=True)
+                raise HTTPException(status_code=400, detail="upload_failed")
+
+            new_upload_files.append(file_prep.get_crawl_file(org.storage))
+
+        # Update upload.files to reflect new files
+        # Delete original multi-WACZ from db and storage
 
     async def delete_uploads(
         self,
