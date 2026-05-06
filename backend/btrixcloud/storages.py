@@ -688,6 +688,18 @@ class StorageOps:
 
         return resp
 
+    async def sync_stream_wacz_child_wacz(
+        self, wacz_files: List[CrawlFileOut], num_retries=5
+    ) -> Iterator[Dict[Any, Any]]:
+        """Return stream of pages specified WACZ"""
+        loop = asyncio.get_event_loop()
+
+        resp = await loop.run_in_executor(
+            None, self._sync_get_pages, wacz_files, num_retries
+        )
+
+        return resp
+
     def _sync_get_logs(
         self,
         wacz_files: List[CrawlFileOut],
