@@ -310,7 +310,11 @@ export class WorkflowListItem extends BtrixElement {
       const href = `/orgs/${this.orgSlugState}/${OrgTab.Workflows}/${this.workflow?.id}/${this.workflow?.lastCrawlState?.startsWith("failed") ? WorkflowTab.Logs : WorkflowTab.LatestCrawl}`;
 
       return html`<div class="col rowClickTarget--cell">
-        <a class="detail url rowClickTarget items-center truncate" href=${href}>
+        <a
+          class="detail url rowClickTarget items-center truncate"
+          href=${href}
+          @click=${this.navigate.link}
+        >
           ${when(this.workflow?.shareable, ShareableNotice)}
           ${this.safeRender(this.renderName)}
         </a>
