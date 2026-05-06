@@ -20,7 +20,7 @@ Websites may require user registration to view content at URLs that are otherwis
 
 We highly recommend avoiding use of your personal accounts when logging into websites during the profile creation process. Instead, sign up for a new account dedicated to archiving and use that dedicated account in your browser profile. Although dedicated accounts are not necessary to benefit from browser profiles, they can address the following potential issues:
 
-- While usernames and passwords are never saved by Browsertrix, the private tokens that enable access to logged-in content _are_ stored in WACZ. Thus, anyone with access to your Browsertrix account or WACZ files, intentional or malicious, may be able to view and use the token to log in to your account.
+- While usernames and passwords are never saved by Browsertrix, the private tokens that enable access to logged-in content _are_ stored in WACZ files. Thus, anyone with access to your Browsertrix account or WACZ files, intentional or malicious, may be able to view and use the token to log in to your account.
 - Some websites may rate limit or lock accounts for reasons they deem to be suspicious, such as logging in from a new geographical location or if the site determines crawls to be robot activity.
 - Personalized data such as cookies, location, etc. may be included in the resulting crawl.
 - The logged-in interface may display unwanted personally identifiable information such as a username or profile picture.
