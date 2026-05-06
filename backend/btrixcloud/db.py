@@ -10,6 +10,8 @@ import contextvars
 from uuid import UUID, uuid4
 
 from typing import (
+    Any,
+    Literal,
     Optional,
     Type,
     TypeVar,
@@ -317,7 +319,9 @@ async def create_indexes(
     await profile_ops.init_index()
 
 
-_LENIENT_CTX = contextvars.ContextVar("_lenient_ctx", default=False)
+_LENIENT_CTX = contextvars.ContextVar[Literal[False] | dict[str, Any]](
+    "_lenient_ctx", default=False
+)
 
 
 def _lenient_str(v, handler, info):
