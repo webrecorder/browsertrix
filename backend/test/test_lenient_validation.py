@@ -4,7 +4,7 @@ from typing import Annotated
 from uuid import uuid4
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field, ValidationError
 
 from btrixcloud.db import LENIENT_ON_READ, BaseMongoModel
 
