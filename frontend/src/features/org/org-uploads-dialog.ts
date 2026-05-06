@@ -40,11 +40,17 @@ export class OrgUploadsDialog extends BtrixElement {
     callback: (value) => {
       this.uploadsByStatus = OrgUploadsContextController.uploadsByStatus(value);
 
-      if (this.cancelIds.size) {
+      if (this.cancelIds.length) {
         // Remove IDs that have been removed
-        this.cancelIds = new Set(Object.keys(value)).intersection(
-          this.cancelIds,
-        );
+        const cancelIds: string[] = [];
+
+        this.cancelIds.forEach((id) => {
+          if (id in value && !value[id].canceled) {
+            cancelIds.push(id);
+          }
+        });
+
+        this.cancelIds = cancelIds;
       }
     },
   });
@@ -61,7 +67,7 @@ export class OrgUploadsDialog extends BtrixElement {
   private minimized = false;
 
   @state()
-  private cancelIds = new Set<string>();
+  private cancelIds: string[] = [];
 
   @query("sl-alert")
   private readonly alert?: SlAlert;
@@ -197,9 +203,7 @@ export class OrgUploadsDialog extends BtrixElement {
               label=${msg("Close")}
               @click=${() => {
                 if (inProgressCount) {
-                  this.cancelIds = new Set(
-                    inProgress.map(({ uploadId }) => uploadId),
-                  );
+                  this.cancelIds = inProgress.map(({ uploadId }) => uploadId);
                 } else {
                   this.open = false;
                 }
@@ -297,6 +301,7 @@ export class OrgUploadsDialog extends BtrixElement {
           ? isItem
             ? html`<sl-tooltip
                 content=${msg("Go to Item")}
+                placement="bottom"
                 hoist
                 @sl-show=${stopProp}
                 @sl-after-show=${stopProp}
@@ -307,6 +312,7 @@ export class OrgUploadsDialog extends BtrixElement {
               </sl-tooltip>`
             : html`<btrix-popover
                 content=${msg("Link will be available when upload is complete")}
+                placement="bottom"
                 hoist
                 @sl-show=${stopProp}
                 @sl-after-show=${stopProp}
@@ -317,6 +323,7 @@ export class OrgUploadsDialog extends BtrixElement {
               </btrix-popover>`
           : html`<sl-tooltip
               content=${msg("Cancel")}
+              placement="bottom"
               hoist
               @sl-show=${stopProp}
               @sl-after-show=${stopProp}
@@ -331,7 +338,7 @@ export class OrgUploadsDialog extends BtrixElement {
                   if (upload.canceled) {
                     removeOrHide();
                   } else {
-                    this.cancelIds = new Set([upload.uploadId]);
+                    this.cancelIds = [upload.uploadId];
                   }
                 }}
               ></sl-icon-button>
@@ -341,11 +348,7 @@ export class OrgUploadsDialog extends BtrixElement {
   };
 
   private renderDialog() {
-    const cancelCount = this.cancelIds.size;
-    const someCanceled = new Set(
-      this.uploadsByStatus.canceled.map(({ uploadId }) => uploadId),
-    ).intersection(this.cancelIds);
-    const isSomeCanceling = Boolean(someCanceled.size);
+    const cancelCount = this.cancelIds.length;
 
     const message = () => {
       if (cancelCount === 1) {
@@ -374,20 +377,18 @@ export class OrgUploadsDialog extends BtrixElement {
     >
       <p>${message()}</p>
       <div slot="footer" class="flex justify-between">
-        <sl-button size="small" @click=${() => (this.cancelIds = new Set())}
+        <sl-button size="small" @click=${() => (this.cancelIds = [])}
           >${msg("Continue Upload")}</sl-button
         >
         <sl-button
           variant="danger"
           size="small"
-          ?loading=${isSomeCanceling}
-          ?disabled=${isSomeCanceling}
           @click=${async () => {
             this.dispatchEvent(
               new CustomEvent<OrgUploadCancelRemoveEventDetail>(
                 "btrix-org-upload-cancel",
                 {
-                  detail: { uploadIds: Array.from(this.cancelIds.values()) },
+                  detail: { uploadIds: [...this.cancelIds] },
                   bubbles: true,
                   composed: true,
                 },
