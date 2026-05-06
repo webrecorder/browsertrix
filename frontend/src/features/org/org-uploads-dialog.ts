@@ -306,7 +306,7 @@ export class OrgUploadsDialog extends BtrixElement {
                 ${linkBtn}
               </sl-tooltip>`
             : html`<btrix-popover
-                content=${msg("Link will be available when finished")}
+                content=${msg("Link will be available when upload is complete")}
                 hoist
                 @sl-show=${stopProp}
                 @sl-after-show=${stopProp}
