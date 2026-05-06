@@ -228,6 +228,21 @@ export class OrgUploadsDialog extends BtrixElement {
     const progress = (upload.loaded / upload.total) * 100;
     const uploaded = upload.loaded === upload.total;
     const isItem = Boolean(upload.itemId);
+    const linkBtn = html`<sl-icon-button
+      href=${`${this.navigate.orgBasePath}/${OrgTab.Items}/upload/${upload.itemId}`}
+      name="link"
+      class=${clsx(tw`text-base`, !isItem && tw`opacity-30`)}
+      label=${msg("Visit Link")}
+      ?disabled=${!isItem}
+      @click=${(e: MouseEvent) => {
+        if ((e.target as SlIconButton).disabled) {
+          e.preventDefault();
+          return;
+        }
+        removeOrHide();
+        this.navigate.link(e);
+      }}
+    ></sl-icon-button>`;
 
     const removeOrHide = () => {
       if (this.uploadIds.length > 1) {
@@ -279,43 +294,48 @@ export class OrgUploadsDialog extends BtrixElement {
           ></sl-progress-bar>
         </div>
         ${uploaded
-          ? html`<btrix-popover
-              content=${msg("Link will be available when finished")}
-              ?disabled=${isItem}
+          ? isItem
+            ? html`<sl-tooltip
+                content=${msg("Go to Item")}
+                hoist
+                @sl-show=${stopProp}
+                @sl-after-show=${stopProp}
+                @sl-hide=${stopProp}
+                @sl-after-hide=${stopProp}
+              >
+                ${linkBtn}
+              </sl-tooltip>`
+            : html`<btrix-popover
+                content=${msg("Link will be available when finished")}
+                hoist
+                @sl-show=${stopProp}
+                @sl-after-show=${stopProp}
+                @sl-hide=${stopProp}
+                @sl-after-hide=${stopProp}
+              >
+                ${linkBtn}
+              </btrix-popover>`
+          : html`<sl-tooltip
+              content=${msg("Cancel")}
+              hoist
               @sl-show=${stopProp}
               @sl-after-show=${stopProp}
               @sl-hide=${stopProp}
               @sl-after-hide=${stopProp}
-              hoist
             >
               <sl-icon-button
-                href=${`${this.navigate.orgBasePath}/${OrgTab.Items}/upload/${upload.itemId}`}
-                name="link"
-                class=${clsx(tw`text-base`, !isItem && tw`opacity-30`)}
-                label=${msg("Visit Link")}
-                ?disabled=${!isItem}
-                @click=${(e: MouseEvent) => {
-                  if ((e.target as SlIconButton).disabled) {
-                    e.preventDefault();
-                    return;
+                name="x"
+                class="text-base"
+                label=${msg("Cancel Upload")}
+                @click=${() => {
+                  if (upload.canceled) {
+                    removeOrHide();
+                  } else {
+                    this.cancelIds = new Set([upload.uploadId]);
                   }
-                  removeOrHide();
-                  this.navigate.link(e);
                 }}
               ></sl-icon-button>
-            </btrix-popover>`
-          : html`<sl-icon-button
-              name="x"
-              class="text-base"
-              label=${msg("Cancel Upload")}
-              @click=${() => {
-                if (upload.canceled) {
-                  removeOrHide();
-                } else {
-                  this.cancelIds = new Set([upload.uploadId]);
-                }
-              }}
-            ></sl-icon-button>`}
+            </sl-tooltip>`}
       </div>
     `;
   };
