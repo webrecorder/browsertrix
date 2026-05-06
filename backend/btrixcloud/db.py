@@ -331,11 +331,11 @@ def _lenient_str(v, handler, info):
         try:
             return handler(v)
         except ValidationError as e:
-            # pylint: disable=fixme
-            # TODO: replace with logger.warning once we have structured logging in place
             doc_id = ctx.get("id", "?")
             model = ctx.get("model", "?")
             field = getattr(info, "field_name", "?")
+            # pylint: disable=fixme
+            # TODO: replace with logger.warning once we have structured logging in place
             print(
                 f"WARNING: lenient read - "
                 f"{model}.{field!r} value exceeds constraints in "
