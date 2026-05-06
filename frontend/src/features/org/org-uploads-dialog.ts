@@ -76,6 +76,22 @@ export class OrgUploadsDialog extends BtrixElement {
     return this.uploadsByStatus.all.map(({ uploadId }) => uploadId);
   }
 
+  connectedCallback(): void {
+    super.connectedCallback();
+    window.addEventListener("beforeunload", this.onBeforeUnload);
+  }
+
+  disconnectedCallback(): void {
+    window.removeEventListener("beforeunload", this.onBeforeUnload);
+    super.disconnectedCallback();
+  }
+
+  private readonly onBeforeUnload = (e: BeforeUnloadEvent) => {
+    if (this.open && this.uploadsByStatus.inProgress.length) {
+      e.preventDefault();
+    }
+  };
+
   protected updated(changedProperties: PropertyValues): void {
     if (
       changedProperties.has("uploadsByStatus") ||
