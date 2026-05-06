@@ -123,6 +123,15 @@ export class CollectionEdit extends BtrixElement {
   public readonly thumbnailPreview?: CollectionSnapshotPreview | null;
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("tab")) {
+      this.dispatchEvent(
+        new CustomEvent("btrix-collection-edit-dialog-tab-change", {
+          detail: this.tab,
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    }
     if (changedProperties.has("collectionId") && this.collectionId) {
       void this.fetchCollection(this.collectionId);
     }
