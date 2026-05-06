@@ -40,7 +40,8 @@ export interface NotifyEventMap {
 
 const NOTIFY_EVENT_NAME: keyof NotifyEventMap = "btrix-notify";
 
-const iconMap = {
+export const notifyIconFor = {
+  neutral: "info-circle",
   info: "info-circle",
   primary: "info-circle",
   success: "check2-circle",
@@ -73,7 +74,7 @@ export class NotifyController implements ReactiveController {
           ...detail,
           variant,
           type: "toast",
-          icon: detail.icon ?? iconMap[variant],
+          icon: detail.icon ?? notifyIconFor[variant],
           duration: detail.duration ?? (variant === "danger" ? 10000 : 5000),
         },
       }),

@@ -1,19 +1,27 @@
+import { ContextConsumer } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import type { SlButton } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html, type PropertyValues } from "lit";
-import { customElement, property, queryAsync, state } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  query,
+  queryAsync,
+  state,
+} from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
-import throttle from "lodash/fp/throttle";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { Dialog } from "@/components/ui/dialog";
 import type { FileRemoveEvent } from "@/components/ui/file-list";
 import type { BtrixFileChangeEvent } from "@/components/ui/file-list/events";
 import type { Tags } from "@/components/ui/tag-input";
+import orgUploadsContext from "@/context/org-uploads";
+import type { OrgUploadEventDetail } from "@/context/org-uploads/types";
 import type { BtrixTagsChangeEvent } from "@/features/archived-items/item-tags-input";
 import { type CollectionsChangeEvent } from "@/features/collections/collections-add";
-import { APIError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 
 export type FileUploaderRequestCloseEvent = CustomEvent<NonNullable<unknown>>;
@@ -26,41 +34,39 @@ export type FileUploaderUploadedEvent = CustomEvent<{
   fileSize: number;
 }>;
 
-enum AbortReason {
-  UserCancel = "user-canceled",
-  QuotaReached = "storage_quota_reached",
-}
-
 /**
  * Usage:
  * ```ts
  * <btrix-file-uploader
  *   ?open=${this.open}
- *   @request-close=${this.requestClose}
- *   @uploaded=${this.uploaded}
  * ></btrix-file-uploader>
  * ```
  *
- * @TODO Refactor to use this.api.upload
- *
- * @event request-close
- * @event upload-start
- * @event uploaded
+ * @event request-CollectionSavedEvent
  */
 @customElement("btrix-file-uploader")
 @localized()
 export class FileUploader extends BtrixElement {
+  readonly #orgUploads = new ContextConsumer(this, {
+    context: orgUploadsContext,
+    subscribe: true,
+    callback: (value) => {
+      if (this.uploadingId && this.uploadingId in value) {
+        // Finish with dialog once upload has begun
+        this.uploadingId = undefined;
+        this.close();
+      }
+    },
+  });
+
   @property({ type: Boolean })
   open = false;
 
   @state()
-  private isUploading = false;
+  private uploadingId?: string;
 
   @state()
   private isDialogVisible = false;
-
-  @state()
-  private isConfirmingCancel = false;
 
   @state()
   private collectionIds: string[] = [];
@@ -71,16 +77,13 @@ export class FileUploader extends BtrixElement {
   @state()
   private fileList: File[] = [];
 
-  @state()
-  private progress = 0;
+  @query("btrix-dialog")
+  private readonly dialog?: Dialog | null;
 
   @queryAsync("#fileUploadForm")
   private readonly form!: Promise<HTMLFormElement>;
 
   private readonly validateDescriptionMax = maxLengthValidator(500);
-
-  // Use to cancel requests
-  private uploadRequest: XMLHttpRequest | null = null;
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (changedProperties.has("open") && this.open) {
@@ -94,30 +97,24 @@ export class FileUploader extends BtrixElement {
   }
 
   render() {
-    const uploadInProgress = this.isUploading || this.isConfirmingCancel;
     return html`
       <btrix-dialog
         .label=${msg("Upload WACZ")}
         .open=${this.open}
+        class="[--width:60rem]"
         @sl-show=${() => (this.isDialogVisible = true)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
-        @sl-request-close=${this.tryRequestClose}
-        style="--width: ${uploadInProgress ? 40 : 60}rem;"
       >
-        ${when(this.isDialogVisible, () =>
-          uploadInProgress ? this.renderUploading() : this.renderForm(),
-        )}
+        ${when(this.isDialogVisible, () => this.renderForm())}
       </btrix-dialog>
     `;
   }
 
   private renderForm() {
+    const loading = Boolean(this.uploadingId);
+
     return html`
-      <form
-        id="fileUploadForm"
-        @submit=${this.onSubmit}
-        @reset=${this.tryRequestClose}
-      >
+      <form id="fileUploadForm" @submit=${this.onSubmit} @reset=${this.close}>
         <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
           <section class="col-span-1 flex flex-col gap-3">
             <h3 class="flex-0 text-lg font-semibold leading-none">
@@ -149,8 +146,8 @@ export class FileUploader extends BtrixElement {
         <sl-button
           variant="primary"
           size="small"
-          ?loading=${this.isUploading}
-          ?disabled=${!this.fileList.length || this.isUploading}
+          ?loading=${loading}
+          ?disabled=${!this.fileList.length || loading}
           @click=${async () => {
             // Using submit method instead of type="submit" fixes
             // incorrect getRootNode in Chrome
@@ -229,77 +226,7 @@ export class FileUploader extends BtrixElement {
     `;
   }
 
-  private renderUploading() {
-    if (this.isConfirmingCancel) {
-      return html`
-        <div class="flex flex-col items-center gap-5 p-5">
-          <p class="text-lg font-semibold leading-none">
-            ${msg("Cancel this upload?")}
-          </p>
-          <div class="w-full">
-            <btrix-file-list>
-              ${Array.from(this.fileList).map(
-                (file) =>
-                  html`<btrix-file-list-item
-                    .file=${file}
-                    progressValue=${this.progress}
-                    @btrix-remove=${this.handleRemoveFile}
-                  ></btrix-file-list-item>`,
-              )}
-            </btrix-file-list>
-          </div>
-          <div class="flex gap-3">
-            <sl-button
-              size="small"
-              @click=${() => (this.isConfirmingCancel = false)}
-            >
-              ${msg("No")}
-            </sl-button>
-            <sl-button
-              variant="primary"
-              size="small"
-              @click=${() => {
-                this.cancelUpload();
-                this.requestClose();
-              }}
-            >
-              ${msg("Yes")}
-            </sl-button>
-          </div>
-        </div>
-      `;
-    }
-    return html`
-      <section class="flex flex-col gap-3">
-        <h4 class="flex-0 text-lg font-semibold leading-none">
-          ${msg("Uploading...")}
-        </h4>
-        <p class="text-neutral-500">
-          ${msg("Keep this window open until your upload finishes.")}
-        </p>
-        <main class="flex-1 overflow-auto">
-          <btrix-file-list>
-            ${Array.from(this.fileList).map(
-              (file) =>
-                html`<btrix-file-list-item
-                  .file=${file}
-                  progressValue=${this.progress}
-                  @btrix-remove=${this.handleRemoveFile}
-                ></btrix-file-list-item>`,
-            )}
-          </btrix-file-list>
-        </main>
-      </section>
-      <div slot="footer" class="flex justify-between">
-        <sl-button size="small" @click=${() => this.tryRequestClose()}>
-          ${msg("Cancel")}
-        </sl-button>
-      </div>
-    `;
-  }
-
   private readonly handleRemoveFile = (e: FileRemoveEvent) => {
-    this.cancelUpload();
     const idx = this.fileList.indexOf(e.detail.item as File);
     if (idx === -1) return;
     this.fileList = [
@@ -308,33 +235,15 @@ export class FileUploader extends BtrixElement {
     ];
   };
 
-  private cancelUpload() {
-    this.uploadRequest?.abort();
-    this.onUploadProgress.cancel();
-  }
-
   private resetState() {
     this.fileList = [];
     this.tagsToSave = [];
-    this.isUploading = false;
-    this.isConfirmingCancel = false;
-    this.progress = 0;
+    this.uploadingId = undefined;
   }
 
-  private tryRequestClose(e?: CustomEvent) {
-    if (this.isUploading) {
-      e?.preventDefault();
-      this.isConfirmingCancel = true;
-    } else {
-      this.requestClose();
-    }
-  }
-
-  private requestClose() {
-    this.dispatchEvent(
-      new CustomEvent("request-close") as FileUploaderRequestCloseEvent,
-    );
-  }
+  private readonly close = () => {
+    void this.dialog?.hide();
+  };
 
   private async onSubmit(e: SubmitEvent) {
     e.preventDefault();
@@ -345,147 +254,31 @@ export class FileUploader extends BtrixElement {
     const file = this.fileList[0] as File | undefined;
     if (!file) return;
 
-    this.isUploading = true;
-    this.dispatchEvent(
-      new CustomEvent("upload-start", {
-        detail: {
-          fileName: file.name,
-          fileSize: file.size,
-        },
-      }) as FileUploaderUploadedEvent,
-    );
+    this.uploadingId = window.crypto.randomUUID();
 
     const { name, description } = serialize(formEl);
-    try {
-      const query = queryString.stringify({
-        filename: file.name,
-        name,
-        description: description,
-        collections: this.collectionIds,
-        tags: this.tagsToSave,
-      });
-
-      const data = await this.upload(
-        `orgs/${this.orgId}/uploads/stream?${query}`,
-        file,
-      );
-
-      this.uploadRequest = null;
-
-      // Dispatch event here because we're not using apiFetch() for uploads
-      if (data.storageQuotaReached) {
-        this.dispatchEvent(
-          new CustomEvent("btrix-storage-quota-update", {
-            detail: { reached: true },
-            bubbles: true,
-          }),
-        );
-      }
-
-      if (data.id && data.added) {
-        this.dispatchEvent(
-          new CustomEvent("uploaded", {
-            detail: {
-              fileName: file.name,
-              fileSize: file.size,
-            },
-          }) as FileUploaderUploadedEvent,
-        );
-        this.requestClose();
-        this.notify.toast({
-          message: msg(
-            html`Successfully uploaded <strong>${name}</strong>.<br />
-              <a
-                class="underline hover:no-underline"
-                href="${this.navigate.orgBasePath}/items/upload/${data.id}"
-                @click="${this.navigate.link}"
-                >View Item</a
-              > `,
-          ),
-          variant: "success",
-          icon: "check2-circle",
-          id: "file-upload-status",
-        });
-      } else {
-        throw data;
-      }
-    } catch (err) {
-      if (err === AbortReason.UserCancel) {
-        console.debug("Upload aborted to user cancel");
-      } else {
-        let message = msg("Sorry, couldn't upload file at this time.");
-        console.debug(err);
-        if (err === AbortReason.QuotaReached) {
-          message = msg(
-            "Your org does not have enough storage to upload this file.",
-          );
-          this.dispatchEvent(
-            new CustomEvent("btrix-storage-quota-update", {
-              detail: { reached: true },
-              bubbles: true,
-            }),
-          );
-        }
-        this.notify.toast({
-          message: message,
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "file-upload-status",
-        });
-      }
-    }
-    this.isUploading = false;
-  }
-
-  // Use XHR to get upload progress
-  private async upload(
-    url: string,
-    file: File,
-  ): Promise<{ id: string; added: boolean; storageQuotaReached: boolean }> {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-
-      xhr.open("PUT", `/api/${url}`);
-      xhr.setRequestHeader("Content-Type", "application/octet-stream");
-      Object.entries(this.authState!.headers).forEach(([k, v]) => {
-        xhr.setRequestHeader(k, v);
-      });
-      xhr.addEventListener("load", () => {
-        if (xhr.status === 200) {
-          resolve(
-            JSON.parse(xhr.response as string) as {
-              id: string;
-              added: boolean;
-              storageQuotaReached: boolean;
-            },
-          );
-        }
-        if (xhr.status === 403) {
-          reject(AbortReason.QuotaReached);
-        }
-      });
-      xhr.addEventListener("error", () => {
-        reject(
-          new APIError({
-            message: xhr.statusText,
-            status: xhr.status,
-          }),
-        );
-      });
-      xhr.addEventListener("abort", () => {
-        reject(AbortReason.UserCancel);
-      });
-      xhr.upload.addEventListener("progress", this.onUploadProgress);
-
-      xhr.send(file);
-
-      this.uploadRequest = xhr;
+    const query = queryString.stringify({
+      filename: file.name,
+      name,
+      description: description,
+      collections: this.collectionIds,
+      tags: this.tagsToSave,
     });
-  }
 
-  private readonly onUploadProgress = throttle(100)((e: ProgressEvent) => {
-    this.progress = (e.loaded / e.total) * 100;
-  });
+    // Dispatch information for upload to be handled on the org level
+    this.dispatchEvent(
+      new CustomEvent<OrgUploadEventDetail>("btrix-org-upload", {
+        detail: {
+          uploadId: this.uploadingId,
+          itemName: name as string,
+          apiPath: `/orgs/${this.orgId}/uploads/stream?${query}`,
+          file,
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
 
   private async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;

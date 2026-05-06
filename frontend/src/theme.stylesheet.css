@@ -26,6 +26,9 @@
     /* Custom screen widths */
     --btrix-screen-desktop: 82.5rem; /* Should match tailwind.config.screens.desktop */
 
+    /* Offset toast notification stack */
+    --btrix-toast-stack-offset: 0;
+
     /*
      * Shoelace Theme Tokens
      */
@@ -171,6 +174,7 @@
     --height: 0.5rem;
     --track-color: var(--sl-color-neutral-100);
     --indicator-color: var(--sl-color-primary-300);
+    --btrix-indicator-border-color: var(--sl-color-primary-500);
   }
 
   sl-progress-bar::part(base) {
@@ -179,7 +183,7 @@
   }
 
   sl-progress-bar::part(indicator) {
-    box-shadow: inset 0 0 0 1px var(--sl-color-primary-500);
+    box-shadow: inset 0 0 0 1px var(--btrix-indicator-border-color);
     @apply rounded-md;
   }
 
@@ -590,21 +594,36 @@
   .btrix-toast-stack {
     position: fixed;
     top: auto;
-    bottom: 0;
+    bottom: var(--btrix-toast-stack-offset, 0);
     inset-inline-end: 0;
     z-index: var(--sl-z-index-toast);
     width: 28rem;
     max-width: 100%;
     max-height: 100%;
     overflow: auto;
+    pointer-events: none;
   }
 
   .btrix-toast-stack sl-alert {
     margin: var(--sl-spacing-medium);
+    pointer-events: auto;
   }
 
   .btrix-toast-stack sl-alert::part(base) {
     box-shadow: var(--sl-shadow-large);
+  }
+
+  sl-alert::part(message) {
+    /* Decrease padding */
+    padding: var(--sl-spacing-medium);
+  }
+
+  sl-alert::part(icon) {
+    padding-inline-start: var(--sl-spacing-medium);
+  }
+
+  sl-alert::part(close-button) {
+    padding-inline-end: var(--sl-spacing-medium);
   }
 }
 

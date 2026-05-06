@@ -25,6 +25,11 @@ import {
   orgProxiesContext,
   type OrgProxiesContext,
 } from "@/context/org-proxies";
+import orgUploadsContext, {
+  type OrgUploadsContext,
+} from "@/context/org-uploads";
+import { OrgUploadsContextController } from "@/context/org-uploads/OrgUploadsContextController";
+import { orgUploadsContextKey } from "@/context/org-uploads/types";
 import { SearchOrgContextController } from "@/context/search-org/SearchOrgContextController";
 import { searchOrgContextKey } from "@/context/search-org/types";
 import type { QuotaUpdateDetail } from "@/controllers/api";
@@ -114,6 +119,9 @@ export class Org extends BtrixElement {
   @provide({ context: orgCrawlerChannelsContext })
   crawlerChannels: OrgCrawlerChannelsContext = null;
 
+  @provide({ context: orgUploadsContext })
+  orgUploads: OrgUploadsContext = {};
+
   @property({ type: Object })
   viewStateData?: ViewState["data"];
 
@@ -137,6 +145,9 @@ export class Org extends BtrixElement {
   private isCreateDialogVisible = false;
 
   private readonly [searchOrgContextKey] = new SearchOrgContextController(this);
+  private readonly [orgUploadsContextKey] = new OrgUploadsContextController(
+    this,
+  );
 
   private readonly proxiesTask = new Task(this, {
     task: async ([id], { signal }) => {
@@ -402,6 +413,8 @@ export class Org extends BtrixElement {
         </main>
         ${this.renderNewResourceDialogs()}
       </div>
+
+      <btrix-org-uploads-dialog></btrix-org-uploads-dialog>
     `;
   }
 
@@ -496,11 +509,9 @@ export class Org extends BtrixElement {
       >
         <btrix-file-uploader
           ?open=${this.openDialogName === "upload"}
-          @request-close=${() => (this.openDialogName = undefined)}
-          @uploaded=${() => {
-            if (this.orgTab === OrgTab.Dashboard) {
-              this.navigate.to(`${this.navigate.orgBasePath}/items/upload`);
-            }
+          @sl-after-hide=${(e: CustomEvent) => {
+            e.stopPropagation();
+            this.openDialogName = undefined;
           }}
         ></btrix-file-uploader>
 

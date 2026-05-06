@@ -1514,13 +1514,26 @@ export class ArchivedItemDetail extends BtrixElement {
   private async fetchCrawl(): Promise<void> {
     try {
       this.item = await this.getCrawl();
-    } catch {
-      this.notify.toast({
-        message: msg("Sorry, couldn't retrieve crawl at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "archived-item-retrieve-error",
-      });
+    } catch (err) {
+      console.debug(err);
+
+      this.navigate.to(`${this.navigate.orgBasePath}/${OrgTab.Items}`);
+
+      if (isApiError(err) && err.statusCode === 404) {
+        this.notify.toast({
+          message: msg("Archived item does not exist."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+          id: "archived-item-retrieve-error",
+        });
+      } else {
+        this.notify.toast({
+          message: msg("Sorry, couldn't retrieve item at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+          id: "archived-item-retrieve-error",
+        });
+      }
     }
   }
 

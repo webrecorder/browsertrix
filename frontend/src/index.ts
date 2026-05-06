@@ -358,7 +358,7 @@ export class App extends BtrixElement {
 
       ${this.renderUserGuide()}
 
-      <btrix-notification-stack></btrix-notification-stack>
+      <btrix-toast-stack></btrix-toast-stack>
     `;
   }
 
