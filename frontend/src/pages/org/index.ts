@@ -509,7 +509,10 @@ export class Org extends BtrixElement {
       >
         <btrix-file-uploader
           ?open=${this.openDialogName === "upload"}
-          @request-close=${() => (this.openDialogName = undefined)}
+          @sl-after-hide=${(e: CustomEvent) => {
+            e.stopPropagation();
+            this.openDialogName = undefined;
+          }}
         ></btrix-file-uploader>
 
         ${crawlingDefaultsReady
