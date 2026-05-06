@@ -3,11 +3,18 @@ import { localized, msg } from "@lit/localize";
 import type { SlButton } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html, type PropertyValues } from "lit";
-import { customElement, property, queryAsync, state } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  query,
+  queryAsync,
+  state,
+} from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { Dialog } from "@/components/ui/dialog";
 import type { FileRemoveEvent } from "@/components/ui/file-list";
 import type { BtrixFileChangeEvent } from "@/components/ui/file-list/events";
 import type { Tags } from "@/components/ui/tag-input";
@@ -32,7 +39,6 @@ export type FileUploaderUploadedEvent = CustomEvent<{
  * ```ts
  * <btrix-file-uploader
  *   ?open=${this.open}
- *   @request-close=${this.requestClose}
  * ></btrix-file-uploader>
  * ```
  *
@@ -48,7 +54,7 @@ export class FileUploader extends BtrixElement {
       if (this.uploadingId && this.uploadingId in value) {
         // Finish with dialog once upload has begun
         this.uploadingId = undefined;
-        this.requestClose();
+        this.close();
       }
     },
   });
@@ -70,6 +76,9 @@ export class FileUploader extends BtrixElement {
 
   @state()
   private fileList: File[] = [];
+
+  @query("btrix-dialog")
+  private readonly dialog?: Dialog | null;
 
   @queryAsync("#fileUploadForm")
   private readonly form!: Promise<HTMLFormElement>;
@@ -105,11 +114,7 @@ export class FileUploader extends BtrixElement {
     const loading = Boolean(this.uploadingId);
 
     return html`
-      <form
-        id="fileUploadForm"
-        @submit=${this.onSubmit}
-        @reset=${this.requestClose}
-      >
+      <form id="fileUploadForm" @submit=${this.onSubmit} @reset=${this.close}>
         <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
           <section class="col-span-1 flex flex-col gap-3">
             <h3 class="flex-0 text-lg font-semibold leading-none">
@@ -236,10 +241,8 @@ export class FileUploader extends BtrixElement {
     this.uploadingId = undefined;
   }
 
-  private readonly requestClose = () => {
-    this.dispatchEvent(
-      new CustomEvent("request-close") as FileUploaderRequestCloseEvent,
-    );
+  private readonly close = () => {
+    void this.dialog?.hide();
   };
 
   private async onSubmit(e: SubmitEvent) {
