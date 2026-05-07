@@ -238,7 +238,7 @@ export class CollectionWorkflowListSettings extends BtrixElement {
 
     if (dedupe === true) {
       params.dedupeCollId = this.collectionId;
-    } else if (dedupe === false) {
+    } else if (dedupe === false && this.dedupeCollId === this.collectionId) {
       params.dedupeCollId = "";
     }
 
@@ -253,7 +253,7 @@ export class CollectionWorkflowListSettings extends BtrixElement {
         this.autoAddCollections,
       );
 
-      if (this.dedupe) {
+      if (this.dedupeCollId === this.collectionId) {
         params.dedupeCollId = "";
       }
     }
