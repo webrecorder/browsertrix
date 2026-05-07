@@ -1,18 +1,3 @@
-/**
- * Selection delta computation for generic containers and their items.
- *
- * Model:
- * - Containers hold items. We may not know all item IDs (e.g. pagination),
- *   but we know how many items each container has.
- * - Each container may be "fully selected" (all items selected) or not.
- * - Batch operations can include/exclude entire containers with exceptions.
- * - Individual items can be selected/deselected outside batch ops.
- *
- * The delta tells us how many items are added/removed vs. the original state.
- *
- * In practical use, the containers are Workflows, and their items are Crawls.
- */
-
 export type Container = {
   id: string;
   itemCount: number;
@@ -49,6 +34,21 @@ export type Delta = {
   excludedContainers: Set<string>;
 };
 
+/**
+ * Selection delta computation for generic containers and their items.
+ *
+ * Model:
+ * - Containers hold items. We may not know all item IDs (e.g. pagination),
+ *   but we know how many items each container has.
+ * - Each container may be "fully selected" (all items selected) or not.
+ * - Batch operations can include/exclude entire containers with exceptions.
+ * - Individual items can be selected/deselected outside batch ops.
+ *
+ * The delta tells us how many items are added/removed vs. the original state.
+ *
+ * In practical use, containers correspond to Workflows and their items to
+ * Crawls, but this should be reusable for any container-item relationship.
+ */
 export function computeSelectionDelta(state: SelectionState): Delta {
   const addedItems = new Set<string>();
   const removedItems = new Set<string>();

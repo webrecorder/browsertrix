@@ -10,7 +10,6 @@ import union from "lodash/fp/union";
 import without from "lodash/fp/without";
 import queryString from "query-string";
 
-import { computeSelectionDelta } from "./collection-selection-difference";
 import type {
   AutoAddChangeDetail,
   CrawlsPageChangeDetail,
@@ -38,6 +37,7 @@ import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import { SortDirection } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { finishedCrawlStates, isCrawl } from "@/utils/crawler";
+import { computeSelectionDelta } from "@/utils/nested-selection-difference";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
