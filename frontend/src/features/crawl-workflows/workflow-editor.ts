@@ -2061,6 +2061,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
             this.updateFormState({
               browserProfile: profile ?? null,
               proxyId: profile?.proxyId ?? null,
+              saveStorage:
+                profile && this.formState.saveStorage === undefined
+                  ? true
+                  : this.formState.saveStorage,
             });
           }}
         ></btrix-select-browser-profile>
