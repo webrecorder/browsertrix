@@ -1095,16 +1095,14 @@ class CollectionOps:
         modified = dt_now()
 
         for coll_id in crawl_coll_ids:
-            await self.background_job_ops.create_update_collection_stats_job(
-                oid, coll_id
-            )
-
-            # TODO: Should we be setting modified here at all? or are we just
-            # updating stats? look into where this is called from
             result = await self.collections.find_one_and_update(
                 {"_id": coll_id},
                 {"$set": {"modified": modified}},
                 return_document=pymongo.ReturnDocument.AFTER,
+            )
+
+            await self.background_job_ops.create_update_collection_stats_job(
+                oid, coll_id
             )
 
             # if this is a collection that has an index and its *not* the collection that the crawl
