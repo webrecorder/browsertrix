@@ -834,6 +834,7 @@ class BackgroundJobOps:
                 job.collection_id,
                 existing_job_id=job.id,
             )
+            return {"success": True}
 
         if job.type == BgJobType.CLEANUP_SEED_FILES:
             raise HTTPException(status_code=400, detail="cron_job_retry_not_supported")
