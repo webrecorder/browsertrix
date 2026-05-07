@@ -122,10 +122,16 @@ async def main():
             while True:
                 if not await coll_ops.should_update_stats(UUID(coll_id), org.id):
                     break
+
+                count += 1
+                print(f"Starting update number {count}", flush=True)
                 await coll_ops.update_collection_stats(UUID(coll_id), org.id)
                 count += 1
 
-            print(f"Ran update {count} times", flush=True)
+            print(
+                f"No changes to collection since start of last update, job complete",
+                flush=True,
+            )
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:

@@ -970,13 +970,13 @@ class CollectionOps:
         """determine if collection stats need update"""
         coll = await self.get_collection(coll_id, oid)
 
-        if coll.statsLastUpdated is None:
+        if coll.lastStatsUpdateStarted is None:
             return True
 
         if (
             coll.modified
-            and coll.statsLastUpdated
-            and coll.modified >= coll.statsLastUpdated
+            and coll.lastStatsUpdateStarted
+            and coll.modified >= coll.lastStatsUpdateStarted
         ):
             return True
 
@@ -1044,10 +1044,10 @@ class CollectionOps:
             {"_id": collection_id},
             {
                 "$set": {
-                    # Set statsLastUpdated to when update started so that if
-                    # collection is modified any time after calculations begin
-                    # we will recalculate again after
-                    "statsLastUpdated": update_start_time,
+                    # store time update started so that if collection is modified
+                    # again while an update job is running the job will know to
+                    # recalculate again before quitting
+                    "lastStatsUpdateStarted": update_start_time,
                     "crawlCount": crawl_count,
                     "pageCount": page_count,
                     "uniquePageCount": unique_page_count,
