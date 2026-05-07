@@ -210,7 +210,7 @@ class CrawlManager(K8sAPI):
         if existing_job_id:
             job_id = existing_job_id
         else:
-            job_id = f"update-coll-{secrets.token_hex(5)}"
+            job_id = f"update-coll-{collection_id}"
 
         return await self._run_bg_job_with_ops_classes(
             job_id,
