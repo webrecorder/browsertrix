@@ -210,6 +210,7 @@ class CrawlManager(K8sAPI):
         if existing_job_id:
             job_id = existing_job_id
         else:
+            # Ensures we only get one concurrent update job per collection
             job_id = f"update-coll-{collection_id}"
 
         return await self._run_bg_job_with_ops_classes(
