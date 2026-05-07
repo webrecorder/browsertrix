@@ -985,6 +985,8 @@ class CollectionOps:
     async def update_collection_stats(self, collection_id: UUID, oid: UUID):
         """recalculate counts, tags, and dates for collection"""
         # pylint: disable=too-many-locals
+        update_start_time = dt_now()
+
         crawl_count = 0
         page_count = 0
         total_size = 0
@@ -1042,7 +1044,10 @@ class CollectionOps:
             {"_id": collection_id},
             {
                 "$set": {
-                    "statsLastUpdated": dt_now(),
+                    # Set statsLastUpdated to when update started so that if
+                    # collection is modified any time after calculations begin
+                    # we will recalculate again after
+                    "statsLastUpdated": update_start_time,
                     "crawlCount": crawl_count,
                     "pageCount": page_count,
                     "uniquePageCount": unique_page_count,
