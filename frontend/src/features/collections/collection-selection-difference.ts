@@ -54,7 +54,19 @@ export function computeSelectionDelta(state: SelectionState): Delta {
   let removals = 0;
 
   // Precompute: container -> count of originally selected items
+  // and container -> set of known item IDs
   const selectedCountPerContainer = new Map<string, number>();
+  const containerToItems = new Map<string, Set<string>>();
+  for (const [itemId, cid] of state.itemToContainer) {
+    if (cid) {
+      let items = containerToItems.get(cid);
+      if (!items) {
+        items = new Set<string>();
+        containerToItems.set(cid, items);
+      }
+      items.add(itemId);
+    }
+  }
   for (const itemId of state.originalSelectedItems) {
     const cid = state.itemToContainer.get(itemId);
     if (cid) {
@@ -74,17 +86,34 @@ export function computeSelectionDelta(state: SelectionState): Delta {
       includedContainers.add(containerId);
 
       const alreadySelected = selectedCountPerContainer.get(containerId) ?? 0;
-      let excluded = 0;
+      const excludedInContainer = new Set<string>();
       for (const itemId of op.excludedItems) {
         if (state.itemToContainer.get(itemId) === containerId) {
-          excluded++;
+          excludedInContainer.add(itemId);
         }
       }
 
-      additions += Math.max(
+      // Track specific items being newly added via this batch include
+      const containerItems = containerToItems.get(containerId);
+      let batchKnownAdded = 0;
+      if (containerItems) {
+        for (const itemId of containerItems) {
+          if (
+            !state.originalSelectedItems.has(itemId) &&
+            !excludedInContainer.has(itemId)
+          ) {
+            addedItems.add(itemId);
+            batchKnownAdded++;
+          }
+        }
+      }
+
+      // Numeric additions: only count items whose IDs we don't know
+      const totalNewFromBatch = Math.max(
         0,
-        container.itemCount - alreadySelected - excluded,
+        container.itemCount - alreadySelected - excludedInContainer.size,
       );
+      additions += Math.max(0, totalNewFromBatch - batchKnownAdded);
     } else {
       excludedContainers.add(containerId);
 
