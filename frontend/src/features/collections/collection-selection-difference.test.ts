@@ -362,9 +362,9 @@ describe("computeSelectionDelta", () => {
           selectedItems: new Set(["c2"]),
         }),
       );
-      // c2 is in a batch-included container, so it shouldn't be counted as individual add
+      // c2 is newly selected via batch include and tracked in addedItems
       expect(delta.additions).to.equal(4); // 5 total - 1 already saved
-      expect(delta.addedItems.has("c2")).to.be.false;
+      expect(delta.addedItems.has("c2")).to.be.true;
     });
   });
 

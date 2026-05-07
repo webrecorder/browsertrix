@@ -87,17 +87,30 @@ export function computeSelectionDelta(state: SelectionState): Delta {
 
       const alreadySelected = selectedCountPerContainer.get(containerId) ?? 0;
       const excludedInContainer = new Set<string>();
+      let excludedNotSelected = 0;
       for (const itemId of op.excludedItems) {
         if (state.itemToContainer.get(itemId) === containerId) {
           excludedInContainer.add(itemId);
+          if (!state.originalSelectedItems.has(itemId)) {
+            excludedNotSelected++;
+          }
         }
       }
 
-      // Track specific items being newly added via this batch include
+      // Only subtract excluded items that are NOT already selected.
+      // Items that were already selected and are now excluded are being
+      // swapped out (handled as removals via deselectedItems), not simply
+      // not-added — so they shouldn't reduce the new-item count.
+      const totalNewFromBatch = Math.max(
+        0,
+        container.itemCount - alreadySelected - excludedNotSelected,
+      );
+
       const containerItems = containerToItems.get(containerId);
       let batchKnownAdded = 0;
-      if (containerItems) {
+      if (containerItems && totalNewFromBatch > 0) {
         for (const itemId of containerItems) {
+          if (batchKnownAdded >= totalNewFromBatch) break;
           if (
             !state.originalSelectedItems.has(itemId) &&
             !excludedInContainer.has(itemId)
@@ -109,10 +122,6 @@ export function computeSelectionDelta(state: SelectionState): Delta {
       }
 
       // Numeric additions: only count items whose IDs we don't know
-      const totalNewFromBatch = Math.max(
-        0,
-        container.itemCount - alreadySelected - excludedInContainer.size,
-      );
       additions += Math.max(0, totalNewFromBatch - batchKnownAdded);
     } else {
       excludedContainers.add(containerId);
