@@ -171,6 +171,9 @@ export class CollectionWorkflowList extends BtrixElement {
   @state()
   expandWorkflowSettings = false;
 
+  @state()
+  private lastSavedWorkflowId?: string;
+
   @query("sl-tree")
   private readonly tree?: SlTree | null;
 
@@ -181,7 +184,9 @@ export class CollectionWorkflowList extends BtrixElement {
       if (this.collectionId) {
         const collId = this.collectionId;
         this.expandWorkflowSettings = this.workflows.some((workflow) =>
-          workflow.autoAddCollections.some((id) => id === collId),
+          workflow.dedupeCollId
+            ? workflow.dedupeCollId === this.collectionId
+            : workflow.autoAddCollections.some((id) => id === collId),
         );
       }
     }
@@ -276,6 +281,10 @@ export class CollectionWorkflowList extends BtrixElement {
         dedupeCollId=${ifDefined(workflow.dedupeCollId || undefined)}
         .autoAddCollections=${workflow.autoAddCollections}
         ?collapse=${!this.expandWorkflowSettings}
+        ?showSaveStatus=${this.lastSavedWorkflowId === workflow.id}
+        @btrix-workflow-after-save=${() => {
+          this.lastSavedWorkflowId = workflow.id;
+        }}
       ></btrix-collection-workflow-list-settings>
     `;
   };

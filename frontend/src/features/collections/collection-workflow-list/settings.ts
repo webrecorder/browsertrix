@@ -17,6 +17,8 @@ import { tw } from "@/utils/tailwind";
 
 /**
  * Additional settings for each workflow in `<btrix-collection-workflow-list>`
+ *
+ * @fires btrix-workflow-after-save
  */
 @customElement("btrix-collection-workflow-list-settings")
 @localized()
@@ -36,6 +38,9 @@ export class CollectionWorkflowListSettings extends BtrixElement {
   @property({ type: Boolean })
   collapse = false;
 
+  @property({ type: Boolean })
+  showSaveStatus = false;
+
   @state()
   private autoAdd = false;
 
@@ -43,7 +48,7 @@ export class CollectionWorkflowListSettings extends BtrixElement {
   private dedupe = false;
 
   @state()
-  private showSaveStatus = false;
+  private saving?: "autoAdd" | "dedupe";
 
   @state()
   private saveStatus?: "success" | "error";
@@ -62,7 +67,7 @@ export class CollectionWorkflowListSettings extends BtrixElement {
         this.saveStatus = "success";
         this.showSaveStatus = true;
 
-        this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
+        this.dispatchEvent(new CustomEvent("btrix-workflow-after-save"));
       } catch (err) {
         console.debug(err);
 
@@ -92,9 +97,12 @@ export class CollectionWorkflowListSettings extends BtrixElement {
   protected updated(changedProperties: PropertyValues): void {
     if (changedProperties.has("saveStatus") && this.saveStatus !== undefined) {
       // Reset success status
-      this.#timerId = window.setTimeout(() => {
-        this.showSaveStatus = false;
-      }, 4000);
+      this.#timerId = window.setTimeout(
+        () => {
+          this.showSaveStatus = false;
+        },
+        this.saveStatus === "success" ? 3000 : 5000,
+      );
     }
   }
 
@@ -104,34 +112,29 @@ export class CollectionWorkflowListSettings extends BtrixElement {
   }
 
   render() {
-    return html`<sl-tooltip
-      placement="right"
-      trigger="manual"
-      ?open=${Boolean(this.showSaveStatus && this.saveStatus)}
-      hoist
-      @click=${() => (this.showSaveStatus = false)}
-      @sl-after-hide=${() => (this.saveStatus = undefined)}
-    >
-      ${this.saveStatus === "success"
+    const disableDedupe = Boolean(
+      this.dedupeCollId && this.dedupeCollId !== this.collectionId,
+    );
+    const tooltipContent =
+      this.saveStatus === "success"
         ? html`<div slot="content" class="flex items-center gap-2">
             <sl-icon
               name="check-lg"
               class="text-base text-success-400"
             ></sl-icon>
-            ${msg("Saved Change")}
+            ${msg("Saved")}
           </div>`
         : html`<div slot="content" class="flex items-center gap-2">
             <sl-icon name="x-lg" class="text-base text-danger-400"></sl-icon>
             ${msg("Could Not Save")}
-          </div>`}
-      ${this.renderToggles()}
-    </sl-tooltip>`;
-  }
+          </div>`;
 
-  private renderToggles() {
-    const disableDedupe = Boolean(
-      this.dedupeCollId && this.dedupeCollId !== this.collectionId,
-    );
+    const tooltipClick = () => (this.showSaveStatus = false);
+    const tooltipHide = stopProp;
+    const tooltipAfterHide = (e: CustomEvent) => {
+      e.stopPropagation();
+      this.saveStatus = undefined;
+    };
 
     return html`
       <div
@@ -140,19 +143,19 @@ export class CollectionWorkflowListSettings extends BtrixElement {
           !this.collapse && tw`gap-4`,
         )}
       >
-        <div class="flex grow basis-0 transition-all">
-          <btrix-popover
-            content="${msg(
-              "This workflow is using another collection as its deduplication source.",
-            )} ${msg(
-              "Auto-adding new crawls to this collection may result in missing content.",
-            )}"
-            ?disabled=${!disableDedupe}
+        <div class="flex grow basis-0 items-center transition-all">
+          <sl-tooltip
+            trigger="manual"
             placement="left"
+            distance="10"
+            ?open=${Boolean(this.showSaveStatus && this.saveStatus)}
+            ?disabled=${this.saving !== "autoAdd"}
             hoist
-            @sl-hide=${stopProp}
-            @sl-after-hide=${stopProp}
+            @click=${tooltipClick}
+            @sl-hide=${tooltipHide}
+            @sl-after-hide=${tooltipAfterHide}
           >
+            ${tooltipContent}
             <sl-switch
               class="mx-[2px] inline-block"
               size="small"
@@ -162,54 +165,81 @@ export class CollectionWorkflowListSettings extends BtrixElement {
                 e.stopPropagation();
 
                 this.autoAdd = (e.target as SlSwitch).checked;
-                this.collapse = !this.autoAdd;
 
-                this.debouncedSaveAutoAdd();
+                if (!disableDedupe) {
+                  this.collapse = !this.autoAdd;
+                }
+
+                this.debouncedSaveAutoAdd("autoAdd");
               }}
             >
               <span class="text-neutral-500">${msg("Auto-Add")}</span>
             </sl-switch>
-          </btrix-popover>
+          </sl-tooltip>
         </div>
         ${when(
           this.featureFlags.has("dedupeEnabled"),
           () =>
             html`<div
               class=${clsx(
-                tw`basis-0 overflow-hidden transition-all`,
-                this.autoAdd ? tw`grow` : tw`shrink`,
-                this.collapse && tw`w-0`,
+                tw`overflow-hidden transition-all`,
+                !disableDedupe && [
+                  tw`basis-0`,
+                  this.autoAdd ? tw`grow` : tw`shrink`,
+                ],
+                this.collapse && !disableDedupe && tw`w-0`,
               )}
             >
-              <btrix-popover
-                content=${msg(
-                  "This workflow is using another collection as its deduplication source.",
-                )}
-                ?disabled=${!disableDedupe}
-                placement="bottom-end"
-                hoist
-                @sl-hide=${stopProp}
-                @sl-after-hide=${stopProp}
-              >
-                <sl-switch
-                  class="mx-[2px] inline-block"
-                  size="small"
-                  ?checked=${this.dedupe}
-                  ?disabled=${!this.workflowId || disableDedupe}
-                  @click=${(e: MouseEvent) => {
-                    e.stopPropagation();
-                  }}
-                  @sl-change=${(e: CustomEvent) => {
-                    e.stopPropagation();
+              ${disableDedupe
+                ? html`
+                    <btrix-popover
+                      content="${msg(
+                        "This workflow is using another collection as its deduplication source.",
+                      )} ${msg(
+                        "Auto-adding new crawls to this collection may result in missing content.",
+                      )}"
+                      placement="bottom-end"
+                      hoist
+                    >
+                      <sl-icon
+                        class=${clsx(
+                          tw`mt-px block text-base text-neutral-500`,
+                          this.collapse && `ml-2.5`,
+                        )}
+                        name="exclamation-diamond"
+                      ></sl-icon>
+                    </btrix-popover>
+                  `
+                : html`<sl-tooltip
+                    trigger="manual"
+                    placement="right"
+                    distance="10"
+                    ?open=${Boolean(this.showSaveStatus && this.saveStatus)}
+                    ?disabled=${this.saving !== "dedupe"}
+                    hoist
+                    @click=${tooltipClick}
+                    @sl-hide=${tooltipHide}
+                    @sl-after-hide=${tooltipAfterHide}
+                  >
+                    ${tooltipContent}
+                    <sl-switch
+                      class="mx-[2px] inline-block"
+                      size="small"
+                      ?checked=${this.dedupe}
+                      ?disabled=${!this.workflowId}
+                      @sl-change=${(e: CustomEvent) => {
+                        e.stopPropagation();
 
-                    this.dedupe = (e.target as SlSwitch).checked;
+                        this.dedupe = (e.target as SlSwitch).checked;
 
-                    this.debouncedSaveAutoAdd();
-                  }}
-                >
-                  <span class="text-neutral-500">${msg("Dedupe")}</span>
-                </sl-switch>
-              </btrix-popover>
+                        this.debouncedSaveAutoAdd(
+                          this.collapse ? "autoAdd" : "dedupe",
+                        );
+                      }}
+                    >
+                      <span class="text-neutral-500">${msg("Dedupe")}</span>
+                    </sl-switch>
+                  </sl-tooltip>`}
             </div>`,
         )}
       </div>
@@ -217,9 +247,12 @@ export class CollectionWorkflowListSettings extends BtrixElement {
   }
 
   // Debounce auto add to prevent multiple requests when toggling too quickly
-  private readonly debouncedSaveAutoAdd = debounce(200)(() => {
-    void this.saveAutoAddTask.run();
-  });
+  private readonly debouncedSaveAutoAdd = debounce(200)(
+    (field: "autoAdd" | "dedupe") => {
+      this.saving = field;
+      void this.saveAutoAddTask.run();
+    },
+  );
 
   private async saveAutoAdd(
     {
