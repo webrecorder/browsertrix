@@ -718,5 +718,161 @@ describe("computeSelectionDelta", () => {
       expect(delta.removals).to.equal(1); // c2 removed
       expect(delta.additions).to.equal(1); // c3 added via individual selection
     });
+
+    it("tracks items newly added via batch include in addedItems", () => {
+      // Workflow has 3 items, 2 originally selected (c1, c2).
+      // User selects remaining item → batch include (all checked).
+      // User then deselects c1 (originally selected).
+      // c3 should appear as an addition, c1 as a removal.
+      const delta = computeSelectionDelta(
+        createState({
+          containers: new Map([
+            [
+              "wf1",
+              {
+                id: "wf1",
+                itemCount: 3,
+                originalSelectedCount: 2,
+                wasFullySelected: false,
+              },
+            ],
+          ]),
+          itemToContainer: new Map([
+            ["c1", "wf1"],
+            ["c2", "wf1"],
+            ["c3", "wf1"],
+          ]),
+          originalSelectedItems: new Set(["c1", "c2"]),
+          batchOps: new Map([
+            [
+              "wf1",
+              {
+                kind: "include" as const,
+                excludedItems: new Set(["c1"]),
+              },
+            ],
+          ]),
+          selectedItems: new Set(["c1", "c2"]),
+          deselectedItems: new Set(["c1"]),
+        }),
+      );
+      expect(delta.additions).to.equal(1);
+      expect(delta.removals).to.equal(1);
+      expect(delta.addedItems.has("c3")).to.be.true;
+      expect(delta.removedItems.has("c1")).to.be.true;
+    });
+
+    it("ignores excludedItems / includedItems belonging to other containers", () => {
+      const delta = computeSelectionDelta(
+        createState({
+          containers: new Map([
+            [
+              "wf1",
+              {
+                id: "wf1",
+                itemCount: 3,
+                originalSelectedCount: 0,
+                wasFullySelected: false,
+              },
+            ],
+            [
+              "wf2",
+              {
+                id: "wf2",
+                itemCount: 3,
+                originalSelectedCount: 3,
+                wasFullySelected: true,
+              },
+            ],
+          ]),
+          itemToContainer: new Map([
+            ["a1", "wf1"],
+            ["a2", "wf1"],
+            ["a3", "wf1"],
+            ["b1", "wf2"],
+            ["b2", "wf2"],
+            ["b3", "wf2"],
+          ]),
+          originalSelectedItems: new Set(["a1", "b1", "b2", "b3"]),
+          batchOps: new Map([
+            [
+              "wf1",
+              {
+                kind: "include" as const,
+                excludedItems: new Set(["b1", "b2"]),
+              },
+            ],
+            [
+              "wf2",
+              {
+                kind: "exclude" as const,
+                includedItems: new Set(["a1", "b3"]),
+              },
+            ],
+          ]),
+          selectedItems: new Set(["a1", "b3"]),
+        }),
+      );
+      // wf1 include: a1 already selected, b1/b2 belong to wf2 → excluded=0
+      // additions = 3 - 1 - 0 = 2 (a2, a3)
+      // wf2 exclude: b3 kept, a1 belongs to wf1 → validExceptions=1 (b3 only)
+      // removals = 3 - 1 = 2 (b1, b2)
+      expect(delta.additions).to.equal(2);
+      expect(delta.removals).to.equal(2);
+      expect(delta.includedContainers.has("wf1")).to.be.true;
+      expect(delta.excludedContainers.has("wf2")).to.be.true;
+    });
+
+    it("ignores deselected items that were never originally selected", () => {
+      // wf1 fully selected, but c4 was never selected originally
+      // Deselecting c4 should be a no-op
+      const delta = computeSelectionDelta(
+        createState({
+          containers: new Map([
+            [
+              "wf1",
+              {
+                id: "wf1",
+                itemCount: 3,
+                originalSelectedCount: 3,
+                wasFullySelected: true,
+              },
+            ],
+          ]),
+          itemToContainer: new Map([
+            ["c1", "wf1"],
+            ["c2", "wf1"],
+            ["c3", "wf1"],
+            ["c4", "wf1"],
+          ]),
+          originalSelectedItems: new Set(["c1", "c2", "c3"]),
+          batchOps: new Map([
+            ["wf1", { kind: "include" as const, excludedItems: new Set() }],
+          ]),
+          deselectedItems: new Set(["c4"]),
+        }),
+      );
+      expect(delta.additions).to.equal(0);
+      expect(delta.removals).to.equal(0);
+      expect(delta.removedItems.has("c4")).to.be.false;
+    });
+
+    it("handles items with no container mapping (undefined containerId)", () => {
+      // Items not in itemToContainer at all — containerId is undefined
+      // An orphaned originally-selected item no longer selected → removal
+      // An orphaned newly-selected item → addition
+      const delta = computeSelectionDelta(
+        createState({
+          containers: new Map(),
+          itemToContainer: new Map(),
+          originalSelectedItems: new Set(["orphan1"]),
+          selectedItems: new Set(["orphan2"]),
+        }),
+      );
+      expect(delta.removals).to.equal(1);
+      expect(delta.removedItems.has("orphan1")).to.be.true;
+      expect(delta.additions).to.equal(1);
+      expect(delta.addedItems.has("orphan2")).to.be.true;
+    });
   });
 });
