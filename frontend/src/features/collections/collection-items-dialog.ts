@@ -6,12 +6,9 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
-import union from "lodash/fp/union";
-import without from "lodash/fp/without";
 import queryString from "query-string";
 
 import type {
-  AutoAddChangeDetail,
   CrawlsPageChangeDetail,
   SelectionChangeDetail,
 } from "./collection-workflow-list";
@@ -270,7 +267,7 @@ export class CollectionItemsDialog extends BtrixElement {
     return html` <btrix-dialog
       ?open=${this.open}
       class="part-[title]:overflow-hidden"
-      style="--width: var(--btrix-screen-desktop); --body-spacing: 0;"
+      style="--width: calc(var(--btrix-screen-desktop) - 3.5rem); --body-spacing: 0;"
       @sl-show=${() => (this.isReady = true)}
       @sl-after-hide=${() => this.reset()}
     >
@@ -713,21 +710,6 @@ export class CollectionItemsDialog extends BtrixElement {
             this.workflowSelection = new Map(this.workflowSelection);
             this.selectedItems = new Set(this.selectedItems);
             this.deselectedItems = new Set(this.deselectedItems);
-          }}
-          @btrix-auto-add-change=${(e: CustomEvent<AutoAddChangeDetail>) => {
-            const { id, checked, dedupe } = e.detail;
-            const workflow = this.workflows?.items.find(
-              (workflow) => workflow.id === id,
-            );
-            if (workflow) {
-              void this.saveAutoAdd({
-                id,
-                autoAddCollections: checked
-                  ? union([this.collectionId], workflow.autoAddCollections)
-                  : without([this.collectionId], workflow.autoAddCollections),
-                dedupe,
-              });
-            }
           }}
         >
         </btrix-collection-workflow-list>
@@ -1435,51 +1417,5 @@ export class CollectionItemsDialog extends BtrixElement {
     return this.api.fetch<SearchValues>(
       `/orgs/${this.orgId}/all-crawls/search-values?crawlType=${searchType}`,
     );
-  }
-
-  private async saveAutoAdd({
-    id,
-    autoAddCollections,
-    dedupe,
-  }: Pick<Workflow, "id" | "autoAddCollections"> & { dedupe?: boolean }) {
-    const params: Pick<Workflow, "autoAddCollections" | "dedupeCollId"> = {
-      autoAddCollections: autoAddCollections,
-    };
-
-    if (dedupe === true) {
-      params.dedupeCollId = this.collectionId;
-    } else if (dedupe === false) {
-      params.dedupeCollId = "";
-    }
-
-    try {
-      await this.api.fetch(`/orgs/${this.orgId}/crawlconfigs/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(params),
-      });
-      await this.fetchWorkflows();
-      this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
-
-      this.notify.toast({
-        message:
-          dedupe === true || dedupe === false
-            ? msg("Deduplication settings updated.")
-            : msg("Auto-add settings updated."),
-        variant: "success",
-        icon: "check2-circle",
-        duration: 1000,
-        id: "auto-add-status",
-      });
-    } catch (e: unknown) {
-      console.debug(e);
-      this.notify.toast({
-        message: msg(
-          "Something unexpected went wrong, couldn't save auto-add setting.",
-        ),
-        variant: "warning",
-        icon: "exclamation-circle",
-        id: "auto-add-status",
-      });
-    }
   }
 }

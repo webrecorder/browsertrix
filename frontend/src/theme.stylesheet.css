@@ -68,6 +68,11 @@
     --wa-color-neutral-90: var(--sl-color-neutral-200);
     --wa-color-neutral-95: var(--sl-color-neutral-100);
 
+    /* Z-index */
+
+    /* Place above toast notifications */
+    --sl-z-index-dialog: 1000;
+
     /*
      * Typography
      */
