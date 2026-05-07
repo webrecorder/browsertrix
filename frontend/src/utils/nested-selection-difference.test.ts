@@ -1,6 +1,6 @@
 import { expect } from "@open-wc/testing";
 
-import { computeSelectionDelta } from "./collection-selection-difference";
+import { computeSelectionDelta } from "./nested-selection-difference";
 
 describe("computeSelectionDelta", () => {
   // Helper to create a basic state
