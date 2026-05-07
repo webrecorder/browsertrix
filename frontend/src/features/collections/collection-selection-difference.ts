@@ -9,6 +9,8 @@
  * - Individual items can be selected/deselected outside batch ops.
  *
  * The delta tells us how many items are added/removed vs. the original state.
+ *
+ * In practical use, the containers are Workflows, and the items are Crawls.
  */
 
 export type Container = {
