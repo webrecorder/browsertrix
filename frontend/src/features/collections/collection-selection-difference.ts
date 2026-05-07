@@ -55,23 +55,17 @@ export function computeSelectionDelta(state: SelectionState): Delta {
   let additions = 0;
   let removals = 0;
 
-  // Precompute: container -> count of originally selected items
-  // and container -> set of known item IDs
   const selectedCountPerContainer = new Map<string, number>();
   const containerToItems = new Map<string, Set<string>>();
   for (const [itemId, cid] of state.itemToContainer) {
-    if (cid) {
-      let items = containerToItems.get(cid);
-      if (!items) {
-        items = new Set<string>();
-        containerToItems.set(cid, items);
-      }
-      items.add(itemId);
+    if (!cid) continue;
+    let items = containerToItems.get(cid);
+    if (!items) {
+      items = new Set<string>();
+      containerToItems.set(cid, items);
     }
-  }
-  for (const itemId of state.originalSelectedItems) {
-    const cid = state.itemToContainer.get(itemId);
-    if (cid) {
+    items.add(itemId);
+    if (state.originalSelectedItems.has(itemId)) {
       selectedCountPerContainer.set(
         cid,
         (selectedCountPerContainer.get(cid) ?? 0) + 1,
@@ -88,16 +82,13 @@ export function computeSelectionDelta(state: SelectionState): Delta {
       includedContainers.add(containerId);
 
       const alreadySelected = selectedCountPerContainer.get(containerId) ?? 0;
-      const excludedInContainer = new Set<string>();
-      let excludedNotSelected = 0;
-      for (const itemId of op.excludedItems) {
-        if (state.itemToContainer.get(itemId) === containerId) {
-          excludedInContainer.add(itemId);
-          if (!state.originalSelectedItems.has(itemId)) {
-            excludedNotSelected++;
-          }
-        }
-      }
+
+      const containerItems = containerToItems.get(containerId);
+      const excludedNotSelected = containerItems
+        ? containerItems
+            .intersection(op.excludedItems)
+            .difference(state.originalSelectedItems).size
+        : 0;
 
       // Only subtract excluded items that are NOT already selected.
       // Items that were already selected and are now excluded are being
@@ -108,14 +99,13 @@ export function computeSelectionDelta(state: SelectionState): Delta {
         container.itemCount - alreadySelected - excludedNotSelected,
       );
 
-      const containerItems = containerToItems.get(containerId);
       let batchKnownAdded = 0;
       if (containerItems && totalNewFromBatch > 0) {
         for (const itemId of containerItems) {
           if (batchKnownAdded >= totalNewFromBatch) break;
           if (
             !state.originalSelectedItems.has(itemId) &&
-            !excludedInContainer.has(itemId)
+            !op.excludedItems.has(itemId)
           ) {
             addedItems.add(itemId);
             batchKnownAdded++;
@@ -159,46 +149,37 @@ export function computeSelectionDelta(state: SelectionState): Delta {
   }
 
   // --- Deselected items from fully selected containers (partial removals) ---
-  for (const itemId of state.deselectedItems) {
+  for (const itemId of state.deselectedItems.intersection(
+    state.originalSelectedItems,
+  )) {
     const containerId = state.itemToContainer.get(itemId);
     if (!containerId || excludedContainers.has(containerId)) continue;
-
-    // Only count if the container is currently fully selected AND
-    // the item was originally selected (otherwise it wasn't "removed")
-    if (
-      currentlyFullySelected.has(containerId) &&
-      state.originalSelectedItems.has(itemId)
-    ) {
+    if (currentlyFullySelected.has(containerId)) {
       removedItems.add(itemId);
     }
   }
 
   // --- Individual item selections outside batch ops ---
-  for (const itemId of state.selectedItems) {
+  for (const itemId of state.selectedItems.difference(
+    state.originalSelectedItems,
+  )) {
     const containerId = state.itemToContainer.get(itemId);
-    // Only count if not part of an include batch op
     if (containerId && includedContainers.has(containerId)) continue;
-
-    if (!state.originalSelectedItems.has(itemId)) {
-      addedItems.add(itemId);
-    }
+    addedItems.add(itemId);
   }
 
   // --- Individual item deselections outside batch ops ---
-  for (const itemId of state.originalSelectedItems) {
+  for (const itemId of state.originalSelectedItems.difference(
+    state.selectedItems,
+  )) {
     const containerId = state.itemToContainer.get(itemId);
-    // Skip items in fully selected containers (they're still selected)
-    // and excluded containers (handled by batch exclude loop)
     if (
       containerId &&
       (currentlyFullySelected.has(containerId) ||
         excludedContainers.has(containerId))
     )
       continue;
-
-    if (!state.selectedItems.has(itemId)) {
-      removedItems.add(itemId);
-    }
+    removedItems.add(itemId);
   }
 
   additions += addedItems.size;
