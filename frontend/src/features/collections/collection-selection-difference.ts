@@ -57,18 +57,18 @@ export function computeSelectionDelta(state: SelectionState): Delta {
 
   const selectedCountPerContainer = new Map<string, number>();
   const containerToItems = new Map<string, Set<string>>();
-  for (const [itemId, cid] of state.itemToContainer) {
-    if (!cid) continue;
-    let items = containerToItems.get(cid);
+  for (const [itemId, containerId] of state.itemToContainer) {
+    if (!containerId) continue;
+    let items = containerToItems.get(containerId);
     if (!items) {
       items = new Set<string>();
-      containerToItems.set(cid, items);
+      containerToItems.set(containerId, items);
     }
     items.add(itemId);
     if (state.originalSelectedItems.has(itemId)) {
       selectedCountPerContainer.set(
-        cid,
-        (selectedCountPerContainer.get(cid) ?? 0) + 1,
+        containerId,
+        (selectedCountPerContainer.get(containerId) ?? 0) + 1,
       );
     }
   }
