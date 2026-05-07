@@ -34,7 +34,7 @@ from slugify import slugify
 
 # from fastapi_users import models as fastapi_users_models
 
-from .db import BaseMongoModel
+from .db import LENIENT_ON_READ, BaseMongoModel
 
 from .utils import is_bool
 
@@ -92,17 +92,17 @@ HttpUrl = Annotated[
     str, BeforeValidator(lambda value: str(http_url_adapter.validate_python(value)))
 ]
 
-Name = Annotated[str, Field(min_length=1, max_length=1000)]
-NameOrEmptyStr = Annotated[str, Field(min_length=0, max_length=1000)]
-Description = Annotated[str | None, Field(max_length=5000)]
-Tag = Annotated[str, Field(min_length=1, max_length=80)]
+Name = Annotated[str, Field(min_length=1, max_length=1000), LENIENT_ON_READ]
+NameOrEmptyStr = Annotated[str, Field(min_length=0, max_length=1000), LENIENT_ON_READ]
+Description = Annotated[str | None, Field(max_length=5000), LENIENT_ON_READ]
+Tag = Annotated[str, Field(min_length=1, max_length=80), LENIENT_ON_READ]
 
-CollectionName = Annotated[str, Field(min_length=1, max_length=80)]
-CollectionSlug = Annotated[str, Field(min_length=1, max_length=80)]
-CollectionCaption = Annotated[str | None, Field(max_length=1000)]
+CollectionName = Annotated[str, Field(min_length=1, max_length=80), LENIENT_ON_READ]
+CollectionSlug = Annotated[str, Field(min_length=1, max_length=80), LENIENT_ON_READ]
+CollectionCaption = Annotated[str | None, Field(max_length=1000), LENIENT_ON_READ]
 
-OrgName = Annotated[str, Field(min_length=1, max_length=50)]
-OrgPublicDescription = Annotated[str | None, Field(max_length=400)]
+OrgName = Annotated[str, Field(min_length=1, max_length=50), LENIENT_ON_READ]
+OrgPublicDescription = Annotated[str | None, Field(max_length=400), LENIENT_ON_READ]
 
 
 # pylint: disable=too-few-public-methods
@@ -501,7 +501,7 @@ class CrawlConfigCore(BaseMongoModel):
     jobType: Optional[JobType] = JobType.CUSTOM
     config: Optional[RawCrawlConfig] = None
 
-    tags: Optional[List[str]] = []
+    tags: list[Tag] | None = []
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
@@ -525,8 +525,8 @@ class CrawlConfigCore(BaseMongoModel):
 class CrawlConfigAdditional(BaseModel):
     """Additional fields shared by CrawlConfig and CrawlConfigOut."""
 
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: NameOrEmptyStr | None = None
+    description: Description | None = None
 
     created: datetime
     createdBy: Optional[UUID] = None
@@ -2450,7 +2450,7 @@ class OrgOut(BaseMongoModel):
     """Organization API output model"""
 
     id: UUID
-    name: str
+    name: OrgName
     slug: str
     users: Dict[str, Any] = {}
 
@@ -2513,7 +2513,7 @@ class Organization(BaseMongoModel):
     """Organization Base Model"""
 
     id: UUID
-    name: str
+    name: OrgName
     slug: str
     users: Dict[str, UserRole] = {}
 
