@@ -1696,6 +1696,8 @@ class Collection(BaseMongoModel):
     created: Optional[datetime] = None
     modified: Optional[datetime] = None
 
+    statsLastUpdated: Optional[datetime] = None
+
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
     uniquePageCount: Optional[int] = 0
@@ -1762,6 +1764,8 @@ class CollOut(BaseMongoModel):
     created: Optional[datetime] = None
     modified: Optional[datetime] = None
 
+    statsLastUpdated: Optional[datetime] = None
+
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
     uniquePageCount: Optional[int] = 0
@@ -1815,6 +1819,8 @@ class PublicCollOut(BaseMongoModel):
     caption: Optional[str] = None
     created: Optional[datetime] = None
     modified: Optional[datetime] = None
+
+    statsLastUpdated: Optional[datetime] = None
 
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
