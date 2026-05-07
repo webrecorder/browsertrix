@@ -976,7 +976,7 @@ class CollectionOps:
         if (
             coll.modified
             and coll.lastStatsUpdateStarted
-            and coll.modified >= coll.lastStatsUpdateStarted
+            and coll.modified > coll.lastStatsUpdateStarted
         ):
             return True
 
