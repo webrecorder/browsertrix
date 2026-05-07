@@ -53,78 +53,65 @@ export function computeSelectionDelta(state: SelectionState): Delta {
   let additions = 0;
   let removals = 0;
 
-  // Classify batch operations
-  for (const [containerId, op] of state.batchOps) {
-    if (op.kind === "include") {
-      includedContainers.add(containerId);
-    } else {
-      excludedContainers.add(containerId);
+  // Precompute: container -> count of originally selected items
+  const selectedCountPerContainer = new Map<string, number>();
+  for (const itemId of state.originalSelectedItems) {
+    const cid = state.itemToContainer.get(itemId);
+    if (cid) {
+      selectedCountPerContainer.set(
+        cid,
+        (selectedCountPerContainer.get(cid) ?? 0) + 1,
+      );
     }
   }
 
-  // Determine which containers are currently fully selected.
-  // This includes:
-  // - Containers with batch include ops
-  // - Containers that were originally fully selected and not batch excluded
-  const currentlyFullySelected = new Set<string>();
-  for (const containerId of includedContainers) {
-    currentlyFullySelected.add(containerId);
+  // Process batch operations in a single pass
+  for (const [containerId, op] of state.batchOps) {
+    const container = state.containers.get(containerId);
+    if (!container) continue;
+
+    if (op.kind === "include") {
+      includedContainers.add(containerId);
+
+      const alreadySelected = selectedCountPerContainer.get(containerId) ?? 0;
+      let excluded = 0;
+      for (const itemId of op.excludedItems) {
+        if (state.itemToContainer.get(itemId) === containerId) {
+          excluded++;
+        }
+      }
+
+      additions += Math.max(
+        0,
+        container.itemCount - alreadySelected - excluded,
+      );
+    } else {
+      excludedContainers.add(containerId);
+
+      const originallySelected = container.wasFullySelected
+        ? container.itemCount
+        : container.originalSelectedCount;
+
+      if (op.includedItems.size > 0) {
+        let validExceptions = 0;
+        for (const itemId of op.includedItems) {
+          if (state.itemToContainer.get(itemId) === containerId) {
+            validExceptions++;
+          }
+        }
+        removals += Math.max(0, originallySelected - validExceptions);
+      } else {
+        removals += originallySelected;
+      }
+    }
   }
+
+  // Containers that are currently fully selected:
+  // batch-included containers + originally fully selected containers not batch excluded
+  const currentlyFullySelected = new Set(includedContainers);
   for (const [containerId, container] of state.containers) {
     if (container.wasFullySelected && !excludedContainers.has(containerId)) {
       currentlyFullySelected.add(containerId);
-    }
-  }
-
-  // --- Batch includes: items added by including a container ---
-  for (const containerId of includedContainers) {
-    const container = state.containers.get(containerId);
-    if (!container) continue;
-
-    const op = state.batchOps.get(containerId);
-    if (!op || op.kind !== "include") continue;
-
-    // Count items that would be added (total - already selected - excluded)
-    const alreadySelected = countInContainer(
-      state.originalSelectedItems,
-      state.itemToContainer,
-      containerId,
-    );
-    const excluded = countInContainer(
-      op.excludedItems,
-      state.itemToContainer,
-      containerId,
-    );
-
-    additions += Math.max(0, container.itemCount - alreadySelected - excluded);
-  }
-
-  // --- Batch excludes: items removed by excluding a container ---
-  for (const containerId of excludedContainers) {
-    const container = state.containers.get(containerId);
-    if (!container) continue;
-
-    const op = state.batchOps.get(containerId);
-    if (!op || op.kind !== "exclude") continue;
-
-    // How many items were originally selected in this container?
-    // Use originalSelectedCount which comes from the API and accounts
-    // for items we may not have loaded.
-    const originallySelected = container.wasFullySelected
-      ? container.itemCount
-      : container.originalSelectedCount;
-
-    if (op.includedItems.size > 0) {
-      // Some items are re-selected (exceptions to the exclusion).
-      // Only count exceptions that were originally selected.
-      const validExceptions = countInContainer(
-        op.includedItems,
-        state.itemToContainer,
-        containerId,
-      );
-      removals += Math.max(0, originallySelected - validExceptions);
-    } else {
-      removals += originallySelected;
     }
   }
 
@@ -182,18 +169,4 @@ export function computeSelectionDelta(state: SelectionState): Delta {
     includedContainers,
     excludedContainers,
   };
-}
-
-function countInContainer(
-  items: Set<string>,
-  itemToContainer: Map<string, string>,
-  containerId: string,
-): number {
-  let count = 0;
-  for (const itemId of items) {
-    if (itemToContainer.get(itemId) === containerId) {
-      count++;
-    }
-  }
-  return count;
 }
