@@ -1,5 +1,5 @@
 /**
- * Generic selection delta computation for containers and their items.
+ * Selection delta computation for generic containers and their items.
  *
  * Model:
  * - Containers hold items. We may not know all item IDs (e.g. pagination),
@@ -10,16 +10,16 @@
  *
  * The delta tells us how many items are added/removed vs. the original state.
  *
- * In practical use, the containers are Workflows, and the items are Crawls.
+ * In practical use, the containers are Workflows, and their items are Crawls.
  */
 
 export type Container = {
   id: string;
   itemCount: number;
   /**
-   * Total number of items that were selected in the original state,
-   * according to the API. This may be larger than the number of item
-   * IDs we have loaded into memory (e.g. due to pagination).
+   * Total number of items that were selected in the original state. This may be
+   * larger than the number of item IDs we have loaded into memory (e.g. due to
+   * pagination).
    */
   originalSelectedCount: number;
   wasFullySelected: boolean;
@@ -34,8 +34,10 @@ export type SelectionState = {
   itemToContainer: Map<string, string>;
   originalSelectedItems: Set<string>;
   batchOps: Map<string, BatchOperation>;
-  selectedItems: Set<string>; // Items selected outside batch ops
-  deselectedItems: Set<string>; // Items deselected from included containers
+  /** Items selected outside batch ops */
+  selectedItems: Set<string>;
+  /** Items deselected from included containers */
+  deselectedItems: Set<string>;
 };
 
 export type Delta = {
@@ -74,11 +76,11 @@ export function computeSelectionDelta(state: SelectionState): Delta {
   }
 
   // Process batch operations in a single pass
-  for (const [containerId, op] of state.batchOps) {
+  for (const [containerId, operation] of state.batchOps) {
     const container = state.containers.get(containerId);
     if (!container) continue;
 
-    if (op.kind === "include") {
+    if (operation.kind === "include") {
       includedContainers.add(containerId);
 
       const alreadySelected = selectedCountPerContainer.get(containerId) ?? 0;
@@ -86,14 +88,14 @@ export function computeSelectionDelta(state: SelectionState): Delta {
       const containerItems = containerToItems.get(containerId);
       const excludedNotSelected = containerItems
         ? containerItems
-            .intersection(op.excludedItems)
+            .intersection(operation.excludedItems)
             .difference(state.originalSelectedItems).size
         : 0;
 
       // Only subtract excluded items that are NOT already selected.
       // Items that were already selected and are now excluded are being
       // swapped out (handled as removals via deselectedItems), not simply
-      // not-added — so they shouldn't reduce the new-item count.
+      // not-added, so they shouldn't reduce the new item count.
       const totalNewFromBatch = Math.max(
         0,
         container.itemCount - alreadySelected - excludedNotSelected,
@@ -105,7 +107,7 @@ export function computeSelectionDelta(state: SelectionState): Delta {
           if (batchKnownAdded >= totalNewFromBatch) break;
           if (
             !state.originalSelectedItems.has(itemId) &&
-            !op.excludedItems.has(itemId)
+            !operation.excludedItems.has(itemId)
           ) {
             addedItems.add(itemId);
             batchKnownAdded++;
@@ -116,15 +118,17 @@ export function computeSelectionDelta(state: SelectionState): Delta {
       // Numeric additions: only count items whose IDs we don't know
       additions += Math.max(0, totalNewFromBatch - batchKnownAdded);
     } else {
+      // Exclusions
       excludedContainers.add(containerId);
 
       const originallySelected = container.wasFullySelected
         ? container.itemCount
         : container.originalSelectedCount;
 
-      if (op.includedItems.size > 0) {
+      if (operation.includedItems.size > 0) {
         let validExceptions = 0;
-        for (const itemId of op.includedItems) {
+        for (const itemId of operation.includedItems) {
+          // Don't count an item as removed if it was originally selected in the container
           if (
             state.originalSelectedItems.has(itemId) &&
             state.itemToContainer.get(itemId) === containerId
@@ -148,7 +152,7 @@ export function computeSelectionDelta(state: SelectionState): Delta {
     }
   }
 
-  // --- Deselected items from fully selected containers (partial removals) ---
+  // Deselected items from fully selected containers (partial removals)
   for (const itemId of state.deselectedItems.intersection(
     state.originalSelectedItems,
   )) {
@@ -159,7 +163,7 @@ export function computeSelectionDelta(state: SelectionState): Delta {
     }
   }
 
-  // --- Individual item selections outside batch ops ---
+  // Individual item selections outside batch ops
   for (const itemId of state.selectedItems.difference(
     state.originalSelectedItems,
   )) {
@@ -168,7 +172,7 @@ export function computeSelectionDelta(state: SelectionState): Delta {
     addedItems.add(itemId);
   }
 
-  // --- Individual item deselections outside batch ops ---
+  // Individual item deselections outside batch ops
   for (const itemId of state.originalSelectedItems.difference(
     state.selectedItems,
   )) {
