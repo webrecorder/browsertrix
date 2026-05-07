@@ -37,6 +37,7 @@ import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import { SortDirection } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { finishedCrawlStates, isCrawl } from "@/utils/crawler";
+import { computeSelectionDelta } from "@/utils/nested-selection-difference";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -571,20 +572,27 @@ export class CollectionItemsDialog extends BtrixElement {
 
               if (selection.checked === true) {
                 // Workflow is now fully selected (select all mode)
-                if (savedSelection?.checked === true && !wasAllSelected) {
-                  // Was individually selected, now select all - switch to allSelected mode
-                  this.batchWorkflows.set(workflowId, {
-                    operation: "add",
-                    omitCrawls: new Set(),
-                  });
-                } else if (savedSelection?.checked !== true) {
-                  // Was not selected, now select all
-                  this.batchWorkflows.set(workflowId, {
-                    operation: "add",
-                    omitCrawls: new Set(),
-                  });
+                const batchWorkflow = this.batchWorkflows.get(workflowId);
+
+                if (savedSelection?.checked === true) {
+                  // Workflow was originally fully selected
+                  if (batchWorkflow?.operation === "remove") {
+                    // Was deselected (batch remove), now re-selected - back to original
+                    this.batchWorkflows.delete(workflowId);
+                  } else if (!wasAllSelected) {
+                    // Was individually selected, now select all - switch to allSelected mode
+                    this.batchWorkflows.set(workflowId, {
+                      operation: "add",
+                      omitCrawls: new Set(),
+                    });
+                  }
+                  // If wasAllSelected and no batchWorkflow, we're already in original state
                 } else {
-                  this.batchWorkflows.delete(workflowId);
+                  // Was not originally selected, now select all
+                  this.batchWorkflows.set(workflowId, {
+                    operation: "add",
+                    omitCrawls: new Set(),
+                  });
                 }
 
                 // Clear any deselected items for this workflow since we're in select all mode
@@ -685,6 +693,14 @@ export class CollectionItemsDialog extends BtrixElement {
                     .difference(removeCrawls)
                     .union(addCrawls);
 
+                  // Track deselected items (for workflows originally selected)
+                  removeCrawls.forEach((id) => {
+                    this.deselectedItems.add(id);
+                  });
+                  addCrawls.forEach((id) => {
+                    this.deselectedItems.delete(id);
+                  });
+
                   const batchWorkflow = this.batchWorkflows.get(workflowId);
 
                   if (batchWorkflow) {
@@ -698,6 +714,13 @@ export class CollectionItemsDialog extends BtrixElement {
                           : batchWorkflow.omitCrawls
                               .difference(removeCrawls)
                               .union(addCrawls),
+                    });
+                  } else if (savedSelection?.checked === true) {
+                    // Workflow was originally fully selected, now partially deselected
+                    // Create a batch remove entry
+                    this.batchWorkflows.set(workflowId, {
+                      operation: "remove",
+                      omitCrawls: new Set(),
                     });
                   }
 
@@ -955,116 +978,64 @@ export class CollectionItemsDialog extends BtrixElement {
   }
 
   private get difference() {
-    const addItems = new Set<string>();
-    const removeItems = new Set<string>();
-    const addWorkflows = new Set<string>();
-    const removeWorkflows = new Set<string>();
-    let addCount = 0;
-    let removeCount = 0;
+    // Map component state to generic selection state
+    const containers = new Map<
+      string,
+      {
+        id: string;
+        itemCount: number;
+        originalSelectedCount: number;
+        wasFullySelected: boolean;
+      }
+    >();
+    for (const [workflowId, workflowCrawls] of this.workflowCrawls) {
+      const savedSelection = this.savedWorkflowSelection.get(workflowId);
+      containers.set(workflowId, {
+        id: workflowId,
+        itemCount: workflowCrawls.paginatedCrawls?.total ?? 0,
+        originalSelectedCount: savedSelection?.selectionCount ?? 0,
+        wasFullySelected: savedSelection?.checked === true,
+      });
+    }
 
-    for (const [workflowId, { operation }] of this.batchWorkflows) {
-      if (operation === "add") {
-        addWorkflows.add(workflowId);
+    // Map batchWorkflows to generic batchOps
+    const batchOps = new Map<
+      string,
+      | { kind: "include"; excludedItems: Set<string> }
+      | { kind: "exclude"; includedItems: Set<string> }
+    >();
+    for (const [workflowId, batch] of this.batchWorkflows) {
+      if (batch.operation === "add") {
+        const op: { kind: "include"; excludedItems: Set<string> } = {
+          kind: "include",
+          excludedItems: batch.omitCrawls,
+        };
+        batchOps.set(workflowId, op);
       } else {
-        removeWorkflows.add(workflowId);
+        const op: { kind: "exclude"; includedItems: Set<string> } = {
+          kind: "exclude",
+          includedItems: batch.omitCrawls,
+        };
+        batchOps.set(workflowId, op);
       }
     }
 
-    // Calculate item counts from batch workflow additions
-    for (const workflowId of addWorkflows) {
-      const workflowCrawls = this.workflowCrawls.get(workflowId);
-      const totalCrawls = workflowCrawls?.paginatedCrawls?.total || 0;
-
-      // Count crawls that would be added (total - already saved - deselected)
-      const savedCrawlsInWorkflow = Array.from(this.savedSelectedItems).filter(
-        (id) => this.crawlToWorkflow.get(id) === workflowId,
-      );
-      const deselectedInWorkflow = Array.from(this.deselectedItems).filter(
-        (id) => this.crawlToWorkflow.get(id) === workflowId,
-      );
-
-      const itemsToAdd = Math.max(
-        0,
-        totalCrawls -
-          savedCrawlsInWorkflow.length -
-          deselectedInWorkflow.length,
-      );
-      addCount += itemsToAdd;
-
-      // Also count explicitly deselected items that were previously saved
-      // (these become individual removes)
-      for (const itemId of deselectedInWorkflow) {
-        if (this.savedSelectedItems.has(itemId)) {
-          removeItems.add(itemId);
-        }
-      }
-    }
-
-    // Calculate item counts from batch workflow removals
-    for (const workflowId of removeWorkflows) {
-      const batchWorkflow = this.batchWorkflows.get(workflowId);
-      const omitCrawls = batchWorkflow?.omitCrawls;
-
-      // Count saved crawls that would be removed (minus omitted crawls that should stay)
-      const savedCrawlsInWorkflow = Array.from(this.savedSelectedItems).filter(
-        (id) => this.crawlToWorkflow.get(id) === workflowId,
-      );
-
-      if (omitCrawls && omitCrawls.size > 0) {
-        // Some crawls should stay (were re-selected after batch remove)
-        // Only count the ones that are actually being removed
-        const crawlsBeingRemoved = savedCrawlsInWorkflow.filter(
-          (id) => !omitCrawls.has(id),
-        );
-        removeCount += crawlsBeingRemoved.length;
-      } else {
-        removeCount += savedCrawlsInWorkflow.length;
-      }
-    }
-
-    // Calculate individual item changes
-    for (const itemId of this.selectedItems) {
-      const workflowId = this.crawlToWorkflow.get(itemId);
-      // Only count as add if workflow is not being batch added
-      if (workflowId && !addWorkflows.has(workflowId)) {
-        if (!this.savedSelectedItems.has(itemId)) {
-          addItems.add(itemId);
-        }
-      } else if (!workflowId) {
-        // Upload or item without workflow
-        if (!this.savedSelectedItems.has(itemId)) {
-          addItems.add(itemId);
-        }
-      }
-    }
-
-    // Calculate removes from saved selection
-    for (const itemId of this.savedSelectedItems) {
-      const workflowId = this.crawlToWorkflow.get(itemId);
-      // Only count as remove if workflow is not being batch removed
-      if (workflowId && !removeWorkflows.has(workflowId)) {
-        if (!this.selectedItems.has(itemId)) {
-          removeItems.add(itemId);
-        }
-      } else if (!workflowId) {
-        // Upload or item without workflow
-        if (!this.selectedItems.has(itemId)) {
-          removeItems.add(itemId);
-        }
-      }
-    }
-
-    // Add individual item counts to totals
-    addCount += addItems.size;
-    removeCount += removeItems.size;
+    const delta = computeSelectionDelta({
+      containers,
+      itemToContainer: this.crawlToWorkflow,
+      originalSelectedItems: this.savedSelectedItems,
+      batchOps,
+      selectedItems: this.selectedItems,
+      deselectedItems: this.deselectedItems,
+    });
 
     return {
-      addCount,
-      removeCount,
-      addItems,
-      removeItems,
-      addWorkflows,
-      removeWorkflows,
+      addCount: delta.additions,
+      removeCount: delta.removals,
+      addItems: delta.addedItems,
+      removeItems: delta.removedItems,
+      addWorkflows: delta.includedContainers,
+      removeWorkflows: delta.excludedContainers,
     };
   }
 
