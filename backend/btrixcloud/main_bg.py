@@ -116,7 +116,12 @@ async def main():
     if job_type == BgJobType.UPDATE_COLL_STATS:
         print(f"Updating collection {coll_id}", flush=True)
         try:
-            await coll_ops.update_collection_stats(UUID(coll_id), org.id)
+            # Loop check so that if a collection is updated again since this job
+            # started, the job will re-calculate the stats again before quitting
+            while True:
+                if not await coll_ops.should_update_stats(UUID(coll_id), org.id):
+                    break
+                await coll_ops.update_collection_stats(UUID(coll_id), org.id)
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:

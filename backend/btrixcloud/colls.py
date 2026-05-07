@@ -966,6 +966,22 @@ class CollectionOps:
         async for coll in self.collections.find({"oid": org.id}, projection={"_id": 1}):
             await self.update_collection_stats(coll.get("_id"), org.id)
 
+    async def should_update_stats(self, coll_id: UUID, oid: UUID) -> bool:
+        """determine if collection stats need update"""
+        coll = await self.get_collection(coll_id, oid)
+
+        if coll.statsLastUpdated is None:
+            return True
+
+        if (
+            coll.modified
+            and coll.statsLastUpdated
+            and coll.modified >= coll.statsLastUpdated
+        ):
+            return True
+
+        return False
+
     async def update_collection_stats(self, collection_id: UUID, oid: UUID):
         """recalculate counts, tags, and dates for collection"""
         # pylint: disable=too-many-locals
@@ -1026,6 +1042,7 @@ class CollectionOps:
             {"_id": collection_id},
             {
                 "$set": {
+                    "statsLastUpdated": dt_now(),
                     "crawlCount": crawl_count,
                     "pageCount": page_count,
                     "uniquePageCount": unique_page_count,
@@ -1082,6 +1099,8 @@ class CollectionOps:
                 oid, coll_id
             )
 
+            # TODO: Should we be setting modified here at all? or are we just
+            # updating stats? look into where this is called from
             result = await self.collections.find_one_and_update(
                 {"_id": coll_id},
                 {"$set": {"modified": modified}},
