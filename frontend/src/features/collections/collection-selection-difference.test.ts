@@ -676,5 +676,47 @@ describe("computeSelectionDelta", () => {
       // So 0 items are actually removed
       expect(delta.removals).to.equal(0);
     });
+
+    it("excludes non-originally-selected exception items from removal deduction", () => {
+      // Original: c1, c2 saved (2 items originally selected)
+      // Exclude with exceptions [c1, c3] — c3 was NOT originally selected
+      // c3 is counted as an individual addition (newly selected via exception).
+      // Only c2 should be counted as removed.
+      const delta = computeSelectionDelta(
+        createState({
+          containers: new Map([
+            [
+              "wf1",
+              {
+                id: "wf1",
+                itemCount: 5,
+                originalSelectedCount: 2,
+                wasFullySelected: false,
+              },
+            ],
+          ]),
+          itemToContainer: new Map([
+            ["c1", "wf1"],
+            ["c2", "wf1"],
+            ["c3", "wf1"],
+            ["c4", "wf1"],
+            ["c5", "wf1"],
+          ]),
+          originalSelectedItems: new Set(["c1", "c2"]),
+          batchOps: new Map([
+            [
+              "wf1",
+              {
+                kind: "exclude" as const,
+                includedItems: new Set(["c1", "c3"]),
+              },
+            ],
+          ]),
+          selectedItems: new Set(["c1", "c3"]),
+        }),
+      );
+      expect(delta.removals).to.equal(1); // c2 removed
+      expect(delta.additions).to.equal(1); // c3 added via individual selection
+    });
   });
 });

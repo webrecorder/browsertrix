@@ -95,7 +95,10 @@ export function computeSelectionDelta(state: SelectionState): Delta {
       if (op.includedItems.size > 0) {
         let validExceptions = 0;
         for (const itemId of op.includedItems) {
-          if (state.itemToContainer.get(itemId) === containerId) {
+          if (
+            state.originalSelectedItems.has(itemId) &&
+            state.itemToContainer.get(itemId) === containerId
+          ) {
             validExceptions++;
           }
         }
