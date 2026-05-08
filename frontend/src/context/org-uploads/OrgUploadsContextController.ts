@@ -73,6 +73,16 @@ export class OrgUploadsContextController implements ReactiveController {
     this.#host.removeEventListener("btrix-org-upload-remove", this.onRemove);
   }
 
+  setUpload(uploadId: string, upload: Partial<OrgUpload>) {
+    this.#context.setValue({
+      ...this.#context.value,
+      [uploadId]: {
+        ...this.#context.value[uploadId],
+        ...upload,
+      },
+    });
+  }
+
   private readonly onUpload = async (e: CustomEvent<OrgUploadEventDetail>) => {
     e.stopPropagation();
 
@@ -83,14 +93,11 @@ export class OrgUploadsContextController implements ReactiveController {
     }
 
     const onUploadProgress = (e: ProgressEvent) => {
-      this.#context.setValue({
-        ...this.#context.value,
-        [uploadId]: {
-          itemName,
-          filename: file.name,
-          loaded: e.loaded,
-          total: e.total,
-        },
+      this.setUpload(uploadId, {
+        itemName,
+        filename: file.name,
+        loaded: e.loaded,
+        total: e.total,
       });
     };
 
@@ -110,12 +117,13 @@ export class OrgUploadsContextController implements ReactiveController {
     try {
       const { id } = await uploadComplete;
 
-      this.#context.setValue({
-        ...this.#context.value,
-        [uploadId]: {
-          ...this.#context.value[uploadId],
-          itemId: id,
-        },
+      this.setUpload(uploadId, {
+        ...this.#context.value[uploadId],
+        itemId: id,
+      });
+
+      this.setUpload(uploadId, {
+        itemId: id,
       });
     } catch (err) {
       console.debug(err);
@@ -123,12 +131,8 @@ export class OrgUploadsContextController implements ReactiveController {
       if (err === AbortReason.UserCancel) {
         console.debug("Upload aborted to user cancel");
 
-        this.#context.setValue({
-          ...this.#context.value,
-          [uploadId]: {
-            ...this.#context.value[uploadId],
-            canceled: true,
-          },
+        this.setUpload(uploadId, {
+          canceled: true,
         });
       } else {
         let message = msg("Sorry, couldn't upload file at this time.");
