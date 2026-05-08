@@ -136,10 +136,11 @@ export class OrgUploadsDialog extends BtrixElement {
   };
 
   render() {
-    const { all, canceled, inProgress } = this.uploadsByStatus;
+    const { all, canceled, inProgress, uploaded } = this.uploadsByStatus;
     const totalCount = all.length;
     const inProgressCount = inProgress.length;
     const canceledCount = canceled.length;
+    const uploadedCount = uploaded.length;
     const allDone = inProgressCount === 0;
     const allCanceled = canceledCount === totalCount;
 
@@ -148,16 +149,18 @@ export class OrgUploadsDialog extends BtrixElement {
 
     const number_of_files_in_progress = this.localize.number(inProgressCount);
     const plural_of_files_in_progress = pluralOf("files", inProgressCount);
-    const number_of_files = this.localize.number(totalCount);
-    const plural_of_files = pluralOf("files", totalCount);
+    const number_of_uploaded_files = this.localize.number(uploadedCount);
+    const plural_of_uploaded_files = pluralOf("files", uploadedCount);
     const plural_of_uploads = pluralOf("uploads", canceledCount);
+
+    const variant = allDone && uploadedCount ? "success" : "primary";
 
     return html`
       <div
         class="pointer-events-none fixed bottom-0 top-auto z-[var(--sl-z-index-toast)] max-h-full w-[28rem] max-w-full overflow-auto [inset-inline-end:0]"
       >
         <sl-alert
-          variant=${allDone && !allCanceled ? "success" : "primary"}
+          variant=${variant}
           class="pointer-events-auto m-4 part-[base]:shadow-lg"
           duration=${allCanceled ? 5000 : Infinity}
           ?open=${this.open}
@@ -176,9 +179,9 @@ export class OrgUploadsDialog extends BtrixElement {
         >
           <sl-icon
             name=${allDone
-              ? allCanceled
-                ? notifyIconFor["info"]
-                : notifyIconFor["success"]
+              ? uploadedCount
+                ? notifyIconFor["success"]
+                : notifyIconFor["info"]
               : "upload"}
             slot="icon"
           ></sl-icon>
@@ -188,7 +191,9 @@ export class OrgUploadsDialog extends BtrixElement {
               ${allCanceled
                 ? msg(str`Canceled file ${plural_of_uploads}`)
                 : allDone
-                  ? msg(str`Uploaded ${number_of_files} ${plural_of_files}`)
+                  ? msg(
+                      str`Uploaded ${number_of_uploaded_files} ${plural_of_uploaded_files}`,
+                    )
                   : msg(
                       str`Uploading ${number_of_files_in_progress} ${plural_of_files_in_progress}`,
                     )}
@@ -246,7 +251,7 @@ export class OrgUploadsDialog extends BtrixElement {
     upload: OrgUpload & { uploadId: string },
   ) => {
     const progress = (upload.loaded / upload.total) * 100;
-    const uploaded = upload.loaded === upload.total;
+    const uploaded = !upload.canceled && upload.loaded === upload.total;
     const isItem = Boolean(upload.itemId);
     const linkBtn = html`<sl-icon-button
       href=${`${this.navigate.orgBasePath}/${OrgTab.Items}/upload/${upload.itemId}`}
@@ -339,6 +344,7 @@ export class OrgUploadsDialog extends BtrixElement {
               </btrix-popover>`
           : html`<sl-tooltip
               content=${msg("Cancel")}
+              ?disabled=${upload.canceled}
               placement="bottom"
               hoist
               @sl-show=${stopProp}
@@ -349,7 +355,7 @@ export class OrgUploadsDialog extends BtrixElement {
               <sl-icon-button
                 name="x"
                 class="text-base"
-                label=${msg("Cancel Upload")}
+                label=${upload.canceled ? msg("Close") : msg("Cancel Upload")}
                 @click=${() => {
                   if (upload.canceled) {
                     removeOrHide();

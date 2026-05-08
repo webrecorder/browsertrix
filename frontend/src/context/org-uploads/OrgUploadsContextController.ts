@@ -36,6 +36,7 @@ export class OrgUploadsContextController implements ReactiveController {
     const all: (OrgUpload & { uploadId: string })[] = [];
     const canceled: (OrgUpload & { uploadId: string })[] = [];
     const inProgress: (OrgUpload & { uploadId: string })[] = [];
+    const uploaded: (OrgUpload & { uploadId: string })[] = [];
 
     uploads.forEach(([uploadId, upload]) => {
       const item = { uploadId, ...upload };
@@ -44,12 +45,14 @@ export class OrgUploadsContextController implements ReactiveController {
 
       if (upload.canceled) {
         canceled.push(item);
-      } else if (!upload.itemId) {
+      } else if (upload.itemId) {
+        uploaded.push(item);
+      } else {
         inProgress.push(item);
       }
     });
 
-    return { all, canceled, inProgress };
+    return { all, canceled, inProgress, uploaded };
   }
 
   constructor(host: BtrixElement) {

@@ -213,6 +213,29 @@ export const SomeCanceled: Story = {
   },
 };
 
+export const MultipleDone: Story = {
+  args: {
+    orgUploads: {
+      "upload-1": {
+        itemName: "Test WACZ File",
+        filename: "test_file.wacz",
+        loaded: 50.15 * BYTES_PER_MB,
+        total: 50.15 * BYTES_PER_MB,
+        canceled: true,
+      },
+      "upload-2": {
+        itemName:
+          "Test WACZ file with longer file name for testing long file name",
+        filename:
+          "test_file_with_longer_file_name_for_testing_long_file_name.wacz",
+        loaded: 4.85 * BYTES_PER_GB,
+        total: 4.85 * BYTES_PER_GB,
+        itemId: "upload-item-id-2",
+      },
+    },
+  },
+};
+
 export const MultipleComplete: Story = {
   args: {
     orgUploads: {
@@ -228,38 +251,9 @@ export const MultipleComplete: Story = {
           "Test WACZ file with longer file name for testing long file name",
         filename:
           "test_file_with_longer_file_name_for_testing_long_file_name.wacz",
-        loaded: 310 * BYTES_PER_MB,
+        loaded: 4.85 * BYTES_PER_GB,
         total: 4.85 * BYTES_PER_GB,
         itemId: "upload-item-id-2",
-      },
-    },
-  },
-};
-
-export const MixedStates: Story = {
-  args: {
-    orgUploads: {
-      "upload-1": {
-        itemName: "Test WACZ File",
-        filename: "test_file.wacz",
-        loaded: 50.15 * BYTES_PER_MB,
-        total: 50.15 * BYTES_PER_MB,
-        canceled: true,
-      },
-      "upload-2": {
-        itemName:
-          "Test WACZ file with longer file name for testing long file name",
-        filename:
-          "test_file_with_longer_file_name_for_testing_long_file_name.wacz",
-        loaded: 4.85 * BYTES_PER_MB,
-        total: 4.85 * BYTES_PER_GB,
-        itemId: "upload-item-id-2",
-      },
-      "upload-3": {
-        itemName: "Test WACZ file 2",
-        filename: "test_file_2.wacz",
-        loaded: 4.3 * BYTES_PER_MB,
-        total: 4.3 * BYTES_PER_MB,
       },
     },
   },
@@ -289,7 +283,7 @@ export const WithToastStack: Story = {
           "Test WACZ file with longer file name for testing long file name",
         filename:
           "test_file_with_longer_file_name_for_testing_long_file_name.wacz",
-        loaded: 4.85 * BYTES_PER_MB,
+        loaded: 4.85 * BYTES_PER_GB,
         total: 4.85 * BYTES_PER_GB,
         itemId: "upload-item-id-2",
       },
