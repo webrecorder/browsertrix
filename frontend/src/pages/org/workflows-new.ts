@@ -151,6 +151,7 @@ export class WorkflowsNew extends BtrixElement {
               blockAds: org.crawlingDefaults?.blockAds ?? undefined,
               lang: org.crawlingDefaults?.lang,
               customBehaviors: org.crawlingDefaults?.customBehaviors || [],
+              saveStorage: org.crawlingDefaults?.profileid ? true : undefined,
             },
             crawlTimeout: org.crawlingDefaults?.crawlTimeout,
             maxCrawlSize: org.crawlingDefaults?.maxCrawlSize,

@@ -13,4 +13,5 @@ export const labelFor = {
   selectLinks: msg("Link Selectors"),
   clickSelector: msg("Click Selector"),
   dedupeType: msg("Crawl Deduplication"),
+  saveStorage: msg("Include browser storage data"),
 } as const satisfies Partial<Record<FormStateField, string>>;

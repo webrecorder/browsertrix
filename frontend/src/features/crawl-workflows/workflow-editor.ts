@@ -2061,11 +2061,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
             this.updateFormState({
               browserProfile: profile ?? null,
               proxyId: profile?.proxyId ?? null,
+              saveStorage:
+                profile && this.formState.saveStorage === undefined
+                  ? true
+                  : this.formState.saveStorage,
             });
           }}
         ></btrix-select-browser-profile>
       `)}
-      ${this.renderHelpTextCol(infoTextFor["browserProfile"])}
+      ${this.renderHelpTextCol(html`
+        ${infoTextFor["browserProfile"]}
+        ${this.renderUserGuideLink({
+          hash: "browser-profile",
+          content: msg("More details"),
+        })}
+      `)}
       ${when(
         this.formState.browserProfile,
         () => html`
@@ -2087,6 +2097,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
             false,
           )}
         `,
+      )}
+      ${inputCol(html`
+        <sl-checkbox name="saveStorage" ?checked=${this.formState.saveStorage}>
+          ${labelFor["saveStorage"]}
+        </sl-checkbox>
+      `)}
+      ${this.renderHelpTextCol(
+        html`${infoTextFor["saveStorage"]}
+        ${this.renderUserGuideLink({
+          hash: "include-browser-storage-data",
+          content: msg("More details"),
+        })}.`,
+        false,
       )}
       ${proxies?.servers.length
         ? [
@@ -2164,19 +2187,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(infoTextFor["blockAds"], false)}
-      ${inputCol(html`
-        <sl-checkbox name="saveStorage" ?checked=${this.formState.saveStorage}>
-          ${msg("Save local and session storage")}
-        </sl-checkbox>
-      `)}
-      ${this.renderHelpTextCol(
-        html`${infoTextFor["saveStorage"]}
-        ${this.renderUserGuideLink({
-          hash: "save-local-and-session-storage",
-          content: msg("Implications for shared archives"),
-        })}.`,
-        false,
-      )}
       ${inputCol(html`
         <sl-input
           name="userAgent"
