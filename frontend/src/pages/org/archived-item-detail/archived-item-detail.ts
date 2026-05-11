@@ -1113,7 +1113,7 @@ export class ArchivedItemDetail extends BtrixElement {
       label=${msg("Crawler Channel (Exact Crawler Version)")}
     >
       <div class="flex items-center gap-2">
-        <code class="grow" title=${text}>${text}</code>
+        <code class="grow [word-break:break-word]" title=${text}>${text}</code>
       </div>
     </btrix-desc-list-item>`;
   }
