@@ -87,7 +87,7 @@ export function renderName(
     return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
 
   if (item.name)
-    return html`<span class=${clsx("truncate", className)}>${item.name}</span>`;
+    return html`<div class=${clsx("truncate", className)}>${item.name}</div>`;
   if (item.firstSeed && item.seedCount) {
     const remainder = item.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
@@ -99,9 +99,9 @@ export function renderName(
     }
     return html`
       <span class="inline-flex overflow-hidden whitespace-nowrap">
-        <span class=${clsx("min-w-0 truncate", className)}>
+        <div class=${clsx("min-w-0 truncate", className)}>
           ${item.firstSeed}
-        </span>
+        </div>
         ${nameSuffix}
       </span>
     `;
