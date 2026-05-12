@@ -25,6 +25,7 @@ import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { type BtrixChangeEvent } from "@/events/btrix-change";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import type { EditDialogTab } from "@/features/collections/collection-edit-dialog";
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
@@ -271,8 +272,8 @@ export class CollectionDetail extends BtrixElement {
                   maxLength=${COLLECTION_NAME_MAX_LENGTH}
                   .value=${this.collection?.name}
                   placeholder=${msg("Collection name")}
-                  @btrix-change=${(e: CustomEvent<string>) => {
-                    void this.updateName(e.detail);
+                  @btrix-change=${(e: BtrixChangeEvent<string>) => {
+                    void this.updateName(e.detail.value);
                   }}
                 ></btrix-editable-text-field>`
               : this.collection?.name,
@@ -296,8 +297,8 @@ export class CollectionDetail extends BtrixElement {
                       richText(text, {
                         linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
                       })}
-                    @btrix-change=${(e: CustomEvent<string>) => {
-                      void this.updateSummary(e.detail);
+                    @btrix-change=${(e: BtrixChangeEvent<string>) => {
+                      void this.updateSummary(e.detail.value);
                     }}
                   ></btrix-editable-text-field>`,
               )
