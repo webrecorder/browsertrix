@@ -794,7 +794,7 @@ export class WorkflowDetail extends BtrixElement {
 
     if (this.workflowTab === WorkflowTab.Settings) {
       return html`
-        ${this.appState.isAdmin
+        ${this.appState.isCrawler
           ? html`<btrix-copy-button
               name="filetype-json"
               value=${ifDefined(
