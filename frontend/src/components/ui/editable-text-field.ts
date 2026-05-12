@@ -112,6 +112,7 @@ export class EditableTextField extends TailwindElement {
       this.inputValue = this.value;
     }
     this.valid = true;
+    this.input?.blur();
     this.updateWidth();
   }
 
