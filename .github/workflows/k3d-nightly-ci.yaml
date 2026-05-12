@@ -115,8 +115,13 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install Python Libs
-        run: pip install -r ./backend/test-requirements.txt
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Install dependencies
+        run: |
+          cd backend/
+          uv sync --dev --python 3.12
 
       - name: Wait for all pods to be ready
         run: kubectl wait --for=condition=ready pod --all --timeout=240s
@@ -125,7 +130,7 @@ jobs:
         run: kubectl exec -i deployment/local-minio -c minio -- mkdir /data/replica-0
 
       - name: Run Tests
-        run: pytest -vv ./backend/test_nightly/${{ matrix.module }}
+        run: cd backend && uv run pytest -vv ./test_nightly/${{ matrix.module }}
 
       - name: Print Backend Logs (API)
         if: ${{ always() }}

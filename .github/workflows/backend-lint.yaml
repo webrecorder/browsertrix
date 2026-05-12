@@ -47,24 +47,26 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
       - name: Install dependencies
         run: |
           cd backend/
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r dev-requirements.txt
+          uv sync --locked --dev --python 3.12
 
       - name: Style Check
         run: |
-          ruff format --check backend/btrixcloud/
+          cd backend/
+          uv run ruff format --check btrixcloud/
 
       - name: Lint Check
         run: |
           cd backend/
-          pylint btrixcloud/
-          ruff check --exit-non-zero-on-fix btrixcloud/
+          uv run pylint btrixcloud/
+          uv run ruff check --exit-non-zero-on-fix btrixcloud/
 
       - name: Type Check
         run: |
           cd backend/
-          mypy --install-types --non-interactive --check-untyped-defs btrixcloud/
+          uv run mypy --install-types --non-interactive --check-untyped-defs btrixcloud/
