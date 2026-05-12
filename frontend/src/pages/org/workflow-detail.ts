@@ -2165,7 +2165,8 @@ export class WorkflowDetail extends BtrixElement {
   private settingsToJson() {
     if (!this.workflow || !this.seeds) return;
 
-    const params = {
+    const params: WorkflowParams = {
+      jobType: this.workflow.jobType,
       name: this.workflow.name,
       schedule: this.workflow.schedule,
       browserWindows: this.workflow.browserWindows,
@@ -2181,7 +2182,11 @@ export class WorkflowDetail extends BtrixElement {
         ...this.workflow.config,
         seeds: this.workflow.config.seedFileId ? null : this.seeds.items,
       },
-    } satisfies WorkflowParams;
+    };
+
+    if (this.featureFlags.has("dedupeEnabled")) {
+      params.dedupeCollId = this.workflow.dedupeCollId;
+    }
 
     const { error } = workflowParamsSchema.safeParse(params);
 

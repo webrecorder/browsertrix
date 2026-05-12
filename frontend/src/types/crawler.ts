@@ -78,7 +78,6 @@ export const workflowSettingsSchema = z.object({
   browserWindows: z.number().int(),
   profileid: z.string().nullable(),
   profileName: z.string().nullable().optional(),
-  config: seedConfigSchema,
   tags: z.array(z.string()),
   crawlTimeout: z.number().nullable(),
   maxCrawlSize: z.number().nullable(),
@@ -87,6 +86,7 @@ export const workflowSettingsSchema = z.object({
   crawlerChannel: z.string(),
   proxyId: z.string().nullable(),
   dedupeCollId: z.string().nullable().optional(),
+  config: seedConfigSchema,
 });
 export type WorkflowSettings = z.infer<typeof workflowSettingsSchema>;
 
