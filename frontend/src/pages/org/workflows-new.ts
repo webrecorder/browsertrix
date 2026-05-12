@@ -18,7 +18,11 @@ import {
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
-import { WorkflowScopeType, type StorageSeedFile } from "@/types/workflow";
+import {
+  WorkflowScopeType,
+  type StorageSeedFile,
+  type WorkflowParams,
+} from "@/types/workflow";
 import { tw } from "@/utils/tailwind";
 import {
   DEFAULT_AUTOCLICK_SELECTOR,
@@ -59,9 +63,9 @@ export class WorkflowsNew extends BtrixElement {
   scopeType?: WorkflowFormState["scopeType"];
 
   @property({ type: Object })
-  initialWorkflow?: WorkflowSettings;
+  initialWorkflow?: Partial<WorkflowSettings>;
 
-  private get defaultNewWorkflow(): WorkflowSettings {
+  private get defaultNewWorkflow(): WorkflowParams {
     return {
       name: "",
       description: null,

@@ -112,6 +112,7 @@ import type { UnderlyingFunction } from "@/types/utils";
 import {
   NewWorkflowOnlyScopeType,
   type StorageSeedFile,
+  type WorkflowParams,
 } from "@/types/workflow";
 import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
@@ -156,12 +157,6 @@ import {
   type WorkflowDefaults,
 } from "@/utils/workflow";
 
-type CrawlConfigParams = WorkflowSettings & {
-  config: WorkflowSettings["config"] & {
-    seeds: Seed[] | null;
-    seedFileId?: string | null;
-  };
-};
 type WorkflowRunParams = { runNow: boolean; updateRunning?: boolean };
 
 const STEPS = SECTIONS;
@@ -3355,7 +3350,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }
     }
 
-    const config: CrawlConfigParams & WorkflowRunParams = {
+    const config: WorkflowParams & WorkflowRunParams = {
       ...this.parseConfig(uploadParams),
       runNow: this.saveAndRun && !this.isCrawlRunning,
     };
@@ -3595,10 +3590,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return { isValid, helpText };
   }
 
-  private parseConfig(uploadParams?: {
-    seedFileId?: string;
-  }): CrawlConfigParams {
-    const config: CrawlConfigParams = {
+  private parseConfig(uploadParams?: { seedFileId?: string }): WorkflowParams {
+    const config: WorkflowParams = {
       // Job types are now merged into a single type
       jobType: "custom",
       name: this.formState.jobName || "",
@@ -3667,7 +3660,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private parseUrlListConfig(uploadParams?: {
     seedFileId?: string;
   }): Pick<
-    CrawlConfigParams["config"],
+    WorkflowParams["config"],
     | "seeds"
     | "seedFileId"
     | "scopeType"
@@ -3703,7 +3696,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private parseSeededConfig(): Pick<
-    CrawlConfigParams["config"],
+    WorkflowParams["config"],
     | "seeds"
     | "scopeType"
     | "useSitemap"

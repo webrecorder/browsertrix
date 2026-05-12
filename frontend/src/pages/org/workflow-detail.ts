@@ -14,13 +14,7 @@ import isNil from "lodash/isNil";
 import queryString from "query-string";
 
 import type { ArchivedItemSectionName } from "./archived-item-detail/archived-item-detail";
-import {
-  workflowSettingsSchema,
-  type Crawl,
-  type CrawlLog,
-  type Seed,
-  type Workflow,
-} from "./types";
+import { type Crawl, type CrawlLog, type Seed, type Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Alert } from "@/components/ui/alert";
@@ -41,7 +35,11 @@ import { OrgTab, WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
-import { type StorageSeedFile } from "@/types/workflow";
+import {
+  workflowParamsSchema,
+  type StorageSeedFile,
+  type WorkflowParams,
+} from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import {
@@ -2179,11 +2177,13 @@ export class WorkflowDetail extends BtrixElement {
       autoAddCollections: this.workflow.autoAddCollections,
       crawlerChannel: this.workflow.crawlerChannel,
       proxyId: this.workflow.proxyId,
-      config: this.workflow.config,
-      seeds: this.seeds.items.map(omitNil),
-    };
+      config: {
+        ...this.workflow.config,
+        seeds: this.workflow.config.seedFileId ? null : this.seeds.items,
+      },
+    } satisfies WorkflowParams;
 
-    const { error } = workflowSettingsSchema.safeParse(params);
+    const { error } = workflowParamsSchema.safeParse(params);
 
     if (error) {
       console.debug(error);

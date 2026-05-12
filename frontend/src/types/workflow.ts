@@ -1,7 +1,14 @@
+import { z } from "zod";
+
 import type { StorageFile } from "./storage";
 
 import type { TagCount, TagCounts } from "@/components/ui/tag-filter/types";
-import { ScopeType } from "@/types/crawler";
+import {
+  ScopeType,
+  seedConfigSchema,
+  seedSchema,
+  workflowSettingsSchema,
+} from "@/types/crawler";
 
 export enum NewWorkflowOnlyScopeType {
   PageList = "page-list",
@@ -9,6 +16,18 @@ export enum NewWorkflowOnlyScopeType {
 }
 
 export const WorkflowScopeType = { ...ScopeType, ...NewWorkflowOnlyScopeType };
+
+export const workflowParamsSchema = workflowSettingsSchema.merge(
+  z.object({
+    config: seedConfigSchema.merge(
+      z.object({
+        seeds: z.array(seedSchema).nullable().optional(),
+        seedFileId: z.string().nullable().optional(),
+      }),
+    ),
+  }),
+);
+export type WorkflowParams = z.infer<typeof workflowParamsSchema>;
 
 export type WorkflowTag = TagCount;
 export type WorkflowTags = TagCounts;
