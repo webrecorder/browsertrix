@@ -275,7 +275,15 @@ export class CollectionDetail extends BtrixElement {
                   @btrix-change=${(e: BtrixChangeEvent<string>) => {
                     void this.updateName(e.detail.value);
                   }}
-                ></btrix-editable-text-field>`
+                  extraWidth=${24}
+                >
+                  <sl-icon
+                    slot="suffix"
+                    name="pencil"
+                    class="ml-2 size-4"
+                    aria-label=${msg("Edit Collection Name")}
+                  ></sl-icon>
+                </btrix-editable-text-field>`
               : this.collection?.name,
             tw`mb-2 h-6 w-60`,
             tw`grid`,
@@ -300,7 +308,15 @@ export class CollectionDetail extends BtrixElement {
                     @btrix-change=${(e: BtrixChangeEvent<string>) => {
                       void this.updateSummary(e.detail.value);
                     }}
-                  ></btrix-editable-text-field>`,
+                    extraWidth=${24}
+                  >
+                    <sl-icon
+                      slot="suffix"
+                      name="pencil"
+                      class="ml-2 size-3"
+                      aria-label=${msg("Edit Collection Name")}
+                    ></sl-icon>
+                  </btrix-editable-text-field>`,
               )
             : caption(this.collection?.caption)}
         </div>

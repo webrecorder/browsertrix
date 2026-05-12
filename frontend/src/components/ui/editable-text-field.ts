@@ -38,6 +38,12 @@ export class EditableTextField extends TailwindElement {
   @property({ type: Object })
   renderContent?: (text: string) => TemplateResult;
 
+  /**
+   * Extra width to add to the computed width to accommodate the suffix slot.
+   */
+  @property({ type: Number })
+  extraWidth = 0;
+
   static styles = css`
     :host {
       display: inline-block;
@@ -130,7 +136,7 @@ export class EditableTextField extends TailwindElement {
       this.inputValue || this.placeholder || "",
       this.label,
     ).width;
-    if (width) this.width = width;
+    if (width) this.width = width + this.extraWidth;
   }
 
   updatePlaceholderWidth() {
@@ -209,8 +215,8 @@ export class EditableTextField extends TailwindElement {
           ? this.renderContent
             ? this.renderContent(this.inputValue)
             : this.inputValue
-          : this.placeholder}</span
-      >
+          : this.placeholder}<slot name="suffix"></slot
+      ></span>
       ${this.maxLength && !this.valid
         ? html`<span
             class="absolute bottom-0 right-4 z-10 rounded-b-sm bg-white pt-1 text-xs font-semibold leading-none text-danger"
