@@ -125,7 +125,6 @@ export class EditableTextField extends TailwindElement {
   }
 
   updateWidth() {
-    // await this.updateComplete;
     if (!this.label) return;
     const width = measureTextWithElement(
       this.inputValue || this.placeholder || "",
@@ -136,7 +135,6 @@ export class EditableTextField extends TailwindElement {
 
   updatePlaceholderWidth() {
     if (!this.placeholder) return;
-    // await this.updateComplete;
     if (!this.label) return;
     const width = measureTextWithElement(this.placeholder, this.label).width;
     if (width) this.placeholderWidth = width;
