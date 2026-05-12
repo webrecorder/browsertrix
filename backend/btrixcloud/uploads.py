@@ -200,11 +200,7 @@ class UploadOps(BaseCrawlOps):
 
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 
-    async def post_process_upload(
-        self,
-        crawl_id: str,
-        org: Organization
-    ):
+    async def post_process_upload(self, crawl_id: str, org: Organization):
         """Perform upload post-processing. This should be called from background job"""
         upload = await self.get_upload(crawl_id, org)
 
@@ -227,13 +223,12 @@ class UploadOps(BaseCrawlOps):
 
         await self.replicate_crawl_files(crawl_id, org, "upload")
 
-    async def _get_child_wacz_files(self, wacz_url: str) -> List[ZipInfo]:
+    async def _get_child_wacz_files(self, wacz_url: str) -> list[ZipInfo]:
         with RemoteZip(wacz_url) as remote_zip:
-            wacz_files: List[ZipInfo] = [
+            wacz_files: list[ZipInfo] = [
                 f
                 for f in remote_zip.infolist()
-                if f.filename.endswith(".wacz")
-                and not f.is_dir()
+                if f.filename.endswith(".wacz") and not f.is_dir()
             ]
             return wacz_files
 
@@ -242,15 +237,17 @@ class UploadOps(BaseCrawlOps):
         crawl_id: str,
         org: Organization,
         wacz_url: str,
-        child_waczs: List[ZipInfo]
+        child_waczs: list[ZipInfo],
     ):
         prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{crawl_id}"
 
         new_upload_files = []
 
         for child_wacz in child_waczs:
-            print(f"Processing child WACZ {child_wacz.filename} (size: {child_wacz.file_size})")
-            
+            print(
+                f"Processing child WACZ {child_wacz.filename} (size: {child_wacz.file_size})"
+            )
+
             # Upload file
             file_prep = FilePreparer(prefix, filename)
 
@@ -261,11 +258,18 @@ class UploadOps(BaseCrawlOps):
                             file_prep.add_chunk(chunk)
                             yield chunk
 
+            async def to_async_iterable(sync_iterable: Iterable[bytes]):
+                # to_thread errors if StopIteration raised in it. So we use a sentinel to detect the end
+                done = object()
+                it = iter(sync_iterable)
+                while (value := await asyncio.to_thread(next, it, done)) is not done:
+                    yield value
+
             if not await self.storage_ops.do_upload_multipart(
                 org,
                 file_prep.upload_name,
                 # Nope, not gonna work, needs an async iterator
-                sync_wacz_stream_iter(),
+                to_async_iterable(sync_wacz_stream_iter),
                 MIN_UPLOAD_PART_SIZE,
             ):
                 print("Child WACZ stream upload failed", flush=True)
