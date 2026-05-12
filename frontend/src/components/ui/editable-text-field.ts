@@ -149,10 +149,6 @@ export class EditableTextField extends TailwindElement {
   updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("editing") && this.editing) {
       this.input?.focus();
-      setTimeout(() => {
-        this.updateWidth();
-        this.updatePlaceholderWidth();
-      }, 0);
     }
   }
 
