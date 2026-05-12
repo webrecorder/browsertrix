@@ -36,7 +36,6 @@ import type {
 import type {
   ArchivedItem,
   Crawl,
-  CrawlConfig,
   CrawlReplay,
   Seed,
   Workflow,
@@ -208,9 +207,11 @@ export class ArchivedItemDetail extends BtrixElement {
     task: async ([item], { signal }) => {
       if (!item) return;
       if (!isCrawlReplay(item)) return;
-      if (!item.config.seedFileId) return null;
 
-      return await this.getSeedFile(item.config.seedFileId, signal);
+      const { seedFileId } = item.config;
+      if (!seedFileId) return null;
+
+      return await this.getSeedFile(seedFileId, signal);
     },
     args: () => [this.item] as const,
   });
@@ -1107,7 +1108,8 @@ export class ArchivedItemDetail extends BtrixElement {
     const text =
       (this.item.crawlerChannel
         ? capitalize(this.item.crawlerChannel)
-        : msg("Default")) + (this.item.image ? ` (${this.item.image})` : "");
+        : msg("Default")) +
+      (isCrawlReplay(this.item) ? ` (${this.item.image})` : "");
 
     return html` <btrix-desc-list-item
       label=${msg("Crawler Channel (Exact Crawler Version)")}
@@ -1386,7 +1388,7 @@ export class ArchivedItemDetail extends BtrixElement {
             <btrix-config-details
               .crawlConfig=${{
                 ...this.item,
-              } as CrawlConfig}
+              }}
               .seeds=${this.seeds!.items}
               .seedFile=${this.seedFileTask.value || undefined}
               hideMetadata

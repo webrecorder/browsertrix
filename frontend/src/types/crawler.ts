@@ -90,13 +90,8 @@ export const workflowParamsSchema = z.object({
 });
 export type WorkflowParams = z.infer<typeof workflowParamsSchema>;
 
-export type CrawlConfig = WorkflowParams & {
+export type Workflow = WorkflowParams & {
   oid: string;
-  profileName: string | null;
-  image: string | null;
-};
-
-export type Workflow = CrawlConfig & {
   id: string;
   createdBy: string; // User ID
   createdByName: string | null; // User full name
@@ -126,6 +121,8 @@ export type Workflow = CrawlConfig & {
   isCrawlRunning: boolean | null;
   autoAddCollections: string[];
   seedCount: number;
+  profileName: string | null;
+  image: string | null;
   shareable?: boolean;
 };
 
@@ -215,7 +212,7 @@ type ArchivedItemBase = {
 
 export type Crawl = ArchivedItemBase &
   Omit<
-    CrawlConfig,
+    WorkflowParams,
     | "config"
     | "autoAddCollections"
     | "schedule"
@@ -234,7 +231,7 @@ export type Crawl = ArchivedItemBase &
     })[];
   };
 
-export type CrawlReplay = Crawl & Pick<CrawlConfig, "config">;
+export type CrawlReplay = Crawl & Pick<Workflow, "config" | "image">;
 
 export type Upload = ArchivedItemBase & {
   type: "upload";
