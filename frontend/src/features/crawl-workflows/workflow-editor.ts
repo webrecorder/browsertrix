@@ -106,7 +106,7 @@ import {
   ScopeType,
   type Profile,
   type Seed,
-  type WorkflowParams,
+  type WorkflowSettings,
 } from "@/types/crawler";
 import type { UnderlyingFunction } from "@/types/utils";
 import {
@@ -156,8 +156,8 @@ import {
   type WorkflowDefaults,
 } from "@/utils/workflow";
 
-type CrawlConfigParams = WorkflowParams & {
-  config: WorkflowParams["config"] & {
+type CrawlConfigParams = WorkflowSettings & {
+  config: WorkflowSettings["config"] & {
     seeds: Seed[] | null;
     seedFileId?: string | null;
   };
@@ -304,7 +304,7 @@ export class WorkflowEditor extends BtrixElement {
     // such as when the user guide is open
     hasChanged: isNotEqual,
   })
-  initialWorkflow?: WorkflowParams;
+  initialWorkflow?: WorkflowSettings;
 
   private updatingScopeType = false;
 

@@ -15,7 +15,7 @@ import queryString from "query-string";
 
 import type { ArchivedItemSectionName } from "./archived-item-detail/archived-item-detail";
 import {
-  workflowParamsSchema,
+  workflowSettingsSchema,
   type Crawl,
   type CrawlLog,
   type Seed,
@@ -2183,7 +2183,7 @@ export class WorkflowDetail extends BtrixElement {
       seeds: this.seeds.items.map(omitNil),
     };
 
-    const { error } = workflowParamsSchema.safeParse(params);
+    const { error } = workflowSettingsSchema.safeParse(params);
 
     if (error) {
       console.debug(error);

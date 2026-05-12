@@ -71,7 +71,7 @@ export const seedConfigSchema = seedSchema
   );
 export type SeedConfig = Expand<z.infer<typeof seedConfigSchema>>;
 
-export const workflowParamsSchema = z.object({
+export const workflowSettingsSchema = z.object({
   jobType: z.enum(["url-list", "seed-crawl", "custom"]).optional(),
   name: z.string(),
   schedule: z.string(),
@@ -88,9 +88,9 @@ export const workflowParamsSchema = z.object({
   proxyId: z.string().nullable(),
   dedupeCollId: z.string().nullable().optional(),
 });
-export type WorkflowParams = z.infer<typeof workflowParamsSchema>;
+export type WorkflowSettings = z.infer<typeof workflowSettingsSchema>;
 
-export type Workflow = WorkflowParams & {
+export type Workflow = WorkflowSettings & {
   oid: string;
   id: string;
   createdBy: string; // User ID
@@ -212,7 +212,7 @@ type ArchivedItemBase = {
 
 export type Crawl = ArchivedItemBase &
   Omit<
-    WorkflowParams,
+    WorkflowSettings,
     | "config"
     | "autoAddCollections"
     | "schedule"

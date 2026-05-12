@@ -15,7 +15,7 @@ import {
   type Profile,
   type Seed,
   type SeedConfig,
-  type WorkflowParams,
+  type WorkflowSettings,
 } from "@/types/crawler";
 import type { OrgData } from "@/types/org";
 import { NewWorkflowOnlyScopeType, WorkflowScopeType } from "@/types/workflow";
@@ -161,11 +161,11 @@ export type FormState = {
   scopeType:
     | Exclude<ScopeType, ScopeType.Any>
     | (typeof NewWorkflowOnlyScopeType)[keyof typeof NewWorkflowOnlyScopeType];
-  exclusions: WorkflowParams["config"]["exclude"];
-  pageLimit: WorkflowParams["config"]["limit"];
-  browserWindows: WorkflowParams["browserWindows"];
-  blockAds: WorkflowParams["config"]["blockAds"];
-  lang: WorkflowParams["config"]["lang"];
+  exclusions: WorkflowSettings["config"]["exclude"];
+  pageLimit: WorkflowSettings["config"]["limit"];
+  browserWindows: WorkflowSettings["browserWindows"];
+  blockAds: WorkflowSettings["config"]["blockAds"];
+  lang: WorkflowSettings["config"]["lang"];
   /**
    * NOTE The UI currently only supports "cron" and "none".
    */
@@ -202,11 +202,11 @@ export type FormState = {
   scheduleCustom?: string;
   dedupeType: DedupeType;
   dedupeCollection: { id: string } | { name: string } | null;
-  jobName: WorkflowParams["name"];
+  jobName: WorkflowSettings["name"];
   browserProfile: Profile | null;
   tags: Tags;
   autoAddCollections: string[];
-  description: WorkflowParams["description"];
+  description: WorkflowSettings["description"];
   autoscrollBehavior: boolean;
   autoclickBehavior: boolean;
   customBehavior: boolean;
@@ -215,8 +215,8 @@ export type FormState = {
   proxyId: string | null;
   selectLinks: string[];
   clickSelector: string;
-  saveStorage: WorkflowParams["config"]["saveStorage"];
-  useRobots: WorkflowParams["config"]["useRobots"];
+  saveStorage: WorkflowSettings["config"]["saveStorage"];
+  useRobots: WorkflowSettings["config"]["useRobots"];
 };
 
 export type FormStateField = keyof FormState;
@@ -290,7 +290,7 @@ export const mapSeedToUrl = (arr: Seed[]) =>
 export function getInitialFormState(params: {
   configId?: string;
   initialSeeds?: Seed[];
-  initialWorkflow?: WorkflowParams;
+  initialWorkflow?: WorkflowSettings;
   org?: OrgData | null;
 }): FormState {
   const defaultFormState = getDefaultFormState();

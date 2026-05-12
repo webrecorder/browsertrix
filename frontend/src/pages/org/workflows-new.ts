@@ -13,7 +13,7 @@ import {
   CrawlerChannelImage,
   ScopeType,
   type Seed,
-  type WorkflowParams,
+  type WorkflowSettings,
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -59,9 +59,9 @@ export class WorkflowsNew extends BtrixElement {
   scopeType?: WorkflowFormState["scopeType"];
 
   @property({ type: Object })
-  initialWorkflow?: WorkflowParams;
+  initialWorkflow?: WorkflowSettings;
 
-  private get defaultNewWorkflow(): WorkflowParams {
+  private get defaultNewWorkflow(): WorkflowSettings {
     return {
       name: "",
       description: null,
@@ -161,14 +161,14 @@ export class WorkflowsNew extends BtrixElement {
             autoAddCollections: org.crawlingDefaults?.dedupeCollId
               ? [org.crawlingDefaults.dedupeCollId]
               : [],
-          } satisfies PartialDeep<WorkflowParams>,
+          } satisfies PartialDeep<WorkflowSettings>,
           this.initialWorkflow || {},
         );
 
         const initialWorkflow = makeArrUniq({
           ...mergedWorkflow,
           config: makeArrUniq(mergedWorkflow.config),
-        }) as WorkflowParams;
+        }) as WorkflowSettings;
 
         const scopeType = this.scopeType || initialWorkflow.config.scopeType;
 
