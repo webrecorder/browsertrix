@@ -6,6 +6,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { styleMap } from "lit/directives/style-map.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { type BtrixChangeEventDetail } from "@/events/btrix-change";
 import localize from "@/utils/localize";
 import { measureTextWithElement } from "@/utils/measure-text";
 import { tw } from "@/utils/tailwind";
@@ -112,8 +113,8 @@ export class EditableTextField extends TailwindElement {
     if (this.checkValidity()) {
       this.endEditing();
       this.dispatchEvent(
-        new CustomEvent("btrix-change", {
-          detail: this.inputValue,
+        new CustomEvent<BtrixChangeEventDetail<string>>("btrix-change", {
+          detail: { value: this.inputValue },
           bubbles: true,
           composed: true,
         }),
