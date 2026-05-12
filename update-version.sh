@@ -10,6 +10,10 @@ echo "__version__ = \"$version\"" >> ./backend/btrixcloud/version.py
 
 sed -E -i "" "s/^version:.*$/version: v$version/" chart/Chart.yaml
 
+sed -E -i "" "s/^version =.*$/version = \"$version\"/" backend/pyproject.toml
+# updates the version in the lockfile
+uv --directory backend lock
+
 sed -E -i "" "s/\/browsertrix-backend:[[:alnum:].-]+/\/browsertrix-backend:$version/" chart/values.yaml
 sed -E -i "" "s/\/browsertrix-frontend:[[:alnum:].-]+/\/browsertrix-frontend:$version/" chart/values.yaml
 sed -E -i "" "s/\/browsertrix-emails:[[:alnum:].-]+/\/browsertrix-emails:$version/" chart/values.yaml

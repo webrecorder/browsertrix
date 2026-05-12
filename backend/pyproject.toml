@@ -1,0 +1,54 @@
+[project]
+name = "backend"
+version = "1.22.6"
+description = "Browsertrix backend"
+requires-python = ">=3.12"
+dependencies = [
+    "aiobotocore>=2.22.0",
+    "aiofiles>=25.1.0",
+    "aiostream>=0.7.1",
+    "backoff>=2.2.1",
+    "email-validator>=2.3.0",
+    "fastapi==0.128.0",
+    "gunicorn>=26.0.0",
+    "humanize>=4.15.0",
+    "iso639-lang>=2.6.0",
+    "jinja2>=3.1.6",
+    "json-stream>=2.5.1",
+    "kubernetes>=35.0.0",
+    "kubernetes-asyncio==29.0.0",
+    "loguru>=0.7.3",
+    "motor>=3.7.1",
+    "pathvalidate>=3.3.1",
+    "pwdlib[argon2,bcrypt]>=0.3.0",
+    "pydantic==2.12.5",
+    "pyjwt==2.8.0",
+    "python-multipart>=0.0.28",
+    "python-slugify>=8.0.1",
+    "pyyaml>=6.0.3",
+    "redis>=5.0.0",
+    "remotezip>=0.12.3",
+    "requests>=2.34.0",
+    "setuptools<82.0.0",
+    "stream-zip",
+    "types-aiobotocore-s3>=3.7.0",
+    "types-python-slugify>=8.0.2.20240310",
+    "types-pyyaml>=6.0.12.20260510",
+    "types-redis>=4.6.0.20241004",
+    "uvicorn[standard]>=0.46.0",
+]
+
+[tool.uv.sources]
+stream-zip = { url = "https://github.com/ikreymer/stream-zip/archive/refs/heads/crc32-optional.zip" }
+
+[dependency-groups]
+dev = [
+    "boto3>=1.43.0",
+    "mypy>=2.1.0",
+    "pylint>=4.0.5",
+    "pytest>=9.0.3",
+    "pytest-asyncio>=1.3.0",
+    "pytest-timeout>=2.4.0",
+    "requests>=2.34.0",
+    "ruff>=0.15.12",
+]
