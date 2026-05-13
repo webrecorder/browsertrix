@@ -1484,7 +1484,7 @@ class PageNote(BaseModel):
     """Model for page notes, tracking user and time"""
 
     id: UUID
-    text: str
+    text: Annotated[str, Field(max_length=5000)]
     created: datetime
     userid: UUID
     userName: str
