@@ -794,7 +794,9 @@ export class CollectionItemsDialog extends BtrixElement {
     // - Otherwise: selected if in selectedItems or was originally in collection
     const isSelected = workflowSelection?.allSelected
       ? !this.deselectedItems.has(item.id)
-      : this.selectedItems.has(item.id) || isInCollection;
+      : workflowSelection?.checked === false
+        ? false
+        : this.selectedItems.has(item.id) || isInCollection;
 
     return html`
       <btrix-archived-item-list-item
