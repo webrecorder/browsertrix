@@ -150,7 +150,6 @@ export class EditableTextField extends TailwindElement {
     }
 
     if (
-      changedProperties.has("editing") ||
       changedProperties.has("inputValue") ||
       changedProperties.has("placeholder")
     ) {
