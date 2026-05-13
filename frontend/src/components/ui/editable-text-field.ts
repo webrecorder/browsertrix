@@ -183,7 +183,7 @@ export class EditableTextField extends TailwindElement {
 
     return html`<input
         class=${clsx(
-          tw`peer absolute inset-4 rounded bg-transparent`,
+          tw`peer absolute inset-4 rounded bg-yellow-500/50`,
           !this.valid && tw`z-[11] outline outline-danger`,
         )}
         type="text"
