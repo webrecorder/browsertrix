@@ -1,7 +1,8 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import clsx from "clsx";
 import { merge } from "immutable";
-import { css, html, type PropertyValues } from "lit";
+import { css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -222,6 +223,63 @@ export class CollectionItemsDialog extends BtrixElement {
       label: msg("Uploaded Items"),
     },
   };
+
+  private readonly dependenciesTask = new Task(this, {
+    task: async (_args, { signal }) => {
+      const { removeItems, removeWorkflows } = this.difference;
+      console.log("remove:", removeItems, removeWorkflows);
+
+      if (!removeItems.size && !removeWorkflows.size) return;
+
+      const requests: Promise<APIPaginatedList<ArchivedItem>>[] = [];
+
+      if (removeItems.size) {
+        const query = queryString.stringify({
+          ids: [...removeItems],
+          collectionId: this.collectionId,
+          hasRequiredByCrawls: true,
+        });
+
+        requests.push(
+          this.api.fetch<APIPaginatedList<ArchivedItem>>(
+            `/orgs/${this.orgId}/all-crawls?${query}`,
+            { signal },
+          ),
+        );
+      }
+
+      if (removeWorkflows.size) {
+        removeWorkflows.forEach((id) => {
+          const query = queryString.stringify({
+            cid: id,
+            collectionId: this.collectionId,
+            hasRequiredByCrawls: true,
+          });
+
+          requests.push(
+            this.api.fetch<APIPaginatedList<ArchivedItem>>(
+              `/orgs/${this.orgId}/all-crawls?${query}`,
+              { signal },
+            ),
+          );
+        });
+      }
+
+      const results = await Promise.all(requests);
+      const deps = new Set<string>();
+
+      results.forEach(({ items, total }) => {
+        if (items.length > total) {
+          console.warn("some dependencies hidden");
+        }
+
+        items.forEach(({ id }) => deps.add(id));
+      });
+
+      return deps;
+    },
+    args: () => [this.deselectedItems, this.workflowSelection] as const,
+  });
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (!this.open) {
@@ -892,25 +950,27 @@ export class CollectionItemsDialog extends BtrixElement {
     if (hasChange) {
       const messages: string[] = [];
       if (addCount) {
-        messages.push(
-          msg(
-            str`Adding ${this.localize.number(addCount)} ${pluralOf("items", addCount)}`,
-          ),
-        );
+        const number_of_items = this.localize.number(addCount);
+        const plural_of_items = pluralOf("items", addCount);
+
+        messages.push(msg(str`Adding ${number_of_items} ${plural_of_items}`));
       }
       if (removeCount) {
-        messages.push(
-          msg(
-            str`Removing ${this.localize.number(removeCount)} ${pluralOf("items", removeCount)}`,
-          ),
-        );
+        const number_of_items = this.localize.number(removeCount);
+        const plural_of_items = pluralOf("items", removeCount);
+
+        messages.push(msg(str`Removing ${number_of_items} ${plural_of_items}`));
       }
 
       selectionMessage = messages.join(" / ");
     }
 
     return html`
-      <span class="text-warning">${selectionMessage}</span>
+      <div class="inline-flex items-center gap-1.5 text-warning">
+        <span>${selectionMessage}</span>
+        ${this.renderDependencyWarning()}
+      </div>
+
       <sl-button
         variant="primary"
         size="small"
@@ -922,6 +982,25 @@ export class CollectionItemsDialog extends BtrixElement {
       </sl-button>
     `;
   };
+
+  private renderDependencyWarning() {
+    const warning = (deps: Set<string>) => {
+      const count = deps.size;
+      const number_of_dependencies = this.localize.number(count);
+      const plural_of_dependencies = pluralOf("dependencies", count);
+
+      return html`<btrix-popover placement="top-end" hoist>
+      <div slot="content">
+        ${msg(str`${number_of_dependencies} ${plural_of_dependencies} will be removed`)}
+      </div>
+      <sl-icon class="text-base" name="exclamation-diamond" label=${msg("Warning")}></sl-icon></sl-icon>
+    </btrix-popover>`;
+    };
+
+    return this.dependenciesTask.render({
+      complete: (deps) => (deps ? warning(deps) : nothing),
+    });
+  }
 
   private readonly renderLoading = () => html`
     <div class="my-24 flex w-full items-center justify-center text-3xl">
