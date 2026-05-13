@@ -592,7 +592,10 @@ export class BrowserProfilesList extends BtrixElement {
           >
         </btrix-table-cell>
         <btrix-table-cell>
-          <btrix-tag-container class="relative hover:z-[2]" .tags=${data.tags}>
+          <btrix-tag-container
+            class="relative max-w-full hover:z-[2]"
+            .tags=${data.tags}
+          >
           </btrix-tag-container>
         </btrix-table-cell>
         <btrix-table-cell>
