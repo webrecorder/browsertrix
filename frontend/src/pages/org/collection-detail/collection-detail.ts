@@ -25,6 +25,7 @@ import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { type BtrixChangeEvent } from "@/events/btrix-change";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import type { EditDialogTab } from "@/features/collections/collection-edit-dialog";
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
@@ -48,6 +49,8 @@ import {
   type APISortQuery,
 } from "@/types/api";
 import {
+  COLLECTION_CAPTION_MAX_LENGTH,
+  COLLECTION_NAME_MAX_LENGTH,
   CollectionAccess,
   collectionSchema,
   type Collection,
@@ -220,14 +223,16 @@ export class CollectionDetail extends BtrixElement {
     >`;
     const caption = (text?: Collection["caption"]) => {
       if (text) {
-        return html`<div class="text-pretty text-neutral-600">
+        return html`<div
+          class="max-w-full hyphens-auto text-pretty break-words text-neutral-600"
+        >
           ${richText(text)}
         </div>`;
       }
     };
 
     return html`
-      <div class="mb-7 flex justify-between align-baseline">
+      <div class="mb-7 flex flex-wrap justify-between gap-y-3 align-baseline">
         ${this.renderBreadcrumbs()}
         ${this.collection &&
         (this.collection.access === CollectionAccess.Unlisted ||
@@ -254,53 +259,68 @@ export class CollectionDetail extends BtrixElement {
       </div>
       <header
         class=${clsx(
-          tw`mt-5 flex flex-col gap-3 lg:flex-row`,
+          tw`mt-5 grid gap-3 lg:grid-cols-[1fr_auto]`,
           this.isCrawler && tw`min-h-16`,
         )}
       >
-        <div
-          class="-mb-1 -ml-2 -mr-1 -mt-1 flex flex-none flex-col gap-2 self-start rounded-lg pb-1 pl-2 pr-1 pt-1 transition-colors has-[.addSummary:hover]:bg-primary-50 has-[sl-icon-button:hover]:bg-primary-50"
-        >
-          <div class="flex flex-wrap items-center gap-2.5">
-            ${this.renderAccessIcon()}${pageTitle(
-              this.collection?.name,
-              tw`mb-2 h-6 w-60`,
-            )}
-            ${this.collection && this.isCrawler
-              ? html`<sl-icon-button
-                  name="pencil"
-                  aria-label=${msg("Edit Collection Name and Description")}
-                  @click=${() => {
-                    this.openDialogName = "edit";
-                    this.editTab = "general";
+        <div class="flex items-center gap-2.5">
+          ${this.renderAccessIcon()}${pageTitle(
+            this.isCrawler
+              ? html`<btrix-editable-text-field
+                  class="-m-4 overflow-hidden p-4"
+                  minLength=${1}
+                  maxLength=${COLLECTION_NAME_MAX_LENGTH}
+                  .value=${this.collection?.name}
+                  placeholder=${msg("Collection name")}
+                  @btrix-change=${(e: BtrixChangeEvent<string>) => {
+                    void this.updateName(e.detail.value);
                   }}
-                ></sl-icon-button>`
-              : nothing}
-          </div>
+                  extraWidth=${24}
+                >
+                  <sl-icon
+                    slot="suffix"
+                    name="pencil"
+                    class="ml-2 size-4"
+                    aria-label=${msg("Edit Collection Name")}
+                  ></sl-icon>
+                </btrix-editable-text-field>`
+              : this.collection?.name,
+            tw`mb-2 h-6 w-60`,
+            tw`grid`,
+          )}
+        </div>
+        <div
+          class="-mx-3 -mb-3 -mt-3 grid overflow-clip px-3 pb-3 lg:col-span-2"
+        >
           ${this.isCrawler
             ? when(
                 this.collection,
                 (col) =>
-                  col.caption
-                    ? caption(col.caption)
-                    : html`
-                        <div
-                          class="addSummary text-pretty rounded-md px-1 font-light text-neutral-500"
-                          role="button"
-                          @click=${() => {
-                            this.openDialogName = "edit";
-                            this.editTab = "general";
-                          }}
-                        >
-                          ${msg("Add a summary...")}
-                        </div>
-                      `,
-                () => html`<sl-skeleton></sl-skeleton>`,
+                  html`<btrix-editable-text-field
+                    class="-mx-4 -my-3 -mb-2 overflow-hidden p-4 text-neutral-600"
+                    maxLength=${COLLECTION_CAPTION_MAX_LENGTH}
+                    .value=${col.caption}
+                    placeholder=${msg("Add a summary...")}
+                    .renderContent=${this.renderCaption}
+                    @btrix-change=${(e: BtrixChangeEvent<string>) => {
+                      void this.updateSummary(e.detail.value);
+                    }}
+                    extraWidth=${24}
+                  >
+                    <sl-icon
+                      slot="suffix"
+                      name="pencil"
+                      class="ml-2 size-3"
+                      aria-label=${msg("Edit Collection Name")}
+                    ></sl-icon>
+                  </btrix-editable-text-field>`,
               )
             : caption(this.collection?.caption)}
         </div>
 
-        <div class="ml-auto flex flex-shrink-0 items-center gap-2">
+        <div
+          class="mb-0.5 ml-auto flex flex-shrink-0 flex-wrap items-center justify-end gap-2 lg:col-start-2 lg:row-start-1"
+        >
           <btrix-share-collection
             orgSlug=${this.orgSlugState || ""}
             collectionId=${this.collectionId}
@@ -568,6 +588,11 @@ export class CollectionDetail extends BtrixElement {
           // TODO maybe we can return the updated collection from the update endpoint, and avoid an extra fetch?
           void this.fetchCollection();
         }}
+        @btrix-collection-edit-dialog-tab-change=${(
+          e: CustomEvent<EditDialogTab>,
+        ) => {
+          this.editTab = e.detail;
+        }}
         @btrix-change=${() => {
           // Don't do full refresh of rwp so that rwp-url-change fires
           this.isRwpLoaded = false;
@@ -599,6 +624,11 @@ export class CollectionDetail extends BtrixElement {
     `;
   }
 
+  private readonly renderCaption = (text: string) =>
+    richText(text, {
+      linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
+    });
+
   private renderAccessIcon() {
     return choose(this.collection?.access, [
       [
@@ -608,11 +638,25 @@ export class CollectionDetail extends BtrixElement {
             content=${SelectCollectionAccess.Options[CollectionAccess.Private]
               .label}
           >
-            <sl-icon
-              class="text-lg text-neutral-600"
-              name=${SelectCollectionAccess.Options[CollectionAccess.Private]
-                .icon}
-            ></sl-icon>
+            ${this.isCrawler
+              ? html` <sl-icon-button
+                  class="z-10 -mx-2 -mb-0.5 text-lg text-neutral-600"
+                  name=${SelectCollectionAccess.Options[
+                    CollectionAccess.Private
+                  ].icon}
+                  @click=${() => {
+                    this.openDialogName = "edit";
+                    this.editTab = "sharing";
+                  }}
+                ></sl-icon-button>`
+              : html`
+                  <sl-icon
+                    class="text-lg text-neutral-600"
+                    name=${SelectCollectionAccess.Options[
+                      CollectionAccess.Private
+                    ].icon}
+                  ></sl-icon>
+                `}
           </sl-tooltip>
         `,
       ],
@@ -623,11 +667,27 @@ export class CollectionDetail extends BtrixElement {
             content=${SelectCollectionAccess.Options[CollectionAccess.Unlisted]
               .label}
           >
-            <sl-icon
-              class="text-lg text-neutral-600"
-              name=${SelectCollectionAccess.Options[CollectionAccess.Unlisted]
-                .icon}
-            ></sl-icon>
+            ${this.isCrawler
+              ? html`
+                  <sl-icon-button
+                    class="z-10 -mx-2 -mb-0.5 text-lg text-neutral-600"
+                    name=${SelectCollectionAccess.Options[
+                      CollectionAccess.Unlisted
+                    ].icon}
+                    @click=${() => {
+                      this.openDialogName = "edit";
+                      this.editTab = "sharing";
+                    }}
+                  ></sl-icon-button>
+                `
+              : html`
+                  <sl-icon
+                    class="text-lg text-neutral-600"
+                    name=${SelectCollectionAccess.Options[
+                      CollectionAccess.Unlisted
+                    ].icon}
+                  ></sl-icon>
+                `}
           </sl-tooltip>
         `,
       ],
@@ -638,11 +698,27 @@ export class CollectionDetail extends BtrixElement {
             content=${SelectCollectionAccess.Options[CollectionAccess.Public]
               .label}
           >
-            <sl-icon
-              class="text-lg text-success-600"
-              name=${SelectCollectionAccess.Options[CollectionAccess.Public]
-                .icon}
-            ></sl-icon>
+            ${this.isCrawler
+              ? html`
+                  <sl-icon-button
+                    class="z-10 -mx-2 -mb-0.5 text-lg text-success-600"
+                    name=${SelectCollectionAccess.Options[
+                      CollectionAccess.Public
+                    ].icon}
+                    @click=${() => {
+                      this.openDialogName = "edit";
+                      this.editTab = "sharing";
+                    }}
+                  ></sl-icon-button>
+                `
+              : html`
+                  <sl-icon
+                    class="text-lg text-success-600"
+                    name=${SelectCollectionAccess.Options[
+                      CollectionAccess.Public
+                    ].icon}
+                  ></sl-icon>
+                `}
           </sl-tooltip>
         `,
       ],
@@ -719,6 +795,15 @@ export class CollectionDetail extends BtrixElement {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
+      <sl-tooltip content=${msg("Share")}>
+        <sl-icon-button
+          name="box-arrow-up"
+          @click=${() => {
+            this.openDialogName = "edit";
+            this.editTab = "sharing";
+          }}
+        ></sl-icon-button>
+      </sl-tooltip>
       <sl-tooltip content=${msg("Edit Collection Settings")}>
         <sl-icon-button
           name="gear"
@@ -746,6 +831,24 @@ export class CollectionDetail extends BtrixElement {
               }
 
               this.openDialogName = "edit";
+              this.editTab = "sharing";
+            }}
+          >
+            <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+            ${msg("Share Collection")}
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${async () => {
+              // replay-web-page needs to be available in order to configure start page
+              if (this.collectionTab !== Tab.Replay) {
+                this.navigate.to(
+                  `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${Tab.Replay}`,
+                );
+                await this.updateComplete;
+              }
+
+              this.openDialogName = "edit";
+              this.editTab = "general";
             }}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
@@ -1298,7 +1401,7 @@ export class CollectionDetail extends BtrixElement {
         message: msg(html`Deleted <strong>${name}</strong> Collection.`),
         variant: "success",
         icon: "check2-circle",
-        id: "collection-delete-status",
+        id: "update",
       });
 
       // Collection may be used in crawling default, request update
@@ -1314,10 +1417,10 @@ export class CollectionDetail extends BtrixElement {
       );
     } catch {
       this.notify.toast({
-        message: msg("Sorry, couldn't delete Collection at this time."),
+        message: msg("Sorry, couldn’t delete Collection at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "collection-delete-status",
+        id: "update",
       });
     }
   }
@@ -1338,10 +1441,10 @@ export class CollectionDetail extends BtrixElement {
       }
     } catch (e) {
       this.notify.toast({
-        message: msg("Sorry, couldn't retrieve Collection at this time."),
+        message: msg("Sorry, couldn’t retrieve Collection at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "collection-retrieve-status",
+        id: "update",
       });
       console.error(e);
     }
@@ -1377,10 +1480,10 @@ export class CollectionDetail extends BtrixElement {
         console.debug("Fetch web captures aborted to throttle");
       } else {
         this.notify.toast({
-          message: msg("Sorry, couldn't retrieve web captures at this time."),
+          message: msg("Sorry, couldn’t retrieve web captures at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
-          id: "collection-retrieve-status",
+          id: "update",
         });
       }
     }
@@ -1436,7 +1539,7 @@ export class CollectionDetail extends BtrixElement {
         message: msg(str`Successfully removed item from Collection.`),
         variant: "success",
         icon: "check2-circle",
-        id: "collection-item-remove-status",
+        id: "update",
       });
       this.refreshReplay();
       void this.fetchCollection();
@@ -1448,11 +1551,90 @@ export class CollectionDetail extends BtrixElement {
       console.debug((e as Error | undefined)?.message);
       this.notify.toast({
         message: msg(
-          "Sorry, couldn't remove item from Collection at this time.",
+          "Sorry, couldn’t remove item from Collection at this time.",
         ),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "collection-item-remove-status",
+      });
+    }
+  }
+
+  private async updateName(name: string) {
+    if (name === this.collection?.name) return;
+    try {
+      await this.api.fetch<Collection>(
+        `/orgs/${this.orgId}/collections/${this.collectionId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            name,
+          }),
+        },
+      );
+
+      this.notify.toast({
+        message: msg("Name updated."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "update",
+      });
+
+      if (this.collection) {
+        this.collection = {
+          ...this.collection,
+          name,
+        };
+      }
+
+      void this.fetchCollection();
+    } catch (err) {
+      console.debug(err);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn’t save collection name at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async updateSummary(caption: string) {
+    caption = caption.trim();
+    if (caption === this.collection?.caption) return;
+    try {
+      await this.api.fetch<Collection>(
+        `/orgs/${this.orgId}/collections/${this.collectionId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            caption,
+          }),
+        },
+      );
+
+      this.notify.toast({
+        message: msg("Summary updated."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "update",
+      });
+
+      if (this.collection) {
+        this.collection = {
+          ...this.collection,
+          caption,
+        };
+      }
+
+      void this.fetchCollection();
+    } catch (err) {
+      console.debug(err);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn’t save collection summary at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "update",
       });
     }
   }
@@ -1480,6 +1662,7 @@ export class CollectionDetail extends BtrixElement {
         message: msg("Description updated."),
         variant: "success",
         icon: "check2-circle",
+        id: "update",
       });
 
       if (this.collection) {
@@ -1496,10 +1679,11 @@ export class CollectionDetail extends BtrixElement {
 
       this.notify.toast({
         message: msg(
-          "Sorry, couldn't save collection description at this time.",
+          "Sorry, couldn’t save collection description at this time.",
         ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "update",
       });
     }
   }
@@ -1531,16 +1715,16 @@ export class CollectionDetail extends BtrixElement {
             }),
         variant: "success",
         icon: "check2-circle",
-        id: "dedupe-index-update-status",
+        id: "update",
       });
     } catch (err) {
       console.debug(err);
 
       this.notify.toast({
-        message: msg("Sorry, couldn't created index at this time."),
+        message: msg("Sorry, couldn’t create index at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "dedupe-index-update-status",
+        id: "update",
       });
     }
   }
@@ -1560,7 +1744,7 @@ export class CollectionDetail extends BtrixElement {
         message: msg("Purging deduplication index..."),
         variant: "success",
         icon: "check2-circle",
-        id: "dedupe-index-update-status",
+        id: "update",
       });
     } catch (err) {
       const message =
@@ -1571,7 +1755,7 @@ export class CollectionDetail extends BtrixElement {
         message,
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "dedupe-index-update-status",
+        id: "update",
       });
     }
   }
@@ -1592,7 +1776,7 @@ export class CollectionDetail extends BtrixElement {
         message: msg("Deleted deduplication index."),
         variant: "success",
         icon: "check2-circle",
-        id: "dedupe-index-update-status",
+        id: "update",
       });
     } catch (err) {
       const message =
@@ -1603,7 +1787,7 @@ export class CollectionDetail extends BtrixElement {
         message,
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "dedupe-index-update-status",
+        id: "update",
       });
     }
   }

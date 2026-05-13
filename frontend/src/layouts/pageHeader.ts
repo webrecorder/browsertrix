@@ -37,7 +37,8 @@ function breadcrumbLink({ href, content }: Breadcrumb, classNames?: string) {
   return html`
     <a
       class=${clsx(
-        tw`flex h-5 items-center gap-1 truncate whitespace-nowrap leading-5`,
+        typeof content === "string" ? tw`block` : tw`flex`,
+        tw`h-5 items-center gap-1 truncate whitespace-nowrap leading-5`,
         href
           ? tw`font-medium text-neutral-500 transition-colors hover:text-neutral-700`
           : tw`font-medium text-primary`,
@@ -55,7 +56,7 @@ function breadcrumbLink({ href, content }: Breadcrumb, classNames?: string) {
 
 function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
   return html`
-    <nav class="flex flex-wrap items-center gap-2 text-neutral-500">
+    <nav class="flex max-w-full flex-wrap items-center gap-2 text-neutral-500">
       ${breadcrumbs.length
         ? breadcrumbs.map(
             (breadcrumb, i) => html`
@@ -83,12 +84,13 @@ export function pageBack({ href, content }: Breadcrumb) {
 export function pageTitle(
   title?: string | TemplateResult | typeof nothing,
   skeletonClass?: string,
+  headerClass?: string,
 ) {
   return html`
-    <h1 class="min-w-0 text-xl font-semibold leading-8">
+    <h1 class=${clsx(tw`min-w-0 text-xl font-semibold leading-8`, headerClass)}>
       ${title ||
       html`<sl-skeleton
-        class=${skeletonClass ?? "my-.5 h-5 w-60"}
+        class=${skeletonClass ?? tw`my-.5 h-5 w-60`}
         effect="sheen"
       ></sl-skeleton>`}
     </h1>

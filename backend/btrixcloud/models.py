@@ -13,8 +13,18 @@ import mimetypes
 import math
 import os
 
-from typing import Optional, List, Dict, Self, Union, Literal, Any, get_args, get_origin
-from typing_extensions import Annotated
+from typing import (
+    Optional,
+    List,
+    Dict,
+    Self,
+    Union,
+    Literal,
+    Any,
+    get_args,
+    get_origin,
+    Annotated,
+)
 
 from pydantic import (
     BaseModel,
