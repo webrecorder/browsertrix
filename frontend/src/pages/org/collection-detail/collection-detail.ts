@@ -829,6 +829,24 @@ export class CollectionDetail extends BtrixElement {
               }
 
               this.openDialogName = "edit";
+              this.editTab = "sharing";
+            }}
+          >
+            <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+            ${msg("Share Collection")}
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${async () => {
+              // replay-web-page needs to be available in order to configure start page
+              if (this.collectionTab !== Tab.Replay) {
+                this.navigate.to(
+                  `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${Tab.Replay}`,
+                );
+                await this.updateComplete;
+              }
+
+              this.openDialogName = "edit";
+              this.editTab = "general";
             }}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
