@@ -19,7 +19,7 @@ coll_id = os.environ.get("COLLECTION_ID")
 
 # ============================================================================
 # pylint: disable=too-many-function-args, duplicate-code, too-many-locals, too-many-return-statements
-# pylint: disable=too-many-branches
+# pylint: disable=too-many-branches, too-many-statements
 async def main():
     """run background job with access to ops classes"""
 
@@ -115,8 +115,23 @@ async def main():
 
     if job_type == BgJobType.UPDATE_COLL_STATS:
         print(f"Updating collection {coll_id}", flush=True)
+        count = 0
         try:
-            await coll_ops.update_collection_stats(UUID(coll_id), org.id)
+            # Loop check so that if a collection is modified again since update
+            # calculation started, the job will re-calculate the stats again
+            # before quitting
+            while True:
+                if not await coll_ops.should_update_stats(UUID(coll_id), org.id):
+                    break
+
+                count += 1
+                print(f"Starting update number {count}", flush=True)
+                await coll_ops.update_collection_stats(UUID(coll_id), org.id)
+
+            print(
+                "No changes to collection since start of last update, job complete",
+                flush=True,
+            )
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:

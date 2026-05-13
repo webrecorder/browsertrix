@@ -966,9 +966,27 @@ class CollectionOps:
         async for coll in self.collections.find({"oid": org.id}, projection={"_id": 1}):
             await self.update_collection_stats(coll.get("_id"), org.id)
 
+    async def should_update_stats(self, coll_id: UUID, oid: UUID) -> bool:
+        """determine if collection stats need update"""
+        coll = await self.get_collection(coll_id, oid)
+
+        if coll.lastStatsUpdateStarted is None:
+            return True
+
+        if (
+            coll.modified
+            and coll.lastStatsUpdateStarted
+            and coll.modified > coll.lastStatsUpdateStarted
+        ):
+            return True
+
+        return False
+
     async def update_collection_stats(self, collection_id: UUID, oid: UUID):
         """recalculate counts, tags, and dates for collection"""
         # pylint: disable=too-many-locals
+        update_start_time = dt_now()
+
         crawl_count = 0
         page_count = 0
         total_size = 0
@@ -1026,6 +1044,10 @@ class CollectionOps:
             {"_id": collection_id},
             {
                 "$set": {
+                    # store time update started so that if collection is modified
+                    # again while an update job is running the job will know to
+                    # recalculate again before quitting
+                    "lastStatsUpdateStarted": update_start_time,
                     "crawlCount": crawl_count,
                     "pageCount": page_count,
                     "uniquePageCount": unique_page_count,
@@ -1078,14 +1100,14 @@ class CollectionOps:
         modified = dt_now()
 
         for coll_id in crawl_coll_ids:
-            await self.background_job_ops.create_update_collection_stats_job(
-                oid, coll_id
-            )
-
             result = await self.collections.find_one_and_update(
                 {"_id": coll_id},
                 {"$set": {"modified": modified}},
                 return_document=pymongo.ReturnDocument.AFTER,
+            )
+
+            await self.background_job_ops.create_update_collection_stats_job(
+                oid, coll_id
             )
 
             # if this is a collection that has an index and its *not* the collection that the crawl
