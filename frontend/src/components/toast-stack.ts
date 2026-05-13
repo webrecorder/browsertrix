@@ -19,7 +19,7 @@ import {
 import { tw } from "@/utils/tailwind";
 
 /**
- * Global notifications to stack in bottom end of the viewport.
+ * Global toast notifications to stack in bottom end of the viewport.
  *
  * This component reuses `.sl-toast-stack` styles instead of using Shoelace's
  * `SlAlert.toast()` to reactively render the toast state of a notification
@@ -27,7 +27,7 @@ import { tw } from "@/utils/tailwind";
  *
  * @fires btrix-remove-notification
  */
-@customElement("btrix-notification-stack")
+@customElement("btrix-toast-stack")
 export class NotificationStack extends BtrixElement {
   @consume({ context: notificationsContext, subscribe: true })
   @state()
@@ -57,7 +57,7 @@ export class NotificationStack extends BtrixElement {
       <div
         class=${clsx(
           "btrix-toast-stack",
-          this.notifications.length && tw`min-h-24`,
+          this.notifications.length && tw`min-h-20`,
         )}
       >
         ${repeat(this.notifications, ({ id }) => id, this.renderNotification)}
@@ -72,7 +72,6 @@ export class NotificationStack extends BtrixElement {
     return html`<sl-alert
       data-id=${notification.id}
       class=${clsx(
-        tw`[--sl-spacing-large:var(--sl-spacing-medium)]`,
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- will add new notification types
         notification.type === "toast" &&
           (variant === "danger" || variant === "warning") &&

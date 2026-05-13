@@ -52,6 +52,10 @@ export class NotificationsContextController implements ReactiveController {
     );
   }
 
+  addNotification(notification: AppNotification) {
+    this.#context.setValue([notification, ...this.#context.value]);
+  }
+
   private readonly onNotify = (e: CustomEvent<NotifyEventDetail>) => {
     e.stopPropagation();
 
@@ -88,8 +92,4 @@ export class NotificationsContextController implements ReactiveController {
       console.debug("no notification with id"), e.detail.id;
     }
   };
-
-  private addNotification(notification: AppNotification) {
-    this.#context.setValue([notification, ...this.#context.value]);
-  }
 }

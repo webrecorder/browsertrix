@@ -81,6 +81,7 @@ export default class LiteElement extends LitElement {
   /**
    * @deprecated New components should use APIController directly
    */
-  apiFetch = async <T = unknown>(...args: Parameters<APIController["fetch"]>) =>
-    this.apiController.fetch<T>(...args);
+  apiFetch = async <T extends {} | undefined>(
+    ...args: Parameters<APIController["fetch"]>
+  ) => this.apiController.fetch<T>(...args);
 }

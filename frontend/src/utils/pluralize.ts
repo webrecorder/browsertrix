@@ -39,6 +39,32 @@ const plurals = {
       id: "crawls.plural.other",
     }),
   },
+  uploads: {
+    zero: msg("uploads", {
+      desc: 'plural form of "upload" for zero uploads',
+      id: "uploads.plural.zero",
+    }),
+    one: msg("upload", {
+      desc: 'singular form for "upload"',
+      id: "uploads.plural.one",
+    }),
+    two: msg("uploads", {
+      desc: 'plural form of "upload" for two uploads',
+      id: "uploads.plural.two",
+    }),
+    few: msg("uploads", {
+      desc: 'plural form of "upload" for few uploads',
+      id: "uploads.plural.few",
+    }),
+    many: msg("uploads", {
+      desc: 'plural form of "upload" for many uploads',
+      id: "uploads.plural.many",
+    }),
+    other: msg("uploads", {
+      desc: 'plural form of "upload" for multiple/other uploads',
+      id: "uploads.plural.other",
+    }),
+  },
   items: {
     zero: msg("items", {
       desc: 'plural form of "item" for zero items',
@@ -453,6 +479,32 @@ const plurals = {
     other: msg("organizations", {
       desc: 'plural form of "organization" for multiple/other organizations',
       id: "organizations.plural.other",
+    }),
+  },
+  files: {
+    zero: msg("files", {
+      desc: 'plural form of "file" for zero files',
+      id: "files.plural.zero",
+    }),
+    one: msg("file", {
+      desc: 'singular form for "file"',
+      id: "files.plural.one",
+    }),
+    two: msg("files", {
+      desc: 'plural form of "file" for two files',
+      id: "files.plural.two",
+    }),
+    few: msg("files", {
+      desc: 'plural form of "file" for few files',
+      id: "files.plural.few",
+    }),
+    many: msg("files", {
+      desc: 'plural form of "file" for many files',
+      id: "files.plural.many",
+    }),
+    other: msg("files", {
+      desc: 'plural form of "file" for multiple/other files',
+      id: "files.plural.other",
     }),
   },
 };

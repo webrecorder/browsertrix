@@ -25,11 +25,11 @@ import type { Collection } from "@/types/collection";
 import type { ArchivedItem, Workflow } from "@/types/crawler";
 import type { DedupeIndexStats } from "@/types/dedupe";
 import { SortDirection } from "@/types/utils";
+import { BYTES_PER_MB } from "@/utils/bytes";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { indexAvailable, indexUpdating } from "@/utils/dedupe";
 import { tw } from "@/utils/tailwind";
 
-const BYTES_PER_MB = 1e6;
 const INITIAL_PAGE_SIZE = 10;
 
 enum ItemsView {
