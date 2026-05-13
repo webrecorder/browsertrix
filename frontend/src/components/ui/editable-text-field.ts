@@ -55,9 +55,6 @@ export class EditableTextField extends TailwindElement {
   @query("input")
   input?: HTMLInputElement;
 
-  @query("span")
-  label?: HTMLSpanElement;
-
   @property({ type: String })
   placeholder?: string;
 
@@ -115,6 +112,7 @@ export class EditableTextField extends TailwindElement {
     this.valid = true;
     this.input?.blur();
     this.updateWidth();
+    this.updatePlaceholderWidth();
   }
 
   save() {
@@ -133,24 +131,31 @@ export class EditableTextField extends TailwindElement {
   }
 
   updateWidth() {
-    if (!this.label) return;
     const width = measureTextWithElement(
       this.inputValue || this.placeholder || "",
-      this.label,
+      this,
     ).width;
     if (width) this.width = width + this.extraWidth;
   }
 
   updatePlaceholderWidth() {
     if (!this.placeholder) return;
-    if (!this.label) return;
-    const width = measureTextWithElement(this.placeholder, this.label).width;
+    const width = measureTextWithElement(this.placeholder, this).width;
     if (width) this.placeholderWidth = width;
   }
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("value")) {
       this.inputValue = this.value;
+    }
+
+    if (
+      changedProperties.has("editing") ||
+      changedProperties.has("inputValue") ||
+      changedProperties.has("placeholder")
+    ) {
+      this.updateWidth();
+      this.updatePlaceholderWidth();
     }
   }
 
@@ -173,17 +178,11 @@ export class EditableTextField extends TailwindElement {
   }
 
   render() {
-    // Normally we wouldn't want to run code like this on every render, but it's
-    // a) cached by args already, and b) very quick to run - these use canvas
-    // text measurements, rather than element measurements which cause reflows
-    this.updateWidth();
-    this.updatePlaceholderWidth();
-
     const minWidth = Math.max(this.placeholderWidth, this.width, 1);
 
     return html`<input
         class=${clsx(
-          tw`peer absolute inset-4 rounded bg-yellow-500/50`,
+          tw`peer absolute inset-4 rounded bg-transparent`,
           !this.valid && tw`z-[11] outline outline-danger`,
         )}
         type="text"
