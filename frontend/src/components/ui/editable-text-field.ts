@@ -35,7 +35,7 @@ export class EditableTextField extends TailwindElement {
   @property({ type: Number })
   maxLength?: number;
 
-  @property({ type: Object })
+  @property({ attribute: false })
   renderContent?: (text: string) => TemplateResult;
 
   /**
