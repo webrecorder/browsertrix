@@ -3,6 +3,8 @@ import type { StorageFile } from "./storage";
 import type { TagCount, TagCounts } from "@/components/ui/tag-filter/types";
 import { ScopeType } from "@/types/crawler";
 
+export { NAME_MAX_LENGTH, DESCRIPTION_MAX_LENGTH } from "./archivedItems";
+
 export enum NewWorkflowOnlyScopeType {
   PageList = "page-list",
   Regex = "custom-regex",

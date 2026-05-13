@@ -19,7 +19,7 @@ def get_org(quotas: OrgQuotas, monthly=None, **kwargs):
         storage=StorageRef(name="test-storage"),
         quotas=quotas,
         monthlyExecSeconds=monthlyExecSeconds,
-        **kwargs
+        **kwargs,
     )
 
 

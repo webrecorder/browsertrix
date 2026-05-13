@@ -39,8 +39,13 @@ import type {
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
+import { DESCRIPTION_MAX_LENGTH } from "@/types/archivedItems";
 import type { ArchivedItem, ArchivedItemPageComment } from "@/types/crawler";
-import type { ArchivedItemQAPage, QARun } from "@/types/qa";
+import {
+  PAGE_COMMENT_MAX_LENGTH,
+  type ArchivedItemQAPage,
+  type QARun,
+} from "@/types/qa";
 import { SortDirection as APISortDirection } from "@/types/utils";
 import {
   isActive,
@@ -169,8 +174,12 @@ export class ArchivedItemQA extends BtrixElement {
 
   private readonly replaySwReg =
     navigator.serviceWorker.getRegistration("/replay/");
-  private readonly validateItemDescriptionMax = maxLengthValidator(500);
-  private readonly validatePageCommentMax = maxLengthValidator(500);
+  private readonly validateItemDescriptionMax = maxLengthValidator(
+    DESCRIPTION_MAX_LENGTH,
+  );
+  private readonly validatePageCommentMax = maxLengthValidator(
+    PAGE_COMMENT_MAX_LENGTH,
+  );
 
   @query("#hiddenReplayFrame")
   private readonly hiddenReplayFrame?: HTMLIFrameElement | null;

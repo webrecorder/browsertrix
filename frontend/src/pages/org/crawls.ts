@@ -441,7 +441,7 @@ export class OrgCrawls extends BtrixElement {
     ${this.crawlToEdit
       ? html`
           <btrix-item-metadata-editor
-            .crawl=${this.crawlToEdit}
+            .item=${this.crawlToEdit}
             ?open=${this.isEditingItem}
             @request-close=${() => (this.isEditingItem = false)}
             @updated=${() => {

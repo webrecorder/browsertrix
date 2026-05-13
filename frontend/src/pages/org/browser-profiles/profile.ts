@@ -125,11 +125,11 @@ export class BrowserProfilesProfilePage extends BtrixElement {
         content: msg("Browser Profiles"),
       },
       {
-        content: this.profile?.name,
+        content: html`<div class="truncate">${this.profile?.name}</div>`,
       },
     ];
     const header = {
-      title: this.profile?.name,
+      title: html`<div class="truncate">${this.profile?.name}</div>`,
       suffix: when(
         this.profile && this.appState.isCrawler,
         () =>

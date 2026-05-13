@@ -588,7 +588,7 @@ export class ArchivedItemDetail extends BtrixElement {
       </main>
 
       <btrix-item-metadata-editor
-        .crawl=${this.item}
+        .item=${this.item}
         ?open=${this.openDialogName === "metadata"}
         @request-close=${() => (this.openDialogName = undefined)}
         @updated=${() => void this.fetchCrawl()}
@@ -1113,7 +1113,7 @@ export class ArchivedItemDetail extends BtrixElement {
       label=${msg("Crawler Channel (Exact Crawler Version)")}
     >
       <div class="flex items-center gap-2">
-        <code class="grow" title=${text}>${text}</code>
+        <code class="grow [word-break:break-word]" title=${text}>${text}</code>
       </div>
     </btrix-desc-list-item>`;
   }

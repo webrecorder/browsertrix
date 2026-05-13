@@ -257,6 +257,7 @@ export class ConfigDetails extends BtrixElement {
                   href=${`${this.navigate.orgBasePath}/browser-profiles/profile/${
                     crawlConfig!.profileid
                   }`}
+                  class="part-[base]:block part-[base]:truncate"
                   hideIcon
                 >
                   ${crawlConfig?.profileName}

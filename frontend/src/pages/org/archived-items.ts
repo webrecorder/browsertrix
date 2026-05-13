@@ -582,7 +582,7 @@ export class CrawlsList extends BtrixElement {
     ${this.itemToEdit
       ? html`
           <btrix-item-metadata-editor
-            .crawl=${this.itemToEdit}
+            .item=${this.itemToEdit}
             ?open=${this.isEditingItem}
             @request-close=${() => (this.isEditingItem = false)}
             @updated=${() => {
