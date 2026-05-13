@@ -301,10 +301,7 @@ export class CollectionDetail extends BtrixElement {
                     maxLength=${COLLECTION_CAPTION_MAX_LENGTH}
                     .value=${col.caption}
                     placeholder=${msg("Add a summary...")}
-                    .renderContent=${(text: string) =>
-                      richText(text, {
-                        linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
-                      })}
+                    .renderContent=${this.renderCaption}
                     @btrix-change=${(e: BtrixChangeEvent<string>) => {
                       void this.updateSummary(e.detail.value);
                     }}
@@ -626,6 +623,11 @@ export class CollectionDetail extends BtrixElement {
       })}
     `;
   }
+
+  private readonly renderCaption = (text: string) =>
+    richText(text, {
+      linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
+    });
 
   private renderAccessIcon() {
     return choose(this.collection?.access, [

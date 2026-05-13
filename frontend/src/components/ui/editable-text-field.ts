@@ -2,6 +2,7 @@ import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
 import { css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import type { DirectiveResult } from "lit/directive.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { styleMap } from "lit/directives/style-map.js";
 
@@ -36,7 +37,7 @@ export class EditableTextField extends TailwindElement {
   maxLength?: number;
 
   @property({ attribute: false })
-  renderContent?: (text: string) => TemplateResult;
+  renderContent?: (text: string) => TemplateResult | DirectiveResult;
 
   /**
    * Extra width to add to the computed width to accommodate the suffix slot.
@@ -53,9 +54,6 @@ export class EditableTextField extends TailwindElement {
 
   @query("input")
   input?: HTMLInputElement;
-
-  @query("span")
-  label?: HTMLSpanElement;
 
   @property({ type: String })
   placeholder?: string;
@@ -114,6 +112,7 @@ export class EditableTextField extends TailwindElement {
     this.valid = true;
     this.input?.blur();
     this.updateWidth();
+    this.updatePlaceholderWidth();
   }
 
   save() {
@@ -132,24 +131,30 @@ export class EditableTextField extends TailwindElement {
   }
 
   updateWidth() {
-    if (!this.label) return;
     const width = measureTextWithElement(
       this.inputValue || this.placeholder || "",
-      this.label,
+      this,
     ).width;
     if (width) this.width = width + this.extraWidth;
   }
 
   updatePlaceholderWidth() {
     if (!this.placeholder) return;
-    if (!this.label) return;
-    const width = measureTextWithElement(this.placeholder, this.label).width;
+    const width = measureTextWithElement(this.placeholder, this).width;
     if (width) this.placeholderWidth = width;
   }
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("value")) {
       this.inputValue = this.value;
+    }
+
+    if (
+      changedProperties.has("inputValue") ||
+      changedProperties.has("placeholder")
+    ) {
+      this.updateWidth();
+      this.updatePlaceholderWidth();
     }
   }
 
@@ -172,12 +177,6 @@ export class EditableTextField extends TailwindElement {
   }
 
   render() {
-    // Normally we wouldn't want to run code like this on every render, but it's
-    // a) cached by args already, and b) very quick to run - these use canvas
-    // text measurements, rather than element measurements which cause reflows
-    this.updateWidth();
-    this.updatePlaceholderWidth();
-
     const minWidth = Math.max(this.placeholderWidth, this.width, 1);
 
     return html`<input
