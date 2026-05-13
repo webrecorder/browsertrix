@@ -1199,9 +1199,7 @@ class CrawlScaleResponse(BaseModel):
 class UploadedCrawl(BaseCrawl):
     """Store State of a Crawl Upload"""
 
-    name: Name | None
-    description: Description = ""
-    tags: list[Tag] | None = []
+    name: Name
 
     type: Literal["upload"] = "upload"
     image: None = None
@@ -1210,6 +1208,8 @@ class UploadedCrawl(BaseCrawl):
 # ============================================================================
 class UpdateUpload(UpdateCrawl):
     """Update modal that also includes name"""
+
+    name: Name | None
 
 
 # ============================================================================
