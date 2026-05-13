@@ -35,6 +35,7 @@ import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import { SortDirection } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { finishedCrawlStates, isCrawl } from "@/utils/crawler";
+import { stopProp } from "@/utils/events";
 import { computeSelectionDelta } from "@/utils/nested-selection-difference";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
@@ -100,6 +101,9 @@ export class CollectionItemsDialog extends BtrixElement {
 
   @property({ type: Boolean })
   open = false;
+
+  @state()
+  private showConfirmation = false;
 
   @state()
   private isSubmitting = false;
@@ -227,7 +231,8 @@ export class CollectionItemsDialog extends BtrixElement {
   private readonly dependenciesTask = new Task(this, {
     task: async (_args, { signal }) => {
       const { removeItems, removeWorkflows } = this.difference;
-      console.log("remove:", removeItems, removeWorkflows);
+
+      this.showConfirmation = false;
 
       if (!removeItems.size && !removeWorkflows.size) return;
 
@@ -965,21 +970,71 @@ export class CollectionItemsDialog extends BtrixElement {
       selectionMessage = messages.join(" / ");
     }
 
+    const confirmationContent = () => {
+      const count = this.dependenciesTask.value?.size;
+
+      if (!count) return;
+
+      const number_of_dependencies = this.localize.number(count);
+      const plural_of_dependencies = pluralOf("dependencies", count);
+
+      return html`<p class="font-semibold">
+          ${msg(
+            str`Are you sure you want to remove ${number_of_dependencies} ${plural_of_dependencies}?`,
+          )}
+        </p>
+        <p class="mt-2">
+          ${msg(
+            "Removing this item may result in incomplete replay and downloads until dependent URLs are crawled again.",
+          )}
+        </p> `;
+    };
+
     return html`
       <div class="inline-flex items-center gap-1.5 text-warning">
         <span>${selectionMessage}</span>
         ${this.renderDependencyWarning()}
       </div>
 
-      <sl-button
-        variant="primary"
-        size="small"
-        ?disabled=${this.isSubmitting}
-        ?loading=${this.isSubmitting}
-        @click=${hasChange ? () => void this.save() : () => this.close()}
+      ${this.showConfirmation
+        ? html`<sl-button
+            size="small"
+            @click=${() => (this.showConfirmation = false)}
+          >
+            ${msg("Edit Selection")}
+          </sl-button>`
+        : nothing}
+
+      <btrix-popover
+        ?open=${this.showConfirmation}
+        trigger="manual"
+        placement="top-end"
+        hoist
+        @sl-show=${stopProp}
+        @sl-after-show=${stopProp}
+        @sl-hide=${stopProp}
+        @sl-after-hide=${stopProp}
       >
-        ${hasChange ? msg("Save Selection") : msg("Done")}
-      </sl-button>
+        <div slot="content" @click=${() => (this.showConfirmation = false)}>
+          ${confirmationContent()}
+        </div>
+
+        <sl-button
+          variant="primary"
+          size="small"
+          ?disabled=${this.isSubmitting}
+          ?loading=${this.isSubmitting}
+          @click=${hasChange
+            ? () =>
+                this.showConfirmation ? void this.save() : void this.trySave()
+            : () => this.close()}
+        >
+          ${this.showConfirmation
+            ? html`<sl-icon slot="prefix" name="check2-all"></sl-icon>`
+            : nothing}
+          ${hasChange ? msg("Save Selection") : msg("Done")}
+        </sl-button>
+      </btrix-popover>
     `;
   };
 
@@ -998,7 +1053,7 @@ export class CollectionItemsDialog extends BtrixElement {
     };
 
     return this.dependenciesTask.render({
-      complete: (deps) => (deps ? warning(deps) : nothing),
+      complete: (deps) => (deps?.size ? warning(deps) : nothing),
     });
   }
 
@@ -1015,6 +1070,7 @@ export class CollectionItemsDialog extends BtrixElement {
   private reset() {
     this.isReady = false;
     // Reset selection and filters
+    this.showConfirmation = false;
     this.activeTab = TABS[0];
     this.crawls = undefined;
     this.workflows = undefined;
@@ -1038,6 +1094,8 @@ export class CollectionItemsDialog extends BtrixElement {
     this.workflowSelection = new Map();
     this.savedWorkflowSelection = new Map();
     this.batchWorkflows = new Map();
+
+    this.dependenciesTask.abort();
   }
 
   private get difference() {
@@ -1100,6 +1158,17 @@ export class CollectionItemsDialog extends BtrixElement {
       addWorkflows: delta.includedContainers,
       removeWorkflows: delta.excludedContainers,
     };
+  }
+
+  private async trySave() {
+    const deps = await this.dependenciesTask.taskComplete;
+
+    if (deps?.size) {
+      this.showConfirmation = true;
+      return;
+    }
+
+    await this.save();
   }
 
   private async save() {
