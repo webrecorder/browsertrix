@@ -2,6 +2,7 @@ import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
 import { css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import type { DirectiveResult } from "lit/directive.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { styleMap } from "lit/directives/style-map.js";
 
@@ -35,8 +36,8 @@ export class EditableTextField extends TailwindElement {
   @property({ type: Number })
   maxLength?: number;
 
-  @property({ type: Object })
-  renderContent?: (text: string) => TemplateResult;
+  @property({ attribute: false })
+  renderContent?: (text: string) => TemplateResult | DirectiveResult;
 
   /**
    * Extra width to add to the computed width to accommodate the suffix slot.
