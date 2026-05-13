@@ -117,14 +117,16 @@ export class EditableTextField extends TailwindElement {
 
   save() {
     if (this.checkValidity()) {
+      if (this.editing) {
+        this.dispatchEvent(
+          new CustomEvent<BtrixChangeEventDetail<string>>("btrix-change", {
+            detail: { value: this.inputValue },
+            bubbles: true,
+            composed: true,
+          }),
+        );
+      }
       this.endEditing();
-      this.dispatchEvent(
-        new CustomEvent<BtrixChangeEventDetail<string>>("btrix-change", {
-          detail: { value: this.inputValue },
-          bubbles: true,
-          composed: true,
-        }),
-      );
     } else {
       this.showUnsavedWarning = true;
     }
