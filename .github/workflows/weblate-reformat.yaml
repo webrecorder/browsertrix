@@ -18,7 +18,7 @@ jobs:
     outputs:
       matches: ${{ steps.filter.outputs.matches }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 2  # important, to fetch previous commit
 
@@ -47,13 +47,13 @@ jobs:
     steps:
       # Setup:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'yarn'
