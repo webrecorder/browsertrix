@@ -47,9 +47,6 @@ export class CrawlMetadataEditor extends BtrixElement {
   private isDialogVisible = false;
 
   @state()
-  private includeName = false;
-
-  @state()
   private tagsToSave: Tags = [];
 
   @state()
@@ -69,7 +66,6 @@ export class CrawlMetadataEditor extends BtrixElement {
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("item") && this.item) {
-      this.includeName = this.item.type === "upload";
       this.tagsToSave = this.item.tags;
       this.collectionsToSave = this.item.collectionIds;
     }
@@ -103,21 +99,17 @@ export class CrawlMetadataEditor extends BtrixElement {
         @submit=${this.onSubmitMetadata}
         @reset=${this.requestClose}
       >
-        ${this.includeName
-          ? html`
-              <div class="mb-3">
-                <sl-input
-                  label="Name"
-                  name="name"
-                  value="${item.name}"
-                  help-text=${this.validateItemNameMax.helpText}
-                  @sl-input=${this.validateItemNameMax.validate}
-                  placeholder="${item.name}"
-                >
-                </sl-input>
-              </div>
-            `
-          : ``}
+        <div class="mb-3">
+          <sl-input
+            label="Name"
+            name="name"
+            value="${item.name}"
+            help-text=${this.validateItemNameMax.helpText}
+            @sl-input=${this.validateItemNameMax.validate}
+            placeholder="${item.name}"
+          >
+          </sl-input>
+        </div>
         <sl-textarea
           id="description-input"
           class="with-max-help-text mb-3"
@@ -187,7 +179,7 @@ export class CrawlMetadataEditor extends BtrixElement {
       description?: string;
       name?: string;
     } = {};
-    if (this.includeName && name && name !== this.item.name) {
+    if (name && name !== this.item.name) {
       params.name = name as string;
     }
     if (
