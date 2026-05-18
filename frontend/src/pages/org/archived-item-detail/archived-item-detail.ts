@@ -1127,13 +1127,12 @@ export class ArchivedItemDetail extends BtrixElement {
         <btrix-desc-list-item label=${msg("Description")}>
           ${when(
             this.item,
-            () =>
+            (item) =>
               when(
-                this.item!.description?.length,
+                item.description?.length,
                 () =>
-                  html`<pre class="whitespace-pre-line font-sans">
-                      ${richText(this.item?.description ?? "")}
-                </pre
+                  html`<btrix-prose
+                    >${richText(item.description ?? "")}</btrix-prose
                   >`,
                 () => noneText,
               ),
@@ -1143,11 +1142,11 @@ export class ArchivedItemDetail extends BtrixElement {
         <btrix-desc-list-item label=${msg("Tags")}>
           ${when(
             this.item,
-            () =>
+            (item) =>
               when(
-                this.item!.tags.length,
+                item.tags.length,
                 () =>
-                  this.item!.tags.map(
+                  item.tags.map(
                     (tag) =>
                       html`<btrix-tag class="mr-2 mt-1">${tag}</btrix-tag>`,
                   ),

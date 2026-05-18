@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
-import { html, nothing } from "lit";
+import { css, html, nothing } from "lit";
 import { customElement, queryAsync, state } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -9,10 +9,18 @@ import { tw } from "@/utils/tailwind";
 /**
  * Display prose, like workflow and item descriptions, with line clamping.
  * Uses `overflow-hidden` as fallback
+ *
+ * @cssproperty --btrix-line-clamp
  */
 @customElement("btrix-prose")
 @localized()
 export class Prose extends TailwindElement {
+  static styles = css`
+    :host {
+      --btrix-line-clamp: 12;
+    }
+  `;
+
   @state()
   private clamped?: boolean;
 
@@ -22,7 +30,8 @@ export class Prose extends TailwindElement {
   render() {
     return html`<pre
         class=${clsx(
-          this.clamped !== false && tw`line-clamp-6 max-h-32 overflow-hidden`,
+          this.clamped !== false &&
+            tw`line-clamp-[var(--btrix-line-clamp)] max-h-[15.75rem]`,
           tw`max-w-prose whitespace-pre-line font-sans leading-normal`,
         )}
       ><slot @slotchange=${this.onSlotChange}></slot></pre>
