@@ -16,9 +16,10 @@ import { none, notSpecified } from "@/layouts/empty";
 import {
   Behavior,
   CrawlerChannelImage,
-  type CrawlConfig,
+  type CrawlReplay,
   type Seed,
   type SeedConfig,
+  type Workflow,
 } from "@/pages/org/types";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
@@ -35,6 +36,9 @@ import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
 import { getServerDefaults, regexScopeConfig } from "@/utils/workflow";
 
+const isWorkflow = (data?: CrawlReplay | Workflow): data is Workflow =>
+  !!data && "crawlCount" in data;
+
 /**
  * Usage:
  * ```ts
@@ -50,7 +54,7 @@ export class ConfigDetails extends BtrixElement {
   private readonly orgProxies?: OrgProxiesContext;
 
   @property({ type: Object })
-  crawlConfig?: CrawlConfig;
+  crawlConfig?: CrawlReplay | Workflow;
 
   @property({ type: Array })
   seeds?: Seed[];
@@ -173,14 +177,16 @@ export class ConfigDetails extends BtrixElement {
               }
             }),
           )}
-          ${this.renderSetting(
-            msg("Crawl Time Limit"),
-            renderTimeLimit(this.crawlConfig?.crawlTimeout, Infinity),
-          )}
-          ${this.renderSetting(
-            msg("Crawl Size Limit"),
-            renderSize(this.crawlConfig?.maxCrawlSize),
-          )}
+          ${isWorkflow(this.crawlConfig)
+            ? html`${this.renderSetting(
+                msg("Crawl Time Limit"),
+                renderTimeLimit(this.crawlConfig.crawlTimeout, Infinity),
+              )}
+              ${this.renderSetting(
+                msg("Crawl Size Limit"),
+                renderSize(this.crawlConfig.maxCrawlSize),
+              )}`
+            : nothing}
         `,
       })}
       ${this.renderSection({
@@ -312,26 +318,28 @@ export class ConfigDetails extends BtrixElement {
             : nothing}
         `,
       })}
-      ${this.renderSection({
-        id: "crawl-scheduling",
-        heading: sectionStrings.scheduling,
-        renderDescItems: () => html`
-          ${this.renderSetting(
-            msg("Crawl Schedule Type"),
-            crawlConfig?.schedule
-              ? msg("Run on a Recurring Basis")
-              : msg("No Schedule"),
-          )}
-          ${when(crawlConfig?.schedule, () =>
-            this.renderSetting(
-              msg("Schedule"),
-              crawlConfig?.schedule
-                ? humanizeSchedule(crawlConfig.schedule)
-                : undefined,
-            ),
-          )}
-        `,
-      })}
+      ${isWorkflow(crawlConfig)
+        ? this.renderSection({
+            id: "crawl-scheduling",
+            heading: sectionStrings.scheduling,
+            renderDescItems: () => html`
+              ${this.renderSetting(
+                msg("Crawl Schedule Type"),
+                crawlConfig.schedule
+                  ? msg("Run on a Recurring Basis")
+                  : msg("No Schedule"),
+              )}
+              ${when(crawlConfig.schedule, () =>
+                this.renderSetting(
+                  msg("Schedule"),
+                  crawlConfig.schedule
+                    ? humanizeSchedule(crawlConfig.schedule)
+                    : undefined,
+                ),
+              )}
+            `,
+          })
+        : nothing}
       ${when(this.featureFlags.has("dedupeEnabled"), () =>
         this.renderSection({
           id: "deduplication",
@@ -347,27 +355,29 @@ export class ConfigDetails extends BtrixElement {
         }),
       )}
       ${when(!this.hideMetadata, () =>
-        this.renderSection({
-          id: "collection",
-          heading: sectionStrings.collections,
-          renderDescItems: () => html`
-            ${this.renderSetting(
-              html`<span class="mb-1 inline-block"
-                >${msg("Auto-Add to Collection")}</span
-              >`,
-              crawlConfig?.autoAddCollections.length
-                ? html`<btrix-linked-collections
-                    .collections=${crawlConfig.autoAddCollections}
-                    dedupeId=${ifDefined(
-                      (this.featureFlags.has("dedupeEnabled") &&
-                        crawlConfig.dedupeCollId) ||
-                        undefined,
-                    )}
-                  ></btrix-linked-collections>`
-                : undefined,
-            )}
-          `,
-        }),
+        isWorkflow(crawlConfig)
+          ? this.renderSection({
+              id: "collection",
+              heading: sectionStrings.collections,
+              renderDescItems: () => html`
+                ${this.renderSetting(
+                  html`<span class="mb-1 inline-block"
+                    >${msg("Auto-Add to Collection")}</span
+                  >`,
+                  crawlConfig.autoAddCollections.length
+                    ? html`<btrix-linked-collections
+                        .collections=${crawlConfig.autoAddCollections}
+                        dedupeId=${ifDefined(
+                          (this.featureFlags.has("dedupeEnabled") &&
+                            crawlConfig.dedupeCollId) ||
+                            undefined,
+                        )}
+                      ></btrix-linked-collections>`
+                    : undefined,
+                )}
+              `,
+            })
+          : nothing,
       )}
       ${when(!this.hideMetadata, () =>
         this.renderSection({
@@ -407,9 +417,7 @@ export class ConfigDetails extends BtrixElement {
   }: {
     id: string;
     heading: string;
-    renderDescItems: (
-      seedsConfig?: CrawlConfig["config"],
-    ) => TemplateResult | undefined;
+    renderDescItems: (seedsConfig?: SeedConfig) => TemplateResult | undefined;
   }) {
     return html`
       <section id=${id} class="mb-8">
@@ -423,9 +431,7 @@ export class ConfigDetails extends BtrixElement {
     `;
   }
 
-  private readonly renderConfirmUrlListSettings = (
-    config: CrawlConfig["config"],
-  ) => {
+  private readonly renderConfirmUrlListSettings = (config: SeedConfig) => {
     const seedFile = () =>
       when(
         this.seedFile,
@@ -519,9 +525,7 @@ export class ConfigDetails extends BtrixElement {
     `;
   };
 
-  private readonly renderConfirmSeededSettings = (
-    config: CrawlConfig["config"],
-  ) => {
+  private readonly renderConfirmSeededSettings = (config: SeedConfig) => {
     if (!this.seeds) return;
     const additionalUrlList = this.seeds.slice(1);
     const primarySeedConfig = this.seeds[0] as SeedConfig | Seed | undefined;

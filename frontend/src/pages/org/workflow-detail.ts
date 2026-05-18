@@ -14,7 +14,7 @@ import isNil from "lodash/isNil";
 import queryString from "query-string";
 
 import type { ArchivedItemSectionName } from "./archived-item-detail/archived-item-detail";
-import type { Crawl, CrawlLog, Seed, Workflow } from "./types";
+import { type Crawl, type CrawlLog, type Seed, type Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Alert } from "@/components/ui/alert";
@@ -35,7 +35,11 @@ import { OrgTab, WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
-import { type StorageSeedFile } from "@/types/workflow";
+import {
+  workflowParamsSchema,
+  type StorageSeedFile,
+  type WorkflowParams,
+} from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import {
@@ -794,20 +798,13 @@ export class WorkflowDetail extends BtrixElement {
 
     if (this.workflowTab === WorkflowTab.Settings) {
       return html`
-        ${this.appState.isAdmin
+        ${this.appState.isCrawler
           ? html`<btrix-copy-button
               name="filetype-json"
               value=${ifDefined(
                 this.workflow &&
                   this.seeds &&
-                  JSON.stringify(
-                    {
-                      ...omitNil(this.workflow.config),
-                      seeds: this.seeds.items.map(omitNil),
-                    },
-                    null,
-                    2,
-                  ),
+                  JSON.stringify(this.settingsToJson(), null, 2),
               )}
               content=${msg("Copy as JSON")}
               size="medium"
@@ -2159,6 +2156,49 @@ export class WorkflowDetail extends BtrixElement {
       errors: errors.total,
       behaviors: behaviors.total,
     };
+  }
+
+  /**
+   * Copy workflow settings to clipboard in JSON format
+   * compatible with POST/PATCH API
+   */
+  private settingsToJson() {
+    if (!this.workflow || !this.seeds) return;
+
+    const params: WorkflowParams = {
+      jobType: this.workflow.jobType,
+      name: this.workflow.name,
+      schedule: this.workflow.schedule,
+      browserWindows: this.workflow.browserWindows,
+      profileid: this.workflow.profileid,
+      tags: this.workflow.tags,
+      crawlTimeout: this.workflow.crawlTimeout,
+      maxCrawlSize: this.workflow.maxCrawlSize,
+      description: this.workflow.description,
+      autoAddCollections: this.workflow.autoAddCollections,
+      crawlerChannel: this.workflow.crawlerChannel,
+      proxyId: this.workflow.proxyId,
+      config: {
+        ...this.workflow.config,
+        seeds: this.workflow.config.seedFileId ? null : this.seeds.items,
+      },
+    };
+
+    if (this.featureFlags.has("dedupeEnabled")) {
+      params.dedupeCollId = this.workflow.dedupeCollId;
+    }
+
+    const { error } = workflowParamsSchema.safeParse(params);
+
+    if (error) {
+      console.debug(error);
+    }
+
+    // Omit null and undefined values
+    return omitNil({
+      ...params,
+      config: omitNil(params.config),
+    });
   }
 
   /**

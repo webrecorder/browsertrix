@@ -13,12 +13,16 @@ import {
   CrawlerChannelImage,
   ScopeType,
   type Seed,
-  type WorkflowParams,
+  type WorkflowSettings,
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
-import { WorkflowScopeType, type StorageSeedFile } from "@/types/workflow";
+import {
+  WorkflowScopeType,
+  type StorageSeedFile,
+  type WorkflowParams,
+} from "@/types/workflow";
 import { tw } from "@/utils/tailwind";
 import {
   DEFAULT_AUTOCLICK_SELECTOR,
@@ -59,7 +63,7 @@ export class WorkflowsNew extends BtrixElement {
   scopeType?: WorkflowFormState["scopeType"];
 
   @property({ type: Object })
-  initialWorkflow?: WorkflowParams;
+  initialWorkflow?: Partial<WorkflowSettings>;
 
   private get defaultNewWorkflow(): WorkflowParams {
     return {
@@ -161,14 +165,14 @@ export class WorkflowsNew extends BtrixElement {
             autoAddCollections: org.crawlingDefaults?.dedupeCollId
               ? [org.crawlingDefaults.dedupeCollId]
               : [],
-          } satisfies PartialDeep<WorkflowParams>,
+          } satisfies PartialDeep<WorkflowSettings>,
           this.initialWorkflow || {},
         );
 
         const initialWorkflow = makeArrUniq({
           ...mergedWorkflow,
           config: makeArrUniq(mergedWorkflow.config),
-        }) as WorkflowParams;
+        }) as WorkflowSettings;
 
         const scopeType = this.scopeType || initialWorkflow.config.scopeType;
 

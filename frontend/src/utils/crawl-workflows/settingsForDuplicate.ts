@@ -8,7 +8,7 @@ import type {
   ScopeType,
   Seed,
   Workflow,
-  WorkflowParams,
+  WorkflowSettings,
 } from "@/types/crawler";
 import {
   NewWorkflowOnlyScopeType,
@@ -16,7 +16,7 @@ import {
 } from "@/types/workflow";
 
 export type DuplicateWorkflowSettings = {
-  workflow: Partial<WorkflowParams>;
+  workflow: Partial<WorkflowSettings>;
   scopeType?: ScopeType | NewWorkflowOnlyScopeType;
   seeds?: Seed[];
   seedFile?: StorageSeedFile;
@@ -31,7 +31,7 @@ export function settingsForDuplicate({
   seeds?: APIPaginatedList<Seed>;
   seedFile?: StorageSeedFile;
 }): DuplicateWorkflowSettings {
-  const workflowParams: Partial<WorkflowParams> = {
+  const workflowParams: Partial<WorkflowSettings> = {
     ...workflow,
     name: workflow.name ? msg(str`${workflow.name} Copy`) : "",
   };

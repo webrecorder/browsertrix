@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import type { CrawlState } from "./crawlState";
 import type { StorageFile } from "./storage";
 
@@ -23,69 +25,73 @@ export enum CrawlerChannelImage {
   Default = "default",
 }
 
-export type Seed = {
-  url: string;
-  scopeType: ScopeType | undefined;
-  include?: string[] | null;
-  exclude?: string[] | null;
-  limit?: number | null;
-  extraHops?: number | null;
-  depth?: number | null;
-};
+export const seedSchema = z.object({
+  url: z.string(),
+  scopeType: z.nativeEnum(ScopeType).optional(),
+  include: z.array(z.string()).nullable().optional(),
+  exclude: z.array(z.string()).nullable().optional(),
+  limit: z.number().nullable().optional(),
+  extraHops: z.number().nullable().optional(),
+  depth: z.number().nullable().optional(),
+});
+export type Seed = z.infer<typeof seedSchema>;
 
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 
-export type SeedConfig = Expand<
-  Pick<Seed, "scopeType" | "include" | "exclude" | "limit" | "extraHops"> & {
-    seedFileId?: string | null;
-    lang?: string | null;
-    blockAds?: boolean;
-    behaviorTimeout: number | null;
-    pageLoadTimeout: number | null;
-    pageExtraDelay: number | null;
-    postLoadDelay: number | null;
-    behaviors?: string | null;
-    extraHops?: number | null;
-    useSitemap?: boolean;
-    failOnFailedSeed?: boolean;
-    failOnContentCheck?: boolean;
-    depth?: number | null;
-    userAgent?: string | null;
-    selectLinks: string[];
-    customBehaviors: string[];
-    clickSelector: string;
-    saveStorage?: boolean;
-    useRobots?: boolean;
-  }
->;
+export const seedConfigSchema = seedSchema
+  .pick({
+    scopeType: true,
+    include: true,
+    exclude: true,
+    limit: true,
+    extraHops: true,
+  })
+  .merge(
+    z.object({
+      seedFileId: z.string().nullable().optional(),
+      lang: z.string().nullable().optional(),
+      blockAds: z.boolean().optional(),
+      behaviorTimeout: z.number().nullable(),
+      pageLoadTimeout: z.number().nullable(),
+      pageExtraDelay: z.number().nullable(),
+      postLoadDelay: z.number().nullable(),
+      behaviors: z.string().nullable().optional(),
+      extraHops: z.number().nullable().optional(),
+      useSitemap: z.boolean().optional(),
+      failOnFailedSeed: z.boolean().optional(),
+      failOnContentCheck: z.boolean().optional(),
+      depth: z.number().nullable().optional(),
+      userAgent: z.string().nullable().optional(),
+      selectLinks: z.array(z.string()),
+      customBehaviors: z.array(z.string()),
+      clickSelector: z.string(),
+      saveStorage: z.boolean().optional(),
+      useRobots: z.boolean().optional(),
+    }),
+  );
+export type SeedConfig = Expand<z.infer<typeof seedConfigSchema>>;
 
-export type JobType = "url-list" | "seed-crawl" | "custom";
+export const workflowSettingsSchema = z.object({
+  jobType: z.enum(["url-list", "seed-crawl", "custom"]).optional(),
+  name: z.string(),
+  schedule: z.string(),
+  browserWindows: z.number().int(),
+  profileid: z.string().nullable(),
+  profileName: z.string().nullable().optional(),
+  tags: z.array(z.string()),
+  crawlTimeout: z.number().nullable(),
+  maxCrawlSize: z.number().nullable(),
+  description: z.string().nullable(),
+  autoAddCollections: z.array(z.string()),
+  crawlerChannel: z.string(),
+  proxyId: z.string().nullable(),
+  dedupeCollId: z.string().nullable().optional(),
+  config: seedConfigSchema,
+});
+export type WorkflowSettings = z.infer<typeof workflowSettingsSchema>;
 
-export type WorkflowParams = {
-  jobType?: JobType;
-  name: string;
-  schedule: string;
-  browserWindows: number;
-  profileid: string | null;
-  profileName?: string | null;
-  config: SeedConfig;
-  tags: string[];
-  crawlTimeout: number | null;
-  maxCrawlSize: number | null;
-  description: string | null;
-  autoAddCollections: string[];
-  crawlerChannel: string;
-  proxyId: string | null;
-  dedupeCollId?: string | null;
-};
-
-export type CrawlConfig = WorkflowParams & {
+export type Workflow = WorkflowSettings & {
   oid: string;
-  profileName: string | null;
-  image: string | null;
-};
-
-export type Workflow = CrawlConfig & {
   id: string;
   createdBy: string; // User ID
   createdByName: string | null; // User full name
@@ -115,6 +121,8 @@ export type Workflow = CrawlConfig & {
   isCrawlRunning: boolean | null;
   autoAddCollections: string[];
   seedCount: number;
+  profileName: string | null;
+  image: string | null;
   shareable?: boolean;
 };
 
@@ -204,7 +212,7 @@ type ArchivedItemBase = {
 
 export type Crawl = ArchivedItemBase &
   Omit<
-    CrawlConfig,
+    WorkflowSettings,
     | "config"
     | "autoAddCollections"
     | "schedule"
@@ -223,7 +231,7 @@ export type Crawl = ArchivedItemBase &
     })[];
   };
 
-export type CrawlReplay = Crawl & Pick<CrawlConfig, "config">;
+export type CrawlReplay = Crawl & Pick<Workflow, "config" | "image">;
 
 export type Upload = ArchivedItemBase & {
   type: "upload";
