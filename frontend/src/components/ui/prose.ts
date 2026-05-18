@@ -11,6 +11,7 @@ import { tw } from "@/utils/tailwind";
  * Uses `overflow-hidden` as fallback
  *
  * @cssproperty --btrix-line-clamp
+ * @cssproperty --btrix-prose-width
  */
 @customElement("btrix-prose")
 @localized()
@@ -18,6 +19,8 @@ export class Prose extends TailwindElement {
   static styles = css`
     :host {
       --btrix-line-clamp: 6;
+      --btrix-prose-width: 65ch;
+      display: contents;
     }
   `;
 
@@ -32,12 +35,12 @@ export class Prose extends TailwindElement {
         class=${clsx(
           this.clamped !== false &&
             tw`line-clamp-[var(--btrix-line-clamp)] max-h-[15.75rem]`,
-          tw`max-w-prose whitespace-pre-line font-sans leading-normal`,
+          tw`max-w-[var(--btrix-prose-width)] hyphens-auto whitespace-pre-line text-pretty font-sans leading-normal`,
         )}
       ><slot @slotchange=${this.onSlotChange}></slot></pre>
       ${this.clamped || this.clamped === false
         ? html`<button
-            class="mt-1.5 leading-normal text-primary-500 transition-colors duration-fast hover:text-primary-600"
+            class="whitespace-nowrap leading-normal text-primary-500 transition-colors duration-fast hover:text-primary-600"
             @click=${() => (this.clamped = !this.clamped)}
           >
             ${this.clamped ? msg("Show more") : msg("Show less")}
