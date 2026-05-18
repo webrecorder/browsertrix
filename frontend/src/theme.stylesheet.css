@@ -459,6 +459,32 @@
     grid-column-start: 2;
   }
 
+  /** Render help text to the side of the label **/
+  .help-text-same-line::part(form-control) {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: enter;
+    gap: var(--sl-spacing-3x-small);
+  }
+
+  .help-text-same-line::part(form-control-label) {
+    grid-column: 1 / 2;
+    grid-row-start: 1;
+    margin: 0;
+  }
+
+  .help-text-same-line::part(form-control-input) {
+    grid-column: 1 / 3;
+    grid-row-start: 2;
+  }
+
+  .help-text-same-line::part(form-control-help-text) {
+    grid-column-start: 2;
+    grid-row-start: 1;
+    margin: 0;
+  }
+
   /* Button group tweaks */
   [data-sl-button-group__button--first][variant="primary"]:has(
       + [data-sl-button-group__button][variant="default"]

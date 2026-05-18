@@ -1194,9 +1194,7 @@ export class ArchivedItemDetail extends BtrixElement {
         class="flex min-h-8 items-center rounded border"
         aria-busy="${!this.workflow}"
       >
-        <div class="flex-1 overflow-hidden p-1.5 leading-none">
-          ${renderName(this.workflow)}
-        </div>
+        <div class="flex-1 truncate p-1.5">${renderName(this.workflow)}</div>
         <div class="flex-none">
           <sl-icon-button
             name="link"

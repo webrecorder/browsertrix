@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import type { SlInput, SlTextarea } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
@@ -14,7 +14,7 @@ import type {
 } from "@/features/collections/collections-add";
 import { DESCRIPTION_MAX_LENGTH, NAME_MAX_LENGTH } from "@/types/archivedItems";
 import type { ArchivedItem } from "@/types/crawler";
-import { isSuccessfullyFinished } from "@/utils/crawler";
+import { isCrawl, isSuccessfullyFinished } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
 
 /**
@@ -95,6 +95,7 @@ export class CrawlMetadataEditor extends BtrixElement {
 
     const item = this.item;
     const isSuccess = isSuccessfullyFinished(item);
+    const crawl = isCrawl(this.item);
 
     return html`
       <form
@@ -105,14 +106,23 @@ export class CrawlMetadataEditor extends BtrixElement {
         <div class="mb-3">
           <sl-input
             id="name-input"
+            class=${crawl ? "help-text-same-line" : "with-max-help-text"}
             label="Name"
             name="name"
             value="${item.name}"
             help-text=${this.validateItemNameMax.helpText}
+            placeholder=${(crawl ? item.firstSeed : item.name) || ""}
+            ?required=${!crawl}
             @sl-input=${this.validateItemNameMax.validate}
-            placeholder="${item.name}"
           >
           </sl-input>
+          ${crawl
+            ? html`<p class="form-help-text">
+                ${msg(
+                  "If omitted, the item will be named after the first URL crawled.",
+                )}
+              </p>`
+            : nothing}
         </div>
         <sl-textarea
           id="description-input"
@@ -183,7 +193,7 @@ export class CrawlMetadataEditor extends BtrixElement {
       description?: string;
       name?: string;
     } = {};
-    if (name && name !== this.item.name) {
+    if (name !== this.item.name) {
       params.name = name as string;
     }
     if (
