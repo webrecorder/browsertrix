@@ -453,29 +453,7 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       case "config":
         sectionContent = this.renderPanel(
-          html`
-            ${this.renderTitle(html`
-              ${this.tabLabels.config}
-              <sl-tooltip
-                content=${msg("Workflow settings used to run this crawl")}
-              >
-                <sl-icon
-                  class="align-[-.175em] text-base text-neutral-500"
-                  name="info-circle"
-                ></sl-icon>
-              </sl-tooltip>
-            `)}
-            <sl-button
-              size="small"
-              href="${this.navigate.orgBasePath}/workflows/${this.item
-                ?.cid}?edit"
-              ?disabled=${!this.item}
-              @click=${this.navigate.link}
-            >
-              <sl-icon slot="prefix" name="gear"></sl-icon>
-              ${msg("Edit Workflow")}
-            </sl-button>
-          `,
+          this.renderTitle(this.tabLabels.config),
           this.renderConfig(),
           [tw`rounded-lg border p-4`],
         );
@@ -507,9 +485,9 @@ export class ArchivedItemDetail extends BtrixElement {
       default:
         sectionContent = html`
           <div
-            class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:grid-rows-[auto_1fr]"
+            class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:grid-rows-[auto_auto_1fr]"
           >
-            <div class="col-span-1 row-span-1 flex flex-col lg:row-span-2">
+            <div class="col-span-1 row-span-1 flex flex-col lg:row-span-3">
               ${this.renderPanel(msg("Overview"), this.renderOverview(), [
                 tw`rounded-lg border p-4`,
               ])}
@@ -563,6 +541,25 @@ export class ArchivedItemDetail extends BtrixElement {
                   )}
                 </div>
               `,
+            )}
+            ${when(
+              this.item && isCrawl(this.item),
+              () =>
+                html`<div class="col-span-1 row-span-1 flex flex-col">
+                  ${this.renderPanel(
+                    html`
+                      ${this.renderTitle(msg("Workflow"))}
+                      <btrix-copy-button
+                        value=${this.item?.cid || ""}
+                        content=${msg("Copy Workflow ID")}
+                        size="medium"
+                        placement="left"
+                        hoist
+                      ></btrix-copy-button>
+                    `,
+                    this.renderWorkflow(),
+                  )}
+                </div>`,
             )}
           </div>
         `;
@@ -1191,6 +1188,28 @@ export class ArchivedItemDetail extends BtrixElement {
     `;
   }
 
+  private renderWorkflow() {
+    return html`
+      <div
+        class="flex min-h-8 items-center rounded border"
+        aria-busy="${!this.workflow}"
+      >
+        <div class="flex-1 overflow-hidden p-1.5 leading-none">
+          ${renderName(this.workflow)}
+        </div>
+        <div class="flex-none">
+          <sl-icon-button
+            name="link"
+            href="${this.navigate.orgBasePath}/workflows/${this.item?.cid}"
+            label=${msg("Visit Link")}
+            @click=${this.navigate.link}
+          >
+          </sl-icon-button>
+        </div>
+      </div>
+    `;
+  }
+
   private renderDependencies() {
     if (!this.item) return;
 
@@ -1390,7 +1409,6 @@ export class ArchivedItemDetail extends BtrixElement {
               }}
               .seeds=${this.seeds!.items}
               .seedFile=${this.seedFileTask.value || undefined}
-              hideMetadata
             ></btrix-config-details>
           `,
           this.renderLoading,
