@@ -1131,7 +1131,7 @@ export class ArchivedItemDetail extends BtrixElement {
               when(
                 item.description?.length,
                 () =>
-                  html`<btrix-prose
+                  html`<btrix-prose class="[--btrix-line-clamp:4]"
                     >${richText(item.description ?? "")}</btrix-prose
                   >`,
                 () => noneText,

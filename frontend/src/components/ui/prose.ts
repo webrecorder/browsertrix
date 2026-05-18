@@ -17,7 +17,7 @@ import { tw } from "@/utils/tailwind";
 export class Prose extends TailwindElement {
   static styles = css`
     :host {
-      --btrix-line-clamp: 12;
+      --btrix-line-clamp: 6;
     }
   `;
 
