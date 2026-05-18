@@ -1,5 +1,5 @@
 import { localized, msg } from "@lit/localize";
-import type { SlTextarea } from "@shoelace-style/shoelace";
+import type { SlInput, SlTextarea } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -52,6 +52,9 @@ export class CrawlMetadataEditor extends BtrixElement {
   @state()
   private collectionsToSave: string[] = [];
 
+  @query("#name-input")
+  public readonly nameInput?: SlInput | null;
+
   @query("#description-input")
   public readonly descriptionInput?: SlTextarea | null;
 
@@ -101,6 +104,7 @@ export class CrawlMetadataEditor extends BtrixElement {
       >
         <div class="mb-3">
           <sl-input
+            id="name-input"
             label="Name"
             name="name"
             value="${item.name}"

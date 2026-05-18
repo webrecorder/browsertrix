@@ -1664,6 +1664,7 @@ export class ArchivedItemDetail extends BtrixElement {
               this.editDialog?.collectionInput?.focus();
               break;
             default:
+              this.editDialog?.nameInput?.focus();
               break;
           }
         },
