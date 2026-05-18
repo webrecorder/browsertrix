@@ -485,9 +485,9 @@ export class ArchivedItemDetail extends BtrixElement {
       default:
         sectionContent = html`
           <div
-            class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:grid-rows-[auto_auto_1fr]"
+            class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:grid-rows-[auto_1fr]"
           >
-            <div class="col-span-1 row-span-1 flex flex-col lg:row-span-3">
+            <div class="col-span-1 row-span-1 flex flex-col lg:row-span-2">
               ${this.renderPanel(msg("Overview"), this.renderOverview(), [
                 tw`rounded-lg border p-4`,
               ])}
@@ -541,25 +541,6 @@ export class ArchivedItemDetail extends BtrixElement {
                   )}
                 </div>
               `,
-            )}
-            ${when(
-              this.item && isCrawl(this.item),
-              () =>
-                html`<div class="col-span-1 row-span-1 flex flex-col">
-                  ${this.renderPanel(
-                    html`
-                      ${this.renderTitle(msg("Workflow"))}
-                      <btrix-copy-button
-                        value=${this.item?.cid || ""}
-                        content=${msg("Copy Workflow ID")}
-                        size="medium"
-                        placement="left"
-                        hoist
-                      ></btrix-copy-button>
-                    `,
-                    this.renderWorkflow(),
-                  )}
-                </div>`,
             )}
           </div>
         `;
@@ -1185,26 +1166,6 @@ export class ArchivedItemDetail extends BtrixElement {
           ),
         () => html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`,
       )}
-    `;
-  }
-
-  private renderWorkflow() {
-    return html`
-      <div
-        class="flex min-h-8 items-center rounded border"
-        aria-busy="${!this.workflow}"
-      >
-        <div class="flex-1 truncate p-1.5">${renderName(this.workflow)}</div>
-        <div class="flex-none">
-          <sl-icon-button
-            name="link"
-            href="${this.navigate.orgBasePath}/workflows/${this.item?.cid}"
-            label=${msg("Visit Link")}
-            @click=${this.navigate.link}
-          >
-          </sl-icon-button>
-        </div>
-      </div>
     `;
   }
 
