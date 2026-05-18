@@ -174,7 +174,7 @@ export class ProfileMetadataDialog extends BtrixElement {
           class="with-max-help-text"
           label=${msg("Description")}
           value=${this.profile.description || ""}
-          rows="3"
+          rows="6"
           autocomplete="off"
           resize="auto"
           help-text=${this.validateDescriptionMax.helpText}
