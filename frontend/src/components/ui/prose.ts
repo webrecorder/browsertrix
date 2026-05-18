@@ -56,8 +56,9 @@ export class Prose extends TailwindElement {
       return;
     }
 
-    this.clamped = pre.scrollHeight > pre.clientHeight;
-
-    console.log(pre.clientHeight, pre.scrollHeight);
+    this.clamped =
+      pre.scrollHeight === pre.clientHeight
+        ? undefined
+        : pre.scrollHeight > pre.clientHeight;
   }
 }
