@@ -61,6 +61,7 @@ import type { CrawlState } from "@/types/crawlState";
 import type { DedupeIndexState } from "@/types/dedupe";
 import { isCrawlReplay, renderName } from "@/utils/crawler";
 import { indexAvailable, indexInUse, indexUpdating } from "@/utils/dedupe";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { richText } from "@/utils/rich-text";
@@ -80,7 +81,7 @@ export class CollectionDetail extends BtrixElement {
   @property({ type: String })
   collectionTab: Tab | null = Tab.Replay;
 
-  @state()
+  @state({ hasChanged: isNotEqual })
   private collection?: Collection;
 
   @state()
