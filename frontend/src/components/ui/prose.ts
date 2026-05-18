@@ -22,6 +22,10 @@ export class Prose extends TailwindElement {
       --btrix-prose-width: 65ch;
       display: contents;
     }
+
+    .clamp {
+      max-height: calc(var(--btrix-line-clamp) * 1.3125rem);
+    }
   `;
 
   @state()
@@ -33,8 +37,10 @@ export class Prose extends TailwindElement {
   render() {
     return html`<pre
         class=${clsx(
-          this.clamped &&
-            tw`line-clamp-[--btrix-line-clamp] max-h-[15.75rem]`,
+          this.clamped !== false && [
+            tw`line-clamp-[--btrix-line-clamp]`,
+            "clamp",
+          ],
           tw`max-w-[--btrix-prose-width] hyphens-auto whitespace-pre-line text-pretty font-sans leading-normal`,
         )}
       ><slot @slotchange=${this.onSlotChange}></slot></pre>

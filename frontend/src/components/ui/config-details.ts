@@ -388,7 +388,7 @@ export class ConfigDetails extends BtrixElement {
             ${this.renderSetting(
               msg("Description"),
               crawlConfig?.description
-                ? html`<btrix-prose
+                ? html`<btrix-prose class="[--btrix-line-clamp:12]"
                     >${richText(crawlConfig.description)}</btrix-prose
                   >`
                 : undefined,
