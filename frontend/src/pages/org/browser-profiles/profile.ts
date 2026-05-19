@@ -453,13 +453,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
           <btrix-desc-list-item label=${msg("Description")}>
             ${this.renderDetail((profile) =>
               profile.description
-                ? html`
-                    <!-- display: inline -->
-                    <div
-                      class="text-balanced whitespace-pre-line font-sans leading-relaxed text-neutral-600"
-                      >${profile.description}</div
-                    >
-                  `
+                ? html`<btrix-prose>${profile.description}</btrix-prose>`
                 : none,
             )}
           </btrix-desc-list-item>

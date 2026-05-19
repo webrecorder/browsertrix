@@ -124,7 +124,7 @@ export class CrawlMetadataEditor extends BtrixElement {
           name="crawlDescription"
           label=${msg("Description")}
           value=${item.description || ""}
-          rows="3"
+          rows="6"
           autocomplete="off"
           resize="auto"
           help-text=${this.validateItemDescriptionMax.helpText}
