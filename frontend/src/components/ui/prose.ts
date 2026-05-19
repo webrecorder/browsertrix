@@ -33,9 +33,9 @@ export class Prose extends TailwindElement {
   render() {
     return html`<pre
         class=${clsx(
-          this.clamped !== false &&
-            tw`line-clamp-[var(--btrix-line-clamp)] max-h-[15.75rem]`,
-          tw`max-w-[var(--btrix-prose-width)] hyphens-auto whitespace-pre-line text-pretty font-sans leading-normal`,
+          this.clamped &&
+            tw`line-clamp-[--btrix-line-clamp] max-h-[15.75rem]`,
+          tw`max-w-[--btrix-prose-width] hyphens-auto whitespace-pre-line text-pretty font-sans leading-normal`,
         )}
       ><slot @slotchange=${this.onSlotChange}></slot></pre>
       ${this.clamped || this.clamped === false
