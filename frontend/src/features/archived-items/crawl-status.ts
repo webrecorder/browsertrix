@@ -5,7 +5,11 @@ import startCase from "lodash/fp/startCase";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { labelWithIcon } from "@/layouts/labelWithIcon";
-import { RUNNING_STATES, type CrawlState } from "@/types/crawlState";
+import {
+  PAUSED_STATES,
+  RUNNING_STATES,
+  type CrawlState,
+} from "@/types/crawlState";
 import { isPaused } from "@/utils/crawler";
 import { animatePulse } from "@/utils/css";
 
@@ -166,7 +170,7 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Resuming");
         break;
 
-      case "paused":
+      case "paused": {
         color = "var(--sl-color-neutral-500)";
         icon = html`<sl-icon
           name="pause-circle"
@@ -174,37 +178,16 @@ export class CrawlStatus extends TailwindElement {
           style="color: ${color}"
         ></sl-icon>`;
         label = msg("Paused");
+        reason =
+          originalState === "paused_storage_quota_reached"
+            ? msg("Storage Quota Reached")
+            : originalState === "paused_time_quota_reached"
+              ? msg("Time Quota Reached")
+              : originalState === "paused_org_readonly"
+                ? msg("Crawling Disabled")
+                : "";
         break;
-
-      case "paused_storage_quota_reached":
-        color = "var(--sl-color-neutral-500)";
-        icon = html`<sl-icon
-          name="pause-circle"
-          slot="prefix"
-          style="color: ${color}"
-        ></sl-icon>`;
-        label = msg("Paused: Storage Quota Reached");
-        break;
-
-      case "paused_time_quota_reached":
-        color = "var(--sl-color-neutral-500)";
-        icon = html`<sl-icon
-          name="pause-circle"
-          slot="prefix"
-          style="color: ${color}"
-        ></sl-icon>`;
-        label = msg("Paused: Time Quota Reached");
-        break;
-
-      case "paused_org_readonly":
-        color = "var(--sl-color-neutral-500)";
-        icon = html`<sl-icon
-          name="pause-circle"
-          slot="prefix"
-          style="color: ${color}"
-        ></sl-icon>`;
-        label = msg("Paused: Crawling Disabled");
-        break;
+      }
 
       case "pending-wait":
         color = "var(--sl-color-violet-600)";
@@ -370,17 +353,21 @@ export class CrawlStatus extends TailwindElement {
   }
 
   filterState() {
+    if (!this.state) return "";
     if (this.stopping && this.state === "running") {
       return "stopping";
     }
     if (
       this.shouldPause &&
-      (RUNNING_STATES as readonly string[]).includes(this.state || "")
+      (RUNNING_STATES as readonly string[]).includes(this.state)
     ) {
       return "pausing";
     }
-    if (!this.shouldPause && isPaused(this.state || "")) {
+    if (!this.shouldPause && isPaused(this.state)) {
       return "resuming";
+    }
+    if ((PAUSED_STATES as readonly string[]).includes(this.state)) {
+      return "paused";
     }
     return this.state;
   }
