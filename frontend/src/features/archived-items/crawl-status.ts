@@ -82,7 +82,15 @@ export class CrawlStatus extends TailwindElement {
       style="color: ${color}"
     ></sl-icon>`;
     let label = "";
-    let reason = "";
+    let reason = originalState
+      ? originalState.endsWith("_storage_quota_reached")
+        ? msg("Storage Quota Reached")
+        : originalState.endsWith("_time_quota_reached")
+          ? msg("Time Quota Reached")
+          : originalState.endsWith("_org_readonly")
+            ? msg("Crawling Disabled")
+            : ""
+      : "";
 
     switch (state) {
       case "starting":
@@ -96,10 +104,8 @@ export class CrawlStatus extends TailwindElement {
         ></sl-icon>`;
         label = msg("Starting");
         break;
-
-      case "waiting_capacity":
-      case "waiting_org_limit":
-      case "waiting_dedupe_index":
+        å;
+      case "waiting":
         color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="hourglass-split"
@@ -170,7 +176,7 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Resuming");
         break;
 
-      case "paused": {
+      case "paused":
         color = "var(--sl-color-neutral-500)";
         icon = html`<sl-icon
           name="pause-circle"
@@ -178,16 +184,7 @@ export class CrawlStatus extends TailwindElement {
           style="color: ${color}"
         ></sl-icon>`;
         label = msg("Paused");
-        reason =
-          originalState === "paused_storage_quota_reached"
-            ? msg("Storage Quota Reached")
-            : originalState === "paused_time_quota_reached"
-              ? msg("Time Quota Reached")
-              : originalState === "paused_org_readonly"
-                ? msg("Crawling Disabled")
-                : "";
         break;
-      }
 
       case "pending-wait":
         color = "var(--sl-color-violet-600)";
@@ -238,44 +235,27 @@ export class CrawlStatus extends TailwindElement {
         }[type];
         break;
 
-      case "failed":
+      case "failed": {
         color = "var(--danger)";
         icon = html`<sl-icon
-          name="exclamation-triangle-fill"
+          name="x-octagon-fill"
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;
         label = msg("Failed");
+        reason =
+          originalState === "failed_not_logged_in" ? msg("Not Logged In") : "";
         break;
+      }
 
-      case "failed_not_logged_in":
+      case "skipped":
         color = "var(--danger)";
         icon = html`<sl-icon
           name="exclamation-triangle-fill"
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;
-        label = msg("Failed: Not Logged In");
-        break;
-
-      case "skipped_storage_quota_reached":
-        color = "var(--danger)";
-        icon = html`<sl-icon
-          name="exclamation-triangle-fill"
-          slot="prefix"
-          style="color: ${color}"
-        ></sl-icon>`;
-        label = msg("Skipped: Storage Quota Reached");
-        break;
-
-      case "skipped_time_quota_reached":
-        color = "var(--danger)";
-        icon = html`<sl-icon
-          name="exclamation-triangle-fill"
-          slot="prefix"
-          style="color: ${color}"
-        ></sl-icon>`;
-        label = msg("Skipped: Time Quota Reached");
+        label = msg("Skipped");
         break;
 
       case "stopped_by_user":
@@ -289,44 +269,22 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "stopped_pause_expired":
-        color = "var(--warning)";
-        icon = html`<sl-icon
-          name="dash-square-fill"
-          slot="prefix"
-          style="color: ${color}"
-        ></sl-icon>`;
-        label = msg("Stopped: Paused Too Long");
-        break;
-
       case "stopped_storage_quota_reached":
-        color = "var(--warning)";
-        icon = html`<sl-icon
-          name="exclamation-square-fill"
-          slot="prefix"
-          style="color: ${color}"
-        ></sl-icon>`;
-        label = msg("Stopped: Storage Quota Reached");
-        break;
-
       case "stopped_time_quota_reached":
+      case "stopped_org_readonly": {
         color = "var(--warning)";
         icon = html`<sl-icon
           name="exclamation-square-fill"
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;
-        label = msg("Stopped: Time Quota Reached");
+        label = msg("Stopped");
+        reason =
+          originalState === "stopped_pause_expired"
+            ? msg("Paused Too Long")
+            : reason;
         break;
-
-      case "stopped_org_readonly":
-        color = "var(--warning)";
-        icon = html`<sl-icon
-          name="exclamation-square-fill"
-          slot="prefix"
-          style="color: ${color}"
-        ></sl-icon>`;
-        label = msg("Stopped: Crawling Disabled");
-        break;
+      }
 
       case "canceled":
         color = "var(--sl-color-neutral-600)";
@@ -368,6 +326,15 @@ export class CrawlStatus extends TailwindElement {
     }
     if ((PAUSED_STATES as readonly string[]).includes(this.state)) {
       return "paused";
+    }
+    if (this.state.startsWith("waiting_")) {
+      return "waiting";
+    }
+    if (this.state.startsWith("failed_")) {
+      return "failed";
+    }
+    if (this.state.startsWith("skipped_")) {
+      return "skipped";
     }
     return this.state;
   }
