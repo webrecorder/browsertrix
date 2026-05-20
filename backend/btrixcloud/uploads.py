@@ -236,6 +236,8 @@ class UploadOps(BaseCrawlOps):
         pp_logger.debug("post_process_upload", state="started")
         upload = await self.get_upload(crawl_id, org)
 
+        original_files: list[CrawlFile] = []
+
         # If there's only one file, check if it's a multi-wacz and split it up if so
         if upload.files and len(upload.files) == 1:
             pp_logger.debug("post_process_upload", state="multi_wacz_check")
@@ -250,7 +252,9 @@ class UploadOps(BaseCrawlOps):
                     state="multi_wacz_split",
                     child_wacz_count=len(child_waczs),
                 )
-                await self._split_multiwacz(crawl_id, org, wacz_url, child_waczs)
+                original_files = await self._split_multiwacz(
+                    crawl_id, org, wacz_url, child_waczs
+                )
             else:
                 pp_logger.debug("post_process_upload", state="single_wacz")
         else:
@@ -272,6 +276,21 @@ class UploadOps(BaseCrawlOps):
 
         pp_logger.debug("post_process_upload", state="replicate_crawl_files")
         await self.replicate_crawl_files(crawl_id, org, "upload")
+
+        # Now that all post-processing succeeded, safe to delete original multi-WACZ
+        if original_files:
+            for orig_file in original_files:
+                pp_logger.debug(
+                    "post_process_upload",
+                    state="delete_original",
+                    filename=orig_file.filename,
+                )
+                await self.storage_ops.delete_file_object(org, orig_file)
+                await self.presigned_urls.delete_one({"_id": orig_file.filename})
+                await self.background_job_ops.create_delete_replica_jobs(
+                    org, orig_file, crawl_id, "upload"
+                )
+
         pp_logger.debug("post_process_upload", state="complete")
 
     async def _get_child_wacz_files(self, wacz_url: str) -> list[ZipInfo]:
@@ -294,7 +313,7 @@ class UploadOps(BaseCrawlOps):
         org: Organization,
         wacz_url: str,
         child_waczs: list[ZipInfo],
-    ):
+    ) -> list[CrawlFile]:
         cwf_logger = logger.bind(
             crawl_id=crawl_id,
             wacz_url=wacz_url,
@@ -355,12 +374,40 @@ class UploadOps(BaseCrawlOps):
 
         # Update upload.files to reflect new files
         # Delete original multi-WACZ from db and storage
+
+        # Get current upload to access original multi-WACZ files
+        upload = await self.get_upload(crawl_id, org)
+        original_files = upload.files or []
+
+        # Update DB: replace files with new child WACZ files
+        file_dicts = [f.model_dump() for f in new_upload_files]
+        new_file_size = sum(f.size for f in new_upload_files)
+        old_file_size = sum(f.size for f in original_files)
+
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id},
+            {
+                "$set": {
+                    "files": file_dicts,
+                    "fileCount": len(new_upload_files),
+                    "fileSize": new_file_size,
+                }
+            },
+        )
+
+        # Adjust org bytes stored for the size difference
+        size_diff = new_file_size - old_file_size
+        if size_diff != 0:
+            await self.orgs.inc_org_bytes_stored(org.id, size_diff, "upload")
+
         cwf_logger.debug(
             "multi_wacz_split_complete",
             count=len(new_upload_files),
             original_wacz=wacz_url,
             new_upload_files=[f.filename for f in new_upload_files],
         )
+
+        return original_files
 
     async def delete_uploads(
         self,
