@@ -30,6 +30,7 @@ from .models import (
     SUCCESSFUL_AND_PAUSED_STATES,
     SUCCESSFUL_STATES,
     TYPE_CRAWL_TYPES,
+    UPLOAD_STATES,
     BaseCrawl,
     CrawlFile,
     CrawlFileOut,
@@ -553,7 +554,7 @@ class BaseCrawlOps:
 
         if (
             files
-            and crawl.state in SUCCESSFUL_AND_PAUSED_STATES
+            and crawl.state in [*SUCCESSFUL_AND_PAUSED_STATES, *UPLOAD_STATES]
             and isinstance(crawl, CrawlOutWithResources)
         ):
             crawl.resources = await self._files_to_resources(files, org, crawl.id)
