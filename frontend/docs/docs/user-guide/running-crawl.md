@@ -35,7 +35,7 @@ Exclusions added while crawling are applied to the same exclusion table saved in
 
 Like exclusions, the number of [browser windows](workflow-setup.md#browser-windows) can also be adjusted while crawling. On the **Watch** tab, press the **+/-** button next to the _Running in_ N _browser windows_ text and set the desired value.
 
-Unlike exclusions, this change will not be applied to future workflow runs.
+This change takes effect immediately on the running crawl and updates the crawl workflow settings for future runs.
 
 ## Pausing and Resuming Crawls
 
