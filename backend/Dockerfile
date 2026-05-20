@@ -1,3 +1,19 @@
+FROM ghcr.io/astral-sh/uv:python3.12-trixie-slim AS builder
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+
+ENV UV_NO_DEV=1
+ENV UV_PYTHON_DOWNLOADS=0
+
+WORKDIR /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project
+COPY pyproject.toml /app
+COPY uv.lock /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked
+
 FROM docker.io/library/python:3.12-slim
 
 RUN apt-get update \
@@ -7,10 +23,13 @@ RUN apt-get update \
 
 WORKDIR /app
 
-ADD requirements.txt /app
+ADD pyproject.toml /app
+ADD uv.lock /app
 
-RUN pip install -r requirements.txt
+COPY --from=builder --chown=nonroot:nonroot /app /app
 
 ADD btrixcloud/ /app/btrixcloud/
+
+ENV PATH="/app/.venv/bin:$PATH"
 
 EXPOSE 8000
