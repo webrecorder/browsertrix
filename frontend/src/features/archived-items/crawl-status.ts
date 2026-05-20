@@ -91,6 +91,7 @@ export class CrawlStatus extends TailwindElement {
             ? msg("Crawling Disabled")
             : ""
       : "";
+    let substate = "";
 
     switch (state) {
       case "starting":
@@ -104,7 +105,6 @@ export class CrawlStatus extends TailwindElement {
         ></sl-icon>`;
         label = msg("Starting");
         break;
-        å;
       case "waiting":
         color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
@@ -157,7 +157,7 @@ export class CrawlStatus extends TailwindElement {
           style="color: ${color}"
         ></sl-icon>`;
         label = msg("Pausing");
-        reason =
+        substate =
           originalState === "pending-wait"
             ? msg("Finishing Downloads")
             : originalState?.endsWith("-wacz")
@@ -305,7 +305,7 @@ export class CrawlStatus extends TailwindElement {
     }
     return {
       icon,
-      label: reason ? `${label} (${reason})` : label,
+      label: `${label}${reason ? `: ${reason}` : ""}${substate ? ` (${substate})` : ""}`,
       cssColor: color,
     };
   }
