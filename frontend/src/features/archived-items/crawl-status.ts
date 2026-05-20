@@ -126,6 +126,16 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Running");
         break;
 
+      case "rate-limited":
+        color = "var(--warning)";
+        icon = html`<sl-icon
+          name="exclamation-triangle-fill"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Rate Limited");
+        break;
+
       case "stopping":
         color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
