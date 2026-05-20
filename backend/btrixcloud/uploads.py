@@ -1,17 +1,19 @@
 """handle user uploads into browsertrix"""
 
+import asyncio
 import uuid
 from urllib.parse import unquote
 from uuid import UUID
 
 from io import BufferedReader
-from typing import Optional, List, Any
+from typing import Iterable, Optional, List, Any
+from zipfile import ZipInfo
+
 from fastapi import Depends, UploadFile, File
 from fastapi import HTTPException
 from starlette.requests import Request
 
 from remotezip import RemoteZip
-from zipfile import ZipInfo
 
 from .basecrawls import BaseCrawlOps
 from .storages import CHUNK_SIZE
@@ -184,53 +186,96 @@ class UploadOps(BaseCrawlOps):
             version=2,
         )
 
+        print(
+            f"Upload {crawl_id}: saving with state=processing-upload, fileCount={len(files)}, fileSize={file_size}",
+            flush=True,
+        )
+
         await self.crawls.find_one_and_update(
             {"_id": crawl_id}, {"$set": uploaded.to_dict()}, upsert=True
         )
 
+        print(
+            f"Upload {crawl_id}: saved to db, dispatching webhook notification",
+            flush=True,
+        )
         run_async_task(
             self.event_webhook_ops.create_upload_finished_notification(crawl_id, org.id)
         )
 
         # TODO: Move into background job
+        print(f"Upload {crawl_id}: starting post-processing", flush=True)
         await self.post_process_upload(crawl_id, org)
 
         # TODO: Move into background job?
+        print(
+            f"Upload {crawl_id}: updating org bytes stored by {file_size}", flush=True
+        )
         await self.orgs.inc_org_bytes_stored(org.id, file_size, "upload")
         quota_reached = self.orgs.storage_quota_reached(org)
 
+        print(f"Upload {crawl_id}: completed, quotaReached={quota_reached}", flush=True)
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 
     async def post_process_upload(self, crawl_id: str, org: Organization):
         """Perform upload post-processing. This should be called from background job"""
+        print(f"PostProcess {crawl_id}: starting post-processing", flush=True)
         upload = await self.get_upload(crawl_id, org)
 
         # If there's only one file, check if it's a multi-wacz and split it up if so
         if upload.files and len(upload.files) == 1:
+            print(
+                f"PostProcess {crawl_id}: single file upload, checking for multi-wacz",
+                flush=True,
+            )
             resources = await self.resolve_signed_urls(upload.files, org, crawl_id)
             upload_wacz = resources[0]
             wacz_url = self.storage_ops.resolve_internal_access_path(upload_wacz.path)
 
             child_waczs = await self._get_child_wacz_files(wacz_url)
             if child_waczs:
-                await self._split_multiwacz(crawl_id, org.id, wacz_url, child_waczs)
+                print(
+                    f"PostProcess {crawl_id}: found {len(child_waczs)} child waczs, splitting",
+                    flush=True,
+                )
+                await self._split_multiwacz(crawl_id, org, wacz_url, child_waczs)
+            else:
+                print(
+                    f"PostProcess {crawl_id}: no child waczs found in single file, not multi-wacz",
+                    flush=True,
+                )
+        else:
+            print(
+                f"PostProcess {crawl_id}: {len(upload.files) if upload.files else 0} files, skipping multi-wacz check",
+                flush=True,
+            )
 
+        print(f"PostProcess {crawl_id}: adding crawl pages to db from wacz", flush=True)
         await self.page_ops.add_crawl_pages_to_db_from_wacz(crawl_id)
+        print(f"PostProcess {crawl_id}: updating crawl collections", flush=True)
         await self.colls.update_crawl_collections(crawl_id, org.id)
 
+        print(f"PostProcess {crawl_id}: setting state to complete", flush=True)
         await self.crawls.find_one_and_update(
             {"_id": crawl_id}, {"$set": {"state": "complete"}}, upsert=True
         )
 
+        print(f"PostProcess {crawl_id}: replicating crawl files", flush=True)
         await self.replicate_crawl_files(crawl_id, org, "upload")
+        print(f"PostProcess {crawl_id}: post-processing complete", flush=True)
 
     async def _get_child_wacz_files(self, wacz_url: str) -> list[ZipInfo]:
+        print(f"MultiWacz: listing child waczs from {wacz_url}", flush=True)
         with RemoteZip(wacz_url) as remote_zip:
             wacz_files: list[ZipInfo] = [
                 f
                 for f in remote_zip.infolist()
                 if f.filename.endswith(".wacz") and not f.is_dir()
             ]
+            print(
+                f"MultiWacz: found {len(wacz_files)} child waczs in remote zip",
+                flush=True,
+            )
             return wacz_files
 
     async def _split_multiwacz(
@@ -240,17 +285,23 @@ class UploadOps(BaseCrawlOps):
         wacz_url: str,
         child_waczs: list[ZipInfo],
     ):
+        print(
+            f"MultiWacz {crawl_id}: splitting {len(child_waczs)} child waczs",
+            flush=True,
+        )
         prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{crawl_id}"
 
         new_upload_files = []
 
-        for child_wacz in child_waczs:
+        for idx, child_wacz in enumerate(child_waczs):
             print(
-                f"Processing child WACZ {child_wacz.filename} (size: {child_wacz.file_size})"
+                f"MultiWacz {crawl_id}: processing child {idx + 1}/{len(child_waczs)}: "
+                f"{child_wacz.filename} (size: {child_wacz.file_size})",
+                flush=True,
             )
 
             # Upload file
-            file_prep = FilePreparer(prefix, filename)
+            file_prep = FilePreparer(prefix, child_wacz.filename)
 
             def sync_wacz_stream_iter():
                 with RemoteZip(wacz_url) as remote_zip:
@@ -269,17 +320,30 @@ class UploadOps(BaseCrawlOps):
             if not await self.storage_ops.do_upload_multipart(
                 org,
                 file_prep.upload_name,
-                # Nope, not gonna work, needs an async iterator
-                to_async_iterable(sync_wacz_stream_iter),
+                to_async_iterable(sync_wacz_stream_iter()),
                 MIN_UPLOAD_PART_SIZE,
             ):
-                print("Child WACZ stream upload failed", flush=True)
+                print(
+                    f"MultiWacz {crawl_id}: child WACZ stream upload failed for {child_wacz.filename}",
+                    flush=True,
+                )
                 raise HTTPException(status_code=400, detail="upload_failed")
 
-            new_upload_files.append(file_prep.get_crawl_file(org.storage))
+            craw_file = file_prep.get_crawl_file(org.storage)
+            print(
+                f"MultiWacz {crawl_id}: uploaded child {idx + 1}/{len(child_waczs)} "
+                f"as {craw_file.filename} (digest={craw_file.hash})",
+                flush=True,
+            )
+            new_upload_files.append(craw_file)
 
         # Update upload.files to reflect new files
         # Delete original multi-WACZ from db and storage
+        print(
+            f"MultiWacz {crawl_id}: split complete, {len(new_upload_files)} new child files "
+            f"(TODO: update upload.files, delete original multi-wacz)",
+            flush=True,
+        )
 
     async def delete_uploads(
         self,

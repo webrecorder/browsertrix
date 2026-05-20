@@ -1,10 +1,13 @@
 import pytest
 import yaml
 from os import listdir
+
 # Import hacking for script
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
 import check_passwords
+
 
 @pytest.fixture
 def yaml_files(tmp_path):
@@ -42,26 +45,27 @@ def yaml_files(tmp_path):
         location: "a pear tree"
       turtle-doves: two
     """
-    with open(tmp_path / "with_password.yaml", 'w') as fobj:
+    with open(tmp_path / "with_password.yaml", "w") as fobj:
         fobj.write(with_password)
 
-    with open(tmp_path / "with_allowed_password.yaml", 'w') as fobj:
+    with open(tmp_path / "with_allowed_password.yaml", "w") as fobj:
         fobj.write(with_allowed_password)
 
-    with open(tmp_path / "example.yaml", 'w') as fobj:
+    with open(tmp_path / "example.yaml", "w") as fobj:
         fobj.write(example_yaml)
     return tmp_path
 
+
 class TestCheckPasswords:
     def test_find_passwords(self, yaml_files):
-        with open(yaml_files / "with_password.yaml", 'r') as fobj:
+        with open(yaml_files / "with_password.yaml", "r") as fobj:
             yml = yaml.safe_load(fobj)
             gen = check_passwords.key_finder(yml)
-            assert ('nested', 'is_a_password', "thisislegit!") == next(gen)
-            assert ('not_nested_password', 'uh_oh_i_commited_creds') == next(gen)
+            assert ("nested", "is_a_password", "thisislegit!") == next(gen)
+            assert ("not_nested_password", "uh_oh_i_commited_creds") == next(gen)
 
     def test_dont_find_passwords(self, yaml_files):
-        with open(yaml_files / "with_allowed_password.yaml", 'r') as fobj:
+        with open(yaml_files / "with_allowed_password.yaml", "r") as fobj:
             yml = yaml.safe_load(fobj)
             gen = check_passwords.key_finder(yml)
             (_, _, password) = next(gen)
@@ -72,7 +76,7 @@ class TestCheckPasswords:
                 next(gen)
 
     def test_parsing_yaml(self, yaml_files):
-        with open(yaml_files / "example.yaml", 'r') as fobj:
+        with open(yaml_files / "example.yaml", "r") as fobj:
             yml = yaml.safe_load(fobj)
             gen = check_passwords.key_finder(yml)
             with pytest.raises(StopIteration):

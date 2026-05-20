@@ -11,6 +11,7 @@ source_prefix = "https://github.com/webrecorder/browsertrix/tree/"
 
 home = "https://github.com/webrecorder/browsertrix"
 
+
 def compute_hash(url):
     h = hashlib.sha256()
     with requests.get(url, stream=True) as resp:
@@ -18,6 +19,7 @@ def compute_hash(url):
             h.update(chunk)
 
     return h.hexdigest()
+
 
 def main():
     result = requests.get(URL)
@@ -37,20 +39,13 @@ def main():
             "type": "application",
             "home": home,
             "appVersion": tag.replace("v", ""),
-            "version": tag.replace("v", "")
+            "version": tag.replace("v", ""),
         }
         index_releases.append(data)
 
-    root = {
-        "apiVersion": "v1",
-        "entries": {
-            "browsertrix": index_releases
-        }
-    }
+    root = {"apiVersion": "v1", "entries": {"browsertrix": index_releases}}
 
     print(yaml.dump(root))
 
 
 main()
-
-
