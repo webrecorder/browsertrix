@@ -9,7 +9,7 @@ import type { CrawlStatus } from "@/features/archived-items/crawl-status";
 import {
   CRAWL_STATES,
   PAUSED_STATES,
-  type CrawlState,
+  RUNNING_STATES,
 } from "@/types/crawlState";
 
 const meta = {
@@ -35,12 +35,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<CrawlStatus>;
 
-const crawlStates = [
-  // Add additional paused state that handles "resuming"
-  "paused",
-  ...CRAWL_STATES,
-] satisfies CrawlState[];
-
 export const AllStates: Story = {
   decorators: [
     () => html`
@@ -52,17 +46,35 @@ export const AllStates: Story = {
           <btrix-table-header-cell>State</btrix-table-header-cell>
         </btrix-table-head>
         <btrix-table-body>
-          ${crawlStates.map(
-            (state, i) =>
+          ${RUNNING_STATES.map(
+            (state) =>
               html`<btrix-table-row class="border-t">
                 <btrix-table-cell>
                   <btrix-crawl-status
                     state=${state}
-                    ?shouldPause=${i > 0 &&
-                    (PAUSED_STATES as unknown as CrawlState[]).includes(state)
-                      ? true
-                      : false}
+                    shouldPause
                   ></btrix-crawl-status>
+                </btrix-table-cell>
+                <btrix-table-cell><code>${state}</code></btrix-table-cell>
+              </btrix-table-row>`,
+          )}
+          ${PAUSED_STATES.map(
+            (state) =>
+              html`<btrix-table-row class="border-t">
+                <btrix-table-cell>
+                  <btrix-crawl-status
+                    state=${state}
+                    shouldPause
+                  ></btrix-crawl-status>
+                </btrix-table-cell>
+                <btrix-table-cell><code>${state}</code></btrix-table-cell>
+              </btrix-table-row>`,
+          )}
+          ${CRAWL_STATES.map(
+            (state) =>
+              html`<btrix-table-row class="border-t">
+                <btrix-table-cell>
+                  <btrix-crawl-status state=${state}></btrix-crawl-status>
                 </btrix-table-cell>
                 <btrix-table-cell><code>${state}</code></btrix-table-cell>
               </btrix-table-row>`,
