@@ -453,29 +453,7 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       case "config":
         sectionContent = this.renderPanel(
-          html`
-            ${this.renderTitle(html`
-              ${this.tabLabels.config}
-              <sl-tooltip
-                content=${msg("Workflow settings used to run this crawl")}
-              >
-                <sl-icon
-                  class="align-[-.175em] text-base text-neutral-500"
-                  name="info-circle"
-                ></sl-icon>
-              </sl-tooltip>
-            `)}
-            <sl-button
-              size="small"
-              href="${this.navigate.orgBasePath}/workflows/${this.item
-                ?.cid}?edit"
-              ?disabled=${!this.item}
-              @click=${this.navigate.link}
-            >
-              <sl-icon slot="prefix" name="gear"></sl-icon>
-              ${msg("Edit Workflow")}
-            </sl-button>
-          `,
+          this.renderTitle(this.tabLabels.config),
           this.renderConfig(),
           [tw`rounded-lg border p-4`],
         );
@@ -1390,7 +1368,6 @@ export class ArchivedItemDetail extends BtrixElement {
               }}
               .seeds=${this.seeds!.items}
               .seedFile=${this.seedFileTask.value || undefined}
-              hideMetadata
             ></btrix-config-details>
           `,
           this.renderLoading,
@@ -1646,6 +1623,7 @@ export class ArchivedItemDetail extends BtrixElement {
               this.editDialog?.collectionInput?.focus();
               break;
             default:
+              this.editDialog?.nameInput?.focus();
               break;
           }
         },

@@ -65,10 +65,6 @@ export class ConfigDetails extends BtrixElement {
   @property({ type: Boolean })
   anchorLinks = false;
 
-  // Hide metadata section, e.g. if embedded in crawl detail view
-  @property({ type: Boolean })
-  hideMetadata = false;
-
   @state()
   private orgDefaults?: {
     pageLoadTimeoutSeconds?: number;
@@ -354,9 +350,9 @@ export class ConfigDetails extends BtrixElement {
           `,
         }),
       )}
-      ${when(!this.hideMetadata, () =>
-        isWorkflow(crawlConfig)
-          ? this.renderSection({
+      ${isWorkflow(crawlConfig)
+        ? html`
+            ${this.renderSection({
               id: "collection",
               heading: sectionStrings.collections,
               renderDescItems: () => html`
@@ -376,35 +372,35 @@ export class ConfigDetails extends BtrixElement {
                     : undefined,
                 )}
               `,
-            })
-          : nothing,
-      )}
-      ${when(!this.hideMetadata, () =>
-        this.renderSection({
-          id: "crawl-metadata",
-          heading: sectionStrings.metadata,
-          renderDescItems: () => html`
-            ${this.renderSetting(msg("Name"), crawlConfig?.name)}
-            ${this.renderSetting(
-              msg("Description"),
-              crawlConfig?.description
-                ? html`<btrix-prose class="[--btrix-line-clamp:12]"
-                    >${richText(crawlConfig.description)}</btrix-prose
-                  >`
-                : undefined,
-            )}
-            ${this.renderSetting(
-              msg("Tags"),
-              crawlConfig?.tags.length
-                ? crawlConfig.tags.map(
-                    (tag) =>
-                      html`<btrix-tag class="mr-2 mt-1">${tag}</btrix-tag>`,
-                  )
-                : [],
-            )}
-          `,
-        }),
-      )}
+            })}
+            ${this.renderSection({
+              id: "crawl-metadata",
+              heading: sectionStrings.metadata,
+              renderDescItems: () => html`
+                ${this.renderSetting(msg("Name"), crawlConfig.name)}
+                ${this.renderSetting(
+                  msg("Description"),
+                  crawlConfig.description
+                    ? html`
+                        <btrix-prose class="[--btrix-line-clamp:12]"
+                          >${richText(crawlConfig.description)}</btrix-prose
+                        >
+                      `
+                    : undefined,
+                )}
+                ${this.renderSetting(
+                  msg("Tags"),
+                  crawlConfig.tags.length
+                    ? crawlConfig.tags.map(
+                        (tag) =>
+                          html`<btrix-tag class="mr-2 mt-1">${tag}</btrix-tag>`,
+                      )
+                    : [],
+                )}
+              `,
+            })}
+          `
+        : nothing}
     `;
   }
 
