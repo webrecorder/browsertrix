@@ -105,7 +105,20 @@ export class CrawlStatus extends TailwindElement {
         ></sl-icon>`;
         label = msg("Starting");
         break;
-      case "waiting":
+
+      case "waiting_capacity":
+        color = "var(--sl-color-violet-600)";
+        icon = html`<sl-icon
+          name="hourglass-split"
+          class="animatePulse"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Waiting for Resources");
+        break;
+
+      case "waiting_org_limit":
+      case "waiting_dedupe_index":
         color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="hourglass-split"
@@ -115,13 +128,11 @@ export class CrawlStatus extends TailwindElement {
         ></sl-icon>`;
         label = msg("Waiting");
         reason =
-          originalState === "waiting_capacity"
-            ? msg("At Capacity")
-            : originalState === "waiting_org_limit"
-              ? msg("At Crawl Limit")
-              : originalState === "waiting_dedupe_index"
-                ? msg("Dedupe Index")
-                : "";
+          originalState === "waiting_org_limit"
+            ? msg("At Crawl Limit")
+            : originalState === "waiting_dedupe_index"
+              ? msg("Dedupe Index")
+              : "";
         break;
 
       case "running":
@@ -174,6 +185,8 @@ export class CrawlStatus extends TailwindElement {
           style="color: ${color}"
         ></sl-icon>`;
         label = msg("Resuming");
+        // Resume is always through user action, regardless of previous state
+        reason = "";
         break;
 
       case "paused":
@@ -326,9 +339,6 @@ export class CrawlStatus extends TailwindElement {
     }
     if ((PAUSED_STATES as readonly string[]).includes(this.state)) {
       return "paused";
-    }
-    if (this.state.startsWith("waiting_")) {
-      return "waiting";
     }
     if (this.state.startsWith("failed_")) {
       return "failed";

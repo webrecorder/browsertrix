@@ -36,6 +36,42 @@ While crawling, the **Latest Crawl** section streams the current state of the br
 
 Re-running a crawl workflow can be useful to capture a website as it changes over time, or to run with an updated [crawl scope](workflow-setup.md#crawl-scope-options).
 
-## Status
+## Workflow Status
 
-Finished crawl workflows inherit the [status of the last archived item they created](archived-items.md#status). Crawl workflows that are in progress maintain their [own statuses](./running-crawl.md#crawl-workflow-status).
+The status of the crawl workflow is updated as the workflow runs, or as a result of user intervention, or automatically when certain org-wide limits are reached.
+
+Statuses may be displayed with a reason that details how the current status came to be.
+
+| Status | Description |
+| ---- | ---- |
+| <span class="status-violet-600">:bootstrap-hourglass-split: Waiting for Resources</span>     | The workflow is queued to run and is waiting for crawl resources to become available. |
+| <span class="status-violet-600">:bootstrap-hourglass-split: Waiting: _Reason_</span>     | The workflow run is queued for one of the following reasons:<br/>**At Crawl Limit**: Org has reached maximum number of concurrent crawls<br/>**Dedupe Index**: An update to the deduplication index is in progress |
+| <span class="status-violet-600">:btrix-status-dot: Starting</span>       | Crawl resources are starting up. Crawling should begin shortly.|
+| <span class="status-green-600">:btrix-status-dot: Running</span>        | The crawler is visiting and archiving pages. |
+| <span class="status-violet-600">:bootstrap-pause-circle: Pausing</span>     | The workflow is in the process of being paused. |
+| <span class="status-neutral-500">:bootstrap-pause-circle: Paused</span>     | The workflow run has been paused by a user. |
+| <span class="status-neutral-500">:bootstrap-pause-circle: Paused: _Reason_</span>     | The workflow run has been paused automatically due to an enforced limit, as specified in the reason. |
+| <span class="status-violet-600">:bootstrap-play-circle: Resuming</span>     | The workflow is in the process of resuming after being paused. |
+| <span class="status-violet-600">:btrix-status-dot: Stopping</span> | A user has instructed this workflow to stop. Finishing capture of the current pages.|
+| <span class="status-violet-600">:btrix-status-dot: Finishing Downloads</span> | The workflow has finished crawling and is finalizing downloads.|
+| <span class="status-violet-600">:btrix-status-dot: Generating WACZ</span> | Data is being packaged into WACZ files.|
+| <span class="status-violet-600">:btrix-status-dot: Uploading WACZ</span> | WACZ files have been created and are being transferred to storage.|
+| <span class="status-green-600">:bootstrap-check-circle-fill: Complete</span>     | All pages within the workflow's scope and limits have been crawled and saved as WACZ, resulting in an archived item. |
+| <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped</span>       | The crawl was stopped by a user and allowed to finish gracefully, resulting in an archived item. |
+| <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: Paused Too Long</span>       | The crawl was stopped automatically because it was not resumed within the given time limit. |
+| <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: _Reason_</span>       | The crawl was stopped automatically due to an enforced limit, as specified in the reason. |
+| <span class="status-neutral-600">:bootstrap-x-octagon: Canceled</span>        | The workflow run was canceled by a user; crawled content is discarded. |
+| <span class="status-red-600">:bootstrap-exclamation-triangle-fill: Skipped: _Reason_</span> | The workflow run was skipped due to an enforced limit, as specified in the reason. |
+| <span class="status-red-600">:bootstrap-x-octagon-fill: Failed</span> | A serious error occurred while crawling causing the crawler to exit; no crawled content is saved. |
+| <span class="status-red-600">:bootstrap-x-octagon-fill: Failed: Not Logged In</span> | The crawler detected a logged out page and failed the crawl per [Fail Crawl if Not Logged In](workflow-setup.md#fail-crawl-if-not-logged-in) setting. |
+
+### Reasons for Automatic Pausing, Stopping, or Skipping
+
+Workflow runs may be automatically paused, stopped, or skipped due to an enforced quota or limit. These statuses will always be displayed with a reason:
+
+| Reason | Description |
+| ---- | ---- |
+| **Storage Quota Reached** | Disk space allocated for the org is full |
+| **Time Quota Reached** | All execution time allocated for the org has been spent |
+| **Crawling Disabled** | Crawling has been disabled for the entire org |
+
