@@ -9,7 +9,7 @@ email-validator
 loguru
 aiofiles
 kubernetes-asyncio==29.0.0
-kubernetes
+kubernetes==35.0.0
 aiobotocore>=2.22.0
 requests
 redis>=5.0.0
