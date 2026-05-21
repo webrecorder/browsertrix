@@ -44,22 +44,24 @@ Statuses may be displayed with a reason that details how the current status came
 
 | Status | Description |
 | ---- | ---- |
-| <span class="status-violet-600">:bootstrap-hourglass-split: Waiting for Resources</span>     | The workflow is queued to run and is waiting for crawl resources to become available. |
+| <span class="status-violet-600">:bootstrap-hourglass-split: Waiting for Resources</span>     | The workflow is queued to run and is waiting for the computational resources needed to start the crawl. |
 | <span class="status-violet-600">:bootstrap-hourglass-split: Waiting: _Reason_</span>     | The workflow run is queued for one of the following reasons:<br/>**At Crawl Limit**: Org has reached maximum number of concurrent crawls<br/>**Dedupe Index**: An update to the deduplication index is in progress |
-| <span class="status-violet-600">:btrix-status-dot: Starting</span>       | Crawl resources are starting up. Crawling should begin shortly.|
+| <span class="status-violet-600">:btrix-status-dot: Starting</span>       | The crawler is being initialized. Crawling will begin shortly.|
 | <span class="status-green-600">:btrix-status-dot: Running</span>        | The crawler is visiting and archiving pages. |
-| <span class="status-violet-600">:bootstrap-pause-circle: Pausing</span>     | The workflow is in the process of being paused. |
-| <span class="status-neutral-500">:bootstrap-pause-circle: Paused</span>     | The workflow run has been paused by a user. |
+| <span class="status-violet-600">:bootstrap-pause-circle: Pausing</span>     | The crawler has been instructed to pause and is finishing crawl of the current page. |
+| <span class="status-violet-600">:bootstrap-pause-circle: Pausing (Finishing Downloads)</span>     | The crawler is finalizing downloads on the current page. |
+| <span class="status-violet-600">:bootstrap-pause-circle: Pausing (Creating WACZ)</span>     | Pages crawled so far are being packaged into WACZ files and transferred to storage. |
+| <span class="status-neutral-500">:bootstrap-pause-circle: Paused</span>     | The workflow run has been paused by a user. It can be resumed for up to 7 days; afterwards, the run stops. |
 | <span class="status-neutral-500">:bootstrap-pause-circle: Paused: _Reason_</span>     | The workflow run has been paused automatically due to an enforced limit, as specified in the reason. |
-| <span class="status-violet-600">:bootstrap-play-circle: Resuming</span>     | The workflow is in the process of resuming after being paused. |
-| <span class="status-violet-600">:btrix-status-dot: Stopping</span> | A user has instructed this workflow to stop. Finishing capture of the current pages.|
-| <span class="status-violet-600">:btrix-status-dot: Finishing Downloads</span> | The workflow has finished crawling and is finalizing downloads.|
-| <span class="status-violet-600">:btrix-status-dot: Generating WACZ</span> | Data is being packaged into WACZ files.|
+| <span class="status-violet-600">:bootstrap-play-circle: Resuming</span>     | The workflow run is starting back up after being paused. |
+| <span class="status-violet-600">:btrix-status-dot: Stopping</span> | The crawler has been instructed to stop and is finishing crawl of the current page.|
+| <span class="status-violet-600">:btrix-status-dot: Finishing Downloads</span> | The crawler is waiting for the current page to finish downloading to finalize the crawl.|
+| <span class="status-violet-600">:btrix-status-dot: Generating WACZ</span> | Crawled pages are being packaged into WACZ files.|
 | <span class="status-violet-600">:btrix-status-dot: Uploading WACZ</span> | WACZ files have been created and are being transferred to storage.|
-| <span class="status-green-600">:bootstrap-check-circle-fill: Complete</span>     | All pages within the workflow's scope and limits have been crawled and saved as WACZ, resulting in an archived item. |
-| <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped</span>       | The crawl was stopped by a user and allowed to finish gracefully, resulting in an archived item. |
-| <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: Paused Too Long</span>       | The crawl was stopped automatically because it was not resumed within the given time limit. |
-| <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: _Reason_</span>       | The crawl was stopped automatically due to an enforced limit, as specified in the reason. |
+| <span class="status-green-600">:bootstrap-check-circle-fill: Complete</span>     | All pages within the workflow's scope and limits have been crawled and saved as WACZ, resulting in an [archived item](archived-items.md). |
+| <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped</span>       | The workflow run was stopped by a user and allowed to finish gracefully, resulting in an archived item. |
+| <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: Paused Too Long</span>       | The workflow run was stopped automatically because it was not resumed within the given time limit. |
+| <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: _Reason_</span>       | The workflow run was stopped automatically due to an enforced limit, as specified in the reason. |
 | <span class="status-neutral-600">:bootstrap-x-octagon: Canceled</span>        | The workflow run was canceled by a user; crawled content is discarded. |
 | <span class="status-red-600">:bootstrap-exclamation-triangle-fill: Skipped: _Reason_</span> | The workflow run was skipped due to an enforced limit, as specified in the reason. |
 | <span class="status-red-600">:bootstrap-x-octagon-fill: Failed</span> | A serious error occurred while crawling causing the crawler to exit; no crawled content is saved. |
