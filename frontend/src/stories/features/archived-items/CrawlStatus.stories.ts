@@ -7,9 +7,10 @@ import "@/features/archived-items/crawl-status";
 
 import type { CrawlStatus } from "@/features/archived-items/crawl-status";
 import {
-  CRAWL_STATES,
   PAUSED_STATES,
   RUNNING_STATES,
+  SUCCESSFUL_AND_FAILED_STATES,
+  WAITING_NOT_PAUSED_STATES,
 } from "@/types/crawlState";
 
 const meta = {
@@ -46,6 +47,24 @@ export const AllStates: Story = {
           <btrix-table-header-cell>State</btrix-table-header-cell>
         </btrix-table-head>
         <btrix-table-body>
+          ${WAITING_NOT_PAUSED_STATES.map(
+            (state) =>
+              html`<btrix-table-row class="border-t">
+                <btrix-table-cell>
+                  <btrix-crawl-status state=${state}></btrix-crawl-status>
+                </btrix-table-cell>
+                <btrix-table-cell><code>${state}</code></btrix-table-cell>
+              </btrix-table-row>`,
+          )}
+          ${RUNNING_STATES.map(
+            (state) =>
+              html`<btrix-table-row class="border-t">
+                <btrix-table-cell>
+                  <btrix-crawl-status state=${state}></btrix-crawl-status>
+                </btrix-table-cell>
+                <btrix-table-cell><code>${state}</code></btrix-table-cell>
+              </btrix-table-row>`,
+          )}
           ${RUNNING_STATES.map(
             (state) =>
               html`<btrix-table-row class="border-t">
@@ -70,7 +89,16 @@ export const AllStates: Story = {
                 <btrix-table-cell><code>${state}</code></btrix-table-cell>
               </btrix-table-row>`,
           )}
-          ${CRAWL_STATES.map(
+          ${PAUSED_STATES.map(
+            (state) =>
+              html`<btrix-table-row class="border-t">
+                <btrix-table-cell>
+                  <btrix-crawl-status state=${state}></btrix-crawl-status>
+                </btrix-table-cell>
+                <btrix-table-cell><code>${state}</code></btrix-table-cell>
+              </btrix-table-row>`,
+          )}
+          ${SUCCESSFUL_AND_FAILED_STATES.map(
             (state) =>
               html`<btrix-table-row class="border-t">
                 <btrix-table-cell>
