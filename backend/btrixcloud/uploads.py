@@ -1,6 +1,7 @@
 """handle user uploads into browsertrix"""
 
 import asyncio
+import os
 import uuid
 from io import BufferedReader
 from typing import Any, Iterable, List, Optional
@@ -33,6 +34,10 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import CHUNK_SIZE
 from .utils import dt_now, run_async_task
+
+MAX_SYNC_UPLOAD_SIZE = int(
+    os.environ.get("UPLOAD_BG_THRESHOLD_BYTES", 50 * 1024 * 1024)
+)
 
 
 # ============================================================================
@@ -200,14 +205,26 @@ class UploadOps(BaseCrawlOps):
             self.event_webhook_ops.create_upload_finished_notification(crawl_id, org.id)
         )
 
-        # TODO: Move into background job
-        print(f"Upload {crawl_id}: starting post-processing", flush=True)
-        await self.post_process_upload(crawl_id, org)
+        # Post-processing: sync for small files, background job for large files
+        if file_size > MAX_SYNC_UPLOAD_SIZE:
+            print(
+                f"Upload {crawl_id}: large file ({file_size} bytes > threshold {MAX_SYNC_UPLOAD_SIZE}), "
+                "dispatching background job",
+                flush=True,
+            )
+            job_id = await self.background_job_ops.create_postprocess_upload_job(
+                org.id, crawl_id
+            )
+            if not job_id:
+                print(
+                    f"Upload {crawl_id}: bg job dispatch failed, falling back to sync processing",
+                    flush=True,
+                )
+                await self.post_process_upload(crawl_id, org)
+        else:
+            print(f"Upload {crawl_id}: starting post-processing", flush=True)
+            await self.post_process_upload(crawl_id, org)
 
-        # TODO: Move into background job?
-        print(
-            f"Upload {crawl_id}: updating org bytes stored by {file_size}", flush=True
-        )
         await self.orgs.inc_org_bytes_stored(org.id, file_size, "upload")
         quota_reached = self.orgs.storage_quota_reached(org)
 

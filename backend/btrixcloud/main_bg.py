@@ -35,7 +35,7 @@ async def main():
         _,
         _,
         _,
-        _,
+        upload_ops,
         page_ops,
         coll_ops,
         _,
@@ -131,6 +131,18 @@ async def main():
                 "No changes to collection since start of last update, job complete",
                 flush=True,
             )
+            return 0
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            traceback.print_exc()
+            return 1
+
+    if job_type == BgJobType.POSTPROCESS_UPLOAD:
+        if not crawl_id:
+            print("Crawl id missing, quitting")
+            return 1
+        try:
+            await upload_ops.post_process_upload(crawl_id, org)
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:

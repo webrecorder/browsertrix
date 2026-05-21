@@ -23,6 +23,7 @@ from .models import (
     OptimizePagesJob,
     Organization,
     PaginatedBackgroundJobResponse,
+    PostProcessUploadJob,
     ReAddOrgPagesJob,
     RecalculateOrgStatsJob,
     StorageRef,
@@ -519,6 +520,54 @@ class BackgroundJobOps:
             print(f"warning: update collection stats job could not be started: {exc}")
             return None
 
+    async def create_postprocess_upload_job(
+        self,
+        oid: UUID,
+        crawl_id: str,
+        existing_job_id: Optional[str] = None,
+    ):
+        """Create job to post-process uploaded crawl"""
+        try:
+            job_id = await self.crawl_manager.run_postprocess_upload_job(
+                oid=str(oid),
+                crawl_id=crawl_id,
+                existing_job_id=existing_job_id,
+            )
+            if existing_job_id:
+                postprocess_job = await self.get_background_job(existing_job_id)
+                previous_attempt = {
+                    "started": postprocess_job.started,
+                    "finished": postprocess_job.finished,
+                }
+                if postprocess_job.previousAttempts:
+                    postprocess_job.previousAttempts.append(previous_attempt)
+                else:
+                    postprocess_job.previousAttempts = [previous_attempt]
+                postprocess_job.started = dt_now()
+                postprocess_job.finished = None
+                postprocess_job.success = None
+            else:
+                postprocess_job = PostProcessUploadJob(
+                    id=job_id,
+                    oid=oid,
+                    crawl_id=crawl_id,
+                    started=dt_now(),
+                )
+
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": postprocess_job.to_dict()}, upsert=True
+            )
+
+            return job_id
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            print(
+                f"warning: postprocess upload job could not be started: {exc}",
+                flush=True,
+            )
+            return None
+
     async def ensure_cron_cleanup_jobs_exist(self):
         """Ensure background job to clean up unused seed files weekly exists"""
         await self.crawl_manager.ensure_cleanup_seed_file_cron_job_exists()
@@ -612,6 +661,7 @@ class BackgroundJobOps:
         OptimizePagesJob,
         CleanupSeedFilesJob,
         UpdateCollStatsJob,
+        PostProcessUploadJob,
     ]:
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
