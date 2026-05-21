@@ -54,7 +54,7 @@ async def main():
         _,
         _,
         _,
-        _,
+        upload_ops,
         page_ops,
         coll_ops,
         _,
@@ -186,6 +186,22 @@ async def main():
             crawl_logger.exception(
                 "bg_job_failed",
                 unstructured_message="update_collection_stats failed",
+            )
+            return 1
+
+    if job_type == BgJobType.POSTPROCESS_UPLOAD:
+        if not crawl_id:
+            crawl_logger.critical(
+                "missing_crawl_id",
+            )
+            return 1
+        try:
+            await upload_ops.post_process_upload(crawl_id, org)
+            return 0
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            crawl_logger.exception(
+                "bg_job_failed",
             )
             return 1
 
