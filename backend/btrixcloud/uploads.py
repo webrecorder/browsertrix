@@ -1,6 +1,7 @@
 """handle user uploads into browsertrix"""
 
 import asyncio
+import os
 import uuid
 from collections.abc import AsyncGenerator, Callable
 from io import BufferedReader
@@ -37,6 +38,10 @@ from .storages import CHUNK_SIZE
 from .utils import dt_now, run_async_task
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
+MAX_SYNC_UPLOAD_SIZE = int(
+    os.environ.get("UPLOAD_BG_THRESHOLD_BYTES", 50 * 1024 * 1024)
+)
 
 
 # ============================================================================
@@ -216,12 +221,33 @@ class UploadOps(BaseCrawlOps):
             self.event_webhook_ops.create_upload_finished_notification(crawl_id, org.id)
         )
 
-        # TODO: Move into background job
-        upload_logger.debug("upload_create", state="starting_post_processing")
-        await self.post_process_upload(crawl_id, org)
+        # Post-processing: sync for small files, background job for large files
+        if file_size > MAX_SYNC_UPLOAD_SIZE:
+            upload_logger.debug(
+                "upload_create",
+                state="large_file_dispatching_bg_job",
+                file_size=file_size,
+                max_sync_upload_size=MAX_SYNC_UPLOAD_SIZE,
+            )
 
-        # TODO: Move into background job?
-        upload_logger.debug("upload_create", state="updating_org_bytes_stored")
+            job_id = await self.background_job_ops.create_postprocess_upload_job(
+                org.id, crawl_id
+            )
+            if not job_id:
+                upload_logger.warning(
+                    "upload_create",
+                    state="large_file_dispatching_bg_job_failed",
+                )
+                await self.post_process_upload(crawl_id, org)
+        else:
+            upload_logger.debug(
+                "upload_create",
+                state="small_file_dispatching_sync_job",
+                file_size=file_size,
+                max_sync_upload_size=MAX_SYNC_UPLOAD_SIZE,
+            )
+            await self.post_process_upload(crawl_id, org)
+
         await self.orgs.inc_org_bytes_stored(org.id, file_size, "upload")
         quota_reached = self.orgs.storage_quota_reached(org)
 
