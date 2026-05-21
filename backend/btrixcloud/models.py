@@ -3188,6 +3188,7 @@ class BgJobType(StrEnum):
     OPTIMIZE_PAGES = "optimize-pages"
     CLEANUP_SEED_FILES = "cleanup-seed-files"
     UPDATE_COLL_STATS = "update-coll-stats"
+    POSTPROCESS_UPLOAD = "postprocess-upload"
 
 
 # ============================================================================
@@ -3274,18 +3275,30 @@ class UpdateCollStatsJob(BackgroundJob):
 
 
 # ============================================================================
+class PostProcessUploadJob(BackgroundJob):
+    """Model for tracking jobs to post-process uploaded crawls"""
+
+    type: Literal[BgJobType.POSTPROCESS_UPLOAD] = BgJobType.POSTPROCESS_UPLOAD
+    oid: UUID
+    crawl_id: str
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
-    CreateReplicaJob
-    | DeleteReplicaJob
-    | BackgroundJob
-    | DeleteOrgJob
-    | RecalculateOrgStatsJob
-    | ReAddOrgPagesJob
-    | OptimizePagesJob
-    | CleanupSeedFilesJob
-    | UpdateCollStatsJob
+    Union[
+        CreateReplicaJob,
+        DeleteReplicaJob,
+        BackgroundJob,
+        DeleteOrgJob,
+        RecalculateOrgStatsJob,
+        ReAddOrgPagesJob,
+        OptimizePagesJob,
+        CleanupSeedFilesJob,
+        UpdateCollStatsJob,
+        PostProcessUploadJob,
+    ]
 ]
 
 
