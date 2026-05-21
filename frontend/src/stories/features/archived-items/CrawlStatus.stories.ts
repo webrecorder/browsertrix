@@ -6,7 +6,12 @@ import { argTypes } from "../excludeContainerProperties";
 import "@/features/archived-items/crawl-status";
 
 import type { CrawlStatus } from "@/features/archived-items/crawl-status";
-import { CRAWL_STATES } from "@/types/crawlState";
+import {
+  PAUSED_STATES,
+  RUNNING_STATES,
+  SUCCESSFUL_AND_FAILED_STATES,
+  WAITING_NOT_PAUSED_STATES,
+} from "@/types/crawlState";
 
 const meta = {
   title: "Features/Crawl Status",
@@ -42,7 +47,58 @@ export const AllStates: Story = {
           <btrix-table-header-cell>State</btrix-table-header-cell>
         </btrix-table-head>
         <btrix-table-body>
-          ${CRAWL_STATES.map(
+          ${WAITING_NOT_PAUSED_STATES.map(
+            (state) =>
+              html`<btrix-table-row class="border-t">
+                <btrix-table-cell>
+                  <btrix-crawl-status state=${state}></btrix-crawl-status>
+                </btrix-table-cell>
+                <btrix-table-cell><code>${state}</code></btrix-table-cell>
+              </btrix-table-row>`,
+          )}
+          ${RUNNING_STATES.map(
+            (state) =>
+              html`<btrix-table-row class="border-t">
+                <btrix-table-cell>
+                  <btrix-crawl-status state=${state}></btrix-crawl-status>
+                </btrix-table-cell>
+                <btrix-table-cell><code>${state}</code></btrix-table-cell>
+              </btrix-table-row>`,
+          )}
+          ${RUNNING_STATES.map(
+            (state) =>
+              html`<btrix-table-row class="border-t">
+                <btrix-table-cell>
+                  <btrix-crawl-status
+                    state=${state}
+                    shouldPause
+                  ></btrix-crawl-status>
+                </btrix-table-cell>
+                <btrix-table-cell><code>${state}</code></btrix-table-cell>
+              </btrix-table-row>`,
+          )}
+          ${PAUSED_STATES.map(
+            (state) =>
+              html`<btrix-table-row class="border-t">
+                <btrix-table-cell>
+                  <btrix-crawl-status
+                    state=${state}
+                    shouldPause
+                  ></btrix-crawl-status>
+                </btrix-table-cell>
+                <btrix-table-cell><code>${state}</code></btrix-table-cell>
+              </btrix-table-row>`,
+          )}
+          ${PAUSED_STATES.map(
+            (state) =>
+              html`<btrix-table-row class="border-t">
+                <btrix-table-cell>
+                  <btrix-crawl-status state=${state}></btrix-crawl-status>
+                </btrix-table-cell>
+                <btrix-table-cell><code>${state}</code></btrix-table-cell>
+              </btrix-table-row>`,
+          )}
+          ${SUCCESSFUL_AND_FAILED_STATES.map(
             (state) =>
               html`<btrix-table-row class="border-t">
                 <btrix-table-cell>
