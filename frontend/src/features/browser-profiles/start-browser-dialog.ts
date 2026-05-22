@@ -29,6 +29,7 @@ import {
 } from "@/context/org-proxies";
 import type { Profile } from "@/types/crawler";
 import type { WorkflowSearchValues } from "@/types/workflow";
+import { getDefaultProxyId } from "@/utils/crawler";
 
 type StartBrowserEventDetail = {
   url?: string;
@@ -235,9 +236,7 @@ export class StartBrowserDialog extends BtrixElement {
               <btrix-select-crawler-proxy
                 .label=${msg("Proxy Server")}
                 defaultProxyId=${ifDefined(
-                  this.org?.crawlingDefaults?.profileid ||
-                    proxies.default_proxy_id ||
-                    undefined,
+                  getDefaultProxyId(this.org, proxies),
                 )}
                 .proxyServers=${proxyServers}
                 .proxyId=${profile.proxyId || ""}

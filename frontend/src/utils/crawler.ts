@@ -6,6 +6,7 @@ import type {
   ArchivedItem,
   Crawl,
   CrawlReplay,
+  ProxiesAPIResponse,
   Upload,
   Workflow,
 } from "@/types/crawler";
@@ -16,6 +17,7 @@ import {
   SUCCESSFUL_AND_FAILED_STATES,
   SUCCESSFUL_STATES,
 } from "@/types/crawlState";
+import type { OrgData } from "@/types/org";
 import type { QARun } from "@/types/qa";
 import { WorkflowScopeType } from "@/types/workflow";
 import localize from "@/utils/localize";
@@ -74,6 +76,23 @@ export function isPageScopeType(
   return (
     scope === WorkflowScopeType.Page || scope === WorkflowScopeType.PageList
   );
+}
+
+export function getDefaultProxyId(
+  org?: OrgData | null,
+  proxies?: ProxiesAPIResponse,
+): string | undefined {
+  if (!org || !proxies) return;
+
+  let defaultProxyId = proxies.default_proxy_id;
+  const orgProxyId = org.crawlingDefaults?.proxyId;
+
+  // Proxy in crawling default may not exist if it was removed from the proxy list
+  if (orgProxyId && proxies.servers.some(({ id }) => id === orgProxyId)) {
+    defaultProxyId = orgProxyId;
+  }
+
+  return defaultProxyId || undefined;
 }
 
 export function renderName(
