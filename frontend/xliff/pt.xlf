@@ -30,8 +30,9 @@
         <source>Next</source>
         <target state="translated">Próximo</target>
       </trans-unit>
-      <trans-unit id="h7ee8a6e551e702ba">
+      <trans-unit id="h7ee8a6e551e702ba" xml:space="preserve">
         <source> <x id="0" equiv-text="${this.renderInput()}"/> of <x id="1" equiv-text="${this.pages} "/></source>
+        <target state="translated"><x id="0" equiv-text="${this.renderInput()}"/> de<x id="1" equiv-text="${this.pages} "/></target>
       </trans-unit>
       <trans-unit id="s5697808ce744d508" xml:space="preserve">
         <source>Current page, page <x id="0" equiv-text="${this._page}"/></source>
@@ -171,11 +172,11 @@
       </trans-unit>
       <trans-unit id="s02e734a81b23d11b" xml:space="preserve">
         <source>Subscribe Now</source>
-        <target state="translated">Se inscrever agora</target>
+        <target state="translated">Subscreva Agora</target>
       </trans-unit>
       <trans-unit id="s5a38b8a21f9d9ab7" xml:space="preserve">
         <source>Update Billing</source>
-        <target state="translated">Atualizar faturamento</target>
+        <target state="translated">Atualizar Faturamento</target>
       </trans-unit>
       <trans-unit id="s0e65fdd42d12acb3" xml:space="preserve">
         <source>Choose Plan</source>
@@ -185,14 +186,17 @@
         <source>Sorry, couldn't retrieve current plan at this time.</source>
         <target state="translated">Desculpe, não foi possível recuperar o plano atual no momento.</target>
       </trans-unit>
-      <trans-unit id="s0fd618c2a8596617">
+      <trans-unit id="s0fd618c2a8596617" xml:space="preserve">
         <source>subscribe to keep your account</source>
+        <target state="translated">subscreva para manter a sua conta</target>
       </trans-unit>
-      <trans-unit id="s5f5b3049f319a00a">
+      <trans-unit id="s5f5b3049f319a00a" xml:space="preserve">
         <source>Your plan will be canceled on <x id="0" equiv-text="${futureCancelDate}"/></source>
+        <target state="translated">O seu plano será cancelado em <x id="0" equiv-text="${futureCancelDate}"/></target>
       </trans-unit>
-      <trans-unit id="sc8fa6bd4dc311b6a">
+      <trans-unit id="sc8fa6bd4dc311b6a" xml:space="preserve">
         <source>Monthly quota</source>
+        <target state="translated">Quota mensal</target>
       </trans-unit>
       <trans-unit id="s87d8a89eee6ca824">
         <source>Subscription status, features, and add-ons, if applicable.</source>
@@ -225,8 +229,9 @@
       <trans-unit id="scce75a19b57e0095">
         <source>Plus</source>
       </trans-unit>
-      <trans-unit id="sa45a194b58837e4f">
+      <trans-unit id="sa45a194b58837e4f" xml:space="preserve">
         <source>Active</source>
+        <target state="translated">Ativo</target>
       </trans-unit>
       <trans-unit id="sd95c2c71d3eaada7">
         <source>Free Trial</source>
@@ -234,8 +239,9 @@
       <trans-unit id="s88297f67c4182ba0">
         <source>Paused, payment failed</source>
       </trans-unit>
-      <trans-unit id="sa30c4d3b566b6b1a">
+      <trans-unit id="sa30c4d3b566b6b1a" xml:space="preserve">
         <source>Canceled</source>
+        <target state="needs-translation">Cancelado</target>
       </trans-unit>
       <trans-unit id="s8e067719f45b0458">
         <source>Pro</source>
@@ -243,8 +249,9 @@
       <trans-unit id="s8e49ef99717ff3d4">
         <source><x id="0" equiv-text="${this.localize.number(quotas.maxConcurrentCrawls)}"/> concurrent <x id="1" equiv-text="${pluralOf(&quot;crawls&quot;, quotas.maxConcurrentCrawls)}"/></source>
       </trans-unit>
-      <trans-unit id="se9ef1815463f8000">
+      <trans-unit id="se9ef1815463f8000" xml:space="preserve">
         <source>Unlimited</source>
+        <target state="needs-translation">Ilimitado</target>
       </trans-unit>
       <trans-unit id="sab5061cf8c519285">
         <source><x id="0" equiv-text="${storageBytesText}"/> of disk space</source>
@@ -267,8 +274,9 @@
       <trans-unit id="sded4cfc4d8910016">
         <source>Browser Default</source>
       </trans-unit>
-      <trans-unit id="sefcf950b3cc4fc3b">
+      <trans-unit id="sefcf950b3cc4fc3b" xml:space="preserve">
         <source>Language</source>
+        <target state="needs-translation">Língua</target>
       </trans-unit>
       <trans-unit id="sf334547f9650322f">
         <source>Select Type</source>
