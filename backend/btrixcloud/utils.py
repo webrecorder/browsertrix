@@ -261,3 +261,19 @@ def run_async_task(func) -> None:
     task = asyncio.create_task(func)
     bg_tasks.add(task)
     task.add_done_callback(bg_tasks.discard)
+
+
+def drop_privileges():
+    """
+    Drop privileges to nobody/nobody and no additional groups.
+    To be used as the preexec_fn for subprocesses.
+    """
+
+    try:
+        os.setgroups([])
+        os.setgid(65534)
+        os.setuid(65534)
+    except (OSError, PermissionError) as e:
+        # Can't raise back to the parent; write to stderr and bail
+        os.write(2, f"Failed to drop privileges: {e}\n".encode())
+        os._exit(127)

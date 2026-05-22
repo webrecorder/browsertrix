@@ -72,6 +72,7 @@ from .models import (
 )
 from .utils import (
     dt_now,
+    drop_privileges,
     slug_from_name,
     validate_regexes,
     validate_language_code,
@@ -1566,25 +1567,55 @@ class CrawlConfigOps:
 
     async def _validate_behavior_git_repo(self, repo_url: str, branch: str = ""):
         """Validate git repository and branch, if specified, exist and are reachable"""
-        cmd = f"git ls-remote {repo_url} HEAD"
-        proc = await asyncio.create_subprocess_shell(cmd)
-        if await proc.wait() > 0:
-            raise HTTPException(
-                status_code=404,
-                detail="custom_behavior_not_found",
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "/usr/bin/git",
+                "ls-remote",
+                repo_url,
+                "HEAD",
+                # Prevent git from asking for credentials
+                env={"GIT_TERMINAL_PROMPT": "0"},
+                preexec_fn=drop_privileges,
             )
+            return_code = await asyncio.wait_for(proc.wait(), timeout=30)
+            if return_code != 0:
+                raise HTTPException(
+                    status_code=404,
+                    detail="custom_behavior_not_found",
+                )
+        except asyncio.TimeoutError as e:
+            proc.kill()
+            raise HTTPException(
+                status_code=504, detail="custom_behavior_timeout"
+            ) from e
 
         if branch:
             await asyncio.sleep(0.5)
-            git_remote_cmd = (
-                f"git ls-remote --exit-code --heads {repo_url} refs/heads/{branch}"
-            )
-            proc = await asyncio.create_subprocess_shell(git_remote_cmd)
-            if await proc.wait() > 0:
-                raise HTTPException(
-                    status_code=404,
-                    detail="custom_behavior_branch_not_found",
+
+            ref = f"refs/heads/{branch}"
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    "/usr/bin/git",
+                    "ls-remote",
+                    "--exit-code",
+                    "--heads",
+                    repo_url,
+                    ref,
+                    # Prevent git from asking for credentials
+                    env={"GIT_TERMINAL_PROMPT": "0"},
+                    preexec_fn=drop_privileges,
                 )
+                return_code = await asyncio.wait_for(proc.wait(), timeout=30)
+                if return_code != 0:
+                    raise HTTPException(
+                        status_code=404,
+                        detail="custom_behavior_branch_not_found",
+                    )
+            except asyncio.TimeoutError as e:
+                proc.kill()
+                raise HTTPException(
+                    status_code=504, detail="custom_behavior_timeout"
+                ) from e
 
     async def _validate_behavior_url(self, url: str):
         """Validate behavior file exists at url"""
@@ -2005,7 +2036,12 @@ def init_crawl_config_api(
         behavior: ValidateCustomBehavior,
         # pylint: disable=unused-argument
         org: Organization = Depends(org_crawl_dep),
+        user: User = Depends(user_dep),
     ):
+        print(
+            f"Validating custom behavior url={behavior.customBehavior} "
+            f"oid={str(org.id)} uid={str(user.id)}"
+        )
         return await ops.validate_custom_behavior(behavior.customBehavior)
 
     org_ops.router.include_router(router)
