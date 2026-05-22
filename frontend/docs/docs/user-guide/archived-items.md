@@ -12,8 +12,8 @@ The status of an archived item depends on its type. Uploads will always have the
 
 | Status | Description |
 | ---- | ---- |
-| <span class="status-green-600">:bootstrap-check-circle-fill: Complete</span>     | All pages within the crawl workflow's scope and limits have been crawled and are included in the archived item. |
-| <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped</span>       | Only the pages crawled until the workflow run had been stopped are included in the archived item. An optional reason for stopping may be displayed. |
+| <span class="status-green-600">:bootstrap-check-circle-fill: Complete</span> | All pages within the crawl workflow's scope and limits have been crawled and are included in the archived item. |
+| <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped</span> | Only the pages crawled until the workflow run had been stopped are included in the archived item. An optional reason for stopping may be displayed. |
 
 ## Archived Item Details
 
