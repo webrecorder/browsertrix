@@ -42,7 +42,7 @@ class Migration(BaseMigration):
         }
 
         try:
-            await jobs_mdb.update_many(
+            res = await jobs_mdb.update_many(
                 match_query,
                 {
                     "$set": {
@@ -51,6 +51,8 @@ class Migration(BaseMigration):
                     }
                 },
             )
+            updated = res.modified_count
+            print(f"{updated} background job db records updated", flush=True)
         # pylint: disable=broad-exception-caught
         except Exception as err:
             print(
