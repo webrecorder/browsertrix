@@ -40,7 +40,7 @@ ALGORITHM = "HS256"
 
 RESET_VERIFY_TOKEN_LIFETIME_MINUTES = 60
 
-PWD_CONTEXT = PasswordHash((BcryptHasher()))
+PWD_CONTEXT = PasswordHash((BcryptHasher(),))
 
 # Audiences
 CUSTOM_AUTH_AUD = "btrix:custom-auth"
