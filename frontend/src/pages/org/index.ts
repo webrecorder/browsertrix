@@ -46,7 +46,7 @@ import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import type { DuplicateWorkflowSettings } from "@/utils/crawl-workflows/settingsForDuplicate";
-import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
+import { DEFAULT_MAX_SCALE, getDefaultProxyId } from "@/utils/crawler";
 import { type OrgData } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
 import type { FormState as WorkflowFormState } from "@/utils/workflow";
@@ -519,13 +519,9 @@ export class Org extends BtrixElement {
           ? html`<btrix-new-browser-profile-dialog
               .proxyServers=${proxies.servers}
               .crawlerChannels=${crawlerChannels}
-              defaultProxyId=${ifDefined(
-                org.crawlingDefaults?.proxyId ||
-                  proxies.default_proxy_id ||
-                  undefined,
-              )}
+              defaultProxyId=${ifDefined(getDefaultProxyId(org, proxies))}
               defaultCrawlerChannel=${ifDefined(
-                org.crawlingDefaults?.crawlerChannel,
+                org.crawlingDefaults?.crawlerChannel || undefined,
               )}
               ?open=${this.openDialogName === "browser-profile"}
               @sl-hide=${() => (this.openDialogName = undefined)}

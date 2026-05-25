@@ -119,7 +119,11 @@ import {
 import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
-import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
+import {
+  DEPTH_SUPPORTED_SCOPES,
+  getDefaultProxyId,
+  isPageScopeType,
+} from "@/utils/crawler";
 import {
   getUTCSchedule,
   humanizeNextDate,
@@ -2115,7 +2119,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             inputCol(html`
               <btrix-select-crawler-proxy
                 defaultProxyId=${ifDefined(
-                  proxies.default_proxy_id ?? undefined,
+                  getDefaultProxyId(this.org, proxies),
                 )}
                 .proxyServers=${proxies.servers}
                 .proxyId=${profileProxyId || this.formState.proxyId || ""}
