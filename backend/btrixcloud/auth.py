@@ -7,7 +7,6 @@ from typing import Optional, Tuple, List
 import string
 import secrets
 from pwdlib import PasswordHash
-from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
 
 from pydantic import BaseModel
@@ -41,12 +40,7 @@ ALGORITHM = "HS256"
 
 RESET_VERIFY_TOKEN_LIFETIME_MINUTES = 60
 
-PWD_CONTEXT = PasswordHash(
-    (
-        Argon2Hasher(),
-        BcryptHasher(),
-    )
-)
+PWD_CONTEXT = PasswordHash((BcryptHasher(),))
 
 # Audiences
 CUSTOM_AUTH_AUD = "btrix:custom-auth"
