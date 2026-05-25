@@ -125,8 +125,9 @@ if TYPE_CHECKING:
     from .pages import PageOps
     from .file_uploads import FileUploadOps
     from .crawlmanager import CrawlManager
+    from .crawlconfigs import CrawlConfigOps
 else:
-    InviteOps = BaseCrawlOps = ProfileOps = CollectionOps = object
+    InviteOps = BaseCrawlOps = ProfileOps = CollectionOps = CrawlConfigOps = object
     BackgroundJobOps = UserManager = PageOps = FileUploadOps = CrawlManager = object
 
 
@@ -252,6 +253,7 @@ class OrgOps(BaseOrgs):
         background_job_ops: BackgroundJobOps,
         page_ops: PageOps,
         file_ops: FileUploadOps,
+        crawl_config_ops: CrawlConfigOps,
     ) -> None:
         """Set additional ops classes"""
         # pylint: disable=attribute-defined-outside-init
@@ -261,6 +263,7 @@ class OrgOps(BaseOrgs):
         self.background_job_ops = background_job_ops
         self.page_ops = page_ops
         self.file_ops = file_ops
+        self.crawl_config_ops = crawl_config_ops
 
     def set_default_primary_storage(self, storage: StorageRef):
         """set default primary storage"""
@@ -664,7 +667,7 @@ class OrgOps(BaseOrgs):
 
     async def update_proxies(self, org: Organization, proxies: OrgProxies) -> None:
         """Update org proxy settings"""
-        await self.orgs.find_one_and_update(
+        updated_org = await self.orgs.find_one_and_update(
             {"_id": org.id},
             {
                 "$set": {
@@ -672,7 +675,27 @@ class OrgOps(BaseOrgs):
                     "allowedProxies": proxies.allowedProxies,
                 }
             },
+            return_document=ReturnDocument.AFTER,
         )
+        org = Organization.from_dict(updated_org)
+
+        # If proxy currently set as crawling default was removed from org,
+        # remove it from crawling defaults as well
+        if (
+            org.crawlingDefaults
+            and org.crawlingDefaults.proxyId
+            and not self.crawl_config_ops.can_org_use_proxy(
+                org, org.crawlingDefaults.proxyId
+            )
+        ):
+            await self.orgs.find_one_and_update(
+                {"_id": org.id, "crawlingDefaults.proxyId": {"$ne": None}},
+                {
+                    "$set": {
+                        "crawlingDefaults.proxyId": None,
+                    }
+                },
+            )
 
     async def update_quotas(
         self,
