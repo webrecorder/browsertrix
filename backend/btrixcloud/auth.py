@@ -43,8 +43,8 @@ RESET_VERIFY_TOKEN_LIFETIME_MINUTES = 60
 
 PWD_CONTEXT = PasswordHash(
     (
-        Argon2Hasher(),
         BcryptHasher(),
+        Argon2Hasher(),
     )
 )
 
