@@ -67,12 +67,12 @@ Statuses may be displayed with a reason that details how the current status came
 | <span class="status-red-600">:bootstrap-x-octagon-fill: Failed</span> | A serious error occurred while crawling causing the crawler to exit; no crawled content is saved. |
 | <span class="status-red-600">:bootstrap-x-octagon-fill: Failed: Not Logged In</span> | The crawler detected a logged out page and failed the crawl per [Fail Crawl if Not Logged In](workflow-setup.md#fail-crawl-if-not-logged-in) setting. |
 
-### Reasons for Automatic Pausing, Stopping, or Skipping
+### Enforced Limit Reasons
 
-Workflow runs may be automatically paused, stopped, or skipped due to an enforced quota or limit. These statuses will always be displayed with a reason:
+Workflow runs may be automatically paused, stopped, or skipped due to an enforced quota or limit. The status will always be displayed with a reason:
 
 | Reason | Description |
 | ---- | ---- |
-| **Storage Quota Reached** | Disk space allocated for the org is full |
-| **Time Quota Reached** | All execution time allocated for the org has been spent |
-| **Crawling Disabled** | Crawling has been disabled for the entire org |
+| **Storage Quota Reached** | Disk space allocated for the org is full. |
+| **Time Quota Reached** | All execution time allocated for the org has been spent. |
+| **Crawling Disabled** | Crawling has been disabled for the entire org. |
