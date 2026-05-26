@@ -10,6 +10,9 @@ export const infoTextFor = {
   includeLinkedPages: msg(
     "If checked, the crawler will visit pages one link away.",
   ),
+  allowHash: msg(
+    "Crawl hash anchor links discovered on any in-scope page as distinct pages..",
+  ),
   exclusions: msg(
     "Specify exclusion rules for what pages should not be visited.",
   ),

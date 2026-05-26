@@ -33,6 +33,7 @@ export const seedSchema = z.object({
   limit: z.number().nullable().optional(),
   extraHops: z.number().nullable().optional(),
   depth: z.number().nullable().optional(),
+  allowHash: z.boolean().optional(),
 });
 export type Seed = z.infer<typeof seedSchema>;
 
@@ -45,6 +46,7 @@ export const seedConfigSchema = seedSchema
     exclude: true,
     limit: true,
     extraHops: true,
+    allowHash: true,
   })
   .merge(
     z.object({
@@ -67,6 +69,7 @@ export const seedConfigSchema = seedSchema
       clickSelector: z.string(),
       saveStorage: z.boolean().optional(),
       useRobots: z.boolean().optional(),
+      allowHash: z.boolean().optional(),
     }),
   );
 export type SeedConfig = Expand<z.infer<typeof seedConfigSchema>>;

@@ -1616,6 +1616,17 @@ https://archiveweb.page/es/`}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
+      ${when(
+        DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType),
+        () => html`
+          ${inputCol(html`
+            <sl-checkbox name="allowHash" ?checked=${this.formState.allowHash}>
+              ${msg("Crawl hash anchor links as distinct pages")}
+            </sl-checkbox>
+          `)}
+          ${this.renderHelpTextCol(infoTextFor["allowHash"], false)}
+        `,
+      )}
       ${inputCol(html`
         <sl-checkbox name="useRobots" ?checked=${this.formState.useRobots}>
           ${msg("Skip pages disallowed by robots.txt")}
@@ -3736,6 +3747,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             ? includeUrlList.map((url) => "^" + regexEscape(url))
             : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
+      allowHash: this.formState.allowHash,
     };
 
     if (DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType)) {

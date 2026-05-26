@@ -148,6 +148,7 @@ export type FormState = {
   seedFileId: string | null;
   seedFile: File | null;
   includeLinkedPages: boolean;
+  allowHash: boolean;
   useSitemap: boolean;
   failOnFailedSeed: boolean;
   failOnContentCheck: boolean;
@@ -240,6 +241,7 @@ export const getDefaultFormState = (): FormState => ({
   seedFileId: null,
   seedFile: null,
   includeLinkedPages: false,
+  allowHash: false,
   useSitemap: false,
   failOnFailedSeed: false,
   failOnContentCheck: false,
@@ -323,6 +325,9 @@ export function getInitialFormState(params: {
           .map(unescapeCustomPrefix)
           .join("\n");
       }
+    }
+    if (primarySeedConfig.allowHash) {
+      formState.allowHash = primarySeedConfig.allowHash;
     }
     const additionalSeeds = params.initialSeeds?.slice(1);
     if (additionalSeeds?.length) {
@@ -441,6 +446,7 @@ export function getInitialFormState(params: {
     includeLinkedPages: Boolean(
       primarySeedConfig.extraHops || seedsConfig.extraHops,
     ),
+    allowHash: seedsConfig.allowHash ?? defaultFormState.allowHash,
     useSitemap: seedsConfig.useSitemap ?? defaultFormState.useSitemap,
     failOnFailedSeed:
       seedsConfig.failOnFailedSeed ?? defaultFormState.failOnFailedSeed,
