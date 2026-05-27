@@ -42,6 +42,7 @@ import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
 import { panelBody, panelHeader } from "@/layouts/panel";
 import { updatingOverlay } from "@/layouts/updatingOverlay";
+import { RouteNamespace } from "@/routes";
 import { getIndexErrorMessage } from "@/strings/collections/index-error";
 import {
   type APIPaginatedList,
@@ -66,6 +67,7 @@ import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
+import { toShortUrl } from "@/utils/url-helpers";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_ITEMS_PAGE_SIZE = 20;
@@ -260,35 +262,43 @@ export class CollectionDetail extends BtrixElement {
       </div>
       <header
         class=${clsx(
-          tw`mt-5 grid gap-3 lg:grid-cols-[1fr_auto]`,
+          tw`mt-5 grid items-start gap-3 lg:grid-cols-[1fr_auto]`,
           this.isCrawler && tw`min-h-16`,
         )}
       >
-        <div class="flex items-center gap-2.5">
-          ${this.renderAccessIcon()}${pageTitle(
-            this.isCrawler
-              ? html`<btrix-editable-text-field
-                  class="-m-4 overflow-hidden p-4"
-                  minLength=${1}
-                  maxLength=${COLLECTION_NAME_MAX_LENGTH}
-                  .value=${this.collection?.name}
-                  placeholder=${msg("Collection name")}
-                  @btrix-change=${(e: BtrixChangeEvent<string>) => {
-                    void this.updateName(e.detail.value);
-                  }}
-                  extraWidth=${24}
-                >
-                  <sl-icon
-                    slot="suffix"
-                    name="pencil"
-                    class="ml-2 size-4"
-                    aria-label=${msg("Edit Collection Name")}
-                  ></sl-icon>
-                </btrix-editable-text-field>`
-              : this.collection?.name,
-            tw`mb-2 h-6 w-60`,
-            tw`grid`,
+        <div
+          class=${clsx(
+            tw`overflow-hidden p-0.5`,
+            this.isCrawler && tw`-m-0.5 -mt-1`,
           )}
+        >
+          <div class="flex items-center gap-2.5">
+            ${pageTitle(
+              this.isCrawler
+                ? html`<btrix-editable-text-field
+                    class="-m-4 overflow-hidden p-4"
+                    minLength=${1}
+                    maxLength=${COLLECTION_NAME_MAX_LENGTH}
+                    .value=${this.collection?.name}
+                    placeholder=${msg("Collection name")}
+                    @btrix-change=${(e: BtrixChangeEvent<string>) => {
+                      void this.updateName(e.detail.value);
+                    }}
+                    extraWidth=${24}
+                  >
+                    <sl-icon
+                      slot="suffix"
+                      name="pencil"
+                      class="ml-2 size-4"
+                      aria-label=${msg("Edit Collection Name")}
+                    ></sl-icon>
+                  </btrix-editable-text-field>`
+                : this.collection?.name,
+              tw`mb-2 h-6 w-60`,
+              tw`grid`,
+            )}
+          </div>
+          ${this.renderPublicLink()}
         </div>
         <div
           class="-mx-3 -mb-3 -mt-3 grid overflow-clip px-3 pb-3 lg:col-span-2"
@@ -320,7 +330,7 @@ export class CollectionDetail extends BtrixElement {
         </div>
 
         <div
-          class="mb-0.5 ml-auto flex flex-shrink-0 flex-wrap items-center justify-end gap-2 lg:col-start-2 lg:row-start-1"
+          class="ml-auto flex flex-shrink-0 flex-wrap items-center justify-end gap-2 lg:col-start-2 lg:row-start-1"
         >
           <btrix-share-collection
             orgSlug=${this.orgSlugState || ""}
@@ -624,6 +634,27 @@ export class CollectionDetail extends BtrixElement {
       })}
     `;
   }
+
+  private readonly renderPublicLink = () => {
+    const baseUrl = `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
+    const slugPreview = this.collection?.slug || "";
+    const publicGalleryUrl = `${window.location.protocol}//${baseUrl}/${RouteNamespace.PublicOrgs}/${slugPreview}`;
+    const url = new URL(publicGalleryUrl);
+
+    return html`<div
+      class="flex items-center gap-1.5 overflow-hidden text-neutral-700"
+    >
+      <span class="shrink-0">${this.renderAccessIcon()}</span>
+      <a
+        class="truncate font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
+        href="${url.href}"
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+      >
+        ${toShortUrl(url.href, null)}
+      </a>
+    </div>`;
+  };
 
   private readonly renderCaption = (text: string) =>
     richText(text, {
