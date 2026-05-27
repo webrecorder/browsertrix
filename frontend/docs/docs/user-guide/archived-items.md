@@ -30,6 +30,8 @@ View metadata and statistics associated with how the archived item was created.
 
 Metadata can be edited by pressing the pencil icon at the top right of the metadata section to edit the item's description, tags, and collections it is associated with.
 
+Each archived item also has an item ID that can be used to reference the item in the API and in support requests. This can also be found in the Actions menu, where you can copy the item ID to the clipboard, alongside the item’s workflow ID if the item is a crawl, which similarly can be used to reference the item’s workflow in the API and support requests.
+
 ### Quality Assurance
 
 View crawl quality information collected from analysis runs, review crawled pages, and start new analysis runs. QA is only available for crawls and org members with [crawler permissions](org-members.md).
