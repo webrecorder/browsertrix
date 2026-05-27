@@ -607,6 +607,10 @@ export class ConfigDetails extends BtrixElement {
         Boolean(config.useSitemap),
       )}
       ${this.renderSetting(
+        msg("Crawl Hash Anchor Links as Distinct Pages"),
+        Boolean(primarySeedConfig?.allowHash ?? config.allowHash),
+      )}
+      ${this.renderSetting(
         msg("Fail Crawl if Not Logged In"),
         Boolean(config.failOnContentCheck),
       )}
