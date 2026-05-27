@@ -71,6 +71,15 @@ async def main():
             traceback.print_exc()
             return 1
 
+    if job_type == BgJobType.VERIFY_FILE_REPLICAS:
+        try:
+            # Add business logic
+            return 0
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            traceback.print_exc()
+            return 1
+
     # Run job (org-specific)
     if not oid:
         print("Org id missing, quitting")

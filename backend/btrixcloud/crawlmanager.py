@@ -320,14 +320,32 @@ class CrawlManager(K8sAPI):
 
     async def ensure_cleanup_seed_file_cron_job_exists(self):
         """ensure cron background job to clean up unused seed files weekly exists"""
-
-        job_id = "cleanup-seed-files-cron"
-
         # Default schedule is midnight every Sunday
         default_schedule = "0 0 * * 0"
         job_schedule = os.environ.get("CLEANUP_JOB_CRON_SCHEDULE", default_schedule)
 
-        # Don't create a duplicate cron job if already exists
+        await self._ensure_cron_job_exists(
+            "cleanup-seed-files-cron", job_schedule, BgJobType.CLEANUP_SEED_FILES.value
+        )
+
+    async def ensure_verify_file_replicas_cron_job_exists(self):
+        """ensure cron background job to verify and ensure all files are replicated exists"""
+        # Default schedule is 1am every Sunday, one hour after seed file cleanup default
+        default_schedule = "0 1 * * 0"
+        job_schedule = os.environ.get(
+            "VERIFY_REPLICAS_JOB_CRON_SCHEDULE", default_schedule
+        )
+
+        await self._ensure_cron_job_exists(
+            "verify-file-replicas-cron",
+            job_schedule,
+            BgJobType.VERIFY_FILE_REPLICAS.value,
+        )
+
+    async def _ensure_cron_job_exists(
+        self, job_id: str, job_schedule: str, job_type: str
+    ):
+        """ensure specified cron background job exists"""
         try:
             cron_job = await self.batch_api.read_namespaced_cron_job(
                 name=job_id,
@@ -335,7 +353,7 @@ class CrawlManager(K8sAPI):
             )
             if cron_job:
                 print(
-                    "Cron job to clean up unused seed files already exists",
+                    f"Cron job {job_id} already exists",
                     flush=True,
                 )
 
@@ -348,7 +366,7 @@ class CrawlManager(K8sAPI):
                         body=cron_job,
                     )
                     print(
-                        f"Cron job to clean up unused seed files updated, schedule: {job_schedule}",
+                        f"Cron job {job_id} updated, new schedule: {job_schedule}",
                         flush=True,
                     )
                 return
@@ -357,13 +375,13 @@ class CrawlManager(K8sAPI):
             pass
 
         print(
-            f"Creating cron job to clean up unused seed files, schedule: {job_schedule}",
+            f"Creating cron job {job_id}, schedule: {job_schedule}",
             flush=True,
         )
 
         params = {
             "id": job_id,
-            "job_type": BgJobType.CLEANUP_SEED_FILES.value,
+            "job_type": job_type,
             "backend_image": os.environ.get("BACKEND_IMAGE", ""),
             "pull_policy": os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
             "schedule": job_schedule,

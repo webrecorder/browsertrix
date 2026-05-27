@@ -26,6 +26,7 @@ from .models import (
     OptimizePagesJob,
     CleanupSeedFilesJob,
     UpdateCollStatsJob,
+    VerifyFileReplicasJob,
     PaginatedBackgroundJobResponse,
     AnyJob,
     StorageRef,
@@ -521,9 +522,10 @@ class BackgroundJobOps:
             print(f"warning: update collection stats job could not be started: {exc}")
             return None
 
-    async def ensure_cron_cleanup_jobs_exist(self):
-        """Ensure background job to clean up unused seed files weekly exists"""
+    async def ensure_cron_bg_jobs_exist(self):
+        """Ensure background jobs that run on cron schedule exist"""
         await self.crawl_manager.ensure_cleanup_seed_file_cron_job_exists()
+        await self.crawl_manager.ensure_verify_file_replicas_cron_job_exists()
 
     async def job_finished(
         self,
@@ -537,21 +539,30 @@ class BackgroundJobOps:
         """Update job as finished, including
         job-specific task handling"""
 
-        # For seed file cleanup jobs, no database record will exist for each
-        # run before this point, so create it here
-        if job_type == BgJobType.CLEANUP_SEED_FILES:
+        # For cron background jobs (seed file cleanup and file replica verification),
+        # no database record will exist for each run before this point so create it here
+        if job_type in (BgJobType.CLEANUP_SEED_FILES, BgJobType.VERIFY_FILE_REPLICAS):
             if not started:
                 started = finished
-            cleanup_job = CleanupSeedFilesJob(
-                id=f"seed-files-{secrets.token_hex(5)}",
-                type=BgJobType.CLEANUP_SEED_FILES,
-                started=started,
-                finished=finished,
-                success=success,
-            )
-            await self.jobs.insert_one(cleanup_job.to_dict())
+            if job_type == BgJobType.CLEANUP_SEED_FILES:
+                new_job: CleanupSeedFilesJob | VerifyFileReplicasJob = (
+                    CleanupSeedFilesJob(
+                        id=f"seed-files-{secrets.token_hex(5)}",
+                        started=started,
+                        finished=finished,
+                        success=success,
+                    )
+                )
+            else:
+                new_job = VerifyFileReplicasJob(
+                    id=f"verify-replicas-{secrets.token_hex(5)}",
+                    started=started,
+                    finished=finished,
+                    success=success,
+                )
+            await self.jobs.insert_one(new_job.to_dict())
             if not success:
-                await self._send_bg_job_failure_email(cleanup_job, finished)
+                await self._send_bg_job_failure_email(new_job, finished)
             return
 
         # If org has been successfully deleted in job, delete k8s resources
@@ -614,6 +625,7 @@ class BackgroundJobOps:
         OptimizePagesJob,
         CleanupSeedFilesJob,
         UpdateCollStatsJob,
+        VerifyFileReplicasJob,
     ]:
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
@@ -649,6 +661,9 @@ class BackgroundJobOps:
 
         if data["type"] == BgJobType.UPDATE_COLL_STATS:
             return UpdateCollStatsJob.from_dict(data)
+
+        if data["type"] == BgJobType.VERIFY_FILE_REPLICAS:
+            return VerifyFileReplicasJob.from_dict(data)
 
         return DeleteOrgJob.from_dict(data)
 
@@ -836,7 +851,7 @@ class BackgroundJobOps:
             )
             return {"success": True}
 
-        if job.type == BgJobType.CLEANUP_SEED_FILES:
+        if job.type in (BgJobType.CLEANUP_SEED_FILES, BgJobType.VERIFY_FILE_REPLICAS):
             raise HTTPException(status_code=400, detail="cron_job_retry_not_supported")
 
         return {"success": False}

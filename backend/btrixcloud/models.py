@@ -3157,6 +3157,7 @@ class BgJobType(str, Enum):
     OPTIMIZE_PAGES = "optimize-pages"
     CLEANUP_SEED_FILES = "cleanup-seed-files"
     UPDATE_COLL_STATS = "update-coll-stats"
+    VERIFY_FILE_REPLICAS = "verify-file-replicas"
 
 
 # ============================================================================
@@ -3243,6 +3244,13 @@ class UpdateCollStatsJob(BackgroundJob):
 
 
 # ============================================================================
+class VerifyFileReplicasJob(BackgroundJob):
+    """Model for tracking jobs to verify all files are properly replicated"""
+
+    type: Literal[BgJobType.VERIFY_FILE_REPLICAS] = BgJobType.VERIFY_FILE_REPLICAS
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
@@ -3256,6 +3264,7 @@ AnyJob = RootModel[
         OptimizePagesJob,
         CleanupSeedFilesJob,
         UpdateCollStatsJob,
+        VerifyFileReplicasJob,
     ]
 ]
 

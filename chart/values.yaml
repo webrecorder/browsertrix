@@ -170,6 +170,14 @@ cleanup_job_cron_schedule: "0 0 * * 0"
 # for cleanup. defaults to 1 day (1440 minutes)
 cleanup_files_after_minutes: 1440
 
+# Cron schedule for periodically ensuring all crawl and profile files are replicated
+# Defaults to every Sunday at 1am
+verify_replicas_job_cron_schedule: "0 1 * * 0"
+
+# upper limit to number of file replication jobs each run of the verify replicas job
+# can create
+verify_replicas_job_limit: 10
+
 # Emails Image
 # =========================================
 emails_image: "docker.io/webrecorder/browsertrix-emails:1.23.0-beta.0"

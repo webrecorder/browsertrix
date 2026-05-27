@@ -112,6 +112,10 @@ data:
 
   CLEANUP_FILES_AFTER_MINUTES: "{{ .Values.cleanup_files_after_minutes | default 1440 }}"
 
+  VERIFY_REPLICAS_JOB_CRON_SCHEDULE: "{{ .Values.verify_replicas_job_cron_schedule }}"
+
+  VERIFY_REPLICAS_JOB_LIMIT: "{{ .Values.verify_replicas_job_limit | default 10 }}"
+
   DEDUPE_IMPORTER_CHANNEL: "{{ .Values.dedupe.importer_channel }}"
 
   ENABLE_AUTO_RESIZE_INDEX_STORAGE: "{{ .Values.dedupe.enable_auto_resize }}"
