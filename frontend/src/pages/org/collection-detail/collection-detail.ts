@@ -46,7 +46,7 @@ import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
 import { panelBody, panelHeader } from "@/layouts/panel";
 import { updatingOverlay } from "@/layouts/updatingOverlay";
-import { RouteNamespace } from "@/routes";
+import { OrgTab, RouteNamespace } from "@/routes";
 import { getIndexErrorMessage } from "@/strings/collections/index-error";
 import {
   type APIPaginatedList,
@@ -273,17 +273,22 @@ export class CollectionDetail extends BtrixElement {
       </div>
       <header
         class=${clsx(
-          tw`mt-5 grid items-start gap-3 lg:grid-cols-[1fr_auto]`,
+          tw`mt-3 grid items-end gap-3 lg:grid-cols-[1fr_auto]`,
           this.isCrawler && tw`min-h-16`,
         )}
       >
         <div
           class=${clsx(
-            tw`overflow-hidden p-1`,
-            this.isCrawler && tw`-m-1 -mt-1.5`,
+            tw`overflow-hidden`,
+            this.isCrawler && tw`-m-1 -mt-1.5 p-1`,
           )}
         >
-          <div class="flex items-center gap-2.5">
+          <div
+            class=${clsx(
+              tw`flex items-center gap-2.5`,
+              this.isCrawler ? tw`mb-1` : tw`mb-2`,
+            )}
+          >
             ${pageTitle(
               this.isCrawler
                 ? html`<btrix-editable-text-field
@@ -318,10 +323,10 @@ export class CollectionDetail extends BtrixElement {
               tw`grid`,
             )}
           </div>
-          ${this.renderPublicLink()}
+          <div class="relative z-10">${this.renderAccessDetails()}</div>
         </div>
         <div
-          class="-mx-3 -mb-3 -mt-3 grid overflow-clip px-3 pb-3 lg:col-span-2"
+          class="-mx-3 -mb-3 -mt-2 grid overflow-clip px-3 pb-3 lg:col-span-2"
         >
           ${this.isCrawler
             ? when(
@@ -654,6 +659,41 @@ export class CollectionDetail extends BtrixElement {
       })}
     `;
   }
+
+  private readonly renderAccessDetails = () => {
+    if (!this.collection) {
+      return html`<sl-skeleton class="h-4 w-12"></sl-skeleton>`;
+    }
+
+    const badge = html`<btrix-badge>
+      <sl-icon
+        name=${SelectCollectionAccess.Options[this.collection.access].icon}
+        class="mr-1.5"
+      ></sl-icon>
+      ${SelectCollectionAccess.Options[this.collection.access].label}
+    </btrix-badge>`;
+
+    const baseUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}/${RouteNamespace.PublicOrgs}/${this.viewState?.params.slug}/${OrgTab.Collections}`;
+    const slugPreview = this.slugPreview || this.collection.slug || "";
+    const publicGalleryUrl = `${baseUrl}/${slugPreview}`;
+
+    return html`<div class="flex items-start gap-1.5">
+      ${badge}
+      <span
+        class=${clsx(
+          tw`break-all text-xs`,
+          this.slugPreview ? tw` text-neutral-700` : tw`text-neutral-500`,
+        )}
+        >${slugPreview}</span
+      >
+      <btrix-copy-button
+        name="link"
+        content=${msg("Copy Shareable Link")}
+        size="x-small"
+        value=${new URL(publicGalleryUrl).href}
+      ></btrix-copy-button>
+    </div>`;
+  };
 
   private readonly renderPublicLink = () => {
     const baseUrl = `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
@@ -1612,7 +1652,11 @@ export class CollectionDetail extends BtrixElement {
   }
 
   private async updateName(name: string) {
-    if (name === this.collection?.name) return;
+    if (name === this.collection?.name) {
+      this.slugPreview = "";
+      return;
+    }
+
     try {
       await this.api.fetch<Collection>(
         `/orgs/${this.orgId}/collections/${this.collectionId}`,
