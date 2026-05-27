@@ -279,8 +279,8 @@ export class CollectionDetail extends BtrixElement {
       >
         <div
           class=${clsx(
-            tw`overflow-hidden p-0.5`,
-            this.isCrawler && tw`-m-0.5 -mt-1`,
+            tw`overflow-hidden p-1`,
+            this.isCrawler && tw`-m-1 -mt-1.5`,
           )}
         >
           <div class="flex items-center gap-2.5">
