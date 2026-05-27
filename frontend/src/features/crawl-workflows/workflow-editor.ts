@@ -1616,17 +1616,6 @@ https://archiveweb.page/es/`}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
-      ${when(
-        DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType),
-        () => html`
-          ${inputCol(html`
-            <sl-checkbox name="allowHash" ?checked=${this.formState.allowHash}>
-              ${msg("Crawl hash anchor links as distinct pages")}
-            </sl-checkbox>
-          `)}
-          ${this.renderHelpTextCol(infoTextFor["allowHash"], false)}
-        `,
-      )}
       ${inputCol(html`
         <sl-checkbox name="useRobots" ?checked=${this.formState.useRobots}>
           ${msg("Skip pages disallowed by robots.txt")}
@@ -1643,6 +1632,17 @@ https://archiveweb.page/es/`}
           `If checked, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if present.`,
         ),
         false,
+      )}
+      ${when(
+        DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType),
+        () => html`
+          ${inputCol(html`
+            <sl-checkbox name="allowHash" ?checked=${this.formState.allowHash}>
+              ${msg("Crawl hash anchor links as distinct pages")}
+            </sl-checkbox>
+          `)}
+          ${this.renderHelpTextCol(infoTextFor["allowHash"], false)}
+        `,
       )}
       ${this.renderLinkSelectors()}
 
