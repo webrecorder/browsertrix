@@ -232,27 +232,24 @@ export class CollectionDetail extends BtrixElement {
     const collection_name = html`<strong class="font-semibold"
       >${this.collection?.name}</strong
     >`;
-    const caption = (text?: Collection["caption"]) => {
-      if (text) {
-        return html`<div
-          class="max-w-full hyphens-auto text-pretty break-words text-neutral-600"
-        >
-          ${richText(text)}
-        </div>`;
-      }
-    };
 
     return html`
       <div class="mb-7">${this.renderBreadcrumbs()}</div>
       <header
         class=${clsx(
-          tw`grid items-end gap-3 lg:grid-cols-[1fr_auto]`,
+          tw`grid items-end gap-3 md:grid-cols-[auto_1fr] md:grid-rows-[repeat(3,auto)] md:items-start lg:grid-cols-[auto_1fr_auto]`,
           this.isCrawler && tw`min-h-16`,
         )}
       >
+        <div class="aspect-video w-60 md:row-span-3">
+          <sl-skeleton
+            class="block aspect-video [--border-radius:var(--sl-border-radius-large)]"
+            effect="sheen"
+          ></sl-skeleton>
+        </div>
         <div
           class=${clsx(
-            tw`overflow-hidden`,
+            tw`overflow-hidden md:col-start-2 md:row-start-1`,
             this.isCrawler && tw`-m-1 -mt-1.5 p-1`,
           )}
         >
@@ -305,14 +302,17 @@ export class CollectionDetail extends BtrixElement {
           <div class="relative z-10">${this.renderAccessDetails()}</div>
         </div>
         <div
-          class="-mx-3 -mb-5 -mt-2 grid overflow-clip px-3 pb-3 lg:col-span-2"
+          class=${clsx(
+            tw`grid overflow-clip md:col-start-2 md:row-start-2 lg:col-end-4`,
+            this.isCrawler && tw`-mx-1 -mb-5 -mt-1 px-1 pb-5 pt-1 `,
+          )}
         >
           ${this.isCrawler
             ? when(
                 this.collection,
                 (col) =>
                   html`<btrix-editable-text-field
-                    class="-mx-4 -my-3 -mb-2 overflow-hidden p-4 text-neutral-600"
+                    class="-m-4 overflow-hidden p-4 text-neutral-600"
                     maxLength=${COLLECTION_CAPTION_MAX_LENGTH}
                     .value=${col.caption}
                     placeholder=${msg("Add a summary...")}
@@ -330,11 +330,16 @@ export class CollectionDetail extends BtrixElement {
                     ></sl-icon>
                   </btrix-editable-text-field>`,
               )
-            : caption(this.collection?.caption)}
+            : this.collection?.caption
+              ? html`<btrix-prose
+                  class="block [--btrix-line-clamp:2] part-[base]:max-w-full"
+                  >${richText(this.collection.caption)}</btrix-prose
+                >`
+              : nothing}
         </div>
 
         <div
-          class="ml-auto flex flex-shrink-0 flex-wrap items-center justify-end gap-2 lg:col-start-2 lg:row-start-1"
+          class="ml-auto flex flex-shrink-0 flex-wrap items-center justify-end gap-2 md:col-start-2 md:row-start-3 lg:col-start-3 lg:row-start-1"
         >
           <btrix-share-collection
             orgSlug=${this.orgSlugState || ""}
