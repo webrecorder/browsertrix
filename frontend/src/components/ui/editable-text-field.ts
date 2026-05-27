@@ -150,7 +150,7 @@ export class EditableTextField extends TailwindElement {
   updatePlaceholderWidth() {
     if (!this.placeholder) return;
     const width = measureTextWithElement(this.placeholder, this).width;
-    if (width) this.placeholderWidth = width;
+    if (width) this.placeholderWidth = width + this.extraWidth;
   }
 
   willUpdate(changedProperties: PropertyValues<this>) {
@@ -244,7 +244,7 @@ export class EditableTextField extends TailwindElement {
       ></span>
       ${this.maxLength && !this.valid
         ? html`<span
-            class="absolute bottom-0 right-4 z-10 rounded-b-sm bg-white pt-1 text-xs font-semibold leading-none text-danger"
+            class="absolute bottom-1 right-4 z-20 rounded-b-sm bg-white pt-1 text-xs font-semibold leading-none text-danger"
           >
             ${this.showUnsavedWarning ? html`${msg("Unsaved")} - ` : null}
             ${localize.number(this.inputValue.length)} /
