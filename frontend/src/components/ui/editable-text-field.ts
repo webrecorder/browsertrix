@@ -225,18 +225,22 @@ export class EditableTextField extends TailwindElement {
       />
       <span
         class=${clsx(
-          tw`pointer-events-none block cursor-text select-none truncate whitespace-pre rounded outline-1 outline-offset-[--sl-focus-ring-offset] outline-[--sl-input-border-color] peer-hover:outline peer-active:outline-none host-focus-within:outline-none`,
+          tw`pointer-events-none flex cursor-text select-none items-center gap-1.5 whitespace-pre rounded outline-1 outline-offset-[--sl-focus-ring-offset] outline-[--sl-input-border-color] peer-hover:outline peer-active:outline-none host-focus-within:outline-none`,
           !this.inputValue && tw`text-neutral-500`,
         )}
         style=${styleMap({
           visibility: this.editing ? "hidden" : "visible",
           width: this.editing ? `${minWidth}px` : "auto",
         })}
-        >${this.inputValue
-          ? this.renderContent
-            ? this.renderContent(this.inputValue)
-            : this.inputValue
-          : this.placeholder}<slot name="suffix"></slot
+      >
+        <span class="truncate"
+          >${this.inputValue
+            ? this.renderContent
+              ? this.renderContent(this.inputValue)
+              : this.inputValue
+            : this.placeholder}</span
+        >
+        <slot name="suffix"></slot
       ></span>
       ${this.maxLength && !this.valid
         ? html`<span

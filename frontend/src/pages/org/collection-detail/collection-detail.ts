@@ -309,7 +309,7 @@ export class CollectionDetail extends BtrixElement {
                     <sl-icon
                       slot="suffix"
                       name="pencil"
-                      class="ml-2 size-4"
+                      class="ml-2 size-3.5 shrink-0"
                       aria-label=${msg("Edit Collection Name")}
                     ></sl-icon>
                   </btrix-editable-text-field>`
@@ -341,8 +341,8 @@ export class CollectionDetail extends BtrixElement {
                     <sl-icon
                       slot="suffix"
                       name="pencil"
-                      class="ml-2 size-3"
-                      aria-label=${msg("Edit Collection Name")}
+                      class="ml-2 size-3 shrink-0"
+                      aria-label=${msg("Edit Collection Caption")}
                     ></sl-icon>
                   </btrix-editable-text-field>`,
               )
