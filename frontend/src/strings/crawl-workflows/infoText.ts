@@ -11,7 +11,7 @@ export const infoTextFor = {
     "If checked, the crawler will visit pages one link away.",
   ),
   allowHash: msg(
-    "Crawl hash anchor links discovered on any in-scope page as distinct pages..",
+    "Crawl URLs with hash-based routes as distinct pages. Can be helpful for crawling single-page applications.",
   ),
   exclusions: msg(
     "Specify exclusion rules for what pages should not be visited.",
