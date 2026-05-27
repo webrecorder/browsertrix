@@ -1,7 +1,9 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { html, nothing, unsafeCSS } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
+import { when } from "lit/directives/when.js";
 
 import { collectionStatusIcon } from "../templates/collection-status-icon";
 
@@ -104,6 +106,25 @@ export class ItemDependencyList extends BtrixElement {
         minute: "2-digit",
       });
 
+    const missingDeps = (ids: string[]) => {
+      const dependencies_count = this.localize.number(ids.length);
+      const plural_of_dependencies = pluralOf("dependencies", ids.length);
+
+      return html`<btrix-popover
+        content=${msg(
+          str`Includes ${dependencies_count} ${msg("missing")} ${plural_of_dependencies}`,
+        )}
+        placement="bottom-start"
+        hoist
+      >
+        <sl-icon
+          name="exclamation-diamond"
+          label=${msg("Warning")}
+          class="text-warning-700"
+        ></sl-icon>
+      </btrix-popover>`;
+    };
+
     return html`
 
       <btrix-table-cell>
@@ -122,12 +143,12 @@ export class ItemDependencyList extends BtrixElement {
         </a>
       </btrix-table-cell>
       <btrix-table-cell class="flex items-center gap-1.5 truncate tabular-nums">
-        <sl-tooltip
-          content=${dedupeStatusText(
-            item.requiredByCrawls.length,
-            numDependencies,
+        ${when(item.missingRequiresCrawls, missingDeps)}
+        <btrix-popover
+          content=${ifDefined(
+            dedupeStatusText(item.requiredByCrawls.length, numDependencies),
           )}
-          placement="left"
+          placement="bottom-start"
           hoist
         >
         ${
@@ -142,7 +163,7 @@ export class ItemDependencyList extends BtrixElement {
               `
             : nothing
         }
-        </sl-tooltip>
+        </btrix-popover>
       </btrix-table-cell>
 
       <btrix-table-cell class="flex items-center gap-1.5 truncate tabular-nums">
