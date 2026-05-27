@@ -20,6 +20,10 @@ import {
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type {
+  EditableTextFieldChangeEvent,
+  EditableTextFieldInputEvent,
+} from "@/components/ui/editable-text-field";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
@@ -66,6 +70,7 @@ import { isNotEqual } from "@/utils/is-not-equal";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { richText } from "@/utils/rich-text";
+import slugifyStrict from "@/utils/slugify";
 import { tw } from "@/utils/tailwind";
 import { toShortUrl } from "@/utils/url-helpers";
 
@@ -106,6 +111,9 @@ export class CollectionDetail extends BtrixElement {
 
   @state()
   private rwpDoFullReload = false;
+
+  @state()
+  private slugPreview = "";
 
   @consume({ context: viewStateContext })
   viewState?: ViewStateContext;
@@ -218,6 +226,9 @@ export class CollectionDetail extends BtrixElement {
         }, 200);
       }
     }
+    if (changedProperties.has("collection")) {
+      this.slugPreview = "";
+    }
   }
 
   render() {
@@ -281,7 +292,16 @@ export class CollectionDetail extends BtrixElement {
                     maxLength=${COLLECTION_NAME_MAX_LENGTH}
                     .value=${this.collection?.name}
                     placeholder=${msg("Collection name")}
-                    @btrix-change=${(e: BtrixChangeEvent<string>) => {
+                    @btrix-input=${(e: EditableTextFieldInputEvent) => {
+                      e.stopPropagation();
+
+                      const { value } = e.detail;
+
+                      this.slugPreview = value ? slugifyStrict(value) : "";
+                    }}
+                    @btrix-change=${(e: EditableTextFieldChangeEvent) => {
+                      e.stopPropagation();
+
                       void this.updateName(e.detail.value);
                     }}
                     extraWidth=${24}
@@ -637,7 +657,7 @@ export class CollectionDetail extends BtrixElement {
 
   private readonly renderPublicLink = () => {
     const baseUrl = `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
-    const slugPreview = this.collection?.slug || "";
+    const slugPreview = this.slugPreview || this.collection?.slug || "";
     const publicGalleryUrl = `${window.location.protocol}//${baseUrl}/${RouteNamespace.PublicOrgs}/${slugPreview}`;
     const url = new URL(publicGalleryUrl);
 
@@ -1615,6 +1635,7 @@ export class CollectionDetail extends BtrixElement {
         this.collection = {
           ...this.collection,
           name,
+          slug: this.slugPreview || this.collection.slug || "",
         };
       }
 

@@ -7,10 +7,14 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { styleMap } from "lit/directives/style-map.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { type BtrixChangeEventDetail } from "@/events/btrix-change";
+import type { BtrixChangeEvent } from "@/events/btrix-change";
+import type { BtrixInputEvent } from "@/events/btrix-input";
 import localize from "@/utils/localize";
 import { measureTextWithElement } from "@/utils/measure-text";
 import { tw } from "@/utils/tailwind";
+
+export type EditableTextFieldInputEvent = BtrixInputEvent<string>;
+export type EditableTextFieldChangeEvent = BtrixChangeEvent<string>;
 
 @customElement("btrix-editable-text-field")
 @localized()
@@ -119,11 +123,14 @@ export class EditableTextField extends TailwindElement {
     if (this.checkValidity()) {
       if (this.editing) {
         this.dispatchEvent(
-          new CustomEvent<BtrixChangeEventDetail<string>>("btrix-change", {
-            detail: { value: this.inputValue },
-            bubbles: true,
-            composed: true,
-          }),
+          new CustomEvent<EditableTextFieldChangeEvent["detail"]>(
+            "btrix-change",
+            {
+              detail: { value: this.inputValue },
+              bubbles: true,
+              composed: true,
+            },
+          ),
         );
       }
       this.endEditing();
@@ -189,9 +196,21 @@ export class EditableTextField extends TailwindElement {
         type="text"
         .value=${this.inputValue}
         placeholder=${ifDefined(this.placeholder)}
-        @input=${(e: Event) => {
+        @input=${async (e: Event) => {
           this.inputValue = (e.target as HTMLInputElement).value;
           this.checkValidity();
+
+          await this.updateComplete;
+          this.dispatchEvent(
+            new CustomEvent<EditableTextFieldInputEvent["detail"]>(
+              "btrix-input",
+              {
+                detail: { value: this.inputValue },
+                bubbles: true,
+                composed: true,
+              },
+            ),
+          );
         }}
         @focus=${() => {
           this.startEditing();
