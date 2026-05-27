@@ -30,7 +30,7 @@ View metadata and statistics associated with how the archived item was created.
 
 Metadata can be edited by pressing the pencil icon at the top right of the metadata section to edit the item's description, tags, and collections it is associated with.
 
-Each archived item also has an item ID that can be used to reference the item in the API and in support requests. This can also be found in the Actions menu, where you can copy the item ID to the clipboard, alongside the item’s workflow ID if the item is a crawl, which similarly can be used to reference the item’s workflow in the API and support requests.
+Each archived item also has a unique identifier (ID) that can be used to reference the item in the Browsertrix API and in support requests. The ID may be prefixed with `upload-`, `manual-`, or `sched-`, followed by letters and numbers. The ID can be copied from the archived item **Overview** section or the _Actions_ dropdown menu. Crawled items will also have an option to copy the item's workflow ID, which similarly can be used to reference the item’s workflow in the API and support requests.
 
 ### Quality Assurance
 
