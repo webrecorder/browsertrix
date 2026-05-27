@@ -287,12 +287,16 @@ export class CollectionDetail extends BtrixElement {
                     }}
                     extraWidth=${24}
                   >
-                    <sl-icon
+                    <span
                       slot="suffix"
-                      name="pencil"
-                      class="ml-2 size-3.5 shrink-0"
-                      aria-label=${msg("Edit Collection Name")}
-                    ></sl-icon>
+                      class="ml-2 mt-0.5 inline-flex h-8 shrink-0 items-center"
+                    >
+                      <sl-icon
+                        name="pencil"
+                        class="size-3.5"
+                        aria-label=${msg("Edit Collection Name")}
+                      ></sl-icon>
+                    </span>
                   </btrix-editable-text-field>`
                 : this.collection?.name,
               tw`mb-2 h-6 w-60`,
@@ -303,8 +307,8 @@ export class CollectionDetail extends BtrixElement {
         </div>
         <div
           class=${clsx(
-            tw`grid overflow-clip md:col-start-2 md:row-start-2 lg:col-end-4`,
-            this.isCrawler && tw`-mx-1 -mb-5 -mt-1 px-1 pb-5 pt-1 `,
+            tw`grid md:col-start-2 md:row-start-2 lg:col-end-4`,
+            this.isCrawler && tw`-mx-1 -mb-9 -mt-1 px-1 pb-5 pt-1 `,
           )}
         >
           ${this.isCrawler
@@ -312,29 +316,31 @@ export class CollectionDetail extends BtrixElement {
                 this.collection,
                 (col) =>
                   html`<btrix-editable-text-field
-                    class="-m-4 overflow-hidden p-4 text-neutral-600"
+                    class="-m-4 -mb-5 overflow-hidden p-4 pb-5 text-neutral-600"
                     maxLength=${COLLECTION_CAPTION_MAX_LENGTH}
                     .value=${col.caption}
                     placeholder=${msg("Add a summary...")}
                     .renderContent=${this.renderCaption}
+                    rows=${3}
                     @btrix-change=${(e: BtrixChangeEvent<string>) => {
                       void this.updateSummary(e.detail.value);
                     }}
                     extraWidth=${24}
                   >
-                    <sl-icon
+                    <span
                       slot="suffix"
-                      name="pencil"
-                      class="ml-2 size-3 shrink-0"
-                      aria-label=${msg("Edit Collection Caption")}
-                    ></sl-icon>
+                      class="ml-2 mt-0.5 inline-flex h-5 shrink-0 items-center"
+                    >
+                      <sl-icon
+                        name="pencil"
+                        class="size-3"
+                        aria-label=${msg("Edit Collection Caption")}
+                      ></sl-icon>
+                    </span>
                   </btrix-editable-text-field>`,
               )
             : this.collection?.caption
-              ? html`<btrix-prose
-                  class="block [--btrix-line-clamp:2] part-[base]:max-w-full"
-                  >${richText(this.collection.caption)}</btrix-prose
-                >`
+              ? this.renderCaption(this.collection.caption)
               : nothing}
         </div>
 
@@ -696,9 +702,12 @@ export class CollectionDetail extends BtrixElement {
   };
 
   private readonly renderCaption = (text: string) =>
-    richText(text, {
-      linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
-    });
+    html`<btrix-prose
+      class="block [--btrix-line-clamp:2] part-[base]:max-w-full"
+      >${richText(text, {
+        linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
+      })}</btrix-prose
+    >`;
 
   private refreshReplay() {
     if (this.replayEmbed) {
