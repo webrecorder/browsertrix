@@ -72,6 +72,7 @@ import { formatRwpTimestamp } from "@/utils/replay";
 import { richText } from "@/utils/rich-text";
 import slugifyStrict from "@/utils/slugify";
 import { tw } from "@/utils/tailwind";
+import { toShortUrl } from "@/utils/url-helpers";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_ITEMS_PAGE_SIZE = 20;
@@ -649,28 +650,35 @@ export class CollectionDetail extends BtrixElement {
     </btrix-badge>`;
 
     const publicLink = () => {
-      const baseUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}/${RouteNamespace.PublicOrgs}/${this.viewState?.params.slug}/${OrgTab.Collections}`;
+      const baseUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
+      const namespacedPath = `${RouteNamespace.PublicOrgs}/${this.viewState?.params.slug}/${OrgTab.Collections}`;
       const slugPreview = this.slugPreview || this.collection?.slug || "";
-      const link = new URL(`${baseUrl}/${slugPreview}`).href;
+      const link = new URL(`${baseUrl}/${namespacedPath}/${slugPreview}`).href;
 
-      return html`<span
-          class=${clsx(
-            tw`break-all text-xs`,
-            this.slugPreview ? tw` text-blue-500` : tw`text-neutral-500`,
-          )}
-          >${slugPreview}</span
-        >
-        <btrix-copy-button
-          name="link"
-          content=${msg("Copy Shareable Link")}
-          size="x-small"
-          value=${link}
-        ></btrix-copy-button>
-        <sl-tooltip content=${msg("Open in New Tab")}>
-          <btrix-button size="x-small" href=${link} target="_blank">
-            <sl-icon name="arrow-up-right" class="size-3.5"></sl-icon>
-          </btrix-button>
-        </sl-tooltip>`;
+      return html`<span class="break-all text-xs text-neutral-500">
+          <span>${toShortUrl(baseUrl, null)}</span
+          ><span title="/${namespacedPath}/">/.../</span
+          ><span
+            class=${clsx(
+              tw`break-all text-xs`,
+              this.slugPreview ? tw` text-blue-500` : tw`text-neutral-500`,
+            )}
+            >${slugPreview}</span
+          >
+        </span>
+        ${this.slugPreview
+          ? nothing
+          : html`<btrix-copy-button
+                name="link"
+                content=${msg("Copy Shareable Link")}
+                size="x-small"
+                value=${link}
+              ></btrix-copy-button>
+              <sl-tooltip content=${msg("Open in New Tab")}>
+                <btrix-button size="x-small" href=${link} target="_blank">
+                  <sl-icon name="arrow-up-right" class="size-3.5"></sl-icon>
+                </btrix-button>
+              </sl-tooltip>`}`;
     };
 
     return html`<div class="flex items-start gap-1.5">
