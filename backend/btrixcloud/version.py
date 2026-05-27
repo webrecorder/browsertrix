@@ -1,3 +1,3 @@
 """current version"""
 
-__version__ = "1.22.9"
+__version__ = "1.23.0-beta.0"
