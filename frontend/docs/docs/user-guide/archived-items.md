@@ -8,17 +8,12 @@ WACZ files can be given metadata and uploaded to Browsertrix by pressing the _Up
 
 ## Status
 
-The status of an archived item depends on its type. Uploads will always have the status <span class="status-success">:bootstrap-upload: Uploaded</span>, crawls have four possible states:
+The status of an archived item depends on its type. Uploads will always have the status <span class="status-green-600">:bootstrap-upload: Uploaded</span>, while crawls can have one of the following statuses:
 
 | Status | Description |
 | ---- | ---- |
-| <span class="status-success">:bootstrap-check-circle-fill: Complete</span>     | The crawl completed according to the workflow's settings. Workflows with [crawl limits](workflow-setup.md#crawl-limits) set may stop running before they capture every queued page, but the resulting archived item will still be marked as "Complete". |
-| <span class="status-neutral">:bootstrap-dash-square-fill: Stopped</span>       | The crawl workflow was _stopped_ gracefully by a user and data is saved. |
-| <span class="status-neutral">:bootstrap-exclamation-square-fill: Stopped: Reason</span> | A workflow limit (listed as the reason) was reached and data is saved. |
-| <span class="status-neutral">:bootstrap-x-octagon: Canceled</span>        | The crawl workflow was _canceled_ by a user, no data is saved. |
-| <span class="status-danger">:bootstrap-exclamation-triangle-fill: Failed</span> | A serious error occurred while crawling, no data is saved.|
-
-Because <span class="status-neutral">:bootstrap-x-octagon: Canceled</span> and <span class="status-danger">:bootstrap-exclamation-triangle-fill: Failed</span> crawls do not contain data, they are omitted from the archived items list page and cannot be added to a collection.
+| <span class="status-green-600">:bootstrap-check-circle-fill: Complete</span> | All pages within the crawl workflow's scope and limits have been crawled and are included in the archived item. |
+| <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped</span> | Only the pages crawled until the workflow run had been stopped are included in the archived item. An optional reason for stopping may be displayed. |
 
 ## Archived Item Details
 
