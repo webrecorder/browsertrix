@@ -262,7 +262,7 @@ export class CollectionDetail extends BtrixElement {
           <div
             class=${clsx(
               tw`flex items-center gap-2.5`,
-              this.isCrawler ? tw`mb-1` : tw`mb-2`,
+              this.isCrawler ? tw`mb-1.5` : tw`mb-2`,
             )}
           >
             ${pageTitle(
