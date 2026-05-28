@@ -875,6 +875,211 @@ class BackgroundJobOps:
             run_async_task(self.retry_background_job(job["_id"], org))
         return {"success": True}
 
+    async def verify_file_replicas(self):
+        """Verify that all crawl and profile files are replicated
+
+        If any gaps exist, start background jobs to replicate files to fill those
+        gaps up to the configured limit on the number of jobs for each run.
+        """
+        # TODO: Replace with org_ops method?
+        orgs_mdb = self.mdb["organizations"]
+
+        orgs_total = await orgs_mdb.count_documents({})
+        org_count = 0
+
+        jobs_started = 0
+        try:
+            jobs_limit = int(os.environ.get("VERIFY_REPLICAS_JOB_LIMIT", 10))
+        # pylint: disable=bare-except
+        except Exception:
+            jobs_limit = 10
+
+        # TODO: Future-proof in anticipation of custom storage - do not attempt to
+        # replicate files for orgs that don't have a replica location configured
+        async for org_raw in orgs_mdb.find({}):
+            org = Organization.from_dict(org_raw)
+
+            org_count += 1
+            print(f"Processing {org.name}, org {org_count}/{orgs_total}", flush=True)
+
+            org_replica_storages = self.storage_ops.get_org_replicas_storage_refs(org)
+
+            jobs_started = await self.replicate_unreplicated_archived_item_files(
+                org, org_replica_storages, jobs_started, jobs_limit
+            )
+
+            if jobs_started < jobs_limit:
+                jobs_started = await self.replicate_unreplicated_profile_files(
+                    org, org_replica_storages, jobs_started, jobs_limit
+                )
+
+            if jobs_started >= jobs_limit:
+                break
+
+        print(f"Complete. {jobs_started} file replication jobs started.")
+
+    async def replicate_unreplicated_archived_item_files(
+        self,
+        org: Organization,
+        org_replica_storages: list[StorageRef],
+        jobs_started: int,
+        jobs_limit: int = 10,
+    ) -> int:
+        """Create any needed replication jobs for archived items in this org"""
+        jobs_mdb = self.mdb["jobs"]
+        crawls_mdb = self.mdb["crawls"]
+
+        expected_replicas_count = len(org_replica_storages)
+
+        crawls_match_query = {
+            "oid": org.id,
+            "files": {
+                "$elemMatch": {"replicas": {"$size": {"$ne": expected_replicas_count}}}
+            },
+        }
+
+        crawls_total = await crawls_mdb.count_documents(crawls_match_query)
+        count = 0
+
+        async for crawl_raw in crawls_mdb.find(crawls_match_query):
+            count += 1
+            print(
+                f"Processing crawl with missing replicas {count}/{crawls_total}",
+                flush=True,
+            )
+
+            crawl = BaseCrawl.from_dict(crawl_raw)
+            for file_ in crawl.files:
+                if jobs_started >= jobs_limit:
+                    return jobs_started
+
+                file_replicas = file_.replicas or []
+
+                if len(file_replicas) == expected_replicas_count:
+                    continue
+
+                missing_replicas = list(set(org_replica_storages) - set(file_replicas))
+                for missing_replica in missing_replicas:
+                    # Check that there isn't already an in-progress job
+                    if await jobs_mdb.find(
+                        {
+                            "type": BgJobType.CREATE_REPLICA.value,
+                            "object_id": crawl.id,
+                            "object_type": crawl.type,
+                            "file_path": file_.filename,
+                            "replica_storage": missing_replica,
+                            "started": {"$ne": None},
+                            "finished": None,
+                        }
+                    ):
+                        continue
+
+                    rep_name = missing_replica["name"]
+                    print(
+                        # pylint: disable=line-too-long
+                        f"Creating replication job for crawl {crawl.id}, file {file_.name}, replica location {rep_name}",
+                        flush=True,
+                    )
+
+                    try:
+                        await self.create_replica_jobs(
+                            crawl.oid,
+                            file_,
+                            crawl.id,
+                            crawl.type,
+                            replica_storage_ref=missing_replica,
+                        )
+                        jobs_started += 1
+                    # pylint: disable=broad-exception-caught
+                    except Exception as err:
+                        print(
+                            f"Error replicating unreplicated file for item {crawl.id}: {err}",
+                            flush=True,
+                        )
+
+        return jobs_started
+
+    async def replicate_unreplicated_profile_files(
+        self,
+        org: Organization,
+        org_replica_storages: list[StorageRef],
+        jobs_started: int,
+        jobs_limit: int = 10,
+    ) -> int:
+        """Create any needed replication jobs for profiles in this org"""
+        jobs_mdb = self.mdb["jobs"]
+        profiles_mdb = self.mdb["profiles"]
+
+        expected_replicas_count = len(org_replica_storages)
+
+        profiles_match_query = {
+            "oid": org.id,
+            "resource.replicas": {"$size": {"$ne": expected_replicas_count}},
+        }
+
+        profiles_total = await profiles_mdb.count_documents(profiles_match_query)
+        count = 0
+
+        async for profile_raw in profiles_mdb.find(profiles_match_query):
+            if jobs_started >= jobs_limit:
+                return jobs_started
+
+            count += 1
+            print(
+                f"Processing profile with missing replicas {count}/{profiles_total}",
+                flush=True,
+            )
+
+            profile = Profile.from_dict(profile_raw)
+
+            if not profile.resource:
+                continue
+
+            file_replicas = profile.resource.replicas or []
+
+            if len(file_replicas) == expected_replicas_count:
+                continue
+
+            missing_replicas = list(set(org_replica_storages) - set(file_replicas))
+            for missing_replica in missing_replicas:
+                # Check there isn't already an in-progress job
+                if await jobs_mdb.find(
+                    {
+                        "type": BgJobType.CREATE_REPLICA.value,
+                        "object_id": profile.id,
+                        "object_type": "profile",
+                        "file_path": profile.resource.filename,
+                        "replica_storage": missing_replica,
+                        "started": {"$ne": None},
+                        "finished": None,
+                    }
+                ):
+                    continue
+
+                rep_name = missing_replica["name"]
+                print(
+                    # pylint: disable=line-too-long
+                    f"Creating replication job for profile {profile.id}, replica location {rep_name}",
+                    flush=True,
+                )
+
+                try:
+                    await self.create_replica_jobs(
+                        profile.oid,
+                        profile.resource,
+                        profile.id,
+                        "profile",
+                        replica_storage_ref=missing_replica,
+                    )
+                # pylint: disable=broad-exception-caught
+                except Exception as err:
+                    print(
+                        f"Error replicating unreplicated file for profile {profile.id}: {err}",
+                        flush=True,
+                    )
+
+        return jobs_started
+
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme

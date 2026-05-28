@@ -41,7 +41,7 @@ async def main():
         coll_ops,
         _,
         _,
-        _,
+        background_job_ops,
         _,
         user_manager,
         _,
@@ -73,7 +73,7 @@ async def main():
 
     if job_type == BgJobType.VERIFY_FILE_REPLICAS:
         try:
-            # Add business logic
+            await background_job_ops.verify_file_replicas()
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:
