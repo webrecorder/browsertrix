@@ -226,9 +226,6 @@ export class CollectionDetail extends BtrixElement {
         }, 200);
       }
     }
-    if (changedProperties.has("collection")) {
-      this.slugPreview = "";
-    }
   }
 
   render() {
@@ -283,7 +280,13 @@ export class CollectionDetail extends BtrixElement {
                     @btrix-change=${(e: EditableTextFieldChangeEvent) => {
                       e.stopPropagation();
 
-                      void this.updateName(e.detail.value);
+                      const { value } = e.detail;
+
+                      if (value === this.collection?.name) {
+                        this.slugPreview = "";
+                      }
+
+                      void this.updateName(value);
                     }}
                     extraWidth=${24}
                   >
@@ -1528,7 +1531,6 @@ export class CollectionDetail extends BtrixElement {
 
   private async updateName(name: string) {
     if (name === this.collection?.name) {
-      this.slugPreview = "";
       return;
     }
 
@@ -1558,7 +1560,9 @@ export class CollectionDetail extends BtrixElement {
         };
       }
 
-      void this.fetchCollection();
+      await this.fetchCollection();
+
+      this.slugPreview = "";
     } catch (err) {
       console.debug(err);
 
