@@ -679,7 +679,7 @@ export class CollectionDetail extends BtrixElement {
               ></btrix-copy-button>
               <sl-tooltip content=${msg("Open in New Tab")}>
                 <btrix-button size="x-small" href=${link} target="_blank">
-                  <sl-icon name="arrow-up-right" class="size-3.5"></sl-icon>
+                  <sl-icon name="arrow-up-right" class="size-2.5"></sl-icon>
                 </btrix-button>
               </sl-tooltip>`}`;
     };
