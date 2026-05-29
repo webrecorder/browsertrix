@@ -1,5 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
+import type {
+  SlInput,
+  SlInputEvent,
+  SlSelectEvent,
+} from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html } from "lit";
 import {
@@ -24,7 +28,8 @@ import {
   type Collection,
 } from "@/types/collection";
 import { isApiError } from "@/utils/api";
-import { maxLengthValidator } from "@/utils/form";
+import { formValidator, maxLengthValidator } from "@/utils/form";
+import slugifyStrict from "@/utils/slugify";
 
 export type CollectionSavedEvent = CustomEvent<{
   id: string;
@@ -43,6 +48,9 @@ export class CollectionCreateDialog extends BtrixElement {
   isDialogVisible = false;
 
   @state()
+  private slug = "";
+
+  @state()
   private isSubmitting = false;
 
   @state()
@@ -54,6 +62,7 @@ export class CollectionCreateDialog extends BtrixElement {
   @queryAsync("#collectionForm")
   private readonly form!: Promise<HTMLFormElement>;
 
+  private readonly checkFormValidity = formValidator(this);
   private readonly validateNameMax = maxLengthValidator(
     COLLECTION_NAME_MAX_LENGTH,
   );
@@ -119,7 +128,22 @@ export class CollectionCreateDialog extends BtrixElement {
           autocomplete="off"
           required
           help-text=${this.validateNameMax.helpText}
-          @sl-input=${this.validateNameMax.validate}
+          @sl-input=${(e: SlInputEvent) => {
+            const valid = this.validateNameMax.validate(e);
+
+            if (!valid) return;
+
+            const input = e.target as SlInput;
+            const value = input.value;
+
+            this.slug = slugifyStrict(value);
+
+            if (value && !this.slug) {
+              input.setCustomValidity(
+                msg("Please include at least one letter or number."),
+              );
+            }
+          }}
         >
         </sl-input>
         <sl-input
@@ -161,7 +185,7 @@ export class CollectionCreateDialog extends BtrixElement {
         ${when(
           this.showPublicWarning && this.org,
           (org) => html`
-            <btrix-alert variant="warning" class="mt-2">
+            <btrix-alert variant="warning" class="my-2">
               ${org.enablePublicProfile
                 ? msg(
                     "This collection will be visible in the org public collection gallery, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.",
@@ -199,9 +223,9 @@ export class CollectionCreateDialog extends BtrixElement {
     event.stopPropagation();
 
     const form = event.target as HTMLFormElement;
-    const nameInput = form.querySelector<SlInput>('sl-input[name="name"]');
+    const isValid = await this.checkFormValidity(form);
 
-    if (!nameInput?.checkValidity()) {
+    if (!isValid) {
       return;
     }
 
@@ -212,6 +236,7 @@ export class CollectionCreateDialog extends BtrixElement {
       const body = JSON.stringify({
         name,
         caption,
+        slug: this.slug,
         access: this.selectCollectionAccess?.value || CollectionAccess.Private,
         defaultThumbnailName: DEFAULT_THUMBNAIL,
       });
