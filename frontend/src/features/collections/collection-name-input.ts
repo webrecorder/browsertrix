@@ -20,6 +20,7 @@ import {
   COLLECTION_NAME_MAX_LENGTH,
   type Collection,
 } from "@/types/collection";
+import slugifyStrict from "@/utils/slugify";
 import appState from "@/utils/state";
 
 export type CollectionNameInputLoadedEvent =
@@ -97,6 +98,10 @@ export class CollectionNameInput extends WithSearchOrgContext(
       }
     }
   }
+
+  readonly validateNew = (value: string) => {
+    return value ? slugifyStrict(value).length > 0 : false;
+  };
 
   private readonly onSelect = async (e: BtrixSearchComboboxSelectEvent) => {
     e.stopPropagation();
