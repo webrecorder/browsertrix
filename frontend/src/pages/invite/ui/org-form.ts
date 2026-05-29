@@ -83,12 +83,21 @@ export class OrgForm extends BtrixElement {
             autocomplete="off"
             value=${this.slug}
             minlength="2"
-            maxlength="30"
+            maxlength="50"
             help-text=${helpText(this.slug)}
             required
             @sl-input=${(e: InputEvent) => {
               const input = e.target as SlInput;
+              // Ideally this would match against the full character map that slugify uses
+              // but this'll do for most use cases
+              const end = input.value.match(/[\s*_+~.,()'"!\-:@]$/g) ? "-" : "";
+              input.value = slugifyStrict(input.value) + end;
+              const slugValue = slugifyStrict(input.value);
               input.helpText = helpText(slugifyStrict(input.value));
+
+              input.setCustomValidity(
+                slugValue.length < 2 ? msg("URL too short") : "",
+              );
             }}
           >
           </sl-input>
