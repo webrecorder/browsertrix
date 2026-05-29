@@ -48,9 +48,6 @@ export class CollectionCreateDialog extends BtrixElement {
   isDialogVisible = false;
 
   @state()
-  private slug = "";
-
-  @state()
   private isSubmitting = false;
 
   @state()
@@ -136,9 +133,7 @@ export class CollectionCreateDialog extends BtrixElement {
             const input = e.target as SlInput;
             const value = input.value;
 
-            this.slug = slugifyStrict(value);
-
-            if (value && !this.slug) {
+            if (value && !slugifyStrict(value)) {
               input.setCustomValidity(
                 msg("Please include at least one letter or number."),
               );
@@ -229,14 +224,17 @@ export class CollectionCreateDialog extends BtrixElement {
       return;
     }
 
-    const { name, caption } = serialize(form);
+    const { name, caption } = serialize(form) as {
+      name: string;
+      caption?: string;
+    };
 
     this.isSubmitting = true;
     try {
       const body = JSON.stringify({
         name,
         caption,
-        slug: this.slug,
+        slug: slugifyStrict(name),
         access: this.selectCollectionAccess?.value || CollectionAccess.Private,
         defaultThumbnailName: DEFAULT_THUMBNAIL,
       });
