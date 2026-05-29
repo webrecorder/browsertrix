@@ -8,6 +8,7 @@ import {
   type CollectionUpdate,
 } from "@/types/collection";
 import { isApiError } from "@/utils/api";
+import slugifyStrict from "@/utils/slugify";
 
 export default function submitTask(
   this: CollectionEdit,
@@ -75,12 +76,20 @@ export default function submitTask(
       }
 
       if (Object.keys(rest).length) {
+        const params = {
+          ...rest,
+        };
+
+        if (rest.name) {
+          params.slug = slugifyStrict(rest.name);
+        }
+
         tasks.push(
           await this.api.fetch<{ updated: boolean }>(
             `/orgs/${this.orgId}/collections/${this.collection.id}`,
             {
               method: "PATCH",
-              body: JSON.stringify(rest),
+              body: JSON.stringify(params),
               signal,
             },
           ),

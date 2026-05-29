@@ -65,6 +65,7 @@ import { isNotEqual } from "@/utils/is-not-equal";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { richText } from "@/utils/rich-text";
+import slugifyStrict from "@/utils/slugify";
 import { tw } from "@/utils/tailwind";
 
 const ABORT_REASON_THROTTLE = "throttled";
@@ -1569,6 +1570,7 @@ export class CollectionDetail extends BtrixElement {
           method: "PATCH",
           body: JSON.stringify({
             name,
+            slug: slugifyStrict(name),
           }),
         },
       );
