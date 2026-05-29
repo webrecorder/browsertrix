@@ -1,6 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { html, nothing, unsafeCSS } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 
 import { collectionStatusIcon } from "../templates/collection-status-icon";
@@ -105,44 +106,41 @@ export class ItemDependencyList extends BtrixElement {
       });
 
     return html`
-
       <btrix-table-cell>
         ${collectionStatusIcon({ item, collectionId })}
       </btrix-table-cell>
       <btrix-table-cell class="pl-0" rowClickTarget="a">
-        <a class=""
-          href=${
-            crawled
-              ? `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}#${"dependencies" as ArchivedItemSectionName}`
-              : `${this.navigate.orgBasePath}/${OrgTab.Items}/${item.type}/${item.id}#${"dependencies" as ArchivedItemSectionName}`
-          }
-    @click=${this.navigate.link}
+        <a href=${
+          crawled
+            ? `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}#${"dependencies" as ArchivedItemSectionName}`
+            : `${this.navigate.orgBasePath}/${OrgTab.Items}/${item.type}/${item.id}#${"dependencies" as ArchivedItemSectionName}`
+        }
+        @click=${this.navigate.link}
         >
           ${renderName(item)}
         </a>
       </btrix-table-cell>
       <btrix-table-cell class="flex items-center gap-1.5 truncate tabular-nums">
-        <sl-tooltip
-          content=${dedupeStatusText(
-            item.requiredByCrawls.length,
-            numDependencies,
+        <btrix-popover
+          content=${ifDefined(
+            dedupeStatusText(item.requiredByCrawls.length, numDependencies),
           )}
-          placement="left"
+          placement="bottom-start"
           hoist
         >
-        ${
-          numDependencies
-            ? html`
-                ${dedupeIcon({
-                  hasDependencies: true,
-                  hasDependents: !!item.requiredByCrawls.length,
-                })}
-                ${this.localize.number(numDependencies)}
-                ${pluralOf("dependencies", numDependencies)}
-              `
-            : nothing
-        }
-        </sl-tooltip>
+          ${
+            numDependencies
+              ? html`
+                  ${dedupeIcon({
+                    hasDependencies: true,
+                    hasDependents: !!item.requiredByCrawls.length,
+                  })}
+                  ${this.localize.number(numDependencies)}
+                  ${pluralOf("dependencies", numDependencies)}
+                `
+              : nothing
+          }
+        </btrix-popover>
       </btrix-table-cell>
 
       <btrix-table-cell class="flex items-center gap-1.5 truncate tabular-nums">

@@ -156,7 +156,7 @@ export class CollectionDetailDedupe extends BtrixElement {
         ...pagination,
         sortBy: "finished",
         sortDirection: SortDirection.Descending,
-        collectionId,
+        dedupeCollId: collectionId,
         state: finishedCrawlStates,
         hasRequiredByCrawls: true,
       });
