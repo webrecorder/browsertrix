@@ -180,7 +180,7 @@ export class CollectionCreateDialog extends BtrixElement {
         ${when(
           this.showPublicWarning && this.org,
           (org) => html`
-            <btrix-alert variant="warning" class="my-2">
+            <btrix-alert variant="warning" class="mt-2">
               ${org.enablePublicProfile
                 ? msg(
                     "This collection will be visible in the org public collection gallery, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.",
