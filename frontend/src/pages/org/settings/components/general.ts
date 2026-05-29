@@ -97,7 +97,7 @@ export class OrgSettingsGeneral extends BtrixElement {
                   autocomplete="off"
                   value=${this.orgSlugState || ""}
                   minlength="2"
-                  maxlength="30"
+                  maxlength="50"
                   required
                   @sl-input=${this.handleSlugInput}
                 >
