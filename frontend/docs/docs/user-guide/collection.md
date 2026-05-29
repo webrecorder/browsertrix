@@ -6,6 +6,12 @@ A collection is a specific, user-directed grouping of either crawls or uploaded 
 
 You can create a collection from the Collections page directly, or the  _Create New..._ shortcut from the org dashboard.
 
+### Name and Summary
+
+Choose a collection name that identifies your collection within the org. The name can contain letters, numbers, and special characters (like emojis.) The collection name should include at least one letter.
+
+The summary is a short description that summarizes this collection. If the collection is shareable, this will appear next to the collection name. You can add a longer description in the “About” section after creating the collection.
+
 ### Add Collection Content
 
 Collections are the primary way of organizing and combining archived items into groups for presentation. Collections also allow you to view a combined replay of any archived items they contain; if a link is present when viewing a collection but the actual page is missing, and another item with that captured page is added to the collection, the link will now work as expected.

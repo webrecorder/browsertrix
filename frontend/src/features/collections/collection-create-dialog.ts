@@ -156,7 +156,7 @@ export class CollectionCreateDialog extends BtrixElement {
         >
           <span slot="label">
             ${msg("Summary")}
-            <sl-tooltip>
+            <btrix-popover placement="top-start" hoist>
               <span slot="content">
                 ${msg(
                   "Write a short description that summarizes this collection. If the collection is shareable, this will appear next to the collection name.",
@@ -170,7 +170,7 @@ export class CollectionCreateDialog extends BtrixElement {
                 name="info-circle"
                 style="vertical-align: -.175em"
               ></sl-icon>
-            </sl-tooltip>
+            </btrix-popover>
           </span>
         </sl-input>
 
