@@ -330,8 +330,8 @@ class CrawlManager(K8sAPI):
 
     async def ensure_verify_file_replicas_cron_job_exists(self):
         """ensure cron background job to verify and ensure all files are replicated exists"""
-        # Default schedule is 1am every Sunday, one hour after seed file cleanup default
-        default_schedule = "0 1 * * 0"
+        # Default schedule is daily at 1am
+        default_schedule = "0 1 * * *"
         job_schedule = os.environ.get(
             "VERIFY_REPLICAS_JOB_CRON_SCHEDULE", default_schedule
         )

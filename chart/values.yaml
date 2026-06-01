@@ -162,20 +162,19 @@ backend_avg_cpu_threshold: 80
 # scale up if avg memory utilization exceeds
 backend_avg_memory_threshold: 95
 
-# Cron schedule for periodically cleaning up unused files
-# Defaults to every Sunday at midnight
+# cron schedule for periodically cleaning up unused files
+# defaults to every Sunday at midnight
 cleanup_job_cron_schedule: "0 0 * * 0"
 
 # number of minutes before unused seed files are eligible
 # for cleanup. defaults to 1 day (1440 minutes)
 cleanup_files_after_minutes: 1440
 
-# Cron schedule for periodically ensuring all crawl and profile files are replicated
-# Defaults to every Sunday at 1am
-verify_replicas_job_cron_schedule: "0 1 * * 0"
+# cron schedule for job ensuring all files are replicated
+# defaults to daily at 1am
+verify_replicas_job_cron_schedule: "0 1 * * *"
 
-# upper limit to number of file replication jobs each run of the verify replicas job
-# can create
+# upper limit on number of file replication jobs spawned each time cron job runs
 verify_replicas_job_limit: 10
 
 # Emails Image
