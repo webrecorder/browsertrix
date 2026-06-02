@@ -1,6 +1,7 @@
 """crawl logs"""
 
 import json
+import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from uuid import UUID, uuid4
 
@@ -9,6 +10,8 @@ from fastapi import HTTPException
 
 from .models import CrawlLogLine, Organization
 from .pagination import DEFAULT_PAGE_SIZE
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -99,9 +102,13 @@ class CrawlLogOps:
             return res is not None
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Error adding log line for crawl {crawl_id} to database: {err}",
-                flush=True,
+            # pylint: disable=line-too-long
+            logger.error(
+                "crawl_log_insert_failed",
+                crawl_id=crawl_id,
+                oid=oid,
+                error=str(err),
+                unstructured_message=f"Error adding log line for crawl {crawl_id} to database: {err}",
             )
             return False
 

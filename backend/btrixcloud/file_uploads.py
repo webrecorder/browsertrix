@@ -1,5 +1,6 @@
 """user-uploaded files"""
 
+import logging
 import os
 import tempfile
 from datetime import timedelta
@@ -26,6 +27,8 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import CHUNK_SIZE, StorageOps
 from .utils import dt_now, is_url
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -221,7 +224,13 @@ class FileUploadOps:
                 file_prep.add_chunk(chunk)
                 yield chunk
 
-        print(f"{upload_type} stream upload starting", flush=True)
+        logger.info(
+            "file_stream_upload_starting",
+            upload_type=upload_type,
+            oid=org.id,
+            uid=str(user.id),
+            unstructured_message=f"{upload_type} stream upload starting",
+        )
 
         if not await self.storage_ops.do_upload_multipart(
             org,
@@ -230,19 +239,27 @@ class FileUploadOps:
             MIN_UPLOAD_PART_SIZE,
             mime=file_prep.mime,
         ):
-            print(f"{upload_type} stream upload failed", flush=True)
+            logger.error(
+                "file_stream_upload_failed",
+                upload_type=upload_type,
+                oid=org.id,
+                uid=str(user.id),
+                unstructured_message=f"{upload_type} stream upload failed",
+            )
             raise HTTPException(status_code=400, detail="upload_failed")
-
-        print(f"{upload_type} stream upload complete", flush=True)
 
         file_obj = file_prep.get_user_file(org.storage)
 
         # Validate size
         max_size = SEED_FILE_MAX_SIZE
         if file_obj.size > max_size:
-            print(
-                f"{upload_type} stream upload failed: max size (25 MB) exceeded",
-                flush=True,
+            # pylint: disable=line-too-long
+            logger.error(
+                "file_stream_upload_size_exceeded",
+                upload_type=upload_type,
+                oid=org.id,
+                uid=str(user.id),
+                unstructured_message=f"{upload_type} stream upload failed: max size (25 MB) exceeded",
             )
             await self.storage_ops.delete_file_object(org, file_obj)
             raise HTTPException(
@@ -252,12 +269,23 @@ class FileUploadOps:
 
         first_seed, seed_count = await self._parse_seed_info_from_file(file_obj, org)
         if not first_seed or seed_count == 0:
-            print(
-                f"{upload_type} stream upload failed: invalid seed file",
-                flush=True,
+            logger.error(
+                "file_stream_upload_invalid_seed",
+                upload_type=upload_type,
+                oid=org.id,
+                uid=str(user.id),
+                unstructured_message=f"{upload_type} stream upload failed: invalid seed file",
             )
             await self.storage_ops.delete_file_object(org, file_obj)
             raise HTTPException(status_code=400, detail="invalid_seed_file")
+
+        logger.info(
+            "file_stream_upload_complete",
+            upload_type=upload_type,
+            oid=org.id,
+            uid=str(user.id),
+            unstructured_message=f"{upload_type} stream upload complete",
+        )
 
         # Save file to database
         file_to_insert = SeedFile(
@@ -363,9 +391,11 @@ class FileUploadOps:
         """Delete older seed files that are not used in workflows"""
         cleanup_after_mins = int(os.environ.get("CLEANUP_FILES_AFTER_MINUTES", 1440))
 
-        print(
-            f"Cleaning up unused seed files more than {cleanup_after_mins} minutes old",
-            flush=True,
+        # pylint: disable=line-too-long
+        logger.info(
+            "seed_file_cleanup_starting",
+            cleanup_after_mins=cleanup_after_mins,
+            unstructured_message=f"Cleaning up unused seed files more than {cleanup_after_mins} minutes old",
         )
 
         cleanup_before = dt_now() - timedelta(minutes=cleanup_after_mins)
@@ -392,7 +422,12 @@ class FileUploadOps:
             try:
                 org = await self.org_ops.get_org_by_id(file_dict["oid"])
                 await self.delete_seed_file(file_id, org)
-                print(f"Deleted unused seed file {file_id}", flush=True)
+                logger.info(
+                    "seed_file_deleted",
+                    file_id=file_id,
+                    oid=org.id,
+                    unstructured_message=f"Deleted unused seed file {file_id}",
+                )
 
             except HTTPException as e:
                 # handle case where org is deleted by seed file still exists
@@ -404,14 +439,24 @@ class FileUploadOps:
                         await self.files.delete_one({"_id": file_id})
                     # pylint: disable=broad-exception-caught
                     except Exception as err:
-                        print(
-                            f"Error deleting orphaned seed file without org {file_id}: {err}",
-                            flush=True,
+                        # pylint: disable=line-too-long
+                        logger.error(
+                            "orphaned_seed_file_delete_error",
+                            file_id=file_id,
+                            oid=file_dict["oid"],
+                            error=str(err),
+                            unstructured_message=f"Error deleting orphaned seed file without org {file_id}: {err}",
                         )
 
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(f"Error deleting unused seed file {file_id}: {err}", flush=True)
+                logger.error(
+                    "seed_file_delete_error",
+                    file_id=file_id,
+                    oid=file_dict["oid"],
+                    error=str(err),
+                    unstructured_message=f"Error deleting unused seed file {file_id}: {err}",
+                )
                 # Raise exception later so that job fails but only after attempting
                 # to clean up all files first
                 errored = True
@@ -429,9 +474,13 @@ class FileUploadOps:
                 await self.delete_seed_file(file_id, org)
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(
-                    f"Error deleting seed file {file_id} from deleted org: {err}",
-                    flush=True,
+                # pylint: disable=line-too-long
+                logger.error(
+                    "seed_file_org_deleted_error",
+                    file_id=file_id,
+                    oid=org.id,
+                    error=str(err),
+                    unstructured_message=f"Error deleting seed file {file_id} from deleted org: {err}",
                 )
 
 

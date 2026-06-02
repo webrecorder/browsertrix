@@ -2,6 +2,7 @@
 FastAPI user handling (via fastapi-users)
 """
 
+import logging
 import os
 from typing import TYPE_CHECKING, Callable, List, Optional, Tuple, Type, cast
 from uuid import UUID, uuid4
@@ -59,6 +60,8 @@ if TYPE_CHECKING:
     from .orgs import OrgOps
 else:
     InviteOps = EmailSender = OrgOps = BaseCrawlOps = CrawlConfigOps = object
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================================
@@ -274,7 +277,9 @@ class UserManager:
         password = os.environ.get("SUPERUSER_PASSWORD")
         name = os.environ.get("SUPERUSER_NAME", "admin")
         if not email:
-            print("No superuser defined", flush=True)
+            logger.info(
+                "superuser_not_defined", unstructured_message="No superuser defined"
+            )
             return
 
         if not password:
@@ -284,11 +289,19 @@ class UserManager:
         if superuser:
             if str(superuser.email) != email:
                 await self.update_email_name(superuser, cast(EmailStr, email), name)
-                print("Superuser email updated")
+                logger.info(
+                    "superuser_email_updated",
+                    uid=str(superuser.id),
+                    unstructured_message="Superuser email updated",
+                )
 
             if not await self.check_password(superuser, password):
                 await self._update_password(superuser, password)
-                print("Superuser password updated")
+                logger.info(
+                    "superuser_password_updated",
+                    uid=str(superuser.id),
+                    unstructured_message="Superuser password updated",
+                )
 
             return
 
@@ -296,11 +309,19 @@ class UserManager:
             res = await self.create_user(
                 name=name, email=email, password=password, is_superuser=True
             )
-            print(f"Super user {email} created", flush=True)
-            print(res, flush=True)
+            logger.info(
+                "superuser_created",
+                email=email,
+                uid=str(res.id),
+                unstructured_message=f"Super user {email} created",
+            )
         except DuplicateKeyError as exc:
-            print(exc)
-            print(f"User {email} already exists", flush=True)
+            logger.warning(
+                "superuser_already_exists",
+                email=email,
+                exception=str(exc),
+                unstructured_message=f"User {email} already exists",
+            )
 
     async def request_verify(
         self, user: User, request: Optional[Request] = None
@@ -430,7 +451,13 @@ class UserManager:
             RESET_VERIFY_TOKEN_LIFETIME_MINUTES,
         )
 
-        print(f"User {user.id} has forgot their password. Reset token: {token}")
+        logger.info(
+            "password_reset_requested",
+            user_id=str(user.id),
+            reset_token=token,
+            uid=str(user.id),
+            unstructured_message=f"User {user.id} has forgot their password. Reset token: {token}",
+        )
         await self.email.send_user_forgot_password(
             user.email, token, request and request.headers
         )

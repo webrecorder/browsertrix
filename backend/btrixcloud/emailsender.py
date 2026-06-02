@@ -1,5 +1,6 @@
 """Basic Email Sending Support"""
 
+import logging
 import os
 import smtplib
 import ssl
@@ -22,6 +23,8 @@ from .models import (
     Subscription,
 )
 from .utils import get_origin, is_bool
+
+logger = logging.getLogger(__name__)
 
 
 # pylint: disable=too-few-public-methods, too-many-instance-attributes
@@ -82,13 +85,19 @@ class EmailSender:
                     subject = json["subject"]
 
                     if self.log_sent_emails:
-                        print(text, flush=True)
+                        logger.debug(
+                            "email_content_logged",
+                            email_text=text,
+                            unstructured_message=f"{text}",
+                        )
 
                     if not self.smtp_server:
-                        print(
-                            f'Email: created "{name}" msg for "{receiver}", '
-                            f"but not sent (no SMTP server set)",
-                            flush=True,
+                        # pylint: disable=line-too-long
+                        logger.info(
+                            "email_created_not_sent_no_smtp",
+                            template_name=name,
+                            receiver=receiver,
+                            unstructured_message=f'Email: created "{name}" msg for "{receiver}", but not sent (no SMTP server set)',
                         )
                         return
 
@@ -119,7 +128,11 @@ class EmailSender:
                         # server.sendmail(self.sender, receiver, message)
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            print("Error fetching email template", exc)
+            logger.error(
+                "email_template_fetch_error",
+                error=str(exc),
+                unstructured_message=f"Error fetching email template {exc}",
+            )
             raise exc
 
     async def send_user_validation(

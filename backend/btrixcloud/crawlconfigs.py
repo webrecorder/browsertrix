@@ -6,9 +6,9 @@ Crawl Config API handling
 
 import asyncio
 import json
+import logging
 import os
 import re
-import traceback
 import urllib.parse
 from datetime import datetime, timedelta
 from typing import (
@@ -108,6 +108,8 @@ ALLOWED_SORT_KEYS = (
 )
 
 DEFAULT_PROXY_ID: str | None = os.environ.get("DEFAULT_PROXY_ID")
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================================
@@ -405,7 +407,14 @@ class CrawlConfigOps:
                     storage_quota_reached = True
                 elif e.detail == "exec_minutes_quota_reached":
                     exec_mins_quota_reached = True
-                print(f"Can't run crawl now: {e.detail}", flush=True)
+                logger.warning(
+                    "crawl_run_now_blocked",
+                    error_detail=e.detail,
+                    oid=org.id,
+                    uid=str(user.id),
+                    config_name=crawlconfig.name,
+                    unstructured_message=f"Can't run crawl now: {e.detail}",
+                )
                 error_detail = e.detail
         else:
             storage_quota_reached = self.org_ops.storage_quota_reached(org)
@@ -784,7 +793,14 @@ class CrawlConfigOps:
                 await self.crawl_manager.update_scheduled_job(crawlconfig, str(user.id))
 
             except Exception as exc:
-                print(exc, flush=True)
+                logger.exception(
+                    "scheduled_job_update_failed",
+                    error=str(exc),
+                    oid=org.id,
+                    uid=str(user.id),
+                    config_id=str(cid),
+                    unstructured_message=f"Error updating scheduled job: {exc}",
+                )
                 # pylint: disable=raise-missing-from
                 raise HTTPException(
                     status_code=404, detail=f"Crawl Config '{cid}' not found"
@@ -1393,7 +1409,13 @@ class CrawlConfigOps:
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
-            print(traceback.format_exc())
+            logger.exception(
+                "crawl_start_failed",
+                oid=org.id,
+                uid=str(user.id),
+                config_id=str(crawlconfig.id),
+                unstructured_message="Error starting crawl",
+            )
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
 
     async def check_if_too_many_waiting_crawls(self, org: Organization):
@@ -1556,12 +1578,21 @@ class CrawlConfigOps:
             config = CrawlConfig.from_dict(config_dict)
             try:
                 await self.crawl_manager.update_scheduled_job(config)
-                print(f"Updated cronjob for scheduled workflow {config.id}", flush=True)
+                logger.info(
+                    "scheduled_cronjob_updated",
+                    config_id=str(config.id),
+                    oid=config.oid,
+                    unstructured_message=f"Updated cronjob for scheduled workflow {config.id}",
+                )
             # pylint: disable=broad-except
             except Exception as err:
-                print(
-                    f"Error updating cronjob for scheduled workflow {config.id}: {err}",
-                    flush=True,
+                # pylint: disable=line-too-long
+                logger.error(
+                    "scheduled_cronjob_update_failed",
+                    config_id=str(config.id),
+                    error=str(err),
+                    oid=config.oid,
+                    unstructured_message=f"Error updating cronjob for scheduled workflow {config.id}: {err}",
                 )
 
     async def _validate_behavior_git_repo(self, repo_url: str, branch: str = ""):
@@ -2037,9 +2068,11 @@ def init_crawl_config_api(
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        print(
-            f"Validating custom behavior url={behavior.customBehavior} "
-            f"oid={str(org.id)} uid={str(user.id)}"
+        logger.debug(
+            "validating_custom_behavior",
+            url=behavior.customBehavior,
+            oid=org.id,
+            uid=user.id,
         )
         return await ops.validate_custom_behavior(behavior.customBehavior)
 
