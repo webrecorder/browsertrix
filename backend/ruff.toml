@@ -11,3 +11,17 @@ extend-select = [
 	# flake8-quotes
 	"Q"
 ]
+ignore = [
+	# Comparison to true should be 'if cond is true:' or 'if cond:'
+	"E712",
+	# Do not use bare except, specify exception instead
+	"E722",
+	# Comparison to None should be 'cond is None:'
+	"E711",
+	# Module imported but unused
+	"F401",
+	# f string missing placeholders
+	"F541",
+	# unused variable
+	"F841"
+]
