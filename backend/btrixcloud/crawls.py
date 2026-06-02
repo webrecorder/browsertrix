@@ -5,6 +5,7 @@
 import asyncio
 import contextlib
 import json
+import logging
 import os
 import re
 import urllib.parse
@@ -84,6 +85,8 @@ from .utils import (
     stream_dict_list_as_csv,
     validate_regexes,
 )
+
+logger = logging.getLogger(__name__)
 
 MAX_MATCH_SIZE = 500000
 DEFAULT_RANGE_LIMIT = 50
