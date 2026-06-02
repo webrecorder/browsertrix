@@ -1,23 +1,30 @@
 """entrypoint module for init_container, handles db migration"""
 
 import asyncio
+import logging
 import os
 import sys
 
+from .logger import init_logging
 from .db import ensure_feature_version, update_and_prepare_db
 from .ops import init_ops
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================================
 # pylint: disable=too-many-function-args, duplicate-code
 async def main() -> int:
     """init migrations"""
+    init_logging()
 
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
-        print(
-            "Sorry, the Browsertrix Backend must be run inside a Kubernetes environment.\
-             Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
+        # pylint: disable=line-too-long
+        logger.error(
+            "kubernetes_not_detected",
+            unstructured_message="Sorry, the Browsertrix Backend must be run inside a Kubernetes environment. "
+            "Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting",
         )
         return 1
 
