@@ -40,7 +40,8 @@ def clear_log_context() -> None:
 
 
 def create_request_logging_middleware(logger: logging.Logger):
-    """Return an ASGI middleware that logs every request with method, path, status, duration, and request_id."""
+    """Return an ASGI middleware that logs every request with
+    method, path, status, duration, and request_id."""
 
     async def request_logging_middleware(request, call_next):
         request_id = uuid4().hex[:8]
@@ -48,6 +49,7 @@ def create_request_logging_middleware(logger: logging.Logger):
         start_time = time.time()
         try:
             response = await call_next(request)
+        # pylint: disable=broad-exception-caught
         except Exception:
             logger.exception(
                 "http_unhandled_exception",

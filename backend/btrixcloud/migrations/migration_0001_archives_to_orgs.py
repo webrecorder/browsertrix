@@ -8,6 +8,7 @@ import os
 from pymongo.errors import OperationFailure
 
 from btrixcloud.k8sapi import K8sAPI
+from btrixcloud.migrations import BaseMigration
 
 logger = logging.getLogger(__name__)
 
