@@ -1,6 +1,6 @@
 """Operator handler for BackgroundJobs"""
 
-import traceback
+import logging
 from uuid import UUID
 
 from btrixcloud.utils import (
@@ -10,6 +10,8 @@ from btrixcloud.utils import (
 
 from .baseoperator import BaseOperator
 from .models import MCDecoratorSyncData
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================================
@@ -42,8 +44,12 @@ class BgJobOperator(BaseOperator):
         spec = data.object["spec"]
         success = status.get("succeeded") == spec.get("parallelism")
         if not success:
-            print(
-                f"Succeeded: {status.get('succeeded')}, Num Pods: {spec.get('parallelism')}"
+            logger.warning(
+                "background_job_not_successful",
+                succeeded=status.get("succeeded"),
+                parallelism=spec.get("parallelism"),
+                # pylint: disable=line-too-long
+                unstructured_message=f"Succeeded: {status.get('succeeded')}, Num Pods: {spec.get('parallelism')}",
             )
         start_time = status.get("startTime")
         completion_time = status.get("completionTime")
@@ -78,7 +84,9 @@ class BgJobOperator(BaseOperator):
 
         # pylint: disable=broad-except
         except Exception:
-            print("Update Background Job Error", flush=True)
-            traceback.print_exc()
+            logger.exception(
+                "background_job_update_failed",
+                unstructured_message="Update Background Job Error",
+            )
 
         return {"attachments": [], "finalized": finalized}

@@ -1,5 +1,6 @@
 """shared crawl manager implementation"""
 
+import logging
 import os
 import secrets
 from datetime import datetime, timedelta
@@ -17,6 +18,8 @@ from .models import (
     StorageRef,
 )
 from .utils import date_to_str, dt_now, scale_from_browser_windows
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 DEFAULT_PROXY_ID: str = os.environ.get("DEFAULT_PROXY_ID", "")
@@ -331,9 +334,9 @@ class CrawlManager(K8sAPI):
                 namespace=DEFAULT_NAMESPACE,
             )
             if cron_job:
-                print(
-                    "Cron job to clean up unused seed files already exists",
-                    flush=True,
+                logger.info(
+                    "cleanup_cron_job_exists",
+                    unstructured_message="Cron job to clean up unused seed files already exists",
                 )
 
                 if cron_job.spec.schedule != job_schedule:
@@ -344,18 +347,22 @@ class CrawlManager(K8sAPI):
                         namespace=DEFAULT_NAMESPACE,
                         body=cron_job,
                     )
-                    print(
-                        f"Cron job to clean up unused seed files updated, schedule: {job_schedule}",
-                        flush=True,
+                    # pylint: disable=line-too-long
+                    logger.info(
+                        "cleanup_cron_job_updated",
+                        schedule=job_schedule,
+                        unstructured_message=f"Cron job to clean up unused seed files updated, schedule: {job_schedule}",
                     )
                 return
         # pylint: disable=broad-exception-caught
         except Exception:
             pass
 
-        print(
-            f"Creating cron job to clean up unused seed files, schedule: {job_schedule}",
-            flush=True,
+        # pylint: disable=line-too-long
+        logger.info(
+            "cleanup_cron_job_creating",
+            schedule=job_schedule,
+            unstructured_message=f"Creating cron job to clean up unused seed files, schedule: {job_schedule}",
         )
 
         params = {
@@ -678,7 +685,11 @@ class CrawlManager(K8sAPI):
 
         params["schedule"] = schedule
 
-        print(f"Replica deletion cron schedule: '{schedule}'", flush=True)
+        logger.info(
+            "replica_deletion_cron_schedule",
+            schedule=schedule,
+            unstructured_message=f"Replica deletion cron schedule: '{schedule}'",
+        )
 
         data = self.templates.env.get_template("replica_deletion_cron_job.yaml").render(
             params
