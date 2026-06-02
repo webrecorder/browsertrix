@@ -2,43 +2,42 @@
 Browsertrix API Mongo DB initialization
 """
 
+import asyncio
+import contextvars
 import importlib.util
 import os
 import urllib.parse
-import asyncio
-import contextvars
-from uuid import UUID, uuid4
-
 from typing import (
+    TYPE_CHECKING,
     Any,
     Literal,
     Optional,
     Type,
     TypeVar,
     Union,
-    TYPE_CHECKING,
 )
+from uuid import UUID, uuid4
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from pydantic import BaseModel, WrapValidator, ValidationError
+from pydantic import BaseModel, ValidationError, WrapValidator
 from pymongo.errors import InvalidName
 
 from .migrations import BaseMigration
 
 if TYPE_CHECKING:
-    from .users import UserManager
-    from .orgs import OrgOps
-    from .crawlconfigs import CrawlConfigOps
-    from .crawl_logs import CrawlLogOps
-    from .crawls import CrawlOps
-    from .colls import CollectionOps
-    from .invites import InviteOps
-    from .storages import StorageOps
-    from .pages import PageOps
     from .background_jobs import BackgroundJobOps
-    from .file_uploads import FileUploadOps
+    from .colls import CollectionOps
+    from .crawl_logs import CrawlLogOps
+    from .crawlconfigs import CrawlConfigOps
     from .crawlmanager import CrawlManager
+    from .crawls import CrawlOps
+    from .file_uploads import FileUploadOps
+    from .invites import InviteOps
+    from .orgs import OrgOps
+    from .pages import PageOps
     from .profiles import ProfileOps
+    from .storages import StorageOps
+    from .users import UserManager
 else:
     UserManager = OrgOps = CrawlConfigOps = CrawlOps = CollectionOps = InviteOps = (
         StorageOps

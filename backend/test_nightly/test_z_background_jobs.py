@@ -1,11 +1,9 @@
 """background jobs tests, named to run after everything else has finished"""
 
+import pytest
 import requests
 
-import pytest
-
 from .conftest import API_PREFIX
-
 
 job_id = None
 

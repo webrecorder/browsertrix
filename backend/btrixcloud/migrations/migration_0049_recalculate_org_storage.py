@@ -4,7 +4,6 @@ Migration 0049 - Recalculate org storage for seed file and thumbnail size
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0049"
 
 

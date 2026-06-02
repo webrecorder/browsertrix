@@ -1,15 +1,16 @@
 """Operator handler for crawl CronJobs"""
 
-from uuid import UUID
 from typing import Optional
+from uuid import UUID
+
 import yaml
 
 from btrixcloud.utils import date_to_str, dt_now, run_async_task
-from .models import MCDecoratorSyncData, CJS, MCDecoratorSyncResponse
-from .baseoperator import BaseOperator
 
 from ..models import CrawlConfig
 from ..utils import scale_from_browser_windows
+from .baseoperator import BaseOperator
+from .models import CJS, MCDecoratorSyncData, MCDecoratorSyncResponse
 
 
 # pylint: disable=too-many-locals

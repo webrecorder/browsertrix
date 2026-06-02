@@ -1,63 +1,58 @@
 """CrawlOperator"""
 
-import traceback
-import os
+import json
 import math
-from pprint import pprint
-from typing import Optional, Any, Sequence, Literal
+import os
+import traceback
 from datetime import datetime, timedelta
+from pprint import pprint
+from typing import Any, Literal, Optional, Sequence
 from uuid import UUID
 
-import json
-
 import humanize
-
+from fastapi import HTTPException
 from kubernetes.utils import parse_quantity
 
-from fastapi import HTTPException
-
 from btrixcloud.models import (
-    TYPE_NON_RUNNING_STATES,
-    TYPE_RUNNING_STATES,
-    TYPE_ALL_CRAWL_STATES,
-    TYPE_PAUSED_STATES,
-    RUNNING_STATES,
-    WAITING_STATES,
-    RUNNING_AND_STARTING_ONLY,
-    RUNNING_AND_WAITING_STATES,
-    SUCCESSFUL_STATES,
     FAILED_STATES,
     PAUSED_STATES,
-    CrawlFile,
+    RUNNING_AND_STARTING_ONLY,
+    RUNNING_AND_WAITING_STATES,
+    RUNNING_STATES,
+    SUCCESSFUL_STATES,
+    TYPE_ALL_CRAWL_STATES,
+    TYPE_NON_RUNNING_STATES,
+    TYPE_PAUSED_STATES,
+    TYPE_RUNNING_STATES,
+    WAITING_STATES,
     CrawlCompleteIn,
-    StorageRef,
     CrawlDedupeStats,
+    CrawlFile,
+    StorageRef,
 )
-
 from btrixcloud.utils import (
-    str_to_date,
+    crawler_image_below_minimum,
     date_to_str,
     dt_now,
-    scale_from_browser_windows,
-    crawler_image_below_minimum,
     run_async_task,
+    scale_from_browser_windows,
+    str_to_date,
 )
 
 from .baseoperator import BaseOperator, Redis
 from .models import (
+    BTRIX_API,
+    CMAP,
+    POD,
+    PVC,
     CrawlSpec,
     CrawlStatus,
-    OpCrawlStats,
-    StopReason,
     MCBaseRequest,
     MCSyncData,
+    OpCrawlStats,
     PodInfo,
-    POD,
-    CMAP,
-    PVC,
-    BTRIX_API,
+    StopReason,
 )
-
 
 METRICS_API = "metrics.k8s.io/v1beta1"
 METRICS = f"PodMetrics.{METRICS_API}"

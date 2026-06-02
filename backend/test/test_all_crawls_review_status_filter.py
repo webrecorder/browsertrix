@@ -1,7 +1,8 @@
-import requests
-import pytest
-import time
 import itertools
+import time
+
+import pytest
+import requests
 
 from .conftest import API_PREFIX, FINISHED_STATES
 

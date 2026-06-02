@@ -4,7 +4,6 @@ Migration 0050 - Move crawl logs to seperate mongo collection
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0050"
 
 

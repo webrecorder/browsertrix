@@ -1,11 +1,12 @@
-from .conftest import API_PREFIX, HOST_PREFIX
-import requests
 import time
 from datetime import datetime
 from tempfile import TemporaryFile
-from zipfile import ZipFile, ZIP_STORED
+from zipfile import ZIP_STORED, ZipFile
 
 import pytest
+import requests
+
+from .conftest import API_PREFIX, HOST_PREFIX
 
 MAX_ATTEMPTS = 24
 

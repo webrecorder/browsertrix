@@ -1,8 +1,8 @@
-import pytest
-import requests
 import time
 from datetime import datetime, timezone
 
+import pytest
+import requests
 
 HOST_PREFIX = "http://127.0.0.1:30870"
 API_PREFIX = HOST_PREFIX + "/api"

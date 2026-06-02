@@ -2,11 +2,10 @@
 Migration 0048 - Calculate firstSeed/seedCount and store directly in database
 """
 
-from typing import cast, List, Dict, Any
+from typing import Any, Dict, List, cast
 
 from btrixcloud.migrations import BaseMigration
-from btrixcloud.models import CrawlConfig, Crawl, Seed
-
+from btrixcloud.models import Crawl, CrawlConfig, Seed
 
 MIGRATION_VERSION = "0048"
 

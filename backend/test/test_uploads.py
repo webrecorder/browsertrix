@@ -1,15 +1,14 @@
-import requests
 import os
 import time
 from tempfile import TemporaryFile
 from urllib.parse import urljoin
-from zipfile import ZipFile, ZIP_STORED
+from zipfile import ZIP_STORED, ZipFile
 
 import pytest
+import requests
 
 from .conftest import API_PREFIX
 from .utils import read_in_chunks
-
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 

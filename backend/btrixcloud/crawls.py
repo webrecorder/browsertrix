@@ -2,90 +2,88 @@
 
 # pylint: disable=too-many-lines
 
+import asyncio
+import contextlib
 import json
 import os
 import re
-import contextlib
 import urllib.parse
 from datetime import datetime
-from uuid import UUID
-import asyncio
-
 from typing import (
     Annotated,
-    Optional,
-    List,
-    Dict,
-    Union,
     Any,
-    Sequence,
     AsyncIterator,
+    Dict,
+    List,
+    Optional,
+    Sequence,
     Tuple,
+    Union,
 )
+from uuid import UUID
 
+import pymongo
 from fastapi import Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorClientSession
 from redis import asyncio as exceptions
 from redis.asyncio.client import Redis
-import pymongo
 
-from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import (
-    dt_now,
-    date_to_str,
-    stream_dict_list_as_csv,
-    validate_regexes,
-    scale_from_browser_windows,
-    browser_windows_from_scale,
-    crawler_image_below_minimum,
-)
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
 from .models import (
-    ListFilterType,
-    UpdateCrawl,
-    DeleteCrawlList,
-    CrawlConfig,
-    UpdateCrawlConfig,
-    CrawlScale,
-    CrawlStats,
-    CrawlFile,
-    Crawl,
-    CrawlOut,
-    CrawlOutWithResources,
-    QARun,
-    QARunOut,
-    QARunWithResources,
-    QARunAggregateStatsOut,
-    DeleteQARunList,
-    Organization,
-    User,
-    Seed,
-    PaginatedCrawlOutResponse,
-    PaginatedSeedResponse,
-    PaginatedCrawlLogResponse,
+    ALL_CRAWL_STATES,
+    NON_RUNNING_STATES,
     RUNNING_AND_WAITING_STATES,
     SUCCESSFUL_STATES,
-    NON_RUNNING_STATES,
-    ALL_CRAWL_STATES,
     TYPE_ALL_CRAWL_STATES,
-    UpdatedResponse,
-    SuccessResponse,
-    StartedResponse,
-    DeletedCountResponseQuota,
-    DeletedCountResponse,
-    EmptyResponse,
-    CrawlScaleResponse,
-    CrawlQueueResponse,
-    MatchCrawlQueueResponse,
-    CrawlLogLine,
-    TagsResponse,
     TYPE_AUTO_PAUSED_STATES,
-    UserRole,
+    Crawl,
+    CrawlConfig,
     CrawlDedupeStats,
+    CrawlFile,
+    CrawlLogLine,
+    CrawlOut,
+    CrawlOutWithResources,
+    CrawlQueueResponse,
+    CrawlScale,
+    CrawlScaleResponse,
+    CrawlStats,
+    DeleteCrawlList,
+    DeletedCountResponse,
+    DeletedCountResponseQuota,
+    DeleteQARunList,
+    EmptyResponse,
+    ListFilterType,
+    MatchCrawlQueueResponse,
+    Organization,
+    PaginatedCrawlLogResponse,
+    PaginatedCrawlOutResponse,
+    PaginatedSeedResponse,
+    QARun,
+    QARunAggregateStatsOut,
+    QARunOut,
+    QARunWithResources,
+    Seed,
+    StartedResponse,
+    SuccessResponse,
+    TagsResponse,
+    UpdateCrawl,
+    UpdateCrawlConfig,
+    UpdatedResponse,
+    User,
+    UserRole,
 )
-
+from .pagination import DEFAULT_PAGE_SIZE, paginated_format
+from .utils import (
+    browser_windows_from_scale,
+    crawler_image_below_minimum,
+    date_to_str,
+    dt_now,
+    scale_from_browser_windows,
+    stream_dict_list_as_csv,
+    validate_regexes,
+)
 
 MAX_MATCH_SIZE = 500000
 DEFAULT_RANGE_LIMIT = 50

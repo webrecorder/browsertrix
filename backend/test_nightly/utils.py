@@ -1,13 +1,12 @@
 """nightly test utils"""
 
-import requests
 import hashlib
 import os
 import tempfile
 
 import boto3
 import pytest
-
+import requests
 
 from .conftest import API_PREFIX
 

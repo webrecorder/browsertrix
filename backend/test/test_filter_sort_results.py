@@ -1,5 +1,6 @@
-import requests
 import urllib.parse
+
+import requests
 
 from .conftest import API_PREFIX
 from .test_collections import UPDATED_NAME as COLLECTION_NAME

@@ -1,30 +1,27 @@
 """auth functions for login"""
 
 import os
-from uuid import UUID, uuid4
-from datetime import timedelta
-from typing import Optional, Tuple, List
-import string
 import secrets
+import string
+from datetime import timedelta
+from typing import List, Optional, Tuple
+from uuid import UUID, uuid4
+
+import jwt
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Request,
+    WebSocket,
+)
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pwdlib import PasswordHash
 from pwdlib.hashers.bcrypt import BcryptHasher
-
 from pydantic import BaseModel
-import jwt
-
-from fastapi import (
-    Request,
-    HTTPException,
-    Depends,
-    WebSocket,
-    APIRouter,
-)
-
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from .models import User, UserOut
 from .utils import dt_now, run_async_task
-
 
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid4().hex)

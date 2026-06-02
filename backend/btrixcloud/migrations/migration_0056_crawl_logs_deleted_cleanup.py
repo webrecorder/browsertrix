@@ -6,7 +6,6 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0056"
 
 NOT_NULLISH = {"$nin": [None, ""]}

@@ -1,8 +1,8 @@
 import os
-import requests
 import uuid
 
 import pytest
+import requests
 
 from .conftest import API_PREFIX, NON_DEFAULT_ORG_NAME, NON_DEFAULT_ORG_SLUG
 from .utils import read_in_chunks

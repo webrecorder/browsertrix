@@ -4,14 +4,13 @@ import asyncio
 import csv
 import io
 import json
-import signal
-import os
-import sys
-import re
 import math
-
+import os
+import re
+import signal
+import sys
 from datetime import datetime, timezone
-from typing import Optional, Dict, Union, List, Any
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 from uuid import UUID
 
@@ -22,7 +21,6 @@ from packaging.version import parse as parse_version
 from pymongo.collation import Collation
 from pymongo.errors import DuplicateKeyError
 from slugify import slugify
-
 
 default_origin = os.environ.get("APP_ORIGIN", "")
 

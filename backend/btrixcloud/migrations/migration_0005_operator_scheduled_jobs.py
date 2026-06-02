@@ -2,10 +2,9 @@
 Migration 0005 - Updating scheduled cron jobs after Operator changes
 """
 
-from btrixcloud.models import CrawlConfig
 from btrixcloud.crawlmanager import CrawlManager
 from btrixcloud.migrations import BaseMigration
-
+from btrixcloud.models import CrawlConfig
 
 MIGRATION_VERSION = "0005"
 

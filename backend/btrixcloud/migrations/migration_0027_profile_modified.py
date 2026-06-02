@@ -4,7 +4,6 @@ Migration 0027 - Profile modified date fallback
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0027"
 
 

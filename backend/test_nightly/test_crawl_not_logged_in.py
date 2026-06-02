@@ -1,9 +1,9 @@
 import time
+from typing import Dict
+from uuid import UUID
 
 import pytest
 import requests
-from typing import Dict
-from uuid import UUID
 
 from .conftest import API_PREFIX
 

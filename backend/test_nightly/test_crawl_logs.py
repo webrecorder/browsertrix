@@ -1,11 +1,10 @@
 import json
-import requests
 import time
 
 import pytest
+import requests
 
 from .conftest import API_PREFIX
-
 
 LINES_TO_TEST = 10
 

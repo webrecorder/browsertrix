@@ -4,7 +4,6 @@ Migration 0017 - Calculate and store org storage usage by type
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0017"
 
 

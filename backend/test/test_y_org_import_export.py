@@ -1,20 +1,21 @@
 import json
 import os
-import requests
 import tempfile
 import time
 
-from .conftest import API_PREFIX
+import requests
+
 from btrixcloud.models import (
-    Organization,
-    Profile,
-    CrawlConfig,
-    ConfigRevision,
     BaseCrawl,
     Collection,
+    ConfigRevision,
+    CrawlConfig,
+    Organization,
     Page,
+    Profile,
 )
 
+from .conftest import API_PREFIX
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 

@@ -8,7 +8,6 @@ from fastapi import HTTPException
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0053"
 
 

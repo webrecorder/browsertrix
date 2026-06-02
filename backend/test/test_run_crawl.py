@@ -1,18 +1,18 @@
-import requests
-import hashlib
-import time
-import io
-import zipfile
-import re
-import csv
 import codecs
+import csv
+import hashlib
+import io
 import json
+import re
+import time
+import zipfile
 from tempfile import TemporaryFile
-from zipfile import ZipFile, ZIP_STORED
+from zipfile import ZIP_STORED, ZipFile
 
 import pytest
+import requests
 
-from .conftest import API_PREFIX, HOST_PREFIX, FINISHED_STATES
+from .conftest import API_PREFIX, FINISHED_STATES, HOST_PREFIX
 from .test_collections import UPDATED_NAME as COLLECTION_NAME
 
 wacz_path = None

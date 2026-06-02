@@ -2,25 +2,22 @@
 
 import os
 import traceback
-from typing import Optional, List, Any
+from typing import Any, List, Optional
 
 import yaml
-
+from fastapi import HTTPException
+from fastapi.templating import Jinja2Templates
 from kubernetes_asyncio import client, config
-from kubernetes_asyncio.stream import WsApiClient
-from kubernetes_asyncio.client.api_client import ApiClient
 from kubernetes_asyncio.client.api import custom_objects_api
-from kubernetes_asyncio.client.models import V1CronJob
-from kubernetes_asyncio.utils import create_from_dict
+from kubernetes_asyncio.client.api_client import ApiClient
 from kubernetes_asyncio.client.exceptions import ApiException
-
+from kubernetes_asyncio.client.models import V1CronJob
+from kubernetes_asyncio.stream import WsApiClient
+from kubernetes_asyncio.utils import create_from_dict
 from redis import asyncio as aioredis
 from redis.asyncio.client import Redis
 
-from fastapi import HTTPException
-from fastapi.templating import Jinja2Templates
-
-from .utils import get_templates_dir, dt_now
+from .utils import dt_now, get_templates_dir
 
 
 # ============================================================================

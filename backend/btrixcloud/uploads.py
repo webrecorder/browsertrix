@@ -1,35 +1,34 @@
 """handle user uploads into browsertrix"""
 
 import uuid
+from io import BufferedReader
+from typing import Any, List, Optional
 from urllib.parse import unquote
 from uuid import UUID
 
-from io import BufferedReader
-from typing import Optional, List, Any
-from fastapi import Depends, UploadFile, File
-from fastapi import HTTPException
+from fastapi import Depends, File, HTTPException, UploadFile
 from starlette.requests import Request
 
 from .basecrawls import BaseCrawlOps
-from .storages import CHUNK_SIZE
 from .models import (
+    MIN_UPLOAD_PART_SIZE,
+    AddedResponseIdQuota,
+    CrawlFile,
     CrawlOut,
     CrawlOutWithResources,
-    CrawlFile,
     DeleteCrawlList,
-    UploadedCrawl,
-    UpdateUpload,
+    DeletedResponseQuota,
+    FilePreparer,
     Organization,
     PaginatedCrawlOutResponse,
-    User,
-    UpdatedResponse,
-    DeletedResponseQuota,
-    AddedResponseIdQuota,
-    FilePreparer,
-    MIN_UPLOAD_PART_SIZE,
     TagsResponse,
+    UpdatedResponse,
+    UpdateUpload,
+    UploadedCrawl,
+    User,
 )
-from .pagination import paginated_format, DEFAULT_PAGE_SIZE
+from .pagination import DEFAULT_PAGE_SIZE, paginated_format
+from .storages import CHUNK_SIZE
 from .utils import dt_now, run_async_task
 
 

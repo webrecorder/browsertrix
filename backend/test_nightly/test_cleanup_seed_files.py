@@ -1,8 +1,8 @@
 import os
-import requests
 import time
 
 import pytest
+import requests
 
 from .conftest import API_PREFIX
 from .utils import read_in_chunks

@@ -2,14 +2,14 @@
 
 from btrixcloud.utils import run_async_task
 
+from .baseoperator import BaseOperator
 from .models import (
+    BTRIX_API,
+    CMAP,
     MCBaseRequest,
     MCDecoratorSyncData,
     MCDecoratorSyncResponse,
-    BTRIX_API,
-    CMAP,
 )
-from .baseoperator import BaseOperator
 
 
 # ============================================================================

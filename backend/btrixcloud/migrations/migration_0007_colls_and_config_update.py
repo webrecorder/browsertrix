@@ -8,7 +8,6 @@ Migration 0007 - Workflows changes
 from btrixcloud.crawlconfigs import stats_recompute_all
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0007"
 
 

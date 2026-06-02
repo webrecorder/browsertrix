@@ -5,7 +5,6 @@ Migration 0047 - Convert scale to browserWindows
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import browser_windows_from_scale
 
-
 MIGRATION_VERSION = "0047"
 
 

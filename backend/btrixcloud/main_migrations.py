@@ -1,11 +1,11 @@
 """entrypoint module for init_container, handles db migration"""
 
+import asyncio
 import os
 import sys
-import asyncio
 
+from .db import ensure_feature_version, update_and_prepare_db
 from .ops import init_ops
-from .db import update_and_prepare_db, ensure_feature_version
 
 
 # ============================================================================

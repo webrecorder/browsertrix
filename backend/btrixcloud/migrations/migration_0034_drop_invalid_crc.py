@@ -4,7 +4,6 @@ Migration 0034 -- remove crc32 from CrawlFile
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0034"
 
 

@@ -3,78 +3,76 @@ Collections API
 """
 
 # pylint: disable=too-many-lines
-from datetime import datetime
-from collections import Counter
-from uuid import UUID, uuid4
-from typing import Optional, List, TYPE_CHECKING, cast, Dict, Any, Union
 import os
+from collections import Counter
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from uuid import UUID, uuid4
 
-import pymongo
 import aiohttp
+import pymongo
 from fastapi import Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
 from starlette.requests import Request
 
-from .pagination import DEFAULT_PAGE_SIZE, paginated_format
+from .auth import get_custom_jwt_token
+from .crawlmanager import CrawlManager
 from .models import (
+    MIN_UPLOAD_PART_SIZE,
+    SUCCESSFUL_STATES,
+    TYPE_DEDUPE_INDEX_STATES,
+    TYPE_INDEX_JOB_TYPES,
+    AddedResponse,
+    AddedResponseIdName,
     AnyHttpUrl,
+    BaseCrawl,
+    BgJobType,
+    CollAccessType,
     Collection,
+    CollectionAddRemove,
+    CollectionAllResponse,
+    CollectionSearchValuesResponse,
+    CollectionThumbnailSource,
+    CollIdName,
     CollIn,
     CollOut,
-    CollIdName,
-    CollectionThumbnailSource,
-    UpdateColl,
-    DedupeIndexStats,
-    DedupeIndexFile,
-    CollectionAddRemove,
-    BaseCrawl,
     CrawlFileOut,
-    Organization,
-    PaginatedCollOutResponse,
-    SUCCESSFUL_STATES,
-    AddedResponseIdName,
-    EmptyResponse,
-    UpdatedResponse,
-    SuccessResponse,
-    AddedResponse,
+    DedupeIndexFile,
+    DedupeIndexStats,
+    DeleteDedupeIndex,
     DeletedResponse,
-    CollectionSearchValuesResponse,
-    CollectionAllResponse,
+    EmptyResponse,
+    Organization,
     OrgPublicCollections,
+    PaginatedCollOutResponse,
+    PublicCollOut,
     PublicOrgDetails,
-    CollAccessType,
+    ResourcesOnly,
+    SuccessResponse,
+    UpdateColl,
     UpdateCollHomeUrl,
+    UpdatedResponse,
     User,
     UserFile,
     UserFilePreparer,
-    MIN_UPLOAD_PART_SIZE,
-    PublicCollOut,
-    ResourcesOnly,
-    DeleteDedupeIndex,
-    BgJobType,
-    TYPE_DEDUPE_INDEX_STATES,
-    TYPE_INDEX_JOB_TYPES,
 )
+from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
+    case_insensitive_collation,
     dt_now,
-    slug_from_name,
     get_duplicate_key_error_field,
     get_origin,
-    case_insensitive_collation,
     run_async_task,
+    slug_from_name,
 )
 
-from .auth import get_custom_jwt_token
-
-from .crawlmanager import CrawlManager
-
 if TYPE_CHECKING:
+    from .background_jobs import BackgroundJobOps
+    from .crawls import CrawlOps
     from .orgs import OrgOps
+    from .pages import PageOps
     from .storages import StorageOps
     from .webhooks import EventWebhookOps
-    from .crawls import CrawlOps
-    from .pages import PageOps
-    from .background_jobs import BackgroundJobOps
 else:
     OrgOps = StorageOps = EventWebhookOps = CrawlOps = PageOps = BackgroundJobOps = (
         object

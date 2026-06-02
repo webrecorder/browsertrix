@@ -1,6 +1,6 @@
 import requests
 
-from .conftest import API_PREFIX, ADMIN_USERNAME, ADMIN_PW
+from .conftest import ADMIN_PW, ADMIN_USERNAME, API_PREFIX
 
 
 def test_login_invalid():

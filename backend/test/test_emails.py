@@ -1,8 +1,8 @@
 """Tests for the email sending functionality in emailsender.py & email templating microservice"""
 
 import asyncio
-import uuid
 import os
+import uuid
 from datetime import datetime
 from typing import cast
 
@@ -11,11 +11,11 @@ import pytest
 
 from btrixcloud.emailsender import EmailSender
 from btrixcloud.models import (
-    Organization,
-    InvitePending,
-    EmailStr,
-    StorageRef,
     CreateReplicaJob,
+    EmailStr,
+    InvitePending,
+    Organization,
+    StorageRef,
 )
 from btrixcloud.utils import dt_now
 

@@ -1,5 +1,6 @@
-import requests
 import time
+
+import requests
 
 from .conftest import API_PREFIX
 from .utils import get_crawl_status

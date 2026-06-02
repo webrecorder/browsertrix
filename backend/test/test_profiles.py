@@ -2,22 +2,22 @@ import time
 from typing import Dict
 from uuid import UUID
 
-import requests
 import pytest
+import requests
 
 from .conftest import (
     API_PREFIX,
-    PROFILE_NAME,
-    PROFILE_DESC,
-    PROFILE_TAGS,
-    PROFILE_NAME_UPDATED,
-    PROFILE_DESC_UPDATED,
-    PROFILE_2_NAME,
     PROFILE_2_DESC,
+    PROFILE_2_NAME,
     PROFILE_2_TAGS,
+    PROFILE_DESC,
+    PROFILE_DESC_UPDATED,
+    PROFILE_NAME,
+    PROFILE_NAME_UPDATED,
+    PROFILE_TAGS,
     PROFILE_TAGS_UPDATED,
-    prepare_browser_for_profile_commit,
     create_profile_browser,
+    prepare_browser_for_profile_commit,
 )
 
 
