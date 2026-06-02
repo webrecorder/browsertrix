@@ -20,20 +20,25 @@ export const DEFAULT_THUMBNAIL = Thumbnail.Cyan;
 @localized()
 @customElement("btrix-collection-thumbnail")
 export class CollectionThumbnail extends BtrixElement {
-  static readonly Variants: Record<Thumbnail, { path: string }> = {
-    [Thumbnail.Cyan]: {
-      path: thumbnailCyanSrc,
-    },
-    [Thumbnail.Green]: {
-      path: thumbnailGreenSrc,
-    },
-    [Thumbnail.Orange]: {
-      path: thumbnailOrangeSrc,
-    },
-    [Thumbnail.Yellow]: {
-      path: thumbnailYellowSrc,
-    },
-  };
+  static readonly Variants: Record<Thumbnail, { path: string; label: string }> =
+    {
+      [Thumbnail.Cyan]: {
+        path: thumbnailCyanSrc,
+        label: msg("Blue"),
+      },
+      [Thumbnail.Green]: {
+        path: thumbnailGreenSrc,
+        label: msg("Green"),
+      },
+      [Thumbnail.Orange]: {
+        path: thumbnailOrangeSrc,
+        label: msg("Rust"),
+      },
+      [Thumbnail.Yellow]: {
+        path: thumbnailYellowSrc,
+        label: msg("Amber"),
+      },
+    };
 
   @property({ type: String })
   src?: string;

@@ -14,6 +14,7 @@ import("./index-import-progress");
 import("./linked-collections");
 import("./select-collection-access");
 import("./select-collection-page");
+import("./select-collection-thumbnail");
 import("./select-dedupe-collection");
 import("./share-collection");
 import("./collection-thumbnail");

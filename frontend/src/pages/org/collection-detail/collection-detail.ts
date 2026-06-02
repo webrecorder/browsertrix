@@ -1,4 +1,4 @@
-import { consume } from "@lit/context";
+import { consume, provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
@@ -9,8 +9,9 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
-import type { Embed as ReplayWebPage } from "replaywebpage";
+import type { Embed as ReplayWebPage, RwpUrlChangeEvent } from "replaywebpage";
 
+import { collectionRwpContext } from "./context/collection-rwp";
 import {
   CollectionSearchParam,
   EditingSearchParamValue,
@@ -118,8 +119,8 @@ export class CollectionDetail extends BtrixElement {
   @consume({ context: viewStateContext })
   viewState?: ViewStateContext;
 
-  @query("replay-web-page")
-  private readonly replayEmbed?: ReplayWebPage | null;
+  @provide({ context: collectionRwpContext })
+  replayEmbed?: ReplayWebPage | null;
 
   @query("btrix-share-collection")
   private readonly shareCollection?: ShareCollection | null;
@@ -195,6 +196,7 @@ export class CollectionDetail extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (changedProperties.has("collectionId")) {
+      this.replayEmbed = undefined;
       void this.fetchCollection();
       void this.fetchArchivedItems({
         page: parsePage(new URLSearchParams(location.search).get("page")),
@@ -237,20 +239,24 @@ export class CollectionDetail extends BtrixElement {
       <div class="mb-7">${this.renderBreadcrumbs()}</div>
       <header
         class=${clsx(
-          tw`grid items-end gap-3 md:grid-cols-[auto_1fr] md:grid-rows-[repeat(3,auto)] md:items-start lg:grid-cols-[auto_1fr_auto]`,
-          this.isCrawler && tw`min-h-16`,
+          tw`grid items-end gap-4 md:grid-cols-[auto_1fr] md:grid-rows-[repeat(3,auto)] md:items-start lg:grid-cols-[auto_1fr_auto]`,
         )}
       >
-        <div class="aspect-video w-60 md:row-span-3">
-          <sl-skeleton
-            class="block aspect-video [--border-radius:var(--sl-border-radius-large)]"
-            effect="sheen"
-          ></sl-skeleton>
+        <div class="aspect-video md:row-span-3 md:h-36">
+          ${when(
+            this.collection,
+            this.renderThumbnail,
+            () =>
+              html`<sl-skeleton
+                class="block aspect-video [--border-radius:var(--sl-border-radius-large)]"
+                effect="sheen"
+              ></sl-skeleton>`,
+          )}
         </div>
         <div
           class=${clsx(
             tw`overflow-hidden md:col-start-2 md:row-start-1`,
-            this.isCrawler && tw`-m-1 -mt-1.5 p-1`,
+            this.isCrawler && tw`-m-1 p-1`,
           )}
         >
           <div
@@ -321,7 +327,7 @@ export class CollectionDetail extends BtrixElement {
                     .value=${col.caption}
                     placeholder=${msg("Add a summary...")}
                     .renderContent=${this.renderCaption}
-                    rows=${3}
+                    rows=${2}
                     @btrix-change=${(e: BtrixChangeEvent<string>) => {
                       void this.updateSummary(e.detail.value);
                     }}
@@ -650,6 +656,18 @@ export class CollectionDetail extends BtrixElement {
     `;
   }
 
+  private readonly renderThumbnail = (collection: Collection) => {
+    return html`
+      <btrix-select-collection-thumbnail
+        collectionId=${collection.id}
+        homeUrl=${ifDefined(collection.homeUrl || undefined)}
+        homeUrlTs=${ifDefined(collection.homeUrlTs || undefined)}
+        thumbnailName=${ifDefined(collection.defaultThumbnailName || undefined)}
+        thumbnailPath=${ifDefined(collection.thumbnail?.path)}
+      ></btrix-select-collection-thumbnail>
+    `;
+  };
+
   private readonly renderAccessDetails = () => {
     if (!this.collection) {
       return html`<sl-skeleton class="h-4 w-12"></sl-skeleton>`;
@@ -703,7 +721,7 @@ export class CollectionDetail extends BtrixElement {
 
   private readonly renderCaption = (text: string) =>
     html`<btrix-prose
-      class="block [--btrix-line-clamp:2] part-[base]:max-w-full"
+      class="block [--btrix-line-clamp:1] part-[base]:max-w-full"
       >${richText(text, {
         linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
       })}</btrix-prose
@@ -1342,11 +1360,14 @@ export class CollectionDetail extends BtrixElement {
         replayBase="/replay/"
         noSandbox="true"
         noCache="true"
-        @rwp-url-change=${() => {
+        @rwp-url-change=${(e: RwpUrlChangeEvent) => {
+          if (!this.replayEmbed) {
+            this.replayEmbed = e.currentTarget as ReplayWebPage;
+          }
           if (!this.isRwpLoaded) {
             this.isRwpLoaded = true;
           }
-          if (this.rwpDoFullReload && this.replayEmbed) {
+          if (this.rwpDoFullReload) {
             void this.replayEmbed.fullReload();
             this.rwpDoFullReload = false;
           }

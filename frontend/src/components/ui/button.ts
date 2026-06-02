@@ -72,7 +72,7 @@ export class Button extends TailwindElement {
         this.disabled ? tw`cursor-not-allowed opacity-50` : tw`cursor-pointer`,
         tw`flex items-center justify-center gap-2 text-center font-medium outline-3 outline-offset-1 outline-primary transition focus-visible:outline`,
         {
-          "x-small": tw`min-h-4 min-w-4 text-sm`,
+          "x-small": tw`min-h-4 min-w-4 rounded-sm text-sm`,
           small: tw`min-h-6 min-w-6 rounded-md text-base`,
           medium: tw`min-h-8 min-w-8 rounded-sm text-lg`,
         }[this.size],
