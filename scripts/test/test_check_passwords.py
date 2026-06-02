@@ -1,6 +1,5 @@
 import pytest
 import yaml
-from os import listdir
 # Import hacking for script
 import sys
 sys.path.insert(0, '.')
