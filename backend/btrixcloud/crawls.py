@@ -1219,9 +1219,15 @@ class CrawlOps(BaseCrawlOps):
 
         finished = qa_run.finished.isoformat()
 
-        headers = {
-            "Content-Disposition": f'attachment; filename="qa-{finished}-crawl-{crawl_id}.wacz"'
-        }
+        filename = f"qa-{finished}-crawl-{crawl_id}.wacz"
+
+        headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+        logger.info(
+            "download_qa_run_as_single_wacz",
+            qa_run_id=qa_run_id,
+            crawl_id=crawl_id,
+            filename=filename,
+        )
         return StreamingResponse(
             resp, headers=headers, media_type="application/wacz+zip"
         )

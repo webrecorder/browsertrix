@@ -1,6 +1,7 @@
 """base crawl type"""
 
 import asyncio
+import logging
 import os
 import urllib.parse
 from datetime import datetime
@@ -50,6 +51,8 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import date_to_str, dt_now, get_origin, run_async_task
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .background_jobs import BackgroundJobOps
@@ -360,9 +363,11 @@ class BaseCrawlOps:
             crawl = await self.get_base_crawl(crawl_id, org, type_)
         # pylint: disable=broad-exception-caught
         except Exception:
-            print(
-                f"Not replicating files for crawl {crawl_id}: crawl not found",
-                flush=True,
+            logger.warning(
+                "crawl_replicate_skipped_not_found",
+                crawl_id=crawl_id,
+                oid=org.id,
+                unstructured_message=f"Not replicating files for crawl {crawl_id}: crawl not found",
             )
             return
 
@@ -373,7 +378,12 @@ class BaseCrawlOps:
                 )
             # pylint: disable=broad-exception-caught
             except Exception as exc:
-                print("Replicate Exception", exc, flush=True)
+                logger.error(
+                    "crawl_replicate_failed",
+                    error=str(exc),
+                    oid=org.id,
+                    unstructured_message=f"Replicate Exception: {exc}",
+                )
 
     async def add_crawl_file_replica(
         self, crawl_id: str, filename: str, ref: StorageRef
@@ -1106,6 +1116,13 @@ class BaseCrawlOps:
             filename = crawl.resources[0].name
 
         headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+        logger.info(
+            "download_crawl_as_single_wacz",
+            crawl_id=crawl_id,
+            filename=filename,
+            prefer_single_wacz=prefer_single_wacz,
+            with_dependencies=with_dependencies,
+        )
         return StreamingResponse(
             resp, headers=headers, media_type="application/wacz+zip"
         )

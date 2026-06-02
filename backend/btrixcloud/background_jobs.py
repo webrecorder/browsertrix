@@ -1,5 +1,6 @@
 """k8s background jobs"""
 
+import logging
 import os
 import secrets
 from datetime import datetime
@@ -34,6 +35,8 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import StorageOps
 from .utils import dt_now, run_async_task
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .basecrawls import BaseCrawlOps
@@ -102,7 +105,14 @@ class BackgroundJobOps:
                 UUID(job.object_id), job.file_path, job.replica_storage
             )
         if not res:
-            print("File deleted before replication job started, ignoring", flush=True)
+            logger.info(
+                "file_deleted_before_replication",
+                object_id=job.object_id,
+                file_path=job.file_path,
+                replica_storage=job.replica_storage,
+                oid=job.oid,
+                unstructured_message="File deleted before replication job started, ignoring",
+            )
 
     async def handle_delete_replica_job_finished(self, job: DeleteReplicaJob) -> None:
         """After successful replica deletion, delete cronjob if scheduled"""
@@ -203,9 +213,14 @@ class BackgroundJobOps:
             return job_id
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            print(
-                "warning: replica job could not be started "
-                + f"for {object_type} {file}: {exc}"
+            # pylint: disable=line-too-long
+            logger.warning(
+                "replica_job_start_failed",
+                object_type=object_type,
+                oid=org.id,
+                file=file,
+                error=str(exc),
+                unstructured_message=f"warning: replica job could not be started for {object_type} {file}: {exc}",
             )
             return ""
 
@@ -293,9 +308,14 @@ class BackgroundJobOps:
 
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            print(
-                "warning: replica deletion job could not be started "
-                + f"for {object_type} {file}: {exc}"
+            # pylint: disable=line-too-long
+            logger.warning(
+                "replica_deletion_job_start_failed",
+                object_type=object_type,
+                file=file,
+                error=str(exc),
+                oid=org.id,
+                unstructured_message=f"warning: replica deletion job could not be started for {object_type} {file}: {exc}",
             )
             return ""
 
@@ -339,7 +359,13 @@ class BackgroundJobOps:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             # pylint: disable=raise-missing-from
-            print(f"warning: delete org job could not be started: {exc}")
+            logger.warning(
+                "delete_org_job_start_failed",
+                oid=org.id,
+                existing_job_id=existing_job_id,
+                error=str(exc),
+                unstructured_message=f"warning: delete org job could not be started: {exc}",
+            )
             return None
 
     async def create_recalculate_org_stats_job(
@@ -382,7 +408,14 @@ class BackgroundJobOps:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             # pylint: disable=raise-missing-from
-            print(f"warning: recalculate org stats job could not be started: {exc}")
+            # pylint: disable=line-too-long
+            logger.warning(
+                "recalculate_org_stats_job_start_failed",
+                error=str(exc),
+                oid=org.id,
+                existing_job_id=existing_job_id,
+                unstructured_message=f"warning: recalculate org stats job could not be started: {exc}",
+            )
             return None
 
     async def create_re_add_org_pages_job(
@@ -431,7 +464,12 @@ class BackgroundJobOps:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             # pylint: disable=raise-missing-from
-            print(f"warning: re-add org pages job could not be started: {exc}")
+            logger.warning(
+                "readd_org_pages_job_start_failed",
+                error=str(exc),
+                oid=oid,
+                unstructured_message=f"warning: re-add org pages job could not be started: {exc}",
+            )
             return None
 
     async def create_optimize_crawl_pages_job(
@@ -471,7 +509,11 @@ class BackgroundJobOps:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             # pylint: disable=raise-missing-from
-            print(f"warning: optimize pages job could not be started: {exc}")
+            logger.warning(
+                "optimize_pages_job_start_failed",
+                error=str(exc),
+                unstructured_message=f"warning: optimize pages job could not be started: {exc}",
+            )
             return None
 
     async def create_update_collection_stats_job(
@@ -516,7 +558,13 @@ class BackgroundJobOps:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             # pylint: disable=raise-missing-from
-            print(f"warning: update collection stats job could not be started: {exc}")
+            # pylint: disable=line-too-long
+            logger.warning(
+                "update_collection_stats_job_start_failed",
+                error=str(exc),
+                oid=oid,
+                unstructured_message=f"warning: update collection stats job could not be started: {exc}",
+            )
             return None
 
     async def ensure_cron_cleanup_jobs_exist(self):
@@ -579,9 +627,11 @@ class BackgroundJobOps:
             await self._send_bg_job_failure_email(job, finished)
 
     async def _send_bg_job_failure_email(self, job: BackgroundJob, finished: datetime):
-        print(
-            f"Background job {job.id} failed, sending email to superuser",
-            flush=True,
+        logger.info(
+            "bg_job_failed_sending_email",
+            job_id=job.id,
+            oid=job.oid,
+            unstructured_message=f"Background job {job.id} failed, sending email to superuser",
         )
         try:
             superuser = await self.user_manager.get_superuser()
@@ -596,9 +646,12 @@ class BackgroundJobOps:
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Error sending bg job failure email for job {job.id}: {err}",
-                flush=True,
+            logger.error(
+                "bg_job_failure_email_failed",
+                job_id=job.id,
+                error=str(err),
+                oid=job.oid,
+                unstructured_message=f"Error sending bg job failure email for job {job.id}: {err}",
             )
 
     async def get_background_job(

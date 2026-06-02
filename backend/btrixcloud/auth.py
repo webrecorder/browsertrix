@@ -1,5 +1,6 @@
 """auth functions for login"""
 
+import logging
 import os
 import secrets
 import string
@@ -20,8 +21,11 @@ from pwdlib import PasswordHash
 from pwdlib.hashers.bcrypt import BcryptHasher
 from pydantic import BaseModel
 
+from .logger import set_log_context
 from .models import User, UserOut
 from .utils import dt_now, run_async_task
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid4().hex)
@@ -180,6 +184,7 @@ def init_jwt_auth(user_manager):
             uid: Optional[str] = payload.get("sub") or payload.get("user_id")
             user = await user_manager.get_by_id(UUID(uid))
             assert user
+            set_log_context(user_id=str(user.id))
             return user
         except:
             raise HTTPException(
@@ -195,7 +200,9 @@ def init_jwt_auth(user_manager):
         # if the shared secret is set
         # ensure using a long shared secret (eg. uuid4)
         if BTRIX_SUBS_APP_API_KEY and token == BTRIX_SUBS_APP_API_KEY:
-            return await user_manager.get_superuser()
+            user = await user_manager.get_superuser()
+            set_log_context(user_id=str(user.id))
+            return user
 
         user = await get_current_user(token)
         if not user.is_superuser:
@@ -229,9 +236,13 @@ def init_jwt_auth(user_manager):
         failed_count = await user_manager.get_failed_logins_count(login_email)
 
         if failed_count > 0:
-            print(
-                f"Consecutive failed login count for {login_email}: {failed_count}",
-                flush=True,
+            # pylint: disable=line-too-long
+            logger.info(
+                "consecutive_failed_logins",
+                login_email=login_email,
+                failed_count=failed_count,
+                uid=login_email,
+                unstructured_message=f"Consecutive failed login count for {login_email}: {failed_count}",
             )
 
         # first, check if failed count exceeds max failed logins
@@ -244,9 +255,12 @@ def init_jwt_auth(user_manager):
                     attempted_user = await user_manager.get_by_email(login_email)
                     if attempted_user:
                         await user_manager.forgot_password(attempted_user)
-                        print(
-                            f"Password reset email sent after too many attempts for {login_email}",
-                            flush=True,
+                        # pylint: disable=line-too-long
+                        logger.info(
+                            "password_reset_email_sent",
+                            login_email=login_email,
+                            uid=str(attempted_user.id),
+                            unstructured_message=f"Password reset email sent after too many attempts for {login_email}",
                         )
 
                 run_async_task(send_reset_if_needed())
@@ -264,7 +278,12 @@ def init_jwt_auth(user_manager):
         user = await user_manager.authenticate(login_email, credentials.password)
 
         if not user:
-            print(f"Failed login attempt for {login_email}", flush=True)
+            logger.warning(
+                "login_failed",
+                login_email=login_email,
+                uid=login_email,
+                unstructured_message=f"Failed login attempt for {login_email}",
+            )
             await user_manager.inc_failed_logins(login_email)
 
             raise HTTPException(
