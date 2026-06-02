@@ -1,11 +1,10 @@
 """CrawlOperator"""
 
 import json
+import logging
 import math
 import os
-import traceback
 from datetime import datetime, timedelta
-from pprint import pprint
 from typing import Any, Literal, Optional, Sequence
 from uuid import UUID
 
@@ -53,6 +52,9 @@ from .models import (
     PodInfo,
     StopReason,
 )
+
+logger = logging.getLogger(__name__)
+
 
 METRICS_API = "metrics.k8s.io/v1beta1"
 METRICS = f"PodMetrics.{METRICS_API}"
@@ -214,8 +216,11 @@ class CrawlOperator(BaseOperator):
         # just in case, finished but not deleted, can only get here if
         # do_crawl_finished_tasks() doesn't reach the end or taking too long
         if status.finished:
-            print(
-                f"warn crawl {crawl_id} finished but not deleted, post-finish taking too long?"
+            logger.warning(
+                "crawl_finished_not_deleted",
+                crawl_id=str(crawl_id),
+                # pylint: disable=line-too-long
+                unstructured_message=f"crawl {crawl_id} finished but not deleted, post-finish taking too long?",
             )
             run_async_task(self.k8s.delete_crawl_job(crawl.id))
             return await self.finalize_response(
@@ -311,13 +316,22 @@ class CrawlOperator(BaseOperator):
             state: Optional[TYPE_NON_RUNNING_STATES] = None
             # Check if pause expiry limit is reached and if so, stop crawl
             if dt_now() >= (crawl.paused_at + self.paused_expires_delta):
-                print(f"Paused crawl expiry reached, stopping crawl, id: {crawl.id}")
+                logger.info(
+                    "paused_crawl_expiry_reached",
+                    crawl_id=str(crawl.id),
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"Paused crawl expiry reached, stopping crawl, id: {crawl.id}",
+                )
                 stop_reason = "stopped_pause_expired"
                 state = "stopped_pause_expired"
 
             # Check if paused crawl was stopped manually
             elif crawl.stopping:
-                print(f"Paused crawl stopped by user, id: {crawl.id}")
+                logger.info(
+                    "paused_crawl_stopped_by_user",
+                    crawl_id=str(crawl.id),
+                    unstructured_message=f"Paused crawl stopped by user, id: {crawl.id}",
+                )
                 stop_reason = "stopped_by_user"
                 state = "stopped_by_user"
 
@@ -454,7 +468,12 @@ class CrawlOperator(BaseOperator):
         if has_pod:
             restart_reason = pod_info.should_restart_pod()
             if restart_reason:
-                print(f"Restarting {name}, reason: {restart_reason}")
+                logger.info(
+                    "redis_pod_restarting",
+                    name=name,
+                    restart_reason=restart_reason,
+                    unstructured_message=f"Restarting {name}, reason: {restart_reason}",
+                )
 
         params["init_redis"] = status.initRedis and not restart_reason
 
@@ -473,9 +492,11 @@ class CrawlOperator(BaseOperator):
             and crawler_image
             and crawler_image_below_minimum(crawler_image, min_autoclick_crawler_image)
         ):
-            print(
-                "Crawler version < min_autoclick_crawler_image, removing autoclick behavior",
-                flush=True,
+            logger.info(
+                "autoclick_behavior_removed",
+                crawler_image=crawler_image,
+                # pylint: disable=line-too-long
+                unstructured_message="Crawler version < min_autoclick_crawler_image, removing autoclick behavior",
             )
             behaviors_list = behaviors.split(",")
             filtered_behaviors = [
@@ -518,7 +539,11 @@ class CrawlOperator(BaseOperator):
         params["config"] = json.dumps(raw_config)
 
         if config_update_needed:
-            print(f"Updating config for {crawl.id}")
+            logger.info(
+                "crawl_configmap_updated",
+                crawl_id=str(crawl.id),
+                unstructured_message=f"Updating config for {crawl.id}",
+            )
 
         return self.load_from_yaml("crawl_configmap.yaml", params)
 
@@ -528,7 +553,11 @@ class CrawlOperator(BaseOperator):
 
         configmap = children[CMAP].get(name)
         if configmap and self.is_configmap_update_needed("qa-config.json", configmap):
-            print(f"Refreshing QA configmap for QA run: {name}")
+            logger.info(
+                "qa_configmap_refreshed",
+                name=name,
+                unstructured_message=f"Refreshing QA configmap for QA run: {name}",
+            )
             configmap = None
 
         if configmap:
@@ -601,7 +630,14 @@ class CrawlOperator(BaseOperator):
         # and previous number of workers was >0
         workers_changed = pod_info.lastWorkers != workers and pod_info.lastWorkers
         if workers_changed:
-            print(f"Workers changed for {i}: {pod_info.lastWorkers} -> {workers}")
+            logger.info(
+                "crawler_workers_changed",
+                pod_index=i,
+                last_workers=pod_info.lastWorkers,
+                new_workers=workers,
+                # pylint: disable=line-too-long
+                unstructured_message=f"Workers changed for {i}: {pod_info.lastWorkers} -> {workers}",
+            )
 
         pod_info.lastWorkers = workers
 
@@ -624,7 +660,12 @@ class CrawlOperator(BaseOperator):
                 restart_reason = "pod_resized"
 
             if restart_reason:
-                print(f"Restarting {name}, reason: {restart_reason}")
+                logger.info(
+                    "crawler_pod_restarting",
+                    name=name,
+                    restart_reason=restart_reason,
+                    unstructured_message=f"Restarting {name}, reason: {restart_reason}",
+                )
                 params["init_crawler"] = False
 
         return self.load_from_yaml("crawler.yaml", params)
@@ -657,7 +698,11 @@ class CrawlOperator(BaseOperator):
             name = f"crawl-{crawl_id}-{i}"
             pod = pods.get(name)
             if pod:
-                print(f"Attempting scaling down of pod {i}")
+                logger.info(
+                    "pod_scale_down_attempting",
+                    pod_index=i,
+                    unstructured_message=f"Attempting scaling down of pod {i}",
+                )
                 await redis.hset(f"{crawl_id}:stopone", name, "1")
 
             # check if this pod can be scaled down
@@ -665,11 +710,22 @@ class CrawlOperator(BaseOperator):
                 # if status key doesn't exist, this pod never actually ran, so just scale down
                 if not await redis.hexists(f"{crawl_id}:status", name):
                     new_scale = i
-                    print(f"Scaled down pod index {i + 1} -> {i}, no previous pod")
+                    logger.info(
+                        "pod_scaled_down_no_previous",
+                        prev_index=i + 1,
+                        new_index=i,
+                        # pylint: disable=line-too-long
+                        unstructured_message=f"Scaled down pod index {i + 1} -> {i}, no previous pod",
+                    )
 
                 elif pod and pod["status"].get("phase") == "Succeeded":
                     new_scale = i
-                    print(f"Scaled down pod index {i + 1} -> {i}, pod completed")
+                    logger.info(
+                        "pod_scaled_down_completed",
+                        prev_index=i + 1,
+                        new_index=i,
+                        unstructured_message=f"Scaled down pod index {i + 1} -> {i}, pod completed",
+                    )
 
         if new_scale < actual_scale:
             for i in range(new_scale, actual_scale):
@@ -737,7 +793,13 @@ class CrawlOperator(BaseOperator):
                 stats=stats,
             )
             if res and status.state != state:
-                print(f"Setting state: {status.state} -> {state}, {crawl.id}")
+                logger.info(
+                    "crawl_state_set",
+                    prev_state=status.state,
+                    new_state=state,
+                    crawl_id=str(crawl.id),
+                    unstructured_message=f"Setting state: {status.state} -> {state}, {crawl.id}",
+                )
                 status.state = state
                 return True
 
@@ -751,15 +813,25 @@ class CrawlOperator(BaseOperator):
                 status.finished = date_to_str(finished)
 
             if actual_state != state:
-                print(
-                    f"State mismatch, actual state {actual_state}, requested {state}, {crawl.id}"
+                logger.warning(
+                    "crawl_state_mismatch",
+                    actual_state=actual_state,
+                    requested_state=state,
+                    crawl_id=str(crawl.id),
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"State mismatch, actual state {actual_state}, requested {state}, {crawl.id}",
                 )
                 if not actual_state and state == "canceled":
                     return True
 
         if status.state != state:
-            print(
-                f"Not setting state: {status.state} -> {state}, not allowed, {crawl.id}"
+            logger.warning(
+                "crawl_state_transition_not_allowed",
+                prev_state=status.state,
+                requested_state=state,
+                crawl_id=str(crawl.id),
+                # pylint: disable=line-too-long
+                unstructured_message=f"Not setting state: {status.state} -> {state}, not allowed, {crawl.id}",
             )
         return False
 
@@ -902,8 +974,12 @@ class CrawlOperator(BaseOperator):
         pod_names = list(pods.keys())
 
         for name in pod_names:
-            print(f"============== POD STATUS: {name} ==============")
-            pprint(pods[name]["status"])
+            logger.error(
+                "failed_crawl_pod_status",
+                pod_name=name,
+                # pylint: disable=line-too-long
+                unstructured_message=f"============== POD STATUS: {name} ==============\n{pods[name]['status']}",
+            )
 
         run_async_task(self.k8s.print_pod_logs(pod_names, self.log_failed_crawl_lines))
 
@@ -949,7 +1025,11 @@ class CrawlOperator(BaseOperator):
                 ttl = spec.get("ttlSecondsAfterFinished", DEFAULT_TTL)
                 finished = str_to_date(status.finished)
                 if finished and (dt_now() - finished).total_seconds() > ttl >= 0:
-                    print("CrawlJob expired, deleting: " + crawl.id)
+                    logger.info(
+                        "crawl_job_expired",
+                        crawl_id=str(crawl.id),
+                        unstructured_message=f"CrawlJob expired, deleting: {crawl.id}",
+                    )
                     finalized = True
             else:
                 finalized = True
@@ -1015,8 +1095,11 @@ class CrawlOperator(BaseOperator):
                     if last_active_time and (
                         (dt_now() - last_active_time).total_seconds() > REDIS_TTL
                     ):
-                        print(
-                            f"Pausing redis, no running crawler pods for >{REDIS_TTL} secs"
+                        logger.info(
+                            "redis_paused_no_crawler_pods",
+                            redis_ttl=REDIS_TTL,
+                            # pylint: disable=line-too-long
+                            unstructured_message=f"Pausing redis, no running crawler pods for >{REDIS_TTL} secs",
                         )
                         status.initRedis = False
 
@@ -1084,8 +1167,10 @@ class CrawlOperator(BaseOperator):
 
         # pylint: disable=broad-except
         except Exception as exc:
-            traceback.print_exc()
-            print(f"Crawl get failed: {exc}, will try again")
+            logger.exception(
+                "crawl_sync_failed",
+                unstructured_message=f"Crawl get failed: {exc}, will try again",
+            )
             return status
 
         finally:
@@ -1132,7 +1217,10 @@ class CrawlOperator(BaseOperator):
 
         # pylint: disable=broad-except
         except Exception as exc:
-            print(exc)
+            logger.error(
+                "sync_pod_status_failed",
+                unstructured_message=f"sync_pod_status error: {exc}",
+            )
 
         return crawler_running, redis_running, pod_done_count
 
@@ -1145,7 +1233,10 @@ class CrawlOperator(BaseOperator):
 
         exit_time = terminated.get("finishedAt")
         if not exit_time:
-            print("warn: terminated pod missing finishedAt", flush=True)
+            logger.warning(
+                "terminated_pod_missing_finished_at",
+                unstructured_message="terminated pod missing finishedAt",
+            )
             return
 
         pod_status = status.podStatus[name]
@@ -1189,7 +1280,12 @@ class CrawlOperator(BaseOperator):
         )
 
         if not update_start_time:
-            print("Crawl first started, webhooks called", now, crawl.id)
+            logger.info(
+                "crawl_first_started",
+                now=str(now),
+                crawl_id=str(crawl.id),
+                unstructured_message=f"Crawl first started, webhooks called {now} {crawl.id}",
+            )
             # call initial running webhook
             if not crawl.qa_source_crawl_id:
                 run_async_task(
@@ -1230,8 +1326,14 @@ class CrawlOperator(BaseOperator):
 
         exec_time = 0
         max_duration = 0
-        print(
-            f"Exec Time Update: {reason}: {now} - {update_start_time} = {update_duration}"
+        logger.info(
+            "exec_time_updated",
+            reason=reason,
+            now=str(now),
+            update_start_time=str(update_start_time),
+            update_duration=update_duration,
+            # pylint: disable=line-too-long
+            unstructured_message=f"Exec Time Update: {reason}: {now} - {update_start_time} = {update_duration}",
         )
 
         for name, pod in pods.items():
@@ -1268,16 +1370,28 @@ class CrawlOperator(BaseOperator):
 
                 # already counted
                 if update_start_time and end_time and end_time < update_start_time:
-                    print(
-                        f"  - {name}: {pod_state}: skipping already counted, "
-                        + f"{end_time} < {start_time}"
+                    logger.debug(
+                        "exec_time_skip_counted",
+                        pod_name=name,
+                        pod_state=pod_state,
+                        end_time=str(end_time),
+                        start_time=str(start_time),
+                        # pylint: disable=line-too-long
+                        unstructured_message=f"  - {name}: {pod_state}: skipping already counted, {end_time} < {start_time}",
                     )
                     continue
 
             if end_time and start_time:
                 duration = int((end_time - start_time).total_seconds())
-                print(
-                    f"  - {name}: {pod_state}: {end_time} - {start_time} = {duration}"
+                logger.debug(
+                    "pod_exec_time_computed",
+                    pod_name=name,
+                    pod_state=pod_state,
+                    end_time=str(end_time),
+                    start_time=str(start_time),
+                    duration=duration,
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"  - {name}: {pod_state}: {end_time} - {start_time} = {duration}",
                 )
                 exec_time += duration
                 max_duration = max(duration, max_duration)
@@ -1289,9 +1403,12 @@ class CrawlOperator(BaseOperator):
             status.crawlExecTime += exec_time
             status.elapsedCrawlTime += max_duration
 
-        print(
-            f"  Exec Time Total: {status.crawlExecTime}, Incremented By: {exec_time}",
-            flush=True,
+        logger.debug(
+            "exec_time_total_computed",
+            total_exec_time=status.crawlExecTime,
+            incremented_by=exec_time,
+            # pylint: disable=line-too-long
+            unstructured_message=f"  Exec Time Total: {status.crawlExecTime}, Incremented By: {exec_time}",
         )
 
         await self.crawl_ops.inc_crawl_exec_time(
@@ -1347,15 +1464,25 @@ class CrawlOperator(BaseOperator):
             # if pod is using >MEM_SCALE_UP_THRESHOLD of its memory, increase mem
             if mem_usage > MEM_SCALE_UP_THRESHOLD:
                 if new_memory > self.k8s.max_crawler_memory_size:
-                    print(
-                        f"Mem {mem_usage}: Not resizing pod {name}: "
-                        + f"mem {new_memory} > max allowed {self.k8s.max_crawler_memory_size}"
+                    logger.warning(
+                        "pod_memory_resize_skipped",
+                        mem_usage=mem_usage,
+                        pod_name=name,
+                        new_memory=new_memory,
+                        max_allowed=self.k8s.max_crawler_memory_size,
+                        # pylint: disable=line-too-long
+                        unstructured_message=f"Mem {mem_usage}: Not resizing pod {name}: mem {new_memory} > max allowed {self.k8s.max_crawler_memory_size}",
                     )
                     return
 
                 pod.newMemory = new_memory
-                print(
-                    f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - Scale Up"
+                logger.info(
+                    "pod_memory_scaled_up",
+                    mem_usage=mem_usage,
+                    pod_name=name,
+                    new_memory=pod.newMemory,
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - Scale Up",
                 )
 
                 # if crawler pod is using its OOM threshold, attempt a soft OOM
@@ -1370,8 +1497,13 @@ class CrawlOperator(BaseOperator):
             # if any pod crashed due to OOM, increase mem
             elif pod.isNewExit and pod.reason == "oom":
                 pod.newMemory = new_memory
-                print(
-                    f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - OOM Detected"
+                logger.warning(
+                    "pod_memory_oom_resize",
+                    mem_usage=mem_usage,
+                    pod_name=name,
+                    new_memory=pod.newMemory,
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - OOM Detected",
                 )
                 send_sig = True
 
@@ -1393,7 +1525,10 @@ class CrawlOperator(BaseOperator):
                 "Crawler Instance Crashed", {"reason": pod.reason, "pod": name}
             )
             if not redis:
-                print(log)
+                logger.error(
+                    "crawler_instance_crashed",
+                    unstructured_message=f"Crawl crash: {log}",
+                )
             else:
                 await redis.lpush(f"{crawl_id}:e", log)
 
@@ -1491,7 +1626,11 @@ class CrawlOperator(BaseOperator):
         if crawl.paused_at:
             return reason
 
-        print(f"request pause for {reason}")
+        logger.info(
+            "crawl_pause_requested",
+            reason=reason,
+            unstructured_message=f"request pause for {reason}",
+        )
         run_async_task(self.crawl_ops.pause_crawl(crawl.id, crawl.org, pause=True))
         return None
 
@@ -1593,8 +1732,12 @@ class CrawlOperator(BaseOperator):
                     pod_info.used.storage * self.min_avail_storage_ratio / 1_000_000_000
                 )
                 pod_info.newStorage = f"{new_storage}Gi"
-                print(
-                    f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
+                logger.info(
+                    "pod_storage_adjusting",
+                    new_storage=pod_info.newStorage,
+                    pod_key=key,
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"Attempting to adjust storage to {pod_info.newStorage} for {key}",
                 )
 
         # check if no longer paused, clear paused stopping state
@@ -1612,11 +1755,20 @@ class CrawlOperator(BaseOperator):
             if status.stopping:
                 if status.stopReason in PAUSED_STATES:
                     await redis.set(f"{crawl.id}:paused", "1")
-                    print(f"Crawl pausing: {status.stopReason}, id: {crawl.id}")
+                    logger.info(
+                        "crawl_pausing",
+                        stop_reason=status.stopReason,
+                        crawl_id=str(crawl.id),
+                        unstructured_message=f"Crawl pausing: {status.stopReason}, id: {crawl.id}",
+                    )
                 else:
                     await redis.set(f"{crawl.id}:stopping", "1")
-                    print(
-                        f"Crawl gracefully stopping: {status.stopReason}, id: {crawl.id}"
+                    logger.info(
+                        "crawl_gracefully_stopping",
+                        stop_reason=status.stopReason,
+                        crawl_id=str(crawl.id),
+                        # pylint: disable=line-too-long
+                        unstructured_message=f"Crawl gracefully stopping: {status.stopReason}, id: {crawl.id}",
                     )
 
         # resolve scale down, if needed
@@ -1743,8 +1895,10 @@ class CrawlOperator(BaseOperator):
 
         # pylint: disable=broad-exception-caught
         except Exception as e:
-            print(e)
-            traceback.print_exc()
+            logger.exception(
+                "dedupe_stats_update_failed",
+                unstructured_message=f"add_crawl_dedupe_stats error: {e}",
+            )
 
     # pylint: disable=too-many-arguments
     async def mark_finished(
@@ -1769,7 +1923,10 @@ class CrawlOperator(BaseOperator):
             finished=finished,
             stats=stats,
         ):
-            print("already finished, ignoring mark_finished")
+            logger.info(
+                "crawl_already_finished",
+                unstructured_message="already finished, ignoring mark_finished",
+            )
             if not status.finished:
                 status.finished = date_to_str(finished)
 
@@ -1870,12 +2027,19 @@ class CrawlOperator(BaseOperator):
 
         started = str_to_date(crawl.started)
         if not started:
-            print("Missing crawl start time, unable to increment crawl stats")
+            logger.error(
+                "crawl_start_time_missing",
+                unstructured_message="Missing crawl start time, unable to increment crawl stats",
+            )
             return
 
         duration = int((finished - started).total_seconds())
 
-        print(f"Duration: {duration}", flush=True)
+        logger.debug(
+            "crawl_duration_computed",
+            duration=duration,
+            unstructured_message=f"Duration: {duration}",
+        )
 
         await self.org_ops.inc_org_time_stats(crawl.oid, duration, False, crawl.is_qa)
 
