@@ -112,6 +112,12 @@ backend_pull_policy: "IfNotPresent"
 
 backend_password_secret: "PASSWORD!"
 
+# log level for backend, operator, and background jobs (DEBUG, INFO, WARNING, ERROR)
+log_level: "DEBUG"
+
+# log format: "json" for structured, "text" for human-readable dev format
+log_format: "json"
+
 # number of workers per pod
 backend_workers: 1
 
