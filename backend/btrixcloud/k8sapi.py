@@ -1,7 +1,7 @@
 """K8S API Access"""
 
+import logging
 import os
-import traceback
 from typing import Any, List, Optional
 
 import yaml
@@ -18,6 +18,8 @@ from redis import asyncio as aioredis
 from redis.asyncio.client import Redis
 
 from .utils import dt_now, get_templates_dir
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================================
@@ -330,7 +332,10 @@ class K8sAPI:
             return {"success": True}
         # pylint: disable=broad-except
         except Exception as exc:
-            traceback.print_exc()
+            logger.exception(
+                "patch_custom_object_failed",
+                unstructured_message="Patch custom object failed",
+            )
             return {"error": str(exc)}
 
     async def unsuspend_k8s_job(self, name) -> dict:
@@ -342,7 +347,10 @@ class K8sAPI:
             return {"success": True}
         # pylint: disable=broad-except
         except Exception as exc:
-            traceback.print_exc()
+            logger.exception(
+                "unsuspend_k8s_job_failed",
+                unstructured_message="Unsuspend k8s job failed",
+            )
             return {"error": str(exc)}
 
     async def has_job(self, name) -> bool:
@@ -359,15 +367,21 @@ class K8sAPI:
     async def print_pod_logs(self, pod_names, lines=100):
         """print pod logs"""
         for pod in pod_names:
-            print(f"============== LOGS FOR POD: {pod} ==============")
+            logger.info(
+                "pod_logs_header",
+                pod_name=pod,
+                unstructured_message=f"============== LOGS FOR POD: {pod} ==============",
+            )
             try:
                 resp = await self.core_api.read_namespaced_pod_log(
                     pod, self.namespace, tail_lines=lines
                 )
-                print(resp)
+                logger.info(
+                    "pod_logs_content", pod_logs=resp, unstructured_message=f"{resp}"
+                )
             # pylint: disable=bare-except
             except:
-                print("Logs Not Found")
+                logger.info("pod_logs_not_found", unstructured_message="Logs Not Found")
 
     async def get_pod_logs(self, pod_name, lines=100, container=None) -> str:
         """get logs for pod"""
@@ -396,7 +410,11 @@ class K8sAPI:
             return True
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            print(exc)
+            logger.error(
+                "pod_metrics_check_failed",
+                error=str(exc),
+                unstructured_message=f"{exc}",
+            )
             return False
 
     async def has_custom_jobs_with_label(self, plural, label) -> bool:
@@ -422,7 +440,12 @@ class K8sAPI:
         signaled = False
 
         try:
-            print(f"Sending {signame} to {pod_name}", flush=True)
+            logger.info(
+                "sending_signal_to_pod",
+                signal=signame,
+                pod_name=pod_name,
+                unstructured_message=f"Sending {signame} to {pod_name}",
+            )
 
             res = await self.core_api_ws.connect_get_namespaced_pod_exec(
                 name=pod_name,
@@ -432,14 +455,20 @@ class K8sAPI:
                 stdout=True,
             )
             if res:
-                print("Result", res, flush=True)
+                logger.debug(
+                    "signal_result", result=res, unstructured_message=f"Result {res}"
+                )
 
             else:
                 signaled = True
 
         # pylint: disable=broad-except
         except Exception as exc:
-            print(f"Send Signal Error: {exc}", flush=True)
+            logger.error(
+                "send_signal_error",
+                error=str(exc),
+                unstructured_message=f"Send Signal Error: {exc}",
+            )
 
         return signaled
 
