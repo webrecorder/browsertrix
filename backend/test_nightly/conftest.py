@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 import pytest
 import requests
 
+import btrixcloud.logger
+
 logger = logging.getLogger(__name__)
 
 
