@@ -1,10 +1,10 @@
 import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
-import { Task } from "@lit/task";
+import { Task, TaskStatus } from "@lit/task";
 import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import Fuse from "fuse.js";
-import { html } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -30,6 +30,12 @@ import { tw } from "@/utils/tailwind";
 
 const SEARCH_LIMIT = 3;
 
+type PageSnapshotOption = {
+  pageId: string;
+  url: string;
+  timestamp: string;
+};
+
 /**
  * @fires btrix-collection-saved
  */
@@ -54,17 +60,23 @@ export class SelectCollectionThumbnail extends BtrixElement {
   @property({ type: String })
   thumbnailPath?: string;
 
+  @property({ type: Number })
+  pageCount?: number;
+
   @state()
   private open = false;
 
   @state()
   private searchValue = "";
 
+  @state()
+  private nextThumbnailUrl?: string;
+
   @query("sl-input")
   private readonly input?: SlInput | null;
 
   readonly #screenshots = new Map<
-    string,
+    /* pageId */ string,
     {
       blob: Promise<Blob | undefined>;
       url: Promise<string | undefined>;
@@ -108,13 +120,12 @@ export class SelectCollectionThumbnail extends BtrixElement {
       }
 
       return options.map((opt) => {
-        const timestamp = opt.snapshots[opt.snapshots.length - 1]?.ts || "";
-        const id = `${opt.url}-${timestamp}`;
+        const snapshot = opt.snapshots[opt.snapshots.length - 1];
 
         return {
-          id,
+          pageId: snapshot.pageId,
           url: opt.url,
-          timestamp,
+          timestamp: snapshot.ts,
         };
       });
     },
@@ -129,8 +140,8 @@ export class SelectCollectionThumbnail extends BtrixElement {
     task: async ([options, rwp], { signal }) => {
       if (!options || !rwp) return this.#screenshots;
 
-      options.forEach(({ id, timestamp, url }) => {
-        let thumbnail = this.#screenshots.get(id);
+      options.forEach(({ pageId, timestamp, url }) => {
+        let thumbnail = this.#screenshots.get(pageId);
 
         if (!thumbnail) {
           const blob = this.getBlob({ url: url, timestamp: timestamp }, signal);
@@ -142,7 +153,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
 
           // - Cache blob to use as upload payload
           // - Cache object URL to revoke in component teardown
-          this.#screenshots.set(id, thumbnail);
+          this.#screenshots.set(pageId, thumbnail);
         }
       });
 
@@ -150,6 +161,62 @@ export class SelectCollectionThumbnail extends BtrixElement {
     },
     args: () => [this.optionsTask.value, this.rwp] as const,
   });
+
+  /**
+   * Save thumbnail to collection.
+   */
+  private readonly updateThumbnailTask = new Task(this, {
+    autoRun: false,
+    task: async ([option], { signal }) => {
+      if (!option) return;
+
+      this.open = false;
+
+      try {
+        const screenshot = this.#screenshots.get(option.pageId);
+
+        if (!screenshot) {
+          throw new Error("no screenshot");
+        }
+
+        const url = await screenshot.url;
+
+        if (!url) {
+          throw new Error("no screenshot url");
+        }
+
+        this.nextThumbnailUrl = url;
+
+        await this.uploadThumbnail(option, signal);
+        await this.updateThumbnail({ defaultThumbnailName: null });
+
+        this.notify.toast({
+          message: msg("Thumbnail updated."),
+          variant: "success",
+          icon: "check2-circle",
+          id: "collection-thumbnail-update-status",
+        });
+
+        this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
+      } catch (err) {
+        console.debug(err);
+
+        this.notify.toast({
+          message: msg("Sorry, couldn't update thumbnail at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+          id: "collection-thumbnail-update-status",
+        });
+      }
+    },
+    args: () => [undefined] as readonly [PageSnapshotOption | undefined],
+  });
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("thumbnailPath") && this.thumbnailPath) {
+      this.nextThumbnailUrl = undefined;
+    }
+  }
 
   disconnectedCallback(): void {
     for (const screenshot of this.#screenshots.values()) {
@@ -161,6 +228,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
 
   render() {
     const isCrawler = this.appState.isCrawler;
+    const updating = this.updateThumbnailTask.status === TaskStatus.PENDING;
 
     return html`<sl-dropdown
       placement="bottom-start"
@@ -183,12 +251,18 @@ export class SelectCollectionThumbnail extends BtrixElement {
           ],
         )}
       >
-        <div class="relative aspect-video">
+        <div class="relative aspect-video rounded-lg bg-neutral-100">
           <btrix-collection-thumbnail
+            class=${clsx(
+              updating && tw`opacity-75`,
+              tw`transition-opacity duration-fast`,
+            )}
             src=${ifDefined(
-              Object.entries(CollectionThumbnail.Variants).find(
-                ([name]) => name === this.thumbnailName,
-              )?.[1].path || this.thumbnailPath,
+              this.nextThumbnailUrl ||
+                Object.entries(CollectionThumbnail.Variants).find(
+                  ([name]) => name === this.thumbnailName,
+                )?.[1].path ||
+                this.thumbnailPath,
             )}
           ></btrix-collection-thumbnail>
 
@@ -198,8 +272,13 @@ export class SelectCollectionThumbnail extends BtrixElement {
               <btrix-button
                 class="absolute bottom-2 right-2"
                 size="small"
-                label=${this.open ? msg("Confirm Edit") : msg("Edit Thumbnail")}
+                label=${updating
+                  ? msg("Updating Thumbnail")
+                  : this.open
+                    ? msg("Confirm Edit")
+                    : msg("Edit Thumbnail")}
                 role="presentation"
+                ?loading=${updating}
                 raised
               >
                 <sl-icon name="pencil"></sl-icon>
@@ -212,7 +291,17 @@ export class SelectCollectionThumbnail extends BtrixElement {
         id="thumb-listbox"
         class="pt-0 [scrollbar-gutter:stable]"
         @sl-select=${(e: SlSelectEvent) => {
-          console.log("select", e.detail.item.value);
+          const pageId = e.detail.item.value;
+          const option = this.optionsTask.value?.find(
+            (opt) => opt.pageId === pageId,
+          );
+
+          if (!option) {
+            console.debug("no option");
+            return;
+          }
+
+          void this.updateThumbnailTask.run([option]);
         }}
       >
         <sl-menu-label class="part-[base]:px-3">
@@ -269,18 +358,14 @@ export class SelectCollectionThumbnail extends BtrixElement {
     </sl-input>`;
   }
 
-  private readonly renderPageOption = ({
-    id,
+  private readonly renderSnapshotOption = ({
+    pageId,
     url,
     timestamp,
-  }: {
-    id: string;
-    url: string;
-    timestamp: string;
-  }) => {
+  }: PageSnapshotOption) => {
     const selected = url === "TODO";
-    const thumbnail = (path?: string) =>
-      path
+    const thumbnail = (url?: string) =>
+      url
         ? html`<div slot="prefix" class="w-28">
             <btrix-popover
               class="[--sl-tooltip-padding:0] part-[base__arrow]:hidden"
@@ -294,13 +379,13 @@ export class SelectCollectionThumbnail extends BtrixElement {
             >
               <div slot="content">
                 <btrix-collection-thumbnail
-                  src=${path}
+                  src=${url}
                 ></btrix-collection-thumbnail>
               </div>
 
               <div class="relative">
                 <btrix-collection-thumbnail
-                  src=${path}
+                  src=${url}
                 ></btrix-collection-thumbnail>
 
                 <btrix-button
@@ -325,7 +410,8 @@ export class SelectCollectionThumbnail extends BtrixElement {
             <sl-icon name="file-earmark-x" class="text-base"></sl-icon>
             ${msg("No thumbnail")}
           </div>`;
-    const asyncScreenshotUrl = this.screenshotsTask.value?.get(id)?.url;
+    const asyncScreenshotUrl = this.screenshotsTask.value?.get(pageId)?.url;
+    const updating = this.updateThumbnailTask.status === TaskStatus.PENDING;
 
     return html`<sl-menu-item
       class=${clsx(
@@ -333,9 +419,9 @@ export class SelectCollectionThumbnail extends BtrixElement {
         selected && tw`part-[checked-icon]:visible`,
       )}
       aria-selected="${selected}"
-      value=${id}
+      value=${pageId}
       ?disabled=${until(
-        asyncScreenshotUrl?.then((path) => !path),
+        asyncScreenshotUrl?.then((path) => updating || !path),
         true,
       )}
     >
@@ -382,7 +468,8 @@ export class SelectCollectionThumbnail extends BtrixElement {
         selected && tw`part-[checked-icon]:visible`,
       )}
       aria-selected="${selected === true}"
-      value=${ifDefined(path)}
+      ?disabled=${this.updateThumbnailTask.status === TaskStatus.PENDING}
+      value=${path}
     >
       <btrix-collection-thumbnail
         slot="prefix"
@@ -393,10 +480,26 @@ export class SelectCollectionThumbnail extends BtrixElement {
     </sl-menu-item>`;
 
   private renderPages() {
-    const list = (
-      options?: { id: string; url: string; timestamp: string }[],
-    ) => {
-      if (!options?.length) {
+    const skeleton = () =>
+      Array.from({
+        length: Math.min(SEARCH_LIMIT, this.pageCount || SEARCH_LIMIT),
+      }).map(
+        () => html`
+          <sl-menu-item class="pointer-events-none" role="presentation">
+            <sl-skeleton
+              slot="prefix"
+              class="aspect-video w-28 part-[base]:rounded-lg"
+              effect="sheen"
+            ></sl-skeleton>
+            <sl-skeleton class="w-20"></sl-skeleton>
+          </sl-menu-item>
+        `,
+      );
+
+    const list = (options?: PageSnapshotOption[]) => {
+      if (!options) return skeleton();
+
+      if (!options.length) {
         return html`<div class="p-3 text-neutral-500">
           ${this.searchValue
             ? msg("No matching pages found.")
@@ -404,12 +507,13 @@ export class SelectCollectionThumbnail extends BtrixElement {
         </div>`;
       }
 
-      return repeat(options, ({ id }) => id, this.renderPageOption);
+      return repeat(options, ({ pageId }) => pageId, this.renderSnapshotOption);
     };
 
     return this.optionsTask.render({
       complete: list,
       pending: () => list(this.optionsTask.value),
+      initial: skeleton,
     });
   }
 
@@ -449,55 +553,52 @@ export class SelectCollectionThumbnail extends BtrixElement {
     }
   };
 
-  private async updateThumbnail({
-    id,
-    url,
-    timestamp,
-  }: {
-    id: string;
-    url: string;
-    timestamp: string;
-  }) {
-    const screenshot = this.#screenshots.get(id);
+  private async uploadThumbnail(
+    { pageId, url, timestamp }: PageSnapshotOption,
+    signal: AbortSignal,
+  ) {
+    const screenshot = this.#screenshots.get(pageId);
 
     if (!screenshot) {
-      console.debug("no screenshot");
-      return;
+      throw new Error("no screenshot");
     }
 
     const blob = await screenshot.blob;
 
     if (!blob) {
-      console.debug("no blob");
-      return;
+      throw new Error("no screenshot blob");
     }
 
-    // TODO get filename from rwp?
-    const fileName = `page-thumbnail_${id}.jpeg`;
+    const fileName = `page-thumbnail_${pageId}.jpeg`;
+    const file = new File([blob], fileName, {
+      type: blob.type,
+    });
 
-    try {
-      const file = new File([blob], fileName, {
-        type: blob.type,
-      });
+    const searchParams = new URLSearchParams({
+      filename: fileName,
+      sourceUrl: url,
+      sourceTs: timestamp,
+      sourcePageId: pageId,
+    });
 
-      const searchParams = new URLSearchParams({
-        filename: fileName,
-        sourceUrl: url,
-        sourceTs: timestamp,
-        // sourcePageId: this.selectedSnapshot.pageId,
-      });
-      const tasks = [
-        this.api.upload(
-          `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?${searchParams.toString()}`,
-          file,
-        ),
-        // this.updateThumbnail({ defaultThumbnailName: null }),
-      ];
-      await Promise.all(tasks);
+    return this.api.upload(
+      `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?${searchParams.toString()}`,
+      file,
+      signal,
+    );
+  }
 
-      this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
-    } catch (err) {
-      console.debug("err");
-    }
+  private async updateThumbnail({
+    defaultThumbnailName,
+  }: {
+    defaultThumbnailName: string | null;
+  }) {
+    return this.api.fetch<{ updated: boolean }>(
+      `/orgs/${this.orgId}/collections/${this.collectionId}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ defaultThumbnailName }),
+      },
+    );
   }
 }
