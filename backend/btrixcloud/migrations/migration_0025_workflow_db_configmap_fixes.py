@@ -2,7 +2,12 @@
 Migration 0025 -- fix workflow database and configmap issues.
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0025"
 
@@ -28,7 +33,7 @@ class Migration(BaseMigration):
             )
         # pylint: disable=broad-except
         except Exception:
-            print(
-                "Error updating null crawlconfig crawlTimeouts to 0",
-                flush=True,
+            logger.error(
+                "migration_crawl_timeout_null_error",
+                unstructured_message="Error updating null crawlconfig crawlTimeouts to 0",
             )

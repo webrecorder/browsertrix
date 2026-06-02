@@ -2,7 +2,11 @@
 Migration 0050 - Move crawl logs to seperate mongo collection
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0050"
 
@@ -20,7 +24,10 @@ class Migration(BaseMigration):
         """Perform migration up. Move crawl logs to separate mongo collection."""
         # pylint: disable=duplicate-code, line-too-long, too-many-locals
         if self.crawl_log_ops is None:
-            print("Unable to move logs, missing ops", flush=True)
+            logger.warning(
+                "crawl_log_migration_missing_ops",
+                unstructured_message="Unable to move logs, missing ops",
+            )
             return
 
         crawls_mdb = self.mdb["crawls"]
@@ -65,9 +72,11 @@ class Migration(BaseMigration):
                 )
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(
-                    f"Error moving logs for crawl {crawl_id}: {err}",
-                    flush=True,
+                logger.error(
+                    "crawl_log_move_error",
+                    crawl_id=crawl_id,
+                    error=err,
+                    unstructured_message=f"Error moving logs for crawl {crawl_id}: {err}",
                 )
 
         # Migrate qaFinished logs
@@ -115,7 +124,10 @@ class Migration(BaseMigration):
                     )
                 # pylint: disable=broad-exception-caught
                 except Exception as err:
-                    print(
-                        f"Error moving logs for crawl {crawl_id} QA run {qa_run_id}: {err}",
-                        flush=True,
+                    logger.error(
+                        "crawl_log_qa_move_error",
+                        crawl_id=crawl_id,
+                        qa_run_id=qa_run_id,
+                        error=err,
+                        unstructured_message=f"Error moving logs for crawl {crawl_id} QA run {qa_run_id}: {err}",
                     )

@@ -2,7 +2,12 @@
 Migration 0012 - Notes to description
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0012"
 
@@ -25,4 +30,8 @@ class Migration(BaseMigration):
             await crawls.update_many({}, {"$rename": {"notes": "description"}})
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(f"Error renaming crawl notes to description: {err}", flush=True)
+            logger.error(
+                "migration_rename_field_error",
+                error=str(err),
+                unstructured_message=f"Error renaming crawl notes to description: {err}",
+            )

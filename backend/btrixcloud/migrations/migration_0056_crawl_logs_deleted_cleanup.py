@@ -2,9 +2,14 @@
 Migration 0056 - Remove logs for deleted crawls
 """
 
+import logging
+
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0056"
 
@@ -47,27 +52,39 @@ class Migration(BaseMigration):
                 crawl_logs_to_delete.append(crawl_id)
 
             if index % 100 == 0:
-                print(
-                    f"Checked {index} of {crawl_count} crawls for logs to delete",
-                    flush=True,
+                logger.info(
+                    "crawls_checked_progress",
+                    index=index,
+                    crawl_count=crawl_count,
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"Checked {index} of {crawl_count} crawls for logs to delete",
                 )
 
         if crawl_logs_to_delete:
             del_count = len(crawl_logs_to_delete)
-            print(
-                f"Checked {index} crawls, deleting logs for {del_count} deleted crawls",
-                flush=True,
+            logger.info(
+                "crawl_logs_deleted_crawls_summary",
+                index=index,
+                del_count=del_count,
+                # pylint: disable=line-too-long
+                unstructured_message=f"Checked {index} crawls, deleting logs for {del_count} deleted crawls",
             )
 
             try:
                 res = await crawl_logs_mdb.delete_many(
                     {"crawlId": {"$in": crawl_logs_to_delete}}
                 )
-                print(f"Deleted {res.deleted_count} crawl log lines", flush=True)
+                logger.info(
+                    "crawl_log_lines_deleted",
+                    deleted_count=res.deleted_count,
+                    unstructured_message=f"Deleted {res.deleted_count} crawl log lines",
+                )
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(
-                    f"Error deleting crawl logs from deleted crawls: {err}", flush=True
+                logger.error(
+                    "crawl_logs_deleted_crawls_error",
+                    error=err,
+                    unstructured_message=f"Error deleting crawl logs from deleted crawls: {err}",
                 )
 
         # DELETED QA RUNS
@@ -90,23 +107,37 @@ class Migration(BaseMigration):
                 qa_run_logs_to_delete.append(qa_run_id)
 
             if qa_index % 100 == 0:
-                print(
-                    f"Checked {qa_index} of {qa_run_count} QA runs for logs to delete",
-                    flush=True,
+                logger.info(
+                    "qa_runs_checked_progress",
+                    qa_index=qa_index,
+                    qa_run_count=qa_run_count,
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"Checked {qa_index} of {qa_run_count} QA runs for logs to delete",
                 )
 
         if qa_run_logs_to_delete:
             qa_del_count = len(qa_run_logs_to_delete)
-            print(
-                f"Checked {qa_index} QA runs, deleting logs for {qa_del_count} deleted runs",
-                flush=True,
+            logger.info(
+                "qa_run_logs_deleted_summary",
+                qa_index=qa_index,
+                qa_del_count=qa_del_count,
+                # pylint: disable=line-too-long
+                unstructured_message=f"Checked {qa_index} QA runs, deleting logs for {qa_del_count} deleted runs",
             )
 
             try:
                 res = await crawl_logs_mdb.delete_many(
                     {"qaRunId": {"$in": qa_run_logs_to_delete}}
                 )
-                print(f"Deleted {res.deleted_count} QA run log lines", flush=True)
+                logger.info(
+                    "qa_run_log_lines_deleted",
+                    deleted_count=res.deleted_count,
+                    unstructured_message=f"Deleted {res.deleted_count} QA run log lines",
+                )
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(f"Error deleting logs from deleted QA runs: {err}", flush=True)
+                logger.error(
+                    "qa_run_logs_deleted_error",
+                    error=err,
+                    unstructured_message=f"Error deleting logs from deleted QA runs: {err}",
+                )

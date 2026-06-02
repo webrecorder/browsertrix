@@ -2,7 +2,12 @@
 Migration 0027 - Profile modified date fallback
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0027"
 
@@ -27,7 +32,8 @@ class Migration(BaseMigration):
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Error adding modified date to profiles: {err}",
-                flush=True,
+            logger.error(
+                "migration_profile_modified_error",
+                error=str(err),
+                unstructured_message=f"Error adding modified date to profiles: {err}",
             )

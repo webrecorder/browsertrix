@@ -51,10 +51,7 @@ class Migration(BaseMigration):
                 },
             )
             updated = res.modified_count
-            print(f"{updated} background job db records updated", flush=True)
+            logger.info("updated_bg_job_records", count=updated)
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Error updating failed background jobs: {err}",
-                flush=True,
-            )
+            logger.error("failed_to_update_bg_job_records", error=str(err))

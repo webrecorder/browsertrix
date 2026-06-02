@@ -3,7 +3,11 @@ Migration 0054 -- clear proxyId on workflows that have profile set
 using proxyId from profile always
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0054"
 
@@ -29,7 +33,8 @@ class Migration(BaseMigration):
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Error update crawl_configs: {err}",
-                flush=True,
+            logger.error(
+                "crawl_config_update_error",
+                error=err,
+                unstructured_message=f"Error update crawl_configs: {err}",
             )

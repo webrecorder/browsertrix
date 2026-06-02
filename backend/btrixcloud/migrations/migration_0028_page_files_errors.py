@@ -2,8 +2,13 @@
 Migration 0028 - Page files and errors
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Crawl, Page
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0028"
 
@@ -64,7 +69,9 @@ class Migration(BaseMigration):
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 crawl_id = crawl_dict.get("_id")
-                print(
-                    f"Error updating page counts and pages for crawl {crawl_id}: {err}",
-                    flush=True,
+                logger.error(
+                    "migration_page_counts_error",
+                    crawl_id=crawl_id,
+                    error=str(err),
+                    unstructured_message=f"Error updating page counts and pages for crawl {crawl_id}: {err}",
                 )

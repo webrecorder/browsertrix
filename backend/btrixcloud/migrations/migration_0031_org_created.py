@@ -2,7 +2,11 @@
 Migration 0031 - Organization created field
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0031"
 
@@ -34,15 +38,22 @@ class Migration(BaseMigration):
                 await orgs_db.find_one_and_update(
                     {"_id": oid}, {"$set": {"created": workflow_created}}
                 )
-                print(f"Created date set for org {oid}", flush=True)
+                logger.info(
+                    "org_created_date_set",
+                    oid=oid,
+                    unstructured_message=f"Created date set for org {oid}",
+                )
             except IndexError:
-                print(
-                    f"Error setting created date for org {oid}, no workflows exist to set date from",
-                    flush=True,
+                logger.error(
+                    "error_setting_org_created_date_no_workflows",
+                    oid=oid,
+                    unstructured_message=f"Error setting created date for org {oid}, no workflows exist to set date from",
                 )
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(
-                    f"Error setting created date for org {oid} from first workflow: {err}",
-                    flush=True,
+                logger.error(
+                    "error_setting_org_created_date_from_workflow",
+                    oid=oid,
+                    error=err,
+                    unstructured_message=f"Error setting created date for org {oid} from first workflow: {err}",
                 )

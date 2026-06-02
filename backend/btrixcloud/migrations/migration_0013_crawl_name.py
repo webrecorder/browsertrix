@@ -2,7 +2,12 @@
 Migration 0013 - Copy config name to crawls
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0013"
 
@@ -33,7 +38,10 @@ class Migration(BaseMigration):
                 )
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(
-                    f"Unable to set name for crawls from with config {config_id}: {err}",
-                    flush=True,
+                logger.error(
+                    "migration_crawl_name_error",
+                    config_id=config_id,
+                    error=str(err),
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"Unable to set name for crawls from with config {config_id}: {err}",
                 )
