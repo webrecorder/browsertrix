@@ -62,7 +62,7 @@ jobs:
         run: |
           cd backend/
           pylint btrixcloud/
-          #ruff check --exit-non-zero-on-fix btrixcloud/
+          ruff check --exit-non-zero-on-fix btrixcloud/
 
       - name: Type Check
         run: |
