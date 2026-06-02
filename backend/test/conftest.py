@@ -8,6 +8,8 @@ from uuid import UUID
 import pytest
 import requests
 
+import btrixcloud.logger
+
 from .utils import read_in_chunks
 
 logger = logging.getLogger(__name__)
