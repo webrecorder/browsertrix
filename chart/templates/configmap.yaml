@@ -8,6 +8,10 @@ metadata:
 data:
   APP_ORIGIN: {{ .Values.ingress.tls | ternary "https" "http" }}://{{ or .Values.ingress.host ( print "localhost:" ( .Values.local_service_port | default 9870 )) }}
 
+  LOG_LEVEL: "{{ .Values.log_level | default "DEBUG" }}"
+
+  LOG_FORMAT: "{{ .Values.log_format | default "json" }}"
+
   CRAWLER_NAMESPACE: {{ .Values.crawler_namespace }}
 
   DEFAULT_NAMESPACE: {{ .Release.Namespace }}
