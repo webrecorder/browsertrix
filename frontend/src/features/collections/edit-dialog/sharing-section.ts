@@ -89,13 +89,15 @@ export class CollectionShareSettings extends BtrixElement {
       <div>
         <div class="form-label flex items-center gap-1.5">
           ${msg("Downloads")}
-          <sl-tooltip
+          <btrix-popover
             content=${msg(
               "If enabled, a button to download this collection will be visible in the shareable page. Please note that even if the download button is disabled, anyone determined to download a shared collection can do so through developer tools. If this is a concern, keep your collection private.",
             )}
+            placement="top-start"
+            hoist
           >
             <sl-icon name="info-circle"></sl-icon>
-          </sl-tooltip>
+          </btrix-popover>
         </div>
         <div>
           <sl-switch

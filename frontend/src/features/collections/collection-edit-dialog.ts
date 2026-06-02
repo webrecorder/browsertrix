@@ -9,15 +9,10 @@ import {
   queryAsync,
   state,
 } from "lit/decorators.js";
-import { type Embed } from "replaywebpage";
 
-import { type CollectionSnapshotPreview } from "./collection-snapshot-preview";
-import { type Thumbnail } from "./collection-thumbnail";
 import checkChanged from "./edit-dialog/helpers/check-changed";
 import submitTask from "./edit-dialog/helpers/submit-task";
-import renderPresentation from "./edit-dialog/presentation-section";
 import { type CollectionShareSettings } from "./edit-dialog/sharing-section";
-import { type SelectCollectionPage } from "./select-collection-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
@@ -26,10 +21,8 @@ import {
   COLLECTION_CAPTION_MAX_LENGTH,
   COLLECTION_NAME_MAX_LENGTH,
   type Collection,
-  type CollectionThumbnailSource,
 } from "@/types/collection";
 import { maxLengthValidator, type MaxLengthValidator } from "@/utils/form";
-import { formatRwpTimestamp } from "@/utils/replay";
 
 type Tab = "general" | "sharing";
 
@@ -63,17 +56,6 @@ export class CollectionEdit extends BtrixElement {
   @property({ type: Boolean })
   open = false;
 
-  /**
-   * If there's an existing RWP instance loaded, pass it into this property;
-   * otherwise, this dialog will load its own instance. RWP is required for
-   * fetching thumbnails.
-   */
-  @property({ type: Object })
-  replayWebPage?: Embed | null | undefined;
-
-  @property({ type: Boolean })
-  replayLoaded = false;
-
   @state()
   isDialogVisible = false;
 
@@ -84,28 +66,7 @@ export class CollectionEdit extends BtrixElement {
   errorTab: Tab | null = null;
 
   @state()
-  thumbnailIsValid: boolean | null = null;
-
-  @state()
   dirty = false;
-
-  // Separating this out so that we can eagerly respond to name changes in dialog title & toasts
-  @state()
-  name = this.collection?.name;
-
-  @state()
-  defaultThumbnailName: `${Thumbnail}` | null =
-    (this.collection?.defaultThumbnailName as
-      | `${Thumbnail}`
-      | null
-      | undefined) || null;
-
-  @state()
-  selectedSnapshot: CollectionThumbnailSource | null =
-    this.collection?.thumbnailSource ?? null;
-
-  @state()
-  blobIsLoaded = false;
 
   @query("btrix-dialog")
   readonly dialog?: Dialog;
@@ -115,12 +76,6 @@ export class CollectionEdit extends BtrixElement {
 
   @queryAsync("btrix-collection-share-settings")
   readonly shareSettings?: Promise<CollectionShareSettings>;
-
-  @query("btrix-select-collection-page")
-  readonly thumbnailSelector?: SelectCollectionPage;
-
-  @query("btrix-collection-snapshot-preview")
-  public readonly thumbnailPreview?: CollectionSnapshotPreview | null;
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("tab")) {
@@ -138,15 +93,6 @@ export class CollectionEdit extends BtrixElement {
     if (changedProperties.has("collectionId") && !this.collectionId) {
       this.onReset();
       this.collection = undefined;
-    }
-    if (
-      changedProperties.has("collection") &&
-      changedProperties.get("collection")?.id != this.collection?.id
-    ) {
-      this.defaultThumbnailName =
-        (this.collection?.defaultThumbnailName as `${Thumbnail}` | null) ||
-        null;
-      this.selectedSnapshot = this.collection?.thumbnailSource ?? null;
     }
   }
 
@@ -186,16 +132,8 @@ export class CollectionEdit extends BtrixElement {
 
   private onReset() {
     void this.hideDialog();
-    void this.thumbnailSelector?.resetFormState();
     this.dirty = false;
     this.errorTab = null;
-    this.blobIsLoaded = false;
-    this.selectedSnapshot = this.collection?.thumbnailSource ?? null;
-    this.defaultThumbnailName =
-      (this.collection?.defaultThumbnailName as
-        | `${Thumbnail}`
-        | null
-        | undefined) || null;
   }
 
   protected firstUpdated(): void {
@@ -205,183 +143,103 @@ export class CollectionEdit extends BtrixElement {
   }
 
   render() {
+    const collection_name = this.collection?.name;
+
     return html`<btrix-dialog
-        .label=${this.collection
-          ? msg(
-              str`Collection Settings for “${this.name || this.collection.name}”`,
-            )
-          : msg("Collection Settings")}
-        .open=${this.open}
-        @sl-show=${() => (this.isDialogVisible = true)}
-        @sl-after-hide=${() => {
-          this.isDialogVisible = false;
-          // Reset the open tab when closing the dialog
-          this.tab = "general";
-        }}
-        @sl-request-close=${(e: SlRequestCloseEvent) => {
-          if (e.detail.source === "close-button") {
-            this.onReset();
-            return;
-          }
-          // Prevent accidental closes unless data has been saved
-          // Closing via the close buttons is fine though, cause it resets the form first.
-          if (this.dirty) e.preventDefault();
-        }}
-        class="h-full [--width:var(--btrix-screen-desktop)]"
-        >${this.isDialogVisible
-          ? html`
-              ${this.collection
-                ? html`
-                    <form
-                      id="collectionEditForm"
-                      @reset=${this.onReset}
-                      @submit=${this.onSubmit}
-                      @btrix-change=${() => {
-                        void this.checkChanged();
-                      }}
-                      @sl-input=${() => {
-                        void this.checkChanged();
-                      }}
-                      @sl-change=${() => {
-                        void this.checkChanged();
-                      }}
-                    >
-                      <btrix-tab-group
-                        placement="top"
-                        .sticky=${false}
-                        active=${this.tab}
-                        @btrix-tab-change=${(e: CustomEvent<Tab>) => {
-                          this.tab = e.detail;
-                        }}
-                        class="part-[content]:pt-4"
-                      >
-                        ${this.renderTab({
-                          panel: "general",
-                          icon: "easel3-fill",
-                          string: msg("Presentation"),
-                        })}
-                        ${this.renderTab({
-                          panel: "sharing",
-                          icon: "globe",
-                          string: msg("Sharing"),
-                        })}
-
-                        <btrix-tab-group-panel name="general">
-                          ${renderPresentation.bind(this)()}
-                        </btrix-tab-group-panel>
-
-                        <btrix-tab-group-panel name="sharing">
-                          <btrix-collection-share-settings
-                            .collection=${this.collection}
-                          ></btrix-collection-share-settings>
-                        </btrix-tab-group-panel>
-                      </btrix-tab-group>
-                      <input class="offscreen" type="submit" />
-                    </form>
-                  `
-                : html`
-                    <div class="grid h-max min-h-[50svh] place-items-center">
-                      <sl-spinner class="text-3xl"></sl-spinner>
-                    </div>
-                  `}
-              <div slot="footer" class="flex items-center justify-end gap-3">
-                <sl-button
-                  class="mr-auto"
-                  size="small"
-                  @click=${async () => {
-                    // Using reset method instead of type="reset" fixes
-                    // incorrect getRootNode in Chrome
-                    (await this.form).reset();
-                  }}
-                  >${this.dirty
-                    ? msg("Discard Changes")
-                    : msg("Cancel")}</sl-button
-                >
-                ${this.dirty
-                  ? html`<span class="text-sm text-warning"
-                      >${msg("Unsaved changes.")}</span
-                    >`
-                  : nothing}
-                ${this.errorTab !== null
-                  ? html`<span class="text-sm text-danger"
-                      >${msg("Please review issues with your changes.")}</span
-                    >`
-                  : nothing}
-                <sl-button
-                  variant="primary"
-                  size="small"
-                  ?loading=${this.submitTask.status === TaskStatus.PENDING}
-                  ?disabled=${this.submitTask.status === TaskStatus.PENDING ||
-                  !this.dirty ||
-                  this.errorTab !== null}
-                  @click=${async () => {
-                    // Using submit method instead of type="submit" fixes
-                    // incorrect getRootNode in Chrome
-                    const form = await this.form;
-                    const submitInput = form.querySelector<HTMLInputElement>(
-                      'input[type="submit"]',
-                    );
-                    form.requestSubmit(submitInput);
-                  }}
-                  >${msg("Save")}</sl-button
-                >
-              </div>
-            `
-          : nothing}
-      </btrix-dialog>
-      ${this.renderReplay()}`;
-  }
-
-  private renderReplay() {
-    if (this.replayWebPage) return;
-    if (!this.collection) return;
-    if (!this.isDialogVisible) return;
-    if (!this.collection.crawlCount) return;
-
-    const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
-    const headers = this.authState?.headers;
-    const config = JSON.stringify({ headers });
-
-    return html`<replay-web-page
-      class="hidden"
-      tabindex="0"
-      source=${replaySource}
-      config="${config}"
-      coll=${this.collection.id}
-      url=${this.collection.homeUrl ||
-      /* must be empty string to reset the attribute: */ ""}
-      ts=${formatRwpTimestamp(this.collection.homeUrlTs) ||
-      /* must be empty string to reset the attribute: */ ""}
-      replayBase="/replay/"
-      noSandbox="true"
-      noCache="true"
-      @rwp-url-change=${() => {
-        if (!this.replayLoaded) {
-          this.replayLoaded = true;
-        }
+      .label=${this.collection
+        ? msg(str`Share “${collection_name}”`)
+        : msg("Share")}
+      .open=${this.open}
+      @sl-show=${() => (this.isDialogVisible = true)}
+      @sl-after-hide=${() => {
+        this.isDialogVisible = false;
+        // Reset the open tab when closing the dialog
+        this.tab = "general";
       }}
-    ></replay-web-page>`;
-  }
-
-  private renderTab({
-    panel,
-    icon,
-    string,
-  }: {
-    panel: Tab;
-    icon: string;
-    string: string;
-  }) {
-    return html`<btrix-tab-group-tab
-      slot="nav"
-      panel=${panel}
-      variant=${this.errorTab === panel ? "error" : "primary"}
-    >
-      <sl-icon
-        name=${this.errorTab === panel ? "exclamation-triangle-fill" : icon}
-      ></sl-icon>
-      ${string}
-    </btrix-tab-group-tab>`;
+      @sl-request-close=${(e: SlRequestCloseEvent) => {
+        if (e.detail.source === "close-button") {
+          this.onReset();
+          return;
+        }
+        // Prevent accidental closes unless data has been saved
+        // Closing via the close buttons is fine though, cause it resets the form first.
+        if (this.dirty) e.preventDefault();
+      }}
+      class="[--width:40rem]"
+      >${this.isDialogVisible
+        ? html`
+            ${this.collection
+              ? html`
+                  <form
+                    id="collectionEditForm"
+                    @reset=${this.onReset}
+                    @submit=${this.onSubmit}
+                    @btrix-change=${() => {
+                      void this.checkChanged();
+                    }}
+                    @sl-input=${() => {
+                      void this.checkChanged();
+                    }}
+                    @sl-change=${() => {
+                      void this.checkChanged();
+                    }}
+                  >
+                    <btrix-collection-share-settings
+                      .collection=${this.collection}
+                    ></btrix-collection-share-settings>
+                    <input class="offscreen" type="submit" />
+                  </form>
+                `
+              : html`
+                  <div class="grid h-max min-h-[50svh] place-items-center">
+                    <sl-spinner class="text-3xl"></sl-spinner>
+                  </div>
+                `}
+            <div slot="footer" class="flex items-center justify-end gap-3">
+              <sl-button
+                class="mr-auto"
+                size="small"
+                @click=${async () => {
+                  // Using reset method instead of type="reset" fixes
+                  // incorrect getRootNode in Chrome
+                  (await this.form).reset();
+                }}
+                >${this.dirty
+                  ? msg("Discard Changes")
+                  : msg("Cancel")}</sl-button
+              >
+              ${this.dirty
+                ? html`<span class="text-sm text-warning"
+                    >${msg("Unsaved changes.")}</span
+                  >`
+                : nothing}
+              ${this.errorTab !== null
+                ? html`<span class="text-sm text-danger"
+                    >${msg("Please review issues with your changes.")}</span
+                  >`
+                : nothing}
+              <sl-button
+                variant="primary"
+                size="small"
+                ?loading=${this.submitTask.status === TaskStatus.PENDING}
+                ?disabled=${this.submitTask.status === TaskStatus.PENDING ||
+                !this.dirty ||
+                this.errorTab !== null}
+                @click=${async () => {
+                  // Using submit method instead of type="submit" fixes
+                  // incorrect getRootNode in Chrome
+                  const form = await this.form;
+                  const submitInput = form.querySelector<HTMLInputElement>(
+                    'input[type="submit"]',
+                  );
+                  form.requestSubmit(submitInput);
+                }}
+                >${msg("Save")}</sl-button
+              >
+            </div>
+          `
+        : nothing}
+    </btrix-dialog>`;
   }
 
   private async fetchCollection(id: string) {

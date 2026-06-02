@@ -32,7 +32,6 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixChangeEvent } from "@/events/btrix-change";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
-import type { EditDialogTab } from "@/features/collections/collection-edit-dialog";
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
@@ -100,9 +99,6 @@ export class CollectionDetail extends BtrixElement {
 
   @state()
   private itemToRemove?: ArchivedItem;
-
-  @state()
-  private editTab?: EditDialogTab;
 
   @state()
   private isEditingDescription = false;
@@ -612,18 +608,12 @@ export class CollectionDetail extends BtrixElement {
 
       <btrix-collection-edit-dialog
         .collection=${this.collection}
-        .tab=${this.editTab ?? "general"}
         ?open=${this.openDialogName === "edit"}
         @sl-hide=${() => (this.openDialogName = undefined)}
         @btrix-collection-saved=${() => {
           this.refreshReplay();
           // TODO maybe we can return the updated collection from the update endpoint, and avoid an extra fetch?
           void this.fetchCollection();
-        }}
-        @btrix-collection-edit-dialog-tab-change=${(
-          e: CustomEvent<EditDialogTab>,
-        ) => {
-          this.editTab = e.detail;
         }}
         @btrix-change=${() => {
           // Don't do full refresh of rwp so that rwp-url-change fires
@@ -806,20 +796,8 @@ export class CollectionDetail extends BtrixElement {
           name="box-arrow-up"
           @click=${() => {
             this.openDialogName = "edit";
-            this.editTab = "sharing";
           }}
         ></sl-icon-button>
-      </sl-tooltip>
-      <sl-tooltip content=${msg("Edit Collection Settings")}>
-        <sl-icon-button
-          name="gear"
-          @click=${() => {
-            this.openDialogName = "edit";
-            this.editTab = "general";
-          }}
-        >
-          <sl-icon slot="prefix"></sl-icon>
-        </sl-icon-button>
       </sl-tooltip>
       <sl-dropdown distance="4">
         <sl-button slot="trigger" size="small" caret
@@ -827,38 +805,12 @@ export class CollectionDetail extends BtrixElement {
         >
         <sl-menu>
           <sl-menu-item
-            @click=${async () => {
-              // replay-web-page needs to be available in order to configure start page
-              if (this.collectionTab !== Tab.Replay) {
-                this.navigate.to(
-                  `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${Tab.Replay}`,
-                );
-                await this.updateComplete;
-              }
-
+            @click=${() => {
               this.openDialogName = "edit";
-              this.editTab = "sharing";
             }}
           >
             <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
             ${msg("Share Collection")}
-          </sl-menu-item>
-          <sl-menu-item
-            @click=${async () => {
-              // replay-web-page needs to be available in order to configure start page
-              if (this.collectionTab !== Tab.Replay) {
-                this.navigate.to(
-                  `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${Tab.Replay}`,
-                );
-                await this.updateComplete;
-              }
-
-              this.openDialogName = "edit";
-              this.editTab = "general";
-            }}
-          >
-            <sl-icon name="gear" slot="prefix"></sl-icon>
-            ${msg("Edit Collection Settings")}
           </sl-menu-item>
           ${when(
             this.collection?.crawlCount,

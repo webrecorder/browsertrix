@@ -24,9 +24,10 @@ import {
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { PageUrlCount } from "@/types/page";
 import type { UnderlyingFunction } from "@/types/utils";
-import { stopProp } from "@/utils/events";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { tw } from "@/utils/tailwind";
+
+import "@/features/collections/collection-thumbnail";
 
 const SEARCH_LIMIT = 3;
 
@@ -236,6 +237,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
     const updating = this.updateThumbnailTask.status === TaskStatus.PENDING;
 
     return html`<sl-dropdown
+      class="size-full"
       placement="bottom-start"
       distance="8"
       skidding="-3"
@@ -249,48 +251,46 @@ export class SelectCollectionThumbnail extends BtrixElement {
       <div
         slot="trigger"
         class=${clsx(
-          tw`relative m-px`,
+          tw`relative aspect-video size-full rounded-lg bg-neutral-100`,
           isCrawler && [
-            tw`cursor-pointer rounded-lg ring-1 transition-all duration-x-fast hover:ring-offset-2`,
+            tw`m-px cursor-pointer ring-1 transition-all duration-x-fast hover:ring-offset-2`,
             this.open ? tw`ring-offset-2` : tw`ring-neutral-200`,
           ],
         )}
       >
-        <div class="relative aspect-video rounded-lg bg-neutral-100">
-          <btrix-collection-thumbnail
-            class=${clsx(
-              updating && tw`opacity-75`,
-              tw`transition-opacity duration-fast`,
-            )}
-            src=${ifDefined(
-              this.nextThumbnailUrl ||
-                Object.entries(CollectionThumbnail.Variants).find(
-                  ([name]) => name === this.thumbnailName,
-                )?.[1].path ||
-                this.thumbnailPath,
-            )}
-          ></btrix-collection-thumbnail>
-
-          ${when(
-            isCrawler,
-            () => html`
-              <btrix-button
-                class="absolute bottom-2 right-2"
-                size="small"
-                label=${updating
-                  ? msg("Updating Thumbnail")
-                  : this.open
-                    ? msg("Confirm Edit")
-                    : msg("Edit Thumbnail")}
-                role="presentation"
-                ?loading=${updating}
-                raised
-              >
-                <sl-icon name="pencil"></sl-icon>
-              </btrix-button>
-            `,
+        <btrix-collection-thumbnail
+          class=${clsx(
+            updating && tw`opacity-75`,
+            tw`transition-opacity duration-fast`,
           )}
-        </div>
+          src=${ifDefined(
+            this.nextThumbnailUrl ||
+              Object.entries(CollectionThumbnail.Variants).find(
+                ([name]) => name === this.thumbnailName,
+              )?.[1].path ||
+              this.thumbnailPath,
+          )}
+        ></btrix-collection-thumbnail>
+
+        ${when(
+          isCrawler,
+          () => html`
+            <btrix-button
+              class="absolute bottom-2 right-2"
+              size="small"
+              label=${updating
+                ? msg("Updating Thumbnail")
+                : this.open
+                  ? msg("Confirm Edit")
+                  : msg("Edit Thumbnail")}
+              role="presentation"
+              ?loading=${updating}
+              raised
+            >
+              <sl-icon name="pencil"></sl-icon>
+            </btrix-button>
+          `,
+        )}
       </div>
       <sl-menu
         id="thumb-listbox"
@@ -387,10 +387,6 @@ export class SelectCollectionThumbnail extends BtrixElement {
               class="[--sl-tooltip-padding:0] part-[base__arrow]:hidden"
               trigger="hover"
               placement="bottom-start"
-              @sl-show=${stopProp}
-              @sl-after-show=${stopProp}
-              @sl-hide=${stopProp}
-              @sl-after-hide=${stopProp}
               hoist
             >
               <div slot="content">

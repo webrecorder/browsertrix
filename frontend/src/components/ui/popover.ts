@@ -3,6 +3,8 @@ import slTooltipStyles from "@shoelace-style/shoelace/dist/components/tooltip/to
 import { css } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
+import { stopProp } from "@/utils/events";
+
 /**
  * Popovers are used to reveal supplementary information, like additional context or details.
  * They're hidden until an anchor is activated, e.g. on hover.
@@ -24,6 +26,16 @@ export class Popover extends SlTooltip {
 
   @property({ type: String, reflect: true })
   placement: SlTooltip["placement"] = "bottom";
+
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    // Stop propagation to prevent dialogs and dropdowns from closing
+    this.addEventListener("sl-show", stopProp);
+    this.addEventListener("sl-after-show", stopProp);
+    this.addEventListener("sl-hide", stopProp);
+    this.addEventListener("sl-after-hide", stopProp);
+  }
 
   static styles = [
     slTooltipStyles,
