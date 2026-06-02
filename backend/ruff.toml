@@ -29,3 +29,6 @@ ignore = [
 ]
 [lint.flake8-tidy-imports.banned-api]
 "asyncio.create_subprocess_shell".msg = "Use the non-shell asyncio.create_subprocess_exec function instead."
+
+[lint.isort]
+force-to-top = ["logger"]

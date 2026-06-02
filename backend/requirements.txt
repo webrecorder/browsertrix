@@ -6,7 +6,6 @@ pwdlib[bcrypt]
 PyJWT==2.8.0
 pydantic==2.12.5
 email-validator
-loguru
 aiofiles
 kubernetes-asyncio==29.0.0
 kubernetes==35.0.0
