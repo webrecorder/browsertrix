@@ -1,13 +1,13 @@
 import os
-import pytest
-import requests
 import subprocess
 import time
 from typing import Dict
 from uuid import UUID
 
-from .utils import read_in_chunks
+import pytest
+import requests
 
+from .utils import read_in_chunks
 
 HOST_PREFIX = "http://127.0.0.1:30870"
 API_PREFIX = HOST_PREFIX + "/api"

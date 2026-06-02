@@ -1,12 +1,11 @@
 """crawl logs"""
 
-from typing import TYPE_CHECKING, Any, Optional, Dict, Tuple, List
-
 import json
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from uuid import UUID, uuid4
 
-from fastapi import HTTPException
 import pymongo
+from fastapi import HTTPException
 
 from .models import CrawlLogLine, Organization
 from .pagination import DEFAULT_PAGE_SIZE

@@ -4,7 +4,6 @@ Migration 0033 - Standardizing quota-based crawl states
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0033"
 
 

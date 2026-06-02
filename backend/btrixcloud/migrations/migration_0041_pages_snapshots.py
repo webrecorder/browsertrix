@@ -4,7 +4,6 @@ Migration 0041 - Rationalize page counts
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0041"
 
 

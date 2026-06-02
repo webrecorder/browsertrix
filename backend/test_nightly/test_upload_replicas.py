@@ -1,13 +1,13 @@
-import time
 import os
+import time
+
 import requests
 
 from .conftest import API_PREFIX
-
 from .utils import (
     read_in_chunks,
-    verify_file_replicated,
     verify_file_and_replica_deleted,
+    verify_file_replicated,
 )
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))

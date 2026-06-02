@@ -4,7 +4,6 @@ Migration 0051 - Ensure failOnContentCheck is not set for workflows without prof
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0051"
 
 

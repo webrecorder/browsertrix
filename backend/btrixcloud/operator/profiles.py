@@ -1,11 +1,10 @@
 """Operator handler for ProfileJobs"""
 
-from btrixcloud.utils import str_to_date, dt_now, run_async_task
-
 from btrixcloud.models import StorageRef
+from btrixcloud.utils import dt_now, run_async_task, str_to_date
 
-from .models import MCSyncData
 from .baseoperator import BaseOperator
+from .models import MCSyncData
 
 
 # ============================================================================

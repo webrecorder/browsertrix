@@ -4,7 +4,6 @@ Migration 0042 - Add filename to pages
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0042"
 
 

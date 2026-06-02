@@ -1,7 +1,8 @@
-import requests
-import time
 import os
+import time
+
 import pytest
+import requests
 
 from .conftest import API_PREFIX
 

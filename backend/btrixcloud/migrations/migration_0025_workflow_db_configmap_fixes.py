@@ -4,7 +4,6 @@ Migration 0025 -- fix workflow database and configmap issues.
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0025"
 
 

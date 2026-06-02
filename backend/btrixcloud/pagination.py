@@ -2,7 +2,6 @@
 
 from typing import Any, List, Optional
 
-
 DEFAULT_PAGE_SIZE = 1_000
 
 

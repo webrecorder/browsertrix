@@ -1,36 +1,35 @@
 """Operator handler for CollIndexes"""
 
-import re
 import datetime
-import traceback
 import os
-
+import re
+import traceback
 from typing import Literal
 from urllib.parse import urlsplit
-
 from uuid import UUID
+
+from kubernetes.utils import parse_quantity
 from pydantic import BaseModel
 from redis.asyncio.client import Redis
-from kubernetes.utils import parse_quantity
 
+from btrixcloud.models import (
+    TYPE_DEDUPE_INDEX_STATES,
+    DedupeIndexFile,
+    DedupeIndexStats,
+    Organization,
+)
 from btrixcloud.utils import (
-    str_to_date,
     date_to_str,
     dt_now,
     gb_storage_ceil,
     gb_storage_floor,
     is_bool,
     run_async_task,
-)
-from btrixcloud.models import (
-    TYPE_DEDUPE_INDEX_STATES,
-    DedupeIndexStats,
-    DedupeIndexFile,
-    Organization,
+    str_to_date,
 )
 
-from .models import MCSyncData, MCBaseRequest, POD, JOB, CJS, BTRIX_API
 from .baseoperator import BaseOperator
+from .models import BTRIX_API, CJS, JOB, POD, MCBaseRequest, MCSyncData
 
 # Threshold used / capacity at which a resize should happen
 USED_DISK_THRESHOLD = 0.70

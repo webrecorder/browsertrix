@@ -4,15 +4,13 @@ Migration 0010 - Precomputing collection total size
 
 from typing import cast
 
-from btrixcloud.colls import CollectionOps
-from btrixcloud.migrations import BaseMigration
-
 from btrixcloud.background_jobs import BackgroundJobOps
+from btrixcloud.colls import CollectionOps
+from btrixcloud.crawlmanager import CrawlManager
+from btrixcloud.migrations import BaseMigration
 from btrixcloud.orgs import OrgOps
 from btrixcloud.storages import StorageOps
 from btrixcloud.webhooks import EventWebhookOps
-from btrixcloud.crawlmanager import CrawlManager
-
 
 MIGRATION_VERSION = "0010"
 

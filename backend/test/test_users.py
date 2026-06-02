@@ -1,13 +1,14 @@
-import requests
 import time
 from uuid import uuid4
 
+import requests
+
 from .conftest import (
+    ADMIN_USERNAME,
     API_PREFIX,
+    CRAWLER_PW,
     CRAWLER_USERNAME,
     CRAWLER_USERNAME_LOWERCASE,
-    CRAWLER_PW,
-    ADMIN_USERNAME,
     FINISHED_STATES,
 )
 

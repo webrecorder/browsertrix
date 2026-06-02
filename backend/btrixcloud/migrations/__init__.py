@@ -4,6 +4,7 @@ BaseMigration class to subclass in each migration module
 
 import os
 import traceback
+
 from pymongo.errors import OperationFailure
 
 

@@ -5,7 +5,6 @@ Migration 0052 - Fix profile filenames in db to be full path from bucket
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Profile
 
-
 MIGRATION_VERSION = "0052"
 
 

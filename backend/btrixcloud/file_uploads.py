@@ -1,32 +1,31 @@
 """user-uploaded files"""
 
-from typing import TYPE_CHECKING, Union, Any, Optional, Dict, Tuple, List
-
-from datetime import timedelta
 import os
 import tempfile
+from datetime import timedelta
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID, uuid4
 
 import aiohttp
+import pymongo
 from fastapi import APIRouter, Depends, HTTPException, Request
 from motor.motor_asyncio import AsyncIOMotorClientSession
-import pymongo
 
 from .models import (
-    SeedFileOut,
+    MIN_UPLOAD_PART_SIZE,
+    AddedResponseId,
+    Organization,
+    PaginatedUserFileResponse,
     SeedFile,
+    SeedFileOut,
+    SuccessResponse,
+    User,
     UserFile,
     UserFilePreparer,
-    Organization,
-    User,
-    AddedResponseId,
-    SuccessResponse,
-    MIN_UPLOAD_PART_SIZE,
-    PaginatedUserFileResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
+from .storages import CHUNK_SIZE, StorageOps
 from .utils import dt_now, is_url
-from .storages import StorageOps, CHUNK_SIZE
 
 if TYPE_CHECKING:
     from .orgs import OrgOps

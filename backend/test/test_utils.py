@@ -2,7 +2,7 @@
 
 import pytest
 
-from btrixcloud.utils import slug_from_name, crawler_image_below_minimum
+from btrixcloud.utils import crawler_image_below_minimum, slug_from_name
 
 
 @pytest.mark.parametrize(

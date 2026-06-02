@@ -1,28 +1,27 @@
 """Basic Email Sending Support"""
 
-from datetime import datetime
 import os
 import smtplib
 import ssl
-from uuid import UUID
-from typing import Optional, Union, Literal
-
+from datetime import datetime
 from email.message import EmailMessage
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Literal, Optional, Union
+from uuid import UUID
 
 import aiohttp
 from fastapi import HTTPException
 
 from .models import (
+    TYPE_AUTO_PAUSED_STATES,
     CreateReplicaJob,
     DeleteReplicaJob,
-    Organization,
     InvitePending,
+    Organization,
     Subscription,
-    TYPE_AUTO_PAUSED_STATES,
 )
-from .utils import is_bool, get_origin
+from .utils import get_origin, is_bool
 
 
 # pylint: disable=too-few-public-methods, too-many-instance-attributes

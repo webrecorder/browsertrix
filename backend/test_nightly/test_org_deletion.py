@@ -1,8 +1,8 @@
-import requests
 import time
 from uuid import uuid4
 
 import pytest
+import requests
 
 from .conftest import API_PREFIX
 

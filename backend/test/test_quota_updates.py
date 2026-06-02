@@ -3,7 +3,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from btrixcloud.models import OrgQuotasIn, Organization, StorageRef, OrgQuotas
+
+from btrixcloud.models import Organization, OrgQuotas, OrgQuotasIn, StorageRef
 from btrixcloud.orgs import BaseOrgs, OrgOps
 from btrixcloud.utils import dt_now
 

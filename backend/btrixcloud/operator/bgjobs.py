@@ -1,15 +1,15 @@
 """Operator handler for BackgroundJobs"""
 
-from uuid import UUID
 import traceback
+from uuid import UUID
 
 from btrixcloud.utils import (
-    str_to_date,
     dt_now,
+    str_to_date,
 )
 
-from .models import MCDecoratorSyncData
 from .baseoperator import BaseOperator
+from .models import MCDecoratorSyncData
 
 
 # ============================================================================

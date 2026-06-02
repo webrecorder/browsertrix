@@ -1,6 +1,7 @@
 import os
-import requests
 import time
+
+import requests
 
 from .conftest import API_PREFIX, HOST_PREFIX
 from .utils import verify_file_and_replica_deleted

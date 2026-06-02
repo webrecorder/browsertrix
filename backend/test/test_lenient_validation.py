@@ -8,7 +8,6 @@ from pydantic import Field, ValidationError
 
 from btrixcloud.db import LENIENT_ON_READ, BaseMongoModel
 
-
 # ---------------------------------------------------------------------------
 # Minimal test models
 # ---------------------------------------------------------------------------

@@ -1,28 +1,31 @@
 """Base Operator class for all operators"""
 
-import os
 import json
+import os
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
-from kubernetes.utils import parse_quantity
 
 import yaml
+from kubernetes.utils import parse_quantity
+
 from btrixcloud.k8sapi import K8sAPI
-from btrixcloud.utils import is_bool, dt_now, str_to_date
+from btrixcloud.utils import dt_now, is_bool, str_to_date
+
 from .models import COLLINDEX
 
 if TYPE_CHECKING:
+    from redis.asyncio.client import Redis
+
+    from btrixcloud.background_jobs import BackgroundJobOps
+    from btrixcloud.colls import CollectionOps
+    from btrixcloud.crawl_logs import CrawlLogOps
     from btrixcloud.crawlconfigs import CrawlConfigOps
     from btrixcloud.crawls import CrawlOps
-    from btrixcloud.crawl_logs import CrawlLogOps
     from btrixcloud.orgs import OrgOps
-    from btrixcloud.colls import CollectionOps
-    from btrixcloud.storages import StorageOps
-    from btrixcloud.webhooks import EventWebhookOps
-    from btrixcloud.users import UserManager
-    from btrixcloud.background_jobs import BackgroundJobOps
     from btrixcloud.pages import PageOps
-    from redis.asyncio.client import Redis
+    from btrixcloud.storages import StorageOps
+    from btrixcloud.users import UserManager
+    from btrixcloud.webhooks import EventWebhookOps
 else:
     CrawlConfigOps = CrawlOps = OrgOps = CollectionOps = Redis = CrawlLogOps = object
     StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = PageOps = object

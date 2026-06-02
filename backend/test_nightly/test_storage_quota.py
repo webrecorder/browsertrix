@@ -1,12 +1,12 @@
 import math
-import requests
 import time
 from datetime import datetime
 from typing import Dict
 
+import requests
+
 from .conftest import API_PREFIX
 from .utils import get_crawl_status
-
 
 STORAGE_QUOTA_MB_TO_INCREASE = 5
 STORAGE_QUOTA_BYTES_INC = STORAGE_QUOTA_MB_TO_INCREASE * 1000 * 1000

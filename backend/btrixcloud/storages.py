@@ -2,69 +2,63 @@
 Storage API
 """
 
-from typing import (
-    Optional,
-    Iterator,
-    Iterable,
-    List,
-    Dict,
-    AsyncIterator,
-    TYPE_CHECKING,
-    Any,
-    cast,
-    Union,
-)
-from urllib.parse import urlsplit
-from contextlib import asynccontextmanager
-from itertools import chain
-
 import asyncio
-import time
 import heapq
-import zlib
 import json
 import os
-
+import time
+import zlib
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
+from itertools import chain
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Union,
+    cast,
+)
+from urllib.parse import urlsplit
 from zipfile import ZipInfo
 
-from fastapi import Depends, HTTPException, APIRouter
-from stream_zip import stream_zip, NO_COMPRESSION_64, Method
-from remotezip import RemoteZip
-from aiobotocore.config import AioConfig
-
 import aiobotocore.session
-import requests
 import pymongo
-
+import requests
+from aiobotocore.config import AioConfig
+from fastapi import APIRouter, Depends, HTTPException
+from remotezip import RemoteZip
+from stream_zip import NO_COMPRESSION_64, Method, stream_zip
 from types_aiobotocore_s3 import S3Client as AIOS3Client
 from types_aiobotocore_s3.type_defs import CompletedPartTypeDef
 
 from .models import (
+    PRESIGN_DURATION_SECONDS,
+    AddedResponseName,
     BaseFile,
     CrawlFile,
     CrawlFileOut,
+    DeletedResponse,
     Organization,
-    StorageRef,
+    OrgStorageRefs,
+    PresignedUrl,
     S3Storage,
     S3StorageIn,
-    OrgStorageRefs,
-    DeletedResponse,
-    UpdatedResponse,
-    AddedResponseName,
-    PRESIGN_DURATION_SECONDS,
-    PresignedUrl,
+    StorageRef,
     SuccessResponse,
+    UpdatedResponse,
     User,
 )
-
-from .utils import slug_from_name, dt_now, get_origin
+from .utils import dt_now, get_origin, slug_from_name
 from .version import __version__
 
-
 if TYPE_CHECKING:
-    from .orgs import OrgOps
     from .crawlmanager import CrawlManager
+    from .orgs import OrgOps
 else:
     OrgOps = CrawlManager = object
 

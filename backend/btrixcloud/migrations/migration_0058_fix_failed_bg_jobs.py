@@ -2,12 +2,11 @@
 Migration 0058 - Fix failed background jobs with success and finished unset
 """
 
-from datetime import timedelta
 import os
+from datetime import timedelta
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import dt_now
-
 
 MIGRATION_VERSION = "0058"
 

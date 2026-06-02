@@ -1,33 +1,33 @@
 repos:
-- repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.14.13
-  hooks:
-    - id: ruff-check
-      args: ["--fix", "backend/btrixcloud/"]
-    - id: ruff-format
-      args: ["backend/btrixcloud/"]
-- repo: local
-  hooks:
-    - id: pylint
-      name: pylint
-      entry: cd backend && pylint
-      language: system
-      types: [python]
-      args: ["btrixcloud/"]
-- repo: local
-  hooks:
-    - id: mypy
-      name: mypy
-      entry: cd backend && mypy
-      language: python
-      args: ["btrixcloud/"]
-- repo: local
-  hooks:
-    - id: husky-run-pre-commit
-      name: husky
-      language: system
-      entry: frontend/.husky/pre-commit
-      pass_filenames: false
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.13
+    hooks:
+      - id: ruff-check
+        args: ["--fix", "backend/btrixcloud/"]
+      - id: ruff-format
+        args: ["backend/btrixcloud/"]
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: cd backend && pylint
+        language: system
+        types: [python]
+        args: ["btrixcloud/"]
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: cd backend && mypy
+        language: python
+        args: ["btrixcloud/"]
+  - repo: local
+    hooks:
+      - id: husky-run-pre-commit
+        name: husky
+        language: system
+        entry: frontend/.husky/pre-commit
+        pass_filenames: false
 # - repo: local
 #   hooks:
 #     - id: password-check

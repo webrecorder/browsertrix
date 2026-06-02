@@ -1,10 +1,10 @@
-import requests
 import os
 import time
-from uuid import uuid4
-
-from zipfile import ZipFile, ZIP_STORED
 from tempfile import TemporaryFile
+from uuid import uuid4
+from zipfile import ZIP_STORED, ZipFile
+
+import requests
 
 from .conftest import API_PREFIX, NON_DEFAULT_ORG_NAME, NON_DEFAULT_ORG_SLUG
 from .utils import read_in_chunks

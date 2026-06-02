@@ -4,11 +4,11 @@ Migration 0039 -- collection slugs
 
 from uuid import UUID
 
-from pymongo.errors import DuplicateKeyError
 import pymongo
+from pymongo.errors import DuplicateKeyError
 
 from btrixcloud.migrations import BaseMigration
-from btrixcloud.utils import slug_from_name, case_insensitive_collation
+from btrixcloud.utils import case_insensitive_collation, slug_from_name
 
 MIGRATION_VERSION = "0039"
 

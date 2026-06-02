@@ -1,11 +1,11 @@
-import time
-import pytest
-import requests
 import random
 import string
+import time
+
+import pytest
+import requests
 
 from .conftest import API_PREFIX
-
 
 MAX_ATTEMPTS = 24
 

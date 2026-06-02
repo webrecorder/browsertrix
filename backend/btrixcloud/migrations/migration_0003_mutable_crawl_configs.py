@@ -2,10 +2,9 @@
 Migration 0003 - Mutable crawl configs and crawl revision history
 """
 
-from btrixcloud.models import Crawl, CrawlConfig
 from btrixcloud.migrations import BaseMigration, MigrationError
+from btrixcloud.models import Crawl, CrawlConfig
 from btrixcloud.utils import dt_now
-
 
 MIGRATION_VERSION = "0003"
 

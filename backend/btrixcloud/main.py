@@ -8,39 +8,34 @@ import sys
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
-
-from fastapi.openapi.utils import get_openapi
-from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from pydantic import BaseModel
 
-from .db import init_db, await_db_and_migrations
-
-from .emailsender import EmailSender
-from .invites import init_invites
 from .auth import JWT_TOKEN_LIFETIME
-from .users import init_users_api, init_user_manager
-from .orgs import init_orgs_api
-
-from .profiles import init_profiles_api
-
-from .storages import init_storages_api
-from .uploads import init_uploads_api
-from .crawlconfigs import init_crawl_config_api
-from .crawl_logs import CrawlLogOps
-from .colls import init_collections_api
-from .crawls import init_crawls_api
-from .basecrawls import init_base_crawls_api
-from .webhooks import init_event_webhooks_api
 from .background_jobs import init_background_jobs_api
-from .pages import init_pages_api
-from .subs import init_subs_api
-from .file_uploads import init_file_uploads_api
-
+from .basecrawls import init_base_crawls_api
+from .colls import init_collections_api
+from .crawl_logs import CrawlLogOps
+from .crawlconfigs import init_crawl_config_api
 from .crawlmanager import CrawlManager
-from .utils import register_exit_handler, is_bool, run_async_task
+from .crawls import init_crawls_api
+from .db import await_db_and_migrations, init_db
+from .emailsender import EmailSender
+from .file_uploads import init_file_uploads_api
+from .invites import init_invites
+from .orgs import init_orgs_api
+from .pages import init_pages_api
+from .profiles import init_profiles_api
+from .storages import init_storages_api
+from .subs import init_subs_api
+from .uploads import init_uploads_api
+from .users import init_user_manager, init_users_api
+from .utils import is_bool, register_exit_handler, run_async_task
 from .version import __version__
+from .webhooks import init_event_webhooks_api
 
 API_PREFIX = "/api"
 

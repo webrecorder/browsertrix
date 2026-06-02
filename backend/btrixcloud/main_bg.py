@@ -9,7 +9,6 @@ from uuid import UUID
 from .models import BgJobType
 from .ops import init_ops
 
-
 job_type = os.environ.get("BG_JOB_TYPE")
 oid = os.environ.get("OID")
 crawl_type = os.environ.get("CRAWL_TYPE")

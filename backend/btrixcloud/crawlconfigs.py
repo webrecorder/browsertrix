@@ -4,30 +4,29 @@ Crawl Config API handling
 
 # pylint: disable=too-many-lines
 
-from typing import (
-    List,
-    Optional,
-    TYPE_CHECKING,
-    cast,
-    Dict,
-    Tuple,
-    Annotated,
-    Union,
-    Any,
-)
-
 import asyncio
 import json
-import re
 import os
+import re
 import traceback
-from datetime import datetime, timedelta
-from uuid import UUID, uuid4
 import urllib.parse
+from datetime import datetime, timedelta
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
+from uuid import UUID, uuid4
 
 import aiohttp
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 import pymongo
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from motor.motor_asyncio import (
     AsyncIOMotorClient,
     AsyncIOMotorClientSession,
@@ -35,63 +34,63 @@ from motor.motor_asyncio import (
     AsyncIOMotorDatabase,
 )
 
-from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
+    SUCCESSFUL_STATES,
     TYPE_ALL_CRAWL_STATES,
-    CrawlConfigIn,
     ConfigRevision,
     CrawlConfig,
-    CrawlConfigOut,
-    TagsResponse,
-    CrawlOut,
-    CrawlOutWithResources,
-    UpdateCrawlConfig,
-    Organization,
-    User,
-    PaginatedCrawlConfigOutResponse,
-    PaginatedSeedResponse,
-    PaginatedConfigRevisionResponse,
-    SUCCESSFUL_STATES,
-    CrawlerChannel,
-    CrawlerChannels,
-    StartedResponse,
-    SuccessResponse,
-    EmptyResponse,
     CrawlConfigAddedResponse,
+    CrawlConfigDeletedResponse,
+    CrawlConfigIn,
+    CrawlConfigOut,
     CrawlConfigSearchValues,
     CrawlConfigUpdateResponse,
-    CrawlConfigDeletedResponse,
-    CrawlerProxy,
+    CrawlerChannel,
+    CrawlerChannels,
     CrawlerProxies,
-    ValidateCustomBehavior,
-    RawCrawlConfig,
+    CrawlerProxy,
+    CrawlOut,
+    CrawlOutWithResources,
+    EmptyResponse,
     ListFilterType,
+    Organization,
+    PaginatedConfigRevisionResponse,
+    PaginatedCrawlConfigOutResponse,
+    PaginatedSeedResponse,
+    Profile,
+    RawCrawlConfig,
     ScopeType,
     Seed,
-    Profile,
+    StartedResponse,
+    SuccessResponse,
+    TagsResponse,
+    UpdateCrawlConfig,
+    User,
+    ValidateCustomBehavior,
 )
+from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
-    dt_now,
-    drop_privileges,
-    slug_from_name,
-    validate_regexes,
-    validate_language_code,
-    is_url,
     browser_windows_from_scale,
     case_insensitive_collation,
     crawler_image_below_minimum,
+    drop_privileges,
+    dt_now,
+    is_url,
     run_async_task,
+    slug_from_name,
+    validate_language_code,
+    validate_regexes,
 )
 
 if TYPE_CHECKING:
-    from .orgs import OrgOps
-    from .crawlmanager import CrawlManager
-    from .users import UserManager
-    from .profiles import ProfileOps
-    from .crawls import CrawlOps
     from .colls import CollectionOps
+    from .crawlmanager import CrawlManager
+    from .crawls import CrawlOps
     from .file_uploads import FileUploadOps
+    from .orgs import OrgOps
+    from .profiles import ProfileOps
     from .storages import StorageOps
+    from .users import UserManager
 else:
     OrgOps = CrawlManager = UserManager = ProfileOps = CrawlOps = CollectionOps = (
         FileUploadOps

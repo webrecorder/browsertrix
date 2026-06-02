@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # important, to fetch previous commit
+          fetch-depth: 2 # important, to fetch previous commit
 
       # workaround for https://github.com/dorny/paths-filter/issues/240
       - id: previous-sha
@@ -45,7 +45,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |

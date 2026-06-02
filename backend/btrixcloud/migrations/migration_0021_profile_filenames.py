@@ -5,7 +5,6 @@ Migration 0021 - Profile filenames
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Profile
 
-
 MIGRATION_VERSION = "0021"
 
 

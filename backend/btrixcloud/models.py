@@ -4,48 +4,52 @@ Crawl-related models and types
 
 # pylint: disable=invalid-name, too-many-lines
 from __future__ import annotations
-from datetime import datetime
-from enum import Enum, IntEnum
-from uuid import UUID
+
 import base64
 import hashlib
-import mimetypes
 import math
+import mimetypes
 import os
-
+from datetime import datetime
+from enum import Enum, IntEnum
 from typing import (
-    Optional,
-    List,
+    Annotated,
+    Any,
     Dict,
+    List,
+    Literal,
+    Optional,
     Self,
     Union,
-    Literal,
-    Any,
     get_args,
     get_origin,
-    Annotated,
 )
+from uuid import UUID
 
 from pydantic import (
-    BaseModel,
-    Field,
-    HttpUrl as HttpUrlNonStr,
     AnyHttpUrl as AnyHttpUrlNonStr,
-    EmailStr as CasedEmailStr,
+)
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    RootModel,
+    TypeAdapter,
     create_model,
     model_validator,
     validate_email,
-    RootModel,
-    BeforeValidator,
-    TypeAdapter,
-    ConfigDict,
+)
+from pydantic import (
+    EmailStr as CasedEmailStr,
+)
+from pydantic import (
+    HttpUrl as HttpUrlNonStr,
 )
 from slugify import slugify
 
 # from fastapi_users import models as fastapi_users_models
-
 from .db import LENIENT_ON_READ, BaseMongoModel
-
 from .utils import is_bool
 
 # num browsers per crawler instance

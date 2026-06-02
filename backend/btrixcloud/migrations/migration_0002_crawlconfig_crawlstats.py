@@ -4,7 +4,6 @@ Migration 0002 - Dropping CrawlConfig crawl stats
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0002"
 
 

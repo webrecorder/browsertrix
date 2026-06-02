@@ -2,24 +2,21 @@
 
 import os
 import secrets
-
-from typing import Optional, Dict, Tuple
 from datetime import datetime, timedelta
+from typing import Dict, Optional, Tuple
 
 from fastapi import HTTPException
 
-from .utils import dt_now, date_to_str, scale_from_browser_windows
-from .k8sapi import K8sAPI, ApiException
 from .auth import create_custom_jwt_token
-
+from .k8sapi import ApiException, K8sAPI
 from .models import (
-    StorageRef,
-    CrawlConfig,
-    BgJobType,
-    ProfileBrowserMetadata,
     TYPE_INDEX_JOB_TYPES,
+    BgJobType,
+    CrawlConfig,
+    ProfileBrowserMetadata,
+    StorageRef,
 )
-
+from .utils import date_to_str, dt_now, scale_from_browser_windows
 
 # ============================================================================
 DEFAULT_PROXY_ID: str = os.environ.get("DEFAULT_PROXY_ID", "")

@@ -1,12 +1,12 @@
 """operators module"""
 
-from .profiles import ProfileOperator
+from .baseoperator import K8sOpAPI
 from .bgjobs import BgJobOperator
-from .cronjobs import CronJobOperator
-from .crawls import CrawlOperator
 from .collindexes import CollIndexOperator
 from .collindexjob import CollIndexImportJobOperator
-from .baseoperator import K8sOpAPI
+from .crawls import CrawlOperator
+from .cronjobs import CronJobOperator
+from .profiles import ProfileOperator
 
 operator_classes = [
     ProfileOperator,

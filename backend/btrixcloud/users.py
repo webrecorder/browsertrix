@@ -3,63 +3,60 @@ FastAPI user handling (via fastapi-users)
 """
 
 import os
+from typing import TYPE_CHECKING, Callable, List, Optional, Tuple, Type, cast
 from uuid import UUID, uuid4
 
-from typing import Optional, List, TYPE_CHECKING, cast, Callable, Tuple, Type
-
 from fastapi import (
-    Request,
-    HTTPException,
-    Depends,
     APIRouter,
     Body,
+    Depends,
+    HTTPException,
+    Request,
 )
-
-from pymongo.errors import DuplicateKeyError
 from pymongo.collation import Collation
+from pymongo.errors import DuplicateKeyError
 
+from .auth import (
+    RESET_ALLOW_AUD,
+    RESET_AUD,
+    RESET_VERIFY_TOKEN_LIFETIME_MINUTES,
+    VERIFY_ALLOW_AUD,
+    VERIFY_AUD,
+    decode_jwt,
+    generate_jwt,
+    generate_password,
+    get_password_hash,
+    init_jwt_auth,
+    verify_and_update_password,
+)
 from .models import (
     EmailStr,
-    UserCreate,
-    UserUpdateEmailName,
-    UserUpdatePassword,
+    FailedLogin,
+    InviteOut,
+    InvitePending,
+    PaginatedInvitePendingResponse,
+    PaginatedUserOutResponse,
+    SuccessResponse,
+    UpdatedResponse,
     User,
+    UserCreate,
     UserOrgInfoOut,
     UserOrgInfoOutWithSubs,
     UserOut,
     UserOutNoId,
     UserRole,
-    InvitePending,
-    InviteOut,
-    PaginatedInvitePendingResponse,
-    FailedLogin,
-    UpdatedResponse,
-    SuccessResponse,
-    PaginatedUserOutResponse,
+    UserUpdateEmailName,
+    UserUpdatePassword,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import is_bool, dt_now, run_async_task
-
-from .auth import (
-    init_jwt_auth,
-    RESET_AUD,
-    RESET_ALLOW_AUD,
-    VERIFY_AUD,
-    VERIFY_ALLOW_AUD,
-    RESET_VERIFY_TOKEN_LIFETIME_MINUTES,
-    verify_and_update_password,
-    get_password_hash,
-    generate_password,
-    generate_jwt,
-    decode_jwt,
-)
+from .utils import dt_now, is_bool, run_async_task
 
 if TYPE_CHECKING:
-    from .invites import InviteOps
-    from .emailsender import EmailSender
-    from .orgs import OrgOps
     from .basecrawls import BaseCrawlOps
     from .crawlconfigs import CrawlConfigOps
+    from .emailsender import EmailSender
+    from .invites import InviteOps
+    from .orgs import OrgOps
 else:
     InviteOps = EmailSender = OrgOps = BaseCrawlOps = CrawlConfigOps = object
 

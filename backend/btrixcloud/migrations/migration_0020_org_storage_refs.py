@@ -4,7 +4,6 @@ Migration 0020 - New Storage Ref System
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0020"
 
 

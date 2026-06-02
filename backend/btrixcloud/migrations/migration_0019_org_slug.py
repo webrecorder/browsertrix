@@ -5,7 +5,6 @@ Migration 0019 - Organization slug
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import slug_from_name
 
-
 MIGRATION_VERSION = "0019"
 
 

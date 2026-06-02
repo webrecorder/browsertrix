@@ -4,7 +4,6 @@ Migration 0014 - collections to collectionIDs
 
 from btrixcloud.migrations import BaseMigration
 
-
 MIGRATION_VERSION = "0014"
 
 
