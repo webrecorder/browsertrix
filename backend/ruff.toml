@@ -1,2 +1,13 @@
 [lint]
-select = ["I", "PLE", "W", "A", "Q"]
+extend-select = [
+	# Import sorting
+	"I",
+	# Error
+	"PLE",
+	# Warning
+	"W",
+	# flake8-builtins
+	"A",
+	# flake8-quotes
+	"Q"
+]
