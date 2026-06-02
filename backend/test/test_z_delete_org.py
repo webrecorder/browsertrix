@@ -1,9 +1,12 @@
+import logging
 import time
 
 import pytest
 import requests
 
 from .conftest import API_PREFIX
+
+logger = logging.getLogger(__name__)
 
 
 def test_recalculate_org_storage(admin_auth_headers, default_org_id):
@@ -48,7 +51,12 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
             pytest.fail(f"Giving up waiting for job after {max_attempts} attempts")
 
         attempts += 1
-        print(f"Job not yet succeeded, retrying... ({attempts}/{max_attempts})")
+        logger.info(
+            "test_job_retrying",
+            attempts=attempts,
+            max_attempts=max_attempts,
+            unstructured_message=f"Job not yet succeeded, retrying... ({attempts}/{max_attempts})",
+        )
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}",
@@ -126,7 +134,12 @@ def test_delete_org_superadmin(admin_auth_headers, default_org_id):
             pytest.fail(f"Giving up waiting for job after {max_attempts} attempts")
 
         attempts += 1
-        print(f"Job not yet succeeded, retrying... ({attempts}/{max_attempts})")
+        logger.info(
+            "test_job_retrying",
+            attempts=attempts,
+            max_attempts=max_attempts,
+            unstructured_message=f"Job not yet succeeded, retrying... ({attempts}/{max_attempts})",
+        )
 
     # Ensure org and items got deleted
     r = requests.get(
