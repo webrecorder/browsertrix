@@ -2,7 +2,11 @@
 Migration 0036 -- collection access
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0036"
 
@@ -29,9 +33,10 @@ class Migration(BaseMigration):
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Error migrating private collections: {err}",
-                flush=True,
+            logger.error(
+                "error_migrating_private_collections",
+                error=err,
+                unstructured_message=f"Error migrating private collections: {err}",
             )
 
         # Set public collections to unlisted
@@ -42,7 +47,8 @@ class Migration(BaseMigration):
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Error migrating public unlisted collections: {err}",
-                flush=True,
+            logger.error(
+                "error_migrating_public_unlisted_collections",
+                error=err,
+                unstructured_message=f"Error migrating public unlisted collections: {err}",
             )

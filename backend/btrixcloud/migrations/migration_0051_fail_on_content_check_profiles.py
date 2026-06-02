@@ -2,7 +2,11 @@
 Migration 0051 - Ensure failOnContentCheck is not set for workflows without profiles
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0051"
 
@@ -30,7 +34,9 @@ class Migration(BaseMigration):
 
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Error unsetting failOnContentCheck for configs without profiles: {err}",
-                flush=True,
+            logger.error(
+                "fail_on_content_check_unset_error",
+                error=err,
+                # pylint: disable=line-too-long
+                unstructured_message=f"Error unsetting failOnContentCheck for configs without profiles: {err}",
             )

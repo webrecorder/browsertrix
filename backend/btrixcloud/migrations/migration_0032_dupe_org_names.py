@@ -2,12 +2,15 @@
 Migration 0032 - Case-insensitive org name duplicates
 """
 
+import logging
 from uuid import UUID
 
 from pymongo.errors import DuplicateKeyError
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import slug_from_name
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0032"
 
@@ -79,8 +82,12 @@ class Migration(BaseMigration):
                 await orgs_db.find_one_and_update(
                     {"_id": oid}, {"$set": {"slug": org_slug, "name": org_name}}
                 )
-                print(
-                    f"Renamed org {oid} to {org_name} with slug {org_slug}", flush=True
+                logger.info(
+                    "org_renamed",
+                    oid=oid,
+                    org_name=org_name,
+                    org_slug=org_slug,
+                    unstructured_message=f"Renamed org {oid} to {org_name} with slug {org_slug}",
                 )
                 break
             except DuplicateKeyError:
@@ -89,5 +96,10 @@ class Migration(BaseMigration):
                 suffix = f" {count}"
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(f"Error renaming org {oid}: {err}", flush=True)
+                logger.error(
+                    "error_renaming_org",
+                    oid=oid,
+                    error=err,
+                    unstructured_message=f"Error renaming org {oid}: {err}",
+                )
                 break

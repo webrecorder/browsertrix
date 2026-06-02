@@ -2,6 +2,7 @@
 Migration 0010 - Precomputing collection total size
 """
 
+import logging
 from typing import cast
 
 from btrixcloud.background_jobs import BackgroundJobOps
@@ -11,6 +12,8 @@ from btrixcloud.migrations import BaseMigration
 from btrixcloud.orgs import OrgOps
 from btrixcloud.storages import StorageOps
 from btrixcloud.webhooks import EventWebhookOps
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0010"
 
@@ -43,4 +46,9 @@ class Migration(BaseMigration):
                 await coll_ops.update_collection_stats(coll_id, coll["oid"])
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(f"Unable to update collection {coll_id}: {err}", flush=True)
+                logger.warning(
+                    "migration_collection_update_warning",
+                    collection_id=coll_id,
+                    error=str(err),
+                    unstructured_message=f"Unable to update collection {coll_id}: {err}",
+                )

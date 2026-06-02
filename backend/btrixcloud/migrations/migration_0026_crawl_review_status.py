@@ -2,7 +2,12 @@
 Migration 0026 - Crawl reviewStatus type
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0026"
 
@@ -33,7 +38,9 @@ class Migration(BaseMigration):
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Error modifying existing crawl reviewStatuses to ints: {err}",
-                flush=True,
+            logger.error(
+                "migration_review_status_error",
+                error=str(err),
+                # pylint: disable=line-too-long
+                unstructured_message=f"Error modifying existing crawl reviewStatuses to ints: {err}",
             )

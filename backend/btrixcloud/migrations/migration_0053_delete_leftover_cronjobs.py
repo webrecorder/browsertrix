@@ -2,11 +2,14 @@
 Migration 0053 - Delete leftover cron and crawl jobs
 """
 
+import logging
 from uuid import UUID
 
 from fastapi import HTTPException
 
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0053"
 
@@ -32,7 +35,10 @@ class Migration(BaseMigration):
         cleaned up.
         """
         if self.crawl_manager is None:
-            print("Unable to clean up leftover cron jobs, missing ops", flush=True)
+            logger.warning(
+                "cron_job_cleanup_missing_ops",
+                unstructured_message="Unable to clean up leftover cron jobs, missing ops",
+            )
             return
 
         bg_cron_jobs = await self.crawl_manager.list_cron_jobs()
@@ -69,29 +75,38 @@ class Migration(BaseMigration):
     async def delete_cron_job_if_org_deleted(self, oid: UUID, job_name: str) -> None:
         """Delete cron job if it belongs to a deleted org"""
         if self.crawl_manager is None:
-            print(f"Skipping cron job {job_name} org check, missing ops", flush=True)
+            logger.warning(
+                "cron_job_org_check_skipped_missing_ops",
+                job_name=job_name,
+                unstructured_message=f"Skipping cron job {job_name} org check, missing ops",
+            )
             return
 
         org_exists = await self._org_exists(oid)
         if not org_exists:
             try:
                 await self.crawl_manager.delete_cron_job_by_name(job_name)
-                print(
-                    f"Deleted cron job {job_name} from deleted org",
-                    flush=True,
+                logger.info(
+                    "cron_job_deleted_from_deleted_org",
+                    job_name=job_name,
+                    unstructured_message=f"Deleted cron job {job_name} from deleted org",
                 )
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(
-                    f"Error deleting cron job {job_name}: {err}",
-                    flush=True,
+                logger.error(
+                    "cron_job_delete_error",
+                    job_name=job_name,
+                    error=err,
+                    unstructured_message=f"Error deleting cron job {job_name}: {err}",
                 )
 
     async def delete_replica_delete_job_if_finished(self, job_name: str) -> None:
         """Delete replica delete cron job if finished"""
         if self.background_job_ops is None or self.crawl_manager is None:
-            print(
-                f"Skipping cron job {job_name} finished check, missing ops", flush=True
+            logger.warning(
+                "replica_delete_job_finished_check_skipped_missing_ops",
+                job_name=job_name,
+                unstructured_message=f"Skipping cron job {job_name} finished check, missing ops",
             )
             return
 
@@ -100,23 +115,30 @@ class Migration(BaseMigration):
             if job.finished and job.success is not None:
                 await self.crawl_manager.delete_cron_job_by_name(job_name)
                 # pylint: disable=line-too-long
-                print(
-                    f"Deleted replica delete job {job_name} (success: {job.success}, org: {job.oid})",
-                    flush=True,
+                logger.info(
+                    "replica_delete_job_deleted",
+                    job_name=job_name,
+                    success=job.success,
+                    oid=job.oid,
+                    unstructured_message=f"Deleted replica delete job {job_name} (success: {job.success}, org: {job.oid})",
                 )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Error deleting replica delete cron job {job_name}: {err}",
-                flush=True,
+            logger.error(
+                "replica_delete_cron_job_error",
+                job_name=job_name,
+                error=err,
+                unstructured_message=f"Error deleting replica delete cron job {job_name}: {err}",
             )
 
     async def delete_crawl_job_if_org_deleted(self, oid: UUID, crawl_id: str) -> None:
         """Delete crawl job if it belongs to a deleted org"""
         if self.crawl_manager is None:
-            print(
-                f"Skipping crawl job crawljob-{crawl_id} org check, missing ops",
-                flush=True,
+            logger.warning(
+                "crawl_job_org_check_skipped_missing_ops",
+                crawl_id=crawl_id,
+                # pylint: disable=line-too-long
+                unstructured_message=f"Skipping crawl job crawljob-{crawl_id} org check, missing ops",
             )
             return
 
@@ -124,14 +146,18 @@ class Migration(BaseMigration):
         if not org_exists:
             resp = await self.crawl_manager.delete_crawl_job(crawl_id)
             if resp.get("success"):
-                print(
-                    f"Deleted crawl job crawljob-{crawl_id} from deleted org",
-                    flush=True,
+                logger.info(
+                    "crawl_job_deleted_from_deleted_org",
+                    crawl_id=crawl_id,
+                    unstructured_message=f"Deleted crawl job crawljob-{crawl_id} from deleted org",
                 )
 
             error = resp.get("error")
             if error:
-                print(
-                    f"Error deleting crawl job crawljob-{crawl_id} from deleted org: {error}",
-                    flush=True,
+                logger.error(
+                    "crawl_job_delete_error",
+                    crawl_id=crawl_id,
+                    error=error,
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"Error deleting crawl job crawljob-{crawl_id} from deleted org: {error}",
                 )

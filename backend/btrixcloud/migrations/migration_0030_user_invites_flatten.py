@@ -2,9 +2,12 @@
 Migration 0030 - Move user invites from user.invites to invites collection
 """
 
-from btrixcloud.invites import get_hash
+import logging
+
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import InvitePending
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0030"
 
@@ -29,7 +32,11 @@ class Migration(BaseMigration):
         async for user in users_db.find({"invites": {"$nin": [None, {}]}}):
             for user_invite in user["invites"].values():
                 user_invite["email"] = user["email"]
-                print("Migrating existing user invite", user_invite)
+                logger.info(
+                    "migrating_existing_user_invite",
+                    user_invite=user_invite,
+                    unstructured_message=f"Migrating existing user invite {user_invite}",
+                )
                 invite = InvitePending(
                     userid=user["id"],
                     tokenHash=get_hash(user_invite["id"]),
@@ -45,7 +52,11 @@ class Migration(BaseMigration):
         # note that tokenHash is of the existing _id
         # for new invites, the tokenHash will be of a separate uuid that is not stored
         async for invite_data in invites_db.find({"tokenHash": {"$eq": None}}):
-            print("Migrating new user invite", invite_data)
+            logger.info(
+                "migrating_new_user_invite",
+                invite_data=invite_data,
+                unstructured_message=f"Migrating new user invite {invite_data}",
+            )
             await invites_db.find_one_and_update(
                 {"_id": invite_data["_id"]},
                 {"$set": {"tokenHash": get_hash(invite_data["_id"])}},

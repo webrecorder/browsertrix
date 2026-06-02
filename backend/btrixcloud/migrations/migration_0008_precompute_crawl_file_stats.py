@@ -2,8 +2,13 @@
 Migration 0008 - Precomputing crawl file stats
 """
 
+import logging
+
 from btrixcloud.crawls import recompute_crawl_file_count_and_size
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0008"
 
@@ -30,4 +35,9 @@ class Migration(BaseMigration):
                 await recompute_crawl_file_count_and_size(crawls, crawl_id)
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(f"Unable to update crawl {crawl_id}: {err}", flush=True)
+                logger.warning(
+                    "migration_crawl_update_warning",
+                    crawl_id=crawl_id,
+                    error=str(err),
+                    unstructured_message=f"Unable to update crawl {crawl_id}: {err}",
+                )

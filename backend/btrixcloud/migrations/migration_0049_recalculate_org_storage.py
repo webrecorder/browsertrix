@@ -2,7 +2,12 @@
 Migration 0049 - Recalculate org storage for seed file and thumbnail size
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0049"
 
@@ -22,7 +27,10 @@ class Migration(BaseMigration):
         """Perform migration up. Add thumbnail and seed file storage to orgs."""
         # pylint: disable=duplicate-code, line-too-long
         if self.org_ops is None or self.coll_ops is None or self.file_ops is None:
-            print("Unable to recalculate org storage, missing ops", flush=True)
+            logger.warning(
+                "org_storage_recalculate_missing_ops",
+                unstructured_message="Unable to recalculate org storage, missing ops",
+            )
             return
 
         orgs_db = self.mdb["organizations"]
@@ -54,7 +62,9 @@ class Migration(BaseMigration):
                 )
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(
-                    f"Error recalculating storage for org {oid}: {err}",
-                    flush=True,
+                logger.error(
+                    "org_storage_recalculate_error",
+                    oid=oid,
+                    error=err,
+                    unstructured_message=f"Error recalculating storage for org {oid}: {err}",
                 )

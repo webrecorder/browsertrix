@@ -2,7 +2,11 @@
 Migration 0020 - New Storage Ref System
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0020"
 
@@ -43,7 +47,12 @@ class Migration(BaseMigration):
             try:
                 await mdb_orgs.find_one_and_update({"_id": oid}, {"$set": update_dict})
             except Exception as err:
-                print(f"Error updating storage for {oid}: {err}", flush=True)
+                logger.error(
+                    "migration_org_storage_update_error",
+                    org_id=oid,
+                    error=str(err),
+                    unstructured_message=f"Error updating storage for {oid}: {err}",
+                )
 
         # CrawlFile Migrations
         mdb_crawls = self.mdb["crawls"]
@@ -65,9 +74,12 @@ class Migration(BaseMigration):
                     {"_id": crawl_id}, {"$set": {"files": crawl_files}}
                 )
             except Exception as err:
-                print(
-                    f"Error updating crawl file storage for crawl {crawl_id}: {err}",
-                    flush=True,
+                logger.error(
+                    "migration_crawl_storage_update_error",
+                    crawl_id=crawl_id,
+                    error=str(err),
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"Error updating crawl file storage for crawl {crawl_id}: {err}",
                 )
 
         # ProfileFile Migrations
@@ -90,7 +102,10 @@ class Migration(BaseMigration):
                     {"_id": profile_id}, {"$set": {"resource": file_}}
                 )
             except Exception as err:
-                print(
-                    f"Error updating profile storage for profile {profile['name']}: {err}",
-                    flush=True,
+                logger.error(
+                    "migration_profile_storage_update_error",
+                    profile_name=profile["name"],
+                    error=str(err),
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"Error updating profile storage for profile {profile['name']}: {err}",
                 )
