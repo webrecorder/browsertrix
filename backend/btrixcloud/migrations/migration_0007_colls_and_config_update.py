@@ -5,8 +5,13 @@ Migration 0007 - Workflows changes
 - Re-calculate workflow crawl stats to populate crawlSuccessfulCount
 """
 
+import logging
+
 from btrixcloud.crawlconfigs import stats_recompute_all
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0007"
 
@@ -27,9 +32,12 @@ class Migration(BaseMigration):
         crawls = self.mdb["crawls"]
 
         if self.crawl_config_ops is None:
-            print(
-                f"Unable to set run migration {MIGRATION_VERSION}, missing crawl_config_ops",
-                flush=True,
+            logger.warning(
+                "migration_missing_dependency",
+                migration_version=MIGRATION_VERSION,
+                dependency="crawl_config_ops",
+                # pylint: disable=line-too-long
+                unstructured_message=f"Unable to run migration {MIGRATION_VERSION}, missing crawl_config_ops",
             )
             return
 
@@ -42,7 +50,12 @@ class Migration(BaseMigration):
                 )
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(f"Unable to update workflow {config_id}: {err}", flush=True)
+                logger.warning(
+                    "migration_workflow_update_warning",
+                    config_id=config_id,
+                    error=str(err),
+                    unstructured_message=f"Unable to update workflow {config_id}: {err}",
+                )
 
         # Make sure crawls have collections array
         await crawls.update_many({"collections": None}, {"$set": {"collections": []}})

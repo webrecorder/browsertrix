@@ -2,7 +2,12 @@
 Migration 0009 - Crawl types
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0009"
 
@@ -27,4 +32,8 @@ class Migration(BaseMigration):
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(f"Error adding type 'crawl' to existing crawls: {err}", flush=True)
+            logger.error(
+                "migration_add_crawl_type_error",
+                error=str(err),
+                unstructured_message=f"Error adding type 'crawl' to existing crawls: {err}",
+            )

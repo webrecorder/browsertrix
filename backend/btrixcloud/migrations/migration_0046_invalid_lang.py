@@ -2,7 +2,12 @@
 Migration 0046 - Invalid language codes
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0046"
 
@@ -218,15 +223,19 @@ class Migration(BaseMigration):
                 {"config.lang": {"$nin": [None, *ISO_639_1_CODES]}},
                 {"$set": {"config.lang": "en"}},
             )
-            print(
-                f"Fixed invalid language code for {result.modified_count} workflows",
-                flush=True,
+            logger.info(
+                "fixed_invalid_lang_workflows",
+                modified_count=result.modified_count,
+                # pylint: disable=line-too-long
+                unstructured_message=f"Fixed invalid language code for {result.modified_count} workflows",
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Unable to update invalid language codes for crawl workflows: {err}",
-                flush=True,
+            logger.warning(
+                "invalid_lang_workflows_update_error",
+                error=err,
+                # pylint: disable=line-too-long
+                unstructured_message=f"Unable to update invalid language codes for crawl workflows: {err}",
             )
 
         # Crawls
@@ -235,15 +244,18 @@ class Migration(BaseMigration):
                 {"config.lang": {"$nin": [None, *ISO_639_1_CODES]}},
                 {"$set": {"config.lang": "en"}},
             )
-            print(
-                f"Fixed invalid language code for {result.modified_count} crawls",
-                flush=True,
+            logger.info(
+                "fixed_invalid_lang_crawls",
+                modified_count=result.modified_count,
+                # pylint: disable=line-too-long
+                unstructured_message=f"Fixed invalid language code for {result.modified_count} crawls",
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Unable to update invalid language codes for crawls: {err}",
-                flush=True,
+            logger.warning(
+                "invalid_lang_crawls_update_error",
+                error=err,
+                unstructured_message=f"Unable to update invalid language codes for crawls: {err}",
             )
 
         # Org crawling defaults
@@ -252,13 +264,17 @@ class Migration(BaseMigration):
                 {"crawlingDefaults.lang": {"$nin": [None, *ISO_639_1_CODES]}},
                 {"$set": {"crawlingDefaults.lang": "en"}},
             )
-            print(
-                f"Fixed invalid language code for {result.modified_count} orgs",
-                flush=True,
+            logger.info(
+                "fixed_invalid_lang_orgs",
+                modified_count=result.modified_count,
+                # pylint: disable=line-too-long
+                unstructured_message=f"Fixed invalid language code for {result.modified_count} orgs",
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Unable to update invalid language codes for org crawling defaults: {err}",
-                flush=True,
+            logger.warning(
+                "invalid_lang_orgs_update_error",
+                error=err,
+                # pylint: disable=line-too-long
+                unstructured_message=f"Unable to update invalid language codes for org crawling defaults: {err}",
             )

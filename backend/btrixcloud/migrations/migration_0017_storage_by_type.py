@@ -2,7 +2,11 @@
 Migration 0017 - Calculate and store org storage usage by type
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0017"
 
@@ -64,7 +68,9 @@ class Migration(BaseMigration):
                 )
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(
-                    f"Unable to set bytes stored by type for org {oid}: {err}",
-                    flush=True,
+                logger.warning(
+                    "migration_org_storage_type_warning",
+                    org_id=oid,
+                    error=str(err),
+                    unstructured_message=f"Unable to set bytes stored by type for org {oid}: {err}",
                 )

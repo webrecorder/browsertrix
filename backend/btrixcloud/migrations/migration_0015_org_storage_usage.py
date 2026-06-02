@@ -2,7 +2,12 @@
 Migration 0015 - Calculate and store org storage usage
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0015"
 
@@ -44,7 +49,9 @@ class Migration(BaseMigration):
                 )
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(
-                    f"Unable to set bytes stored for org {oid}: {err}",
-                    flush=True,
+                logger.error(
+                    "migration_org_storage_error",
+                    org_id=oid,
+                    error=str(err),
+                    unstructured_message=f"Unable to set bytes stored for org {oid}: {err}",
                 )

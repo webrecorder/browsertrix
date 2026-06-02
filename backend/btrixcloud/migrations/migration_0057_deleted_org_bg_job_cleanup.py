@@ -2,12 +2,15 @@
 Migration 0057 - Remove background jobs for deleted orgs from db
 """
 
+import logging
 from uuid import UUID
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import BgJobType
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0057"
 
@@ -39,9 +42,10 @@ class Migration(BaseMigration):
 
         if job_orgs_to_delete:
             del_count = len(job_orgs_to_delete)
-            print(
-                f"Deleting background jobs for {del_count} deleted orgs",
-                flush=True,
+            logger.info(
+                "background_jobs_deleting_for_deleted_orgs",
+                del_count=del_count,
+                unstructured_message=f"Deleting background jobs for {del_count} deleted orgs",
             )
 
             try:
@@ -54,7 +58,15 @@ class Migration(BaseMigration):
                         "type": {"$ne": BgJobType.DELETE_ORG},
                     }
                 )
-                print(f"Deleted {res.deleted_count} jobs from database", flush=True)
+                logger.info(
+                    "background_jobs_deleted_from_db",
+                    deleted_count=res.deleted_count,
+                    unstructured_message=f"Deleted {res.deleted_count} jobs from database",
+                )
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(f"Error deleting jobs from deleted orgs: {err}", flush=True)
+                logger.error(
+                    "background_jobs_deleted_orgs_error",
+                    error=err,
+                    unstructured_message=f"Error deleting jobs from deleted orgs: {err}",
+                )

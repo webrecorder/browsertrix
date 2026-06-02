@@ -2,7 +2,12 @@
 Migration 0024 -- crawlerChannel
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0024"
 
@@ -34,9 +39,12 @@ class Migration(BaseMigration):
                 )
             # pylint: disable=broad-except
             except Exception as err:
-                print(
-                    f"Error adding crawlerChannel 'default' to workflow {config_id}: {err}",
-                    flush=True,
+                logger.error(
+                    "migration_crawlerchannel_workflow_error",
+                    config_id=config_id,
+                    error=str(err),
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"Error adding crawlerChannel 'default' to workflow {config_id}: {err}",
                 )
 
         async for profile in mdb_profiles.find({"crawlerChannel": {"$in": ["", None]}}):
@@ -48,7 +56,10 @@ class Migration(BaseMigration):
                 )
             # pylint: disable=broad-except
             except Exception as err:
-                print(
-                    f"Error adding crawlerChannel 'default' to profile {profile_id}: {err}",
-                    flush=True,
+                logger.error(
+                    "migration_crawlerchannel_profile_error",
+                    profile_id=profile_id,
+                    error=str(err),
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"Error adding crawlerChannel 'default' to profile {profile_id}: {err}",
                 )

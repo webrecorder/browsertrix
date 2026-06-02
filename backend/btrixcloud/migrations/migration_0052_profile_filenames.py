@@ -2,8 +2,12 @@
 Migration 0052 - Fix profile filenames in db to be full path from bucket
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Profile
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0052"
 
@@ -30,9 +34,11 @@ class Migration(BaseMigration):
         match_query = {"resource.filename": {"$regex": r"^profiles"}}
 
         if self.background_job_ops is None:
-            print(
-                f"Unable to start migration {MIGRATION_VERSION}, ops class missing",
-                flush=True,
+            logger.warning(
+                "profile_filename_migration_missing_ops",
+                migration_version=MIGRATION_VERSION,
+                # pylint: disable=line-too-long
+                unstructured_message=f"Unable to start migration {MIGRATION_VERSION}, ops class missing",
             )
             return
 
@@ -60,16 +66,21 @@ class Migration(BaseMigration):
                     profile.resource.filename = new_filename
                     profile.resource.replicas = []
 
-                    print(
-                        f"Starting background jobs to replicate profile {profile.id}",
-                        flush=True,
+                    logger.info(
+                        "profile_replication_job_started",
+                        profile_id=profile.id,
+                        # pylint: disable=line-too-long
+                        unstructured_message=f"Starting background jobs to replicate profile {profile.id}",
                     )
                     await self.background_job_ops.create_replica_jobs(
                         profile.oid, profile.resource, str(profile.id), "profile"
                     )
                 # pylint: disable=broad-exception-caught
                 except Exception as err:
-                    print(
-                        f"Error fixing filename and replicas for profile {profile.id}: {err}",
-                        flush=True,
+                    logger.error(
+                        "profile_filename_fix_error",
+                        profile_id=profile.id,
+                        error=err,
+                        # pylint: disable=line-too-long
+                        unstructured_message=f"Error fixing filename and replicas for profile {profile.id}: {err}",
                     )

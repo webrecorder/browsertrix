@@ -2,10 +2,14 @@
 Migration 0048 - Calculate firstSeed/seedCount and store directly in database
 """
 
+import logging
 from typing import Any, Dict, List, cast
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Crawl, CrawlConfig, Seed
+
+logger = logging.getLogger(__name__)
+
 
 MIGRATION_VERSION = "0048"
 
@@ -34,9 +38,11 @@ class Migration(BaseMigration):
 
             try:
                 if not config.config.seeds:
-                    print(
-                        f"Unable to find seeds for config {config.id}, skipping",
-                        flush=True,
+                    logger.warning(
+                        "config_seeds_not_found",
+                        config_id=config.id,
+                        # pylint: disable=line-too-long
+                        unstructured_message=f"Unable to find seeds for config {config.id}, skipping",
                     )
                     continue
 
@@ -55,9 +61,12 @@ class Migration(BaseMigration):
                 )
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(
-                    f"Unable to update seed info for workflow {config.id}: {err}",
-                    flush=True,
+                logger.warning(
+                    "seed_info_workflow_update_error",
+                    config_id=config.id,
+                    error=err,
+                    # pylint: disable=line-too-long
+                    unstructured_message=f"Unable to update seed info for workflow {config.id}: {err}",
                 )
 
         # Crawls
@@ -88,7 +97,9 @@ class Migration(BaseMigration):
                 )
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(
-                    f"Unable to update seed info for crawl {crawl_id}: {err}",
-                    flush=True,
+                logger.warning(
+                    "seed_info_crawl_update_error",
+                    crawl_id=crawl_id,
+                    error=err,
+                    unstructured_message=f"Unable to update seed info for crawl {crawl_id}: {err}",
                 )

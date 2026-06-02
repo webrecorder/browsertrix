@@ -2,8 +2,12 @@
 Migration 0021 - Profile filenames
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Profile
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0021"
 
@@ -36,7 +40,10 @@ class Migration(BaseMigration):
                         {"$set": {"resource.filename": f"profiles/{filename}"}},
                     )
                 except Exception as err:
-                    print(
-                        f"Error updating filename for profile {profile.name}: {err}",
-                        flush=True,
+                    logger.error(
+                        "migration_profile_filename_error",
+                        profile_name=profile.name,
+                        error=str(err),
+                        # pylint: disable=line-too-long
+                        unstructured_message=f"Error updating filename for profile {profile.name}: {err}",
                     )

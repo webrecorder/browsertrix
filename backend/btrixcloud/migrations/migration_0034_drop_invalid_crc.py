@@ -2,7 +2,11 @@
 Migration 0034 -- remove crc32 from CrawlFile
 """
 
+import logging
+
 from btrixcloud.migrations import BaseMigration
+
+logger = logging.getLogger(__name__)
 
 MIGRATION_VERSION = "0034"
 
@@ -27,10 +31,15 @@ class Migration(BaseMigration):
                 {"$unset": {"files.$[].crc32": 1}},
             )
             updated = res.modified_count
-            print(f"{updated} crawls migrated to remove crc32 from files", flush=True)
+            logger.info(
+                "crawls_crc32_removed",
+                updated=updated,
+                unstructured_message=f"{updated} crawls migrated to remove crc32 from files",
+            )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Error migrating crawl files to remove crc32: {err}",
-                flush=True,
+            logger.error(
+                "error_migrating_crawl_files_remove_crc32",
+                error=err,
+                unstructured_message=f"Error migrating crawl files to remove crc32: {err}",
             )
