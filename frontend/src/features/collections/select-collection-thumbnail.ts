@@ -13,7 +13,7 @@ import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import queryString from "query-string";
 
-import { CollectionThumbnail } from "./collection-thumbnail";
+import { CollectionThumbnail, type Thumbnail } from "./collection-thumbnail";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { defaultFuseOptions } from "@/context/search-org/connectFuse";
@@ -173,22 +173,26 @@ export class SelectCollectionThumbnail extends BtrixElement {
       this.open = false;
 
       try {
-        const screenshot = this.#screenshots.get(option.pageId);
+        if (typeof option === "string") {
+          await this.updateThumbnail({ defaultThumbnailName: option });
+        } else {
+          const screenshot = this.#screenshots.get(option.pageId);
 
-        if (!screenshot) {
-          throw new Error("no screenshot");
+          if (!screenshot) {
+            throw new Error("no screenshot");
+          }
+
+          const url = await screenshot.url;
+
+          if (!url) {
+            throw new Error("no screenshot url");
+          }
+
+          this.nextThumbnailUrl = url;
+
+          await this.uploadThumbnail(option, signal);
+          await this.updateThumbnail({ defaultThumbnailName: null });
         }
-
-        const url = await screenshot.url;
-
-        if (!url) {
-          throw new Error("no screenshot url");
-        }
-
-        this.nextThumbnailUrl = url;
-
-        await this.uploadThumbnail(option, signal);
-        await this.updateThumbnail({ defaultThumbnailName: null });
 
         this.notify.toast({
           message: msg("Thumbnail updated."),
@@ -209,7 +213,8 @@ export class SelectCollectionThumbnail extends BtrixElement {
         });
       }
     },
-    args: () => [undefined] as readonly [PageSnapshotOption | undefined],
+    args: () =>
+      [undefined] as readonly [PageSnapshotOption | Thumbnail | undefined],
   });
 
   protected willUpdate(changedProperties: PropertyValues): void {
@@ -233,7 +238,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
     return html`<sl-dropdown
       placement="bottom-start"
       distance="8"
-      skidding="-4"
+      skidding="-3"
       hoist
       ?open=${this.open}
       ?disabled=${!isCrawler}
@@ -244,10 +249,10 @@ export class SelectCollectionThumbnail extends BtrixElement {
       <div
         slot="trigger"
         class=${clsx(
-          tw`relative`,
+          tw`relative m-px`,
           isCrawler && [
-            tw`cursor-pointer rounded-lg transition-all duration-x-fast hover:ring-1 hover:ring-offset-2`,
-            this.open && tw`ring-1 ring-offset-2`,
+            tw`cursor-pointer rounded-lg ring-1 transition-all duration-x-fast hover:ring-offset-2`,
+            this.open ? tw`ring-offset-2` : tw`ring-neutral-200`,
           ],
         )}
       >
@@ -291,17 +296,28 @@ export class SelectCollectionThumbnail extends BtrixElement {
         id="thumb-listbox"
         class="pt-0 [scrollbar-gutter:stable]"
         @sl-select=${(e: SlSelectEvent) => {
-          const pageId = e.detail.item.value;
-          const option = this.optionsTask.value?.find(
-            (opt) => opt.pageId === pageId,
-          );
+          const { value } = e.detail.item;
 
-          if (!option) {
-            console.debug("no option");
-            return;
+          const defaultThumbnail = Object.entries(
+            CollectionThumbnail.Variants,
+          ).find(([_name, { path }]) => path === value);
+
+          if (defaultThumbnail) {
+            void this.updateThumbnailTask.run([
+              defaultThumbnail[0] as Thumbnail,
+            ]);
+          } else {
+            const option = this.optionsTask.value?.find(
+              ({ pageId }) => pageId === value,
+            );
+
+            if (!option) {
+              console.debug("no option");
+              return;
+            }
+
+            void this.updateThumbnailTask.run([option]);
           }
-
-          void this.updateThumbnailTask.run([option]);
         }}
       >
         <sl-menu-label class="part-[base]:px-3">

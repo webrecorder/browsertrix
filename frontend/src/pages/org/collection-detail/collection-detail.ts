@@ -327,7 +327,7 @@ export class CollectionDetail extends BtrixElement {
                     .value=${col.caption}
                     placeholder=${msg("Add a summary...")}
                     .renderContent=${this.renderCaption}
-                    rows=${2}
+                    rows=${3}
                     @btrix-change=${(e: BtrixChangeEvent<string>) => {
                       void this.updateSummary(e.detail.value);
                     }}
@@ -725,7 +725,7 @@ export class CollectionDetail extends BtrixElement {
 
   private readonly renderCaption = (text: string) =>
     html`<btrix-prose
-      class="block [--btrix-line-clamp:1] part-[base]:max-w-full"
+      class="block [--btrix-line-clamp:2] part-[base]:max-w-full"
       >${richText(text, {
         linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
       })}</btrix-prose
