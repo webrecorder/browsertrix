@@ -3,6 +3,7 @@ import csv
 import hashlib
 import io
 import json
+import logging
 import re
 import time
 import zipfile
@@ -14,6 +15,8 @@ import requests
 
 from .conftest import API_PREFIX, FINISHED_STATES, HOST_PREFIX
 from .test_collections import UPDATED_NAME as COLLECTION_NAME
+
+logger = logging.getLogger(__name__)
 
 wacz_path = None
 wacz_size = None
@@ -496,7 +499,11 @@ def test_download_wacz_crawls_as_single_wacz(
             logs_found = False
 
             for filename in contents:
-                print(filename)
+                logger.info(
+                    "zip_contents_filename",
+                    filename=filename,
+                    unstructured_message=f"{filename}",
+                )
                 if filename.startswith("archive/") and filename.endswith(".warc.gz"):
                     archives_found = True
                 if filename.startswith("indexes/"):

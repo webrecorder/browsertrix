@@ -1,3 +1,4 @@
+import logging
 import time
 from uuid import uuid4
 
@@ -11,6 +12,8 @@ from .conftest import (
     CRAWLER_USERNAME_LOWERCASE,
     FINISHED_STATES,
 )
+
+logger = logging.getLogger(__name__)
 
 INVALID_PASSWORD_EMAIL = "invalidpassword@example.com"
 VALID_USER_EMAIL = "validpassword@example.com"
@@ -580,7 +583,10 @@ def test_reset_valid_password(admin_auth_headers, default_org_id):
             valid_user_headers = {"Authorization": f"Bearer {data['access_token']}"}
             break
         except:
-            print("Waiting for valid user auth headers")
+            logger.info(
+                "test_waiting_valid_user_auth_headers",
+                unstructured_message="Waiting for valid user auth headers",
+            )
             time.sleep(5)
             if count > 5:
                 break
