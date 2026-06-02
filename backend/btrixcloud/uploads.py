@@ -1,5 +1,6 @@
 """handle user uploads into browsertrix"""
 
+import logging
 import uuid
 from io import BufferedReader
 from typing import Any, List, Optional
@@ -30,6 +31,8 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import CHUNK_SIZE
 from .utils import dt_now, run_async_task
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================================
@@ -82,7 +85,13 @@ class UploadOps(BaseCrawlOps):
                 file_prep.add_chunk(chunk)
                 yield chunk
 
-        print("Stream Upload Start", flush=True)
+        logger.info(
+            "stream_upload_start",
+            oid=org.id,
+            uid=str(user.id),
+            crawl_id=id_,
+            unstructured_message="Stream Upload Start",
+        )
 
         if not await self.storage_ops.do_upload_multipart(
             org,
@@ -90,7 +99,13 @@ class UploadOps(BaseCrawlOps):
             stream_iter(),
             MIN_UPLOAD_PART_SIZE,
         ):
-            print("Stream Upload Failed", flush=True)
+            logger.error(
+                "stream_upload_failed",
+                oid=org.id,
+                uid=str(user.id),
+                crawl_id=id_,
+                unstructured_message="Stream Upload Failed",
+            )
             raise HTTPException(status_code=400, detail="upload_failed")
 
         files = [file_prep.get_crawl_file(org.storage)]
@@ -101,7 +116,14 @@ class UploadOps(BaseCrawlOps):
                 await self.page_ops.delete_crawl_pages(prev_upload.id, org.id)
             # pylint: disable=broad-exception-caught
             except Exception as exc:
-                print(f"Error handling previous upload: {exc}", flush=True)
+                logger.error(
+                    "previous_upload_cleanup_error",
+                    error=str(exc),
+                    oid=org.id,
+                    uid=str(user.id),
+                    crawl_id=id_,
+                    unstructured_message=f"Error handling previous upload: {exc}",
+                )
 
         return await self._create_upload(
             files, name, description, collections, tags, id_, org, user

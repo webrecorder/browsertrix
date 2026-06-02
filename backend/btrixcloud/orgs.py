@@ -5,6 +5,7 @@ Organization API handling
 # pylint: disable=too-many-lines
 
 import json
+import logging
 import math
 import os
 import time
@@ -36,6 +37,7 @@ from pydantic import ValidationError
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 
+from .logger import set_log_context
 from .models import (
     ACTIVE,
     MAX_BROWSER_WINDOWS,
@@ -127,6 +129,8 @@ else:
     InviteOps = BaseCrawlOps = ProfileOps = CollectionOps = CrawlConfigOps = object
     BackgroundJobOps = UserManager = PageOps = FileUploadOps = CrawlManager = object
 
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 
@@ -282,9 +286,10 @@ class OrgOps(BaseOrgs):
                 break
             # pylint: disable=duplicate-code
             except AutoReconnect:
-                print(
-                    "Database connection unavailable to create index. Will try again in 5 scconds",
-                    flush=True,
+                # pylint: disable=line-too-long
+                logger.warning(
+                    "db_connection_unavailable",
+                    unstructured_message="Database connection unavailable to create index. Will try again in 5 scconds",
                 )
                 time.sleep(5)
 
@@ -442,12 +447,21 @@ class OrgOps(BaseOrgs):
         try:
             default_org = await self.get_default_org()
             if default_org.name == DEFAULT_ORG:
-                print("Default organization already exists - skipping", flush=True)
+                logger.info(
+                    "default_org_exists",
+                    oid=str(default_org.id),
+                    unstructured_message="Default organization already exists - skipping",
+                )
             else:
                 default_org.name = DEFAULT_ORG
                 default_org.slug = slug_from_name(DEFAULT_ORG)
                 await self.update_full(default_org)
-                print(f'Default organization renamed to "{DEFAULT_ORG}"', flush=True)
+                logger.info(
+                    "default_org_renamed",
+                    default_org=DEFAULT_ORG,
+                    oid=str(default_org.id),
+                    unstructured_message=f'Default organization renamed to "{DEFAULT_ORG}"',
+                )
             return
         except HTTPException:
             # default org does not exist, create below
@@ -464,9 +478,13 @@ class OrgOps(BaseOrgs):
             default=True,
         )
         primary_name = self.default_primary and self.default_primary.name
-        print(
-            f'Creating Default Organization "{DEFAULT_ORG}". Storage: {primary_name}',
-            flush=True,
+        # pylint: disable=line-too-long
+        logger.info(
+            "default_org_creating",
+            default_org=DEFAULT_ORG,
+            storage=primary_name,
+            oid=str(org.id),
+            unstructured_message=f'Creating Default Organization "{DEFAULT_ORG}". Storage: {primary_name}',
         )
         try:
             await self.orgs.insert_one(org.to_dict())
@@ -475,9 +493,12 @@ class OrgOps(BaseOrgs):
             value = org.name
             if field == "slug":
                 value = org.slug
-            print(
-                f"Organization {field} {value} already in use - skipping",
-                flush=True,
+            logger.warning(
+                "org_field_in_use",
+                field=field,
+                value=value,
+                oid=str(org.id),
+                unstructured_message=f"Organization {field} {value} already in use - skipping",
             )
 
     async def create_org(
@@ -552,7 +573,14 @@ class OrgOps(BaseOrgs):
             {"storage.custom": False, "storage.name": {"$nin": storage_names}}
         ):
             org = Organization.from_dict(org_data)
-            print(f"Org {org.slug} uses unknown primary storage {org.storage.name}")
+            # pylint: disable=line-too-long
+            logger.warning(
+                "org_unknown_primary_storage",
+                slug=org.slug,
+                storage_name=org.storage.name,
+                oid=str(org.id),
+                unstructured_message=f"Org {org.slug} uses unknown primary storage {org.storage.name}",
+            )
             errors += 1
 
         async for org_data in self.orgs.find(
@@ -562,7 +590,12 @@ class OrgOps(BaseOrgs):
             }
         ):
             org = Organization.from_dict(org_data)
-            print(f"Org {org.slug} uses an unknown replica storage")
+            logger.warning(
+                "org_unknown_replica_storage",
+                slug=org.slug,
+                oid=str(org.id),
+                unstructured_message=f"Org {org.slug} uses an unknown replica storage",
+            )
             errors += 1
 
         if errors:
@@ -793,7 +826,12 @@ class OrgOps(BaseOrgs):
                     {"_id": org.id}, update, session=session
                 )
             except Exception as e:
-                print(f"Error updating organization quotas: {e}")
+                logger.error(
+                    "org_quota_update_error",
+                    error=str(e),
+                    oid=str(org.id),
+                    unstructured_message=f"Error updating organization quotas: {e}",
+                )
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
     async def update_feature_flags(
@@ -907,7 +945,12 @@ class OrgOps(BaseOrgs):
             await self.add_user_to_org(org, user.id, add.role)
             return user
         except HTTPException as exc:
-            print("Error adding user to org", exc)
+            logger.error(
+                "org_add_user_error",
+                error=str(exc),
+                oid=str(org.id),
+                unstructured_message=f"Error adding user to org {exc}",
+            )
             raise exc
 
     async def set_default_org_name_from_user_name(
@@ -1343,9 +1386,12 @@ class OrgOps(BaseOrgs):
         version = version_res["version"]
         stream_db_version = org_data.get("dbVersion")
         if version != stream_db_version and not ignore_version:
-            print(
-                f"Export db version: {stream_db_version} doesn't match db: {version}, quitting",
-                flush=True,
+            # pylint: disable=line-too-long
+            logger.error(
+                "export_db_version_mismatch",
+                export_version=stream_db_version,
+                db_version=version,
+                unstructured_message=f"Export db version: {stream_db_version} doesn't match db: {version}, quitting",
             )
             raise HTTPException(status_code=400, detail="db_version_mismatch")
 
@@ -1361,7 +1407,11 @@ class OrgOps(BaseOrgs):
             pass
 
         if existing_org:
-            print(f"Org {oid} already exists, quitting", flush=True)
+            logger.warning(
+                "org_already_exists",
+                oid=str(oid),
+                unstructured_message=f"Org {oid} already exists, quitting",
+            )
             raise HTTPException(status_code=400, detail="org_already_exists")
 
         new_storage_ref = None
@@ -1477,7 +1527,12 @@ class OrgOps(BaseOrgs):
             if item["type"] == "upload":
                 item_obj = UploadedCrawl.from_dict(item)  # type: ignore
             if not item_obj:
-                print(f"Archived item {item_id} has no type, skipping", flush=True)
+                logger.warning(
+                    "archived_item_no_type",
+                    item_id=item_id,
+                    oid=str(oid),
+                    unstructured_message=f"Archived item {item_id} has no type, skipping",
+                )
                 continue
 
             # Update userid if necessary
@@ -1523,7 +1578,13 @@ class OrgOps(BaseOrgs):
         successfully completes to prevent deleting this job before it
         completes.
         """
-        print(f"Deleting org: {org.slug} {org.name} {org.id}")
+        logger.info(
+            "org_deletion_started",
+            slug=org.slug,
+            name=org.name,
+            oid=str(org.id),
+            unstructured_message=f"Deleting org: {org.slug} {org.name} {org.id}",
+        )
 
         # Delete archived items
         cursor = self.crawls_db.find({"oid": org.id}, projection=["_id"])
@@ -1651,7 +1712,13 @@ class OrgOps(BaseOrgs):
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(f"Error updating field {field} on org {oid}: {err}", flush=True)
+            logger.error(
+                "org_field_update_error",
+                field=field,
+                oid=str(oid),
+                error=str(err),
+                unstructured_message=f"Error updating field {field} on org {oid}: {err}",
+            )
 
     async def remove_collection_from_crawling_defaults(
         self, coll_id: UUID, org: Organization
@@ -1669,9 +1736,13 @@ class OrgOps(BaseOrgs):
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Error removing coll {coll_id} from org {org.id} defaults: {err}",
-                flush=True,
+            # pylint: disable=line-too-long
+            logger.error(
+                "org_coll_defaults_remove_error",
+                coll_id=str(coll_id),
+                oid=str(org.id),
+                error=str(err),
+                unstructured_message=f"Error removing coll {coll_id} from org {org.id} defaults: {err}",
             )
 
 
@@ -1701,6 +1772,7 @@ def init_orgs_api(
                 detail="User does not have permission to view this organization",
             )
 
+        set_log_context(oid=str(org.id), user_id=str(user.id))
         return org
 
     async def org_crawl_dep(
@@ -1730,6 +1802,7 @@ def init_orgs_api(
         except HTTPException as exc:
             raise HTTPException(status_code=404, detail="org_not_found") from exc
 
+        set_log_context(oid=str(org.id))
         return org
 
     router = APIRouter(

@@ -1,6 +1,7 @@
 """Profile Management"""
 
 import json
+import logging
 import os
 from typing import (
     TYPE_CHECKING,
@@ -48,6 +49,8 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import case_insensitive_collation, dt_now, run_async_task, str_to_date
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .background_jobs import BackgroundJobOps
@@ -371,7 +374,14 @@ class ProfileOps:
 
         # pylint: disable=broad-except
         except Exception as e:
-            print("Profile commit failed", e)
+            logger.error(
+                "profile_commit_failed",
+                error=str(e),
+                oid=org.id,
+                uid=str(user.id),
+                profile_id=str(metadata.profileid),
+                unstructured_message=f"Profile commit failed {e}",
+            )
             return False
 
         return True
@@ -416,7 +426,13 @@ class ProfileOps:
             modified = str_to_date(data["modified"])
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            print(exc)
+            logger.error(
+                "profile_update_parse_failed",
+                error=str(exc),
+                oid=org_id,
+                profile_id=str(profileid),
+                unstructured_message=f"{exc}",
+            )
             return False
 
         res = await self.profiles.find_one_and_update(
@@ -644,7 +660,12 @@ class ProfileOps:
                     data = await resp.json()
 
         except Exception as e:
-            print(e)
+            logger.error(
+                "browser_request_failed",
+                browser_id=browserid,
+                error=str(e),
+                unstructured_message=f"{e}",
+            )
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=200, detail="waiting_for_browser")
 
@@ -720,12 +741,17 @@ def init_profiles_api(
         metadata = None
         try:
             metadata = await crawl_manager.get_profile_browser_metadata(browserid)
-        # pylint: disable=raise-missing-from
+        # pylint: disable=raise-missing-from, broad-exception-caught
         except Exception as e:
-            print(e)
-            raise HTTPException(status_code=400, detail="invalid_profile_browser")
+            logger.error(
+                "browser_metadata_fetch_failed",
+                error=str(e),
+                oid=org.id,
+                browser_id=browserid,
+                unstructured_message=f"{e}",
+            )
 
-        if metadata.oid != str(org.id):
+        if not metadata or metadata.oid != str(org.id):
             raise HTTPException(status_code=404, detail="no_such_browser")
 
         return metadata

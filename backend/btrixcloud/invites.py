@@ -1,6 +1,7 @@
 """Invite system management"""
 
 import hashlib
+import logging
 import os
 import time
 import urllib.parse
@@ -25,6 +26,8 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE
 from .users import UserManager
 from .utils import dt_now, is_bool
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================================
@@ -58,9 +61,10 @@ class InviteOps:
 
             # pylint: disable=duplicate-code
             except AutoReconnect:
-                print(
-                    "Database connection unavailable to create index. Will try again in 5 scconds",
-                    flush=True,
+                # pylint: disable=line-too-long
+                logger.error(
+                    "db_index_creation_unavailable",
+                    unstructured_message="Database connection unavailable to create index. Will try again in 5 scconds",
                 )
                 time.sleep(5)
 

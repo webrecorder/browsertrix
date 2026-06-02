@@ -3,6 +3,7 @@ Subscription API handling
 """
 
 import asyncio
+import logging
 import os
 from datetime import datetime
 from typing import Annotated, Any, Awaitable, Callable, List, Optional, Tuple
@@ -50,6 +51,8 @@ from .orgs import OrgOps
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .users import UserManager
 from .utils import dt_now, get_origin, is_bool, run_async_task
+
+logger = logging.getLogger(__name__)
 
 # if set, will enable this api
 subscriptions_enabled = is_bool(os.environ.get("BILLING_ENABLED"))
@@ -211,7 +214,11 @@ class SubOps:
         org = await self.org_ops.find_org_by_subscription_id(reminder.subId)
 
         if not org:
-            print(f"Organization not found for subscription ID {reminder.subId}")
+            logger.error(
+                "org_not_found_for_subscription",
+                sub_id=reminder.subId,
+                unstructured_message=f"Organization not found for subscription ID {reminder.subId}",
+            )
             raise HTTPException(
                 status_code=404, detail="org_for_subscription_not_found"
             )
@@ -219,13 +226,24 @@ class SubOps:
         assert org.subscription
 
         if not org.subscription.futureCancelDate:
-            print(f"Future cancel date not found for subscription ID {reminder.subId}")
+            # pylint: disable=line-too-long
+            logger.error(
+                "future_cancel_date_not_found",
+                sub_id=reminder.subId,
+                oid=org.id,
+                unstructured_message=f"Future cancel date not found for subscription ID {reminder.subId}",
+            )
             raise HTTPException(status_code=400, detail="future_cancel_date_not_found")
 
         users = await self.org_ops.get_users_for_org(org, UserRole.OWNER)
 
         if len(users) == 0:
-            print(f"No admin users found for organization ID {org.id}")
+            logger.error(
+                "no_admin_users_found_for_org",
+                org_id=org.id,
+                oid=org.id,
+                unstructured_message=f"No admin users found for organization ID {org.id}",
+            )
             raise HTTPException(status_code=400, detail="no_admin_users_found")
 
         await asyncio.gather(
@@ -395,7 +413,12 @@ class SubOps:
                         return SubscriptionPortalUrlResponse(**json)
             # pylint: disable=broad-exception-caught
             except Exception as exc:
-                print("Error fetching portal url", exc)
+                logger.error(
+                    "portal_url_fetch_failed",
+                    error=str(exc),
+                    oid=org.id,
+                    unstructured_message=f"Error fetching portal url {exc}",
+                )
 
         return SubscriptionPortalUrlResponse()
 
@@ -420,7 +443,12 @@ class SubOps:
                         return AddonMinutesPricing(**json)
             # pylint: disable=broad-exception-caught
             except Exception as exc:
-                print("Error fetching execution minutes price", exc)
+                logger.error(
+                    "execution_minutes_price_fetch_failed",
+                    error=str(exc),
+                    oid=org.id,
+                    unstructured_message=f"Error fetching execution minutes price {exc}",
+                )
 
     async def get_checkout_url(
         self,
@@ -456,11 +484,21 @@ class SubOps:
                         raise_for_status=True,
                     ) as resp:
                         json = await resp.json()
-                        print(f"get_checkout_url got response: {json}")
+                        logger.debug(
+                            "checkout_url_response",
+                            response=json,
+                            oid=org.id,
+                            unstructured_message=f"get_checkout_url got response: {json}",
+                        )
                         return CheckoutAddonMinutesResponse(**json)
             # pylint: disable=broad-exception-caught
             except Exception as exc:
-                print("Error fetching checkout url", exc)
+                logger.error(
+                    "checkout_url_fetch_failed",
+                    error=str(exc),
+                    oid=org.id,
+                    unstructured_message=f"Error fetching checkout url {exc}",
+                )
                 raise HTTPException(
                     status_code=500, detail="Error fetching checkout url"
                 ) from exc
