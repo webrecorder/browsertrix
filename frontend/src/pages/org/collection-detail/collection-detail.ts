@@ -1,5 +1,6 @@
 import { consume, provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
+import { Task, TaskStatus } from "@lit/task";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -9,7 +10,11 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
-import type { Embed as ReplayWebPage, RwpUrlChangeEvent } from "replaywebpage";
+import type {
+  Embed as ReplayWebPage,
+  RwpPageLoadingEvent,
+  RwpUrlChangeEvent,
+} from "replaywebpage";
 
 import { collectionRwpContext } from "./context/collection-rwp";
 import {
@@ -64,6 +69,7 @@ import {
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import type { DedupeIndexState } from "@/types/dedupe";
+import type { PageSnapshot } from "@/types/page";
 import { isCrawlReplay, renderName } from "@/utils/crawler";
 import { indexAvailable, indexInUse, indexUpdating } from "@/utils/dedupe";
 import { isNotEqual } from "@/utils/is-not-equal";
@@ -111,6 +117,9 @@ export class CollectionDetail extends BtrixElement {
 
   @state()
   private slugPreview = "";
+
+  @state()
+  private replayCurrentPage?: { url: string; ts: string };
 
   @consume({ context: viewStateContext })
   viewState?: ViewStateContext;
@@ -182,6 +191,58 @@ export class CollectionDetail extends BtrixElement {
   private get isCrawler() {
     return this.appState.isCrawler;
   }
+
+  private readonly setReplayHomepageTask = new Task(this, {
+    task: async ([replayCurrentPage], { signal }) => {
+      try {
+        let pageId: string | null = null;
+
+        if (replayCurrentPage) {
+          const { url, ts } = replayCurrentPage;
+
+          // TODO See if Replay can return page ID
+          const { items } = await this.getPages(
+            {
+              url,
+              // TODO See if API can accept Replay-formatted timestamps
+              // ts,
+            },
+            signal,
+          );
+          const page = items.find((page) => formatRwpTimestamp(page.ts) === ts);
+
+          if (page) {
+            pageId = page.id;
+          } else {
+            throw new Error("no matching page");
+          }
+        }
+
+        await this.updateUrl({ pageId }, signal);
+
+        this.notify.toast({
+          message: msg("Homepage updated."),
+          variant: "success",
+          icon: "check2-circle",
+          id: "update",
+        });
+      } catch (err) {
+        console.debug("err");
+
+        this.notify.toast({
+          message: msg("Sorry, couldn’t update homepage at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+          id: "update",
+        });
+      }
+    },
+    args: () =>
+      [undefined] as readonly [
+        CollectionDetail["replayCurrentPage"] | undefined,
+      ],
+    autoRun: false,
+  });
 
   disconnectedCallback(): void {
     window.clearTimeout(this.timerId);
@@ -381,25 +442,58 @@ export class CollectionDetail extends BtrixElement {
               () =>
                 this.collection?.crawlCount
                   ? html`
-                      <sl-button
-                        size="small"
-                        @click=${() => {
-                          this.openDialogName = "replaySettings";
-                        }}
-                        title=${ifDefined(
-                          this.isRwpLoaded
-                            ? undefined
-                            : msg("Please wait for replay load"),
-                        )}
-                        ?disabled=${!this.isRwpLoaded ||
-                        this.collection.runningUpdatesCount}
-                      >
-                        ${this.isRwpLoaded &&
-                        !this.collection.runningUpdatesCount
-                          ? html`<sl-icon name="house" slot="prefix"></sl-icon>`
-                          : html`<sl-spinner slot="prefix"></sl-spinner>`}
-                        ${msg("Set Initial View")}
-                      </sl-button>
+                      <sl-button-group label=${msg("Replay Toolbar")}>
+                        <sl-tooltip
+                          content=${msg("Go to Homepage")}
+                          placement="left"
+                        >
+                          <sl-button
+                            size="small"
+                            ?disabled=${this.setReplayHomepageTask.status ===
+                            TaskStatus.PENDING}
+                            @click=${() => console.log("TODO")}
+                          >
+                            <sl-icon slot="prefix" name="house"></sl-icon>
+                          </sl-button>
+                        </sl-tooltip>
+                        <sl-dropdown placement="bottom-end" distance="4">
+                          <sl-button slot="trigger" size="small" caret>
+                            ${msg("Set Homepage")}</sl-button
+                          >
+                          <sl-menu>
+                            <sl-menu-item
+                              ?disabled=${!this.replayCurrentPage ||
+                              (this.replayCurrentPage.url ===
+                                this.collection.homeUrl &&
+                                this.replayCurrentPage.ts ===
+                                  formatRwpTimestamp(
+                                    this.collection.homeUrlTs,
+                                  ))}
+                              @click=${() => {
+                                if (this.replayCurrentPage)
+                                  void this.setReplayHomepageTask.run([
+                                    this.replayCurrentPage,
+                                  ]);
+                              }}
+                            >
+                              <sl-icon
+                                slot="prefix"
+                                name="file-earmark-richtext"
+                              ></sl-icon>
+                              ${msg("Current Page")}
+                            </sl-menu-item>
+                            <sl-menu-item
+                              @click=${() => {
+                                this.replayCurrentPage = undefined;
+                                void this.setReplayHomepageTask.run();
+                              }}
+                            >
+                              <sl-icon slot="prefix" name="list-ul"></sl-icon>
+                              ${msg("List of Pages")} (${msg("Default")})
+                            </sl-menu-item>
+                          </sl-menu>
+                        </sl-dropdown>
+                      </sl-button-group>
                     `
                   : this.collection?.runningUpdatesCount
                     ? html`<sl-spinner slot="prefix"></sl-spinner>`
@@ -423,7 +517,14 @@ export class CollectionDetail extends BtrixElement {
         )}
       </div>
       ${choose(this.collectionTab, [
-        [Tab.Replay, () => guard([this.collection], this.renderReplay)],
+        [
+          Tab.Replay,
+          () =>
+            guard(
+              [this.collectionId, this.collection?.crawlCount],
+              this.renderReplay,
+            ),
+        ],
         [
           Tab.Items,
           () => guard([this.archivedItems], this.renderArchivedItems),
@@ -812,26 +913,6 @@ export class CollectionDetail extends BtrixElement {
             <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
             ${msg("Share Collection")}
           </sl-menu-item>
-          ${when(
-            this.collection?.crawlCount,
-            () => html`
-              <sl-menu-item
-                @click=${() => {
-                  this.openDialogName = "replaySettings";
-                }}
-                ?disabled=${!this.isRwpLoaded}
-              >
-                ${this.isRwpLoaded
-                  ? html`<sl-icon name="house" slot="prefix"></sl-icon>`
-                  : html`<sl-spinner slot="prefix"></sl-spinner>`}
-                ${msg("Set Initial View")}
-              </sl-menu-item>
-            `,
-            () =>
-              this.collection?.runningUpdatesCount
-                ? html`<sl-spinner slot="prefix"></sl-spinner>`
-                : nothing,
-          )}
           <sl-menu-item
             @click=${async () => {
               this.navigate.to(
@@ -1316,6 +1397,22 @@ export class CollectionDetail extends BtrixElement {
         replayBase="/replay/"
         noSandbox="true"
         noCache="true"
+        @rwp-page-loading=${(e: RwpPageLoadingEvent) => {
+          const { url, ts, loading } = e.detail;
+
+          if (!loading) {
+            if (
+              url &&
+              ts &&
+              (!("replayNotFoundError" in e.detail) ||
+                !e.detail.replayNotFoundError)
+            ) {
+              this.replayCurrentPage = { url, ts };
+            } else {
+              this.replayCurrentPage = undefined;
+            }
+          }
+        }}
         @rwp-url-change=${(e: RwpUrlChangeEvent) => {
           if (!this.replayEmbed) {
             this.replayEmbed = e.currentTarget as ReplayWebPage;
@@ -1758,5 +1855,31 @@ export class CollectionDetail extends BtrixElement {
         id: "update",
       });
     }
+  }
+
+  private async getPages(
+    params: { url?: string; ts?: string } & APIPaginationQuery,
+    signal: AbortSignal,
+  ) {
+    const query = queryString.stringify({ ...params });
+
+    return this.api.fetch<APIPaginatedList<PageSnapshot>>(
+      `/orgs/${this.orgId}/collections/${this.collectionId}/pages?${query}`,
+      { signal },
+    );
+  }
+
+  private async updateUrl(
+    { pageId }: { pageId: string | null },
+    signal: AbortSignal,
+  ) {
+    return this.api.fetch(
+      `/orgs/${this.orgId}/collections/${this.collectionId}/home-url`,
+      {
+        method: "POST",
+        body: JSON.stringify({ pageId }),
+        signal,
+      },
+    );
   }
 }
