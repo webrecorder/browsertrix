@@ -191,7 +191,7 @@ export class EditableTextField extends TailwindElement {
     return html`<input
         class=${clsx(
           tw`peer absolute inset-4 rounded bg-transparent`,
-          !this.valid && tw`z-[11] outline outline-danger`,
+          !this.valid && tw`z-[21] outline outline-danger`,
         )}
         type="text"
         .value=${this.inputValue}
@@ -244,7 +244,7 @@ export class EditableTextField extends TailwindElement {
       ></span>
       ${this.maxLength && !this.valid
         ? html`<span
-            class="absolute bottom-0 right-4 z-20 rounded-b-sm bg-white pt-1 text-xs font-semibold leading-none text-danger tabular-nums"
+            class="absolute bottom-0 right-4 z-20 rounded-b-sm bg-white pt-1 text-xs font-semibold tabular-nums leading-none text-danger"
           >
             ${this.showUnsavedWarning ? html`${msg("Unsaved")} - ` : null}
             ${localize.number(this.inputValue.length)} /
