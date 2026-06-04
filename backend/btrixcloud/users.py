@@ -4,7 +4,16 @@ FastAPI user handling (via fastapi-users)
 
 import logging
 import os
-from typing import TYPE_CHECKING, Callable, List, Optional, Tuple, Type, cast
+from typing import (
+    TYPE_CHECKING,
+    AsyncGenerator,
+    Callable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    cast,
+)
 from uuid import UUID, uuid4
 
 from fastapi import (
@@ -700,7 +709,8 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
 
 # ============================================================================
 def init_users_router(
-    current_active_user: Callable, user_manager: UserManager
+    current_active_user: Callable[[str], AsyncGenerator[User, None]],
+    user_manager: UserManager,
 ) -> APIRouter:
     """/users routes"""
     users_router = APIRouter()

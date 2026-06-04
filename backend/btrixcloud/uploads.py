@@ -3,7 +3,7 @@
 import logging
 import uuid
 from io import BufferedReader
-from typing import Any, List, Optional
+from typing import Any, AsyncGenerator, Callable, List, Optional
 from urllib.parse import unquote
 from uuid import UUID
 
@@ -259,7 +259,7 @@ class UploadFileReader(BufferedReader):
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name
-def init_uploads_api(app, user_dep, *args):
+def init_uploads_api(app, user_dep: Callable[[str], AsyncGenerator[User, None]], *args):
     """uploads api"""
 
     ops = UploadOps(*args)

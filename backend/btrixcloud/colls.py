@@ -7,7 +7,17 @@ import logging
 import os
 from collections import Counter
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Union,
+    cast,
+)
 from uuid import UUID, uuid4
 
 import aiohttp
@@ -1362,7 +1372,7 @@ def init_collections_api(
     crawl_manager: CrawlManager,
     event_webhook_ops: EventWebhookOps,
     background_job_ops: BackgroundJobOps,
-    user_dep,
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
 ) -> CollectionOps:
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments

@@ -4,7 +4,17 @@ import logging
 import os
 import secrets
 from datetime import datetime
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -915,7 +925,14 @@ class BackgroundJobOps:
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
 def init_background_jobs_api(
-    app, mdb, email, user_manager, org_ops, crawl_manager, storage_ops, user_dep
+    app,
+    mdb,
+    email,
+    user_manager,
+    org_ops,
+    crawl_manager,
+    storage_ops,
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
 ):
     """init background jobs system"""
     # pylint: disable=invalid-name

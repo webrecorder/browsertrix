@@ -9,7 +9,9 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    AsyncGenerator,
     AsyncIterable,
+    Callable,
     Dict,
     List,
     Optional,
@@ -1198,7 +1200,9 @@ class BaseCrawlOps:
 
 
 # ============================================================================
-def init_base_crawls_api(app, user_dep, *args):
+def init_base_crawls_api(
+    app, user_dep: Callable[[str], AsyncGenerator[User, None]], *args
+):
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code, too-many-arguments, too-many-locals
 
