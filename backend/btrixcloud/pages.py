@@ -6,7 +6,17 @@ import asyncio
 import logging
 import urllib.parse
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 from uuid import UUID, uuid4
 
 import pymongo
@@ -1194,7 +1204,7 @@ class PageOps:
             logger.info(
                 "running_crawls_waiting",
                 version=version,
-                running_crawl=running_crawl._id,  # noqa: W0212
+                running_crawl=running_crawl._id,  # pylint: disable=protected-access
                 unstructured_message="Running crawls remain, waiting for them to finish",
             )
             await asyncio.sleep(30)
@@ -1211,7 +1221,7 @@ class PageOps:
             logger.info(
                 "unmigrated_crawls_remain_finishing",
                 version=version,
-                in_progress=in_progress._id,  # noqa: W0212
+                in_progress=in_progress._id,  # pylint: disable=protected-access
                 unstructured_message="Unmigrated crawls remain, finishing job",
             )
             await asyncio.sleep(5)
@@ -1228,7 +1238,7 @@ def init_pages_api(
     background_job_ops,
     coll_ops,
     crawl_config_ops,
-    user_dep,
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
 ) -> PageOps:
     """init pages API"""
     # pylint: disable=invalid-name

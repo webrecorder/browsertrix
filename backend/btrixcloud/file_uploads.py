@@ -4,7 +4,17 @@ import logging
 import os
 import tempfile
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 from uuid import UUID, uuid4
 
 import aiohttp
@@ -479,7 +489,7 @@ def init_file_uploads_api(
     mdb,
     org_ops,
     storage_ops,
-    user_dep,
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
 ):
     """Init /files api routes"""
 

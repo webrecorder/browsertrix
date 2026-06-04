@@ -13,7 +13,9 @@ from datetime import datetime
 from typing import (
     Annotated,
     Any,
+    AsyncGenerator,
     AsyncIterator,
+    Callable,
     Dict,
     List,
     Optional,
@@ -1373,7 +1375,7 @@ async def recompute_crawl_file_count_and_size(crawls, crawl_id: str):
 def init_crawls_api(
     crawl_manager: CrawlManager,
     app,
-    user_dep,
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
     *args,
 ):
     """API for crawl management, including crawl done callback"""

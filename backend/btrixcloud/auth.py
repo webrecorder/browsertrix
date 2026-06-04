@@ -171,7 +171,7 @@ def generate_password() -> str:
 
 
 # ============================================================================
-# pylint: disable=raise-missing-from
+# pylint: disable=raise-missing-from,too-many-statements
 def init_jwt_auth(user_manager):
     """init jwt auth router + current_active_user dependency"""
     oauth2_scheme = OA2BearerOrQuery(tokenUrl="/api/auth/jwt/login", auto_error=False)
@@ -313,7 +313,7 @@ def init_jwt_auth(user_manager):
             clear_log_context(tokens)
 
     @auth_jwt_router.post("/refresh", response_model=BearerResponse)
-    async def refresh_jwt(user=Depends(current_active_user)):
+    async def refresh_jwt(user: User = Depends(current_active_user)):
         user_info = await user_manager.get_user_info_with_orgs(user)
         tokens = set_log_context(user_id=str(user.id))
         try:

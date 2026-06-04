@@ -15,7 +15,9 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     AsyncIterator,
+    Callable,
     Dict,
     Iterable,
     Iterator,
@@ -1018,7 +1020,11 @@ def _parse_json(line) -> dict:
 
 # ============================================================================
 def init_storages_api(
-    org_ops: OrgOps, crawl_manager: CrawlManager, app: APIRouter, mdb, user_dep
+    org_ops: OrgOps,
+    crawl_manager: CrawlManager,
+    app: APIRouter,
+    mdb,
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
 ) -> StorageOps:
     """API for updating storage for an org"""
 
