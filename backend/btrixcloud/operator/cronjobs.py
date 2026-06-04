@@ -76,7 +76,6 @@ class CronJobOperator(BaseOperator):
         except:
             logger.error(
                 "cronjob_crawlconfig_not_found",
-                org_slug=org.slug,
                 cid=cid,
                 oid=oid,
                 user_id=userid,
