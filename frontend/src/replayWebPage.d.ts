@@ -1,4 +1,4 @@
-import type { Embed as ReplayWebPage } from "replaywebpage";
+import type { ReplayWebPage } from "replaywebpage";
 
 type RwpUrlChangeEvent = CustomEvent<{
   type: "urlchange";

@@ -3,7 +3,7 @@
  */
 
 import { createContext } from "@lit/context";
-import type { Embed as ReplayWebPage } from "replaywebpage";
+import type { ReplayWebPage } from "replaywebpage";
 
 export type CollectionRwpContext = ReplayWebPage | null | undefined;
 

@@ -11,7 +11,7 @@ import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 import type {
-  Embed as ReplayWebPage,
+  ReplayWebPage,
   RwpPageLoadingEvent,
   RwpUrlChangeEvent,
 } from "replaywebpage";
@@ -119,7 +119,7 @@ export class CollectionDetail extends BtrixElement {
   private slugPreview = "";
 
   @state()
-  private replayCurrentPage?: { url: string; ts: string };
+  private replayCurrentPage?: { url: string; ts?: string };
 
   @consume({ context: viewStateContext })
   viewState?: ViewStateContext;
@@ -192,33 +192,35 @@ export class CollectionDetail extends BtrixElement {
     return this.appState.isCrawler;
   }
 
-  private readonly setReplayHomepageTask = new Task(this, {
+  private readonly updateHomepageTask = new Task(this, {
     task: async ([replayCurrentPage], { signal }) => {
       try {
-        let pageId: string | null = null;
-
         if (replayCurrentPage) {
-          const { url, ts } = replayCurrentPage;
-
-          // TODO See if Replay can return page ID
-          const { items } = await this.getPages(
+          await this.api.fetch<Collection>(
+            `/orgs/${this.orgId}/collections/${this.collectionId}`,
             {
-              url,
-              // TODO See if API can accept Replay-formatted timestamps
-              // ts,
+              method: "PATCH",
+              body: JSON.stringify({
+                homeUrl: replayCurrentPage.url,
+                homeUrlTs: replayCurrentPage.ts,
+                homeUrlPageId: "q",
+              }),
             },
-            signal,
           );
-          const page = items.find((page) => formatRwpTimestamp(page.ts) === ts);
-
-          if (page) {
-            pageId = page.id;
-          } else {
-            throw new Error("no matching page");
-          }
+        } else {
+          // Unset homepage
+          await this.updateHomepage({ pageId: null }, signal);
         }
 
-        await this.updateUrl({ pageId }, signal);
+        // Optimistic update
+        if (this.collection) {
+          this.collection = {
+            ...this.collection,
+            homeUrl: replayCurrentPage?.url || null,
+            homeUrlTs: replayCurrentPage?.ts || null,
+            homeUrlPageId: null,
+          };
+        }
 
         this.notify.toast({
           message: msg("Homepage updated."),
@@ -226,8 +228,10 @@ export class CollectionDetail extends BtrixElement {
           icon: "check2-circle",
           id: "update",
         });
+
+        await this.fetchCollection();
       } catch (err) {
-        console.debug("err");
+        console.debug(err);
 
         this.notify.toast({
           message: msg("Sorry, couldn’t update homepage at this time."),
@@ -449,9 +453,10 @@ export class CollectionDetail extends BtrixElement {
                         >
                           <sl-button
                             size="small"
-                            ?disabled=${this.setReplayHomepageTask.status ===
-                            TaskStatus.PENDING}
-                            @click=${() => console.log("TODO")}
+                            ?disabled=${!this.replayEmbed ||
+                            this.updateHomepageTask.status ===
+                              TaskStatus.PENDING}
+                            @click=${this.goToHomepage}
                           >
                             <sl-icon slot="prefix" name="house"></sl-icon>
                           </sl-button>
@@ -462,16 +467,10 @@ export class CollectionDetail extends BtrixElement {
                           >
                           <sl-menu>
                             <sl-menu-item
-                              ?disabled=${!this.replayCurrentPage ||
-                              (this.replayCurrentPage.url ===
-                                this.collection.homeUrl &&
-                                this.replayCurrentPage.ts ===
-                                  formatRwpTimestamp(
-                                    this.collection.homeUrlTs,
-                                  ))}
+                              ?disabled=${!this.replayCurrentPage}
                               @click=${() => {
                                 if (this.replayCurrentPage)
-                                  void this.setReplayHomepageTask.run([
+                                  void this.updateHomepageTask.run([
                                     this.replayCurrentPage,
                                   ]);
                               }}
@@ -485,11 +484,11 @@ export class CollectionDetail extends BtrixElement {
                             <sl-menu-item
                               @click=${() => {
                                 this.replayCurrentPage = undefined;
-                                void this.setReplayHomepageTask.run();
+                                void this.updateHomepageTask.run();
                               }}
                             >
                               <sl-icon slot="prefix" name="list-ul"></sl-icon>
-                              ${msg("List of Pages")} (${msg("Default")})
+                              ${msg("List of Pages")}
                             </sl-menu-item>
                           </sl-menu>
                         </sl-dropdown>
@@ -1400,15 +1399,13 @@ export class CollectionDetail extends BtrixElement {
         @rwp-page-loading=${(e: RwpPageLoadingEvent) => {
           const { url, ts, loading } = e.detail;
 
-          if (!loading) {
+          if (loading) {
+            this.replayCurrentPage = { url, ts };
+          } else {
             if (
-              url &&
-              ts &&
-              (!("replayNotFoundError" in e.detail) ||
-                !e.detail.replayNotFoundError)
+              "replayNotFoundError" in e.detail &&
+              e.detail.replayNotFoundError
             ) {
-              this.replayCurrentPage = { url, ts };
-            } else {
               this.replayCurrentPage = undefined;
             }
           }
@@ -1436,6 +1433,29 @@ export class CollectionDetail extends BtrixElement {
       <sl-spinner></sl-spinner>
     </div>
   `;
+
+  /**
+   * Navigate RWP to collection home URL.
+   */
+  private readonly goToHomepage = async () => {
+    if (!this.collection) {
+      console.debug("no this.collection");
+      return;
+    }
+
+    if (!this.replayEmbed) {
+      console.debug("no this.replayEmbed");
+      return;
+    }
+
+    // TODO Requires https://github.com/webrecorder/replayweb.page/pull/521
+    // this.replayEmbed.mainElement?.navigateReplayTo(
+    //   this.collection.homeUrl || "pages",
+    //   this.collection.homeUrlTs
+    //     ? { ts: formatRwpTimestamp(this.collection.homeUrlTs) || "" }
+    //     : undefined,
+    // );
+  };
 
   private readonly confirmDelete = () => {
     this.openDialogName = "delete";
@@ -1869,7 +1889,7 @@ export class CollectionDetail extends BtrixElement {
     );
   }
 
-  private async updateUrl(
+  private async updateHomepage(
     { pageId }: { pageId: string | null },
     signal: AbortSignal,
   ) {
