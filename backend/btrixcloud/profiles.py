@@ -7,6 +7,8 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    AsyncGenerator,
+    Callable,
     Dict,
     List,
     Optional,
@@ -725,7 +727,7 @@ def init_profiles_api(
     crawl_manager: CrawlManager,
     storage_ops: StorageOps,
     background_job_ops: BackgroundJobOps,
-    user_dep,
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
 ):
     """init profile ops system"""
     ops = ProfileOps(mdb, org_ops, crawl_manager, storage_ops, background_job_ops)

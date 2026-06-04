@@ -87,7 +87,7 @@ class K8sOpAPI(K8sAPI):
             crawler_memory=crawler_memory,
             qa_memory=qa_memory,
             max_memory=self.max_crawler_memory_size,
-            unstructured_message=f"crawler resources\ncpu = {crawler_cpu} qa: {qa_cpu}\nmemory = {crawler_memory} qa: {qa_memory}\nmax crawler memory size: {self.max_crawler_memory_size}",
+            unstructured_message=f"crawler resources\ncpu = {crawler_cpu} qa: {qa_cpu}\nmemory = {crawler_memory} qa: {qa_memory}\nmax crawler memory size: {self.max_crawler_memory_size}",  # pylint: disable=line-too-long
         )
 
         if self.max_crawler_memory_size < crawler_memory:
@@ -148,7 +148,7 @@ class K8sOpAPI(K8sAPI):
             "profile_resources_computed",
             profile_cpu=profile_cpu,
             profile_memory=profile_memory,
-            unstructured_message=f"profile browser resources\ncpu = {profile_cpu}\nmemory = {profile_memory}",
+            unstructured_message=f"profile browser resources\ncpu = {profile_cpu}\nmemory = {profile_memory}",  # pylint: disable=line-too-long
         )
 
         if self.max_crawler_memory_size < profile_memory:
@@ -168,7 +168,7 @@ class K8sOpAPI(K8sAPI):
             "pod_init",
             has_pod_metrics=self.has_pod_metrics,
             enable_auto_resize=self.enable_auto_resize,
-            unstructured_message=f"Pod Metrics Available: {self.has_pod_metrics}\nAuto-Resize Enabled {self.enable_auto_resize}",
+            unstructured_message=f"Pod Metrics Available: {self.has_pod_metrics}\nAuto-Resize Enabled {self.enable_auto_resize}",  # pylint: disable=line-too-long
         )
 
 

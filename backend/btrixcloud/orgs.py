@@ -205,10 +205,10 @@ class OrgOps(BaseOrgs):
     default_primary: Optional[StorageRef]
 
     router: Optional[APIRouter]
-    org_viewer_dep: Optional[Callable]
-    org_crawl_dep: Optional[Callable]
-    org_owner_dep: Optional[Callable]
-    org_public: Optional[Callable]
+    org_viewer_dep: Optional[Callable[..., AsyncGenerator[Organization, None]]]
+    org_crawl_dep: Optional[Callable[..., Organization]]
+    org_owner_dep: Optional[Callable[..., Organization]]
+    org_public: Optional[Callable[..., AsyncGenerator[Organization, None]]]
 
     def __init__(
         self,
