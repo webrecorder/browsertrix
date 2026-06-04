@@ -334,6 +334,9 @@ class K8sAPI:
         except Exception as exc:
             logger.exception(
                 "patch_custom_object_failed",
+                name=name,
+                body=body,
+                pluraltype=pluraltype,
                 unstructured_message="Patch custom object failed",
             )
             return {"error": str(exc)}
@@ -349,6 +352,7 @@ class K8sAPI:
         except Exception as exc:
             logger.exception(
                 "unsuspend_k8s_job_failed",
+                name=name,
                 unstructured_message="Unsuspend k8s job failed",
             )
             return {"error": str(exc)}
@@ -370,6 +374,7 @@ class K8sAPI:
             logger.info(
                 "pod_logs_header",
                 pod_name=pod,
+                lines=lines,
                 unstructured_message=f"============== LOGS FOR POD: {pod} ==============",
             )
             try:
@@ -377,11 +382,17 @@ class K8sAPI:
                     pod, self.namespace, tail_lines=lines
                 )
                 logger.info(
-                    "pod_logs_content", pod_logs=resp, unstructured_message=f"{resp}"
+                    "pod_logs_content",
+                    pod_name=pod,
+                    pod_logs=resp,
                 )
             # pylint: disable=bare-except
             except:
-                logger.info("pod_logs_not_found", unstructured_message="Logs Not Found")
+                logger.warning(
+                    "pod_logs_not_found",
+                    pod_name=pod,
+                    unstructured_message="Logs Not Found",
+                )
 
     async def get_pod_logs(self, pod_name, lines=100, container=None) -> str:
         """get logs for pod"""
@@ -413,6 +424,7 @@ class K8sAPI:
             logger.error(
                 "pod_metrics_check_failed",
                 error=str(exc),
+                namespace=self.namespace,
                 unstructured_message=f"{exc}",
             )
             return False
@@ -456,7 +468,10 @@ class K8sAPI:
             )
             if res:
                 logger.debug(
-                    "signal_result", result=res, unstructured_message=f"Result {res}"
+                    "signal_result",
+                    signal=signame,
+                    pod_name=pod_name,
+                    result=res,
                 )
 
             else:
@@ -466,6 +481,8 @@ class K8sAPI:
         except Exception as exc:
             logger.error(
                 "send_signal_error",
+                signal=signame,
+                pod_name=pod_name,
                 error=str(exc),
                 unstructured_message=f"Send Signal Error: {exc}",
             )

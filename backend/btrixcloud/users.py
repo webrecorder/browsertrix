@@ -291,7 +291,7 @@ class UserManager:
                 await self.update_email_name(superuser, cast(EmailStr, email), name)
                 logger.info(
                     "superuser_email_updated",
-                    uid=str(superuser.id),
+                    user_id=superuser.id,
                     unstructured_message="Superuser email updated",
                 )
 
@@ -299,7 +299,7 @@ class UserManager:
                 await self._update_password(superuser, password)
                 logger.info(
                     "superuser_password_updated",
-                    uid=str(superuser.id),
+                    user_id=superuser.id,
                     unstructured_message="Superuser password updated",
                 )
 
@@ -312,7 +312,7 @@ class UserManager:
             logger.info(
                 "superuser_created",
                 email=email,
-                uid=str(res.id),
+                user_id=res.id,
                 unstructured_message=f"Super user {email} created",
             )
         except DuplicateKeyError as exc:
@@ -451,11 +451,10 @@ class UserManager:
             RESET_VERIFY_TOKEN_LIFETIME_MINUTES,
         )
 
-        logger.info(
+        logger.debug(
             "password_reset_requested",
-            user_id=str(user.id),
+            user_id=user.id,
             reset_token=token,
-            uid=str(user.id),
             unstructured_message=f"User {user.id} has forgot their password. Reset token: {token}",
         )
         await self.email.send_user_forgot_password(

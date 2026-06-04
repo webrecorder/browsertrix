@@ -272,6 +272,7 @@ class OrgOps(BaseOrgs):
 
     async def init_index(self) -> None:
         """init lookup index"""
+        attempt = 0
         while True:
             try:
                 await self.orgs.create_index(
@@ -286,9 +287,11 @@ class OrgOps(BaseOrgs):
                 break
             # pylint: disable=duplicate-code
             except AutoReconnect:
+                attempt += 1
                 # pylint: disable=line-too-long
                 logger.warning(
                     "db_connection_unavailable",
+                    attempt=attempt,
                     unstructured_message="Database connection unavailable to create index. Will try again in 5 scconds",
                 )
                 time.sleep(5)
@@ -449,7 +452,7 @@ class OrgOps(BaseOrgs):
             if default_org.name == DEFAULT_ORG:
                 logger.info(
                     "default_org_exists",
-                    oid=str(default_org.id),
+                    oid=default_org.id,
                     unstructured_message="Default organization already exists - skipping",
                 )
             else:
@@ -459,7 +462,7 @@ class OrgOps(BaseOrgs):
                 logger.info(
                     "default_org_renamed",
                     default_org=DEFAULT_ORG,
-                    oid=str(default_org.id),
+                    oid=default_org.id,
                     unstructured_message=f'Default organization renamed to "{DEFAULT_ORG}"',
                 )
             return
@@ -483,7 +486,7 @@ class OrgOps(BaseOrgs):
             "default_org_creating",
             default_org=DEFAULT_ORG,
             storage=primary_name,
-            oid=str(org.id),
+            oid=org.id,
             unstructured_message=f'Creating Default Organization "{DEFAULT_ORG}". Storage: {primary_name}',
         )
         try:
@@ -497,7 +500,7 @@ class OrgOps(BaseOrgs):
                 "org_field_in_use",
                 field=field,
                 value=value,
-                oid=str(org.id),
+                oid=org.id,
                 unstructured_message=f"Organization {field} {value} already in use - skipping",
             )
 
@@ -578,7 +581,7 @@ class OrgOps(BaseOrgs):
                 "org_unknown_primary_storage",
                 slug=org.slug,
                 storage_name=org.storage.name,
-                oid=str(org.id),
+                oid=org.id,
                 unstructured_message=f"Org {org.slug} uses unknown primary storage {org.storage.name}",
             )
             errors += 1
@@ -593,7 +596,7 @@ class OrgOps(BaseOrgs):
             logger.warning(
                 "org_unknown_replica_storage",
                 slug=org.slug,
-                oid=str(org.id),
+                oid=org.id,
                 unstructured_message=f"Org {org.slug} uses an unknown replica storage",
             )
             errors += 1
@@ -829,7 +832,7 @@ class OrgOps(BaseOrgs):
                 logger.error(
                     "org_quota_update_error",
                     error=str(e),
-                    oid=str(org.id),
+                    target_oid=org.id,
                     unstructured_message=f"Error updating organization quotas: {e}",
                 )
                 raise HTTPException(status_code=500, detail=str(e)) from e
@@ -948,7 +951,7 @@ class OrgOps(BaseOrgs):
             logger.error(
                 "org_add_user_error",
                 error=str(exc),
-                oid=str(org.id),
+                oid=org.id,
                 unstructured_message=f"Error adding user to org {exc}",
             )
             raise exc
@@ -1409,7 +1412,7 @@ class OrgOps(BaseOrgs):
         if existing_org:
             logger.warning(
                 "org_already_exists",
-                oid=str(oid),
+                oid=oid,
                 unstructured_message=f"Org {oid} already exists, quitting",
             )
             raise HTTPException(status_code=400, detail="org_already_exists")
@@ -1530,7 +1533,7 @@ class OrgOps(BaseOrgs):
                 logger.warning(
                     "archived_item_no_type",
                     item_id=item_id,
-                    oid=str(oid),
+                    oid=oid,
                     unstructured_message=f"Archived item {item_id} has no type, skipping",
                 )
                 continue
@@ -1582,7 +1585,7 @@ class OrgOps(BaseOrgs):
             "org_deletion_started",
             slug=org.slug,
             name=org.name,
-            oid=str(org.id),
+            oid=org.id,
             unstructured_message=f"Deleting org: {org.slug} {org.name} {org.id}",
         )
 
@@ -1715,7 +1718,7 @@ class OrgOps(BaseOrgs):
             logger.error(
                 "org_field_update_error",
                 field=field,
-                oid=str(oid),
+                oid=oid,
                 error=str(err),
                 unstructured_message=f"Error updating field {field} on org {oid}: {err}",
             )
@@ -1739,8 +1742,8 @@ class OrgOps(BaseOrgs):
             # pylint: disable=line-too-long
             logger.error(
                 "org_coll_defaults_remove_error",
-                coll_id=str(coll_id),
-                oid=str(org.id),
+                coll_id=coll_id,
+                oid=org.id,
                 error=str(err),
                 unstructured_message=f"Error removing coll {coll_id} from org {org.id} defaults: {err}",
             )

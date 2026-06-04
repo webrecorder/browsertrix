@@ -85,10 +85,8 @@ class UploadOps(BaseCrawlOps):
                 file_prep.add_chunk(chunk)
                 yield chunk
 
-        logger.info(
+        logger.debug(
             "stream_upload_start",
-            oid=org.id,
-            uid=str(user.id),
             crawl_id=id_,
             unstructured_message="Stream Upload Start",
         )
@@ -101,8 +99,6 @@ class UploadOps(BaseCrawlOps):
         ):
             logger.error(
                 "stream_upload_failed",
-                oid=org.id,
-                uid=str(user.id),
                 crawl_id=id_,
                 unstructured_message="Stream Upload Failed",
             )
@@ -119,8 +115,6 @@ class UploadOps(BaseCrawlOps):
                 logger.error(
                     "previous_upload_cleanup_error",
                     error=str(exc),
-                    oid=org.id,
-                    uid=str(user.id),
                     crawl_id=id_,
                     unstructured_message=f"Error handling previous upload: {exc}",
                 )

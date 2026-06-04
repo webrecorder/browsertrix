@@ -73,23 +73,6 @@ class K8sOpAPI(K8sAPI):
         )
         qa_memory, qa_cpu = self.compute_for_num_browsers(qa_num_workers)
 
-        logger.info(
-            "crawler_resources_computed",
-            unstructured_message="crawler resources",
-        )
-        logger.info(
-            "crawler_cpu_qa_cpu_computed",
-            crawler_cpu=crawler_cpu,
-            qa_cpu=qa_cpu,
-            unstructured_message=f"cpu = {crawler_cpu} qa: {qa_cpu}",
-        )
-        logger.info(
-            "crawler_memory_qa_memory_computed",
-            crawler_memory=crawler_memory,
-            qa_memory=qa_memory,
-            unstructured_message=f"memory = {crawler_memory} qa: {qa_memory}",
-        )
-
         max_crawler_memory_size = 0
         max_crawler_memory = os.environ.get("MAX_CRAWLER_MEMORY")
         if max_crawler_memory:
@@ -98,9 +81,13 @@ class K8sOpAPI(K8sAPI):
         self.max_crawler_memory_size = max_crawler_memory_size or crawler_memory
 
         logger.info(
-            "max_crawler_memory_size_set",
+            "crawler_resources_computed",
+            crawler_cpu=crawler_cpu,
+            qa_cpu=qa_cpu,
+            crawler_memory=crawler_memory,
+            qa_memory=qa_memory,
             max_memory=self.max_crawler_memory_size,
-            unstructured_message=f"max crawler memory size: {self.max_crawler_memory_size}",
+            unstructured_message=f"crawler resources\ncpu = {crawler_cpu} qa: {qa_cpu}\nmemory = {crawler_memory} qa: {qa_memory}\nmax crawler memory size: {self.max_crawler_memory_size}",
         )
 
         if self.max_crawler_memory_size < crawler_memory:
@@ -159,17 +146,9 @@ class K8sOpAPI(K8sAPI):
 
         logger.info(
             "profile_resources_computed",
-            unstructured_message="profile browser resources",
-        )
-        logger.info(
-            "profile_cpu_computed",
             profile_cpu=profile_cpu,
-            unstructured_message=f"cpu = {profile_cpu}",
-        )
-        logger.info(
-            "profile_memory_computed",
             profile_memory=profile_memory,
-            unstructured_message=f"memory = {profile_memory}",
+            unstructured_message=f"profile browser resources\ncpu = {profile_cpu}\nmemory = {profile_memory}",
         )
 
         if self.max_crawler_memory_size < profile_memory:
@@ -181,19 +160,15 @@ class K8sOpAPI(K8sAPI):
     async def async_init(self) -> None:
         """perform any async init here"""
         self.has_pod_metrics = await self.is_pod_metrics_available()
-        logger.info(
-            "pod_metrics_available_checked",
-            has_pod_metrics=self.has_pod_metrics,
-            unstructured_message=f"Pod Metrics Available: {self.has_pod_metrics}",
-        )
 
         self.enable_auto_resize = self.has_pod_metrics and is_bool(
             os.environ.get("ENABLE_AUTO_RESIZE_CRAWLERS")
         )
         logger.info(
-            "auto_resize_enabled_checked",
+            "pod_init",
+            has_pod_metrics=self.has_pod_metrics,
             enable_auto_resize=self.enable_auto_resize,
-            unstructured_message=f"Auto-Resize Enabled {self.enable_auto_resize}",
+            unstructured_message=f"Pod Metrics Available: {self.has_pod_metrics}\nAuto-Resize Enabled {self.enable_auto_resize}",
         )
 
 
@@ -260,6 +235,7 @@ class BaseOperator:
         except Exception as e:
             logger.warning(
                 "configmap_presigned_check_failed",
+                error=str(e),
                 unstructured_message=str(e),
             )
 

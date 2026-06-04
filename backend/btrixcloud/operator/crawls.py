@@ -218,7 +218,7 @@ class CrawlOperator(BaseOperator):
         if status.finished:
             logger.warning(
                 "crawl_finished_not_deleted",
-                crawl_id=str(crawl_id),
+                crawl_id=crawl_id,
                 # pylint: disable=line-too-long
                 unstructured_message=f"crawl {crawl_id} finished but not deleted, post-finish taking too long?",
             )
@@ -318,7 +318,7 @@ class CrawlOperator(BaseOperator):
             if dt_now() >= (crawl.paused_at + self.paused_expires_delta):
                 logger.info(
                     "paused_crawl_expiry_reached",
-                    crawl_id=str(crawl.id),
+                    crawl_id=crawl.id,
                     # pylint: disable=line-too-long
                     unstructured_message=f"Paused crawl expiry reached, stopping crawl, id: {crawl.id}",
                 )
@@ -329,7 +329,7 @@ class CrawlOperator(BaseOperator):
             elif crawl.stopping:
                 logger.info(
                     "paused_crawl_stopped_by_user",
-                    crawl_id=str(crawl.id),
+                    crawl_id=crawl.id,
                     unstructured_message=f"Paused crawl stopped by user, id: {crawl.id}",
                 )
                 stop_reason = "stopped_by_user"
@@ -494,6 +494,7 @@ class CrawlOperator(BaseOperator):
         ):
             logger.info(
                 "autoclick_behavior_removed",
+                behavior=behaviors,
                 crawler_image=crawler_image,
                 # pylint: disable=line-too-long
                 unstructured_message="Crawler version < min_autoclick_crawler_image, removing autoclick behavior",
@@ -977,6 +978,7 @@ class CrawlOperator(BaseOperator):
             logger.error(
                 "failed_crawl_pod_status",
                 pod_name=name,
+                pod_status=pods[name]["status"],
                 # pylint: disable=line-too-long
                 unstructured_message=f"============== POD STATUS: {name} ==============\n{pods[name]['status']}",
             )
@@ -1027,7 +1029,7 @@ class CrawlOperator(BaseOperator):
                 if finished and (dt_now() - finished).total_seconds() > ttl >= 0:
                     logger.info(
                         "crawl_job_expired",
-                        crawl_id=str(crawl.id),
+                        crawl_id=crawl.id,
                         unstructured_message=f"CrawlJob expired, deleting: {crawl.id}",
                     )
                     finalized = True
@@ -1169,6 +1171,7 @@ class CrawlOperator(BaseOperator):
         except Exception as exc:
             logger.exception(
                 "crawl_sync_failed",
+                error=str(exc),
                 unstructured_message=f"Crawl get failed: {exc}, will try again",
             )
             return status
@@ -1219,6 +1222,7 @@ class CrawlOperator(BaseOperator):
         except Exception as exc:
             logger.error(
                 "sync_pod_status_failed",
+                error=str(exc),
                 unstructured_message=f"sync_pod_status error: {exc}",
             )
 
@@ -1283,7 +1287,7 @@ class CrawlOperator(BaseOperator):
             logger.info(
                 "crawl_first_started",
                 now=str(now),
-                crawl_id=str(crawl.id),
+                crawl_id=crawl.id,
                 unstructured_message=f"Crawl first started, webhooks called {now} {crawl.id}",
             )
             # call initial running webhook
@@ -1371,7 +1375,7 @@ class CrawlOperator(BaseOperator):
                 # already counted
                 if update_start_time and end_time and end_time < update_start_time:
                     logger.debug(
-                        "exec_time_skip_counted",
+                        "pod_exec_time_skip_counted",
                         pod_name=name,
                         pod_state=pod_state,
                         end_time=str(end_time),
@@ -1404,7 +1408,7 @@ class CrawlOperator(BaseOperator):
             status.elapsedCrawlTime += max_duration
 
         logger.debug(
-            "exec_time_total_computed",
+            "pod_exec_time_total_computed",
             total_exec_time=status.crawlExecTime,
             incremented_by=exec_time,
             # pylint: disable=line-too-long
@@ -1527,6 +1531,7 @@ class CrawlOperator(BaseOperator):
             if not redis:
                 logger.error(
                     "crawler_instance_crashed",
+                    error=log,
                     unstructured_message=f"Crawl crash: {log}",
                 )
             else:
@@ -1758,7 +1763,7 @@ class CrawlOperator(BaseOperator):
                     logger.info(
                         "crawl_pausing",
                         stop_reason=status.stopReason,
-                        crawl_id=str(crawl.id),
+                        crawl_id=crawl.id,
                         unstructured_message=f"Crawl pausing: {status.stopReason}, id: {crawl.id}",
                     )
                 else:
@@ -1766,7 +1771,7 @@ class CrawlOperator(BaseOperator):
                     logger.info(
                         "crawl_gracefully_stopping",
                         stop_reason=status.stopReason,
-                        crawl_id=str(crawl.id),
+                        crawl_id=crawl.id,
                         # pylint: disable=line-too-long
                         unstructured_message=f"Crawl gracefully stopping: {status.stopReason}, id: {crawl.id}",
                     )
@@ -1925,6 +1930,7 @@ class CrawlOperator(BaseOperator):
         ):
             logger.info(
                 "crawl_already_finished",
+                crawl_id=crawl.id,
                 unstructured_message="already finished, ignoring mark_finished",
             )
             if not status.finished:
@@ -2029,6 +2035,8 @@ class CrawlOperator(BaseOperator):
         if not started:
             logger.error(
                 "crawl_start_time_missing",
+                crawl_id=crawl.id,
+                finished=finished,
                 unstructured_message="Missing crawl start time, unable to increment crawl stats",
             )
             return
@@ -2037,7 +2045,10 @@ class CrawlOperator(BaseOperator):
 
         logger.debug(
             "crawl_duration_computed",
+            started=started,
+            finished=finished,
             duration=duration,
+            crawl_id=crawl.id,
             unstructured_message=f"Duration: {duration}",
         )
 

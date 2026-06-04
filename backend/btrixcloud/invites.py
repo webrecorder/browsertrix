@@ -48,6 +48,7 @@ class InviteOps:
 
     async def init_index(self) -> None:
         """Create TTL index so that invites auto-expire"""
+        attempt = 0
         while True:
             try:
                 # Default to 14 days
@@ -61,9 +62,11 @@ class InviteOps:
 
             # pylint: disable=duplicate-code
             except AutoReconnect:
+                attempt += 1
                 # pylint: disable=line-too-long
                 logger.error(
                     "db_index_creation_unavailable",
+                    attempt=attempt,
                     unstructured_message="Database connection unavailable to create index. Will try again in 5 scconds",
                 )
                 time.sleep(5)

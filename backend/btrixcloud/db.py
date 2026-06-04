@@ -122,18 +122,23 @@ async def ensure_feature_version(client: AsyncIOMotorClient):
 async def ping_db(mdb) -> None:
     """run in loop until db is up, set db_inited['inited'] property to true"""
     logger.info("db_connecting", unstructured_message="Waiting DB")
+    attempt = 0
     while True:
         try:
             result = await mdb.command("ping")
             assert result.get("ok")
-            logger.info("db_connected", unstructured_message="DB reached")
+            logger.info(
+                "db_connected", attempt=attempt, unstructured_message="DB reached"
+            )
             break
         # pylint: disable=broad-exception-caught
         except Exception:
             logger.info(
                 "db_connection_retry",
+                attempt=attempt,
                 unstructured_message="Retrying, waiting for DB to be ready",
             )
+            attempt += 1
             await asyncio.sleep(3)
 
 
