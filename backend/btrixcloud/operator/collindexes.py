@@ -189,7 +189,7 @@ class CollIndexOperator(BaseOperator):
             if is_done:
                 logger.info(
                     "collindex_removed",
-                    coll_id=str(coll_id),
+                    coll_id=coll_id,
                     unstructured_message=f"CollIndex removed: {coll_id}",
                 )
                 return {
@@ -230,7 +230,7 @@ class CollIndexOperator(BaseOperator):
         except Exception as e:
             logger.exception(
                 "coll_index_sync_failed",
-                unstructured_message=str(e),
+                error=str(e),
             )
 
             # load redis pvc and/or redis pod itself
@@ -365,7 +365,7 @@ class CollIndexOperator(BaseOperator):
             "coll_index_state_set",
             prev_state=status.state,
             new_state=state,
-            coll_id=str(coll_id),
+            coll_id=coll_id,
             unstructured_message=f"Setting coll index state {status.state} -> {state} {coll_id}",
         )
         status.state = state
@@ -379,7 +379,7 @@ class CollIndexOperator(BaseOperator):
         """delete the CollIndex object"""
         logger.info(
             "collindex_deleting",
-            coll_id=str(coll_id),
+            coll_id=coll_id,
             unstructured_message=f"Deleting collindex {coll_id}",
         )
         await self.k8s.delete_custom_object(f"collindex-{coll_id}", "collindexes")
@@ -400,10 +400,11 @@ class CollIndexOperator(BaseOperator):
                 await redis.shutdown()
 
         # pylint: disable=broad-exception-caught
-        except Exception:
+        except Exception as e:
             await self.set_state("ready", status, coll_id, oid)
             logger.exception(
                 "coll_index_save_redis_failed",
+                error=str(e),
                 unstructured_message="Error during save redis",
             )
 
@@ -453,7 +454,7 @@ class CollIndexOperator(BaseOperator):
         except Exception as e:
             logger.exception(
                 "coll_index_stats_update_failed",
-                unstructured_message=str(e),
+                error=str(e),
             )
             return False
 
@@ -477,19 +478,15 @@ class CollIndexOperator(BaseOperator):
 
         if used < capacity and (float(used) / capacity) > USED_DISK_THRESHOLD:
             status.storageDesired = gb_storage_ceil(float(used) / USED_DISK_TARGET)
-            logger.debug(
-                "coll_index_disk_usage_ratio",
+            logger.info(
+                "coll_index_capacity_expanded",
                 disk_used=used,
                 disk_capacity=capacity,
                 usage_ratio=float(used) / capacity,
-                unstructured_message=f"used / capacity {used} {capacity} {float(used) / capacity}",
-            )
-            logger.info(
-                "coll_index_capacity_expanded",
                 prev_capacity=status.storageCapacity,
                 new_capacity=status.storageDesired,
                 # pylint: disable=line-too-long
-                unstructured_message=f"Expanding Dedupe Index Capacity {status.storageCapacity} -> {status.storageDesired}",
+                unstructured_message=f"used / capacity {used} {capacity} {float(used) / capacity}\nExpanding Dedupe Index Capacity {status.storageCapacity} -> {status.storageDesired}",
             )
 
     def get_related(self, data: MCBaseRequest):

@@ -723,10 +723,12 @@ class StorageOps:
             """Pass lines as json objects"""
             filename = log_zipinfo.filename
 
-            logger.info(
+            logger.debug(
                 "wacz_log_fetching",
                 filename=filename,
                 wacz_filename=wacz_filename,
+                log_levels=log_levels,
+                contexts=contexts,
                 unstructured_message=f"Fetching log {filename} from {wacz_filename}",
             )
 
@@ -803,10 +805,11 @@ class StorageOps:
             """Pass lines as json objects"""
             filename = pagefile_zipinfo.filename
 
-            logger.info(
+            logger.debug(
                 "wacz_pages_fetching",
                 filename=filename,
                 wacz_filename=wacz_filename,
+                wacz_url=wacz_url,
                 unstructured_message=f"Fetching JSON lines from {filename} in {wacz_filename}",
             )
 

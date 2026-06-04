@@ -227,8 +227,6 @@ class FileUploadOps:
         logger.info(
             "file_stream_upload_starting",
             upload_type=upload_type,
-            oid=org.id,
-            uid=str(user.id),
             unstructured_message=f"{upload_type} stream upload starting",
         )
 
@@ -242,8 +240,6 @@ class FileUploadOps:
             logger.error(
                 "file_stream_upload_failed",
                 upload_type=upload_type,
-                oid=org.id,
-                uid=str(user.id),
                 unstructured_message=f"{upload_type} stream upload failed",
             )
             raise HTTPException(status_code=400, detail="upload_failed")
@@ -257,8 +253,6 @@ class FileUploadOps:
             logger.error(
                 "file_stream_upload_size_exceeded",
                 upload_type=upload_type,
-                oid=org.id,
-                uid=str(user.id),
                 unstructured_message=f"{upload_type} stream upload failed: max size (25 MB) exceeded",
             )
             await self.storage_ops.delete_file_object(org, file_obj)
@@ -272,8 +266,6 @@ class FileUploadOps:
             logger.error(
                 "file_stream_upload_invalid_seed",
                 upload_type=upload_type,
-                oid=org.id,
-                uid=str(user.id),
                 unstructured_message=f"{upload_type} stream upload failed: invalid seed file",
             )
             await self.storage_ops.delete_file_object(org, file_obj)
@@ -282,8 +274,6 @@ class FileUploadOps:
         logger.info(
             "file_stream_upload_complete",
             upload_type=upload_type,
-            oid=org.id,
-            uid=str(user.id),
             unstructured_message=f"{upload_type} stream upload complete",
         )
 

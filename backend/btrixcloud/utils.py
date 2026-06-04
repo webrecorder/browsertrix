@@ -243,6 +243,8 @@ def crawler_image_below_minimum(crawler_image: str, min_image: str):
     except Exception:
         logger.warning(
             "crawler_version_comparison_failed",
+            crawler_image=crawler_image,
+            min_image=min_image,
             unstructured_message="Unable to compare crawler versions, allowing",
         )
         return False

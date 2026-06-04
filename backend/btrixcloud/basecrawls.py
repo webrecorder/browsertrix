@@ -367,6 +367,7 @@ class BaseCrawlOps:
                 "crawl_replicate_skipped_not_found",
                 crawl_id=crawl_id,
                 oid=org.id,
+                type=type_,
                 unstructured_message=f"Not replicating files for crawl {crawl_id}: crawl not found",
             )
             return
@@ -382,6 +383,7 @@ class BaseCrawlOps:
                     "crawl_replicate_failed",
                     error=str(exc),
                     oid=org.id,
+                    type=type_,
                     unstructured_message=f"Replicate Exception: {exc}",
                 )
 

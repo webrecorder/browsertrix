@@ -410,8 +410,6 @@ class CrawlConfigOps:
                 logger.warning(
                     "crawl_run_now_blocked",
                     error_detail=e.detail,
-                    oid=org.id,
-                    uid=str(user.id),
                     config_name=crawlconfig.name,
                     unstructured_message=f"Can't run crawl now: {e.detail}",
                 )
@@ -796,9 +794,7 @@ class CrawlConfigOps:
                 logger.exception(
                     "scheduled_job_update_failed",
                     error=str(exc),
-                    oid=org.id,
-                    uid=str(user.id),
-                    config_id=str(cid),
+                    config_id=cid,
                     unstructured_message=f"Error updating scheduled job: {exc}",
                 )
                 # pylint: disable=raise-missing-from
@@ -1411,9 +1407,7 @@ class CrawlConfigOps:
             # pylint: disable=raise-missing-from
             logger.exception(
                 "crawl_start_failed",
-                oid=org.id,
-                uid=str(user.id),
-                config_id=str(crawlconfig.id),
+                config_id=crawlconfig.id,
                 unstructured_message="Error starting crawl",
             )
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
@@ -1580,7 +1574,7 @@ class CrawlConfigOps:
                 await self.crawl_manager.update_scheduled_job(config)
                 logger.info(
                     "scheduled_cronjob_updated",
-                    config_id=str(config.id),
+                    config_id=config.id,
                     oid=config.oid,
                     unstructured_message=f"Updated cronjob for scheduled workflow {config.id}",
                 )
@@ -1589,7 +1583,7 @@ class CrawlConfigOps:
                 # pylint: disable=line-too-long
                 logger.error(
                     "scheduled_cronjob_update_failed",
-                    config_id=str(config.id),
+                    config_id=config.id,
                     error=str(err),
                     oid=config.oid,
                     unstructured_message=f"Error updating cronjob for scheduled workflow {config.id}: {err}",
@@ -2071,8 +2065,6 @@ def init_crawl_config_api(
         logger.debug(
             "validating_custom_behavior",
             url=behavior.customBehavior,
-            oid=org.id,
-            uid=user.id,
         )
         return await ops.validate_custom_behavior(behavior.customBehavior)
 

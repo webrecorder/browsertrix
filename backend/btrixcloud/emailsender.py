@@ -85,10 +85,9 @@ class EmailSender:
                     subject = json["subject"]
 
                     if self.log_sent_emails:
-                        logger.debug(
-                            "email_content_logged",
+                        logger.info(
+                            "email_log",
                             email_text=text,
-                            unstructured_message=f"{text}",
                         )
 
                     if not self.smtp_server:

@@ -240,7 +240,7 @@ class SubOps:
         if len(users) == 0:
             logger.error(
                 "no_admin_users_found_for_org",
-                org_id=org.id,
+                sub_id=reminder.subId,
                 oid=org.id,
                 unstructured_message=f"No admin users found for organization ID {org.id}",
             )

@@ -152,8 +152,9 @@ class EventWebhookOps:
     ):
         """Send notification"""
         if not org.webhookUrls:
-            logger.warning(
+            logger.info(
                 "webhook_urls_not_configured",
+                notification_id=notification.id,
                 oid=org.id,
                 unstructured_message="Webhook URLs not configured - skipping sending notification",
             )
@@ -162,8 +163,9 @@ class EventWebhookOps:
         webhook_url = getattr(org.webhookUrls, notification.event)
         if not webhook_url:
             # pylint: disable=line-too-long
-            logger.warning(
+            logger.info(
                 "webhook_url_not_configured_for_event",
+                notification_id=notification.id,
                 event=notification.event,
                 oid=org.id,
                 unstructured_message=f"Webhook URL for event {notification.event} not configured, skipping",
@@ -193,6 +195,8 @@ class EventWebhookOps:
         except Exception as err:
             logger.error(
                 "webhook_notification_failed",
+                notification_id=notification.id,
+                event=notification.event,
                 error=str(err),
                 oid=org.id,
                 unstructured_message=f"Webhook notification failed: {err}",
@@ -219,6 +223,8 @@ class EventWebhookOps:
                 "crawl_not_found_for_webhook",
                 crawl_id=crawl_id,
                 oid=org.id,
+                event=event,
+                body=body,
                 unstructured_message=f"Crawl {crawl_id} not found, skipping event webhook",
             )
             return
@@ -307,6 +313,8 @@ class EventWebhookOps:
                 "qa_run_resources_error",
                 error=str(err),
                 oid=oid,
+                qa_run_id=qa_run.id,
+                crawl_id=crawl_id,
                 unstructured_message=f"Error trying to get QA run resources: {err}",
             )
 
