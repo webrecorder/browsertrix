@@ -1889,6 +1889,8 @@ class UpdateColl(BaseModel):
     allowPublicDownload: Optional[bool] = None
     thumbnailSource: Optional[CollectionThumbnailSource] = None
     hasDedupeIndex: Optional[bool] = None
+    homeUrl: Optional[str] = None
+    homeUrlTs: Optional[str] = None
 
 
 # ============================================================================
