@@ -1,6 +1,6 @@
 """Structured logging configuration for Browsertrix backend.
 
-Produces JSON to stdout in production (for Loki) and human-readable text in dev.
+Produces JSON to stdout in production and human-readable text in dev.
 
 Keyword arguments passed to log calls become distinct JSON fields for searchability:
 
@@ -144,7 +144,7 @@ def _json_default(obj):
 
 
 class JSONFormatter(logging.Formatter):
-    """Emit log records as flat JSON objects on stdout for Loki ingestion."""
+    """Emit log records as flat JSON objects on stdout."""
 
     def format(self, record: logging.LogRecord) -> str:
         log_entry = {
