@@ -14,7 +14,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncGenerator,
-    Awaitable,
     Callable,
     Dict,
     List,
@@ -37,7 +36,7 @@ from pydantic import ValidationError
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 
-from .logger import set_log_context
+from .logger import clear_log_context, set_log_context
 from .models import (
     ACTIVE,
     MAX_BROWSER_WINDOWS,
@@ -1758,7 +1757,7 @@ def init_orgs_api(
     user_manager: UserManager,
     crawl_manager: CrawlManager,
     invites: InviteOps,
-    user_dep: Callable[[str], Awaitable[User]],
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
 ):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
@@ -1775,8 +1774,11 @@ def init_orgs_api(
                 detail="User does not have permission to view this organization",
             )
 
-        set_log_context(oid=str(org.id), user_id=str(user.id))
-        return org
+        tokens = set_log_context(oid=str(org.id), user_id=str(user.id))
+        try:
+            yield org
+        finally:
+            clear_log_context(tokens)
 
     async def org_crawl_dep(
         org: Organization = Depends(org_dep), user: User = Depends(user_dep)
@@ -1805,8 +1807,11 @@ def init_orgs_api(
         except HTTPException as exc:
             raise HTTPException(status_code=404, detail="org_not_found") from exc
 
-        set_log_context(oid=str(org.id))
-        return org
+        tokens = set_log_context(oid=str(org.id))
+        try:
+            yield org
+        finally:
+            clear_log_context(tokens)
 
     router = APIRouter(
         prefix="/orgs/{oid}",

@@ -13,9 +13,11 @@ import logging
 import os
 import sys
 import time
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Optional
 from uuid import UUID, uuid4
 
 from fastapi.responses import JSONResponse
@@ -25,18 +27,47 @@ oid_var: ContextVar[str] = ContextVar("oid", default="")
 user_id_var: ContextVar[str] = ContextVar("user_id", default="")
 
 
-def set_log_context(*, oid: str = "", user_id: str = "") -> None:
+@dataclass
+class LogContextTokens:
+    """Tokens for log context variables, used to reset them after a request."""
+
+    request_id_token: Optional[Token] = None
+    oid_token: Optional[Token] = None
+    user_id_token: Optional[Token] = None
+
+    def reset(self) -> None:
+        """Reset all context vars using their tokens."""
+        if self.request_id_token is not None:
+            request_id_var.reset(self.request_id_token)
+            self.request_id_token = None
+        if self.oid_token is not None:
+            oid_var.reset(self.oid_token)
+            self.oid_token = None
+        if self.user_id_token is not None:
+            user_id_var.reset(self.user_id_token)
+            self.user_id_token = None
+
+
+def set_log_context(*, oid: str = "", user_id: str = "") -> LogContextTokens:
     """Set org and user context for the current request scope."""
+    tokens = LogContextTokens()
     if oid:
-        oid_var.set(str(oid))
+        tokens.oid_token = oid_var.set(str(oid))
     if user_id:
-        user_id_var.set(str(user_id))
+        tokens.user_id_token = user_id_var.set(str(user_id))
+    return tokens
 
 
-def clear_log_context() -> None:
-    """Clear org and user context. Called by middleware after each request."""
-    oid_var.set("")
-    user_id_var.set("")
+def clear_log_context(tokens: Optional[LogContextTokens] = None) -> None:
+    """Clear org and user context using the provided tokens.
+
+    If no tokens are provided, falls back to setting values to empty strings.
+    """
+    if tokens is not None:
+        tokens.reset()
+    else:
+        oid_var.set("")
+        user_id_var.set("")
 
 
 def create_request_logging_middleware(logger: logging.Logger):
@@ -45,7 +76,8 @@ def create_request_logging_middleware(logger: logging.Logger):
 
     async def request_logging_middleware(request, call_next):
         request_id = uuid4().hex[:8]
-        request_id_var.set(request_id)
+        tokens = LogContextTokens()
+        tokens.request_id_token = request_id_var.set(request_id)
         start_time = time.time()
         try:
             response = await call_next(request)
@@ -59,16 +91,17 @@ def create_request_logging_middleware(logger: logging.Logger):
             response = JSONResponse(
                 status_code=500, content={"detail": "internal_error"}
             )
-        duration = time.time() - start_time
-        logger.debug(
-            "http_request",
-            http_method=request.method,
-            http_path=request.url.path,
-            http_status=response.status_code,
-            duration=duration,
-        )
-        request_id_var.set("")
-        clear_log_context()
+        finally:
+            duration = time.time() - start_time
+            logger.debug(
+                "http_request",
+                http_method=request.method,
+                http_path=request.url.path,
+                http_status=response.status_code,
+                duration=duration,
+            )
+            tokens.reset()
+            clear_log_context()
         return response
 
     return request_logging_middleware
