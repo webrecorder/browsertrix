@@ -32,9 +32,8 @@ async def main():
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
         # pylint: disable=line-too-long
-        logger.error(
+        logger.fatal(
             "kubernetes_not_detected",
-            oid=oid,
             unstructured_message="Sorry, the Browsertrix Backend must be run inside a Kubernetes environment. "
             "Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting",
         )
@@ -71,7 +70,6 @@ async def main():
             logger.exception(
                 "bg_job_failed",
                 job_type="optimize_pages",
-                oid=oid,
                 crawl_type=crawl_type,
                 crawl_id=crawl_id,
                 coll_id=coll_id,
@@ -88,7 +86,6 @@ async def main():
             logger.exception(
                 "bg_job_failed",
                 job_type="cleanup_seed_files",
-                oid=oid,
                 crawl_type=crawl_type,
                 crawl_id=crawl_id,
                 coll_id=coll_id,
@@ -100,7 +97,6 @@ async def main():
     if not oid:
         logger.error(
             "org_id_missing",
-            oid=oid,
             crawl_type=crawl_type,
             crawl_id=crawl_id,
             coll_id=coll_id,
@@ -112,7 +108,6 @@ async def main():
     if not org:
         logger.error(
             "org_id_invalid",
-            oid=oid,
             crawl_type=crawl_type,
             crawl_id=crawl_id,
             coll_id=coll_id,
@@ -129,7 +124,6 @@ async def main():
             logger.exception(
                 "bg_job_failed",
                 job_type="delete_org_and_data",
-                oid=oid,
                 crawl_type=crawl_type,
                 crawl_id=crawl_id,
                 coll_id=coll_id,
@@ -146,7 +140,6 @@ async def main():
             logger.exception(
                 "bg_job_failed",
                 job_type="recalculate_storage",
-                oid=oid,
                 crawl_type=crawl_type,
                 crawl_id=crawl_id,
                 coll_id=coll_id,
@@ -168,7 +161,6 @@ async def main():
             logger.exception(
                 "bg_job_failed",
                 job_type="readd_org_pages",
-                oid=oid,
                 crawl_type=crawl_type,
                 crawl_id=crawl_id,
                 coll_id=coll_id,
@@ -179,7 +171,6 @@ async def main():
     if job_type == BgJobType.UPDATE_COLL_STATS:
         logger.info(
             "collection_update_started",
-            oid=oid,
             crawl_type=crawl_type,
             crawl_id=crawl_id,
             coll_id=coll_id,
@@ -198,7 +189,6 @@ async def main():
                 logger.debug(
                     "collection_update_iteration",
                     count=count,
-                    oid=oid,
                     crawl_type=crawl_type,
                     crawl_id=crawl_id,
                     coll_id=coll_id,
@@ -209,7 +199,6 @@ async def main():
             # pylint: disable=line-too-long
             logger.info(
                 "collection_update_complete",
-                oid=oid,
                 crawl_type=crawl_type,
                 crawl_id=crawl_id,
                 coll_id=coll_id,
@@ -221,7 +210,6 @@ async def main():
             logger.exception(
                 "bg_job_failed",
                 job_type="update_collection_stats",
-                oid=oid,
                 crawl_type=crawl_type,
                 crawl_id=crawl_id,
                 coll_id=coll_id,
@@ -229,10 +217,9 @@ async def main():
             )
             return 1
 
-    logger.error(
+    logger.fatal(
         "unsupported_job_type",
         job_type=job_type,
-        oid=oid,
         crawl_type=crawl_type,
         crawl_id=crawl_id,
         coll_id=coll_id,

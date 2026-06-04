@@ -378,8 +378,8 @@ class ProfileOps:
                 "profile_commit_failed",
                 error=str(e),
                 oid=org.id,
-                uid=str(user.id),
-                profile_id=str(metadata.profileid),
+                user_id=user.id,
+                profile_id=metadata.profileid,
                 unstructured_message=f"Profile commit failed {e}",
             )
             return False
@@ -430,8 +430,7 @@ class ProfileOps:
                 "profile_update_parse_failed",
                 error=str(exc),
                 oid=org_id,
-                profile_id=str(profileid),
-                unstructured_message=f"{exc}",
+                profile_id=profileid,
             )
             return False
 
@@ -663,8 +662,10 @@ class ProfileOps:
             logger.error(
                 "browser_request_failed",
                 browser_id=browserid,
+                path=path,
+                method=method,
+                post_data=post_data,
                 error=str(e),
-                unstructured_message=f"{e}",
             )
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=200, detail="waiting_for_browser")

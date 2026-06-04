@@ -847,8 +847,7 @@ class CollectionOps:
                 logger.error(
                     "dedupe_index_file_deletion_failed",
                     filename=coll.indexFile.filename,
-                    oid=org.id,
-                    coll_id=str(coll.id),
+                    coll_id=coll.id,
                     unstructured_message=f"Unable to delete collection dedupe index: {coll.indexFile.filename}",
                 )
                 raise HTTPException(status_code=400, detail="file_deletion_error")
@@ -1234,9 +1233,7 @@ class CollectionOps:
 
         logger.info(
             "thumbnail_upload_starting",
-            oid=org.id,
-            uid=str(user.id),
-            coll_id=str(coll_id),
+            coll_id=coll_id,
             unstructured_message="Collection thumbnail stream upload starting",
         )
 
@@ -1249,9 +1246,7 @@ class CollectionOps:
         ):
             logger.error(
                 "thumbnail_upload_failed",
-                oid=org.id,
-                uid=str(user.id),
-                coll_id=str(coll_id),
+                coll_id=coll_id,
                 unstructured_message="Collection thumbnail stream upload failed",
             )
             raise HTTPException(status_code=400, detail="upload_failed")
@@ -1262,9 +1257,7 @@ class CollectionOps:
             # pylint: disable=line-too-long
             logger.error(
                 "thumbnail_upload_max_size_exceeded",
-                oid=org.id,
-                uid=str(user.id),
-                coll_id=str(coll_id),
+                coll_id=coll_id,
                 unstructured_message="Collection thumbnail stream upload failed: max size (2 MB) exceeded",
             )
             await self.storage_ops.delete_file_object(org, thumbnail_file)
@@ -1279,17 +1272,13 @@ class CollectionOps:
                 logger.warning(
                     "previous_thumbnail_deletion_failed",
                     filename=coll.thumbnail.filename,
-                    oid=org.id,
-                    uid=str(user.id),
-                    coll_id=str(coll_id),
+                    coll_id=coll_id,
                     unstructured_message=f"Unable to delete previous collection thumbnail: {coll.thumbnail.filename}",
                 )
 
         logger.info(
             "thumbnail_upload_complete",
-            oid=org.id,
-            uid=str(user.id),
-            coll_id=str(coll_id),
+            coll_id=coll_id,
             unstructured_message="Collection thumbnail stream upload complete",
         )
 
@@ -1324,8 +1313,7 @@ class CollectionOps:
             logger.error(
                 "thumbnail_deletion_failed",
                 filename=coll.thumbnail.filename,
-                oid=org.id,
-                coll_id=str(coll.id),
+                coll_id=coll.id,
                 unstructured_message=f"Unable to delete collection thumbnail: {coll.thumbnail.filename}",
             )
             raise HTTPException(status_code=400, detail="file_deletion_error")

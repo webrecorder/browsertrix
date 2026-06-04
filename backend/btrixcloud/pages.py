@@ -133,6 +133,7 @@ class PageOps:
                             "page_insert_duplicate",
                             error=str(e),
                             oid=crawl.oid,
+                            crawl_id=crawl_id,
                             unstructured_message=f"Error inserting, probably dupe {e}",
                         )
                     pages_buffer = []
@@ -151,6 +152,7 @@ class PageOps:
                         "page_insert_duplicate",
                         error=str(e),
                         oid=crawl.oid,
+                        crawl_id=crawl_id,
                         unstructured_message=f"Error inserting, probably dupe {e}",
                     )
 
@@ -258,6 +260,7 @@ class PageOps:
                 "page_add_failed",
                 page_id=page.id,
                 crawl_id=crawl_id,
+                qa_run_id=qa_run_id,
                 oid=oid,
                 error=str(err),
                 unstructured_message=f"Error adding page {page.id} from crawl {crawl_id} to db: {err}",
@@ -274,6 +277,8 @@ class PageOps:
                 logger.warning(
                     "qa_compare_data_missing",
                     oid=oid,
+                    qa_run_id=qa_run_id,
+                    crawl_id=crawl_id,
                     unstructured_message="QA Run, but compare data missing!",
                 )
                 return
@@ -836,8 +841,8 @@ class PageOps:
             crawl_type = "upload" if is_upload else "crawl"
             logger.info(
                 "crawl_processing",
-                crawl_type=crawl_type,
                 crawl_id=crawl_id,
+                crawl_type=crawl_type,
                 oid=oid,
                 unstructured_message=f"Processing {crawl_type} {crawl_id}",
             )
@@ -874,6 +879,8 @@ class PageOps:
                 logger.info(
                     "qa_data_stored_temp_db",
                     qa_temp_db_name=qa_temp_db_name,
+                    crawl_id=crawl_id,
+                    crawl_type=crawl_type,
                     oid=oid,
                     unstructured_message=f"Stored QA data in temp db {qa_temp_db_name}",
                 )
@@ -883,6 +890,7 @@ class PageOps:
             logger.info(
                 "crawl_pages_deleted",
                 crawl_id=crawl_id,
+                crawl_type=crawl_type,
                 oid=oid,
                 unstructured_message=f"Deleted pages for crawl {crawl_id}",
             )
@@ -904,6 +912,8 @@ class PageOps:
                 logger.info(
                     "qa_data_merged_from_temp_db",
                     qa_temp_db_name=qa_temp_db_name,
+                    crawl_id=crawl_id,
+                    crawl_type=crawl_type,
                     oid=oid,
                     unstructured_message=f"Merged QA data from temp db {qa_temp_db_name}",
                 )
@@ -913,13 +923,19 @@ class PageOps:
                 logger.info(
                     "temp_db_dropped",
                     qa_temp_db_name=qa_temp_db_name,
+                    crawl_id=crawl_id,
+                    crawl_type=crawl_type,
                     oid=oid,
                     unstructured_message=f"Dropped temp db {qa_temp_db_name}",
                 )
         # pylint: disable=broad-exception-caught
         except Exception as e:
             logger.error(
-                "page_re_add_error", error=str(e), oid=oid, unstructured_message=f"{e}"
+                "page_re_add_error",
+                error=str(e),
+                crawl_id=crawl_id,
+                crawl_type=crawl_type,
+                oid=oid,
             )
 
     async def re_add_all_crawl_pages(
@@ -939,6 +955,7 @@ class PageOps:
             logger.info(
                 "crawl_batch_progress",
                 crawl_index=count,
+                crawl_type=crawl_type,
                 total=total,
                 oid=org.id,
                 unstructured_message=f"Processing crawl {count} of {total}",
@@ -1103,6 +1120,7 @@ class PageOps:
                 if next_crawl is None:
                     logger.info(
                         "all_crawls_migrated",
+                        version=version,
                         unstructured_message="No more finished crawls to migrate",
                     )
                     break
@@ -1111,6 +1129,7 @@ class PageOps:
                 logger.info(
                     "crawl_migration_processing",
                     crawl_id=crawl_id,
+                    version=version,
                     unstructured_message=f"Processing crawl: {crawl_id}",
                 )
 
@@ -1121,6 +1140,8 @@ class PageOps:
                 if has_page_no_filename:
                     logger.info(
                         "pages_reimporting_migrate_v2",
+                        version=version,
+                        crawl_id=crawl_id,
                         unstructured_message="Re-importing pages to migrate to v2",
                     )
                     await self.re_add_crawl_pages(crawl_id)
@@ -1132,12 +1153,16 @@ class PageOps:
                     # pylint: disable=line-too-long
                     logger.info(
                         "pages_missing_import_migrate_v2",
+                        version=version,
+                        crawl_id=crawl_id,
                         unstructured_message="Pages likely missing, importing pages to migrate to v2",
                     )
                     await self.re_add_crawl_pages(crawl_id)
                 else:
                     logger.info(
                         "pages_filename_exists_set_v2",
+                        version=version,
+                        crawl_id=crawl_id,
                         unstructured_message="Pages already have filename, set to v2",
                     )
 
@@ -1161,12 +1186,15 @@ class PageOps:
             if not running_crawl:
                 logger.info(
                     "no_running_crawls_remain",
+                    version=version,
                     unstructured_message="No running crawls remain",
                 )
                 break
 
             logger.info(
                 "running_crawls_waiting",
+                version=version,
+                running_crawl=running_crawl._id,
                 unstructured_message="Running crawls remain, waiting for them to finish",
             )
             await asyncio.sleep(30)
@@ -1182,6 +1210,8 @@ class PageOps:
                 break
             logger.info(
                 "unmigrated_crawls_remain_finishing",
+                version=version,
+                in_progress=in_progress._id,
                 unstructured_message="Unmigrated crawls remain, finishing job",
             )
             await asyncio.sleep(5)

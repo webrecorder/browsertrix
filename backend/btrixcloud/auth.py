@@ -217,6 +217,7 @@ def init_jwt_auth(user_manager):
     def get_bearer_response(user: User, user_info: UserOut):
         """get token, return bearer response for user"""
         token = create_access_token(user)
+        set_log_context(user_id=str(user.id))
         return BearerResponse(
             access_token=token, token_type="bearer", user_info=user_info
         )
@@ -241,7 +242,6 @@ def init_jwt_auth(user_manager):
                 "consecutive_failed_logins",
                 login_email=login_email,
                 failed_count=failed_count,
-                uid=login_email,
                 unstructured_message=f"Consecutive failed login count for {login_email}: {failed_count}",
             )
 
@@ -259,7 +259,7 @@ def init_jwt_auth(user_manager):
                         logger.info(
                             "password_reset_email_sent",
                             login_email=login_email,
-                            uid=str(attempted_user.id),
+                            user_id=attempted_user.id,
                             unstructured_message=f"Password reset email sent after too many attempts for {login_email}",
                         )
 
@@ -281,7 +281,6 @@ def init_jwt_auth(user_manager):
             logger.warning(
                 "login_failed",
                 login_email=login_email,
-                uid=login_email,
                 unstructured_message=f"Failed login attempt for {login_email}",
             )
             await user_manager.inc_failed_logins(login_email)
@@ -292,6 +291,7 @@ def init_jwt_auth(user_manager):
             )
 
         # successfully logged in, reset failed logins, return user
+        set_log_context(user_id=str(user.id))
         await user_manager.reset_failed_logins(login_email)
         user_info = await user_manager.get_user_info_with_orgs(user)
         return get_bearer_response(user, user_info)
