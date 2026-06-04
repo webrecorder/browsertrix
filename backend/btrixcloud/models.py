@@ -1889,14 +1889,14 @@ class UpdateColl(BaseModel):
     allowPublicDownload: Optional[bool] = None
     thumbnailSource: Optional[CollectionThumbnailSource] = None
     hasDedupeIndex: Optional[bool] = None
-    homeUrl: Optional[str] = None
-    homeUrlTs: Optional[str] = None
 
 
 # ============================================================================
 class UpdateCollHomeUrl(BaseModel):
     """Update home url for collection"""
 
+    url: Optional[str] = None
+    ts: Optional[str] = None
     pageId: Optional[UUID] = None
 
 

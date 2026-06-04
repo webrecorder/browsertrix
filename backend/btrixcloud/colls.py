@@ -1168,13 +1168,28 @@ class CollectionOps:
         self, coll_id: UUID, update: UpdateCollHomeUrl, org: Organization
     ) -> Dict[str, bool]:
         """Set home URL for collection and save thumbnail to database"""
+
         if update.pageId:
             page = await self.page_ops.get_page(update.pageId, org.id)
+
+            if (update.url or update.ts) and (
+                update.url != page.url | update.ts != page.ts
+            ):
+                raise HTTPException(status_code=400, detail="invalid_home_url")
+
             update_query = {
                 "homeUrl": page.url,
                 "homeUrlTs": page.ts,
                 "homeUrlPageId": page.id,
             }
+        elif update.url or update.ts:
+            update_query = {"homeUrlPageId": None}
+
+            if update.url:
+                update_query["homeUrl"] = update.url
+
+            if update.ts:
+                update_query["homeUrlTs"] = update.ts
         else:
             update_query = {
                 "homeUrl": None,
