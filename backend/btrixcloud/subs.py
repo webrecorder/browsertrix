@@ -6,7 +6,7 @@ import asyncio
 import logging
 import os
 from datetime import datetime
-from typing import Annotated, Any, Awaitable, Callable, List, Optional, Tuple
+from typing import Annotated, Any, AsyncGenerator, Callable, List, Optional, Tuple
 from uuid import UUID
 
 import aiohttp
@@ -510,7 +510,7 @@ def init_subs_api(
     mdb: AsyncIOMotorDatabase[Any],
     org_ops: OrgOps,
     user_manager: UserManager,
-    superuser_or_shared_secret_dep: Callable[[str], Awaitable[User]],
+    superuser_or_shared_secret_dep: Callable[[str], AsyncGenerator[User, None]],
 ) -> Optional[SubOps]:
     """init subs API"""
 
