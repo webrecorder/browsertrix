@@ -1180,7 +1180,9 @@ class CollectionOps:
 
             if update_url or update_ts:
                 if update_url != page_url or update_ts != page_ts:
-                    raise HTTPException(status_code=400, detail="invalid_home_url")
+                    raise HTTPException(
+                        status_code=400, detail="invalid_collection_page"
+                    )
 
             update_query = {
                 "homeUrl": page_url,

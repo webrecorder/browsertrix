@@ -1566,7 +1566,7 @@ def test_set_collection_home_url_from_invalid_page_url_ts(
         timeout=10,
     )
     assert r.status_code == 400
-    assert r.json()["detail"] == "invalid_home_url"
+    assert r.json()["detail"] == "invalid_collection_page"
 
 
 def test_set_collection_home_url_from_page_url_ts(

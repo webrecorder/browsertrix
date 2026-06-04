@@ -70,6 +70,7 @@ import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import type { DedupeIndexState } from "@/types/dedupe";
 import type { PageSnapshot } from "@/types/page";
+import { isApiError } from "@/utils/api";
 import { isCrawlReplay, renderName } from "@/utils/crawler";
 import { indexAvailable, indexInUse, indexUpdating } from "@/utils/dedupe";
 import { isNotEqual } from "@/utils/is-not-equal";
@@ -219,14 +220,23 @@ export class CollectionDetail extends BtrixElement {
 
         await this.fetchCollection();
       } catch (err) {
-        console.debug(err);
+        if (isApiError(err) && err.details === "invalid_collection_page") {
+          this.notify.toast({
+            message: msg("Please choose another homepage."),
+            variant: "warning",
+            icon: "exclamation-triangle",
+            id: "update",
+          });
+        } else {
+          console.debug(err);
 
-        this.notify.toast({
-          message: msg("Sorry, couldn’t update homepage at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "update",
-        });
+          this.notify.toast({
+            message: msg("Sorry, couldn’t update homepage at this time."),
+            variant: "danger",
+            icon: "exclamation-octagon",
+            id: "update",
+          });
+        }
       }
     },
     args: () =>
