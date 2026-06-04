@@ -14,6 +14,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncGenerator,
+    Awaitable,
     Callable,
     Dict,
     List,
@@ -206,8 +207,8 @@ class OrgOps(BaseOrgs):
 
     router: Optional[APIRouter]
     org_viewer_dep: Optional[Callable[..., AsyncGenerator[Organization, None]]]
-    org_crawl_dep: Optional[Callable[..., Organization]]
-    org_owner_dep: Optional[Callable[..., Organization]]
+    org_crawl_dep: Optional[Callable[..., Awaitable[Organization]]]
+    org_owner_dep: Optional[Callable[..., Awaitable[Organization]]]
     org_public: Optional[Callable[..., AsyncGenerator[Organization, None]]]
 
     def __init__(
@@ -1764,7 +1765,9 @@ def init_orgs_api(
 
     ops = OrgOps(dbclient, mdb, invites, user_manager, crawl_manager)
 
-    async def org_dep(oid: UUID, user: User = Depends(user_dep)):
+    async def org_dep(
+        oid: UUID, user: User = Depends(user_dep)
+    ) -> AsyncGenerator[Organization, None]:
         org = await ops.get_org_for_user_by_id(oid, user)
         if not org:
             raise HTTPException(status_code=404, detail="org_not_found")
@@ -1782,7 +1785,7 @@ def init_orgs_api(
 
     async def org_crawl_dep(
         org: Organization = Depends(org_dep), user: User = Depends(user_dep)
-    ):
+    ) -> Organization:
         if not org.is_crawler(user):
             raise HTTPException(
                 status_code=403, detail="User does not have permission to modify crawls"
@@ -1792,7 +1795,7 @@ def init_orgs_api(
 
     async def org_owner_dep(
         org: Organization = Depends(org_dep), user: User = Depends(user_dep)
-    ):
+    ) -> Organization:
         if not org.is_owner(user):
             raise HTTPException(
                 status_code=403,
@@ -1801,7 +1804,7 @@ def init_orgs_api(
 
         return org
 
-    async def org_public(oid: UUID):
+    async def org_public(oid: UUID) -> AsyncGenerator[Organization, None]:
         try:
             org = await ops.get_org_by_id(oid)
         except HTTPException as exc:
