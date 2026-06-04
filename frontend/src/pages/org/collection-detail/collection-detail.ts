@@ -195,22 +195,10 @@ export class CollectionDetail extends BtrixElement {
   private readonly updateHomepageTask = new Task(this, {
     task: async ([replayCurrentPage], { signal }) => {
       try {
-        if (replayCurrentPage) {
-          await this.api.fetch<Collection>(
-            `/orgs/${this.orgId}/collections/${this.collectionId}`,
-            {
-              method: "PATCH",
-              body: JSON.stringify({
-                homeUrl: replayCurrentPage.url,
-                homeUrlTs: replayCurrentPage.ts,
-                homeUrlPageId: "q",
-              }),
-            },
-          );
-        } else {
-          // Unset homepage
-          await this.updateHomepage({ pageId: null }, signal);
-        }
+        await this.updateHomepage(
+          replayCurrentPage || { pageId: null },
+          signal,
+        );
 
         // Optimistic update
         if (this.collection) {
@@ -1890,14 +1878,14 @@ export class CollectionDetail extends BtrixElement {
   }
 
   private async updateHomepage(
-    { pageId }: { pageId: string | null },
+    params: { pageId?: string | null; url?: string; ts?: string },
     signal: AbortSignal,
   ) {
     return this.api.fetch(
       `/orgs/${this.orgId}/collections/${this.collectionId}/home-url`,
       {
         method: "POST",
-        body: JSON.stringify({ pageId }),
+        body: JSON.stringify(params),
         signal,
       },
     );

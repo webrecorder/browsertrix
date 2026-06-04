@@ -1558,9 +1558,6 @@ def test_set_collection_home_url_from_invalid_page_url_ts(
     page_id = page["id"]
     assert page_id
 
-    page_url = page["url"]
-    page_ts = page["ts"]
-
     # Set page as home url along with invalid URL
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/home-url",
