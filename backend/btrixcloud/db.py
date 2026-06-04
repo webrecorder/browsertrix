@@ -215,7 +215,8 @@ async def run_db_migrations(
         f
         for f in sorted(os.listdir(migrations_path))
         if not os.path.isdir(os.path.join(migrations_path, f))
-        and not f.startswith("__")
+        and f.startswith("migration_")
+        and f.endswith(".py")
     ]
     for module_file in module_files:
         module_path = os.path.join(migrations_path, module_file)
