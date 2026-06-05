@@ -219,9 +219,8 @@ class CrawlOperator(BaseOperator):
             logger.warning(
                 "crawl_finished_not_deleted",
                 crawl_id=crawl_id,
-                # pylint: disable=line-too-long
                 unstructured_message=(
-                    f"crawl {crawl_id} finished but not deleted, post-finish taking too long?"
+                    f"warn crawl {crawl_id} finished but not deleted, post-finish taking too long?"
                 ),
             )
             run_async_task(self.k8s.delete_crawl_job(crawl.id))
@@ -321,7 +320,6 @@ class CrawlOperator(BaseOperator):
                 logger.info(
                     "paused_crawl_expiry_reached",
                     crawl_id=crawl.id,
-                    # pylint: disable=line-too-long
                     unstructured_message=(
                         f"Paused crawl expiry reached, stopping crawl, id: {crawl.id}"
                     ),
@@ -500,7 +498,6 @@ class CrawlOperator(BaseOperator):
                 "autoclick_behavior_removed",
                 behavior=behaviors,
                 crawler_image=crawler_image,
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     "Crawler version < min_autoclick_crawler_image, removing autoclick behavior"
                 ),
@@ -642,7 +639,6 @@ class CrawlOperator(BaseOperator):
                 pod_index=i,
                 last_workers=pod_info.lastWorkers,
                 new_workers=workers,
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"Workers changed for {i}: {pod_info.lastWorkers} -> {workers}"
                 ),
@@ -723,7 +719,6 @@ class CrawlOperator(BaseOperator):
                         "pod_scaled_down_no_previous",
                         prev_index=i + 1,
                         new_index=i,
-                        # pylint: disable=line-too-long
                         unstructured_message=(
                             f"Scaled down pod index {i + 1} -> {i}, no previous pod"
                         ),
@@ -829,9 +824,9 @@ class CrawlOperator(BaseOperator):
                     actual_state=actual_state,
                     requested_state=state,
                     crawl_id=crawl.id,
-                    # pylint: disable=line-too-long
                     unstructured_message=(
-                        f"State mismatch, actual state {actual_state}, requested {state}, {crawl.id}"
+                        f"State mismatch, actual state {actual_state}, requested {state}, "
+                        f"{crawl.id}"
                     ),
                 )
                 if not actual_state and state == "canceled":
@@ -843,7 +838,6 @@ class CrawlOperator(BaseOperator):
                 prev_state=status.state,
                 requested_state=state,
                 crawl_id=crawl.id,
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"Not setting state: {status.state} -> {state}, not allowed,"
                     f" {crawl.id}"
@@ -994,7 +988,6 @@ class CrawlOperator(BaseOperator):
                 "failed_crawl_pod_status",
                 pod_name=name,
                 pod_status=pods[name]["status"],
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"============== POD STATUS: {name} ==============\n"
                     f"{pods[name]['status']}"
@@ -1257,7 +1250,7 @@ class CrawlOperator(BaseOperator):
         if not exit_time:
             logger.warning(
                 "terminated_pod_missing_finished_at",
-                unstructured_message="terminated pod missing finishedAt",
+                unstructured_message="warn: terminated pod missing finishedAt",
             )
             return
 
