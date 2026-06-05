@@ -29,9 +29,8 @@ class Migration(BaseMigration):
         try:
             await crawls.update_many({}, {"$rename": {"notes": "description"}})
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "migration_rename_field_error",
-                error=str(err),
-                unstructured_message=f"Error renaming crawl notes to description: {err}",
+                unstructured_message=f"Error renaming crawl notes to description",
             )

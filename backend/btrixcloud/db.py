@@ -265,13 +265,12 @@ async def run_db_migrations(
             )
             if await migration.run():
                 migrations_run = True
-        except ImportError as err:
+        except ImportError:
             # pylint: disable=line-too-long
-            logger.error(
+            logger.exception(
                 "migration_import_error",
                 module_file=module_file,
-                error=str(err),
-                unstructured_message=f"Error importing Migration class from module {module_file}: {err}",
+                unstructured_message=f"Error importing Migration class from module {module_file}",
             )
     return migrations_run
 
@@ -381,7 +380,7 @@ def _lenient_str(v, handler, info):
                 model=model,
                 field=field,
                 doc_id=repr(doc_id),
-                error=str(e),
+                exc_info=True,
                 unstructured_message=(
                     f"WARNING: lenient read - {model}.{field!r} value exceeds "
                     f"constraints in document id={doc_id!r}: {e}"

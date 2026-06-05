@@ -48,13 +48,11 @@ class Migration(BaseMigration):
                     },
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "migration_exec_seconds_available_error",
                     org_id=oid,
-                    error=str(err),
-                    # pylint: disable=line-too-long
-                    unstructured_message=f"Error adding exec seconds available fields to org {oid}: {err}",
+                    unstructured_message=f"Error adding exec seconds available fields to org {oid}",
                 )
 
         async for org in mdb_orgs.find({"monthlyExecSeconds": None}):
@@ -65,11 +63,9 @@ class Migration(BaseMigration):
                     [{"$set": {"monthlyExecSeconds": "$crawlExecSeconds"}}],
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "migration_exec_seconds_copy_error",
                     org_id=oid,
-                    error=str(err),
-                    # pylint: disable=line-too-long
-                    unstructured_message=f"Error copying crawlExecSeconds to monthlyExecSeconds for org {oid}: {err}",
+                    unstructured_message=f"Error copying crawlExecSeconds to monthlyExecSeconds for org {oid}",
                 )

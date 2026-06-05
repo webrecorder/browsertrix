@@ -440,22 +440,20 @@ class FileUploadOps:
                     # pylint: disable=broad-exception-caught
                     except Exception as err:
                         # pylint: disable=line-too-long
-                        logger.error(
+                        logger.exception(
                             "orphaned_seed_file_delete_error",
                             file_id=file_id,
                             oid=file_dict["oid"],
-                            error=str(err),
-                            unstructured_message=f"Error deleting orphaned seed file without org {file_id}: {err}",
+                            unstructured_message=f"Error deleting orphaned seed file without org {file_id}",
                         )
 
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                logger.error(
+                logger.exception(
                     "seed_file_delete_error",
                     file_id=file_id,
                     oid=file_dict["oid"],
-                    error=str(err),
-                    unstructured_message=f"Error deleting unused seed file {file_id}: {err}",
+                    unstructured_message=f"Error deleting unused seed file {file_id}",
                 )
                 # Raise exception later so that job fails but only after attempting
                 # to clean up all files first
@@ -475,12 +473,11 @@ class FileUploadOps:
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 # pylint: disable=line-too-long
-                logger.error(
+                logger.exception(
                     "seed_file_org_deleted_error",
                     file_id=file_id,
                     oid=org.id,
-                    error=str(err),
-                    unstructured_message=f"Error deleting seed file {file_id} from deleted org: {err}",
+                    unstructured_message=f"Error deleting seed file {file_id} from deleted org",
                 )
 
 

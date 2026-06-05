@@ -39,11 +39,9 @@ class Migration(BaseMigration):
                         {"_id": profile.id},
                         {"$set": {"resource.filename": f"profiles/{filename}"}},
                     )
-                except Exception as err:
-                    logger.error(
+                except Exception:
+                    logger.exception(
                         "migration_profile_filename_error",
                         profile_name=profile.name,
-                        error=str(err),
-                        # pylint: disable=line-too-long
-                        unstructured_message=f"Error updating filename for profile {profile.name}: {err}",
+                        unstructured_message=f"Error updating filename for profile {profile.name}",
                     )

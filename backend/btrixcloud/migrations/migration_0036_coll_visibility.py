@@ -32,11 +32,10 @@ class Migration(BaseMigration):
                 {"$set": {"access": "private"}, "$unset": {"isPublic": 1}},
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "error_migrating_private_collections",
-                error=err,
-                unstructured_message=f"Error migrating private collections: {err}",
+                unstructured_message="Error migrating private collections",
             )
 
         # Set public collections to unlisted
@@ -46,9 +45,8 @@ class Migration(BaseMigration):
                 {"$set": {"access": "unlisted"}, "$unset": {"isPublic": 1}},
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "error_migrating_public_unlisted_collections",
-                error=err,
-                unstructured_message=f"Error migrating public unlisted collections: {err}",
+                unstructured_message="Error migrating public unlisted collections",
             )

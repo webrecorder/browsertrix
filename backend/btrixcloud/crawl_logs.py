@@ -103,13 +103,12 @@ class CrawlLogOps:
         # pylint: disable=broad-exception-caught
         except Exception as err:
             # pylint: disable=line-too-long
-            logger.error(
+            logger.exception(
                 "crawl_log_insert_failed",
                 crawl_id=crawl_id,
                 oid=oid,
                 qa_run_id=qa_run_id,
                 log_line=log_line,
-                error=str(err),
                 unstructured_message=f"Error adding log line for crawl {crawl_id} to database: {err}",
             )
             return False

@@ -44,9 +44,8 @@ class Migration(BaseMigration):
                 )
 
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "migration_configmap_timeout_error",
-                    error=str(err),
-                    unstructured_message=f"Error modifying configmap CRAWL_TIMEOUT value: {err}",
+                    unstructured_message=f"Error modifying configmap CRAWL_TIMEOUT value",
                 )

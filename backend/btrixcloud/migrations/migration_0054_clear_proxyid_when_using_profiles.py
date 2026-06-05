@@ -32,9 +32,8 @@ class Migration(BaseMigration):
                 {"$set": {"proxyId": None}},
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "crawl_config_update_error",
-                error=err,
-                unstructured_message=f"Error update crawl_configs: {err}",
+                unstructured_message=f"Error update crawl_configs",
             )

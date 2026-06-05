@@ -227,10 +227,9 @@ class CollIndexOperator(BaseOperator):
                 await self.update_state(data, coll_id, oid, status)
 
         # pylint: disable=broad-exception-caught
-        except Exception as e:
+        except Exception:
             logger.exception(
                 "coll_index_sync_failed",
-                error=str(e),
             )
 
             # load redis pvc and/or redis pod itself
@@ -400,11 +399,10 @@ class CollIndexOperator(BaseOperator):
                 await redis.shutdown()
 
         # pylint: disable=broad-exception-caught
-        except Exception as e:
+        except Exception:
             await self.set_state("ready", status, coll_id, oid)
             logger.exception(
                 "coll_index_save_redis_failed",
-                error=str(e),
                 unstructured_message="Error during save redis",
             )
 
@@ -451,10 +449,9 @@ class CollIndexOperator(BaseOperator):
             return True
 
         # pylint: disable=broad-exception-caught
-        except Exception as e:
+        except Exception:
             logger.exception(
                 "coll_index_stats_update_failed",
-                error=str(e),
             )
             return False
 

@@ -39,11 +39,9 @@ class Migration(BaseMigration):
             try:
                 await self.page_ops.set_archived_item_page_counts(crawl_id)
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "archived_item_page_count_save_error",
                     crawl_id=crawl_id,
-                    error=err,
-                    # pylint: disable=line-too-long
-                    unstructured_message=f"Error saving page counts for archived item {crawl_id}: {err}",
+                    unstructured_message=f"Error saving page counts for archived item {crawl_id}",
                 )

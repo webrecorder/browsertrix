@@ -71,12 +71,11 @@ class Migration(BaseMigration):
                     },
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "crawl_log_move_error",
                     crawl_id=crawl_id,
-                    error=err,
-                    unstructured_message=f"Error moving logs for crawl {crawl_id}: {err}",
+                    unstructured_message=f"Error moving logs for crawl {crawl_id}",
                 )
 
         # Migrate qaFinished logs
@@ -123,11 +122,10 @@ class Migration(BaseMigration):
                         },
                     )
                 # pylint: disable=broad-exception-caught
-                except Exception as err:
-                    logger.error(
+                except Exception:
+                    logger.exception(
                         "crawl_log_qa_move_error",
                         crawl_id=crawl_id,
                         qa_run_id=qa_run_id,
-                        error=err,
-                        unstructured_message=f"Error moving logs for crawl {crawl_id} QA run {qa_run_id}: {err}",
+                        unstructured_message=f"Error moving logs for crawl {crawl_id} QA run {qa_run_id}",
                     )

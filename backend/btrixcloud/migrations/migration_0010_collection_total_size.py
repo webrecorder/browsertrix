@@ -45,10 +45,10 @@ class Migration(BaseMigration):
             try:
                 await coll_ops.update_collection_stats(coll_id, coll["oid"])
             # pylint: disable=broad-exception-caught
-            except Exception as err:
+            except Exception:
                 logger.warning(
                     "migration_collection_update_warning",
                     collection_id=coll_id,
-                    error=str(err),
-                    unstructured_message=f"Unable to update collection {coll_id}: {err}",
+                    exc_info=True,
+                    unstructured_message=f"Unable to update collection {coll_id}",
                 )

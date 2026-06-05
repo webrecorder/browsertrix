@@ -37,9 +37,8 @@ class Migration(BaseMigration):
         try:
             await self.background_job_ops.create_optimize_crawl_pages_job()
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.warning(
+        except Exception:
+            logger.exception(
                 "optimize_pages_job_start_error",
-                error=err,
-                unstructured_message=f"Unable to start background job to optimize pages: {err}",
+                unstructured_message="Unable to start background job to optimize pages",
             )

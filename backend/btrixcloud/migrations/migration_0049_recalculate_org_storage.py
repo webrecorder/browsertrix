@@ -61,10 +61,9 @@ class Migration(BaseMigration):
                     },
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "org_storage_recalculate_error",
                     oid=oid,
-                    error=err,
-                    unstructured_message=f"Error recalculating storage for org {oid}: {err}",
+                    unstructured_message=f"Error recalculating storage for org {oid}",
                 )

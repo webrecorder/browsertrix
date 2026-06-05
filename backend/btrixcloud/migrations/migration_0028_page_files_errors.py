@@ -67,11 +67,10 @@ class Migration(BaseMigration):
                     },
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
+            except Exception:
                 crawl_id = crawl_dict.get("_id")
-                logger.error(
+                logger.exception(
                     "migration_page_counts_error",
                     crawl_id=crawl_id,
-                    error=str(err),
-                    unstructured_message=f"Error updating page counts and pages for crawl {crawl_id}: {err}",
+                    unstructured_message=f"Error updating page counts and pages for crawl {crawl_id}",
                 )

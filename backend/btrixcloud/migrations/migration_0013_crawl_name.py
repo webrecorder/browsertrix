@@ -37,11 +37,9 @@ class Migration(BaseMigration):
                     {"cid": config_id}, {"$set": {"name": config.get("name")}}
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "migration_crawl_name_error",
                     config_id=config_id,
-                    error=str(err),
-                    # pylint: disable=line-too-long
-                    unstructured_message=f"Unable to set name for crawls from with config {config_id}: {err}",
+                    unstructured_message=f"Unable to set name for crawls from with config {config_id}",
                 )

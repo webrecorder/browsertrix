@@ -47,12 +47,12 @@ class Migration(BaseMigration):
                     {"$set": {"userName": user.name}},
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
+            except Exception:
                 logger.warning(
                     "migration_username_update_warning",
                     crawl_id=crawl_id,
-                    error=str(err),
-                    unstructured_message=f"Unable to update userName for crawl {crawl_id}: {err}",
+                    exc_info=True,
+                    unstructured_message=f"Unable to update userName for crawl {crawl_id}",
                 )
 
         async for config in mdb_configs.find({}):
@@ -89,10 +89,10 @@ class Migration(BaseMigration):
                     },
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
+            except Exception:
                 logger.warning(
                     "migration_crawlconfig_username_warning",
                     config_id=cid,
-                    error=str(err),
-                    unstructured_message=f"Unable to update usernames for crawlconfig {cid}: {err}",
+                    exc_info=True,
+                    unstructured_message=f"Unable to update usernames for crawlconfig {cid}",
                 )

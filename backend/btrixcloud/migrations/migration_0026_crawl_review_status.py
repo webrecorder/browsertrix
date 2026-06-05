@@ -37,10 +37,8 @@ class Migration(BaseMigration):
                 {"reviewStatus": {"$eq": "failure"}}, {"$set": {"reviewStatus": 1}}
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "migration_review_status_error",
-                error=str(err),
-                # pylint: disable=line-too-long
-                unstructured_message=f"Error modifying existing crawl reviewStatuses to ints: {err}",
+                unstructured_message="Error modifying existing crawl reviewStatuses to ints",
             )
