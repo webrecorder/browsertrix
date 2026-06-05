@@ -51,8 +51,8 @@ class BaseMigration:
             available_version=self.migration_version,
             # pylint: disable=line-too-long
             unstructured_message=(
-                f"Current database version before migration: {db_version},"
-                f" migration available: {self.migration_version}"
+                f"Current database version before migration: {db_version}\n"
+                f"Migration available to apply: {self.migration_version}"
             ),
         )
         # Databases from prior to migrations will not have a version set.
