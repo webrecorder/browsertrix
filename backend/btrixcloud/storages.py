@@ -869,12 +869,13 @@ class StorageOps:
                         time.sleep(30)
                         continue
 
-                    # pylint: disable=line-too-long
                     logger.error(
                         "wacz_download_max_retries",
                         error_msg=msg,
                         wacz_url=wacz_url,
-                        unstructured_message=f"No more retries for error: {msg}, skipping {wacz_url}",
+                        unstructured_message=(
+                            f"No more retries for error: {msg}, skipping {wacz_url}"
+                        ),
                     )
 
                 break
@@ -917,14 +918,16 @@ class StorageOps:
                         return
 
                 except Exception:
-                    # pylint: disable=line-too-long
                     logger.exception(
                         "streaming_dl_error_retrying",
                         path=path,
                         bytes_read=bytes_read,
                         retry=retries + 1,
                         max_retries=max_retries,
-                        unstructured_message=f"Streaming DL Error: {path}, Processed {bytes_read} - retrying ({retries + 1}/{max_retries})...",
+                        unstructured_message=(
+                            f"Streaming DL Error: {path}, Processed {bytes_read}"
+                            f" - retrying ({retries + 1}/{max_retries})..."
+                        ),
                     )
                     time.sleep(2)
                     retries += 1

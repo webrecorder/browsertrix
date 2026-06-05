@@ -49,7 +49,9 @@ class BgJobOperator(BaseOperator):
                 succeeded=status.get("succeeded"),
                 parallelism=spec.get("parallelism"),
                 # pylint: disable=line-too-long
-                unstructured_message=f"Succeeded: {status.get('succeeded')}, Num Pods: {spec.get('parallelism')}",
+                unstructured_message=(
+                    f"Succeeded: {status.get('succeeded')}, Num Pods: {spec.get('parallelism')}"
+                ),
             )
         start_time = status.get("startTime")
         completion_time = status.get("completionTime")

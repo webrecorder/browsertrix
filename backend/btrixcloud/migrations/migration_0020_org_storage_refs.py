@@ -103,5 +103,7 @@ class Migration(BaseMigration):
                     "migration_profile_storage_update_error",
                     profile_name=profile["name"],
                     # pylint: disable=line-too-long
-                    unstructured_message=f"Error updating profile storage for profile {profile['name']}",
+                    unstructured_message=(
+                        f"Error updating profile storage for profile {profile['name']}"
+                    ),
                 )

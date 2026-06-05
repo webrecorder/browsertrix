@@ -57,7 +57,9 @@ class Migration(BaseMigration):
                     index=index,
                     crawl_count=crawl_count,
                     # pylint: disable=line-too-long
-                    unstructured_message=f"Checked {index} of {crawl_count} crawls for logs to delete",
+                    unstructured_message=(
+                        f"Checked {index} of {crawl_count} crawls for logs to delete"
+                    ),
                 )
 
         if crawl_logs_to_delete:
@@ -67,7 +69,9 @@ class Migration(BaseMigration):
                 index=index,
                 del_count=del_count,
                 # pylint: disable=line-too-long
-                unstructured_message=f"Checked {index} crawls, deleting logs for {del_count} deleted crawls",
+                unstructured_message=(
+                    f"Checked {index} crawls, deleting logs for {del_count} deleted crawls"
+                ),
             )
 
             try:
@@ -111,7 +115,9 @@ class Migration(BaseMigration):
                     qa_index=qa_index,
                     qa_run_count=qa_run_count,
                     # pylint: disable=line-too-long
-                    unstructured_message=f"Checked {qa_index} of {qa_run_count} QA runs for logs to delete",
+                    unstructured_message=(
+                        f"Checked {qa_index} of {qa_run_count} QA runs for logs to delete"
+                    ),
                 )
 
         if qa_run_logs_to_delete:
@@ -121,7 +127,9 @@ class Migration(BaseMigration):
                 qa_index=qa_index,
                 qa_del_count=qa_del_count,
                 # pylint: disable=line-too-long
-                unstructured_message=f"Checked {qa_index} QA runs, deleting logs for {qa_del_count} deleted runs",
+                unstructured_message=(
+                    f"Checked {qa_index} QA runs, deleting logs for {qa_del_count} deleted runs"
+                ),
             )
 
             try:

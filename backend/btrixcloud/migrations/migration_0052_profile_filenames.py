@@ -38,7 +38,9 @@ class Migration(BaseMigration):
                 "profile_filename_migration_missing_ops",
                 migration_version=MIGRATION_VERSION,
                 # pylint: disable=line-too-long
-                unstructured_message=f"Unable to start migration {MIGRATION_VERSION}, ops class missing",
+                unstructured_message=(
+                    f"Unable to start migration {MIGRATION_VERSION}, ops class missing"
+                ),
             )
             return
 
@@ -70,7 +72,9 @@ class Migration(BaseMigration):
                         "profile_replication_job_started",
                         profile_id=profile.id,
                         # pylint: disable=line-too-long
-                        unstructured_message=f"Starting background jobs to replicate profile {profile.id}",
+                        unstructured_message=(
+                            f"Starting background jobs to replicate profile {profile.id}"
+                        ),
                     )
                     await self.background_job_ops.create_replica_jobs(
                         profile.oid, profile.resource, str(profile.id), "profile"
@@ -81,5 +85,7 @@ class Migration(BaseMigration):
                         "profile_filename_fix_error",
                         profile_id=profile.id,
                         # pylint: disable=line-too-long
-                        unstructured_message=f"Error fixing filename and replicas for profile {profile.id}",
+                        unstructured_message=(
+                            f"Error fixing filename and replicas for profile {profile.id}"
+                        ),
                     )

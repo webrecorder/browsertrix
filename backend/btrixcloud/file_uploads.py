@@ -259,11 +259,12 @@ class FileUploadOps:
         # Validate size
         max_size = SEED_FILE_MAX_SIZE
         if file_obj.size > max_size:
-            # pylint: disable=line-too-long
             logger.error(
                 "file_stream_upload_size_exceeded",
                 upload_type=upload_type,
-                unstructured_message=f"{upload_type} stream upload failed: max size (25 MB) exceeded",
+                unstructured_message=(
+                    f"{upload_type} stream upload failed: max size (25 MB) exceeded"
+                ),
             )
             await self.storage_ops.delete_file_object(org, file_obj)
             raise HTTPException(
@@ -391,11 +392,12 @@ class FileUploadOps:
         """Delete older seed files that are not used in workflows"""
         cleanup_after_mins = int(os.environ.get("CLEANUP_FILES_AFTER_MINUTES", 1440))
 
-        # pylint: disable=line-too-long
         logger.info(
             "seed_file_cleanup_starting",
             cleanup_after_mins=cleanup_after_mins,
-            unstructured_message=f"Cleaning up unused seed files more than {cleanup_after_mins} minutes old",
+            unstructured_message=(
+                f"Cleaning up unused seed files more than {cleanup_after_mins} minutes old"
+            ),
         )
 
         cleanup_before = dt_now() - timedelta(minutes=cleanup_after_mins)
@@ -439,12 +441,13 @@ class FileUploadOps:
                         await self.files.delete_one({"_id": file_id})
                     # pylint: disable=broad-exception-caught
                     except Exception:
-                        # pylint: disable=line-too-long
                         logger.exception(
                             "orphaned_seed_file_delete_error",
                             file_id=file_id,
                             oid=file_dict["oid"],
-                            unstructured_message=f"Error deleting orphaned seed file without org {file_id}",
+                            unstructured_message=(
+                                f"Error deleting orphaned seed file without org {file_id}"
+                            ),
                         )
 
             # pylint: disable=broad-exception-caught
@@ -472,7 +475,6 @@ class FileUploadOps:
                 await self.delete_seed_file(file_id, org)
             # pylint: disable=broad-exception-caught
             except Exception:
-                # pylint: disable=line-too-long
                 logger.exception(
                     "seed_file_org_deleted_error",
                     file_id=file_id,

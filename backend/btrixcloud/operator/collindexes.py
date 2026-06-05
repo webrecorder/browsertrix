@@ -483,7 +483,11 @@ class CollIndexOperator(BaseOperator):
                 prev_capacity=status.storageCapacity,
                 new_capacity=status.storageDesired,
                 # pylint: disable=line-too-long
-                unstructured_message=f"used / capacity {used} {capacity} {float(used) / capacity}\nExpanding Dedupe Index Capacity {status.storageCapacity} -> {status.storageDesired}",
+                unstructured_message=(
+                    f"used / capacity {used} {capacity} {float(used) / capacity}\n"
+                    f"Expanding Dedupe Index Capacity {status.storageCapacity}"
+                    f" -> {status.storageDesired}"
+                ),
             )
 
     def get_related(self, data: MCBaseRequest):

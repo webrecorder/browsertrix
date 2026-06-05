@@ -37,5 +37,7 @@ class Migration(BaseMigration):
             logger.exception(
                 "fail_on_content_check_unset_error",
                 # pylint: disable=line-too-long
-                unstructured_message="Error unsetting failOnContentCheck for configs without profiles",
+                unstructured_message=(
+                    "Error unsetting failOnContentCheck for configs without profiles"
+                ),
             )

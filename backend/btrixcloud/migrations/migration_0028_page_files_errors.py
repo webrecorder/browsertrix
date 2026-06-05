@@ -72,5 +72,7 @@ class Migration(BaseMigration):
                 logger.exception(
                     "migration_page_counts_error",
                     crawl_id=crawl_id,
-                    unstructured_message=f"Error updating page counts and pages for crawl {crawl_id}",
+                    unstructured_message=(
+                        f"Error updating page counts and pages for crawl {crawl_id}"
+                    ),
                 )

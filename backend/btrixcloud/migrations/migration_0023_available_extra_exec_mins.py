@@ -68,5 +68,7 @@ class Migration(BaseMigration):
                     "migration_exec_seconds_copy_error",
                     org_id=oid,
                     # pylint: disable=line-too-long
-                    unstructured_message=f"Error copying crawlExecSeconds to monthlyExecSeconds for org {oid}",
+                    unstructured_message=(
+                        f"Error copying crawlExecSeconds to monthlyExecSeconds for org {oid}"
+                    ),
                 )

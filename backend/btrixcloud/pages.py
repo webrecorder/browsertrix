@@ -168,14 +168,16 @@ class PageOps:
 
             await self.set_archived_item_page_counts(crawl_id)
 
-            # pylint: disable=line-too-long
             logger.info(
                 "crawl_pages_added",
                 crawl_id=crawl_id,
                 seed_count=seed_count,
                 non_seed_count=non_seed_count,
                 oid=crawl.oid,
-                unstructured_message=f"Added pages for crawl {crawl_id}: {seed_count} Seed, {non_seed_count} Non-Seed",
+                unstructured_message=(
+                    f"Added pages for crawl {crawl_id}:"
+                    f" {seed_count} Seed, {non_seed_count} Non-Seed"
+                ),
             )
 
         # pylint: disable=broad-exception-caught, raise-missing-from
@@ -264,7 +266,6 @@ class PageOps:
 
         # pylint: disable=broad-except
         except Exception:
-            # pylint: disable=line-too-long
             logger.exception(
                 "page_add_failed",
                 page_id=page.id,
@@ -409,13 +410,14 @@ class PageOps:
             if qa and qa.get(qa_run_id):
                 page_raw["qa"] = qa.get(qa_run_id)
             else:
-                # pylint: disable=line-too-long
                 logger.error(
                     "page_qa_data_missing",
                     page_id=page_id,
                     qa_run_id=qa_run_id,
                     oid=oid,
-                    unstructured_message=f"Error: Page {page_id} does not have data from QA run {qa_run_id}",
+                    unstructured_message=(
+                        f"Error: Page {page_id} does not have data from QA run {qa_run_id}"
+                    ),
                 )
                 page_raw["qa"] = None
             return PageOutWithSingleQA.from_dict(page_raw)
@@ -1155,12 +1157,13 @@ class PageOps:
                     and next_crawl.get("stats", {}).get("done", 0) > 0
                     and next_crawl.get("state") not in ["canceled", "failed"]
                 ):
-                    # pylint: disable=line-too-long
                     logger.info(
                         "pages_missing_import_migrate_v2",
                         version=version,
                         crawl_id=crawl_id,
-                        unstructured_message="Pages likely missing, importing pages to migrate to v2",
+                        unstructured_message=(
+                            "Pages likely missing, importing pages to migrate to v2"
+                        ),
                     )
                     await self.re_add_crawl_pages(crawl_id)
                 else:

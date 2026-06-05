@@ -288,11 +288,13 @@ class OrgOps(BaseOrgs):
             # pylint: disable=duplicate-code
             except AutoReconnect:
                 attempt += 1
-                # pylint: disable=line-too-long
                 logger.warning(
                     "db_connection_unavailable",
                     attempt=attempt,
-                    unstructured_message="Database connection unavailable to create index. Will try again in 5 scconds",
+                    unstructured_message=(
+                        "Database connection unavailable to create index."
+                        " Will try again in 5 seconds"
+                    ),
                 )
                 time.sleep(5)
 
@@ -481,13 +483,14 @@ class OrgOps(BaseOrgs):
             default=True,
         )
         primary_name = self.default_primary and self.default_primary.name
-        # pylint: disable=line-too-long
         logger.info(
             "default_org_creating",
             default_org=DEFAULT_ORG,
             storage=primary_name,
             oid=org.id,
-            unstructured_message=f'Creating Default Organization "{DEFAULT_ORG}". Storage: {primary_name}',
+            unstructured_message=(
+                f'Creating Default Organization "{DEFAULT_ORG}". Storage: {primary_name}'
+            ),
         )
         try:
             await self.orgs.insert_one(org.to_dict())
@@ -576,13 +579,14 @@ class OrgOps(BaseOrgs):
             {"storage.custom": False, "storage.name": {"$nin": storage_names}}
         ):
             org = Organization.from_dict(org_data)
-            # pylint: disable=line-too-long
             logger.warning(
                 "org_unknown_primary_storage",
                 slug=org.slug,
                 storage_name=org.storage.name,
                 oid=org.id,
-                unstructured_message=f"Org {org.slug} uses unknown primary storage {org.storage.name}",
+                unstructured_message=(
+                    f"Org {org.slug} uses unknown primary storage {org.storage.name}"
+                ),
             )
             errors += 1
 
@@ -1387,12 +1391,14 @@ class OrgOps(BaseOrgs):
         version = version_res["version"]
         stream_db_version = org_data.get("dbVersion")
         if version != stream_db_version and not ignore_version:
-            # pylint: disable=line-too-long
             logger.error(
                 "export_db_version_mismatch",
                 export_version=stream_db_version,
                 db_version=version,
-                unstructured_message=f"Export db version: {stream_db_version} doesn't match db: {version}, quitting",
+                unstructured_message=(
+                    f"Export db version: {stream_db_version}"
+                    f" doesn't match db: {version}, quitting"
+                ),
             )
             raise HTTPException(status_code=400, detail="db_version_mismatch")
 
@@ -1736,7 +1742,6 @@ class OrgOps(BaseOrgs):
             )
         # pylint: disable=broad-exception-caught
         except Exception:
-            # pylint: disable=line-too-long
             logger.exception(
                 "org_coll_defaults_remove_error",
                 coll_id=coll_id,

@@ -162,13 +162,14 @@ class EventWebhookOps:
 
         webhook_url = getattr(org.webhookUrls, notification.event)
         if not webhook_url:
-            # pylint: disable=line-too-long
             logger.info(
                 "webhook_url_not_configured_for_event",
                 notification_id=notification.id,
                 event=notification.event,
                 oid=org.id,
-                unstructured_message=f"Webhook URL for event {notification.event} not configured, skipping",
+                unstructured_message=(
+                    f"Webhook URL for event {notification.event} not configured, skipping"
+                ),
             )
             return
 
