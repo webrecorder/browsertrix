@@ -32,5 +32,5 @@ class Migration(BaseMigration):
         except Exception:
             logger.exception(
                 "migration_rename_field_error",
-                unstructured_message=f"Error renaming crawl notes to description",
+                unstructured_message="Error renaming crawl notes to description",
             )

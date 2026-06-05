@@ -83,7 +83,7 @@ class Migration(BaseMigration):
             except Exception:
                 logger.exception(
                     "crawl_logs_deleted_crawls_error",
-                    unstructured_message=f"Error deleting crawl logs from deleted crawls",
+                    unstructured_message="Error deleting crawl logs from deleted crawls",
                 )
 
         # DELETED QA RUNS
@@ -137,5 +137,5 @@ class Migration(BaseMigration):
             except Exception:
                 logger.exception(
                     "qa_run_logs_deleted_error",
-                    unstructured_message=f"Error deleting logs from deleted QA runs",
+                    unstructured_message="Error deleting logs from deleted QA runs",
                 )

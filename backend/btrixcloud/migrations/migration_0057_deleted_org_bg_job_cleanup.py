@@ -67,5 +67,5 @@ class Migration(BaseMigration):
             except Exception:
                 logger.exception(
                     "background_jobs_deleted_orgs_error",
-                    unstructured_message=f"Error deleting jobs from deleted orgs",
+                    unstructured_message="Error deleting jobs from deleted orgs",
                 )

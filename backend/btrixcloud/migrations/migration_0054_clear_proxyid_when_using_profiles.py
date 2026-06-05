@@ -35,5 +35,5 @@ class Migration(BaseMigration):
         except Exception:
             logger.exception(
                 "crawl_config_update_error",
-                unstructured_message=f"Error update crawl_configs",
+                unstructured_message="Error update crawl_configs",
             )
