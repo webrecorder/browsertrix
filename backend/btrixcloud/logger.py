@@ -48,7 +48,9 @@ class LogContextTokens:
             self.user_id_token = None
 
 
-def set_log_context(*, oid: str = "", user_id: str = "") -> LogContextTokens:
+def set_log_context(
+    *, oid: str | UUID = "", user_id: str | UUID = ""
+) -> LogContextTokens:
     """Set org and user context for the current request scope."""
     tokens = LogContextTokens()
     if oid:
