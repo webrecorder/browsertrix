@@ -324,7 +324,7 @@ class UserManager:
                 user_id=res.id,
                 unstructured_message=f"Super user {email} created",
             )
-        except DuplicateKeyError as exc:
+        except DuplicateKeyError:
             logger.warning(
                 "superuser_already_exists",
                 email=email,
@@ -466,6 +466,7 @@ class UserManager:
                 user_id=user.id,
                 user_email=user.email,
                 reset_token=token,
+                # pylint: disable=line-too-long
                 unstructured_message=f"User {user.id} has forgot their password. Reset token: {token}",
             )
         else:
