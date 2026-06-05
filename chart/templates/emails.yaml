@@ -29,7 +29,7 @@ spec:
       {{- end }}
 
       containers:
-        - name: api
+        - name: emails
           image: {{ .Values.emails_image }}
           imagePullPolicy: {{ .Values.emails_pull_policy }}
           command:
@@ -99,7 +99,7 @@ spec:
   ports:
     - protocol: TCP
       port: 3000
-      name: api
+      name: emails
 
   {{- if and .Values.local_emails_port (not .Values.ingress.host) }}
       nodePort: {{ .Values.local_emails_port }}
