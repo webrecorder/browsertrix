@@ -36,5 +36,5 @@ class Migration(BaseMigration):
         except Exception:
             logger.exception(
                 "fail_on_content_check_unset_error",
-                unstructured_message=f"Error unsetting failOnContentCheck for configs without profiles",
+                unstructured_message="Error unsetting failOnContentCheck for configs without profiles",
             )

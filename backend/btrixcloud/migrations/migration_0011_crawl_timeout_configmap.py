@@ -47,5 +47,5 @@ class Migration(BaseMigration):
             except Exception:
                 logger.exception(
                     "migration_configmap_timeout_error",
-                    unstructured_message=f"Error modifying configmap CRAWL_TIMEOUT value",
+                    unstructured_message="Error modifying configmap CRAWL_TIMEOUT value",
                 )
