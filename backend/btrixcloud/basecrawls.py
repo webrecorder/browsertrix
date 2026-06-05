@@ -385,7 +385,7 @@ class BaseCrawlOps:
                     "crawl_replicate_failed",
                     oid=org.id,
                     type=type_,
-                    unstructured_message=f"Replicate Exception: {exc}",
+                    unstructured_message=f"Replicate Exception {exc}",
                 )
 
     async def add_crawl_file_replica(
