@@ -254,7 +254,7 @@ class CronJobOperator(BaseOperator):
             if not data.object["status"].get("succeeded"):
                 logger.info(
                     "cronjob_complete",
-                    finished=str(finished),
+                    finished=finished,
                     cid=cid,
                     oid=oid,
                     user_id=userid,

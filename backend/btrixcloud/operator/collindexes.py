@@ -571,7 +571,7 @@ class CollIndexOperator(BaseOperator):
         logger.info(
             "coll_index_state_set_saved",
             prev_state=status.state,
-            coll_id=str(spec.id),
+            coll_id=spec.id,
             unstructured_message=f"Setting coll index state {status.state} -> saved {spec.id}",
         )
         status.state = "saved"
