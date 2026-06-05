@@ -12,6 +12,9 @@ extend-select = [
 	"Q",
 	# banned-api
 	"TID251",
+	# flake8-logging & flake8-logging-format
+	"LOG",
+	"G",
 ]
 ignore = [
 	# Comparison to true should be 'if cond is true:' or 'if cond:'
