@@ -157,6 +157,9 @@ class ContextFilter(logging.Filter):
         if btrix_extra:
             for key, value in btrix_extra.items():
                 setattr(record, f"btrix_{key}", value)
+        if record.exc_info and record.exc_info[1]:
+            record.btrix_error_type = type(record.exc_info[1]).__name__
+            record.btrix_error_message = str(record.exc_info[1])
         return True
 
 
