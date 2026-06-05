@@ -29,7 +29,6 @@ class Migration(BaseMigration):
         if self.background_job_ops is None:
             logger.warning(
                 "optimize_pages_job_missing_ops",
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     "Unable to start background job to optimize pages, ops class missing"
                 ),

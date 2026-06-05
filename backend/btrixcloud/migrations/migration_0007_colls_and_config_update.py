@@ -36,7 +36,6 @@ class Migration(BaseMigration):
                 "migration_missing_dependency",
                 migration_version=MIGRATION_VERSION,
                 dependency="crawl_config_ops",
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"Unable to run migration {MIGRATION_VERSION}, missing crawl_config_ops"
                 ),

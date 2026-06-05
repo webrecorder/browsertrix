@@ -74,7 +74,6 @@ class Migration(BaseMigration):
                 logger.exception(
                     "error_updating_collections_after_adding_pages",
                     org_id=org.id,
-                    # pylint: disable=line-too-long
                     unstructured_message=(
                         f"Error updating collections after adding pages for org {org.id}"
                     ),

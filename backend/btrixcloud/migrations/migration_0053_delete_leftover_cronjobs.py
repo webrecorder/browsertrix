@@ -137,7 +137,6 @@ class Migration(BaseMigration):
             logger.warning(
                 "crawl_job_org_check_skipped_missing_ops",
                 crawl_id=crawl_id,
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"Skipping crawl job crawljob-{crawl_id} org check, missing ops"
                 ),
@@ -160,7 +159,6 @@ class Migration(BaseMigration):
                     "crawl_job_delete_error",
                     crawl_id=crawl_id,
                     error=error,
-                    # pylint: disable=line-too-long
                     unstructured_message=(
                         f"Error deleting crawl job crawljob-{crawl_id} from deleted org"
                     ),
