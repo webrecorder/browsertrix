@@ -13,4 +13,10 @@ RUN pip install -r requirements.txt
 
 ADD btrixcloud/ /app/btrixcloud/
 
+ARG GIT_COMMIT_HASH
+ARG GIT_BRANCH_NAME
+
+ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
+    GIT_BRANCH_NAME=${GIT_BRANCH_NAME}
+
 EXPOSE 8000

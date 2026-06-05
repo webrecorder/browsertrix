@@ -36,6 +36,9 @@ jobs:
           context: backend
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: |
+            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
+            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
           tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-backend:${{ env.VERSION }}, webrecorder/browsertrix-backend:latest
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
@@ -46,6 +49,10 @@ jobs:
           context: emails
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: |
+            VERSION=${{ env.VERSION }}
+            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
+            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
           tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-emails:${{ env.VERSION }}, webrecorder/browsertrix-emails:latest
           cache-from: type=gha,scope=emails
           cache-to: type=gha,scope=emails,mode=max
