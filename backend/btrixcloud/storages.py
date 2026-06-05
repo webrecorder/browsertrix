@@ -511,10 +511,9 @@ class StorageOps:
                     Bucket=bucket, Key=key, UploadId=upload_id
                 )
 
-                logger.error(
+                logger.exception(
                     "multipart_upload_failed",
                     upload_id=upload_id,
-                    exc_info=True,
                     oid=org.id,
                     unstructured_message=f"Multipart upload failed: {upload_id}",
                 )
@@ -919,13 +918,12 @@ class StorageOps:
 
                 except Exception:
                     # pylint: disable=line-too-long
-                    logger.error(
+                    logger.exception(
                         "streaming_dl_error_retrying",
                         path=path,
                         bytes_read=bytes_read,
                         retry=retries + 1,
                         max_retries=max_retries,
-                        exc_info=True,
                         unstructured_message=f"Streaming DL Error: {path}, Processed {bytes_read} - retrying ({retries + 1}/{max_retries})...",
                     )
                     time.sleep(2)
@@ -1009,10 +1007,9 @@ def _parse_json(line) -> dict:
     try:
         parsed_json = json.loads(line)
     except json.JSONDecodeError as err:
-        logger.error(
+        logger.exception(
             "jsonl_decode_error",
             line=line,
-            error=str(err),
             unstructured_message=f"Error decoding json-l line: {line}. Error: {err}",
         )
     return parsed_json or {}

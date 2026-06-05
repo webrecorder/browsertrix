@@ -39,11 +39,9 @@ class Migration(BaseMigration):
             try:
                 await self.coll_ops.update_collection_stats(coll_id, coll["oid"])
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.warning(
+            except Exception:
+                logger.exception(
                     "collection_page_counts_update_error",
                     coll_id=coll_id,
-                    error=err,
-                    # pylint: disable=line-too-long
-                    unstructured_message=f"Unable to update page counts for collection {coll_id}: {err}",
+                    unstructured_message=f"Unable to update page counts for collection {coll_id}",
                 )

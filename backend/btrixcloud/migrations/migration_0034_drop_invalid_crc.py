@@ -37,9 +37,8 @@ class Migration(BaseMigration):
                 unstructured_message=f"{updated} crawls migrated to remove crc32 from files",
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "error_migrating_crawl_files_remove_crc32",
-                error=err,
-                unstructured_message=f"Error migrating crawl files to remove crc32: {err}",
+                unstructured_message="Error migrating crawl files to remove crc32",
             )

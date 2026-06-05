@@ -56,12 +56,11 @@ class Migration(BaseMigration):
             try:
                 await self.page_ops.re_add_crawl_pages(upload.id, upload.oid)
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "error_adding_pages_for_upload",
                     upload_id=upload.id,
-                    error=err,
-                    unstructured_message=f"Error adding pages for upload {upload.id}: {err}",
+                    unstructured_message=f"Error adding pages for upload {upload.id}",
                 )
             current_index += 1
 
@@ -71,11 +70,9 @@ class Migration(BaseMigration):
             try:
                 await self.coll_ops.recalculate_org_collection_stats(org)
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "error_updating_collections_after_adding_pages",
                     org_id=org.id,
-                    error=err,
-                    # pylint: disable=line-too-long
-                    unstructured_message=f"Error updating collections after adding pages for org {org.id}: {err}",
+                    unstructured_message=f"Error updating collections after adding pages for org {org.id}",
                 )

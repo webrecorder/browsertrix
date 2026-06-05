@@ -141,7 +141,7 @@ class PageOps:
                     except Exception as e:
                         logger.warning(
                             "page_insert_duplicate",
-                            error=str(e),
+                            exc_info=True,
                             oid=crawl.oid,
                             crawl_id=crawl_id,
                             unstructured_message=f"Error inserting, probably dupe {e}",
@@ -160,7 +160,7 @@ class PageOps:
                 except Exception as e:
                     logger.warning(
                         "page_insert_duplicate",
-                        error=str(e),
+                        exc_info=True,
                         oid=crawl.oid,
                         crawl_id=crawl_id,
                         unstructured_message=f"Error inserting, probably dupe {e}",
@@ -179,13 +179,12 @@ class PageOps:
             )
 
         # pylint: disable=broad-exception-caught, raise-missing-from
-        except Exception as err:
+        except Exception:
             logger.exception(
                 "crawl_pages_add_failed",
                 crawl_id=crawl_id,
                 oid=crawl.oid,
-                error=str(err),
-                unstructured_message=f"Error adding pages for crawl {crawl_id} to db: {err}",
+                unstructured_message=f"Error adding pages for crawl {crawl_id} to db",
             )
 
     def _get_page_from_dict(
@@ -264,16 +263,15 @@ class PageOps:
             pass
 
         # pylint: disable=broad-except
-        except Exception as err:
+        except Exception:
             # pylint: disable=line-too-long
-            logger.error(
+            logger.exception(
                 "page_add_failed",
                 page_id=page.id,
                 crawl_id=crawl_id,
                 qa_run_id=qa_run_id,
                 oid=oid,
-                error=str(err),
-                unstructured_message=f"Error adding page {page.id} from crawl {crawl_id} to db: {err}",
+                unstructured_message=f"Error adding page {page.id} from crawl {crawl_id} to db",
             )
             return
 
@@ -342,13 +340,12 @@ class PageOps:
         try:
             await self.pages.delete_many(query)
         # pylint: disable=broad-except
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "crawl_pages_delete_failed",
                 crawl_id=crawl_id,
                 oid=oid,
-                error=str(err),
-                unstructured_message=f"Error deleting pages from crawl {crawl_id}: {err}",
+                unstructured_message=f"Error deleting pages from crawl {crawl_id}",
             )
 
         try:
@@ -364,13 +361,12 @@ class PageOps:
                 },
             )
         # pylint: disable=broad-except
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "crawl_page_counts_reset_failed",
                 crawl_id=crawl_id,
                 oid=oid,
-                error=str(err),
-                unstructured_message=f"Error resetting page counts for crawl {crawl_id}: {err}",
+                unstructured_message=f"Error resetting page counts for crawl {crawl_id}",
             )
 
     async def get_page_raw(
@@ -939,10 +935,9 @@ class PageOps:
                     unstructured_message=f"Dropped temp db {qa_temp_db_name}",
                 )
         # pylint: disable=broad-exception-caught
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "page_re_add_error",
-                error=str(e),
                 crawl_id=crawl_id,
                 crawl_type=crawl_type,
                 oid=oid,

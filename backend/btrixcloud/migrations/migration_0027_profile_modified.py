@@ -31,9 +31,8 @@ class Migration(BaseMigration):
                 {"modified": None}, [{"$set": {"modified": "$created"}}]
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "migration_profile_modified_error",
-                error=str(err),
-                unstructured_message=f"Error adding modified date to profiles: {err}",
+                unstructured_message="Error adding modified date to profiles",
             )

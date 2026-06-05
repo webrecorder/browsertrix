@@ -40,10 +40,9 @@ class Migration(BaseMigration):
             try:
                 await self.org_ops.set_last_crawl_finished(oid)
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "error_setting_last_crawl_finished",
                     oid=oid,
-                    error=err,
-                    unstructured_message=f"Error setting lastCrawlFinished for org {oid}: {err}",
+                    unstructured_message=f"Error setting lastCrawlFinished for org {oid}",
                 )

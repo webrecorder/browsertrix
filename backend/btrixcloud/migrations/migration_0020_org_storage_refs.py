@@ -46,12 +46,11 @@ class Migration(BaseMigration):
 
             try:
                 await mdb_orgs.find_one_and_update({"_id": oid}, {"$set": update_dict})
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "migration_org_storage_update_error",
                     org_id=oid,
-                    error=str(err),
-                    unstructured_message=f"Error updating storage for {oid}: {err}",
+                    unstructured_message=f"Error updating storage for {oid}",
                 )
 
         # CrawlFile Migrations
@@ -73,13 +72,11 @@ class Migration(BaseMigration):
                 await mdb_crawls.find_one_and_update(
                     {"_id": crawl_id}, {"$set": {"files": crawl_files}}
                 )
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "migration_crawl_storage_update_error",
                     crawl_id=crawl_id,
-                    error=str(err),
-                    # pylint: disable=line-too-long
-                    unstructured_message=f"Error updating crawl file storage for crawl {crawl_id}: {err}",
+                    unstructured_message=f"Error updating crawl file storage for crawl {crawl_id}",
                 )
 
         # ProfileFile Migrations
@@ -101,11 +98,9 @@ class Migration(BaseMigration):
                 await mdb_profiles.find_one_and_update(
                     {"_id": profile_id}, {"$set": {"resource": file_}}
                 )
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "migration_profile_storage_update_error",
                     profile_name=profile["name"],
-                    error=str(err),
-                    # pylint: disable=line-too-long
-                    unstructured_message=f"Error updating profile storage for profile {profile['name']}: {err}",
+                    unstructured_message=f"Error updating profile storage for profile {profile['name']}",
                 )

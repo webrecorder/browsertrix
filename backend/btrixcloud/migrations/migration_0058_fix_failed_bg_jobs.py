@@ -56,5 +56,5 @@ class Migration(BaseMigration):
             updated = res.modified_count
             logger.info("updated_bg_job_records", count=updated)
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error("failed_to_update_bg_job_records", error=str(err))
+        except Exception:
+            logger.exception("failed_to_update_bg_job_records")

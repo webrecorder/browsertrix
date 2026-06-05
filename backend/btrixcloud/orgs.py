@@ -829,9 +829,8 @@ class OrgOps(BaseOrgs):
                     {"_id": org.id}, update, session=session
                 )
             except Exception as e:
-                logger.error(
+                logger.exception(
                     "org_quota_update_error",
-                    error=str(e),
                     target_oid=org.id,
                     unstructured_message=f"Error updating organization quotas: {e}",
                 )
@@ -948,11 +947,10 @@ class OrgOps(BaseOrgs):
             await self.add_user_to_org(org, user.id, add.role)
             return user
         except HTTPException as exc:
-            logger.error(
+            logger.exception(
                 "org_add_user_error",
-                error=str(exc),
                 oid=org.id,
-                unstructured_message=f"Error adding user to org {exc}",
+                unstructured_message="Error adding user to org",
             )
             raise exc
 
@@ -1714,13 +1712,12 @@ class OrgOps(BaseOrgs):
                 session=session,
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "org_field_update_error",
                 field=field,
                 oid=oid,
-                error=str(err),
-                unstructured_message=f"Error updating field {field} on org {oid}: {err}",
+                unstructured_message=f"Error updating field {field} on org {oid}",
             )
 
     async def remove_collection_from_crawling_defaults(
@@ -1738,14 +1735,13 @@ class OrgOps(BaseOrgs):
                 {"$set": {"crawlingDefaults.dedupeCollId": None}},
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
+        except Exception:
             # pylint: disable=line-too-long
-            logger.error(
+            logger.exception(
                 "org_coll_defaults_remove_error",
                 coll_id=coll_id,
                 oid=org.id,
-                error=str(err),
-                unstructured_message=f"Error removing coll {coll_id} from org {org.id} defaults: {err}",
+                unstructured_message=f"Error removing coll {coll_id} from org {org.id} defaults",
             )
 
 

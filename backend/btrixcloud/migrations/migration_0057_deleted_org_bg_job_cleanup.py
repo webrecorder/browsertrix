@@ -64,9 +64,8 @@ class Migration(BaseMigration):
                     unstructured_message=f"Deleted {res.deleted_count} jobs from database",
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "background_jobs_deleted_orgs_error",
-                    error=err,
-                    unstructured_message=f"Error deleting jobs from deleted orgs: {err}",
+                    unstructured_message=f"Error deleting jobs from deleted orgs",
                 )

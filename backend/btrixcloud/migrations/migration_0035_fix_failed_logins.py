@@ -37,9 +37,8 @@ class Migration(BaseMigration):
                 unstructured_message=f"{updated} failed logins fixed",
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "error_fixing_failed_logins",
-                error=err,
-                unstructured_message=f"Error fixing failed logins: {err}",
+                unstructured_message="Error fixing failed logins",
             )

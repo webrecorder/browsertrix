@@ -96,10 +96,9 @@ def parse_jsonl_log_messages(log_lines: list[str]) -> list[dict]:
             result = json.loads(log_line)
             parsed_log_lines.append(result)
         except json.JSONDecodeError as err:
-            logger.error(
+            logger.exception(
                 "jsonl_decode_error",
                 log_line=log_line,
-                error=str(err),
                 unstructured_message=f"Error decoding json-l log line: {log_line}. Error: {err}",
             )
     return parsed_log_lines

@@ -33,10 +33,8 @@ class Migration(BaseMigration):
             )
 
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "fail_on_content_check_unset_error",
-                error=err,
-                # pylint: disable=line-too-long
-                unstructured_message=f"Error unsetting failOnContentCheck for configs without profiles: {err}",
+                unstructured_message=f"Error unsetting failOnContentCheck for configs without profiles",
             )

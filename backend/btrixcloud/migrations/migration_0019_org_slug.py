@@ -34,10 +34,9 @@ class Migration(BaseMigration):
                     {"_id": oid}, {"$set": {"slug": slug}}
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "migration_org_slug_error",
                     org_id=oid,
-                    error=str(err),
-                    unstructured_message=f"Error adding slug to org {oid}: {err}",
+                    unstructured_message=f"Error adding slug to org {oid}",
                 )

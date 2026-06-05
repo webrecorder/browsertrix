@@ -95,11 +95,10 @@ class Migration(BaseMigration):
                 count += 1
                 suffix = f" {count}"
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "error_renaming_org",
                     oid=oid,
-                    error=err,
-                    unstructured_message=f"Error renaming org {oid}: {err}",
+                    unstructured_message=f"Error renaming org {oid}",
                 )
                 break

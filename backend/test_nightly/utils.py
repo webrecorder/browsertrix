@@ -31,7 +31,7 @@ def read_in_chunks(fh, blocksize=1024):
 
 
 def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
-    endpoint_url = f"http://127.0.0.1:30090/"
+    endpoint_url = "http://127.0.0.1:30090/"
     client = boto3.client(
         "s3",
         region_name="",

@@ -381,9 +381,8 @@ class BaseCrawlOps:
                 )
             # pylint: disable=broad-exception-caught
             except Exception as exc:
-                logger.error(
+                logger.exception(
                     "crawl_replicate_failed",
-                    error=str(exc),
                     oid=org.id,
                     type=type_,
                     unstructured_message=f"Replicate Exception: {exc}",

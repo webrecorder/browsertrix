@@ -127,9 +127,8 @@ class EmailSender:
                         # server.sendmail(self.sender, receiver, message)
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            logger.error(
+            logger.exception(
                 "email_template_fetch_error",
-                error=str(exc),
                 unstructured_message=f"Error fetching email template {exc}",
             )
             raise exc

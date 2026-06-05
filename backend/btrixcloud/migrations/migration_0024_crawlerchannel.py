@@ -38,13 +38,11 @@ class Migration(BaseMigration):
                     {"$set": {"crawlerChannel": "default"}},
                 )
             # pylint: disable=broad-except
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "migration_crawlerchannel_workflow_error",
                     config_id=config_id,
-                    error=str(err),
-                    # pylint: disable=line-too-long
-                    unstructured_message=f"Error adding crawlerChannel 'default' to workflow {config_id}: {err}",
+                    unstructured_message=f"Error adding crawlerChannel 'default' to workflow {config_id}",
                 )
 
         async for profile in mdb_profiles.find({"crawlerChannel": {"$in": ["", None]}}):
@@ -55,11 +53,9 @@ class Migration(BaseMigration):
                     {"$set": {"crawlerChannel": "default"}},
                 )
             # pylint: disable=broad-except
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "migration_crawlerchannel_profile_error",
                     profile_id=profile_id,
-                    error=str(err),
-                    # pylint: disable=line-too-long
-                    unstructured_message=f"Error adding crawlerChannel 'default' to profile {profile_id}: {err}",
+                    unstructured_message=f"Error adding crawlerChannel 'default' to profile {profile_id}",
                 )

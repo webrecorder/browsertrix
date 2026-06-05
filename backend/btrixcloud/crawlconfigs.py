@@ -795,7 +795,6 @@ class CrawlConfigOps:
             except Exception as exc:
                 logger.exception(
                     "scheduled_job_update_failed",
-                    error=str(exc),
                     config_id=cid,
                     unstructured_message=f"Error updating scheduled job: {exc}",
                 )
@@ -1583,12 +1582,11 @@ class CrawlConfigOps:
             # pylint: disable=broad-except
             except Exception as err:
                 # pylint: disable=line-too-long
-                logger.error(
+                logger.exception(
                     "scheduled_cronjob_update_failed",
                     config_id=config.id,
-                    error=str(err),
                     oid=config.oid,
-                    unstructured_message=f"Error updating cronjob for scheduled workflow {config.id}: {err}",
+                    unstructured_message=f"Error updating cronjob for scheduled workflow {config.id}",
                 )
 
     async def _validate_behavior_git_repo(self, repo_url: str, branch: str = ""):
