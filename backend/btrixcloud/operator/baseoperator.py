@@ -232,7 +232,7 @@ class BaseOperator:
                     return True
 
         # pylint: disable=broad-exception-caught
-        except Exception as e:
+        except Exception:
             logger.warning(
                 "configmap_presigned_check_failed",
                 exc_info=True,
