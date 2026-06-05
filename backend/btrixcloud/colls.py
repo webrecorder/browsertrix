@@ -411,8 +411,7 @@ class CollectionOps:
             ) = await self.get_collection_crawl_resources(coll_id, org)
 
             initial_pages, _ = await self.page_ops.list_pages(
-                crawl_ids=crawl_ids,
-                page_size=25,
+                crawl_ids=crawl_ids, page_size=25, sort_by="isSeed", sort_direction=1
             )
 
             public = "public/" if public_or_unlisted_only else ""
@@ -431,7 +430,8 @@ class CollectionOps:
             if pages_optimized:
                 result["initialPages"] = initial_pages
                 result["pagesQueryUrl"] = (
-                    origin + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages"
+                    origin
+                    + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages?sortBy=isSeed&sortDirection=1"
                 )
 
         thumbnail = result.get("thumbnail")
