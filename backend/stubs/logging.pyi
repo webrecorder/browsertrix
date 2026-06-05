@@ -30,6 +30,8 @@ class LogRecord:
     request_id: str
     oid: str
     user_id: str
+    btrix_error_type: str
+    btrix_error_message: str
     def getMessage(self) -> str: ...
 
 class Filter:
