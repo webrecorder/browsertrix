@@ -235,7 +235,6 @@ class BaseOperator:
         except Exception as e:
             logger.warning(
                 "configmap_presigned_check_failed",
-                unstructured_message=str(e),
                 exc_info=True,
             )
 

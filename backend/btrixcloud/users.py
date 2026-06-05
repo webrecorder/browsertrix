@@ -328,7 +328,7 @@ class UserManager:
             logger.warning(
                 "superuser_already_exists",
                 email=email,
-                exception=str(exc),
+                exc_info=True,
                 unstructured_message=f"User {email} already exists",
             )
 

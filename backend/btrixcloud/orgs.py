@@ -1773,7 +1773,7 @@ def init_orgs_api(
                 detail="User does not have permission to view this organization",
             )
 
-        tokens = set_log_context(oid=str(org.id), user_id=str(user.id))
+        tokens = set_log_context(oid=org.id, user_id=user.id)
         try:
             yield org
         finally:
@@ -1806,7 +1806,7 @@ def init_orgs_api(
         except HTTPException as exc:
             raise HTTPException(status_code=404, detail="org_not_found") from exc
 
-        tokens = set_log_context(oid=str(org.id))
+        tokens = set_log_context(oid=org.id)
         try:
             yield org
         finally:

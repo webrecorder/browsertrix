@@ -194,7 +194,7 @@ def init_jwt_auth(user_manager):
         token: str = Depends(oauth2_scheme),
     ) -> AsyncGenerator[User, None]:
         user = await _get_current_user_core(token)
-        tokens = set_log_context(user_id=str(user.id))
+        tokens = set_log_context(user_id=user.id)
         try:
             yield user
         finally:
@@ -208,7 +208,7 @@ def init_jwt_auth(user_manager):
         # ensure using a long shared secret (eg. uuid4)
         if BTRIX_SUBS_APP_API_KEY and token == BTRIX_SUBS_APP_API_KEY:
             user = await user_manager.get_superuser()
-            tokens = set_log_context(user_id=str(user.id))
+            tokens = set_log_context(user_id=user.id)
             try:
                 yield user
             finally:
@@ -218,7 +218,7 @@ def init_jwt_auth(user_manager):
             if not user.is_superuser:
                 raise HTTPException(status_code=403, detail="not_allowed")
 
-            tokens = set_log_context(user_id=str(user.id))
+            tokens = set_log_context(user_id=user.id)
             try:
                 yield user
             finally:
@@ -304,7 +304,7 @@ def init_jwt_auth(user_manager):
             )
 
         # successfully logged in, reset failed logins, return user
-        tokens = set_log_context(user_id=str(user.id))
+        tokens = set_log_context(user_id=user.id)
         try:
             await user_manager.reset_failed_logins(login_email)
             user_info = await user_manager.get_user_info_with_orgs(user)
@@ -315,7 +315,7 @@ def init_jwt_auth(user_manager):
     @auth_jwt_router.post("/refresh", response_model=BearerResponse)
     async def refresh_jwt(user: User = Depends(current_active_user)):
         user_info = await user_manager.get_user_info_with_orgs(user)
-        tokens = set_log_context(user_id=str(user.id))
+        tokens = set_log_context(user_id=user.id)
         try:
             return get_bearer_response(user, user_info)
         finally:

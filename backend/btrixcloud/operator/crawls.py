@@ -542,7 +542,7 @@ class CrawlOperator(BaseOperator):
         if config_update_needed:
             logger.info(
                 "crawl_configmap_updated",
-                crawl_id=str(crawl.id),
+                crawl_id=crawl.id,
                 unstructured_message=f"Updating config for {crawl.id}",
             )
 
@@ -798,7 +798,7 @@ class CrawlOperator(BaseOperator):
                     "crawl_state_set",
                     prev_state=status.state,
                     new_state=state,
-                    crawl_id=str(crawl.id),
+                    crawl_id=crawl.id,
                     unstructured_message=f"Setting state: {status.state} -> {state}, {crawl.id}",
                 )
                 status.state = state
@@ -818,7 +818,7 @@ class CrawlOperator(BaseOperator):
                     "crawl_state_mismatch",
                     actual_state=actual_state,
                     requested_state=state,
-                    crawl_id=str(crawl.id),
+                    crawl_id=crawl.id,
                     # pylint: disable=line-too-long
                     unstructured_message=f"State mismatch, actual state {actual_state}, requested {state}, {crawl.id}",
                 )
@@ -830,7 +830,7 @@ class CrawlOperator(BaseOperator):
                 "crawl_state_transition_not_allowed",
                 prev_state=status.state,
                 requested_state=state,
-                crawl_id=str(crawl.id),
+                crawl_id=crawl.id,
                 # pylint: disable=line-too-long
                 unstructured_message=f"Not setting state: {status.state} -> {state}, not allowed, {crawl.id}",
             )
@@ -1284,7 +1284,7 @@ class CrawlOperator(BaseOperator):
         if not update_start_time:
             logger.info(
                 "crawl_first_started",
-                now=str(now),
+                now=now,
                 crawl_id=crawl.id,
                 unstructured_message=f"Crawl first started, webhooks called {now} {crawl.id}",
             )
@@ -1331,8 +1331,8 @@ class CrawlOperator(BaseOperator):
         logger.info(
             "exec_time_updated",
             reason=reason,
-            now=str(now),
-            update_start_time=str(update_start_time),
+            now=now,
+            update_start_time=update_start_time,
             update_duration=update_duration,
             # pylint: disable=line-too-long
             unstructured_message=f"Exec Time Update: {reason}: {now} - {update_start_time} = {update_duration}",
@@ -1376,8 +1376,8 @@ class CrawlOperator(BaseOperator):
                         "pod_exec_time_skip_counted",
                         pod_name=name,
                         pod_state=pod_state,
-                        end_time=str(end_time),
-                        start_time=str(start_time),
+                        end_time=end_time,
+                        start_time=start_time,
                         # pylint: disable=line-too-long
                         unstructured_message=f"  - {name}: {pod_state}: skipping already counted, {end_time} < {start_time}",
                     )
@@ -1389,8 +1389,8 @@ class CrawlOperator(BaseOperator):
                     "pod_exec_time_computed",
                     pod_name=name,
                     pod_state=pod_state,
-                    end_time=str(end_time),
-                    start_time=str(start_time),
+                    end_time=end_time,
+                    start_time=start_time,
                     duration=duration,
                     # pylint: disable=line-too-long
                     unstructured_message=f"  - {name}: {pod_state}: {end_time} - {start_time} = {duration}",
