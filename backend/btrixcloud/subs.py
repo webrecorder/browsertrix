@@ -441,7 +441,7 @@ class SubOps:
                         json = await resp.json()
                         return AddonMinutesPricing(**json)
             # pylint: disable=broad-exception-caught
-            except Exception as exc:
+            except Exception:
                 logger.exception(
                     "execution_minutes_price_fetch_failed",
                     oid=org.id,

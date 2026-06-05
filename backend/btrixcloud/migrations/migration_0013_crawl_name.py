@@ -41,5 +41,6 @@ class Migration(BaseMigration):
                 logger.exception(
                     "migration_crawl_name_error",
                     config_id=config_id,
+                    # pylint: disable=line-too-long
                     unstructured_message=f"Unable to set name for crawls from with config {config_id}",
                 )

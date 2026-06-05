@@ -89,7 +89,7 @@ class BaseMigration:
             try:
                 await self.migrate_up()
                 await self.set_db_version()
-            except OperationFailure as err:
+            except OperationFailure:
                 logger.exception(
                     "migration_error",
                     migration_version=self.migration_version,

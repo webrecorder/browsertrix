@@ -45,6 +45,7 @@ class Migration(BaseMigration):
                 logger.exception(
                     "browser_windows_workflow_update_error",
                     config_id=config_id,
+                    # pylint: disable=line-too-long
                     unstructured_message=f"Unable to set browser windows from scale for workflow {config_id}",
                 )
 
@@ -64,5 +65,6 @@ class Migration(BaseMigration):
                 logger.exception(
                     "browser_windows_crawl_update_error",
                     crawl_id=crawl_id,
+                    # pylint: disable=line-too-long
                     unstructured_message=f"Unable to set browser windows from scale for crawl {crawl_id}",
                 )
