@@ -26,11 +26,12 @@ def main():
 
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
-        # pylint: disable=line-too-long
         logger.critical(
             "kubernetes_not_detected",
-            unstructured_message="Sorry, the Browsertrix Backend must be run inside a Kubernetes environment. "
-            "Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting",
+            unstructured_message=(
+                "Sorry, the Browsertrix Backend must be run inside a Kubernetes environment. "
+                "Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
+            ),
         )
         sys.exit(1)
 

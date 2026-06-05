@@ -51,7 +51,10 @@ class Migration(BaseMigration):
                 schedule=config.schedule,
                 timeout=config.crawlTimeout,
                 # pylint: disable=line-too-long
-                unstructured_message=f"Updating Crawl Config {config.id}: schedule: {config.schedule}, timeout: {config.crawlTimeout}",
+                unstructured_message=(
+                    f"Updating Crawl Config {config.id}: schedule:"
+                    f" {config.schedule}, timeout: {config.crawlTimeout}"
+                ),
             )
             try:
                 await crawl_manager.update_scheduled_job(config)
@@ -61,7 +64,9 @@ class Migration(BaseMigration):
                     "migration_crawl_config_skip",
                     exc_info=True,
                     # pylint: disable=line-too-long
-                    unstructured_message=f"Skip crawl config migration due to error, likely missing config {exc}",
+                    unstructured_message=(
+                        f"Skip crawl config migration due to error, likely missing config {exc}"
+                    ),
                 )
 
         # Delete existing scheduled jobs from crawler namespace

@@ -46,7 +46,9 @@ class Migration(BaseMigration):
                     "browser_windows_workflow_update_error",
                     config_id=config_id,
                     # pylint: disable=line-too-long
-                    unstructured_message=f"Unable to set browser windows from scale for workflow {config_id}",
+                    unstructured_message=(
+                        f"Unable to set browser windows from scale for workflow {config_id}"
+                    ),
                 )
 
         async for crawl_raw in crawls_mdb.find({"browserWindows": None}):
@@ -66,5 +68,7 @@ class Migration(BaseMigration):
                     "browser_windows_crawl_update_error",
                     crawl_id=crawl_id,
                     # pylint: disable=line-too-long
-                    unstructured_message=f"Unable to set browser windows from scale for crawl {crawl_id}",
+                    unstructured_message=(
+                        f"Unable to set browser windows from scale for crawl {crawl_id}"
+                    ),
                 )

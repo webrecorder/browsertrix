@@ -226,12 +226,13 @@ class SubOps:
         assert org.subscription
 
         if not org.subscription.futureCancelDate:
-            # pylint: disable=line-too-long
             logger.error(
                 "future_cancel_date_not_found",
                 sub_id=reminder.subId,
                 oid=org.id,
-                unstructured_message=f"Future cancel date not found for subscription ID {reminder.subId}",
+                unstructured_message=(
+                    f"Future cancel date not found for subscription ID {reminder.subId}"
+                ),
             )
             raise HTTPException(status_code=400, detail="future_cancel_date_not_found")
 

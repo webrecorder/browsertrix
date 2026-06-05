@@ -223,14 +223,14 @@ class BackgroundJobOps:
             return job_id
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            # pylint: disable=line-too-long
             logger.warning(
                 "replica_job_start_failed",
                 object_type=object_type,
                 oid=org.id,
                 file=file,
                 exc_info=True,
-                unstructured_message=f"warning: replica job could not be started for {object_type} {file}: {exc}",
+                unstructured_message=f"warning: replica job could not be started "
+                f"for {object_type} {file}: {exc}",
             )
             return ""
 
@@ -318,14 +318,14 @@ class BackgroundJobOps:
 
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            # pylint: disable=line-too-long
             logger.warning(
                 "replica_deletion_job_start_failed",
                 object_type=object_type,
                 file=file,
                 exc_info=True,
                 oid=org.id,
-                unstructured_message=f"warning: replica deletion job could not be started for {object_type} {file}: {exc}",
+                unstructured_message="warning: replica deletion job could not be "
+                f"started for {object_type} {file}: {exc}",
             )
             return ""
 
@@ -418,13 +418,13 @@ class BackgroundJobOps:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             # pylint: disable=raise-missing-from
-            # pylint: disable=line-too-long
             logger.warning(
                 "recalculate_org_stats_job_start_failed",
                 exc_info=True,
                 oid=org.id,
                 existing_job_id=existing_job_id,
-                unstructured_message=f"warning: recalculate org stats job could not be started: {exc}",
+                unstructured_message="warning: recalculate org stats job could "
+                f"not be started: {exc}",
             )
             return None
 
@@ -568,12 +568,12 @@ class BackgroundJobOps:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             # pylint: disable=raise-missing-from
-            # pylint: disable=line-too-long
             logger.warning(
                 "update_collection_stats_job_start_failed",
                 exc_info=True,
                 oid=oid,
-                unstructured_message=f"warning: update collection stats job could not be started: {exc}",
+                unstructured_message="warning: update collection stats job could "
+                f"not be started: {exc}",
             )
             return None
 

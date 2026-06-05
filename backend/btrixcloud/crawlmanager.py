@@ -347,22 +347,26 @@ class CrawlManager(K8sAPI):
                         namespace=DEFAULT_NAMESPACE,
                         body=cron_job,
                     )
-                    # pylint: disable=line-too-long
                     logger.info(
                         "cleanup_cron_job_updated",
                         schedule=job_schedule,
-                        unstructured_message=f"Cron job to clean up unused seed files updated, schedule: {job_schedule}",
+                        unstructured_message=(
+                            f"Cron job to clean up unused seed files updated,"
+                            f" schedule: {job_schedule}"
+                        ),
                     )
                 return
         # pylint: disable=broad-exception-caught
         except Exception:
             pass
 
-        # pylint: disable=line-too-long
         logger.info(
             "cleanup_cron_job_creating",
             schedule=job_schedule,
-            unstructured_message=f"Creating cron job to clean up unused seed files, schedule: {job_schedule}",
+            unstructured_message=(
+                f"Creating cron job to clean up unused seed files,"
+                f" schedule: {job_schedule}"
+            ),
         )
 
         params = {

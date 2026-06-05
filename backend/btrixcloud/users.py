@@ -466,8 +466,9 @@ class UserManager:
                 user_id=user.id,
                 user_email=user.email,
                 reset_token=token,
-                # pylint: disable=line-too-long
-                unstructured_message=f"User {user.id} has forgot their password. Reset token: {token}",
+                unstructured_message=(
+                    f"User {user.id} has forgot their password. Reset token: {token}"
+                ),
             )
         else:
             logger.debug(
