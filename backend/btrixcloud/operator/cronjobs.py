@@ -80,7 +80,6 @@ class CronJobOperator(BaseOperator):
                 oid=oid,
                 user_id=userid,
                 crawl_id=crawl_id,
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"error: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
                 ),
@@ -152,7 +151,6 @@ class CronJobOperator(BaseOperator):
                 oid=oid,
                 user_id=userid,
                 crawl_id=crawl_id,
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"proxy {crawlconfig.proxyId} missing, skipping scheduled crawl"
                     f' for workflow {cid} in "{org.slug}"'

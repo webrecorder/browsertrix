@@ -482,7 +482,6 @@ class CollIndexOperator(BaseOperator):
                 usage_ratio=float(used) / capacity,
                 prev_capacity=status.storageCapacity,
                 new_capacity=status.storageDesired,
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"used / capacity {used} {capacity} {float(used) / capacity}\n"
                     f"Expanding Dedupe Index Capacity {status.storageCapacity}"

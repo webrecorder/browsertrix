@@ -49,7 +49,6 @@ class BaseMigration:
             "migration_version_check",
             db_version=db_version,
             available_version=self.migration_version,
-            # pylint: disable=line-too-long
             unstructured_message=(
                 f"Current database version before migration: {db_version}\n"
                 f"Migration available to apply: {self.migration_version}"

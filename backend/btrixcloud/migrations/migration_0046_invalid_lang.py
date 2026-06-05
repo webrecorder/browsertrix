@@ -226,7 +226,6 @@ class Migration(BaseMigration):
             logger.info(
                 "fixed_invalid_lang_workflows",
                 modified_count=result.modified_count,
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"Fixed invalid language code for {result.modified_count} workflows"
                 ),
@@ -247,7 +246,6 @@ class Migration(BaseMigration):
             logger.info(
                 "fixed_invalid_lang_crawls",
                 modified_count=result.modified_count,
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"Fixed invalid language code for {result.modified_count} crawls"
                 ),
@@ -268,7 +266,6 @@ class Migration(BaseMigration):
             logger.info(
                 "fixed_invalid_lang_orgs",
                 modified_count=result.modified_count,
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"Fixed invalid language code for {result.modified_count} orgs"
                 ),
@@ -277,7 +274,6 @@ class Migration(BaseMigration):
         except Exception:
             logger.exception(
                 "invalid_lang_orgs_update_error",
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     "Unable to update invalid language codes for org crawling defaults"
                 ),

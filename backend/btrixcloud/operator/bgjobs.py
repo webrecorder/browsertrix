@@ -48,7 +48,6 @@ class BgJobOperator(BaseOperator):
                 "background_job_not_successful",
                 succeeded=status.get("succeeded"),
                 parallelism=spec.get("parallelism"),
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"Succeeded: {status.get('succeeded')}, Num Pods: {spec.get('parallelism')}"
                 ),

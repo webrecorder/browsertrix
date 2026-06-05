@@ -37,7 +37,6 @@ class Migration(BaseMigration):
             logger.warning(
                 "crawlconfig_stats_recompute_missing_ops",
                 migration_version=MIGRATION_VERSION,
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"Unable to set run migration {MIGRATION_VERSION}, missing crawl_config_ops"
                 ),
