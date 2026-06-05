@@ -81,7 +81,9 @@ class CronJobOperator(BaseOperator):
                 user_id=userid,
                 crawl_id=crawl_id,
                 # pylint: disable=line-too-long
-                unstructured_message=f"error: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?",
+                unstructured_message=(
+                    f"error: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
+                ),
             )
             return self.get_finished_response(metadata)
 
@@ -133,7 +135,9 @@ class CronJobOperator(BaseOperator):
                 user_id=userid,
                 crawl_id=crawl_id,
                 # pylint: disable=line-too-long
-                unstructured_message=f'org "{org.slug}" set to read-only. skipping scheduled crawl for workflow {cid}',
+                unstructured_message=(
+                    f'org "{org.slug}" set to read-only. skipping scheduled crawl for workflow {cid}'
+                ),
             )
             return self.get_finished_response(metadata)
 
@@ -149,7 +153,10 @@ class CronJobOperator(BaseOperator):
                 user_id=userid,
                 crawl_id=crawl_id,
                 # pylint: disable=line-too-long
-                unstructured_message=f'proxy {crawlconfig.proxyId} missing, skipping scheduled crawl for workflow {cid} in "{org.slug}"',
+                unstructured_message=(
+                    f"proxy {crawlconfig.proxyId} missing, skipping scheduled crawl"
+                    f' for workflow {cid} in "{org.slug}"'
+                ),
             )
             return self.get_finished_response(metadata)
 

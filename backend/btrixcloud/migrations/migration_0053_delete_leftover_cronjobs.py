@@ -113,13 +113,15 @@ class Migration(BaseMigration):
             job = await self.background_job_ops.get_background_job(job_name)
             if job.finished and job.success is not None:
                 await self.crawl_manager.delete_cron_job_by_name(job_name)
-                # pylint: disable=line-too-long
                 logger.info(
                     "replica_delete_job_deleted",
                     job_name=job_name,
                     success=job.success,
                     oid=job.oid,
-                    unstructured_message=f"Deleted replica delete job {job_name} (success: {job.success}, org: {job.oid})",
+                    unstructured_message=(
+                        f"Deleted replica delete job {job_name}"
+                        f" (success: {job.success}, org: {job.oid})"
+                    ),
                 )
         # pylint: disable=broad-exception-caught
         except Exception:
@@ -136,7 +138,9 @@ class Migration(BaseMigration):
                 "crawl_job_org_check_skipped_missing_ops",
                 crawl_id=crawl_id,
                 # pylint: disable=line-too-long
-                unstructured_message=f"Skipping crawl job crawljob-{crawl_id} org check, missing ops",
+                unstructured_message=(
+                    f"Skipping crawl job crawljob-{crawl_id} org check, missing ops"
+                ),
             )
             return
 
@@ -157,5 +161,7 @@ class Migration(BaseMigration):
                     crawl_id=crawl_id,
                     error=error,
                     # pylint: disable=line-too-long
-                    unstructured_message=f"Error deleting crawl job crawljob-{crawl_id} from deleted org",
+                    unstructured_message=(
+                        f"Error deleting crawl job crawljob-{crawl_id} from deleted org"
+                    ),
                 )

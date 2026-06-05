@@ -99,12 +99,13 @@ async def ensure_feature_version(client: AsyncIOMotorClient):
     version = fcv_status.get("featureCompatibilityVersion", {}).get("version")
 
     if float(version) < MIN_DB_VERSION:
-        # pylint: disable=line-too-long
         logger.info(
             "mongodb_feature_compatibility_updating",
             from_version=version,
             to_version=str(MIN_DB_VERSION),
-            unstructured_message=f"mongodb: updating feature compatibility {version} -> {MIN_DB_VERSION}",
+            unstructured_message=(
+                f"mongodb: updating feature compatibility {version} -> {MIN_DB_VERSION}"
+            ),
         )
         await admin.command(
             {"setFeatureCompatibilityVersion": str(MIN_DB_VERSION), "confirm": True}
@@ -266,7 +267,6 @@ async def run_db_migrations(
             if await migration.run():
                 migrations_run = True
         except ImportError:
-            # pylint: disable=line-too-long
             logger.exception(
                 "migration_import_error",
                 module_file=module_file,
@@ -284,12 +284,13 @@ async def await_db_and_migrations(mdb, db_inited):
     base_migration = BaseMigration(mdb, CURR_DB_VERSION)
     while await base_migration.migrate_up_needed(ignore_rerun=True):
         version = await base_migration.get_db_version()
-        # pylint: disable=line-too-long
         logger.info(
             "migration_waiting",
             db_version=version,
             latest_version=CURR_DB_VERSION,
-            unstructured_message=f"Waiting for migrations to finish, DB at {version}, latest {CURR_DB_VERSION}",
+            unstructured_message=(
+                f"Waiting for migrations to finish, DB at {version}, latest {CURR_DB_VERSION}"
+            ),
         )
 
         await asyncio.sleep(5)

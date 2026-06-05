@@ -127,5 +127,7 @@ class Migration(BaseMigration):
                         "crawl_log_qa_move_error",
                         crawl_id=crawl_id,
                         qa_run_id=qa_run_id,
-                        unstructured_message=f"Error moving logs for crawl {crawl_id} QA run {qa_run_id}",
+                        unstructured_message=(
+                            f"Error moving logs for crawl {crawl_id} QA run {qa_run_id}"
+                        ),
                     )

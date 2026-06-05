@@ -47,12 +47,16 @@ class Migration(BaseMigration):
                 logger.error(
                     "error_setting_org_created_date_no_workflows",
                     oid=oid,
-                    unstructured_message=f"Error setting created date for org {oid}, no workflows exist to set date from",
+                    unstructured_message=(
+                        f"Error setting created date for org {oid}, no workflows exist to set date from"
+                    ),
                 )
             # pylint: disable=broad-exception-caught
             except Exception:
                 logger.exception(
                     "error_setting_org_created_date_from_workflow",
                     oid=oid,
-                    unstructured_message=f"Error setting created date for org {oid} from first workflow",
+                    unstructured_message=(
+                        f"Error setting created date for org {oid} from first workflow"
+                    ),
                 )

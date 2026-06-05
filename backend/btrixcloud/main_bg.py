@@ -31,11 +31,12 @@ async def main():
 
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
-        # pylint: disable=line-too-long
         logger.critical(
             "kubernetes_not_detected",
-            unstructured_message="Sorry, the Browsertrix Backend must be run inside a Kubernetes environment. "
-            "Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting",
+            unstructured_message=(
+                "Sorry, the Browsertrix Backend must be run inside a Kubernetes environment. "
+                "Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
+            ),
         )
         return 1
 
@@ -196,13 +197,14 @@ async def main():
                 )
                 await coll_ops.update_collection_stats(UUID(coll_id), org.id)
 
-            # pylint: disable=line-too-long
             logger.info(
                 "collection_update_complete",
                 crawl_type=crawl_type,
                 crawl_id=crawl_id,
                 coll_id=coll_id,
-                unstructured_message="No changes to collection since start of last update, job complete",
+                unstructured_message=(
+                    "No changes to collection since start of last update, job complete"
+                ),
             )
             return 0
         # pylint: disable=broad-exception-caught

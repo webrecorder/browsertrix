@@ -220,7 +220,9 @@ class CrawlOperator(BaseOperator):
                 "crawl_finished_not_deleted",
                 crawl_id=crawl_id,
                 # pylint: disable=line-too-long
-                unstructured_message=f"crawl {crawl_id} finished but not deleted, post-finish taking too long?",
+                unstructured_message=(
+                    f"crawl {crawl_id} finished but not deleted, post-finish taking too long?"
+                ),
             )
             run_async_task(self.k8s.delete_crawl_job(crawl.id))
             return await self.finalize_response(
@@ -320,7 +322,9 @@ class CrawlOperator(BaseOperator):
                     "paused_crawl_expiry_reached",
                     crawl_id=crawl.id,
                     # pylint: disable=line-too-long
-                    unstructured_message=f"Paused crawl expiry reached, stopping crawl, id: {crawl.id}",
+                    unstructured_message=(
+                        f"Paused crawl expiry reached, stopping crawl, id: {crawl.id}"
+                    ),
                 )
                 stop_reason = "stopped_pause_expired"
                 state = "stopped_pause_expired"
@@ -497,7 +501,9 @@ class CrawlOperator(BaseOperator):
                 behavior=behaviors,
                 crawler_image=crawler_image,
                 # pylint: disable=line-too-long
-                unstructured_message="Crawler version < min_autoclick_crawler_image, removing autoclick behavior",
+                unstructured_message=(
+                    "Crawler version < min_autoclick_crawler_image, removing autoclick behavior"
+                ),
             )
             behaviors_list = behaviors.split(",")
             filtered_behaviors = [
@@ -637,7 +643,9 @@ class CrawlOperator(BaseOperator):
                 last_workers=pod_info.lastWorkers,
                 new_workers=workers,
                 # pylint: disable=line-too-long
-                unstructured_message=f"Workers changed for {i}: {pod_info.lastWorkers} -> {workers}",
+                unstructured_message=(
+                    f"Workers changed for {i}: {pod_info.lastWorkers} -> {workers}"
+                ),
             )
 
         pod_info.lastWorkers = workers
@@ -716,7 +724,9 @@ class CrawlOperator(BaseOperator):
                         prev_index=i + 1,
                         new_index=i,
                         # pylint: disable=line-too-long
-                        unstructured_message=f"Scaled down pod index {i + 1} -> {i}, no previous pod",
+                        unstructured_message=(
+                            f"Scaled down pod index {i + 1} -> {i}, no previous pod"
+                        ),
                     )
 
                 elif pod and pod["status"].get("phase") == "Succeeded":
@@ -820,7 +830,9 @@ class CrawlOperator(BaseOperator):
                     requested_state=state,
                     crawl_id=crawl.id,
                     # pylint: disable=line-too-long
-                    unstructured_message=f"State mismatch, actual state {actual_state}, requested {state}, {crawl.id}",
+                    unstructured_message=(
+                        f"State mismatch, actual state {actual_state}, requested {state}, {crawl.id}"
+                    ),
                 )
                 if not actual_state and state == "canceled":
                     return True
@@ -832,7 +844,10 @@ class CrawlOperator(BaseOperator):
                 requested_state=state,
                 crawl_id=crawl.id,
                 # pylint: disable=line-too-long
-                unstructured_message=f"Not setting state: {status.state} -> {state}, not allowed, {crawl.id}",
+                unstructured_message=(
+                    f"Not setting state: {status.state} -> {state}, not allowed,"
+                    f" {crawl.id}"
+                ),
             )
         return False
 
@@ -980,7 +995,10 @@ class CrawlOperator(BaseOperator):
                 pod_name=name,
                 pod_status=pods[name]["status"],
                 # pylint: disable=line-too-long
-                unstructured_message=f"============== POD STATUS: {name} ==============\n{pods[name]['status']}",
+                unstructured_message=(
+                    f"============== POD STATUS: {name} ==============\n"
+                    f"{pods[name]['status']}"
+                ),
             )
 
         run_async_task(self.k8s.print_pod_logs(pod_names, self.log_failed_crawl_lines))
@@ -1101,7 +1119,9 @@ class CrawlOperator(BaseOperator):
                             "redis_paused_no_crawler_pods",
                             redis_ttl=REDIS_TTL,
                             # pylint: disable=line-too-long
-                            unstructured_message=f"Pausing redis, no running crawler pods for >{REDIS_TTL} secs",
+                            unstructured_message=(
+                                f"Pausing redis, no running crawler pods for >{REDIS_TTL} secs"
+                            ),
                         )
                         status.initRedis = False
 
@@ -1335,7 +1355,9 @@ class CrawlOperator(BaseOperator):
             update_start_time=update_start_time,
             update_duration=update_duration,
             # pylint: disable=line-too-long
-            unstructured_message=f"Exec Time Update: {reason}: {now} - {update_start_time} = {update_duration}",
+            unstructured_message=(
+                f"Exec Time Update: {reason}: {now} - {update_start_time} = {update_duration}"
+            ),
         )
 
         for name, pod in pods.items():
@@ -1379,7 +1401,10 @@ class CrawlOperator(BaseOperator):
                         end_time=end_time,
                         start_time=start_time,
                         # pylint: disable=line-too-long
-                        unstructured_message=f"  - {name}: {pod_state}: skipping already counted, {end_time} < {start_time}",
+                        unstructured_message=(
+                            f"  - {name}: {pod_state}: skipping already counted,"
+                            f" {end_time} < {start_time}"
+                        ),
                     )
                     continue
 
@@ -1393,7 +1418,9 @@ class CrawlOperator(BaseOperator):
                     start_time=start_time,
                     duration=duration,
                     # pylint: disable=line-too-long
-                    unstructured_message=f"  - {name}: {pod_state}: {end_time} - {start_time} = {duration}",
+                    unstructured_message=(
+                        f"  - {name}: {pod_state}: {end_time} - {start_time} = {duration}"
+                    ),
                 )
                 exec_time += duration
                 max_duration = max(duration, max_duration)
@@ -1410,7 +1437,9 @@ class CrawlOperator(BaseOperator):
             total_exec_time=status.crawlExecTime,
             incremented_by=exec_time,
             # pylint: disable=line-too-long
-            unstructured_message=f"  Exec Time Total: {status.crawlExecTime}, Incremented By: {exec_time}",
+            unstructured_message=(
+                f"  Exec Time Total: {status.crawlExecTime}, Incremented By: {exec_time}"
+            ),
         )
 
         await self.crawl_ops.inc_crawl_exec_time(
@@ -1473,7 +1502,10 @@ class CrawlOperator(BaseOperator):
                         new_memory=new_memory,
                         max_allowed=self.k8s.max_crawler_memory_size,
                         # pylint: disable=line-too-long
-                        unstructured_message=f"Mem {mem_usage}: Not resizing pod {name}: mem {new_memory} > max allowed {self.k8s.max_crawler_memory_size}",
+                        unstructured_message=(
+                            f"Mem {mem_usage}: Not resizing pod {name}: mem {new_memory}"
+                            f" > max allowed {self.k8s.max_crawler_memory_size}"
+                        ),
                     )
                     return
 
@@ -1484,7 +1516,9 @@ class CrawlOperator(BaseOperator):
                     pod_name=name,
                     new_memory=pod.newMemory,
                     # pylint: disable=line-too-long
-                    unstructured_message=f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - Scale Up",
+                    unstructured_message=(
+                        f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - Scale Up"
+                    ),
                 )
 
                 # if crawler pod is using its OOM threshold, attempt a soft OOM
@@ -1505,7 +1539,9 @@ class CrawlOperator(BaseOperator):
                     pod_name=name,
                     new_memory=pod.newMemory,
                     # pylint: disable=line-too-long
-                    unstructured_message=f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - OOM Detected",
+                    unstructured_message=(
+                        f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - OOM Detected"
+                    ),
                 )
                 send_sig = True
 
@@ -1740,7 +1776,9 @@ class CrawlOperator(BaseOperator):
                     new_storage=pod_info.newStorage,
                     pod_key=key,
                     # pylint: disable=line-too-long
-                    unstructured_message=f"Attempting to adjust storage to {pod_info.newStorage} for {key}",
+                    unstructured_message=(
+                        f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
+                    ),
                 )
 
         # check if no longer paused, clear paused stopping state
@@ -1771,7 +1809,9 @@ class CrawlOperator(BaseOperator):
                         stop_reason=status.stopReason,
                         crawl_id=crawl.id,
                         # pylint: disable=line-too-long
-                        unstructured_message=f"Crawl gracefully stopping: {status.stopReason}, id: {crawl.id}",
+                        unstructured_message=(
+                            f"Crawl gracefully stopping: {status.stopReason}, id: {crawl.id}"
+                        ),
                     )
 
         # resolve scale down, if needed

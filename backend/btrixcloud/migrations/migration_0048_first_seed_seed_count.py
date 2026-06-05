@@ -42,7 +42,9 @@ class Migration(BaseMigration):
                         "config_seeds_not_found",
                         config_id=config.id,
                         # pylint: disable=line-too-long
-                        unstructured_message=f"Unable to find seeds for config {config.id}, skipping",
+                        unstructured_message=(
+                            f"Unable to find seeds for config {config.id}, skipping"
+                        ),
                     )
                     continue
 

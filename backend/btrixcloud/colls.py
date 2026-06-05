@@ -853,12 +853,13 @@ class CollectionOps:
 
         if coll.indexFile:
             if not await self.storage_ops.delete_file_object(org, coll.indexFile):
-                # pylint: disable=line-too-long
                 logger.error(
                     "dedupe_index_file_deletion_failed",
                     filename=coll.indexFile.filename,
                     coll_id=coll.id,
-                    unstructured_message=f"Unable to delete collection dedupe index: {coll.indexFile.filename}",
+                    unstructured_message=(
+                        f"Unable to delete collection dedupe index: {coll.indexFile.filename}"
+                    ),
                 )
                 raise HTTPException(status_code=400, detail="file_deletion_error")
 
@@ -1264,11 +1265,12 @@ class CollectionOps:
         thumbnail_file = file_prep.get_user_file(org.storage)
 
         if thumbnail_file.size > THUMBNAIL_MAX_SIZE:
-            # pylint: disable=line-too-long
             logger.error(
                 "thumbnail_upload_max_size_exceeded",
                 coll_id=coll_id,
-                unstructured_message="Collection thumbnail stream upload failed: max size (2 MB) exceeded",
+                unstructured_message=(
+                    "Collection thumbnail stream upload failed: max size (2 MB) exceeded"
+                ),
             )
             await self.storage_ops.delete_file_object(org, thumbnail_file)
             raise HTTPException(
@@ -1278,12 +1280,14 @@ class CollectionOps:
 
         if coll.thumbnail:
             if not await self.storage_ops.delete_file_object(org, coll.thumbnail):
-                # pylint: disable=line-too-long
                 logger.warning(
                     "previous_thumbnail_deletion_failed",
                     filename=coll.thumbnail.filename,
                     coll_id=coll_id,
-                    unstructured_message=f"Unable to delete previous collection thumbnail: {coll.thumbnail.filename}",
+                    unstructured_message=(
+                        f"Unable to delete previous collection thumbnail:"
+                        f" {coll.thumbnail.filename}"
+                    ),
                 )
 
         logger.info(
@@ -1319,12 +1323,13 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="thumbnail_not_found")
 
         if not await self.storage_ops.delete_file_object(org, coll.thumbnail):
-            # pylint: disable=line-too-long
             logger.error(
                 "thumbnail_deletion_failed",
                 filename=coll.thumbnail.filename,
                 coll_id=coll.id,
-                unstructured_message=f"Unable to delete collection thumbnail: {coll.thumbnail.filename}",
+                unstructured_message=(
+                    f"Unable to delete collection thumbnail: {coll.thumbnail.filename}"
+                ),
             )
             raise HTTPException(status_code=400, detail="file_deletion_error")
 
