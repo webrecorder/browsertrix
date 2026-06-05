@@ -438,7 +438,7 @@ class FileUploadOps:
                         )
                         await self.files.delete_one({"_id": file_id})
                     # pylint: disable=broad-exception-caught
-                    except Exception as err:
+                    except Exception:
                         # pylint: disable=line-too-long
                         logger.exception(
                             "orphaned_seed_file_delete_error",
@@ -471,7 +471,7 @@ class FileUploadOps:
             try:
                 await self.delete_seed_file(file_id, org)
             # pylint: disable=broad-exception-caught
-            except Exception as err:
+            except Exception:
                 # pylint: disable=line-too-long
                 logger.exception(
                     "seed_file_org_deleted_error",

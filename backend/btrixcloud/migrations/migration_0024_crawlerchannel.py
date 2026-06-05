@@ -42,6 +42,7 @@ class Migration(BaseMigration):
                 logger.exception(
                     "migration_crawlerchannel_workflow_error",
                     config_id=config_id,
+                    # pylint: disable=line-too-long
                     unstructured_message=f"Error adding crawlerChannel 'default' to workflow {config_id}",
                 )
 
@@ -57,5 +58,6 @@ class Migration(BaseMigration):
                 logger.exception(
                     "migration_crawlerchannel_profile_error",
                     profile_id=profile_id,
+                    # pylint: disable=line-too-long
                     unstructured_message=f"Error adding crawlerChannel 'default' to profile {profile_id}",
                 )
