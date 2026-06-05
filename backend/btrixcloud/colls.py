@@ -431,7 +431,8 @@ class CollectionOps:
                 result["initialPages"] = initial_pages
                 result["pagesQueryUrl"] = (
                     origin
-                    + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages?sortBy=isSeed&sortDirection=1"
+                    + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages"
+                    + "?sortBy=isSeed&sortDirection=1"
                 )
 
         thumbnail = result.get("thumbnail")
