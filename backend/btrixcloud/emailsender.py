@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 import smtplib
 import ssl
 from datetime import datetime
@@ -25,6 +26,29 @@ from .models import (
 from .utils import get_origin, is_bool
 
 logger = logging.getLogger(__name__)
+
+# JWTs have three base64url parts separated by dots and always start with eyJ
+_JWT_RE = re.compile(r"eyJ[a-zA-Z0-9_-]{5,}\.[a-zA-Z0-9_-]{5,}\.[a-zA-Z0-9_-]{5,}")
+
+# Invite URLs contain a UUID token after /join/ or /invite/accept/
+_INVITE_UUID_RE = re.compile(
+    r"(/join/|/invite/accept/)([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})",
+    re.IGNORECASE,
+)
+
+
+def _redact_email_text(text: str) -> str:
+    """Redact sensitive tokens from rendered email text before logging"""
+
+    def _jwt_repl(match: "re.Match[str]") -> str:
+        return "x" * len(match.group())
+
+    def _uuid_repl(match: "re.Match[str]") -> str:
+        return match.group(1) + "x" * len(match.group(2))
+
+    text = _JWT_RE.sub(_jwt_repl, text)
+    text = _INVITE_UUID_RE.sub(_uuid_repl, text)
+    return text
 
 
 # pylint: disable=too-few-public-methods, too-many-instance-attributes
@@ -57,11 +81,22 @@ class EmailSender:
         self.log_sent_emails = is_bool(os.environ.get("LOG_SENT_EMAILS"))
 
         if self.smtp_server and self.log_sent_emails:
+            logger.info(
+                "email_logging_redaction",
+                details="SMTP server is configured but LOG_SENT_EMAILS is enabled. Sensitive "
+                "information such as invite tokens and password reset URLs will be redacted.",
+            )
+        elif not self.smtp_server and not self.log_sent_emails:
             logger.warning(
-                "risky_email_logging",
-                details="SMTP server is configured but LOG_SENT_EMAILS is enabled."
-                "This will log all email content, including sensitive information "
-                "such as invite tokens and password reset URLs.",
+                "sensitive_logs",
+                details="SMTP server is not configured. Password reset URLs will be logged as "
+                "plain text.",
+            )
+        elif not self.smtp_server and self.log_sent_emails:
+            logger.warning(
+                "sensitive_logs",
+                details="SMTP server is not configured. Sensitive information such as invite  "
+                "tokens and password reset URLs will be logged as plain text.",
             )
 
         email_template_endpoint = os.environ.get("EMAIL_TEMPLATE_ENDPOINT")
@@ -95,16 +130,18 @@ class EmailSender:
                     if self.log_sent_emails:
                         logger.info(
                             "email_log",
-                            email_text=text,
+                            email_text=text
+                            if not self.smtp_server
+                            else _redact_email_text(text),
                         )
 
                     if not self.smtp_server:
-                        # pylint: disable=line-too-long
                         logger.info(
                             "email_created_not_sent_no_smtp",
                             template_name=name,
                             receiver=receiver,
-                            unstructured_message=f'Email: created "{name}" msg for "{receiver}", but not sent (no SMTP server set)',
+                            unstructured_message=f'Email: created "{name}" msg for "{receiver}", '
+                            "but not sent (no SMTP server set)",
                         )
                         return
 
