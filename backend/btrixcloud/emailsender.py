@@ -56,6 +56,14 @@ class EmailSender:
 
         self.log_sent_emails = is_bool(os.environ.get("LOG_SENT_EMAILS"))
 
+        if self.smtp_server and self.log_sent_emails:
+            logger.warning(
+                "risky_email_logging",
+                details="SMTP server is configured but LOG_SENT_EMAILS is enabled."
+                "This will log all email content, including sensitive information "
+                "such as invite tokens and password reset URLs.",
+            )
+
         email_template_endpoint = os.environ.get("EMAIL_TEMPLATE_ENDPOINT")
         if not email_template_endpoint:
             raise ValueError(
