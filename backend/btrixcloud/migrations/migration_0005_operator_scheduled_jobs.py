@@ -50,7 +50,6 @@ class Migration(BaseMigration):
                 config_id=config.id,
                 schedule=config.schedule,
                 timeout=config.crawlTimeout,
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"Updating Crawl Config {config.id}: schedule:"
                     f" {config.schedule}, timeout: {config.crawlTimeout}"
@@ -63,7 +62,6 @@ class Migration(BaseMigration):
                 logger.warning(
                     "migration_crawl_config_skip",
                     exc_info=True,
-                    # pylint: disable=line-too-long
                     unstructured_message=(
                         f"Skip crawl config migration due to error, likely missing config {exc}"
                     ),

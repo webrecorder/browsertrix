@@ -1111,7 +1111,6 @@ class CrawlOperator(BaseOperator):
                         logger.info(
                             "redis_paused_no_crawler_pods",
                             redis_ttl=REDIS_TTL,
-                            # pylint: disable=line-too-long
                             unstructured_message=(
                                 f"Pausing redis, no running crawler pods for >{REDIS_TTL} secs"
                             ),
@@ -1347,7 +1346,6 @@ class CrawlOperator(BaseOperator):
             now=now,
             update_start_time=update_start_time,
             update_duration=update_duration,
-            # pylint: disable=line-too-long
             unstructured_message=(
                 f"Exec Time Update: {reason}: {now} - {update_start_time} = {update_duration}"
             ),
@@ -1393,7 +1391,6 @@ class CrawlOperator(BaseOperator):
                         pod_state=pod_state,
                         end_time=end_time,
                         start_time=start_time,
-                        # pylint: disable=line-too-long
                         unstructured_message=(
                             f"  - {name}: {pod_state}: skipping already counted,"
                             f" {end_time} < {start_time}"
@@ -1410,7 +1407,6 @@ class CrawlOperator(BaseOperator):
                     end_time=end_time,
                     start_time=start_time,
                     duration=duration,
-                    # pylint: disable=line-too-long
                     unstructured_message=(
                         f"  - {name}: {pod_state}: {end_time} - {start_time} = {duration}"
                     ),
@@ -1429,7 +1425,6 @@ class CrawlOperator(BaseOperator):
             "pod_exec_time_total_computed",
             total_exec_time=status.crawlExecTime,
             incremented_by=exec_time,
-            # pylint: disable=line-too-long
             unstructured_message=(
                 f"  Exec Time Total: {status.crawlExecTime}, Incremented By: {exec_time}"
             ),
@@ -1494,7 +1489,6 @@ class CrawlOperator(BaseOperator):
                         pod_name=name,
                         new_memory=new_memory,
                         max_allowed=self.k8s.max_crawler_memory_size,
-                        # pylint: disable=line-too-long
                         unstructured_message=(
                             f"Mem {mem_usage}: Not resizing pod {name}: mem {new_memory}"
                             f" > max allowed {self.k8s.max_crawler_memory_size}"
@@ -1508,7 +1502,6 @@ class CrawlOperator(BaseOperator):
                     mem_usage=mem_usage,
                     pod_name=name,
                     new_memory=pod.newMemory,
-                    # pylint: disable=line-too-long
                     unstructured_message=(
                         f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - Scale Up"
                     ),
@@ -1768,7 +1761,6 @@ class CrawlOperator(BaseOperator):
                     "pod_storage_adjusting",
                     new_storage=pod_info.newStorage,
                     pod_key=key,
-                    # pylint: disable=line-too-long
                     unstructured_message=(
                         f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
                     ),
@@ -1801,7 +1793,6 @@ class CrawlOperator(BaseOperator):
                         "crawl_gracefully_stopping",
                         stop_reason=status.stopReason,
                         crawl_id=crawl.id,
-                        # pylint: disable=line-too-long
                         unstructured_message=(
                             f"Crawl gracefully stopping: {status.stopReason}, id: {crawl.id}"
                         ),

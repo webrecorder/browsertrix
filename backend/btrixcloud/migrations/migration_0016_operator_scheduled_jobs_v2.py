@@ -40,7 +40,6 @@ class Migration(BaseMigration):
                 "crawl_config_cronjob_updating",
                 config_id=config.id,
                 schedule=config.schedule,
-                # pylint: disable=line-too-long
                 unstructured_message=(
                     f"Updating CronJob for Crawl Config {config.id}: schedule: {config.schedule}"
                 ),
@@ -52,7 +51,6 @@ class Migration(BaseMigration):
                 logger.warning(
                     "migration_crawl_config_skip",
                     exc_info=True,
-                    # pylint: disable=line-too-long
                     unstructured_message=(
                         f"Skip crawl config migration due to error, likely missing config {exc}"
                     ),
