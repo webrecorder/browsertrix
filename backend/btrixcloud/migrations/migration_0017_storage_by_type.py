@@ -67,10 +67,10 @@ class Migration(BaseMigration):
                     },
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
+            except Exception:
                 logger.warning(
                     "migration_org_storage_type_warning",
                     org_id=oid,
-                    error=str(err),
-                    unstructured_message=f"Unable to set bytes stored by type for org {oid}: {err}",
+                    exc_info=True,
+                    unstructured_message=f"Unable to set bytes stored by type for org {oid}",
                 )

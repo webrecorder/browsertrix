@@ -49,7 +49,7 @@ class Migration(BaseMigration):
             except Exception as exc:
                 logger.warning(
                     "migration_crawl_config_skip",
-                    error=str(exc),
+                    exc_info=True,
                     # pylint: disable=line-too-long
                     unstructured_message=f"Skip crawl config migration due to error, likely missing config {exc}",
                 )

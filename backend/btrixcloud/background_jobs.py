@@ -229,7 +229,7 @@ class BackgroundJobOps:
                 object_type=object_type,
                 oid=org.id,
                 file=file,
-                error=str(exc),
+                exc_info=True,
                 unstructured_message=f"warning: replica job could not be started for {object_type} {file}: {exc}",
             )
             return ""
@@ -323,7 +323,7 @@ class BackgroundJobOps:
                 "replica_deletion_job_start_failed",
                 object_type=object_type,
                 file=file,
-                error=str(exc),
+                exc_info=True,
                 oid=org.id,
                 unstructured_message=f"warning: replica deletion job could not be started for {object_type} {file}: {exc}",
             )
@@ -373,7 +373,7 @@ class BackgroundJobOps:
                 "delete_org_job_start_failed",
                 oid=org.id,
                 existing_job_id=existing_job_id,
-                error=str(exc),
+                exc_info=True,
                 unstructured_message=f"warning: delete org job could not be started: {exc}",
             )
             return None
@@ -421,7 +421,7 @@ class BackgroundJobOps:
             # pylint: disable=line-too-long
             logger.warning(
                 "recalculate_org_stats_job_start_failed",
-                error=str(exc),
+                exc_info=True,
                 oid=org.id,
                 existing_job_id=existing_job_id,
                 unstructured_message=f"warning: recalculate org stats job could not be started: {exc}",
@@ -476,7 +476,7 @@ class BackgroundJobOps:
             # pylint: disable=raise-missing-from
             logger.warning(
                 "readd_org_pages_job_start_failed",
-                error=str(exc),
+                exc_info=True,
                 oid=oid,
                 unstructured_message=f"warning: re-add org pages job could not be started: {exc}",
             )
@@ -521,7 +521,7 @@ class BackgroundJobOps:
             # pylint: disable=raise-missing-from
             logger.warning(
                 "optimize_pages_job_start_failed",
-                error=str(exc),
+                exc_info=True,
                 unstructured_message=f"warning: optimize pages job could not be started: {exc}",
             )
             return None
@@ -571,7 +571,7 @@ class BackgroundJobOps:
             # pylint: disable=line-too-long
             logger.warning(
                 "update_collection_stats_job_start_failed",
-                error=str(exc),
+                exc_info=True,
                 oid=oid,
                 unstructured_message=f"warning: update collection stats job could not be started: {exc}",
             )
@@ -656,10 +656,9 @@ class BackgroundJobOps:
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            logger.error(
+            logger.exception(
                 "bg_job_failure_email_failed",
                 job_id=job.id,
-                error=str(err),
                 oid=job.oid,
                 unstructured_message=f"Error sending bg job failure email for job {job.id}: {err}",
             )

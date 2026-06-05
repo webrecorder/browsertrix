@@ -192,14 +192,13 @@ class EventWebhookOps:
                     )
 
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "webhook_notification_failed",
                 notification_id=notification.id,
                 event=notification.event,
-                error=str(err),
                 oid=org.id,
-                unstructured_message=f"Webhook notification failed: {err}",
+                unstructured_message="Webhook notification failed",
             )
             await self.webhooks.find_one_and_update(
                 {"_id": notification.id},
@@ -308,14 +307,13 @@ class EventWebhookOps:
             )
 
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "qa_run_resources_error",
-                error=str(err),
                 oid=oid,
                 qa_run_id=qa_run.id,
                 crawl_id=crawl_id,
-                unstructured_message=f"Error trying to get QA run resources: {err}",
+                unstructured_message="Error trying to get QA run resources",
             )
 
         notification = WebhookNotification(

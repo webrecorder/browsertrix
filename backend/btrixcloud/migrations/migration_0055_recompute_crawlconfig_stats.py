@@ -51,12 +51,12 @@ class Migration(BaseMigration):
                 )
                 count += 1
             # pylint: disable=broad-exception-caught
-            except Exception as err:
+            except Exception:
                 logger.warning(
                     "workflow_stats_update_warning",
                     config_id=config_id,
-                    error=err,
-                    unstructured_message=f"Unable to update workflow {config_id}: {err}",
+                    exc_info=True,
+                    unstructured_message=f"Unable to update workflow {config_id}",
                 )
 
             if count % 100 == 0:

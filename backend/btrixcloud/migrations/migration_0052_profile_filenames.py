@@ -76,11 +76,9 @@ class Migration(BaseMigration):
                         profile.oid, profile.resource, str(profile.id), "profile"
                     )
                 # pylint: disable=broad-exception-caught
-                except Exception as err:
-                    logger.error(
+                except Exception:
+                    logger.exception(
                         "profile_filename_fix_error",
                         profile_id=profile.id,
-                        error=err,
-                        # pylint: disable=line-too-long
-                        unstructured_message=f"Error fixing filename and replicas for profile {profile.id}: {err}",
+                        unstructured_message=f"Error fixing filename and replicas for profile {profile.id}",
                     )

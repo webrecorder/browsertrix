@@ -37,11 +37,10 @@ class Migration(BaseMigration):
         org_collection = self.mdb["archives"]
         try:
             await org_collection.rename("organizations", dropTarget=True)
-        except OperationFailure as err:
-            logger.error(
+        except OperationFailure:
+            logger.exception(
                 "migration_rename_collection_error",
-                error=str(err),
-                unstructured_message=f"Error renaming archives to organizations: {err}",
+                unstructured_message="Error renaming archives to organizations",
             )
 
         # Rename aid fields to oid

@@ -34,10 +34,10 @@ class Migration(BaseMigration):
             try:
                 await recompute_crawl_file_count_and_size(crawls, crawl_id)
             # pylint: disable=broad-exception-caught
-            except Exception as err:
+            except Exception:
                 logger.warning(
                     "migration_crawl_update_warning",
                     crawl_id=crawl_id,
-                    error=str(err),
-                    unstructured_message=f"Unable to update crawl {crawl_id}: {err}",
+                    exc_info=True,
+                    unstructured_message=f"Unable to update crawl {crawl_id}",
                 )

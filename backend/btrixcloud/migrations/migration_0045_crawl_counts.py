@@ -56,11 +56,9 @@ class Migration(BaseMigration):
                 # Re-increment filePageCount and errorPageCount
                 await self.page_ops.update_crawl_file_and_error_counts(crawl_id)
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.warning(
+            except Exception:
+                logger.exception(
                     "crawl_page_counts_update_error",
                     crawl_id=crawl_id,
-                    error=err,
-                    # pylint: disable=line-too-long
-                    unstructured_message=f"Unable to update page counts for crawl {crawl_id}: {err}",
+                    unstructured_message=f"Unable to update page counts for crawl {crawl_id}",
                 )

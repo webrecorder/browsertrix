@@ -60,13 +60,11 @@ class Migration(BaseMigration):
                     },
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.warning(
+            except Exception:
+                logger.exception(
                     "seed_info_workflow_update_error",
                     config_id=config.id,
-                    error=err,
-                    # pylint: disable=line-too-long
-                    unstructured_message=f"Unable to update seed info for workflow {config.id}: {err}",
+                    unstructured_message=f"Unable to update seed info for workflow {config.id}",
                 )
 
         # Crawls
@@ -96,10 +94,9 @@ class Migration(BaseMigration):
                     },
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.warning(
+            except Exception:
+                logger.exception(
                     "seed_info_crawl_update_error",
                     crawl_id=crawl_id,
-                    error=err,
-                    unstructured_message=f"Unable to update seed info for crawl {crawl_id}: {err}",
+                    unstructured_message=f"Unable to update seed info for crawl {crawl_id}",
                 )

@@ -92,12 +92,11 @@ class Migration(BaseMigration):
                     unstructured_message=f"Deleted cron job {job_name} from deleted org",
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "cron_job_delete_error",
                     job_name=job_name,
-                    error=err,
-                    unstructured_message=f"Error deleting cron job {job_name}: {err}",
+                    unstructured_message=f"Error deleting cron job {job_name}",
                 )
 
     async def delete_replica_delete_job_if_finished(self, job_name: str) -> None:
@@ -123,12 +122,11 @@ class Migration(BaseMigration):
                     unstructured_message=f"Deleted replica delete job {job_name} (success: {job.success}, org: {job.oid})",
                 )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "replica_delete_cron_job_error",
                 job_name=job_name,
-                error=err,
-                unstructured_message=f"Error deleting replica delete cron job {job_name}: {err}",
+                unstructured_message=f"Error deleting replica delete cron job {job_name}",
             )
 
     async def delete_crawl_job_if_org_deleted(self, oid: UUID, crawl_id: str) -> None:
@@ -154,10 +152,10 @@ class Migration(BaseMigration):
 
             error = resp.get("error")
             if error:
-                logger.error(
+                logger.exception(
                     "crawl_job_delete_error",
                     crawl_id=crawl_id,
                     error=error,
                     # pylint: disable=line-too-long
-                    unstructured_message=f"Error deleting crawl job crawljob-{crawl_id} from deleted org: {error}",
+                    unstructured_message=f"Error deleting crawl job crawljob-{crawl_id} from deleted org",
                 )

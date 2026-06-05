@@ -1171,7 +1171,6 @@ class CrawlOperator(BaseOperator):
         except Exception as exc:
             logger.exception(
                 "crawl_sync_failed",
-                error=str(exc),
                 unstructured_message=f"Crawl get failed: {exc}, will try again",
             )
             return status
@@ -1219,11 +1218,10 @@ class CrawlOperator(BaseOperator):
                     redis_running = redis_running or running
 
         # pylint: disable=broad-except
-        except Exception as exc:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "sync_pod_status_failed",
-                error=str(exc),
-                unstructured_message=f"sync_pod_status error: {exc}",
+                unstructured_message="sync_pod_status error",
             )
 
         return crawler_running, redis_running, pod_done_count
@@ -1529,7 +1527,7 @@ class CrawlOperator(BaseOperator):
                 "Crawler Instance Crashed", {"reason": pod.reason, "pod": name}
             )
             if not redis:
-                logger.error(
+                logger.exception(
                     "crawler_instance_crashed",
                     error=log,
                     unstructured_message=f"Crawl crash: {log}",

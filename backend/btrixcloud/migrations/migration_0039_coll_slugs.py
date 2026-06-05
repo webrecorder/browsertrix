@@ -81,12 +81,11 @@ class Migration(BaseMigration):
                 slug = slug_from_name(name)
                 await self.dedup_slug(name, slug, coll_id, colls_mdb)
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "error_saving_slug_for_collection",
                     coll_id=coll_id,
-                    error=err,
-                    unstructured_message=f"Error saving slug for collection {coll_id}: {err}",
+                    unstructured_message=f"Error saving slug for collection {coll_id}",
                 )
 
         await colls_mdb.create_index(

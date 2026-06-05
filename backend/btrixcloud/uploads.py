@@ -111,12 +111,11 @@ class UploadOps(BaseCrawlOps):
                 await self._delete_crawl_files(prev_upload, org)
                 await self.page_ops.delete_crawl_pages(prev_upload.id, org.id)
             # pylint: disable=broad-exception-caught
-            except Exception as exc:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "previous_upload_cleanup_error",
-                    error=str(exc),
                     crawl_id=id_,
-                    unstructured_message=f"Error handling previous upload: {exc}",
+                    unstructured_message="Error handling previous upload",
                 )
 
         return await self._create_upload(

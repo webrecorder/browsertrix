@@ -29,10 +29,8 @@ class Migration(BaseMigration):
         try:
             await crawls.update_many({}, {"$rename": {"collections": "collectionIds"}})
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "migration_rename_field_error",
-                error=str(err),
-                # pylint: disable=line-too-long
-                unstructured_message=f"Error renaming crawl 'collections' to 'collectionIds': {err}",
+                unstructured_message=f"Error renaming crawl 'collections' to 'collectionIds'",
             )

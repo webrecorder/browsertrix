@@ -376,9 +376,8 @@ class ProfileOps:
 
         # pylint: disable=broad-except
         except Exception as e:
-            logger.error(
+            logger.exception(
                 "profile_commit_failed",
-                error=str(e),
                 oid=org.id,
                 user_id=user.id,
                 profile_id=metadata.profileid,
@@ -427,10 +426,9 @@ class ProfileOps:
             hash_ = data["hash"]
             modified = str_to_date(data["modified"])
         # pylint: disable=broad-exception-caught
-        except Exception as exc:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "profile_update_parse_failed",
-                error=str(exc),
                 oid=org_id,
                 profile_id=profileid,
             )
@@ -660,14 +658,13 @@ class ProfileOps:
                 ) as resp:
                     data = await resp.json()
 
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "browser_request_failed",
                 browser_id=browserid,
                 path=path,
                 method=method,
                 post_data=post_data,
-                error=str(e),
             )
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=200, detail="waiting_for_browser")
@@ -746,9 +743,8 @@ def init_profiles_api(
             metadata = await crawl_manager.get_profile_browser_metadata(browserid)
         # pylint: disable=raise-missing-from, broad-exception-caught
         except Exception as e:
-            logger.error(
+            logger.exception(
                 "browser_metadata_fetch_failed",
-                error=str(e),
                 oid=org.id,
                 browser_id=browserid,
                 unstructured_message=f"{e}",

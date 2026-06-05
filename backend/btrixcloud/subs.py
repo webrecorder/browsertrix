@@ -412,12 +412,11 @@ class SubOps:
                         json = await resp.json()
                         return SubscriptionPortalUrlResponse(**json)
             # pylint: disable=broad-exception-caught
-            except Exception as exc:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "portal_url_fetch_failed",
-                    error=str(exc),
                     oid=org.id,
-                    unstructured_message=f"Error fetching portal url {exc}",
+                    unstructured_message="Error fetching portal url",
                 )
 
         return SubscriptionPortalUrlResponse()
@@ -443,11 +442,10 @@ class SubOps:
                         return AddonMinutesPricing(**json)
             # pylint: disable=broad-exception-caught
             except Exception as exc:
-                logger.error(
+                logger.exception(
                     "execution_minutes_price_fetch_failed",
-                    error=str(exc),
                     oid=org.id,
-                    unstructured_message=f"Error fetching execution minutes price {exc}",
+                    unstructured_message="Error fetching execution minutes price",
                 )
 
     async def get_checkout_url(
@@ -493,11 +491,10 @@ class SubOps:
                         return CheckoutAddonMinutesResponse(**json)
             # pylint: disable=broad-exception-caught
             except Exception as exc:
-                logger.error(
+                logger.exception(
                     "checkout_url_fetch_failed",
-                    error=str(exc),
                     oid=org.id,
-                    unstructured_message=f"Error fetching checkout url {exc}",
+                    unstructured_message="Error fetching checkout url",
                 )
                 raise HTTPException(
                     status_code=500, detail="Error fetching checkout url"

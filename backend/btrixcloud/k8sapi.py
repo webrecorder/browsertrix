@@ -420,12 +420,10 @@ class K8sAPI:
             )
             return True
         # pylint: disable=broad-exception-caught
-        except Exception as exc:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "pod_metrics_check_failed",
-                error=str(exc),
                 namespace=self.namespace,
-                unstructured_message=f"{exc}",
             )
             return False
 
@@ -478,13 +476,12 @@ class K8sAPI:
                 signaled = True
 
         # pylint: disable=broad-except
-        except Exception as exc:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "send_signal_error",
                 signal=signame,
                 pod_name=pod_name,
-                error=str(exc),
-                unstructured_message=f"Send Signal Error: {exc}",
+                unstructured_message="Send Signal Error",
             )
 
         return signaled

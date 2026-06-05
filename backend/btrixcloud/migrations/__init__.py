@@ -93,8 +93,7 @@ class BaseMigration:
                 logger.exception(
                     "migration_error",
                     migration_version=self.migration_version,
-                    error=str(err),
-                    unstructured_message=f"Error running migration {self.migration_version}: {err}",
+                    unstructured_message=f"Error running migration {self.migration_version}",
                 )
                 return False
 

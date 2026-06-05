@@ -49,10 +49,9 @@ class Migration(BaseMigration):
                     self.crawl_config_ops, crawl_configs, crawls, config_id
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "migration_workflow_update_error",
                     config_id=config_id,
-                    error=str(err),
-                    unstructured_message=f"Unable to update workflow {config_id}: {err}",
+                    unstructured_message=f"Unable to update workflow {config_id}",
                 )

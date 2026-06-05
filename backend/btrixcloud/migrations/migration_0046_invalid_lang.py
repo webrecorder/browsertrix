@@ -230,12 +230,10 @@ class Migration(BaseMigration):
                 unstructured_message=f"Fixed invalid language code for {result.modified_count} workflows",
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.warning(
+        except Exception:
+            logger.exception(
                 "invalid_lang_workflows_update_error",
-                error=err,
-                # pylint: disable=line-too-long
-                unstructured_message=f"Unable to update invalid language codes for crawl workflows: {err}",
+                unstructured_message="Unable to update invalid language codes for crawl workflows",
             )
 
         # Crawls
@@ -251,11 +249,10 @@ class Migration(BaseMigration):
                 unstructured_message=f"Fixed invalid language code for {result.modified_count} crawls",
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.warning(
+        except Exception:
+            logger.exception(
                 "invalid_lang_crawls_update_error",
-                error=err,
-                unstructured_message=f"Unable to update invalid language codes for crawls: {err}",
+                unstructured_message="Unable to update invalid language codes for crawls",
             )
 
         # Org crawling defaults
@@ -271,10 +268,8 @@ class Migration(BaseMigration):
                 unstructured_message=f"Fixed invalid language code for {result.modified_count} orgs",
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.warning(
+        except Exception:
+            logger.exception(
                 "invalid_lang_orgs_update_error",
-                error=err,
-                # pylint: disable=line-too-long
-                unstructured_message=f"Unable to update invalid language codes for org crawling defaults: {err}",
+                unstructured_message="Unable to update invalid language codes for org crawling defaults",
             )

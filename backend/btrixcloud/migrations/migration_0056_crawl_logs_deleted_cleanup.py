@@ -80,11 +80,10 @@ class Migration(BaseMigration):
                     unstructured_message=f"Deleted {res.deleted_count} crawl log lines",
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "crawl_logs_deleted_crawls_error",
-                    error=err,
-                    unstructured_message=f"Error deleting crawl logs from deleted crawls: {err}",
+                    unstructured_message=f"Error deleting crawl logs from deleted crawls",
                 )
 
         # DELETED QA RUNS
@@ -135,9 +134,8 @@ class Migration(BaseMigration):
                     unstructured_message=f"Deleted {res.deleted_count} QA run log lines",
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "qa_run_logs_deleted_error",
-                    error=err,
-                    unstructured_message=f"Error deleting logs from deleted QA runs: {err}",
+                    unstructured_message=f"Error deleting logs from deleted QA runs",
                 )

@@ -48,10 +48,9 @@ class Migration(BaseMigration):
                     {"_id": oid}, {"$set": {"bytesStored": bytes_stored}}
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "migration_org_storage_error",
                     org_id=oid,
-                    error=str(err),
-                    unstructured_message=f"Unable to set bytes stored for org {oid}: {err}",
+                    unstructured_message=f"Unable to set bytes stored for org {oid}",
                 )

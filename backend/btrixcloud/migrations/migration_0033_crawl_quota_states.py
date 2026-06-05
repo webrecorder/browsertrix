@@ -42,12 +42,10 @@ class Migration(BaseMigration):
                 unstructured_message=f"{updated} crawls with state skipped_quota_reached migrated",
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "error_migrating_skipped_quota_reached_crawls",
-                error=err,
-                # pylint: disable=line-too-long
-                unstructured_message=f"Error migrating crawls with state skipped_quota_reached: {err}",
+                unstructured_message="Error migrating crawls with state skipped_quota_reached",
             )
 
         try:
@@ -62,12 +60,10 @@ class Migration(BaseMigration):
                 unstructured_message=f"{updated} crawls with state stopped_quota_reached migrated",
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "error_migrating_stopped_quota_reached_crawls",
-                error=err,
-                # pylint: disable=line-too-long
-                unstructured_message=f"Error migrating crawls with state stopped_quota_reached: {err}",
+                unstructured_message="Error migrating crawls with state stopped_quota_reached",
             )
 
         ## WORKFLOWS ##
@@ -85,12 +81,10 @@ class Migration(BaseMigration):
                 unstructured_message=f"{updated} crawl configs with lastCrawlState skipped_quota_reached migrated",
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "error_migrating_skipped_quota_reached_workflows",
-                error=err,
-                # pylint: disable=line-too-long
-                unstructured_message=f"Error migrating crawlconfigs with lastCrawlState skipped_quota_reached: {err}",
+                unstructured_message="Error migrating crawlconfigs with lastCrawlState skipped_quota_reached",
             )
 
         try:
@@ -106,10 +100,8 @@ class Migration(BaseMigration):
                 unstructured_message=f"{updated} crawl configs with lastCrawlState stopped_quota_reached migrated",
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "error_migrating_stopped_quota_reached_workflows",
-                error=err,
-                # pylint: disable=line-too-long
-                unstructured_message=f"Error migrating crawl configs with lastCrawlState stopped_quota_reached: {err}",
+                unstructured_message="Error migrating crawl configs with lastCrawlState stopped_quota_reached",
             )

@@ -31,9 +31,8 @@ class Migration(BaseMigration):
                 {"type": {"$eq": None}}, {"$set": {"type": "crawl"}}
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "migration_add_crawl_type_error",
-                error=str(err),
-                unstructured_message=f"Error adding type 'crawl' to existing crawls: {err}",
+                unstructured_message="Error adding type 'crawl' to existing crawls",
             )
