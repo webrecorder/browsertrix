@@ -460,7 +460,7 @@ class UserManager:
             RESET_VERIFY_TOKEN_LIFETIME_MINUTES,
         )
 
-        if not self.email.smtp_server:
+        if not self.email.smtp_server and not self.email.log_sent_emails:
             logger.debug(
                 "password_reset_requested",
                 user_id=user.id,
