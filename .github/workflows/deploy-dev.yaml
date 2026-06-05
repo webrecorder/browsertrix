@@ -59,6 +59,9 @@ jobs:
         with:
           context: backend
           push: true
+          build-args: |
+            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
+            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
           tags: ${{ secrets.DO_REGISTRY_PATH }}/webrecorder/browsertrix-backend:latest
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
@@ -68,6 +71,10 @@ jobs:
         with:
           context: emails
           push: true
+          build-args: |
+            VERSION=${{ env.VERSION }}
+            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
+            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
           tags: ${{ secrets.DO_REGISTRY_PATH }}/webrecorder/browsertrix-emails:latest
           cache-from: type=gha,scope=emails
           cache-to: type=gha,scope=emails,mode=max
