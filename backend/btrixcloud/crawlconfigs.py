@@ -1580,7 +1580,7 @@ class CrawlConfigOps:
                     unstructured_message=f"Updated cronjob for scheduled workflow {config.id}",
                 )
             # pylint: disable=broad-except
-            except Exception as err:
+            except Exception:
                 # pylint: disable=line-too-long
                 logger.exception(
                     "scheduled_cronjob_update_failed",

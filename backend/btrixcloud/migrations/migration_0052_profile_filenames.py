@@ -80,5 +80,6 @@ class Migration(BaseMigration):
                     logger.exception(
                         "profile_filename_fix_error",
                         profile_id=profile.id,
+                        # pylint: disable=line-too-long
                         unstructured_message=f"Error fixing filename and replicas for profile {profile.id}",
                     )

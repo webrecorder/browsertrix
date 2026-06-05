@@ -271,5 +271,6 @@ class Migration(BaseMigration):
         except Exception:
             logger.exception(
                 "invalid_lang_orgs_update_error",
+                # pylint: disable=line-too-long
                 unstructured_message="Unable to update invalid language codes for org crawling defaults",
             )
