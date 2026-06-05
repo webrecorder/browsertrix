@@ -460,12 +460,20 @@ class UserManager:
             RESET_VERIFY_TOKEN_LIFETIME_MINUTES,
         )
 
-        logger.debug(
-            "password_reset_requested",
-            user_id=user.id,
-            reset_token=token,
-            unstructured_message=f"User {user.id} has forgot their password. Reset token: {token}",
-        )
+        if not self.email.smtp_server:
+            logger.debug(
+                "password_reset_requested",
+                user_id=user.id,
+                user_email=user.email,
+                reset_token=token,
+                unstructured_message=f"User {user.id} has forgot their password. Reset token: {token}",
+            )
+        else:
+            logger.debug(
+                "password_reset_requested",
+                user_id=user.id,
+                user_email=user.email,
+            )
         await self.email.send_user_forgot_password(
             user.email, token, request and request.headers
         )
