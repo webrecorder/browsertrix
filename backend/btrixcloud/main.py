@@ -45,7 +45,12 @@ API_PREFIX = "/api"
 
 OPENAPI_URL = API_PREFIX + "/openapi.json"
 
-app_root = FastAPI(docs_url=None, redoc_url=None, OPENAPI_URL=OPENAPI_URL)
+app_root = FastAPI(
+    docs_url=None,
+    redoc_url=None,
+    OPENAPI_URL=OPENAPI_URL,
+    version=__version__,
+)
 
 app_root.middleware("http")(create_request_logging_middleware(logger))
 
