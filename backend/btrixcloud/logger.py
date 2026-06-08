@@ -224,7 +224,7 @@ class DevFormatter(logging.Formatter):
                 extra_parts.append(f"{field}={val}")
         for attr_name, attr_value in sorted(record.__dict__.items()):
             if attr_name.startswith("btrix_") and attr_name != "btrix_extra":
-                extra_parts.append(f"{attr_name[6:]}={attr_value}")
+                extra_parts.append(f"{attr_name[6:]}={attr_value!r}")
 
         if extra_parts:
             main_msg += "  " + " ".join(extra_parts)
