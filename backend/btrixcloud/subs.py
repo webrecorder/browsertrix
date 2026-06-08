@@ -52,7 +52,7 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .users import UserManager
 from .utils import dt_now, get_origin, is_bool, run_async_task
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 # if set, will enable this api
 subscriptions_enabled = is_bool(os.environ.get("BILLING_ENABLED"))

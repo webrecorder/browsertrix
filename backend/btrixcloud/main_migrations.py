@@ -10,7 +10,7 @@ from .logger import init_logging
 from .db import ensure_feature_version, update_and_prepare_db
 from .ops import init_ops
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 # ============================================================================

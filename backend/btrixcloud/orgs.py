@@ -130,7 +130,7 @@ else:
     BackgroundJobOps = UserManager = PageOps = FileUploadOps = CrawlManager = object
 
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 

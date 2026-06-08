@@ -9,7 +9,7 @@ import structlog
 from btrixcloud.k8sapi import K8sAPI
 from btrixcloud.migrations import BaseMigration
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 MIGRATION_VERSION = "0011"

@@ -27,7 +27,7 @@ from .pagination import DEFAULT_PAGE_SIZE
 from .users import UserManager
 from .utils import dt_now, is_bool
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 # ============================================================================

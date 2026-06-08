@@ -54,7 +54,7 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import date_to_str, dt_now, get_origin, run_async_task
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .background_jobs import BackgroundJobOps

@@ -11,7 +11,7 @@ from fastapi import HTTPException
 from .models import CrawlLogLine, Organization
 from .pagination import DEFAULT_PAGE_SIZE
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .orgs import OrgOps

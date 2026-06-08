@@ -39,7 +39,7 @@ from .utils import is_bool, register_exit_handler, run_async_task
 from .version import __version__
 from .webhooks import init_event_webhooks_api
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 API_PREFIX = "/api"
 

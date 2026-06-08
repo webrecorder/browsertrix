@@ -11,7 +11,7 @@ from .operator import init_operator_api
 from .ops import init_ops
 from .utils import register_exit_handler
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 app_root = FastAPI()

@@ -32,7 +32,7 @@ else:
     StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = PageOps = object
 
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 # ============================================================================

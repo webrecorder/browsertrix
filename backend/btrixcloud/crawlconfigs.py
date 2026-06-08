@@ -111,7 +111,7 @@ ALLOWED_SORT_KEYS = (
 
 DEFAULT_PROXY_ID: str | None = os.environ.get("DEFAULT_PROXY_ID")
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 # ============================================================================
