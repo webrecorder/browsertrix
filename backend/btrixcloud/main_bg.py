@@ -34,7 +34,7 @@ async def main():
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
         logger.critical(
             "kubernetes_not_detected",
-            unstructured_message=(
+            message=(
                 "Sorry, the Browsertrix Backend must be run inside a Kubernetes environment. "
                 "Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
             ),
