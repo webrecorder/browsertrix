@@ -36,7 +36,10 @@ export class Button extends TailwindElement {
   label?: string;
 
   @property({ type: String })
-  href?: string;
+  href?: HTMLAnchorElement["href"];
+
+  @property({ type: String })
+  target?: HTMLAnchorElement["target"];
 
   @property({ type: String })
   download?: string;
@@ -108,6 +111,7 @@ export class Button extends TailwindElement {
       )}
       ?disabled=${this.disabled}
       href=${ifDefined(this.href)}
+      target=${ifDefined(this.target)}
       download=${ifDefined(this.download)}
       aria-label=${ifDefined(this.label)}
       @click=${this.handleClick}
