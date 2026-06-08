@@ -181,6 +181,41 @@ def _json_default(obj):
     return repr(obj)
 
 
+# Attributes that are part of every LogRecord or already handled explicitly.
+# Anything else on the record is treated as an extra field.
+_IGNORED_RECORD_ATTRS = frozenset({
+    "args",
+    "asctime",
+    "created",
+    "exc_info",
+    "exc_text",
+    "filename",
+    "funcName",
+    "levelname",
+    "levelno",
+    "lineno",
+    "message",
+    "module",
+    "msecs",
+    "msg",
+    "name",
+    "pathname",
+    "process",
+    "processName",
+    "relativeCreated",
+    "stack_info",
+    "taskName",
+    "thread",
+    "threadName",
+    # ContextFilter fields are handled explicitly
+    "request_id",
+    "oid",
+    "user_id",
+    # Internal intermediate storage
+    "btrix_extra",
+})
+
+
 class JSONFormatter(logging.Formatter):
     """Emit log records as flat JSON objects on stdout."""
 
@@ -200,7 +235,12 @@ class JSONFormatter(logging.Formatter):
                 log_entry[field] = val
         for attr_name, attr_value in record.__dict__.items():
             if attr_name.startswith("btrix_") and attr_name != "btrix_extra":
-                log_entry[attr_name[6:]] = attr_value
+                key = attr_name[6:]
+                if key not in log_entry:
+                    log_entry[key] = attr_value
+            elif attr_name not in _IGNORED_RECORD_ATTRS:
+                if attr_name not in log_entry:
+                    log_entry[attr_name] = attr_value
         if record.exc_info and record.exc_info[1]:
             log_entry["exception"] = self.formatException(record.exc_info)
         return json.dumps(log_entry, default=_json_default)
@@ -225,6 +265,8 @@ class DevFormatter(logging.Formatter):
         for attr_name, attr_value in sorted(record.__dict__.items()):
             if attr_name.startswith("btrix_") and attr_name != "btrix_extra":
                 extra_parts.append(f"{attr_name[6:]}={attr_value!r}")
+            elif attr_name not in _IGNORED_RECORD_ATTRS:
+                extra_parts.append(f"{attr_name}={attr_value!r}")
 
         if extra_parts:
             main_msg += "  " + " ".join(extra_parts)
@@ -239,7 +281,7 @@ class DevFormatter(logging.Formatter):
 
 
 def init_logging() -> None:
-    """Configure the 'btrixcloud' logger hierarchy.
+    """Configure the root logger and the 'btrixcloud' logger hierarchy.
 
     - Log format: JSON if LOG_FORMAT=json, else human-readable text (dev format).
     - Log level from LOG_LEVEL env var (default DEBUG).
@@ -259,10 +301,6 @@ def init_logging() -> None:
     ):
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
-    btrix_logger = logging.getLogger("btrixcloud")
-    btrix_logger.setLevel(level)
-    btrix_logger.propagate = False
-
     handler = logging.StreamHandler(sys.stdout)
     handler.addFilter(ContextFilter())
 
@@ -271,5 +309,24 @@ def init_logging() -> None:
     else:
         handler.setFormatter(DevFormatter(DEV_FORMAT, datefmt="%Y-%m-%d %H:%M:%S"))
 
+    # Attach a single handler to the root logger so that every library
+    # (including uvicorn, gunicorn, fastapi, motor, etc.) emits through
+    # the same formatter.
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
+    root_logger.handlers.clear()
+    root_logger.addHandler(handler)
+
+    # Btrixcloud logger delegates to the root handler.
+    btrix_logger = logging.getLogger("btrixcloud")
+    btrix_logger.setLevel(level)
     btrix_logger.handlers.clear()
-    btrix_logger.addHandler(handler)
+    btrix_logger.propagate = True
+
+    # Uvicorn and Gunicorn install their own plain-text handlers.
+    # Remove them so their logs flow to the root handler instead.
+    for name in list(logging.root.manager.loggerDict.keys()):
+        if name.startswith(("uvicorn", "gunicorn")):
+            logger = logging.getLogger(name)
+            logger.handlers.clear()
+            logger.propagate = True
