@@ -6,7 +6,6 @@ Crawl Config API handling
 
 import asyncio
 import json
-import logging
 import os
 import re
 import urllib.parse
@@ -26,6 +25,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+import structlog
 import aiohttp
 import pymongo
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
@@ -111,7 +111,7 @@ ALLOWED_SORT_KEYS = (
 
 DEFAULT_PROXY_ID: str | None = os.environ.get("DEFAULT_PROXY_ID")
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # ============================================================================

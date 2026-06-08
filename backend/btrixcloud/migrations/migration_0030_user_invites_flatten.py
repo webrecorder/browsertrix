@@ -2,13 +2,13 @@
 Migration 0030 - Move user invites from user.invites to invites collection
 """
 
-import logging
+import structlog
 
 from btrixcloud.invites import get_hash
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import InvitePending
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0030"
 

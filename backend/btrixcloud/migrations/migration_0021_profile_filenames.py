@@ -2,12 +2,12 @@
 Migration 0021 - Profile filenames
 """
 
-import logging
+import structlog
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Profile
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0021"
 

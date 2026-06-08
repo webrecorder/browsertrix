@@ -130,8 +130,8 @@ async def test_send_user_validation(email_sender, caplog):
     info_record = next(
         r for r in caplog.records if r.getMessage() == "email_created_not_sent_no_smtp"
     )
-    assert info_record.btrix_extra["template_name"] == "verifyEmail"
-    assert info_record.btrix_extra["receiver"] == test_email
+    assert info_record.template_name == "verifyEmail"
+    assert info_record.receiver == test_email
 
 
 @pytest.mark.asyncio
@@ -155,8 +155,8 @@ async def test_send_user_invite_new_user(
     info_record = next(
         r for r in caplog.records if r.getMessage() == "email_created_not_sent_no_smtp"
     )
-    assert info_record.btrix_extra["template_name"] == "invite"
-    assert info_record.btrix_extra["receiver"] == sample_invite.email
+    assert info_record.template_name == "invite"
+    assert info_record.receiver == sample_invite.email
 
 
 @pytest.mark.asyncio
@@ -180,8 +180,8 @@ async def test_send_user_invite_existing_user(
     info_record = next(
         r for r in caplog.records if r.getMessage() == "email_created_not_sent_no_smtp"
     )
-    assert info_record.btrix_extra["template_name"] == "invite"
-    assert info_record.btrix_extra["receiver"] == sample_invite.email
+    assert info_record.template_name == "invite"
+    assert info_record.receiver == sample_invite.email
 
 
 @pytest.mark.asyncio
@@ -202,8 +202,8 @@ async def test_send_password_reset(email_sender, caplog):
     info_record = next(
         r for r in caplog.records if r.getMessage() == "email_created_not_sent_no_smtp"
     )
-    assert info_record.btrix_extra["template_name"] == "passwordReset"
-    assert info_record.btrix_extra["receiver"] == test_email
+    assert info_record.template_name == "passwordReset"
+    assert info_record.receiver == test_email
 
 
 @pytest.mark.asyncio
@@ -230,8 +230,8 @@ async def test_send_background_job_failed(email_sender, sample_org, caplog):
     info_record = next(
         r for r in caplog.records if r.getMessage() == "email_created_not_sent_no_smtp"
     )
-    assert info_record.btrix_extra["template_name"] == "failedBgJob"
-    assert info_record.btrix_extra["receiver"] == "admin@example.com"
+    assert info_record.template_name == "failedBgJob"
+    assert info_record.receiver == "admin@example.com"
 
 
 @pytest.mark.asyncio
@@ -253,8 +253,8 @@ async def test_send_subscription_cancellation(email_sender, sample_org, caplog):
     info_record = next(
         r for r in caplog.records if r.getMessage() == "email_created_not_sent_no_smtp"
     )
-    assert info_record.btrix_extra["template_name"] == "subscriptionCancel"
-    assert info_record.btrix_extra["receiver"] == "admin@example.com"
+    assert info_record.template_name == "subscriptionCancel"
+    assert info_record.receiver == "admin@example.com"
 
 
 @pytest.mark.asyncio
@@ -324,4 +324,4 @@ async def test_invite_with_superuser_flag(email_sender, sample_org, caplog):
     info_record = next(
         r for r in caplog.records if r.getMessage() == "email_created_not_sent_no_smtp"
     )
-    assert info_record.btrix_extra["template_name"] == "invite"
+    assert info_record.template_name == "invite"

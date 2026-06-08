@@ -2,16 +2,16 @@
 Migration 0039 -- collection slugs
 """
 
-import logging
 from uuid import UUID
 
+import structlog
 import pymongo
 from pymongo.errors import DuplicateKeyError
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import case_insensitive_collation, slug_from_name
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0039"
 

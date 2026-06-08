@@ -5,12 +5,12 @@ Migration 0007 - Workflows changes
 - Re-calculate workflow crawl stats to populate crawlSuccessfulCount
 """
 
-import logging
+import structlog
 
 from btrixcloud.crawlconfigs import stats_recompute_all
 from btrixcloud.migrations import BaseMigration
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 MIGRATION_VERSION = "0007"

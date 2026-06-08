@@ -1,7 +1,6 @@
 """Profile Management"""
 
 import json
-import logging
 import os
 from typing import (
     TYPE_CHECKING,
@@ -19,6 +18,7 @@ from typing import (
 from urllib.parse import urlencode
 from uuid import UUID, uuid4
 
+import structlog
 import aiohttp
 import pymongo
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -52,7 +52,7 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import case_insensitive_collation, dt_now, run_async_task, str_to_date
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .background_jobs import BackgroundJobOps

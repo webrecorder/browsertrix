@@ -1,14 +1,14 @@
-import logging
 import os
 import time
 
+import structlog
 import pytest
 import requests
 
 from .conftest import API_PREFIX
 from .utils import read_in_chunks
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 

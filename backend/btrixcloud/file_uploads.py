@@ -1,6 +1,5 @@
 """user-uploaded files"""
 
-import logging
 import os
 import tempfile
 from datetime import timedelta
@@ -17,6 +16,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+import structlog
 import aiohttp
 import pymongo
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -38,7 +38,7 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import CHUNK_SIZE, StorageOps
 from .utils import dt_now, is_url
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .orgs import OrgOps

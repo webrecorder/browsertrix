@@ -1,9 +1,9 @@
 """K8S API Access"""
 
-import logging
 import os
 from typing import Any, List, Optional
 
+import structlog
 import yaml
 from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
@@ -19,7 +19,7 @@ from redis.asyncio.client import Redis
 
 from .utils import dt_now, get_templates_dir
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # ============================================================================

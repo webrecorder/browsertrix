@@ -2,7 +2,6 @@
 FastAPI user handling (via fastapi-users)
 """
 
-import logging
 import os
 from typing import (
     TYPE_CHECKING,
@@ -16,6 +15,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+import structlog
 from fastapi import (
     APIRouter,
     Body,
@@ -70,7 +70,7 @@ if TYPE_CHECKING:
 else:
     InviteOps = EmailSender = OrgOps = BaseCrawlOps = CrawlConfigOps = object
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # ============================================================================

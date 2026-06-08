@@ -2,12 +2,12 @@
 BaseMigration class to subclass in each migration module
 """
 
-import logging
 import os
 
+import structlog
 from pymongo.errors import OperationFailure
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class MigrationError(Exception):

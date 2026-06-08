@@ -2,14 +2,14 @@
 Migration 0018 - Store crawl and workflow userName directly in db
 """
 
-import logging
+import structlog
 
 from btrixcloud.emailsender import EmailSender
 from btrixcloud.invites import init_invites
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.users import init_user_manager
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 MIGRATION_VERSION = "0018"

@@ -1,6 +1,5 @@
 """k8s background jobs"""
 
-import logging
 import os
 import secrets
 from datetime import datetime
@@ -18,6 +17,7 @@ from typing import (
 from urllib.parse import urlsplit
 from uuid import UUID
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException
 
 from .crawlmanager import CrawlManager
@@ -46,7 +46,7 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import StorageOps
 from .utils import dt_now, run_async_task
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .basecrawls import BaseCrawlOps

@@ -2,12 +2,12 @@
 Migration 0028 - Page files and errors
 """
 
-import logging
+import structlog
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Crawl, Page
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 MIGRATION_VERSION = "0028"

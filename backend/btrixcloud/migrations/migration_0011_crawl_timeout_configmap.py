@@ -2,13 +2,14 @@
 Migration 0011 - Remove None CRAWL_TIMEOUT values from configmaps
 """
 
-import logging
 import os
+
+import structlog
 
 from btrixcloud.k8sapi import K8sAPI
 from btrixcloud.migrations import BaseMigration
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 MIGRATION_VERSION = "0011"

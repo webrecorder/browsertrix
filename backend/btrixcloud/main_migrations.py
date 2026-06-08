@@ -1,15 +1,16 @@
 """entrypoint module for init_container, handles db migration"""
 
 import asyncio
-import logging
 import os
 import sys
+
+import structlog
 
 from .logger import init_logging
 from .db import ensure_feature_version, update_and_prepare_db
 from .ops import init_ops
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # ============================================================================

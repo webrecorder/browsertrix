@@ -1,10 +1,10 @@
-import logging
 import os
 import subprocess
 import time
 from typing import Dict
 from uuid import UUID
 
+import structlog
 import pytest
 import requests
 
@@ -12,7 +12,7 @@ import btrixcloud.logger
 
 from .utils import read_in_chunks
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 HOST_PREFIX = "http://127.0.0.1:30870"

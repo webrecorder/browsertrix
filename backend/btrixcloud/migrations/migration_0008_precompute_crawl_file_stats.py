@@ -2,12 +2,12 @@
 Migration 0008 - Precomputing crawl file stats
 """
 
-import logging
+import structlog
 
 from btrixcloud.crawls import recompute_crawl_file_count_and_size
 from btrixcloud.migrations import BaseMigration
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 MIGRATION_VERSION = "0008"

@@ -2,14 +2,13 @@
 Migration 0055 - Recompute workflow crawl stats
 """
 
-import logging
-
+import structlog
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from btrixcloud.crawlconfigs import stats_recompute_all
 from btrixcloud.migrations import BaseMigration
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0055"
 
