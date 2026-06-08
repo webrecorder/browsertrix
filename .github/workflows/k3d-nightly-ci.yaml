@@ -137,7 +137,7 @@ jobs:
 
       - name: Print Emails Logs
         if: ${{ always() }}
-        run: kubectl logs svc/browsertrix-cloud-emails -c api
+        run: kubectl logs svc/browsertrix-cloud-emails -c emails
 
       - name: Print K8S Events
         if: ${{ always() }}
