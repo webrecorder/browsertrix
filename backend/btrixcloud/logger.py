@@ -61,9 +61,21 @@ def clear_log_context(tokens: Mapping[str, Token] | None = None) -> None:
 
 def create_request_logging_middleware(logger):
     """Return an ASGI middleware that logs every request with
-    method, path, status, duration, and request_id."""
+    method, path, status, duration, request_id, client_addr, and
+    http_version."""
+
+    def _get_client_addr(request):
+        client = request.client
+        if client:
+            return f"{client.host}:{client.port}"
+        return ""
+
+    SKIP_PATHS = ("/healthz", "/healthzStartup")
 
     async def request_logging_middleware(request, call_next):
+        if request.url.path in SKIP_PATHS:
+            return await call_next(request)
+
         clear_contextvars()
         request_id = uuid4().hex[:8]
         bind_contextvars(request_id=request_id)
@@ -76,6 +88,8 @@ def create_request_logging_middleware(logger):
                 "http_unhandled_exception",
                 http_method=request.method,
                 http_path=request.url.path,
+                client_addr=_get_client_addr(request),
+                http_version=request.scope.get("http_version", ""),
             )
             raise e
         finally:
@@ -86,6 +100,8 @@ def create_request_logging_middleware(logger):
                 http_path=request.url.path,
                 http_status=response.status_code,
                 duration=duration,
+                client_addr=_get_client_addr(request),
+                http_version=request.scope.get("http_version", ""),
             )
             unbind_contextvars("request_id")
             clear_log_context()
