@@ -14,6 +14,8 @@ import logging
 import os
 import sys
 import time
+from collections.abc import Mapping
+from contextvars import Token
 from uuid import UUID, uuid4
 
 import structlog
@@ -21,6 +23,7 @@ from fastapi.responses import JSONResponse
 from structlog.contextvars import (
     bind_contextvars,
     clear_contextvars,
+    reset_contextvars,
     unbind_contextvars,
 )
 from structlog.typing import Processor
@@ -28,7 +31,7 @@ from structlog.typing import Processor
 
 def set_log_context(
     *, oid: str | UUID = "", user_id: str | UUID = ""
-) -> frozenset[str]:
+) -> Mapping[str, Token]:
     """Set org and user context for the current request scope.
 
     Returns the keys that were bound so they can be unbound later.
@@ -39,18 +42,19 @@ def set_log_context(
     if user_id:
         kwargs["user_id"] = str(user_id)
     if kwargs:
-        bind_contextvars(**kwargs)
-    return frozenset(kwargs.keys())
+        tokens = bind_contextvars(**kwargs)
+        return tokens
+    return {}
 
 
-def clear_log_context(keys: frozenset[str] | None = None) -> None:
+def clear_log_context(tokens: Mapping[str, Token] | None = None) -> None:
     """Clear org and user context.
 
     If keys are provided, only those keys are unbound. Otherwise all
     structlog context variables are cleared.
     """
-    if keys is not None:
-        unbind_contextvars(*keys)
+    if tokens is not None:
+        reset_contextvars(**tokens)
     else:
         clear_contextvars()
 
