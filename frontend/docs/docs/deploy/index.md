@@ -8,7 +8,9 @@
 
     Versions of Browsertrix >=v1.15.0 and <v1.22.8 are vulnerable to a security issue that allows users with crawler permissions to access all data on the Browsertrix instance. If you are running an older version, upgrade to v1.22.8 or later to mitigate this issue, or [contact us for assistance](mailto:support@webrecorder.net) if you are unable to upgrade.
 
-    Learn more about this security vulnerability and how to upgrade in the [security advisory](https://github.com/webrecorder/browsertrix/security/advisories/GHSA-47vv-v544-r985).
+    We also recommend upgrading Browsertrix Crawler to v1.13.0 or later if your instance is pinned to an older version.
+
+    Learn more about this security vulnerability and how to upgrade in the [security advisory](https://github.com/webrecorder/browsertrix/security/advisories/GHSA-47vv-v544-r985).    
 
 Browsertrix is designed to be a cloud-native application running in Kubernetes.
 
