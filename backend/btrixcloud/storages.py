@@ -65,7 +65,7 @@ if TYPE_CHECKING:
 else:
     OrgOps = CrawlManager = object
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 CHUNK_SIZE = 1024 * 256
 

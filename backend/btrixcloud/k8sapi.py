@@ -19,7 +19,7 @@ from redis.asyncio.client import Redis
 
 from .utils import dt_now, get_templates_dir
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 # ============================================================================

@@ -8,7 +8,7 @@ from btrixcloud.invites import get_hash
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import InvitePending
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0030"
 

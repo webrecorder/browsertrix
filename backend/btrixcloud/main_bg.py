@@ -11,7 +11,7 @@ from .logger import init_logging, set_log_context
 from .models import BgJobType
 from .ops import init_ops
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 job_type = os.environ.get("BG_JOB_TYPE")
 oid = os.environ.get("OID")

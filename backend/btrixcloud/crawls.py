@@ -88,7 +88,7 @@ from .utils import (
     validate_regexes,
 )
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MAX_MATCH_SIZE = 500000
 DEFAULT_RANGE_LIMIT = 50

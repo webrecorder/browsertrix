@@ -51,7 +51,7 @@ CURR_DB_VERSION = "0058"
 
 MIN_DB_VERSION = 7.0
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 # ============================================================================

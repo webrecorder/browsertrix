@@ -8,7 +8,7 @@ import requests
 from .conftest import API_PREFIX
 from .utils import read_in_chunks
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 

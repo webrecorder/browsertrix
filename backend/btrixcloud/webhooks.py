@@ -29,7 +29,7 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now, run_async_task
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .crawls import CrawlOps
@@ -165,7 +165,7 @@ class EventWebhookOps:
             logger.info(
                 "webhook_url_not_configured_for_event",
                 notification_id=notification.id,
-                event=notification.event,
+                event_type=notification.event,
                 oid=org.id,
                 unstructured_message=(
                     f"Webhook URL for event {notification.event} not configured, skipping"
@@ -197,7 +197,7 @@ class EventWebhookOps:
             logger.exception(
                 "webhook_notification_failed",
                 notification_id=notification.id,
-                event=notification.event,
+                event_type=notification.event,
                 oid=org.id,
                 unstructured_message="Webhook notification failed",
             )
@@ -223,7 +223,7 @@ class EventWebhookOps:
                 "crawl_not_found_for_webhook",
                 crawl_id=crawl_id,
                 oid=org.id,
-                event=event,
+                event_type=event,
                 body=body,
                 unstructured_message=f"Crawl {crawl_id} not found, skipping event webhook",
             )

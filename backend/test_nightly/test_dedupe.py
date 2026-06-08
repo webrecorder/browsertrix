@@ -8,7 +8,7 @@ import requests
 
 from .conftest import API_PREFIX
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 MAX_ATTEMPTS = 24

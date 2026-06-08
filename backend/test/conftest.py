@@ -12,7 +12,7 @@ import btrixcloud.logger
 
 from .utils import read_in_chunks
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 HOST_PREFIX = "http://127.0.0.1:30870"

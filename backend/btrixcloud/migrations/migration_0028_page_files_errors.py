@@ -7,7 +7,7 @@ import structlog
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Crawl, Page
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 MIGRATION_VERSION = "0028"

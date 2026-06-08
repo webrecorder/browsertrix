@@ -23,7 +23,7 @@ from pymongo.collation import Collation
 from pymongo.errors import DuplicateKeyError
 from slugify import slugify
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 default_origin = os.environ.get("APP_ORIGIN", "")

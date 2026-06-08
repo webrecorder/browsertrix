@@ -89,7 +89,7 @@ else:
         object
     )
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 THUMBNAIL_MAX_SIZE = 2_000_000
 
