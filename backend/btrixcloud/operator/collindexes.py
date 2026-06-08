@@ -31,7 +31,7 @@ from btrixcloud.utils import (
 from .baseoperator import BaseOperator
 from .models import BTRIX_API, CJS, JOB, POD, MCBaseRequest, MCSyncData
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 # Threshold used / capacity at which a resize should happen
 USED_DISK_THRESHOLD = 0.70

@@ -53,7 +53,7 @@ from .models import (
     StopReason,
 )
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 METRICS_API = "metrics.k8s.io/v1beta1"

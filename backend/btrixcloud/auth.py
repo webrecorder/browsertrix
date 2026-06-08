@@ -25,7 +25,7 @@ from .logger import clear_log_context, set_log_context
 from .models import User, UserOut
 from .utils import dt_now, run_async_task
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid4().hex)

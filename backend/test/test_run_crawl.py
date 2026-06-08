@@ -16,7 +16,7 @@ import requests
 from .conftest import API_PREFIX, FINISHED_STATES, HOST_PREFIX
 from .test_collections import UPDATED_NAME as COLLECTION_NAME
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 wacz_path = None
 wacz_size = None

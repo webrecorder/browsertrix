@@ -11,7 +11,7 @@ from .utils import (
     verify_file_replicated,
 )
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 

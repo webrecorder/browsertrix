@@ -19,7 +19,7 @@ from .models import (
 )
 from .utils import date_to_str, dt_now, scale_from_browser_windows
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 # ============================================================================
 DEFAULT_PROXY_ID: str = os.environ.get("DEFAULT_PROXY_ID", "")

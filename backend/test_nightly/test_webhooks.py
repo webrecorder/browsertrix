@@ -10,7 +10,7 @@ import requests
 from .conftest import API_PREFIX
 from .utils import read_in_chunks
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 _webhook_event_id = None
 

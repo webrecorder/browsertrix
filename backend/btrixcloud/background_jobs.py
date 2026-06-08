@@ -46,7 +46,7 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import StorageOps
 from .utils import dt_now, run_async_task
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .basecrawls import BaseCrawlOps

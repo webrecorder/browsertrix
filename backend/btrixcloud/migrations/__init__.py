@@ -7,7 +7,7 @@ import os
 import structlog
 from pymongo.errors import OperationFailure
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 class MigrationError(Exception):

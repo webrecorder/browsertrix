@@ -10,7 +10,7 @@ import structlog
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import dt_now
 
-logger = structlog.get_logger(__name__)
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0058"
 
