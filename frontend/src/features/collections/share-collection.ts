@@ -68,26 +68,31 @@ export class ShareCollection extends BtrixElement {
 
     return html`
       <div class="flex items-center gap-2">
-        <btrix-copy-button
-          name="link"
-          size="medium"
-          .getValue=${() => this.shareLink}
-          content=${msg("Copy Public Link")}
-          @click=${() => {
-            void this.clipboardController.copy(this.shareLink);
+        ${when(
+          this.context === "public",
+          () => html`
+            <btrix-copy-button
+              name="link"
+              size="medium"
+              .getValue=${() => this.shareLink}
+              content=${msg("Copy Public Link")}
+              @click=${() => {
+                void this.clipboardController.copy(this.shareLink);
 
-            if (
-              this.collection &&
-              this.collection.access === CollectionAccess.Public
-            ) {
-              track(AnalyticsTrackEvent.CopyShareCollectionLink, {
-                org_slug: this.orgSlug,
-                collection_slug: this.collection.slug,
-                logged_in: !!this.authState,
-              });
-            }
-          }}
-        ></btrix-copy-button>
+                if (
+                  this.collection &&
+                  this.collection.access === CollectionAccess.Public
+                ) {
+                  track(AnalyticsTrackEvent.CopyShareCollectionLink, {
+                    org_slug: this.orgSlug,
+                    collection_slug: this.collection.slug,
+                    logged_in: !!this.authState,
+                  });
+                }
+              }}
+            ></btrix-copy-button>
+          `,
+        )}
         <sl-tooltip content=${msg("View Embed Code")}>
           <sl-icon-button
             class="text-base"

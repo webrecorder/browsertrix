@@ -20,6 +20,10 @@ import {
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type {
+  EditableTextFieldChangeEvent,
+  EditableTextFieldInputEvent,
+} from "@/components/ui/editable-text-field";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
@@ -42,6 +46,7 @@ import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
 import { panelBody, panelHeader } from "@/layouts/panel";
 import { updatingOverlay } from "@/layouts/updatingOverlay";
+import { OrgTab, RouteNamespace } from "@/routes";
 import { getIndexErrorMessage } from "@/strings/collections/index-error";
 import {
   type APIPaginatedList,
@@ -67,6 +72,7 @@ import { formatRwpTimestamp } from "@/utils/replay";
 import { richText } from "@/utils/rich-text";
 import slugifyStrict from "@/utils/slugify";
 import { tw } from "@/utils/tailwind";
+import { toShortUrl } from "@/utils/url-helpers";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_ITEMS_PAGE_SIZE = 20;
@@ -105,6 +111,9 @@ export class CollectionDetail extends BtrixElement {
 
   @state()
   private rwpDoFullReload = false;
+
+  @state()
+  private slugPreview = "";
 
   @consume({ context: viewStateContext })
   viewState?: ViewStateContext;
@@ -234,65 +243,69 @@ export class CollectionDetail extends BtrixElement {
     };
 
     return html`
-      <div class="mb-7 flex flex-wrap justify-between gap-y-3 align-baseline">
-        ${this.renderBreadcrumbs()}
-        ${this.collection &&
-        (this.collection.access === CollectionAccess.Unlisted ||
-          this.collection.access === CollectionAccess.Public)
-          ? html`
-              <sl-button
-                href=${this.shareLink}
-                size="small"
-                variant="text"
-                class="-mx-3 -mb-3.5 -mt-1.5"
-              >
-                <sl-icon
-                  slot="prefix"
-                  name=${this.collection.access === CollectionAccess.Unlisted
-                    ? SelectCollectionAccess.Options.unlisted.icon
-                    : SelectCollectionAccess.Options.public.icon}
-                ></sl-icon>
-                ${this.collection.access === CollectionAccess.Unlisted
-                  ? msg("Go to Unlisted Page")
-                  : msg("Go to Public Page")}
-              </sl-button>
-            `
-          : nothing}
-      </div>
+      <div class="mb-7">${this.renderBreadcrumbs()}</div>
       <header
         class=${clsx(
-          tw`mt-5 grid gap-3 lg:grid-cols-[1fr_auto]`,
+          tw`grid items-end gap-3 lg:grid-cols-[1fr_auto]`,
           this.isCrawler && tw`min-h-16`,
         )}
       >
-        <div class="flex items-center gap-2.5">
-          ${this.renderAccessIcon()}${pageTitle(
-            this.isCrawler
-              ? html`<btrix-editable-text-field
-                  class="-m-4 overflow-hidden p-4"
-                  minLength=${1}
-                  maxLength=${COLLECTION_NAME_MAX_LENGTH}
-                  .value=${this.collection?.name}
-                  placeholder=${msg("Collection name")}
-                  @btrix-change=${(e: BtrixChangeEvent<string>) => {
-                    void this.updateName(e.detail.value);
-                  }}
-                  extraWidth=${24}
-                >
-                  <sl-icon
-                    slot="suffix"
-                    name="pencil"
-                    class="ml-2 size-4"
-                    aria-label=${msg("Edit Collection Name")}
-                  ></sl-icon>
-                </btrix-editable-text-field>`
-              : this.collection?.name,
-            tw`mb-2 h-6 w-60`,
-            tw`grid`,
+        <div
+          class=${clsx(
+            tw`overflow-hidden`,
+            this.isCrawler && tw`-m-1 -mt-1.5 p-1`,
           )}
+        >
+          <div
+            class=${clsx(
+              tw`flex items-center gap-2.5`,
+              this.isCrawler ? tw`mb-1.5` : tw`mb-2`,
+            )}
+          >
+            ${pageTitle(
+              this.isCrawler
+                ? html`<btrix-editable-text-field
+                    class="-m-4 overflow-hidden p-4"
+                    minLength=${1}
+                    maxLength=${COLLECTION_NAME_MAX_LENGTH}
+                    .value=${this.collection?.name}
+                    placeholder=${msg("Enter collection name")}
+                    @btrix-input=${(e: EditableTextFieldInputEvent) => {
+                      e.stopPropagation();
+
+                      const { value } = e.detail;
+
+                      this.slugPreview = value ? slugifyStrict(value) : "";
+                    }}
+                    @btrix-change=${(e: EditableTextFieldChangeEvent) => {
+                      e.stopPropagation();
+
+                      const { value } = e.detail;
+
+                      if (value === this.collection?.name) {
+                        this.slugPreview = "";
+                      }
+
+                      void this.updateName(value);
+                    }}
+                    extraWidth=${24}
+                  >
+                    <sl-icon
+                      slot="suffix"
+                      name="pencil"
+                      class="ml-2 size-3.5 shrink-0"
+                      aria-label=${msg("Edit Collection Name")}
+                    ></sl-icon>
+                  </btrix-editable-text-field>`
+                : this.collection?.name,
+              tw`mb-2 h-6 w-60`,
+              tw`grid`,
+            )}
+          </div>
+          <div class="relative z-10">${this.renderAccessDetails()}</div>
         </div>
         <div
-          class="-mx-3 -mb-3 -mt-3 grid overflow-clip px-3 pb-3 lg:col-span-2"
+          class="-mx-3 -mb-5 -mt-2 grid overflow-clip px-3 pb-3 lg:col-span-2"
         >
           ${this.isCrawler
             ? when(
@@ -312,8 +325,8 @@ export class CollectionDetail extends BtrixElement {
                     <sl-icon
                       slot="suffix"
                       name="pencil"
-                      class="ml-2 size-3"
-                      aria-label=${msg("Edit Collection Name")}
+                      class="ml-2 size-3 shrink-0"
+                      aria-label=${msg("Edit Collection Caption")}
                     ></sl-icon>
                   </btrix-editable-text-field>`,
               )
@@ -321,7 +334,7 @@ export class CollectionDetail extends BtrixElement {
         </div>
 
         <div
-          class="mb-0.5 ml-auto flex flex-shrink-0 flex-wrap items-center justify-end gap-2 lg:col-start-2 lg:row-start-1"
+          class="ml-auto flex flex-shrink-0 flex-wrap items-center justify-end gap-2 lg:col-start-2 lg:row-start-1"
         >
           <btrix-share-collection
             orgSlug=${this.orgSlugState || ""}
@@ -626,106 +639,61 @@ export class CollectionDetail extends BtrixElement {
     `;
   }
 
+  private readonly renderAccessDetails = () => {
+    if (!this.collection) {
+      return html`<sl-skeleton class="h-4 w-12"></sl-skeleton>`;
+    }
+
+    const badge = html`<btrix-badge>
+      <sl-icon
+        name=${SelectCollectionAccess.Options[this.collection.access].icon}
+        class="mr-1.5"
+      ></sl-icon>
+      ${SelectCollectionAccess.Options[this.collection.access].label}
+    </btrix-badge>`;
+
+    const publicLink = () => {
+      const baseUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
+      const namespacedPath = `${RouteNamespace.PublicOrgs}/${this.viewState?.params.slug}/${OrgTab.Collections}`;
+      const slugPreview = this.slugPreview || this.collection?.slug || "";
+      const link = new URL(`${baseUrl}/${namespacedPath}/${slugPreview}`).href;
+
+      return html`<span class="break-all text-xs text-neutral-500">
+          <span>${toShortUrl(baseUrl, null)}</span
+          ><span title="/${namespacedPath}/">/.../</span
+          ><span
+            class=${clsx(
+              tw`break-all text-xs`,
+              this.slugPreview ? tw` text-blue-500` : tw`text-neutral-500`,
+            )}
+            >${slugPreview}</span
+          >
+        </span>
+        ${this.slugPreview
+          ? nothing
+          : html`<btrix-copy-button
+                name="link"
+                content=${msg("Copy Shareable Link")}
+                size="x-small"
+                value=${link}
+              ></btrix-copy-button>
+              <sl-tooltip content=${msg("Open in New Tab")}>
+                <btrix-button size="x-small" href=${link} target="_blank">
+                  <sl-icon name="arrow-up-right" class="size-2.5"></sl-icon>
+                </btrix-button>
+              </sl-tooltip>`}`;
+    };
+
+    return html`<div class="flex items-start gap-1.5">
+      ${badge}
+      ${when(this.collection.access !== CollectionAccess.Private, publicLink)}
+    </div>`;
+  };
+
   private readonly renderCaption = (text: string) =>
     richText(text, {
       linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
     });
-
-  private renderAccessIcon() {
-    return choose(this.collection?.access, [
-      [
-        CollectionAccess.Private,
-        () => html`
-          <sl-tooltip
-            content=${SelectCollectionAccess.Options[CollectionAccess.Private]
-              .label}
-          >
-            ${this.isCrawler
-              ? html` <sl-icon-button
-                  class="z-10 -mx-2 -mb-0.5 text-lg text-neutral-600"
-                  name=${SelectCollectionAccess.Options[
-                    CollectionAccess.Private
-                  ].icon}
-                  @click=${() => {
-                    this.openDialogName = "edit";
-                    this.editTab = "sharing";
-                  }}
-                ></sl-icon-button>`
-              : html`
-                  <sl-icon
-                    class="text-lg text-neutral-600"
-                    name=${SelectCollectionAccess.Options[
-                      CollectionAccess.Private
-                    ].icon}
-                  ></sl-icon>
-                `}
-          </sl-tooltip>
-        `,
-      ],
-      [
-        CollectionAccess.Unlisted,
-        () => html`
-          <sl-tooltip
-            content=${SelectCollectionAccess.Options[CollectionAccess.Unlisted]
-              .label}
-          >
-            ${this.isCrawler
-              ? html`
-                  <sl-icon-button
-                    class="z-10 -mx-2 -mb-0.5 text-lg text-neutral-600"
-                    name=${SelectCollectionAccess.Options[
-                      CollectionAccess.Unlisted
-                    ].icon}
-                    @click=${() => {
-                      this.openDialogName = "edit";
-                      this.editTab = "sharing";
-                    }}
-                  ></sl-icon-button>
-                `
-              : html`
-                  <sl-icon
-                    class="text-lg text-neutral-600"
-                    name=${SelectCollectionAccess.Options[
-                      CollectionAccess.Unlisted
-                    ].icon}
-                  ></sl-icon>
-                `}
-          </sl-tooltip>
-        `,
-      ],
-      [
-        CollectionAccess.Public,
-        () => html`
-          <sl-tooltip
-            content=${SelectCollectionAccess.Options[CollectionAccess.Public]
-              .label}
-          >
-            ${this.isCrawler
-              ? html`
-                  <sl-icon-button
-                    class="z-10 -mx-2 -mb-0.5 text-lg text-success-600"
-                    name=${SelectCollectionAccess.Options[
-                      CollectionAccess.Public
-                    ].icon}
-                    @click=${() => {
-                      this.openDialogName = "edit";
-                      this.editTab = "sharing";
-                    }}
-                  ></sl-icon-button>
-                `
-              : html`
-                  <sl-icon
-                    class="text-lg text-success-600"
-                    name=${SelectCollectionAccess.Options[
-                      CollectionAccess.Public
-                    ].icon}
-                  ></sl-icon>
-                `}
-          </sl-tooltip>
-        `,
-      ],
-    ]);
-  }
 
   private refreshReplay() {
     if (this.replayEmbed) {
@@ -1562,7 +1530,10 @@ export class CollectionDetail extends BtrixElement {
   }
 
   private async updateName(name: string) {
-    if (name === this.collection?.name) return;
+    if (name === this.collection?.name) {
+      return;
+    }
+
     try {
       await this.api.fetch<Collection>(
         `/orgs/${this.orgId}/collections/${this.collectionId}`,
@@ -1586,10 +1557,13 @@ export class CollectionDetail extends BtrixElement {
         this.collection = {
           ...this.collection,
           name,
+          slug: this.slugPreview || this.collection.slug || "",
         };
       }
 
-      void this.fetchCollection();
+      await this.fetchCollection();
+
+      this.slugPreview = "";
     } catch (err) {
       console.debug(err);
 
