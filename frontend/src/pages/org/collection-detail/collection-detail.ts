@@ -325,45 +325,7 @@ export class CollectionDetail extends BtrixElement {
             )}
           >
             ${pageTitle(
-              this.isCrawler
-                ? html`<btrix-editable-text-field
-                    class="-m-4 overflow-hidden p-4"
-                    minLength=${1}
-                    maxLength=${COLLECTION_NAME_MAX_LENGTH}
-                    .value=${this.collection?.name}
-                    placeholder=${msg("Enter collection name")}
-                    @btrix-input=${(e: EditableTextFieldInputEvent) => {
-                      e.stopPropagation();
-
-                      const { value } = e.detail;
-
-                      this.slugPreview = value ? slugifyStrict(value) : "";
-                    }}
-                    @btrix-change=${(e: EditableTextFieldChangeEvent) => {
-                      e.stopPropagation();
-
-                      const { value } = e.detail;
-
-                      if (value === this.collection?.name) {
-                        this.slugPreview = "";
-                      }
-
-                      void this.updateName(value);
-                    }}
-                    extraWidth=${24}
-                  >
-                    <span
-                      slot="suffix"
-                      class="ml-2 mt-0.5 inline-flex h-8 shrink-0 items-center"
-                    >
-                      <sl-icon
-                        name="pencil"
-                        class="size-3.5"
-                        aria-label=${msg("Edit Collection Name")}
-                      ></sl-icon>
-                    </span>
-                  </btrix-editable-text-field>`
-                : this.collection?.name,
+              when(this.collection, this.renderName),
               tw`mb-2 h-6 w-60`,
               tw`grid`,
             )}
@@ -758,6 +720,48 @@ export class CollectionDetail extends BtrixElement {
         }}
       ></btrix-select-collection-thumbnail>
     `;
+  };
+
+  private readonly renderName = (collection: Collection) => {
+    if (!this.isCrawler) return collection.name;
+
+    return html`<btrix-editable-text-field
+      class="-m-4 overflow-hidden p-4"
+      minLength=${1}
+      maxLength=${COLLECTION_NAME_MAX_LENGTH}
+      .value=${collection.name}
+      placeholder=${msg("Enter collection name")}
+      @btrix-input=${(e: EditableTextFieldInputEvent) => {
+        e.stopPropagation();
+
+        const { value } = e.detail;
+
+        this.slugPreview = value ? slugifyStrict(value) : "";
+      }}
+      @btrix-change=${(e: EditableTextFieldChangeEvent) => {
+        e.stopPropagation();
+
+        const { value } = e.detail;
+
+        if (value === this.collection?.name) {
+          this.slugPreview = "";
+        }
+
+        void this.updateName(value);
+      }}
+      extraWidth=${24}
+    >
+      <span
+        slot="suffix"
+        class="ml-2 mt-0.5 inline-flex h-8 shrink-0 items-center"
+      >
+        <sl-icon
+          name="pencil"
+          class="size-3.5"
+          aria-label=${msg("Edit Collection Name")}
+        ></sl-icon>
+      </span>
+    </btrix-editable-text-field>`;
   };
 
   private readonly renderAccessDetails = () => {
