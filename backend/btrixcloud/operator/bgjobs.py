@@ -38,15 +38,20 @@ class BgJobOperator(BaseOperator):
         job_type: str = labels.get("job_type") or ""
         job_id: str = labels.get("job_id") or metadata.get("name")
 
+        print(f"Finalizing job {job_id} (type: {job_type})", flush=True)
+
         status = data.object["status"]
         spec = data.object["spec"]
-        success = status.get("succeeded") == spec.get("parallelism")
+        parallelism = spec.get("parallelism") or 1
+        success = status.get("succeeded") == parallelism
         if not success:
             print(
                 f"Succeeded: {status.get('succeeded')}, Num Pods: {spec.get('parallelism')}"
             )
         start_time = status.get("startTime")
         completion_time = status.get("completionTime")
+
+        print(f"{job_id=} {success=} {start_time=} {completion_time=}", flush=True)
 
         finalized = True
 
@@ -65,6 +70,8 @@ class BgJobOperator(BaseOperator):
         # pylint: disable=broad-except
         except Exception:
             org_id = None
+
+        print(f"{job_id=} {finished=} {org_id=}", flush=True)
 
         try:
             await self.background_job_ops.job_finished(
