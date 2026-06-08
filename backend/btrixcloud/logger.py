@@ -241,17 +241,10 @@ class DevFormatter(logging.Formatter):
 def init_logging() -> None:
     """Configure the 'btrixcloud' logger hierarchy.
 
-    - LOG_FORMAT=json  → JSON to stdout.
-    - LOG_FORMAT=text  → human-readable text to stdout (dev format).
-    - unset            → auto: JSON if KUBERNETES_SERVICE_HOST is set, else dev.
-
+    - Log format: JSON if LOG_FORMAT=json, else human-readable text (dev format).
     - Log level from LOG_LEVEL env var (default DEBUG).
     """
-    log_format = os.environ.get("LOG_FORMAT", "")
-    if log_format:
-        is_prod = log_format == "json"
-    else:
-        is_prod = bool(os.environ.get("KUBERNETES_SERVICE_HOST"))
+    log_format_json = os.environ.get("LOG_FORMAT", "") == "json"
 
     log_level = os.environ.get("LOG_LEVEL", "DEBUG").upper()
     level = getattr(logging, log_level, logging.DEBUG)
@@ -273,7 +266,7 @@ def init_logging() -> None:
     handler = logging.StreamHandler(sys.stdout)
     handler.addFilter(ContextFilter())
 
-    if is_prod:
+    if log_format_json:
         handler.setFormatter(JSONFormatter())
     else:
         handler.setFormatter(DevFormatter(DEV_FORMAT, datefmt="%Y-%m-%d %H:%M:%S"))
