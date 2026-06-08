@@ -1494,14 +1494,13 @@ def test_list_public_collections_no_colls(non_default_org_id, admin_auth_headers
     assert data["collections"] == []
 
 
-def test_set_collection_home_url_from_page_id(
+def test_set_collection_home_url(
     crawler_auth_headers, default_org_id, crawler_crawl_id
 ):
     # Get a page id from crawler_crawl_id
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages",
         headers=crawler_auth_headers,
-        timeout=10,
     )
     assert r.status_code == 200
     data = r.json()
@@ -1521,7 +1520,6 @@ def test_set_collection_home_url_from_page_id(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/home-url",
         headers=crawler_auth_headers,
         json={"pageId": page_id},
-        timeout=10,
     )
     assert r.status_code == 200
     assert r.json()["updated"]
@@ -1530,69 +1528,12 @@ def test_set_collection_home_url_from_page_id(
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
         headers=crawler_auth_headers,
-        timeout=10,
     )
     assert r.status_code == 200
     data = r.json()
     assert data["homeUrl"] == page_url
     assert data["homeUrlTs"] == page_ts
     assert data["homeUrlPageId"] == page_id
-
-
-def test_set_collection_home_url_from_invalid_page_url_ts(
-    crawler_auth_headers, default_org_id, crawler_crawl_id
-):
-    # Get a page id from crawler_crawl_id
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages",
-        headers=crawler_auth_headers,
-        timeout=10,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["total"] >= 1
-
-    page = data["items"][0]
-    assert page
-
-    page_id = page["id"]
-    assert page_id
-
-    # Set page as home url along with invalid URL
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/home-url",
-        headers=crawler_auth_headers,
-        json={"pageId": page_id, "url": "https://example.com/invalid-page-url"},
-        timeout=10,
-    )
-    assert r.status_code == 400
-    assert r.json()["detail"] == "invalid_collection_page"
-
-
-def test_set_collection_home_url_from_page_url_ts(
-    crawler_auth_headers, default_org_id, crawler_crawl_id
-):
-    # Set home url and timestamp
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/home-url",
-        headers=crawler_auth_headers,
-        json={"url": "https://example.com", "ts": "2026-01-01T00:00:00.000Z"},
-        timeout=10,
-    )
-    assert r.status_code == 200
-    assert r.json()["updated"]
-
-    # Check that fields were set in collection as expected
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
-        headers=crawler_auth_headers,
-        timeout=10,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data.get("homeUrl") == "https://example.com"
-    assert data.get("homeUrlTs") == "2026-01-01T00:00:00.000Z"
-    assert data.get("homeUrlPageId") is None
 
 
 def test_collection_url_list(crawler_auth_headers, default_org_id):
