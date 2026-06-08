@@ -537,6 +537,11 @@ class BackgroundJobOps:
         """Update job as finished, including
         job-specific task handling"""
 
+        print(
+            f"Finishing job: {job_id=} {job_type=} {success=} {finished=} {started=} {oid=}",
+            flush=True,
+        )
+
         # For seed file cleanup jobs, no database record will exist for each
         # run before this point, so create it here
         if job_type == BgJobType.CLEANUP_SEED_FILES:
@@ -561,16 +566,24 @@ class BackgroundJobOps:
 
         job = await self.get_background_job(job_id)
         if not job or job.finished:
+            print(f"No job found for job {job_id}", flush=True)
             return
 
         if job.type != job_type:
+            print(
+                f"Job type mismatch for job {job_id}: {job.type} vs {job_type}",
+                flush=True,
+            )
             raise HTTPException(status_code=400, detail="invalid_job_type")
 
         if success and job_type == BgJobType.CREATE_REPLICA:
+            print(f"Handling replication success for job {job_id}", flush=True)
             await self.handle_replica_job_succeeded(cast(CreateReplicaJob, job))
 
         if job_type == BgJobType.DELETE_REPLICA:
             await self.handle_delete_replica_job_finished(cast(DeleteReplicaJob, job))
+
+        print(f"Updating job {job_id}, {success=} {finished=}")
 
         await self.jobs.find_one_and_update(
             {"_id": job_id, "oid": oid},
