@@ -190,6 +190,8 @@ class CollIndexOperator(BaseOperator):
                 logger.info(
                     "collindex_removed",
                     coll_id=coll_id,
+                    oid=oid,
+                    redis_pod=redis_pod,
                     unstructured_message=f"CollIndex removed: {coll_id}",
                 )
                 return {
@@ -230,6 +232,9 @@ class CollIndexOperator(BaseOperator):
         except Exception:
             logger.exception(
                 "coll_index_sync_failed",
+                coll_id=coll_id,
+                oid=oid,
+                redis_pod=redis_pod,
             )
 
             # load redis pvc and/or redis pod itself
@@ -452,6 +457,8 @@ class CollIndexOperator(BaseOperator):
         except Exception:
             logger.exception(
                 "coll_index_stats_update_failed",
+                coll_id=coll_id,
+                status=status,
             )
             return False
 
