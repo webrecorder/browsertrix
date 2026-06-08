@@ -136,6 +136,7 @@ import { isNotEqual } from "@/utils/is-not-equal";
 import localize from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
+import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
 import { regexEscape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
@@ -3822,14 +3823,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async createCollection(
-    params: { name: string },
+    { name }: { name: string },
     signal?: AbortSignal,
   ) {
     return this.api.fetch<{ added: boolean; id: string; name: string }>(
       `/orgs/${this.orgId}/collections`,
       {
         method: "POST",
-        body: JSON.stringify(params),
+        body: JSON.stringify({
+          name,
+          slug: slugifyStrict(name),
+        }),
         signal,
       },
     );

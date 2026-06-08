@@ -76,6 +76,9 @@ export class SearchCombobox<T> extends TailwindElement {
   @property({ type: Boolean })
   createNew = false;
 
+  @property({ attribute: false })
+  validateNew?: (value: string) => boolean;
+
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
@@ -232,7 +235,8 @@ export class SearchCombobox<T> extends TailwindElement {
           ({ value }) =>
             value && value.toLocaleLowerCase() === newName.toLocaleLowerCase(),
         ),
-      );
+      ) &&
+      (!this.validateNew || this.validateNew(newName));
 
     return html`
       ${when(

@@ -1,5 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
+import type {
+  SlInput,
+  SlInputEvent,
+  SlSelectEvent,
+} from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html } from "lit";
 import {
@@ -24,7 +28,8 @@ import {
   type Collection,
 } from "@/types/collection";
 import { isApiError } from "@/utils/api";
-import { maxLengthValidator } from "@/utils/form";
+import { formValidator, maxLengthValidator } from "@/utils/form";
+import slugifyStrict from "@/utils/slugify";
 
 export type CollectionSavedEvent = CustomEvent<{
   id: string;
@@ -54,6 +59,7 @@ export class CollectionCreateDialog extends BtrixElement {
   @queryAsync("#collectionForm")
   private readonly form!: Promise<HTMLFormElement>;
 
+  private readonly checkFormValidity = formValidator(this);
   private readonly validateNameMax = maxLengthValidator(
     COLLECTION_NAME_MAX_LENGTH,
   );
@@ -119,7 +125,20 @@ export class CollectionCreateDialog extends BtrixElement {
           autocomplete="off"
           required
           help-text=${this.validateNameMax.helpText}
-          @sl-input=${this.validateNameMax.validate}
+          @sl-input=${(e: SlInputEvent) => {
+            const valid = this.validateNameMax.validate(e);
+
+            if (!valid) return;
+
+            const input = e.target as SlInput;
+            const value = input.value;
+
+            if (value && !slugifyStrict(value)) {
+              input.setCustomValidity(
+                msg("Please include at least one letter or number."),
+              );
+            }
+          }}
         >
         </sl-input>
         <sl-input
@@ -132,7 +151,7 @@ export class CollectionCreateDialog extends BtrixElement {
         >
           <span slot="label">
             ${msg("Summary")}
-            <sl-tooltip>
+            <btrix-popover placement="top-start" hoist>
               <span slot="content">
                 ${msg(
                   "Write a short description that summarizes this collection. If the collection is shareable, this will appear next to the collection name.",
@@ -146,7 +165,7 @@ export class CollectionCreateDialog extends BtrixElement {
                 name="info-circle"
                 style="vertical-align: -.175em"
               ></sl-icon>
-            </sl-tooltip>
+            </btrix-popover>
           </span>
         </sl-input>
 
@@ -199,19 +218,23 @@ export class CollectionCreateDialog extends BtrixElement {
     event.stopPropagation();
 
     const form = event.target as HTMLFormElement;
-    const nameInput = form.querySelector<SlInput>('sl-input[name="name"]');
+    const isValid = await this.checkFormValidity(form);
 
-    if (!nameInput?.checkValidity()) {
+    if (!isValid) {
       return;
     }
 
-    const { name, caption } = serialize(form);
+    const { name, caption } = serialize(form) as {
+      name: string;
+      caption?: string;
+    };
 
     this.isSubmitting = true;
     try {
       const body = JSON.stringify({
         name,
         caption,
+        slug: slugifyStrict(name),
         access: this.selectCollectionAccess?.value || CollectionAccess.Private,
         defaultThumbnailName: DEFAULT_THUMBNAIL,
       });

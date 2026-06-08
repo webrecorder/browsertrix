@@ -282,12 +282,27 @@ export class Admin extends BtrixElement {
     this.validateOrgNameMax.validate(e);
 
     const input = e.target as SlInput;
-    const slug = slugifyStrict(input.value);
-    const isInvalid = this.orgSlugs.includes(slug);
+    const value = input.value;
+    const slug = slugifyStrict(value);
+    let isInvalid = !value;
 
-    if (isInvalid) {
-      input.setCustomValidity(msg("This org name is already taken."));
-    } else {
+    if (value) {
+      if (!slug) {
+        isInvalid = true;
+
+        input.setCustomValidity(
+          msg("Please include at least one letter or number."),
+        );
+      } else {
+        isInvalid = this.orgSlugs.includes(slug);
+
+        if (isInvalid) {
+          input.setCustomValidity(msg("This org name is already taken."));
+        }
+      }
+    }
+
+    if (!isInvalid) {
       input.setCustomValidity("");
     }
 
@@ -300,14 +315,17 @@ export class Admin extends BtrixElement {
     const formEl = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(formEl))) return;
 
-    const params = serialize(formEl);
+    const params = serialize(formEl) as { name: string };
     this.isSubmittingNewOrg = true;
 
     try {
       // TODO return entire object from API
       await this.api.fetch<{ added: true; id: string }>(`/orgs/create`, {
         method: "POST",
-        body: JSON.stringify(params),
+        body: JSON.stringify({
+          ...params,
+          slug: slugifyStrict(params.name),
+        }),
       });
       await this.fetchOrgs();
       const userInfo = await this.getUserInfo();

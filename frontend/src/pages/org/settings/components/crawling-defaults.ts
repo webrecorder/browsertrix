@@ -36,6 +36,7 @@ import { dedupeTypeLabelFor } from "@/strings/dedupe";
 import { CrawlerChannelImage } from "@/types/crawler";
 import { crawlingDefaultsSchema, type CrawlingDefaults } from "@/types/org";
 import { formValidator } from "@/utils/form";
+import slugifyStrict from "@/utils/slugify";
 import {
   appDefaults,
   BYTES_PER_GB,
@@ -544,14 +545,17 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
   }
 
   private async createCollection(
-    params: { name: string },
+    { name }: { name: string },
     signal?: AbortSignal,
   ) {
     return this.api.fetch<{ added: boolean; id: string; name: string }>(
       `/orgs/${this.orgId}/collections`,
       {
         method: "POST",
-        body: JSON.stringify(params),
+        body: JSON.stringify({
+          name,
+          slug: slugifyStrict(name),
+        }),
         signal,
       },
     );
