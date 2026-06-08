@@ -5,7 +5,6 @@ Organization API handling
 # pylint: disable=too-many-lines
 
 import json
-import logging
 import math
 import os
 import time
@@ -24,6 +23,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+import structlog
 import json_stream
 from aiostream import stream
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -130,7 +130,7 @@ else:
     BackgroundJobOps = UserManager = PageOps = FileUploadOps = CrawlManager = object
 
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 

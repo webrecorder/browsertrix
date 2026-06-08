@@ -3,11 +3,11 @@ Migration 0054 -- clear proxyId on workflows that have profile set
 using proxyId from profile always
 """
 
-import logging
+import structlog
 
 from btrixcloud.migrations import BaseMigration
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0054"
 

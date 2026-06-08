@@ -1,11 +1,11 @@
 """Base Operator class for all operators"""
 
 import json
-import logging
 import os
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
+import structlog
 import yaml
 from kubernetes.utils import parse_quantity
 
@@ -32,7 +32,7 @@ else:
     StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = PageOps = object
 
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # ============================================================================

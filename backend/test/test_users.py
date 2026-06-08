@@ -1,7 +1,7 @@
-import logging
 import time
 from uuid import uuid4
 
+import structlog
 import requests
 
 from .conftest import (
@@ -13,7 +13,7 @@ from .conftest import (
     FINISHED_STATES,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 INVALID_PASSWORD_EMAIL = "invalidpassword@example.com"
 VALID_USER_EMAIL = "validpassword@example.com"

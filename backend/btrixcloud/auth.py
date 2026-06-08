@@ -1,6 +1,5 @@
 """auth functions for login"""
 
-import logging
 import os
 import secrets
 import string
@@ -8,6 +7,7 @@ from datetime import timedelta
 from typing import AsyncGenerator, List, Optional, Tuple
 from uuid import UUID, uuid4
 
+import structlog
 import jwt
 from fastapi import (
     APIRouter,
@@ -25,7 +25,7 @@ from .logger import clear_log_context, set_log_context
 from .models import User, UserOut
 from .utils import dt_now, run_async_task
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid4().hex)

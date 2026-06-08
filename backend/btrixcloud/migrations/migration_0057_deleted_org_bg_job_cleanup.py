@@ -2,15 +2,15 @@
 Migration 0057 - Remove background jobs for deleted orgs from db
 """
 
-import logging
 from uuid import UUID
 
+import structlog
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import BgJobType
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0057"
 

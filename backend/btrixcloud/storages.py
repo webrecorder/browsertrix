@@ -5,7 +5,6 @@ Storage API
 import asyncio
 import heapq
 import json
-import logging
 import os
 import time
 import zlib
@@ -29,6 +28,7 @@ from typing import (
 from urllib.parse import urlsplit
 from zipfile import ZipInfo
 
+import structlog
 import aiobotocore.session
 import pymongo
 import requests
@@ -65,7 +65,7 @@ if TYPE_CHECKING:
 else:
     OrgOps = CrawlManager = object
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 CHUNK_SIZE = 1024 * 256
 

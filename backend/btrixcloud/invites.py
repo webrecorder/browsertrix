@@ -1,13 +1,13 @@
 """Invite system management"""
 
 import hashlib
-import logging
 import os
 import time
 import urllib.parse
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
+import structlog
 import pymongo
 from fastapi import HTTPException
 from pymongo.errors import AutoReconnect
@@ -27,7 +27,7 @@ from .pagination import DEFAULT_PAGE_SIZE
 from .users import UserManager
 from .utils import dt_now, is_bool
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # ============================================================================

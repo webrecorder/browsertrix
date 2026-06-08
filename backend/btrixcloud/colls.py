@@ -3,7 +3,6 @@ Collections API
 """
 
 # pylint: disable=too-many-lines
-import logging
 import os
 from collections import Counter
 from datetime import datetime
@@ -20,6 +19,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+import structlog
 import aiohttp
 import pymongo
 from fastapi import Depends, HTTPException, Response
@@ -89,7 +89,7 @@ else:
         object
     )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 THUMBNAIL_MAX_SIZE = 2_000_000
 

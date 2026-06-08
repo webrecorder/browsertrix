@@ -3,11 +3,11 @@ main file for browsertrix-api system
 supports docker and kubernetes based deployments of multiple browsertrix-crawlers
 """
 
-import logging
 import os
 import sys
 from typing import List, Optional
 
+import structlog
 from fastapi import FastAPI, HTTPException
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
@@ -39,7 +39,7 @@ from .utils import is_bool, register_exit_handler, run_async_task
 from .version import __version__
 from .webhooks import init_event_webhooks_api
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 API_PREFIX = "/api"
 
@@ -47,9 +47,7 @@ OPENAPI_URL = API_PREFIX + "/openapi.json"
 
 app_root = FastAPI(docs_url=None, redoc_url=None, OPENAPI_URL=OPENAPI_URL)
 
-
 app_root.middleware("http")(create_request_logging_middleware(logger))
-
 
 db_inited = {"inited": False}
 

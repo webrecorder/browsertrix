@@ -3,20 +3,20 @@ import csv
 import hashlib
 import io
 import json
-import logging
 import re
 import time
 import zipfile
 from tempfile import TemporaryFile
 from zipfile import ZIP_STORED, ZipFile
 
+import structlog
 import pytest
 import requests
 
 from .conftest import API_PREFIX, FINISHED_STATES, HOST_PREFIX
 from .test_collections import UPDATED_NAME as COLLECTION_NAME
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 wacz_path = None
 wacz_size = None

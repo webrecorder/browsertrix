@@ -1,16 +1,17 @@
 """entrypoint module for background jobs"""
 
 import asyncio
-import logging
 import os
 import sys
 from uuid import UUID
+
+import structlog
 
 from .logger import init_logging, set_log_context
 from .models import BgJobType
 from .ops import init_ops
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 job_type = os.environ.get("BG_JOB_TYPE")
 oid = os.environ.get("OID")

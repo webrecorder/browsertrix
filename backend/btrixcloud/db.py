@@ -5,7 +5,6 @@ Browsertrix API Mongo DB initialization
 import asyncio
 import contextvars
 import importlib.util
-import logging
 import os
 import urllib.parse
 from typing import (
@@ -19,6 +18,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+import structlog
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pydantic import BaseModel, ValidationError, WrapValidator
 from pymongo.errors import InvalidName
@@ -51,7 +51,7 @@ CURR_DB_VERSION = "0058"
 
 MIN_DB_VERSION = 7.0
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # ============================================================================

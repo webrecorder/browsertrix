@@ -34,4 +34,4 @@ ignore = [
 "asyncio.create_subprocess_shell".msg = "Use the non-shell asyncio.create_subprocess_exec function instead."
 
 [lint.isort]
-force-to-top = ["logger"]
+force-to-top = ["logger", "structlog"]

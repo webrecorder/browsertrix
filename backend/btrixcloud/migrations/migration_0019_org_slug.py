@@ -2,12 +2,12 @@
 Migration 0019 - Organization slug
 """
 
-import logging
+import structlog
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import slug_from_name
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0019"
 

@@ -2,8 +2,9 @@
 Migration 0010 - Precomputing collection total size
 """
 
-import logging
 from typing import cast
+
+import structlog
 
 from btrixcloud.background_jobs import BackgroundJobOps
 from btrixcloud.colls import CollectionOps
@@ -13,7 +14,7 @@ from btrixcloud.orgs import OrgOps
 from btrixcloud.storages import StorageOps
 from btrixcloud.webhooks import EventWebhookOps
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0010"
 
