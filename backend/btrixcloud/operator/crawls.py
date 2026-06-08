@@ -1183,6 +1183,10 @@ class CrawlOperator(BaseOperator):
         except Exception as exc:
             logger.exception(
                 "crawl_sync_failed",
+                crawl_id=crawl.id,
+                status=status,
+                pods=pods,
+                data=data,
                 unstructured_message=f"Crawl get failed: {exc}, will try again",
             )
             return status
@@ -1233,6 +1237,8 @@ class CrawlOperator(BaseOperator):
         except Exception:
             logger.exception(
                 "sync_pod_status_failed",
+                pods=pods,
+                status=status,
                 unstructured_message="sync_pod_status error",
             )
 
