@@ -2,11 +2,11 @@
 Migration 0013 - Copy config name to crawls
 """
 
-import logging
+import structlog
 
 from btrixcloud.migrations import BaseMigration
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 MIGRATION_VERSION = "0013"

@@ -1,16 +1,16 @@
 import json
-import logging
 import os
 import subprocess
 import time
 
+import structlog
 import pytest
 import requests
 
 from .conftest import API_PREFIX
 from .utils import read_in_chunks
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _webhook_event_id = None
 

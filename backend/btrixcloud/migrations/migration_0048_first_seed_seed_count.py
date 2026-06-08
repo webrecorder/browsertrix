@@ -2,13 +2,14 @@
 Migration 0048 - Calculate firstSeed/seedCount and store directly in database
 """
 
-import logging
 from typing import Any, Dict, List, cast
+
+import structlog
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Crawl, CrawlConfig, Seed
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 MIGRATION_VERSION = "0048"

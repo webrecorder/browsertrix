@@ -1,13 +1,13 @@
-import logging
 import time
 from uuid import uuid4
 
+import structlog
 import pytest
 import requests
 
 from .conftest import API_PREFIX
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 @pytest.fixture(scope="function")

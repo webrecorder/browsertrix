@@ -1,9 +1,9 @@
 """Operator handler for crawl CronJobs"""
 
-import logging
 from typing import Optional
 from uuid import UUID
 
+import structlog
 import yaml
 
 from btrixcloud.utils import date_to_str, dt_now, run_async_task
@@ -13,7 +13,7 @@ from ..utils import scale_from_browser_windows
 from .baseoperator import BaseOperator
 from .models import CJS, MCDecoratorSyncData, MCDecoratorSyncResponse
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # pylint: disable=too-many-locals

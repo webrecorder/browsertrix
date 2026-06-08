@@ -1,13 +1,13 @@
 """Operator handler for CollIndexes"""
 
 import datetime
-import logging
 import os
 import re
 from typing import Literal
 from urllib.parse import urlsplit
 from uuid import UUID
 
+import structlog
 from kubernetes.utils import parse_quantity
 from pydantic import BaseModel
 from redis.asyncio.client import Redis
@@ -31,7 +31,7 @@ from btrixcloud.utils import (
 from .baseoperator import BaseOperator
 from .models import BTRIX_API, CJS, JOB, POD, MCBaseRequest, MCSyncData
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Threshold used / capacity at which a resize should happen
 USED_DISK_THRESHOLD = 0.70

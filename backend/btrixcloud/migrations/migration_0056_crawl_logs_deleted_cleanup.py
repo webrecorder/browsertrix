@@ -2,13 +2,12 @@
 Migration 0056 - Remove logs for deleted crawls
 """
 
-import logging
-
+import structlog
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from btrixcloud.migrations import BaseMigration
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 MIGRATION_VERSION = "0056"

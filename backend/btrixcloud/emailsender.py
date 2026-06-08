@@ -1,6 +1,5 @@
 """Basic Email Sending Support"""
 
-import logging
 import os
 import re
 import smtplib
@@ -12,6 +11,7 @@ from email.mime.text import MIMEText
 from typing import Literal, Optional, Union
 from uuid import UUID
 
+import structlog
 import aiohttp
 from fastapi import HTTPException
 
@@ -25,7 +25,7 @@ from .models import (
 )
 from .utils import get_origin, is_bool
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # JWTs have three base64url parts separated by dots and always start with eyJ
 _JWT_RE = re.compile(r"eyJ[a-zA-Z0-9_-]{5,}\.[a-zA-Z0-9_-]{5,}\.[a-zA-Z0-9_-]{5,}")

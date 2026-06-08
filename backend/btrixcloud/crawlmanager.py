@@ -1,11 +1,11 @@
 """shared crawl manager implementation"""
 
-import logging
 import os
 import secrets
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple
 
+import structlog
 from fastapi import HTTPException
 
 from .auth import create_custom_jwt_token
@@ -19,7 +19,7 @@ from .models import (
 )
 from .utils import date_to_str, dt_now, scale_from_browser_windows
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # ============================================================================
 DEFAULT_PROXY_ID: str = os.environ.get("DEFAULT_PROXY_ID", "")

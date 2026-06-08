@@ -1,7 +1,6 @@
 """base crawl type"""
 
 import asyncio
-import logging
 import os
 import urllib.parse
 from datetime import datetime
@@ -22,6 +21,7 @@ from typing import (
 )
 from uuid import UUID
 
+import structlog
 import pymongo
 from fastapi import Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
@@ -54,7 +54,7 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import date_to_str, dt_now, get_origin, run_async_task
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .background_jobs import BackgroundJobOps

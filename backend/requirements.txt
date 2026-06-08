@@ -29,3 +29,4 @@ json-stream
 aiostream
 iso639-lang>=2.6.0
 setuptools
+structlog==26.1.0

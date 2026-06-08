@@ -3,12 +3,12 @@ Subscription API handling
 """
 
 import asyncio
-import logging
 import os
 from datetime import datetime
 from typing import Annotated, Any, AsyncGenerator, Callable, List, Optional, Tuple
 from uuid import UUID
 
+import structlog
 import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -52,7 +52,7 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .users import UserManager
 from .utils import dt_now, get_origin, is_bool, run_async_task
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # if set, will enable this api
 subscriptions_enabled = is_bool(os.environ.get("BILLING_ENABLED"))

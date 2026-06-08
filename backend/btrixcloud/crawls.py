@@ -5,7 +5,6 @@
 import asyncio
 import contextlib
 import json
-import logging
 import os
 import re
 import urllib.parse
@@ -25,6 +24,7 @@ from typing import (
 )
 from uuid import UUID
 
+import structlog
 import pymongo
 from fastapi import Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
@@ -88,7 +88,7 @@ from .utils import (
     validate_regexes,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 MAX_MATCH_SIZE = 500000
 DEFAULT_RANGE_LIMIT = 50

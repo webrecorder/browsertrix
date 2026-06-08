@@ -4,7 +4,6 @@ import asyncio
 import csv
 import io
 import json
-import logging
 import math
 import os
 import re
@@ -15,6 +14,7 @@ from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 from uuid import UUID
 
+import structlog
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from iso639 import is_language
@@ -23,7 +23,7 @@ from pymongo.collation import Collation
 from pymongo.errors import DuplicateKeyError
 from slugify import slugify
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 default_origin = os.environ.get("APP_ORIGIN", "")

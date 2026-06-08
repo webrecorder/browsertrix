@@ -2,14 +2,15 @@
 Migration 0058 - Fix failed background jobs with success and finished unset
 """
 
-import logging
 import os
 from datetime import timedelta
+
+import structlog
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import dt_now
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0058"
 

@@ -1,13 +1,13 @@
 """CrawlOperator"""
 
 import json
-import logging
 import math
 import os
 from datetime import datetime, timedelta
 from typing import Any, Literal, Optional, Sequence
 from uuid import UUID
 
+import structlog
 import humanize
 from fastapi import HTTPException
 from kubernetes.utils import parse_quantity
@@ -53,7 +53,7 @@ from .models import (
     StopReason,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 METRICS_API = "metrics.k8s.io/v1beta1"

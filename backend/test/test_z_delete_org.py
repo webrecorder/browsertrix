@@ -1,12 +1,12 @@
-import logging
 import time
 
+import structlog
 import pytest
 import requests
 
 from .conftest import API_PREFIX
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def test_recalculate_org_storage(admin_auth_headers, default_org_id):

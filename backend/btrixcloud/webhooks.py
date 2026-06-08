@@ -1,9 +1,9 @@
 """Webhook management"""
 
-import logging
 from typing import TYPE_CHECKING, List, Optional, Union, cast
 from uuid import UUID, uuid4
 
+import structlog
 import aiohttp
 import backoff
 from fastapi import APIRouter, Depends, HTTPException
@@ -29,7 +29,7 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now, run_async_task
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .crawls import CrawlOps

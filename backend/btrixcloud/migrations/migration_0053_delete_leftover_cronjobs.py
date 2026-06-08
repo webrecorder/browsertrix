@@ -2,14 +2,14 @@
 Migration 0053 - Delete leftover cron and crawl jobs
 """
 
-import logging
 from uuid import UUID
 
+import structlog
 from fastapi import HTTPException
 
 from btrixcloud.migrations import BaseMigration
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0053"
 

@@ -1,7 +1,8 @@
 """Operator handler for BackgroundJobs"""
 
-import logging
 from uuid import UUID
+
+import structlog
 
 from btrixcloud.utils import (
     dt_now,
@@ -11,7 +12,7 @@ from btrixcloud.utils import (
 from .baseoperator import BaseOperator
 from .models import MCDecoratorSyncData
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # ============================================================================

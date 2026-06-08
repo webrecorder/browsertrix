@@ -1,98 +1,79 @@
 """Structured logging configuration for Browsertrix backend.
 
-Produces JSON to stdout in production and human-readable text in dev.
+Uses structlog for structured JSON logging in production and human-readable
+output in development. Integrates with the standard library logging module
+so third-party libraries (uvicorn, motor, etc.) are formatted consistently.
 
-Keyword arguments passed to log calls become distinct JSON fields for searchability:
+Keyword arguments passed to log calls become distinct JSON fields:
 
-    logger.info("Updating collection %s", coll_id, coll_id=coll_id, oid=oid)
-    # => {"message": "Updating collection abc123", "coll_id": "abc123", "oid": "..."}
+    logger.info("updating_collection", coll_id=coll_id, oid=oid)
+    # => {"event": "updating_collection", "coll_id": "abc123", "oid": "..."}
 """
 
-import json
 import logging
 import os
 import sys
 import time
-from contextvars import ContextVar, Token
-from dataclasses import dataclass
-from datetime import datetime, timezone
-from enum import Enum
-from typing import Optional
 from uuid import UUID, uuid4
 
+import structlog
 from fastapi.responses import JSONResponse
-
-request_id_var: ContextVar[str] = ContextVar("request_id", default="")
-oid_var: ContextVar[str] = ContextVar("oid", default="")
-user_id_var: ContextVar[str] = ContextVar("user_id", default="")
-
-
-@dataclass
-class LogContextTokens:
-    """Tokens for log context variables, used to reset them after a request."""
-
-    request_id_token: Optional[Token] = None
-    oid_token: Optional[Token] = None
-    user_id_token: Optional[Token] = None
-
-    def reset(self) -> None:
-        """Reset all context vars using their tokens."""
-        if self.request_id_token is not None:
-            request_id_var.reset(self.request_id_token)
-            self.request_id_token = None
-        if self.oid_token is not None:
-            oid_var.reset(self.oid_token)
-            self.oid_token = None
-        if self.user_id_token is not None:
-            user_id_var.reset(self.user_id_token)
-            self.user_id_token = None
+from structlog.contextvars import (
+    bind_contextvars,
+    clear_contextvars,
+    unbind_contextvars,
+)
+from structlog.typing import Processor
 
 
 def set_log_context(
     *, oid: str | UUID = "", user_id: str | UUID = ""
-) -> LogContextTokens:
-    """Set org and user context for the current request scope."""
-    tokens = LogContextTokens()
-    if oid:
-        tokens.oid_token = oid_var.set(str(oid))
-    if user_id:
-        tokens.user_id_token = user_id_var.set(str(user_id))
-    return tokens
+) -> frozenset[str]:
+    """Set org and user context for the current request scope.
 
-
-def clear_log_context(tokens: Optional[LogContextTokens] = None) -> None:
-    """Clear org and user context using the provided tokens.
-
-    If no tokens are provided, falls back to setting values to empty strings.
+    Returns the keys that were bound so they can be unbound later.
     """
-    if tokens is not None:
-        tokens.reset()
+    kwargs: dict[str, str] = {}
+    if oid:
+        kwargs["oid"] = str(oid)
+    if user_id:
+        kwargs["user_id"] = str(user_id)
+    if kwargs:
+        bind_contextvars(**kwargs)
+    return frozenset(kwargs.keys())
+
+
+def clear_log_context(keys: frozenset[str] | None = None) -> None:
+    """Clear org and user context.
+
+    If keys are provided, only those keys are unbound. Otherwise all
+    structlog context variables are cleared.
+    """
+    if keys is not None:
+        unbind_contextvars(*keys)
     else:
-        oid_var.set("")
-        user_id_var.set("")
+        clear_contextvars()
 
 
-def create_request_logging_middleware(logger: logging.Logger):
+def create_request_logging_middleware(logger):
     """Return an ASGI middleware that logs every request with
     method, path, status, duration, and request_id."""
 
     async def request_logging_middleware(request, call_next):
+        clear_contextvars()
         request_id = uuid4().hex[:8]
-        tokens = LogContextTokens()
-        tokens.request_id_token = request_id_var.set(request_id)
+        bind_contextvars(request_id=request_id)
         start_time = time.time()
         try:
             response = await call_next(request)
         # pylint: disable=broad-exception-caught
-        except Exception:
+        except Exception as e:
             logger.exception(
                 "http_unhandled_exception",
                 http_method=request.method,
                 http_path=request.url.path,
             )
-            response = JSONResponse(
-                status_code=500, content={"detail": "internal_error"}
-            )
+            raise e
         finally:
             duration = time.time() - start_time
             logger.debug(
@@ -102,186 +83,35 @@ def create_request_logging_middleware(logger: logging.Logger):
                 http_status=response.status_code,
                 duration=duration,
             )
-            tokens.reset()
+            unbind_contextvars("request_id")
             clear_log_context()
         return response
 
     return request_logging_middleware
 
 
-class BtrixLogger(logging.Logger):
-    """Logger subclass that routes keyword args into structured JSON fields."""
-
-    _STANDARD_KWARGS = frozenset({"exc_info", "extra", "stack_info", "stacklevel"})
-
-    # pylint: disable=too-many-arguments
-    def _log(
-        self,
-        level,
-        msg,
-        args,
-        exc_info=None,
-        extra=None,
-        stack_info=False,
-        stacklevel=1,
-        **kwargs,
-    ):
-        structured_fields = {
-            k: v for k, v in kwargs.items() if k not in self._STANDARD_KWARGS
+SHARED_PROCESSORS: list[Processor] = [
+    structlog.contextvars.merge_contextvars,
+    structlog.stdlib.add_log_level,
+    structlog.stdlib.add_logger_name,
+    structlog.stdlib.ExtraAdder(),
+    structlog.stdlib.PositionalArgumentsFormatter(),
+    structlog.processors.TimeStamper(fmt="iso"),
+    structlog.processors.StackInfoRenderer(),
+    structlog.processors.format_exc_info,
+    structlog.processors.UnicodeDecoder(),
+    structlog.processors.CallsiteParameterAdder(
+        {
+            structlog.processors.CallsiteParameter.FILENAME,
+            structlog.processors.CallsiteParameter.FUNC_NAME,
+            structlog.processors.CallsiteParameter.LINENO,
         }
-        if structured_fields:
-            if extra is None:
-                extra = {}
-            extra["btrix_extra"] = structured_fields
-        super()._log(
-            level,
-            msg,
-            args,
-            exc_info=exc_info,
-            extra=extra,
-            stack_info=stack_info,
-            stacklevel=stacklevel + 1,
-        )
-
-
-logging.setLoggerClass(BtrixLogger)
-
-
-# pylint: disable=too-few-public-methods
-class ContextFilter(logging.Filter):
-    """Inject contextvar values into log records, unpack btrix_extra."""
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        record.request_id = request_id_var.get()
-        record.oid = oid_var.get()
-        record.user_id = user_id_var.get()
-        btrix_extra = getattr(record, "btrix_extra", None)
-        if btrix_extra:
-            for key, value in btrix_extra.items():
-                setattr(record, f"btrix_{key}", value)
-        if record.exc_info and record.exc_info[1]:
-            record.btrix_error_type = type(record.exc_info[1]).__name__
-            record.btrix_error_message = str(record.exc_info[1])
-        return True
-
-
-def _json_default(obj):
-    """Serialize non-JSON-native types used in structured log fields.
-
-    Falls back to repr() for anything else so that log lines are never lost.
-    """
-    if isinstance(obj, UUID):
-        return str(obj)
-    if isinstance(obj, Enum):
-        return obj.value
-    if isinstance(obj, datetime):
-        return obj.isoformat()
-    if isinstance(obj, set):
-        return list(obj)
-    return repr(obj)
-
-
-# Attributes that are part of every LogRecord or already handled explicitly.
-# Anything else on the record is treated as an extra field.
-_IGNORED_RECORD_ATTRS = frozenset({
-    "args",
-    "asctime",
-    "created",
-    "exc_info",
-    "exc_text",
-    "filename",
-    "funcName",
-    "levelname",
-    "levelno",
-    "lineno",
-    "message",
-    "module",
-    "msecs",
-    "msg",
-    "name",
-    "pathname",
-    "process",
-    "processName",
-    "relativeCreated",
-    "stack_info",
-    "taskName",
-    "thread",
-    "threadName",
-    # ContextFilter fields are handled explicitly
-    "request_id",
-    "oid",
-    "user_id",
-    # Internal intermediate storage
-    "btrix_extra",
-})
-
-
-class JSONFormatter(logging.Formatter):
-    """Emit log records as flat JSON objects on stdout."""
-
-    def format(self, record: logging.LogRecord) -> str:
-        log_entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "level": record.levelname,
-            "logger": record.name,
-            "message": record.getMessage(),
-            "module": record.module,
-            "function": record.funcName,
-            "line": record.lineno,
-        }
-        for field in ("request_id", "oid", "user_id"):
-            val = getattr(record, field, "")
-            if val:
-                log_entry[field] = val
-        for attr_name, attr_value in record.__dict__.items():
-            if attr_name.startswith("btrix_") and attr_name != "btrix_extra":
-                key = attr_name[6:]
-                if key not in log_entry:
-                    log_entry[key] = attr_value
-            elif attr_name not in _IGNORED_RECORD_ATTRS:
-                if attr_name not in log_entry:
-                    log_entry[attr_name] = attr_value
-        if record.exc_info and record.exc_info[1]:
-            log_entry["exception"] = self.formatException(record.exc_info)
-        return json.dumps(log_entry, default=_json_default)
-
-
-DEV_FORMAT = (
-    "%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d | %(message)s"
-)
-
-
-class DevFormatter(logging.Formatter):
-    """Dev formatter that renders structured kwargs alongside the message."""
-
-    def format(self, record: logging.LogRecord) -> str:
-        main_msg = record.getMessage()
-
-        extra_parts = []
-        for field in ("request_id", "oid", "user_id"):
-            val = getattr(record, field, "")
-            if val:
-                extra_parts.append(f"{field}={val}")
-        for attr_name, attr_value in sorted(record.__dict__.items()):
-            if attr_name.startswith("btrix_") and attr_name != "btrix_extra":
-                extra_parts.append(f"{attr_name[6:]}={attr_value!r}")
-            elif attr_name not in _IGNORED_RECORD_ATTRS:
-                extra_parts.append(f"{attr_name}={attr_value!r}")
-
-        if extra_parts:
-            main_msg += "  " + " ".join(extra_parts)
-
-        original_msg, original_args = record.msg, record.args
-        record.msg, record.args = main_msg, ()
-        try:
-            formatted = super().format(record)
-            return formatted.replace("\n", "\\n")
-        finally:
-            record.msg, record.args = original_msg, original_args
+    ),
+]
 
 
 def init_logging() -> None:
-    """Configure the root logger and the 'btrixcloud' logger hierarchy.
+    """Configure structlog and the root logger.
 
     - Log format: JSON if LOG_FORMAT=json, else human-readable text (dev format).
     - Log level from LOG_LEVEL env var (default DEBUG).
@@ -301,32 +131,47 @@ def init_logging() -> None:
     ):
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
-    handler = logging.StreamHandler(sys.stdout)
-    handler.addFilter(ContextFilter())
+    structlog.configure(
+        processors=SHARED_PROCESSORS
+        + [structlog.stdlib.ProcessorFormatter.wrap_for_formatter],
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        wrapper_class=structlog.stdlib.BoundLogger,
+        cache_logger_on_first_use=True,
+    )
 
     if log_format_json:
-        handler.setFormatter(JSONFormatter())
+        formatter = structlog.stdlib.ProcessorFormatter(
+            foreign_pre_chain=SHARED_PROCESSORS,
+            processors=[
+                structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                structlog.processors.JSONRenderer(),
+            ],
+        )
     else:
-        handler.setFormatter(DevFormatter(DEV_FORMAT, datefmt="%Y-%m-%d %H:%M:%S"))
+        formatter = structlog.stdlib.ProcessorFormatter(
+            foreign_pre_chain=SHARED_PROCESSORS,
+            processors=[
+                structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                structlog.dev.ConsoleRenderer(colors=True),
+            ],
+        )
 
-    # Attach a single handler to the root logger so that every library
-    # (including uvicorn, gunicorn, fastapi, motor, etc.) emits through
-    # the same formatter.
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
+
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
     root_logger.handlers.clear()
     root_logger.addHandler(handler)
 
-    # Btrixcloud logger delegates to the root handler.
     btrix_logger = logging.getLogger("btrixcloud")
     btrix_logger.setLevel(level)
     btrix_logger.handlers.clear()
     btrix_logger.propagate = True
 
-    # Uvicorn and Gunicorn install their own plain-text handlers.
-    # Remove them so their logs flow to the root handler instead.
+    # pylint: disable=no-member
     for name in list(logging.root.manager.loggerDict.keys()):
         if name.startswith(("uvicorn", "gunicorn")):
-            logger = logging.getLogger(name)
-            logger.handlers.clear()
-            logger.propagate = True
+            lg = logging.getLogger(name)
+            lg.handlers.clear()
+            lg.propagate = True

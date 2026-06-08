@@ -2,12 +2,12 @@
 Migration 0047 - Convert scale to browserWindows
 """
 
-import logging
+import structlog
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import browser_windows_from_scale
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 MIGRATION_VERSION = "0047"

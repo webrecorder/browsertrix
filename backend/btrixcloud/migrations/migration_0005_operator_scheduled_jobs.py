@@ -2,13 +2,13 @@
 Migration 0005 - Updating scheduled cron jobs after Operator changes
 """
 
-import logging
+import structlog
 
 from btrixcloud.crawlmanager import CrawlManager
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import CrawlConfig
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 MIGRATION_VERSION = "0005"

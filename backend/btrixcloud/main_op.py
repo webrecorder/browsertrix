@@ -1,9 +1,9 @@
 """entrypoint module for operator"""
 
-import logging
 import os
 import sys
 
+import structlog
 from fastapi import FastAPI
 
 from .logger import create_request_logging_middleware, init_logging
@@ -11,7 +11,7 @@ from .operator import init_operator_api
 from .ops import init_ops
 from .utils import register_exit_handler
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 app_root = FastAPI()

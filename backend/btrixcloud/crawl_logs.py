@@ -1,17 +1,17 @@
 """crawl logs"""
 
 import json
-import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from uuid import UUID, uuid4
 
+import structlog
 import pymongo
 from fastapi import HTTPException
 
 from .models import CrawlLogLine, Organization
 from .pagination import DEFAULT_PAGE_SIZE
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .orgs import OrgOps

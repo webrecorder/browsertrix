@@ -1,12 +1,12 @@
 """handle user uploads into browsertrix"""
 
-import logging
 import uuid
 from io import BufferedReader
 from typing import Any, AsyncGenerator, Callable, List, Optional
 from urllib.parse import unquote
 from uuid import UUID
 
+import structlog
 from fastapi import Depends, File, HTTPException, UploadFile
 from starlette.requests import Request
 
@@ -32,7 +32,7 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import CHUNK_SIZE
 from .utils import dt_now, run_async_task
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # ============================================================================
