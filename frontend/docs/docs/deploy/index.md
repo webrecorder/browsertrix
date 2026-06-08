@@ -6,7 +6,7 @@
 
 !!! danger "Security vulnerability in versions of Browsertrix prior to v1.22.8"
 
-    Versions of Browsertrix prior to v1.22.8 are vulnerable to a security issue that allows users with crawler permissions to access all data on the Browsertrix instance. If you are running an older version, upgrade to v1.22.8 or later to mitigate this issue, or [contact us for assistance](mailto:support@webrecorder.net) if you are unable to upgrade.
+    Versions of Browsertrix >=v1.15.0 and <v1.22.8 are vulnerable to a security issue that allows users with crawler permissions to access all data on the Browsertrix instance. If you are running an older version, upgrade to v1.22.8 or later to mitigate this issue, or [contact us for assistance](mailto:support@webrecorder.net) if you are unable to upgrade.
 
     Learn more about this security vulnerability and how to upgrade in the [security advisory](https://github.com/webrecorder/browsertrix/security/advisories/GHSA-47vv-v544-r985).
 
