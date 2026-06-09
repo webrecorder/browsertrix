@@ -179,7 +179,7 @@ async def test_shell_injection_positive_control():
 
     try:
         # Simulate the old vulnerable code path
-        proc = await asyncio.create_subprocess_shell(
+        proc = await asyncio.create_subprocess_shell(  # noqa: TID251
             f"git ls-remote {malicious_url} HEAD"
         )
         await asyncio.wait_for(proc.wait(), timeout=5)
