@@ -407,7 +407,7 @@ def test_add_remove_crawl_from_collection(
             break
 
         if count + 1 == MAX_ATTEMPTS:
-            assert False
+            assert False, "Max attempts reached waiting for collection update"
 
         time.sleep(10)
         count += 1
