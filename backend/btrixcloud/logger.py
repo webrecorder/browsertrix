@@ -19,7 +19,6 @@ from contextvars import Token
 from uuid import UUID, uuid4
 
 import structlog
-from fastapi.responses import JSONResponse
 from structlog.contextvars import (
     bind_contextvars,
     clear_contextvars,
