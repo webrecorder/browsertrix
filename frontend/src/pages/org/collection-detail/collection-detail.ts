@@ -579,13 +579,10 @@ export class CollectionDetail extends BtrixElement {
                               ${msg("Current Page")}
                             </sl-menu-item>
                             <sl-menu-item
-                              @click=${() => {
-                                this.replayCurrentView = undefined;
-                                void this.updateHomepageTask.run();
-                              }}
+                              @click=${() => void this.updateHomepageTask.run()}
                             >
                               <sl-icon slot="prefix" name="list-ul"></sl-icon>
-                              ${msg("List of Pages")}
+                              ${msg("Page List")}
                             </sl-menu-item>
                           </sl-menu>
                         </sl-dropdown>
