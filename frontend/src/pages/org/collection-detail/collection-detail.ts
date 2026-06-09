@@ -425,6 +425,17 @@ export class CollectionDetail extends BtrixElement {
         }, 200);
       }
     }
+
+    if (changedProperties.has("collection") && this.collection) {
+      const prevCollection = changedProperties.get("collection");
+
+      if (
+        prevCollection &&
+        (prevCollection as Collection).modified !== this.collection.modified
+      ) {
+        void this.refreshReplay();
+      }
+    }
   }
 
   render() {
@@ -635,15 +646,19 @@ export class CollectionDetail extends BtrixElement {
           ]),
         )}
       </div>
+
+      <section
+        class=${clsx(
+          this.collectionTab === Tab.Replay
+            ? tw`overflow-hidden rounded-lg border`
+            : // Always render replay to keep reference for thumbnails and reload
+              tw`offscreen`,
+        )}
+      >
+        ${when(this.collection, this.guardedRenderReplay, this.renderSpinner)}
+      </section>
+
       ${choose(this.collectionTab, [
-        [
-          Tab.Replay,
-          () =>
-            guard(
-              [this.collectionId, this.collection?.crawlCount],
-              this.renderReplay,
-            ),
-        ],
         [
           Tab.Items,
           () => guard([this.archivedItems], this.renderArchivedItems),
@@ -804,10 +819,9 @@ export class CollectionDetail extends BtrixElement {
         )}
         @sl-hide=${() => this.editing.setValue(null)}
         @btrix-collection-saved=${async () => {
-          void this.fetchCollection();
           void this.fetchArchivedItems();
-
-          await this.refreshReplay();
+          await this.fetchCollection();
+          await this.updateComplete;
 
           // Re-render collection thumbnails since they're dependent items and replay
           void this.selectCollectionThumbnail?.urlCountsTask.run();
@@ -1551,31 +1565,33 @@ export class CollectionDetail extends BtrixElement {
     </btrix-archived-item-list-item>
   `;
 
-  private readonly renderReplay = () => {
-    if (!this.collection) {
-      return this.renderSpinner();
-    }
-    if (!this.collection.crawlCount) {
-      return this.renderEmptyState();
-    }
+  private readonly guardedRenderReplay = (collection: Collection) => {
+    return guard([collection.crawlCount], () =>
+      collection.crawlCount
+        ? guard([this.collectionId], this.renderReplay)
+        : this.renderEmptyState(),
+    );
+  };
 
+  private readonly renderReplay = () => {
     const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
-    return html` <section class="overflow-hidden rounded-lg border">
+    return html`
       <replay-web-page
         class="h-[calc(100vh-6.5rem)]"
         source=${replaySource}
         config="${config}"
         coll=${this.collectionId}
-        url=${this.collection.homeUrl ||
+        url=${this.collection?.homeUrl ||
         /* must be empty string to reset the attribute: */ ""}
-        ts=${formatRwpTimestamp(this.collection.homeUrlTs) ||
+        ts=${formatRwpTimestamp(this.collection?.homeUrlTs) ||
         /* must be empty string to reset the attribute: */ ""}
         replayBase="/replay/"
         noSandbox="true"
         noCache="true"
+        hideOffscreen="true"
         @rwp-page-loading=${(e: RwpPageLoadingEvent) => {
           if (
             !e.detail.loading &&
@@ -1609,7 +1625,7 @@ export class CollectionDetail extends BtrixElement {
           }
         }}
       ></replay-web-page>
-    </section>`;
+    `;
   };
 
   private readonly renderSpinner = () => html`
@@ -1805,7 +1821,6 @@ export class CollectionDetail extends BtrixElement {
         icon: "check2-circle",
         id: "update",
       });
-      void this.refreshReplay();
       void this.fetchCollection();
       void this.fetchArchivedItems({
         // Update page if last item
@@ -2008,7 +2023,6 @@ export class CollectionDetail extends BtrixElement {
           method: "POST",
         },
       );
-      void this.refreshReplay();
       await this.fetchCollection();
 
       this.notify.toast({
@@ -2040,7 +2054,6 @@ export class CollectionDetail extends BtrixElement {
           body: JSON.stringify(params),
         },
       );
-      void this.refreshReplay();
       await this.fetchCollection();
 
       this.notify.toast({
