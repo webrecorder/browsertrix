@@ -1,6 +1,6 @@
 import { consume, provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
-import { Task, TaskStatus } from "@lit/task";
+import { Task } from "@lit/task";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -567,20 +567,24 @@ export class CollectionDetail extends BtrixElement {
                 this.collection?.crawlCount
                   ? html`
                       <sl-button-group label=${msg("Replay Toolbar")}>
-                        <sl-tooltip
-                          content=${msg("Go to Homepage")}
-                          placement="left"
-                        >
-                          <sl-button
-                            size="small"
-                            ?disabled=${!this.replayEmbed ||
-                            this.updateHomepageTask.status ===
-                              TaskStatus.PENDING}
-                            @click=${this.goToHomepage}
-                          >
-                            <sl-icon slot="prefix" name="house"></sl-icon>
-                          </sl-button>
-                        </sl-tooltip>
+                        ${
+                          // TODO Enable with https://github.com/webrecorder/replayweb.page/tree/target-v2.5.0
+                          ""
+                          //   <sl-tooltip
+                          //   content=${msg("Go to Homepage")}
+                          //   placement="left"
+                          // >
+                          //   <sl-button
+                          //     size="small"
+                          //     ?disabled=${!this.replayEmbed ||
+                          //     this.updateHomepageTask.status ===
+                          //       TaskStatus.PENDING}
+                          //     @click=${this.goToHomepage}
+                          //   >
+                          //     <sl-icon slot="prefix" name="house"></sl-icon>
+                          //   </sl-button>
+                          // </sl-tooltip>
+                        }
                         <sl-dropdown placement="bottom-end" distance="4">
                           <sl-button slot="trigger" size="small" caret>
                             ${msg("Set Homepage")}</sl-button
@@ -1630,13 +1634,13 @@ export class CollectionDetail extends BtrixElement {
       return;
     }
 
-    // TODO Requires https://github.com/webrecorder/replayweb.page/pull/521
-    // this.replayEmbed.mainElement?.navigateReplayTo(
-    //   this.collection.homeUrl || "pages",
-    //   this.collection.homeUrlTs
-    //     ? { ts: formatRwpTimestamp(this.collection.homeUrlTs) || "" }
-    //     : undefined,
-    // );
+    // @ts-expect-error Not used for now, enable with https://github.com/webrecorder/replayweb.page/tree/target-v2.5.0
+    this.replayEmbed.mainElement?.navigateReplayTo(
+      this.collection.homeUrl || "pages",
+      this.collection.homeUrlTs
+        ? { ts: formatRwpTimestamp(this.collection.homeUrlTs) || "" }
+        : undefined,
+    );
   };
 
   private readonly confirmDelete = () => {
