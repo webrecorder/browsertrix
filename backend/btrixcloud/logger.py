@@ -26,7 +26,9 @@ from structlog.contextvars import (
     reset_contextvars,
     unbind_contextvars,
 )
-from structlog.typing import Processor
+from structlog.typing import EventDict, Processor
+
+from .version import __branch__, __commit_hash__, __version__
 
 
 def set_log_context(
@@ -118,6 +120,14 @@ def _encode_special_types(_logger, _method, event_dict):
             event_dict[key] = str(val)
         elif isinstance(val, (datetime, date, time)):
             event_dict[key] = val.isoformat()
+
+
+def add_version_context(
+    logger: structlog.stdlib.BoundLogger, method_name: str, event_dict: EventDict
+) -> structlog.stdlib.BoundLogger:
+    event_dict["btrix_version"] = __version__
+    event_dict["btrix_commit_hash"] = __commit_hash__
+    event_dict["btrix_branch"] = __branch__
     return event_dict
 
 
@@ -126,6 +136,7 @@ SHARED_PROCESSORS: list[Processor] = [
     structlog.contextvars.merge_contextvars,
     structlog.stdlib.add_log_level,
     structlog.stdlib.add_logger_name,
+    add_version_context,
     structlog.stdlib.ExtraAdder(),
     structlog.stdlib.PositionalArgumentsFormatter(),
     structlog.processors.TimeStamper(fmt="iso"),
