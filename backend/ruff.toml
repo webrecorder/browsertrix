@@ -9,7 +9,9 @@ extend-select = [
 	# flake8-builtins
 	"A",
 	# flake8-quotes
-	"Q"
+	"Q",
+	# banned-api
+	"TID251",
 ]
 ignore = [
 	# Comparison to true should be 'if cond is true:' or 'if cond:'
@@ -25,3 +27,5 @@ ignore = [
 	# unused variable
 	"F841"
 ]
+[lint.flake8-tidy-imports.banned-api]
+"asyncio.create_subprocess_shell".msg = "Use the non-shell asyncio.create_subprocess_exec function instead."
