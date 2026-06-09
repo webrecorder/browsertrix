@@ -901,31 +901,31 @@ export class CollectionDetail extends BtrixElement {
       const namespacedPath = `${RouteNamespace.PublicOrgs}/${this.viewState?.params.slug}/${OrgTab.Collections}`;
       const slugPreview = this.slugPreview || this.collection?.slug || "";
       const link = new URL(`${baseUrl}/${namespacedPath}/${slugPreview}`).href;
+      const displayUrl = html`<span class="break-all text-xs text-neutral-500">
+        <span>${toShortUrl(baseUrl, null)}</span
+        ><span title="/${namespacedPath}/">/.../</span
+        ><span
+          class=${clsx(
+            tw`break-all text-xs`,
+            this.slugPreview ? tw` text-blue-500` : tw`text-neutral-500`,
+          )}
+          >${slugPreview}</span
+        >
+      </span>`;
 
-      return html`<span class="break-all text-xs text-neutral-500">
-          <span>${toShortUrl(baseUrl, null)}</span
-          ><span title="/${namespacedPath}/">/.../</span
-          ><span
-            class=${clsx(
-              tw`break-all text-xs`,
-              this.slugPreview ? tw` text-blue-500` : tw`text-neutral-500`,
-            )}
-            >${slugPreview}</span
+      return html` ${this.slugPreview
+        ? displayUrl
+        : html`<a
+            class="group flex items-center gap-1.5"
+            href=${link}
+            target="_blank"
           >
-        </span>
-        ${this.slugPreview
-          ? nothing
-          : html`<btrix-copy-button
-                name="link"
-                content=${msg("Copy Shareable Link")}
-                size="x-small"
-                value=${link}
-              ></btrix-copy-button>
-              <sl-tooltip content=${msg("Open in New Tab")}>
-                <btrix-button size="x-small" href=${link} target="_blank">
-                  <sl-icon name="arrow-up-right" class="size-2.5"></sl-icon>
-                </btrix-button>
-              </sl-tooltip>`}`;
+            ${displayUrl}
+            <sl-icon
+              name="arrow-up-right"
+              class="size-2.5 opacity-0 transition-opacity duration-fast group-hover:opacity-100"
+            ></sl-icon>
+          </a>`}`;
     };
 
     return html`<div class="flex items-start gap-1.5">
@@ -1012,14 +1012,34 @@ export class CollectionDetail extends BtrixElement {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
-      <sl-tooltip content=${msg("Share")}>
-        <sl-icon-button
-          name="box-arrow-up"
+      <btrix-popover placement="bottom">
+        ${when(
+          this.collection,
+          (collection) => html`
+            <div slot="content">
+              <div class="text-sm font-semibold">
+                ${SelectCollectionAccess.Options[collection.access].label}
+              </div>
+              <p>${SelectCollectionAccess.Options[collection.access].detail}</p>
+            </div>
+          `,
+        )}
+        <sl-button
+          size="small"
+          variant=${this.collection?.crawlCount ? "primary" : "default"}
           @click=${() => {
             this.openDialogName = "edit";
           }}
-        ></sl-icon-button>
-      </sl-tooltip>
+        >
+          <sl-icon
+            slot="prefix"
+            name=${this.collection
+              ? SelectCollectionAccess.Options[this.collection.access].icon
+              : ""}
+          ></sl-icon>
+          ${msg("Share")}
+        </sl-button>
+      </btrix-popover>
       <sl-dropdown distance="4">
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
