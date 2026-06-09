@@ -5,7 +5,9 @@ import structlog
 import pytest
 import requests
 
-import btrixcloud.logger
+from btrixcloud.logger import init_logging
+
+init_logging()
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
