@@ -431,24 +431,35 @@ export class CollectionDetail extends BtrixElement {
     const collection_name = html`<strong class="font-semibold"
       >${this.collection?.name}</strong
     >`;
+    const showCaption = this.isCrawler || this.collection?.caption;
 
     return html`
       <div class="mb-7">${this.renderBreadcrumbs()}</div>
       <header
         class=${clsx(
-          tw`grid items-end gap-4 md:grid-cols-[auto_1fr] md:grid-rows-[repeat(3,auto)] md:items-start md:gap-x-5 lg:grid-cols-[auto_1fr_auto]`,
+          tw`grid items-end gap-3 md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_auto]`,
+          showCaption
+            ? tw`md:grid-rows-[1fr_auto] md:items-start`
+            : tw`md:items-center`,
         )}
       >
-        <div class="aspect-video md:row-span-3 md:h-32">
-          ${when(
-            this.collection,
-            this.renderThumbnail,
-            () =>
-              html`<sl-skeleton
-                class="block aspect-video [--border-radius:var(--sl-border-radius-large)]"
-                effect="sheen"
-              ></sl-skeleton>`,
+        <div
+          class=${clsx(
+            tw`self-start lg:pr-2`,
+            showCaption && tw`md:row-span-2`,
           )}
+        >
+          <div class="aspect-video md:h-32">
+            ${when(
+              this.collection,
+              this.renderThumbnail,
+              () =>
+                html`<sl-skeleton
+                  class="block aspect-video [--border-radius:var(--sl-border-radius-large)]"
+                  effect="sheen"
+                ></sl-skeleton>`,
+            )}
+          </div>
         </div>
         <div
           class=${clsx(
@@ -470,56 +481,58 @@ export class CollectionDetail extends BtrixElement {
           </div>
           <div class="relative z-10">${this.renderAccessDetails()}</div>
         </div>
+        ${showCaption
+          ? html`<div
+              class=${clsx(
+                tw`grid md:col-start-2 md:row-start-2 lg:col-end-4`,
+                this.isCrawler && tw`-mx-1 -mt-3 px-1 pt-1 `,
+              )}
+            >
+              ${this.isCrawler
+                ? when(
+                    this.collection,
+                    (col) =>
+                      html`<btrix-editable-text-field
+                        class="-m-4 -mb-5 overflow-hidden p-4 pb-5 text-neutral-600"
+                        maxLength=${COLLECTION_CAPTION_MAX_LENGTH}
+                        .value=${col.caption}
+                        placeholder=${msg("Add a summary...")}
+                        .renderContent=${this.renderCaption}
+                        rows=${2}
+                        @btrix-change=${async (e: BtrixChangeEvent<string>) => {
+                          const el = e.currentTarget as EditableTextField;
+                          const prose =
+                            el.shadowRoot?.querySelector<Prose>("btrix-prose");
+
+                          await this.updateSummary(e.detail.value.trim());
+                          await el.updateComplete;
+
+                          // HACK Force prose to sync clamping after caption update
+                          // This shouldn't be necessary if `renderContent` is refactored to be reactive
+                          void prose?.syncClamp();
+                        }}
+                        extraWidth=${24}
+                      >
+                        <span
+                          slot="suffix"
+                          class="ml-2 mt-0.5 inline-flex h-5 shrink-0 items-center"
+                        >
+                          <sl-icon
+                            name="pencil"
+                            class="size-3"
+                            aria-label=${msg("Edit Collection Caption")}
+                          ></sl-icon>
+                        </span>
+                      </btrix-editable-text-field>`,
+                  )
+                : this.collection?.caption
+                  ? this.renderCaption(this.collection.caption)
+                  : nothing}
+            </div>`
+          : nothing}
+
         <div
-          class=${clsx(
-            tw`grid md:col-start-2 md:row-start-2 lg:col-end-4`,
-            this.isCrawler && tw`-mx-1 -mb-5 -mt-2 px-1 pt-1 `,
-          )}
-        >
-          ${this.isCrawler
-            ? when(
-                this.collection,
-                (col) =>
-                  html`<btrix-editable-text-field
-                    class="-m-4 -mb-5 overflow-hidden p-4 pb-5 text-neutral-600"
-                    maxLength=${COLLECTION_CAPTION_MAX_LENGTH}
-                    .value=${col.caption}
-                    placeholder=${msg("Add a summary...")}
-                    .renderContent=${this.renderCaption}
-                    rows=${2}
-                    @btrix-change=${async (e: BtrixChangeEvent<string>) => {
-                      const el = e.currentTarget as EditableTextField;
-                      const prose =
-                        el.shadowRoot?.querySelector<Prose>("btrix-prose");
-
-                      await this.updateSummary(e.detail.value.trim());
-                      await el.updateComplete;
-
-                      // HACK Force prose to sync clamping after caption update
-                      // This shouldn't be necessary if `renderContent` is refactored to be reactive
-                      void prose?.syncClamp();
-                    }}
-                    extraWidth=${24}
-                  >
-                    <span
-                      slot="suffix"
-                      class="ml-2 mt-0.5 inline-flex h-5 shrink-0 items-center"
-                    >
-                      <sl-icon
-                        name="pencil"
-                        class="size-3"
-                        aria-label=${msg("Edit Collection Caption")}
-                      ></sl-icon>
-                    </span>
-                  </btrix-editable-text-field>`,
-              )
-            : this.collection?.caption
-              ? this.renderCaption(this.collection.caption)
-              : nothing}
-        </div>
-
-        <div
-          class="ml-auto flex flex-shrink-0 flex-wrap items-center justify-end gap-2 md:col-start-2 md:row-start-3 lg:col-start-3 lg:row-start-1 lg:mt-0.5"
+          class="ml-auto flex flex-shrink-0 flex-wrap justify-end gap-2 md:col-start-2 md:row-start-3 lg:col-start-3 lg:row-start-1 lg:min-h-16 lg:pt-1"
         >
           <btrix-share-collection
             orgSlug=${this.orgSlugState || ""}

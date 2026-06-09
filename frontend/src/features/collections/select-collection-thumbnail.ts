@@ -269,7 +269,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
         class=${clsx(
           tw`relative aspect-video size-full rounded-lg bg-neutral-100`,
           isCrawler && [
-            tw`m-px cursor-pointer ring-1 transition-all duration-x-fast hover:ring-offset-2`,
+            tw`cursor-pointer ring-1 transition-all duration-x-fast hover:ring-offset-2`,
             this.open ? tw`ring-offset-2` : tw`ring-neutral-200`,
           ],
         )}
