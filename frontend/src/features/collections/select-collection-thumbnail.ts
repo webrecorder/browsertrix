@@ -92,7 +92,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
   /**
    * Get page URLs included in collection and add them to fuzzy search collection.
    */
-  private readonly urlCountsTask = new Task(this, {
+  readonly urlCountsTask = new Task(this, {
     task: async ([id], { signal }) => {
       if (!id) return;
 

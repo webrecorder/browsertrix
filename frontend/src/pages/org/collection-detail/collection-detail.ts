@@ -43,7 +43,7 @@ import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import { DEFAULT_THUMBNAIL } from "@/features/collections/collection-thumbnail";
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
-import type { ShareCollection } from "@/features/collections/share-collection";
+import type { SelectCollectionThumbnail } from "@/features/collections/select-collection-thumbnail";
 import { createIndexDialog } from "@/features/collections/templates/create-index-dialog";
 import { deleteIndexDialog } from "@/features/collections/templates/delete-index-dialog";
 import { purgeIndexDialog } from "@/features/collections/templates/purge-index-dialog";
@@ -133,11 +133,11 @@ export class CollectionDetail extends BtrixElement {
   @provide({ context: collectionRwpContext })
   replayEmbed?: ReplayWebPage | null;
 
-  @query("btrix-share-collection")
-  private readonly shareCollection?: ShareCollection | null;
-
   @query("btrix-markdown-editor")
   private readonly descriptionEditor?: MarkdownEditor | null;
+
+  @query("btrix-select-collection-thumbnail")
+  private readonly selectCollectionThumbnail?: SelectCollectionThumbnail | null;
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
@@ -799,10 +799,14 @@ export class CollectionDetail extends BtrixElement {
             this.collection,
         )}
         @sl-hide=${() => this.editing.setValue(null)}
-        @btrix-collection-saved=${() => {
-          this.refreshReplay();
+        @btrix-collection-saved=${async () => {
           void this.fetchCollection();
           void this.fetchArchivedItems();
+
+          await this.refreshReplay();
+
+          // Re-render collection thumbnails since they're dependent items and replay
+          void this.selectCollectionThumbnail?.urlCountsTask.run();
         }}
       >
       </btrix-collection-items-dialog>
@@ -812,18 +816,12 @@ export class CollectionDetail extends BtrixElement {
         ?open=${this.openDialogName === "edit"}
         @sl-hide=${() => (this.openDialogName = undefined)}
         @btrix-collection-saved=${() => {
-          this.refreshReplay();
           // TODO maybe we can return the updated collection from the update endpoint, and avoid an extra fetch?
           void this.fetchCollection();
         }}
         @btrix-change=${() => {
-          // Don't do full refresh of rwp so that rwp-url-change fires
-          this.isRwpLoaded = false;
-
           void this.fetchCollection();
         }}
-        .replayWebPage=${this.replayEmbed}
-        ?replayLoaded=${this.isRwpLoaded}
       ></btrix-collection-edit-dialog>
 
       ${createIndexDialog({
@@ -967,10 +965,10 @@ export class CollectionDetail extends BtrixElement {
     >`;
   };
 
-  private refreshReplay() {
+  private async refreshReplay() {
     if (this.replayEmbed) {
       try {
-        void this.replayEmbed.fullReload();
+        await this.replayEmbed.fullReload();
       } catch (e) {
         console.warn("Full reload not available in RWP");
       }
@@ -1803,7 +1801,7 @@ export class CollectionDetail extends BtrixElement {
         icon: "check2-circle",
         id: "update",
       });
-      this.refreshReplay();
+      void this.refreshReplay();
       void this.fetchCollection();
       void this.fetchArchivedItems({
         // Update page if last item
@@ -2006,7 +2004,7 @@ export class CollectionDetail extends BtrixElement {
           method: "POST",
         },
       );
-      this.refreshReplay();
+      void this.refreshReplay();
       await this.fetchCollection();
 
       this.notify.toast({
@@ -2038,7 +2036,7 @@ export class CollectionDetail extends BtrixElement {
           body: JSON.stringify(params),
         },
       );
-      this.refreshReplay();
+      void this.refreshReplay();
       await this.fetchCollection();
 
       this.notify.toast({
