@@ -20,6 +20,8 @@ from btrixcloud.models import (
 )
 from btrixcloud.utils import dt_now
 
+from .utils import _get_log_event
+
 EMAILS_HOST_PREFIX = (
     os.environ.get("EMAIL_TEMPLATE_ENDPOINT") or "http://127.0.0.1:30872"
 )
@@ -127,11 +129,9 @@ async def test_send_user_validation(email_sender, caplog):
 
     # Check log output
     assert "email_created_not_sent_no_smtp" in caplog.text
-    info_record = next(
-        r for r in caplog.records if r.getMessage() == "email_created_not_sent_no_smtp"
-    )
-    assert info_record.template_name == "verifyEmail"
-    assert info_record.receiver == test_email
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "verifyEmail"
+    assert data.get("receiver") == test_email
 
 
 @pytest.mark.asyncio
@@ -152,11 +152,9 @@ async def test_send_user_invite_new_user(
 
     # Check log output
     assert "email_created_not_sent_no_smtp" in caplog.text
-    info_record = next(
-        r for r in caplog.records if r.getMessage() == "email_created_not_sent_no_smtp"
-    )
-    assert info_record.template_name == "invite"
-    assert info_record.receiver == sample_invite.email
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "invite"
+    assert data.get("receiver") == sample_invite.email
 
 
 @pytest.mark.asyncio
@@ -177,11 +175,9 @@ async def test_send_user_invite_existing_user(
 
     # Check log output
     assert "email_created_not_sent_no_smtp" in caplog.text
-    info_record = next(
-        r for r in caplog.records if r.getMessage() == "email_created_not_sent_no_smtp"
-    )
-    assert info_record.template_name == "invite"
-    assert info_record.receiver == sample_invite.email
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "invite"
+    assert data.get("receiver") == sample_invite.email
 
 
 @pytest.mark.asyncio
@@ -199,11 +195,9 @@ async def test_send_password_reset(email_sender, caplog):
 
     # Check log output
     assert "email_created_not_sent_no_smtp" in caplog.text
-    info_record = next(
-        r for r in caplog.records if r.getMessage() == "email_created_not_sent_no_smtp"
-    )
-    assert info_record.template_name == "passwordReset"
-    assert info_record.receiver == test_email
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "passwordReset"
+    assert data.get("receiver") == test_email
 
 
 @pytest.mark.asyncio
@@ -227,11 +221,9 @@ async def test_send_background_job_failed(email_sender, sample_org, caplog):
 
     # Check log output
     assert "email_created_not_sent_no_smtp" in caplog.text
-    info_record = next(
-        r for r in caplog.records if r.getMessage() == "email_created_not_sent_no_smtp"
-    )
-    assert info_record.template_name == "failedBgJob"
-    assert info_record.receiver == "admin@example.com"
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "failedBgJob"
+    assert data.get("receiver") == "admin@example.com"
 
 
 @pytest.mark.asyncio
@@ -250,11 +242,9 @@ async def test_send_subscription_cancellation(email_sender, sample_org, caplog):
 
     # Check log output
     assert "email_created_not_sent_no_smtp" in caplog.text
-    info_record = next(
-        r for r in caplog.records if r.getMessage() == "email_created_not_sent_no_smtp"
-    )
-    assert info_record.template_name == "subscriptionCancel"
-    assert info_record.receiver == "admin@example.com"
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "subscriptionCancel"
+    assert data.get("receiver") == "admin@example.com"
 
 
 @pytest.mark.asyncio
@@ -321,7 +311,5 @@ async def test_invite_with_superuser_flag(email_sender, sample_org, caplog):
     )
 
     assert "email_created_not_sent_no_smtp" in caplog.text
-    info_record = next(
-        r for r in caplog.records if r.getMessage() == "email_created_not_sent_no_smtp"
-    )
-    assert info_record.template_name == "invite"
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "invite"
