@@ -788,21 +788,6 @@ export class CollectionDetail extends BtrixElement {
       >
       </btrix-collection-items-dialog>
 
-      <btrix-collection-initial-view-dialog
-        ?open=${this.openDialogName === "replaySettings"}
-        @btrix-change=${() => {
-          // Don't do full refresh of rwp so that rwp-url-change fires
-          this.isRwpLoaded = false;
-
-          void this.fetchCollection();
-        }}
-        @sl-hide=${async () => (this.openDialogName = undefined)}
-        collectionId=${this.collectionId}
-        .collection=${this.collection}
-        ?replayLoaded=${this.isRwpLoaded}
-      >
-      </btrix-collection-initial-view-dialog>
-
       <btrix-collection-edit-dialog
         .collection=${this.collection}
         ?open=${this.openDialogName === "edit"}

@@ -5,7 +5,6 @@ import("./collections-grid-with-edit-dialog");
 import("./collection-items-dialog");
 import("./collection-edit-dialog");
 import("./collection-create-dialog");
-import("./collection-initial-view-dialog");
 import("./collection-workflow-list");
 import("./dedupe-badge");
 import("./dedupe-source-badge");
