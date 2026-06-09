@@ -49,7 +49,7 @@ def set_log_context(
     return {}
 
 
-def clear_log_context(tokens: Mapping[str, Token] | None = None) -> None:
+def clear_log_context(tokens: Mapping[str, Token]) -> None:
     """Clear org and user context.
 
     If keys are provided, only those keys are unbound. Otherwise all
@@ -64,7 +64,8 @@ def clear_log_context(tokens: Mapping[str, Token] | None = None) -> None:
 def create_request_logging_middleware(logger):
     """Return an ASGI middleware that logs every request with
     method, path, status, duration, request_id, client_addr, and
-    http_version."""
+    http_version.
+    """
 
     def _get_client_addr(request):
         client = request.client
@@ -80,7 +81,7 @@ def create_request_logging_middleware(logger):
 
         clear_contextvars()
         request_id = uuid4().hex[:8]
-        bind_contextvars(request_id=request_id)
+        request_id_token = bind_contextvars(request_id=request_id)
         start_time = time.time()
         try:
             response = await call_next(request)
@@ -105,8 +106,7 @@ def create_request_logging_middleware(logger):
                 client_addr=_get_client_addr(request),
                 http_version=request.scope.get("http_version", ""),
             )
-            unbind_contextvars("request_id")
-            clear_log_context()
+            reset_contextvars(**request_id_token)
         return response
 
     return request_logging_middleware
@@ -155,8 +155,8 @@ SHARED_PROCESSORS: list[Processor] = [
 def init_logging() -> None:
     """Configure structlog and the root logger.
 
-    - Log format: JSON if LOG_FORMAT=json, else human-readable text (dev format).
-    - Log level from LOG_LEVEL env var (default DEBUG).
+    - Log format: JSON if LOG_FORMAT=json, else human-readable text
+    - Log level from LOG_LEVEL env var (default DEBUG)
     """
     log_format_json = os.environ.get("LOG_FORMAT", "") == "json"
 
