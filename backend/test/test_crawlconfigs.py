@@ -966,6 +966,49 @@ def test_validate_custom_behavior(crawler_auth_headers, default_org_id):
     assert r.json()["detail"] == "custom_behavior_branch_not_found"
 
 
+def test_validate_custom_behavior_shell_chars(crawler_auth_headers, default_org_id):
+    """Verify URLs with shell metacharacters are treated as a single arg."""
+    malicious_urls = [
+        "git+https://example.com/repo;whoami",
+        "git+https://example.com/repo&&whoami",
+        "git+https://example.com/repo`whoami`",
+        "git+https://example.com/repo$(whoami)",
+        "git+https://example.com/repo|whoami",
+    ]
+    for url in malicious_urls:
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behavior",
+            headers=crawler_auth_headers,
+            json={"customBehavior": url},
+        )
+        assert r.status_code in (400, 404)
+
+
+def test_validate_custom_behavior_malicious_branch(
+    crawler_auth_headers, default_org_id
+):
+    """Verify that malicious branch names are safely handled."""
+    base_url = "git+https://github.com/webrecorder/custom-behaviors?branch="
+    malicious_branches = [
+        "../etc/passwd",
+        "..\\windows\\system32",
+        "main;whoami",
+        "main`whoami`",
+        "main$(whoami)",
+    ]
+    for branch in malicious_branches:
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behavior",
+            headers=crawler_auth_headers,
+            json={"customBehavior": base_url + branch},
+        )
+        assert r.status_code == 404
+        assert r.json()["detail"] in (
+            "custom_behavior_not_found",
+            "custom_behavior_branch_not_found",
+        )
+
+
 def test_add_crawl_config_with_seed_file(
     crawler_auth_headers, default_org_id, seed_file_id, seed_file_config_id
 ):
