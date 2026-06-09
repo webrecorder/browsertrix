@@ -437,9 +437,9 @@ export class CollectionDetail extends BtrixElement {
       <div class="mb-7">${this.renderBreadcrumbs()}</div>
       <header
         class=${clsx(
-          tw`grid items-end gap-3 md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_auto]`,
+          tw`grid items-end gap-5 md:grid-cols-[auto_1fr] md:gap-3 lg:grid-cols-[auto_1fr_auto]`,
           showCaption
-            ? tw`md:grid-rows-[1fr_auto] md:items-start`
+            ? tw`md:grid-rows-[auto_auto] md:items-start`
             : tw`md:items-center`,
         )}
       >
@@ -504,7 +504,7 @@ export class CollectionDetail extends BtrixElement {
                           const prose =
                             el.shadowRoot?.querySelector<Prose>("btrix-prose");
 
-                          await this.updateSummary(e.detail.value.trim());
+                          await this.updateSummary(e.detail.value);
                           await el.updateComplete;
 
                           // HACK Force prose to sync clamping after caption update
@@ -532,7 +532,7 @@ export class CollectionDetail extends BtrixElement {
           : nothing}
 
         <div
-          class="ml-auto flex flex-shrink-0 flex-wrap justify-end gap-2 md:col-start-2 md:row-start-3 lg:col-start-3 lg:row-start-1 lg:min-h-16 lg:pt-1"
+          class="ml-auto flex flex-shrink-0 flex-wrap items-start justify-end gap-2 md:col-start-2 md:row-start-3 lg:col-start-3 lg:row-start-1 lg:min-h-16 lg:pt-1"
         >
           <btrix-share-collection
             orgSlug=${this.orgSlugState || ""}
@@ -612,9 +612,7 @@ export class CollectionDetail extends BtrixElement {
                         </sl-dropdown>
                       </sl-button-group>
                     `
-                  : this.collection?.runningUpdatesCount
-                    ? html`<sl-spinner slot="prefix"></sl-spinner>`
-                    : nothing,
+                  : nothing,
             ],
             [
               Tab.Items,
@@ -1037,41 +1035,61 @@ export class CollectionDetail extends BtrixElement {
 
   private readonly renderActions = () => {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
+    const showShare = this.collection?.crawlCount;
 
     return html`
-      <btrix-popover placement="bottom">
-        ${when(
-          this.collection,
-          (collection) => html`
-            <div slot="content">
-              <div class="text-sm font-semibold">
-                ${SelectCollectionAccess.Options[collection.access].label}
-              </div>
-              <p>${SelectCollectionAccess.Options[collection.access].detail}</p>
-            </div>
-          `,
-        )}
-        <sl-button
-          size="small"
-          variant=${this.collection?.crawlCount ? "primary" : "default"}
-          @click=${() => {
-            this.openDialogName = "edit";
-          }}
-        >
-          <sl-icon
-            slot="prefix"
-            name=${this.collection
-              ? SelectCollectionAccess.Options[this.collection.access].icon
-              : ""}
-          ></sl-icon>
-          ${msg("Share")}
-        </sl-button>
-      </btrix-popover>
-      <sl-dropdown distance="4">
+      ${showShare
+        ? html`<btrix-popover placement="bottom">
+            ${when(
+              this.collection,
+              (collection) => html`
+                <div slot="content">
+                  <div class="text-sm font-semibold">
+                    ${SelectCollectionAccess.Options[collection.access].label}
+                  </div>
+                  <p>
+                    ${SelectCollectionAccess.Options[collection.access].detail}
+                  </p>
+                </div>
+              `,
+            )}
+            <sl-button
+              size="small"
+              variant=${this.collection?.crawlCount ? "primary" : "default"}
+              @click=${() => {
+                this.openDialogName = "edit";
+              }}
+            >
+              <sl-icon
+                slot="prefix"
+                name=${this.collection
+                  ? SelectCollectionAccess.Options[this.collection.access].icon
+                  : ""}
+              ></sl-icon>
+              ${msg("Share")}
+            </sl-button>
+          </btrix-popover>`
+        : nothing}
+      <sl-dropdown distance="4" placement="bottom-end">
         <sl-button slot="trigger" size="small" caret>
-          <sl-icon name="three-dots" label=${msg("More Actions")}></sl-icon>
+          ${showShare
+            ? html`<sl-icon
+                name="three-dots"
+                label=${msg("More Actions")}
+              ></sl-icon>`
+            : msg("Actions")}
         </sl-button>
         <sl-menu>
+          ${showShare
+            ? nothing
+            : html`<sl-menu-item
+                @click=${() => {
+                  this.openDialogName = "edit";
+                }}
+              >
+                <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+                ${msg("Share Collection")}
+              </sl-menu-item>`}
           <sl-menu-item
             @click=${async () => {
               this.navigate.to(

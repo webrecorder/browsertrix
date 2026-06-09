@@ -240,6 +240,9 @@ export class EditableTextField extends TailwindElement {
         style=${styleMap({
           visibility: this.editing ? "hidden" : "visible",
           width: this.editing ? `${minWidth}px` : "auto",
+          minHeight: this.rows
+            ? `calc(${this.rows * 1.3125}em + 0.375rem)`
+            : "auto",
         })}
       >
         <span class="truncate"
