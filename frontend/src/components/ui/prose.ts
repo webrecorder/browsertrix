@@ -48,13 +48,18 @@ export class Prose extends TailwindElement {
         ? html`<button
             class="whitespace-nowrap leading-normal text-primary-500 transition-colors duration-fast hover:text-primary-600"
             @click=${() => (this.clamped = !this.clamped)}
+            part="button"
           >
             ${this.clamped ? msg("Show more") : msg("Show less")}
           </button>`
         : nothing}`;
   }
 
-  private async onSlotChange() {
+  private onSlotChange() {
+    void this.syncClamp();
+  }
+
+  async syncClamp() {
     const pre = await this.pre;
 
     if (!pre) {

@@ -28,11 +28,13 @@ import { getThumbnailBlob } from "./utils/getThumbnailBlob";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type {
+  EditableTextField,
   EditableTextFieldChangeEvent,
   EditableTextFieldInputEvent,
 } from "@/components/ui/editable-text-field";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import type { Prose } from "@/components/ui/prose";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
@@ -434,10 +436,10 @@ export class CollectionDetail extends BtrixElement {
       <div class="mb-7">${this.renderBreadcrumbs()}</div>
       <header
         class=${clsx(
-          tw`grid items-end gap-4 md:grid-cols-[auto_1fr] md:grid-rows-[repeat(3,auto)] md:items-start lg:grid-cols-[auto_1fr_auto]`,
+          tw`grid items-end gap-4 md:grid-cols-[auto_1fr] md:grid-rows-[repeat(3,auto)] md:items-start md:gap-x-5 lg:grid-cols-[auto_1fr_auto]`,
         )}
       >
-        <div class="aspect-video md:row-span-3 md:h-36">
+        <div class="aspect-video md:row-span-3 md:h-32">
           ${when(
             this.collection,
             this.renderThumbnail,
@@ -471,7 +473,7 @@ export class CollectionDetail extends BtrixElement {
         <div
           class=${clsx(
             tw`grid md:col-start-2 md:row-start-2 lg:col-end-4`,
-            this.isCrawler && tw`-mx-1 -mb-9 -mt-1 px-1 pb-5 pt-1 `,
+            this.isCrawler && tw`-mx-1 -mb-5 -mt-2 px-1 pt-1 `,
           )}
         >
           ${this.isCrawler
@@ -484,9 +486,18 @@ export class CollectionDetail extends BtrixElement {
                     .value=${col.caption}
                     placeholder=${msg("Add a summary...")}
                     .renderContent=${this.renderCaption}
-                    rows=${3}
-                    @btrix-change=${(e: BtrixChangeEvent<string>) => {
-                      void this.updateSummary(e.detail.value);
+                    rows=${2}
+                    @btrix-change=${async (e: BtrixChangeEvent<string>) => {
+                      const el = e.currentTarget as EditableTextField;
+                      const prose =
+                        el.shadowRoot?.querySelector<Prose>("btrix-prose");
+
+                      await this.updateSummary(e.detail.value.trim());
+                      await el.updateComplete;
+
+                      // HACK Force prose to sync clamping after caption update
+                      // This shouldn't be necessary if `renderContent` is refactored to be reactive
+                      void prose?.syncClamp();
                     }}
                     extraWidth=${24}
                   >
@@ -508,7 +519,7 @@ export class CollectionDetail extends BtrixElement {
         </div>
 
         <div
-          class="ml-auto flex flex-shrink-0 flex-wrap items-center justify-end gap-2 md:col-start-2 md:row-start-3 lg:col-start-3 lg:row-start-1"
+          class="ml-auto flex flex-shrink-0 flex-wrap items-center justify-end gap-2 md:col-start-2 md:row-start-3 lg:col-start-3 lg:row-start-1 lg:mt-0.5"
         >
           <btrix-share-collection
             orgSlug=${this.orgSlugState || ""}
@@ -525,7 +536,7 @@ export class CollectionDetail extends BtrixElement {
       </header>
 
       <div
-        class="relative mt-3 rounded-lg border bg-white px-4 py-2"
+        class="relative mt-4 rounded-lg border bg-white px-4 py-2"
         aria-busy="${
           // TODO Switch to task and use task status
           this.collection === undefined || this.collection.runningUpdatesCount
@@ -842,7 +853,9 @@ export class CollectionDetail extends BtrixElement {
   };
 
   private readonly renderName = (collection: Collection) => {
-    if (!this.isCrawler) return collection.name;
+    if (!this.isCrawler) {
+      return html`<div class="truncate">${collection.name}</div>`;
+    }
 
     return html`<btrix-editable-text-field
       class="-m-4 overflow-hidden p-4"
@@ -860,7 +873,7 @@ export class CollectionDetail extends BtrixElement {
       @btrix-change=${(e: EditableTextFieldChangeEvent) => {
         e.stopPropagation();
 
-        const { value } = e.detail;
+        const value = e.detail.value.trim();
 
         if (value === this.collection?.name) {
           this.slugPreview = "";
@@ -934,13 +947,14 @@ export class CollectionDetail extends BtrixElement {
     </div>`;
   };
 
-  private readonly renderCaption = (text: string) =>
-    html`<btrix-prose
-      class="block [--btrix-line-clamp:2] part-[base]:max-w-full"
+  private readonly renderCaption = (text: string) => {
+    return html`<btrix-prose
+      class="pointer-events-auto block [--btrix-line-clamp:2] part-[button]:relative part-[button]:z-30 part-[base]:max-w-full"
       >${richText(text, {
         linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
       })}</btrix-prose
     >`;
+  };
 
   private refreshReplay() {
     if (this.replayEmbed) {
@@ -1041,18 +1055,10 @@ export class CollectionDetail extends BtrixElement {
         </sl-button>
       </btrix-popover>
       <sl-dropdown distance="4">
-        <sl-button slot="trigger" size="small" caret
-          >${msg("Actions")}</sl-button
-        >
+        <sl-button slot="trigger" size="small" caret>
+          <sl-icon name="three-dots" label=${msg("More Actions")}></sl-icon>
+        </sl-button>
         <sl-menu>
-          <sl-menu-item
-            @click=${() => {
-              this.openDialogName = "edit";
-            }}
-          >
-            <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
-            ${msg("Share Collection")}
-          </sl-menu-item>
           <sl-menu-item
             @click=${async () => {
               this.navigate.to(
