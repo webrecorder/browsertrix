@@ -24,6 +24,7 @@ import {
   type Dialog,
   type OpenDialogEventDetail,
 } from "./types";
+import { getThumbnailBlob } from "./utils/getThumbnailBlob";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type {
@@ -37,6 +38,7 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixChangeEvent } from "@/events/btrix-change";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
+import { DEFAULT_THUMBNAIL } from "@/features/collections/collection-thumbnail";
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
@@ -70,6 +72,7 @@ import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import type { DedupeIndexState } from "@/types/dedupe";
 import type { PageSnapshot } from "@/types/page";
+import { SortDirection } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { isCrawlReplay, renderName } from "@/utils/crawler";
 import { indexAvailable, indexInUse, indexUpdating } from "@/utils/dedupe";
@@ -120,7 +123,7 @@ export class CollectionDetail extends BtrixElement {
   private slugPreview = "";
 
   @state()
-  private replayCurrentPage?: { url: string; ts?: string };
+  private replayCurrentView?: { url: string; ts?: string };
 
   @consume({ context: viewStateContext })
   viewState?: ViewStateContext;
@@ -193,30 +196,166 @@ export class CollectionDetail extends BtrixElement {
     return this.appState.isCrawler;
   }
 
-  private readonly updateHomepageTask = new Task(this, {
-    task: async ([replayCurrentPage], { signal }) => {
+  /**
+   * Get page ID from URL and timestamp
+   */
+  private readonly replayCurrentPage = new Task(this, {
+    task: async ([replayCurrentView], { signal }) => {
+      if (!replayCurrentView) return;
+
+      const { url, ts } = replayCurrentView;
+      const { items } = await this.getPages(
+        { url, sortBy: "ts", sortDirection: SortDirection.Descending },
+        signal,
+      );
+      let page: PageSnapshot | undefined = items[0];
+
+      if (ts) {
+        page = items.find((page) => formatRwpTimestamp(page.ts) === ts);
+      }
+
+      return page || null;
+    },
+    args: () => [this.replayCurrentView] as const,
+  });
+
+  /**
+   * Revert thumbnail change
+   */
+  private readonly revertThumbnailTask = new Task(this, {
+    task: async ([oldThumbnail, oldDefaultThumbnailName], { signal }) => {
       try {
-        await this.updateHomepage(
-          replayCurrentPage || { pageId: null },
-          signal,
-        );
+        if (oldDefaultThumbnailName) {
+          await this.updateThumbnail(
+            {
+              defaultThumbnailName: oldDefaultThumbnailName,
+            },
+            signal,
+          );
+        } else {
+          if (oldThumbnail) {
+            this.notify.toast({
+              message: msg("Reverting thumbnail..."),
+              variant: "info",
+              icon: "info-circle",
+              id: "update",
+            });
+
+            await this.uploadThumbnail(
+              {
+                url: oldThumbnail.url,
+                timestamp: oldThumbnail.urlTs,
+                pageId: oldThumbnail.urlPageId,
+              },
+              signal,
+            );
+          }
+          await this.updateThumbnail(
+            {
+              defaultThumbnailName: oldThumbnail ? null : DEFAULT_THUMBNAIL,
+            },
+            signal,
+          );
+        }
+
+        this.notify.toast({
+          message: msg("Thumbnail updated."),
+          variant: "success",
+          icon: "check2-circle",
+          id: "update",
+        });
+
+        await this.fetchCollection();
+      } catch {
+        this.notify.toast({
+          message: msg("Sorry, couldn’t revert thumbnail at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+          id: "update",
+        });
+      }
+    },
+    args: () =>
+      [undefined, undefined] as readonly [
+        Collection["thumbnailSource"] | undefined,
+        Collection["defaultThumbnailName"] | undefined,
+      ],
+    autoRun: false,
+  });
+
+  /**
+   * Update Replay/collection initial view
+   */
+  private readonly updateHomepageTask = new Task(this, {
+    task: async ([page], { signal }) => {
+      this.revertThumbnailTask.abort();
+
+      try {
+        const oldThumbnail = this.collection?.thumbnailSource;
+        const oldDefaultThumbnailName = this.collection?.defaultThumbnailName;
+        let thumbnailUpdated = false;
+
+        await this.updateHomepage({ pageId: page?.id ?? null }, signal);
+
+        if (page) {
+          this.notify.toast({
+            message: msg("Updating homepage..."),
+            variant: "info",
+            icon: "info-circle",
+            id: "update",
+          });
+
+          try {
+            await this.uploadThumbnail(
+              { url: page.url, timestamp: page.ts, pageId: page.id },
+              signal,
+            );
+            await this.updateThumbnail({ defaultThumbnailName: null }, signal);
+
+            thumbnailUpdated = true;
+          } catch (err) {
+            console.debug(err);
+          }
+        }
 
         // Optimistic update
         if (this.collection) {
           this.collection = {
             ...this.collection,
-            homeUrl: replayCurrentPage?.url || null,
-            homeUrlTs: replayCurrentPage?.ts || null,
+            homeUrl: page?.url || null,
+            homeUrlTs: page?.ts || null,
             homeUrlPageId: null,
           };
         }
 
-        this.notify.toast({
-          message: msg("Homepage updated."),
-          variant: "success",
-          icon: "check2-circle",
-          id: "update",
-        });
+        if (thumbnailUpdated) {
+          const undo = () =>
+            void this.revertThumbnailTask.run([
+              oldThumbnail,
+              oldDefaultThumbnailName,
+            ]);
+          const undoButton = html`<button
+            class="font-semibold text-primary-500 underline hover:text-primary-600 hover:no-underline"
+            @click=${undo}
+          >
+            ${msg("Undo")}
+          </button>`;
+          this.notify.toast({
+            title: msg("Homepage updated"),
+            message: html`${msg("Thumbnail updated to match.")} ${undoButton}`,
+            variant: "success",
+            icon: "check2-circle",
+            duration: 10000,
+            id: "update",
+          });
+        } else {
+          this.notify.toast({
+            message: msg("Homepage updated."),
+            variant: "success",
+            icon: "check2-circle",
+            id: "update",
+          });
+        }
 
         await this.fetchCollection();
       } catch (err) {
@@ -239,10 +378,7 @@ export class CollectionDetail extends BtrixElement {
         }
       }
     },
-    args: () =>
-      [undefined] as readonly [
-        CollectionDetail["replayCurrentPage"] | undefined,
-      ],
+    args: () => [undefined] as readonly [PageSnapshot | undefined],
     autoRun: false,
   });
 
@@ -427,12 +563,13 @@ export class CollectionDetail extends BtrixElement {
                           >
                           <sl-menu>
                             <sl-menu-item
-                              ?disabled=${!this.replayCurrentPage}
+                              ?disabled=${!this.replayCurrentPage.value}
                               @click=${() => {
-                                if (this.replayCurrentPage)
+                                if (this.replayCurrentPage.value) {
                                   void this.updateHomepageTask.run([
-                                    this.replayCurrentPage,
+                                    this.replayCurrentPage.value,
                                   ]);
+                                }
                               }}
                             >
                               <sl-icon
@@ -443,7 +580,7 @@ export class CollectionDetail extends BtrixElement {
                             </sl-menu-item>
                             <sl-menu-item
                               @click=${() => {
-                                this.replayCurrentPage = undefined;
+                                this.replayCurrentView = undefined;
                                 void this.updateHomepageTask.run();
                               }}
                             >
@@ -1399,17 +1536,12 @@ export class CollectionDetail extends BtrixElement {
         noSandbox="true"
         noCache="true"
         @rwp-page-loading=${(e: RwpPageLoadingEvent) => {
-          const { url, ts, loading } = e.detail;
-
-          if (loading) {
-            this.replayCurrentPage = { url, ts };
-          } else {
-            if (
-              "replayNotFoundError" in e.detail &&
-              e.detail.replayNotFoundError
-            ) {
-              this.replayCurrentPage = undefined;
-            }
+          if (
+            !e.detail.loading &&
+            "replayNotFoundError" in e.detail &&
+            e.detail.replayNotFoundError
+          ) {
+            this.replayCurrentView = undefined;
           }
         }}
         @rwp-url-change=${(e: RwpUrlChangeEvent) => {
@@ -1422,6 +1554,17 @@ export class CollectionDetail extends BtrixElement {
           if (this.rwpDoFullReload) {
             void this.replayEmbed.fullReload();
             this.rwpDoFullReload = false;
+          }
+
+          const { url, ts } = e.detail;
+
+          if (
+            !(
+              "replayNotFoundError" in e.detail && e.detail.replayNotFoundError
+            ) &&
+            url
+          ) {
+            this.replayCurrentView = { url, ts };
           }
         }}
       ></replay-web-page>
@@ -1880,7 +2023,7 @@ export class CollectionDetail extends BtrixElement {
   }
 
   private async getPages(
-    params: { url?: string; ts?: string } & APIPaginationQuery,
+    params: { url?: string; ts?: string } & APISortQuery & APIPaginationQuery,
     signal: AbortSignal,
   ) {
     const query = queryString.stringify({ ...params });
@@ -1888,6 +2031,65 @@ export class CollectionDetail extends BtrixElement {
     return this.api.fetch<APIPaginatedList<PageSnapshot>>(
       `/orgs/${this.orgId}/collections/${this.collectionId}/pages?${query}`,
       { signal },
+    );
+  }
+
+  private async uploadThumbnail(
+    {
+      url,
+      timestamp,
+      pageId,
+    }: { url: string; timestamp: string; pageId: string },
+    signal: AbortSignal,
+  ) {
+    const blob = await getThumbnailBlob(
+      {
+        collectionId: this.collectionId,
+        rwp: this.replayEmbed,
+        url,
+        timestamp,
+      },
+      signal,
+    );
+
+    if (!blob) {
+      throw new Error("thumbnail not found");
+    }
+
+    const fileName = `page-thumbnail_${pageId}.jpeg`;
+    const file = new File([blob], fileName, {
+      type: blob.type,
+    });
+
+    const searchParams = new URLSearchParams({
+      filename: fileName,
+      sourceUrl: url,
+      sourceTs: timestamp,
+      sourcePageId: pageId,
+    });
+
+    return this.api.upload(
+      `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?${searchParams.toString()}`,
+      file,
+      signal,
+    );
+  }
+
+  private async updateThumbnail(
+    {
+      defaultThumbnailName,
+    }: {
+      defaultThumbnailName: string | null;
+    },
+    signal: AbortSignal,
+  ) {
+    return this.api.fetch<{ updated: boolean }>(
+      `/orgs/${this.orgId}/collections/${this.collectionId}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ defaultThumbnailName }),
+        signal,
+      },
     );
   }
 

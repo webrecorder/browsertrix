@@ -21,10 +21,10 @@ import {
   collectionRwpContext,
   type CollectionRwpContext,
 } from "@/pages/org/collection-detail/context/collection-rwp";
+import { getThumbnailBlob } from "@/pages/org/collection-detail/utils/getThumbnailBlob";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { PageUrlCount } from "@/types/page";
 import type { UnderlyingFunction } from "@/types/utils";
-import { formatRwpTimestamp } from "@/utils/replay";
 import { tw } from "@/utils/tailwind";
 
 import "@/features/collections/collection-thumbnail";
@@ -145,7 +145,10 @@ export class SelectCollectionThumbnail extends BtrixElement {
         let thumbnail = this.#screenshots.get(pageId);
 
         if (!thumbnail) {
-          const blob = this.getBlob({ url: url, timestamp: timestamp }, signal);
+          const blob = this.getBlob(
+            { collectionId: this.collectionId, rwp: this.rwp, timestamp, url },
+            signal,
+          );
 
           thumbnail = {
             blob,
@@ -175,7 +178,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
 
       try {
         if (typeof option === "string") {
-          await this.updateThumbnail({ defaultThumbnailName: option });
+          await this.updateThumbnail({ defaultThumbnailName: option }, signal);
         } else {
           const screenshot = this.#screenshots.get(option.pageId);
 
@@ -191,8 +194,15 @@ export class SelectCollectionThumbnail extends BtrixElement {
 
           this.nextThumbnailUrl = url;
 
+          this.notify.toast({
+            message: msg("Updating thumbnail..."),
+            variant: "info",
+            icon: "info-circle",
+            id: "collection-thumbnail-update-status",
+          });
+
           await this.uploadThumbnail(option, signal);
-          await this.updateThumbnail({ defaultThumbnailName: null });
+          await this.updateThumbnail({ defaultThumbnailName: null }, signal);
         }
 
         this.notify.toast({
@@ -247,6 +257,12 @@ export class SelectCollectionThumbnail extends BtrixElement {
       stay-open-on-select
       @sl-show=${() => (this.open = true)}
       @sl-hide=${() => (this.open = false)}
+      @sl-after-hide=${() => {
+        if (this.input) {
+          this.input.value = "";
+          this.searchValue = "";
+        }
+      }}
     >
       <div
         slot="trigger"
@@ -260,7 +276,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
       >
         <btrix-collection-thumbnail
           class=${clsx(
-            updating && tw`opacity-75`,
+            updating && tw`opacity-50`,
             tw`transition-opacity duration-fast`,
           )}
           src=${ifDefined(
@@ -545,25 +561,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
     );
   }
 
-  private readonly getBlob = async (
-    { url, timestamp }: { url: string; timestamp: string },
-    signal: AbortSignal,
-  ) => {
-    if (!this.rwp) {
-      console.debug("no this.rwp");
-      return;
-    }
-    const resp = await this.rwp.shadowRoot
-      ?.querySelector("iframe")
-      ?.contentWindow?.fetch(
-        `/replay/w/${this.collectionId}/${formatRwpTimestamp(timestamp)}id_/urn:thumbnail:${url}`,
-        { signal },
-      );
-
-    if (resp?.status === 200) {
-      return await resp.blob();
-    }
-  };
+  private readonly getBlob = getThumbnailBlob;
 
   private async uploadThumbnail(
     { pageId, url, timestamp }: PageSnapshotOption,
@@ -600,16 +598,20 @@ export class SelectCollectionThumbnail extends BtrixElement {
     );
   }
 
-  private async updateThumbnail({
-    defaultThumbnailName,
-  }: {
-    defaultThumbnailName: string | null;
-  }) {
+  private async updateThumbnail(
+    {
+      defaultThumbnailName,
+    }: {
+      defaultThumbnailName: string | null;
+    },
+    signal: AbortSignal,
+  ) {
     return this.api.fetch<{ updated: boolean }>(
       `/orgs/${this.orgId}/collections/${this.collectionId}`,
       {
         method: "PATCH",
         body: JSON.stringify({ defaultThumbnailName }),
+        signal,
       },
     );
   }
