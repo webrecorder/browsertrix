@@ -67,6 +67,12 @@ def create_request_logging_middleware(logger):
     """
 
     def _get_client_addr(request):
+        xff = request.headers.get("x-forwarded-for")
+        if xff:
+            return xff.split(",")[0].strip()
+        xri = request.headers.get("x-real-ip")
+        if xri:
+            return xri.strip()
         client = request.client
         if client:
             return f"{client.host}:{client.port}"
