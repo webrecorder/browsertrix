@@ -31,6 +31,9 @@ export class EditableTextBox extends TailwindElement {
   `;
 
   @property({ type: String })
+  label = "";
+
+  @property({ type: String })
   value = "";
 
   @property({ type: String })
@@ -176,8 +179,12 @@ export class EditableTextBox extends TailwindElement {
           : html`<span class="invisible" aria-hidden="true"
               >${this.placeholder}</span
             >`}<span slot="suffix" aria-hidden="true"
-          ><sl-icon name="pencil" class="size-3"></sl-icon></span
+          ><sl-icon
+            name="pencil"
+            class="size-3 text-neutral-600"
+          ></sl-icon></span
       ></btrix-prose>
+      <label class="sr-only">${this.label}</label>
       <textarea
         class=${clsx(
           tw`block min-w-full resize-none hyphens-auto text-pretty rounded bg-transparent leading-normal [scrollbar-gutter:stable]`,

@@ -23,6 +23,9 @@ export type EditableTextFieldChangeEvent = BtrixChangeEvent<string>;
 @localized()
 export class EditableTextField extends TailwindElement {
   @property({ type: String })
+  label = "";
+
+  @property({ type: String })
   value = "";
 
   @state()
@@ -188,7 +191,8 @@ export class EditableTextField extends TailwindElement {
   render() {
     const minWidth = Math.max(this.placeholderWidth, this.width, 1);
 
-    return html`<input
+    return html`<label class="sr-only">${this.label}</label>
+      <input
         class=${clsx(
           tw`peer absolute inset-4 rounded bg-transparent`,
           !this.valid && tw`z-[21] outline outline-danger`,

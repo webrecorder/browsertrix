@@ -498,7 +498,8 @@ export class CollectionDetail extends BtrixElement {
                 ? when(
                     this.collection,
                     (col) =>
-                      html` <btrix-editable-text-box
+                      html`<btrix-editable-text-box
+                        label=${msg("Collection Summary")}
                         .value=${col.caption ?? ""}
                         placeholder=${msg("Add a summary...")}
                         maxLength=${COLLECTION_CAPTION_MAX_LENGTH}
@@ -858,6 +859,7 @@ export class CollectionDetail extends BtrixElement {
     }
 
     return html`<btrix-editable-text-field
+      label=${msg("Collection Name")}
       class="-m-4 overflow-hidden p-4"
       minLength=${1}
       maxLength=${COLLECTION_NAME_MAX_LENGTH}
