@@ -16,6 +16,7 @@ import sys
 import time
 from collections.abc import Mapping
 from contextvars import Token
+from datetime import date, datetime, time
 from uuid import UUID, uuid4
 
 import structlog
@@ -109,7 +110,19 @@ def create_request_logging_middleware(logger):
     return request_logging_middleware
 
 
+def _encode_special_types(_logger, _method, event_dict):
+    """Convert UUID / datetime values to strings so they are logged as plain text
+    rather than falling back to repr (e.g. "UUID('...')")."""
+    for key, val in event_dict.items():
+        if isinstance(val, UUID):
+            event_dict[key] = str(val)
+        elif isinstance(val, (datetime, date, time)):
+            event_dict[key] = val.isoformat()
+    return event_dict
+
+
 SHARED_PROCESSORS: list[Processor] = [
+    _encode_special_types,
     structlog.contextvars.merge_contextvars,
     structlog.stdlib.add_log_level,
     structlog.stdlib.add_logger_name,
@@ -117,7 +130,6 @@ SHARED_PROCESSORS: list[Processor] = [
     structlog.stdlib.PositionalArgumentsFormatter(),
     structlog.processors.TimeStamper(fmt="iso"),
     structlog.processors.StackInfoRenderer(),
-    structlog.processors.format_exc_info,
     structlog.processors.UnicodeDecoder(),
     structlog.processors.CallsiteParameterAdder(
         {
@@ -163,6 +175,7 @@ def init_logging() -> None:
             foreign_pre_chain=SHARED_PROCESSORS,
             processors=[
                 structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                structlog.processors.dict_tracebacks,
                 structlog.processors.JSONRenderer(),
             ],
         )
