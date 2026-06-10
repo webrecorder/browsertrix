@@ -1061,14 +1061,20 @@ export class CollectionDetail extends BtrixElement {
           </btrix-popover>`
         : nothing}
       <sl-dropdown distance="4" placement="bottom-end">
-        <sl-button slot="trigger" size="small" caret>
-          ${showShare
-            ? html`<sl-icon
-                name="three-dots"
-                label=${msg("More Actions")}
-              ></sl-icon>`
-            : msg("Actions")}
-        </sl-button>
+        ${when(
+          this.collection,
+          () =>
+            html`<sl-button slot="trigger" size="small" caret>
+              ${showShare
+                ? html`<sl-icon
+                    name="three-dots"
+                    label=${msg("More Actions")}
+                  ></sl-icon>`
+                : msg("Actions")}
+            </sl-button>`,
+          () =>
+            html`<sl-skeleton slot="trigger" class="h-8 w-20"></sl-skeleton>`,
+        )}
         <sl-menu>
           ${showShare
             ? nothing
