@@ -10,13 +10,13 @@ Keyword arguments passed to log calls become distinct JSON fields:
     # => {"event": "updating_collection", "coll_id": "abc123", "oid": "..."}
 """
 
+import datetime
 import logging
 import os
 import sys
 import time
 from collections.abc import Mapping
 from contextvars import Token
-from datetime import date, datetime, time
 from uuid import UUID, uuid4
 
 import structlog
@@ -24,7 +24,6 @@ from structlog.contextvars import (
     bind_contextvars,
     clear_contextvars,
     reset_contextvars,
-    unbind_contextvars,
 )
 from structlog.typing import EventDict, Processor
 
@@ -112,19 +111,23 @@ def create_request_logging_middleware(logger):
     return request_logging_middleware
 
 
-def _encode_special_types(_logger, _method, event_dict):
+def encode_special_types(
+    _logger: structlog.stdlib.BoundLogger, _method_name: str, event_dict: EventDict
+) -> EventDict:
     """Convert UUID / datetime values to strings so they are logged as plain text
     rather than falling back to repr (e.g. "UUID('...')")."""
     for key, val in event_dict.items():
         if isinstance(val, UUID):
             event_dict[key] = str(val)
-        elif isinstance(val, (datetime, date, time)):
+        elif isinstance(val, (datetime.datetime, datetime.date, datetime.time)):
             event_dict[key] = val.isoformat()
+    return event_dict
 
 
 def add_version_context(
-    logger: structlog.stdlib.BoundLogger, method_name: str, event_dict: EventDict
-) -> structlog.stdlib.BoundLogger:
+    _logger: structlog.stdlib.BoundLogger, _method_name: str, event_dict: EventDict
+) -> EventDict:
+    """Add version information to the log event dict."""
     event_dict["btrix_version"] = __version__
     event_dict["btrix_commit_hash"] = __commit_hash__
     event_dict["btrix_branch"] = __branch__
@@ -133,10 +136,10 @@ def add_version_context(
 
 SHARED_PROCESSORS: list[Processor] = [
     _encode_special_types,
+    add_version_context,
     structlog.contextvars.merge_contextvars,
     structlog.stdlib.add_log_level,
     structlog.stdlib.add_logger_name,
-    add_version_context,
     structlog.stdlib.ExtraAdder(),
     structlog.stdlib.PositionalArgumentsFormatter(),
     structlog.processors.TimeStamper(fmt="iso"),
