@@ -193,6 +193,7 @@ export class EditableTextBox extends TailwindElement {
             : tw`absolute inset-0 outline-1 outline-offset-[--sl-focus-ring-offset] outline-[--sl-input-border-color] hover:outline`,
           !this.valid && tw`outline outline-danger`,
         )}
+        spellcheck="${this.editing ? true : false}"
         placeholder=${ifDefined(
           this.editing || !this.value ? this.placeholder : undefined,
         )}

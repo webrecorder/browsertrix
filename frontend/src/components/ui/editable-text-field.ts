@@ -194,6 +194,7 @@ export class EditableTextField extends TailwindElement {
           !this.valid && tw`z-[21] outline outline-danger`,
         )}
         type="text"
+        spellcheck="${this.editing ? this.spellcheck : false}"
         .value=${this.inputValue}
         placeholder=${ifDefined(this.placeholder)}
         @input=${async (e: Event) => {
