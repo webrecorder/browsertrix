@@ -100,8 +100,16 @@ export class EditableTextBox extends TailwindElement {
     }
   };
 
-  private readonly handleInput = async (e: Event) => {
-    this.inputValue = (e.target as HTMLTextAreaElement).value;
+  private readonly handleInput = async (e: InputEvent) => {
+    const textarea = e.currentTarget as HTMLTextAreaElement;
+    let value = (e.target as HTMLTextAreaElement).value;
+
+    if (!this.allowNewLines) {
+      value = value.replace(newlineRegex, "");
+      textarea.value = value;
+    }
+
+    this.inputValue = value;
     this.checkValidity();
 
     await this.updateComplete;
