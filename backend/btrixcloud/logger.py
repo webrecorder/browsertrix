@@ -135,7 +135,7 @@ def add_version_context(
 
 
 SHARED_PROCESSORS: list[Processor] = [
-    _encode_special_types,
+    encode_special_types,
     add_version_context,
     structlog.contextvars.merge_contextvars,
     structlog.stdlib.add_log_level,
@@ -168,6 +168,7 @@ def init_logging() -> None:
 
     for noisy in (
         "aiohttp",
+        "botocore",
         "motor",
         "pymongo",
         "aiobotocore",
