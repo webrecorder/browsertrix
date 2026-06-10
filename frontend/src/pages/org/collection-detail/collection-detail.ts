@@ -458,7 +458,7 @@ export class CollectionDetail extends BtrixElement {
             showCaption && tw`md:row-span-2`,
           )}
         >
-          <div class="aspect-video md:h-32">
+          <div class="aspect-video md:h-36">
             ${when(
               this.collection,
               this.renderThumbnail,
