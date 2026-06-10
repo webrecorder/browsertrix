@@ -17,6 +17,8 @@ import { tw } from "@/utils/tailwind";
 export type EditableTextBoxInputEvent = BtrixInputEvent<string>;
 export type EditableTextBoxChangeEvent = BtrixChangeEvent<string>;
 
+const newlineRegex = /[\r\n]+/gm;
+
 /**
  * In-place editor for multi-line text.
  */
@@ -46,7 +48,7 @@ export class EditableTextBox extends TailwindElement {
   plainText = false;
 
   @property({ type: Boolean })
-  enterToSave = false;
+  allowNewLines = false;
 
   @property({ type: Number })
   minLength?: number;
@@ -76,7 +78,7 @@ export class EditableTextBox extends TailwindElement {
   private readonly prose?: Prose | null;
 
   private readonly handleKeydown = (e: KeyboardEvent) => {
-    if (this.enterToSave) {
+    if (!this.allowNewLines) {
       if (e.key === "Enter") {
         e.preventDefault();
         this.save();
@@ -85,6 +87,32 @@ export class EditableTextBox extends TailwindElement {
     if (e.key === "Escape") {
       this.endEditing(false);
     }
+  };
+
+  private readonly handlePaste = (e: ClipboardEvent) => {
+    if (!this.allowNewLines) {
+      e.preventDefault();
+      const text = e.clipboardData?.getData("text") ?? "";
+      const el = e.currentTarget as HTMLTextAreaElement;
+
+      el.value = text.replace(newlineRegex, " ");
+      void this.handleInput(e);
+    }
+  };
+
+  private readonly handleInput = async (e: Event) => {
+    this.inputValue = (e.target as HTMLTextAreaElement).value;
+    this.checkValidity();
+
+    await this.updateComplete;
+
+    this.dispatchEvent(
+      new CustomEvent<EditableTextBoxInputEvent["detail"]>("btrix-input", {
+        detail: { value: this.inputValue },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   };
 
   startEditing() {
@@ -199,28 +227,13 @@ export class EditableTextBox extends TailwindElement {
           this.editing || !this.value ? this.placeholder : undefined,
         )}
         rows=${ifDefined(this.clamp)}
-        @input=${async (e: Event) => {
-          this.inputValue = (e.target as HTMLTextAreaElement).value;
-          this.checkValidity();
-
-          await this.updateComplete;
-
-          this.dispatchEvent(
-            new CustomEvent<EditableTextBoxInputEvent["detail"]>(
-              "btrix-input",
-              {
-                detail: { value: this.inputValue },
-                bubbles: true,
-                composed: true,
-              },
-            ),
-          );
-        }}
+        @input=${this.handleInput}
         @focus=${() => {
           this.startEditing();
         }}
         @blur=${this.save}
         @keydown=${this.handleKeydown}
+        @paste=${this.handlePaste}
       ></textarea>
       ${this.maxLength && !this.valid
         ? html`<span

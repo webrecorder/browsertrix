@@ -504,7 +504,6 @@ export class CollectionDetail extends BtrixElement {
                         placeholder=${msg("Add a summary...")}
                         maxLength=${COLLECTION_CAPTION_MAX_LENGTH}
                         clamp="2"
-                        enterToSave
                         @btrix-change=${(e: EditableTextBoxChangeEvent) => {
                           void this.updateSummary(e.detail.value);
                         }}
