@@ -24,11 +24,11 @@ export class CollectionThumbnail extends BtrixElement {
     {
       [Thumbnail.Cyan]: {
         path: thumbnailCyanSrc,
-        label: msg("Blue"),
+        label: msg("Cyan"),
       },
       [Thumbnail.Green]: {
         path: thumbnailGreenSrc,
-        label: msg("Green"),
+        label: msg("Lime"),
       },
       [Thumbnail.Orange]: {
         path: thumbnailOrangeSrc,
