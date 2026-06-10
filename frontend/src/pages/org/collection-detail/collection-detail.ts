@@ -27,18 +27,16 @@ import {
 import { getThumbnailBlob } from "./utils/getThumbnailBlob";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { EditableTextBoxChangeEvent } from "@/components/ui/editable-text-box";
 import type {
-  EditableTextField,
   EditableTextFieldChangeEvent,
   EditableTextFieldInputEvent,
 } from "@/components/ui/editable-text-field";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
-import type { Prose } from "@/components/ui/prose";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
-import { type BtrixChangeEvent } from "@/events/btrix-change";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import { DEFAULT_THUMBNAIL } from "@/features/collections/collection-thumbnail";
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
@@ -450,7 +448,7 @@ export class CollectionDetail extends BtrixElement {
         class=${clsx(
           tw`grid items-end gap-5 md:grid-cols-[auto_1fr] md:gap-3 lg:grid-cols-[auto_1fr_auto]`,
           showCaption
-            ? tw`md:grid-rows-[auto_auto] md:items-start`
+            ? tw`md:grid-rows-[auto_1fr] md:items-start`
             : tw`md:items-center`,
         )}
       >
@@ -494,47 +492,22 @@ export class CollectionDetail extends BtrixElement {
         </div>
         ${showCaption
           ? html`<div
-              class=${clsx(
-                tw`grid md:col-start-2 md:row-start-2 lg:col-end-4`,
-                this.isCrawler && tw`-mx-1 -mt-3 px-1 pt-1 `,
-              )}
+              class=${clsx(tw`grid md:col-start-2 md:row-start-2 lg:col-end-4`)}
             >
               ${this.isCrawler
                 ? when(
                     this.collection,
                     (col) =>
-                      html`<btrix-editable-text-field
-                        class="-m-4 -mb-5 overflow-hidden p-4 pb-5 text-neutral-600"
-                        maxLength=${COLLECTION_CAPTION_MAX_LENGTH}
-                        .value=${col.caption}
+                      html` <btrix-editable-text-box
+                        .value=${col.caption ?? ""}
                         placeholder=${msg("Add a summary...")}
-                        .renderContent=${this.renderCaption}
-                        rows=${2}
-                        @btrix-change=${async (e: BtrixChangeEvent<string>) => {
-                          const el = e.currentTarget as EditableTextField;
-                          const prose =
-                            el.shadowRoot?.querySelector<Prose>("btrix-prose");
-
-                          await this.updateSummary(e.detail.value);
-                          await el.updateComplete;
-
-                          // HACK Force prose to sync clamping after caption update
-                          // This shouldn't be necessary if `renderContent` is refactored to be reactive
-                          void prose?.syncClamp();
+                        maxLength=${COLLECTION_CAPTION_MAX_LENGTH}
+                        clamp="2"
+                        enterToSave
+                        @btrix-change=${(e: EditableTextBoxChangeEvent) => {
+                          void this.updateSummary(e.detail.value);
                         }}
-                        extraWidth=${24}
-                      >
-                        <span
-                          slot="suffix"
-                          class="ml-2 mt-0.5 inline-flex h-5 shrink-0 items-center"
-                        >
-                          <sl-icon
-                            name="pencil"
-                            class="size-3"
-                            aria-label=${msg("Edit Collection Caption")}
-                          ></sl-icon>
-                        </span>
-                      </btrix-editable-text-field>`,
+                      ></btrix-editable-text-box>`,
                   )
                 : this.collection?.caption
                   ? this.renderCaption(this.collection.caption)
@@ -916,7 +889,7 @@ export class CollectionDetail extends BtrixElement {
       >
         <sl-icon
           name="pencil"
-          class="size-3.5"
+          class="size-3.5 text-neutral-600"
           aria-label=${msg("Edit Collection Name")}
         ></sl-icon>
       </span>

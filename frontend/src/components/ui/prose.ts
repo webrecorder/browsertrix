@@ -1,10 +1,15 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
-import { css, html, nothing } from "lit";
+import { css, html, nothing, type PropertyValues } from "lit";
 import { customElement, queryAsync, state } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
+
+export type ProseClampingEvent = CustomEvent<{
+  clamping: boolean;
+  clamped: boolean;
+}>;
 
 /**
  * Display prose, like workflow and item descriptions, with line clamping.
@@ -12,6 +17,7 @@ import { tw } from "@/utils/tailwind";
  *
  * @cssproperty --btrix-line-clamp
  * @cssPart base
+ * @fires btrix-prose-clamping
  */
 @customElement("btrix-prose")
 @localized()
@@ -32,6 +38,19 @@ export class Prose extends TailwindElement {
 
   @queryAsync("pre")
   private readonly pre?: Promise<HTMLPreElement>;
+
+  protected updated(changedProperties: PropertyValues): void {
+    if (changedProperties.has("clamped")) {
+      this.dispatchEvent(
+        new CustomEvent<ProseClampingEvent["detail"]>("btrix-prose-clamping", {
+          detail: {
+            clamping: this.clamped !== undefined,
+            clamped: this.clamped === true,
+          },
+        }),
+      );
+    }
+  }
 
   render() {
     return html`<pre

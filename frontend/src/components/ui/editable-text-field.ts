@@ -1,13 +1,10 @@
-/* eslint-disable lit/binding-positions -- Using lit/static-html */
-/* eslint-disable lit/no-invalid-html -- Using lit/static-html */
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
-import { css, type PropertyValues, type TemplateResult } from "lit";
+import { css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import type { DirectiveResult } from "lit/directive.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { html, literal } from "lit/static-html.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
@@ -19,6 +16,9 @@ import { tw } from "@/utils/tailwind";
 export type EditableTextFieldInputEvent = BtrixInputEvent<string>;
 export type EditableTextFieldChangeEvent = BtrixChangeEvent<string>;
 
+/**
+ * In-place editor for single-line text.
+ */
 @customElement("btrix-editable-text-field")
 @localized()
 export class EditableTextField extends TailwindElement {
@@ -27,9 +27,6 @@ export class EditableTextField extends TailwindElement {
 
   @state()
   inputValue = "";
-
-  @property({ type: Number })
-  rows?: number;
 
   @state()
   editing = false;
@@ -59,7 +56,7 @@ export class EditableTextField extends TailwindElement {
     }
   `;
 
-  @query(".input")
+  @query("input")
   private readonly input?: HTMLInputElement | HTMLTextAreaElement | null;
 
   @property({ type: String })
@@ -189,21 +186,17 @@ export class EditableTextField extends TailwindElement {
   }
 
   render() {
-    const tag = this.rows ? literal`textarea` : literal`input`;
     const minWidth = Math.max(this.placeholderWidth, this.width, 1);
 
-    return html`<${tag}
+    return html`<input
         class=${clsx(
-          "input",
           tw`peer absolute inset-4 rounded bg-transparent`,
-          this.rows && [tw`resize-none`, !this.editing && tw`overflow-hidden`],
           !this.valid && tw`z-[21] outline outline-danger`,
         )}
         type="text"
         .value=${this.inputValue}
         placeholder=${ifDefined(this.placeholder)}
         spellcheck="${this.editing ? true : false}"
-        rows=${ifDefined(this.rows)}
         @input=${async (e: Event) => {
           this.inputValue = (e.target as HTMLInputElement).value;
           this.checkValidity();
@@ -231,41 +224,30 @@ export class EditableTextField extends TailwindElement {
           width: `min(${minWidth}px, calc(100% - 2rem))`,
           minWidth: `${this.placeholderWidth}px`,
         })}
-      ></${tag}>
-      <div
+      />
+      <span
         class=${clsx(
-          tw`pointer-events-none flex cursor-text select-none items-start gap-1.5 whitespace-pre rounded outline-1 outline-offset-[--sl-focus-ring-offset] outline-[--sl-input-border-color] peer-hover:outline peer-active:outline-none host-focus-within:outline-none`,
+          tw`pointer-events-none block cursor-text select-none truncate whitespace-pre rounded outline-1 outline-offset-[--sl-focus-ring-offset] outline-[--sl-input-border-color] peer-hover:outline peer-active:outline-none host-focus-within:outline-none`,
           !this.inputValue && tw`text-neutral-500`,
         )}
         style=${styleMap({
           visibility: this.editing ? "hidden" : "visible",
           width: this.editing ? `${minWidth}px` : "auto",
-          minHeight: this.rows
-            ? `calc(${this.rows * 1.3125}em + 0.375rem)`
-            : "auto",
         })}
-      >
-        <span class="truncate"
-          >${
-            this.inputValue
-              ? this.renderContent
-                ? this.renderContent(this.inputValue)
-                : this.inputValue
-              : this.placeholder
-          }</span
-        >
-        <slot name="suffix"></slot
-      ></div>
-      ${
-        this.maxLength && !this.valid
-          ? html`<span
-              class="absolute bottom-0 right-4 z-20 rounded-b-sm bg-white pt-1 text-xs font-semibold tabular-nums leading-none text-danger"
-            >
-              ${this.showUnsavedWarning ? html`${msg("Unsaved")} - ` : null}
-              ${localize.number(this.inputValue.length)} /
-              ${localize.number(this.maxLength)}
-            </span>`
-          : null
-      }`;
+        >${this.inputValue
+          ? this.renderContent
+            ? this.renderContent(this.inputValue)
+            : this.inputValue
+          : this.placeholder}<slot name="suffix"></slot
+      ></span>
+      ${this.maxLength && !this.valid
+        ? html`<span
+            class="absolute bottom-0 right-4 z-20 rounded-b-sm bg-white pt-1 text-xs font-semibold tabular-nums leading-none text-danger"
+          >
+            ${this.showUnsavedWarning ? html`${msg("Unsaved")} - ` : null}
+            ${localize.number(this.inputValue.length)} /
+            ${localize.number(this.maxLength)}
+          </span>`
+        : null}`;
   }
 }
