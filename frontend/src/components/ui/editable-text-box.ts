@@ -61,9 +61,6 @@ export class EditableTextBox extends TailwindElement {
   private clamping = false;
 
   @state()
-  private clamped = false;
-
-  @state()
   private valid: boolean | undefined = true;
 
   @state()
@@ -170,7 +167,6 @@ export class EditableTextBox extends TailwindElement {
         })}
         @btrix-prose-clamping=${(e: ProseClampingEvent) => {
           this.clamping = e.detail.clamping;
-          this.clamped = e.detail.clamped;
         }}
         >${this.value
           ? this.plainText
