@@ -1,3 +1,5 @@
+import type { Collection } from "@/types/collection";
+
 export enum Tab {
   Replay = "replay",
   About = "about",
@@ -22,3 +24,5 @@ export enum CollectionSearchParam {
 export enum EditingSearchParamValue {
   Items = "items",
 }
+
+export type CollectionSavedEvent = CustomEvent<Partial<Collection> | undefined>;

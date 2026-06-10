@@ -32,7 +32,6 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { PublicCollection } from "@/types/collection";
 import type { PageUrlCount } from "@/types/page";
 import type { UnderlyingFunction } from "@/types/utils";
-import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 import "@/features/collections/collection-thumbnail";
@@ -70,7 +69,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
   @property({ type: String })
   thumbnailPath?: string;
 
-  @property({ type: Object, hasChanged: isNotEqual })
+  @property({ type: Object })
   thumbnailSource?: PublicCollection["thumbnailSource"];
 
   @property({ type: Number })
@@ -260,7 +259,12 @@ export class SelectCollectionThumbnail extends BtrixElement {
           id: "collection-thumbnail-update-status",
         });
 
-        this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
+        this.dispatchEvent(
+          new CustomEvent("btrix-collection-saved", {
+            bubbles: true,
+            composed: true,
+          }),
+        );
       } catch (err) {
         console.debug(err);
 
