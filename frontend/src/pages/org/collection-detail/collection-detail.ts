@@ -949,7 +949,7 @@ export class CollectionDetail extends BtrixElement {
 
   private readonly renderCaption = (text: string) => {
     return html`<btrix-prose
-      class="pointer-events-auto block [--btrix-line-clamp:2] part-[button]:relative part-[button]:z-30 part-[base]:max-w-full"
+      class="[--btrix-line-clamp:2] part-[content]:max-w-full"
       >${richText(text, {
         linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
       })}</btrix-prose

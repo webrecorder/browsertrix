@@ -17,6 +17,8 @@ export type ProseClampingEvent = CustomEvent<{
  *
  * @cssproperty --btrix-line-clamp
  * @cssPart base
+ * @cssPart content
+ * @cssPart button
  * @fires btrix-prose-clamping
  */
 @customElement("btrix-prose")
@@ -53,16 +55,19 @@ export class Prose extends TailwindElement {
   }
 
   render() {
-    return html`<pre
-        class=${clsx(
-          this.clamped !== false && [
-            tw`line-clamp-[--btrix-line-clamp]`,
-            "clamp",
-          ],
-          tw`max-w-prose hyphens-auto whitespace-pre-line text-pretty font-sans leading-normal`,
-        )}
-        part="base"
-      ><slot @slotchange=${this.onSlotChange}></slot></pre>
+    return html`<div part="base">
+        <pre
+          class=${clsx(
+            this.clamped !== false && [
+              tw`line-clamp-[--btrix-line-clamp]`,
+              "clamp",
+            ],
+            tw`max-w-prose hyphens-auto whitespace-pre-line text-pretty font-sans leading-normal`,
+          )}
+          part="content"
+        ><slot @slotchange=${this.onSlotChange}></slot></pre>
+        <slot name="suffix"></slot>
+      </div>
       ${this.clamped || this.clamped === false
         ? html`<button
             class="whitespace-nowrap leading-normal text-primary-500 transition-colors duration-fast hover:text-primary-600"

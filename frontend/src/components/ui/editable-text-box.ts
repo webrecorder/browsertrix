@@ -158,8 +158,7 @@ export class EditableTextBox extends TailwindElement {
     return html`
       <btrix-prose
         class=${clsx(
-          tw`part-[base]:max-w-full`,
-          this.value && tw`part-[base]:pr-4`,
+          tw`part-[base]:flex part-[content]:max-w-full part-[base]:gap-1.5`,
           this.editing && tw`hidden`,
         )}
         style=${styleMap({
@@ -171,18 +170,13 @@ export class EditableTextBox extends TailwindElement {
         >${this.value
           ? this.plainText
             ? this.value
-            : richText(this.value)
+            : richText(this.value, {
+                linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
+              })
           : html`<span class="invisible" aria-hidden="true"
               >${this.placeholder}</span
-            >`}<span
-          class=${clsx(
-            this.value ? tw`absolute end-0 top-0` : tw`ml-1.5 align-middle`,
-          )}
-          aria-hidden="true"
-          ><sl-icon
-            name="pencil"
-            class="size-3 text-neutral-600"
-          ></sl-icon></span
+            >`}<span slot="suffix" aria-hidden="true"
+          ><sl-icon name="pencil" class="size-3"></sl-icon></span
       ></btrix-prose>
       <textarea
         class=${clsx(
@@ -193,7 +187,7 @@ export class EditableTextBox extends TailwindElement {
             : tw`absolute inset-0 outline-1 outline-offset-[--sl-focus-ring-offset] outline-[--sl-input-border-color] hover:outline`,
           !this.valid && tw`outline outline-danger`,
         )}
-        spellcheck="${this.editing ? true : false}"
+        spellcheck="${this.editing ? this.spellcheck : false}"
         placeholder=${ifDefined(
           this.editing || !this.value ? this.placeholder : undefined,
         )}
