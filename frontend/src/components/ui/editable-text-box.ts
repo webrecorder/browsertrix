@@ -176,12 +176,16 @@ export class EditableTextBox extends TailwindElement {
   }
 
   updated(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("editing") && this.editing) {
-      this.textarea?.focus();
-    }
-
-    if (changedProperties.has("value")) {
-      void this.prose?.syncClamp();
+    if (changedProperties.has("editing")) {
+      if (this.editing) {
+        // Reset clamping to recalculate when editing ends
+        if (this.prose) {
+          this.prose.clamped = undefined;
+        }
+        this.textarea?.focus();
+      } else {
+        void this.prose?.syncClamp();
+      }
     }
   }
 

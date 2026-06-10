@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
 import { css, html, nothing, type PropertyValues } from "lit";
-import { customElement, queryAsync, state } from "lit/decorators.js";
+import { customElement, property, queryAsync } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
@@ -35,8 +35,8 @@ export class Prose extends TailwindElement {
     }
   `;
 
-  @state()
-  private clamped?: boolean;
+  @property({ type: Boolean })
+  clamped?: boolean;
 
   @queryAsync("pre")
   private readonly pre?: Promise<HTMLPreElement>;
