@@ -246,7 +246,12 @@ export class SelectCollectionThumbnail extends BtrixElement {
           id: "collection-thumbnail-update-status",
         });
 
-        this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
+        this.dispatchEvent(
+          new CustomEvent("btrix-collection-saved", {
+            bubbles: true,
+            composed: true,
+          }),
+        );
       } catch (err) {
         console.debug(err);
 
