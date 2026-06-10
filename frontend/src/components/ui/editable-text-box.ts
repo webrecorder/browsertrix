@@ -92,11 +92,11 @@ export class EditableTextBox extends TailwindElement {
   private readonly handlePaste = (e: ClipboardEvent) => {
     if (!this.allowNewLines) {
       e.preventDefault();
-      const text = e.clipboardData?.getData("text") ?? "";
-      const el = e.currentTarget as HTMLTextAreaElement;
 
-      el.value = text.replace(newlineRegex, " ");
-      void this.handleInput(e);
+      const text = e.clipboardData?.getData("text") ?? "";
+      const modifiedText = text.replace(newlineRegex, " ");
+
+      document.execCommand("insertText", false, modifiedText);
     }
   };
 
