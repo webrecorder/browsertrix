@@ -11,6 +11,7 @@ import { repeat } from "lit/directives/repeat.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
+import orderBy from "lodash/fp/orderBy";
 import queryString from "query-string";
 
 import { CollectionThumbnail, type Thumbnail } from "./collection-thumbnail";
@@ -29,6 +30,7 @@ import { tw } from "@/utils/tailwind";
 
 import "@/features/collections/collection-thumbnail";
 
+const SEARCHABLE_MAX = 1000;
 const SEARCH_LIMIT = 3;
 
 type PageSnapshotOption = {
@@ -84,21 +86,36 @@ export class SelectCollectionThumbnail extends BtrixElement {
     }
   >();
 
-  readonly #fuse = new Fuse<PageUrlCount>([], {
-    ...defaultFuseOptions,
-    keys: ["url"],
-  });
+  #fuse?: Fuse<PageUrlCount>;
 
   /**
-   * Get page URLs included in collection and add them to fuzzy search collection.
+   * Get page URLs included in collection and determine whether to use fuzzy search or prefix search
    */
   readonly urlCountsTask = new Task(this, {
     task: async ([id], { signal }) => {
       if (!id) return;
 
-      const { items } = await this.getUrlCounts({ id }, signal);
+      let { items } = await this.getUrlCounts(
+        { id, pageSize: SEARCHABLE_MAX },
+        signal,
+      );
 
-      this.#fuse.setCollection(items);
+      // FIXME API doesn't currently return total so length instead
+      if (items.length < SEARCHABLE_MAX) {
+        // FIXME API doesn't currently support sorting by newest snapshot
+        items = orderBy<PageUrlCount>(
+          ({ snapshots }) => snapshots[snapshots.length - 1].ts,
+        )("desc")(items);
+
+        if (this.#fuse) {
+          this.#fuse.setCollection(items);
+        } else {
+          this.#fuse = new Fuse<PageUrlCount>(items, {
+            ...defaultFuseOptions,
+            keys: ["url"],
+          });
+        }
+      }
 
       return items;
     },
@@ -109,15 +126,32 @@ export class SelectCollectionThumbnail extends BtrixElement {
    * Make page-based thumbnail options from page URLs in collection, filtered by search string.
    */
   private readonly optionsTask = new Task(this, {
-    task: async ([items, searchValue]) => {
+    task: async ([items, searchValue], { signal }) => {
       if (!items) return;
 
       let options = items.slice(0, SEARCH_LIMIT);
 
-      if (searchValue) {
-        options = this.#fuse
-          .search(this.searchValue, { limit: SEARCH_LIMIT })
-          .map(({ item }) => item);
+      // Use fuzzy search if available
+      if (this.#fuse) {
+        if (searchValue) {
+          options = this.#fuse
+            .search(this.searchValue, { limit: SEARCH_LIMIT })
+            .map(({ item }) => item);
+        }
+      } else {
+        // Use API URL prefix search
+        if (searchValue) {
+          const { items } = await this.getUrlCounts(
+            {
+              id: this.collectionId ?? "",
+              urlPrefix: searchValue,
+              pageSize: SEARCH_LIMIT,
+            },
+            signal,
+          );
+
+          options = items;
+        }
       }
 
       return options.map((opt) => {
@@ -383,7 +417,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
         typeof this.onSearchInput
       >}
     >
-      ${this.urlCountsTask.render({
+      ${this.optionsTask.render({
         pending: () => html`<sl-spinner slot="prefix"></sl-spinner>`,
         complete: () => html`<sl-icon slot="prefix" name="search"></sl-icon>`,
       })}
@@ -545,12 +579,26 @@ export class SelectCollectionThumbnail extends BtrixElement {
     });
   }
 
-  private readonly onSearchInput = debounce(200)(() => {
-    this.searchValue = this.input?.value || "";
+  private readonly onSearchInput = debounce(300)(() => {
+    const value = this.input?.value.trim();
+
+    if (value) {
+      if (this.#fuse || value.startsWith("http")) {
+        this.searchValue = value;
+      } else {
+        this.searchValue = `https://${value}`;
+
+        if (this.input) {
+          this.input.value = this.searchValue;
+        }
+      }
+    } else {
+      this.searchValue = "";
+    }
   });
 
   private async getUrlCounts(
-    { id, ...params }: { id: string } & APIPaginationQuery,
+    { id, ...params }: { id: string; urlPrefix?: string } & APIPaginationQuery,
     signal: AbortSignal,
   ) {
     const query = queryString.stringify({ ...params });
