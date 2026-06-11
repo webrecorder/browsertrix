@@ -188,7 +188,7 @@ class CollIndexOperator(BaseOperator):
 
             if is_done:
                 logger.info(
-                    "collindex_removed",
+                    "coll_index_removed",
                     coll_id=coll_id,
                     oid=oid,
                     redis_pod=redis_pod,
@@ -382,7 +382,7 @@ class CollIndexOperator(BaseOperator):
     async def do_delete(self, coll_id: UUID):
         """delete the CollIndex object"""
         logger.info(
-            "collindex_deleting",
+            "coll_index_deleting",
             coll_id=coll_id,
             unstructured_message=f"Deleting collindex {coll_id}",
         )
