@@ -2,7 +2,7 @@ import { provide } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html, nothing, type TemplateResult } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import type { ReplayWebPage, RwpUrlChangeEvent } from "replaywebpage";
@@ -11,10 +11,11 @@ import { collectionRwpContext } from "../org/collection-detail/context/collectio
 import type { CollectionSavedEvent } from "../org/collection-detail/types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { metadataColumn } from "@/layouts/collections/metadataColumn";
 import { page } from "@/layouts/page";
-import { RouteNamespace } from "@/routes";
-import type { PublicCollection } from "@/types/collection";
+import { CommonTab, OrgTab, RouteNamespace } from "@/routes";
+import { CollectionAccess, type PublicCollection } from "@/types/collection";
 import { formatRwpTimestamp } from "@/utils/replay";
 
 import "@/features/collections/collection-page-header";
@@ -27,6 +28,9 @@ enum Tab {
 @localized()
 @customElement("btrix-collection")
 export class Collection extends BtrixElement {
+  @provide({ context: collectionRwpContext })
+  replayEmbed?: ReplayWebPage | null;
+
   @property({ type: String })
   orgSlug?: string;
 
@@ -36,8 +40,8 @@ export class Collection extends BtrixElement {
   @property({ type: String })
   tab: Tab | string = Tab.Replay;
 
-  @provide({ context: collectionRwpContext })
-  replayEmbed?: ReplayWebPage | null;
+  @state()
+  private showEditDialog = false;
 
   get canEditCollection() {
     return this.orgSlug === this.orgSlugState && this.appState.isCrawler;
@@ -82,7 +86,7 @@ export class Collection extends BtrixElement {
   });
 
   render() {
-    return this.collection.render({
+    return html`${this.collection.render({
       complete: this.renderComplete,
       pending: () =>
         this.collection.value
@@ -90,7 +94,26 @@ export class Collection extends BtrixElement {
           : // TODO Add skeleton layout
             nothing,
       error: this.renderError,
-    });
+    })}
+    ${when(
+      this.collection.value,
+      (collection) =>
+        html`<btrix-collection-edit-dialog
+          .collection=${collection}
+          ?open=${this.showEditDialog}
+          @sl-hide=${() => (this.showEditDialog = false)}
+          @btrix-collection-saved=${async (e: CollectionSavedEvent) => {
+            if (e.detail?.access === CollectionAccess.Private) {
+              // Redirect to private page
+              this.navigate.to(
+                `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${collection.id}`,
+              );
+            } else {
+              void this.collection.run();
+            }
+          }}
+        ></btrix-collection-edit-dialog>`,
+    )} `;
   }
 
   private readonly renderComplete = (collection: PublicCollection) => {
@@ -123,8 +146,8 @@ export class Collection extends BtrixElement {
             e.stopPropagation();
             void this.collection.run();
           }}
+          >${this.renderActions()}</btrix-collection-page-header
         >
-        </btrix-collection-page-header>
         <hr />`,
     };
 
@@ -155,6 +178,36 @@ export class Collection extends BtrixElement {
       )}
     `;
   };
+
+  private renderActions() {
+    return html`<btrix-popover slot="actions" placement="bottom">
+      ${when(
+        this.collection.value,
+        (collection) => html`
+          <div slot="content">
+            <div class="text-sm font-semibold">
+              ${SelectCollectionAccess.Options[collection.access].label}
+            </div>
+            <p>${SelectCollectionAccess.Options[collection.access].detail}</p>
+          </div>
+        `,
+      )}
+      <sl-button
+        size="small"
+        @click=${() => {
+          this.showEditDialog = true;
+        }}
+      >
+        <sl-icon
+          slot="prefix"
+          name=${this.collection.value
+            ? SelectCollectionAccess.Options[this.collection.value.access].icon
+            : ""}
+        ></sl-icon>
+        ${msg("Share")}
+      </sl-button>
+    </btrix-popover>`;
+  }
 
   private readonly renderError = (error?: unknown) => {
     console.log("error", error);
