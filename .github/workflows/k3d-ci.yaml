@@ -135,7 +135,7 @@ jobs:
       - name: Install Python Libs
         run: |
           cd backend/
-          uv sync --dev --python 3.13
+          uv sync --group test --python 3.13
 
       - name: Wait for all pods to be ready
         run: kubectl wait --for=condition=ready pod --all --timeout=240s
