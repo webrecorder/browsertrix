@@ -24,7 +24,7 @@ class BaseMigration:
         """Get current db version from database."""
         db_version = None
         version_collection = self.mdb["version"]
-        version_record = await version_collection.find_one()
+        version_record = await version_collection.find_one({"version": {"$ne": None}})
         if not version_record:
             return db_version
         try:
@@ -37,7 +37,9 @@ class BaseMigration:
         """Set db version to migration_version."""
         version_collection = self.mdb["version"]
         await version_collection.find_one_and_update(
-            {}, {"$set": {"version": self.migration_version}}, upsert=True
+            {"version": {"$ne": None}},
+            {"$set": {"version": self.migration_version}},
+            upsert=True,
         )
 
     async def migrate_up_needed(self, ignore_rerun=False):

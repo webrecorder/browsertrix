@@ -40,6 +40,7 @@ class InviteOps:
     def __init__(self, mdb, email: EmailSender):
         self.invites = mdb["invites"]
         self.orgs = mdb["organizations"]
+        self.versions = mdb["version"]
         self.email = email
         self.allow_dupe_invites = is_bool(os.environ.get("ALLOW_DUPE_INVITES", "0"))
 
@@ -51,6 +52,22 @@ class InviteOps:
                 expire_after_seconds = int(
                     os.environ.get("INVITE_EXPIRE_SECONDS", "1209600")
                 )
+
+                res = await self.versions.find_one(
+                    {"curr_invite_expire_seconds": {"$ne": None}}
+                )
+                if (
+                    not res
+                    or res.get("curr_invite_expire_seconds") != expire_after_seconds
+                ):
+                    print("Invite Expiration Changed, Dropping Invite Index")
+                    await self.invites.drop_indexes()
+                    await self.versions.find_one_and_update(
+                        {"curr_invite_expire_seconds": {"$ne": None}},
+                        {"$set": {"curr_invite_expire_seconds": expire_after_seconds}},
+                        upsert=True,
+                    )
+
                 await self.invites.create_index(
                     "created", expireAfterSeconds=expire_after_seconds
                 )
