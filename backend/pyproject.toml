@@ -31,6 +31,7 @@ dependencies = [
     "requests>=2.34.0",
     "setuptools<82.0.0",
     "stream-zip",
+    "structlog>=26.1.0",
     "types-aiobotocore-s3>=3.7.0",
     "types-python-slugify>=8.0.2.20240310",
     "types-pyyaml>=6.0.12.20260510",

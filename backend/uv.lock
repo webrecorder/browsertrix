@@ -285,6 +285,7 @@ dependencies = [
     { name = "requests" },
     { name = "setuptools" },
     { name = "stream-zip" },
+    { name = "structlog" },
     { name = "types-aiobotocore-s3" },
     { name = "types-python-slugify" },
     { name = "types-pyyaml" },
@@ -335,6 +336,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.34.0" },
     { name = "setuptools", specifier = "<82.0.0" },
     { name = "stream-zip", url = "https://github.com/ikreymer/stream-zip/archive/refs/heads/crc32-optional.zip" },
+    { name = "structlog", specifier = ">=26.1.0" },
     { name = "types-aiobotocore-s3", specifier = ">=3.7.0" },
     { name = "types-python-slugify", specifier = ">=8.0.2.20240310" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20260510" },
@@ -1963,6 +1965,15 @@ requires-dist = [
     { name = "types-contextvars", marker = "python_full_version < '3.7' and extra == 'dev'", specifier = ">=2.4.7.3" },
 ]
 provides-extras = ["dev", "ci"]
+
+[[package]]
+name = "structlog"
+version = "26.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/89/b4a0bcfdf4f71a3dea31379f095929613d7e4528a0996bca6aa964cd0dca/structlog-26.1.0.tar.gz", hash = "sha256:f63a716cbd1b1291cf7661de7794b455acfa4c43c5bcf1630e6ad5ddc1adb3b7", size = 1459881, upload-time = "2026-06-06T07:33:39.348Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a9/18/489c97b834dfff9cf2fc2507cede4bcd4b11e67f84bc462acd1992496f86/structlog-26.1.0-py3-none-any.whl", hash = "sha256:e081a26d6c373e6d201eca24eede26d8ffab07f88f477822e679183428d3d91e", size = 73764, upload-time = "2026-06-06T07:33:38.046Z" },
+]
 
 [[package]]
 name = "text-unidecode"
