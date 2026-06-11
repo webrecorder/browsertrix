@@ -1,9 +1,14 @@
+import { provide } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import { html, type TemplateResult } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import type { ReplayWebPage, RwpUrlChangeEvent } from "replaywebpage";
+
+import { collectionRwpContext } from "../org/collection-detail/context/collection-rwp";
+import type { CollectionSavedEvent } from "../org/collection-detail/types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { metadataColumn } from "@/layouts/collections/metadataColumn";
@@ -11,7 +16,8 @@ import { page } from "@/layouts/page";
 import { RouteNamespace } from "@/routes";
 import type { PublicCollection } from "@/types/collection";
 import { formatRwpTimestamp } from "@/utils/replay";
-import { richText } from "@/utils/rich-text";
+
+import "@/features/collections/collection-page-header";
 
 enum Tab {
   Replay = "replay",
@@ -29,6 +35,9 @@ export class Collection extends BtrixElement {
 
   @property({ type: String })
   tab: Tab | string = Tab.Replay;
+
+  @provide({ context: collectionRwpContext })
+  replayEmbed?: ReplayWebPage | null;
 
   get canEditCollection() {
     return this.orgSlug === this.orgSlugState && this.appState.isCrawler;
@@ -75,6 +84,11 @@ export class Collection extends BtrixElement {
   render() {
     return this.collection.render({
       complete: this.renderComplete,
+      pending: () =>
+        this.collection.value
+          ? this.renderComplete(this.collection.value)
+          : // TODO Add skeleton layout
+            nothing,
       error: this.renderError,
     });
   }
@@ -90,40 +104,29 @@ export class Collection extends BtrixElement {
               },
             ]
           : undefined,
-      title: collection.name || "",
-      actions: html`
-        <btrix-share-collection
-          orgSlug=${this.orgSlug || ""}
+      title: collection.name,
+      content: html`<btrix-collection-page-header
+          context="public"
           collectionId=${collection.id}
-          .collection=${collection}
-        ></btrix-share-collection>
-        ${when(
-          this.canEditCollection,
-          () => html`
-            <sl-button
-              href="${this.navigate
-                .orgBasePath}/collections/view/${collection.id}"
-              size="small"
-              variant="text"
-              class="-mx-3"
-              @click=${this.navigate.link}
-            >
-              ${msg("Go to Private Page")}
-            </sl-button>
-          `,
-        )}
-      `,
-    };
-
-    if (collection.caption) {
-      header.secondary = html`
-        <div
-          class="max-w-full hyphens-auto text-pretty break-words text-neutral-600"
+          collectionName=${collection.name}
+          slug=${collection.slug}
+          caption=${collection.caption ?? ""}
+          access=${collection.access}
+          collectionSize=${collection.totalSize}
+          homeUrl=${collection.homeUrl || ""}
+          homeUrlTs=${collection.homeUrlTs || ""}
+          thumbnailName=${collection.defaultThumbnailName || ""}
+          thumbnailPath=${collection.thumbnail?.path || ""}
+          pageCount=${collection.pageCount}
+          ?allowPublicDownload=${collection.allowPublicDownload}
+          @btrix-collection-saved=${(e: CollectionSavedEvent) => {
+            e.stopPropagation();
+            void this.collection.run();
+          }}
         >
-          ${richText(collection.caption)}
-        </div>
-      `;
-    }
+        </btrix-collection-page-header>
+        <hr />`,
+    };
 
     const panel = (tab: Tab, content: TemplateResult) => html`
       <div
@@ -199,7 +202,13 @@ export class Collection extends BtrixElement {
           replayBase="/replay/"
           noSandbox="true"
           noCache="true"
+          hideOffscreen="true"
           deepLink
+          @rwp-url-change=${(e: RwpUrlChangeEvent) => {
+            if (!this.replayEmbed) {
+              this.replayEmbed = e.currentTarget as ReplayWebPage;
+            }
+          }}
         ></replay-web-page>
       </section>
     `;

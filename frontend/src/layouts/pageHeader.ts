@@ -72,13 +72,15 @@ function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
 export function pageBack({ href, content }: Breadcrumb) {
   if (!href) return;
 
-  return breadcrumbLink({
-    href,
-    content: html`
-      <sl-icon name="chevron-left" class="size-4 text-neutral-500"></sl-icon>
-      ${content ? html` ${msg("Back to")} ${content}` : msg("Back")}
-    `,
-  });
+  return html`<div class="-ml-1 flex">
+    ${breadcrumbLink({
+      href,
+      content: html`
+        <sl-icon name="chevron-left" class="size-4 text-neutral-500"></sl-icon>
+        ${content ? html` ${msg("Back to")} ${content}` : msg("Back")}
+      `,
+    })}
+  </div>`;
 }
 
 export function pageTitle(
