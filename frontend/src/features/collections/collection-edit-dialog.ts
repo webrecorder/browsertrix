@@ -21,6 +21,7 @@ import {
   COLLECTION_CAPTION_MAX_LENGTH,
   COLLECTION_NAME_MAX_LENGTH,
   type Collection,
+  type PublicCollection,
 } from "@/types/collection";
 import { maxLengthValidator, type MaxLengthValidator } from "@/utils/form";
 
@@ -30,7 +31,8 @@ export type { Tab as EditDialogTab };
 
 export type CollectionSavedEvent = CustomEvent<{
   id: string;
-}>;
+}> &
+  Partial<Collection>;
 
 export const validateNameMax = maxLengthValidator(COLLECTION_NAME_MAX_LENGTH);
 export const validateCaptionMax = maxLengthValidator(
@@ -44,7 +46,7 @@ export const validateCaptionMax = maxLengthValidator(
 @localized()
 export class CollectionEdit extends BtrixElement {
   @property({ type: Object })
-  collection?: Collection;
+  collection?: Collection | PublicCollection;
 
   /** For contexts where we don't have the full collection object already -
    * Will cause this to fetch the collection internally, so avoid if there's
