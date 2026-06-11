@@ -4,12 +4,14 @@ import { css, html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { styleMap } from "lit/directives/style-map.js";
+import debounce from "lodash/fp/debounce";
 
 import type { Prose, ProseClampingEvent } from "./prose";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
 import type { BtrixInputEvent } from "@/events/btrix-input";
+import type { UnderlyingFunction } from "@/types/utils";
 import localize from "@/utils/localize";
 import { measureTextWithElement } from "@/utils/measure-text";
 import { richText } from "@/utils/rich-text";
@@ -210,7 +212,7 @@ export class EditableTextBox extends TailwindElement {
           this.prose.clamped = undefined;
         }
         this.textarea?.focus();
-      } else {
+      } else if (changedProperties.get("editing") !== undefined) {
         void this.prose?.syncClamp();
       }
     }
@@ -277,6 +279,27 @@ export class EditableTextBox extends TailwindElement {
             ${localize.number(this.maxLength)}
           </span>`
         : null}
+
+      <sl-resize-observer
+        @sl-resize=${this.debouncedOnResize as UnderlyingFunction<
+          EditableTextBox["onResize"]
+        >}
+      >
+        <div><!-- Watch for width changes only --></div>
+      </sl-resize-observer>
     `;
   }
+
+  private firstResize = true;
+
+  private readonly onResize = () => {
+    if (this.firstResize) {
+      this.firstResize = false;
+      return;
+    }
+
+    void this.prose?.syncClamp();
+  };
+
+  private readonly debouncedOnResize = debounce(200)(this.onResize);
 }
