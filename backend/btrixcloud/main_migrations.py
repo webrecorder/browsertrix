@@ -9,6 +9,7 @@ import structlog
 from .logger import init_logging
 from .db import ensure_feature_version, update_and_prepare_db
 from .ops import init_ops
+from .utils import btrix_env
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
@@ -18,6 +19,8 @@ logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 async def main() -> int:
     """init migrations"""
     init_logging()
+
+    logger.info("starting", btrix_env=btrix_env)
 
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):

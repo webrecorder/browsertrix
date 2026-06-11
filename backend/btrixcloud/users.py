@@ -59,7 +59,7 @@ from .models import (
     UserUpdatePassword,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import dt_now, is_bool, run_async_task
+from .utils import dt_now, is_bool, is_production, run_async_task
 
 if TYPE_CHECKING:
     from .basecrawls import BaseCrawlOps
@@ -462,14 +462,27 @@ class UserManager:
 
         pwd_logger = logger.bind(user_id=user.id, user_email=user.email)
 
+        # should only log reset token in development mode AND if email logging is disabled
+        # AND email is not being sent via SMTP, as then it's the only way to get the token
         if not self.email.smtp_server and not self.email.log_sent_emails:
-            pwd_logger.debug(
-                "password_reset_requested",
-                reset_token=token,
-                unstructured_message=(
-                    f"User {user.id} has forgot their password. Reset token: {token}"
-                ),
-            )
+            if is_production:
+                pwd_logger.warning(
+                    "password_reset_requested",
+                    details="Reset token will not be logged because Browsertrix is in production "
+                    "mode. Set `btrix_env` to 'development' to log reset tokens.",
+                    unstructured_message=(f"User {user.id} has forgot their password."),
+                )
+            else:
+                pwd_logger.warning(
+                    "password_reset_requested",
+                    reset_token=token,
+                    details="Reset token is logged in plaintext because Browsertrix is in "
+                    "development mode. Set `btrix_env` to 'production' to disable plaintext "
+                    "logging.",
+                    unstructured_message=(
+                        f"User {user.id} has forgot their password. Reset token: {token}"
+                    ),
+                )
         else:
             pwd_logger.debug(
                 "password_reset_requested",

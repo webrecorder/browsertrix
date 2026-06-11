@@ -23,7 +23,7 @@ from .models import (
     Organization,
     Subscription,
 )
-from .utils import get_origin, is_bool
+from .utils import get_origin, is_bool, is_production
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
@@ -80,23 +80,35 @@ class EmailSender:
 
         self.log_sent_emails = is_bool(os.environ.get("LOG_SENT_EMAILS"))
 
-        if self.smtp_server and self.log_sent_emails:
+        if self.smtp_server and self.log_sent_emails and is_production:
             logger.info(
                 "email_logging_redaction",
                 details="SMTP server is configured but LOG_SENT_EMAILS is enabled. Sensitive "
-                "information such as invite tokens and password reset URLs will be redacted.",
+                "information such as invite tokens and password reset URLs will be redacted. "
+                "Set `btrix_env` to 'development' to allow logging secrets as plain text.",
             )
-        elif not self.smtp_server and not self.log_sent_emails:
+        elif not self.smtp_server and self.log_sent_emails and is_production:
             logger.warning(
-                "sensitive_logs",
-                details="SMTP server is not configured. Password reset URLs will be logged as "
-                "plain text.",
-            )
-        elif not self.smtp_server and self.log_sent_emails:
-            logger.warning(
-                "sensitive_logs",
+                "email_logging_redaction",
                 details="SMTP server is not configured. Sensitive information such as invite  "
-                "tokens and password reset URLs will be logged as plain text.",
+                "tokens and password reset URLs will be redacted. Set `btrix_env` to "
+                "'development' to allow logging secrets as plain text.",
+            )
+        elif self.smtp_server and self.log_sent_emails and not is_production:
+            logger.info(
+                "email_logging_redaction",
+                details="SMTP server is configured but LOG_SENT_EMAILS is enabled, and "
+                "Browsertrix is not in production mode. Sensitive information such as "
+                "invite tokens and password reset URLs will NOT be redacted in logs. "
+                "Set `btrix_env` to 'production' to enable logging protections.",
+            )
+        elif not self.smtp_server and self.log_sent_emails and not is_production:
+            logger.info(
+                "email_logging_redaction",
+                details="SMTP server is not configured, and Browsertrix is not in production "
+                "mode. Sensitive information such as invite tokens and password reset "
+                "URLs will NOT be redacted in logs. "
+                "Set `btrix_env` to 'production' to enable logging protections.",
             )
 
         email_template_endpoint = os.environ.get("EMAIL_TEMPLATE_ENDPOINT")
@@ -128,11 +140,13 @@ class EmailSender:
                     subject = json["subject"]
 
                     if self.log_sent_emails:
+                        if is_production:
+                            log_text = _redact_email_text(text)
+                        else:
+                            log_text = text
                         logger.info(
                             "email_log",
-                            email_text=text
-                            if not self.smtp_server
-                            else _redact_email_text(text),
+                            email_text=log_text,
                         )
 
                     if not self.smtp_server:

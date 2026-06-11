@@ -8,7 +8,9 @@ metadata:
 data:
   APP_ORIGIN: {{ .Values.ingress.tls | ternary "https" "http" }}://{{ or .Values.ingress.host ( print "localhost:" ( .Values.local_service_port | default 9870 )) }}
 
-  LOG_LEVEL: "{{ .Values.log_level | default "DEBUG" }}"
+  BTRIX_ENV: "{{ .Values.btrix_env }}"
+
+  LOG_LEVEL: "{{ .Values.log_level }}"
 
   LOG_FORMAT: "{{ .Values.log_format }}"
 

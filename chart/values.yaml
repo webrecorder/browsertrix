@@ -6,6 +6,13 @@
 # ex: enable only 'en' and 'es' locales
 # locales_enabled: "en,es"
 
+# sensitive information in logs will be redacted
+# unless btrix_env is set to "development".
+# when running without an email sender configured, invite tokens and
+# password reset URLs will only be available in logs, so without
+# setting btrix_env to "development", these will be redacted.
+# btrix_env: "development"
+
 # Crawler Settings
 # =========================================
 
@@ -54,7 +61,6 @@ crawler_extra_args: ""
 
 # max allowed browser windows per crawl
 max_browser_windows: 8
-
 
 # Cluster Settings
 # =========================================
@@ -258,7 +264,6 @@ redis_memory: "200Mi"
 
 redis_storage: "3Gi"
 
-
 # Dedupe Index
 # =========================================
 dedupe:
@@ -288,7 +293,6 @@ dedupe:
   # set this to custom crawler channel (from one of options below)
   # used for dedupe index importing
   importer_channel: "default"
-
 
 # Crawler Channels
 # =========================================

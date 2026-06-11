@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from .logger import create_request_logging_middleware, init_logging
 from .operator import init_operator_api
 from .ops import init_ops
-from .utils import register_exit_handler
+from .utils import btrix_env, register_exit_handler
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
@@ -23,6 +23,8 @@ app_root.middleware("http")(create_request_logging_middleware(logger))
 # pylint: disable=too-many-function-args, duplicate-code
 def main():
     """init operator"""
+
+    logger.info("starting", btrix_env=btrix_env)
 
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):

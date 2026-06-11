@@ -26,6 +26,9 @@ from slugify import slugify
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
+btrix_env = os.environ.get("BTRIX_ENV", "production").lower()
+is_production = btrix_env == "production"
+
 default_origin = os.environ.get("APP_ORIGIN", "")
 
 browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
