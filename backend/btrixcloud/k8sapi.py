@@ -371,9 +371,9 @@ class K8sAPI:
     async def print_pod_logs(self, pod_names, lines=100):
         """print pod logs"""
         for pod in pod_names:
-            logger.info(
+            pod_logger = logger.bind(pod_name=pod)
+            pod_logger.info(
                 "pod_logs_header",
-                pod_name=pod,
                 lines=lines,
                 unstructured_message=f"============== LOGS FOR POD: {pod} ==============",
             )
@@ -381,16 +381,14 @@ class K8sAPI:
                 resp = await self.core_api.read_namespaced_pod_log(
                     pod, self.namespace, tail_lines=lines
                 )
-                logger.info(
+                pod_logger.info(
                     "pod_logs_content",
-                    pod_name=pod,
                     pod_logs=resp,
                 )
             # pylint: disable=bare-except
             except:
-                logger.warning(
+                pod_logger.warning(
                     "pod_logs_not_found",
-                    pod_name=pod,
                     unstructured_message="Logs Not Found",
                 )
 
@@ -449,11 +447,11 @@ class K8sAPI:
         command = ["sh", "-c", f"kill -s {signame} 1"]
         signaled = False
 
+        signal_logger = logger.bind(signal=signame, pod_name=pod_name)
+
         try:
-            logger.info(
+            signal_logger.info(
                 "sending_signal_to_pod",
-                signal=signame,
-                pod_name=pod_name,
                 unstructured_message=f"Sending {signame} to {pod_name}",
             )
 
@@ -465,10 +463,8 @@ class K8sAPI:
                 stdout=True,
             )
             if res:
-                logger.debug(
+                signal_logger.debug(
                     "signal_result",
-                    signal=signame,
-                    pod_name=pod_name,
                     result=res,
                 )
 
@@ -477,10 +473,8 @@ class K8sAPI:
 
         # pylint: disable=broad-except
         except Exception:
-            logger.exception(
+            signal_logger.exception(
                 "send_signal_error",
-                signal=signame,
-                pod_name=pod_name,
                 unstructured_message="Send Signal Error",
             )
 

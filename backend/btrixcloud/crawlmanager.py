@@ -328,13 +328,15 @@ class CrawlManager(K8sAPI):
         job_schedule = os.environ.get("CLEANUP_JOB_CRON_SCHEDULE", default_schedule)
 
         # Don't create a duplicate cron job if already exists
+        cleanup_logger = logger.bind(schedule=job_schedule)
+
         try:
             cron_job = await self.batch_api.read_namespaced_cron_job(
                 name=job_id,
                 namespace=DEFAULT_NAMESPACE,
             )
             if cron_job:
-                logger.info(
+                cleanup_logger.info(
                     "cleanup_cron_job_exists",
                     unstructured_message="Cron job to clean up unused seed files already exists",
                 )
@@ -347,9 +349,8 @@ class CrawlManager(K8sAPI):
                         namespace=DEFAULT_NAMESPACE,
                         body=cron_job,
                     )
-                    logger.info(
+                    cleanup_logger.info(
                         "cleanup_cron_job_updated",
-                        schedule=job_schedule,
                         unstructured_message=(
                             f"Cron job to clean up unused seed files updated,"
                             f" schedule: {job_schedule}"
@@ -360,9 +361,8 @@ class CrawlManager(K8sAPI):
         except Exception:
             pass
 
-        logger.info(
+        cleanup_logger.info(
             "cleanup_cron_job_creating",
-            schedule=job_schedule,
             unstructured_message=(
                 f"Creating cron job to clean up unused seed files,"
                 f" schedule: {job_schedule}"

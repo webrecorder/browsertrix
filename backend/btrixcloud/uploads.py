@@ -75,6 +75,8 @@ class UploadOps(BaseCrawlOps):
 
         id_ = "upload-" + str(uuid.uuid4()) if not replaceId else replaceId
 
+        upload_logger = logger.bind(crawl_id=id_)
+
         prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{id_}"
 
         file_prep = FilePreparer(prefix, filename)
@@ -85,9 +87,8 @@ class UploadOps(BaseCrawlOps):
                 file_prep.add_chunk(chunk)
                 yield chunk
 
-        logger.debug(
+        upload_logger.debug(
             "stream_upload_start",
-            crawl_id=id_,
             unstructured_message="Stream Upload Start",
         )
 
@@ -97,9 +98,8 @@ class UploadOps(BaseCrawlOps):
             stream_iter(),
             MIN_UPLOAD_PART_SIZE,
         ):
-            logger.error(
+            upload_logger.error(
                 "stream_upload_failed",
-                crawl_id=id_,
                 unstructured_message="Stream Upload Failed",
             )
             raise HTTPException(status_code=400, detail="upload_failed")
@@ -112,9 +112,8 @@ class UploadOps(BaseCrawlOps):
                 await self.page_ops.delete_crawl_pages(prev_upload.id, org.id)
             # pylint: disable=broad-exception-caught
             except Exception:
-                logger.exception(
+                upload_logger.exception(
                     "previous_upload_cleanup_error",
-                    crawl_id=id_,
                     unstructured_message="Error handling previous upload",
                 )
 

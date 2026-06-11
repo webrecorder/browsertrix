@@ -228,15 +228,16 @@ class FileUploadOps:
             created=dt_now(),
         )
 
+        upload_logger = logger.bind(upload_type=upload_type)
+
         async def stream_iter():
             """iterate over each chunk and compute and digest + total size"""
             async for chunk in stream:
                 file_prep.add_chunk(chunk)
                 yield chunk
 
-        logger.info(
+        upload_logger.info(
             "file_stream_upload_starting",
-            upload_type=upload_type,
             unstructured_message=f"{upload_type} stream upload starting",
         )
 
@@ -247,9 +248,8 @@ class FileUploadOps:
             MIN_UPLOAD_PART_SIZE,
             mime=file_prep.mime,
         ):
-            logger.error(
+            upload_logger.error(
                 "file_stream_upload_failed",
-                upload_type=upload_type,
                 unstructured_message=f"{upload_type} stream upload failed",
             )
             raise HTTPException(status_code=400, detail="upload_failed")
@@ -259,9 +259,8 @@ class FileUploadOps:
         # Validate size
         max_size = SEED_FILE_MAX_SIZE
         if file_obj.size > max_size:
-            logger.error(
+            upload_logger.error(
                 "file_stream_upload_size_exceeded",
-                upload_type=upload_type,
                 unstructured_message=(
                     f"{upload_type} stream upload failed: max size (25 MB) exceeded"
                 ),
@@ -274,17 +273,15 @@ class FileUploadOps:
 
         first_seed, seed_count = await self._parse_seed_info_from_file(file_obj, org)
         if not first_seed or seed_count == 0:
-            logger.error(
+            upload_logger.error(
                 "file_stream_upload_invalid_seed",
-                upload_type=upload_type,
                 unstructured_message=f"{upload_type} stream upload failed: invalid seed file",
             )
             await self.storage_ops.delete_file_object(org, file_obj)
             raise HTTPException(status_code=400, detail="invalid_seed_file")
 
-        logger.info(
+        upload_logger.info(
             "file_stream_upload_complete",
-            upload_type=upload_type,
             unstructured_message=f"{upload_type} stream upload complete",
         )
 

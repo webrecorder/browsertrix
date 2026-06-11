@@ -1242,9 +1242,10 @@ class CollectionOps:
                 file_prep.add_chunk(chunk)
                 yield chunk
 
-        logger.info(
+        thumb_logger = logger.bind(coll_id=coll_id)
+
+        thumb_logger.info(
             "thumbnail_upload_starting",
-            coll_id=coll_id,
             unstructured_message="Collection thumbnail stream upload starting",
         )
 
@@ -1255,9 +1256,8 @@ class CollectionOps:
             MIN_UPLOAD_PART_SIZE,
             mime=file_prep.mime,
         ):
-            logger.error(
+            thumb_logger.error(
                 "thumbnail_upload_failed",
-                coll_id=coll_id,
                 unstructured_message="Collection thumbnail stream upload failed",
             )
             raise HTTPException(status_code=400, detail="upload_failed")
@@ -1265,9 +1265,8 @@ class CollectionOps:
         thumbnail_file = file_prep.get_user_file(org.storage)
 
         if thumbnail_file.size > THUMBNAIL_MAX_SIZE:
-            logger.error(
+            thumb_logger.error(
                 "thumbnail_upload_max_size_exceeded",
-                coll_id=coll_id,
                 unstructured_message=(
                     "Collection thumbnail stream upload failed: max size (2 MB) exceeded"
                 ),
@@ -1280,19 +1279,17 @@ class CollectionOps:
 
         if coll.thumbnail:
             if not await self.storage_ops.delete_file_object(org, coll.thumbnail):
-                logger.warning(
+                thumb_logger.warning(
                     "previous_thumbnail_deletion_failed",
                     filename=coll.thumbnail.filename,
-                    coll_id=coll_id,
                     unstructured_message=(
                         f"Unable to delete previous collection thumbnail:"
                         f" {coll.thumbnail.filename}"
                     ),
                 )
 
-        logger.info(
+        thumb_logger.info(
             "thumbnail_upload_complete",
-            coll_id=coll_id,
             unstructured_message="Collection thumbnail stream upload complete",
         )
 

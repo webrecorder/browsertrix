@@ -637,10 +637,10 @@ class BackgroundJobOps:
             await self._send_bg_job_failure_email(job, finished)
 
     async def _send_bg_job_failure_email(self, job: BackgroundJob, finished: datetime):
-        logger.info(
+        email_logger = logger.bind(job_id=job.id, oid=job.oid)
+
+        email_logger.info(
             "bg_job_failed_sending_email",
-            job_id=job.id,
-            oid=job.oid,
             unstructured_message=f"Background job {job.id} failed, sending email to superuser",
         )
         try:
@@ -656,10 +656,8 @@ class BackgroundJobOps:
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            logger.exception(
+            email_logger.exception(
                 "bg_job_failure_email_failed",
-                job_id=job.id,
-                oid=job.oid,
                 unstructured_message=f"Error sending bg job failure email for job {job.id}: {err}",
             )
 

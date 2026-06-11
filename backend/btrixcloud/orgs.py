@@ -482,12 +482,14 @@ class OrgOps(BaseOrgs):
             storage=self.default_primary,
             default=True,
         )
+
+        org_logger = logger.bind(oid=org.id)
+
         primary_name = self.default_primary and self.default_primary.name
-        logger.info(
+        org_logger.info(
             "default_org_creating",
             default_org=DEFAULT_ORG,
             storage=primary_name,
-            oid=org.id,
             unstructured_message=(
                 f'Creating Default Organization "{DEFAULT_ORG}". Storage: {primary_name}'
             ),
@@ -499,11 +501,10 @@ class OrgOps(BaseOrgs):
             value = org.name
             if field == "slug":
                 value = org.slug
-            logger.warning(
+            org_logger.warning(
                 "org_field_in_use",
                 field=field,
                 value=value,
-                oid=org.id,
                 unstructured_message=f"Organization {field} {value} already in use - skipping",
             )
 

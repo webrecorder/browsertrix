@@ -211,12 +211,13 @@ class SubOps:
     ):
         """Send a trial end reminder email to the organization admins"""
 
+        reminder_logger = logger.bind(sub_id=reminder.subId)
+
         org = await self.org_ops.find_org_by_subscription_id(reminder.subId)
 
         if not org:
-            logger.error(
+            reminder_logger.error(
                 "org_not_found_for_subscription",
-                sub_id=reminder.subId,
                 unstructured_message=f"Organization not found for subscription ID {reminder.subId}",
             )
             raise HTTPException(
@@ -225,11 +226,11 @@ class SubOps:
 
         assert org.subscription
 
+        org_reminder_logger = reminder_logger.bind(oid=org.id)
+
         if not org.subscription.futureCancelDate:
-            logger.error(
+            org_reminder_logger.error(
                 "future_cancel_date_not_found",
-                sub_id=reminder.subId,
-                oid=org.id,
                 unstructured_message=(
                     f"Future cancel date not found for subscription ID {reminder.subId}"
                 ),
@@ -239,10 +240,8 @@ class SubOps:
         users = await self.org_ops.get_users_for_org(org, UserRole.OWNER)
 
         if len(users) == 0:
-            logger.error(
+            org_reminder_logger.error(
                 "no_admin_users_found_for_org",
-                sub_id=reminder.subId,
-                oid=org.id,
                 unstructured_message=f"No admin users found for organization ID {org.id}",
             )
             raise HTTPException(status_code=400, detail="no_admin_users_found")
@@ -463,6 +462,8 @@ class SubOps:
         subscription_id = org.subscription.subId
         return_url = f"{get_origin(headers)}/orgs/{org.slug}/settings/billing"
 
+        checkout_logger = logger.bind(oid=org.id)
+
         if external_subs_app_api_url:
             try:
                 req = CheckoutAddonMinutesRequest(
@@ -483,18 +484,16 @@ class SubOps:
                         raise_for_status=True,
                     ) as resp:
                         json = await resp.json()
-                        logger.debug(
+                        checkout_logger.debug(
                             "checkout_url_response",
                             response=json,
-                            oid=org.id,
                             unstructured_message=f"get_checkout_url got response: {json}",
                         )
                         return CheckoutAddonMinutesResponse(**json)
             # pylint: disable=broad-exception-caught
             except Exception as exc:
-                logger.exception(
+                checkout_logger.exception(
                     "checkout_url_fetch_failed",
-                    oid=org.id,
                     unstructured_message="Error fetching checkout url",
                 )
                 raise HTTPException(
