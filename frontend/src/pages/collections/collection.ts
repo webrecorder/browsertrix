@@ -1,6 +1,7 @@
 import { provide } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
+import type { SlChangeEvent, SlSwitch } from "@shoelace-style/shoelace";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -39,6 +40,9 @@ export class Collection extends BtrixElement {
 
   @property({ type: String })
   tab: Tab | string = Tab.Replay;
+
+  @state()
+  private viewAsCrawler = false;
 
   @state()
   private showEditDialog = false;
@@ -85,36 +89,75 @@ export class Collection extends BtrixElement {
     args: () => [this.orgSlug, this.collectionSlug] as const,
   });
 
-  render() {
-    return html`${this.collection.render({
-      complete: this.renderComplete,
-      pending: () =>
-        this.collection.value
-          ? this.renderComplete(this.collection.value)
-          : // TODO Add skeleton layout
-            nothing,
-      error: this.renderError,
-    })}
-    ${when(
-      this.collection.value,
-      (collection) =>
-        html`<btrix-collection-edit-dialog
-          .collection=${collection}
-          ?open=${this.showEditDialog}
-          @sl-hide=${() => (this.showEditDialog = false)}
-          @btrix-collection-saved=${async (e: CollectionSavedEvent) => {
-            if (e.detail?.access === CollectionAccess.Private) {
-              // Redirect to private page
-              this.navigate.to(
-                `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${collection.id}`,
-              );
-            } else {
-              void this.collection.run();
-            }
-          }}
-        ></btrix-collection-edit-dialog>`,
-    )} `;
+  protected firstUpdated(): void {
+    this.viewAsCrawler = this.canEditCollection;
   }
+
+  render() {
+    return html`
+      ${when(this.canEditCollection, this.renderPreviewBanner)}
+      ${this.collection.render({
+        complete: this.renderComplete,
+        pending: () =>
+          this.collection.value
+            ? this.renderComplete(this.collection.value)
+            : // TODO Add skeleton layout
+              nothing,
+        error: this.renderError,
+      })}
+      ${when(
+        this.collection.value,
+        (collection) =>
+          html`<btrix-collection-edit-dialog
+            .collection=${collection}
+            ?open=${this.showEditDialog}
+            @sl-hide=${() => (this.showEditDialog = false)}
+            @btrix-collection-saved=${async (e: CollectionSavedEvent) => {
+              if (e.detail?.access === CollectionAccess.Private) {
+                // Redirect to private page
+                this.navigate.to(
+                  `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${collection.id}`,
+                );
+              } else {
+                void this.collection.run();
+              }
+            }}
+          ></btrix-collection-edit-dialog>`,
+      )}
+    `;
+  }
+
+  private readonly renderPreviewBanner = () => {
+    return html`
+      <!-- TODO consolidate with btrix-org-status-banner -->
+      <div class="border-b bg-slate-100 py-5">
+        <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
+          <sl-alert variant="primary" open>
+            <sl-icon slot="icon" name="eye-fill"></sl-icon>
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <strong class="font-semibold">
+                  ${msg("This is a shareable collection")}
+                </strong>
+                <p>${msg("You are viewing this page as an editor.")}</p>
+              </div>
+              <div>
+                <sl-switch
+                  size="small"
+                  ?checked=${!this.viewAsCrawler}
+                  @sl-change=${(e: SlChangeEvent) => {
+                    const el = e.currentTarget as SlSwitch;
+                    this.viewAsCrawler = !el.checked;
+                  }}
+                  >${msg("View as public")}</sl-switch
+                >
+              </div>
+            </div>
+          </sl-alert>
+        </div>
+      </div>
+    `;
+  };
 
   private readonly renderComplete = (collection: PublicCollection) => {
     const header: Parameters<typeof page>[0] = {
@@ -130,6 +173,7 @@ export class Collection extends BtrixElement {
       title: collection.name,
       content: html`<btrix-collection-page-header
           context="public"
+          ?canEdit=${this.viewAsCrawler}
           collectionId=${collection.id}
           collectionName=${collection.name}
           slug=${collection.slug}

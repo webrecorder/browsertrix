@@ -879,7 +879,7 @@ export class App extends BtrixElement {
         }
 
         return html`<btrix-collection
-          class="w-full pt-3"
+          class="w-full"
           orgSlug=${this.viewState.params.slug}
           collectionSlug=${collectionSlug}
           tab=${ifDefined(collectionTab || undefined)}

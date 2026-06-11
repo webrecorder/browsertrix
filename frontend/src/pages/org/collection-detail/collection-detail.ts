@@ -434,6 +434,7 @@ export class CollectionDetail extends BtrixElement {
 
       <btrix-collection-page-header
         context="private"
+        ?canEdit=${this.appState.isCrawler}
         ?loading=${!this.collection}
         collectionId=${this.collectionId}
         collectionName=${ifDefined(this.collection?.name)}
