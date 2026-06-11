@@ -212,6 +212,9 @@ export class SelectCollectionThumbnail extends BtrixElement {
 
       try {
         if (typeof option === "string") {
+          this.nextThumbnailUrl = Object.entries(
+            CollectionThumbnail.Variants,
+          ).find(([name]) => (name as Thumbnail) === option)?.[1].path;
           await this.updateThumbnail({ defaultThumbnailName: option }, signal);
         } else {
           const screenshot = this.#screenshots.get(option.pageId);
