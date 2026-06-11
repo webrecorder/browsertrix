@@ -54,7 +54,7 @@ export class Prose extends TailwindElement {
         <pre
           class=${clsx(
             this.clamped !== false && tw`line-clamp-[--btrix-line-clamp]`,
-            tw`max-w-prose hyphens-auto whitespace-pre-line text-pretty font-sans leading-normal`,
+            tw`max-w-prose hyphens-auto whitespace-pre-line text-pretty font-sans leading-normal [word-break:auto-phrase]`,
           )}
           part="content"
           @scroll=${(e: Event) => {

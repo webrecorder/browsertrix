@@ -18,6 +18,7 @@ export type EditableTextBoxInputEvent = BtrixInputEvent<string>;
 export type EditableTextBoxChangeEvent = BtrixChangeEvent<string>;
 
 const newlineRegex = /[\r\n]+/gm;
+const WORD_MAX = 50;
 
 /**
  * In-place editor for multi-line text.
@@ -76,6 +77,9 @@ export class EditableTextBox extends TailwindElement {
 
   @query("btrix-prose")
   private readonly prose?: Prose | null;
+
+  // Check if value contains any words over the length limit
+  private containsLongWord = false;
 
   private readonly handleKeydown = (e: KeyboardEvent) => {
     if (!this.allowNewLines) {
@@ -180,6 +184,12 @@ export class EditableTextBox extends TailwindElement {
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("value")) {
       this.inputValue = this.value;
+
+      if (this.value) {
+        this.containsLongWord = this.value
+          .split(/\s/)
+          .some((str) => str.length > WORD_MAX);
+      }
     }
   }
 
@@ -203,6 +213,7 @@ export class EditableTextBox extends TailwindElement {
         class=${clsx(
           tw`part-[base]:flex part-[content]:max-w-full part-[base]:gap-1.5`,
           this.editing && tw`hidden`,
+          this.containsLongWord && tw`break-all`,
         )}
         style=${styleMap({
           "--btrix-line-clamp": this.clamp,
