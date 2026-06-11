@@ -694,7 +694,18 @@ class PageOps:
                 # note: not using qa.{qa_run_id} because $set above means qa = qa.{qa_run_id}
                 sort_by = f"qa.{sort_by}"
 
-            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+            sort_query = {sort_by: sort_direction}
+
+            if sort_by == "isSeed":
+                # If sorting first by seed, add secondary and tertiary sorts of URL
+                # and timestamp so that page order comes out nicely in replay
+                sort_query = {
+                    "isSeed": sort_direction,
+                    "url": sort_direction,
+                    "ts": sort_direction,
+                }
+
+            aggregate.extend([{"$sort": sort_query}])
 
         # default sort with search
         elif search or url_prefix:
