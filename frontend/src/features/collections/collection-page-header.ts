@@ -75,6 +75,9 @@ export class CollectionPageHeader extends BtrixElement {
   @property({ type: Boolean })
   loading?: boolean;
 
+  @property({ type: Boolean })
+  canEdit = false;
+
   @property({ type: String })
   context: "private" | "public" = "public";
 
@@ -93,9 +96,9 @@ export class CollectionPageHeader extends BtrixElement {
   }
 
   render() {
-    const isCrawler = this.appState.isCrawler;
+    const canEdit = this.canEdit;
     const showAccess = this.context === "private" || this.slugPreview;
-    const showCaption = isCrawler || this.caption;
+    const showCaption = canEdit || this.caption;
 
     return html`<header
       class=${clsx(
@@ -120,13 +123,13 @@ export class CollectionPageHeader extends BtrixElement {
       <div
         class=${clsx(
           tw`overflow-hidden md:col-start-2 md:row-start-1`,
-          isCrawler && tw`-m-1 p-1`,
+          canEdit && tw`-m-1 p-1`,
         )}
       >
         <div
           class=${clsx(
             tw`flex items-center gap-2.5`,
-            isCrawler ? [showAccess && tw`mb-1.5`] : tw`mb-2`,
+            canEdit ? [showAccess && tw`mb-1.5`] : tw``,
           )}
         >
           ${pageTitle(
@@ -141,7 +144,7 @@ export class CollectionPageHeader extends BtrixElement {
       </div>
       ${showCaption
         ? html`<div class="md:col-start-2 md:row-start-2 lg:col-end-4">
-            ${isCrawler
+            ${canEdit
               ? this.loading
                 ? html`<sl-skeleton class="w-full max-w-prose"></sl-skeleton>`
                 : html`<btrix-editable-text-box
@@ -177,7 +180,7 @@ export class CollectionPageHeader extends BtrixElement {
             this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
           }}
         ></btrix-share-collection>
-        ${when(isCrawler, () => html`<slot name="actions"></slot>`)}
+        ${when(canEdit, () => html`<slot name="actions"></slot>`)}
       </div>
     </header>`;
   }
@@ -196,7 +199,7 @@ export class CollectionPageHeader extends BtrixElement {
   };
 
   private readonly renderName = (name: string) => {
-    if (!this.appState.isCrawler) {
+    if (!this.canEdit) {
       return html`<div class="truncate">${name}</div>`;
     }
 

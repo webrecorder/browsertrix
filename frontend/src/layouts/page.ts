@@ -40,7 +40,7 @@ export function page(
     ></btrix-document-title>
 
     <div
-      class="mx-auto box-border flex min-h-full w-full max-w-screen-desktop flex-1 flex-col gap-3 px-3 lg:px-10 lg:pb-10"
+      class="mx-auto box-border flex min-h-full w-full max-w-screen-desktop flex-1 flex-col gap-3 p-3 lg:px-10 lg:pb-10"
     >
       ${header.breadcrumbs
         ? html`<div class="mb-7">${pageNav(header.breadcrumbs)}</div>`
