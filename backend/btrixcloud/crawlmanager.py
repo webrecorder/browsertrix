@@ -217,6 +217,26 @@ class CrawlManager(K8sAPI):
             collection_id=collection_id,
         )
 
+    async def run_postprocess_upload_job(
+        self,
+        oid: str,
+        crawl_id: str,
+        existing_job_id: Optional[str] = None,
+    ) -> str:
+        """run job to post-process uploaded crawl"""
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"postprocess-upload-{crawl_id}"
+
+        return await self._run_bg_job_with_ops_classes(
+            job_id,
+            job_type=BgJobType.POSTPROCESS_UPLOAD.value,
+            oid=oid,
+            crawl_type="upload",
+            crawl_id=crawl_id,
+        )
+
     async def _run_bg_job_with_ops_classes(
         self,
         job_id: str,
