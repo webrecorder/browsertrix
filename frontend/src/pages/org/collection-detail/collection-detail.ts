@@ -491,9 +491,7 @@ export class CollectionDetail extends BtrixElement {
           <div class="relative z-10">${this.renderAccessDetails()}</div>
         </div>
         ${showCaption
-          ? html`<div
-              class=${clsx(tw`grid md:col-start-2 md:row-start-2 lg:col-end-4`)}
-            >
+          ? html`<div class="md:col-start-2 md:row-start-2 lg:col-end-4">
               ${this.isCrawler
                 ? when(
                     this.collection,
