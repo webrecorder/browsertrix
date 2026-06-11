@@ -38,6 +38,9 @@ dependencies = [
     "uvicorn[standard]>=0.46.0",
 ]
 
+[tool.uv]
+exclude-newer = "7 days"
+
 [tool.uv.sources]
 stream-zip = { url = "https://github.com/ikreymer/stream-zip/archive/refs/heads/crc32-optional.zip" }
 
