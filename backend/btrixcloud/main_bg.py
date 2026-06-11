@@ -10,6 +10,7 @@ import structlog
 from .logger import init_logging, set_log_context
 from .models import BgJobType
 from .ops import init_ops
+from .utils import btrix_env
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
@@ -27,6 +28,9 @@ async def main():
     """run background job with access to ops classes"""
 
     init_logging()
+
+    logger.info("starting", btrix_env=btrix_env)
+
     if oid:
         set_log_context(oid=oid)
 

@@ -35,7 +35,7 @@ from .storages import init_storages_api
 from .subs import init_subs_api
 from .uploads import init_uploads_api
 from .users import init_user_manager, init_users_api
-from .utils import is_bool, register_exit_handler, run_async_task
+from .utils import btrix_env, is_bool, register_exit_handler, run_async_task
 from .version import __version__
 from .webhooks import init_event_webhooks_api
 
@@ -138,6 +138,8 @@ class SettingsResponse(BaseModel):
 # pylint: disable=too-many-locals, duplicate-code
 def main() -> None:
     """init browsertrix api"""
+
+    logger.info("starting", btrix_env=btrix_env)
 
     app = APIRouter()
 
