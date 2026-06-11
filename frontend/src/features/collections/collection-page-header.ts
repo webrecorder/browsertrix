@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
 import { html, nothing } from "lit";
@@ -14,6 +15,7 @@ import type {
   EditableTextFieldChangeEvent,
   EditableTextFieldInputEvent,
 } from "@/components/ui/editable-text-field";
+import { viewStateContext, type ViewStateContext } from "@/context/view-state";
 import { pageTitle } from "@/layouts/pageHeader";
 import type { CollectionSavedEvent } from "@/pages/org/collection-detail/types";
 import { OrgTab, RouteNamespace } from "@/routes";
@@ -73,8 +75,14 @@ export class CollectionPageHeader extends BtrixElement {
   @property({ type: Boolean })
   loading?: boolean;
 
+  @property({ type: String })
+  context: "private" | "public" = "public";
+
   @state()
   private slugPreview = "";
+
+  @consume({ context: viewStateContext })
+  viewState?: ViewStateContext;
 
   @query("btrix-select-collection-thumbnail")
   private readonly selectCollectionThumbnail?: SelectCollectionThumbnail | null;
@@ -86,6 +94,7 @@ export class CollectionPageHeader extends BtrixElement {
 
   render() {
     const isCrawler = this.appState.isCrawler;
+    const showAccess = this.context === "private" || this.slugPreview;
     const showCaption = isCrawler || this.caption;
 
     return html`<header
@@ -117,7 +126,7 @@ export class CollectionPageHeader extends BtrixElement {
         <div
           class=${clsx(
             tw`flex items-center gap-2.5`,
-            isCrawler ? tw`mb-1.5` : tw`mb-2`,
+            isCrawler ? [showAccess && tw`mb-1.5`] : tw`mb-2`,
           )}
         >
           ${pageTitle(
@@ -126,7 +135,9 @@ export class CollectionPageHeader extends BtrixElement {
             tw`grid`,
           )}
         </div>
-        <div class="relative z-10">${this.renderAccessDetails()}</div>
+        ${showAccess
+          ? html`<div class="relative z-10">${this.renderAccessDetails()}</div>`
+          : nothing}
       </div>
       ${showCaption
         ? html`<div class="md:col-start-2 md:row-start-2 lg:col-end-4">
@@ -138,7 +149,7 @@ export class CollectionPageHeader extends BtrixElement {
                     .value=${this.caption ?? ""}
                     placeholder=${msg("Add a summary...")}
                     maxLength=${COLLECTION_CAPTION_MAX_LENGTH}
-                    clamp="2"
+                    clamp=${showAccess ? 2 : 3}
                     @btrix-change=${(e: EditableTextBoxChangeEvent) => {
                       void this.updateSummary(e.detail.value);
                     }}
@@ -150,17 +161,17 @@ export class CollectionPageHeader extends BtrixElement {
         : nothing}
 
       <div
-        class="ml-auto flex flex-shrink-0 flex-wrap items-start justify-end gap-2 md:col-start-2 md:row-start-3 lg:col-start-3 lg:row-start-1 lg:min-h-16 lg:pt-1"
+        class="ml-auto flex flex-shrink-0 flex-wrap items-start justify-end gap-2 md:col-start-2 md:row-start-3 lg:col-start-3 lg:row-start-1 lg:min-h-10 lg:pt-1"
       >
         <btrix-share-collection
-          orgSlug=${this.orgSlugState || ""}
+          orgSlug=${this.viewState?.params.slug || ""}
           collectionId=${this.collectionId}
           collectionName=${ifDefined(this.collectionName)}
           collectionSize=${ifDefined(this.collectionSize)}
           slug=${ifDefined(this.slug)}
           access=${ifDefined(this.access)}
           ?allowPublicDownload=${this.allowPublicDownload}
-          context="private"
+          context=${this.context}
           @btrix-change=${(e: CustomEvent) => {
             e.stopPropagation();
             this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
@@ -281,7 +292,12 @@ export class CollectionPageHeader extends BtrixElement {
 
   private readonly renderCaption = (text: string) => {
     return html`<btrix-prose
-      class="[--btrix-line-clamp:2] part-[content]:max-w-full"
+      class=${clsx(
+        tw`part-[content]:max-w-full`,
+        this.context === "private"
+          ? tw`[--btrix-line-clamp:2]`
+          : tw`[--btrix-line-clamp:3]`,
+      )}
       >${richText(text, {
         linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
       })}</btrix-prose

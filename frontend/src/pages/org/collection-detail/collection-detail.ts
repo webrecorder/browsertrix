@@ -433,6 +433,8 @@ export class CollectionDetail extends BtrixElement {
       <div class="mb-7">${this.renderBreadcrumbs()}</div>
 
       <btrix-collection-page-header
+        context="private"
+        ?loading=${!this.collection}
         collectionId=${this.collectionId}
         collectionName=${ifDefined(this.collection?.name)}
         slug=${ifDefined(this.collection?.slug)}
