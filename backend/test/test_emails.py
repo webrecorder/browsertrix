@@ -1,6 +1,7 @@
 """Tests for the email sending functionality in emailsender.py & email templating microservice"""
 
 import asyncio
+import logging
 import os
 import uuid
 from datetime import datetime
@@ -18,6 +19,8 @@ from btrixcloud.models import (
     StorageRef,
 )
 from btrixcloud.utils import dt_now
+
+from .utils import _get_log_event
 
 EMAILS_HOST_PREFIX = (
     os.environ.get("EMAIL_TEMPLATE_ENDPOINT") or "http://127.0.0.1:30872"
@@ -113,31 +116,32 @@ def test_email_sender_initialization(email_sender):
 
 
 @pytest.mark.asyncio
-async def test_send_user_validation(email_sender, capsys):
+async def test_send_user_validation(email_sender, caplog):
     """Test sending user validation email"""
     test_email = "newuser@example.com"
     test_token = "abc123def456"
     test_headers = {"Host": "app.browsertrix.com", "X-Forwarded-Proto": "https"}
 
+    caplog.set_level(logging.DEBUG)
     await email_sender.send_user_validation(
         receiver_email=test_email, token=test_token, headers=test_headers
     )
 
     # Check log output
-    captured = capsys.readouterr()
-    assert "Email: created" in captured.out
-    assert "verifyEmail" in captured.out
-    assert test_email in captured.out
-    assert test_token in captured.out
+    assert "email_created_not_sent_no_smtp" in caplog.text
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "verifyEmail"
+    assert data.get("receiver") == test_email
 
 
 @pytest.mark.asyncio
 async def test_send_user_invite_new_user(
-    email_sender, sample_invite, sample_org, capsys
+    email_sender, sample_invite, sample_org, caplog
 ):
     """Test sending user invite for new user"""
     test_token = uuid.uuid4()
 
+    caplog.set_level(logging.DEBUG)
     await email_sender.send_user_invite(
         invite=sample_invite,
         token=test_token,
@@ -147,20 +151,20 @@ async def test_send_user_invite_new_user(
     )
 
     # Check log output
-    captured = capsys.readouterr()
-    assert "Email: created" in captured.out
-    assert "invite" in captured.out
-    assert sample_invite.email in captured.out
-    assert str(test_token) in captured.out
+    assert "email_created_not_sent_no_smtp" in caplog.text
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "invite"
+    assert data.get("receiver") == sample_invite.email
 
 
 @pytest.mark.asyncio
 async def test_send_user_invite_existing_user(
-    email_sender, sample_invite, sample_org, capsys
+    email_sender, sample_invite, sample_org, caplog
 ):
     """Test sending user invite for existing user"""
     test_token = uuid.uuid4()
 
+    caplog.set_level(logging.DEBUG)
     await email_sender.send_user_invite(
         invite=sample_invite,
         token=test_token,
@@ -170,19 +174,19 @@ async def test_send_user_invite_existing_user(
     )
 
     # Check log output
-    captured = capsys.readouterr()
-    assert "Email: created" in captured.out
-    assert "invite" in captured.out
-    assert sample_invite.email in captured.out
-    assert str(test_token) in captured.out
+    assert "email_created_not_sent_no_smtp" in caplog.text
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "invite"
+    assert data.get("receiver") == sample_invite.email
 
 
 @pytest.mark.asyncio
-async def test_send_password_reset(email_sender, capsys):
+async def test_send_password_reset(email_sender, caplog):
     """Test sending password reset email"""
     test_email = "existinguser@example.com"
     test_token = uuid.uuid4()
 
+    caplog.set_level(logging.DEBUG)
     await email_sender.send_user_forgot_password(
         receiver_email=test_email,
         token=str(test_token),
@@ -190,15 +194,14 @@ async def test_send_password_reset(email_sender, capsys):
     )
 
     # Check log output
-    captured = capsys.readouterr()
-    assert "Email: created" in captured.out
-    assert "passwordReset" in captured.out
-    assert test_email in captured.out
-    assert str(test_token) in captured.out
+    assert "email_created_not_sent_no_smtp" in caplog.text
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "passwordReset"
+    assert data.get("receiver") == test_email
 
 
 @pytest.mark.asyncio
-async def test_send_background_job_failed(email_sender, sample_org, capsys):
+async def test_send_background_job_failed(email_sender, sample_org, caplog):
     """Test sending background job failure notification"""
     job = CreateReplicaJob(
         id="fake-create-replica-job",
@@ -211,22 +214,24 @@ async def test_send_background_job_failed(email_sender, sample_org, capsys):
         replica_storage=StorageRef(name="test-storage"),
     )
 
+    caplog.set_level(logging.DEBUG)
     await email_sender.send_background_job_failed(
         job=job, finished=dt_now(), receiver_email="admin@example.com", org=sample_org
     )
 
     # Check log output
-    captured = capsys.readouterr()
-    assert "Email: created" in captured.out
-    assert "failedBgJob" in captured.out
-    assert str(sample_org.id) in captured.out
+    assert "email_created_not_sent_no_smtp" in caplog.text
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "failedBgJob"
+    assert data.get("receiver") == "admin@example.com"
 
 
 @pytest.mark.asyncio
-async def test_send_subscription_cancellation(email_sender, sample_org, capsys):
+async def test_send_subscription_cancellation(email_sender, sample_org, caplog):
     """Test sending subscription cancellation notification"""
     cancel_date = datetime.now()
 
+    caplog.set_level(logging.DEBUG)
     await email_sender.send_subscription_will_be_canceled(
         cancel_date=cancel_date,
         user_name="Test User",
@@ -236,15 +241,14 @@ async def test_send_subscription_cancellation(email_sender, sample_org, capsys):
     )
 
     # Check log output
-    captured = capsys.readouterr()
-    assert "Email: created" in captured.out
-    assert "subscriptionCancel" in captured.out
-    assert sample_org.name in captured.out
-    assert "Test User" in captured.out
+    assert "email_created_not_sent_no_smtp" in caplog.text
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "subscriptionCancel"
+    assert data.get("receiver") == "admin@example.com"
 
 
 @pytest.mark.asyncio
-async def test_email_sender_no_smtp_configured(monkeypatch, capsys):
+async def test_email_sender_no_smtp_configured(monkeypatch, caplog):
     """Test graceful handling when no SMTP server is configured"""
     # Mock environment with LOG_SENT_EMAILS set to True
     monkeypatch.setenv("LOG_SENT_EMAILS", "true")
@@ -260,12 +264,12 @@ async def test_email_sender_no_smtp_configured(monkeypatch, capsys):
 
     sender = EmailSender()
 
+    caplog.set_level(logging.DEBUG)
     await sender.send_user_validation(
         receiver_email="test@example.com", token="test_token", headers=test_headers
     )
 
-    captured = capsys.readouterr()
-    assert "but not sent (no SMTP server set)" in captured.out
+    assert "email_created_not_sent_no_smtp" in caplog.text
 
 
 @pytest.mark.asyncio
@@ -285,7 +289,7 @@ async def test_email_sender_error_handling(monkeypatch, email_sender):
 
 
 @pytest.mark.asyncio
-async def test_invite_with_superuser_flag(email_sender, sample_org, capsys):
+async def test_invite_with_superuser_flag(email_sender, sample_org, caplog):
     """Test invite sent from superuser"""
     # Create invite from superuser (should not show inviter email)
     invite = InvitePending(
@@ -297,6 +301,7 @@ async def test_invite_with_superuser_flag(email_sender, sample_org, capsys):
         tokenHash="test-hash",
     )
 
+    caplog.set_level(logging.DEBUG)
     await email_sender.send_user_invite(
         invite=invite,
         token=uuid.uuid4(),
@@ -305,6 +310,6 @@ async def test_invite_with_superuser_flag(email_sender, sample_org, capsys):
         headers={"Host": "app.browsertrix.com", "X-Forwarded-Proto": "https"},
     )
 
-    captured = capsys.readouterr()
-    assert "Email: created" in captured.out
-    assert "invite" in captured.out
+    assert "email_created_not_sent_no_smtp" in caplog.text
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "invite"

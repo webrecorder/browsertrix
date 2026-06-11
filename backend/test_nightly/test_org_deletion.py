@@ -1,10 +1,13 @@
 import time
 from uuid import uuid4
 
+import structlog
 import pytest
 import requests
 
 from .conftest import API_PREFIX
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 @pytest.fixture(scope="function")
@@ -26,7 +29,10 @@ def non_default_org_id(admin_auth_headers):
                 if org["name"] == org_name:
                     return org["id"]
         except:
-            print("Waiting for non-default org id")
+            logger.info(
+                "test_waiting_non_default_org_id",
+                unstructured_message="Waiting for non-default org id",
+            )
             time.sleep(5)
 
 

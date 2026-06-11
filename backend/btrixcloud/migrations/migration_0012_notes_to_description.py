@@ -2,7 +2,12 @@
 Migration 0012 - Notes to description
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MIGRATION_VERSION = "0012"
 
@@ -24,5 +29,8 @@ class Migration(BaseMigration):
         try:
             await crawls.update_many({}, {"$rename": {"notes": "description"}})
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            print(f"Error renaming crawl notes to description: {err}", flush=True)
+        except Exception:
+            logger.exception(
+                "migration_rename_field_error",
+                unstructured_message="Error renaming crawl notes to description",
+            )

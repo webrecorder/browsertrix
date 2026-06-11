@@ -2,7 +2,12 @@
 Migration 0027 - Profile modified date fallback
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MIGRATION_VERSION = "0027"
 
@@ -26,8 +31,8 @@ class Migration(BaseMigration):
                 {"modified": None}, [{"$set": {"modified": "$created"}}]
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            print(
-                f"Error adding modified date to profiles: {err}",
-                flush=True,
+        except Exception:
+            logger.exception(
+                "migration_profile_modified_error",
+                unstructured_message="Error adding modified date to profiles",
             )

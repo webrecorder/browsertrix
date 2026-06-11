@@ -2,8 +2,12 @@
 Migration 0019 - Organization slug
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import slug_from_name
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0019"
 
@@ -30,5 +34,9 @@ class Migration(BaseMigration):
                     {"_id": oid}, {"$set": {"slug": slug}}
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(f"Error adding slug to org {oid}: {err}", flush=True)
+            except Exception:
+                logger.exception(
+                    "migration_org_slug_error",
+                    org_id=oid,
+                    unstructured_message=f"Error adding slug to org {oid}",
+                )

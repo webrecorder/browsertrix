@@ -2,7 +2,11 @@
 Migration 0038 - Organization lastCrawlFinished field
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0038"
 
@@ -20,8 +24,9 @@ class Migration(BaseMigration):
         """Perform migration up. Set lastCrawlFinished for each org."""
         # pylint: disable=duplicate-code, line-too-long
         if self.org_ops is None:
-            print(
-                "Unable to set lastCrawlFinished for orgs, missing org_ops", flush=True
+            logger.warning(
+                "missing_org_ops_for_last_crawl_finished",
+                unstructured_message="Unable to set lastCrawlFinished for orgs, missing org_ops",
             )
             return
 
@@ -35,8 +40,9 @@ class Migration(BaseMigration):
             try:
                 await self.org_ops.set_last_crawl_finished(oid)
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Error setting lastCrawlFinished for org {oid}: {err}",
-                    flush=True,
+            except Exception:
+                logger.exception(
+                    "error_setting_last_crawl_finished",
+                    oid=oid,
+                    unstructured_message=f"Error setting lastCrawlFinished for org {oid}",
                 )

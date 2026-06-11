@@ -3,9 +3,19 @@ FastAPI user handling (via fastapi-users)
 """
 
 import os
-from typing import TYPE_CHECKING, Callable, List, Optional, Tuple, Type, cast
+from typing import (
+    TYPE_CHECKING,
+    AsyncGenerator,
+    Callable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    cast,
+)
 from uuid import UUID, uuid4
 
+import structlog
 from fastapi import (
     APIRouter,
     Body,
@@ -49,7 +59,7 @@ from .models import (
     UserUpdatePassword,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import dt_now, is_bool, run_async_task
+from .utils import dt_now, is_bool, is_production, run_async_task
 
 if TYPE_CHECKING:
     from .basecrawls import BaseCrawlOps
@@ -59,6 +69,8 @@ if TYPE_CHECKING:
     from .orgs import OrgOps
 else:
     InviteOps = EmailSender = OrgOps = BaseCrawlOps = CrawlConfigOps = object
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 # ============================================================================
@@ -274,7 +286,9 @@ class UserManager:
         password = os.environ.get("SUPERUSER_PASSWORD")
         name = os.environ.get("SUPERUSER_NAME", "admin")
         if not email:
-            print("No superuser defined", flush=True)
+            logger.info(
+                "superuser_not_defined", unstructured_message="No superuser defined"
+            )
             return
 
         if not password:
@@ -282,13 +296,21 @@ class UserManager:
 
         superuser = await self.get_superuser()
         if superuser:
+            su_logger = logger.bind(user_id=superuser.id)
+
             if str(superuser.email) != email:
                 await self.update_email_name(superuser, cast(EmailStr, email), name)
-                print("Superuser email updated")
+                su_logger.info(
+                    "superuser_email_updated",
+                    unstructured_message="Superuser email updated",
+                )
 
             if not await self.check_password(superuser, password):
                 await self._update_password(superuser, password)
-                print("Superuser password updated")
+                su_logger.info(
+                    "superuser_password_updated",
+                    unstructured_message="Superuser password updated",
+                )
 
             return
 
@@ -296,11 +318,19 @@ class UserManager:
             res = await self.create_user(
                 name=name, email=email, password=password, is_superuser=True
             )
-            print(f"Super user {email} created", flush=True)
-            print(res, flush=True)
-        except DuplicateKeyError as exc:
-            print(exc)
-            print(f"User {email} already exists", flush=True)
+            logger.info(
+                "superuser_created",
+                email=email,
+                user_id=res.id,
+                unstructured_message=f"Super user {email} created",
+            )
+        except DuplicateKeyError:
+            logger.warning(
+                "superuser_already_exists",
+                email=email,
+                exc_info=True,
+                unstructured_message=f"User {email} already exists",
+            )
 
     async def request_verify(
         self, user: User, request: Optional[Request] = None
@@ -430,7 +460,33 @@ class UserManager:
             RESET_VERIFY_TOKEN_LIFETIME_MINUTES,
         )
 
-        print(f"User {user.id} has forgot their password. Reset token: {token}")
+        pwd_logger = logger.bind(user_id=user.id, user_email=user.email)
+
+        # should only log reset token in development mode AND if email logging is disabled
+        # AND email is not being sent via SMTP, as then it's the only way to get the token
+        if not self.email.smtp_server and not self.email.log_sent_emails:
+            if is_production:
+                pwd_logger.warning(
+                    "password_reset_requested",
+                    details="Reset token will not be logged because Browsertrix is in production "
+                    "mode. Set `btrix_env` to 'development' to log reset tokens.",
+                    unstructured_message=(f"User {user.id} has forgot their password."),
+                )
+            else:
+                pwd_logger.warning(
+                    "password_reset_requested",
+                    reset_token=token,
+                    details="Reset token is logged in plaintext because Browsertrix is in "
+                    "development mode. Set `btrix_env` to 'production' to disable plaintext "
+                    "logging.",
+                    unstructured_message=(
+                        f"User {user.id} has forgot their password. Reset token: {token}"
+                    ),
+                )
+        else:
+            pwd_logger.debug(
+                "password_reset_requested",
+            )
         await self.email.send_user_forgot_password(
             user.email, token, request and request.headers
         )
@@ -674,7 +730,8 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
 
 # ============================================================================
 def init_users_router(
-    current_active_user: Callable, user_manager: UserManager
+    current_active_user: Callable[[str], AsyncGenerator[User, None]],
+    user_manager: UserManager,
 ) -> APIRouter:
     """/users routes"""
     users_router = APIRouter()

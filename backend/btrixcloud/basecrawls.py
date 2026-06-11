@@ -8,7 +8,9 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    AsyncGenerator,
     AsyncIterable,
+    Callable,
     Dict,
     List,
     Optional,
@@ -19,6 +21,7 @@ from typing import (
 )
 from uuid import UUID
 
+import structlog
 import pymongo
 from fastapi import Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
@@ -50,6 +53,8 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import date_to_str, dt_now, get_origin, run_async_task
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .background_jobs import BackgroundJobOps
@@ -356,13 +361,16 @@ class BaseCrawlOps:
         self, crawl_id: str, org: Organization, type_: TYPE_CRAWL_TYPES
     ):
         """Replicate crawl files to configured replica locations"""
+        repl_logger = logger.bind(oid=org.id, type=type_)
+
         try:
             crawl = await self.get_base_crawl(crawl_id, org, type_)
         # pylint: disable=broad-exception-caught
         except Exception:
-            print(
-                f"Not replicating files for crawl {crawl_id}: crawl not found",
-                flush=True,
+            repl_logger.warning(
+                "crawl_replicate_skipped_not_found",
+                crawl_id=crawl_id,
+                unstructured_message=f"Not replicating files for crawl {crawl_id}: crawl not found",
             )
             return
 
@@ -373,7 +381,10 @@ class BaseCrawlOps:
                 )
             # pylint: disable=broad-exception-caught
             except Exception as exc:
-                print("Replicate Exception", exc, flush=True)
+                repl_logger.exception(
+                    "crawl_replicate_failed",
+                    unstructured_message=f"Replicate Exception {exc}",
+                )
 
     async def add_crawl_file_replica(
         self, crawl_id: str, filename: str, ref: StorageRef
@@ -1106,6 +1117,13 @@ class BaseCrawlOps:
             filename = crawl.resources[0].name
 
         headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+        logger.info(
+            "download_crawl_as_single_wacz",
+            crawl_id=crawl_id,
+            filename=filename,
+            prefer_single_wacz=prefer_single_wacz,
+            with_dependencies=with_dependencies,
+        )
         return StreamingResponse(
             resp, headers=headers, media_type="application/wacz+zip"
         )
@@ -1179,7 +1197,9 @@ class BaseCrawlOps:
 
 
 # ============================================================================
-def init_base_crawls_api(app, user_dep, *args):
+def init_base_crawls_api(
+    app, user_dep: Callable[[str], AsyncGenerator[User, None]], *args
+):
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code, too-many-arguments, too-many-locals
 

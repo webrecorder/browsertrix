@@ -3,12 +3,22 @@
 # pylint: disable=too-many-lines
 
 import asyncio
-import traceback
 import urllib.parse
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 from uuid import UUID, uuid4
 
+import structlog
 import pymongo
 from fastapi import Depends, HTTPException, Request, Response
 
@@ -40,6 +50,8 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now, str_list_to_bools, str_to_date
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .background_jobs import BackgroundJobOps
@@ -102,6 +114,9 @@ class PageOps:
         """Add pages to database from WACZ files"""
         pages_buffer: List[Page] = []
         crawl = await self.crawl_ops.get_crawl_out(crawl_id)
+
+        wacz_logger = logger.bind(crawl_id=crawl_id, oid=crawl.oid)
+
         try:
             stream = await self.storage_ops.sync_stream_wacz_pages(
                 crawl.resources or [], num_retries
@@ -127,7 +142,11 @@ class PageOps:
                         )
                     # pylint: disable=broad-exception-caught
                     except Exception as e:
-                        print("Error inserting, probably dupe", e)
+                        wacz_logger.warning(
+                            "page_insert_duplicate",
+                            exc_info=True,
+                            unstructured_message=f"Error inserting, probably dupe {e}",
+                        )
                     pages_buffer = []
 
                 pages_buffer.append(
@@ -140,20 +159,30 @@ class PageOps:
                     await self._add_pages_to_db(crawl_id, pages_buffer, ordered=False)
                 # pylint: disable=broad-exception-caught
                 except Exception as e:
-                    print("Error inserting, probably dupe", e)
+                    wacz_logger.warning(
+                        "page_insert_duplicate",
+                        exc_info=True,
+                        unstructured_message=f"Error inserting, probably dupe {e}",
+                    )
 
             await self.set_archived_item_page_counts(crawl_id)
 
-            print(
-                f"Added pages for crawl {crawl_id}: "
-                + f"{seed_count} Seed, {non_seed_count} Non-Seed",
-                flush=True,
+            wacz_logger.info(
+                "crawl_pages_added",
+                seed_count=seed_count,
+                non_seed_count=non_seed_count,
+                unstructured_message=(
+                    f"Added pages for crawl {crawl_id}:"
+                    f" {seed_count} Seed, {non_seed_count} Non-Seed"
+                ),
             )
 
         # pylint: disable=broad-exception-caught, raise-missing-from
-        except Exception as err:
-            traceback.print_exc()
-            print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
+        except Exception:
+            wacz_logger.exception(
+                "crawl_pages_add_failed",
+                unstructured_message=f"Error adding pages for crawl {crawl_id} to db",
+            )
 
     def _get_page_from_dict(
         self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID, new_uuid: bool
@@ -223,6 +252,8 @@ class PageOps:
         """Add page to database"""
         page = self._get_page_from_dict(page_dict, crawl_id, oid, new_uuid=False)
 
+        page_logger = logger.bind(crawl_id=crawl_id, oid=oid, qa_run_id=qa_run_id)
+
         page_to_insert = page.to_dict(exclude_unset=True, exclude_none=True)
 
         try:
@@ -231,10 +262,11 @@ class PageOps:
             pass
 
         # pylint: disable=broad-except
-        except Exception as err:
-            print(
-                f"Error adding page {page.id} from crawl {crawl_id} to db: {err}",
-                flush=True,
+        except Exception:
+            page_logger.exception(
+                "page_add_failed",
+                page_id=page.id,
+                unstructured_message=f"Error adding page {page.id} from crawl {crawl_id} to db",
             )
             return
 
@@ -245,7 +277,10 @@ class PageOps:
         if qa_run_id and page:
             compare_dict = page_dict.get("comparison")
             if compare_dict is None:
-                print("QA Run, but compare data missing!")
+                page_logger.warning(
+                    "qa_compare_data_missing",
+                    unstructured_message="QA Run, but compare data missing!",
+                )
                 return
 
             compare = PageQACompare(**compare_dict)
@@ -291,16 +326,18 @@ class PageOps:
 
     async def delete_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
         """Delete crawl pages from db and clear crawl page counts"""
+        delete_logger = logger.bind(crawl_id=crawl_id, oid=oid)
+
         query: Dict[str, Union[str, UUID]] = {"crawl_id": crawl_id}
         if oid:
             query["oid"] = oid
         try:
             await self.pages.delete_many(query)
         # pylint: disable=broad-except
-        except Exception as err:
-            print(
-                f"Error deleting pages from crawl {crawl_id}: {err}",
-                flush=True,
+        except Exception:
+            delete_logger.exception(
+                "crawl_pages_delete_failed",
+                unstructured_message=f"Error deleting pages from crawl {crawl_id}",
             )
 
         try:
@@ -316,10 +353,10 @@ class PageOps:
                 },
             )
         # pylint: disable=broad-except
-        except Exception as err:
-            print(
-                f"Error resetting page counts for crawl {crawl_id}: {err}",
-                flush=True,
+        except Exception:
+            delete_logger.exception(
+                "crawl_page_counts_reset_failed",
+                unstructured_message=f"Error resetting page counts for crawl {crawl_id}",
             )
 
     async def get_page_raw(
@@ -362,9 +399,14 @@ class PageOps:
             if qa and qa.get(qa_run_id):
                 page_raw["qa"] = qa.get(qa_run_id)
             else:
-                print(
-                    f"Error: Page {page_id} does not have data from QA run {qa_run_id}",
-                    flush=True,
+                logger.error(
+                    "page_qa_data_missing",
+                    page_id=page_id,
+                    qa_run_id=qa_run_id,
+                    oid=oid,
+                    unstructured_message=(
+                        f"Error: Page {page_id} does not have data from QA run {qa_run_id}"
+                    ),
                 )
                 page_raw["qa"] = None
             return PageOutWithSingleQA.from_dict(page_raw)
@@ -793,7 +835,16 @@ class PageOps:
 
         try:
             is_upload = await self.crawl_ops.is_upload(crawl_id)
-            print(f"Processing {'upload' if is_upload else 'crawl'} {crawl_id}")
+            crawl_type = "upload" if is_upload else "crawl"
+
+            readd_logger = logger.bind(
+                crawl_id=crawl_id, crawl_type=crawl_type, oid=oid
+            )
+
+            readd_logger.info(
+                "crawl_processing",
+                unstructured_message=f"Processing {crawl_type} {crawl_id}",
+            )
             if not is_upload:
                 ts_now = dt_now().strftime("%Y%m%d%H%M%S")
                 qa_temp_db_name = f"pages-qa-temp-{crawl_id}-{ts_now}"
@@ -824,11 +875,18 @@ class PageOps:
                         {"$out": qa_temp_db_name},
                     ]
                 )
-                print(f"Stored QA data in temp db {qa_temp_db_name}")
+                readd_logger.info(
+                    "qa_data_stored_temp_db",
+                    qa_temp_db_name=qa_temp_db_name,
+                    unstructured_message=f"Stored QA data in temp db {qa_temp_db_name}",
+                )
                 assert await cursor.to_list() == []
 
             await self.delete_crawl_pages(crawl_id, oid)
-            print(f"Deleted pages for crawl {crawl_id}", flush=True)
+            readd_logger.info(
+                "crawl_pages_deleted",
+                unstructured_message=f"Deleted pages for crawl {crawl_id}",
+            )
             await self.add_crawl_pages_to_db_from_wacz(crawl_id)
 
             if not is_upload:
@@ -844,14 +902,22 @@ class PageOps:
                         }
                     ]
                 )
-                print(f"Merged QA data from temp db {qa_temp_db_name}")
+                readd_logger.info(
+                    "qa_data_merged_from_temp_db",
+                    qa_temp_db_name=qa_temp_db_name,
+                    unstructured_message=f"Merged QA data from temp db {qa_temp_db_name}",
+                )
 
                 assert await cursor.to_list() == []
                 await qa_temp_db.drop()
-                print(f"Dropped temp db {qa_temp_db_name}")
+                readd_logger.info(
+                    "temp_db_dropped",
+                    qa_temp_db_name=qa_temp_db_name,
+                    unstructured_message=f"Dropped temp db {qa_temp_db_name}",
+                )
         # pylint: disable=broad-exception-caught
-        except Exception as e:
-            print(e)
+        except Exception:
+            readd_logger.exception("page_re_add_error")
 
     async def re_add_all_crawl_pages(
         self, org: Organization, crawl_type: Optional[str] = None
@@ -867,7 +933,14 @@ class PageOps:
         count = 1
         total = await self.crawls.count_documents(match_query)
         async for crawl in self.crawls.find(match_query, projection={"_id": 1}):
-            print(f"Processing crawl {count} of {total}")
+            logger.info(
+                "crawl_batch_progress",
+                crawl_index=count,
+                crawl_type=crawl_type,
+                total=total,
+                oid=org.id,
+                unstructured_message=f"Processing crawl {count} of {total}",
+            )
             await self.re_add_crawl_pages(crawl.get("_id"), org.id)
             count += 1
 
@@ -1010,6 +1083,8 @@ class PageOps:
     async def optimize_crawl_pages(self, version: int = 2):
         """Iterate through crawls, optimizing pages"""
 
+        migrate_logger = logger.bind(version=version)
+
         async def process_finished_crawls():
             while True:
                 # Pull new finished crawl and set isMigrating
@@ -1026,28 +1101,49 @@ class PageOps:
                     projection={"_id": 1, "pageCount": 1, "stats": 1, "state": 1},
                 )
                 if next_crawl is None:
-                    print("No more finished crawls to migrate")
+                    migrate_logger.info(
+                        "all_crawls_migrated",
+                        unstructured_message="No more finished crawls to migrate",
+                    )
                     break
 
                 crawl_id = next_crawl.get("_id")
-                print("Processing crawl: " + crawl_id)
+                migrate_logger.info(
+                    "crawl_migration_processing",
+                    crawl_id=crawl_id,
+                    unstructured_message=f"Processing crawl: {crawl_id}",
+                )
 
                 # Re-add crawl pages if at least one page doesn't have filename set
                 has_page_no_filename = await self.pages.find_one(
                     {"crawl_id": crawl_id, "filename": None}
                 )
                 if has_page_no_filename:
-                    print("Re-importing pages to migrate to v2")
+                    migrate_logger.info(
+                        "pages_reimporting_migrate_v2",
+                        crawl_id=crawl_id,
+                        unstructured_message="Re-importing pages to migrate to v2",
+                    )
                     await self.re_add_crawl_pages(crawl_id)
                 elif (
                     next_crawl.get("pageCount") == 0
                     and next_crawl.get("stats", {}).get("done", 0) > 0
                     and next_crawl.get("state") not in ["canceled", "failed"]
                 ):
-                    print("Pages likely missing, importing pages to migrate to v2")
+                    migrate_logger.info(
+                        "pages_missing_import_migrate_v2",
+                        crawl_id=crawl_id,
+                        unstructured_message=(
+                            "Pages likely missing, importing pages to migrate to v2"
+                        ),
+                    )
                     await self.re_add_crawl_pages(crawl_id)
                 else:
-                    print("Pages already have filename, set to v2")
+                    migrate_logger.info(
+                        "pages_filename_exists_set_v2",
+                        crawl_id=crawl_id,
+                        unstructured_message="Pages already have filename, set to v2",
+                    )
 
                 # Update crawl version and unset isMigrating
                 await self.crawls.find_one_and_update(
@@ -1067,10 +1163,17 @@ class PageOps:
             running_crawl = await self.crawls.find_one(match_query)
 
             if not running_crawl:
-                print("No running crawls remain")
+                migrate_logger.info(
+                    "no_running_crawls_remain",
+                    unstructured_message="No running crawls remain",
+                )
                 break
 
-            print("Running crawls remain, waiting for them to finish")
+            migrate_logger.info(
+                "running_crawls_waiting",
+                running_crawl=running_crawl._id,  # pylint: disable=protected-access
+                unstructured_message="Running crawls remain, waiting for them to finish",
+            )
             await asyncio.sleep(30)
 
         await process_finished_crawls()
@@ -1082,7 +1185,11 @@ class PageOps:
             in_progress = await self.crawls.find_one({"isMigrating": True})
             if in_progress is None:
                 break
-            print("Unmigrated crawls remain, finishing job")
+            migrate_logger.info(
+                "unmigrated_crawls_remain_finishing",
+                in_progress=in_progress._id,  # pylint: disable=protected-access
+                unstructured_message="Unmigrated crawls remain, finishing job",
+            )
             await asyncio.sleep(5)
 
 
@@ -1097,7 +1204,7 @@ def init_pages_api(
     background_job_ops,
     coll_ops,
     crawl_config_ops,
-    user_dep,
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
 ) -> PageOps:
     """init pages API"""
     # pylint: disable=invalid-name

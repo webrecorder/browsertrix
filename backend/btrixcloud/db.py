@@ -18,6 +18,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+import structlog
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pydantic import BaseModel, ValidationError, WrapValidator
 from pymongo.errors import InvalidName
@@ -49,6 +50,8 @@ else:
 CURR_DB_VERSION = "0058"
 
 MIN_DB_VERSION = 7.0
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 # ============================================================================
@@ -96,27 +99,47 @@ async def ensure_feature_version(client: AsyncIOMotorClient):
     version = fcv_status.get("featureCompatibilityVersion", {}).get("version")
 
     if float(version) < MIN_DB_VERSION:
-        print(f"mongodb: updating feature compatibility {version} -> {MIN_DB_VERSION}")
+        logger.info(
+            "mongodb_feature_compatibility_updating",
+            from_version=version,
+            to_version=str(MIN_DB_VERSION),
+            unstructured_message=(
+                f"mongodb: updating feature compatibility {version} -> {MIN_DB_VERSION}"
+            ),
+        )
         await admin.command(
             {"setFeatureCompatibilityVersion": str(MIN_DB_VERSION), "confirm": True}
         )
     else:
-        print(f"mongodb: feature compatibility {version} >= {MIN_DB_VERSION}")
+        logger.info(
+            "mongodb_feature_compatibility_ok",
+            current_version=version,
+            min_version=str(MIN_DB_VERSION),
+            unstructured_message=f"mongodb: feature compatibility {version} >= {MIN_DB_VERSION}",
+        )
 
 
 # ============================================================================
 async def ping_db(mdb) -> None:
     """run in loop until db is up, set db_inited['inited'] property to true"""
-    print("Waiting DB", flush=True)
+    logger.info("db_connecting", unstructured_message="Waiting DB")
+    attempt = 0
     while True:
         try:
             result = await mdb.command("ping")
             assert result.get("ok")
-            print("DB reached")
+            logger.info(
+                "db_connected", attempt=attempt, unstructured_message="DB reached"
+            )
             break
         # pylint: disable=broad-exception-caught
         except Exception:
-            print("Retrying, waiting for DB to be ready")
+            logger.info(
+                "db_connection_retry",
+                attempt=attempt,
+                unstructured_message="Retrying, waiting for DB to be ready",
+            )
+            attempt += 1
             await asyncio.sleep(3)
 
 
@@ -147,7 +170,7 @@ async def update_and_prepare_db(
 
     """
     await ping_db(mdb)
-    print("Database setup started", flush=True)
+    logger.info("db_setup_started", unstructured_message="Database setup started")
     if await run_db_migrations(
         mdb,
         user_manager,
@@ -180,7 +203,7 @@ async def update_and_prepare_db(
     await user_manager.create_super_user()
     await org_ops.create_default_org()
     await org_ops.check_all_org_default_storages(storage_ops)
-    print("Database updated and ready", flush=True)
+    logger.info("db_updated_ready", unstructured_message="Database updated and ready")
 
 
 # ============================================================================
@@ -203,9 +226,10 @@ async def run_db_migrations(
     if not await user_manager.get_superuser():
         base_migration = BaseMigration(mdb, CURR_DB_VERSION)
         await base_migration.set_db_version()
-        print(
-            "New DB, no migration needed, set version to: " + CURR_DB_VERSION,
-            flush=True,
+        logger.info(
+            "db_new_no_migration",
+            db_version=CURR_DB_VERSION,
+            unstructured_message=f"New DB, no migration needed, set version to: {CURR_DB_VERSION}",
         )
         return False
 
@@ -242,10 +266,11 @@ async def run_db_migrations(
             )
             if await migration.run():
                 migrations_run = True
-        except ImportError as err:
-            print(
-                f"Error importing Migration class from module {module_file}: {err}",
-                flush=True,
+        except ImportError:
+            logger.exception(
+                "migration_import_error",
+                module_file=module_file,
+                unstructured_message=f"Error importing Migration class from module {module_file}",
             )
     return migrations_run
 
@@ -254,37 +279,54 @@ async def run_db_migrations(
 async def await_db_and_migrations(mdb, db_inited):
     """await that db is available and any migrations in progress finish"""
     await ping_db(mdb)
-    print("Database setup started", flush=True)
+    logger.info("db_setup_started", unstructured_message="Database setup started")
 
     base_migration = BaseMigration(mdb, CURR_DB_VERSION)
     while await base_migration.migrate_up_needed(ignore_rerun=True):
         version = await base_migration.get_db_version()
-        print(
-            f"Waiting for migrations to finish, DB at {version}, latest {CURR_DB_VERSION}",
-            flush=True,
+        logger.info(
+            "migration_waiting",
+            db_version=version,
+            latest_version=CURR_DB_VERSION,
+            unstructured_message=(
+                f"Waiting for migrations to finish, DB at {version}, latest {CURR_DB_VERSION}"
+            ),
         )
 
         await asyncio.sleep(5)
 
     db_inited["inited"] = True
-    print("Database updated and ready", flush=True)
+    logger.info("db_updated_ready", unstructured_message="Database updated and ready")
 
 
 # ============================================================================
 async def drop_indexes(mdb):
     """Drop all database indexes."""
-    print("Dropping database indexes", flush=True)
+    logger.info("db_dropping_indexes", unstructured_message="Dropping database indexes")
     collection_names = await mdb.list_collection_names()
     for collection in collection_names:
-        # Don't drop pages or logs automatically, as these are large
-        # indices and slow to recreate
         if collection in ("pages", "crawl_logs"):
             continue
 
         try:
             current_coll = mdb[collection]
             await current_coll.drop_indexes()
-            print(f"Indexes for collection {collection} dropped")
+            logger.info(
+                "db_indexes_dropped",
+                collection=collection,
+                unstructured_message=f"Indexes for collection {collection} dropped",
+            )
+        except InvalidName:
+            continue
+
+        try:
+            current_coll = mdb[collection]
+            await current_coll.drop_indexes()
+            logger.info(
+                "db_indexes_dropped",
+                collection=collection,
+                unstructured_message=f"Indexes for collection {collection} dropped",
+            )
         except InvalidName:
             continue
 
@@ -305,7 +347,7 @@ async def create_indexes(
     profile_ops,
 ):
     """Create database indexes."""
-    print("Creating database indexes", flush=True)
+    logger.info("db_creating_indexes", unstructured_message="Creating database indexes")
     await org_ops.init_index()
     await crawl_ops.init_index()
     await crawl_config_ops.init_index()
@@ -334,13 +376,16 @@ def _lenient_str(v, handler, info):
             doc_id = ctx.get("id", "?")
             model = ctx.get("model", "?")
             field = getattr(info, "field_name", "?")
-            # pylint: disable=fixme
-            # TODO: replace with logger.warning once we have structured logging in place
-            print(
-                f"WARNING: lenient read - "
-                f"{model}.{field!r} value exceeds constraints in "
-                f"document id={doc_id!r}",
-                e,
+            logger.warning(
+                "lenient_read_warning",
+                model=model,
+                field=field,
+                doc_id=repr(doc_id),
+                exc_info=True,
+                unstructured_message=(
+                    f"WARNING: lenient read - {model}.{field!r} value exceeds "
+                    f"constraints in document id={doc_id!r}: {e}"
+                ),
             )
             return v
     return handler(v)

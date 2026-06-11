@@ -4,9 +4,10 @@ import os
 import secrets
 import string
 from datetime import timedelta
-from typing import List, Optional, Tuple
+from typing import AsyncGenerator, List, Optional, Tuple
 from uuid import UUID, uuid4
 
+import structlog
 import jwt
 from fastapi import (
     APIRouter,
@@ -20,8 +21,11 @@ from pwdlib import PasswordHash
 from pwdlib.hashers.bcrypt import BcryptHasher
 from pydantic import BaseModel
 
+from .logger import clear_log_context, set_log_context
 from .models import User, UserOut
 from .utils import dt_now, run_async_task
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid4().hex)
@@ -167,14 +171,12 @@ def generate_password() -> str:
 
 
 # ============================================================================
-# pylint: disable=raise-missing-from
+# pylint: disable=raise-missing-from,too-many-statements
 def init_jwt_auth(user_manager):
     """init jwt auth router + current_active_user dependency"""
     oauth2_scheme = OA2BearerOrQuery(tokenUrl="/api/auth/jwt/login", auto_error=False)
 
-    async def get_current_user(
-        token: str = Depends(oauth2_scheme),
-    ) -> User:
+    async def _get_current_user_core(token: str) -> User:
         try:
             payload = decode_jwt(token, AUTH_ALLOW_AUD)
             uid: Optional[str] = payload.get("sub") or payload.get("user_id")
@@ -188,20 +190,39 @@ def init_jwt_auth(user_manager):
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
+    async def get_current_user(
+        token: str = Depends(oauth2_scheme),
+    ) -> AsyncGenerator[User, None]:
+        user = await _get_current_user_core(token)
+        tokens = set_log_context(user_id=user.id)
+        try:
+            yield user
+        finally:
+            clear_log_context(tokens)
+
     async def shared_secret_or_superuser(
         token: str = Depends(oauth2_scheme),
-    ) -> User:
+    ) -> AsyncGenerator[User, None]:
         # allow superadmin access if token matches the known shared secret
         # if the shared secret is set
         # ensure using a long shared secret (eg. uuid4)
         if BTRIX_SUBS_APP_API_KEY and token == BTRIX_SUBS_APP_API_KEY:
-            return await user_manager.get_superuser()
+            user = await user_manager.get_superuser()
+            tokens = set_log_context(user_id=user.id)
+            try:
+                yield user
+            finally:
+                clear_log_context(tokens)
+        else:
+            user = await _get_current_user_core(token)
+            if not user.is_superuser:
+                raise HTTPException(status_code=403, detail="not_allowed")
 
-        user = await get_current_user(token)
-        if not user.is_superuser:
-            raise HTTPException(status_code=403, detail="not_allowed")
-
-        return user
+            tokens = set_log_context(user_id=user.id)
+            try:
+                yield user
+            finally:
+                clear_log_context(tokens)
 
     current_active_user = get_current_user
 
@@ -226,12 +247,16 @@ def init_jwt_auth(user_manager):
         """
         login_email = credentials.username
 
+        email_logger = logger.bind(login_email=login_email)
+
         failed_count = await user_manager.get_failed_logins_count(login_email)
 
         if failed_count > 0:
-            print(
-                f"Consecutive failed login count for {login_email}: {failed_count}",
-                flush=True,
+            email_logger.info(
+                "consecutive_failed_logins",
+                failed_count=failed_count,
+                unstructured_message=f"Consecutive failed login count for {login_email}: "
+                f"{failed_count}",
             )
 
         # first, check if failed count exceeds max failed logins
@@ -244,9 +269,11 @@ def init_jwt_auth(user_manager):
                     attempted_user = await user_manager.get_by_email(login_email)
                     if attempted_user:
                         await user_manager.forgot_password(attempted_user)
-                        print(
-                            f"Password reset email sent after too many attempts for {login_email}",
-                            flush=True,
+                        email_logger.info(
+                            "password_reset_email_sent",
+                            user_id=attempted_user.id,
+                            unstructured_message="Password reset email sent after "
+                            f"too many attempts for {login_email}",
                         )
 
                 run_async_task(send_reset_if_needed())
@@ -264,7 +291,10 @@ def init_jwt_auth(user_manager):
         user = await user_manager.authenticate(login_email, credentials.password)
 
         if not user:
-            print(f"Failed login attempt for {login_email}", flush=True)
+            email_logger.warning(
+                "login_failed",
+                unstructured_message=f"Failed login attempt for {login_email}",
+            )
             await user_manager.inc_failed_logins(login_email)
 
             raise HTTPException(
@@ -273,13 +303,21 @@ def init_jwt_auth(user_manager):
             )
 
         # successfully logged in, reset failed logins, return user
-        await user_manager.reset_failed_logins(login_email)
-        user_info = await user_manager.get_user_info_with_orgs(user)
-        return get_bearer_response(user, user_info)
+        tokens = set_log_context(user_id=user.id)
+        try:
+            await user_manager.reset_failed_logins(login_email)
+            user_info = await user_manager.get_user_info_with_orgs(user)
+            return get_bearer_response(user, user_info)
+        finally:
+            clear_log_context(tokens)
 
     @auth_jwt_router.post("/refresh", response_model=BearerResponse)
-    async def refresh_jwt(user=Depends(current_active_user)):
+    async def refresh_jwt(user: User = Depends(current_active_user)):
         user_info = await user_manager.get_user_info_with_orgs(user)
-        return get_bearer_response(user, user_info)
+        tokens = set_log_context(user_id=user.id)
+        try:
+            return get_bearer_response(user, user_info)
+        finally:
+            clear_log_context(tokens)
 
     return auth_jwt_router, current_active_user, shared_secret_or_superuser

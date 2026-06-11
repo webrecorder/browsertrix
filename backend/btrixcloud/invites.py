@@ -7,6 +7,7 @@ import urllib.parse
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
+import structlog
 import pymongo
 from fastapi import HTTPException
 from pymongo.errors import AutoReconnect
@@ -25,6 +26,8 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE
 from .users import UserManager
 from .utils import dt_now, is_bool
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 # ============================================================================
@@ -45,6 +48,7 @@ class InviteOps:
 
     async def init_index(self) -> None:
         """Create TTL index so that invites auto-expire"""
+        attempt = 0
         while True:
             try:
                 # Default to 14 days
@@ -58,9 +62,14 @@ class InviteOps:
 
             # pylint: disable=duplicate-code
             except AutoReconnect:
-                print(
-                    "Database connection unavailable to create index. Will try again in 5 scconds",
-                    flush=True,
+                attempt += 1
+                logger.error(
+                    "db_index_creation_unavailable",
+                    attempt=attempt,
+                    unstructured_message=(
+                        "Database connection unavailable to create index."
+                        " Will try again in 5 seconds"
+                    ),
                 )
                 time.sleep(5)
 

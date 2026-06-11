@@ -2,8 +2,13 @@
 Migration 0008 - Precomputing crawl file stats
 """
 
+import structlog
+
 from btrixcloud.crawls import recompute_crawl_file_count_and_size
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MIGRATION_VERSION = "0008"
 
@@ -29,5 +34,10 @@ class Migration(BaseMigration):
             try:
                 await recompute_crawl_file_count_and_size(crawls, crawl_id)
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(f"Unable to update crawl {crawl_id}: {err}", flush=True)
+            except Exception:
+                logger.warning(
+                    "migration_crawl_update_warning",
+                    crawl_id=crawl_id,
+                    exc_info=True,
+                    unstructured_message=f"Unable to update crawl {crawl_id}",
+                )

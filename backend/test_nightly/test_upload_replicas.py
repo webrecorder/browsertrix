@@ -1,6 +1,7 @@
 import os
 import time
 
+import structlog
 import requests
 
 from .conftest import API_PREFIX
@@ -9,6 +10,8 @@ from .utils import (
     verify_file_and_replica_deleted,
     verify_file_replicated,
 )
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -76,7 +79,11 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     job = r.json()
-    print(job["file_path"])
+    logger.info(
+        "upload_file_path",
+        file_path=job["file_path"],
+        unstructured_message=f"{job['file_path']}",
+    )
     verify_file_replicated(job["file_path"])
 
 

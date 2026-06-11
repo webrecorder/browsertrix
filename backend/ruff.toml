@@ -12,6 +12,10 @@ extend-select = [
 	"Q",
 	# banned-api
 	"TID251",
+	# flake8-logging, flake8-logging-format, and flake8-print
+	"LOG",
+	"G",
+	"T20",
 ]
 ignore = [
 	# Comparison to true should be 'if cond is true:' or 'if cond:'
@@ -29,3 +33,6 @@ ignore = [
 ]
 [lint.flake8-tidy-imports.banned-api]
 "asyncio.create_subprocess_shell".msg = "Use the non-shell asyncio.create_subprocess_exec function instead."
+
+[lint.isort]
+force-to-top = ["logger", "structlog"]

@@ -1,8 +1,16 @@
 import time
 from datetime import datetime, timezone
 
+import structlog
 import pytest
 import requests
+
+from btrixcloud.logger import init_logging
+
+init_logging()
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 HOST_PREFIX = "http://127.0.0.1:30870"
 API_PREFIX = HOST_PREFIX + "/api"
@@ -31,7 +39,10 @@ def admin_auth_headers():
         try:
             return {"Authorization": f"Bearer {data['access_token']}"}
         except:
-            print("Waiting for admin_auth_headers")
+            logger.info(
+                "test_waiting_admin_auth_headers",
+                unstructured_message="Waiting for admin_auth_headers",
+            )
             time.sleep(5)
 
 
@@ -50,7 +61,10 @@ def default_org_id(admin_auth_headers):
                 if org["default"] is True:
                     return org["id"]
         except:
-            print("Waiting for default org id")
+            logger.info(
+                "test_waiting_default_org_id",
+                unstructured_message="Waiting for default org id",
+            )
             time.sleep(5)
 
 

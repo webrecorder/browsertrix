@@ -2,7 +2,11 @@
 Migration 0020 - New Storage Ref System
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0020"
 
@@ -42,8 +46,12 @@ class Migration(BaseMigration):
 
             try:
                 await mdb_orgs.find_one_and_update({"_id": oid}, {"$set": update_dict})
-            except Exception as err:
-                print(f"Error updating storage for {oid}: {err}", flush=True)
+            except Exception:
+                logger.exception(
+                    "migration_org_storage_update_error",
+                    org_id=oid,
+                    unstructured_message=f"Error updating storage for {oid}",
+                )
 
         # CrawlFile Migrations
         mdb_crawls = self.mdb["crawls"]
@@ -64,10 +72,11 @@ class Migration(BaseMigration):
                 await mdb_crawls.find_one_and_update(
                     {"_id": crawl_id}, {"$set": {"files": crawl_files}}
                 )
-            except Exception as err:
-                print(
-                    f"Error updating crawl file storage for crawl {crawl_id}: {err}",
-                    flush=True,
+            except Exception:
+                logger.exception(
+                    "migration_crawl_storage_update_error",
+                    crawl_id=crawl_id,
+                    unstructured_message=f"Error updating crawl file storage for crawl {crawl_id}",
                 )
 
         # ProfileFile Migrations
@@ -89,8 +98,11 @@ class Migration(BaseMigration):
                 await mdb_profiles.find_one_and_update(
                     {"_id": profile_id}, {"$set": {"resource": file_}}
                 )
-            except Exception as err:
-                print(
-                    f"Error updating profile storage for profile {profile['name']}: {err}",
-                    flush=True,
+            except Exception:
+                logger.exception(
+                    "migration_profile_storage_update_error",
+                    profile_name=profile["name"],
+                    unstructured_message=(
+                        f"Error updating profile storage for profile {profile['name']}"
+                    ),
                 )

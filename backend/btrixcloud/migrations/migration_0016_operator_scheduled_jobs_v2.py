@@ -4,9 +4,14 @@ Migration 0016 - Updating scheduled cron jobs after Operator changes v2
 
 import os
 
+import structlog
+
 from btrixcloud.crawlmanager import CrawlManager
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import CrawlConfig
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MIGRATION_VERSION = "0016"
 
@@ -32,22 +37,34 @@ class Migration(BaseMigration):
         match_query = {"schedule": {"$nin": ["", None]}}
         async for config_dict in crawl_configs.find(match_query):
             config = CrawlConfig.from_dict(config_dict)
-            print(
-                f"Updating CronJob for Crawl Config {config.id}: schedule: {config.schedule}"
+            logger.info(
+                "crawl_config_cronjob_updating",
+                config_id=config.id,
+                schedule=config.schedule,
+                unstructured_message=(
+                    f"Updating CronJob for Crawl Config {config.id}: schedule: {config.schedule}"
+                ),
             )
             try:
                 await crawl_manager.update_scheduled_job(config)
             # pylint: disable=broad-except
             except Exception as exc:
-                print(
-                    "Skip crawl config migration due to error, likely missing config",
-                    exc,
+                logger.warning(
+                    "migration_crawl_config_skip",
+                    exc_info=True,
+                    unstructured_message=(
+                        f"Skip crawl config migration due to error, likely missing config {exc}"
+                    ),
                 )
 
         # Delete existing scheduled jobs from default namespace
-        print("Deleting cronjobs from default namespace")
-
         default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
+
+        logger.info(
+            "migration_deleting_cronjobs",
+            namespace=default_namespace,
+            unstructured_message="Deleting cronjobs from default namespace",
+        )
 
         await crawl_manager.batch_api.delete_collection_namespaced_cron_job(
             namespace=default_namespace, label_selector="btrix.crawlconfig"

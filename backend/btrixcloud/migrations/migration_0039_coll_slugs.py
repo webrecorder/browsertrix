@@ -4,11 +4,14 @@ Migration 0039 -- collection slugs
 
 from uuid import UUID
 
+import structlog
 import pymongo
 from pymongo.errors import DuplicateKeyError
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import case_insensitive_collation, slug_from_name
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0039"
 
@@ -41,7 +44,12 @@ class Migration(BaseMigration):
                 slug = f"{slug_base}-{count}"
 
         if count > 1:
-            print(f"Duplicate collection name '{name}' set to '{name} {count}'")
+            logger.info(
+                "duplicate_collection_name_renamed",
+                name=name,
+                count=count,
+                unstructured_message=f"Duplicate collection name '{name}' set to '{name} {count}'",
+            )
             await colls_mdb.find_one_and_update(
                 {"_id": coll_id}, {"$set": {"name": f"{name} {count}"}}
             )
@@ -73,10 +81,11 @@ class Migration(BaseMigration):
                 slug = slug_from_name(name)
                 await self.dedup_slug(name, slug, coll_id, colls_mdb)
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Error saving slug for collection {coll_id}: {err}",
-                    flush=True,
+            except Exception:
+                logger.exception(
+                    "error_saving_slug_for_collection",
+                    coll_id=coll_id,
+                    unstructured_message=f"Error saving slug for collection {coll_id}",
                 )
 
         await colls_mdb.create_index(

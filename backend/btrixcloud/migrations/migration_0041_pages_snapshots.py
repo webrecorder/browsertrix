@@ -2,7 +2,11 @@
 Migration 0041 - Rationalize page counts
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0041"
 
@@ -24,9 +28,9 @@ class Migration(BaseMigration):
         colls_mdb = self.mdb["collections"]
 
         if self.coll_ops is None:
-            print(
-                "Unable to set collection page counts, missing coll_ops",
-                flush=True,
+            logger.warning(
+                "collection_page_counts_missing_coll_ops",
+                unstructured_message="Unable to set collection page counts, missing coll_ops",
             )
             return
 
@@ -35,8 +39,9 @@ class Migration(BaseMigration):
             try:
                 await self.coll_ops.update_collection_stats(coll_id, coll["oid"])
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Unable to update page counts for collection {coll_id}: {err}",
-                    flush=True,
+            except Exception:
+                logger.exception(
+                    "collection_page_counts_update_error",
+                    coll_id=coll_id,
+                    unstructured_message=f"Unable to update page counts for collection {coll_id}",
                 )

@@ -2,7 +2,11 @@
 Migration 0040 -- archived item pageCount
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0040"
 
@@ -24,9 +28,9 @@ class Migration(BaseMigration):
         crawls_mdb = self.mdb["crawls"]
 
         if self.page_ops is None:
-            print(
-                "Unable to set pageCount for archived items, missing page_ops",
-                flush=True,
+            logger.warning(
+                "archived_item_page_count_missing_page_ops",
+                unstructured_message="Unable to set pageCount for archived items, missing page_ops",
             )
             return
 
@@ -35,8 +39,9 @@ class Migration(BaseMigration):
             try:
                 await self.page_ops.set_archived_item_page_counts(crawl_id)
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Error saving page counts for archived item {crawl_id}: {err}",
-                    flush=True,
+            except Exception:
+                logger.exception(
+                    "archived_item_page_count_save_error",
+                    crawl_id=crawl_id,
+                    unstructured_message=f"Error saving page counts for archived item {crawl_id}",
                 )

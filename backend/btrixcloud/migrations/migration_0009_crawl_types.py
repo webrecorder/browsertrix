@@ -2,7 +2,12 @@
 Migration 0009 - Crawl types
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MIGRATION_VERSION = "0009"
 
@@ -26,5 +31,8 @@ class Migration(BaseMigration):
                 {"type": {"$eq": None}}, {"$set": {"type": "crawl"}}
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            print(f"Error adding type 'crawl' to existing crawls: {err}", flush=True)
+        except Exception:
+            logger.exception(
+                "migration_add_crawl_type_error",
+                unstructured_message="Error adding type 'crawl' to existing crawls",
+            )

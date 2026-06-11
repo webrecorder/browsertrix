@@ -4,10 +4,19 @@ import time
 from typing import Dict
 from uuid import UUID
 
+import structlog
 import pytest
 import requests
 
+from btrixcloud.logger import init_logging
+
 from .utils import read_in_chunks
+
+init_logging()
+
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 HOST_PREFIX = "http://127.0.0.1:30870"
 API_PREFIX = HOST_PREFIX + "/api"
@@ -61,7 +70,10 @@ def admin_auth_headers():
         try:
             return {"Authorization": f"Bearer {data['access_token']}"}
         except:
-            print("Waiting for admin_auth_headers")
+            logger.info(
+                "test_waiting_admin_auth_headers",
+                unstructured_message="Waiting for admin_auth_headers",
+            )
             time.sleep(5)
 
 
@@ -75,7 +87,10 @@ def default_org_id(admin_auth_headers):
                 if org["default"] is True:
                     return org["id"]
         except:
-            print("Waiting for default org id")
+            logger.info(
+                "test_waiting_default_org_id",
+                unstructured_message="Waiting for default org id",
+            )
             time.sleep(5)
 
 
@@ -96,7 +111,10 @@ def non_default_org_id(admin_auth_headers):
                 if org["name"] == NON_DEFAULT_ORG_NAME:
                     return org["id"]
         except:
-            print("Waiting for non-default org id")
+            logger.info(
+                "test_waiting_non_default_org_id",
+                unstructured_message="Waiting for non-default org id",
+            )
             time.sleep(5)
 
 
@@ -700,15 +718,17 @@ def create_profile_browser(
 
 @pytest.fixture(scope="function")
 def echo_server():
-    print(f"Echo server starting", flush=True)
+    logger.info("echo_server_starting", unstructured_message="Echo server starting")
     p = subprocess.Popen(["python3", os.path.join(curr_dir, "echo_server.py")])
-    print(f"Echo server started", flush=True)
+    logger.info("echo_server_started", unstructured_message="Echo server started")
     time.sleep(1)
     yield p
     time.sleep(10)
-    print(f"Echo server terminating", flush=True)
+    logger.info(
+        "echo_server_terminating", unstructured_message="Echo server terminating"
+    )
     p.terminate()
-    print(f"Echo server terminated", flush=True)
+    logger.info("echo_server_terminated", unstructured_message="Echo server terminated")
 
 
 PROFILE_NAME = "Test profile"

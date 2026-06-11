@@ -3,11 +3,14 @@ import os
 import subprocess
 import time
 
+import structlog
 import pytest
 import requests
 
 from .conftest import API_PREFIX
 from .utils import read_in_chunks
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 _webhook_event_id = None
 
@@ -31,15 +34,17 @@ FINISHED_STATES = [*FAILED_STATES, *SUCCESSFUL_STATES]
 
 @pytest.fixture(scope="function")
 def echo_server():
-    print(f"Echo server starting", flush=True)
+    logger.info("echo_server_starting", unstructured_message="Echo server starting")
     p = subprocess.Popen(["python3", os.path.join(curr_dir, "echo_server.py")])
-    print(f"Echo server started", flush=True)
+    logger.info("echo_server_started", unstructured_message="Echo server started")
     time.sleep(1)
     yield p
     time.sleep(10)
-    print(f"Echo server terminating", flush=True)
+    logger.info(
+        "echo_server_terminating", unstructured_message="Echo server terminating"
+    )
     p.terminate()
-    print(f"Echo server terminated", flush=True)
+    logger.info("echo_server_terminated", unstructured_message="Echo server terminated")
 
 
 @pytest.fixture(scope="session")

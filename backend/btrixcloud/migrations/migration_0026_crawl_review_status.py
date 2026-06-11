@@ -2,7 +2,12 @@
 Migration 0026 - Crawl reviewStatus type
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MIGRATION_VERSION = "0026"
 
@@ -32,8 +37,8 @@ class Migration(BaseMigration):
                 {"reviewStatus": {"$eq": "failure"}}, {"$set": {"reviewStatus": 1}}
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            print(
-                f"Error modifying existing crawl reviewStatuses to ints: {err}",
-                flush=True,
+        except Exception:
+            logger.exception(
+                "migration_review_status_error",
+                unstructured_message="Error modifying existing crawl reviewStatuses to ints",
             )

@@ -5,6 +5,7 @@ import secrets
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple
 
+import structlog
 from fastapi import HTTPException
 
 from .auth import create_custom_jwt_token
@@ -17,6 +18,8 @@ from .models import (
     StorageRef,
 )
 from .utils import date_to_str, dt_now, scale_from_browser_windows
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 # ============================================================================
 DEFAULT_PROXY_ID: str = os.environ.get("DEFAULT_PROXY_ID", "")
@@ -325,15 +328,17 @@ class CrawlManager(K8sAPI):
         job_schedule = os.environ.get("CLEANUP_JOB_CRON_SCHEDULE", default_schedule)
 
         # Don't create a duplicate cron job if already exists
+        cleanup_logger = logger.bind(schedule=job_schedule)
+
         try:
             cron_job = await self.batch_api.read_namespaced_cron_job(
                 name=job_id,
                 namespace=DEFAULT_NAMESPACE,
             )
             if cron_job:
-                print(
-                    "Cron job to clean up unused seed files already exists",
-                    flush=True,
+                cleanup_logger.info(
+                    "cleanup_cron_job_exists",
+                    unstructured_message="Cron job to clean up unused seed files already exists",
                 )
 
                 if cron_job.spec.schedule != job_schedule:
@@ -344,18 +349,24 @@ class CrawlManager(K8sAPI):
                         namespace=DEFAULT_NAMESPACE,
                         body=cron_job,
                     )
-                    print(
-                        f"Cron job to clean up unused seed files updated, schedule: {job_schedule}",
-                        flush=True,
+                    cleanup_logger.info(
+                        "cleanup_cron_job_updated",
+                        unstructured_message=(
+                            f"Cron job to clean up unused seed files updated,"
+                            f" schedule: {job_schedule}"
+                        ),
                     )
                 return
         # pylint: disable=broad-exception-caught
         except Exception:
             pass
 
-        print(
-            f"Creating cron job to clean up unused seed files, schedule: {job_schedule}",
-            flush=True,
+        cleanup_logger.info(
+            "cleanup_cron_job_creating",
+            unstructured_message=(
+                f"Creating cron job to clean up unused seed files,"
+                f" schedule: {job_schedule}"
+            ),
         )
 
         params = {
@@ -678,7 +689,11 @@ class CrawlManager(K8sAPI):
 
         params["schedule"] = schedule
 
-        print(f"Replica deletion cron schedule: '{schedule}'", flush=True)
+        logger.info(
+            "replica_deletion_cron_schedule",
+            schedule=schedule,
+            unstructured_message=f"Replica deletion cron schedule: '{schedule}'",
+        )
 
         data = self.templates.env.get_template("replica_deletion_cron_job.yaml").render(
             params

@@ -2,7 +2,12 @@
 Migration 0015 - Calculate and store org storage usage
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MIGRATION_VERSION = "0015"
 
@@ -43,8 +48,9 @@ class Migration(BaseMigration):
                     {"_id": oid}, {"$set": {"bytesStored": bytes_stored}}
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Unable to set bytes stored for org {oid}: {err}",
-                    flush=True,
+            except Exception:
+                logger.exception(
+                    "migration_org_storage_error",
+                    org_id=oid,
+                    unstructured_message=f"Unable to set bytes stored for org {oid}",
                 )

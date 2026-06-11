@@ -6,6 +6,8 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    AsyncGenerator,
+    Callable,
     Dict,
     List,
     Optional,
@@ -16,6 +18,7 @@ from typing import (
 from urllib.parse import urlencode
 from uuid import UUID, uuid4
 
+import structlog
 import aiohttp
 import pymongo
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -48,6 +51,8 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import case_insensitive_collation, dt_now, run_async_task, str_to_date
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .background_jobs import BackgroundJobOps
@@ -371,7 +376,13 @@ class ProfileOps:
 
         # pylint: disable=broad-except
         except Exception as e:
-            print("Profile commit failed", e)
+            logger.exception(
+                "profile_commit_failed",
+                oid=org.id,
+                user_id=user.id,
+                profile_id=metadata.profileid,
+                unstructured_message=f"Profile commit failed {e}",
+            )
             return False
 
         return True
@@ -415,8 +426,12 @@ class ProfileOps:
             hash_ = data["hash"]
             modified = str_to_date(data["modified"])
         # pylint: disable=broad-exception-caught
-        except Exception as exc:
-            print(exc)
+        except Exception:
+            logger.exception(
+                "profile_update_parse_failed",
+                oid=org_id,
+                profile_id=profileid,
+            )
             return False
 
         res = await self.profiles.find_one_and_update(
@@ -643,8 +658,14 @@ class ProfileOps:
                 ) as resp:
                     data = await resp.json()
 
-        except Exception as e:
-            print(e)
+        except Exception:
+            logger.exception(
+                "browser_request_failed",
+                browser_id=browserid,
+                path=path,
+                method=method,
+                post_data=post_data,
+            )
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=200, detail="waiting_for_browser")
 
@@ -703,7 +724,7 @@ def init_profiles_api(
     crawl_manager: CrawlManager,
     storage_ops: StorageOps,
     background_job_ops: BackgroundJobOps,
-    user_dep,
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
 ):
     """init profile ops system"""
     ops = ProfileOps(mdb, org_ops, crawl_manager, storage_ops, background_job_ops)
@@ -720,12 +741,16 @@ def init_profiles_api(
         metadata = None
         try:
             metadata = await crawl_manager.get_profile_browser_metadata(browserid)
-        # pylint: disable=raise-missing-from
+        # pylint: disable=raise-missing-from, broad-exception-caught
         except Exception as e:
-            print(e)
-            raise HTTPException(status_code=400, detail="invalid_profile_browser")
+            logger.exception(
+                "browser_metadata_fetch_failed",
+                oid=org.id,
+                browser_id=browserid,
+                unstructured_message=f"{e}",
+            )
 
-        if metadata.oid != str(org.id):
+        if not metadata or metadata.oid != str(org.id):
             raise HTTPException(status_code=404, detail="no_such_browser")
 
         return metadata

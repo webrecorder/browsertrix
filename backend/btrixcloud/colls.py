@@ -6,9 +6,20 @@ Collections API
 import os
 from collections import Counter
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Union,
+    cast,
+)
 from uuid import UUID, uuid4
 
+import structlog
 import aiohttp
 import pymongo
 from fastapi import Depends, HTTPException, Response
@@ -78,6 +89,7 @@ else:
         object
     )
 
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 THUMBNAIL_MAX_SIZE = 2_000_000
 
@@ -743,7 +755,9 @@ class CollectionOps:
 
         resp = await self.storage_ops.download_streaming_wacz(metadata, coll.resources)
 
-        headers = {"Content-Disposition": f'attachment; filename="{coll.name}.wacz"'}
+        filename = f"{coll.name}.wacz"
+        headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+        logger.info("download_collection", coll_id=coll_id, filename=filename)
         return StreamingResponse(
             resp, headers=headers, media_type="application/wacz+zip"
         )
@@ -839,9 +853,13 @@ class CollectionOps:
 
         if coll.indexFile:
             if not await self.storage_ops.delete_file_object(org, coll.indexFile):
-                print(
-                    "Unable to delete collection dedupe index: "
-                    + f"{coll.indexFile.filename}"
+                logger.error(
+                    "dedupe_index_file_deletion_failed",
+                    filename=coll.indexFile.filename,
+                    coll_id=coll.id,
+                    unstructured_message=(
+                        f"Unable to delete collection dedupe index: {coll.indexFile.filename}"
+                    ),
                 )
                 raise HTTPException(status_code=400, detail="file_deletion_error")
 
@@ -1224,7 +1242,12 @@ class CollectionOps:
                 file_prep.add_chunk(chunk)
                 yield chunk
 
-        print("Collection thumbnail stream upload starting", flush=True)
+        thumb_logger = logger.bind(coll_id=coll_id)
+
+        thumb_logger.info(
+            "thumbnail_upload_starting",
+            unstructured_message="Collection thumbnail stream upload starting",
+        )
 
         if not await self.storage_ops.do_upload_multipart(
             org,
@@ -1233,17 +1256,20 @@ class CollectionOps:
             MIN_UPLOAD_PART_SIZE,
             mime=file_prep.mime,
         ):
-            print("Collection thumbnail stream upload failed", flush=True)
+            thumb_logger.error(
+                "thumbnail_upload_failed",
+                unstructured_message="Collection thumbnail stream upload failed",
+            )
             raise HTTPException(status_code=400, detail="upload_failed")
-
-        print("Collection thumbnail stream upload complete", flush=True)
 
         thumbnail_file = file_prep.get_user_file(org.storage)
 
         if thumbnail_file.size > THUMBNAIL_MAX_SIZE:
-            print(
-                "Collection thumbnail stream upload failed: max size (2 MB) exceeded",
-                flush=True,
+            thumb_logger.error(
+                "thumbnail_upload_max_size_exceeded",
+                unstructured_message=(
+                    "Collection thumbnail stream upload failed: max size (2 MB) exceeded"
+                ),
             )
             await self.storage_ops.delete_file_object(org, thumbnail_file)
             raise HTTPException(
@@ -1253,9 +1279,19 @@ class CollectionOps:
 
         if coll.thumbnail:
             if not await self.storage_ops.delete_file_object(org, coll.thumbnail):
-                print(
-                    f"Unable to delete previous collection thumbnail: {coll.thumbnail.filename}"
+                thumb_logger.warning(
+                    "previous_thumbnail_deletion_failed",
+                    filename=coll.thumbnail.filename,
+                    unstructured_message=(
+                        f"Unable to delete previous collection thumbnail:"
+                        f" {coll.thumbnail.filename}"
+                    ),
                 )
+
+        thumb_logger.info(
+            "thumbnail_upload_complete",
+            unstructured_message="Collection thumbnail stream upload complete",
+        )
 
         coll.thumbnail = thumbnail_file
 
@@ -1284,7 +1320,14 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="thumbnail_not_found")
 
         if not await self.storage_ops.delete_file_object(org, coll.thumbnail):
-            print(f"Unable to delete collection thumbnail: {coll.thumbnail.filename}")
+            logger.error(
+                "thumbnail_deletion_failed",
+                filename=coll.thumbnail.filename,
+                coll_id=coll.id,
+                unstructured_message=(
+                    f"Unable to delete collection thumbnail: {coll.thumbnail.filename}"
+                ),
+            )
             raise HTTPException(status_code=400, detail="file_deletion_error")
 
         # Delete from database
@@ -1331,7 +1374,7 @@ def init_collections_api(
     crawl_manager: CrawlManager,
     event_webhook_ops: EventWebhookOps,
     background_job_ops: BackgroundJobOps,
-    user_dep,
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
 ) -> CollectionOps:
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments

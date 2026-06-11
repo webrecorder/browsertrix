@@ -4,10 +4,14 @@ Migration 0001 - Archives to Orgs
 
 import os
 
+import structlog
 from pymongo.errors import OperationFailure
 
 from btrixcloud.k8sapi import K8sAPI
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MIGRATION_VERSION = "0001"
 
@@ -33,8 +37,11 @@ class Migration(BaseMigration):
         org_collection = self.mdb["archives"]
         try:
             await org_collection.rename("organizations", dropTarget=True)
-        except OperationFailure as err:
-            print(f"Error renaming archives to organizations: {err}")
+        except OperationFailure:
+            logger.exception(
+                "migration_rename_collection_error",
+                unstructured_message="Error renaming archives to organizations",
+            )
 
         # Rename aid fields to oid
         for collection in self.COLLECTIONS_AID_TO_OID:

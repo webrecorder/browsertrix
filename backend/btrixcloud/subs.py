@@ -5,9 +5,10 @@ Subscription API handling
 import asyncio
 import os
 from datetime import datetime
-from typing import Annotated, Any, Awaitable, Callable, List, Optional, Tuple
+from typing import Annotated, Any, AsyncGenerator, Callable, List, Optional, Tuple
 from uuid import UUID
 
+import structlog
 import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -50,6 +51,8 @@ from .orgs import OrgOps
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .users import UserManager
 from .utils import dt_now, get_origin, is_bool, run_async_task
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 # if set, will enable this api
 subscriptions_enabled = is_bool(os.environ.get("BILLING_ENABLED"))
@@ -208,24 +211,39 @@ class SubOps:
     ):
         """Send a trial end reminder email to the organization admins"""
 
+        reminder_logger = logger.bind(sub_id=reminder.subId)
+
         org = await self.org_ops.find_org_by_subscription_id(reminder.subId)
 
         if not org:
-            print(f"Organization not found for subscription ID {reminder.subId}")
+            reminder_logger.error(
+                "org_not_found_for_subscription",
+                unstructured_message=f"Organization not found for subscription ID {reminder.subId}",
+            )
             raise HTTPException(
                 status_code=404, detail="org_for_subscription_not_found"
             )
 
         assert org.subscription
 
+        org_reminder_logger = reminder_logger.bind(oid=org.id)
+
         if not org.subscription.futureCancelDate:
-            print(f"Future cancel date not found for subscription ID {reminder.subId}")
+            org_reminder_logger.error(
+                "future_cancel_date_not_found",
+                unstructured_message=(
+                    f"Future cancel date not found for subscription ID {reminder.subId}"
+                ),
+            )
             raise HTTPException(status_code=400, detail="future_cancel_date_not_found")
 
         users = await self.org_ops.get_users_for_org(org, UserRole.OWNER)
 
         if len(users) == 0:
-            print(f"No admin users found for organization ID {org.id}")
+            org_reminder_logger.error(
+                "no_admin_users_found_for_org",
+                unstructured_message=f"No admin users found for organization ID {org.id}",
+            )
             raise HTTPException(status_code=400, detail="no_admin_users_found")
 
         await asyncio.gather(
@@ -394,8 +412,12 @@ class SubOps:
                         json = await resp.json()
                         return SubscriptionPortalUrlResponse(**json)
             # pylint: disable=broad-exception-caught
-            except Exception as exc:
-                print("Error fetching portal url", exc)
+            except Exception:
+                logger.exception(
+                    "portal_url_fetch_failed",
+                    oid=org.id,
+                    unstructured_message="Error fetching portal url",
+                )
 
         return SubscriptionPortalUrlResponse()
 
@@ -419,8 +441,12 @@ class SubOps:
                         json = await resp.json()
                         return AddonMinutesPricing(**json)
             # pylint: disable=broad-exception-caught
-            except Exception as exc:
-                print("Error fetching execution minutes price", exc)
+            except Exception:
+                logger.exception(
+                    "execution_minutes_price_fetch_failed",
+                    oid=org.id,
+                    unstructured_message="Error fetching execution minutes price",
+                )
 
     async def get_checkout_url(
         self,
@@ -435,6 +461,8 @@ class SubOps:
             )
         subscription_id = org.subscription.subId
         return_url = f"{get_origin(headers)}/orgs/{org.slug}/settings/billing"
+
+        checkout_logger = logger.bind(oid=org.id)
 
         if external_subs_app_api_url:
             try:
@@ -456,11 +484,18 @@ class SubOps:
                         raise_for_status=True,
                     ) as resp:
                         json = await resp.json()
-                        print(f"get_checkout_url got response: {json}")
+                        checkout_logger.debug(
+                            "checkout_url_response",
+                            response=json,
+                            unstructured_message=f"get_checkout_url got response: {json}",
+                        )
                         return CheckoutAddonMinutesResponse(**json)
             # pylint: disable=broad-exception-caught
             except Exception as exc:
-                print("Error fetching checkout url", exc)
+                checkout_logger.exception(
+                    "checkout_url_fetch_failed",
+                    unstructured_message="Error fetching checkout url",
+                )
                 raise HTTPException(
                     status_code=500, detail="Error fetching checkout url"
                 ) from exc
@@ -472,7 +507,7 @@ def init_subs_api(
     mdb: AsyncIOMotorDatabase[Any],
     org_ops: OrgOps,
     user_manager: UserManager,
-    superuser_or_shared_secret_dep: Callable[[str], Awaitable[User]],
+    superuser_or_shared_secret_dep: Callable[[str], AsyncGenerator[User, None]],
 ) -> Optional[SubOps]:
     """init subs API"""
 

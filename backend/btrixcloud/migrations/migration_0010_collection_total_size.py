@@ -4,6 +4,8 @@ Migration 0010 - Precomputing collection total size
 
 from typing import cast
 
+import structlog
+
 from btrixcloud.background_jobs import BackgroundJobOps
 from btrixcloud.colls import CollectionOps
 from btrixcloud.crawlmanager import CrawlManager
@@ -11,6 +13,8 @@ from btrixcloud.migrations import BaseMigration
 from btrixcloud.orgs import OrgOps
 from btrixcloud.storages import StorageOps
 from btrixcloud.webhooks import EventWebhookOps
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0010"
 
@@ -42,5 +46,10 @@ class Migration(BaseMigration):
             try:
                 await coll_ops.update_collection_stats(coll_id, coll["oid"])
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(f"Unable to update collection {coll_id}: {err}", flush=True)
+            except Exception:
+                logger.warning(
+                    "migration_collection_update_warning",
+                    collection_id=coll_id,
+                    exc_info=True,
+                    unstructured_message=f"Unable to update collection {coll_id}",
+                )

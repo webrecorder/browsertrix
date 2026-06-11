@@ -99,6 +99,7 @@ nav:
   - Development:
       - develop/index.md
       - develop/local-dev-setup.md
+      - develop/logging.md
       - develop/docs.md
       - develop/emails.md
       - develop/feature-flags.md
