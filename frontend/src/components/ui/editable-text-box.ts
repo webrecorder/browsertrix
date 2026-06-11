@@ -241,12 +241,12 @@ export class EditableTextBox extends TailwindElement {
         rows=${ifDefined(this.clamp)}
         @input=${this.handleInput}
         @focus=${() => {
-          console.log("focus");
           this.startEditing();
         }}
         @blur=${this.save}
         @keydown=${this.handleKeydown}
         @paste=${this.handlePaste}
+        tabindex="0"
       ></textarea>
       ${this.maxLength && !this.valid
         ? html`<span
