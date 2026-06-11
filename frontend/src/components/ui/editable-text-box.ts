@@ -185,6 +185,11 @@ export class EditableTextBox extends TailwindElement {
     return valid;
   }
 
+  disconnectedCallback(): void {
+    this.debouncedOnResize.cancel();
+    super.disconnectedCallback();
+  }
+
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("value")) {
       this.inputValue = this.value;
