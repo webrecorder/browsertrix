@@ -151,22 +151,20 @@ class EventWebhookOps:
         self, org: Organization, notification: WebhookNotification
     ):
         """Send notification"""
+        notify_logger = logger.bind(notification_id=notification.id, oid=org.id)
+
         if not org.webhookUrls:
-            logger.info(
+            notify_logger.info(
                 "webhook_urls_not_configured",
-                notification_id=notification.id,
-                oid=org.id,
                 unstructured_message="Webhook URLs not configured - skipping sending notification",
             )
             return
 
         webhook_url = getattr(org.webhookUrls, notification.event)
         if not webhook_url:
-            logger.info(
+            notify_logger.info(
                 "webhook_url_not_configured_for_event",
-                notification_id=notification.id,
                 event_type=notification.event,
-                oid=org.id,
                 unstructured_message=(
                     f"Webhook URL for event {notification.event} not configured, skipping"
                 ),
@@ -194,11 +192,9 @@ class EventWebhookOps:
 
         # pylint: disable=broad-exception-caught
         except Exception:
-            logger.exception(
+            notify_logger.exception(
                 "webhook_notification_failed",
-                notification_id=notification.id,
                 event_type=notification.event,
-                oid=org.id,
                 unstructured_message="Webhook notification failed",
             )
             await self.webhooks.find_one_and_update(

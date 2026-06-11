@@ -1571,20 +1571,17 @@ class CrawlConfigOps:
         match_query = {"schedule": {"$nin": ["", None]}, "inactive": {"$ne": True}}
         async for config_dict in self.crawl_configs.find(match_query):
             config = CrawlConfig.from_dict(config_dict)
+            conf_logger = logger.bind(config_id=config.id, oid=config.oid)
             try:
                 await self.crawl_manager.update_scheduled_job(config)
-                logger.info(
+                conf_logger.info(
                     "scheduled_cronjob_updated",
-                    config_id=config.id,
-                    oid=config.oid,
                     unstructured_message=f"Updated cronjob for scheduled workflow {config.id}",
                 )
             # pylint: disable=broad-except
             except Exception:
-                logger.exception(
+                conf_logger.exception(
                     "scheduled_cronjob_update_failed",
-                    config_id=config.id,
-                    oid=config.oid,
                     unstructured_message=(
                         f"Error updating cronjob for scheduled workflow {config.id}"
                     ),

@@ -247,12 +247,13 @@ def init_jwt_auth(user_manager):
         """
         login_email = credentials.username
 
+        email_logger = logger.bind(login_email=login_email)
+
         failed_count = await user_manager.get_failed_logins_count(login_email)
 
         if failed_count > 0:
-            logger.info(
+            email_logger.info(
                 "consecutive_failed_logins",
-                login_email=login_email,
                 failed_count=failed_count,
                 unstructured_message=f"Consecutive failed login count for {login_email}: "
                 f"{failed_count}",
@@ -268,9 +269,8 @@ def init_jwt_auth(user_manager):
                     attempted_user = await user_manager.get_by_email(login_email)
                     if attempted_user:
                         await user_manager.forgot_password(attempted_user)
-                        logger.info(
+                        email_logger.info(
                             "password_reset_email_sent",
-                            login_email=login_email,
                             user_id=attempted_user.id,
                             unstructured_message="Password reset email sent after "
                             f"too many attempts for {login_email}",
@@ -291,9 +291,8 @@ def init_jwt_auth(user_manager):
         user = await user_manager.authenticate(login_email, credentials.password)
 
         if not user:
-            logger.warning(
+            email_logger.warning(
                 "login_failed",
-                login_email=login_email,
                 unstructured_message=f"Failed login attempt for {login_email}",
             )
             await user_manager.inc_failed_logins(login_email)

@@ -454,6 +454,8 @@ class StorageOps:
 
             upload_id = mup_resp["UploadId"]
 
+            mp_logger = logger.bind(upload_id=upload_id, oid=org.id)
+
             parts = []
             part_number = 1
 
@@ -469,12 +471,10 @@ class StorageOps:
                         Key=key,
                     )
 
-                    logger.debug(
+                    mp_logger.debug(
                         "multipart_part_added",
                         part_number=part_number,
                         chunk_size=len(chunk),
-                        upload_id=upload_id,
-                        oid=org.id,
                         unstructured_message=f"part added: {part_number} {len(chunk)} {upload_id}",
                     )
 
@@ -497,10 +497,8 @@ class StorageOps:
                     MultipartUpload={"Parts": parts},
                 )
 
-                logger.info(
+                mp_logger.info(
                     "multipart_upload_succeeded",
-                    upload_id=upload_id,
-                    oid=org.id,
                     unstructured_message=f"Multipart upload succeeded: {upload_id}",
                 )
 
@@ -511,10 +509,8 @@ class StorageOps:
                     Bucket=bucket, Key=key, UploadId=upload_id
                 )
 
-                logger.exception(
+                mp_logger.exception(
                     "multipart_upload_failed",
-                    upload_id=upload_id,
-                    oid=org.id,
                     unstructured_message=f"Multipart upload failed: {upload_id}",
                 )
 

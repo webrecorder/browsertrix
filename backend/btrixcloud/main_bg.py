@@ -30,6 +30,10 @@ async def main():
     if oid:
         set_log_context(oid=oid)
 
+    crawl_logger = logger.bind(
+        crawl_type=crawl_type, crawl_id=crawl_id, coll_id=coll_id
+    )
+
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
         logger.critical(
@@ -69,12 +73,9 @@ async def main():
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:
-            logger.exception(
+            crawl_logger.exception(
                 "bg_job_failed",
                 job_type="optimize_pages",
-                crawl_type=crawl_type,
-                crawl_id=crawl_id,
-                coll_id=coll_id,
                 unstructured_message="optimize_pages failed",
             )
             return 1
@@ -85,34 +86,25 @@ async def main():
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:
-            logger.exception(
+            crawl_logger.exception(
                 "bg_job_failed",
                 job_type="cleanup_seed_files",
-                crawl_type=crawl_type,
-                crawl_id=crawl_id,
-                coll_id=coll_id,
                 unstructured_message="cleanup_seed_files failed",
             )
             return 1
 
     # Run job (org-specific)
     if not oid:
-        logger.error(
+        crawl_logger.error(
             "org_id_missing",
-            crawl_type=crawl_type,
-            crawl_id=crawl_id,
-            coll_id=coll_id,
             unstructured_message="Org id missing, quitting",
         )
         return 1
 
     org = await org_ops.get_org_by_id(UUID(oid))
     if not org:
-        logger.error(
+        crawl_logger.error(
             "org_id_invalid",
-            crawl_type=crawl_type,
-            crawl_id=crawl_id,
-            coll_id=coll_id,
             unstructured_message="Org id invalid, quitting",
         )
         return 1
@@ -123,12 +115,9 @@ async def main():
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:
-            logger.exception(
+            crawl_logger.exception(
                 "bg_job_failed",
                 job_type="delete_org_and_data",
-                crawl_type=crawl_type,
-                crawl_id=crawl_id,
-                coll_id=coll_id,
                 unstructured_message="delete_org_and_data failed",
             )
             return 1
@@ -139,12 +128,9 @@ async def main():
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:
-            logger.exception(
+            crawl_logger.exception(
                 "bg_job_failed",
                 job_type="recalculate_storage",
-                crawl_type=crawl_type,
-                crawl_id=crawl_id,
-                coll_id=coll_id,
                 unstructured_message="recalculate_storage failed",
             )
             return 1
@@ -160,22 +146,16 @@ async def main():
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:
-            logger.exception(
+            crawl_logger.exception(
                 "bg_job_failed",
                 job_type="readd_org_pages",
-                crawl_type=crawl_type,
-                crawl_id=crawl_id,
-                coll_id=coll_id,
                 unstructured_message="readd_org_pages failed",
             )
             return 1
 
     if job_type == BgJobType.UPDATE_COLL_STATS:
-        logger.info(
+        crawl_logger.info(
             "collection_update_started",
-            crawl_type=crawl_type,
-            crawl_id=crawl_id,
-            coll_id=coll_id,
             unstructured_message=f"Updating collection {coll_id}",
         )
         count = 0
@@ -188,21 +168,15 @@ async def main():
                     break
 
                 count += 1
-                logger.debug(
+                crawl_logger.debug(
                     "collection_update_iteration",
                     count=count,
-                    crawl_type=crawl_type,
-                    crawl_id=crawl_id,
-                    coll_id=coll_id,
                     unstructured_message=f"Starting update number {count}",
                 )
                 await coll_ops.update_collection_stats(UUID(coll_id), org.id)
 
-            logger.info(
+            crawl_logger.info(
                 "collection_update_complete",
-                crawl_type=crawl_type,
-                crawl_id=crawl_id,
-                coll_id=coll_id,
                 unstructured_message=(
                     "No changes to collection since start of last update, job complete"
                 ),
@@ -210,22 +184,16 @@ async def main():
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:
-            logger.exception(
+            crawl_logger.exception(
                 "bg_job_failed",
                 job_type="update_collection_stats",
-                crawl_type=crawl_type,
-                crawl_id=crawl_id,
-                coll_id=coll_id,
                 unstructured_message="update_collection_stats failed",
             )
             return 1
 
-    logger.critical(
+    crawl_logger.critical(
         "unsupported_job_type",
         job_type=job_type,
-        crawl_type=crawl_type,
-        crawl_id=crawl_id,
-        coll_id=coll_id,
         unstructured_message=f"Provided job type {job_type} not currently supported",
     )
     return 1

@@ -296,19 +296,19 @@ class UserManager:
 
         superuser = await self.get_superuser()
         if superuser:
+            su_logger = logger.bind(user_id=superuser.id)
+
             if str(superuser.email) != email:
                 await self.update_email_name(superuser, cast(EmailStr, email), name)
-                logger.info(
+                su_logger.info(
                     "superuser_email_updated",
-                    user_id=superuser.id,
                     unstructured_message="Superuser email updated",
                 )
 
             if not await self.check_password(superuser, password):
                 await self._update_password(superuser, password)
-                logger.info(
+                su_logger.info(
                     "superuser_password_updated",
-                    user_id=superuser.id,
                     unstructured_message="Superuser password updated",
                 )
 
@@ -460,21 +460,19 @@ class UserManager:
             RESET_VERIFY_TOKEN_LIFETIME_MINUTES,
         )
 
+        pwd_logger = logger.bind(user_id=user.id, user_email=user.email)
+
         if not self.email.smtp_server and not self.email.log_sent_emails:
-            logger.debug(
+            pwd_logger.debug(
                 "password_reset_requested",
-                user_id=user.id,
-                user_email=user.email,
                 reset_token=token,
                 unstructured_message=(
                     f"User {user.id} has forgot their password. Reset token: {token}"
                 ),
             )
         else:
-            logger.debug(
+            pwd_logger.debug(
                 "password_reset_requested",
-                user_id=user.id,
-                user_email=user.email,
             )
         await self.email.send_user_forgot_password(
             user.email, token, request and request.headers

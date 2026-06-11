@@ -70,16 +70,14 @@ class CronJobOperator(BaseOperator):
         # cronjob doesn't exist yet
         crawlconfig: CrawlConfig
 
+        cj_logger = logger.bind(cid=cid, oid=oid, user_id=userid, crawl_id=crawl_id)
+
         try:
             crawlconfig = await self.crawl_config_ops.get_crawl_config(cid, oid)
         # pylint: disable=bare-except
         except:
-            logger.error(
+            cj_logger.error(
                 "cronjob_crawlconfig_not_found",
-                cid=cid,
-                oid=oid,
-                user_id=userid,
-                crawl_id=crawl_id,
                 unstructured_message=(
                     f"error: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
                 ),
@@ -88,37 +86,32 @@ class CronJobOperator(BaseOperator):
 
         # get org
         oid = crawlconfig.oid
+        cj_logger = cj_logger.bind(oid=oid)
         try:
             org = await self.org_ops.get_org_by_id(oid)
         # pylint: disable=bare-except
         except:
-            logger.error(
+            cj_logger.error(
                 "cronjob_org_not_found",
-                cid=cid,
-                oid=oid,
-                user_id=userid,
-                crawl_id=crawl_id,
                 unstructured_message=f"error: error getting org {oid}, skipping scheduled job",
             )
             return self.get_finished_response(metadata)
+
+        cj_logger = cj_logger.bind(org_slug=org.slug)
 
         # db create
         user = None
 
         if not userid:
             userid = crawlconfig.modifiedBy
+            cj_logger = cj_logger.bind(user_id=userid)
 
         if userid:
             user = await self.user_ops.get_by_id(userid)
 
         if not userid or not user:
-            logger.error(
+            cj_logger.error(
                 "cronjob_user_not_found",
-                org_slug=org.slug,
-                cid=cid,
-                oid=oid,
-                user_id=userid,
-                crawl_id=crawl_id,
                 unstructured_message=f"error: missing user for id {userid}",
             )
             return self.get_finished_response(metadata)
@@ -126,13 +119,8 @@ class CronJobOperator(BaseOperator):
         warc_prefix = self.crawl_config_ops.get_warc_prefix(org, crawlconfig)
 
         if org.readOnly:
-            logger.warning(
+            cj_logger.warning(
                 "org_readonly_skipping_scheduled_crawl",
-                org_slug=org.slug,
-                cid=cid,
-                oid=oid,
-                user_id=userid,
-                crawl_id=crawl_id,
                 # pylint: disable=line-too-long
                 unstructured_message=(
                     f'org "{org.slug}" set to read-only. skipping scheduled crawl for workflow {cid}'
@@ -143,14 +131,9 @@ class CronJobOperator(BaseOperator):
         if crawlconfig.proxyId and not self.crawl_config_ops.get_crawler_proxy(
             crawlconfig.proxyId
         ):
-            logger.warning(
+            cj_logger.warning(
                 "proxy_missing_skipping_scheduled_crawl",
                 proxy_id=crawlconfig.proxyId,
-                org_slug=org.slug,
-                cid=cid,
-                oid=oid,
-                user_id=userid,
-                crawl_id=crawl_id,
                 unstructured_message=(
                     f"proxy {crawlconfig.proxyId} missing, skipping scheduled crawl"
                     f' for workflow {cid} in "{org.slug}"'
@@ -167,13 +150,8 @@ class CronJobOperator(BaseOperator):
                 org,
                 manual=False,
             )
-            logger.info(
+            cj_logger.info(
                 "scheduled_crawl_created",
-                org_slug=org.slug,
-                cid=cid,
-                oid=oid,
-                user_id=userid,
-                crawl_id=crawl_id,
                 unstructured_message=f"Scheduled Crawl Created: {crawl_id}",
             )
 
@@ -186,14 +164,9 @@ class CronJobOperator(BaseOperator):
                 crawlconfig.profileid, org
             )
             if not profile_filename:
-                logger.error(
+                cj_logger.error(
                     "cronjob_profile_not_found",
                     profileid=crawlconfig.profileid,
-                    org_slug=org.slug,
-                    cid=cid,
-                    oid=oid,
-                    user_id=userid,
-                    crawl_id=crawl_id,
                     unstructured_message=f"error: missing profile {crawlconfig.profileid}",
                 )
                 return self.get_finished_response(metadata)
@@ -236,12 +209,11 @@ class CronJobOperator(BaseOperator):
         oid: str = labels.get("btrix.org", "")
         userid: str = labels.get("btrix.userid", "")
 
+        cj_sync_logger = logger.bind(cid=cid, oid=oid, user_id=userid)
+
         if not cid:
-            logger.error(
+            cj_sync_logger.error(
                 "cronjob_missing_cid",
-                cid=cid,
-                oid=oid,
-                user_id=userid,
                 unstructured_message="error: cronjob missing 'cid', invalid cronjob",
             )
             return self.get_finished_response(metadata)
@@ -257,12 +229,9 @@ class CronJobOperator(BaseOperator):
             set_status = False
             # mark job as completed
             if not data.object["status"].get("succeeded"):
-                logger.info(
+                cj_sync_logger.info(
                     "cronjob_complete",
                     finished=finished,
-                    cid=cid,
-                    oid=oid,
-                    user_id=userid,
                     unstructured_message=f"Cron Job Complete! {finished}",
                 )
                 set_status = True
