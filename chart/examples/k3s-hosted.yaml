@@ -12,7 +12,7 @@
 #
 # One way to deploy this is with k3s (https://k3s.io/), which will require the following changes:
 #
-# Make sure to disable traefik on your k3s cluster by adding `--no-deploy traefik` to the systemd unit that starts k3s _before_ starting your server.
+# Make sure to disable traefik on your k3s cluster by adding `--disable traefik` to the systemd unit that starts k3s _before_ starting your server. Note: this flag was renamed from `--no-deploy` to `--disable` (see https://github.com/k3s-io/k3s/issues/1160).
 # One way to check that traefik is not running your cluster is with `kubectl get deployments -n kube-system` and see if traefik shows up in the output.
 #
 # Once traefik has been disabled, you must install `nginx-ingress`, which can be installed by:
