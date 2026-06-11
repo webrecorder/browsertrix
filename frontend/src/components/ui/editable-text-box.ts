@@ -214,7 +214,7 @@ export class EditableTextBox extends TailwindElement {
           ? this.plainText
             ? this.value
             : richText(this.value, {
-                linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
+                linkClass: tw`relative z-[2] text-cyan-500 transition-colors hover:text-cyan-600`,
               })
           : html`<span class="invisible" aria-hidden="true"
               >${this.placeholder}</span
@@ -241,6 +241,7 @@ export class EditableTextBox extends TailwindElement {
         rows=${ifDefined(this.clamp)}
         @input=${this.handleInput}
         @focus=${() => {
+          console.log("focus");
           this.startEditing();
         }}
         @blur=${this.save}

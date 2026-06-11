@@ -13,7 +13,6 @@ export type ProseClampingEvent = CustomEvent<{
 
 /**
  * Display prose, like workflow and item descriptions, with line clamping.
- * Uses `overflow-hidden` as fallback
  *
  * @cssproperty --btrix-line-clamp
  * @cssPart base
@@ -28,10 +27,6 @@ export class Prose extends TailwindElement {
     :host {
       --btrix-line-clamp: 6;
       display: contents;
-    }
-
-    .clamp {
-      max-height: calc(var(--btrix-line-clamp) * 1.3125rem);
     }
   `;
 
@@ -58,13 +53,14 @@ export class Prose extends TailwindElement {
     return html`<div part="base">
         <pre
           class=${clsx(
-            this.clamped !== false && [
-              tw`line-clamp-[--btrix-line-clamp]`,
-              "clamp",
-            ],
+            this.clamped !== false && tw`line-clamp-[--btrix-line-clamp]`,
             tw`max-w-prose hyphens-auto whitespace-pre-line text-pretty font-sans leading-normal`,
           )}
           part="content"
+          @scroll=${(e: Event) => {
+            // Revert scroll that happens when tabbing to a focusable child
+            (e.currentTarget as HTMLPreElement).scrollTo(0, 0);
+          }}
         ><slot @slotchange=${this.onSlotChange}></slot></pre>
         <slot name="suffix"></slot>
       </div>
