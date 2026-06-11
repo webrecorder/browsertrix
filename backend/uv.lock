@@ -290,14 +290,16 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "boto3" },
     { name = "mypy" },
     { name = "pylint" },
+    { name = "ruff" },
+]
+test = [
+    { name = "boto3" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-timeout" },
     { name = "requests" },
-    { name = "ruff" },
 ]
 
 [package.metadata]
@@ -338,14 +340,16 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "boto3", specifier = ">=1.43.0" },
     { name = "mypy", specifier = ">=2.1.0" },
     { name = "pylint", specifier = ">=4.0.5" },
+    { name = "ruff", specifier = ">=0.15.12" },
+]
+test = [
+    { name = "boto3", specifier = ">=1.43.0" },
     { name = "pytest", specifier = ">=9.0.3" },
     { name = "pytest-asyncio", specifier = ">=1.3.0" },
     { name = "pytest-timeout", specifier = ">=2.4.0" },
     { name = "requests", specifier = ">=2.34.0" },
-    { name = "ruff", specifier = ">=0.15.12" },
 ]
 
 [[package]]
