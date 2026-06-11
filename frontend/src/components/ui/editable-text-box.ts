@@ -11,6 +11,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
 import type { BtrixInputEvent } from "@/events/btrix-input";
 import localize from "@/utils/localize";
+import { measureTextWithElement } from "@/utils/measure-text";
 import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
 
@@ -18,7 +19,8 @@ export type EditableTextBoxInputEvent = BtrixInputEvent<string>;
 export type EditableTextBoxChangeEvent = BtrixChangeEvent<string>;
 
 const newlineRegex = /[\r\n]+/gm;
-const WORD_MAX = 50;
+const WORD_MAX_WIDTH = 300;
+const WORD_MAX_LENGTH = 50;
 
 /**
  * In-place editor for multi-line text.
@@ -186,9 +188,16 @@ export class EditableTextBox extends TailwindElement {
       this.inputValue = this.value;
 
       if (this.value) {
-        this.containsLongWord = this.value
-          .split(/\s/)
-          .some((str) => str.length > WORD_MAX);
+        this.containsLongWord = this.value.split(/\s/).some((str) => {
+          const measurement = measureTextWithElement(str, this);
+
+          if (measurement.width) {
+            return measurement.width > WORD_MAX_WIDTH;
+          }
+
+          // Fallback to character length
+          return str.length > WORD_MAX_LENGTH;
+        });
       }
     }
   }
