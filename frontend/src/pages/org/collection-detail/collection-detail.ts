@@ -861,7 +861,7 @@ export class CollectionDetail extends BtrixElement {
       minLength=${1}
       maxLength=${COLLECTION_NAME_MAX_LENGTH}
       .value=${collection.name}
-      placeholder=${msg("Enter collection name")}
+      placeholder=${msg("Collection name")}
       @btrix-input=${(e: EditableTextFieldInputEvent) => {
         e.stopPropagation();
 
@@ -884,7 +884,7 @@ export class CollectionDetail extends BtrixElement {
     >
       <span
         slot="suffix"
-        class="ml-2 mt-0.5 inline-flex h-8 shrink-0 items-center"
+        class="ml-1 mt-0.5 inline-flex h-8 shrink-0 items-center"
       >
         <sl-icon
           name="pencil"
