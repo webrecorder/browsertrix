@@ -1,17 +1,25 @@
+import { provide } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import { html, type TemplateResult } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import type { SlChangeEvent, SlSwitch } from "@shoelace-style/shoelace";
+import { html, nothing, type TemplateResult } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import type { ReplayWebPage, RwpUrlChangeEvent } from "replaywebpage";
+
+import { collectionRwpContext } from "../org/collection-detail/context/collection-rwp";
+import type { CollectionSavedEvent } from "../org/collection-detail/types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { metadataColumn } from "@/layouts/collections/metadataColumn";
 import { page } from "@/layouts/page";
-import { RouteNamespace } from "@/routes";
-import type { PublicCollection } from "@/types/collection";
+import { CommonTab, OrgTab, RouteNamespace } from "@/routes";
+import { CollectionAccess, type PublicCollection } from "@/types/collection";
 import { formatRwpTimestamp } from "@/utils/replay";
-import { richText } from "@/utils/rich-text";
+
+import "@/features/collections/collection-page-header";
 
 enum Tab {
   Replay = "replay",
@@ -21,6 +29,9 @@ enum Tab {
 @localized()
 @customElement("btrix-collection")
 export class Collection extends BtrixElement {
+  @provide({ context: collectionRwpContext })
+  replayEmbed?: ReplayWebPage | null;
+
   @property({ type: String })
   orgSlug?: string;
 
@@ -29,6 +40,12 @@ export class Collection extends BtrixElement {
 
   @property({ type: String })
   tab: Tab | string = Tab.Replay;
+
+  @state()
+  private viewAsCrawler = false;
+
+  @state()
+  private showEditDialog = false;
 
   get canEditCollection() {
     return this.orgSlug === this.orgSlugState && this.appState.isCrawler;
@@ -72,12 +89,75 @@ export class Collection extends BtrixElement {
     args: () => [this.orgSlug, this.collectionSlug] as const,
   });
 
-  render() {
-    return this.collection.render({
-      complete: this.renderComplete,
-      error: this.renderError,
-    });
+  protected firstUpdated(): void {
+    this.viewAsCrawler = this.canEditCollection;
   }
+
+  render() {
+    return html`
+      ${when(this.canEditCollection, this.renderPreviewBanner)}
+      ${this.collection.render({
+        complete: this.renderComplete,
+        pending: () =>
+          this.collection.value
+            ? this.renderComplete(this.collection.value)
+            : // TODO Add skeleton layout
+              nothing,
+        error: this.renderError,
+      })}
+      ${when(
+        this.collection.value,
+        (collection) =>
+          html`<btrix-collection-edit-dialog
+            .collection=${collection}
+            ?open=${this.showEditDialog}
+            @sl-hide=${() => (this.showEditDialog = false)}
+            @btrix-collection-saved=${async (e: CollectionSavedEvent) => {
+              if (e.detail?.access === CollectionAccess.Private) {
+                // Redirect to private page
+                this.navigate.to(
+                  `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${collection.id}`,
+                );
+              } else {
+                void this.collection.run();
+              }
+            }}
+          ></btrix-collection-edit-dialog>`,
+      )}
+    `;
+  }
+
+  private readonly renderPreviewBanner = () => {
+    return html`
+      <!-- TODO consolidate with btrix-org-status-banner -->
+      <div class="border-b bg-slate-100 py-5">
+        <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
+          <sl-alert variant="primary" open>
+            <sl-icon slot="icon" name="eye-fill"></sl-icon>
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <strong class="font-semibold">
+                  ${msg("This is a shareable collection")}
+                </strong>
+                <p>${msg("You are viewing this page as an editor.")}</p>
+              </div>
+              <div>
+                <sl-switch
+                  size="small"
+                  ?checked=${!this.viewAsCrawler}
+                  @sl-change=${(e: SlChangeEvent) => {
+                    const el = e.currentTarget as SlSwitch;
+                    this.viewAsCrawler = !el.checked;
+                  }}
+                  >${msg("View as public")}</sl-switch
+                >
+              </div>
+            </div>
+          </sl-alert>
+        </div>
+      </div>
+    `;
+  };
 
   private readonly renderComplete = (collection: PublicCollection) => {
     const header: Parameters<typeof page>[0] = {
@@ -90,40 +170,30 @@ export class Collection extends BtrixElement {
               },
             ]
           : undefined,
-      title: collection.name || "",
-      actions: html`
-        <btrix-share-collection
-          orgSlug=${this.orgSlug || ""}
+      title: collection.name,
+      content: html`<btrix-collection-page-header
+          context="public"
+          ?canEdit=${this.viewAsCrawler}
           collectionId=${collection.id}
-          .collection=${collection}
-        ></btrix-share-collection>
-        ${when(
-          this.canEditCollection,
-          () => html`
-            <sl-button
-              href="${this.navigate
-                .orgBasePath}/collections/view/${collection.id}"
-              size="small"
-              variant="text"
-              class="-mx-3"
-              @click=${this.navigate.link}
-            >
-              ${msg("Go to Private Page")}
-            </sl-button>
-          `,
-        )}
-      `,
-    };
-
-    if (collection.caption) {
-      header.secondary = html`
-        <div
-          class="max-w-full hyphens-auto text-pretty break-words text-neutral-600"
+          collectionName=${collection.name}
+          slug=${collection.slug}
+          caption=${collection.caption ?? ""}
+          access=${collection.access}
+          collectionSize=${collection.totalSize}
+          homeUrl=${collection.homeUrl || ""}
+          homeUrlTs=${collection.homeUrlTs || ""}
+          thumbnailName=${collection.defaultThumbnailName || ""}
+          thumbnailPath=${collection.thumbnail?.path || ""}
+          pageCount=${collection.pageCount}
+          ?allowPublicDownload=${collection.allowPublicDownload}
+          @btrix-collection-saved=${(e: CollectionSavedEvent) => {
+            e.stopPropagation();
+            void this.collection.run();
+          }}
+          >${this.renderActions()}</btrix-collection-page-header
         >
-          ${richText(collection.caption)}
-        </div>
-      `;
-    }
+        <hr />`,
+    };
 
     const panel = (tab: Tab, content: TemplateResult) => html`
       <div
@@ -152,6 +222,36 @@ export class Collection extends BtrixElement {
       )}
     `;
   };
+
+  private renderActions() {
+    return html`<btrix-popover slot="actions" placement="bottom">
+      ${when(
+        this.collection.value,
+        (collection) => html`
+          <div slot="content">
+            <div class="text-sm font-semibold">
+              ${SelectCollectionAccess.Options[collection.access].label}
+            </div>
+            <p>${SelectCollectionAccess.Options[collection.access].detail}</p>
+          </div>
+        `,
+      )}
+      <sl-button
+        size="small"
+        @click=${() => {
+          this.showEditDialog = true;
+        }}
+      >
+        <sl-icon
+          slot="prefix"
+          name=${this.collection.value
+            ? SelectCollectionAccess.Options[this.collection.value.access].icon
+            : ""}
+        ></sl-icon>
+        ${msg("Share")}
+      </sl-button>
+    </btrix-popover>`;
+  }
 
   private readonly renderError = (error?: unknown) => {
     console.log("error", error);
@@ -199,7 +299,13 @@ export class Collection extends BtrixElement {
           replayBase="/replay/"
           noSandbox="true"
           noCache="true"
+          hideOffscreen="true"
           deepLink
+          @rwp-url-change=${(e: RwpUrlChangeEvent) => {
+            if (!this.replayEmbed) {
+              this.replayEmbed = e.currentTarget as ReplayWebPage;
+            }
+          }}
         ></replay-web-page>
       </section>
     `;
