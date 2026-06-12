@@ -16,6 +16,7 @@ import localize from "@/utils/localize";
 import { measureTextWithElement } from "@/utils/measure-text";
 import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
+import { definitelyUrl } from "@/utils/url-helpers";
 
 export type EditableTextBoxInputEvent = BtrixInputEvent<string>;
 export type EditableTextBoxChangeEvent = BtrixChangeEvent<string>;
@@ -203,7 +204,7 @@ export class EditableTextBox extends TailwindElement {
           }
 
           // Fallback to character length
-          return str.length > WORD_MAX_LENGTH;
+          return str.length > WORD_MAX_LENGTH && !definitelyUrl(str);
         });
       }
     }
@@ -229,7 +230,7 @@ export class EditableTextBox extends TailwindElement {
         class=${clsx(
           tw`part-[base]:flex part-[content]:max-w-full part-[base]:gap-1.5`,
           this.editing && tw`hidden`,
-          this.containsLongWord && tw`break-all`,
+          this.containsLongWord && tw`part-[content]:break-all`,
         )}
         style=${styleMap({
           "--btrix-line-clamp": this.clamp,
@@ -260,6 +261,7 @@ export class EditableTextBox extends TailwindElement {
             ? tw`[field-sizing:content]`
             : tw`absolute inset-0 outline-1 outline-offset-[--sl-focus-ring-offset] outline-[--sl-input-border-color] hover:outline`,
           !this.valid && tw`outline outline-danger`,
+          this.containsLongWord && tw`break-all`,
         )}
         spellcheck="${this.editing ? this.spellcheck : false}"
         placeholder=${ifDefined(
