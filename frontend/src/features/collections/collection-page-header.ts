@@ -200,6 +200,7 @@ export class CollectionPageHeader extends BtrixElement {
         thumbnailPath=${ifDefined(this.thumbnailPath)}
         .thumbnailSource=${this.thumbnailSource}
         pageCount=${ifDefined(this.pageCount)}
+        ?canEdit=${this.canEdit}
       ></btrix-select-collection-thumbnail>
     `;
   };

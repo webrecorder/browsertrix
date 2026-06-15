@@ -17,6 +17,9 @@ export enum Thumbnail {
 
 export const DEFAULT_THUMBNAIL = Thumbnail.Cyan;
 
+/**
+ * @cssPart base
+ */
 @localized()
 @customElement("btrix-collection-thumbnail")
 export class CollectionThumbnail extends BtrixElement {
@@ -58,6 +61,7 @@ export class CollectionThumbnail extends BtrixElement {
           ? msg(str`Thumbnail image for “${this.collectionName}” collection`)
           : msg("Thumbnail image"))}
         src=${this.src || DEFAULT_THUMBNAIL_VARIANT.path}
+        part="base"
       />
     `;
   }
