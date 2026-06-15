@@ -842,6 +842,7 @@ export class CollectionDetail extends BtrixElement {
         homeUrlTs=${ifDefined(collection.homeUrlTs || undefined)}
         thumbnailName=${ifDefined(collection.defaultThumbnailName || undefined)}
         thumbnailPath=${ifDefined(collection.thumbnail?.path)}
+        .thumbnailSource=${collection.thumbnailSource}
         pageCount=${collection.pageCount || 0}
         @btrix-collection-saved=${() => {
           void this.fetchCollection();

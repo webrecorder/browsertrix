@@ -11,7 +11,6 @@ import { repeat } from "lit/directives/repeat.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
-import orderBy from "lodash/fp/orderBy";
 import queryString from "query-string";
 
 import { CollectionThumbnail, type Thumbnail } from "./collection-thumbnail";
@@ -24,8 +23,10 @@ import {
 } from "@/pages/org/collection-detail/context/collection-rwp";
 import { getThumbnailBlob } from "@/pages/org/collection-detail/utils/getThumbnailBlob";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type { PublicCollection } from "@/types/collection";
 import type { PageUrlCount } from "@/types/page";
 import type { UnderlyingFunction } from "@/types/utils";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 import "@/features/collections/collection-thumbnail";
@@ -63,6 +64,9 @@ export class SelectCollectionThumbnail extends BtrixElement {
   @property({ type: String })
   thumbnailPath?: string;
 
+  @property({ type: Object, hasChanged: isNotEqual })
+  thumbnailSource?: PublicCollection["thumbnailSource"];
+
   @property({ type: Number })
   pageCount?: number;
 
@@ -95,23 +99,19 @@ export class SelectCollectionThumbnail extends BtrixElement {
     task: async ([id], { signal }) => {
       if (!id) return;
 
-      let { items } = await this.getUrlCounts(
+      const { items } = await this.getUrlCounts(
         { id, pageSize: SEARCHABLE_MAX },
         signal,
       );
 
       // FIXME API doesn't currently return total so length instead
       if (items.length < SEARCHABLE_MAX) {
-        // FIXME API doesn't currently support sorting by newest snapshot
-        items = orderBy<PageUrlCount>(
-          ({ snapshots }) => snapshots[snapshots.length - 1].ts,
-        )("desc")(items);
-
         if (this.#fuse) {
           this.#fuse.setCollection(items);
         } else {
           this.#fuse = new Fuse<PageUrlCount>(items, {
             ...defaultFuseOptions,
+            shouldSort: true,
             keys: ["url"],
           });
         }
@@ -435,7 +435,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
     url,
     timestamp,
   }: PageSnapshotOption) => {
-    const selected = url === "TODO";
+    const selected = url === this.thumbnailSource?.url;
     const thumbnail = (url?: string) =>
       url
         ? html`<div slot="prefix" class="w-28">
@@ -480,6 +480,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
           </div>`;
     const asyncScreenshotUrl = this.screenshotsTask.value?.get(pageId)?.url;
     const updating = this.updateThumbnailTask.status === TaskStatus.PENDING;
+    const isHomepage = url === this.homeUrl && timestamp === this.homeUrlTs;
 
     return html`<sl-menu-item
       class=${clsx(
@@ -502,12 +503,16 @@ export class SelectCollectionThumbnail extends BtrixElement {
         ></sl-skeleton>`,
       )}
       ${when(
-        url === this.homeUrl && timestamp === this.homeUrlTs,
-        () => html`<btrix-badge>${msg("Homepage")}</btrix-badge>`,
+        isHomepage,
+        () =>
+          html`<btrix-badge variant="success">${msg("Homepage")}</btrix-badge>`,
       )}
       <div>
         <btrix-code
-          class="line-clamp-2 text-xs part-[base]:break-all"
+          class=${clsx(
+            tw`text-xs`,
+            isHomepage ? tw`truncate` : tw`line-clamp-2 part-[base]:break-all`,
+          )}
           language="url"
           value=${url}
         ></btrix-code>
