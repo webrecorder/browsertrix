@@ -146,7 +146,9 @@ export class Collection extends BtrixElement {
         <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
           <sl-alert variant="primary" open>
             <sl-icon slot="icon" name="eye-fill"></sl-icon>
-            <div class="flex items-center justify-between gap-3">
+            <div
+              class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5"
+            >
               <div>
                 <strong class="font-semibold">
                   ${msg("This is a shareable collection")}
@@ -155,6 +157,7 @@ export class Collection extends BtrixElement {
               </div>
               <div>
                 <sl-switch
+                  class="part-[label]:whitespace-nowrap"
                   size="small"
                   ?checked=${!this.viewAsCrawler}
                   @sl-change=${(e: SlChangeEvent) => {

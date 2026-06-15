@@ -134,13 +134,13 @@ export class CollectionPageHeader extends BtrixElement {
         <div
           class=${clsx(
             tw`flex items-center gap-2.5`,
-            canEdit ? [showAccess && tw`mb-1.5`] : tw``,
+            canEdit && showAccess && tw`mb-1.5`,
           )}
         >
           ${pageTitle(
             when(this.collectionName, this.renderName),
             tw`mb-2 h-6 w-60`,
-            tw`grid`,
+            clsx(tw`grid`, canEdit ? tw`mt-0.5` : tw`min-h-10 items-center`),
           )}
         </div>
         ${showAccess
@@ -306,6 +306,7 @@ export class CollectionPageHeader extends BtrixElement {
         this.context === "private"
           ? tw`[--btrix-line-clamp:2]`
           : tw`[--btrix-line-clamp:3]`,
+        !this.canEdit && tw`md:part-[content]:pr-4`,
       )}
       >${richText(text, {
         linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
