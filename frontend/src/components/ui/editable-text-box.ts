@@ -199,12 +199,15 @@ export class EditableTextBox extends TailwindElement {
         this.containsLongWord = this.value.split(/\s/).some((str) => {
           const measurement = measureTextWithElement(str, this);
 
+          // URLs get truncated by `richText()`
+          if (definitelyUrl(str)) return;
+
           if (measurement.width) {
             return measurement.width > WORD_MAX_WIDTH;
           }
 
           // Fallback to character length
-          return str.length > WORD_MAX_LENGTH && !definitelyUrl(str);
+          return str.length > WORD_MAX_LENGTH;
         });
       }
     }
