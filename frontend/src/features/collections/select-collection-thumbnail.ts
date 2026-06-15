@@ -407,12 +407,18 @@ export class SelectCollectionThumbnail extends BtrixElement {
       class="part-[form-control-label]:sr-only"
       id="thumb-search"
       label=${msg("Page URL")}
-      placeholder=${msg("Enter page URL")}
+      placeholder=${this.#fuse
+        ? msg("Search for page by URL")
+        : msg("Enter page URL starting with http")}
       size="small"
       role="combobox"
       aria-autocomplete="list"
       aria-expanded="true"
       aria-controls="thumb-listbox"
+      @keydown=${(e: KeyboardEvent) => {
+        // Prevent controlling dropdown with keyboard
+        e.stopPropagation();
+      }}
       @sl-input=${this.onSearchInput as UnderlyingFunction<
         typeof this.onSearchInput
       >}
