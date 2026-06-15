@@ -1593,10 +1593,6 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
 
     thumbnailSource = collection["thumbnailSource"]
 
-    assert thumbnailSource["url"]
-    assert thumbnailSource["urlTs"]
-    assert thumbnailSource["urlPageId"]
-
     assert thumbnailSource["url"] == "https://example.com/"
     assert thumbnailSource["urlTs"] == "2024-08-16T08:00:21.601000Z"
     assert thumbnailSource["urlPageId"] == "1bba4aba-d5be-4943-ad48-d6710633d754"
@@ -1676,6 +1672,14 @@ def test_list_public_colls_home_url_thumbnail():
             assert thumbnail["size"]
             assert thumbnail["mime"]
 
+            thumbnailSource = coll["thumbnailSource"]
+
+            assert thumbnailSource["url"] == "https://example.com/"
+            assert thumbnailSource["urlTs"] == "2024-08-16T08:00:21.601000Z"
+            assert (
+                thumbnailSource["urlPageId"] == "1bba4aba-d5be-4943-ad48-d6710633d754"
+            )
+
             for field in non_public_image_fields:
                 assert field not in thumbnail
 
@@ -1726,6 +1730,12 @@ def test_get_public_collection(default_org_id):
     assert thumbnail["hash"]
     assert thumbnail["size"]
     assert thumbnail["mime"]
+
+    thumbnailSource = coll["thumbnailSource"]
+
+    assert thumbnailSource["url"] == "https://example.com/"
+    assert thumbnailSource["urlTs"] == "2024-08-16T08:00:21.601000Z"
+    assert thumbnailSource["urlPageId"] == "1bba4aba-d5be-4943-ad48-d6710633d754"
 
     for field in NON_PUBLIC_IMAGE_FIELDS:
         assert field not in thumbnail

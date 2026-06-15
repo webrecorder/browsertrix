@@ -1867,6 +1867,7 @@ class PublicCollOut(BaseMongoModel):
 
     resources: List[CrawlFileOut] = []
     thumbnail: Optional[PublicUserFileOut] = None
+    thumbnailSource: Optional[CollectionThumbnailSource] = None
     defaultThumbnailName: Optional[str] = None
 
     allowPublicDownload: bool = True
