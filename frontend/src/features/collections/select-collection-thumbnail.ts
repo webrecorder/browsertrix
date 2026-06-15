@@ -506,7 +506,11 @@ export class SelectCollectionThumbnail extends BtrixElement {
         () => html`<btrix-badge>${msg("Homepage")}</btrix-badge>`,
       )}
       <div>
-        <btrix-code language="url" value=${url} noWrap truncate></btrix-code>
+        <btrix-code
+          class="line-clamp-2 text-xs part-[base]:break-all"
+          language="url"
+          value=${url}
+        ></btrix-code>
       </div>
       ${when(
         timestamp,
