@@ -2,7 +2,7 @@ import { provide } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlChangeEvent, SlSwitch } from "@shoelace-style/shoelace";
-import { html, nothing, type TemplateResult } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -42,7 +42,7 @@ export class Collection extends BtrixElement {
   tab: Tab | string = Tab.Replay;
 
   @state()
-  private viewAsCrawler = false;
+  private viewAsCrawler?: boolean;
 
   @state()
   private showEditDialog = false;
@@ -89,8 +89,20 @@ export class Collection extends BtrixElement {
     args: () => [this.orgSlug, this.collectionSlug] as const,
   });
 
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("appState.userInfo")) {
+      this.setCrawlerView();
+    }
+  }
+
   protected firstUpdated(): void {
-    this.viewAsCrawler = this.canEditCollection;
+    this.setCrawlerView();
+  }
+
+  private setCrawlerView() {
+    if (this.appState.userInfo && this.viewAsCrawler === undefined) {
+      this.viewAsCrawler = this.canEditCollection;
+    }
   }
 
   render() {
