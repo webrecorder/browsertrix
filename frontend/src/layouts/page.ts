@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { html, nothing, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
@@ -40,7 +41,10 @@ export function page(
     ></btrix-document-title>
 
     <div
-      class="mx-auto box-border flex min-h-full w-full max-w-screen-desktop flex-1 flex-col gap-3 p-3 lg:px-10 lg:pb-10"
+      class=${clsx(
+        tw`mx-auto box-border flex min-h-full w-full max-w-screen-desktop flex-1 flex-col gap-3 p-3 lg:px-10 lg:pb-10`,
+        !header.breadcrumbs && tw`lg:py-10`,
+      )}
     >
       ${header.breadcrumbs
         ? html`<div class="mb-7">${pageNav(header.breadcrumbs)}</div>`
