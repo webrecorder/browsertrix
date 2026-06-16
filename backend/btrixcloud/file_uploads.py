@@ -228,7 +228,11 @@ class FileUploadOps:
             created=dt_now(),
         )
 
-        upload_logger = logger.bind(upload_type=upload_type)
+        upload_logger = logger.bind(
+            upload_type=upload_type,
+            original_filename=filename,
+            new_filename=new_filename,
+        )
 
         async def stream_iter():
             """iterate over each chunk and compute and digest + total size"""
