@@ -191,7 +191,7 @@ class CollIndexOperator(BaseOperator):
                     "coll_index_removed",
                     coll_id=coll_id,
                     oid=oid,
-                    redis_pod=redis_pod,
+                    redis_name=redis_name,
                     unstructured_message=f"CollIndex removed: {coll_id}",
                 )
                 return {
