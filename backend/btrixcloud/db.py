@@ -319,17 +319,6 @@ async def drop_indexes(mdb):
         except InvalidName:
             continue
 
-        try:
-            current_coll = mdb[collection]
-            await current_coll.drop_indexes()
-            logger.info(
-                "db_indexes_dropped",
-                collection=collection,
-                unstructured_message=f"Indexes for collection {collection} dropped",
-            )
-        except InvalidName:
-            continue
-
 
 # ============================================================================
 # pylint: disable=too-many-arguments
