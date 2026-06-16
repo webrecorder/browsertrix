@@ -699,14 +699,15 @@ class CrawlOperator(BaseOperator):
 
         crawl_id = crawl.id
 
+        sd_logger = logger.bind(crawl_id=crawl_id)
+
         new_scale = actual_scale
         for i in range(actual_scale - 1, desired_scale - 1, -1):
             name = f"crawl-{crawl_id}-{i}"
             pod = pods.get(name)
             if pod:
-                logger.debug(
+                sd_logger.debug(
                     "pod_scale_down_attempting",
-                    crawl_id=crawl_id,
                     pod_index=i,
                     unstructured_message=f"Attempting scaling down of pod {i}",
                 )
@@ -717,9 +718,8 @@ class CrawlOperator(BaseOperator):
                 # if status key doesn't exist, this pod never actually ran, so just scale down
                 if not await redis.hexists(f"{crawl_id}:status", name):
                     new_scale = i
-                    logger.debug(
+                    sd_logger.debug(
                         "pod_scaled_down_no_previous",
-                        crawl_id=crawl_id,
                         prev_index=i + 1,
                         new_index=i,
                         unstructured_message=(
@@ -729,9 +729,8 @@ class CrawlOperator(BaseOperator):
 
                 elif pod and pod["status"].get("phase") == "Succeeded":
                     new_scale = i
-                    logger.debug(
+                    sd_logger.debug(
                         "pod_scaled_down_completed",
-                        crawl_id=crawl_id,
                         prev_index=i + 1,
                         new_index=i,
                         unstructured_message=f"Scaled down pod index {i + 1} -> {i}, pod completed",
