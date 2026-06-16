@@ -412,6 +412,7 @@ class CrawlConfigOps:
                 logger.warning(
                     "crawl_run_now_blocked",
                     error_detail=e.detail,
+                    config_id=crawlconfig.id,
                     config_name=crawlconfig.name,
                     unstructured_message=f"Can't run crawl now: {e.detail}",
                 )
