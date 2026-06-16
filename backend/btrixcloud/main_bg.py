@@ -35,7 +35,10 @@ async def main():
         set_log_context(oid=oid)
 
     crawl_logger = logger.bind(
-        crawl_type=crawl_type, crawl_id=crawl_id, coll_id=coll_id
+        job_type=job_type,
+        crawl_type=crawl_type,
+        crawl_id=crawl_id,
+        coll_id=coll_id
     )
 
     # pylint: disable=import-outside-toplevel
@@ -79,7 +82,6 @@ async def main():
         except Exception:
             crawl_logger.exception(
                 "bg_job_failed",
-                job_type="optimize_pages",
                 unstructured_message="optimize_pages failed",
             )
             return 1
@@ -92,7 +94,6 @@ async def main():
         except Exception:
             crawl_logger.exception(
                 "bg_job_failed",
-                job_type="cleanup_seed_files",
                 unstructured_message="cleanup_seed_files failed",
             )
             return 1
@@ -121,7 +122,6 @@ async def main():
         except Exception:
             crawl_logger.exception(
                 "bg_job_failed",
-                job_type="delete_org_and_data",
                 unstructured_message="delete_org_and_data failed",
             )
             return 1
@@ -134,7 +134,6 @@ async def main():
         except Exception:
             crawl_logger.exception(
                 "bg_job_failed",
-                job_type="recalculate_storage",
                 unstructured_message="recalculate_storage failed",
             )
             return 1
@@ -152,7 +151,6 @@ async def main():
         except Exception:
             crawl_logger.exception(
                 "bg_job_failed",
-                job_type="readd_org_pages",
                 unstructured_message="readd_org_pages failed",
             )
             return 1
@@ -190,14 +188,12 @@ async def main():
         except Exception:
             crawl_logger.exception(
                 "bg_job_failed",
-                job_type="update_collection_stats",
                 unstructured_message="update_collection_stats failed",
             )
             return 1
 
     crawl_logger.critical(
         "unsupported_job_type",
-        job_type=job_type,
         unstructured_message=f"Provided job type {job_type} not currently supported",
     )
     return 1
