@@ -361,7 +361,7 @@ class BaseCrawlOps:
         self, crawl_id: str, org: Organization, type_: TYPE_CRAWL_TYPES
     ):
         """Replicate crawl files to configured replica locations"""
-        repl_logger = logger.bind(oid=org.id, type=type_)
+        repl_logger = logger.bind(crawl_id=crawl_id, oid=org.id, type=type_)
 
         try:
             crawl = await self.get_base_crawl(crawl_id, org, type_)
@@ -369,7 +369,6 @@ class BaseCrawlOps:
         except Exception:
             repl_logger.warning(
                 "crawl_replicate_skipped_not_found",
-                crawl_id=crawl_id,
                 unstructured_message=f"Not replicating files for crawl {crawl_id}: crawl not found",
             )
             return

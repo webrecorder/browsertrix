@@ -115,7 +115,7 @@ class BackgroundJobOps:
                 UUID(job.object_id), job.file_path, job.replica_storage
             )
         if not res:
-            logger.info(
+            logger.debug(
                 "file_deleted_before_replication",
                 object_id=job.object_id,
                 file_path=job.file_path,

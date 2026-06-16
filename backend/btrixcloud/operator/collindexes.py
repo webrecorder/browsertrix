@@ -187,7 +187,7 @@ class CollIndexOperator(BaseOperator):
                     is_done = True
 
             if is_done:
-                logger.info(
+                logger.debug(
                     "coll_index_removed",
                     coll_id=coll_id,
                     oid=oid,
@@ -365,7 +365,7 @@ class CollIndexOperator(BaseOperator):
         oid: UUID,
     ):
         """set state after updating db"""
-        logger.info(
+        logger.debug(
             "coll_index_state_set",
             prev_state=status.state,
             new_state=state,
@@ -381,7 +381,7 @@ class CollIndexOperator(BaseOperator):
 
     async def do_delete(self, coll_id: UUID):
         """delete the CollIndex object"""
-        logger.info(
+        logger.debug(
             "coll_index_deleting",
             coll_id=coll_id,
             unstructured_message=f"Deleting collindex {coll_id}",
@@ -482,7 +482,7 @@ class CollIndexOperator(BaseOperator):
 
         if used < capacity and (float(used) / capacity) > USED_DISK_THRESHOLD:
             status.storageDesired = gb_storage_ceil(float(used) / USED_DISK_TARGET)
-            logger.info(
+            logger.debug(
                 "coll_index_capacity_expanded",
                 disk_used=used,
                 disk_capacity=capacity,
@@ -578,7 +578,7 @@ class CollIndexOperator(BaseOperator):
         """create sync job to save redis index data to s3 storage"""
 
         # update state immediately to speed up cleanup
-        logger.info(
+        logger.debug(
             "coll_index_state_set_saved",
             prev_state=status.state,
             coll_id=spec.id,

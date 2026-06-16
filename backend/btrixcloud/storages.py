@@ -827,7 +827,7 @@ class StorageOps:
             retry = 0
             count += 1
 
-            logger.info(
+            logger.debug(
                 "wacz_processing",
                 count=count,
                 total=total,

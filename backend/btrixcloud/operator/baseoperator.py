@@ -80,7 +80,7 @@ class K8sOpAPI(K8sAPI):
 
         self.max_crawler_memory_size = max_crawler_memory_size or crawler_memory
 
-        logger.info(
+        logger.debug(
             "crawler_resources_computed",
             crawler_cpu=crawler_cpu,
             qa_cpu=qa_cpu,
@@ -148,7 +148,7 @@ class K8sOpAPI(K8sAPI):
         p["profile_cpu"] = profile_cpu
         p["profile_memory"] = profile_memory
 
-        logger.info(
+        logger.debug(
             "profile_resources_computed",
             profile_cpu=profile_cpu,
             profile_memory=profile_memory,
@@ -171,7 +171,7 @@ class K8sOpAPI(K8sAPI):
         self.enable_auto_resize = self.has_pod_metrics and is_bool(
             os.environ.get("ENABLE_AUTO_RESIZE_CRAWLERS")
         )
-        logger.info(
+        logger.debug(
             "pod_init",
             has_pod_metrics=self.has_pod_metrics,
             enable_auto_resize=self.enable_auto_resize,

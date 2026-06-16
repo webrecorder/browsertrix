@@ -470,7 +470,7 @@ class CrawlOperator(BaseOperator):
         if has_pod:
             restart_reason = pod_info.should_restart_pod()
             if restart_reason:
-                logger.info(
+                logger.debug(
                     "redis_pod_restarting",
                     name=name,
                     restart_reason=restart_reason,
@@ -494,7 +494,7 @@ class CrawlOperator(BaseOperator):
             and crawler_image
             and crawler_image_below_minimum(crawler_image, min_autoclick_crawler_image)
         ):
-            logger.info(
+            logger.debug(
                 "autoclick_behavior_removed",
                 behavior=behaviors,
                 crawler_image=crawler_image,
@@ -543,7 +543,7 @@ class CrawlOperator(BaseOperator):
         params["config"] = json.dumps(raw_config)
 
         if config_update_needed:
-            logger.info(
+            logger.debug(
                 "crawl_configmap_updated",
                 crawl_id=crawl.id,
                 unstructured_message=f"Updating config for {crawl.id}",
@@ -557,7 +557,7 @@ class CrawlOperator(BaseOperator):
 
         configmap = children[CMAP].get(name)
         if configmap and self.is_configmap_update_needed("qa-config.json", configmap):
-            logger.info(
+            logger.debug(
                 "qa_configmap_refreshed",
                 name=name,
                 unstructured_message=f"Refreshing QA configmap for QA run: {name}",
@@ -636,6 +636,7 @@ class CrawlOperator(BaseOperator):
         if workers_changed:
             logger.info(
                 "crawler_workers_changed",
+                name=name,
                 pod_index=i,
                 last_workers=pod_info.lastWorkers,
                 new_workers=workers,
@@ -703,8 +704,9 @@ class CrawlOperator(BaseOperator):
             name = f"crawl-{crawl_id}-{i}"
             pod = pods.get(name)
             if pod:
-                logger.info(
+                logger.debug(
                     "pod_scale_down_attempting",
+                    crawl_id=crawl_id,
                     pod_index=i,
                     unstructured_message=f"Attempting scaling down of pod {i}",
                 )
@@ -715,8 +717,9 @@ class CrawlOperator(BaseOperator):
                 # if status key doesn't exist, this pod never actually ran, so just scale down
                 if not await redis.hexists(f"{crawl_id}:status", name):
                     new_scale = i
-                    logger.info(
+                    logger.debug(
                         "pod_scaled_down_no_previous",
+                        crawl_id=crawl_id,
                         prev_index=i + 1,
                         new_index=i,
                         unstructured_message=(
@@ -726,8 +729,9 @@ class CrawlOperator(BaseOperator):
 
                 elif pod and pod["status"].get("phase") == "Succeeded":
                     new_scale = i
-                    logger.info(
+                    logger.debug(
                         "pod_scaled_down_completed",
+                        crawl_id=crawl_id,
                         prev_index=i + 1,
                         new_index=i,
                         unstructured_message=f"Scaled down pod index {i + 1} -> {i}, pod completed",
@@ -986,6 +990,7 @@ class CrawlOperator(BaseOperator):
         for name in pod_names:
             logger.error(
                 "failed_crawl_pod_status",
+                crawl_id=crawl.id,
                 pod_name=name,
                 pod_status=pods[name]["status"],
                 unstructured_message=(
@@ -1108,8 +1113,9 @@ class CrawlOperator(BaseOperator):
                     if last_active_time and (
                         (dt_now() - last_active_time).total_seconds() > REDIS_TTL
                     ):
-                        logger.info(
+                        logger.debug(
                             "redis_paused_no_crawler_pods",
+                            crawl_id=crawl.id,
                             redis_ttl=REDIS_TTL,
                             unstructured_message=(
                                 f"Pausing redis, no running crawler pods for >{REDIS_TTL} secs"
@@ -1346,8 +1352,9 @@ class CrawlOperator(BaseOperator):
 
         exec_time = 0
         max_duration = 0
-        logger.info(
+        logger.debug(
             "exec_time_updated",
+            crawl_id=crawl.id,
             reason=reason,
             now=now,
             update_start_time=update_start_time,
@@ -1393,6 +1400,7 @@ class CrawlOperator(BaseOperator):
                 if update_start_time and end_time and end_time < update_start_time:
                     logger.debug(
                         "pod_exec_time_skip_counted",
+                        crawl_id=crawl.id,
                         pod_name=name,
                         pod_state=pod_state,
                         end_time=end_time,
@@ -1408,6 +1416,7 @@ class CrawlOperator(BaseOperator):
                 duration = int((end_time - start_time).total_seconds())
                 logger.debug(
                     "pod_exec_time_computed",
+                    crawl_id=crawl.id,
                     pod_name=name,
                     pod_state=pod_state,
                     end_time=end_time,
@@ -1429,6 +1438,7 @@ class CrawlOperator(BaseOperator):
 
         logger.debug(
             "pod_exec_time_total_computed",
+            crawl_id=crawl.id,
             total_exec_time=status.crawlExecTime,
             incremented_by=exec_time,
             unstructured_message=(
@@ -1503,7 +1513,7 @@ class CrawlOperator(BaseOperator):
                     return
 
                 pod.newMemory = new_memory
-                logger.info(
+                logger.debug(
                     "pod_memory_scaled_up",
                     mem_usage=mem_usage,
                     pod_name=name,
@@ -1557,6 +1567,7 @@ class CrawlOperator(BaseOperator):
             if not redis:
                 logger.exception(
                     "crawler_instance_crashed",
+                    crawl_id=crawl_id,
                     error=log,
                     unstructured_message=f"Crawl crash: {log}",
                 )
@@ -1659,6 +1670,7 @@ class CrawlOperator(BaseOperator):
 
         logger.info(
             "crawl_pause_requested",
+            crawl_id=crawl.id,
             reason=reason,
             unstructured_message=f"request pause for {reason}",
         )
@@ -1763,8 +1775,9 @@ class CrawlOperator(BaseOperator):
                     pod_info.used.storage * self.min_avail_storage_ratio / 1_000_000_000
                 )
                 pod_info.newStorage = f"{new_storage}Gi"
-                logger.info(
+                logger.debug(
                     "pod_storage_adjusting",
+                    crawl_id=crawl.id,
                     new_storage=pod_info.newStorage,
                     pod_key=key,
                     unstructured_message=(
@@ -1930,6 +1943,7 @@ class CrawlOperator(BaseOperator):
         except Exception as e:
             logger.exception(
                 "dedupe_stats_update_failed",
+                crawl_id=crawl.id,
                 unstructured_message=f"add_crawl_dedupe_stats error: {e}",
             )
 
