@@ -35,10 +35,7 @@ async def main():
         set_log_context(oid=oid)
 
     crawl_logger = logger.bind(
-        job_type=job_type,
-        crawl_type=crawl_type,
-        crawl_id=crawl_id,
-        coll_id=coll_id
+        job_type=job_type, crawl_type=crawl_type, crawl_id=crawl_id, coll_id=coll_id
     )
 
     # pylint: disable=import-outside-toplevel
