@@ -6,11 +6,9 @@
 # ex: enable only 'en' and 'es' locales
 # locales_enabled: "en,es"
 
-# sensitive information in logs will be redacted
-# unless btrix_env is set to "development".
-# when running without an email sender configured, invite tokens and
-# password reset URLs will only be available in logs, so without
-# setting btrix_env to "development", these will be redacted.
+# Sensitive information in logs will be redacted unless btrix_env is set to "development".
+# When running without an email sender configured, invite tokens and password reset URLs will
+# only be available in logs, so without setting btrix_env to "development", these will be redacted.
 # btrix_env: "development"
 
 # Crawler Settings
@@ -118,8 +116,8 @@ backend_pull_policy: "IfNotPresent"
 
 backend_password_secret: "PASSWORD!"
 
-# log level for backend, operator, and background jobs (DEBUG, INFO, WARNING, ERROR)
-log_level: "DEBUG"
+# log level for backend, operator, and background jobs (DEBUG, INFO, WARNING, ERROR) - default is DEBUG
+# log_level: "DEBUG"
 
 # log format: uses a human-readable text format by default, set to "json" to emit structured JSON instead
 # log_format: "json"
