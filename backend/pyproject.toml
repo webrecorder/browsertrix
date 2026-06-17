@@ -28,7 +28,7 @@ dependencies = [
     "redis>=5.0.0",
     "remotezip>=0.12.3",
     "requests>=2.34.0",
-    "setuptools<82.0.0",
+    "setuptools<83.0.0",
     "stream-zip",
     "structlog>=26.1.0",
     "types-aiobotocore-s3>=3.7.0",
