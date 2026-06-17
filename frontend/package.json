@@ -66,7 +66,7 @@
     "lit": "~3.2.0",
     "lit-shared-state": "^0.2.1",
     "lodash": "^4.17.21",
-    "micromark": "^4.0.0",
+    "micromark": "^4.0.2",
     "micromark-extension-gfm-strikethrough": "^2.0.0",
     "nanoid": "^5.1.5",
     "node-fetch": "^3.1.0",
