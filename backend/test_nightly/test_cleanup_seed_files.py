@@ -1,11 +1,14 @@
 import os
 import time
 
+import structlog
 import pytest
 import requests
 
 from .conftest import API_PREFIX
 from .utils import read_in_chunks
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -97,7 +100,7 @@ def test_seed_file_cleanup_cron_job(
 
     assert data["total"] > 0
     for job in data["items"]:
-        print(job)
+        logger.info("seed_file_cleanup_job", job=job, unstructured_message=f"{job}")
         assert job["id"]
         assert job["type"] == "cleanup-seed-files"
         assert job["success"]

@@ -2,8 +2,13 @@
 Migration 0006 - Precomputing workflow crawl stats
 """
 
+import structlog
+
 from btrixcloud.crawlconfigs import stats_recompute_all
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MIGRATION_VERSION = "0006"
 
@@ -28,9 +33,13 @@ class Migration(BaseMigration):
         crawls = self.mdb["crawls"]
 
         if self.crawl_config_ops is None:
-            print(
-                f"Unable to set run migration {MIGRATION_VERSION}, missing crawl_config_ops",
-                flush=True,
+            logger.warning(
+                "migration_missing_dependency",
+                migration_version=MIGRATION_VERSION,
+                dependency="crawl_config_ops",
+                unstructured_message=(
+                    f"Unable to run migration {MIGRATION_VERSION}, missing crawl_config_ops"
+                ),
             )
             return
 
@@ -41,5 +50,9 @@ class Migration(BaseMigration):
                     self.crawl_config_ops, crawl_configs, crawls, config_id
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(f"Unable to update workflow {config_id}: {err}", flush=True)
+            except Exception:
+                logger.exception(
+                    "migration_workflow_update_error",
+                    config_id=config_id,
+                    unstructured_message=f"Unable to update workflow {config_id}",
+                )

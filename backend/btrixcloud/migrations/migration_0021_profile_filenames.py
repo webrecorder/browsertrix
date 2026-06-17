@@ -2,8 +2,12 @@
 Migration 0021 - Profile filenames
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Profile
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0021"
 
@@ -35,8 +39,9 @@ class Migration(BaseMigration):
                         {"_id": profile.id},
                         {"$set": {"resource.filename": f"profiles/{filename}"}},
                     )
-                except Exception as err:
-                    print(
-                        f"Error updating filename for profile {profile.name}: {err}",
-                        flush=True,
+                except Exception:
+                    logger.exception(
+                        "migration_profile_filename_error",
+                        profile_name=profile.name,
+                        unstructured_message=f"Error updating filename for profile {profile.name}",
                     )

@@ -5,8 +5,12 @@ Migration 0058 - Fix failed background jobs with success and finished unset
 import os
 from datetime import timedelta
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import dt_now
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0058"
 
@@ -51,10 +55,7 @@ class Migration(BaseMigration):
                 },
             )
             updated = res.modified_count
-            print(f"{updated} background job db records updated", flush=True)
+            logger.info("updated_bg_job_records", count=updated)
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            print(
-                f"Error updating failed background jobs: {err}",
-                flush=True,
-            )
+        except Exception:
+            logger.exception("failed_to_update_bg_job_records")

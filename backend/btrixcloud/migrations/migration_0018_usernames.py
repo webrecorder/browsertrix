@@ -2,10 +2,15 @@
 Migration 0018 - Store crawl and workflow userName directly in db
 """
 
+import structlog
+
 from btrixcloud.emailsender import EmailSender
 from btrixcloud.invites import init_invites
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.users import init_user_manager
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MIGRATION_VERSION = "0018"
 
@@ -42,9 +47,12 @@ class Migration(BaseMigration):
                     {"$set": {"userName": user.name}},
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Unable to update userName for crawl {crawl_id}: {err}", flush=True
+            except Exception:
+                logger.warning(
+                    "migration_username_update_warning",
+                    crawl_id=crawl_id,
+                    exc_info=True,
+                    unstructured_message=f"Unable to update userName for crawl {crawl_id}",
                 )
 
         async for config in mdb_configs.find({}):
@@ -81,8 +89,10 @@ class Migration(BaseMigration):
                     },
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Unable to update usernames for crawlconfig {cid}: {err}",
-                    flush=True,
+            except Exception:
+                logger.warning(
+                    "migration_crawlconfig_username_warning",
+                    config_id=cid,
+                    exc_info=True,
+                    unstructured_message=f"Unable to update usernames for crawlconfig {cid}",
                 )

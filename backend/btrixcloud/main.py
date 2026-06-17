@@ -7,6 +7,7 @@ import os
 import sys
 from typing import List, Optional
 
+import structlog
 from fastapi import FastAPI, HTTPException
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
@@ -14,6 +15,7 @@ from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
 from pydantic import BaseModel
 
+from .logger import create_request_logging_middleware, init_logging
 from .auth import JWT_TOKEN_LIFETIME
 from .background_jobs import init_background_jobs_api
 from .basecrawls import init_base_crawls_api
@@ -33,15 +35,24 @@ from .storages import init_storages_api
 from .subs import init_subs_api
 from .uploads import init_uploads_api
 from .users import init_user_manager, init_users_api
-from .utils import is_bool, register_exit_handler, run_async_task
+from .utils import btrix_env, is_bool, register_exit_handler, run_async_task
 from .version import __version__
 from .webhooks import init_event_webhooks_api
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 API_PREFIX = "/api"
 
 OPENAPI_URL = API_PREFIX + "/openapi.json"
 
-app_root = FastAPI(docs_url=None, redoc_url=None, OPENAPI_URL=OPENAPI_URL)
+app_root = FastAPI(
+    docs_url=None,
+    redoc_url=None,
+    OPENAPI_URL=OPENAPI_URL,
+    version=__version__,
+)
+
+app_root.middleware("http")(create_request_logging_middleware(logger))
 
 db_inited = {"inited": False}
 
@@ -128,6 +139,8 @@ class SettingsResponse(BaseModel):
 def main() -> None:
     """init browsertrix api"""
 
+    logger.info("starting", btrix_env=btrix_env)
+
     app = APIRouter()
 
     email = EmailSender()
@@ -183,9 +196,12 @@ def main() -> None:
 
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
-        print(
-            "Sorry, the Browsertrix Backend must be run inside a Kubernetes environment.\
-             Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
+        logger.critical(
+            "kubernetes_not_detected",
+            message=(
+                "Sorry, the Browsertrix Backend must be run inside a Kubernetes environment. "
+                "Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
+            ),
         )
         sys.exit(1)
 
@@ -363,5 +379,6 @@ def main() -> None:
 @app_root.on_event("startup")
 async def startup():
     """init on startup"""
+    init_logging()
     register_exit_handler()
     main()

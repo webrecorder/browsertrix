@@ -2,7 +2,12 @@
 Migration 0014 - collections to collectionIDs
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MIGRATION_VERSION = "0014"
 
@@ -24,8 +29,8 @@ class Migration(BaseMigration):
         try:
             await crawls.update_many({}, {"$rename": {"collections": "collectionIds"}})
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            print(
-                f"Error renaming crawl 'collections' to 'collectionIds': {err}",
-                flush=True,
+        except Exception:
+            logger.exception(
+                "migration_rename_field_error",
+                unstructured_message="Error renaming crawl 'collections' to 'collectionIds'",
             )

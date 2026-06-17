@@ -14,7 +14,13 @@ RUN yarn build:api
 FROM node:22-alpine AS runtime
 
 ARG GIT_COMMIT_HASH
-ENV NODE_ENV=production
+ARG GIT_BRANCH_NAME
+ARG VERSION
+
+ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
+    GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
+    VERSION=${VERSION} \
+    NODE_ENV=production
 
 WORKDIR /app
 

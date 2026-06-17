@@ -3,9 +3,11 @@ BaseMigration class to subclass in each migration module
 """
 
 import os
-import traceback
 
+import structlog
 from pymongo.errors import OperationFailure
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 class MigrationError(Exception):
@@ -43,8 +45,15 @@ class BaseMigration:
     async def migrate_up_needed(self, ignore_rerun=False):
         """Verify migration up is needed and return boolean indicator."""
         db_version = await self.get_db_version()
-        print(f"Current database version before migration: {db_version}")
-        print(f"Migration available to apply: {self.migration_version}")
+        logger.info(
+            "migration_version_check",
+            db_version=db_version,
+            available_version=self.migration_version,
+            unstructured_message=(
+                f"Current database version before migration: {db_version}\n"
+                f"Migration available to apply: {self.migration_version}"
+            ),
+        )
         # Databases from prior to migrations will not have a version set.
         if not db_version:
             return True
@@ -56,7 +65,12 @@ class BaseMigration:
             and self.rerun_from_migration
             and self.rerun_from_migration <= self.migration_version
         ):
-            print(f"Rerunning migrations from: {self.migration_version}")
+            logger.info(
+                "migration_rerunning",
+                migration_version=self.migration_version,
+                rerun_from=self.rerun_from_migration,
+                unstructured_message=f"Rerunning migrations from: {self.migration_version}",
+            )
             return True
         return False
 
@@ -69,18 +83,33 @@ class BaseMigration:
     async def run(self):
         """Run migrations."""
         if await self.migrate_up_needed():
-            print("Performing migration up", flush=True)
+            logger.info(
+                "migration_performing",
+                migration_version=self.migration_version,
+                unstructured_message="Performing migration up",
+            )
             try:
                 await self.migrate_up()
                 await self.set_db_version()
-            except OperationFailure as err:
-                print(f"Error running migration {self.migration_version}: {err}")
-                traceback.print_exc()
+            except OperationFailure:
+                logger.exception(
+                    "migration_error",
+                    migration_version=self.migration_version,
+                    unstructured_message=f"Error running migration {self.migration_version}",
+                )
                 return False
 
         else:
-            print("No migration to apply - skipping", flush=True)
+            logger.info(
+                "migration_skipped",
+                migration_version=self.migration_version,
+                unstructured_message="No migration to apply - skipping",
+            )
             return False
 
-        print(f"Database successfully migrated to {self.migration_version}", flush=True)
+        logger.info(
+            "migration_completed",
+            migration_version=self.migration_version,
+            unstructured_message=f"Database successfully migrated to {self.migration_version}",
+        )
         return True

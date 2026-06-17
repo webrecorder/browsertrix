@@ -3,11 +3,11 @@
 import datetime
 import os
 import re
-import traceback
 from typing import Literal
 from urllib.parse import urlsplit
 from uuid import UUID
 
+import structlog
 from kubernetes.utils import parse_quantity
 from pydantic import BaseModel
 from redis.asyncio.client import Redis
@@ -30,6 +30,8 @@ from btrixcloud.utils import (
 
 from .baseoperator import BaseOperator
 from .models import BTRIX_API, CJS, JOB, POD, MCBaseRequest, MCSyncData
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 # Threshold used / capacity at which a resize should happen
 USED_DISK_THRESHOLD = 0.70
@@ -185,7 +187,13 @@ class CollIndexOperator(BaseOperator):
                     is_done = True
 
             if is_done:
-                print(f"CollIndex removed: {coll_id}")
+                logger.debug(
+                    "coll_index_removed",
+                    coll_id=coll_id,
+                    oid=oid,
+                    redis_name=redis_name,
+                    unstructured_message=f"CollIndex removed: {coll_id}",
+                )
                 return {
                     "status": status.dict(),
                     "children": [],
@@ -221,9 +229,13 @@ class CollIndexOperator(BaseOperator):
                 await self.update_state(data, coll_id, oid, status)
 
         # pylint: disable=broad-exception-caught
-        except Exception as e:
-            print(e)
-            traceback.print_exc()
+        except Exception:
+            logger.exception(
+                "coll_index_sync_failed",
+                coll_id=coll_id,
+                oid=oid,
+                redis_pod=redis_pod,
+            )
 
             # load redis pvc and/or redis pod itself
         if status.state != "idle":
@@ -353,7 +365,13 @@ class CollIndexOperator(BaseOperator):
         oid: UUID,
     ):
         """set state after updating db"""
-        print(f"Setting coll index state {status.state} -> {state} {coll_id}")
+        logger.debug(
+            "coll_index_state_set",
+            prev_state=status.state,
+            new_state=state,
+            coll_id=coll_id,
+            unstructured_message=f"Setting coll index state {status.state} -> {state} {coll_id}",
+        )
         status.state = state
         status.lastStateChangeAt = date_to_str(dt_now())
 
@@ -363,7 +381,11 @@ class CollIndexOperator(BaseOperator):
 
     async def do_delete(self, coll_id: UUID):
         """delete the CollIndex object"""
-        print(f"Deleting collindex {coll_id}")
+        logger.debug(
+            "coll_index_deleting",
+            coll_id=coll_id,
+            unstructured_message=f"Deleting collindex {coll_id}",
+        )
         await self.k8s.delete_custom_object(f"collindex-{coll_id}", "collindexes")
 
     async def do_save_redis(self, coll_id: UUID, oid: UUID, status: CollIndexStatus):
@@ -384,7 +406,10 @@ class CollIndexOperator(BaseOperator):
         # pylint: disable=broad-exception-caught
         except Exception:
             await self.set_state("ready", status, coll_id, oid)
-            traceback.print_exc()
+            logger.exception(
+                "coll_index_save_redis_failed",
+                unstructured_message="Error during save redis",
+            )
 
     async def is_bgsave_done(self, redis: Redis) -> bool:
         """return true if bgsave has successfully finished"""
@@ -429,9 +454,12 @@ class CollIndexOperator(BaseOperator):
             return True
 
         # pylint: disable=broad-exception-caught
-        except Exception as e:
-            print(e)
-            traceback.print_exc()
+        except Exception:
+            logger.exception(
+                "coll_index_stats_update_failed",
+                coll_id=coll_id,
+                status=status,
+            )
             return False
 
     async def check_disk_size(self, redis: Redis, status: CollIndexStatus):
@@ -454,12 +482,18 @@ class CollIndexOperator(BaseOperator):
 
         if used < capacity and (float(used) / capacity) > USED_DISK_THRESHOLD:
             status.storageDesired = gb_storage_ceil(float(used) / USED_DISK_TARGET)
-            print("used / capacity", used, capacity, float(used) / capacity)
-            print(
-                (
-                    "Expanding Dedupe Index Capacity "
-                    + f"{status.storageCapacity} -> {status.storageDesired}"
-                )
+            logger.debug(
+                "coll_index_capacity_expanded",
+                disk_used=used,
+                disk_capacity=capacity,
+                usage_ratio=float(used) / capacity,
+                prev_capacity=status.storageCapacity,
+                new_capacity=status.storageDesired,
+                unstructured_message=(
+                    f"used / capacity {used} {capacity} {float(used) / capacity}\n"
+                    f"Expanding Dedupe Index Capacity {status.storageCapacity}"
+                    f" -> {status.storageDesired}"
+                ),
             )
 
     def get_related(self, data: MCBaseRequest):
@@ -544,7 +578,12 @@ class CollIndexOperator(BaseOperator):
         """create sync job to save redis index data to s3 storage"""
 
         # update state immediately to speed up cleanup
-        print(f"Setting coll index state {status.state} -> saved {spec.id}")
+        logger.debug(
+            "coll_index_state_set_saved",
+            prev_state=status.state,
+            coll_id=spec.id,
+            unstructured_message=f"Setting coll index state {status.state} -> saved {spec.id}",
+        )
         status.state = "saved"
 
         finished_at = str_to_date(status.index.savedAt)
@@ -569,9 +608,13 @@ class CollIndexOperator(BaseOperator):
             size = int(m.group(1))
             hash_ = m.group(2)
 
-        print("UPLOAD LOGS")
-        print("-----------")
-        print(logs, size, hash_)
+        logger.debug(
+            "coll_index_upload_stats",
+            logs=logs,
+            size=size,
+            hash=hash_,
+            unstructured_message=f"UPLOAD LOGS\n-----------\n{logs} {size} {hash_}",
+        )
 
         org = await self.coll_ops.orgs.get_org_by_id(oid)
         filename = self.get_index_storage_filename(coll_id, org)

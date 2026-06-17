@@ -1,6 +1,7 @@
 """Basic Email Sending Support"""
 
 import os
+import re
 import smtplib
 import ssl
 from datetime import datetime
@@ -10,6 +11,7 @@ from email.mime.text import MIMEText
 from typing import Literal, Optional, Union
 from uuid import UUID
 
+import structlog
 import aiohttp
 from fastapi import HTTPException
 
@@ -21,7 +23,32 @@ from .models import (
     Organization,
     Subscription,
 )
-from .utils import get_origin, is_bool
+from .utils import get_origin, is_bool, is_production
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
+# JWTs have three base64url parts separated by dots and always start with eyJ
+_JWT_RE = re.compile(r"eyJ[a-zA-Z0-9_-]{5,}\.[a-zA-Z0-9_-]{5,}\.[a-zA-Z0-9_-]{5,}")
+
+# Invite URLs contain a UUID token after /join/ or /invite/accept/
+_INVITE_UUID_RE = re.compile(
+    r"(/join/|/invite/accept/)([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})",
+    re.IGNORECASE,
+)
+
+
+def _redact_email_text(text: str) -> str:
+    """Redact sensitive tokens from rendered email text before logging"""
+
+    def _jwt_repl(match: "re.Match[str]") -> str:
+        return "x" * len(match.group())
+
+    def _uuid_repl(match: "re.Match[str]") -> str:
+        return match.group(1) + "x" * len(match.group(2))
+
+    text = _JWT_RE.sub(_jwt_repl, text)
+    text = _INVITE_UUID_RE.sub(_uuid_repl, text)
+    return text
 
 
 # pylint: disable=too-few-public-methods, too-many-instance-attributes
@@ -53,6 +80,37 @@ class EmailSender:
 
         self.log_sent_emails = is_bool(os.environ.get("LOG_SENT_EMAILS"))
 
+        if self.smtp_server and self.log_sent_emails and is_production:
+            logger.info(
+                "email_logging_redaction",
+                details="SMTP server is configured but LOG_SENT_EMAILS is enabled. Sensitive "
+                "information such as invite tokens and password reset URLs will be redacted. "
+                "Set `btrix_env` to 'development' to allow logging secrets as plain text.",
+            )
+        elif not self.smtp_server and self.log_sent_emails and is_production:
+            logger.warning(
+                "email_logging_redaction",
+                details="SMTP server is not configured. Sensitive information such as invite  "
+                "tokens and password reset URLs will be redacted. Set `btrix_env` to "
+                "'development' to allow logging secrets as plain text.",
+            )
+        elif self.smtp_server and self.log_sent_emails and not is_production:
+            logger.info(
+                "email_logging_redaction",
+                details="SMTP server is configured but LOG_SENT_EMAILS is enabled, and "
+                "Browsertrix is not in production mode. Sensitive information such as "
+                "invite tokens and password reset URLs will NOT be redacted in logs. "
+                "Set `btrix_env` to 'production' to enable logging protections.",
+            )
+        elif not self.smtp_server and self.log_sent_emails and not is_production:
+            logger.info(
+                "email_logging_redaction",
+                details="SMTP server is not configured, and Browsertrix is not in production "
+                "mode. Sensitive information such as invite tokens and password reset "
+                "URLs will NOT be redacted in logs. "
+                "Set `btrix_env` to 'production' to enable logging protections.",
+            )
+
         email_template_endpoint = os.environ.get("EMAIL_TEMPLATE_ENDPOINT")
         if not email_template_endpoint:
             raise ValueError(
@@ -82,13 +140,22 @@ class EmailSender:
                     subject = json["subject"]
 
                     if self.log_sent_emails:
-                        print(text, flush=True)
+                        if is_production:
+                            log_text = _redact_email_text(text)
+                        else:
+                            log_text = text
+                        logger.info(
+                            "email_log",
+                            email_text=log_text,
+                        )
 
                     if not self.smtp_server:
-                        print(
-                            f'Email: created "{name}" msg for "{receiver}", '
-                            f"but not sent (no SMTP server set)",
-                            flush=True,
+                        logger.info(
+                            "email_created_not_sent_no_smtp",
+                            template_name=name,
+                            receiver=receiver,
+                            unstructured_message=f'Email: created "{name}" msg for "{receiver}", '
+                            "but not sent (no SMTP server set)",
                         )
                         return
 
@@ -119,7 +186,10 @@ class EmailSender:
                         # server.sendmail(self.sender, receiver, message)
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            print("Error fetching email template", exc)
+            logger.exception(
+                "email_template_fetch_error",
+                unstructured_message=f"Error fetching email template {exc}",
+            )
             raise exc
 
     async def send_user_validation(

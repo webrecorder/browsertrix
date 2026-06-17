@@ -4,8 +4,13 @@ Migration 0011 - Remove None CRAWL_TIMEOUT values from configmaps
 
 import os
 
+import structlog
+
 from btrixcloud.k8sapi import K8sAPI
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MIGRATION_VERSION = "0011"
 
@@ -40,7 +45,8 @@ class Migration(BaseMigration):
                 )
 
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Error modifying configmap CRAWL_TIMEOUT value: {err}", flush=True
+            except Exception:
+                logger.exception(
+                    "migration_configmap_timeout_error",
+                    unstructured_message="Error modifying configmap CRAWL_TIMEOUT value",
                 )

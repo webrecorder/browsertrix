@@ -2,7 +2,11 @@
 Migration 0035 -- fix model for failed logins
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0035"
 
@@ -27,10 +31,14 @@ class Migration(BaseMigration):
                 [{"$set": {"attempted": "$attempted.attempted"}}],
             )
             updated = res.modified_count
-            print(f"{updated} failed logins fixed", flush=True)
+            logger.info(
+                "failed_logins_fixed",
+                updated=updated,
+                unstructured_message=f"{updated} failed logins fixed",
+            )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            print(
-                f"Error fixing failed logins: {err}",
-                flush=True,
+        except Exception:
+            logger.exception(
+                "error_fixing_failed_logins",
+                unstructured_message="Error fixing failed logins",
             )

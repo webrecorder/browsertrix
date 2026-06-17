@@ -2,10 +2,13 @@
 Migration 0055 - Recompute workflow crawl stats
 """
 
+import structlog
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from btrixcloud.crawlconfigs import stats_recompute_all
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0055"
 
@@ -30,9 +33,12 @@ class Migration(BaseMigration):
         crawls = self.mdb["crawls"]
 
         if self.crawl_config_ops is None:
-            print(
-                f"Unable to set run migration {MIGRATION_VERSION}, missing crawl_config_ops",
-                flush=True,
+            logger.warning(
+                "crawlconfig_stats_recompute_missing_ops",
+                migration_version=MIGRATION_VERSION,
+                unstructured_message=(
+                    f"Unable to set run migration {MIGRATION_VERSION}, missing crawl_config_ops"
+                ),
             )
             return
 
@@ -45,10 +51,23 @@ class Migration(BaseMigration):
                 )
                 count += 1
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(f"Unable to update workflow {config_id}: {err}", flush=True)
+            except Exception:
+                logger.warning(
+                    "workflow_stats_update_warning",
+                    config_id=config_id,
+                    exc_info=True,
+                    unstructured_message=f"Unable to update workflow {config_id}",
+                )
 
             if count % 100 == 0:
-                print(f"Migrated {count} workflows")
+                logger.info(
+                    "workflows_migrated_progress",
+                    count=count,
+                    unstructured_message=f"Migrated {count} workflows",
+                )
 
-        print(f"Migrated {count} workflows total, done")
+        logger.info(
+            "workflows_migrated_total",
+            count=count,
+            unstructured_message=f"Migrated {count} workflows total, done",
+        )

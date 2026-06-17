@@ -2,7 +2,11 @@
 Migration 0036 -- collection access
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0036"
 
@@ -28,10 +32,10 @@ class Migration(BaseMigration):
                 {"$set": {"access": "private"}, "$unset": {"isPublic": 1}},
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            print(
-                f"Error migrating private collections: {err}",
-                flush=True,
+        except Exception:
+            logger.exception(
+                "error_migrating_private_collections",
+                unstructured_message="Error migrating private collections",
             )
 
         # Set public collections to unlisted
@@ -41,8 +45,8 @@ class Migration(BaseMigration):
                 {"$set": {"access": "unlisted"}, "$unset": {"isPublic": 1}},
             )
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            print(
-                f"Error migrating public unlisted collections: {err}",
-                flush=True,
+        except Exception:
+            logger.exception(
+                "error_migrating_public_unlisted_collections",
+                unstructured_message="Error migrating public unlisted collections",
             )

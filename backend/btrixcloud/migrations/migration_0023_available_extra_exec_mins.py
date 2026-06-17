@@ -2,7 +2,12 @@
 Migration 0023 -- Available extra/gifted minutes
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MIGRATION_VERSION = "0023"
 
@@ -43,10 +48,11 @@ class Migration(BaseMigration):
                     },
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Error adding exec seconds available fields to org {oid}: {err}",
-                    flush=True,
+            except Exception:
+                logger.exception(
+                    "migration_exec_seconds_available_error",
+                    org_id=oid,
+                    unstructured_message=f"Error adding exec seconds available fields to org {oid}",
                 )
 
         async for org in mdb_orgs.find({"monthlyExecSeconds": None}):
@@ -57,8 +63,11 @@ class Migration(BaseMigration):
                     [{"$set": {"monthlyExecSeconds": "$crawlExecSeconds"}}],
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Error copying crawlExecSeconds to monthlyExecSeconds for org {oid}: {err}",
-                    flush=True,
+            except Exception:
+                logger.exception(
+                    "migration_exec_seconds_copy_error",
+                    org_id=oid,
+                    unstructured_message=(
+                        f"Error copying crawlExecSeconds to monthlyExecSeconds for org {oid}"
+                    ),
                 )

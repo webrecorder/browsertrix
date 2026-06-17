@@ -43,7 +43,7 @@ def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_con
             assert data["tags"] == PROFILE_TAGS
             assert data["userid"]
             assert data["oid"] == default_org_id
-            assert data.get("origins") or data.get("origins") == []
+            assert "origins" in data and isinstance(data["origins"], list)
             assert data["created"]
             assert data["createdBy"]
             assert data["createdByName"] == "admin"
@@ -63,7 +63,7 @@ def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_con
             assert resource["size"]
             assert resource["storage"]
             assert resource["storage"]["name"]
-            assert resource.get("replicas") or resource.get("replicas") == []
+            assert "replicas" in resource and isinstance(resource["replicas"], list)
 
             assert "crawlconfigs" not in data
             assert data["inUse"] == True
@@ -103,7 +103,7 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert profile_2["tags"] == PROFILE_2_TAGS
             assert profile_2["userid"]
             assert profile_2["oid"] == default_org_id
-            assert profile_2.get("origins") or data.get("origins") == []
+            assert "origins" in profile_2 and isinstance(profile_2["origins"], list)
             assert profile_2["created"]
             assert profile_2["createdBy"]
             assert profile_2["createdByName"] == "admin"
@@ -119,7 +119,7 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert resource["size"]
             assert resource["storage"]
             assert resource["storage"]["name"]
-            assert resource.get("replicas") or resource.get("replicas") == []
+            assert "replicas" in resource and isinstance(resource["replicas"], list)
 
             # First profile should be listed second by default because it was
             # modified less recently
@@ -130,7 +130,7 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert profile_1["tags"] == PROFILE_TAGS
             assert profile_1["userid"]
             assert profile_1["oid"] == default_org_id
-            assert profile_1.get("origins") or data.get("origins") == []
+            assert "origins" in profile_1 and isinstance(profile_1["origins"], list)
             assert profile_1["created"]
             assert profile_1["createdBy"]
             assert profile_1["createdByName"] == "admin"
@@ -146,7 +146,7 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert resource["size"]
             assert resource["storage"]
             assert resource["storage"]["name"]
-            assert resource.get("replicas") or resource.get("replicas") == []
+            assert "replicas" in resource and isinstance(resource["replicas"], list)
 
             break
         except:

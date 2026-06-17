@@ -9,11 +9,14 @@ import zipfile
 from tempfile import TemporaryFile
 from zipfile import ZIP_STORED, ZipFile
 
+import structlog
 import pytest
 import requests
 
 from .conftest import API_PREFIX, FINISHED_STATES, HOST_PREFIX
 from .test_collections import UPDATED_NAME as COLLECTION_NAME
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 wacz_path = None
 wacz_size = None
@@ -496,7 +499,11 @@ def test_download_wacz_crawls_as_single_wacz(
             logs_found = False
 
             for filename in contents:
-                print(filename)
+                logger.info(
+                    "zip_contents_filename",
+                    filename=filename,
+                    unstructured_message=f"{filename}",
+                )
                 if filename.startswith("archive/") and filename.endswith(".warc.gz"):
                     archives_found = True
                 if filename.startswith("indexes/"):

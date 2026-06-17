@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 from uuid import UUID
 
+import structlog
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from iso639 import is_language
@@ -21,6 +22,12 @@ from packaging.version import parse as parse_version
 from pymongo.collation import Collation
 from pymongo.errors import DuplicateKeyError
 from slugify import slugify
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
+
+btrix_env = os.environ.get("BTRIX_ENV", "production").lower()
+is_production = btrix_env == "production"
 
 default_origin = os.environ.get("APP_ORIGIN", "")
 
@@ -74,7 +81,9 @@ def register_exit_handler() -> None:
 
     def exit_handler():
         """sigterm handler"""
-        print("SIGTERM received, exiting")
+        logger.info(
+            "sigterm_received", unstructured_message="SIGTERM received, exiting"
+        )
         sys.exit(1)
 
     loop.add_signal_handler(signal.SIGTERM, exit_handler)
@@ -90,9 +99,10 @@ def parse_jsonl_log_messages(log_lines: list[str]) -> list[dict]:
             result = json.loads(log_line)
             parsed_log_lines.append(result)
         except json.JSONDecodeError as err:
-            print(
-                f"Error decoding json-l log line: {log_line}. Error: {err}",
-                flush=True,
+            logger.exception(
+                "jsonl_decode_error",
+                log_line=log_line,
+                unstructured_message=f"Error decoding json-l log line: {log_line}. Error: {err}",
             )
     return parsed_log_lines
 
@@ -233,7 +243,12 @@ def crawler_image_below_minimum(crawler_image: str, min_image: str):
         min_image_version = parse_version(min_image.split(":")[1])
     # pylint: disable=broad-exception-caught
     except Exception:
-        print("Unable to compare crawler versions, allowing", flush=True)
+        logger.warning(
+            "crawler_version_comparison_failed",
+            crawler_image=crawler_image,
+            min_image=min_image,
+            unstructured_message="Unable to compare crawler versions, allowing",
+        )
         return False
 
     if crawler_image_version < min_image_version:

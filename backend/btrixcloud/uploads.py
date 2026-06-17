@@ -2,10 +2,11 @@
 
 import uuid
 from io import BufferedReader
-from typing import Any, List, Optional
+from typing import Any, AsyncGenerator, Callable, List, Optional
 from urllib.parse import unquote
 from uuid import UUID
 
+import structlog
 from fastapi import Depends, File, HTTPException, UploadFile
 from starlette.requests import Request
 
@@ -30,6 +31,8 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import CHUNK_SIZE
 from .utils import dt_now, run_async_task
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 # ============================================================================
@@ -72,6 +75,8 @@ class UploadOps(BaseCrawlOps):
 
         id_ = "upload-" + str(uuid.uuid4()) if not replaceId else replaceId
 
+        upload_logger = logger.bind(crawl_id=id_)
+
         prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{id_}"
 
         file_prep = FilePreparer(prefix, filename)
@@ -82,7 +87,10 @@ class UploadOps(BaseCrawlOps):
                 file_prep.add_chunk(chunk)
                 yield chunk
 
-        print("Stream Upload Start", flush=True)
+        upload_logger.debug(
+            "stream_upload_start",
+            unstructured_message="Stream Upload Start",
+        )
 
         if not await self.storage_ops.do_upload_multipart(
             org,
@@ -90,7 +98,10 @@ class UploadOps(BaseCrawlOps):
             stream_iter(),
             MIN_UPLOAD_PART_SIZE,
         ):
-            print("Stream Upload Failed", flush=True)
+            upload_logger.error(
+                "stream_upload_failed",
+                unstructured_message="Stream Upload Failed",
+            )
             raise HTTPException(status_code=400, detail="upload_failed")
 
         files = [file_prep.get_crawl_file(org.storage)]
@@ -100,8 +111,11 @@ class UploadOps(BaseCrawlOps):
                 await self._delete_crawl_files(prev_upload, org)
                 await self.page_ops.delete_crawl_pages(prev_upload.id, org.id)
             # pylint: disable=broad-exception-caught
-            except Exception as exc:
-                print(f"Error handling previous upload: {exc}", flush=True)
+            except Exception:
+                upload_logger.exception(
+                    "previous_upload_cleanup_error",
+                    unstructured_message="Error handling previous upload",
+                )
 
         return await self._create_upload(
             files, name, description, collections, tags, id_, org, user
@@ -243,7 +257,7 @@ class UploadFileReader(BufferedReader):
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name
-def init_uploads_api(app, user_dep, *args):
+def init_uploads_api(app, user_dep: Callable[[str], AsyncGenerator[User, None]], *args):
     """uploads api"""
 
     ops = UploadOps(*args)

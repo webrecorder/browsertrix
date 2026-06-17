@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING, List, Optional, Union, cast
 from uuid import UUID, uuid4
 
+import structlog
 import aiohttp
 import backoff
 from fastapi import APIRouter, Depends, HTTPException
@@ -27,6 +28,8 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now, run_async_task
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .crawls import CrawlOps
@@ -148,18 +151,23 @@ class EventWebhookOps:
         self, org: Organization, notification: WebhookNotification
     ):
         """Send notification"""
+        notify_logger = logger.bind(notification_id=notification.id, oid=org.id)
+
         if not org.webhookUrls:
-            print(
-                "Webhook URLs not configured - skipping sending notification",
-                flush=True,
+            notify_logger.info(
+                "webhook_urls_not_configured",
+                unstructured_message="Webhook URLs not configured - skipping sending notification",
             )
             return
 
         webhook_url = getattr(org.webhookUrls, notification.event)
         if not webhook_url:
-            print(
-                f"Webhook URL for event {notification.event} not configured, skipping",
-                flush=True,
+            notify_logger.info(
+                "webhook_url_not_configured_for_event",
+                event_type=notification.event,
+                unstructured_message=(
+                    f"Webhook URL for event {notification.event} not configured, skipping"
+                ),
             )
             return
 
@@ -183,8 +191,12 @@ class EventWebhookOps:
                     )
 
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            print(f"Webhook notification failed: {err}", flush=True)
+        except Exception:
+            notify_logger.exception(
+                "webhook_notification_failed",
+                event_type=notification.event,
+                unstructured_message="Webhook notification failed",
+            )
             await self.webhooks.find_one_and_update(
                 {"_id": notification.id},
                 {
@@ -203,7 +215,14 @@ class EventWebhookOps:
         """Create webhook notification for finished crawl/upload."""
         crawl = await self.crawl_ops.get_crawl_out(crawl_id, org)
         if not crawl:
-            print(f"Crawl {crawl_id} not found, skipping event webhook", flush=True)
+            logger.warning(
+                "crawl_not_found_for_webhook",
+                crawl_id=crawl_id,
+                oid=org.id,
+                event_type=event,
+                body=body,
+                unstructured_message=f"Crawl {crawl_id} not found, skipping event webhook",
+            )
             return
 
         body.resources = crawl.resources or []
@@ -285,8 +304,14 @@ class EventWebhookOps:
             )
 
         # pylint: disable=broad-exception-caught
-        except Exception as err:
-            print(f"Error trying to get QA run resources: {err}", flush=True)
+        except Exception:
+            logger.exception(
+                "qa_run_resources_error",
+                oid=oid,
+                qa_run_id=qa_run.id,
+                crawl_id=crawl_id,
+                unstructured_message="Error trying to get QA run resources",
+            )
 
         notification = WebhookNotification(
             id=uuid4(),

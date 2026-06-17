@@ -4,11 +4,14 @@ import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from uuid import UUID, uuid4
 
+import structlog
 import pymongo
 from fastapi import HTTPException
 
 from .models import CrawlLogLine, Organization
 from .pagination import DEFAULT_PAGE_SIZE
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -99,9 +102,15 @@ class CrawlLogOps:
             return res is not None
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            print(
-                f"Error adding log line for crawl {crawl_id} to database: {err}",
-                flush=True,
+            logger.exception(
+                "crawl_log_insert_failed",
+                crawl_id=crawl_id,
+                oid=oid,
+                qa_run_id=qa_run_id,
+                log_line=log_line,
+                unstructured_message=(
+                    f"Error adding log line for crawl {crawl_id} to database: {err}"
+                ),
             )
             return False
 

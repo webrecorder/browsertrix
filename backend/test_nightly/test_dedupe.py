@@ -2,10 +2,14 @@ import random
 import string
 import time
 
+import structlog
 import pytest
 import requests
 
 from .conftest import API_PREFIX
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MAX_ATTEMPTS = 24
 
@@ -150,7 +154,7 @@ def test_first_crawl_stats(
     assert data.get("indexLastSavedAt") == None
 
     stats = data.get("indexStats")
-    print(stats)
+    logger.info("dedupe_stats", stats=stats, unstructured_message=f"{stats}")
     assert stats["conservedSize"] > 2500
     assert stats["dupeUrls"] == 2
     assert stats["totalCrawlSize"] > 51000000
@@ -186,7 +190,7 @@ def test_second_crawl_stats(
     assert data.get("indexLastSavedAt") == last_saved_at
 
     stats = data.get("indexStats")
-    print(stats)
+    logger.info("dedupe_stats", stats=stats, unstructured_message=f"{stats}")
     assert stats["conservedSize"] > 49000000
     assert stats["dupeUrls"] == 52
     assert stats["totalCrawlSize"] > 53000000
@@ -294,7 +298,7 @@ def test_import_into_another_coll(
     )
 
     stats = data.get("indexStats")
-    print(stats)
+    logger.info("dedupe_stats", stats=stats, unstructured_message=f"{stats}")
     assert stats == {**orig_stats, "updateProgress": 1.0}
 
 
@@ -331,7 +335,7 @@ def test_remove_crawl_from_collection(
     )
 
     stats = data.get("indexStats")
-    print(stats)
+    logger.info("dedupe_stats", stats=stats, unstructured_message=f"{stats}")
     assert stats["conservedSize"] > 49000000
     assert stats["dupeUrls"] == 52
     assert stats["totalCrawlSize"] > 53000000
@@ -367,7 +371,7 @@ def test_purge_index(
 
     # back to stats after only 1 crawl
     stats = data.get("indexStats")
-    print(stats)
+    logger.info("dedupe_stats", stats=stats, unstructured_message=f"{stats}")
     assert stats["conservedSize"] > 2500
     assert stats["conservedSize"] <= 3000
     assert stats["dupeUrls"] == 2

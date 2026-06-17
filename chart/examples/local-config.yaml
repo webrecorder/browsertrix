@@ -11,6 +11,17 @@
 # Uncomment to set custom organization name
 # default_org: "My Local Organization"
 
+# Sensitive information in logs will be redacted unless btrix_env is set to "development".
+# When running without an email sender configured, invite tokens and password reset URLs will
+# only be available in logs, so without setting btrix_env to "development", these will be redacted.
+# btrix_env: "development"
+
+# log level for backend, operator, and background jobs (DEBUG, INFO, WARNING, ERROR) - default is DEBUG
+# log_level: "DEBUG"
+
+# log format: uses a human-readable text format by default, set to "json" to emit structured JSON instead
+# log_format: "json"
+
 # use version specified in values.yaml, uncomment to use :latest release instead
 # backend_image: docker.io/webrecorder/browsertrix-backend:latest
 # emails_image: docker.io/webrecorder/browsertrix-emails:latest

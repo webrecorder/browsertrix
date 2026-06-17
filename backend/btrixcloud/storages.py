@@ -14,7 +14,9 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     AsyncIterator,
+    Callable,
     Dict,
     Iterable,
     Iterator,
@@ -26,6 +28,7 @@ from typing import (
 from urllib.parse import urlsplit
 from zipfile import ZipInfo
 
+import structlog
 import aiobotocore.session
 import pymongo
 import requests
@@ -61,6 +64,8 @@ if TYPE_CHECKING:
     from .orgs import OrgOps
 else:
     OrgOps = CrawlManager = object
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 CHUNK_SIZE = 1024 * 256
 
@@ -153,7 +158,10 @@ class StorageOps:
             # previous run
             # if so, just delete this index (as this collection is temporary anyway)
             # and recreate
-            print("Recreating presigned_urls index")
+            logger.info(
+                "presigned_urls_index_recreating",
+                unstructured_message="Recreating presigned_urls index",
+            )
             await self.presigned_urls.drop_indexes()
 
             await self.presigned_urls.create_index(
@@ -446,6 +454,8 @@ class StorageOps:
 
             upload_id = mup_resp["UploadId"]
 
+            mp_logger = logger.bind(upload_id=upload_id, oid=org.id)
+
             parts = []
             part_number = 1
 
@@ -461,9 +471,11 @@ class StorageOps:
                         Key=key,
                     )
 
-                    print(
-                        f"part added: {part_number} {len(chunk)} {upload_id}",
-                        flush=True,
+                    mp_logger.debug(
+                        "multipart_part_added",
+                        part_number=part_number,
+                        chunk_size=len(chunk),
+                        unstructured_message=f"part added: {part_number} {len(chunk)} {upload_id}",
                     )
 
                     part: CompletedPartTypeDef = {
@@ -485,17 +497,22 @@ class StorageOps:
                     MultipartUpload={"Parts": parts},
                 )
 
-                print(f"Multipart upload succeeded: {upload_id}")
+                mp_logger.info(
+                    "multipart_upload_succeeded",
+                    unstructured_message=f"Multipart upload succeeded: {upload_id}",
+                )
 
                 return True
             # pylint: disable=broad-exception-caught
-            except Exception as exc:
+            except Exception:
                 await client.abort_multipart_upload(
                     Bucket=bucket, Key=key, UploadId=upload_id
                 )
 
-                print(exc)
-                print(f"Multipart upload failed: {upload_id}")
+                mp_logger.exception(
+                    "multipart_upload_failed",
+                    unstructured_message=f"Multipart upload failed: {upload_id}",
+                )
 
                 return False
 
@@ -703,7 +720,14 @@ class StorageOps:
             """Pass lines as json objects"""
             filename = log_zipinfo.filename
 
-            print(f"Fetching log {filename} from {wacz_filename}", flush=True)
+            logger.debug(
+                "wacz_log_fetching",
+                filename=filename,
+                wacz_filename=wacz_filename,
+                log_levels=log_levels,
+                contexts=contexts,
+                unstructured_message=f"Fetching log {filename} from {wacz_filename}",
+            )
 
             line_iter: Iterator[bytes] = self._sync_get_filestream(wacz_url, filename)
             for line in line_iter:
@@ -778,9 +802,12 @@ class StorageOps:
             """Pass lines as json objects"""
             filename = pagefile_zipinfo.filename
 
-            print(
-                f"Fetching JSON lines from {filename} in {wacz_filename}",
-                flush=True,
+            logger.debug(
+                "wacz_pages_fetching",
+                filename=filename,
+                wacz_filename=wacz_filename,
+                wacz_url=wacz_url,
+                unstructured_message=f"Fetching JSON lines from {filename} in {wacz_filename}",
             )
 
             line_iter: Iterator[bytes] = self._sync_get_filestream(wacz_url, filename)
@@ -800,7 +827,13 @@ class StorageOps:
             retry = 0
             count += 1
 
-            print(f"  Processing {count} of {total} WACZ {wacz_url}")
+            logger.debug(
+                "wacz_processing",
+                count=count,
+                total=total,
+                wacz_url=wacz_url,
+                unstructured_message=f"  Processing {count} of {total} WACZ {wacz_url}",
+            )
 
             while True:
                 try:
@@ -822,11 +855,24 @@ class StorageOps:
                     msg = str(exc)
                     if retry < num_retries:
                         retry += 1
-                        print(f"Retrying, {retry} of {num_retries}, {msg}")
+                        logger.warning(
+                            "wacz_download_retrying",
+                            retry=retry,
+                            num_retries=num_retries,
+                            error_msg=msg,
+                            unstructured_message=f"Retrying, {retry} of {num_retries}, {msg}",
+                        )
                         time.sleep(30)
                         continue
 
-                    print(f"No more retries for error: {msg}, skipping {wacz_url}")
+                    logger.error(
+                        "wacz_download_max_retries",
+                        error_msg=msg,
+                        wacz_url=wacz_url,
+                        unstructured_message=(
+                            f"No more retries for error: {msg}, skipping {wacz_url}"
+                        ),
+                    )
 
                 break
 
@@ -867,11 +913,17 @@ class StorageOps:
                         # successfully streamed, done
                         return
 
-                except Exception as e:
-                    print(
-                        f"Streaming DL Error: {path}, Processed {bytes_read} - "
-                        + f"retrying ({retries + 1}/{max_retries})...",
-                        e,
+                except Exception:
+                    logger.exception(
+                        "streaming_dl_error_retrying",
+                        path=path,
+                        bytes_read=bytes_read,
+                        retry=retries + 1,
+                        max_retries=max_retries,
+                        unstructured_message=(
+                            f"Streaming DL Error: {path}, Processed {bytes_read}"
+                            f" - retrying ({retries + 1}/{max_retries})..."
+                        ),
                     )
                     time.sleep(2)
                     retries += 1
@@ -954,13 +1006,21 @@ def _parse_json(line) -> dict:
     try:
         parsed_json = json.loads(line)
     except json.JSONDecodeError as err:
-        print(f"Error decoding json-l line: {line}. Error: {err}", flush=True)
+        logger.exception(
+            "jsonl_decode_error",
+            line=line,
+            unstructured_message=f"Error decoding json-l line: {line}. Error: {err}",
+        )
     return parsed_json or {}
 
 
 # ============================================================================
 def init_storages_api(
-    org_ops: OrgOps, crawl_manager: CrawlManager, app: APIRouter, mdb, user_dep
+    org_ops: OrgOps,
+    crawl_manager: CrawlManager,
+    app: APIRouter,
+    mdb,
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
 ) -> StorageOps:
     """API for updating storage for an org"""
 

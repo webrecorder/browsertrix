@@ -6,6 +6,11 @@
 # ex: enable only 'en' and 'es' locales
 # locales_enabled: "en,es"
 
+# Sensitive information in logs will be redacted unless btrix_env is set to "development".
+# When running without an email sender configured, invite tokens and password reset URLs will
+# only be available in logs, so without setting btrix_env to "development", these will be redacted.
+# btrix_env: "development"
+
 # Crawler Settings
 # =========================================
 
@@ -54,7 +59,6 @@ crawler_extra_args: ""
 
 # max allowed browser windows per crawl
 max_browser_windows: 8
-
 
 # Cluster Settings
 # =========================================
@@ -111,6 +115,12 @@ backend_image: "docker.io/webrecorder/browsertrix-backend:1.23.0-beta.0"
 backend_pull_policy: "IfNotPresent"
 
 backend_password_secret: "PASSWORD!"
+
+# log level for backend, operator, and background jobs (DEBUG, INFO, WARNING, ERROR) - default is DEBUG
+# log_level: "DEBUG"
+
+# log format: uses a human-readable text format by default, set to "json" to emit structured JSON instead
+# log_format: "json"
 
 # number of workers per pod
 backend_workers: 1
@@ -252,7 +262,6 @@ redis_memory: "200Mi"
 
 redis_storage: "3Gi"
 
-
 # Dedupe Index
 # =========================================
 dedupe:
@@ -282,7 +291,6 @@ dedupe:
   # set this to custom crawler channel (from one of options below)
   # used for dedupe index importing
   importer_channel: "default"
-
 
 # Crawler Channels
 # =========================================

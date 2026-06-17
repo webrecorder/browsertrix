@@ -48,6 +48,12 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
+      - name: Set Env Vars
+        run: |
+          echo VERSION=`cat version.txt` >> $GITHUB_ENV
+          echo GIT_COMMIT_HASH=`git rev-parse --short HEAD` >> $GITHUB_ENV
+          echo GIT_BRANCH_NAME=`git rev-parse --abbrev-ref HEAD` >> $GITHUB_ENV
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -72,6 +78,10 @@ jobs:
         with:
           context: emails
           load: true
+          build-args: |
+            VERSION=${{ env.VERSION }}
+            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
+            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
           tags: webrecorder/browsertrix-emails:latest
           cache-from: type=gha,scope=emails
           cache-to: type=gha,scope=emails,mode=max

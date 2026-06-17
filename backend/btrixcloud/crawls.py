@@ -12,7 +12,9 @@ from datetime import datetime
 from typing import (
     Annotated,
     Any,
+    AsyncGenerator,
     AsyncIterator,
+    Callable,
     Dict,
     List,
     Optional,
@@ -22,6 +24,7 @@ from typing import (
 )
 from uuid import UUID
 
+import structlog
 import pymongo
 from fastapi import Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
@@ -84,6 +87,8 @@ from .utils import (
     stream_dict_list_as_csv,
     validate_regexes,
 )
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MAX_MATCH_SIZE = 500000
 DEFAULT_RANGE_LIMIT = 50
@@ -1219,9 +1224,15 @@ class CrawlOps(BaseCrawlOps):
 
         finished = qa_run.finished.isoformat()
 
-        headers = {
-            "Content-Disposition": f'attachment; filename="qa-{finished}-crawl-{crawl_id}.wacz"'
-        }
+        filename = f"qa-{finished}-crawl-{crawl_id}.wacz"
+
+        headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+        logger.info(
+            "download_qa_run_as_single_wacz",
+            qa_run_id=qa_run_id,
+            crawl_id=crawl_id,
+            filename=filename,
+        )
         return StreamingResponse(
             resp, headers=headers, media_type="application/wacz+zip"
         )
@@ -1364,7 +1375,7 @@ async def recompute_crawl_file_count_and_size(crawls, crawl_id: str):
 def init_crawls_api(
     crawl_manager: CrawlManager,
     app,
-    user_dep,
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
     *args,
 ):
     """API for crawl management, including crawl done callback"""

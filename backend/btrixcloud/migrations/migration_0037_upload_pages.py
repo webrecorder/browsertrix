@@ -2,8 +2,12 @@
 Migration 0037 -- upload pages
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Organization, UploadedCrawl
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MIGRATION_VERSION = "0037"
 
@@ -25,7 +29,10 @@ class Migration(BaseMigration):
         Start background jobs to parse uploads and add their pages to db
         """
         if not self.background_job_ops or not self.page_ops or not self.coll_ops:
-            print("Unable to start migration, missing ops", flush=True)
+            logger.warning(
+                "migration_missing_ops",
+                unstructured_message="Unable to start migration, missing ops",
+            )
             return
 
         mdb_orgs = self.mdb["organizations"]
@@ -39,18 +46,21 @@ class Migration(BaseMigration):
 
         async for res in mdb_crawls.find(uploads_query):
             upload = UploadedCrawl.from_dict(res)
-            print(
-                f"Adding pages for upload {current_index}/{upload_count}",
-                flush=True,
+            logger.info(
+                "adding_pages_for_upload",
+                current_index=current_index,
+                upload_count=upload_count,
+                unstructured_message=f"Adding pages for upload {current_index}/{upload_count}",
             )
 
             try:
                 await self.page_ops.re_add_crawl_pages(upload.id, upload.oid)
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Error adding pages for upload {upload.id}: {err}",
-                    flush=True,
+            except Exception:
+                logger.exception(
+                    "error_adding_pages_for_upload",
+                    upload_id=upload.id,
+                    unstructured_message=f"Error adding pages for upload {upload.id}",
                 )
             current_index += 1
 
@@ -60,8 +70,11 @@ class Migration(BaseMigration):
             try:
                 await self.coll_ops.recalculate_org_collection_stats(org)
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Error updating collections after adding pages for org {org.id}: {err}",
-                    flush=True,
+            except Exception:
+                logger.exception(
+                    "error_updating_collections_after_adding_pages",
+                    org_id=org.id,
+                    unstructured_message=(
+                        f"Error updating collections after adding pages for org {org.id}"
+                    ),
                 )

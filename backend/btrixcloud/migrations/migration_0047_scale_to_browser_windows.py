@@ -2,8 +2,13 @@
 Migration 0047 - Convert scale to browserWindows
 """
 
+import structlog
+
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import browser_windows_from_scale
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 MIGRATION_VERSION = "0047"
 
@@ -36,10 +41,13 @@ class Migration(BaseMigration):
                     },
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Unable to set browser windows from scale for workflow {config_id}: {err}",
-                    flush=True,
+            except Exception:
+                logger.exception(
+                    "browser_windows_workflow_update_error",
+                    config_id=config_id,
+                    unstructured_message=(
+                        f"Unable to set browser windows from scale for workflow {config_id}"
+                    ),
                 )
 
         async for crawl_raw in crawls_mdb.find({"browserWindows": None}):
@@ -54,8 +62,11 @@ class Migration(BaseMigration):
                     },
                 )
             # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Unable to set browser windows from scale for crawl {crawl_id}: {err}",
-                    flush=True,
+            except Exception:
+                logger.exception(
+                    "browser_windows_crawl_update_error",
+                    crawl_id=crawl_id,
+                    unstructured_message=(
+                        f"Unable to set browser windows from scale for crawl {crawl_id}"
+                    ),
                 )

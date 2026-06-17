@@ -18,6 +18,8 @@ qa_scale: 2
 
 backend_memory: "500Mi"
 
+# logging
+log_level: "DEBUG"
 
 # lower storage sizes
 redis_storage: "100Mi"

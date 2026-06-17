@@ -3,13 +3,20 @@
 import os
 import sys
 
+import structlog
 from fastapi import FastAPI
 
+from .logger import create_request_logging_middleware, init_logging
 from .operator import init_operator_api
 from .ops import init_ops
-from .utils import register_exit_handler
+from .utils import btrix_env, register_exit_handler
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
 
 app_root = FastAPI()
+
+app_root.middleware("http")(create_request_logging_middleware(logger))
 
 
 # ============================================================================
@@ -17,11 +24,16 @@ app_root = FastAPI()
 def main():
     """init operator"""
 
+    logger.info("starting", btrix_env=btrix_env)
+
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
-        print(
-            "Sorry, the Browsertrix Backend must be run inside a Kubernetes environment.\
-             Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
+        logger.critical(
+            "kubernetes_not_detected",
+            message=(
+                "Sorry, the Browsertrix Backend must be run inside a Kubernetes environment. "
+                "Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
+            ),
         )
         sys.exit(1)
 
@@ -64,6 +76,7 @@ def main():
 @app_root.on_event("startup")
 async def startup():
     """init on startup"""
+    init_logging()
     register_exit_handler()
     settings = main()
     await settings.async_init()
