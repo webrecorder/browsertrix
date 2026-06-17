@@ -142,7 +142,7 @@
     "concurrently": "^9.1.2",
     "husky": "^8.0.3",
     "lint-staged": "^13.1.0",
-    "msw": "^2.12.4",
+    "msw": "^2.14.6",
     "msw-storybook-addon": "^2.0.6",
     "prettier-plugin-tailwindcss": "^0.5.12",
     "remark-gfm": "^4.0.1",
