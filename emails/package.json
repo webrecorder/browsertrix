@@ -30,6 +30,6 @@
     "pino-pretty": "^13.0.0",
     "react-email": "4.0.17",
     "tsx": "^4.20.3",
-    "typescript": "^5.3.3"
+    "typescript": "^6.0.3"
   }
 }
