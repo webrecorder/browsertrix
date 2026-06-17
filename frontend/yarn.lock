@@ -1933,15 +1933,10 @@
   resolved "https://registry.yarnpkg.com/@shoelace-style/animations/-/animations-1.2.0.tgz#e92dd4502f0585697d81df8305f31182b499b737"
   integrity sha512-avvo1xxkLbv2dgtabdewBbqcJfV0e0zCwFqkPMnHFGbJbBHorRFfMAHh1NG9ymmXn0jW95ibUVH03E1NYXD6Gw==
 
-"@shoelace-style/localize@^3.1.2":
-  version "3.1.2"
-  resolved "https://registry.yarnpkg.com/@shoelace-style/localize/-/localize-3.1.2.tgz#2c63f16d8aa80842dbe5127845c76ed53f6a5e8e"
-  integrity sha512-Hf45HeO+vdQblabpyZOTxJ4ZeZsmIUYXXPmoYrrR4OJ5OKxL+bhMz5mK8JXgl7HsoEowfz7+e248UGi861de9Q==
-
-"@shoelace-style/localize@^3.2.1":
-  version "3.2.1"
-  resolved "https://registry.yarnpkg.com/@shoelace-style/localize/-/localize-3.2.1.tgz#9aa0078bef68a357070b104df95c75701c962c79"
-  integrity sha512-r4C9C/5kSfMBIr0D9imvpRdCNXtUNgyYThc4YlS6K5Hchv1UyxNQ9mxwj+BTRH2i1Neits260sR3OjKMnplsFA==
+"@shoelace-style/localize@^3.1.2", "@shoelace-style/localize@^3.2.1", "@shoelace-style/localize@^3.2.2":
+  version "3.2.2"
+  resolved "https://registry.yarnpkg.com/@shoelace-style/localize/-/localize-3.2.2.tgz#1f12ce815ea82486e743c3693d7dbfb496f92440"
+  integrity sha512-h3+2/cFWGaw3KQUwintkP4Cy3PtrVW//ysr9DM5nOfIXYekgrHwsELk/nyxc8hmjVP/Kcon7KCzvUtSwUBipfQ==
 
 "@shoelace-style/shoelace@~2.15.1":
   version "2.15.1"
