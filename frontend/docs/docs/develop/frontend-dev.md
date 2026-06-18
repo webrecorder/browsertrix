@@ -12,7 +12,7 @@ The frontend development server requires an existing backend that has been deplo
 
 Once deployed, make note of the URL to the backend API. If you've deployed the backend locally using default values, the URL will be `http://localhost:30870`.
 
-### 2. Node.js ≥20
+### 2. Node.js ≥22
 
 To check if you already have Node.js installed, run the following command in your command line terminal:
 
@@ -20,13 +20,14 @@ To check if you already have Node.js installed, run the following command in you
 node --version
 ```
 
-You should see a version number like `v20.17.0`. If you see a command line error instead of a version number, [install Node.js](https://nodejs.org/en/download/package-manager) before continuing.
+You should see a version number like `v24.17.0`. If you see a command line error instead of a version number, [install Node.js](https://nodejs.org/en/download/package-manager) before continuing.
 
 ??? question "What if my other project requires a different version of Node.js?"
 
     You can use [Node Version Manager](https://nodejs.org/en/download/package-manager#nvm) to install multiple Node.js versions and switch versions between projects.
 
 ### 3. Yarn 1 (Classic)
+
 To verify your Yarn installation:
 
 ```sh
@@ -39,7 +40,6 @@ If Yarn isn't installed, install [Yarn 1 (Classic)](https://classic.yarnpkg.com/
 
 If your Yarn version is `2.0` or greater, run the following from your Browsertrix project directory to enable Yarn 1:
 
-
 ```sh
 cd frontend
 corepack enable
@@ -47,7 +47,6 @@ corepack install
 ```
 
 Check out the full [Yarn + Corepack installation guide](https://yarnpkg.com/corepack) for more details.
-
 
 ## Quickstart
 
