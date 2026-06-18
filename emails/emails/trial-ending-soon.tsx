@@ -1,4 +1,4 @@
-import { Link, Text } from "@react-email/components";
+import { Link, Text } from "react-email";
 
 import { Template } from "../templates/btrix.js";
 import {

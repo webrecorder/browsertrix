@@ -1,4 +1,4 @@
-import { Link, Text } from "@react-email/components";
+import { Link, Text } from "react-email";
 
 import { Template } from "../templates/btrix.js";
 import {
@@ -12,11 +12,14 @@ import {
 import { z } from "zod";
 import { trimTrailingSlash } from "../lib/url.js";
 
-
 export const schema = z.object({
   user_name: z.string(),
   org_name: z.string(),
-  paused_reason: z.enum(["paused_storage_quota_reached", "paused_time_quota_reached", "paused_org_readonly"]),
+  paused_reason: z.enum([
+    "paused_storage_quota_reached",
+    "paused_time_quota_reached",
+    "paused_org_readonly",
+  ]),
   paused_expiry: z.coerce.date(),
   workflow_url: z.url().transform(trimTrailingSlash),
   org_url: z.url().transform(trimTrailingSlash),
@@ -32,7 +35,7 @@ export const CrawlAutoPausedEmail = ({
   paused_expiry,
   workflow_url,
   org_url,
-  support_email
+  support_email,
 }: CrawlAutoPausedEmailProps) => {
   const daysLeft = differenceInDays(new Date(paused_expiry));
   const relativeParts = formatRelativeDateToParts(daysLeft, "days");
@@ -41,21 +44,19 @@ export const CrawlAutoPausedEmail = ({
       preview={"Your Browsertrix crawl was automatically paused"}
       title={
         <>
-          Your <strong className="text-stone-900">Browsertrix</strong> crawl
-          has been automatically paused because your organization has{" "}
-          {paused_reason === "paused_storage_quota_reached" ? (
-            "reached its storage quota."
-          ) : paused_reason === "paused_time_quota_reached" ? (
-            "reached its execution time quota."
-          ) : (
-            "had archiving disabled."
-          )}
+          Your <strong className="text-stone-900">Browsertrix</strong> crawl has
+          been automatically paused because your organization has{" "}
+          {paused_reason === "paused_storage_quota_reached"
+            ? "reached its storage quota."
+            : paused_reason === "paused_time_quota_reached"
+              ? "reached its execution time quota."
+              : "had archiving disabled."}
         </>
       }
       disclaimer={
         <>
-          If you were not expecting your organization to have crawling
-          disabled, please contact us{" "}
+          If you were not expecting your organization to have crawling disabled,
+          please contact us{" "}
           {support_email ? (
             <>
               at{" "}
@@ -81,23 +82,20 @@ export const CrawlAutoPausedEmail = ({
 
       <Text className="text-base text-stone-700">
         This is a courtesy notice that{" "}
-            <Link
-              className="text-cyan-600 font-bold"
-              href={`${workflow_url}`}
-              style={{ textDecoration: "underline" }}
-            >
-              one of your crawls
-            </Link> 
-        {" "}in organization ”
-        <strong className="text-stone-900">{org_name}</strong>” has been
-        automatically paused because because your organization has{" "}
-          {paused_reason === "paused_storage_quota_reached" ? (
-            "reached its storage quota."
-          ) : paused_reason === "paused_time_quota_reached" ? (
-            "reached its execution time quota."
-          ) : (
-            "had archiving disabled."
-          )}
+        <Link
+          className="text-cyan-600 font-bold"
+          href={`${workflow_url}`}
+          style={{ textDecoration: "underline" }}
+        >
+          one of your crawls
+        </Link>{" "}
+        in organization ”<strong className="text-stone-900">{org_name}</strong>”
+        has been automatically paused because because your organization has{" "}
+        {paused_reason === "paused_storage_quota_reached"
+          ? "reached its storage quota."
+          : paused_reason === "paused_time_quota_reached"
+            ? "reached its execution time quota."
+            : "had archiving disabled."}
       </Text>
 
       <Text className="text-base text-stone-700">
@@ -155,8 +153,8 @@ export const CrawlAutoPausedEmail = ({
             href={`mailto:${support_email}`}
           >
             {support_email}
-          </Link>
-          {" "}to inquire about re-enabling archiving in your organization.
+          </Link>{" "}
+          to inquire about re-enabling archiving in your organization.
         </Text>
       )}
     </Template>
@@ -168,7 +166,8 @@ CrawlAutoPausedEmail.PreviewProps = {
   org_name: "Tessa’s Archives",
   paused_reason: "paused_storage_quota_reached",
   paused_expiry: offsetDays(7),
-  workflow_url: "https://dev.browsertrix.com/orgs/default-org/workflows/d4a6cb18-eb54-4d25-a9e8-bb10a3eefa31/latest",
+  workflow_url:
+    "https://dev.browsertrix.com/orgs/default-org/workflows/d4a6cb18-eb54-4d25-a9e8-bb10a3eefa31/latest",
   org_url: "https://dev.browsertrix.com/orgs/default-org",
   support_email: "support@webrecorder.net",
 } satisfies CrawlAutoPausedEmailProps;

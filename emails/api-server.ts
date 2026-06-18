@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { pinoHttp } from "pino-http";
 import { pino } from "pino";
-import { render, pretty as makePretty } from "@react-email/components";
+import { render, pretty as makePretty } from "react-email";
 
 import * as templates from "./emails/index.js";
 import z from "zod";

@@ -1,7 +1,7 @@
 import z from "zod";
 import { Template } from "../templates/btrix.js";
 import { formatDateTime } from "../lib/date.js";
-import { CodeInline } from "@react-email/components";
+import { CodeInline } from "react-email";
 
 export const schema = z.object({
   org: z.string().optional(),
@@ -13,10 +13,12 @@ export const schema = z.object({
     object_type: z.string().optional(),
     object_id: z.string().optional(),
     file_path: z.string().optional(),
-    replica_storage: z.object({
-      name: z.string(),
-      custom: z.boolean(),
-    }).optional(),
+    replica_storage: z
+      .object({
+        name: z.string(),
+        custom: z.boolean(),
+      })
+      .optional(),
   }),
   finished: z.coerce.date(),
 });
@@ -107,7 +109,7 @@ FailedBgJobEmail.PreviewProps = {
     object_type: "object_type",
     object_id: "object_id",
     file_path: "file_path",
-    replica_storage: {name: "replica_storage", custom: false},
+    replica_storage: { name: "replica_storage", custom: false },
   },
   finished: new Date(),
 } satisfies FailedBgJobEmailProps;
