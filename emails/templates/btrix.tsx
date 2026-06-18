@@ -12,7 +12,7 @@ import {
   Section,
   Tailwind,
   Text,
-} from "@react-email/components";
+} from "react-email";
 
 import twConfig from "../tailwind.config.js";
 
@@ -47,11 +47,11 @@ export const Template = ({
   },
 }: TemplateProps) => {
   return (
-    <Html>
-      <Head>
-        <Preview>{preview}</Preview>
-      </Head>
-      <Tailwind config={twConfig}>
+    <Tailwind config={twConfig}>
+      <Html>
+        <Head>
+          <Preview>{preview}</Preview>
+        </Head>
         <Body
           className={
             'mx-auto my-auto bg-white px-2 font-sans [font-feature-settings:"ss04"_off,_"ss07"_on,_"ss08"_on]'
@@ -84,7 +84,7 @@ export const Template = ({
                   href="https://webrecorder.net"
                   style={{ textDecoration: "none" }}
                 >
-                  <Text className="h-0 text-white m-0">Webrecorder</Text>
+                  <Text className="sr-only">Webrecorder</Text>
                   <Img
                     src={`${baseUrl}/static/webrecorder-lockup-color.png`}
                     alt="Webrecorder"
@@ -113,7 +113,7 @@ export const Template = ({
             </Row>
           </Container>
         </Body>
-      </Tailwind>
-    </Html>
+      </Html>
+    </Tailwind>
   );
 };
