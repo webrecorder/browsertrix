@@ -171,7 +171,7 @@
     }
   },
   "engines": {
-    "node": ">=20 <23"
+    "node": ">=22 <25"
   },
   "resolutions": {
     "**/playwright": "1.49.0",
