@@ -31,6 +31,7 @@ export function page(
   header: Parameters<typeof pageHeader>[0] & {
     breadcrumbs?: Parameters<typeof pageNav>[0];
     content?: TemplateResult;
+    aside?: TemplateResult;
   },
   render: () => TemplateResult,
 ) {
@@ -46,8 +47,13 @@ export function page(
         !header.breadcrumbs && tw`lg:py-10`,
       )}
     >
-      ${header.breadcrumbs
-        ? html`<div class="mb-7">${pageNav(header.breadcrumbs)}</div>`
+      ${header.breadcrumbs || header.aside
+        ? html`<div
+            class="mb-7 flex flex-wrap items-start justify-between gap-2"
+          >
+            ${header.breadcrumbs ? pageNav(header.breadcrumbs) : nothing}
+            ${header.aside}
+          </div>`
         : nothing}
       ${header.content || pageHeader(header)}
       ${header.title

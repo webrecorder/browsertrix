@@ -72,7 +72,7 @@ function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
 export function pageBack({ href, content }: Breadcrumb) {
   if (!href) return;
 
-  return html`<div class="-ml-1 flex">
+  return html`<div class="-ml-1 flex items-center">
     ${breadcrumbLink({
       href,
       content: html`
