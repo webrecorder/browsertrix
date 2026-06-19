@@ -16,10 +16,10 @@ import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
-import { type CollectionSavedEvent } from "@/features/collections/collection-edit-dialog";
 import { storageColorClasses } from "@/features/meters/storage/colors";
 import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
+import type { CollectionSavedEvent } from "@/pages/org/collection-detail/types";
 import { RouteNamespace } from "@/routes";
 import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";

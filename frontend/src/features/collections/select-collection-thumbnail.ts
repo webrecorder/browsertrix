@@ -76,6 +76,9 @@ export class SelectCollectionThumbnail extends BtrixElement {
   @property({ type: Number })
   pageCount?: number;
 
+  @property({ type: Boolean })
+  canEdit = false;
+
   @state()
   private open = false;
 
@@ -226,6 +229,9 @@ export class SelectCollectionThumbnail extends BtrixElement {
 
       try {
         if (typeof option === "string") {
+          this.nextThumbnailUrl = Object.entries(
+            CollectionThumbnail.Variants,
+          ).find(([name]) => (name as Thumbnail) === option)?.[1].path;
           await this.updateThumbnail({ defaultThumbnailName: option }, signal);
         } else {
           const screenshot = this.#screenshots.get(option.pageId);
@@ -260,7 +266,12 @@ export class SelectCollectionThumbnail extends BtrixElement {
           id: "collection-thumbnail-update-status",
         });
 
-        this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
+        this.dispatchEvent(
+          new CustomEvent("btrix-collection-saved", {
+            bubbles: true,
+            composed: true,
+          }),
+        );
       } catch (err) {
         console.debug(err);
 
@@ -291,7 +302,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
   }
 
   render() {
-    const isCrawler = this.appState.isCrawler;
+    const canEdit = this.canEdit;
     const updating = this.updateThumbnailTask.status === TaskStatus.PENDING;
 
     return html`<sl-dropdown
@@ -301,7 +312,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
       skidding="-3"
       hoist
       ?open=${this.open}
-      ?disabled=${!isCrawler}
+      ?disabled=${!canEdit}
       stay-open-on-select
       @sl-show=${() => (this.open = true)}
       @sl-after-show=${async () => {
@@ -324,20 +335,19 @@ export class SelectCollectionThumbnail extends BtrixElement {
         }
       }}
     >
-      <div
-        slot="trigger"
-        class=${clsx(
-          tw`relative aspect-video size-full rounded-lg bg-neutral-100`,
-          isCrawler && [
-            tw`cursor-pointer ring-1 transition-all duration-x-fast hover:ring-offset-2`,
-            this.open ? tw`ring-offset-2` : tw`ring-neutral-200`,
-          ],
-        )}
-      >
+      <div slot="trigger" class="relative aspect-video size-full">
         <btrix-collection-thumbnail
           class=${clsx(
-            updating && tw`opacity-50`,
-            tw`transition-opacity duration-fast`,
+            tw`part-[base]:border part-[base]:transition-all part-[base]:duration-x-fast`,
+            updating && tw`part-[base]:opacity-50`,
+            canEdit
+              ? [
+                  tw`cursor-pointer part-[base]:ring-1 hover:part-[base]:ring-offset-1`,
+                  this.open
+                    ? tw`part-[base]:ring-offset-1`
+                    : tw`part-[base]:ring-neutral-200`,
+                ]
+              : tw`part-[base]:border`,
           )}
           alt=${ifDefined(this.thumbnailSource?.url)}
           src=${ifDefined(
@@ -350,7 +360,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
         ></btrix-collection-thumbnail>
 
         ${when(
-          isCrawler,
+          canEdit,
           () => html`
             <btrix-button
               class="absolute bottom-2 right-2"
