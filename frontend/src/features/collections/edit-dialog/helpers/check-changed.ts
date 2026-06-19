@@ -4,10 +4,14 @@ import { type CollectionEdit } from "../../collection-edit-dialog";
 
 import gatherState from "./gather-state";
 
-import type { Collection, CollectionUpdate } from "@/types/collection";
+import type {
+  Collection,
+  CollectionUpdate,
+  PublicCollection,
+} from "@/types/collection";
 
 const checkEqual = <K extends keyof CollectionUpdate>(
-  collection: Collection,
+  collection: Collection | PublicCollection,
   key: K,
   b: CollectionUpdate[K] | null,
 ) => {
@@ -29,6 +33,11 @@ type KVPairs<T> = {
 export default async function checkChanged(this: CollectionEdit) {
   try {
     const { collectionUpdate } = await gatherState.bind(this)();
+    const collection = this.collection;
+
+    if (!collection) {
+      throw new Error("no this.collection");
+    }
 
     const state: CollectionUpdate = {
       ...collectionUpdate,
@@ -38,7 +47,7 @@ export default async function checkChanged(this: CollectionEdit) {
 
     // filter out unchanged properties
     const updates = pairs.filter(
-      ([name, value]) => !checkEqual(this.collection!, name, value),
+      ([name, value]) => !checkEqual(collection, name, value),
     ) as KVPairs<CollectionUpdate>;
 
     if (updates.length > 0) {
