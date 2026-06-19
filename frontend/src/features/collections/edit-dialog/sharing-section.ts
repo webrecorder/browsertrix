@@ -15,13 +15,17 @@ import { type SelectCollectionAccess } from "../select-collection-access";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
-import { CollectionAccess, type Collection } from "@/types/collection";
+import {
+  CollectionAccess,
+  type Collection,
+  type PublicCollection,
+} from "@/types/collection";
 
 @customElement("btrix-collection-share-settings")
 @localized()
 export class CollectionShareSettings extends BtrixElement {
   @property({ type: Object })
-  collection?: Collection;
+  collection?: Collection | PublicCollection;
 
   @consume({ context: viewStateContext })
   viewState?: ViewStateContext;
