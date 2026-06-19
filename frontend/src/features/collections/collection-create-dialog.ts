@@ -20,6 +20,7 @@ import { DEFAULT_THUMBNAIL } from "./collection-thumbnail";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { SelectCollectionAccess } from "@/features/collections/select-collection-access";
+import type { CollectionSavedEvent } from "@/pages/org/collection-detail/types";
 import { alerts } from "@/strings/collections/alerts";
 import {
   COLLECTION_CAPTION_MAX_LENGTH,
@@ -30,10 +31,6 @@ import {
 import { isApiError } from "@/utils/api";
 import { formValidator, maxLengthValidator } from "@/utils/form";
 import slugifyStrict from "@/utils/slugify";
-
-export type CollectionSavedEvent = CustomEvent<{
-  id: string;
-}>;
 
 /**
  * @fires btrix-collection-saved CollectionSavedEvent Fires
@@ -247,11 +244,14 @@ export class CollectionCreateDialog extends BtrixElement {
       });
 
       this.dispatchEvent(
-        new CustomEvent("btrix-collection-saved", {
-          detail: {
-            id: data.id,
+        new CustomEvent<CollectionSavedEvent["detail"]>(
+          "btrix-collection-saved",
+          {
+            detail: {
+              id: data.id,
+            },
           },
-        }) as CollectionSavedEvent,
+        ),
       );
       this.notify.toast({
         message: msg(str`Created "${data.name || name}" collection`),

@@ -29,11 +29,6 @@ type Tab = "general" | "sharing";
 
 export type { Tab as EditDialogTab };
 
-export type CollectionSavedEvent = CustomEvent<{
-  id: string;
-}> &
-  Partial<Collection>;
-
 export const validateNameMax = maxLengthValidator(COLLECTION_NAME_MAX_LENGTH);
 export const validateCaptionMax = maxLengthValidator(
   COLLECTION_CAPTION_MAX_LENGTH,

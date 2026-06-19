@@ -25,4 +25,6 @@ export enum EditingSearchParamValue {
   Items = "items",
 }
 
-export type CollectionSavedEvent = CustomEvent<Partial<Collection> | undefined>;
+export type CollectionSavedEvent = CustomEvent<
+  { id: string } & Partial<Collection>
+>;

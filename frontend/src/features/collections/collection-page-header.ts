@@ -344,6 +344,7 @@ export class CollectionPageHeader extends BtrixElement {
           "btrix-collection-saved",
           {
             detail: {
+              id: this.collectionId,
               name,
               slug: this.slugPreview || this.slug || "",
             },
@@ -388,7 +389,7 @@ export class CollectionPageHeader extends BtrixElement {
         new CustomEvent<CollectionSavedEvent["detail"]>(
           "btrix-collection-saved",
           {
-            detail: { caption },
+            detail: { id: this.collectionId, caption },
           },
         ),
       );
