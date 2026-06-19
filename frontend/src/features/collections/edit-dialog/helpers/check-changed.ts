@@ -28,8 +28,7 @@ type KVPairs<T> = {
 
 export default async function checkChanged(this: CollectionEdit) {
   try {
-    const { collectionUpdate, thumbnail, setInitialView } =
-      await gatherState.bind(this)();
+    const { collectionUpdate } = await gatherState.bind(this)();
 
     const state: CollectionUpdate = {
       ...collectionUpdate,
@@ -40,30 +39,8 @@ export default async function checkChanged(this: CollectionEdit) {
     // filter out unchanged properties
     const updates = pairs.filter(
       ([name, value]) => !checkEqual(this.collection!, name, value),
-    ) as KVPairs<
-      CollectionUpdate & {
-        thumbnail: typeof thumbnail;
-        setInitialView: typeof setInitialView;
-      }
-    >;
+    ) as KVPairs<CollectionUpdate>;
 
-    const shouldUpload =
-      thumbnail.selectedSnapshot &&
-      !isEqual(this.collection?.thumbnailSource, thumbnail.selectedSnapshot) &&
-      this.blobIsLoaded;
-
-    if (shouldUpload) {
-      updates.push(["thumbnail", thumbnail]);
-    }
-    if (setInitialView) {
-      if (
-        this.collection &&
-        thumbnail.selectedSnapshot &&
-        this.collection.homeUrlPageId !== thumbnail.selectedSnapshot.urlPageId
-      ) {
-        updates.push(["setInitialView", true]);
-      }
-    }
     if (updates.length > 0) {
       this.dirty = true;
     } else {

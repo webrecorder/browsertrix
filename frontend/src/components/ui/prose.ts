@@ -1,17 +1,24 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
-import { css, html, nothing } from "lit";
-import { customElement, queryAsync, state } from "lit/decorators.js";
+import { css, html, nothing, type PropertyValues } from "lit";
+import { customElement, property, queryAsync } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
 
+export type ProseClampingEvent = CustomEvent<{
+  clamping: boolean;
+  clamped: boolean;
+}>;
+
 /**
  * Display prose, like workflow and item descriptions, with line clamping.
- * Uses `overflow-hidden` as fallback
  *
  * @cssproperty --btrix-line-clamp
- * @cssproperty --btrix-prose-width
+ * @cssPart base
+ * @cssPart content
+ * @cssPart button
+ * @fires btrix-prose-clamping
  */
 @customElement("btrix-prose")
 @localized()
@@ -19,42 +26,60 @@ export class Prose extends TailwindElement {
   static styles = css`
     :host {
       --btrix-line-clamp: 6;
-      --btrix-prose-width: 65ch;
       display: contents;
-    }
-
-    .clamp {
-      max-height: calc(var(--btrix-line-clamp) * 1.3125rem);
     }
   `;
 
-  @state()
-  private clamped?: boolean;
+  @property({ type: Boolean })
+  clamped?: boolean;
 
   @queryAsync("pre")
   private readonly pre?: Promise<HTMLPreElement>;
 
+  protected updated(changedProperties: PropertyValues): void {
+    if (changedProperties.has("clamped")) {
+      this.dispatchEvent(
+        new CustomEvent<ProseClampingEvent["detail"]>("btrix-prose-clamping", {
+          detail: {
+            clamping: this.clamped !== undefined,
+            clamped: this.clamped === true,
+          },
+        }),
+      );
+    }
+  }
+
   render() {
-    return html`<pre
-        class=${clsx(
-          this.clamped !== false && [
-            tw`line-clamp-[--btrix-line-clamp]`,
-            "clamp",
-          ],
-          tw`max-w-[--btrix-prose-width] hyphens-auto whitespace-pre-line text-pretty font-sans leading-normal`,
-        )}
-      ><slot @slotchange=${this.onSlotChange}></slot></pre>
+    return html`<div part="base">
+        <pre
+          class=${clsx(
+            this.clamped !== false && tw`line-clamp-[--btrix-line-clamp]`,
+            tw`max-w-prose hyphens-auto whitespace-pre-line text-pretty font-sans leading-normal [word-break:auto-phrase]`,
+          )}
+          part="content"
+          @scroll=${(e: Event) => {
+            // Revert scroll that happens when tabbing to a focusable child
+            (e.currentTarget as HTMLPreElement).scrollTo(0, 0);
+          }}
+        ><slot @slotchange=${this.onSlotChange}></slot></pre>
+        <slot name="suffix"></slot>
+      </div>
       ${this.clamped || this.clamped === false
         ? html`<button
             class="whitespace-nowrap leading-normal text-primary-500 transition-colors duration-fast hover:text-primary-600"
             @click=${() => (this.clamped = !this.clamped)}
+            part="button"
           >
             ${this.clamped ? msg("Show more") : msg("Show less")}
           </button>`
         : nothing}`;
   }
 
-  private async onSlotChange() {
+  private onSlotChange() {
+    void this.syncClamp();
+  }
+
+  async syncClamp() {
     const pre = await this.pre;
 
     if (!pre) {
