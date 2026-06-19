@@ -141,11 +141,12 @@ export class CollectionCreateDialog extends BtrixElement {
           }}
         >
         </sl-input>
-        <sl-input
+        <sl-textarea
           class="with-max-help-text"
           name="caption"
           placeholder=${msg("Summarize the collection's content")}
           autocomplete="off"
+          rows="3"
           help-text=${this.validateCaptionMax.helpText}
           @sl-input=${this.validateCaptionMax.validate}
         >
@@ -167,7 +168,7 @@ export class CollectionCreateDialog extends BtrixElement {
               ></sl-icon>
             </btrix-popover>
           </span>
-        </sl-input>
+        </sl-textarea>
 
         <sl-divider></sl-divider>
         <btrix-select-collection-access
