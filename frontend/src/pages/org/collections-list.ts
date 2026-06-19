@@ -720,8 +720,8 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
               <sl-menu-item
                 @click=${() => void this.manageCollection(col, "edit")}
               >
-                <sl-icon name="gear" slot="prefix"></sl-icon>
-                ${msg("Edit Collection Settings")}
+                <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+                ${msg("Share Collection")}
               </sl-menu-item>
             `,
           )}

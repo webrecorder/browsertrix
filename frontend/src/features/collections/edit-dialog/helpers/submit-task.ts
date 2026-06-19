@@ -3,12 +3,8 @@ import { type TaskFunction } from "@lit/task";
 
 import { type CollectionEdit } from "../../collection-edit-dialog";
 
-import {
-  type CollectionThumbnailSource,
-  type CollectionUpdate,
-} from "@/types/collection";
+import { type CollectionUpdate } from "@/types/collection";
 import { isApiError } from "@/utils/api";
-import slugifyStrict from "@/utils/slugify";
 
 export default function submitTask(
   this: CollectionEdit,
@@ -18,85 +14,18 @@ export default function submitTask(
     try {
       const updates = await this.checkChanged();
       if (!updates) throw new Error("invalid_data");
-      const updateObject = Object.fromEntries(updates) as CollectionUpdate & {
-        thumbnail?: {
-          selectedSnapshot: CollectionThumbnailSource;
-        };
-        setInitialView?: boolean;
-      };
-      const {
-        thumbnail: { selectedSnapshot } = {},
-        setInitialView,
-        ...rest
-      } = updateObject;
-      const tasks = [];
+      const updateObject = Object.fromEntries(updates) as CollectionUpdate;
 
-      // TODO get filename from rwp?
-      const fileName = `page-thumbnail_${selectedSnapshot?.urlPageId}.jpeg`;
-      let file: File | undefined;
-
-      if (selectedSnapshot) {
-        const blob = await this.thumbnailPreview?.thumbnailBlob.catch(() => {
-          throw new Error("invalid_data");
-        });
-        if (blob) {
-          file = new File([blob], fileName, {
-            type: blob.type,
-          });
-        }
-        if (!file) throw new Error("invalid_data");
-        const searchParams = new URLSearchParams({
-          filename: fileName,
-          sourceUrl: selectedSnapshot.url,
-          sourceTs: selectedSnapshot.urlTs,
-          sourcePageId: selectedSnapshot.urlPageId,
-        });
-        tasks.push(
-          this.api.upload(
-            `/orgs/${this.orgId}/collections/${this.collection.id}/thumbnail?${searchParams.toString()}`,
-            file,
+      if (Object.keys(updateObject).length) {
+        await this.api.fetch<{ updated: boolean }>(
+          `/orgs/${this.orgId}/collections/${this.collection.id}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(updateObject),
             signal,
-          ),
-        );
-        rest.defaultThumbnailName = null;
-      }
-
-      if (setInitialView) {
-        tasks.push(
-          this.api.fetch(
-            `/orgs/${this.orgId}/collections/${this.collection.id}/home-url`,
-            {
-              method: "POST",
-              body: JSON.stringify({
-                pageId: this.selectedSnapshot?.urlPageId,
-              }),
-            },
-          ),
+          },
         );
       }
-
-      if (Object.keys(rest).length) {
-        const params = {
-          ...rest,
-        };
-
-        if (rest.name) {
-          params.slug = slugifyStrict(rest.name);
-        }
-
-        tasks.push(
-          await this.api.fetch<{ updated: boolean }>(
-            `/orgs/${this.orgId}/collections/${this.collection.id}`,
-            {
-              method: "PATCH",
-              body: JSON.stringify(params),
-              signal,
-            },
-          ),
-        );
-      }
-
-      await Promise.all(tasks);
 
       this.dispatchEvent(
         new CustomEvent<{
@@ -110,10 +39,11 @@ export default function submitTask(
         }),
       );
       this.dispatchEvent(new CustomEvent("btrix-change"));
+
+      const collection_name = this.collection.name;
+
       this.notify.toast({
-        message: msg(
-          str`Updated collection “${this.name || this.collection.name}”`,
-        ),
+        message: msg(str`Updated collection “${collection_name}”`),
         variant: "success",
         icon: "check2-circle",
         id: "collection-metadata-status",
