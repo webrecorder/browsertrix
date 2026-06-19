@@ -189,14 +189,6 @@ const main = {
   },
 
   plugins: [
-    // Shim polyfill
-    new webpack.ProvidePlugin({
-      "Intl.DurationFormat": path.resolve(
-        __dirname,
-        "lib/intl-durationformat.js",
-      ),
-    }),
-
     new webpack.DefinePlugin(defineConfig),
 
     new webpack.optimize.LimitChunkCountPlugin({
