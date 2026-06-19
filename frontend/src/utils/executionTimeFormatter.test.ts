@@ -37,7 +37,7 @@ describe("formatHours", () => {
       "12.345.000 h",
     );
     expect(humanizeSeconds(44_442_000_000, { locale: "de-DE" })).to.equal(
-      "12.345.000 Std.",
+      "12.345.000h",
     );
     expect(humanizeSeconds(44_442_000_000, { locale: "ar-EG" })).to.equal(
       "١٢٬٣٤٥٬٠٠٠ س",
