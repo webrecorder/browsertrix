@@ -8,7 +8,6 @@ export enum Tab {
 export type Dialog =
   | "delete"
   | "edit"
-  | "replaySettings"
   | "removeItem"
   | "createIndex"
   | "purgeIndex"
