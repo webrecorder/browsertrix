@@ -1,7 +1,12 @@
 import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
-import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
+import type {
+  SlInput,
+  SlMenu,
+  SlMenuItem,
+  SlSelectEvent,
+} from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import Fuse from "fuse.js";
 import { html, type PropertyValues } from "lit";
@@ -12,6 +17,7 @@ import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import queryString from "query-string";
+import { focusable } from "tabbable";
 
 import { CollectionThumbnail, type Thumbnail } from "./collection-thumbnail";
 
@@ -82,6 +88,9 @@ export class SelectCollectionThumbnail extends BtrixElement {
   @query("sl-input")
   private readonly input?: SlInput | null;
 
+  @query("sl-menu")
+  private readonly menu?: SlMenu | null;
+
   readonly #screenshots = new Map<
     /* pageId */ string,
     {
@@ -91,6 +100,11 @@ export class SelectCollectionThumbnail extends BtrixElement {
   >();
 
   #fuse?: Fuse<PageUrlCount>;
+
+  private get selectedThumbnailPageUrl() {
+    if (this.thumbnailName) return;
+    return this.thumbnailSource?.url;
+  }
 
   /**
    * Get page URLs included in collection and determine whether to use fuzzy search or prefix search
@@ -290,6 +304,18 @@ export class SelectCollectionThumbnail extends BtrixElement {
       ?disabled=${!isCrawler}
       stay-open-on-select
       @sl-show=${() => (this.open = true)}
+      @sl-after-show=${async () => {
+        await this.optionsTask.taskComplete;
+
+        const pageUrl = this.selectedThumbnailPageUrl;
+
+        if (
+          !pageUrl ||
+          !this.optionsTask.value?.some(({ url }) => url === pageUrl)
+        ) {
+          this.input?.focus();
+        }
+      }}
       @sl-hide=${() => (this.open = false)}
       @sl-after-hide=${() => {
         if (this.input) {
@@ -313,6 +339,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
             updating && tw`opacity-50`,
             tw`transition-opacity duration-fast`,
           )}
+          alt=${ifDefined(this.thumbnailSource?.url)}
           src=${ifDefined(
             this.nextThumbnailUrl ||
               Object.entries(CollectionThumbnail.Variants).find(
@@ -381,13 +408,17 @@ export class SelectCollectionThumbnail extends BtrixElement {
         <div class="px-3 pb-1">${this.renderSearch()}</div>
         <sl-divider></sl-divider>
         <div
-          class="contents"
+          class="sr-only"
           id="thumb-listbox"
           role="listbox"
           aria-labelledby="thumb-list-label"
-        >
-          ${this.renderPages()}
-        </div>
+          aria-owns=${ifDefined(
+            this.optionsTask.value
+              ?.map(({ pageId }) => `option-${pageId}`)
+              .join(" "),
+          )}
+        ></div>
+        ${this.renderPages()}
         <sl-divider></sl-divider>
         <sl-menu-label class="part-[base]:px-3">
           ${msg("Default Thumbnails")}
@@ -415,10 +446,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
       aria-autocomplete="list"
       aria-expanded="true"
       aria-controls="thumb-listbox"
-      @keydown=${(e: KeyboardEvent) => {
-        // Prevent controlling dropdown with keyboard
-        e.stopPropagation();
-      }}
+      @keydown=${this.onSearchKeydown}
       @sl-input=${this.onSearchInput as UnderlyingFunction<
         typeof this.onSearchInput
       >}
@@ -435,7 +463,7 @@ export class SelectCollectionThumbnail extends BtrixElement {
     url,
     timestamp,
   }: PageSnapshotOption) => {
-    const selected = url === this.thumbnailSource?.url;
+    const selected = url === this.selectedThumbnailPageUrl;
     const thumbnail = (url?: string) =>
       url
         ? html`<div slot="prefix" class="w-28">
@@ -483,16 +511,19 @@ export class SelectCollectionThumbnail extends BtrixElement {
     const isHomepage = url === this.homeUrl && timestamp === this.homeUrlTs;
 
     return html`<sl-menu-item
+      id="option-${pageId}"
       class=${clsx(
         tw`part-[label]:w-72 part-[base]:items-center`,
         selected && tw`part-[checked-icon]:visible`,
       )}
+      role="option"
       aria-selected="${selected}"
       value=${pageId}
       ?disabled=${until(
         asyncScreenshotUrl?.then((path) => updating || !path),
         true,
       )}
+      @keydown=${this.onOptionKeydown}
     >
       ${until(
         asyncScreenshotUrl?.then(thumbnail),
@@ -544,9 +575,11 @@ export class SelectCollectionThumbnail extends BtrixElement {
         tw`part-[label]:w-72 part-[base]:items-center`,
         selected && tw`part-[checked-icon]:visible`,
       )}
+      role="option"
       aria-selected="${selected === true}"
       ?disabled=${this.updateThumbnailTask.status === TaskStatus.PENDING}
       value=${path}
+      @keydown=${this.onOptionKeydown}
     >
       <btrix-collection-thumbnail
         slot="prefix"
@@ -593,6 +626,75 @@ export class SelectCollectionThumbnail extends BtrixElement {
       initial: skeleton,
     });
   }
+
+  private getFirstFocusable() {
+    if (!this.menu) {
+      console.debug("no this.menu");
+      return false;
+    }
+
+    const options = focusable(this.menu);
+
+    if (options.length) {
+      return options[0];
+    }
+  }
+
+  private getLastFocusable() {
+    if (!this.menu) {
+      console.debug("no this.menu");
+      return false;
+    }
+
+    const options = focusable(this.menu);
+
+    if (options.length) {
+      return options[options.length - 1];
+    }
+  }
+
+  private readonly onOptionKeydown = (e: KeyboardEvent) => {
+    const el = e.currentTarget as SlMenuItem;
+
+    // Check if focus should return to search input
+    if (
+      ((e.key === "ArrowDown" && el === this.getLastFocusable()) ||
+        (e.key === "ArrowUp" && el === this.getFirstFocusable())) &&
+      this.input
+    ) {
+      e.stopPropagation();
+      this.input.focus();
+    }
+  };
+
+  private readonly onSearchKeydown = (e: KeyboardEvent) => {
+    // Check if focus should move to options
+    switch (e.key) {
+      case "Tab":
+      case "ArrowDown": {
+        const focusable = this.getFirstFocusable();
+        if (focusable) {
+          e.stopPropagation();
+          focusable.focus();
+        }
+        break;
+      }
+      case "ArrowUp": {
+        const focusable = this.getLastFocusable();
+        if (focusable) {
+          e.stopPropagation();
+          focusable.focus();
+        }
+        break;
+      }
+      case "Space":
+        // Prevent closing dropdown
+        e.stopPropagation();
+        break;
+      default:
+        break;
+    }
+  };
 
   private readonly onSearchInput = debounce(300)(() => {
     const value = this.input?.value.trim();

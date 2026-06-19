@@ -44,15 +44,19 @@ export class CollectionThumbnail extends BtrixElement {
   src?: string;
 
   @property({ type: String })
+  alt?: string;
+
+  @property({ type: String })
   collectionName?: string;
 
   render() {
     return html`
       <img
         class="aspect-video size-full rounded-lg bg-slate-50 object-cover"
-        alt=${this.collectionName
+        alt=${this.alt ||
+        (this.collectionName
           ? msg(str`Thumbnail image for “${this.collectionName}” collection`)
-          : msg("Thumbnail image")}
+          : msg("Thumbnail image"))}
         src=${this.src || DEFAULT_THUMBNAIL_VARIANT.path}
       />
     `;
