@@ -182,7 +182,7 @@ export class CollectionsGrid extends BtrixElement {
       <div class="pointer-events-auto absolute bottom-2 right-2">
         ${this.renderActions
           ? this.renderActions(collection)
-          : html`<sl-tooltip content=${msg("Edit Collection Settings")}>
+          : html`<sl-tooltip content=${msg("Share Collection")}>
               <btrix-button
                 raised
                 size="small"
@@ -194,7 +194,7 @@ export class CollectionsGrid extends BtrixElement {
                   );
                 }}
               >
-                <sl-icon name="pencil"></sl-icon>
+                <sl-icon name="box-arrow-up"></sl-icon>
               </btrix-button>
             </sl-tooltip>`}
       </div>
