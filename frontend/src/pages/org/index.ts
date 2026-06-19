@@ -9,7 +9,10 @@ import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
 import type { QATab } from "./archived-item-qa/types";
-import type { Tab as CollectionTab } from "./collection-detail/types";
+import type {
+  CollectionSavedEvent,
+  Tab as CollectionTab,
+} from "./collection-detail/types";
 import type {
   Member,
   OrgRemoveMemberEvent,
@@ -35,7 +38,6 @@ import { searchOrgContextKey } from "@/context/search-org/types";
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
-import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { CommonTab, OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
 import type {

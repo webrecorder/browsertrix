@@ -33,6 +33,7 @@ export default function submitTask(
         }>("btrix-collection-saved", {
           detail: {
             id: this.collection.id,
+            ...updateObject,
           },
           bubbles: true,
           composed: true,
