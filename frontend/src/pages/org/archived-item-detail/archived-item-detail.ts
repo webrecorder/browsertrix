@@ -679,7 +679,9 @@ export class ArchivedItemDetail extends BtrixElement {
       beta?: boolean;
     }) => {
       const isActive = section === this.activeTab;
-      const baseUrl = window.location.pathname.split("#")[0];
+      const url = new URL(window.location.href);
+      const baseUrl = `${url.pathname}${url.search}`;
+
       return html`
         <btrix-navigation-button
           class="whitespace-nowrap md:whitespace-normal"
