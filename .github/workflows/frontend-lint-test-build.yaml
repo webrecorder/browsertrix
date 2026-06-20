@@ -45,7 +45,7 @@ jobs:
     if: needs.paths-filter.outputs.matches == 'true'
     strategy:
       matrix:
-        node: [20, 22]
+        node: [22, 24]
     steps:
       # Setup:
       - name: Checkout
@@ -108,7 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [20, 22]
+        node: [22, 24]
     env:
       E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
       E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
@@ -189,7 +189,7 @@ jobs:
     if: needs.paths-filter.outputs.matches == 'true'
     strategy:
       matrix:
-        node: [20, 22]
+        node: [22, 24]
     steps:
       # Setup:
       - name: Checkout
@@ -222,7 +222,7 @@ jobs:
     if: needs.paths-filter.outputs.matches == 'true'
     strategy:
       matrix:
-        node: [20, 22]
+        node: [22, 24]
     steps:
       # Setup:
       - name: Checkout
@@ -259,7 +259,7 @@ jobs:
     if: needs.paths-filter.outputs.matches == 'true'
     strategy:
       matrix:
-        node: [20, 22]
+        node: [22, 24]
     steps:
       # Setup:
       - name: Checkout

@@ -138,7 +138,7 @@ describe("Localize", () => {
           seconds: 4,
           milliseconds: 5,
         }),
-      ).to.equal("1 ቀ፣ 2 ሰ፣ 3 ደ፣ 4 ሰ 5 ሚሴ");
+      ).to.equal("1 ቀ፣ 2 ሰ፣ 3 ደ፣ 4 ሰ እና 5 ሚሴ");
     });
 
     it("formats an empty duration", () => {
