@@ -2,7 +2,7 @@
   "compilerOptions": {
     "outDir": "./dist/",
     "module": "esnext",
-    "target": "ES2018",
+    "target": "ES2021",
     "moduleResolution": "bundler",
     "allowJs": true,
     "strict": true,
@@ -27,8 +27,12 @@
     ],
     "incremental": true,
     "paths": {
-      "@/*": ["./src/*"],
-      "~assets/*": ["./src/assets/*"],
+      "@/*": [
+        "./src/*"
+      ],
+      "~assets/*": [
+        "./src/assets/*"
+      ],
     },
     "lib": [
       "DOM",
@@ -38,6 +42,10 @@
       "esnext.collection",
     ],
   },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules"],
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ],
 }

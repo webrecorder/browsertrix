@@ -86,7 +86,7 @@
     "terser-webpack-plugin": "^5.6.1",
     "thread-loader": "^4.0.4",
     "tlds": "^1.259.0",
-    "ts-loader": "^9.2.6",
+    "ts-loader": "^9.6.0",
     "tsconfig-paths-webpack-plugin": "^4.1.0",
     "type-fest": "^4.39.1",
     "typescript": "~5.5.4",
