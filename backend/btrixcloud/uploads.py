@@ -3,7 +3,7 @@
 import asyncio
 import os
 import uuid
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Callable, Iterable
 from io import BufferedReader
 from typing import Any
 from urllib.parse import unquote
@@ -271,7 +271,7 @@ class UploadOps(BaseCrawlOps):
             upload_wacz = resources[0]
             wacz_url = self.storage_ops.resolve_internal_access_path(upload_wacz.path)
 
-            child_waczs = await self._get_child_wacz_files(wacz_url)
+            child_waczs = await self._get_child_wacz_files(crawl_id, wacz_url)
             if child_waczs:
                 pp_logger.debug(
                     "post_process_upload",
@@ -319,7 +319,9 @@ class UploadOps(BaseCrawlOps):
 
         pp_logger.debug("post_process_upload", state="complete")
 
-    async def _get_child_wacz_files(self, wacz_url: str) -> list[ZipInfo]:
+    async def _get_child_wacz_files(
+        self, crawl_id: str, wacz_url: str
+    ) -> list[ZipInfo]:
         cwf_logger = logger.bind(crawl_id=crawl_id, wacz_url=wacz_url)
         cwf_logger.debug("multi_wacz", state="list_child_waczs")
         with RemoteZip(wacz_url) as remote_zip:
