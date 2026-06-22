@@ -751,6 +751,9 @@ class BackgroundJobOps:
         if data["type"] == BgJobType.UPDATE_COLL_STATS:
             return UpdateCollStatsJob.from_dict(data)
 
+        if data["type"] == BgJobType.POSTPROCESS_UPLOAD:
+            return PostProcessUploadJob.from_dict(data)
+
         return DeleteOrgJob.from_dict(data)
 
     async def list_background_jobs(
