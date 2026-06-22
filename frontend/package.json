@@ -171,7 +171,7 @@
     "node": ">=22 <25"
   },
   "resolutions": {
-    "**/playwright": "1.60.0",
+    "**/playwright": "1.61.0",
     "**/lit": "~3.2.0",
     "**/@web/dev-server-core": "^0.7.5",
     "**/koa": "^2.16.1"
