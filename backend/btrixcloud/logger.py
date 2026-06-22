@@ -106,7 +106,7 @@ def create_request_logging_middleware(logger):
                 "http_request",
                 http_method=request.method,
                 http_path=request.url.path,
-                http_status=response.status_code,
+                http_status=response.status_code if response else None,
                 duration=duration,
                 client_addr=_get_client_addr(request),
                 http_version=request.scope.get("http_version", ""),
