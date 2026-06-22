@@ -35,13 +35,15 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import CHUNK_SIZE
-from .utils import dt_now, run_async_task
+from .utils import dt_now, run_async_task, to_async_iterable
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MAX_SYNC_UPLOAD_SIZE = int(
     os.environ.get("UPLOAD_BG_THRESHOLD_BYTES", 50 * 1024 * 1024)
 )
+
+MAX_UPLOAD_RETRIES = 3
 
 
 # ============================================================================
@@ -378,90 +380,117 @@ class UploadOps(BaseCrawlOps):
 
         new_upload_files = []
 
-        for idx, child_wacz in enumerate(child_waczs):
-            cwf_logger.debug(
-                "multi_wacz",
-                state="process_child_wacz",
-                idx=idx + 1,
-                count=len(child_waczs),
-                filename=child_wacz.filename,
-            )
-
-            # Upload file
-            file_prep = FilePreparer(prefix, child_wacz.filename)
-
-            def sync_wacz_stream_iter(child_wacz=child_wacz, file_prep=file_prep):
-                with RemoteZip(wacz_url) as remote_zip:
-                    with remote_zip.open(child_wacz.filename) as stream:
-                        for chunk in stream:
-                            file_prep.add_chunk(chunk)
-                            yield chunk
-
-            async def to_async_iterable(sync_iterable: Iterable[bytes]):
-                # to_thread errors if StopIteration raised in it, so we use a
-                # sentinel to detect the end
-                done = object()
-                it = iter(sync_iterable)
-                while (value := await asyncio.to_thread(next, it, done)) is not done:
-                    yield value
-
-            if not await self.storage_ops.do_upload_multipart(
-                org,
-                file_prep.upload_name,
-                to_async_iterable(sync_wacz_stream_iter()),
-                MIN_UPLOAD_PART_SIZE,
-            ):
-                cwf_logger.error(
-                    "multi_wacz_child_upload_failed", filename=child_wacz.filename
+        try:
+            for idx, child_wacz in enumerate(child_waczs):
+                cwf_logger.debug(
+                    "multi_wacz",
+                    state="process_child_wacz",
+                    idx=idx + 1,
+                    count=len(child_waczs),
+                    filename=child_wacz.filename,
                 )
-                raise HTTPException(status_code=400, detail="upload_failed")
 
-            craw_file = file_prep.get_crawl_file(org.storage)
-            cwf_logger.debug(
-                "multi_wacz_child_upload_success",
-                idx=idx + 1,
-                count=len(child_waczs),
-                filename=craw_file.filename,
-                hash=craw_file.hash,
+                # it's worth retrying these uploads because they may be run in a background
+                # job, we can't count on being able to give the user immediate feedback
+                for attempt in range(1, MAX_UPLOAD_RETRIES + 1):
+                    file_prep = FilePreparer(prefix, child_wacz.filename)
+
+                    def sync_wacz_stream_iter(
+                        child_wacz=child_wacz, file_prep=file_prep
+                    ):
+                        with RemoteZip(wacz_url) as remote_zip:
+                            with remote_zip.open(child_wacz.filename) as stream:
+                                for chunk in stream:
+                                    file_prep.add_chunk(chunk)
+                                    yield chunk
+
+                    try:
+                        if not await self.storage_ops.do_upload_multipart(
+                            org,
+                            file_prep.upload_name,
+                            to_async_iterable(sync_wacz_stream_iter()),
+                            MIN_UPLOAD_PART_SIZE,
+                        ):
+                            raise HTTPException(status_code=400, detail="upload_failed")
+                        break
+                    except Exception:
+                        if attempt == MAX_UPLOAD_RETRIES:
+                            cwf_logger.error(
+                                "multi_wacz_child_upload_failed",
+                                filename=child_wacz.filename,
+                                attempts=MAX_UPLOAD_RETRIES,
+                            )
+                            raise
+                        cwf_logger.warning(
+                            "multi_wacz_child_upload_retry",
+                            filename=child_wacz.filename,
+                            attempt=attempt,
+                        )
+                        await asyncio.sleep(2 ** (attempt - 1))
+
+                crawl_file = file_prep.get_crawl_file(org.storage)
+                cwf_logger.debug(
+                    "multi_wacz_child_upload_success",
+                    idx=idx + 1,
+                    count=len(child_waczs),
+                    filename=crawl_file.filename,
+                    hash=crawl_file.hash,
+                )
+                new_upload_files.append(crawl_file)
+
+            # Update upload.files to reflect new files
+            # Delete original multi-WACZ from db and storage
+
+            # Get current upload to access original multi-WACZ files
+            upload = await self.get_upload(crawl_id, org)
+            original_files = upload.files or []
+
+            # Update DB: replace files with new child WACZ files
+            file_dicts = [f.model_dump() for f in new_upload_files]
+            new_file_size = sum(f.size for f in new_upload_files)
+            old_file_size = sum(f.size for f in original_files)
+
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id},
+                {
+                    "$set": {
+                        "files": file_dicts,
+                        "fileCount": len(new_upload_files),
+                        "fileSize": new_file_size,
+                    }
+                },
             )
-            new_upload_files.append(craw_file)
 
-        # Update upload.files to reflect new files
-        # Delete original multi-WACZ from db and storage
+            # Adjust org bytes stored for the size difference
+            size_diff = new_file_size - old_file_size
+            if size_diff != 0:
+                await self.orgs.inc_org_bytes_stored(org.id, size_diff, "upload")
 
-        # Get current upload to access original multi-WACZ files
-        upload = await self.get_upload(crawl_id, org)
-        original_files = upload.files or []
+            cwf_logger.debug(
+                "multi_wacz_split_complete",
+                count=len(new_upload_files),
+                original_wacz=wacz_url,
+                new_upload_files=[f.filename for f in new_upload_files],
+            )
 
-        # Update DB: replace files with new child WACZ files
-        file_dicts = [f.model_dump() for f in new_upload_files]
-        new_file_size = sum(f.size for f in new_upload_files)
-        old_file_size = sum(f.size for f in original_files)
-
-        await self.crawls.find_one_and_update(
-            {"_id": crawl_id},
-            {
-                "$set": {
-                    "files": file_dicts,
-                    "fileCount": len(new_upload_files),
-                    "fileSize": new_file_size,
-                }
-            },
-        )
-
-        # Adjust org bytes stored for the size difference
-        size_diff = new_file_size - old_file_size
-        if size_diff != 0:
-            await self.orgs.inc_org_bytes_stored(org.id, size_diff, "upload")
-
-        cwf_logger.debug(
-            "multi_wacz_split_complete",
-            count=len(new_upload_files),
-            original_wacz=wacz_url,
-            new_upload_files=[f.filename for f in new_upload_files],
-        )
-
-        return original_files
+            return original_files
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            for crawl_file in new_upload_files:
+                try:
+                    await self.storage_ops.delete_file_object(org, crawl_file)
+                    cwf_logger.debug(
+                        "multi_wacz_cleanup_deleted",
+                        filename=crawl_file.filename,
+                    )
+                # pylint: disable=broad-exception-caught
+                except Exception:
+                    cwf_logger.exception(
+                        "multi_wacz_cleanup_failed",
+                        filename=crawl_file.filename,
+                    )
+            cwf_logger.exception("multi_wacz_cleanup_failed")
+            raise
 
     async def delete_uploads(
         self,
