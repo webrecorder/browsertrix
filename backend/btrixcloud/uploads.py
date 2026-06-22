@@ -260,64 +260,73 @@ class UploadOps(BaseCrawlOps):
         """Perform upload post-processing. This should be called from background job"""
         pp_logger = logger.bind(crawl_id=crawl_id)
         pp_logger.debug("post_process_upload", state="processing_upload_started")
-        upload = await self.get_upload(crawl_id, org)
+        try:
+            upload = await self.get_upload(crawl_id, org)
 
-        original_files: list[CrawlFile] = []
+            original_files: list[CrawlFile] = []
 
-        # If there's only one file, check if it's a multi-wacz and split it up if so
-        if upload.files and len(upload.files) == 1:
-            pp_logger.debug("post_process_upload", state="multi_wacz_check")
-            resources = await self.resolve_signed_urls(upload.files, org, crawl_id)
-            upload_wacz = resources[0]
-            wacz_url = self.storage_ops.resolve_internal_access_path(upload_wacz.path)
+            # If there's only one file, check if it's a multi-wacz and split it up if so
+            if upload.files and len(upload.files) == 1:
+                pp_logger.debug("post_process_upload", state="multi_wacz_check")
+                resources = await self.resolve_signed_urls(upload.files, org, crawl_id)
+                upload_wacz = resources[0]
+                wacz_url = self.storage_ops.resolve_internal_access_path(
+                    upload_wacz.path
+                )
 
-            child_waczs = await self._get_child_wacz_files(crawl_id, wacz_url)
-            if child_waczs:
+                child_waczs = await self._get_child_wacz_files(crawl_id, wacz_url)
+                if child_waczs:
+                    pp_logger.debug(
+                        "post_process_upload",
+                        state="multi_wacz_split",
+                        child_wacz_count=len(child_waczs),
+                    )
+                    original_files = await self._split_multiwacz(
+                        crawl_id, org, wacz_url, child_waczs
+                    )
+                else:
+                    pp_logger.debug("post_process_upload", state="single_wacz")
+            else:
                 pp_logger.debug(
                     "post_process_upload",
-                    state="multi_wacz_split",
-                    child_wacz_count=len(child_waczs),
+                    state="multi_wacz_skip",
+                    file_count=len(upload.files) if upload.files else 0,
                 )
-                original_files = await self._split_multiwacz(
-                    crawl_id, org, wacz_url, child_waczs
-                )
-            else:
-                pp_logger.debug("post_process_upload", state="single_wacz")
-        else:
-            pp_logger.debug(
-                "post_process_upload",
-                state="multi_wacz_skip",
-                file_count=len(upload.files) if upload.files else 0,
+
+            pp_logger.debug("post_process_upload", state="add_crawl_pages")
+            await self.page_ops.add_crawl_pages_to_db_from_wacz(crawl_id)
+            pp_logger.debug("post_process_upload", state="update_crawl_collections")
+            await self.colls.update_crawl_collections(crawl_id, org.id)
+
+            pp_logger.debug("post_process_upload", state="set_state_complete")
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id}, {"$set": {"state": "complete"}}, upsert=True
             )
 
-        pp_logger.debug("post_process_upload", state="add_crawl_pages")
-        await self.page_ops.add_crawl_pages_to_db_from_wacz(crawl_id)
-        pp_logger.debug("post_process_upload", state="update_crawl_collections")
-        await self.colls.update_crawl_collections(crawl_id, org.id)
+            pp_logger.debug("post_process_upload", state="replicate_crawl_files")
+            await self.replicate_crawl_files(crawl_id, org, "upload")
 
-        pp_logger.debug("post_process_upload", state="set_state_complete")
-        await self.crawls.find_one_and_update(
-            {"_id": crawl_id}, {"$set": {"state": "complete"}}, upsert=True
-        )
+            # Now that all post-processing succeeded, safe to delete original multi-WACZ
+            if original_files:
+                for orig_file in original_files:
+                    pp_logger.debug(
+                        "post_process_upload",
+                        state="delete_original",
+                        filename=orig_file.filename,
+                    )
+                    await self.storage_ops.delete_file_object(org, orig_file)
+                    await self.presigned_urls.delete_one({"_id": orig_file.filename})
+                    await self.background_job_ops.create_delete_replica_jobs(
+                        org, orig_file, crawl_id, "upload"
+                    )
 
-        pp_logger.debug("post_process_upload", state="replicate_crawl_files")
-        await self.replicate_crawl_files(crawl_id, org, "upload")
-
-        # Now that all post-processing succeeded, safe to delete original multi-WACZ
-        if original_files:
-            for orig_file in original_files:
-                pp_logger.debug(
-                    "post_process_upload",
-                    state="delete_original",
-                    filename=orig_file.filename,
-                )
-                await self.storage_ops.delete_file_object(org, orig_file)
-                await self.presigned_urls.delete_one({"_id": orig_file.filename})
-                await self.background_job_ops.create_delete_replica_jobs(
-                    org, orig_file, crawl_id, "upload"
-                )
-
-        pp_logger.debug("post_process_upload", state="complete")
+            pp_logger.debug("post_process_upload", state="complete")
+        except Exception:
+            pp_logger.exception("post_process_upload", state="failed")
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id}, {"$set": {"state": "failed"}}, upsert=True
+            )
+            raise
 
     async def _get_child_wacz_files(
         self, crawl_id: str, wacz_url: str
