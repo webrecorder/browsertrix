@@ -235,6 +235,18 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Uploading WACZ");
         break;
 
+      case "processing-upload":
+        color = "var(--sl-color-violet-600)";
+        icon = html`<sl-icon
+          name="dot"
+          library="app"
+          class="animatePulse"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Processing Upload");
+        break;
+
       case "complete":
         color = "var(--success)";
         icon = html`<sl-icon
