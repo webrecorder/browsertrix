@@ -259,7 +259,7 @@ class UploadOps(BaseCrawlOps):
     async def post_process_upload(self, crawl_id: str, org: Organization):
         """Perform upload post-processing. This should be called from background job"""
         pp_logger = logger.bind(crawl_id=crawl_id)
-        pp_logger.debug("post_process_upload", state="started")
+        pp_logger.debug("post_process_upload", state="processing_upload_started")
         upload = await self.get_upload(crawl_id, org)
 
         original_files: list[CrawlFile] = []
