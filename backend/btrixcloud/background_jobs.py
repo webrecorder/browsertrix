@@ -609,8 +609,7 @@ class BackgroundJobOps:
 
             return job_id
         # pylint: disable=broad-exception-caught
-        except Exception as exc:
-            # pylint: disable=raise-missing-from
+        except Exception:
             logger.exception(
                 "postprocess_upload_job_failed",
                 crawl_id=crawl_id,

@@ -1374,9 +1374,7 @@ def test_multi_wacz_upload_child_wacz_download(
         assert dl_resp.status_code == 200, (
             f"Child WACZ {res['name']} should be downloadable"
         )
-        assert len(dl_resp.content) > 0, (
-            f"Child WACZ {res['name']} should not be empty"
-        )
+        assert len(dl_resp.content) > 0, f"Child WACZ {res['name']} should not be empty"
 
         # Verify it's a valid WACZ (zip starts with PK)
         assert dl_resp.content[:2] == b"PK", (
