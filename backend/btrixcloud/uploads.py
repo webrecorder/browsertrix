@@ -215,12 +215,6 @@ class UploadOps(BaseCrawlOps):
             {"_id": crawl_id}, {"$set": uploaded.to_dict()}, upsert=True
         )
 
-        upload_logger.debug("upload_create", state="saved_to_db_dispatching_webhook")
-
-        run_async_task(
-            self.event_webhook_ops.create_upload_finished_notification(crawl_id, org.id)
-        )
-
         # Post-processing: sync for small files, background job for large files
         if file_size > MAX_SYNC_UPLOAD_SIZE:
             upload_logger.debug(
@@ -237,6 +231,7 @@ class UploadOps(BaseCrawlOps):
                 upload_logger.warning(
                     "upload_create",
                     state="large_file_dispatching_bg_job_failed",
+                    detail="running post_process_upload synchronously instead",
                 )
                 await self.post_process_upload(crawl_id, org)
         else:
@@ -256,7 +251,13 @@ class UploadOps(BaseCrawlOps):
         )
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 
-    async def post_process_upload(self, crawl_id: str, org: Organization):
+    async def post_process_upload(
+        self,
+        crawl_id: str,
+        org: Organization,
+        # In a bg job, await the webhook instead of running it in a separate async task
+        await_webhook: bool = False,
+    ):
         """Perform upload post-processing. This should be called from background job"""
         pp_logger = logger.bind(crawl_id=crawl_id)
         pp_logger.debug("post_process_upload", state="processing_upload_started")
@@ -319,6 +320,21 @@ class UploadOps(BaseCrawlOps):
                     await self.background_job_ops.create_delete_replica_jobs(
                         org, orig_file, crawl_id, "upload"
                     )
+
+            pp_logger.debug(
+                "post_process_upload", state="finished_processing_dispatching_webhook"
+            )
+
+            if await_webhook:
+                await self.event_webhook_ops.create_upload_finished_notification(
+                    crawl_id, org.id
+                )
+            else:
+                run_async_task(
+                    self.event_webhook_ops.create_upload_finished_notification(
+                        crawl_id, org.id
+                    )
+                )
 
             pp_logger.debug("post_process_upload", state="complete")
         except Exception:

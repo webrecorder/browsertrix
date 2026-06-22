@@ -196,7 +196,7 @@ async def main():
             )
             return 1
         try:
-            await upload_ops.post_process_upload(crawl_id, org)
+            await upload_ops.post_process_upload(crawl_id, org, await_webhook=True)
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:
