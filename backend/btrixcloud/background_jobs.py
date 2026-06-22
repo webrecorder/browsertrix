@@ -754,7 +754,11 @@ class BackgroundJobOps:
         if data["type"] == BgJobType.POSTPROCESS_UPLOAD:
             return PostProcessUploadJob.from_dict(data)
 
-        return DeleteOrgJob.from_dict(data)
+        if data["type"] == BgJobType.DELETE_ORG:
+            return DeleteOrgJob.from_dict(data)
+
+        logger.error("unhandled_background_job_type", type=data["type"], data=data)
+        raise ValueError(f"Unhandled background job type: {data['type']}")
 
     async def list_background_jobs(
         self,
