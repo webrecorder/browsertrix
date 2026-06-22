@@ -418,6 +418,7 @@ class UploadOps(BaseCrawlOps):
                         ):
                             raise HTTPException(status_code=400, detail="upload_failed")
                         break
+                    # pylint: disable=broad-exception-caught
                     except Exception:
                         if attempt == MAX_UPLOAD_RETRIES:
                             cwf_logger.error(
