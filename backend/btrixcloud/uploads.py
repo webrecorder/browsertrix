@@ -260,7 +260,12 @@ class UploadOps(BaseCrawlOps):
         # In a bg job, await the webhook instead of running it in a separate async task
         await_webhook: bool = False,
     ):
-        """Perform upload post-processing. This should be called from background job"""
+        """
+        Perform upload post-processing: counts pages, updates collections,
+        replicates files, sends an upload complete webhook.
+
+        If called from a background job, set `await_webhook` to `True`.
+        """
         pp_logger = logger.bind(crawl_id=crawl_id)
         pp_logger.debug("post_process_upload", state="processing_upload_started")
         try:
