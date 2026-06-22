@@ -374,7 +374,7 @@ class UploadOps(BaseCrawlOps):
             # Upload file
             file_prep = FilePreparer(prefix, child_wacz.filename)
 
-            def sync_wacz_stream_iter():
+            def sync_wacz_stream_iter(child_wacz=child_wacz, file_prep=file_prep):
                 with RemoteZip(wacz_url) as remote_zip:
                     with remote_zip.open(child_wacz.filename) as stream:
                         for chunk in stream:
@@ -382,7 +382,8 @@ class UploadOps(BaseCrawlOps):
                             yield chunk
 
             async def to_async_iterable(sync_iterable: Iterable[bytes]):
-                # to_thread errors if StopIteration raised in it. So we use a sentinel to detect the end
+                # to_thread errors if StopIteration raised in it, so we use a
+                # sentinel to detect the end
                 done = object()
                 it = iter(sync_iterable)
                 while (value := await asyncio.to_thread(next, it, done)) is not done:
