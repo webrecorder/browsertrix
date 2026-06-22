@@ -3,14 +3,12 @@
 import asyncio
 import os
 import urllib.parse
+from collections.abc import AsyncGenerator, AsyncIterable, Callable
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    AsyncGenerator,
-    AsyncIterable,
-    Callable,
     Dict,
     List,
     Optional,
@@ -120,10 +118,10 @@ class BaseCrawlOps:
     async def get_crawl_raw(
         self,
         crawlid: str,
-        org: Optional[Organization] = None,
-        type_: Optional[TYPE_CRAWL_TYPES] = None,
-        project: Optional[dict[str, bool]] = None,
-    ) -> Dict[str, Any]:
+        org: Organization | None = None,
+        type_: TYPE_CRAWL_TYPES | None = None,
+        project: dict[str, bool] | None = None,
+    ) -> dict[str, Any]:
         """Get data for single crawl"""
 
         query: dict[str, object] = {"_id": crawlid}
@@ -142,10 +140,10 @@ class BaseCrawlOps:
 
     async def _files_to_resources(
         self,
-        files: List[Dict],
+        files: list[dict],
         org: Organization,
         crawlid: str,
-    ) -> List[CrawlFileOut]:
+    ) -> list[CrawlFileOut]:
         if not files:
             return []
 
@@ -164,8 +162,8 @@ class BaseCrawlOps:
     async def get_base_crawl(
         self,
         crawlid: str,
-        org: Optional[Organization] = None,
-        type_: Optional[TYPE_CRAWL_TYPES] = None,
+        org: Organization | None = None,
+        type_: TYPE_CRAWL_TYPES | None = None,
     ) -> BaseCrawl:
         """Get crawl data for internal use"""
         res = await self.get_crawl_raw(crawlid, org, type_)
@@ -174,11 +172,11 @@ class BaseCrawlOps:
     async def get_crawl_out(
         self,
         crawlid: str,
-        org: Optional[Organization] = None,
-        type_: Optional[TYPE_CRAWL_TYPES] = None,
+        org: Organization | None = None,
+        type_: TYPE_CRAWL_TYPES | None = None,
         skip_resources=False,
-        headers: Optional[dict] = None,
-        cid: Optional[UUID] = None,
+        headers: dict | None = None,
+        cid: UUID | None = None,
         with_dependencies: bool = False,
     ) -> CrawlOutWithResources:
         """Get crawl data for api output"""
@@ -275,7 +273,7 @@ class BaseCrawlOps:
         return missing
 
     async def _update_crawl_collections(
-        self, crawl_id: str, org: Organization, collection_ids: List[UUID]
+        self, crawl_id: str, org: Organization, collection_ids: list[UUID]
     ):
         """Update crawl collections to match updated list."""
         crawl = await self.get_crawl_out(crawl_id, org, skip_resources=True)
@@ -407,7 +405,7 @@ class BaseCrawlOps:
         org: Organization,
         delete_list: DeleteCrawlList,
         type_: TYPE_CRAWL_TYPES,
-        user: Optional[User] = None,
+        user: User | None = None,
     ) -> tuple[int, dict[UUID, dict[str, int]], bool]:
         """Delete a list of crawls by id for given org"""
         cids_to_update: dict[UUID, dict[str, int]] = {}
@@ -496,7 +494,7 @@ class BaseCrawlOps:
         return res.deleted_count, cids_to_update, quota_reached
 
     async def _delete_crawl_files(
-        self, crawl: Union[BaseCrawl, QARun], org: Organization
+        self, crawl: BaseCrawl | QARun, org: Organization
     ):
         """Delete files associated with crawl from storage."""
         size = 0
@@ -539,9 +537,9 @@ class BaseCrawlOps:
 
     async def _resolve_crawl_refs(
         self,
-        crawl: Union[CrawlOut, CrawlOutWithResources],
-        org: Optional[Organization],
-        files: Optional[list[dict]],
+        crawl: CrawlOut | CrawlOutWithResources,
+        org: Organization | None,
+        files: list[dict] | None,
         session: AsyncIOMotorClientSession | None = None,
     ):
         """Resolve running crawl data"""
@@ -572,12 +570,12 @@ class BaseCrawlOps:
 
     async def resolve_signed_urls(
         self,
-        files: List[CrawlFile],
+        files: list[CrawlFile],
         org: Organization,
-        crawl_id: Optional[str] = None,
+        crawl_id: str | None = None,
         force_update=False,
         session: AsyncIOMotorClientSession | None = None,
-    ) -> List[CrawlFileOut]:
+    ) -> list[CrawlFileOut]:
         """Regenerate presigned URLs for files as necessary"""
         if not files:
             return []
@@ -706,7 +704,7 @@ class BaseCrawlOps:
         return resources, pages_optimized
 
     async def validate_all_crawls_successful(
-        self, crawl_ids: List[str], org: Organization
+        self, crawl_ids: list[str], org: Organization
     ):
         """Validate that crawls in list exist and have a succesful state, or throw"""
         # convert to set to remove any duplicates
@@ -725,7 +723,7 @@ class BaseCrawlOps:
             )
 
     async def add_to_collection(
-        self, crawl_ids: List[str], collection_id: UUID, org: Organization
+        self, crawl_ids: list[str], collection_id: UUID, org: Organization
     ):
         """Add crawls to collection."""
         await self.crawls.update_many(
@@ -733,7 +731,7 @@ class BaseCrawlOps:
             {"$addToSet": {"collectionIds": collection_id}},
         )
 
-    async def remove_from_collection(self, crawl_ids: List[str], collection_id: UUID):
+    async def remove_from_collection(self, crawl_ids: list[str], collection_id: UUID):
         """Remove crawls from collection."""
         await self.crawls.update_many(
             {"_id": {"$in": crawl_ids}},
@@ -755,27 +753,27 @@ class BaseCrawlOps:
     # pylint: disable=too-many-branches, invalid-name, too-many-statements
     async def list_all_base_crawls(
         self,
-        org: Optional[Organization] = None,
-        userid: Optional[UUID] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
+        org: Organization | None = None,
+        userid: UUID | None = None,
+        name: str | None = None,
+        description: str | None = None,
         tags: list[str] | None = None,
         tag_match: ListFilterType | None = None,
-        collection_id: Optional[UUID] = None,
-        dedupe_coll_id: Optional[UUID] = None,
+        collection_id: UUID | None = None,
+        dedupe_coll_id: UUID | None = None,
         requires_crawls: list[str] | None = None,
         required_by_crawls: list[str] | None = None,
-        has_requires_crawls: Optional[bool] = None,
-        has_required_by_crawls: Optional[bool] = None,
-        crawl_ids: Optional[List[str]] = None,
-        states: Optional[List[str]] = None,
-        first_seed: Optional[str] = None,
-        type_: Optional[TYPE_CRAWL_TYPES] = None,
-        cid: Optional[UUID] = None,
-        cls_type: Type[Union[CrawlOut, CrawlOutWithResources]] = CrawlOut,
+        has_requires_crawls: bool | None = None,
+        has_required_by_crawls: bool | None = None,
+        crawl_ids: list[str] | None = None,
+        states: list[str] | None = None,
+        first_seed: str | None = None,
+        type_: TYPE_CRAWL_TYPES | None = None,
+        cid: UUID | None = None,
+        cls_type: type[CrawlOut | CrawlOutWithResources] = CrawlOut,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sort_by: Optional[str] = None,
+        sort_by: str | None = None,
         sort_direction: int = -1,
         review_status_range: tuple[int, int] | None = None,
     ):
@@ -980,7 +978,7 @@ class BaseCrawlOps:
         self,
         delete_list: DeleteCrawlList,
         org: Organization,
-        user: Optional[User] = None,
+        user: User | None = None,
     ) -> dict[str, bool]:
         """Delete uploaded crawls"""
         crawls: list[str] = []
@@ -1033,8 +1031,8 @@ class BaseCrawlOps:
     async def get_all_crawl_search_values(
         self,
         org: Organization,
-        type_: Optional[TYPE_CRAWL_TYPES] = None,
-        collection_id: Optional[UUID] = None,
+        type_: TYPE_CRAWL_TYPES | None = None,
+        collection_id: UUID | None = None,
     ):
         """List unique names, first seeds, and descriptions from all captures in org"""
         match_query: dict[str, object] = {"oid": org.id}
@@ -1128,8 +1126,8 @@ class BaseCrawlOps:
         )
 
     async def calculate_org_crawl_file_storage(
-        self, oid: UUID, type_: Optional[TYPE_CRAWL_TYPES] = None
-    ) -> Tuple[int, int, int]:
+        self, oid: UUID, type_: TYPE_CRAWL_TYPES | None = None
+    ) -> tuple[int, int, int]:
         """Calculate and return total size of crawl files in org.
 
         Returns tuple of (total, crawls only, uploads only)
@@ -1155,9 +1153,9 @@ class BaseCrawlOps:
 
         return total_size, crawls_size, uploads_size
 
-    async def get_org_last_crawl_finished(self, oid: UUID) -> Optional[datetime]:
+    async def get_org_last_crawl_finished(self, oid: UUID) -> datetime | None:
         """Get last crawl finished time for org"""
-        last_crawl_finished: Optional[datetime] = None
+        last_crawl_finished: datetime | None = None
 
         cursor = (
             self.crawls.find({"oid": oid, "finished": {"$ne": None}})
@@ -1174,10 +1172,10 @@ class BaseCrawlOps:
         self,
         org: Organization,
         only_successful: bool = True,
-        type_: Optional[TYPE_CRAWL_TYPES] = None,
+        type_: TYPE_CRAWL_TYPES | None = None,
     ):
         """get distinct tags from archived items for this org"""
-        match_query: Dict[str, Any] = {"oid": org.id}
+        match_query: dict[str, Any] = {"oid": org.id}
         if only_successful:
             match_query["state"] = {"$in": SUCCESSFUL_STATES}
         if type_ in CRAWL_TYPES:
@@ -1216,11 +1214,11 @@ def init_base_crawls_api(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        userid: Optional[UUID] = None,
-        name: Optional[str] = None,
+        userid: UUID | None = None,
+        name: str | None = None,
         state: Annotated[list[str] | None, Query()] = None,
-        firstSeed: Optional[str] = None,
-        description: Optional[str] = None,
+        firstSeed: str | None = None,
+        description: str | None = None,
         tags: Annotated[list[str] | None, Query()] = None,
         tag_match: Annotated[
             ListFilterType | None,
@@ -1230,17 +1228,17 @@ def init_base_crawls_api(
                 description='Defaults to `"and"` if omitted',
             ),
         ] = ListFilterType.AND,
-        collectionId: Optional[UUID] = None,
-        dedupeCollId: Optional[UUID] = None,
+        collectionId: UUID | None = None,
+        dedupeCollId: UUID | None = None,
         requiresCrawls: Annotated[list[str] | None, Query()] = None,
         requiredByCrawls: Annotated[list[str] | None, Query()] = None,
-        hasRequiresCrawls: Optional[bool] = None,
-        hasRequiredByCrawls: Optional[bool] = None,
+        hasRequiresCrawls: bool | None = None,
+        hasRequiredByCrawls: bool | None = None,
         ids: Annotated[list[str] | None, Query()] = None,
-        crawlType: Optional[TYPE_CRAWL_TYPES] = None,
-        cid: Optional[UUID] = None,
+        crawlType: TYPE_CRAWL_TYPES | None = None,
+        cid: UUID | None = None,
         reviewStatus: Annotated[list[int] | None, Query()] = None,
-        sortBy: Optional[str] = "finished",
+        sortBy: str | None = "finished",
         sortDirection: int = -1,
     ):
         # Support both comma-separated values and multiple search parameters
@@ -1302,8 +1300,8 @@ def init_base_crawls_api(
     )
     async def get_all_crawls_search_values(
         org: Organization = Depends(org_viewer_dep),
-        crawlType: Optional[TYPE_CRAWL_TYPES] = None,
-        collectionId: Optional[UUID] = None,
+        crawlType: TYPE_CRAWL_TYPES | None = None,
+        collectionId: UUID | None = None,
     ):
         return await ops.get_all_crawl_search_values(
             org, type_=crawlType, collection_id=collectionId
@@ -1317,7 +1315,7 @@ def init_base_crawls_api(
     async def get_all_crawls_tag_counts(
         org: Organization = Depends(org_viewer_dep),
         onlySuccessful: bool = True,
-        crawlType: Optional[TYPE_CRAWL_TYPES] = None,
+        crawlType: TYPE_CRAWL_TYPES | None = None,
     ):
         tags = await ops.get_all_crawls_tag_counts(
             org, only_successful=onlySuccessful, type_=crawlType

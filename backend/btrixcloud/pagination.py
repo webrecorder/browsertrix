@@ -7,7 +7,7 @@ DEFAULT_PAGE_SIZE = 1_000
 
 # ============================================================================
 def paginated_format(
-    items: Optional[List[Any]],
+    items: list[Any] | None,
     total: int,
     page: int = 1,
     page_size: int = DEFAULT_PAGE_SIZE,

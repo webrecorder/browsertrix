@@ -25,7 +25,7 @@ from .webhooks import EventWebhookOps
 
 
 # pylint: disable=too-many-locals
-def init_ops() -> Tuple[
+def init_ops() -> tuple[
     OrgOps,
     CrawlConfigOps,
     BaseCrawlOps,

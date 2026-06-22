@@ -4,8 +4,9 @@ Subscription API handling
 
 import asyncio
 import os
+from collections.abc import AsyncGenerator, Callable
 from datetime import datetime
-from typing import Annotated, Any, AsyncGenerator, Callable, List, Optional, Tuple
+from typing import Annotated, Any, List, Optional, Tuple
 from uuid import UUID
 
 import structlog
@@ -303,17 +304,17 @@ class SubOps:
     # pylint: disable=too-many-arguments
     async def list_sub_events(
         self,
-        status: Optional[str] = None,
-        sub_id: Optional[str] = None,
-        oid: Optional[UUID] = None,
-        plan_id: Optional[str] = None,
-        type_: Optional[SubscriptionEventType] = None,
+        status: str | None = None,
+        sub_id: str | None = None,
+        oid: UUID | None = None,
+        plan_id: str | None = None,
+        type_: SubscriptionEventType | None = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sort_by: Optional[str] = None,
-        sort_direction: Optional[int] = -1,
-    ) -> Tuple[
-        List[SubscriptionEventAnyOut],
+        sort_by: str | None = None,
+        sort_direction: int | None = -1,
+    ) -> tuple[
+        list[SubscriptionEventAnyOut],
         int,
     ]:
         """list subscription events"""
@@ -508,7 +509,7 @@ def init_subs_api(
     org_ops: OrgOps,
     user_manager: UserManager,
     superuser_or_shared_secret_dep: Callable[[str], AsyncGenerator[User, None]],
-) -> Optional[SubOps]:
+) -> SubOps | None:
     """init subs API"""
 
     if not subscriptions_enabled:
@@ -600,15 +601,15 @@ def init_subs_api(
         response_model=PaginatedSubscriptionEventResponse,
     )
     async def get_sub_events(
-        status: Optional[str] = None,
-        subId: Optional[str] = None,
-        oid: Optional[UUID] = None,
-        planId: Optional[str] = None,
-        type_: Annotated[Optional[SubscriptionEventType], Query(alias="type")] = None,
+        status: str | None = None,
+        subId: str | None = None,
+        oid: UUID | None = None,
+        planId: str | None = None,
+        type_: Annotated[SubscriptionEventType | None, Query(alias="type")] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sortBy: Optional[str] = "timestamp",
-        sortDirection: Optional[int] = 1,
+        sortBy: str | None = "timestamp",
+        sortDirection: int | None = 1,
     ):
         events, total = await ops.list_sub_events(
             status=status,

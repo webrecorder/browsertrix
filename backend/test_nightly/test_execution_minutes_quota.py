@@ -177,7 +177,7 @@ def run_crawl(org_id, headers):
     return data["run_now_job"], data["id"]
 
 
-def get_total_exec_seconds(execSeconds: Dict[str, int]) -> int:
+def get_total_exec_seconds(execSeconds: dict[str, int]) -> int:
     return sum(list(execSeconds.values()))
 
 

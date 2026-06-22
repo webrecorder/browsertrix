@@ -72,10 +72,10 @@ class EventWebhookOps:
         org: Organization,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        success: Optional[bool] = None,
-        event: Optional[str] = None,
-        sort_by: Optional[str] = None,
-        sort_direction: Optional[int] = -1,
+        success: bool | None = None,
+        event: str | None = None,
+        sort_by: str | None = None,
+        sort_direction: int | None = -1,
     ):
         """List all webhook notifications"""
         # pylint: disable=duplicate-code
@@ -210,7 +210,7 @@ class EventWebhookOps:
         crawl_id: str,
         org: Organization,
         event: str,
-        body: Union[CrawlFinishedBody, QaAnalysisFinishedBody, UploadFinishedBody],
+        body: CrawlFinishedBody | QaAnalysisFinishedBody | UploadFinishedBody,
     ):
         """Create webhook notification for finished crawl/upload."""
         crawl = await self.crawl_ops.get_crawl_out(crawl_id, org)
@@ -249,7 +249,7 @@ class EventWebhookOps:
         self,
         org: Organization,
         event: str,
-        body: Union[CrawlDeletedBody, UploadDeletedBody, CollectionDeletedBody],
+        body: CrawlDeletedBody | UploadDeletedBody | CollectionDeletedBody,
     ):
         """Create webhook notification for deleted crawl/upload/collection."""
         notification = WebhookNotification(
@@ -452,8 +452,8 @@ class EventWebhookOps:
         self,
         crawl_id: str,
         oid: UUID,
-        review_status: Optional[int],
-        description: Optional[str],
+        review_status: int | None,
+        description: str | None,
     ) -> None:
         """Create webhook notification for crawl being reviewed in qa"""
         org = await self.org_ops.get_org_by_id(oid)
@@ -494,7 +494,7 @@ class EventWebhookOps:
         coll_id: UUID,
         org: Organization,
         event: str,
-        body: Union[CollectionItemAddedBody, CollectionItemRemovedBody],
+        body: CollectionItemAddedBody | CollectionItemRemovedBody,
     ):
         """Create webhook notification for item added/removed to collection."""
         coll_download_url = f"/api/orgs/{org.id}/collections/{coll_id}/download"
@@ -519,7 +519,7 @@ class EventWebhookOps:
 
     async def create_added_to_collection_notification(
         self,
-        crawl_ids: List[str],
+        crawl_ids: list[str],
         coll_id: UUID,
         org: Organization,
     ) -> None:
@@ -541,7 +541,7 @@ class EventWebhookOps:
 
     async def create_removed_from_collection_notification(
         self,
-        crawl_ids: List[str],
+        crawl_ids: list[str],
         coll_id: UUID,
         org: Organization,
     ) -> None:
@@ -596,10 +596,10 @@ def init_event_webhooks_api(mdb, org_ops, app):
         org: Organization = Depends(org_owner_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        success: Optional[bool] = None,
-        event: Optional[str] = None,
-        sortBy: Optional[str] = None,
-        sortDirection: Optional[int] = -1,
+        success: bool | None = None,
+        event: str | None = None,
+        sortBy: str | None = None,
+        sortDirection: int | None = -1,
     ):
         notifications, total = await ops.list_notifications(
             org,

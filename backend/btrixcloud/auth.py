@@ -3,8 +3,9 @@
 import os
 import secrets
 import string
+from collections.abc import AsyncGenerator
 from datetime import timedelta
-from typing import AsyncGenerator, List, Optional, Tuple
+from typing import List, Optional, Tuple
 from uuid import UUID, uuid4
 
 import structlog
@@ -112,7 +113,7 @@ def generate_jwt(data: dict, minutes: int) -> str:
 
 
 # ============================================================================
-def decode_jwt(token: str, audience: Optional[List[str]] = None) -> dict:
+def decode_jwt(token: str, audience: list[str] | None = None) -> dict:
     """decode JWT token"""
     return jwt.decode(token, PASSWORD_SECRET, algorithms=[ALGORITHM], audience=audience)
 
@@ -152,7 +153,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 # ============================================================================
 def verify_and_update_password(
     plain_password: str, hashed_password: str
-) -> Tuple[bool, Optional[str]]:
+) -> tuple[bool, str | None]:
     """verify password and return updated hash, if any"""
     return PWD_CONTEXT.verify_and_update(plain_password, hashed_password)
 
@@ -179,7 +180,7 @@ def init_jwt_auth(user_manager):
     async def _get_current_user_core(token: str) -> User:
         try:
             payload = decode_jwt(token, AUTH_ALLOW_AUD)
-            uid: Optional[str] = payload.get("sub") or payload.get("user_id")
+            uid: str | None = payload.get("sub") or payload.get("user_id")
             user = await user_manager.get_by_id(UUID(uid))
             assert user
             return user

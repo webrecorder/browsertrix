@@ -395,7 +395,7 @@ T = TypeVar("T")
 class BaseMongoModel(BaseModel):
     """Base pydantic model that is also a mongo doc"""
 
-    id: Optional[Union[UUID, str]]
+    id: UUID | str | None
 
     @property
     def id_str(self):
@@ -403,7 +403,7 @@ class BaseMongoModel(BaseModel):
         return str(self.id)
 
     @classmethod
-    def from_dict(cls: Type[T], data: dict) -> T:
+    def from_dict(cls: type[T], data: dict) -> T:
         """convert dict from mongo to a class"""
         if not data:
             return cls()

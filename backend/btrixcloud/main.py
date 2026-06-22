@@ -129,7 +129,7 @@ class SettingsResponse(BaseModel):
     salesEmail: str = ""
     supportEmail: str = ""
 
-    localesEnabled: Optional[List[str]]
+    localesEnabled: list[str] | None
 
     pausedExpiryMinutes: int
 

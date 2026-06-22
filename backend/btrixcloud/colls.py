@@ -5,12 +5,11 @@ Collections API
 # pylint: disable=too-many-lines
 import os
 from collections import Counter
+from collections.abc import AsyncGenerator, Callable
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncGenerator,
-    Callable,
     Dict,
     List,
     Optional,
@@ -265,7 +264,7 @@ class CollectionOps:
     async def add_crawls_to_collection(
         self,
         coll_id: UUID,
-        crawl_ids: List[str],
+        crawl_ids: list[str],
         org: Organization,
     ) -> UpdatedResponse:
         """Add crawls to collection"""
@@ -301,7 +300,7 @@ class CollectionOps:
     async def update_collection_post_remove(
         self,
         coll_id: UUID,
-        crawl_ids: List[str],
+        crawl_ids: list[str],
         org: Organization,
     ):
         """Update collection after crawls are removed or deleted outright"""
@@ -330,7 +329,7 @@ class CollectionOps:
     async def remove_crawls_from_collection(
         self,
         coll_id: UUID,
-        crawl_ids: List[str],
+        crawl_ids: list[str],
         org: Organization,
     ) -> UpdatedResponse:
         """Remove crawls from collection"""
@@ -340,7 +339,7 @@ class CollectionOps:
 
     async def get_collection_raw(
         self, coll_id: UUID, oid: UUID, public_or_unlisted_only: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get collection by id as dict from database"""
         query: dict[str, object] = {"_id": coll_id, "oid": oid}
         if public_or_unlisted_only:
@@ -358,7 +357,7 @@ class CollectionOps:
         oid: UUID,
         previous_slugs: bool = False,
         public_or_unlisted_only: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get collection by slug (current or previous) as dict from database"""
         query: dict[str, object] = {"oid": oid}
         if previous_slugs:
@@ -409,7 +408,7 @@ class CollectionOps:
         resources=False,
         public_or_unlisted_only=False,
         updates_count=True,
-        headers: Optional[dict] = None,
+        headers: dict | None = None,
     ) -> CollOut:
         """Get CollOut by id"""
         # pylint: disable=too-many-locals
@@ -545,13 +544,13 @@ class CollectionOps:
         public_colls_out: bool = False,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sort_by: Optional[str] = None,
+        sort_by: str | None = None,
         sort_direction: int = 1,
-        name: Optional[str] = None,
-        name_prefix: Optional[str] = None,
-        has_dedupe_index: Optional[bool] = None,
-        access: Optional[str] = None,
-        headers: Optional[dict] = None,
+        name: str | None = None,
+        name_prefix: str | None = None,
+        has_dedupe_index: bool | None = None,
+        access: str | None = None,
+        headers: dict | None = None,
     ):
         """List all collections for org"""
         # pylint: disable=too-many-locals, duplicate-code, too-many-branches
@@ -559,7 +558,7 @@ class CollectionOps:
         page = page - 1
         skip = page * page_size
 
-        match_query: Dict[str, Union[str, UUID, int, object]] = {"oid": org.id}
+        match_query: dict[str, str | UUID | int | object] = {"oid": org.id}
 
         if name:
             match_query["name"] = name
@@ -575,7 +574,7 @@ class CollectionOps:
         elif access:
             match_query["access"] = access
 
-        aggregate: List[Dict[str, Union[str, UUID, int, object]]] = [
+        aggregate: list[dict[str, str | UUID | int | object]] = [
             {"$match": match_query}
         ]
 
@@ -629,7 +628,7 @@ class CollectionOps:
         except (IndexError, ValueError):
             total = 0
 
-        collections: List[Union[CollOut, PublicCollOut]] = []
+        collections: list[CollOut | PublicCollOut] = []
 
         for res in items:
             thumbnail = res.get("thumbnail")
@@ -657,8 +656,8 @@ class CollectionOps:
 
     # pylint: disable=too-many-locals
     async def get_collection_crawl_resources(
-        self, coll_id: Optional[UUID], org: Organization
-    ) -> tuple[List[CrawlFileOut], List[str], bool]:
+        self, coll_id: UUID | None, org: Organization
+    ) -> tuple[list[CrawlFileOut], list[str], bool]:
         """Return pre-signed resources for all collection crawl files."""
         match: dict[str, Any]
 
@@ -675,7 +674,7 @@ class CollectionOps:
 
         return resources, crawl_ids, pages_optimized
 
-    async def get_collection_names(self, uuids: List[UUID]):
+    async def get_collection_names(self, uuids: list[UUID]):
         """return object of {_id, names} given list of collection ids"""
         cursor = self.collections.find(
             {"_id": {"$in": uuids}}, projection=["_id", "name"]
@@ -698,7 +697,7 @@ class CollectionOps:
         coll_id: UUID,
         oid: UUID,
         public_or_unlisted_only=False,
-    ) -> List[str]:
+    ) -> list[str]:
         """Return list of crawl ids in collection, including only public collections"""
         crawl_ids = []
         # ensure collection is public or unlisted, else throw here
@@ -809,7 +808,7 @@ class CollectionOps:
         coll_id: UUID,
         oid: UUID,
         job_type: TYPE_INDEX_JOB_TYPES = "import",
-        crawl_id: Optional[str] = None,
+        crawl_id: str | None = None,
     ):
         """update index with import / purge / post-crawl job"""
 
@@ -913,8 +912,8 @@ class CollectionOps:
         coll_id: UUID,
         oid: UUID,
         state: TYPE_DEDUPE_INDEX_STATES,
-        index_file: Optional[DedupeIndexFile] = None,
-        dt: Optional[datetime] = None,
+        index_file: DedupeIndexFile | None = None,
+        dt: datetime | None = None,
         if_exists=False,
     ) -> bool:
         """update the state, and optionally, dedupe index file info"""
@@ -947,7 +946,7 @@ class CollectionOps:
 
         return res is not None
 
-    async def get_dedupe_index_saved(self, coll_id: UUID) -> Optional[datetime]:
+    async def get_dedupe_index_saved(self, coll_id: UUID) -> datetime | None:
         """return datetime for when index was last saved, if any"""
         coll = await self.collections.find_one(
             {"_id": coll_id, "indexLastSavedAt": {"$ne": None}},
@@ -1149,9 +1148,9 @@ class CollectionOps:
         org_slug: str,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sort_by: Optional[str] = None,
+        sort_by: str | None = None,
         sort_direction: int = 1,
-        headers: Optional[dict] = None,
+        headers: dict | None = None,
     ):
         """List public collections for org"""
         try:
@@ -1184,7 +1183,7 @@ class CollectionOps:
 
     async def set_home_url(
         self, coll_id: UUID, update: UpdateCollHomeUrl, org: Organization
-    ) -> Dict[str, bool]:
+    ) -> dict[str, bool]:
         """Set home URL for collection and save thumbnail to database"""
         if update.pageId:
             page = await self.page_ops.get_page(update.pageId, org.id)
@@ -1215,10 +1214,10 @@ class CollectionOps:
         coll_id: UUID,
         org: Organization,
         user: User,
-        source_url: Optional[AnyHttpUrl] = None,
-        source_ts: Optional[datetime] = None,
-        source_page_id: Optional[UUID] = None,
-    ) -> Dict[str, bool]:
+        source_url: AnyHttpUrl | None = None,
+        source_ts: datetime | None = None,
+        source_page_id: UUID | None = None,
+    ) -> dict[str, bool]:
         """Upload file as stream to use as collection thumbnail"""
         coll = await self.get_collection(coll_id, org.id)
 
@@ -1424,12 +1423,12 @@ def init_collections_api(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sortBy: Optional[str] = None,
+        sortBy: str | None = None,
         sortDirection: int = 1,
-        name: Optional[str] = None,
-        namePrefix: Optional[str] = None,
-        hasDedupeIndex: Optional[bool] = None,
-        access: Optional[str] = None,
+        name: str | None = None,
+        namePrefix: str | None = None,
+        hasDedupeIndex: bool | None = None,
+        access: str | None = None,
     ):
         # pylint: disable=duplicate-code
         collections, total = await colls.list_collections(
@@ -1607,7 +1606,7 @@ def init_collections_api(
         request: Request,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sortBy: Optional[str] = None,
+        sortBy: str | None = None,
         sortDirection: int = 1,
     ):
         return await colls.get_org_public_collections(
@@ -1704,9 +1703,9 @@ def init_collections_api(
         request: Request,
         filename: str,
         coll_id: UUID,
-        sourceUrl: Optional[AnyHttpUrl],
-        sourceTs: Optional[datetime],
-        sourcePageId: Optional[UUID],
+        sourceUrl: AnyHttpUrl | None,
+        sourceTs: datetime | None,
+        sourcePageId: UUID | None,
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):

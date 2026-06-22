@@ -58,7 +58,7 @@ class EmailSender:
     sender: str
     password: str
     reply_to: str
-    smtp_server: Optional[str]
+    smtp_server: str | None
     smtp_port: int
     smtp_use_tls: bool
     support_email: str
@@ -159,7 +159,7 @@ class EmailSender:
                         )
                         return
 
-                    msg: Union[EmailMessage, MIMEMultipart]
+                    msg: EmailMessage | MIMEMultipart
 
                     if html:
                         msg = MIMEMultipart("alternative")
@@ -193,7 +193,7 @@ class EmailSender:
             raise exc
 
     async def send_user_validation(
-        self, receiver_email: str, token: str, headers: Optional[dict] = None
+        self, receiver_email: str, token: str, headers: dict | None = None
     ):
         """Send email to validate registration email address"""
 
@@ -214,8 +214,8 @@ class EmailSender:
         token: UUID,
         org_name: str,
         is_new: bool,
-        subscription: Optional[Subscription] = None,
-        headers: Optional[dict] = None,
+        subscription: Subscription | None = None,
+        headers: dict | None = None,
     ):
         """Send email to invite new user"""
 
@@ -258,10 +258,10 @@ class EmailSender:
 
     async def send_background_job_failed(
         self,
-        job: Union[CreateReplicaJob, DeleteReplicaJob],
+        job: CreateReplicaJob | DeleteReplicaJob,
         finished: datetime,
         receiver_email: str,
-        org: Optional[Organization] = None,
+        org: Organization | None = None,
     ):
         """Send background job failed email to superuser"""
         await self._send_encrypted(

@@ -80,7 +80,7 @@ class K8sAPI:
             socket_timeout=20,
         )
 
-    async def get_redis_connected(self, obj_id: str) -> Optional[Redis]:
+    async def get_redis_connected(self, obj_id: str) -> Redis | None:
         """init redis, ensure connectivity"""
         redis_url = self.get_redis_url(obj_id)
         redis = None
@@ -104,14 +104,14 @@ class K8sAPI:
         userid: str,
         oid: str,
         storage: str,
-        crawler_channel: Optional[str] = "",
-        scale: Optional[int] = 1,
-        browser_windows: Optional[int] = 1,
-        crawl_timeout: Optional[int] = 0,
-        max_crawl_size: Optional[int] = 0,
+        crawler_channel: str | None = "",
+        scale: int | None = 1,
+        browser_windows: int | None = 1,
+        crawl_timeout: int | None = 0,
+        max_crawl_size: int | None = 0,
         manual: bool = True,
-        crawl_id: Optional[str] = None,
-        warc_prefix: Optional[str] = "",
+        crawl_id: str | None = None,
+        warc_prefix: str | None = "",
         storage_filename: str = "",
         profile_filename: str = "",
         profileid: str = "",
@@ -159,14 +159,14 @@ class K8sAPI:
         userid: str,
         oid: str,
         storage: str,
-        crawler_channel: Optional[str] = "",
-        scale: Optional[int] = 1,
-        browser_windows: Optional[int] = 1,
-        crawl_timeout: Optional[int] = 0,
-        max_crawl_size: Optional[int] = 0,
+        crawler_channel: str | None = "",
+        scale: int | None = 1,
+        browser_windows: int | None = 1,
+        crawl_timeout: int | None = 0,
+        max_crawl_size: int | None = 0,
         manual: bool = True,
-        crawl_id: Optional[str] = None,
-        warc_prefix: Optional[str] = "",
+        crawl_id: str | None = None,
+        warc_prefix: str | None = "",
         storage_filename: str = "",
         profile_filename: str = "",
         profileid: str = "",
@@ -487,7 +487,7 @@ class K8sAPI:
             namespace=self.namespace,
         )
 
-    async def list_cron_jobs(self, label: str = "") -> List[V1CronJob]:
+    async def list_cron_jobs(self, label: str = "") -> list[V1CronJob]:
         """Return list of all cron jobs, optionally filtered by label"""
         resp = await self.batch_api.list_namespaced_cron_job(
             namespace=self.namespace,
@@ -495,7 +495,7 @@ class K8sAPI:
         )
         return resp.items
 
-    async def list_crawl_jobs(self, label: str = "") -> List[dict[str, Any]]:
+    async def list_crawl_jobs(self, label: str = "") -> list[dict[str, Any]]:
         """Return list of all crawl jobs, optionally filtered by label"""
         resp = await self.custom_api.list_namespaced_custom_object(
             group="btrix.cloud",

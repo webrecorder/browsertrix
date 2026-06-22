@@ -71,7 +71,7 @@ class CrawlLogOps:
         crawl_id: str,
         oid: UUID,
         log_line: str,
-        qa_run_id: Optional[str] = None,
+        qa_run_id: str | None = None,
     ) -> bool:
         """add crawl log line to database"""
         try:
@@ -122,10 +122,10 @@ class CrawlLogOps:
         page: int = 1,
         sort_by: str = "timestamp",
         sort_direction: int = -1,
-        contexts: Optional[List[str]] = None,
-        log_levels: Optional[List[str]] = None,
-        qa_run_id: Optional[str] = None,
-    ) -> Tuple[list[CrawlLogLine], int]:
+        contexts: list[str] | None = None,
+        log_levels: list[str] | None = None,
+        qa_run_id: str | None = None,
+    ) -> tuple[list[CrawlLogLine], int]:
         """list all logs for particular crawl"""
         # pylint: disable=too-many-locals, duplicate-code
 
@@ -133,7 +133,7 @@ class CrawlLogOps:
         page = page - 1
         skip = page_size * page
 
-        match_query: Dict[str, Any] = {
+        match_query: dict[str, Any] = {
             "oid": org.id,
             "crawlId": crawl_id,
             "qaRunId": qa_run_id,
@@ -145,7 +145,7 @@ class CrawlLogOps:
         if log_levels:
             match_query["logLevel"] = {"$in": log_levels}
 
-        aggregate: List[Dict[str, Any]] = [{"$match": match_query}]
+        aggregate: list[dict[str, Any]] = [{"$match": match_query}]
 
         if sort_by:
             if sort_by not in (
@@ -189,7 +189,7 @@ class CrawlLogOps:
         return log_lines, total
 
     async def delete_crawl_logs(
-        self, crawl_id: str, oid: UUID, qa_run_id: Optional[str] = None
+        self, crawl_id: str, oid: UUID, qa_run_id: str | None = None
     ):
         """Delete all logs from a specific crawl"""
         query: dict[str, str | UUID] = {"crawlId": crawl_id, "oid": oid}
