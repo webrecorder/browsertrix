@@ -10,6 +10,7 @@ import {
   PAUSED_STATES,
   RUNNING_STATES,
   SUCCESSFUL_AND_FAILED_STATES,
+  UPLOAD_STATES,
   WAITING_NOT_PAUSED_STATES,
 } from "@/types/crawlState";
 
@@ -99,6 +100,15 @@ export const AllStates: Story = {
               </btrix-table-row>`,
           )}
           ${SUCCESSFUL_AND_FAILED_STATES.map(
+            (state) =>
+              html`<btrix-table-row class="border-t">
+                <btrix-table-cell>
+                  <btrix-crawl-status state=${state}></btrix-crawl-status>
+                </btrix-table-cell>
+                <btrix-table-cell><code>${state}</code></btrix-table-cell>
+              </btrix-table-row>`,
+          )}
+          ${UPLOAD_STATES.map(
             (state) =>
               html`<btrix-table-row class="border-t">
                 <btrix-table-cell>
