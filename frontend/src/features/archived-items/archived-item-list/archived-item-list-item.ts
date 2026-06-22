@@ -71,7 +71,7 @@ export class ArchivedItemListItem extends BtrixElement {
     const rowName = renderName(this.item);
     const isUpload = this.item.type === "upload";
     const crawlStatus = isUpload
-      ? CrawlStatus.getContent({ state: "complete" })
+      ? CrawlStatus.getContent({ state: this.item.state })
       : CrawlStatus.getContent(this.item as Crawl);
     const pageCount = isUpload
       ? this.item.pageCount
