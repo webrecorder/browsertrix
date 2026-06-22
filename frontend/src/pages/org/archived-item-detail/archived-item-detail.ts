@@ -1059,8 +1059,13 @@ export class ArchivedItemDetail extends BtrixElement {
         )}
         <btrix-desc-list-item label=${msg("Pages")}>
           ${this.item
-            ? html`${this.localize.number(this.item.pageCount || 0)}
-              ${pluralOf("pages", this.item.pageCount || 0)}`
+            ? this.item.type === "upload" &&
+              this.item.state === "processing-upload"
+              ? html`<sl-spinner
+                  style="font-size: 0.875rem; --track-width: 1.5px;"
+                ></sl-spinner>`
+              : html`${this.localize.number(this.item.pageCount || 0)}
+                ${pluralOf("pages", this.item.pageCount || 0)}`
             : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Size")}>
