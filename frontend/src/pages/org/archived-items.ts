@@ -1055,6 +1055,7 @@ export class CrawlsList extends BtrixElement {
         message: msg(str`Successfully deleted archived item.`),
         variant: "success",
         icon: "check2-circle",
+        id: "archived-item-deleted",
       });
     } catch (e) {
       if (this.itemToDelete) {
