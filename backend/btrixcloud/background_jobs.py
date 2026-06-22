@@ -576,6 +576,10 @@ class BackgroundJobOps:
         existing_job_id: Optional[str] = None,
     ):
         """Create job to post-process uploaded crawl"""
+
+        pp_logger = logger.bind(
+            crawl_id=crawl_id, oid=oid, existing_job_id=existing_job_id
+        )
         try:
             job_id = await self.crawl_manager.run_postprocess_upload_job(
                 oid=str(oid),
@@ -610,10 +614,8 @@ class BackgroundJobOps:
             return job_id
         # pylint: disable=broad-exception-caught
         except Exception:
-            logger.exception(
+            pp_logger.exception(
                 "postprocess_upload_job_failed",
-                crawl_id=crawl_id,
-                oid=oid,
             )
             return None
 
