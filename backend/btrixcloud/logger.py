@@ -117,7 +117,7 @@ def create_request_logging_middleware(logger):
     return request_logging_middleware
 
 
-def encode_special_types(
+def _encode_special_types(
     _logger: structlog.stdlib.BoundLogger, _method_name: str, event_dict: EventDict
 ) -> EventDict:
     """Convert UUID / datetime values to strings so they are logged as plain text
@@ -130,7 +130,7 @@ def encode_special_types(
     return event_dict
 
 
-def add_version_context(
+def _add_version_context(
     _logger: structlog.stdlib.BoundLogger, _method_name: str, event_dict: EventDict
 ) -> EventDict:
     """Add version information to the log event dict."""
@@ -140,9 +140,29 @@ def add_version_context(
     return event_dict
 
 
+_callsite_adder = structlog.processors.CallsiteParameterAdder(
+    {
+        structlog.processors.CallsiteParameter.FILENAME,
+        structlog.processors.CallsiteParameter.FUNC_NAME,
+        structlog.processors.CallsiteParameter.LINENO,
+    }
+)
+
+
+def _add_callsite(logger, method_name: str, event_dict: EventDict) -> EventDict:
+    """Add callsite info to all events except request-logging events,
+    whose callsite is always the same middleware location."""
+    if event_dict.get("event") not in (
+        "http_request",
+        "http_unhandled_exception",
+    ) and event_dict.get("logger") not in ("uvicorn.access",):
+        return _callsite_adder(logger, method_name, event_dict)
+    return event_dict
+
+
 SHARED_PROCESSORS: list[Processor] = [
-    encode_special_types,
-    add_version_context,
+    _encode_special_types,
+    _add_version_context,
     structlog.contextvars.merge_contextvars,
     structlog.stdlib.add_log_level,
     structlog.stdlib.add_logger_name,
@@ -151,13 +171,7 @@ SHARED_PROCESSORS: list[Processor] = [
     structlog.processors.TimeStamper(fmt="iso"),
     structlog.processors.StackInfoRenderer(),
     structlog.processors.UnicodeDecoder(),
-    structlog.processors.CallsiteParameterAdder(
-        {
-            structlog.processors.CallsiteParameter.FILENAME,
-            structlog.processors.CallsiteParameter.FUNC_NAME,
-            structlog.processors.CallsiteParameter.LINENO,
-        }
-    ),
+    _add_callsite,
 ]
 
 
