@@ -495,7 +495,7 @@ class UploadOps(BaseCrawlOps):
                         "multi_wacz_cleanup_failed",
                         filename=crawl_file.filename,
                     )
-            cwf_logger.exception("multi_wacz_cleanup_failed")
+            cwf_logger.exception("multi_wacz_split_failed")
             raise
 
     async def delete_uploads(
