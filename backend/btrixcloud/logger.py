@@ -155,7 +155,7 @@ def _add_callsite(logger, method_name: str, event_dict: EventDict) -> EventDict:
     if event_dict.get("event") not in (
         "http_request",
         "http_unhandled_exception",
-    ) and event_dict.get("logger") not in ("uvicorn.access"):
+    ) and event_dict.get("logger") not in ("uvicorn.access",):
         return _callsite_adder(logger, method_name, event_dict)
     return event_dict
 
