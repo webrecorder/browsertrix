@@ -30,7 +30,7 @@ import {
   type StorageSeedFile,
 } from "@/types/workflow";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
-import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
+import { isDepthSupportedScopeType, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
@@ -586,7 +586,7 @@ export class ConfigDetails extends BtrixElement {
                 true,
               ),
       )}
-      ${when(DEPTH_SUPPORTED_SCOPES.includes(scopeType), () =>
+      ${when(isDepthSupportedScopeType(scopeType), () =>
         this.renderSetting(
           msg("Max Depth in Scope"),
           primarySeedConfig && primarySeedConfig.depth !== null

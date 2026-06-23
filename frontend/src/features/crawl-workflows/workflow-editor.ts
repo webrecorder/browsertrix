@@ -120,8 +120,8 @@ import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import {
-  DEPTH_SUPPORTED_SCOPES,
   getDefaultProxyId,
+  isDepthSupportedScopeType,
   isPageScopeType,
 } from "@/utils/crawler";
 import {
@@ -1582,7 +1582,7 @@ https://archiveweb.page/es/`}
         `,
       )}
       ${when(
-        DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType),
+        isDepthSupportedScopeType(this.formState.scopeType),
         () => html`
           ${inputCol(html`
             <sl-input
@@ -3691,7 +3691,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         : null,
       seedFileId: jsonSeeds
         ? null
-        : uploadParams?.seedFileId ?? this.formState.seedFileId,
+        : (uploadParams?.seedFileId ?? this.formState.seedFileId),
       scopeType: ScopeType.Page,
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
       useSitemap: false,
@@ -3739,7 +3739,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
 
-    if (DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType)) {
+    if (isDepthSupportedScopeType(this.formState.scopeType)) {
       primarySeed.depth = this.formState.maxScopeDepth;
     }
 
