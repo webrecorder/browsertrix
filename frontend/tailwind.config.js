@@ -1,4 +1,4 @@
-import theme from "@webrecorder/hickory/tokens/tailwind";
+import { colors } from "@webrecorder/hickory/tokens/tailwind";
 import { tailwindTransform } from "postcss-lit";
 
 import attributes from "./config/tailwind/plugins/attributes";
@@ -38,12 +38,12 @@ function makeTheme() {
     // https://github.com/tailwindlabs/tailwindcss/blob/52ab3154392ba3d7a05cae643694384e72dc24b2/stubs/defaultConfig.stub.js
     colors: {
       current: "currentColor",
-      ...theme.colors,
+      ...colors,
       primary: {
-        ...theme.colors.cyan,
-        DEFAULT: theme.colors.cyan[500],
+        ...colors.cyan,
+        DEFAULT: colors.cyan[500],
       },
-      brand: theme.colors.brand,
+      brand: colors.brand,
       success: {
         ...shoelaceColorPalette("success"),
         DEFAULT: `var(--success)`,
