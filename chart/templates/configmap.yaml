@@ -124,6 +124,8 @@ data:
 
   DEDUPE_FEATURE_ENABLED_DEFAULT: "{{ .Values.dedupe.default_enabled }}"
 
+  CRAWLER_NO_PVC: "{{ .Values.crawler_no_pvc }}"
+
 
   {{- if .Values.available_plans }}
   AVAILABLE_PLANS: {{ .Values.available_plans | toJson }}

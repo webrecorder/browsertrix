@@ -57,6 +57,10 @@ default_crawl_filename_template: "@ts-@hostsuffix.wacz"
 # standard crawler options are covered with other options above
 crawler_extra_args: ""
 
+# if set to 1, no PVCs will be used for crawler / redis pods
+# use with caution
+crawler_no_pvc: 0
+
 # max allowed browser windows per crawl
 max_browser_windows: 8
 

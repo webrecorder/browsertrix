@@ -123,6 +123,8 @@ class CrawlOperator(BaseOperator):
 
         self.paused_expires_delta = timedelta(minutes=paused_crawl_limit_minutes)
 
+        self.no_pvc = os.environ.get("CRAWLER_NO_PVC") == "1"
+
     def init_routes(self, app):
         """init routes for this operator"""
 
@@ -464,7 +466,7 @@ class CrawlOperator(BaseOperator):
         params["obj_type"] = "crawl"
         params["cpu"] = pod_info.newCpu or params.get("redis_cpu")
         params["memory"] = pod_info.newMemory or params.get("redis_memory")
-        params["no_pvc"] = crawl.is_single_page
+        params["no_pvc"] = self.no_pvc or crawl.is_single_page
 
         restart_reason = None
         if has_pod:
@@ -658,6 +660,8 @@ class CrawlOperator(BaseOperator):
         else:
             params["memory_limit"] = self.k8s.max_crawler_memory_size
         params["storage"] = pod_info.newStorage or params.get("crawler_storage")
+        if self.no_pvc:
+            params["no_pvc"] = True
 
         params["init_crawler"] = not is_paused
         if has_pod and not is_paused:
