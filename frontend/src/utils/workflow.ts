@@ -1,7 +1,6 @@
-/**
- * TODO Move to utils/crawl-configs/
- */
 import { msg, str } from "@lit/localize";
+import { Set as ImmutableSet } from "immutable";
+import sortBy from "lodash/fp/sortBy";
 import { z } from "zod";
 
 import { getAppSettings, type AppSettings } from "./app";
@@ -21,7 +20,7 @@ import type { OrgData } from "@/types/org";
 import { NewWorkflowOnlyScopeType, WorkflowScopeType } from "@/types/workflow";
 import { BYTES_PER_GB } from "@/utils/bytes";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
-import { DEFAULT_MAX_SCALE, isPageScopeType } from "@/utils/crawler";
+import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import { getNextDate, getScheduleInterval } from "@/utils/cron";
 import localize, { getDefaultLang } from "@/utils/localize";
 
@@ -71,6 +70,44 @@ export const workflowTabToGuideHash: Record<SectionsEnum, GuideHash> = {
   collections: GuideHash.Collections,
   metadata: GuideHash.Metadata,
 };
+
+const WorkflowScopeSet = ImmutableSet(
+  Object.values(WorkflowScopeType),
+).subtract([ScopeType.Any]);
+const WorkflowPageScopeSet = ImmutableSet([
+  ScopeType.Page,
+  NewWorkflowOnlyScopeType.PageList,
+  ScopeType.SPA,
+]);
+const WorkflowSiteScopeSet = WorkflowScopeSet.subtract(WorkflowPageScopeSet);
+
+const SCOPE_PRIORITY = {
+  [ScopeType.Page]: 1,
+  [NewWorkflowOnlyScopeType.PageList]: 2,
+  [ScopeType.SPA]: 3,
+  [ScopeType.Prefix]: 4,
+  [ScopeType.Host]: 5,
+  [ScopeType.Domain]: 6,
+  [ScopeType.Custom]: 7,
+  [NewWorkflowOnlyScopeType.Regex]: 8,
+  [ScopeType.Any]: 9,
+} satisfies Record<ScopeType | NewWorkflowOnlyScopeType, number>;
+const sortByPriority = sortBy<ScopeType | NewWorkflowOnlyScopeType>(
+  (scope) => SCOPE_PRIORITY[scope],
+);
+
+export const WORKFLOW_PAGE_SCOPES = sortByPriority(
+  Array.from(WorkflowPageScopeSet.values()),
+);
+export const WORKFLOW_SITE_SCOPES = sortByPriority(
+  Array.from(WorkflowSiteScopeSet.values()),
+);
+
+export function isPageScope(
+  scope?: (typeof WorkflowScopeType)[keyof typeof WorkflowScopeType],
+) {
+  return scope !== undefined && WorkflowPageScopeSet.has(scope);
+}
 
 export function makeUserGuideEvent(
   section: SectionsEnum,
@@ -299,7 +336,7 @@ export function getInitialFormState(params: {
   const formState: Partial<FormState> = {};
   const seedsConfig = params.initialWorkflow.config;
   let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-  if (!isPageScopeType(params.initialWorkflow.config.scopeType)) {
+  if (!isPageScope(params.initialWorkflow.config.scopeType)) {
     if (params.initialSeeds) {
       const firstSeed = params.initialSeeds[0];
       if (typeof firstSeed === "string") {

@@ -119,11 +119,7 @@ import {
 import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
-import {
-  getDefaultProxyId,
-  isDepthSupportedScopeType,
-  isPageScopeType,
-} from "@/utils/crawler";
+import { getDefaultProxyId, isDepthSupportedScopeType } from "@/utils/crawler";
 import {
   getUTCSchedule,
   humanizeNextDate,
@@ -152,6 +148,7 @@ import {
   getDefaultFormState,
   getInitialFormState,
   getServerDefaults,
+  isPageScope,
   makeUserGuideEvent,
   MAX_SEED_LIST_FILE_BYTES,
   MAX_SEED_LIST_STRING_BYTES,
@@ -159,6 +156,8 @@ import {
   SECTIONS,
   SEED_LIST_FILE_EXT,
   SeedListFormat,
+  WORKFLOW_PAGE_SCOPES,
+  WORKFLOW_SITE_SCOPES,
   workflowTabToGuideHash,
   type FormState,
   type WorkflowDefaults,
@@ -910,8 +909,6 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private readonly renderScope = () => {
-    const exclusions = trimArray(this.formState.exclusions || []);
-
     return html`
       ${inputCol(html`
         <sl-select
@@ -925,135 +922,70 @@ export class WorkflowEditor extends BtrixElement {
             )}
         >
           <sl-menu-label>${msg("Page Crawl")}</sl-menu-label>
-          <sl-option value=${ScopeType.Page}
-            >${scopeTypeLabels[ScopeType.Page]}</sl-option
-          >
-          <sl-option value=${NewWorkflowOnlyScopeType.PageList}>
-            ${scopeTypeLabels[NewWorkflowOnlyScopeType.PageList]}
-          </sl-option>
-          <sl-option value=${ScopeType.SPA}>
-            ${scopeTypeLabels[ScopeType.SPA]}
-          </sl-option>
+          ${WORKFLOW_PAGE_SCOPES.map(
+            (scope) =>
+              html`<sl-option value=${scope}
+                >${scopeTypeLabels[scope]}</sl-option
+              >`,
+          )}
           <sl-divider></sl-divider>
           <sl-menu-label>${msg("Site Crawl")}</sl-menu-label>
-          <sl-option value=${ScopeType.Prefix}>
-            ${scopeTypeLabels[ScopeType.Prefix]}
-          </sl-option>
-          <sl-option value=${ScopeType.Host}>
-            ${scopeTypeLabels[ScopeType.Host]}
-          </sl-option>
-          <sl-option value=${ScopeType.Domain}>
-            ${scopeTypeLabels[ScopeType.Domain]}
-          </sl-option>
-          <sl-option value=${ScopeType.Custom}>
-            ${scopeTypeLabels[ScopeType.Custom]}
-          </sl-option>
-          <sl-option value=${NewWorkflowOnlyScopeType.Regex}>
-            ${scopeTypeLabels[NewWorkflowOnlyScopeType.Regex]}
-          </sl-option>
+          ${WORKFLOW_SITE_SCOPES.map(
+            (scope) =>
+              html`<sl-option value=${scope}
+                >${scopeTypeLabels[scope]}</sl-option
+              >`,
+          )}
         </sl-select>
       `)}
       ${this.renderHelpTextCol(html`
         <p>${msg(`Tells the crawler which pages it can visit.`)}</p>
       `)}
-      ${isPageScopeType(this.formState.scopeType)
+      ${isPageScope(this.formState.scopeType)
         ? this.renderPageScope()
         : this.renderSiteScope()}
-      ${!isPageScopeType(this.formState.scopeType) ||
-      this.formState.includeLinkedPages
-        ? html`
-            <div class="col-span-5">
-              <btrix-details ?open=${exclusions.length > 0}>
-                <span slot="title"
-                  >${msg("Exclude Pages")}
-                  ${exclusions.length
-                    ? html`<btrix-badge>${exclusions.length}</btrix-badge>`
-                    : ""}</span
-                >
-                <div class="grid grid-cols-5 gap-5 py-2">
-                  ${inputCol(html`
-                    <btrix-queue-exclusion-table
-                      label=""
-                      .exclusions=${this.formState.exclusions}
-                      pageSize="10"
-                      editable
-                      removable
-                      uncontrolled
-                      @btrix-remove=${this.handleRemoveRegex}
-                      @btrix-change=${this.handleChangeRegex}
-                    ></btrix-queue-exclusion-table>
-                  `)}
-                  ${this.renderHelpTextCol(infoTextFor["exclusions"], false)}
-                </div>
-              </btrix-details>
-            </div>
-          `
-        : nothing}
     `;
   };
 
+  private renderExcludePages() {
+    const exclusions = trimArray(this.formState.exclusions || []);
+
+    return html`
+      <div class="col-span-5">
+        <btrix-details ?open=${exclusions.length > 0}>
+          <span slot="title"
+            >${msg("Exclude Pages")}
+            ${exclusions.length
+              ? html`<btrix-badge>${exclusions.length}</btrix-badge>`
+              : ""}</span
+          >
+          <div class="grid grid-cols-5 gap-5 py-2">
+            ${inputCol(html`
+              <btrix-queue-exclusion-table
+                label=""
+                .exclusions=${this.formState.exclusions}
+                pageSize="10"
+                editable
+                removable
+                uncontrolled
+                @btrix-remove=${this.handleRemoveRegex}
+                @btrix-change=${this.handleChangeRegex}
+              ></btrix-queue-exclusion-table>
+            `)}
+            ${this.renderHelpTextCol(infoTextFor["exclusions"], false)}
+          </div>
+        </btrix-details>
+      </div>
+    `;
+  }
+
   private readonly renderPageScope = () => {
     return html`
-      ${this.formState.scopeType === ScopeType.Page
-        ? html`
-            ${inputCol(html`
-              <!-- TODO Use btrix-url-input -->
-              <sl-input
-                name="urlList"
-                label=${msg("URL to Crawl")}
-                placeholder="https://webrecorder.net/blog"
-                autocomplete="off"
-                inputmode="url"
-                value=${this.formState.urlList}
-                autofocus
-                required
-                @sl-input=${async (e: Event) => {
-                  const inputEl = e.target as SlInput;
-                  await inputEl.updateComplete;
-                  this.updateFormState(
-                    {
-                      urlList: inputEl.value,
-                    },
-                    true,
-                  );
-                  const valid = validURL(inputEl.value);
-                  if (!inputEl.checkValidity() && valid) {
-                    inputEl.setCustomValidity("");
-                    inputEl.helpText = "";
-                  }
-
-                  if (valid) {
-                    this.animateStickyFooter();
-                  }
-                }}
-                @sl-blur=${async (e: Event) => {
-                  const inputEl = e.target as SlInput;
-                  await inputEl.updateComplete;
-                  if (inputEl.value && !validURL(inputEl.value)) {
-                    const text = msg("Please enter a valid URL.");
-                    inputEl.helpText = text;
-                    inputEl.setCustomValidity(text);
-                  } else if (
-                    inputEl.value &&
-                    !inputEl.value.startsWith("https://") &&
-                    !inputEl.value.startsWith("http://")
-                  ) {
-                    this.updateFormState(
-                      {
-                        urlList: "https://" + inputEl.value,
-                      },
-                      true,
-                    );
-                  }
-                }}
-              >
-              </sl-input>
-            `)}
-            ${this.renderHelpTextCol(
-              msg(str`The crawler will visit this URL.`),
-            )}
-          `
-        : this.renderUrlList()}
+      ${choose(this.formState.scopeType, [
+        [ScopeType.Page, this.renderSingleUrlInput],
+        [ScopeType.SPA, this.renderPrimarySeedInput],
+        [NewWorkflowOnlyScopeType.PageList, this.renderUrlList],
+      ])}
       ${inputCol(html`
         <sl-checkbox
           name="includeLinkedPages"
@@ -1063,19 +995,17 @@ export class WorkflowEditor extends BtrixElement {
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
-      ${inputCol(html`
-        <sl-checkbox name="useRobots" ?checked=${this.formState.useRobots}>
-          ${msg("Skip pages disallowed by robots.txt")}
-        </sl-checkbox>
-      `)}
-      ${this.renderHelpTextCol(infoTextFor["useRobots"], false)}
-      ${when(this.formState.includeLinkedPages, () =>
-        this.renderLinkSelectors(),
+      ${when(
+        this.formState.includeLinkedPages ||
+          this.formState.scopeType === ScopeType.SPA,
+        () => html`
+          ${this.renderLinkSelectors()} ${this.renderExcludePages()}
+        `,
       )}
     `;
   };
 
-  private renderUrlList() {
+  private readonly renderUrlList = () => {
     let numberOfURLs: string | null = null;
 
     if (this.formState.seedListFormat === SeedListFormat.File) {
@@ -1144,7 +1074,208 @@ export class WorkflowEditor extends BtrixElement {
               })}.`,
       )}
     `;
-  }
+  };
+
+  private readonly renderSingleUrlInput = () => {
+    return html`${inputCol(html`
+      <!-- TODO Use btrix-url-input -->
+      <sl-input
+        name="urlList"
+        label=${msg("URL to Crawl")}
+        placeholder="https://webrecorder.net/blog"
+        autocomplete="off"
+        inputmode="url"
+        value=${this.formState.urlList}
+        autofocus
+        required
+        @sl-input=${async (e: Event) => {
+          const inputEl = e.target as SlInput;
+          await inputEl.updateComplete;
+          this.updateFormState(
+            {
+              urlList: inputEl.value,
+            },
+            true,
+          );
+          const valid = validURL(inputEl.value);
+          if (!inputEl.checkValidity() && valid) {
+            inputEl.setCustomValidity("");
+            inputEl.helpText = "";
+          }
+
+          if (valid) {
+            this.animateStickyFooter();
+          }
+        }}
+        @sl-blur=${async (e: Event) => {
+          const inputEl = e.target as SlInput;
+          await inputEl.updateComplete;
+          if (inputEl.value && !validURL(inputEl.value)) {
+            const text = msg("Please enter a valid URL.");
+            inputEl.helpText = text;
+            inputEl.setCustomValidity(text);
+          } else if (
+            inputEl.value &&
+            !inputEl.value.startsWith("https://") &&
+            !inputEl.value.startsWith("http://")
+          ) {
+            this.updateFormState(
+              {
+                urlList: "https://" + inputEl.value,
+              },
+              true,
+            );
+          }
+        }}
+      >
+      </sl-input>
+    `)}
+    ${this.renderHelpTextCol(msg(str`The crawler will visit this URL.`))}`;
+  };
+
+  private readonly renderPrimarySeedInput = () => {
+    const urlPlaceholder = "https://example.com/path/page.html";
+    let exampleUrl = new URL(urlPlaceholder);
+    if (this.formState.primarySeedUrl) {
+      try {
+        exampleUrl = new URL(this.formState.primarySeedUrl);
+      } catch {
+        /* empty */
+      }
+    }
+    const exampleHost = exampleUrl.host;
+    const exampleProtocol = exampleUrl.protocol;
+    const examplePathname = exampleUrl.pathname;
+    const exampleDomain = `${exampleProtocol}//${exampleHost}`;
+
+    let helpText: TemplateResult | string;
+
+    const custom = (customRegexFieldLabel: string) => {
+      const example_url = html`<span class="break-word text-blue-500"
+        >${exampleDomain}${examplePathname}</span
+      >`;
+      const custom_regexes = html`<em>${customRegexFieldLabel}</em>`;
+
+      return msg(
+        html`Will start crawl with ${example_url} and only follow links that
+        match the ${custom_regexes} listed below.`,
+      );
+    };
+
+    switch (this.formState.scopeType) {
+      case ScopeType.Prefix:
+        helpText = msg(
+          html`Will crawl all pages and paths in the same directory, e.g.
+            <span class="break-word break-word text-blue-500"
+              >${exampleDomain}</span
+            ><span class="break-word font-medium text-blue-500"
+              >${examplePathname.slice(
+                0,
+                examplePathname.lastIndexOf("/"),
+              )}/</span
+            >`,
+        );
+        break;
+      case ScopeType.Host:
+        helpText = msg(
+          html`Will crawl all pages on
+            <span class="text-blue-500">${exampleHost}</span> and ignore pages
+            on any subdomains.`,
+        );
+        break;
+      case ScopeType.Domain:
+        helpText = msg(
+          html`Will crawl all pages on
+            <span class="text-blue-500">${exampleHost}</span> and
+            <span class="text-blue-500">subdomain.${exampleHost}</span>.`,
+        );
+        break;
+      case ScopeType.SPA:
+        helpText = msg(
+          html`Will crawl hash anchor links as pages. For example,
+            <span class="break-word text-blue-500"
+              >${exampleDomain}${examplePathname}</span
+            ><span class="break-word font-medium text-blue-500"
+              >#example-page</span
+            >
+            will be treated as a separate page.`,
+        );
+        break;
+      case ScopeType.Custom:
+        helpText = custom(msg("Page Prefix URLs"));
+        break;
+      case NewWorkflowOnlyScopeType.Regex:
+        helpText = custom(msg("Page Regex Patterns"));
+        break;
+      default:
+        helpText = "";
+        break;
+    }
+
+    return html`${inputCol(html`
+      <sl-input
+        name="primarySeedUrl"
+        label=${msg("Crawl Start URL")}
+        autocomplete="off"
+        inputmode="url"
+        placeholder=${urlPlaceholder}
+        value=${this.formState.primarySeedUrl}
+        required
+        @sl-input=${async (e: Event) => {
+          const inputEl = e.target as SlInput;
+          await inputEl.updateComplete;
+          this.updateFormState(
+            {
+              primarySeedUrl: inputEl.value,
+            },
+            true,
+          );
+          if (!inputEl.checkValidity() && validURL(inputEl.value)) {
+            inputEl.setCustomValidity("");
+            inputEl.helpText = "";
+          }
+        }}
+        @sl-blur=${async (e: Event) => {
+          const inputEl = e.target as SlInput;
+          await inputEl.updateComplete;
+          if (inputEl.value && !validURL(inputEl.value)) {
+            const text = msg("Please enter a valid URL.");
+            inputEl.helpText = text;
+            inputEl.setCustomValidity(text);
+          } else if (
+            inputEl.value &&
+            !inputEl.value.startsWith("https://") &&
+            !inputEl.value.startsWith("http://")
+          ) {
+            this.updateFormState(
+              {
+                primarySeedUrl: "https://" + inputEl.value,
+              },
+              true,
+            );
+          }
+          const { primarySeedUrl } = this.formState;
+          if (
+            primarySeedUrl &&
+            (this.formState.scopeType === NewWorkflowOnlyScopeType.Regex ||
+              this.formState.scopeType === ScopeType.Custom) &&
+            !this.formState.customIncludeList
+          ) {
+            this.updateFormState(
+              {
+                customIncludeList:
+                  this.customIncludeListFromSeed(primarySeedUrl),
+              },
+              true,
+            );
+          }
+        }}
+      >
+        <div slot="help-text">${helpText}</div>
+      </sl-input>
+    `)}
+    ${this.renderHelpTextCol(msg(`The starting point of your crawl.`))}`;
+  };
 
   private readonly renderSeedListTextbox = () => {
     return html`<sl-textarea
@@ -1339,151 +1470,11 @@ https://replayweb.page/docs`}
   };
 
   private readonly renderSiteScope = () => {
-    const urlPlaceholder = "https://example.com/path/page.html";
-    let exampleUrl = new URL(urlPlaceholder);
-    if (this.formState.primarySeedUrl) {
-      try {
-        exampleUrl = new URL(this.formState.primarySeedUrl);
-      } catch {
-        /* empty */
-      }
-    }
-    const exampleHost = exampleUrl.host;
-    const exampleProtocol = exampleUrl.protocol;
-    const examplePathname = exampleUrl.pathname;
-    const exampleDomain = `${exampleProtocol}//${exampleHost}`;
-
-    let helpText: TemplateResult | string;
-
-    const custom = (customRegexFieldLabel: string) => {
-      const example_url = html`<span class="break-word text-blue-500"
-        >${exampleDomain}${examplePathname}</span
-      >`;
-      const custom_regexes = html`<em>${customRegexFieldLabel}</em>`;
-
-      return msg(
-        html`Will start crawl with ${example_url} and only follow links that
-        match the ${custom_regexes} listed below.`,
-      );
-    };
-
-    switch (this.formState.scopeType) {
-      case ScopeType.Prefix:
-        helpText = msg(
-          html`Will crawl all pages and paths in the same directory, e.g.
-            <span class="break-word break-word text-blue-500"
-              >${exampleDomain}</span
-            ><span class="break-word font-medium text-blue-500"
-              >${examplePathname.slice(
-                0,
-                examplePathname.lastIndexOf("/"),
-              )}/</span
-            >`,
-        );
-        break;
-      case ScopeType.Host:
-        helpText = msg(
-          html`Will crawl all pages on
-            <span class="text-blue-500">${exampleHost}</span> and ignore pages
-            on any subdomains.`,
-        );
-        break;
-      case ScopeType.Domain:
-        helpText = msg(
-          html`Will crawl all pages on
-            <span class="text-blue-500">${exampleHost}</span> and
-            <span class="text-blue-500">subdomain.${exampleHost}</span>.`,
-        );
-        break;
-      case ScopeType.SPA:
-        helpText = msg(
-          html`Will crawl hash anchor links as pages. For example,
-            <span class="break-word text-blue-500"
-              >${exampleDomain}${examplePathname}</span
-            ><span class="break-word font-medium text-blue-500"
-              >#example-page</span
-            >
-            will be treated as a separate page.`,
-        );
-        break;
-      case ScopeType.Custom:
-        helpText = custom(msg("Page Prefix URLs"));
-        break;
-      case NewWorkflowOnlyScopeType.Regex:
-        helpText = custom(msg("Page Regex Patterns"));
-        break;
-      default:
-        helpText = "";
-        break;
-    }
-
     const additionalUrlList = urlListToArray(this.formState.urlList);
     const maxUrls = this.localize.number(URL_LIST_MAX_URLS);
 
     return html`
-      ${inputCol(html`
-        <sl-input
-          name="primarySeedUrl"
-          label=${msg("Crawl Start URL")}
-          autocomplete="off"
-          inputmode="url"
-          placeholder=${urlPlaceholder}
-          value=${this.formState.primarySeedUrl}
-          required
-          @sl-input=${async (e: Event) => {
-            const inputEl = e.target as SlInput;
-            await inputEl.updateComplete;
-            this.updateFormState(
-              {
-                primarySeedUrl: inputEl.value,
-              },
-              true,
-            );
-            if (!inputEl.checkValidity() && validURL(inputEl.value)) {
-              inputEl.setCustomValidity("");
-              inputEl.helpText = "";
-            }
-          }}
-          @sl-blur=${async (e: Event) => {
-            const inputEl = e.target as SlInput;
-            await inputEl.updateComplete;
-            if (inputEl.value && !validURL(inputEl.value)) {
-              const text = msg("Please enter a valid URL.");
-              inputEl.helpText = text;
-              inputEl.setCustomValidity(text);
-            } else if (
-              inputEl.value &&
-              !inputEl.value.startsWith("https://") &&
-              !inputEl.value.startsWith("http://")
-            ) {
-              this.updateFormState(
-                {
-                  primarySeedUrl: "https://" + inputEl.value,
-                },
-                true,
-              );
-            }
-            const { primarySeedUrl } = this.formState;
-            if (
-              primarySeedUrl &&
-              (this.formState.scopeType === NewWorkflowOnlyScopeType.Regex ||
-                this.formState.scopeType === ScopeType.Custom) &&
-              !this.formState.customIncludeList
-            ) {
-              this.updateFormState(
-                {
-                  customIncludeList:
-                    this.customIncludeListFromSeed(primarySeedUrl),
-                },
-                true,
-              );
-            }
-          }}
-        >
-          <div slot="help-text">${helpText}</div>
-        </sl-input>
-      `)}
-      ${this.renderHelpTextCol(msg(`The starting point of your crawl.`))}
+      ${this.renderPrimarySeedInput()}
       ${when(
         this.formState.scopeType === ScopeType.Custom,
         () => html`
@@ -1679,6 +1670,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
             )}
           </div>
         </btrix-details>
+
+        ${this.renderExcludePages()}
       </div>
     `;
   };
@@ -1759,7 +1752,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const minPages = Math.max(
       1,
       urlListToArray(this.formState.urlList).length +
-        (isPageScopeType(this.formState.scopeType) ? 0 : 1),
+        (isPageScope(this.formState.scopeType) ? 0 : 1),
     );
 
     return html`
@@ -2639,7 +2632,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private renderJobMetadata() {
-    const isPageScope = isPageScopeType(this.formState.scopeType);
+    const pageScope = isPageScope(this.formState.scopeType);
 
     const linkToScope = (label: string) =>
       html`<button
@@ -2673,7 +2666,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         html`${msg(`Customize the name of this workflow.`)}
-        ${isPageScope
+        ${pageScope
           ? this.formState.scopeType === ScopeType.Page
             ? msg(
                 html`If omitted, the workflow will be named after the URL
@@ -2844,18 +2837,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
     };
     const urls = urlListToArray(this.formState.urlList);
 
-    const isPageScope = isPageScopeType(value);
-    const isPrevPageScope = isPageScopeType(prevScopeType);
+    const pageScope = isPageScope(value);
+    const isPrevPageScope = isPageScope(prevScopeType);
 
-    if (isPageScope === isPrevPageScope) {
-      if (isPageScope) {
+    if (pageScope === isPrevPageScope) {
+      if (pageScope) {
         formState.urlList = urls[0];
       }
     } else {
       if (isPrevPageScope) {
         formState.primarySeedUrl = urls[0];
         formState.urlList = urls.slice(1).join("\n");
-      } else if (isPageScope) {
+      } else if (pageScope) {
         formState.urlList = [this.formState.primarySeedUrl, ...urls].join("\n");
       }
     }
@@ -2974,7 +2967,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   });
 
   private hasRequiredFields(): boolean {
-    if (isPageScopeType(this.formState.scopeType)) {
+    if (isPageScope(this.formState.scopeType)) {
       return Boolean(
         this.formState.seedListFormat === SeedListFormat.File
           ? this.formState.seedFile || this.formState.seedFileId
@@ -3622,7 +3615,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           this.formState.dedupeCollection.id) ||
         "",
       config: {
-        ...(isPageScopeType(this.formState.scopeType)
+        ...(isPageScope(this.formState.scopeType)
           ? this.parseUrlListConfig(uploadParams)
           : this.parseSeededConfig()),
         behaviorTimeout: this.formState.behaviorTimeoutSeconds,

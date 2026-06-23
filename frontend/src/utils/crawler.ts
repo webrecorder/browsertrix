@@ -20,7 +20,7 @@ import {
 } from "@/types/crawlState";
 import type { OrgData } from "@/types/org";
 import type { QARun } from "@/types/qa";
-import { WorkflowScopeType } from "@/types/workflow";
+import { type WorkflowScopeType } from "@/types/workflow";
 import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
@@ -79,14 +79,6 @@ export function isDepthSupportedScopeType(
     (
       DEPTH_SUPPORTED_SCOPES as readonly (typeof WorkflowScopeType)[keyof typeof WorkflowScopeType][]
     ).includes(scope)
-  );
-}
-
-export function isPageScopeType(
-  scope?: (typeof WorkflowScopeType)[keyof typeof WorkflowScopeType],
-) {
-  return (
-    scope === WorkflowScopeType.Page || scope === WorkflowScopeType.PageList
   );
 }
 

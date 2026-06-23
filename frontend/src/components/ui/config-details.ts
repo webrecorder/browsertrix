@@ -30,11 +30,15 @@ import {
   type StorageSeedFile,
 } from "@/types/workflow";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
-import { isDepthSupportedScopeType, isPageScopeType } from "@/utils/crawler";
+import { isDepthSupportedScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
-import { getServerDefaults, regexScopeConfig } from "@/utils/workflow";
+import {
+  getServerDefaults,
+  isPageScope,
+  regexScopeConfig,
+} from "@/utils/workflow";
 
 const isWorkflow = (data?: CrawlReplay | Workflow): data is Workflow =>
   !!data && "crawlCount" in data;
@@ -129,10 +133,7 @@ export class ConfigDetails extends BtrixElement {
                   ? scopeTypeLabel[WorkflowScopeType.PageList]
                   : when(this.seeds, (seeds) => {
                       if (!config.scopeType) return;
-                      if (
-                        isPageScopeType(config.scopeType) &&
-                        seeds.length > 1
-                      ) {
+                      if (isPageScope(config.scopeType) && seeds.length > 1) {
                         return scopeTypeLabel[WorkflowScopeType.PageList];
                       }
                       const primarySeedConfig = seeds[0];
@@ -142,7 +143,7 @@ export class ConfigDetails extends BtrixElement {
                       return scopeTypeLabel[config.scopeType];
                     }),
               )}
-              ${isPageScopeType(config.scopeType)
+              ${isPageScope(config.scopeType)
                 ? this.renderConfirmUrlListSettings(config)
                 : this.renderConfirmSeededSettings(config)}
             `,
