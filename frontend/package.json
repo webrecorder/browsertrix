@@ -136,7 +136,7 @@
     "@web/dev-server-esbuild": "^1.0.5",
     "@web/dev-server-import-maps": "^0.2.1",
     "@web/dev-server-rollup": "^0.6.4",
-    "concurrently": "^9.1.2",
+    "concurrently": "^10.0.3",
     "husky": "^8.0.3",
     "lint-staged": "^13.1.0",
     "msw": "^2.14.6",
