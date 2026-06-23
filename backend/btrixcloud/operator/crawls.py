@@ -533,6 +533,8 @@ class CrawlOperator(BaseOperator):
 
         crawler_image = params["crawler_image"]
 
+        configmap_logger = logger.bind(crawl_id=crawl.id)
+
         raw_config = crawlconfig.get_raw_config()
         raw_config["behaviors"] = self._filter_autoclick_behavior(
             raw_config["behaviors"], crawler_image
@@ -546,6 +548,11 @@ class CrawlOperator(BaseOperator):
                 crawler_image, min_behavior_links_image
             ):
                 raw_config.pop("ignoreScopeForBehaviorLinks", None)
+                configmap_logger.warning(
+                    "crawl_configmap_ignore_scope_behavior_links_ignored",
+                    crawler_image=crawler_image,
+                    min_behavior_links_image=min_behavior_links_image,
+                )
 
         if crawl.seed_file_url:
             raw_config["seedFile"] = crawl.seed_file_url
@@ -554,9 +561,8 @@ class CrawlOperator(BaseOperator):
         params["config"] = json.dumps(raw_config)
 
         if config_update_needed:
-            logger.debug(
+            configmap_logger.debug(
                 "crawl_configmap_updated",
-                crawl_id=crawl.id,
                 unstructured_message=f"Updating config for {crawl.id}",
             )
 
