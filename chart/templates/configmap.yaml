@@ -84,6 +84,8 @@ data:
 
   MIN_SEED_FILE_CRAWLER_IMAGE: "{{ .Values.min_seed_file_crawler_image }}"
 
+  MIN_BEHAVIOR_LINKS_CRAWLER_IMAGE: "{{ .Values.min_behavior_links_crawler_image }}"
+
   NUM_BROWSERS: "{{ .Values.crawler_browser_instances }}"
 
   MAX_CRAWLER_MEMORY: "{{ .Values.max_crawler_memory }}"

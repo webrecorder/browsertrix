@@ -531,10 +531,21 @@ class CrawlOperator(BaseOperator):
 
         self.crawl_config_ops.ensure_quota_page_limit(crawlconfig, crawl.org)
 
+        crawler_image = params["crawler_image"]
+
         raw_config = crawlconfig.get_raw_config()
         raw_config["behaviors"] = self._filter_autoclick_behavior(
-            raw_config["behaviors"], params["crawler_image"]
+            raw_config["behaviors"], crawler_image
         )
+
+        if raw_config.get("ignoreScopeForBehaviorLinks") is True:
+            min_behavior_links_image = os.environ.get(
+                "MIN_BEHAVIOR_LINKS_CRAWLER_IMAGE"
+            )
+            if min_behavior_links_image and crawler_image_below_minimum(
+                crawler_image, min_behavior_links_image
+            ):
+                raw_config.pop("ignoreScopeForBehaviorLinks", None)
 
         if crawl.seed_file_url:
             raw_config["seedFile"] = crawl.seed_file_url
