@@ -8,20 +8,9 @@ import json
 import os
 import re
 import urllib.parse
+from collections.abc import AsyncGenerator, AsyncIterator, Callable, Sequence
 from datetime import datetime
-from typing import (
-    Annotated,
-    Any,
-    AsyncGenerator,
-    AsyncIterator,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Annotated, Any
 from uuid import UUID
 
 import structlog
@@ -149,7 +138,7 @@ class CrawlOps(BaseCrawlOps):
     async def get_crawl(
         self,
         crawlid: str,
-        org: Optional[Organization] = None,
+        org: Organization | None = None,
     ) -> Crawl:
         """Get crawl data for internal use"""
         res = await self.get_crawl_raw(crawlid, org, "crawl")
@@ -169,27 +158,27 @@ class CrawlOps(BaseCrawlOps):
 
     async def list_crawls(
         self,
-        org: Optional[Organization] = None,
-        cid: Optional[UUID] = None,
-        userid: Optional[UUID] = None,
+        org: Organization | None = None,
+        cid: UUID | None = None,
+        userid: UUID | None = None,
         crawl_id: str = "",
         running_only=False,
-        state: Optional[List[str]] = None,
-        first_seed: Optional[str] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
+        state: list[str] | None = None,
+        first_seed: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
         tags: list[str] | None = None,
         tag_match: ListFilterType | None = ListFilterType.AND,
-        collection_id: Optional[UUID] = None,
-        dedupe_coll_id: Optional[UUID] = None,
+        collection_id: UUID | None = None,
+        dedupe_coll_id: UUID | None = None,
         requires_crawls: list[str] | None = None,
         required_by_crawls: list[str] | None = None,
-        has_requires_crawls: Optional[bool] = None,
-        has_required_by_crawls: Optional[bool] = None,
-        crawl_ids: Optional[List[str]] = None,
+        has_requires_crawls: bool | None = None,
+        has_required_by_crawls: bool | None = None,
+        crawl_ids: list[str] | None = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sort_by: Optional[str] = None,
+        sort_by: str | None = None,
         sort_direction: int = -1,
         resources: bool = False,
         session: AsyncIOMotorClientSession | None = None,
@@ -439,7 +428,7 @@ class CrawlOps(BaseCrawlOps):
         org: Organization,
         delete_list: DeleteCrawlList,
         type_="crawl",
-        user: Optional[User] = None,
+        user: User | None = None,
     ) -> tuple[int, dict[UUID, dict[str, int]], bool]:
         """Delete a list of crawls by id for given org"""
 
@@ -694,19 +683,19 @@ class CrawlOps(BaseCrawlOps):
         is_qa: bool,
         state: TYPE_ALL_CRAWL_STATES,
         allowed_from: Sequence[TYPE_ALL_CRAWL_STATES],
-        finished: Optional[datetime] = None,
-        stats: Optional[CrawlStats] = None,
+        finished: datetime | None = None,
+        stats: CrawlStats | None = None,
     ) -> bool:
         """update crawl state and other properties in db if state has changed"""
         prefix = "" if not is_qa else "qa."
 
-        update: Dict[str, Any] = {f"{prefix}state": state}
+        update: dict[str, Any] = {f"{prefix}state": state}
         if finished:
             update[f"{prefix}finished"] = finished
         if stats:
             update[f"{prefix}stats"] = stats.dict()
 
-        query: Dict[str, Any] = {"_id": crawl_id, "type": "crawl"}
+        query: dict[str, Any] = {"_id": crawl_id, "type": "crawl"}
         if allowed_from:
             query[f"{prefix}state"] = {"$in": allowed_from}
 
@@ -760,7 +749,7 @@ class CrawlOps(BaseCrawlOps):
 
     async def get_crawl_exec_last_update_time(
         self, crawl_id: str, is_qa: bool
-    ) -> Optional[datetime]:
+    ) -> datetime | None:
         """get crawl last updated time"""
         field = "_lut" if not is_qa else "qa._lut"
         res = await self.crawls.find_one(
@@ -773,7 +762,7 @@ class CrawlOps(BaseCrawlOps):
 
     async def get_crawl_state(
         self, crawl_id: str, is_qa: bool
-    ) -> tuple[Optional[TYPE_ALL_CRAWL_STATES], Optional[datetime]]:
+    ) -> tuple[TYPE_ALL_CRAWL_STATES | None, datetime | None]:
         """return current crawl state of a crawl"""
         prefix = "" if not is_qa else "qa."
 
@@ -828,22 +817,22 @@ class CrawlOps(BaseCrawlOps):
             return [], 0
 
     async def get_crawl_stats(
-        self, org: Optional[Organization] = None
-    ) -> List[Dict[str, Union[str, int]]]:
+        self, org: Organization | None = None
+    ) -> list[dict[str, str | int]]:
         """Return crawl statistics"""
         # pylint: disable=too-many-locals
         org_slugs = await self.orgs.get_org_slugs_by_ids()
         user_emails = await self.user_manager.get_user_emails_by_ids()
 
-        crawls_data: List[Dict[str, Union[str, int]]] = []
+        crawls_data: list[dict[str, str | int]] = []
 
-        query: Dict[str, Union[str, UUID]] = {"type": "crawl"}
+        query: dict[str, str | UUID] = {"type": "crawl"}
         if org:
             query["oid"] = org.id
 
         async for crawl_raw in self.crawls.find(query):
             crawl = Crawl.from_dict(crawl_raw)
-            data: Dict[str, Union[str, int]] = {}
+            data: dict[str, str | int] = {}
             data["id"] = crawl.id
 
             data["oid"] = str(crawl.oid)
@@ -885,8 +874,8 @@ class CrawlOps(BaseCrawlOps):
         crawl_id: str,
         org: Organization,
         pause: bool,
-        paused_at: Optional[datetime] = None,
-    ) -> Dict[str, bool]:
+        paused_at: datetime | None = None,
+    ) -> dict[str, bool]:
         """pause or resume a crawl temporarily"""
         crawl = await self.get_base_crawl(crawl_id, org)
         if crawl and crawl.type != "crawl":
@@ -922,7 +911,7 @@ class CrawlOps(BaseCrawlOps):
 
     async def shutdown_crawl(
         self, crawl_id: str, org: Organization, graceful: bool
-    ) -> Dict[str, bool]:
+    ) -> dict[str, bool]:
         """stop or cancel specified crawl"""
         crawl = await self.get_base_crawl(crawl_id, org)
         if crawl and crawl.type != "crawl":
@@ -1115,7 +1104,7 @@ class CrawlOps(BaseCrawlOps):
         if not crawl.qa:
             return False
 
-        query: Dict[str, Any] = {"qa": None}
+        query: dict[str, Any] = {"qa": None}
 
         if crawl.qa.finished and crawl.qa.state in NON_RUNNING_STATES:
             query[f"qaFinished.{crawl.qa.id}"] = crawl.qa.dict()
@@ -1134,8 +1123,8 @@ class CrawlOps(BaseCrawlOps):
         self,
         crawl_id: str,
         skip_failed: bool = False,
-        org: Optional[Organization] = None,
-    ) -> List[QARunOut]:
+        org: Organization | None = None,
+    ) -> list[QARunOut]:
         """Return list of QA runs"""
         crawl_data = await self.get_crawl_raw(
             crawl_id, org, "crawl", project={"qaFinished": True, "qa": True}
@@ -1157,8 +1146,8 @@ class CrawlOps(BaseCrawlOps):
         return all_qa
 
     async def get_active_qa(
-        self, crawl_id: str, org: Optional[Organization] = None
-    ) -> Optional[QARunOut]:
+        self, crawl_id: str, org: Organization | None = None
+    ) -> QARunOut | None:
         """return just the active QA, if any"""
         crawl_data = await self.get_crawl_raw(
             crawl_id, org, "crawl", project={"qa": True}
@@ -1167,7 +1156,7 @@ class CrawlOps(BaseCrawlOps):
         return QARunOut(**qa) if qa else None
 
     async def get_qa_run(
-        self, crawl_id: str, qa_run_id: str, org: Optional[Organization] = None
+        self, crawl_id: str, qa_run_id: str, org: Organization | None = None
     ):
         """Get QARun by id"""
         crawl = await self.get_crawl(crawl_id, org)
@@ -1180,7 +1169,7 @@ class CrawlOps(BaseCrawlOps):
         return qa_run
 
     async def get_qa_run_for_replay(
-        self, crawl_id: str, qa_run_id: str, org: Optional[Organization] = None
+        self, crawl_id: str, qa_run_id: str, org: Organization | None = None
     ) -> QARunWithResources:
         """Fetch QA runs with resources for replay.json"""
         crawl = await self.get_crawl(crawl_id, org)
@@ -1241,7 +1230,7 @@ class CrawlOps(BaseCrawlOps):
         self,
         crawl_id: str,
         qa_run_id: str,
-        thresholds: Dict[str, List[float]],
+        thresholds: dict[str, list[float]],
     ) -> QARunAggregateStatsOut:
         """Get aggregate stats for QA run"""
         screenshot_results = await self.page_ops.get_qa_run_aggregate_counts(
@@ -1263,10 +1252,10 @@ class CrawlOps(BaseCrawlOps):
         page: int = 1,
         sort_by: str = "timestamp",
         sort_direction: int = 1,
-        contexts: Optional[List[str]] = None,
-        log_levels: Optional[List[str]] = None,
-        qa_run_id: Optional[str] = None,
-    ) -> Tuple[list[CrawlLogLine], int]:
+        contexts: list[str] | None = None,
+        log_levels: list[str] | None = None,
+        qa_run_id: str | None = None,
+    ) -> tuple[list[CrawlLogLine], int]:
         """get crawl logs"""
         return await self.crawl_log_ops.get_crawl_logs(
             org,
@@ -1393,17 +1382,17 @@ def init_crawls_api(
         user: User = Depends(user_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        userid: Optional[UUID] = None,
-        cid: Optional[UUID] = None,
-        state: Optional[str] = None,
-        firstSeed: Optional[str] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        collectionId: Optional[UUID] = None,
+        userid: UUID | None = None,
+        cid: UUID | None = None,
+        state: str | None = None,
+        firstSeed: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        collectionId: UUID | None = None,
         ids: Annotated[list[str] | None, Query()] = None,
-        sortBy: Optional[str] = None,
+        sortBy: str | None = None,
         sortDirection: int = -1,
-        runningOnly: Optional[bool] = True,
+        runningOnly: bool | None = True,
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
@@ -1446,12 +1435,12 @@ def init_crawls_api(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        userid: Optional[UUID] = None,
-        cid: Optional[UUID] = None,
+        userid: UUID | None = None,
+        cid: UUID | None = None,
         state: Annotated[list[str] | None, Query()] = None,
-        firstSeed: Optional[str] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
+        firstSeed: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
         tags: Annotated[list[str] | None, Query()] = None,
         tag_match: Annotated[
             ListFilterType | None,
@@ -1461,14 +1450,14 @@ def init_crawls_api(
                 description='Defaults to `"and"` if omitted',
             ),
         ] = ListFilterType.AND,
-        collectionId: Optional[UUID] = None,
-        dedupeCollId: Optional[UUID] = None,
+        collectionId: UUID | None = None,
+        dedupeCollId: UUID | None = None,
         requiresCrawls: Annotated[list[str] | None, Query()] = None,
         requiredByCrawls: Annotated[list[str] | None, Query()] = None,
-        hasRequiresCrawls: Optional[bool] = None,
-        hasRequiredByCrawls: Optional[bool] = None,
+        hasRequiresCrawls: bool | None = None,
+        hasRequiredByCrawls: bool | None = None,
         ids: Annotated[list[str] | None, Query()] = None,
-        sortBy: Optional[str] = None,
+        sortBy: str | None = None,
         sortDirection: int = -1,
     ):
         # Support both comma-separated values and multiple search parameters
@@ -1697,7 +1686,7 @@ def init_crawls_api(
         # pylint: disable=unused-argument
         org: Organization = Depends(org_viewer_dep),
     ):
-        thresholds: Dict[str, List[float]] = {}
+        thresholds: dict[str, list[float]] = {}
         try:
             thresholds["screenshotMatch"] = [
                 float(threshold) for threshold in screenshotThresholds.split(",")
@@ -1765,7 +1754,7 @@ def init_crawls_api(
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa",
         tags=["qa"],
-        response_model=List[QARunOut],
+        response_model=list[QARunOut],
     )
     async def get_qa_runs(
         crawl_id, org: Organization = Depends(org_viewer_dep), skipFailed: bool = False
@@ -1775,7 +1764,7 @@ def init_crawls_api(
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa/activeQA",
         tags=["qa"],
-        response_model=Dict[str, Optional[QARunOut]],
+        response_model=dict[str, QARunOut | None],
     )
     async def get_active_qa(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return {"qa": await ops.get_active_qa(crawl_id, org)}
@@ -1935,8 +1924,8 @@ def init_crawls_api(
     async def stream_crawl_logs(
         crawl_id,
         org: Organization = Depends(org_viewer_dep),
-        logLevel: Optional[str] = None,
-        context: Optional[str] = None,
+        logLevel: str | None = None,
+        context: str | None = None,
     ):
         crawl = await ops.get_crawl_out(crawl_id, org)
 

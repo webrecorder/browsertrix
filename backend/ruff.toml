@@ -16,6 +16,7 @@ extend-select = [
 	"LOG",
 	"G",
 	"T20",
+	"UP"
 ]
 ignore = [
 	# Comparison to true should be 'if cond is true:' or 'if cond:'

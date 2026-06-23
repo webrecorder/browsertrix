@@ -1,6 +1,5 @@
 """Operator handler for crawl CronJobs"""
 
-from typing import Optional
 from uuid import UUID
 
 import structlog
@@ -31,7 +30,7 @@ class CronJobOperator(BaseOperator):
             return await self.sync_cronjob_crawl(data)
 
     def get_finished_response(
-        self, metadata: dict[str, str], set_status=True, finished: Optional[str] = None
+        self, metadata: dict[str, str], set_status=True, finished: str | None = None
     ) -> MCDecoratorSyncResponse:
         """get final response to indicate cronjob created job is finished"""
 
@@ -60,11 +59,11 @@ class CronJobOperator(BaseOperator):
     async def make_new_crawljob(
         self,
         cid: UUID,
-        oid: Optional[UUID],
-        userid: Optional[UUID],
+        oid: UUID | None,
+        userid: UUID | None,
         crawl_id: str,
         metadata: dict[str, str],
-        state: Optional[str],
+        state: str | None,
     ) -> MCDecoratorSyncResponse:
         """declare new CrawlJob from cid, based on db data"""
         # cronjob doesn't exist yet

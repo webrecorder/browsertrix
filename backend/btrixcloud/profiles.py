@@ -2,19 +2,8 @@
 
 import json
 import os
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    AsyncGenerator,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from collections.abc import AsyncGenerator, Callable
+from typing import TYPE_CHECKING, Annotated, Any, cast
 from urllib.parse import urlencode
 from uuid import UUID, uuid4
 
@@ -241,7 +230,7 @@ class ProfileOps:
         browser_commit: ProfileCreate,
         org: Organization,
         user: User,
-        existing_profile: Optional[Profile] = None,
+        existing_profile: Profile | None = None,
     ) -> dict[str, Any]:
         """commit to profile async, returning if committed, or waiting"""
         if not metadata.profileid:
@@ -276,7 +265,7 @@ class ProfileOps:
         browser_commit: ProfileCreate,
         org: Organization,
         user: User,
-        existing_profile: Optional[Profile] = None,
+        existing_profile: Profile | None = None,
     ) -> bool:
         """commit profile and shutdown profile browser"""
         # pylint: disable=too-many-locals
@@ -480,15 +469,15 @@ class ProfileOps:
     async def list_profiles(
         self,
         org: Organization,
-        userid: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        tag_match: Optional[ListFilterType] = ListFilterType.AND,
-        name: Optional[str] = None,
+        userid: UUID | None = None,
+        tags: list[str] | None = None,
+        tag_match: ListFilterType | None = ListFilterType.AND,
+        name: str | None = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: str = "modified",
         sort_direction: int = -1,
-    ) -> Tuple[list[Profile], int]:
+    ) -> tuple[list[Profile], int]:
         """list all profiles"""
         # pylint: disable=too-many-locals,duplicate-code
 
@@ -496,7 +485,7 @@ class ProfileOps:
         page = page - 1
         skip = page_size * page
 
-        match_query: Dict[str, Any] = {"oid": org.id}
+        match_query: dict[str, Any] = {"oid": org.id}
         if userid:
             match_query["userid"] = userid
         if tags:
@@ -505,7 +494,7 @@ class ProfileOps:
         if name:
             match_query["name"] = name
 
-        aggregate: List[Dict[str, Any]] = [{"$match": match_query}]
+        aggregate: list[dict[str, Any]] = [{"$match": match_query}]
 
         if sort_by:
             if sort_by not in ("modified", "created", "name", "url"):
@@ -570,7 +559,7 @@ class ProfileOps:
         return profile
 
     async def get_profile_filename_proxy_channel(
-        self, profileid: Optional[UUID], org: Organization
+        self, profileid: UUID | None, org: Organization
     ) -> tuple[str, str, str]:
         """return profile path filename (relative path) for given profile id and org"""
         if not profileid:
@@ -641,7 +630,7 @@ class ProfileOps:
         browserid: str,
         path: str,
         method: str = "GET",
-        post_data: Optional[dict[str, Any]] = None,
+        post_data: dict[str, Any] | None = None,
         committing="",
     ) -> dict[str, Any]:
         """make request to browser api to get state"""
@@ -694,7 +683,7 @@ class ProfileOps:
 
     async def get_profile_tag_counts(
         self, org: Organization
-    ) -> list[dict[str, Union[str, int]]]:
+    ) -> list[dict[str, str | int]]:
         """get distinct tags from all profiles for this org, sorted by count"""
         # pylint: disable=duplicate-code
         tags = await self.profiles.aggregate(
@@ -767,17 +756,17 @@ def init_profiles_api(
     @router.get("", response_model=PaginatedProfileResponse)
     async def list_profiles(
         org: Organization = Depends(org_crawl_dep),
-        userid: Optional[UUID] = None,
-        tags: Annotated[Optional[List[str]], Query(title="Tags")] = None,
+        userid: UUID | None = None,
+        tags: Annotated[list[str] | None, Query(title="Tags")] = None,
         tag_match: Annotated[
-            Optional[ListFilterType],
+            ListFilterType | None,
             Query(
                 alias="tagMatch",
                 title="Tag Match Type",
                 description='Defaults to `"and"` if omitted',
             ),
         ] = ListFilterType.AND,
-        name: Optional[str] = None,
+        name: str | None = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: str = "modified",

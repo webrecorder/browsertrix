@@ -9,20 +9,9 @@ import json
 import os
 import re
 import urllib.parse
+from collections.abc import AsyncGenerator, Callable
 from datetime import datetime, timedelta
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    AsyncGenerator,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Annotated, Any, cast
 from uuid import UUID, uuid4
 
 import structlog
@@ -339,7 +328,7 @@ class CrawlConfigOps:
                     status_code=400, detail="use_one_of_seeds_or_seedfile"
                 )
 
-            seeds = cast(List[Seed], config_in.config.seeds)
+            seeds = cast(list[Seed], config_in.config.seeds)
             seed_count = len(seeds)
 
             first_seed = seeds[0].url
@@ -443,7 +432,7 @@ class CrawlConfigOps:
 
         return extra_hops == 0 and scope_type == "page"
 
-    def _validate_link_selectors(self, link_selectors: List[str]):
+    def _validate_link_selectors(self, link_selectors: list[str]):
         """Validate link selectors
 
         Ensure at least one link selector is set and that all the link slectors passed
@@ -461,7 +450,7 @@ class CrawlConfigOps:
             if not parts[0] or not parts[1]:
                 raise HTTPException(status_code=400, detail="invalid_link_selector")
 
-    def _validate_custom_behavior_url_syntax(self, url: str) -> Tuple[bool, List[str]]:
+    def _validate_custom_behavior_url_syntax(self, url: str) -> tuple[bool, list[str]]:
         """Validate custom behaviors are valid URLs after removing custom git syntax"""
         git_prefix = "git+"
         is_git_repo = False
@@ -837,18 +826,18 @@ class CrawlConfigOps:
         org: Organization,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        created_by: Optional[UUID] = None,
-        modified_by: Optional[UUID] = None,
-        profile_ids: Optional[List[UUID]] = None,
-        first_seed: Optional[str] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        tag_match: Optional[ListFilterType] = ListFilterType.AND,
-        dedupe_coll_id: Optional[UUID] = None,
+        created_by: UUID | None = None,
+        modified_by: UUID | None = None,
+        profile_ids: list[UUID] | None = None,
+        first_seed: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        tag_match: ListFilterType | None = ListFilterType.AND,
+        dedupe_coll_id: UUID | None = None,
         last_crawl_state: list[TYPE_ALL_CRAWL_STATES] | None = None,
-        schedule: Optional[bool] = None,
-        is_crawl_running: Optional[bool] = None,
+        schedule: bool | None = None,
+        is_crawl_running: bool | None = None,
         sort_by: str = "lastRun",
         sort_direction: int = -1,
     ) -> tuple[list[CrawlConfigOut], int]:
@@ -892,7 +881,7 @@ class CrawlConfigOps:
             match_query["lastCrawlState"] = {"$in": last_crawl_state}
 
         # pylint: disable=duplicate-code
-        aggregate: List[Dict[str, Union[object, str, int]]] = [
+        aggregate: list[dict[str, object | str | int]] = [
             {"$match": match_query},
             {"$unset": ["config"]},
         ]
@@ -975,7 +964,7 @@ class CrawlConfigOps:
         )
         return res is not None
 
-    async def mark_profiles_in_use(self, profiles: List[Profile], org: Organization):
+    async def mark_profiles_in_use(self, profiles: list[Profile], org: Organization):
         """mark which profiles are in use by querying and grouping crawlconfigs"""
         profile_ids = [profile.id for profile in profiles]
         cursor = self.crawl_configs.aggregate(
@@ -1004,7 +993,7 @@ class CrawlConfigOps:
 
     async def get_running_crawl(
         self, cid: UUID, session: AsyncIOMotorClientSession | None = None
-    ) -> Optional[CrawlOut]:
+    ) -> CrawlOut | None:
         """Return the id of currently running crawl for this config, if any"""
         # crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
         crawls, _ = await self.crawl_ops.list_crawls(
@@ -1020,8 +1009,8 @@ class CrawlConfigOps:
         self,
         cid: UUID,
         org: Organization,
-        request: Optional[Request] = None,
-    ) -> Optional[CrawlOutWithResources]:
+        request: Request | None = None,
+    ) -> CrawlOutWithResources | None:
         """Return the last successful crawl out with resources for this config, if any"""
         headers = dict(request.headers) if request else None
         match_query = {
@@ -1148,7 +1137,7 @@ class CrawlConfigOps:
     async def get_crawl_config(
         self,
         cid: UUID,
-        oid: Optional[UUID] = None,
+        oid: UUID | None = None,
         active_only: bool = True,
         config_cls=CrawlConfig,
     ):
@@ -1307,10 +1296,10 @@ class CrawlConfigOps:
         return tags
 
     async def get_crawl_config_search_values(
-        self, org, profile_ids: Optional[List[UUID]] = None
+        self, org, profile_ids: list[UUID] | None = None
     ):
         """List unique names, first seeds, and descriptions from all workflows in org"""
-        query: Dict[str, Any] = {"oid": org.id, "inactive": {"$ne": True}}
+        query: dict[str, Any] = {"oid": org.id, "inactive": {"$ne": True}}
         if profile_ids:
             query["profileid"] = {"$in": profile_ids}
 
@@ -1470,15 +1459,11 @@ class CrawlConfigOps:
         except Exception:
             return [], 0
 
-    def get_channel_crawler_image(
-        self, crawler_channel: Optional[str]
-    ) -> Optional[str]:
+    def get_channel_crawler_image(self, crawler_channel: str | None) -> str | None:
         """Get crawler image name by id"""
         return self.crawler_images_map.get(crawler_channel or "")
 
-    def get_channel_crawler_image_pull_policy(
-        self, crawler_channel: Optional[str]
-    ) -> str:
+    def get_channel_crawler_image_pull_policy(self, crawler_channel: str | None) -> str:
         """Get crawler image name by id"""
         return (
             self.crawler_image_pull_policy_map.get(crawler_channel or "")
@@ -1528,7 +1513,7 @@ class CrawlConfigOps:
             servers=list(self.get_crawler_proxies_map().values()),
         )
 
-    def get_crawler_proxy(self, proxy_id: str) -> Optional[CrawlerProxy]:
+    def get_crawler_proxy(self, proxy_id: str) -> CrawlerProxy | None:
         """Get crawlerProxy by id"""
         return self.get_crawler_proxies_map().get(proxy_id)
 
@@ -1547,7 +1532,7 @@ class CrawlConfigOps:
             _proxy.shared and org.allowSharedProxies
         ) or _proxy.id in org.allowedProxies
 
-    def assert_can_org_use_proxy(self, org: Organization, proxy: Optional[str]):
+    def assert_can_org_use_proxy(self, org: Organization, proxy: str | None):
         """assert that proxy can be used or throw error"""
         if proxy and not self.can_org_use_proxy(org, proxy):
             raise HTTPException(status_code=400, detail="proxy_not_found")
@@ -1606,7 +1591,7 @@ class CrawlConfigOps:
                     status_code=404,
                     detail="custom_behavior_not_found",
                 )
-        except asyncio.TimeoutError as e:
+        except TimeoutError as e:
             proc.kill()
             raise HTTPException(
                 status_code=504, detail="custom_behavior_timeout"
@@ -1634,7 +1619,7 @@ class CrawlConfigOps:
                         status_code=404,
                         detail="custom_behavior_branch_not_found",
                     )
-            except asyncio.TimeoutError as e:
+            except TimeoutError as e:
                 proc.kill()
                 raise HTTPException(
                     status_code=504, detail="custom_behavior_timeout"
@@ -1658,7 +1643,7 @@ class CrawlConfigOps:
                 detail="custom_behavior_not_found",
             )
 
-    async def validate_custom_behavior(self, url: str) -> Dict[str, bool]:
+    async def validate_custom_behavior(self, url: str) -> dict[str, bool]:
         """Validate custom behavior URL
 
         Implemented:
@@ -1711,7 +1696,7 @@ async def stats_recompute_all(
     total_size = 0
     successful_count = 0
 
-    last_crawl: Optional[dict[str, object]] = None
+    last_crawl: dict[str, object] | None = None
     last_crawl_size = 0
 
     if count:
@@ -1820,26 +1805,22 @@ def init_crawl_config_api(
         ] = DEFAULT_PAGE_SIZE,
         page: int = 1,
         # createdBy, kept as userid for API compatibility
-        user_id: Annotated[
-            Optional[UUID], Query(alias="userid", title="User ID")
-        ] = None,
+        user_id: Annotated[UUID | None, Query(alias="userid", title="User ID")] = None,
         modified_by: Annotated[
-            Optional[UUID], Query(alias="modifiedBy", title="Modified By User ID")
+            UUID | None, Query(alias="modifiedBy", title="Modified By User ID")
         ] = None,
         profile_ids: Annotated[
-            Optional[List[UUID]], Query(alias="profileIds", title="Profile IDs")
+            list[UUID] | None, Query(alias="profileIds", title="Profile IDs")
         ] = None,
         first_seed: Annotated[
-            Optional[str], Query(alias="firstSeed", title="First Seed")
+            str | None, Query(alias="firstSeed", title="First Seed")
         ] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        tag: Annotated[
-            Optional[List[str]], Query(title="Tags", deprecated=True)
-        ] = None,
-        tags: Annotated[Optional[List[str]], Query(title="Tags")] = None,
+        name: str | None = None,
+        description: str | None = None,
+        tag: Annotated[list[str] | None, Query(title="Tags", deprecated=True)] = None,
+        tags: Annotated[list[str] | None, Query(title="Tags")] = None,
         tag_match: Annotated[
-            Optional[ListFilterType],
+            ListFilterType | None,
             Query(
                 alias="tagMatch",
                 title="Tag Match Type",
@@ -1847,16 +1828,16 @@ def init_crawl_config_api(
             ),
         ] = ListFilterType.AND,
         dedupe_coll_id: Annotated[
-            Optional[UUID],
+            UUID | None,
             Query(alias="dedupeCollId", title="Deduplication Source Collection"),
         ] = None,
         last_crawl_state: Annotated[
             list[TYPE_ALL_CRAWL_STATES] | None,
             Query(alias="lastCrawlState", title="Last Crawl State"),
         ] = None,
-        schedule: Optional[bool] = None,
+        schedule: bool | None = None,
         is_crawl_running: Annotated[
-            Optional[bool], Query(alias="isCrawlRunning", title="Is Crawl Running")
+            bool | None, Query(alias="isCrawlRunning", title="Is Crawl Running")
         ] = None,
         sort_by: Annotated[str, Query(alias="sortBy", title="Sort Field")] = "",
         sort_direction: Annotated[
@@ -1898,7 +1879,7 @@ def init_crawl_config_api(
         )
         return paginated_format(crawl_configs, total, page, page_size)
 
-    @router.get("/tags", response_model=List[str], deprecated=True)
+    @router.get("/tags", response_model=list[str], deprecated=True)
     async def get_crawl_config_tags(org: Organization = Depends(org_viewer_dep)):
         """
         Deprecated - prefer /api/orgs/{oid}/crawlconfigs/tagCounts instead.
@@ -1913,7 +1894,7 @@ def init_crawl_config_api(
     async def get_crawl_config_search_values(
         org: Organization = Depends(org_viewer_dep),
         profile_ids: Annotated[
-            Optional[List[UUID]], Query(alias="profileIds", title="Profile IDs")
+            list[UUID] | None, Query(alias="profileIds", title="Profile IDs")
         ] = None,
     ):
         return await ops.get_crawl_config_search_values(org, profile_ids)
