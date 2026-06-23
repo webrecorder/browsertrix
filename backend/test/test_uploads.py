@@ -1370,7 +1370,7 @@ def test_multi_wacz_upload_child_wacz_download(
 
     for res in resources:
         dl_url = urljoin(API_PREFIX, res["path"])
-        dl_resp = requests.get(dl_url, headers=admin_auth_headers)
+        dl_resp = requests.get(dl_url)
         assert dl_resp.status_code == 200, (
             f"Child WACZ {res['name']} should be downloadable, got {dl_resp.status_code}: "
             f"{dl_resp.text}"
