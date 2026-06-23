@@ -317,6 +317,17 @@ def test_verify_default_click_selector(
     assert r.json()["config"]["clickSelector"] == "a"
 
 
+def test_verify_default_ignore_scope_behavior_links(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["config"]["ignoreScopeForBehaviorLinks"] is False
+
+
 def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_data):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
@@ -327,6 +338,7 @@ def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_d
                 "scopeType": "domain",
                 "selectLinks": ["a[href]->href", "script[src]->src"],
                 "clickSelector": "button",
+                "ignoreScopeForBehaviorLinks": True,
             }
         },
     )
@@ -344,6 +356,7 @@ def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_d
     assert config["scopeType"] == "domain"
     assert config["selectLinks"] == ["a[href]->href", "script[src]->src"]
     assert config["clickSelector"] == "button"
+    assert config["ignoreScopeForBehaviorLinks"] is True
 
     # Verify fields set in config originally are unchanged
     assert config["lang"] == "en"
@@ -363,6 +376,7 @@ def test_update_config_no_changes(
                 "scopeType": "domain",
                 "selectLinks": ["a[href]->href", "script[src]->src"],
                 "clickSelector": "button",
+                "ignoreScopeForBehaviorLinks": True,
             }
         },
     )
