@@ -5,7 +5,6 @@ import secrets
 import string
 from collections.abc import AsyncGenerator
 from datetime import timedelta
-from typing import List, Optional, Tuple
 from uuid import UUID, uuid4
 
 import structlog

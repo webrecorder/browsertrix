@@ -8,7 +8,7 @@ from datetime import datetime
 from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Literal, Optional, Union
+from typing import Literal
 from uuid import UUID
 
 import structlog

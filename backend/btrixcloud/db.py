@@ -7,15 +7,7 @@ import contextvars
 import importlib.util
 import os
 import urllib.parse
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 from uuid import UUID, uuid4
 
 import structlog

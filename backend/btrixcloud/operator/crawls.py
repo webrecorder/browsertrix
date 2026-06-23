@@ -5,7 +5,7 @@ import math
 import os
 from collections.abc import Sequence
 from datetime import datetime, timedelta
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 from uuid import UUID
 
 import structlog

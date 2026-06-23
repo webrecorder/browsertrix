@@ -2,7 +2,7 @@
 Migration 0048 - Calculate firstSeed/seedCount and store directly in database
 """
 
-from typing import Any, Dict, List, cast
+from typing import Any, cast
 
 import structlog
 

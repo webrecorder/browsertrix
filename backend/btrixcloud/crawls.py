@@ -10,15 +10,7 @@ import re
 import urllib.parse
 from collections.abc import AsyncGenerator, AsyncIterator, Callable, Sequence
 from datetime import datetime
-from typing import (
-    Annotated,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import Annotated, Any
 from uuid import UUID
 
 import structlog

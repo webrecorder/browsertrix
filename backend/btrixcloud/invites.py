@@ -4,7 +4,7 @@ import hashlib
 import os
 import time
 import urllib.parse
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 import structlog

@@ -6,7 +6,7 @@ import asyncio
 import os
 from collections.abc import AsyncGenerator, Callable
 from datetime import datetime
-from typing import Annotated, Any, List, Optional, Tuple
+from typing import Annotated, Any
 from uuid import UUID
 
 import structlog

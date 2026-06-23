@@ -10,15 +10,7 @@ import os
 import time
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from tempfile import NamedTemporaryFile
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Literal, cast
 from uuid import UUID, uuid4
 
 import structlog
@@ -1287,7 +1279,7 @@ class OrgOps(BaseOrgs):
         async def json_opening_gen() -> AsyncGenerator:
             """Async generator that opens JSON document, writes dbVersion and org"""
             # pylint: disable=consider-using-f-string
-            opening_section = '{{"data": {{\n"dbVersion": "{0}",\n"org": {1},\n'.format(
+            opening_section = '{{"data": {{\n"dbVersion": "{}",\n"org": {},\n'.format(
                 version.get("version"),
                 json.dumps(org_serialized.to_dict(), cls=JSONSerializer),
             )

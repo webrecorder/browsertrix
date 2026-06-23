@@ -6,15 +6,7 @@ import asyncio
 import urllib.parse
 from collections.abc import AsyncGenerator, Callable
 from datetime import datetime
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 import structlog
@@ -450,9 +442,7 @@ class PageOps:
         user: User | None = None,
     ) -> dict[str, bool]:
         """Update page manual review"""
-        query: dict[str, bool | None | str | datetime | UUID] = {
-            "approved": approved
-        }
+        query: dict[str, bool | None | str | datetime | UUID] = {"approved": approved}
         query["modified"] = dt_now()
         if user:
             query["userid"] = user.id

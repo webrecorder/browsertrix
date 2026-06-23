@@ -5,7 +5,6 @@ supports docker and kubernetes based deployments of multiple browsertrix-crawler
 
 import os
 import sys
-from typing import List, Optional
 
 import structlog
 from fastapi import FastAPI, HTTPException

@@ -4,14 +4,7 @@ FastAPI user handling (via fastapi-users)
 
 import os
 from collections.abc import AsyncGenerator, Callable
-from typing import (
-    TYPE_CHECKING,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    cast,
-)
+from typing import TYPE_CHECKING, cast
 from uuid import UUID, uuid4
 
 import structlog
@@ -331,9 +324,7 @@ class UserManager:
                 unstructured_message=f"User {email} already exists",
             )
 
-    async def request_verify(
-        self, user: User, request: Request | None = None
-    ) -> None:
+    async def request_verify(self, user: User, request: Request | None = None) -> None:
         """start verifying user, if not already verified"""
         if user.is_verified:
             raise HTTPException(status_code=400, detail="verify_user_already_verified")
@@ -446,9 +437,7 @@ class UserManager:
         user.is_verified = True
         await self.update_verified(user)
 
-    async def forgot_password(
-        self, user: User, request: Request | None = None
-    ) -> None:
+    async def forgot_password(self, user: User, request: Request | None = None) -> None:
         """start forgot password reset request"""
         token_data = {
             "user_id": str(user.id),

@@ -3,7 +3,6 @@
 import os
 import secrets
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
 
 import structlog
 from fastapi import HTTPException

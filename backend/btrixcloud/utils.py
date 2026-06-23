@@ -9,8 +9,8 @@ import os
 import re
 import signal
 import sys
-from datetime import UTC, datetime, timezone
-from typing import Any, Dict, List, Optional, Union
+from datetime import UTC, datetime
+from typing import Any
 from urllib.parse import urlparse
 from uuid import UUID
 

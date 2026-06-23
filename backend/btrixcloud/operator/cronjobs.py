@@ -1,6 +1,5 @@
 """Operator handler for crawl CronJobs"""
 
-from typing import Optional
 from uuid import UUID
 
 import structlog

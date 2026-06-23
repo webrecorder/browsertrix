@@ -1,6 +1,6 @@
 """Webhook management"""
 
-from typing import TYPE_CHECKING, List, Optional, Union, cast
+from typing import TYPE_CHECKING, cast
 from uuid import UUID, uuid4
 
 import structlog

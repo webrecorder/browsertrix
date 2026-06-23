@@ -11,17 +11,7 @@ import re
 import urllib.parse
 from collections.abc import AsyncGenerator, Callable
 from datetime import datetime, timedelta
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Annotated, Any, cast
 from uuid import UUID, uuid4
 
 import structlog
@@ -1469,15 +1459,11 @@ class CrawlConfigOps:
         except Exception:
             return [], 0
 
-    def get_channel_crawler_image(
-        self, crawler_channel: str | None
-    ) -> str | None:
+    def get_channel_crawler_image(self, crawler_channel: str | None) -> str | None:
         """Get crawler image name by id"""
         return self.crawler_images_map.get(crawler_channel or "")
 
-    def get_channel_crawler_image_pull_policy(
-        self, crawler_channel: str | None
-    ) -> str:
+    def get_channel_crawler_image_pull_policy(self, crawler_channel: str | None) -> str:
         """Get crawler image name by id"""
         return (
             self.crawler_image_pull_policy_map.get(crawler_channel or "")
@@ -1819,9 +1805,7 @@ def init_crawl_config_api(
         ] = DEFAULT_PAGE_SIZE,
         page: int = 1,
         # createdBy, kept as userid for API compatibility
-        user_id: Annotated[
-            UUID | None, Query(alias="userid", title="User ID")
-        ] = None,
+        user_id: Annotated[UUID | None, Query(alias="userid", title="User ID")] = None,
         modified_by: Annotated[
             UUID | None, Query(alias="modifiedBy", title="Modified By User ID")
         ] = None,
@@ -1833,9 +1817,7 @@ def init_crawl_config_api(
         ] = None,
         name: str | None = None,
         description: str | None = None,
-        tag: Annotated[
-            list[str] | None, Query(title="Tags", deprecated=True)
-        ] = None,
+        tag: Annotated[list[str] | None, Query(title="Tags", deprecated=True)] = None,
         tags: Annotated[list[str] | None, Query(title="Tags")] = None,
         tag_match: Annotated[
             ListFilterType | None,

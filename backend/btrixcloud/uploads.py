@@ -3,7 +3,7 @@
 import uuid
 from collections.abc import AsyncGenerator, Callable
 from io import BufferedReader
-from typing import Any, List, Optional
+from typing import Any
 from urllib.parse import unquote
 from uuid import UUID
 

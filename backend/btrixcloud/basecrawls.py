@@ -5,18 +5,7 @@ import os
 import urllib.parse
 from collections.abc import AsyncGenerator, AsyncIterable, Callable
 from datetime import datetime
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Annotated, Any, cast
 from uuid import UUID
 
 import structlog
@@ -493,9 +482,7 @@ class BaseCrawlOps:
 
         return res.deleted_count, cids_to_update, quota_reached
 
-    async def _delete_crawl_files(
-        self, crawl: BaseCrawl | QARun, org: Organization
-    ):
+    async def _delete_crawl_files(self, crawl: BaseCrawl | QARun, org: Organization):
         """Delete files associated with crawl from storage."""
         size = 0
         for file_ in crawl.files:

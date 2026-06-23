@@ -12,15 +12,7 @@ from collections.abc import AsyncGenerator, AsyncIterator, Callable, Iterable, I
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from itertools import chain
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlsplit
 from zipfile import ZipInfo
 
@@ -634,9 +626,7 @@ class StorageOps:
 
         return urls, now + self.signed_duration_delta
 
-    async def delete_file_object(
-        self, org: Organization, crawlfile: BaseFile
-    ) -> bool:
+    async def delete_file_object(self, org: Organization, crawlfile: BaseFile) -> bool:
         """delete crawl file from storage."""
         return await self._delete_file(org, crawlfile.filename, crawlfile.storage)
 

@@ -1,7 +1,7 @@
 """K8S API Access"""
 
 import os
-from typing import Any, List, Optional
+from typing import Any
 
 import structlog
 import yaml

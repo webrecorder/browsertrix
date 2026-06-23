@@ -1,7 +1,5 @@
 """shared helper to initialize ops classes"""
 
-from typing import Tuple
-
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 from .background_jobs import BackgroundJobOps

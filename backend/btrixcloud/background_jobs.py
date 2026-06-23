@@ -4,15 +4,7 @@ import os
 import secrets
 from collections.abc import AsyncGenerator, Callable
 from datetime import datetime
-from typing import (
-    TYPE_CHECKING,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, cast
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -662,7 +654,16 @@ class BackgroundJobOps:
 
     async def get_background_job(
         self, job_id: str, oid: UUID | None = None
-    ) -> CreateReplicaJob | DeleteReplicaJob | DeleteOrgJob | RecalculateOrgStatsJob | ReAddOrgPagesJob | OptimizePagesJob | CleanupSeedFilesJob | UpdateCollStatsJob:
+    ) -> (
+        CreateReplicaJob
+        | DeleteReplicaJob
+        | DeleteOrgJob
+        | RecalculateOrgStatsJob
+        | ReAddOrgPagesJob
+        | OptimizePagesJob
+        | CleanupSeedFilesJob
+        | UpdateCollStatsJob
+    ):
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
         if oid:
@@ -786,9 +787,7 @@ class BackgroundJobOps:
         except Exception:
             raise HTTPException(status_code=404, detail="file_not_found")
 
-    async def retry_background_job(
-        self, job_id: str, org: Organization | None = None
-    ):
+    async def retry_background_job(self, job_id: str, org: Organization | None = None):
         """Retry background job"""
         job = await self.get_background_job(job_id)
         if not job:

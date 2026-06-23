@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from datetime import datetime
-from typing import Annotated, Any, DefaultDict, Literal, Optional
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from kubernetes.utils import parse_quantity

@@ -11,19 +11,8 @@ import math
 import mimetypes
 import os
 from datetime import datetime
-from enum import Enum, IntEnum
-from typing import (
-    Annotated,
-    Any,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Self,
-    Union,
-    get_args,
-    get_origin,
-)
+from enum import IntEnum, StrEnum
+from typing import Annotated, Any, Literal, Self, get_args, get_origin
 from uuid import UUID
 
 from pydantic import (
@@ -94,7 +83,7 @@ EmptyStr = Annotated[str, Field(min_length=0, max_length=0)]
 
 Scale = Annotated[int, Field(strict=True, ge=1, le=MAX_CRAWL_SCALE, deprecated=True)]
 BrowserWindowCount = Annotated[int, Field(strict=True, ge=1, le=MAX_BROWSER_WINDOWS)]
-ReviewStatus = Optional[Annotated[int, Field(strict=True, ge=1, le=5)]]
+ReviewStatus = Annotated[int, Field(strict=True, ge=1, le=5)] | None
 
 any_http_url_adapter = TypeAdapter(AnyHttpUrlNonStr)
 AnyHttpUrl = Annotated[
@@ -358,7 +347,7 @@ class CrawlStats(BaseModel):
 
 
 # ============================================================================
-class JobType(str, Enum):
+class JobType(StrEnum):
     """Job Types"""
 
     URL_LIST = "url-list"
@@ -367,7 +356,7 @@ class JobType(str, Enum):
 
 
 # ============================================================================
-class ScopeType(str, Enum):
+class ScopeType(StrEnum):
     """Crawl scope type"""
 
     PAGE = "page"
@@ -1649,7 +1638,7 @@ INDEX_JOB_TYPES = get_args(TYPE_INDEX_JOB_TYPES)
 
 
 # ============================================================================
-class CollAccessType(str, Enum):
+class CollAccessType(StrEnum):
     """Collection access types"""
 
     PRIVATE = "private"
@@ -2170,21 +2159,21 @@ class SubscriptionAddMinutesOut(SubscriptionAddMinutes, SubscriptionEventOut):
 
 
 # ============================================================================
-SubscriptionEventAny = Union[
-    SubscriptionCreate,
-    SubscriptionUpdate,
-    SubscriptionCancel,
-    SubscriptionImport,
-    SubscriptionAddMinutes,
-]
+SubscriptionEventAny = (
+    SubscriptionCreate
+    | SubscriptionUpdate
+    | SubscriptionCancel
+    | SubscriptionImport
+    | SubscriptionAddMinutes
+)
 
-SubscriptionEventAnyOut = Union[
-    SubscriptionCreateOut,
-    SubscriptionUpdateOut,
-    SubscriptionCancelOut,
-    SubscriptionImportOut,
-    SubscriptionAddMinutesOut,
-]
+SubscriptionEventAnyOut = (
+    SubscriptionCreateOut
+    | SubscriptionUpdateOut
+    | SubscriptionCancelOut
+    | SubscriptionImportOut
+    | SubscriptionAddMinutesOut
+)
 
 
 # ============================================================================
@@ -2979,7 +2968,7 @@ class WebhookNotificationBody(BaseModel):
 
 
 # ============================================================================
-class WebhookEventType(str, Enum):
+class WebhookEventType(StrEnum):
     """Webhook Event Types"""
 
     CRAWL_STARTED = "crawlStarted"
@@ -3126,7 +3115,19 @@ class WebhookNotification(BaseMongoModel):
 
     event: WebhookEventType
     oid: UUID
-    body: CrawlStartedBody | CrawlFinishedBody | CrawlDeletedBody | QaAnalysisStartedBody | QaAnalysisFinishedBody | CrawlReviewedBody | UploadFinishedBody | UploadDeletedBody | CollectionItemAddedBody | CollectionItemRemovedBody | CollectionDeletedBody
+    body: (
+        CrawlStartedBody
+        | CrawlFinishedBody
+        | CrawlDeletedBody
+        | QaAnalysisStartedBody
+        | QaAnalysisFinishedBody
+        | CrawlReviewedBody
+        | UploadFinishedBody
+        | UploadDeletedBody
+        | CollectionItemAddedBody
+        | CollectionItemRemovedBody
+        | CollectionDeletedBody
+    )
     success: bool = False
     attempts: int = 0
     created: datetime
@@ -3139,7 +3140,7 @@ class WebhookNotification(BaseMongoModel):
 
 
 # ============================================================================
-class BgJobType(str, Enum):
+class BgJobType(StrEnum):
     """Background Job Types"""
 
     CREATE_REPLICA = "create-replica"
@@ -3239,17 +3240,15 @@ class UpdateCollStatsJob(BackgroundJob):
 # Union of all job types, for response model
 
 AnyJob = RootModel[
-    Union[
-        CreateReplicaJob,
-        DeleteReplicaJob,
-        BackgroundJob,
-        DeleteOrgJob,
-        RecalculateOrgStatsJob,
-        ReAddOrgPagesJob,
-        OptimizePagesJob,
-        CleanupSeedFilesJob,
-        UpdateCollStatsJob,
-    ]
+    CreateReplicaJob
+    | DeleteReplicaJob
+    | BackgroundJob
+    | DeleteOrgJob
+    | RecalculateOrgStatsJob
+    | ReAddOrgPagesJob
+    | OptimizePagesJob
+    | CleanupSeedFilesJob
+    | UpdateCollStatsJob
 ]
 
 
@@ -3519,7 +3518,7 @@ class PageUrlCountResponse(BaseModel):
 
 
 # ============================================================================
-class ListFilterType(str, Enum):
+class ListFilterType(StrEnum):
     """Combination type for query filters that accept lists"""
 
     OR = "or"
