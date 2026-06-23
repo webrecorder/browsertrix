@@ -1372,7 +1372,8 @@ def test_multi_wacz_upload_child_wacz_download(
         dl_url = urljoin(API_PREFIX, res["path"])
         dl_resp = requests.get(dl_url, headers=admin_auth_headers)
         assert dl_resp.status_code == 200, (
-            f"Child WACZ {res['name']} should be downloadable"
+            f"Child WACZ {res['name']} should be downloadable, got {dl_resp.status_code}: "
+            f"{dl_resp.text}"
         )
         assert len(dl_resp.content) > 0, f"Child WACZ {res['name']} should not be empty"
 
