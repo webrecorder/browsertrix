@@ -152,7 +152,10 @@ _callsite_adder = structlog.processors.CallsiteParameterAdder(
 def _add_callsite(logger, method_name: str, event_dict: EventDict) -> EventDict:
     """Add callsite info to all events except request-logging events,
     whose callsite is always the same middleware location."""
-    if event_dict.get("event") not in ("http_request", "http_unhandled_exception"):
+    if event_dict.get("event") not in (
+        "http_request",
+        "http_unhandled_exception",
+    ) and event_dict.get("logger") not in ("uvicorn.access"):
         return _callsite_adder(logger, method_name, event_dict)
     return event_dict
 
