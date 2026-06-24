@@ -80,6 +80,10 @@ const WorkflowPageScopeSet = ImmutableSet([
   ScopeType.SPA,
 ]);
 const WorkflowSiteScopeSet = WorkflowScopeSet.subtract(WorkflowPageScopeSet);
+const WorkflowUrlListScopeSet = WorkflowPageScopeSet.subtract([ScopeType.SPA]);
+const WorkflowPrimarySeedScopeSet = WorkflowScopeSet.subtract(
+  WorkflowUrlListScopeSet,
+);
 
 const SCOPE_PRIORITY = {
   [ScopeType.Page]: 1,
@@ -107,6 +111,18 @@ export function isPageScope(
   scope?: (typeof WorkflowScopeType)[keyof typeof WorkflowScopeType],
 ) {
   return scope !== undefined && WorkflowPageScopeSet.has(scope);
+}
+
+export function isUrlListScope(
+  scope?: (typeof WorkflowScopeType)[keyof typeof WorkflowScopeType],
+) {
+  return scope !== undefined && WorkflowUrlListScopeSet.has(scope);
+}
+
+export function isPrimarySeedScope(
+  scope?: (typeof WorkflowScopeType)[keyof typeof WorkflowScopeType],
+) {
+  return scope !== undefined && WorkflowPrimarySeedScopeSet.has(scope);
 }
 
 export function makeUserGuideEvent(
@@ -336,7 +352,7 @@ export function getInitialFormState(params: {
   const formState: Partial<FormState> = {};
   const seedsConfig = params.initialWorkflow.config;
   let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-  if (!isPageScope(params.initialWorkflow.config.scopeType)) {
+  if (!isUrlListScope(params.initialWorkflow.config.scopeType)) {
     if (params.initialSeeds) {
       const firstSeed = params.initialSeeds[0];
       if (typeof firstSeed === "string") {

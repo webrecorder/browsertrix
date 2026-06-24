@@ -38,7 +38,7 @@ import { richText } from "@/utils/rich-text";
 import {
   defaultLabel,
   getServerDefaults,
-  isPageScope,
+  isUrlListScope,
   regexScopeConfig,
 } from "@/utils/workflow";
 
@@ -135,7 +135,10 @@ export class ConfigDetails extends BtrixElement {
                   ? scopeTypeLabel[WorkflowScopeType.PageList]
                   : when(this.seeds, (seeds) => {
                       if (!config.scopeType) return;
-                      if (isPageScope(config.scopeType) && seeds.length > 1) {
+                      if (
+                        isUrlListScope(config.scopeType) &&
+                        seeds.length > 1
+                      ) {
                         return scopeTypeLabel[WorkflowScopeType.PageList];
                       }
                       const primarySeedConfig = seeds[0];
@@ -145,7 +148,7 @@ export class ConfigDetails extends BtrixElement {
                       return scopeTypeLabel[config.scopeType];
                     }),
               )}
-              ${isPageScope(config.scopeType)
+              ${isUrlListScope(config.scopeType)
                 ? this.renderConfirmUrlListSettings(config)
                 : this.renderConfirmSeededSettings(config)}
             `,

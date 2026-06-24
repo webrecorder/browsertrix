@@ -151,6 +151,7 @@ import {
   getInitialFormState,
   getServerDefaults,
   isPageScope,
+  isUrlListScope,
   makeUserGuideEvent,
   MAX_SEED_LIST_FILE_BYTES,
   MAX_SEED_LIST_STRING_BYTES,
@@ -1804,7 +1805,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const minPages = Math.max(
       1,
       urlListToArray(this.formState.urlList).length +
-        (isPageScope(this.formState.scopeType) ? 0 : 1),
+        (isUrlListScope(this.formState.scopeType) ? 0 : 1),
     );
 
     return html`
@@ -2704,7 +2705,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private renderJobMetadata() {
-    const pageScope = isPageScope(this.formState.scopeType);
+    const urlList = isUrlListScope(this.formState.scopeType);
 
     const linkToScope = (label: string) =>
       html`<button
@@ -2738,7 +2739,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         html`${msg(`Customize the name of this workflow.`)}
-        ${pageScope
+        ${urlList
           ? this.formState.scopeType === ScopeType.Page
             ? msg(
                 html`If omitted, the workflow will be named after the URL
@@ -2909,18 +2910,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
     };
     const urls = urlListToArray(this.formState.urlList);
 
-    const pageScope = isPageScope(value);
-    const isPrevPageScope = isPageScope(prevScopeType);
+    const urlList = isUrlListScope(value);
+    const prevUrlList = isUrlListScope(prevScopeType);
 
-    if (pageScope === isPrevPageScope) {
-      if (pageScope) {
+    if (urlList === prevUrlList) {
+      if (urlList) {
         formState.urlList = urls[0];
       }
     } else {
-      if (isPrevPageScope) {
+      if (prevUrlList) {
         formState.primarySeedUrl = urls[0];
         formState.urlList = urls.slice(1).join("\n");
-      } else if (pageScope) {
+      } else if (urlList) {
         formState.urlList = [this.formState.primarySeedUrl, ...urls].join("\n");
       }
     }
@@ -3039,7 +3040,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   });
 
   private hasRequiredFields(): boolean {
-    if (isPageScope(this.formState.scopeType)) {
+    if (isUrlListScope(this.formState.scopeType)) {
       return Boolean(
         this.formState.seedListFormat === SeedListFormat.File
           ? this.formState.seedFile || this.formState.seedFileId
@@ -3687,7 +3688,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           this.formState.dedupeCollection.id) ||
         "",
       config: {
-        ...(isPageScope(this.formState.scopeType)
+        ...(isUrlListScope(this.formState.scopeType)
           ? this.parseUrlListConfig(uploadParams)
           : this.parseSeededConfig()),
         behaviorTimeout: this.formState.behaviorTimeoutSeconds,
@@ -3708,6 +3709,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
           [],
         clickSelector:
           this.formState.clickSelector || DEFAULT_AUTOCLICK_SELECTOR,
+        failOnContentCheck: this.formState.failOnContentCheck,
+        saveStorage: this.formState.saveStorage,
+        useRobots: this.formState.useRobots,
       },
       crawlerChannel:
         this.formState.crawlerChannel || CrawlerChannelImage.Default,
@@ -3735,15 +3739,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     seedFileId?: string;
   }): Pick<
     WorkflowParams["config"],
-    | "seeds"
-    | "seedFileId"
-    | "scopeType"
-    | "extraHops"
-    | "useSitemap"
-    | "failOnFailedSeed"
-    | "failOnContentCheck"
-    | "saveStorage"
-    | "useRobots"
+    "seeds" | "seedFileId" | "scopeType" | "extraHops" | "failOnFailedSeed"
   > {
     const jsonSeeds = this.formState.seedListFormat === SeedListFormat.JSON;
 
@@ -3761,9 +3757,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
       useSitemap: false,
       failOnFailedSeed: this.formState.failOnFailedSeed,
-      failOnContentCheck: this.formState.failOnContentCheck,
-      saveStorage: this.formState.saveStorage,
-      useRobots: this.formState.useRobots,
     };
 
     return config;
@@ -3771,24 +3764,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private parseSeededConfig(): Pick<
     WorkflowParams["config"],
-    | "seeds"
-    | "scopeType"
-    | "useSitemap"
-    | "failOnFailedSeed"
-    | "failOnContentCheck"
-    | "saveStorage"
-    | "useRobots"
+    "seeds" | "scopeType" | "useSitemap" | "failOnFailedSeed"
   > {
     const primarySeedUrl = this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeList
       ? urlListToArray(this.formState.customIncludeList)
       : [];
-    const additionalSeedUrlList = this.formState.urlList
-      ? urlListToArray(this.formState.urlList).map((seedUrl) => {
-          const newSeed: Seed = { url: seedUrl, scopeType: ScopeType.Page };
-          return newSeed;
-        })
-      : [];
+    const additionalSeedUrlList =
+      !isPageScope(this.formState.scopeType) &&
+      // Page scopes do not support additional seed URLs
+      this.formState.urlList
+        ? urlListToArray(this.formState.urlList).map((seedUrl) => {
+            const newSeed: Seed = { url: seedUrl, scopeType: ScopeType.Page };
+            return newSeed;
+          })
+        : [];
     const scopeType = apiScopeType(this.formState.scopeType)
       ? this.formState.scopeType
       : ScopeType.Custom;
@@ -3813,9 +3803,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
       scopeType,
       useSitemap: this.formState.useSitemap,
       failOnFailedSeed: false,
-      failOnContentCheck: this.formState.failOnContentCheck,
-      saveStorage: this.formState.saveStorage,
-      useRobots: this.formState.useRobots,
     };
     return config;
   }
