@@ -502,7 +502,7 @@ export class ConfigDetails extends BtrixElement {
         true,
       )}
       ${this.renderSetting(
-        msg("Include Any Linked Page (“one hop out”)"),
+        msg(labelFor.includeLinkedPages),
         Boolean(config.extraHops),
       )}
       ${this.renderSetting(
@@ -596,7 +596,7 @@ export class ConfigDetails extends BtrixElement {
         ),
       )}
       ${this.renderSetting(
-        msg("Include Any Linked Page (“one hop out”)"),
+        msg(labelFor.includeLinkedPages),
         Boolean(primarySeedConfig?.extraHops ?? config.extraHops),
       )}
       ${this.renderSetting(

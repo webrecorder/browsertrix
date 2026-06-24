@@ -1038,15 +1038,7 @@ export class WorkflowEditor extends BtrixElement {
 
       <!-- Settings that expand the crawl scope by including links that would normally be out of scope -->
       ${this.renderSectionHeading(msg("Additional Scope"))}
-      ${inputCol(html`
-        <sl-checkbox
-          name="includeLinkedPages"
-          ?checked=${this.formState.includeLinkedPages}
-        >
-          ${msg("Include any linked page (“one hop out”)")}
-        </sl-checkbox>
-      `)}
-      ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
+      ${this.renderIncludeLinkedPages()}
       ${when(
         this.formState.includeLinkedPages ||
           this.formState.scopeType === ScopeType.SPA,
@@ -1664,15 +1656,7 @@ https://archiveweb.page/es/`}
 
       <!-- Settings that expand the crawl scope by including links that would normally be out of scope -->
       ${this.renderSectionHeading(msg("Additional Scope"))}
-      ${inputCol(html`
-        <sl-checkbox
-          name="includeLinkedPages"
-          ?checked=${this.formState.includeLinkedPages}
-        >
-          ${msg("Include any linked page (“one hop out”)")}
-        </sl-checkbox>
-      `)}
-      ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
+      ${this.renderIncludeLinkedPages()}
       ${detailsInColumns({
         title: html`${msg("Custom List of Pages")}
         ${additionalUrlList.length
@@ -1747,6 +1731,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
       inputEl.setCustomValidity(helpText);
     }
   };
+
+  private renderIncludeLinkedPages() {
+    return html`${inputCol(html`
+      <sl-checkbox
+        name="includeLinkedPages"
+        ?checked=${this.formState.includeLinkedPages}
+      >
+        ${labelFor.includeLinkedPages}
+      </sl-checkbox>
+    `)}
+    ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}`;
+  }
 
   private renderLinkSelectors() {
     const selectors = this.formState.selectLinks;

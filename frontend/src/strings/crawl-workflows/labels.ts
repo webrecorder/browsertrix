@@ -15,6 +15,7 @@ export const labelFor = {
   dedupeType: msg("Crawl Deduplication"),
   saveStorage: msg("Include browser storage data"),
   maxScopeDepth: msg("Max Discovery Depth"),
+  includeLinkedPages: msg("Visit any linked page"),
   useSitemap: msg("Use sitemap"),
   useRobots: msg("Use robots.txt disallow list"),
 } as const satisfies Partial<Record<FormStateField, string>>;

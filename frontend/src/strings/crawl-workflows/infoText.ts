@@ -11,7 +11,7 @@ const robots_txt = html`<code>robots.txt</code>`;
 export const infoTextFor = {
   urlList: msg("The crawler will visit and record each URL listed here."),
   includeLinkedPages: msg(
-    "If checked, the crawler will visit pages one link away.",
+    "Expands crawl scope to include pages that are one link away.",
   ),
   exclusions: msg("Specify rules for which pages should not be visited."),
   pageLimit: msg(
