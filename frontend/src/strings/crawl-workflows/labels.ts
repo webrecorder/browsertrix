@@ -18,4 +18,7 @@ export const labelFor = {
   includeLinkedPages: msg("Visit any linked page"),
   useSitemap: msg("Use sitemap"),
   useRobots: msg("Use robots.txt disallow list"),
+  customIncludeList: msg("Page Prefix URLs"),
+  urlList: msg("Custom List of Pages"),
+  failOnContentCheck: msg("Fail crawl if not logged in"),
 } as const satisfies Partial<Record<FormStateField, string>>;

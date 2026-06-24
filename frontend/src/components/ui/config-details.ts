@@ -16,6 +16,7 @@ import { none, notSpecified } from "@/layouts/empty";
 import {
   Behavior,
   CrawlerChannelImage,
+  ScopeType,
   type CrawlReplay,
   type Seed,
   type SeedConfig,
@@ -35,6 +36,7 @@ import { humanizeSchedule } from "@/utils/cron";
 import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
 import {
+  defaultLabel,
   getServerDefaults,
   isPageScope,
   regexScopeConfig,
@@ -273,6 +275,14 @@ export class ConfigDetails extends BtrixElement {
                 >`,
             ),
           )}
+          ${this.renderSetting(
+            labelFor.failOnContentCheck,
+            Boolean(seedsConfig?.failOnContentCheck),
+          )}
+          ${this.renderSetting(
+            labelFor["saveStorage"],
+            seedsConfig?.saveStorage,
+          )}
           ${crawlConfig?.proxyId
             ? this.renderSetting(
                 msg("Crawler Proxy Server"),
@@ -294,10 +304,6 @@ export class ConfigDetails extends BtrixElement {
           ${this.renderSetting(
             msg("Block Ads by Domain"),
             seedsConfig?.blockAds,
-          )}
-          ${this.renderSetting(
-            labelFor["saveStorage"],
-            seedsConfig?.saveStorage,
           )}
           ${this.renderSetting(
             msg("User Agent"),
@@ -502,19 +508,11 @@ export class ConfigDetails extends BtrixElement {
         true,
       )}
       ${this.renderSetting(
-        msg(labelFor.includeLinkedPages),
+        labelFor.includeLinkedPages,
         Boolean(config.extraHops),
       )}
-      ${this.renderSetting(
-        msg("Skip Pages Disallowed by robots.txt"),
-        Boolean(config.useRobots),
-      )}
-      ${this.renderSetting(
-        msg("Fail Crawl If Not Logged In"),
-        Boolean(config.failOnContentCheck),
-      )}
       ${when(
-        config.extraHops,
+        config.extraHops || config.scopeType === ScopeType.SPA,
         () => html`${this.renderLinkSelectors()}${this.renderExclusions()}`,
       )}
     `;
@@ -572,7 +570,7 @@ export class ConfigDetails extends BtrixElement {
                 true,
               )
             : this.renderSetting(
-                msg("Page Prefix URLs"),
+                labelFor.customIncludeList,
                 includeRegexList.length
                   ? html`
                       <btrix-data-table
@@ -591,29 +589,18 @@ export class ConfigDetails extends BtrixElement {
         this.renderSetting(
           labelFor.maxScopeDepth,
           primarySeedConfig && primarySeedConfig.depth !== null
-            ? msg(str`${primarySeedConfig.depth} hop(s)`)
-            : msg("Unlimited (default)"),
+            ? msg(str`${primarySeedConfig.depth} level(s)`)
+            : defaultLabel(Infinity),
         ),
       )}
+      ${this.renderSetting(labelFor.useSitemap, Boolean(config.useSitemap))}
       ${this.renderSetting(
-        msg(labelFor.includeLinkedPages),
+        labelFor.includeLinkedPages,
         Boolean(primarySeedConfig?.extraHops ?? config.extraHops),
-      )}
-      ${this.renderSetting(
-        msg("Skip Pages Disallowed by robots.txt"),
-        Boolean(config.useRobots),
-      )}
-      ${this.renderSetting(
-        msg("Check For Sitemap"),
-        Boolean(config.useSitemap),
-      )}
-      ${this.renderSetting(
-        msg("Fail Crawl if Not Logged In"),
-        Boolean(config.failOnContentCheck),
       )}
       ${this.renderLinkSelectors()}
       ${this.renderSetting(
-        msg("Additional Page URLs"),
+        labelFor.urlList,
         additionalUrlList.length
           ? html`
               <ul>
@@ -634,6 +621,7 @@ export class ConfigDetails extends BtrixElement {
           : none,
         true,
       )}
+      ${this.renderSetting(labelFor.useRobots, Boolean(config.useRobots))}
       ${this.renderExclusions()}
     `;
   };

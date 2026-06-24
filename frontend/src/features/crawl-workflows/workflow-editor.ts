@@ -1528,7 +1528,7 @@ https://replayweb.page/docs`}
           ${inputCol(html`
             <sl-textarea
               name="customIncludeList"
-              label=${msg("Page Prefix URLs")}
+              label=${labelFor.customIncludeList}
               rows="3"
               autocomplete="off"
               inputmode="url"
@@ -1658,7 +1658,7 @@ https://archiveweb.page/es/`}
       ${this.renderSectionHeading(msg("Additional Scope"))}
       ${this.renderIncludeLinkedPages()}
       ${detailsInColumns({
-        title: html`${msg("Custom List of Pages")}
+        title: html`${labelFor.urlList}
         ${additionalUrlList.length
           ? html`<btrix-badge>${additionalUrlList.length}</btrix-badge>`
           : ""}`,
@@ -2132,7 +2132,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               ?checked=${this.formState.failOnContentCheck &&
               this.formState.browserProfile !== null}
             >
-              ${msg("Fail crawl if not logged in")}
+              ${labelFor.failOnContentCheck}
             </sl-checkbox>
           `)}
           ${this.renderHelpTextCol(
