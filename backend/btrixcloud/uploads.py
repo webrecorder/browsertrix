@@ -3,7 +3,7 @@
 import asyncio
 import os
 import uuid
-from collections.abc import AsyncGenerator, Callable, Iterable
+from collections.abc import AsyncGenerator, Callable
 from io import BufferedReader
 from typing import Any
 from urllib.parse import unquote
