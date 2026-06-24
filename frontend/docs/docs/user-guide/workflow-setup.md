@@ -191,7 +191,7 @@ See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_w
 
 A list of page URLs outside of the _Crawl Scope_ to include in the crawl.
 
-### Exclude Pages
+### Custom Exclusion Rules
 
 The exclusions table will instruct the crawler to ignore links it finds on pages where all or part of the link matches an exclusion found in the table. The table is only available in Page List crawls when _Include Any Linked Page_ is enabled.
 

@@ -921,10 +921,27 @@ export class WorkflowEditor extends BtrixElement {
     return infoCol(content, padTop ? tw`md:pt-[2.35rem]` : tw`md:pt-1`);
   }
 
+  private renderExternalLink({
+    href,
+    text,
+  }: {
+    href: string;
+    text: TemplateResult | string;
+  }) {
+    return html`<a
+      href=${href}
+      class="text-blue-600 hover:text-blue-500"
+      target="_blank"
+      rel="noopener noreferrer nofollow"
+      >${text} <sl-icon name="box-arrow-up-right"></sl-icon
+    ></a>`;
+  }
+
   private readonly renderScope = () => {
     return html`
       ${inputCol(html`
         <sl-select
+          class="part-[combobox]:pl-2.5"
           name="scopeType"
           label=${msg("Crawl Scope")}
           value=${this.formState.scopeType}
@@ -934,7 +951,7 @@ export class WorkflowEditor extends BtrixElement {
               (e.target as HTMLSelectElement).value as FormState["scopeType"],
             )}
         >
-          <btrix-badge slot="prefix"
+          <btrix-badge class="mr-2.5" slot="prefix" outline
             >${isPageScope(this.formState.scopeType)
               ? stringForScopeGroup.page
               : stringForScopeGroup.site}</btrix-badge
@@ -971,6 +988,11 @@ export class WorkflowEditor extends BtrixElement {
 
   private renderExcludePages() {
     const exclusions = trimArray(this.formState.exclusions || []);
+    const RegExp = html`<code>RegExp</code>`;
+    const RegExp_constructor = this.renderExternalLink({
+      href: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions#writing_a_regular_expression_pattern",
+      text: msg(html`${RegExp} constructor`),
+    });
 
     return detailsInColumns({
       title: html`${msg("Custom Exclusion Rules")}
@@ -990,7 +1012,19 @@ export class WorkflowEditor extends BtrixElement {
           @btrix-change=${this.handleChangeRegex}
         ></btrix-queue-exclusion-table>
       `,
-      info: infoTextFor["exclusions"],
+      description: infoTextFor["exclusions"],
+      info: html`${infoTextFor["exclusions"]}
+      ${msg(
+        "Rules can be written as plain text or a regular expression pattern.",
+      )}
+      ${msg(
+        html`Regex patterns should be written in the JavaScript regular
+        expression syntax without the enclosed slashes, as it would be passed to
+        a ${RegExp_constructor}.`,
+        {
+          desc: "'RegExp_constructor' is a link to https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions#writing_a_regular_expression_pattern",
+        },
+      )}`,
     });
   }
 
@@ -1669,6 +1703,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             @sl-blur=${this.doValidateUrlList}
           ></sl-textarea>
         `,
+        description: infoTextFor["urlList"],
         info: html`${infoTextFor["urlList"]}
         ${msg(str`You can enter up to ${maxUrls} URLs.`, {
           desc: "`maxUrls` example: '1,000'",
@@ -1723,6 +1758,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ><code class="text-neutral-400">${SELECTOR_DELIMITER}</code
       ><btrix-code language="xml" value=${defaultAttr}></btrix-code>
     </span>`;
+    const CSS_selectors = this.renderExternalLink({
+      href: "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors",
+      text: msg("CSS selectors"),
+    });
 
     return detailsInColumns({
       title: html`${labelFor.selectLinks}
@@ -1732,8 +1771,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
         .selectors=${selectors}
         editable
       ></btrix-link-selector-table>`,
+      description: infoTextFor["selectLinks"],
       info: html`
         ${infoTextFor["selectLinks"]}
+        ${msg(
+          html`The crawler will use the specified ${CSS_selectors} to find URLs
+          that are defined in custom HTML attributes.`,
+          {
+            desc: "'CSS_selectors' is a link to https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors",
+          },
+        )}
         <br /><br />
         ${msg(
           html`If none are specified, the crawler will default to
@@ -2039,6 +2086,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
         .filter((url) => url);
     };
 
+    const Steven_Blacks_Hosts_file = this.renderExternalLink({
+      href: "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
+      text: msg("Steven Black’s Hosts file"),
+    });
+    const Useragents_me = this.renderExternalLink({
+      href: "https://www.useragents.me/",
+      text: "Useragents.me",
+    });
+
     return html`
       ${inputCol(html`
         <btrix-select-browser-profile
@@ -2179,7 +2235,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ${msg("Block ads by domain")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(infoTextFor["blockAds"], false)}
+      ${this.renderHelpTextCol(
+        html`${infoTextFor["blockAds"]}
+        ${msg(html`Uses ${Steven_Blacks_Hosts_file}.`, {
+          desc: "'Steven_Blacks_Hosts_file' is a link to https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
+        })} `,
+        false,
+      )}
       ${inputCol(html`
         <sl-input
           name="userAgent"
@@ -2190,7 +2252,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
         >
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoTextFor["userAgent"])}
+      ${this.renderHelpTextCol(
+        html`${infoTextFor["userAgent"]}
+        ${msg(html`For common user agents see ${Useragents_me}.`, {
+          desc: "'Useragents_me' is a link to https://www.useragents.me/",
+        })}`,
+      )}
       ${inputCol(html`
         <btrix-language-select
           .value=${this.formState.lang as LanguageCode}
