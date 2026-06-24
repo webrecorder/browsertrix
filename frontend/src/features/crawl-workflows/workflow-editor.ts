@@ -150,8 +150,8 @@ import {
   getDefaultFormState,
   getInitialFormState,
   getServerDefaults,
-  isPageScope,
-  isUrlListScope,
+  isPageScopeType,
+  isUrlListScopeType,
   makeUserGuideEvent,
   MAX_SEED_LIST_FILE_BYTES,
   MAX_SEED_LIST_STRING_BYTES,
@@ -953,7 +953,7 @@ export class WorkflowEditor extends BtrixElement {
             )}
         >
           <btrix-badge class="mr-2.5" slot="prefix" outline
-            >${isPageScope(this.formState.scopeType)
+            >${isPageScopeType(this.formState.scopeType)
               ? stringForScopeGroup.page
               : stringForScopeGroup.site}</btrix-badge
           >
@@ -981,7 +981,7 @@ export class WorkflowEditor extends BtrixElement {
           )}
         </p>
       `)}
-      ${isPageScope(this.formState.scopeType)
+      ${isPageScopeType(this.formState.scopeType)
         ? this.renderPageScope()
         : this.renderSiteScope()}
     `;
@@ -1805,7 +1805,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const minPages = Math.max(
       1,
       urlListToArray(this.formState.urlList).length +
-        (isUrlListScope(this.formState.scopeType) ? 0 : 1),
+        (isUrlListScopeType(this.formState.scopeType) ? 0 : 1),
     );
 
     return html`
@@ -2705,7 +2705,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private renderJobMetadata() {
-    const urlList = isUrlListScope(this.formState.scopeType);
+    const urlList = isUrlListScopeType(this.formState.scopeType);
 
     const linkToScope = (label: string) =>
       html`<button
@@ -2910,18 +2910,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
     };
     const urls = urlListToArray(this.formState.urlList);
 
-    const urlList = isUrlListScope(value);
-    const prevUrlList = isUrlListScope(prevScopeType);
+    const isUrlList = isUrlListScopeType(value);
+    const prevIsUrlList = isUrlListScopeType(prevScopeType);
 
-    if (urlList === prevUrlList) {
-      if (urlList) {
+    if (isUrlList === prevIsUrlList) {
+      if (isUrlList) {
         formState.urlList = urls[0];
       }
     } else {
-      if (prevUrlList) {
+      if (prevIsUrlList) {
         formState.primarySeedUrl = urls[0];
         formState.urlList = urls.slice(1).join("\n");
-      } else if (urlList) {
+      } else if (isUrlList) {
         formState.urlList = [this.formState.primarySeedUrl, ...urls].join("\n");
       }
     }
@@ -3040,7 +3040,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   });
 
   private hasRequiredFields(): boolean {
-    if (isUrlListScope(this.formState.scopeType)) {
+    if (isUrlListScopeType(this.formState.scopeType)) {
       return Boolean(
         this.formState.seedListFormat === SeedListFormat.File
           ? this.formState.seedFile || this.formState.seedFileId
@@ -3688,7 +3688,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           this.formState.dedupeCollection.id) ||
         "",
       config: {
-        ...(isUrlListScope(this.formState.scopeType)
+        ...(isUrlListScopeType(this.formState.scopeType)
           ? this.parseUrlListConfig(uploadParams)
           : this.parseSeededConfig()),
         behaviorTimeout: this.formState.behaviorTimeoutSeconds,
@@ -3771,7 +3771,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ? urlListToArray(this.formState.customIncludeList)
       : [];
     const additionalSeedUrlList =
-      !isPageScope(this.formState.scopeType) &&
+      !isPageScopeType(this.formState.scopeType) &&
       // Page scopes do not support additional seed URLs
       this.formState.urlList
         ? urlListToArray(this.formState.urlList).map((seedUrl) => {

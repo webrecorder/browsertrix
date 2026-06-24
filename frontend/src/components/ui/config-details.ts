@@ -1,5 +1,5 @@
 import { consume } from "@lit/context";
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import ISO6391 from "iso-639-1";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -33,12 +33,12 @@ import {
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { isDepthSupportedScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
-import { pluralOf } from "@/utils/pluralize";
+import { pluralize, pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
 import {
   defaultLabel,
   getServerDefaults,
-  isUrlListScope,
+  isUrlListScopeType,
   regexScopeConfig,
 } from "@/utils/workflow";
 
@@ -136,7 +136,7 @@ export class ConfigDetails extends BtrixElement {
                   : when(this.seeds, (seeds) => {
                       if (!config.scopeType) return;
                       if (
-                        isUrlListScope(config.scopeType) &&
+                        isUrlListScopeType(config.scopeType) &&
                         seeds.length > 1
                       ) {
                         return scopeTypeLabel[WorkflowScopeType.PageList];
@@ -148,7 +148,7 @@ export class ConfigDetails extends BtrixElement {
                       return scopeTypeLabel[config.scopeType];
                     }),
               )}
-              ${isUrlListScope(config.scopeType)
+              ${isUrlListScopeType(config.scopeType)
                 ? this.renderConfirmUrlListSettings(config)
                 : this.renderConfirmSeededSettings(config)}
             `,
@@ -511,7 +511,7 @@ export class ConfigDetails extends BtrixElement {
         true,
       )}
       ${this.renderSetting(
-        labelFor.includeLinkedPages,
+        msg("Visit Any Linked Page"),
         Boolean(config.extraHops),
       )}
       ${when(
@@ -591,13 +591,23 @@ export class ConfigDetails extends BtrixElement {
       ${when(isDepthSupportedScopeType(scopeType), () =>
         this.renderSetting(
           labelFor.maxScopeDepth,
-          primarySeedConfig && primarySeedConfig.depth !== null
-            ? msg(str`${primarySeedConfig.depth} level(s)`)
+          primarySeedConfig &&
+            primarySeedConfig.depth !== null &&
+            primarySeedConfig.depth !== undefined
+            ? html`${this.localize.number(primarySeedConfig.depth)}
+              ${pluralize(primarySeedConfig.depth, {
+                zero: msg("levels"),
+                one: msg("level"),
+                two: msg("levels"),
+                few: msg("levels"),
+                many: msg("levels"),
+                other: msg("levels"),
+              })}`
             : defaultLabel(Infinity),
         ),
       )}
       ${this.renderLinkSelectors()}
-      ${this.renderSetting(labelFor.useSitemap, Boolean(config.useSitemap))}
+      ${this.renderSetting(msg("Use Sitemap"), Boolean(config.useSitemap))}
       ${this.renderSetting(
         labelFor.includeLinkedPages,
         Boolean(primarySeedConfig?.extraHops ?? config.extraHops),
@@ -624,7 +634,10 @@ export class ConfigDetails extends BtrixElement {
           : none,
         true,
       )}
-      ${this.renderSetting(labelFor.useRobots, Boolean(config.useRobots))}
+      ${this.renderSetting(
+        msg("Use Robots.txt Disallow List"),
+        Boolean(config.useRobots),
+      )}
       ${this.renderExclusions()}
     `;
   };

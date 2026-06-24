@@ -3,7 +3,7 @@
  */
 import { msg, str } from "@lit/localize";
 
-import { isPageScope } from "../workflow";
+import { isPageScopeType } from "../workflow";
 
 import type { APIPaginatedList } from "@/types/api";
 import type {
@@ -43,7 +43,7 @@ export function settingsForDuplicate({
   return {
     scopeType:
       seedFile ||
-      (isPageScope(workflowParams.config?.scopeType) &&
+      (isPageScopeType(workflowParams.config?.scopeType) &&
         seedItems?.length &&
         seedItems.length > 1)
         ? NewWorkflowOnlyScopeType.PageList

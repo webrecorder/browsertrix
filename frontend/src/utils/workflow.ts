@@ -107,13 +107,13 @@ export const WORKFLOW_SITE_SCOPES = sortByPriority(
   Array.from(WorkflowSiteScopeSet.values()),
 );
 
-export function isPageScope(
+export function isPageScopeType(
   scope?: (typeof WorkflowScopeType)[keyof typeof WorkflowScopeType],
 ) {
   return scope !== undefined && WorkflowPageScopeSet.has(scope);
 }
 
-export function isUrlListScope(
+export function isUrlListScopeType(
   scope?: (typeof WorkflowScopeType)[keyof typeof WorkflowScopeType],
 ) {
   return scope !== undefined && WorkflowUrlListScopeSet.has(scope);
@@ -352,7 +352,7 @@ export function getInitialFormState(params: {
   const formState: Partial<FormState> = {};
   const seedsConfig = params.initialWorkflow.config;
   let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-  if (!isUrlListScope(params.initialWorkflow.config.scopeType)) {
+  if (!isUrlListScopeType(params.initialWorkflow.config.scopeType)) {
     if (params.initialSeeds) {
       const firstSeed = params.initialSeeds[0];
       if (typeof firstSeed === "string") {
