@@ -95,6 +95,7 @@ import { panel } from "@/layouts/panel";
 import { OrgTab, WorkflowTab } from "@/routes";
 import { infoTextFor } from "@/strings/crawl-workflows/infoText";
 import { labelFor } from "@/strings/crawl-workflows/labels";
+import { stringForScopeGroup } from "@/strings/crawl-workflows/scopeGroup";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import { dedupeTypeLabelFor } from "@/strings/dedupe";
@@ -921,7 +922,12 @@ export class WorkflowEditor extends BtrixElement {
               (e.target as HTMLSelectElement).value as FormState["scopeType"],
             )}
         >
-          <sl-menu-label>${msg("Page Crawl")}</sl-menu-label>
+          <btrix-badge slot="prefix"
+            >${isPageScope(this.formState.scopeType)
+              ? stringForScopeGroup.page
+              : stringForScopeGroup.site}</btrix-badge
+          >
+          <sl-menu-label>${stringForScopeGroup.page}</sl-menu-label>
           ${WORKFLOW_PAGE_SCOPES.map(
             (scope) =>
               html`<sl-option value=${scope}
@@ -929,7 +935,7 @@ export class WorkflowEditor extends BtrixElement {
               >`,
           )}
           <sl-divider></sl-divider>
-          <sl-menu-label>${msg("Site Crawl")}</sl-menu-label>
+          <sl-menu-label>${stringForScopeGroup.site}</sl-menu-label>
           ${WORKFLOW_SITE_SCOPES.map(
             (scope) =>
               html`<sl-option value=${scope}

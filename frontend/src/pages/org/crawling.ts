@@ -4,15 +4,14 @@ import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
-import { ScopeType } from "./types";
-
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { pageHeader } from "@/layouts/pageHeader";
 import { OrgTab, WorkflowTab } from "@/routes";
+import { stringForScopeGroup } from "@/strings/crawl-workflows/scopeGroup";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
-import { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { tw } from "@/utils/tailwind";
+import { WORKFLOW_PAGE_SCOPES, WORKFLOW_SITE_SCOPES } from "@/utils/workflow";
 
 @customElement("btrix-org-crawling")
 @localized()
@@ -88,33 +87,21 @@ export class OrgCrawling extends BtrixElement {
                     >
                   </sl-button>
                   <sl-menu>
-                    <sl-menu-label> ${msg("Page Crawl")} </sl-menu-label>
-                    <sl-menu-item value=${ScopeType.Page}
-                      >${scopeTypeLabels[ScopeType.Page]}</sl-menu-item
-                    >
-                    <sl-menu-item value=${NewWorkflowOnlyScopeType.PageList}>
-                      ${scopeTypeLabels[NewWorkflowOnlyScopeType.PageList]}
-                    </sl-menu-item>
-                    <sl-menu-item value=${ScopeType.SPA}>
-                      ${scopeTypeLabels[ScopeType.SPA]}
-                    </sl-menu-item>
+                    <sl-menu-label>${stringForScopeGroup.page}</sl-menu-label>
+                    ${WORKFLOW_PAGE_SCOPES.map(
+                      (scope) =>
+                        html`<sl-menu-item value=${scope}
+                          >${scopeTypeLabels[scope]}</sl-menu-item
+                        >`,
+                    )}
                     <sl-divider></sl-divider>
-                    <sl-menu-label>${msg("Site Crawl")}</sl-menu-label>
-                    <sl-menu-item value=${ScopeType.Prefix}>
-                      ${scopeTypeLabels[ScopeType.Prefix]}
-                    </sl-menu-item>
-                    <sl-menu-item value=${ScopeType.Host}>
-                      ${scopeTypeLabels[ScopeType.Host]}
-                    </sl-menu-item>
-                    <sl-menu-item value=${ScopeType.Domain}>
-                      ${scopeTypeLabels[ScopeType.Domain]}
-                    </sl-menu-item>
-                    <sl-menu-item value=${ScopeType.Custom}>
-                      ${scopeTypeLabels[ScopeType.Custom]}
-                    </sl-menu-item>
-                    <sl-menu-item value=${NewWorkflowOnlyScopeType.Regex}>
-                      ${scopeTypeLabels[NewWorkflowOnlyScopeType.Regex]}
-                    </sl-menu-item>
+                    <sl-menu-label>${stringForScopeGroup.site}</sl-menu-label>
+                    ${WORKFLOW_SITE_SCOPES.map(
+                      (scope) =>
+                        html`<sl-menu-item value=${scope}
+                          >${scopeTypeLabels[scope]}</sl-menu-item
+                        >`,
+                    )}
                   </sl-menu>
                 </sl-dropdown>
               </sl-button-group>
