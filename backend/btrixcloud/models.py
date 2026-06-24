@@ -3292,18 +3292,16 @@ class PostProcessUploadJob(BackgroundJob):
 # Union of all job types, for response model
 
 AnyJob = RootModel[
-    Union[
-        CreateReplicaJob,
-        DeleteReplicaJob,
-        BackgroundJob,
-        DeleteOrgJob,
-        RecalculateOrgStatsJob,
-        ReAddOrgPagesJob,
-        OptimizePagesJob,
-        CleanupSeedFilesJob,
-        UpdateCollStatsJob,
-        PostProcessUploadJob,
-    ]
+    CreateReplicaJob
+    | DeleteReplicaJob
+    | BackgroundJob
+    | DeleteOrgJob
+    | RecalculateOrgStatsJob
+    | ReAddOrgPagesJob
+    | OptimizePagesJob
+    | CleanupSeedFilesJob
+    | UpdateCollStatsJob
+    | PostProcessUploadJob
 ]
 
 
