@@ -1777,8 +1777,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
       info: html`
         ${infoTextFor["selectLinks"]}
         ${msg(
-          html`The crawler will use the specified ${CSS_selectors} to find URLs
-          that are defined in custom HTML attributes.`,
+          html`The crawler will use the specified ${CSS_selectors} and HTML
+          attributes to find links.`,
           {
             desc: "'CSS_selectors' is a link to https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors",
           },

@@ -50,7 +50,7 @@ export const infoTextFor = {
   lang: msg(`Websites that observe the browser’s language setting may serve
   content in that language if available.`),
   proxyId: msg(`Choose a proxy to crawl through.`),
-  selectLinks: msg("Customize how URLs are extracted from a page."),
+  selectLinks: msg("Customize how page links are extracted."),
   customBehavior: msg(
     `Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.`,
   ),
