@@ -90,6 +90,7 @@ import type {
   QueueExclusionTable,
 } from "@/features/crawl-workflows/queue-exclusion-table";
 import { infoCol, inputCol } from "@/layouts/columns";
+import { detailsInColumns } from "@/layouts/detailsInColumns";
 import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
 import { panel } from "@/layouts/panel";
 import { OrgTab, WorkflowTab } from "@/routes";
@@ -282,6 +283,17 @@ export class WorkflowEditor extends BtrixElement {
           opacity: 1;
         }
       }
+    }
+
+    btrix-details {
+      --margin-bottom: 0;
+      --border-bottom: 0;
+      margin-top: -0.5rem;
+    }
+
+    btrix-details::part(summary) {
+      /* display: inline-flex; */
+      color: inherit;
     }
   `;
 
@@ -960,34 +972,26 @@ export class WorkflowEditor extends BtrixElement {
   private renderExcludePages() {
     const exclusions = trimArray(this.formState.exclusions || []);
 
-    return html`
-      <div class="col-span-5">
-        <btrix-details ?open=${exclusions.length > 0}>
-          <span slot="title"
-            >${msg("Exclude Pages")}
-            ${exclusions.length
-              ? html`<btrix-badge>${exclusions.length}</btrix-badge>`
-              : ""}</span
-          >
-          <div class="grid grid-cols-5 gap-5 py-2">
-            ${inputCol(html`
-              <btrix-queue-exclusion-table
-                label=""
-                labelClassName=${tw`hidden`}
-                .exclusions=${this.formState.exclusions}
-                pageSize="10"
-                editable
-                removable
-                uncontrolled
-                @btrix-remove=${this.handleRemoveRegex}
-                @btrix-change=${this.handleChangeRegex}
-              ></btrix-queue-exclusion-table>
-            `)}
-            ${this.renderHelpTextCol(infoTextFor["exclusions"], false)}
-          </div>
-        </btrix-details>
-      </div>
-    `;
+    return detailsInColumns({
+      title: html`${msg("Custom Exclusion Rules")}
+      ${exclusions.length
+        ? html`<btrix-badge>${exclusions.length}</btrix-badge>`
+        : ""}`,
+      main: html`
+        <btrix-queue-exclusion-table
+          label=""
+          labelClassName=${tw`hidden`}
+          .exclusions=${this.formState.exclusions}
+          pageSize="10"
+          editable
+          removable
+          uncontrolled
+          @btrix-remove=${this.handleRemoveRegex}
+          @btrix-change=${this.handleChangeRegex}
+        ></btrix-queue-exclusion-table>
+      `,
+      info: infoTextFor["exclusions"],
+    });
   }
 
   private readonly renderPageScope = () => {
@@ -1633,51 +1637,43 @@ https://archiveweb.page/es/`}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
-
-      <div class="col-span-5">
-        <btrix-details>
-          <span slot="title">
-            ${msg("Custom Page List")}
-            ${additionalUrlList.length
-              ? html`<btrix-badge>${additionalUrlList.length}</btrix-badge>`
-              : ""}
-          </span>
-          <div class="grid grid-cols-5 gap-5 py-2">
-            ${inputCol(html`
-              <sl-textarea
-                name="urlList"
-                label=${msg("Page URLs")}
-                rows="3"
-                autocomplete="off"
-                inputmode="url"
-                value=${this.formState.urlList}
-                placeholder=${`https://webrecorder.net/blog
+      ${detailsInColumns({
+        title: html`${msg("Custom List of Pages")}
+        ${additionalUrlList.length
+          ? html`<btrix-badge>${additionalUrlList.length}</btrix-badge>`
+          : ""}`,
+        main: html`
+          <sl-textarea
+            class="part-[form-control-label]:sr-only"
+            name="urlList"
+            label=${msg("Page URLs")}
+            rows="3"
+            autocomplete="off"
+            inputmode="url"
+            value=${this.formState.urlList}
+            placeholder=${`https://webrecorder.net/blog
 https://archiveweb.page/images/${"logo.svg"}`}
-                @keyup=${async (e: KeyboardEvent) => {
-                  if (e.key === "Enter") {
-                    await (e.target as SlInput).updateComplete;
-                    this.doValidateUrlList(e);
-                  }
-                }}
-                @sl-input=${(e: CustomEvent) => {
-                  const inputEl = e.target as SlInput;
-                  if (!inputEl.value) {
-                    inputEl.helpText = msg("At least 1 URL is required.");
-                  }
-                }}
-                @sl-change=${this.doValidateUrlList}
-                @sl-blur=${this.doValidateUrlList}
-              ></sl-textarea>
-            `)}
-            ${this.renderHelpTextCol(
-              html`${infoTextFor["urlList"]}
-              ${msg(str`You can enter up to ${maxUrls} URLs.`, {
-                desc: "`maxUrls` example: '1,000'",
-              })}`,
-            )}
-          </div>
-        </btrix-details>
-      </div>
+            @keyup=${async (e: KeyboardEvent) => {
+              if (e.key === "Enter") {
+                await (e.target as SlInput).updateComplete;
+                this.doValidateUrlList(e);
+              }
+            }}
+            @sl-input=${(e: CustomEvent) => {
+              const inputEl = e.target as SlInput;
+              if (!inputEl.value) {
+                inputEl.helpText = msg("At least 1 URL is required.");
+              }
+            }}
+            @sl-change=${this.doValidateUrlList}
+            @sl-blur=${this.doValidateUrlList}
+          ></sl-textarea>
+        `,
+        info: html`${infoTextFor["urlList"]}
+        ${msg(str`You can enter up to ${maxUrls} URLs.`, {
+          desc: "`maxUrls` example: '1,000'",
+        })}`,
+      })}
 
       <!-- Settings that modify the expanded scope by exclude links that would normally would be in scope -->
       ${this.renderSectionHeading(msg("Exclude Pages"))}
@@ -1728,38 +1724,23 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ><btrix-code language="xml" value=${defaultAttr}></btrix-code>
     </span>`;
 
-    return html`
-      <div class="col-span-5">
-        <btrix-details ?open=${isCustom}>
-          <span slot="title">
-            ${labelFor.selectLinks}
-            ${isCustom
-              ? html`<btrix-badge>${selectors.length}</btrix-badge>`
-              : ""}
-          </span>
-          <div class="grid grid-cols-5 gap-5 py-2">
-            ${inputCol(
-              html`<btrix-link-selector-table
-                name="selectLinks"
-                .selectors=${selectors}
-                editable
-              ></btrix-link-selector-table>`,
-            )}
-            ${this.renderHelpTextCol(
-              html`
-                ${infoTextFor["selectLinks"]}
-                <br /><br />
-                ${msg(
-                  html`If none are specified, the crawler will default to
-                  ${defaultValue}.`,
-                )}
-              `,
-              false,
-            )}
-          </div>
-        </btrix-details>
-      </div>
-    `;
+    return detailsInColumns({
+      title: html`${labelFor.selectLinks}
+      ${isCustom ? html`<btrix-badge>${selectors.length}</btrix-badge>` : ""}`,
+      main: html`<btrix-link-selector-table
+        name="selectLinks"
+        .selectors=${selectors}
+        editable
+      ></btrix-link-selector-table>`,
+      info: html`
+        ${infoTextFor["selectLinks"]}
+        <br /><br />
+        ${msg(
+          html`If none are specified, the crawler will default to
+          ${defaultValue}.`,
+        )}
+      `,
+    });
   }
 
   private renderCrawlLimits() {

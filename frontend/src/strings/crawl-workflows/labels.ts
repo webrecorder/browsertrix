@@ -10,7 +10,7 @@ export const labelFor = {
   postLoadDelaySeconds: msg("Delay After Page Load"),
   behaviorTimeoutSeconds: "Behavior Limit",
   pageExtraDelaySeconds: msg("Delay Before Next Page"),
-  selectLinks: msg("Link Selectors"),
+  selectLinks: msg("Custom Link Selectors"),
   clickSelector: msg("Click Selector"),
   dedupeType: msg("Crawl Deduplication"),
   saveStorage: msg("Include browser storage data"),

@@ -170,7 +170,7 @@ When enabled, the crawler will check for a sitemap at /sitemap.xml and use it to
 
 This can be useful for discovering and capturing pages on a website that aren't linked to from the seed and which might not otherwise be captured.
 
-### Link Selectors
+### Custom Link Selectors
 
 Instructs the crawler which HTML elements should be used to extract URLs, i.e. considered a “link.” By default, the crawler checks the `href` value of all anchor (`<a>`) elements on a page.
 
