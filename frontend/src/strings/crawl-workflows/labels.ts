@@ -21,4 +21,5 @@ export const labelFor = {
   customIncludeList: msg("Page Prefix URLs"),
   urlList: msg("Custom List of Pages"),
   failOnContentCheck: msg("Fail crawl if not logged in"),
+  exclusions: msg("Custom Exclusion Rules"),
 } as const satisfies Partial<Record<FormStateField, string>>;

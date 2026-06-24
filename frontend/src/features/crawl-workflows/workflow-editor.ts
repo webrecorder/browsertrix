@@ -995,10 +995,13 @@ export class WorkflowEditor extends BtrixElement {
     });
 
     return detailsInColumns({
-      title: html`${msg("Custom Exclusion Rules")}
+      open: exclusions.length > 0,
+      title: html`${labelFor.exclusions}
       ${exclusions.length
-        ? html`<btrix-badge>${exclusions.length}</btrix-badge>`
-        : ""}`,
+        ? html`<btrix-badge
+            >${this.localize.number(exclusions.length)}</btrix-badge
+          >`
+        : nothing}`,
       main: html`
         <btrix-queue-exclusion-table
           label=""
@@ -1646,22 +1649,25 @@ https://archiveweb.page/es/`}
           )}
         `,
       )}
+      ${this.renderLinkSelectors()}
       ${inputCol(html`
         <sl-checkbox name="useSitemap" ?checked=${this.formState.useSitemap}>
           ${labelFor.useSitemap}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(infoTextFor.useSitemap, false)}
-      ${this.renderLinkSelectors()}
 
       <!-- Settings that expand the crawl scope by including links that would normally be out of scope -->
       ${this.renderSectionHeading(msg("Additional Scope"))}
       ${this.renderIncludeLinkedPages()}
       ${detailsInColumns({
+        open: additionalUrlList.length > 0,
         title: html`${labelFor.urlList}
         ${additionalUrlList.length
-          ? html`<btrix-badge>${additionalUrlList.length}</btrix-badge>`
-          : ""}`,
+          ? html`<btrix-badge
+              >${this.localize.number(additionalUrlList.length)}</btrix-badge
+            >`
+          : nothing}`,
         main: html`
           <sl-textarea
             class="part-[form-control-label]:sr-only"
@@ -1762,8 +1768,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
     });
 
     return detailsInColumns({
+      open: isCustom,
       title: html`${labelFor.selectLinks}
-      ${isCustom ? html`<btrix-badge>${selectors.length}</btrix-badge>` : ""}`,
+      ${isCustom
+        ? html`<btrix-badge
+            >${this.localize.number(selectors.length)}</btrix-badge
+          >`
+        : nothing}`,
       main: html`<btrix-link-selector-table
         name="selectLinks"
         .selectors=${selectors}

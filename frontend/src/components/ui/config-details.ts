@@ -593,12 +593,12 @@ export class ConfigDetails extends BtrixElement {
             : defaultLabel(Infinity),
         ),
       )}
+      ${this.renderLinkSelectors()}
       ${this.renderSetting(labelFor.useSitemap, Boolean(config.useSitemap))}
       ${this.renderSetting(
         labelFor.includeLinkedPages,
         Boolean(primarySeedConfig?.extraHops ?? config.extraHops),
       )}
-      ${this.renderLinkSelectors()}
       ${this.renderSetting(
         labelFor.urlList,
         additionalUrlList.length
@@ -659,7 +659,7 @@ export class ConfigDetails extends BtrixElement {
           </btrix-queue-exclusion-table>
         </div>
       `,
-      () => this.renderSetting(msg("Exclusions"), none),
+      () => this.renderSetting(labelFor.exclusions, none),
     );
   }
 
