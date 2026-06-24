@@ -5,6 +5,9 @@ import { type FormState } from "@/utils/workflow";
 
 type Field = keyof FormState;
 
+const sitemap_xml = html`<code>sitemap.xml</code>`;
+const robots_txt = html`<code>robots.txt</code>`;
+
 export const infoTextFor = {
   urlList: msg("The crawler will visit and record each URL listed here."),
   includeLinkedPages: msg(
@@ -94,8 +97,13 @@ export const infoTextFor = {
   ${msg(
     "This can improve replay quality, but may come with security implications.",
   )}`,
+  useSitemap: msg(
+    html`For each page host with a ${sitemap_xml} file, the crawler will use the
+    sitemap to discover pages.`,
+  ),
   useRobots: msg(
-    `Check for a robots.txt file for each host and skip any disallowed pages.`,
+    html`Tells the crawler to check for a ${robots_txt} file for each page host
+    and skip any disallowed pages.`,
   ),
   customIncludeList: msg(
     "Only crawl the page if the URL matches a regular expression pattern listed here.",

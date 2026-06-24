@@ -945,7 +945,11 @@ export class WorkflowEditor extends BtrixElement {
         </sl-select>
       `)}
       ${this.renderHelpTextCol(html`
-        <p>${msg(`Tells the crawler which pages it can visit.`)}</p>
+        <p>
+          ${msg(
+            `Tells the crawler how to use the URL you provide to discover and visit pages.`,
+          )}
+        </p>
       `)}
       ${isPageScope(this.formState.scopeType)
         ? this.renderPageScope()
@@ -969,6 +973,7 @@ export class WorkflowEditor extends BtrixElement {
             ${inputCol(html`
               <btrix-queue-exclusion-table
                 label=""
+                labelClassName=${tw`hidden`}
                 .exclusions=${this.formState.exclusions}
                 pageSize="10"
                 editable
@@ -992,6 +997,9 @@ export class WorkflowEditor extends BtrixElement {
         [ScopeType.SPA, this.renderPrimarySeedInput],
         [NewWorkflowOnlyScopeType.PageList, this.renderUrlList],
       ])}
+
+      <!-- Settings that expand the crawl scope by including links that would normally be out of scope -->
+      ${this.renderSectionHeading(msg("Additional Scope"))}
       ${inputCol(html`
         <sl-checkbox
           name="includeLinkedPages"
@@ -1481,6 +1489,7 @@ https://replayweb.page/docs`}
 
     return html`
       ${this.renderPrimarySeedInput()}
+      ${this.renderSectionHeading(msg("Configure Site Crawl"))}
       ${when(
         this.formState.scopeType === ScopeType.Custom,
         () => html`
@@ -1584,7 +1593,7 @@ https://archiveweb.page/es/`}
           ${inputCol(html`
             <sl-input
               name="maxScopeDepth"
-              label=${msg("Max Depth in Scope")}
+              label=${labelFor.maxScopeDepth}
               value=${ifDefined(
                 this.formState.maxScopeDepth === null
                   ? undefined
@@ -1595,16 +1604,26 @@ https://archiveweb.page/es/`}
               type="number"
               inputmode="numeric"
             >
-              <span slot="suffix">${msg("hops")}</span>
+              <span slot="suffix">${msg("levels")}</span>
             </sl-input>
           `)}
           ${this.renderHelpTextCol(
             msg(
-              `Limits how many hops away the crawler can visit while staying within the Crawl Scope.`,
+              "The crawler will follow links this many levels deep to discover pages that match the crawl scope.",
             ),
           )}
         `,
       )}
+      ${inputCol(html`
+        <sl-checkbox name="useSitemap" ?checked=${this.formState.useSitemap}>
+          ${labelFor.useSitemap}
+        </sl-checkbox>
+      `)}
+      ${this.renderHelpTextCol(infoTextFor.useSitemap, false)}
+      ${this.renderLinkSelectors()}
+
+      <!-- Settings that expand the crawl scope by including links that would normally be out of scope -->
+      ${this.renderSectionHeading(msg("Additional Scope"))}
       ${inputCol(html`
         <sl-checkbox
           name="includeLinkedPages"
@@ -1614,34 +1633,16 @@ https://archiveweb.page/es/`}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}
-      ${inputCol(html`
-        <sl-checkbox name="useRobots" ?checked=${this.formState.useRobots}>
-          ${msg("Skip pages disallowed by robots.txt")}
-        </sl-checkbox>
-      `)}
-      ${this.renderHelpTextCol(infoTextFor["useRobots"], false)}
-      ${inputCol(html`
-        <sl-checkbox name="useSitemap" ?checked=${this.formState.useSitemap}>
-          ${msg("Check for sitemap")}
-        </sl-checkbox>
-      `)}
-      ${this.renderHelpTextCol(
-        msg(
-          `If checked, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if present.`,
-        ),
-        false,
-      )}
-      ${this.renderLinkSelectors()}
 
       <div class="col-span-5">
         <btrix-details>
           <span slot="title">
-            ${msg("Additional Pages")}
+            ${msg("Custom Page List")}
             ${additionalUrlList.length
               ? html`<btrix-badge>${additionalUrlList.length}</btrix-badge>`
               : ""}
           </span>
-          <div class="grid grid-cols-5 gap-4 py-2">
+          <div class="grid grid-cols-5 gap-5 py-2">
             ${inputCol(html`
               <sl-textarea
                 name="urlList"
@@ -1676,9 +1677,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
             )}
           </div>
         </btrix-details>
-
-        ${this.renderExcludePages()}
       </div>
+
+      <!-- Settings that modify the expanded scope by exclude links that would normally would be in scope -->
+      ${this.renderSectionHeading(msg("Exclude Pages"))}
+      ${inputCol(html`
+        <sl-checkbox name="useRobots" ?checked=${this.formState.useRobots}>
+          ${labelFor.useRobots}
+        </sl-checkbox>
+      `)}
+      ${this.renderHelpTextCol(infoTextFor["useRobots"], false)}
+      ${this.renderExcludePages()}
     `;
   };
 

@@ -14,4 +14,7 @@ export const labelFor = {
   clickSelector: msg("Click Selector"),
   dedupeType: msg("Crawl Deduplication"),
   saveStorage: msg("Include browser storage data"),
+  maxScopeDepth: msg("Max Discovery Depth"),
+  useSitemap: msg("Use sitemap"),
+  useRobots: msg("Use robots.txt disallow list"),
 } as const satisfies Partial<Record<FormStateField, string>>;

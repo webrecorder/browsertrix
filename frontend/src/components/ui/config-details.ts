@@ -589,7 +589,7 @@ export class ConfigDetails extends BtrixElement {
       )}
       ${when(isDepthSupportedScopeType(scopeType), () =>
         this.renderSetting(
-          msg("Max Depth in Scope"),
+          labelFor.maxScopeDepth,
           primarySeedConfig && primarySeedConfig.depth !== null
             ? msg(str`${primarySeedConfig.depth} hop(s)`)
             : msg("Unlimited (default)"),
