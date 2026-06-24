@@ -1,7 +1,7 @@
 """Unit tests for background job type dispatch exhaustiveness"""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
@@ -68,7 +68,7 @@ def test_mapping_covers_all_enum_members():
 
 def test_get_job_by_type_maps_all_enum_values(bg_job_ops):
     _id = str(uuid.uuid4())
-    started = datetime.now(timezone.utc)
+    started = datetime.now(UTC)
     oid = str(uuid.uuid4())
     collection_id = str(uuid.uuid4())
     crawl_id = "test-crawl-id"
@@ -105,7 +105,7 @@ def test_get_job_by_type_maps_all_enum_values(bg_job_ops):
 
 def test_unknown_type_raises(bg_job_ops):
     _id = str(uuid.uuid4())
-    started = datetime.now(timezone.utc)
+    started = datetime.now(UTC)
     data = {"_id": _id, "type": "nonexistent-type", "started": started}
 
     with pytest.raises(ValueError, match="Unhandled background job type"):

@@ -223,7 +223,7 @@ class CrawlManager(K8sAPI):
         self,
         oid: str,
         crawl_id: str,
-        existing_job_id: Optional[str] = None,
+        existing_job_id: str | None = None,
     ) -> str:
         """run job to post-process uploaded crawl"""
         if existing_job_id:

@@ -573,7 +573,7 @@ class BackgroundJobOps:
         self,
         oid: UUID,
         crawl_id: str,
-        existing_job_id: Optional[str] = None,
+        existing_job_id: str | None = None,
     ):
         """Create job to post-process uploaded crawl"""
 
@@ -704,18 +704,18 @@ class BackgroundJobOps:
             )
 
     async def get_background_job(
-        self, job_id: str, oid: Optional[UUID] = None
-    ) -> Union[
-        CreateReplicaJob,
-        DeleteReplicaJob,
-        DeleteOrgJob,
-        RecalculateOrgStatsJob,
-        ReAddOrgPagesJob,
-        OptimizePagesJob,
-        CleanupSeedFilesJob,
-        UpdateCollStatsJob,
-        PostProcessUploadJob,
-    ]:
+        self, job_id: str, oid: UUID | None = None
+    ) -> (
+        CreateReplicaJob
+        | DeleteReplicaJob
+        | DeleteOrgJob
+        | RecalculateOrgStatsJob
+        | ReAddOrgPagesJob
+        | OptimizePagesJob
+        | CleanupSeedFilesJob
+        | UpdateCollStatsJob
+        | PostProcessUploadJob
+    ):
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
         if oid:
