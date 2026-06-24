@@ -352,7 +352,7 @@ export function getInitialFormState(params: {
   const formState: Partial<FormState> = {};
   const seedsConfig = params.initialWorkflow.config;
   let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-  if (!isUrlListScopeType(params.initialWorkflow.config.scopeType)) {
+  if (isPrimarySeedScope(params.initialWorkflow.config.scopeType)) {
     if (params.initialSeeds) {
       const firstSeed = params.initialSeeds[0];
       if (typeof firstSeed === "string") {
@@ -381,6 +381,11 @@ export function getInitialFormState(params: {
     if (additionalSeeds?.length) {
       formState.urlList = mapSeedToUrl(additionalSeeds).join("\n");
     }
+
+    formState.maxScopeDepth =
+      !primarySeedConfig.depth || primarySeedConfig.depth === -1
+        ? defaultFormState.maxScopeDepth
+        : primarySeedConfig.depth;
     formState.useSitemap = seedsConfig.useSitemap;
   } else {
     if (params.initialWorkflow.config.seedFileId) {
@@ -395,10 +400,8 @@ export function getInitialFormState(params: {
       }
 
       formState.urlList = mapSeedToUrl(params.initialSeeds).join("\n");
+      formState.maxScopeDepth = null;
     }
-
-    formState.failOnFailedSeed = seedsConfig.failOnFailedSeed;
-    formState.failOnContentCheck = seedsConfig.failOnContentCheck;
   }
 
   if (params.initialWorkflow.schedule) {
@@ -473,7 +476,6 @@ export function getInitialFormState(params: {
       seedsConfig.pageExtraDelay ?? defaultFormState.pageExtraDelaySeconds,
     postLoadDelaySeconds:
       seedsConfig.postLoadDelay ?? defaultFormState.postLoadDelaySeconds,
-    maxScopeDepth: primarySeedConfig.depth ?? defaultFormState.maxScopeDepth,
     browserWindows: params.initialWorkflow.browserWindows,
     blockAds: params.initialWorkflow.config.blockAds,
     lang: params.initialWorkflow.config.lang ?? defaultFormState.lang,
