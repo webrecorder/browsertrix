@@ -1051,7 +1051,9 @@ export class WorkflowEditor extends BtrixElement {
         this.formState.includeLinkedPages ||
           this.formState.scopeType === ScopeType.SPA,
         () => html`
-          ${this.renderLinkSelectors()} ${this.renderExcludePages()}
+          ${this.renderLinkSelectors()}
+          ${this.renderSectionHeading(msg("Exclude Pages"))}
+          ${this.renderExcludePages()}
         `,
       )}
     `;
