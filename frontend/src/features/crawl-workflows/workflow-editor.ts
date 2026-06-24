@@ -293,7 +293,6 @@ export class WorkflowEditor extends BtrixElement {
     }
 
     btrix-details::part(summary) {
-      /* display: inline-flex; */
       color: inherit;
     }
   `;
@@ -1650,13 +1649,13 @@ https://archiveweb.page/es/`}
           )}
         `,
       )}
-      ${this.renderLinkSelectors()}
       ${inputCol(html`
         <sl-checkbox name="useSitemap" ?checked=${this.formState.useSitemap}>
           ${labelFor.useSitemap}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(infoTextFor.useSitemap, false)}
+      ${this.renderLinkSelectors()}
 
       <!-- Settings that expand the crawl scope by including links that would normally be out of scope -->
       ${this.renderSectionHeading(msg("Additional Scope"))}
