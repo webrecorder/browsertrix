@@ -1800,18 +1800,18 @@ class CrawlOperator(BaseOperator):
             status.stopReason = await self.is_crawl_stopping(crawl, status)
             status.stopping = status.stopReason is not None
 
-            # mark crawl as stopping
-            if status.stopping:
-                if status.stopReason in PAUSED_STATES:
-                    await redis.set(f"{crawl.id}:paused", "1")
+        # mark crawl as pausing or stopping
+        if status.stopping:
+            if status.stopReason in PAUSED_STATES:
+                if await redis.set(f"{crawl.id}:paused", "1", nx=True):
                     logger.info(
                         "crawl_pausing",
                         stop_reason=status.stopReason,
                         crawl_id=crawl.id,
                         unstructured_message=f"Crawl pausing: {status.stopReason}, id: {crawl.id}",
                     )
-                else:
-                    await redis.set(f"{crawl.id}:stopping", "1")
+            else:
+                if await redis.set(f"{crawl.id}:stopping", "1", nx=True):
                     logger.info(
                         "crawl_gracefully_stopping",
                         stop_reason=status.stopReason,
