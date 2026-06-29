@@ -33,10 +33,9 @@ import {
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
 import { isDepthSupportedScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
-import { pluralize, pluralOf } from "@/utils/pluralize";
+import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
 import {
-  defaultLabel,
   getServerDefaults,
   isUrlListScopeType,
   regexScopeConfig,
@@ -44,6 +43,11 @@ import {
 
 const isWorkflow = (data?: CrawlReplay | Workflow): data is Workflow =>
   !!data && "crawlCount" in data;
+
+const defaultLabel = (value: number | string) =>
+  html`<span class="text-neutral-400"
+    >${value === Infinity ? msg("Unlimited") : value} ${msg("(default)")}</span
+  >`;
 
 /**
  * Usage:
@@ -105,9 +109,8 @@ export class ConfigDetails extends BtrixElement {
             verbose: true,
           });
         }
-        return html`<span class="text-neutral-400"
-          >${value} ${msg("(default)")}</span
-        >`;
+
+        return defaultLabel(value);
       }
     };
     const renderSize = (valueBytes?: number | null) => {
@@ -116,9 +119,7 @@ export class ConfigDetails extends BtrixElement {
         return this.localize.bytes(valueBytes, { unitDisplay: "narrow" });
       }
 
-      return html`<span class="text-neutral-400"
-        >${msg("Unlimited")} ${msg("(default)")}</span
-      >`;
+      return defaultLabel(Infinity);
     };
 
     return html`
@@ -595,14 +596,7 @@ export class ConfigDetails extends BtrixElement {
             primarySeedConfig.depth !== null &&
             primarySeedConfig.depth !== undefined
             ? html`${this.localize.number(primarySeedConfig.depth)}
-              ${pluralize(primarySeedConfig.depth, {
-                zero: msg("levels"),
-                one: msg("level"),
-                two: msg("levels"),
-                few: msg("levels"),
-                many: msg("levels"),
-                other: msg("levels"),
-              })}`
+              ${pluralOf("levels", primarySeedConfig.depth)}`
             : defaultLabel(Infinity),
         ),
       )}

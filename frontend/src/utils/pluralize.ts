@@ -507,6 +507,32 @@ const plurals = {
       id: "files.plural.other",
     }),
   },
+  levels: {
+    zero: msg("levels", {
+      desc: 'plural form of "level" for zero levels',
+      id: "levels.plural.zero",
+    }),
+    one: msg("level", {
+      desc: 'singular form for "level"',
+      id: "levels.plural.one",
+    }),
+    two: msg("levels", {
+      desc: 'plural form of "level" for two levels',
+      id: "levels.plural.two",
+    }),
+    few: msg("levels", {
+      desc: 'plural form of "level" for few levels',
+      id: "levels.plural.few",
+    }),
+    many: msg("levels", {
+      desc: 'plural form of "level" for many levels',
+      id: "levels.plural.many",
+    }),
+    other: msg("levels", {
+      desc: 'plural form of "level" for multiple/other levels',
+      id: "levels.plural.other",
+    }),
+  },
 };
 
 /**
