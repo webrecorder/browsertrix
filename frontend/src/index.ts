@@ -725,7 +725,7 @@ export class App extends BtrixElement {
   private renderFooter() {
     return html`
       <footer
-        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col items-center  gap-4 p-3 md:flex-row"
+        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col items-center gap-4 p-3 md:flex-row"
       >
         <div class="flex-1">
           <a
@@ -829,6 +829,15 @@ export class App extends BtrixElement {
         return this.renderAdminPage(
           () => html`
             <btrix-admin class="w-full bg-neutral-50"></btrix-admin>
+          `,
+        );
+
+      case "adminNewOrg":
+        return this.renderAdminPage(
+          () => html`
+            <btrix-admin-new-org
+              class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
+            ></btrix-admin-new-org>
           `,
         );
 

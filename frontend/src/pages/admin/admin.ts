@@ -1,21 +1,13 @@
-import { localized, msg, str } from "@lit/localize";
-import type { SlInput, SlInputEvent } from "@shoelace-style/shoelace";
-import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import { localized, msg } from "@lit/localize";
 import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import needLogin from "@/decorators/needLogin";
 import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
-import type { APIUser } from "@/index";
+import { RouteNamespace } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
-import { ORG_NAME_MAX_LENGTH } from "@/types/org";
-import { isApiError } from "@/utils/api";
-import { maxLengthValidator } from "@/utils/form";
 import { type OrgData } from "@/utils/orgs";
-import slugifyStrict from "@/utils/slugify";
-import { AppStateService } from "@/utils/state";
-import { formatAPIUser } from "@/utils/user";
 
 /**
  * Browsertrix superadmin dashboard
@@ -27,27 +19,6 @@ export class Admin extends BtrixElement {
   @state()
   private orgList?: OrgData[];
 
-  @state()
-  private orgSlugs: string[] = [];
-
-  @state()
-  private isAddingOrg = false;
-
-  @state()
-  private isAddOrgFormVisible = false;
-
-  @state()
-  private isSubmittingNewOrg = false;
-
-  @state()
-  private isOrgNameValid: boolean | null = null;
-
-  private get slug() {
-    return this.appState.orgSlug;
-  }
-
-  private readonly validateOrgNameMax = maxLengthValidator(ORG_NAME_MAX_LENGTH);
-
   protected firstUpdated(): void {
     this.initSuperAdmin();
   }
@@ -57,8 +28,7 @@ export class Admin extends BtrixElement {
       if (this.userInfo.orgs.length) {
         void this.fetchOrgs();
       } else {
-        this.isAddingOrg = true;
-        this.isAddOrgFormVisible = true;
+        this.navigate.to(`/${RouteNamespace.Superadmin}/orgs/new`);
       }
     }
   }
@@ -96,7 +66,6 @@ export class Admin extends BtrixElement {
       <main class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4">
         ${this.renderAdminOrgs()}
       </main>
-      ${this.renderAddOrgDialog()}
     `;
   }
 
@@ -120,7 +89,8 @@ export class Admin extends BtrixElement {
             <sl-button
               variant="primary"
               size="small"
-              @click=${() => (this.isAddingOrg = true)}
+              @click=${() =>
+                this.navigate.to(`/${RouteNamespace.Superadmin}/orgs/new`)}
             >
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>
               ${msg("New Organization")}
@@ -135,96 +105,6 @@ export class Admin extends BtrixElement {
           ></btrix-orgs-list>
         </section>
       </div>
-    `;
-  }
-
-  private renderAddOrgDialog() {
-    let orgNameStatusLabel = msg("Start typing to see availability");
-    let orgNameStatusIcon = html`
-      <sl-icon class="mr-3 text-neutral-300" name="check-lg"></sl-icon>
-    `;
-
-    if (this.isOrgNameValid) {
-      orgNameStatusLabel = msg("This org name is available");
-      orgNameStatusIcon = html`
-        <sl-icon class="mr-3 text-success" name="check-lg"></sl-icon>
-      `;
-    } else if (this.isOrgNameValid === false) {
-      orgNameStatusLabel = msg("This org name is taken");
-      orgNameStatusIcon = html`
-        <sl-icon class="mr-3 text-danger" name="x-lg"></sl-icon>
-      `;
-    }
-
-    return html`
-      <btrix-dialog
-        .label=${msg("New Organization")}
-        .open=${this.isAddingOrg}
-        @sl-request-close=${(e: CustomEvent) => {
-          // Disable closing if there are no orgs
-          if (this.orgList?.length) {
-            this.isAddingOrg = false;
-          } else {
-            e.preventDefault();
-          }
-        }}
-        @sl-show=${() => (this.isAddOrgFormVisible = true)}
-        @sl-after-hide=${() => {
-          this.isAddOrgFormVisible = false;
-          this.isOrgNameValid = null;
-        }}
-      >
-        ${this.isAddOrgFormVisible
-          ? html`
-              <form
-                id="newOrgForm"
-                @reset=${() => (this.isAddingOrg = false)}
-                @submit=${this.onSubmitNewOrg}
-              >
-                <div class="mb-5">
-                  <sl-input
-                    class="with-max-help-text"
-                    name="name"
-                    label=${msg("Org Name")}
-                    placeholder=${msg("My Organization")}
-                    autocomplete="off"
-                    required
-                    help-text=${this.validateOrgNameMax.helpText}
-                    @sl-input=${this.onOrgNameInput}
-                  >
-                    <sl-tooltip
-                      slot="suffix"
-                      content=${orgNameStatusLabel}
-                      @sl-hide=${(e: CustomEvent) => e.stopPropagation()}
-                      @sl-after-hide=${(e: CustomEvent) => e.stopPropagation()}
-                      hoist
-                    >
-                      ${orgNameStatusIcon}
-                    </sl-tooltip>
-                  </sl-input>
-                </div>
-              </form>
-              <div slot="footer" class="flex justify-between">
-                ${this.orgList?.length
-                  ? html`<sl-button form="newOrgForm" type="reset" size="small">
-                      ${msg("Cancel")}
-                    </sl-button>`
-                  : ""}
-
-                <sl-button
-                  form="newOrgForm"
-                  variant="primary"
-                  type="submit"
-                  size="small"
-                  ?loading=${this.isSubmittingNewOrg}
-                  ?disabled=${this.isSubmittingNewOrg}
-                >
-                  ${msg("Create Org")}
-                </sl-button>
-              </div>
-            `
-          : ""}
-      </btrix-dialog>
     `;
   }
 
@@ -258,112 +138,12 @@ export class Admin extends BtrixElement {
 
   private async fetchOrgs() {
     try {
-      this.orgList = await this.getOrgs();
-      this.orgSlugs = await this.getOrgSlugs();
+      const data =
+        await this.api.fetch<APIPaginatedList<OrgData>>("/orgs?sortBy=name");
+      this.orgList = data.items;
     } catch (e) {
       console.debug(e);
     }
-  }
-
-  private async getOrgs() {
-    const data =
-      await this.api.fetch<APIPaginatedList<OrgData>>("/orgs?sortBy=name");
-
-    return data.items;
-  }
-
-  private async getOrgSlugs() {
-    const data = await this.api.fetch<{ slugs: string[] }>("/orgs/slugs");
-
-    return data.slugs;
-  }
-
-  private async onOrgNameInput(e: SlInputEvent) {
-    this.validateOrgNameMax.validate(e);
-
-    const input = e.target as SlInput;
-    const value = input.value;
-    const slug = slugifyStrict(value);
-    let isInvalid = !value;
-
-    if (value) {
-      if (!slug) {
-        isInvalid = true;
-
-        input.setCustomValidity(
-          msg("Please include at least one letter or number."),
-        );
-      } else {
-        isInvalid = this.orgSlugs.includes(slug);
-
-        if (isInvalid) {
-          input.setCustomValidity(msg("This org name is already taken."));
-        }
-      }
-    }
-
-    if (!isInvalid) {
-      input.setCustomValidity("");
-    }
-
-    this.isOrgNameValid = !isInvalid;
-  }
-
-  private async onSubmitNewOrg(e: SubmitEvent) {
-    e.preventDefault();
-
-    const formEl = e.target as HTMLFormElement;
-    if (!(await this.checkFormValidity(formEl))) return;
-
-    const params = serialize(formEl) as { name: string };
-    this.isSubmittingNewOrg = true;
-
-    try {
-      // TODO return entire object from API
-      await this.api.fetch<{ added: true; id: string }>(`/orgs/create`, {
-        method: "POST",
-        body: JSON.stringify({
-          ...params,
-          slug: slugifyStrict(params.name),
-        }),
-      });
-      await this.fetchOrgs();
-      const userInfo = await this.getUserInfo();
-      AppStateService.updateUser(formatAPIUser(userInfo));
-
-      this.notify.toast({
-        message: msg(str`Created new org named "${params.name}".`),
-        variant: "success",
-        icon: "check2-circle",
-        duration: 8000,
-      });
-      this.isAddingOrg = false;
-    } catch (e) {
-      let message = msg("Sorry, couldn't create organization at this time.");
-
-      if (isApiError(e)) {
-        if (e.details === "duplicate_org_name") {
-          message = msg("This org name is already taken, try another one.");
-        } else if (e.details === "duplicate_org_slug") {
-          message = msg(
-            "This org URL identifier is already taken, try another one.",
-          );
-        } else if (e.details === "invalid_slug") {
-          message = msg(
-            "This org URL identifier is invalid. Please use alphanumeric characters and dashes (-) only.",
-          );
-        }
-      }
-
-      this.notify.toast({
-        message,
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "org-invalid",
-      });
-    }
-
-    this.isSubmittingNewOrg = false;
   }
 
   async onUpdateOrgQuotas(e: CustomEvent) {
@@ -389,14 +169,5 @@ export class Admin extends BtrixElement {
 
   async onUpdateOrgFeatureFlags() {
     void this.fetchOrgs();
-  }
-
-  async checkFormValidity(formEl: HTMLFormElement) {
-    await this.updateComplete;
-    return !formEl.querySelector("[data-invalid]");
-  }
-
-  async getUserInfo(): Promise<APIUser> {
-    return this.api.fetch("/users/me");
   }
 }

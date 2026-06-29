@@ -2404,6 +2404,8 @@ class OrgCreate(BaseModel):
 
     name: OrgName
     slug: str | None = None
+    planId: str | None = None
+    quotas: OrgQuotas | None = None
 
 
 # ============================================================================
