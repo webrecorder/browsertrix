@@ -2,18 +2,9 @@
 
 import os
 import tempfile
+from collections.abc import AsyncGenerator, Callable
 from datetime import timedelta
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncGenerator,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 import structlog
@@ -83,10 +74,10 @@ class FileUploadOps:
     async def get_file_raw(
         self,
         file_id: UUID,
-        org: Optional[Organization] = None,
-        type_: Optional[str] = None,
+        org: Organization | None = None,
+        type_: str | None = None,
         session: AsyncIOMotorClientSession | None = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get raw file from db"""
         query: dict[str, object] = {"_id": file_id}
         if org:
@@ -105,8 +96,8 @@ class FileUploadOps:
     async def get_seed_file(
         self,
         file_id: UUID,
-        org: Optional[Organization] = None,
-        type_: Optional[str] = None,
+        org: Organization | None = None,
+        type_: str | None = None,
         session: AsyncIOMotorClientSession | None = None,
     ) -> SeedFile:
         """Get file by UUID"""
@@ -116,9 +107,9 @@ class FileUploadOps:
     async def get_seed_file_out(
         self,
         file_id: UUID,
-        org: Optional[Organization] = None,
-        type_: Optional[str] = None,
-        headers: Optional[dict] = None,
+        org: Organization | None = None,
+        type_: str | None = None,
+        headers: dict | None = None,
     ) -> SeedFileOut:
         """Get file output model by UUID"""
         user_file = await self.get_seed_file(file_id, org, type_)
@@ -131,8 +122,8 @@ class FileUploadOps:
         page: int = 1,
         sort_by: str = "created",
         sort_direction: int = -1,
-        headers: Optional[dict] = None,
-    ) -> Tuple[list[SeedFileOut], int]:
+        headers: dict | None = None,
+    ) -> tuple[list[SeedFileOut], int]:
         """list all user-uploaded files"""
         # pylint: disable=too-many-locals
 
@@ -142,7 +133,7 @@ class FileUploadOps:
 
         match_query = {"oid": org.id}
 
-        aggregate: List[Dict[str, Any]] = [{"$match": match_query}]
+        aggregate: list[dict[str, Any]] = [{"$match": match_query}]
 
         if sort_by:
             if sort_by not in (
@@ -200,7 +191,7 @@ class FileUploadOps:
         org: Organization,
         user: User,
         upload_type: str = "seedFile",
-    ) -> Dict[str, Union[bool, UUID]]:
+    ) -> dict[str, bool | UUID]:
         """Upload file stream and return its id"""
         self.org_ops.can_write_data(org, include_time=False)
 
@@ -316,7 +307,7 @@ class FileUploadOps:
 
     async def _parse_seed_info_from_file(
         self, file_obj: UserFile, org: Organization
-    ) -> Tuple[str, int]:
+    ) -> tuple[str, int]:
         first_seed = ""
         seed_count = 0
 
@@ -352,7 +343,7 @@ class FileUploadOps:
         file_id: UUID,
         org: Organization,
         session: AsyncIOMotorClientSession | None = None,
-    ) -> Dict[str, bool]:
+    ) -> dict[str, bool]:
         """Delete user-uploaded file from storage and db"""
         file = await self.get_seed_file(file_id, org, session=session)
 

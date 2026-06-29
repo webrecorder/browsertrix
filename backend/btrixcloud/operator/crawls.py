@@ -3,8 +3,9 @@
 import json
 import math
 import os
+from collections.abc import Sequence
 from datetime import datetime, timedelta
-from typing import Any, Literal, Optional, Sequence
+from typing import Any, Literal
 from uuid import UUID
 
 import structlog
@@ -313,8 +314,8 @@ class CrawlOperator(BaseOperator):
 
         # stopping paused crawls
         if crawl.paused_at:
-            stop_reason: Optional[StopReason] = None
-            state: Optional[TYPE_NON_RUNNING_STATES] = None
+            stop_reason: StopReason | None = None
+            state: TYPE_NON_RUNNING_STATES | None = None
             # Check if pause expiry limit is reached and if so, stop crawl
             if dt_now() >= (crawl.paused_at + self.paused_expires_delta):
                 logger.info(
@@ -482,8 +483,8 @@ class CrawlOperator(BaseOperator):
         return self.load_from_yaml("redis.yaml", params)
 
     def _filter_autoclick_behavior(
-        self, behaviors: Optional[str], crawler_image: str
-    ) -> Optional[str]:
+        self, behaviors: str | None, crawler_image: str
+    ) -> str | None:
         """Remove autoclick behavior if crawler version doesn't support it"""
         min_autoclick_crawler_image = os.environ.get("MIN_AUTOCLICK_CRAWLER_IMAGE")
 
@@ -782,8 +783,8 @@ class CrawlOperator(BaseOperator):
         status: CrawlStatus,
         crawl: CrawlSpec,
         allowed_from: Sequence[TYPE_ALL_CRAWL_STATES],
-        finished: Optional[datetime] = None,
-        stats: Optional[OpCrawlStats] = None,
+        finished: datetime | None = None,
+        stats: OpCrawlStats | None = None,
     ):
         """set status state and update db, if changed
         if allowed_from passed in, can only transition from allowed_from state,
@@ -1267,7 +1268,7 @@ class CrawlOperator(BaseOperator):
         return crawler_running, redis_running, pod_done_count
 
     def handle_terminated_pod(
-        self, name, role, status: CrawlStatus, terminated: Optional[dict[str, Any]]
+        self, name, role, status: CrawlStatus, terminated: dict[str, Any] | None
     ) -> None:
         """handle terminated pod state"""
         if not terminated:
@@ -1630,7 +1631,7 @@ class CrawlOperator(BaseOperator):
 
     async def is_crawl_stopping(
         self, crawl: CrawlSpec, status: CrawlStatus
-    ) -> Optional[StopReason]:
+    ) -> StopReason | None:
         """check if crawl is stopping and set reason"""
         # if user requested stop, then enter stopping phase
         if crawl.stopping:
@@ -1677,7 +1678,7 @@ class CrawlOperator(BaseOperator):
 
     def request_pause_crawl(
         self, reason: StopReason, crawl: CrawlSpec
-    ) -> Optional[StopReason]:
+    ) -> StopReason | None:
         """Request crawl to be paused asynchronously, equivalent of user clicking 'pause' button
         if crawl is paused, then use the specified reason instead of default paused state
         """
@@ -1969,7 +1970,7 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         state: TYPE_NON_RUNNING_STATES,
-        stats: Optional[OpCrawlStats] = None,
+        stats: OpCrawlStats | None = None,
     ) -> bool:
         """mark crawl as finished, set finished timestamp and final state"""
 
@@ -2017,7 +2018,7 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         state: TYPE_NON_RUNNING_STATES,
-        stats: Optional[OpCrawlStats],
+        stats: OpCrawlStats | None,
     ) -> None:
         """Run tasks after crawl completes in asyncio.task coroutine."""
         if state in SUCCESSFUL_STATES:

@@ -8,23 +8,11 @@ import json
 import os
 import time
 import zlib
+from collections.abc import AsyncGenerator, AsyncIterator, Callable, Iterable, Iterator
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from itertools import chain
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncGenerator,
-    AsyncIterator,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlsplit
 from zipfile import ZipInfo
 
@@ -76,11 +64,11 @@ CHUNK_SIZE = 1024 * 256
 class StorageOps:
     """All storage handling, download/upload operations"""
 
-    default_storages: Dict[str, S3Storage] = {}
+    default_storages: dict[str, S3Storage] = {}
 
-    default_primary: Optional[StorageRef] = None
+    default_primary: StorageRef | None = None
 
-    default_replicas: List[StorageRef] = []
+    default_replicas: list[StorageRef] = []
 
     org_ops: OrgOps
     crawl_manager: CrawlManager
@@ -290,9 +278,9 @@ class StorageOps:
 
         return {"updated": True}
 
-    def get_available_storages(self, org: Organization) -> List[StorageRef]:
+    def get_available_storages(self, org: Organization) -> list[StorageRef]:
         """return a list of available default + custom storages"""
-        refs: List[StorageRef] = []
+        refs: list[StorageRef] = []
         for name in self.default_storages:
             refs.append(StorageRef(name=name, custom=False))
         for name in org.customStorages:
@@ -353,7 +341,7 @@ class StorageOps:
             return self.frontend_origin + path
         return path
 
-    def resolve_relative_access_path(self, path: str, headers: Optional[dict] = None):
+    def resolve_relative_access_path(self, path: str, headers: dict | None = None):
         """Resolve relative path for internal access or external if headers provided"""
         if path.startswith("/"):
             if headers is None:
@@ -376,7 +364,7 @@ class StorageOps:
 
         return self.get_org_storage_by_ref(org, org.storage)
 
-    def get_org_replicas_storage_refs(self, org: Organization) -> List[StorageRef]:
+    def get_org_replicas_storage_refs(self, org: Organization) -> list[StorageRef]:
         """get org replicas storages, defaulting to default replicas if none found"""
 
         if org.storageReplicas:
@@ -422,7 +410,7 @@ class StorageOps:
         filename: str,
         file_: AsyncIterator,
         min_size: int,
-        mime: Optional[str] = None,
+        mime: str | None = None,
     ) -> bool:
         """do upload to specified key using multipart chunking"""
         s3storage = self.get_org_primary_storage(org)
@@ -564,7 +552,7 @@ class StorageOps:
 
     def get_host_endpoint_url(
         self, s3storage: S3Storage, bucket: str, key: str
-    ) -> Optional[str]:
+    ) -> str | None:
         """compute host endpoint for given storage for replacement for access"""
         if not s3storage.access_endpoint_url:
             return None
@@ -638,9 +626,7 @@ class StorageOps:
 
         return urls, now + self.signed_duration_delta
 
-    async def delete_file_object(
-        self, org: Organization, crawlfile: Union[BaseFile]
-    ) -> bool:
+    async def delete_file_object(self, org: Organization, crawlfile: BaseFile) -> bool:
         """delete crawl file from storage."""
         return await self._delete_file(org, crawlfile.filename, crawlfile.storage)
 
@@ -675,8 +661,8 @@ class StorageOps:
         return await self._delete_file_from_storage(s3storage, filename)
 
     async def sync_stream_wacz_pages(
-        self, wacz_files: List[CrawlFileOut], num_retries=5
-    ) -> Iterator[Dict[Any, Any]]:
+        self, wacz_files: list[CrawlFileOut], num_retries=5
+    ) -> Iterator[dict[Any, Any]]:
         """Return stream of pages specified WACZ"""
         loop = asyncio.get_event_loop()
 
@@ -688,9 +674,9 @@ class StorageOps:
 
     async def sync_stream_wacz_logs(
         self,
-        wacz_files: List[CrawlFileOut],
-        log_levels: List[str],
-        contexts: List[str],
+        wacz_files: list[CrawlFileOut],
+        log_levels: list[str],
+        contexts: list[str],
     ) -> Iterator[bytes]:
         """Return filtered stream of logs from specified WACZs sorted by timestamp"""
         loop = asyncio.get_event_loop()
@@ -707,9 +693,9 @@ class StorageOps:
 
     def _sync_get_logs(
         self,
-        wacz_files: List[CrawlFileOut],
-        log_levels: List[str],
-        contexts: List[str],
+        wacz_files: list[CrawlFileOut],
+        log_levels: list[str],
+        contexts: list[str],
     ) -> Iterator[bytes]:
         """Generate filtered stream of logs from specified WACZs sorted by timestamp"""
 
@@ -734,7 +720,7 @@ class StorageOps:
                 yield _parse_json(line.decode("utf-8", errors="ignore"))
 
         def stream_json_lines(
-            iterator: Iterable[dict], log_levels: List[str], contexts: List[str]
+            iterator: Iterable[dict], log_levels: list[str], contexts: list[str]
         ) -> Iterator[bytes]:
             """Yield parsed JSON dicts as JSON-lines bytes after filtering as necessary"""
             for line_dict in iterator:
@@ -746,11 +732,11 @@ class StorageOps:
                 yield json_str.encode("utf-8")
 
         def organize_based_on_instance_number(
-            wacz_files: List[CrawlFileOut],
-        ) -> List[List[CrawlFileOut]]:
+            wacz_files: list[CrawlFileOut],
+        ) -> list[list[CrawlFileOut]]:
             """Place wacz_files into their own list based on instance number"""
             wacz_files.sort(key=lambda file: file.name)
-            waczs_groups: Dict[str, List[CrawlFileOut]] = {}
+            waczs_groups: dict[str, list[CrawlFileOut]] = {}
             for file in wacz_files:
                 instance_number = file.name[
                     file.name.rfind("-") + 1 : file.name.rfind(".")
@@ -761,16 +747,16 @@ class StorageOps:
                     waczs_groups[instance_number] = [file]
             return list(waczs_groups.values())
 
-        log_generators: List[Iterator[dict]] = []
+        log_generators: list[Iterator[dict]] = []
 
         waczs_groups = organize_based_on_instance_number(wacz_files)
         for instance_list in waczs_groups:
-            wacz_log_streams: List[Iterator[dict]] = []
+            wacz_log_streams: list[Iterator[dict]] = []
 
             for wacz_file in instance_list:
                 wacz_url = self.resolve_internal_access_path(wacz_file.path)
                 with RemoteZip(wacz_url) as remote_zip:
-                    log_files: List[ZipInfo] = [
+                    log_files: list[ZipInfo] = [
                         f
                         for f in remote_zip.infolist()
                         if f.filename.startswith("logs/") and not f.is_dir()
@@ -789,8 +775,8 @@ class StorageOps:
         return stream_json_lines(heap_iter, log_levels, contexts)
 
     def _sync_get_pages(
-        self, wacz_files: List[CrawlFileOut], num_retries=5
-    ) -> Iterator[Dict[Any, Any]]:
+        self, wacz_files: list[CrawlFileOut], num_retries=5
+    ) -> Iterator[dict[Any, Any]]:
         """Generate stream of page dicts from specified WACZs"""
 
         # pylint: disable=too-many-function-args
@@ -798,7 +784,7 @@ class StorageOps:
             pagefile_zipinfo: ZipInfo,
             wacz_url: str,
             wacz_filename: str,
-        ) -> Iterator[Dict[Any, Any]]:
+        ) -> Iterator[dict[Any, Any]]:
             """Pass lines as json objects"""
             filename = pagefile_zipinfo.filename
 
@@ -838,7 +824,7 @@ class StorageOps:
             while True:
                 try:
                     with RemoteZip(wacz_url) as remote_zip:
-                        page_files: List[ZipInfo] = [
+                        page_files: list[ZipInfo] = [
                             f
                             for f in remote_zip.infolist()
                             if f.filename.startswith("pages/")
@@ -885,7 +871,7 @@ class StorageOps:
     def _sync_dl(
         self,
         metadata: dict[str, str],
-        all_files: List[CrawlFileOut],
+        all_files: list[CrawlFileOut],
         prefer_single_wacz: bool = False,
         max_retries=5,
     ) -> Iterator[bytes]:
@@ -985,7 +971,7 @@ class StorageOps:
     async def download_streaming_wacz(
         self,
         metadata: dict[str, str],
-        files: List[CrawlFileOut],
+        files: list[CrawlFileOut],
         prefer_single_wacz: bool = False,
     ) -> Iterator[bytes]:
         """return an iter for downloading a stream nested wacz file
@@ -1002,7 +988,7 @@ class StorageOps:
 # ============================================================================
 def _parse_json(line) -> dict:
     """Parse JSON str into dict."""
-    parsed_json: Optional[dict] = None
+    parsed_json: dict | None = None
     try:
         parsed_json = json.loads(line)
     except json.JSONDecodeError as err:
@@ -1039,7 +1025,7 @@ def init_storages_api(
         """get storage refs for an org"""
         return OrgStorageRefs(storage=org.storage, storageReplicas=org.storageReplicas)
 
-    @router.get("/allStorages", tags=["organizations"], response_model=List[StorageRef])
+    @router.get("/allStorages", tags=["organizations"], response_model=list[StorageRef])
     def get_available_storages(org: Organization = Depends(org_owner_dep)):
         return storage_ops.get_available_storages(org)
 

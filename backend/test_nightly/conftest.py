@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import structlog
 import pytest
@@ -334,7 +334,7 @@ def error_crawl_id(admin_auth_headers, default_org_id):
 
 @pytest.fixture(scope="session")
 def org_with_quotas(admin_auth_headers):
-    name = "Quota Org " + datetime.now(timezone.utc).isoformat()
+    name = "Quota Org " + datetime.now(UTC).isoformat()
     r = requests.post(
         f"{API_PREFIX}/orgs/create", headers=admin_auth_headers, json={"name": name}
     )

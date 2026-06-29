@@ -1,8 +1,9 @@
 """handle user uploads into browsertrix"""
 
 import uuid
+from collections.abc import AsyncGenerator, Callable
 from io import BufferedReader
-from typing import Any, AsyncGenerator, Callable, List, Optional
+from typing import Any
 from urllib.parse import unquote
 from uuid import UUID
 
@@ -42,7 +43,7 @@ class UploadOps(BaseCrawlOps):
     async def get_upload(
         self,
         crawlid: str,
-        org: Optional[Organization] = None,
+        org: Organization | None = None,
     ) -> UploadedCrawl:
         """Get crawl data for internal use"""
         res = await self.get_crawl_raw(crawlid, org, "upload")
@@ -54,13 +55,13 @@ class UploadOps(BaseCrawlOps):
         self,
         stream,
         filename: str,
-        name: Optional[str],
-        description: Optional[str],
-        collections: Optional[List[str]],
-        tags: Optional[List[str]],
+        name: str | None,
+        description: str | None,
+        collections: list[str] | None,
+        tags: list[str] | None,
         org: Organization,
         user: User,
-        replaceId: Optional[str],
+        replaceId: str | None,
     ) -> dict[str, Any]:
         """Upload streaming file, length unknown"""
         self.orgs.can_write_data(org, include_time=False)
@@ -124,11 +125,11 @@ class UploadOps(BaseCrawlOps):
     # pylint: disable=too-many-arguments, too-many-locals
     async def upload_formdata(
         self,
-        uploads: List[UploadFile],
-        name: Optional[str],
-        description: Optional[str],
-        collections: Optional[List[str]],
-        tags: Optional[List[str]],
+        uploads: list[UploadFile],
+        name: str | None,
+        description: str | None,
+        collections: list[str] | None,
+        tags: list[str] | None,
         org: Organization,
         user: User,
     ) -> dict[str, Any]:
@@ -136,7 +137,7 @@ class UploadOps(BaseCrawlOps):
         self.orgs.can_write_data(org, include_time=False)
 
         id_ = uuid.uuid4()
-        files: List[CrawlFile] = []
+        files: list[CrawlFile] = []
 
         prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{id_}"
 
@@ -155,11 +156,11 @@ class UploadOps(BaseCrawlOps):
 
     async def _create_upload(
         self,
-        files: List[CrawlFile],
-        name: Optional[str],
-        description: Optional[str],
-        collections: Optional[List[str]],
-        tags: Optional[List[str]],
+        files: list[CrawlFile],
+        name: str | None,
+        description: str | None,
+        collections: list[str] | None,
+        tags: list[str] | None,
         crawl_id: str,
         org: Organization,
         user: User,
@@ -167,7 +168,7 @@ class UploadOps(BaseCrawlOps):
         now = dt_now()
         file_size = sum(file_.size or 0 for file_ in files)
 
-        collection_uuids: List[UUID] = []
+        collection_uuids: list[UUID] = []
         if collections:
             try:
                 for coll in collections:
@@ -217,7 +218,7 @@ class UploadOps(BaseCrawlOps):
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 
     async def _add_pages_and_update_collections(
-        self, crawl_id: str, oid: UUID, collections: Optional[List[str]] = None
+        self, crawl_id: str, oid: UUID, collections: list[str] | None = None
     ):
         await self.page_ops.add_crawl_pages_to_db_from_wacz(crawl_id)
         if collections:
@@ -227,7 +228,7 @@ class UploadOps(BaseCrawlOps):
         self,
         delete_list: DeleteCrawlList,
         org: Organization,
-        user: Optional[User] = None,
+        user: User | None = None,
     ):
         """Delete uploaded crawls"""
         deleted_count, _, quota_reached = await self.delete_crawls(
@@ -248,7 +249,7 @@ class UploadFileReader(BufferedReader):
         super().__init__(upload.file._file)
         self.file_prep = file_prep
 
-    def read(self, size: Optional[int] = CHUNK_SIZE) -> bytes:
+    def read(self, size: int | None = CHUNK_SIZE) -> bytes:
         """read and digest file chunk"""
         chunk = super().read(size)
         self.file_prep.add_chunk(chunk)
@@ -271,11 +272,11 @@ def init_uploads_api(app, user_dep: Callable[[str], AsyncGenerator[User, None]],
         response_model=AddedResponseIdQuota,
     )
     async def upload_formdata(
-        uploads: List[UploadFile] = File(...),
+        uploads: list[UploadFile] = File(...),
         name: str = "",
         description: str = "",
-        collections: Optional[str] = "",
-        tags: Optional[str] = "",
+        collections: str | None = "",
+        tags: str | None = "",
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ) -> dict[str, Any]:
@@ -303,9 +304,9 @@ def init_uploads_api(app, user_dep: Callable[[str], AsyncGenerator[User, None]],
         filename: str,
         name: str = "",
         description: str = "",
-        collections: Optional[str] = "",
-        tags: Optional[str] = "",
-        replaceId: Optional[str] = "",
+        collections: str | None = "",
+        tags: str | None = "",
+        replaceId: str | None = "",
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ) -> dict[str, Any]:
@@ -340,11 +341,11 @@ def init_uploads_api(app, user_dep: Callable[[str], AsyncGenerator[User, None]],
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        state: Optional[str] = None,
-        userid: Optional[UUID] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        collectionId: Optional[UUID] = None,
+        state: str | None = None,
+        userid: UUID | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        collectionId: UUID | None = None,
         sortBy: str = "finished",
         sortDirection: int = -1,
     ):

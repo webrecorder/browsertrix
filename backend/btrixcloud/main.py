@@ -5,7 +5,6 @@ supports docker and kubernetes based deployments of multiple browsertrix-crawler
 
 import os
 import sys
-from typing import List, Optional
 
 import structlog
 from fastapi import FastAPI, HTTPException
@@ -129,7 +128,7 @@ class SettingsResponse(BaseModel):
     salesEmail: str = ""
     supportEmail: str = ""
 
-    localesEnabled: Optional[List[str]]
+    localesEnabled: list[str] | None
 
     pausedExpiryMinutes: int
 

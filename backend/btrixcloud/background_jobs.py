@@ -2,18 +2,9 @@
 
 import os
 import secrets
+from collections.abc import AsyncGenerator, Callable
 from datetime import datetime
-from typing import (
-    TYPE_CHECKING,
-    AsyncGenerator,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, cast
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -131,7 +122,7 @@ class BackgroundJobOps:
 
     async def create_replica_jobs(
         self, oid: UUID, file: BaseFile, object_id: str, object_type: str
-    ) -> Dict[str, Union[bool, List[str]]]:
+    ) -> dict[str, bool | list[str]]:
         """Create k8s background job to replicate a file to all replica storage locations."""
         org = await self.org_ops.get_org_by_id(oid)
 
@@ -167,7 +158,7 @@ class BackgroundJobOps:
         replica_ref: StorageRef,
         primary_file_path: str,
         primary_endpoint: str,
-        existing_job_id: Optional[str] = None,
+        existing_job_id: str | None = None,
     ) -> str:
         """Create k8s background job to replicate a file to a specific replica storage location."""
         replica_storage = self.storage_ops.get_org_storage_by_ref(org, replica_ref)
@@ -236,7 +227,7 @@ class BackgroundJobOps:
 
     async def create_delete_replica_jobs(
         self, org: Organization, file: BaseFile, object_id: str, object_type: str
-    ) -> Dict[str, Union[bool, List[str]]]:
+    ) -> dict[str, bool | list[str]]:
         """Create a job to delete each replica for the given file"""
         ids = []
 
@@ -257,7 +248,7 @@ class BackgroundJobOps:
         object_type: str,
         replica_ref: StorageRef,
         force_start_immediately: bool = False,
-        existing_job_id: Optional[str] = None,
+        existing_job_id: str | None = None,
     ) -> str:
         """Create a job to delete one replica of a given file"""
         try:
@@ -332,8 +323,8 @@ class BackgroundJobOps:
     async def create_delete_org_job(
         self,
         org: Organization,
-        existing_job_id: Optional[str] = None,
-    ) -> Optional[str]:
+        existing_job_id: str | None = None,
+    ) -> str | None:
         """Create background job to delete org and its data"""
 
         try:
@@ -381,8 +372,8 @@ class BackgroundJobOps:
     async def create_recalculate_org_stats_job(
         self,
         org: Organization,
-        existing_job_id: Optional[str] = None,
-    ) -> Optional[str]:
+        existing_job_id: str | None = None,
+    ) -> str | None:
         """Create background job to recalculate org stats"""
 
         try:
@@ -431,9 +422,9 @@ class BackgroundJobOps:
     async def create_re_add_org_pages_job(
         self,
         oid: UUID,
-        crawl_type: Optional[str] = None,
-        crawl_id: Optional[str] = None,
-        existing_job_id: Optional[str] = None,
+        crawl_type: str | None = None,
+        crawl_id: str | None = None,
+        existing_job_id: str | None = None,
     ):
         """Create job to (re)add all pages in an org, optionally filtered by crawl type"""
 
@@ -484,7 +475,7 @@ class BackgroundJobOps:
 
     async def create_optimize_crawl_pages_job(
         self,
-        existing_job_id: Optional[str] = None,
+        existing_job_id: str | None = None,
     ):
         """Create job to optimize crawl pages"""
 
@@ -530,7 +521,7 @@ class BackgroundJobOps:
         self,
         oid: UUID,
         collection_id: UUID,
-        existing_job_id: Optional[str] = None,
+        existing_job_id: str | None = None,
     ):
         """Create job to update collection stats"""
         try:
@@ -587,8 +578,8 @@ class BackgroundJobOps:
         job_type: str,
         success: bool,
         finished: datetime,
-        started: Optional[datetime] = None,
-        oid: Optional[UUID] = None,
+        started: datetime | None = None,
+        oid: UUID | None = None,
     ) -> None:
         """Update job as finished, including
         job-specific task handling"""
@@ -662,17 +653,17 @@ class BackgroundJobOps:
             )
 
     async def get_background_job(
-        self, job_id: str, oid: Optional[UUID] = None
-    ) -> Union[
-        CreateReplicaJob,
-        DeleteReplicaJob,
-        DeleteOrgJob,
-        RecalculateOrgStatsJob,
-        ReAddOrgPagesJob,
-        OptimizePagesJob,
-        CleanupSeedFilesJob,
-        UpdateCollStatsJob,
-    ]:
+        self, job_id: str, oid: UUID | None = None
+    ) -> (
+        CreateReplicaJob
+        | DeleteReplicaJob
+        | DeleteOrgJob
+        | RecalculateOrgStatsJob
+        | ReAddOrgPagesJob
+        | OptimizePagesJob
+        | CleanupSeedFilesJob
+        | UpdateCollStatsJob
+    ):
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
         if oid:
@@ -712,14 +703,14 @@ class BackgroundJobOps:
 
     async def list_background_jobs(
         self,
-        org: Optional[Organization] = None,
+        org: Organization | None = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        success: Optional[bool] = None,
-        job_type: Optional[str] = None,
-        sort_by: Optional[str] = None,
-        sort_direction: Optional[int] = -1,
-    ) -> Tuple[List[BackgroundJob], int]:
+        success: bool | None = None,
+        job_type: str | None = None,
+        sort_by: str | None = None,
+        sort_direction: int | None = -1,
+    ) -> tuple[list[BackgroundJob], int]:
         """List all background jobs"""
         # pylint: disable=duplicate-code
         # Zero-index page for query
@@ -778,7 +769,7 @@ class BackgroundJobOps:
         return jobs, total
 
     async def get_replica_job_file(
-        self, job: Union[CreateReplicaJob, DeleteReplicaJob], org: Organization
+        self, job: CreateReplicaJob | DeleteReplicaJob, org: Organization
     ) -> BaseFile:
         """Return file from replica job"""
         try:
@@ -796,9 +787,7 @@ class BackgroundJobOps:
         except Exception:
             raise HTTPException(status_code=404, detail="file_not_found")
 
-    async def retry_background_job(
-        self, job_id: str, org: Optional[Organization] = None
-    ):
+    async def retry_background_job(self, job_id: str, org: Organization | None = None):
         """Retry background job"""
         job = await self.get_background_job(job_id)
         if not job:
@@ -823,7 +812,7 @@ class BackgroundJobOps:
 
     async def retry_org_background_job(
         self, job: BackgroundJob, org: Organization
-    ) -> Dict[str, Union[bool, Optional[str]]]:
+    ) -> dict[str, bool | str | None]:
         """Retry background job specific to one org"""
         if job.type == BgJobType.CREATE_REPLICA:
             job = cast(CreateReplicaJob, job)
@@ -901,7 +890,7 @@ class BackgroundJobOps:
 
     async def retry_failed_org_background_jobs(
         self, org: Organization
-    ) -> Dict[str, Union[bool, Optional[str]]]:
+    ) -> dict[str, bool | str | None]:
         """Retry all failed background jobs in an org"""
         async for job in self.jobs.find({"oid": org.id, "success": False}):
             run_async_task(self.retry_background_job(job["_id"], org))
@@ -909,7 +898,7 @@ class BackgroundJobOps:
 
     async def retry_all_failed_background_jobs(
         self,
-    ) -> Dict[str, Union[bool, Optional[str]]]:
+    ) -> dict[str, bool | str | None]:
         """Retry all failed background jobs from all orgs"""
         async for job in self.jobs.find({"success": False}):
             org = None
@@ -1021,10 +1010,10 @@ def init_background_jobs_api(
     async def list_all_background_jobs(
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        success: Optional[bool] = None,
-        jobType: Optional[str] = None,
-        sortBy: Optional[str] = None,
-        sortDirection: Optional[int] = -1,
+        success: bool | None = None,
+        jobType: str | None = None,
+        sortBy: str | None = None,
+        sortDirection: int | None = -1,
         user: User = Depends(user_dep),
     ):
         """Retrieve paginated list of background jobs"""
@@ -1047,10 +1036,10 @@ def init_background_jobs_api(
         org: Organization = Depends(org_crawl_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        success: Optional[bool] = None,
-        jobType: Optional[str] = None,
-        sortBy: Optional[str] = None,
-        sortDirection: Optional[int] = -1,
+        success: bool | None = None,
+        jobType: str | None = None,
+        sortBy: str | None = None,
+        sortDirection: int | None = -1,
     ):
         """Retrieve paginated list of background jobs"""
         jobs, total = await ops.list_background_jobs(
