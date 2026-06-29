@@ -227,6 +227,65 @@ def test_create_org(admin_auth_headers):
     assert data["created"]
 
 
+def test_create_org_with_quotas(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Quotas",
+            "slug": "org-with-quotas",
+            "quotas": {
+                "maxConcurrentCrawls": 2,
+                "maxPagesPerCrawl": 100,
+                "storageQuota": 10,
+                "maxExecMinutesPerMonth": 1000,
+                "extraExecMinutes": 0,
+                "giftedExecMinutes": 0,
+            },
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+    assert org["quotas"]["maxConcurrentCrawls"] == 2
+    assert org["quotas"]["maxPagesPerCrawl"] == 100
+    assert org["quotas"]["storageQuota"] == 10
+    assert org["quotas"]["maxExecMinutesPerMonth"] == 1000
+
+
+def test_create_org_with_plan_and_quotas_rejected(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Plan And Quotas",
+            "slug": "org-with-plan-and-quotas",
+            "planId": "basic",
+            "quotas": {"maxConcurrentCrawls": 1},
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_request"
+
+
+def test_create_org_with_invalid_plan(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Invalid Plan",
+            "slug": "org-with-invalid-plan",
+            "planId": "does-not-exist",
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_plan"
+
+
 @pytest.mark.parametrize(
     "name",
     [

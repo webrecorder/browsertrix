@@ -1848,7 +1848,35 @@ def init_orgs_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        org = await ops.create_org(new_org.name, new_org.slug)
+        quotas = new_org.quotas
+        plan_id = new_org.planId
+
+        if plan_id and quotas:
+            raise HTTPException(status_code=400, detail="invalid_request")
+
+        subscription = None
+        if plan_id:
+            plans_json = os.environ.get("AVAILABLE_PLANS")
+            if not plans_json:
+                raise HTTPException(status_code=400, detail="invalid_plan")
+
+            try:
+                plans = PlansResponse.model_validate_json(plans_json)
+            except ValidationError as err:
+                raise HTTPException(status_code=400, detail="invalid_plans") from err
+
+            plan = next((p for p in plans.plans if p.id == plan_id), None)
+            if not plan:
+                raise HTTPException(status_code=400, detail="invalid_plan")
+
+            quotas = plan.org_quotas
+            subscription = Subscription(subId="", status=ACTIVE, planId=plan.id)
+
+        org = await ops.create_org(new_org.name, new_org.slug, quotas=quotas)
+
+        if subscription:
+            await ops.add_subscription_to_org(subscription, org.id)
+
         return {"added": True, "id": org.id}
 
     @router.get("", tags=["organizations"], response_model=OrgOut)
