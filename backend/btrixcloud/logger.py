@@ -88,6 +88,7 @@ def create_request_logging_middleware(logger):
         request_id = uuid4().hex[:8]
         request_id_token = bind_contextvars(request_id=request_id)
         start_time = time.time()
+        response = None
         try:
             response = await call_next(request)
         # pylint: disable=broad-exception-caught
@@ -106,7 +107,7 @@ def create_request_logging_middleware(logger):
                 "http_request",
                 http_method=request.method,
                 http_path=request.url.path,
-                http_status=response.status_code,
+                http_status=response.status_code if response else None,
                 duration=duration,
                 client_addr=_get_client_addr(request),
                 http_version=request.scope.get("http_version", ""),
