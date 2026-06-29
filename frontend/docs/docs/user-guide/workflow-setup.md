@@ -8,11 +8,16 @@ Crawl settings are shown in the crawl workflow detail **Settings** tab and in th
 
 ## Scope
 
-Specify the range and depth of your crawl.
+Specify how much or little of a site is crawled, i.e. the range and depth of your crawl.
+
+### Crawl Scope
+
+The crawl scope determines which pages are selected by default to be crawled.
 
 Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 
 #### Page Crawl
+
 :   Choose one of these crawl scopes if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one hop out.
 
     A Page Crawl workflow can be simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
@@ -23,6 +28,7 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
         - You want to include URLs with different domain names in the same crawl (`List of Pages`)
 
 #### Site Crawl
+
 :   Choose one of these crawl scopes to have the the crawler automatically find pages based on a domain name, start page URL, or directory on a website.
 
     Site Crawl workflows are great for advanced use cases where you don't need (or want) to know every single URL of the website that you're archiving.
@@ -31,14 +37,16 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
         - You're archiving a subset of a website, like everything under _website.com/your-username_ (`Pages in Same Directory`)
         - You're archiving an entire website _and_ external pages linked to from the website (`Pages on Same Domain` + _Include Any Linked Page_ checked)
 
-### Crawl Scope Options
+The crawl scope is your starting point for scoping. The scope can be expanded to include more pages or limited to less pages by combining the crawl scope with Additional Scope and Exclude Pages settings.
 
-#### Page Crawl
+### Page Crawl Scopes
 
-##### Single Page
-:   Crawls a single URL and does not include any linked pages.
+#### Single Page
 
-##### List of Pages
+:   Crawls a single URL.
+
+#### List of Pages
+
 :   Crawls a list of specified URLs.
 
     Select one of two options to provide a list of URLs:
@@ -55,28 +63,34 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 
     If both a list of entered list and an uploaded file are provided, the currently selected option will be used.
 
-##### In-Page Links
+#### In-Page Links
+
 :   Crawls only the specified URL and treats linked sections of the page as distinct pages.
 
     Any link that begins with the _Crawl Start URL_ followed by a hashtag symbol (`#`) and then a string is considered an in-page link. This is commonly used to link to a section of a page. For example, because the "Scope" section of this guide is linked by its heading as `/user-guide/workflow-setup/#scope` it would be treated as a separate page under the _In-Page Links_ scope.
 
     This scope can also be useful for crawling websites that are single-page applications where each page has its own hash, such as `example.com/#/blog` and `example.com/#/about`.
 
-#### Site Crawl
+### Site Crawl Scopes
 
-##### Pages in Same Directory
+#### Pages in Same Directory
+
 :   This scope will only crawl pages in the same directory as the _Crawl Start URL_. If `example.com/path` is set as the _Crawl Start URL_, `example.com/path/path2` will be crawled but `example.com/path3` will not.
 
-##### Pages on Same Domain
+#### Pages on Same Domain
+
 :   This scope will crawl all pages on the domain entered as the _Crawl Start URL_ however it will ignore subdomains such as `subdomain.example.com`.
 
-##### Pages on Same Domain + Subdomains
+#### Pages on Same Domain + Subdomains
+
 :   This scope will crawl all pages on the domain and any subdomains found. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
 
-##### Custom Page Prefix
+#### Custom Page Prefix
+
 :   This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_Page Prefix URLs_](#page-prefix-urls).
 
-##### Custom Page Match
+#### Custom Page Match
+
 :   This scope will crawl the _Crawl Start URL_ and then include only those pages with URLs that match the regular expression patterns listed in [_Page Regex Patterns_](#page-regex-patterns).
 
 ### Crawl Start URL / URL(s) to Crawl
@@ -88,7 +102,6 @@ This is the URL used by the crawler to initiate the crawling process. The URL in
 | _Single Page_ | URL&nbsp;to&nbsp;Crawl | The crawler will visit only this URL. |
 | _List of Pages_ | URLs&nbsp;to&nbsp;Crawl | The crawler will visit each URL specified in the text list or file. |
 | _In-Page Links_<br/>_Pages in Same Directory_<br/>_Pages on Same Domain_<br/>_Pages on Same Domain + Subdomains_<br/>_Custom Page Prefix_ | Crawl&nbsp;Start&nbsp;URL | The crawler will visit this URL as its starting point and use this URL to collect information on which linked pages it should also visit. |
-
 
 URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
 
@@ -189,11 +202,13 @@ The exclusions table will instruct the crawler to ignore links it finds on pages
 This can be useful for avoiding crawler traps — sites that may automatically generate pages such as calendars or filter options — or other pages that should not be crawled according to their URL.
 
 #### Matches text
+
 :   Will perform simple matching of entered text and exclude all URLs where matching text is found.
 
     e.g: If `about` is entered, `example.com/aboutme/` will not be crawled.
 
 #### Regex
+
 :   Regular expressions (Regex) can also be used to perform more complex matching.
 
     e.g: If `#!regex \babout\/?\b` is entered, `example.com/about/` will not be crawled however `example.com/aboutme/` will be crawled.
@@ -302,7 +317,7 @@ When enabled, instructs the crawler to save the browser's `localStorage` and `se
 
 !!! Warning "Privacy & security implications when used with browser profiles"
     Websites can use browser storage to store arbitrary data. During the browser profile creation process, some websites may save sensitive data such as login information and user-identifying preferences in browser storage. Since every website can implement browser storage differently, Browsertrix does not attempt to detect whether the information stored is potentially sensitive.
-    
+
     Use caution when sharing WACZ files created with this option enabled, especially if you’re crawling pages that require login. We always recommend creating dedicated website logins to be used only for crawling to mitigate the risk of compromised login information.
 
 ### Crawler Proxy Server
@@ -360,6 +375,7 @@ Automatically start crawls periodically on a daily, weekly, or monthly schedule.
 ### Crawl Schedule Type
 
 #### Run on a Recurring Basis
+
 :   When selected, additional configuration options for instructing the system when to run the crawl will be shown. If a crawl is already running when the schedule is set to activate it, the scheduled crawl will not run.
 
     !!! tip "Tip: Scheduling crawl workflows with logged-in browser profiles"
@@ -368,6 +384,7 @@ Automatically start crawls periodically on a daily, weekly, or monthly schedule.
         For some websites, a short schedule frequency can help keep the browser profile logged in by regularly and [automatically refreshing the login session](./browser-profiles/usage-in-crawls.md#effects-of-crawling). A separate crawl workflow could be created for this purpose. We recommend manually [checking the profile](./browser-profiles/configure-sites.md#saved-sites) periodically to ensure that it is still logged in.
 
 #### No Schedule
+
 :   When selected, the configuration options that have been set will be saved but the system will not do anything with them unless manually instructed.
 
 ### Frequency
@@ -424,7 +441,7 @@ Additionally, the following macros are supported:
 | Value | Description |
 | - | - |
 | `@yearly` | Run once a year at midnight of 1 January |
-| `@monthly` | 	Run once a month at midnight of the first day of the month |
+| `@monthly` |  Run once a month at midnight of the first day of the month |
 | `@weekly` | Run once a week at midnight on Sunday |
 | `@daily` | Run once a day at midnight |
 | `@hourly` | Run once an hour at the beginning of the hour |
@@ -445,9 +462,11 @@ Prevent duplicate content from being crawled and stored.
 ### Crawl Deduplication
 
 #### No Deduplication
+
 :   When selected, deduplication will not be enabled in crawls of this workflow.
 
 #### Deduplicate using a collection
+
 :   When selected, crawls of this workflow will reference items in the specified Collection to Use when checking for new content and URLs.
 
 ### Collection to Use
