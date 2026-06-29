@@ -8,19 +8,19 @@ Crawl settings are shown in the crawl workflow detail **Settings** tab and in th
 
 ## Scope
 
-Specify how much or little of a site is crawled, i.e. the range and depth of your crawl.
+Specify the range and depth of your crawl.
 
 ### Crawl Scope
 
-The crawl scope determines which pages are selected by default to be crawled.
+The crawl scope selects pages to be crawled based on the provided URL.
 
 Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 
 #### Page Crawl
 
-:   Choose one of these crawl scopes if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one hop out.
+:   Choose one of these crawl scopes if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one link out.
 
-    A Page Crawl workflow can be simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
+    A page-based scope can be simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
 
     ??? info "Page Crawl Use Cases"
         - You want to archive a social media post (`Single Page`)
@@ -29,15 +29,15 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 
 #### Site Crawl
 
-:   Choose one of these crawl scopes to have the the crawler automatically find pages based on a domain name, start page URL, or directory on a website.
+:   Choose one of these crawl scopes to have the the crawler automatically discover pages based on a domain name, start page URL, or directory on a website.
 
-    Site Crawl workflows are great for advanced use cases where you don't need (or want) to know every single URL of the website that you're archiving.
+    Site-based scopes are great for advanced use cases where you don't need (or want) to know every single URL of the website that you're archiving.
 
     ??? info "Site Crawl Use Cases"
         - You're archiving a subset of a website, like everything under _website.com/your-username_ (`Pages in Same Directory`)
         - You're archiving an entire website _and_ external pages linked to from the website (`Pages on Same Domain` + _Include Any Linked Page_ checked)
 
-The crawl scope is your starting point for scoping. The scope can be expanded to include more pages or limited to less pages by combining the crawl scope with Additional Scope and Exclude Pages settings.
+The crawl scope is your starting point for scoping. The scope can be expanded to include more pages or limited to less pages by combining the crawl scope with [Additional Scope](#additional-scope) and [Exclude Pages](#exclude-pages) settings.
 
 ### Page Crawl Scopes
 
@@ -95,17 +95,17 @@ The crawl scope is your starting point for scoping. The scope can be expanded to
 
 ### Crawl Start URL / URL(s) to Crawl
 
-This is the URL used by the crawler to initiate the crawling process. The URL input may be labeled _Crawl Start URL_ or _URL(s) to Crawl_ depending on which crawl scope is used:
+This is the URL used by the crawler to select pages to crawl and initiate the crawling process. The URL input may be labeled _Crawl Start URL_ or _URL(s) to Crawl_ depending on which crawl scope is used:
 
 | Crawl Scope | Label | Description |
 | ----------- | ----- | ----------- |
-| _Single Page_ | URL&nbsp;to&nbsp;Crawl | The crawler will visit only this URL. |
-| _List of Pages_ | URLs&nbsp;to&nbsp;Crawl | The crawler will visit each URL specified in the text list or file. |
-| _In-Page Links_<br/>_Pages in Same Directory_<br/>_Pages on Same Domain_<br/>_Pages on Same Domain + Subdomains_<br/>_Custom Page Prefix_ | Crawl&nbsp;Start&nbsp;URL | The crawler will visit this URL as its starting point and use this URL to collect information on which linked pages it should also visit. |
+| Single Page | URL&nbsp;to&nbsp;Crawl | The crawler will visit only this URL. |
+| List of Pages | URLs&nbsp;to&nbsp;Crawl | The crawler will visit each URL specified in the text list or file. |
+| - In-Page Links<br/>- Pages in Same Directory<br/>- Pages on Same Domain<br/>- Pages on Same Domain + Subdomains<br/>- Custom Page Prefix | Crawl&nbsp;Start&nbsp;URL | The crawler will visit this URL as its starting point and use this URL to collect information on which linked pages it should also visit. |
 
 URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
 
-Refer to a specific [_Crawl Scope_ option](#crawl-scope-options) for details on how each crawl scope interacts with this URL.
+Refer to a specific [_Crawl Scope_ option](#crawl-scope) for details on how each crawl scope interacts with this URL.
 
 ??? example "Crawling with HTTP basic auth"
 
@@ -113,26 +113,15 @@ Refer to a specific [_Crawl Scope_ option](#crawl-scope-options) for details on 
 
     **These credentials WILL BE WRITTEN into the archive.** We recommend exercising caution and only archiving with dedicated archival accounts, changing your password or deleting the account when finished.
 
-### Skip Pages Disallowed By Robots.txt
+### Configure Site Crawl
 
-When enabled, the crawler will check for a [Robots Exclusion Protocol](https://www.rfc-editor.org/rfc/rfc9309.html) file at /robots.txt for each host encountered during crawling and skip any pages that are disallowed by the rules found therein.
+Choosing a crawl scope that belongs to the _Site Crawl_ category will enable additional options that modify the crawl scope.
 
-### Include Any Linked Page
+#### Max Discovery Depth
 
-When enabled, the crawler will visit all the links it finds within each URL defined in the [URL input field](#crawl-start-url-urls-to-crawl) under _Crawl Scope_.
+When using a domain-based crawl scope, adds a limit to how far the crawler should recursively visit same-domain hyperlinks away from the starting page.
 
-??? example "Crawling tags & search queries with Page List crawls"
-    This setting can be useful for crawling a list of specific pages and pages they link to, such as a list of search queries. For example, you can add a list of multiple URLs such as: `https://example.com/search?q=search_this`, `https://example.com/search?q=also_search_this`, etc... to the _URLs to Crawl_ text box and enable _Include Any Linked Page_ to crawl all the content present on these search query pages.
-
-### Fail Crawl on Failed URL
-
-When enabled, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled. The resulting archived item will have a status of "Failed".
-
-### Max Depth in Scope
-
-Instructs the crawler to stop visiting new links past a specified depth.
-
-### Page Prefix URLs
+#### Page Prefix URLs
 
 When using a scope of `Custom Page Prefix`, this field accepts a list of URLs that a page URL should begin with if it is to be crawled.
 
@@ -146,7 +135,7 @@ By default, _Page Prefix URLs_ will be prefilled with the _Crawl Start URL_ up t
 !!! tip "Use Case: Crawl website that uses multiple TLDs"
     This field can be useful for crawling websites that span multiple top-level domains (e.g. `example.org` and `example.net`) by specifying each domain in the list.
 
-### Page Regex Patterns
+#### Page Regex Patterns
 
 When using a scope of `Custom Page Match`, this field accepts a list of regular expressions (regexes) that will be matched against page URLs to be crawled.
 
@@ -162,19 +151,13 @@ Patterns should be written in the JavaScript regular expression syntax without t
 !!! tip "Use Case: Crawl website that uses multiple protocols"
     This field can be useful for crawling websites that link to both `http` and `https` pages by using a regex pattern like `^https?://example.com`. The `?` quantifier indicates that that the preceding character `s` is to be matched 0 times (in the case of `http`) or 1 time (in the case of `https`.)
 
-### Include Any Linked Page ("one hop out")
+#### Use Sitemap
 
-When enabled, the crawler bypasses the _Crawl Scope_ setting to visit links it finds in each page within scope. The crawler will not visit links it finds in the pages found outside of scope (hence only "one hop out".)
+When enabled, the crawler will check for a sitemap at `/sitemap.xml` and use it to discover pages that match the crawl scope.
 
-This can be useful for capturing links on a page that lead outside the website that is being crawled but should still be included in the archive for context.
+This can be useful for selecting pages on a website that are not hyperlinked and may not otherwise be captured.
 
-### Check For Sitemap
-
-When enabled, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if found. It will not crawl pages found in the sitemap that do not meet the crawl's scope settings or limits.
-
-This can be useful for discovering and capturing pages on a website that aren't linked to from the seed and which might not otherwise be captured.
-
-### Link Selectors
+#### Custom Link Selectors
 
 Instructs the crawler which HTML elements should be used to extract URLs, i.e. considered a “link.” By default, the crawler checks the `href` value of all anchor (`<a>`) elements on a page.
 
@@ -191,27 +174,43 @@ The _CSS Selector_ for a custom link selector could be `button.link` and its _Li
 
 See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors) for examples of valid CSS selectors.
 
-### Additional Pages
+### Additional Scope
 
-A list of page URLs outside of the _Crawl Scope_ to include in the crawl.
+To include more pages than what is selected by the crawl scope, you can specify scoping rules that will add those pages to the scope.
+
+#### Visit Any Linked Page
+
+When enabled, the crawler will follow any hyperlink that is on a page selected by the crawl scope. Links will only be followed one level deep (aka “one hop out”.)
+
+This can be useful for capturing links that lead outside the crawled website but should still be included in the archive for context.
+
+#### Custom List of Pages
+
+A list of URLs of pages to crawl.
 
 ### Exclude Pages
 
-The exclusions table will instruct the crawler to ignore links it finds on pages where all or part of the link matches an exclusion found in the table. The table is only available in Page List crawls when _Include Any Linked Page_ is enabled.
+You can prevent the crawler from visiting parts of a website that you do not want to be archived by setting exclusion rules. Exclusion rules will be applied last, after crawl scope and additional scoping rules are applied.
 
-This can be useful for avoiding crawler traps — sites that may automatically generate pages such as calendars or filter options — or other pages that should not be crawled according to their URL.
+#### Use Robots.txt Disallow List
 
-#### Matches text
+When enabled, the crawler will check for a [Robots Exclusion Protocol](https://www.rfc-editor.org/rfc/rfc9309.html) file at `/robots.txt` for each host encountered during crawling and skip any pages that are disallowed by the rules found therein.
 
-:   Will perform simple matching of entered text and exclude all URLs where matching text is found.
+#### Custom Exclusion Rules
 
-    e.g: If `about` is entered, `example.com/aboutme/` will not be crawled.
+Exclusion rules instruct the crawler to ignores pages with URLs that match a specified pattern. Patterns can be written as plain text or a regular expression per selected _Exclusion Type_:
 
-#### Regex
+##### Matches Text
 
-:   Regular expressions (Regex) can also be used to perform more complex matching.
+:   Text patterns will be matched against any part of the URL. For example, a text pattern of `chi` will apply to `https://en.wikipedia.org/wiki/Web_archiving` (<code>ar**chi**ving</code>) and `https://www.chicago.gov` (<code>**chi**cago</code>).
 
-    e.g: If `#!regex \babout\/?\b` is entered, `example.com/about/` will not be crawled however `example.com/aboutme/` will be crawled.
+    Text patterns are case-sensitive. For example, `web` will apply to `https://webrecorder.net` but not `https://en.wikipedia.org/wiki/Web_archiving` since `Web` is capitalized.
+
+##### Regex
+
+:   Regular expressions (Regex) can be used to perform more complex matching. Regex patterns should be written in the JavaScript regular expression syntax without the enclosed slashes, as it would be passed to a [RegExp constructor](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions#writing_a_regular_expression_pattern).
+
+    Example: If `#!regex \babout\/?\b` is entered, `example.com/about/` will not be crawled however `example.com/aboutme/` will be crawled.
 
 ## Crawl Limits
 
