@@ -540,16 +540,16 @@ class CrawlOperator(BaseOperator):
             raw_config["behaviors"], crawler_image
         )
 
-        if raw_config.get("ignoreScopeForBehaviorLinks") is True:
+        if raw_config.get("alwaysAddBehaviorLinks") is True:
             min_behavior_links_image = os.environ.get(
                 "MIN_BEHAVIOR_LINKS_CRAWLER_IMAGE"
             )
             if min_behavior_links_image and crawler_image_below_minimum(
                 crawler_image, min_behavior_links_image
             ):
-                raw_config.pop("ignoreScopeForBehaviorLinks", None)
+                raw_config.pop("alwaysAddBehaviorLinks", None)
                 configmap_logger.warning(
-                    "crawl_configmap_ignore_scope_behavior_links_ignored",
+                    "crawl_configmap_always_add_behavior_links_ignored",
                     crawler_image=crawler_image,
                     min_behavior_links_image=min_behavior_links_image,
                 )

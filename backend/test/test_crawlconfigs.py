@@ -325,7 +325,7 @@ def test_verify_default_ignore_scope_behavior_links(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["config"]["ignoreScopeForBehaviorLinks"] is False
+    assert r.json()["config"]["alwaysAddBehaviorLinks"] is False
 
 
 def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_data):
@@ -338,7 +338,7 @@ def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_d
                 "scopeType": "domain",
                 "selectLinks": ["a[href]->href", "script[src]->src"],
                 "clickSelector": "button",
-                "ignoreScopeForBehaviorLinks": True,
+                "alwaysAddBehaviorLinks": True,
             }
         },
     )
@@ -356,7 +356,7 @@ def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_d
     assert config["scopeType"] == "domain"
     assert config["selectLinks"] == ["a[href]->href", "script[src]->src"]
     assert config["clickSelector"] == "button"
-    assert config["ignoreScopeForBehaviorLinks"] is True
+    assert config["alwaysAddBehaviorLinks"] is True
 
     # Verify fields set in config originally are unchanged
     assert config["lang"] == "en"
@@ -376,7 +376,7 @@ def test_update_config_no_changes(
                 "scopeType": "domain",
                 "selectLinks": ["a[href]->href", "script[src]->src"],
                 "clickSelector": "button",
-                "ignoreScopeForBehaviorLinks": True,
+                "alwaysAddBehaviorLinks": True,
             }
         },
     )
