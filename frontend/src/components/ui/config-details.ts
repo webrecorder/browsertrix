@@ -480,6 +480,10 @@ export class ConfigDetails extends BtrixElement {
         ),
       )}
       ${this.renderSetting(
+        titlecaseLabelFor.alwaysAddBehaviorLinks,
+        Boolean(config.alwaysAddBehaviorLinks),
+      )}
+      ${this.renderSetting(
         titlecaseLabelFor.includeLinkedPages,
         Boolean(config.extraHops),
       )}
@@ -572,6 +576,10 @@ export class ConfigDetails extends BtrixElement {
       ${this.renderSetting(
         titlecaseLabelFor.useSitemap,
         Boolean(config.useSitemap),
+      )}
+      ${this.renderSetting(
+        titlecaseLabelFor.alwaysAddBehaviorLinks,
+        Boolean(config.alwaysAddBehaviorLinks),
       )}
       ${this.renderSetting(
         titlecaseLabelFor.includeLinkedPages,
