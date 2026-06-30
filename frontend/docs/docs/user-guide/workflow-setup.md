@@ -75,23 +75,37 @@ The crawl scope is your starting point for scoping. The scope can be expanded to
 
 #### Pages in Same Directory
 
-:   This scope will only crawl pages in the same directory as the _Crawl Start URL_. If `example.com/path` is set as the _Crawl Start URL_, `example.com/path/path2` will be crawled but `example.com/path3` will not.
+:   Crawls pages in the same directory as the _Crawl Start URL_.
+
+    For example, if <https://webrecorder.net/blog/product> is provided, the following pages would also be crawled:
+
+    - <https://webrecorder.net/blog/company>
+    - <https://webrecorder.net/blog/resources>
+    
+    The following pages would not be crawled:
+
+    - <https://webrecorder.net/blog/product/2> (because it's in the **`/product/`** subdirectory)
+    - <https://webrecorder.net/resources> (because it's outside of the **`/blog/`** directory)
+
+    ##### URLs With Trailing Slash
+
+    The presence of a trailing slash will change which directory is used. Ending the example URL above with a slash (`webrecorder.net/blog/product` + `/`) will crawl all pages in **`/product/`** instead of **`/blog/`** since <code>webrecorder.net/blog/**product/index.html**</code> is now considered the starting page.
 
 #### Pages on Same Domain
 
-:   This scope will crawl all pages on the domain entered as the _Crawl Start URL_ however it will ignore subdomains such as `subdomain.example.com`.
+:   Crawls all pages on the same domain as the _Crawl Start URL_ and ignores subdomains such as `subdomain.example.com`.
 
 #### Pages on Same Domain + Subdomains
 
-:   This scope will crawl all pages on the domain and any subdomains found. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
+:   Crawls all pages on the domain and any linked subdomains. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
 
 #### Custom Page Prefix
 
-:   This scope will crawl the _Crawl Start URL_ and then include only those pages that begin with the URLs listed in [_Page Prefix URLs_](#page-prefix-urls).
+:   Crawls the _Crawl Start URL_ and only those pages that begin with the URLs listed in [_Page Prefix URLs_](#page-prefix-urls).
 
 #### Custom Page Match
 
-:   This scope will crawl the _Crawl Start URL_ and then include only those pages with URLs that match the regular expression patterns listed in [_Page Regex Patterns_](#page-regex-patterns).
+:   Crawls the _Crawl Start URL_ only those pages with URLs that match the regular expression patterns listed in [_Page Regex Patterns_](#page-regex-patterns).
 
 ### Crawl Start URL / URL(s) to Crawl
 
