@@ -828,16 +828,10 @@ export class App extends BtrixElement {
       case "admin":
         return this.renderAdminPage(
           () => html`
-            <btrix-admin class="w-full bg-neutral-50"></btrix-admin>
-          `,
-        );
-
-      case "adminNewOrg":
-        return this.renderAdminPage(
-          () => html`
-            <btrix-admin-new-org
-              class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
-            ></btrix-admin-new-org>
+            <btrix-admin
+              class="w-full bg-neutral-50"
+              .openNewOrgDialog=${!!this.viewState.params.newOrg}
+            ></btrix-admin>
           `,
         );
 

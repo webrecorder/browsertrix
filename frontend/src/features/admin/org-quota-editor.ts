@@ -1,9 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import { type SlDialog } from "@shoelace-style/shoelace";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref, type Ref } from "lit/directives/ref.js";
-import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import { type Entries } from "type-fest";
 
@@ -36,11 +36,14 @@ export class OrgQuotaEditor extends BtrixElement {
 
   dialog: Ref<SlDialog> = createRef();
 
-  @state()
-  plans = fetchPlans(this.api).then((plans) =>
-    // Default to an "unset" plan preset if no plans are available from the backend
-    plans.length === 0 ? [defaultPlan] : plans,
-  );
+  private readonly plansTask = new Task(this, {
+    task: async () => {
+      const plans = await fetchPlans(this.api);
+      // Default to an "unset" plan preset if no plans are available from the backend
+      return plans.length === 0 ? [defaultPlan] : plans;
+    },
+    autoRun: true,
+  });
 
   show() {
     void this.dialog.value?.show();
@@ -100,12 +103,11 @@ export class OrgQuotaEditor extends BtrixElement {
                 ${msg("Presets")}
               </h3>
               <sl-menu class="py-0">
-                ${until(
-                  this.plans.then((plans) =>
+                ${this.plansTask.render({
+                  pending: () => msg("Loading plans..."),
+                  complete: (plans) =>
                     plans.map((plan) => this.renderPlanPreset(plan, quotas)),
-                  ),
-                  msg("Loading plans..."),
-                )}
+                })}
               </sl-menu>
             </div>
           </div>

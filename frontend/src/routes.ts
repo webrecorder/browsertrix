@@ -54,7 +54,6 @@ export const ROUTES = {
   publicCollection: `/${RouteNamespace.PublicOrgs}/:slug/collections/:collectionSlug(/:collectionTab)`,
   // Superadmin routes
   admin: `/${RouteNamespace.Superadmin}(/)`,
-  adminNewOrg: `/${RouteNamespace.Superadmin}/orgs/new`,
   adminUsers: `/${RouteNamespace.Superadmin}/users(/)`,
   adminUsersInvite: `/${RouteNamespace.Superadmin}/users/invite`,
   adminCrawls: `/${RouteNamespace.Superadmin}/crawls(/)`,

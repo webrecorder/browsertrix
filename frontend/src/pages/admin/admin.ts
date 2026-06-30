@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
-import { html } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { html, type PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import needLogin from "@/decorators/needLogin";
@@ -16,11 +16,23 @@ import { type OrgData } from "@/utils/orgs";
 @localized()
 @needLogin
 export class Admin extends BtrixElement {
+  @property({ type: Boolean })
+  openNewOrgDialog = false;
+
   @state()
   private orgList?: OrgData[];
 
+  @state()
+  private isAddingOrg = false;
+
   protected firstUpdated(): void {
     this.initSuperAdmin();
+  }
+
+  protected willUpdate(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("openNewOrgDialog")) {
+      this.isAddingOrg = this.openNewOrgDialog;
+    }
   }
 
   private initSuperAdmin() {
@@ -28,7 +40,7 @@ export class Admin extends BtrixElement {
       if (this.userInfo.orgs.length) {
         void this.fetchOrgs();
       } else {
-        this.navigate.to(`/${RouteNamespace.Superadmin}/orgs/new`);
+        this.navigate.to(`/${RouteNamespace.Superadmin}?newOrg=true`);
       }
     }
   }
@@ -66,7 +78,24 @@ export class Admin extends BtrixElement {
       <main class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4">
         ${this.renderAdminOrgs()}
       </main>
+      ${this.renderNewOrgDialog()}
     `;
+  }
+
+  private renderNewOrgDialog() {
+    return html`<btrix-new-org-dialog
+      .open=${this.isAddingOrg}
+      @sl-after-hide=${() => {
+        if (this.openNewOrgDialog) {
+          this.navigate.to(`/${RouteNamespace.Superadmin}`);
+        } else {
+          this.isAddingOrg = false;
+        }
+      }}
+      @btrix-success=${() => {
+        void this.fetchOrgs();
+      }}
+    ></btrix-new-org-dialog>`;
   }
 
   private renderAdminOrgs() {
@@ -89,8 +118,8 @@ export class Admin extends BtrixElement {
             <sl-button
               variant="primary"
               size="small"
-              @click=${() =>
-                this.navigate.to(`/${RouteNamespace.Superadmin}/orgs/new`)}
+              href="/${RouteNamespace.Superadmin}?newOrg=1"
+              @click=${this.navigate.link.bind(this)}
             >
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>
               ${msg("New Organization")}
