@@ -51,10 +51,10 @@ The crawl scope is your starting point for scoping. The scope can be expanded to
 
     Select one of two options to provide a list of URLs:
 
-    ###### Enter URLs
+    _Enter URLs_
     :    If the list is small enough, 100 URLs or less, the URLs can be entered directly into the text area. If a large list is pasted into the textbox, it will be converted into an uploaded URL list and attached to the workflow.
 
-    ###### Upload URL List
+    _Upload URL List_
     :    A longer list of URLs can be provided as a text file, containing one URL per line. The text file may not exceed 25MB, but there is no limit to the number of URLs in the file. Once a file is added, a link will be provided to view the file (but not edit it). To change the file, a new file can be uploaded in its place.
 
     For both options, each line should contain a valid URL (starting with https:// or http://). Invalid or duplicate URLs will be skipped. The crawl will fail if the list contains no valid URLs or if the file is not a list of URLs.
