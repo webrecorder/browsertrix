@@ -12,6 +12,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { emptyQuotas, LABELS } from "@/features/admin/org-quota-form";
 import { fetchPlans, type Plan } from "@/features/admin/plans";
 import type { APIUser } from "@/index";
+import { RouteNamespace } from "@/routes";
 import { ORG_NAME_MAX_LENGTH } from "@/types/org";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
@@ -39,6 +40,9 @@ export class NewOrgDialog extends BtrixElement {
   open = false;
 
   @state()
+  private orgName = "";
+
+  @state()
   private selectedPlanId = "";
 
   @state()
@@ -50,7 +54,14 @@ export class NewOrgDialog extends BtrixElement {
   @state()
   private isSubmitting = false;
 
+  @state()
+  private slugPreview = "";
+
   private readonly validateOrgNameMax = maxLengthValidator(ORG_NAME_MAX_LENGTH);
+
+  private get baseUrl() {
+    return `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
+  }
 
   private readonly orgSlugsTask = new Task(this, {
     task: async () => {
@@ -81,6 +92,7 @@ export class NewOrgDialog extends BtrixElement {
       <form id="newOrgForm" class="grid gap-5" @submit=${this.onSubmit}>
         <div>
           <sl-input
+            value=${this.orgName}
             class="with-max-help-text"
             name="name"
             label=${msg("Org Name")}
@@ -92,6 +104,7 @@ export class NewOrgDialog extends BtrixElement {
           >
             ${this.renderOrgNameStatusIcon()}
           </sl-input>
+          ${this.renderOrgUrlPreview()}
         </div>
 
         ${this.plansTask.render({
@@ -143,6 +156,22 @@ export class NewOrgDialog extends BtrixElement {
         </sl-button>
       </div>
     </btrix-dialog>`;
+  }
+
+  private renderOrgUrlPreview() {
+    return html`
+      <div class="text-xs text-neutral-600">
+        <span class="break-word text-blue-500">
+          ${this.baseUrl}/${RouteNamespace.PrivateOrgs}/<strong
+            class="font-medium"
+            >${this.slugPreview ||
+            html`<span class="text-neutral-400"
+              >${slugifyStrict(msg("My Organization"))}</span
+            >`}</strong
+          >/dashboard
+        </span>
+      </div>
+    `;
   }
 
   private renderOrgNameStatusIcon() {
@@ -290,14 +319,17 @@ export class NewOrgDialog extends BtrixElement {
   }
 
   private onAfterHide() {
+    this.resetForm();
     this.dispatchEvent(new CustomEvent("sl-after-hide", { bubbles: true }));
   }
 
   private resetForm() {
+    this.orgName = "";
     this.selectedPlanId = "";
     this.customQuotas = emptyQuotas;
     this.isOrgNameValid = null;
     this.isSubmitting = false;
+    this.slugPreview = "";
   }
 
   private async onOrgNameInput(e: SlInputEvent) {
@@ -305,7 +337,9 @@ export class NewOrgDialog extends BtrixElement {
 
     const input = e.target as SlInput;
     const value = input.value;
+    this.orgName = value;
     const slug = slugifyStrict(value);
+    this.slugPreview = slug;
     const orgSlugs = this.orgSlugsTask.value ?? [];
     let isInvalid = !value;
 
