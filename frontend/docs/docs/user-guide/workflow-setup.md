@@ -93,7 +93,9 @@ The crawl scope is your starting point for scoping. The scope can be expanded to
 
 #### Pages on Same Domain
 
-:   Crawls all pages on the same domain as the _Crawl Start URL_ and ignores subdomains such as `subdomain.example.com`.
+:   Crawls all pages on the same domain as the _Crawl Start URL_ and ignores subdomains (ex: `subdomain.example.com`).
+
+    The `www` subdomain is an exemption; pages on `www.example.com` will be treated as the same domain as `example.com`. See [Special Treatment of Redirects](#special-treatment-of-redirects)
 
 #### Pages on Same Domain + Subdomains
 
@@ -120,6 +122,10 @@ This is the URL used by the crawler to select pages to crawl and initiate the cr
 URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
 
 Refer to a specific [_Crawl Scope_ option](#crawl-scope) for details on how each crawl scope interacts with this URL.
+
+#### Special Treatment of Redirects
+
+Browsertrix will handle redirects from `http` to `https` and a bare domain to the `www` subdomain gracefully. This means that if `webrecorder.net` redirects to `www.webrecorder.net`, `www.webrecorder.net` will be treated as being the same domain in the context of crawl scope.
 
 ??? example "Crawling with HTTP basic auth"
 
