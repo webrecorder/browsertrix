@@ -64,8 +64,12 @@ export class InviteForm extends BtrixElement {
             name="orgId"
             label=${msg("Organization")}
             placeholder=${msg("Select an org")}
-            value=${this.defaultOrg?.id ||
-            (this.orgs?.length === 1 ? this.orgs[0].id : "")}
+            value=${
+              // sl-select calls `value.split(" ")` without a nullish check,
+              // so value must be a string
+              this.defaultOrg?.id ||
+              (this.orgs?.length === 1 ? this.orgs[0].id : "")
+            }
             ?disabled=${sortedOrgs.length === 1}
             required
             @sl-change=${(e: SlChangeEvent) => {
