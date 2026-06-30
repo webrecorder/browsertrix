@@ -118,7 +118,7 @@ export class Admin extends BtrixElement {
             <sl-button
               variant="primary"
               size="small"
-              href="/${RouteNamespace.Superadmin}?newOrg=1"
+              href="/${RouteNamespace.Superadmin}?newOrg=true"
               @click=${this.navigate.link.bind(this)}
             >
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>

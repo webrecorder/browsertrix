@@ -5,6 +5,7 @@ import type {
   SlInputEvent,
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 
@@ -19,6 +20,7 @@ import { maxLengthValidator } from "@/utils/form";
 import type { OrgQuotas } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
+import { tw } from "@/utils/tailwind";
 import { formatAPIUser } from "@/utils/user";
 
 const CUSTOM_PLAN_VALUE = "__custom__";
@@ -104,18 +106,25 @@ export class NewOrgDialog extends BtrixElement {
         <div>
           <sl-input
             value=${this.orgName}
-            class="with-max-help-text"
+            class="with-max-help-text contain-inline-size"
             name="name"
             label=${msg("Org Name")}
             placeholder=${msg("My Organization")}
             autocomplete="off"
             required
-            help-text=${this.validateOrgNameMax.helpText}
             @sl-input=${this.onOrgNameInput}
           >
             ${this.renderOrgNameStatusIcon()}
+            <div
+              class="flex w-full min-w-0 flex-row-reverse flex-wrap justify-end gap-x-2 text-left"
+              slot="help-text"
+            >
+              <span class="ml-auto flex-shrink-0"
+                >${this.validateOrgNameMax.helpText}</span
+              >
+              ${this.renderOrgUrlPreview()}
+            </div>
           </sl-input>
-          ${this.renderOrgUrlPreview()}
         </div>
 
         ${this.plansTask.render({
@@ -170,18 +179,22 @@ export class NewOrgDialog extends BtrixElement {
   }
 
   private renderOrgUrlPreview() {
+    const isSlugInvalid = this.slugPreview && !this.isOrgNameValid;
+    const slugHasValue = this.slugPreview !== "";
     return html`
-      <div class="text-xs text-neutral-600">
-        <span class="break-word text-blue-500">
-          ${this.baseUrl}/${RouteNamespace.PrivateOrgs}/<strong
-            class="font-medium"
-            >${this.slugPreview ||
-            html`<span class="text-neutral-400"
-              >${slugifyStrict(msg("My Organization"))}</span
-            >`}</strong
-          >/dashboard
-        </span>
-      </div>
+      <span class="min-w-0 text-blue-500">
+        ${this
+          .baseUrl}&ZeroWidthSpace;/${RouteNamespace.PrivateOrgs}&ZeroWidthSpace;/<strong
+          class=${clsx(
+            tw`break-words`,
+            slugHasValue
+              ? tw`font-medium text-blue-600`
+              : tw`font-normal text-neutral-400`,
+            isSlugInvalid ? tw`text-danger` : null,
+          )}
+          >${this.slugPreview || slugifyStrict(msg("My Organization"))}</strong
+        >&ZeroWidthSpace;/dashboard
+      </span>
     `;
   }
 
