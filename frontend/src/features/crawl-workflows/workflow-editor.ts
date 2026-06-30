@@ -1767,7 +1767,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ${labelFor.alwaysAddBehaviorLinks}
       </sl-checkbox>
     `)}
-    ${this.renderHelpTextCol(infoTextFor["alwaysAddBehaviorLinks"], false)}`;
+    ${this.renderHelpTextCol(
+      html`${infoTextFor["alwaysAddBehaviorLinks"]}
+      ${this.renderUserGuideLink({
+        hash: "use-smart-scoping-rules",
+        content: msg("More details"),
+      })}`,
+      false,
+    )}`;
   }
 
   private renderIncludeLinkedPages() {
@@ -2049,7 +2056,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoTextFor["behaviorTimeoutSeconds"])}
+      ${this.renderHelpTextCol(
+        html`${infoTextFor["behaviorTimeoutSeconds"]}
+        ${msg(
+          "Also applies to site-specific behaviors that are automatically added by scoping rules.",
+        )}`,
+      )}
       ${inputCol(html`
         <sl-input
           name="pageExtraDelaySeconds"
@@ -2183,7 +2195,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             ${this.renderUserGuideLink({
               hash: "fail-crawl-if-not-logged-in",
               content: msg("More details"),
-            })}.`,
+            })}`,
             false,
           )}
         `,
@@ -2198,7 +2210,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ${this.renderUserGuideLink({
           hash: "include-browser-storage-data",
           content: msg("More details"),
-        })}.`,
+        })}`,
         false,
       )}
       ${proxies?.servers.length

@@ -7,12 +7,10 @@ type Field = keyof FormState;
 
 const sitemap_xml = html`<code>sitemap.xml</code>`;
 const robots_txt = html`<code>robots.txt</code>`;
-
 export const infoTextFor = {
   urlList: msg("The crawler will visit and record each URL listed here."),
   alwaysAddBehaviorLinks: msg(
-    html`For supported social media platforms, expands crawl scope to include
-    URLs that ensure content completeness.`,
+    "Expands crawl scope to more accurately crawl social media pages, if detected.",
   ),
   includeLinkedPages: msg(
     "Expands crawl scope to include pages that are one link away.",
