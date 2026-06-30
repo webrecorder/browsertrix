@@ -24,3 +24,11 @@ export const labelFor = {
   failOnFailedSeed: msg("Fail crawl if any URL fails"),
   exclusions: msg("Custom Exclusion Rules"),
 } as const satisfies Partial<Record<FormStateField, string>>;
+
+export const titlecaseLabelFor = {
+  saveStorage: msg("Include Browser Storage Data"),
+  includeLinkedPages: msg("Visit Any Linked Page"),
+  useSitemap: msg("Use Sitemap"),
+  useRobots: msg("Use Robots.txt Disallow List"),
+  failOnContentCheck: msg("Fail Crawl if Not Logged In"),
+} as const satisfies Partial<Record<FormStateField, string>>;
