@@ -59,6 +59,9 @@ export class NewOrgDialog extends BtrixElement {
   @state()
   private slugPreview = "";
 
+  @state()
+  private setQuotas = false;
+
   @query("form")
   private readonly form?: HTMLFormElement | null;
 
@@ -146,21 +149,30 @@ export class NewOrgDialog extends BtrixElement {
           `,
         })}
         ${this.renderPlanDetails()}
-        ${this.selectedPlanId === CUSTOM_PLAN_VALUE
+        ${this.hasNoPlans
           ? html`
-              <div>
-                <h2 class="mb-3 text-lg font-medium">
-                  ${msg("Custom Quotas")}
-                </h2>
-                <btrix-org-quota-form
-                  .activeOrg=${null}
-                  @btrix-change=${(e: CustomEvent<{ quotas: OrgQuotas }>) => {
-                    this.customQuotas = e.detail.quotas;
-                  }}
-                ></btrix-org-quota-form>
-              </div>
+              <sl-switch
+                size="small"
+                ?checked=${this.setQuotas}
+                @sl-change=${() => (this.setQuotas = !this.setQuotas)}
+              >
+                ${msg("Set quotas")}
+              </sl-switch>
             `
-          : ""}
+          : null}
+        ${this.showCustomQuotas
+          ? html`
+              <btrix-org-quota-form
+                .activeOrg=${null}
+                @btrix-change=${(e: CustomEvent<{ quotas: OrgQuotas }>) => {
+                  this.customQuotas = e.detail.quotas;
+                }}
+              ></btrix-org-quota-form>
+              <small class="text-right text-xs text-neutral-500"
+                >${msg("A value of 0 is unlimited")}</small
+              >
+            `
+          : null}
       </form>
 
       <div slot="footer" class="flex justify-between">
@@ -333,6 +345,20 @@ export class NewOrgDialog extends BtrixElement {
     return fn(v);
   }
 
+  private get showCustomQuotas() {
+    if (this.plansTask.status !== TaskStatus.COMPLETE) return false;
+    const plans = this.plansTask.value;
+    if (!plans || plans.length === 0) return this.setQuotas;
+    return this.selectedPlanId === CUSTOM_PLAN_VALUE;
+  }
+
+  private get hasNoPlans() {
+    return (
+      this.plansTask.status === TaskStatus.COMPLETE &&
+      (this.plansTask.value?.length ?? 0) === 0
+    );
+  }
+
   private get canSubmit() {
     if (!this.isOrgNameValid) return false;
     const plans = this.plansTask.value;
@@ -368,6 +394,7 @@ export class NewOrgDialog extends BtrixElement {
     this.isOrgNameValid = null;
     this.isSubmitting = false;
     this.slugPreview = "";
+    this.setQuotas = false;
   }
 
   private async onOrgNameInput(e: SlInputEvent) {
@@ -434,6 +461,8 @@ export class NewOrgDialog extends BtrixElement {
       } else {
         body.planId = this.selectedPlanId;
       }
+    } else if (this.setQuotas) {
+      body.quotas = this.customQuotas;
     }
 
     this.isSubmitting = true;
