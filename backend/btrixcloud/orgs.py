@@ -1852,6 +1852,7 @@ def init_orgs_api(
         plan_id = new_org.planId
 
         if plan_id and quotas:
+            # disallow setting both planId and quotas
             raise HTTPException(status_code=400, detail="invalid_request")
 
         subscription = None
@@ -1876,6 +1877,14 @@ def init_orgs_api(
 
         if subscription:
             await ops.add_subscription_to_org(subscription, org.id)
+
+        logger.info(
+            "created_org",
+            org_id=org.id,
+            name=org.name,
+            quotas=quotas,
+            plan_id=plan_id,
+        )
 
         return {"added": True, "id": org.id}
 
