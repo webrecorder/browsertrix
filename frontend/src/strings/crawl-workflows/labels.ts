@@ -23,6 +23,7 @@ export const labelFor = {
   failOnContentCheck: msg("Fail crawl if not logged in"),
   failOnFailedSeed: msg("Fail crawl if any URL fails"),
   exclusions: msg("Custom Exclusion Rules"),
+  alwaysAddBehaviorLinks: msg("Use smart scoping rules"),
 } as const satisfies Partial<Record<FormStateField, string>>;
 
 export const titlecaseLabelFor = {
@@ -31,4 +32,5 @@ export const titlecaseLabelFor = {
   useSitemap: msg("Use Sitemap"),
   useRobots: msg("Use Robots.txt Disallow List"),
   failOnContentCheck: msg("Fail Crawl if Not Logged In"),
+  alwaysAddBehaviorLinks: msg("Use Smart Scoping Rules"),
 } as const satisfies Partial<Record<FormStateField, string>>;

@@ -10,6 +10,10 @@ const robots_txt = html`<code>robots.txt</code>`;
 
 export const infoTextFor = {
   urlList: msg("The crawler will visit and record each URL listed here."),
+  alwaysAddBehaviorLinks: msg(
+    html`For supported social media platforms, expands crawl scope to include
+    URLs that ensure content completeness.`,
+  ),
   includeLinkedPages: msg(
     "Expands crawl scope to include pages that are one link away.",
   ),

@@ -1041,7 +1041,7 @@ export class WorkflowEditor extends BtrixElement {
 
       <!-- Settings that expand the crawl scope by including links that would normally be out of scope -->
       ${this.renderSectionHeading(msg("Additional Scope"))}
-      ${this.renderIncludeLinkedPages()}
+      ${this.renderUseSmartScope()} ${this.renderIncludeLinkedPages()}
       ${when(
         this.formState.includeLinkedPages ||
           this.formState.scopeType === ScopeType.SPA,
@@ -1668,7 +1668,7 @@ https://archiveweb.page/es/`}
 
       <!-- Settings that expand the crawl scope by including links that would normally be out of scope -->
       ${this.renderSectionHeading(msg("Additional Scope"))}
-      ${this.renderIncludeLinkedPages()}
+      ${this.renderUseSmartScope()} ${this.renderIncludeLinkedPages()}
       ${detailsInColumns({
         open: additionalUrlList.length > 0,
         title: html`${labelFor.urlList}
@@ -1757,6 +1757,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
       inputEl.setCustomValidity(helpText);
     }
   };
+
+  private renderUseSmartScope() {
+    return html`${inputCol(html`
+      <sl-checkbox
+        name="alwaysAddBehaviorLinks"
+        ?checked=${this.formState.alwaysAddBehaviorLinks}
+      >
+        ${labelFor.alwaysAddBehaviorLinks}
+      </sl-checkbox>
+    `)}
+    ${this.renderHelpTextCol(infoTextFor["alwaysAddBehaviorLinks"], false)}`;
+  }
 
   private renderIncludeLinkedPages() {
     return html`${inputCol(html`
@@ -3731,6 +3743,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         failOnContentCheck: this.formState.failOnContentCheck,
         saveStorage: this.formState.saveStorage,
         useRobots: this.formState.useRobots,
+        alwaysAddBehaviorLinks: this.formState.alwaysAddBehaviorLinks,
       },
       crawlerChannel:
         this.formState.crawlerChannel || CrawlerChannelImage.Default,
