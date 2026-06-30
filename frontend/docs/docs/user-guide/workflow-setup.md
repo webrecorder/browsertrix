@@ -153,7 +153,7 @@ Patterns should be written in the JavaScript regular expression syntax without t
 
 #### Use Sitemap
 
-When enabled, the crawler will check for a sitemap at `/sitemap.xml` and use it to discover pages that match the crawl scope.
+When enabled, the crawler will check for a sitemap at `/sitemap.xml` and `/robots.txt` and use it to discover pages that match the crawl scope.
 
 This can be useful for selecting pages on a website that are not hyperlinked and may not otherwise be captured.
 
@@ -180,9 +180,9 @@ To include more pages than what is selected by the crawl scope, you can specify 
 
 #### Visit Any Linked Page
 
-When enabled, the crawler will follow any hyperlink that is on a page selected by the crawl scope. Links will only be followed one level deep (aka “one hop out”.)
+When enabled, the crawler will follow any hyperlink that is on a page selected by the crawl scope. Links will only be followed one level deep (aka “one hop out”).
 
-This can be useful for capturing links that lead outside the crawled website but should still be included in the archive for context.
+This can be useful for capturing links that lead outside the crawled website but should still be included in the archive.
 
 #### Custom List of Pages
 
