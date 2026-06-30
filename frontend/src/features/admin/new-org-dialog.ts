@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import { Task } from "@lit/task";
+import { Task, TaskStatus } from "@lit/task";
 import type {
   SlInput,
   SlInputEvent,
@@ -87,6 +87,12 @@ export class NewOrgDialog extends BtrixElement {
   protected willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("open") && this.open) {
       this.resetForm();
+    }
+  }
+
+  protected updated(_changedProperties: PropertyValues<this>) {
+    if (this.orgSlugsTask.status === TaskStatus.COMPLETE && this.orgName) {
+      this.validateOrgName();
     }
   }
 
@@ -346,7 +352,6 @@ export class NewOrgDialog extends BtrixElement {
   private onAfterHide() {
     this.resetForm();
     this.form?.reset();
-    this.dispatchEvent(new CustomEvent("sl-after-hide", { bubbles: true }));
   }
 
   private onFormReset() {
@@ -366,14 +371,20 @@ export class NewOrgDialog extends BtrixElement {
   }
 
   private async onOrgNameInput(e: SlInputEvent) {
-    const maxLenValid = this.validateOrgNameMax.validate(e);
-
+    this.validateOrgNameMax.validate(e);
     const input = e.target as SlInput;
-    const value = input.value;
-    this.orgName = value;
+    this.orgName = input.value;
+    this.validateOrgName();
+  }
+
+  private validateOrgName() {
+    if (!this.orgNameInput) return;
+    const input = this.orgNameInput;
+    const value = this.orgName;
     const slug = slugifyStrict(value);
     this.slugPreview = slug;
     const orgSlugs = this.orgSlugsTask.value ?? [];
+    const maxLenValid = value.length <= ORG_NAME_MAX_LENGTH;
     let isInvalid = !value;
 
     if (value && maxLenValid) {
@@ -432,30 +443,6 @@ export class NewOrgDialog extends BtrixElement {
         method: "POST",
         body: JSON.stringify(body),
       });
-
-      const userInfo = await this.getUserInfo();
-      AppStateService.updateUser(formatAPIUser(userInfo));
-
-      this.notify.toast({
-        message: html`
-          ${msg(str`Created new org named "${name}".`)}
-          <a
-            class="underline hover:no-underline"
-            href="/orgs/${slug}/dashboard"
-            @click=${this.navigate.link.bind(this)}
-          >
-            ${msg(str`Log in to ${name}`)}
-          </a>
-        `,
-        variant: "success",
-        icon: "check2-circle",
-        duration: 8000,
-      });
-
-      this.dispatchEvent(
-        new CustomEvent("btrix-success", { bubbles: true, composed: true }),
-      );
-      this.open = false;
     } catch (err) {
       let message = msg("Sorry, couldn't create organization at this time.");
 
@@ -481,8 +468,38 @@ export class NewOrgDialog extends BtrixElement {
         icon: "exclamation-octagon",
         id: "org-invalid",
       });
+
+      this.isSubmitting = false;
+      return;
     }
 
+    try {
+      const userInfo = await this.getUserInfo();
+      AppStateService.updateUser(formatAPIUser(userInfo));
+    } catch {
+      // best-effort: org was already created
+    }
+
+    this.notify.toast({
+      message: html`
+        ${msg(str`Created new org named "${name}".`)}
+        <a
+          class="underline hover:no-underline"
+          href="/orgs/${slug}/dashboard"
+          @click=${this.navigate.link.bind(this)}
+        >
+          ${msg(str`Log in to “${name}”`)}
+        </a>
+      `,
+      variant: "success",
+      icon: "check2-circle",
+      duration: 8000,
+    });
+
+    this.dispatchEvent(
+      new CustomEvent("btrix-success", { bubbles: true, composed: true }),
+    );
+    this.open = false;
     this.isSubmitting = false;
   }
 
