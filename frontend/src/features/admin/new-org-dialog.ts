@@ -214,7 +214,8 @@ export class NewOrgDialog extends BtrixElement {
       return html`
         <sl-tooltip
           slot="suffix"
-          content=${msg("This org name is taken")}
+          content=${this.orgNameInput?.validationMessage ||
+          msg("This org name is invalid")}
           hoist
         >
           <sl-icon class="mr-3 text-danger" name="x-lg"></sl-icon>
@@ -365,7 +366,7 @@ export class NewOrgDialog extends BtrixElement {
   }
 
   private async onOrgNameInput(e: SlInputEvent) {
-    this.validateOrgNameMax.validate(e);
+    const maxLenValid = this.validateOrgNameMax.validate(e);
 
     const input = e.target as SlInput;
     const value = input.value;
@@ -375,25 +376,23 @@ export class NewOrgDialog extends BtrixElement {
     const orgSlugs = this.orgSlugsTask.value ?? [];
     let isInvalid = !value;
 
-    if (value) {
+    if (value && maxLenValid) {
       if (!slug) {
         isInvalid = true;
         input.setCustomValidity(
           msg("Please include at least one letter or number."),
         );
-      } else {
-        isInvalid = orgSlugs.includes(slug);
-        if (isInvalid) {
-          input.setCustomValidity(msg("This org name is already taken."));
-        }
+      } else if (orgSlugs.includes(slug)) {
+        isInvalid = true;
+        input.setCustomValidity(msg("This org name is already taken."));
       }
     }
 
-    if (!isInvalid) {
+    if (!isInvalid && maxLenValid) {
       input.setCustomValidity("");
     }
 
-    this.isOrgNameValid = !isInvalid;
+    this.isOrgNameValid = !isInvalid && maxLenValid;
   }
 
   private onPlanChange(e: SlSelectEvent) {
