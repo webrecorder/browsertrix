@@ -579,10 +579,10 @@
     html-to-text "^9.0.5"
     prettier "^3.5.3"
 
-"@react-email/ui@6.6.3":
-  version "6.6.3"
-  resolved "https://registry.yarnpkg.com/@react-email/ui/-/ui-6.6.3.tgz#33df37392b14d07332ce369d69d6c9e77724701d"
-  integrity sha512-rGmMv2usj1REJqrTsg2VLnnUsV8/qI4AxaK9AMD81BbaNsJV8K0StHy0B03XHdrTuhxAjIg5wFD4LCd2me/qdg==
+"@react-email/ui@6.6.4":
+  version "6.6.4"
+  resolved "https://registry.yarnpkg.com/@react-email/ui/-/ui-6.6.4.tgz#8402ea8d877c83867c340b15213a5a19658bb4f0"
+  integrity sha512-e3Aqk0Y649X4AY3YNxAZJP8emLJuIAJf0BjTph/utCVO0gmvNJBdmWnhuhbZExedODaIZeNt8un/9j2BhoanFA==
   dependencies:
     esbuild "0.28.0"
     next "16.2.6"
