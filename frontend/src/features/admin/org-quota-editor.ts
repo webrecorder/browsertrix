@@ -42,7 +42,7 @@ export class OrgQuotaEditor extends BtrixElement {
       // Default to an "unset" plan preset if no plans are available from the backend
       return plans.length === 0 ? [defaultPlan] : plans;
     },
-    autoRun: true,
+    args: () => [],
   });
 
   show() {
