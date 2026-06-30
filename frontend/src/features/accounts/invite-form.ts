@@ -3,7 +3,6 @@ import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import sortBy from "lodash/fp/sortBy";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -65,10 +64,8 @@ export class InviteForm extends BtrixElement {
             name="orgId"
             label=${msg("Organization")}
             placeholder=${msg("Select an org")}
-            value=${ifDefined(
-              this.defaultOrg?.id ||
-                (this.orgs?.length === 1 ? this.orgs[0].id : undefined),
-            )}
+            value=${this.defaultOrg?.id ||
+            (this.orgs?.length === 1 ? this.orgs[0].id : "")}
             ?disabled=${sortedOrgs.length === 1}
             required
             @sl-change=${(e: SlChangeEvent) => {
