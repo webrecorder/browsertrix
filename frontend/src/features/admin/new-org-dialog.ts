@@ -6,7 +6,7 @@ import type {
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
 import { html, type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { emptyQuotas, LABELS } from "@/features/admin/org-quota-form";
@@ -57,6 +57,12 @@ export class NewOrgDialog extends BtrixElement {
   @state()
   private slugPreview = "";
 
+  @query("form")
+  private readonly form?: HTMLFormElement | null;
+
+  @query('sl-input[name="name"]')
+  private readonly orgNameInput?: SlInput | null;
+
   private readonly validateOrgNameMax = maxLengthValidator(ORG_NAME_MAX_LENGTH);
 
   private get baseUrl() {
@@ -89,7 +95,12 @@ export class NewOrgDialog extends BtrixElement {
       @sl-request-close=${this.onRequestClose}
       @sl-after-hide=${this.onAfterHide}
     >
-      <form id="newOrgForm" class="grid gap-5" @submit=${this.onSubmit}>
+      <form
+        id="newOrgForm"
+        class="grid gap-5"
+        @submit=${this.onSubmit}
+        @reset=${this.onFormReset}
+      >
         <div>
           <sl-input
             value=${this.orgName}
@@ -320,7 +331,15 @@ export class NewOrgDialog extends BtrixElement {
 
   private onAfterHide() {
     this.resetForm();
+    this.form?.reset();
     this.dispatchEvent(new CustomEvent("sl-after-hide", { bubbles: true }));
+  }
+
+  private onFormReset() {
+    if (this.orgNameInput) {
+      this.orgNameInput.value = "";
+      this.orgNameInput.setCustomValidity("");
+    }
   }
 
   private resetForm() {
