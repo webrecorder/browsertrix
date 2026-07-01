@@ -467,6 +467,11 @@ class CrawlOperator(BaseOperator):
         params["memory"] = pod_info.newMemory or params.get("redis_memory")
         params["no_pvc"] = crawl.is_single_page
 
+        if self.k8s.enable_auto_resize:
+            params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
+        else:
+            params["memory_limit"] = self.k8s.max_crawler_memory_size
+
         restart_reason = None
         if has_pod:
             restart_reason = pod_info.should_restart_pod()
@@ -654,10 +659,6 @@ class CrawlOperator(BaseOperator):
         params["memory"] = pod_info.newMemory or memory
         params["workers"] = workers
         params["save_profile"] = has_profile and (i == 0)
-        if self.k8s.enable_auto_resize:
-            params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
-        else:
-            params["memory_limit"] = self.k8s.max_crawler_memory_size
         params["storage"] = pod_info.newStorage or params.get("crawler_storage")
 
         params["init_crawler"] = not is_paused
