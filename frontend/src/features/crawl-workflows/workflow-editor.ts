@@ -65,6 +65,10 @@ import type { SyntaxInput } from "@/components/ui/syntax-input";
 import type { TabListTab } from "@/components/ui/tab-list";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { validURL } from "@/components/ui/url-input";
+import {
+  SmartScopeSites,
+  type SmartScopeSite,
+} from "@/constants/smart-scope-sites";
 import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import {
   orgCrawlerChannelsContext,
@@ -1177,6 +1181,9 @@ export class WorkflowEditor extends BtrixElement {
           }
         }}
       >
+        ${guard(this.formState.urlList, () =>
+          when(this.formState.urlList, this.renderSmartScopeNotice),
+        )}
       </sl-input>
     `)}
     ${this.renderHelpTextCol(msg(str`The crawler will visit this URL.`))}`;
@@ -1321,6 +1328,10 @@ export class WorkflowEditor extends BtrixElement {
         }}
       >
         <div slot="help-text">${helpText}</div>
+
+        ${guard(this.formState.primarySeedUrl, () =>
+          when(this.formState.primarySeedUrl, this.renderSmartScopeNotice),
+        )}
       </sl-input>
     `)}
     ${this.renderHelpTextCol(msg(`The starting point of your crawl.`))}`;
@@ -1328,74 +1339,83 @@ export class WorkflowEditor extends BtrixElement {
 
   private readonly renderSeedListTextbox = () => {
     return html`<sl-textarea
-      id="seedUrlList"
-      name="urlList"
-      placeholder=${`https://webrecorder.net/resources
+        id="seedUrlList"
+        name="urlList"
+        placeholder=${`https://webrecorder.net/resources
 https://archiveweb.page/guide
 https://replayweb.page/docs`}
-      rows="4"
-      autocomplete="off"
-      inputmode="url"
-      value=${this.formState.urlList}
-      required
-      help-text=${msg("Enter one URL per line.")}
-      @paste=${(e: ClipboardEvent) => {
-        const text = `${(e.currentTarget as SlTextarea).value}
+        rows="4"
+        autocomplete="off"
+        inputmode="url"
+        value=${this.formState.urlList}
+        required
+        help-text=${msg("Enter one URL per line.")}
+        @paste=${(e: ClipboardEvent) => {
+          const text = `${(e.currentTarget as SlTextarea).value}
           ${e.clipboardData?.getData("text")}`
-          // Remove zero-width characters
-          .replace(/[\u200B-\u200D\uFEFF]/g, "")
-          // Remove multiple whitespaces
-          .replace(/\s+/g, "\n")
-          .trim();
+            // Remove zero-width characters
+            .replace(/[\u200B-\u200D\uFEFF]/g, "")
+            // Remove multiple whitespaces
+            .replace(/\s+/g, "\n")
+            .trim();
 
-        if (text) {
-          const textBlob = new Blob([text]);
-          if (
-            (textBlob.size > MAX_SEED_LIST_STRING_BYTES &&
-              textBlob.size <= MAX_SEED_LIST_FILE_BYTES) ||
-            urlListToArray(text).length > URL_LIST_MAX_URLS
-          ) {
-            const file = new File([textBlob], pastedUrlListFileName, {
-              type: "text/plain",
-            });
+          if (text) {
+            const textBlob = new Blob([text]);
+            if (
+              (textBlob.size > MAX_SEED_LIST_STRING_BYTES &&
+                textBlob.size <= MAX_SEED_LIST_FILE_BYTES) ||
+              urlListToArray(text).length > URL_LIST_MAX_URLS
+            ) {
+              const file = new File([textBlob], pastedUrlListFileName, {
+                type: "text/plain",
+              });
 
-            this.updateFormState(
-              {
-                urlList: undefined,
-                seedFileId: null,
-                seedListFormat: SeedListFormat.File,
-                seedFile: file,
-              },
-              true,
-            );
-          }
-        }
-      }}
-      @keyup=${async (e: KeyboardEvent) => {
-        if (e.key === "Enter") {
-          await (e.target as SlInput).updateComplete;
-          this.doValidateUrlList(e);
-        }
-      }}
-      @sl-input=${(e: CustomEvent) => {
-        const inputEl = e.target as SlInput;
-        const value = inputEl.value;
-
-        if (value) {
-          if (!this.stickyFooter) {
-            const { isValid } = this.validateUrlList(inputEl.value);
-
-            if (isValid) {
-              this.animateStickyFooter();
+              this.updateFormState(
+                {
+                  urlList: undefined,
+                  seedFileId: null,
+                  seedListFormat: SeedListFormat.File,
+                  seedFile: file,
+                },
+                true,
+              );
             }
           }
-        } else {
-          inputEl.helpText = msg("At least 1 URL is required.");
-        }
-      }}
-      @sl-change=${this.doValidateUrlList}
-      @sl-blur=${this.doValidateUrlList}
-    ></sl-textarea>`;
+        }}
+        @keyup=${async (e: KeyboardEvent) => {
+          if (e.key === "Enter") {
+            await (e.target as SlInput).updateComplete;
+            this.doValidateUrlList(e);
+          }
+        }}
+        @sl-input=${(e: CustomEvent) => {
+          const inputEl = e.target as SlInput;
+          const value = inputEl.value;
+
+          if (value) {
+            if (!this.stickyFooter) {
+              const { isValid } = this.validateUrlList(inputEl.value);
+
+              if (isValid) {
+                this.animateStickyFooter();
+              }
+            }
+          } else {
+            inputEl.helpText = msg("At least 1 URL is required.");
+          }
+        }}
+        @sl-change=${this.doValidateUrlList}
+        @sl-blur=${this.doValidateUrlList}
+      ></sl-textarea>
+      ${guard(this.formState.urlList, () =>
+        when(
+          this.formState.urlList,
+          (urlList) =>
+            html`<div class="form-help-text mt-0">
+              ${this.renderSmartScopeNotice(urlList)}
+            </div>`,
+        ),
+      )}`;
   };
 
   private readonly renderSeedListFileUpload = () => {
@@ -1516,6 +1536,46 @@ https://replayweb.page/docs`}
 
       ${helpText ? html`<div slot="help-text">${helpText}</div>` : nothing}
     </btrix-file-input>`;
+  };
+
+  private readonly renderSmartScopeNotice = (urlStr: string) => {
+    const urls = urlListToArray(urlStr);
+    const sites: SmartScopeSite[] = [];
+
+    urls.forEach((url) => {
+      if (!url.startsWith("http") || !validURL(url)) return;
+
+      try {
+        const hostname = new URL(url).hostname.replace(/^www\./, "");
+
+        if ((SmartScopeSites as readonly string[]).includes(hostname)) {
+          sites.push(hostname as SmartScopeSite);
+        }
+      } catch {
+        console.debug("invalid URL not caught by `validURL`:", url);
+      }
+    });
+
+    if (!sites.length) return;
+
+    const list_of_sites = this.localize
+      .list(sites)
+      .map(
+        (part) =>
+          html`<span class=${clsx(part.type === "element" && tw`text-blue-500`)}
+            >${part.value}</span
+          >`,
+      );
+
+    return html`<span slot="help-text">
+      <sl-icon
+        name="check2-circle"
+        class="align-[-.175em] text-sm text-success"
+      ></sl-icon>
+      ${msg(html`Smart scoping rules available for ${list_of_sites}.`, {
+        desc: '`list_of_sites` is replaced with an actual list of sites, e.g. "instagram.com and facebook.com".',
+      })}
+    </span>`;
   };
 
   private readonly renderSiteScope = () => {
