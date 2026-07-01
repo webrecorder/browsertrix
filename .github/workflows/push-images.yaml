@@ -1,0 +1,76 @@
+name: "*** Push Branch to Repo ***"
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_tag:
+        description: 'Tag to push to'
+        required: true
+        type: string
+        default: 'latest'
+
+jobs:
+  push_images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+        with:
+          driver-opts: network=host
+
+      - name: Login to Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ secrets.DO_REGISTRY }}
+          username: ${{ secrets.DO_API_TOKEN }}
+          password: ${{ secrets.DO_API_TOKEN }}
+
+      - name: Set Env Vars
+        run: |
+          echo VERSION=`cat version.txt` >> $GITHUB_ENV
+          echo GIT_COMMIT_HASH=`git rev-parse --short HEAD` >> $GITHUB_ENV
+          echo GIT_BRANCH_NAME=`git rev-parse --abbrev-ref HEAD` >> $GITHUB_ENV
+
+      - name: Build Backend
+        uses: docker/build-push-action@v7
+        with:
+          context: backend
+          push: true
+          build-args: |
+            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
+            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
+          tags: ${{ secrets.DO_REGISTRY_PATH }}/webrecorder/browsertrix-backend:${{ inputs.repo_tag }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      - name: Build Emails
+        uses: docker/build-push-action@v7
+        with:
+          context: emails
+          push: true
+          build-args: |
+            VERSION=${{ env.VERSION }}
+            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
+            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
+          tags: ${{ secrets.DO_REGISTRY_PATH }}/webrecorder/browsertrix-emails:${{ inputs.repo_tag }}
+          cache-from: type=gha,scope=emails
+          cache-to: type=gha,scope=emails,mode=max
+
+      - name: Build Frontend
+        uses: docker/build-push-action@v7
+        env:
+          HUSKY: 0
+        with:
+          context: frontend
+          push: true
+          build-args: |
+            VERSION=${{ env.VERSION }}
+            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
+            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
+
+          tags: ${{ secrets.DO_REGISTRY_PATH }}/webrecorder/browsertrix-frontend:${{ inputs.repo_tag }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
