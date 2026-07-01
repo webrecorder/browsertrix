@@ -75,21 +75,15 @@ The crawl scope is your starting point for scoping. The scope can be expanded to
 
 #### Pages in Same Directory
 
-:   Crawls pages in the same directory as the _Crawl Start URL_.
+:   Crawls pages in the same directory as the _Crawl Start URL_ and subdirectories.
 
     For example, if <https://webrecorder.net/blog/product> is provided, the following pages would also be crawled:
 
-    - <https://webrecorder.net/blog/company>
+    - <https://webrecorder.net/blog/product/2>
+    - <https://webrecorder.net/blog/2026-04-09-deduplication/>
     - <https://webrecorder.net/blog/resources>
     
-    The following pages would not be crawled:
-
-    - <https://webrecorder.net/blog/product/2> (because it's in the **`/product/`** subdirectory)
-    - <https://webrecorder.net/resources> (because it's outside of the **`/blog/`** directory)
-
-    ##### URLs With Trailing Slash
-
-    The presence of a trailing slash will change which directory is used. Ending the example URL above with a slash (`webrecorder.net/blog/product` + `/`) will crawl all pages in **`/product/`** instead of **`/blog/`** since <code>webrecorder.net/blog/**product/index.html**</code> is now considered the starting page.
+    The following page would not be crawled: <https://webrecorder.net/resources> (because it's outside of the **`/blog/`** directory).
 
 #### Pages on Same Domain
 
