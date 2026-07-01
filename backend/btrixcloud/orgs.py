@@ -1853,7 +1853,9 @@ def init_orgs_api(
 
         if plan_id and quotas:
             # disallow setting both planId and quotas
-            raise HTTPException(status_code=400, detail="invalid_request")
+            raise HTTPException(
+                status_code=400, detail="invalid_request_use_either_plan_or_quotas"
+            )
 
         subscription = None
         if plan_id:

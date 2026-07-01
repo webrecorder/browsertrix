@@ -269,7 +269,7 @@ def test_create_org_with_plan_and_quotas_rejected(admin_auth_headers):
         },
     )
     assert r.status_code == 400
-    assert r.json()["detail"] == "invalid_request"
+    assert r.json()["detail"] == "invalid_request_use_either_plan_or_quotas"
 
 
 def test_create_org_with_invalid_plan(admin_auth_headers):
