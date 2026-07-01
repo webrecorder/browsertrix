@@ -42,6 +42,7 @@ class K8sOpAPI(K8sAPI):
     has_pod_metrics: bool
     enable_auto_resize: bool
     max_crawler_memory_size: int
+    max_redis_memory_size: int
 
     def __init__(self):
         super().__init__()
@@ -52,6 +53,7 @@ class K8sOpAPI(K8sAPI):
         self.has_pod_metrics = False
         self.enable_auto_resize = False
         self.max_crawler_memory_size = 0
+        self.max_redis_memory_size = 0
 
         self.compute_crawler_resources()
         self.compute_profile_resources()
@@ -79,6 +81,11 @@ class K8sOpAPI(K8sAPI):
             max_crawler_memory_size = int(parse_quantity(max_crawler_memory))
 
         self.max_crawler_memory_size = max_crawler_memory_size or crawler_memory
+
+        # optional: if set to 0, will use fixed memory
+        max_redis_memory = os.environ.get("MAX_REDIS_MEMORY")
+        if max_redis_memory:
+            self.max_redis_memory_size = int(parse_quantity(max_redis_memory))
 
         logger.debug(
             "crawler_resources_computed",

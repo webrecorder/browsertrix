@@ -262,6 +262,10 @@ redis_memory: "200Mi"
 
 redis_storage: "3Gi"
 
+# max redis memory, if set, will allow redis to use upto max_redis_memory as the upper limit
+# if not set or 0, redis memory is fixed to 'redis_memory' above
+# max_redis_memory: 0
+
 # Dedupe Index
 # =========================================
 dedupe:
