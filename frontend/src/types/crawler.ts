@@ -67,6 +67,7 @@ export const seedConfigSchema = seedSchema
       clickSelector: z.string(),
       saveStorage: z.boolean().optional(),
       useRobots: z.boolean().optional(),
+      alwaysAddBehaviorLinks: z.boolean(),
     }),
   );
 export type SeedConfig = Expand<z.infer<typeof seedConfigSchema>>;

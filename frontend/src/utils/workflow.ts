@@ -271,6 +271,7 @@ export type FormState = {
   clickSelector: string;
   saveStorage: WorkflowSettings["config"]["saveStorage"];
   useRobots: WorkflowSettings["config"]["useRobots"];
+  alwaysAddBehaviorLinks: WorkflowSettings["config"]["alwaysAddBehaviorLinks"];
 };
 
 export type FormStateField = keyof FormState;
@@ -336,6 +337,7 @@ export const getDefaultFormState = (): FormState => ({
   customBehavior: false,
   saveStorage: false,
   useRobots: false,
+  alwaysAddBehaviorLinks: false,
 });
 
 export const mapSeedToUrl = (arr: Seed[]) =>
@@ -352,7 +354,7 @@ export function getInitialFormState(params: {
   const formState: Partial<FormState> = {};
   const seedsConfig = params.initialWorkflow.config;
   let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-  if (isPrimarySeedScope(params.initialWorkflow.config.scopeType)) {
+  if (isPrimarySeedScope(seedsConfig.scopeType)) {
     if (params.initialSeeds) {
       const firstSeed = params.initialSeeds[0];
       if (typeof firstSeed === "string") {
@@ -388,8 +390,8 @@ export function getInitialFormState(params: {
         : primarySeedConfig.depth;
     formState.useSitemap = seedsConfig.useSitemap;
   } else {
-    if (params.initialWorkflow.config.seedFileId) {
-      formState.seedFileId = params.initialWorkflow.config.seedFileId;
+    if (seedsConfig.seedFileId) {
+      formState.seedFileId = seedsConfig.seedFileId;
       formState.scopeType = WorkflowScopeType.PageList;
       formState.seedListFormat = SeedListFormat.File;
     } else if (params.initialSeeds?.length) {
@@ -451,9 +453,7 @@ export function getInitialFormState(params: {
     return fallback;
   };
 
-  const enableCustomBehaviors = Boolean(
-    params.initialWorkflow.config.customBehaviors.length,
-  );
+  const enableCustomBehaviors = Boolean(seedsConfig.customBehaviors.length);
 
   return {
     ...defaultFormState,
@@ -477,8 +477,8 @@ export function getInitialFormState(params: {
     postLoadDelaySeconds:
       seedsConfig.postLoadDelay ?? defaultFormState.postLoadDelaySeconds,
     browserWindows: params.initialWorkflow.browserWindows,
-    blockAds: params.initialWorkflow.config.blockAds,
-    lang: params.initialWorkflow.config.lang ?? defaultFormState.lang,
+    blockAds: seedsConfig.blockAds,
+    lang: seedsConfig.lang ?? defaultFormState.lang,
     scheduleType: defaultFormState.scheduleType,
     scheduleFrequency: defaultFormState.scheduleFrequency,
     tags: params.initialWorkflow.tags,
@@ -501,28 +501,27 @@ export function getInitialFormState(params: {
       seedsConfig.failOnFailedSeed ?? defaultFormState.failOnFailedSeed,
     failOnContentCheck:
       seedsConfig.failOnContentCheck ?? defaultFormState.failOnContentCheck,
-    pageLimit:
-      params.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
-    autoscrollBehavior: params.initialWorkflow.config.behaviors
-      ? params.initialWorkflow.config.behaviors.includes(Behavior.AutoScroll)
+    pageLimit: seedsConfig.limit ?? defaultFormState.pageLimit,
+    autoscrollBehavior: seedsConfig.behaviors
+      ? seedsConfig.behaviors.includes(Behavior.AutoScroll)
       : enableCustomBehaviors
         ? false
         : defaultFormState.autoscrollBehavior,
-    autoclickBehavior: params.initialWorkflow.config.behaviors
-      ? params.initialWorkflow.config.behaviors.includes(Behavior.AutoClick)
+    autoclickBehavior: seedsConfig.behaviors
+      ? seedsConfig.behaviors.includes(Behavior.AutoClick)
       : enableCustomBehaviors
         ? false
         : defaultFormState.autoclickBehavior,
     customBehavior: enableCustomBehaviors,
-    selectLinks: params.initialWorkflow.config.selectLinks,
-    clickSelector: params.initialWorkflow.config.clickSelector,
-    userAgent:
-      params.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,
+    selectLinks: seedsConfig.selectLinks,
+    clickSelector: seedsConfig.clickSelector,
+    userAgent: seedsConfig.userAgent ?? defaultFormState.userAgent,
     crawlerChannel:
       params.initialWorkflow.crawlerChannel || defaultFormState.crawlerChannel,
     proxyId: params.initialWorkflow.proxyId || defaultFormState.proxyId,
-    saveStorage: params.initialWorkflow.config.saveStorage,
-    useRobots: params.initialWorkflow.config.useRobots,
+    saveStorage: seedsConfig.saveStorage,
+    useRobots: seedsConfig.useRobots,
+    alwaysAddBehaviorLinks: Boolean(seedsConfig.alwaysAddBehaviorLinks),
     ...formState,
   };
 }

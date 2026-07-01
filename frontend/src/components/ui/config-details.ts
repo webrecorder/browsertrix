@@ -22,7 +22,7 @@ import {
   type SeedConfig,
   type Workflow,
 } from "@/pages/org/types";
-import { labelFor } from "@/strings/crawl-workflows/labels";
+import { labelFor, titlecaseLabelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import {
@@ -280,11 +280,11 @@ export class ConfigDetails extends BtrixElement {
             ),
           )}
           ${this.renderSetting(
-            labelFor.failOnContentCheck,
+            titlecaseLabelFor.failOnContentCheck,
             Boolean(seedsConfig?.failOnContentCheck),
           )}
           ${this.renderSetting(
-            labelFor["saveStorage"],
+            titlecaseLabelFor.saveStorage,
             seedsConfig?.saveStorage,
           )}
           ${crawlConfig?.proxyId
@@ -512,7 +512,11 @@ export class ConfigDetails extends BtrixElement {
         true,
       )}
       ${this.renderSetting(
-        msg("Visit Any Linked Page"),
+        titlecaseLabelFor.alwaysAddBehaviorLinks,
+        Boolean(config.alwaysAddBehaviorLinks),
+      )}
+      ${this.renderSetting(
+        titlecaseLabelFor.includeLinkedPages,
         Boolean(config.extraHops),
       )}
       ${when(
@@ -601,9 +605,16 @@ export class ConfigDetails extends BtrixElement {
         ),
       )}
       ${this.renderLinkSelectors()}
-      ${this.renderSetting(msg("Use Sitemap"), Boolean(config.useSitemap))}
       ${this.renderSetting(
-        labelFor.includeLinkedPages,
+        titlecaseLabelFor.useSitemap,
+        Boolean(config.useSitemap),
+      )}
+      ${this.renderSetting(
+        titlecaseLabelFor.alwaysAddBehaviorLinks,
+        Boolean(config.alwaysAddBehaviorLinks),
+      )}
+      ${this.renderSetting(
+        titlecaseLabelFor.includeLinkedPages,
         Boolean(primarySeedConfig?.extraHops ?? config.extraHops),
       )}
       ${this.renderSetting(
@@ -629,7 +640,7 @@ export class ConfigDetails extends BtrixElement {
         true,
       )}
       ${this.renderSetting(
-        msg("Use Robots.txt Disallow List"),
+        titlecaseLabelFor.useRobots,
         Boolean(config.useRobots),
       )}
       ${this.renderExclusions()}

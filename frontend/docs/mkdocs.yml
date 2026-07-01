@@ -59,6 +59,7 @@ nav:
           - user-guide/crawl-workflows.md
           - user-guide/workflow-setup.md
           - user-guide/running-crawl.md
+          - user-guide/behaviors.md
       - Archived Items:
           - user-guide/archived-items.md
           - user-guide/review.md
