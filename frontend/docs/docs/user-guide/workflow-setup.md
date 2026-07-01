@@ -192,6 +192,25 @@ See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_w
 
 To include more pages than what is selected by the crawl scope, you can specify scoping rules that will add those pages to the scope.
 
+#### Use Smart Scoping Rules
+
+Smart scoping rules reduce the complexity associated with scoping social media sites. When enabled, scoping rules for major social media platforms and other site-specific scoping rules will be automatically applied to the workflow. This setting is only applicable if a page selected by the crawl scope is hosted by a social media platform that Browsertrix supports, or if the page is selected by a custom behavior.
+
+We recommend keeping this setting enabled to ensure that pages from social media sites are archived to completion and are replayable. Disabling this setting may result in replay issues for popular social media platforms.
+
+Browsertrix provides smart scoping rules for the following sites:
+
+| **Platform Name** | **Page Host** | **Applicable Pages** |
+|-------------------|---------------|----------------------|
+| Facebook          | facebook.com  | Timeline             |
+| Instagram         | instagram.com | Posts, Stories       |
+
+#### Custom Scoping Rules
+
+Scoping rules for other platforms can be added through [custom behavior scripts](#use-custom-behaviors). When _Use Smart Scoping Rules_ is enabled, any URLs added to the crawl through the `addLink()` method in a custom behavior will be queued regardless of whether they would otherwise be in scope.
+
+Customizing scope through custom behaviors should only be done to achieve advanced use cases for sites that are not listed above, as Browsertrix’s built-in behaviors and scoping rules will take precedence over custom behavior scripts.
+
 #### Visit Any Linked Page
 
 When enabled, the crawler will follow any hyperlink that is on a page selected by the crawl scope. Links will only be followed one level deep (aka “one hop out”).
