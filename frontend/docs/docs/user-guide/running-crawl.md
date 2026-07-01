@@ -12,7 +12,7 @@ You can watch the current state of the browser windows as the crawler visits pag
 
 ## Live Exclusion Editing
 
-While [exclusions](workflow-setup.md#exclude-pages) can be set before running a crawl workflow, sometimes while crawling the crawler may find new parts of the site that weren't previously known about and shouldn't be crawled, or get stuck browsing parts of a website that automatically generate URLs known as ["crawler traps"](https://en.wikipedia.org/wiki/Spider_trap).
+While [exclusions](workflow-setup.md#custom-exclusion-rules) can be set before running a crawl workflow, sometimes while crawling the crawler may find new parts of the site that weren't previously known about and shouldn't be crawled, or get stuck browsing parts of a website that automatically generate URLs known as ["crawler traps"](https://en.wikipedia.org/wiki/Spider_trap).
 
 If the crawl queue is filled with URLs that should not be crawled, use the _Edit Exclusions_ button in the **Watch** tab to instruct the crawler what pages should be excluded from the queue.
 
@@ -28,14 +28,14 @@ This change takes effect immediately on the running crawl and updates the crawl 
 
 If you need to reassess or rescope your crawl at any point after it has started, you can pause the running crawl.
 
-To pause a running crawl, click the *Pause* button. The crawl status will change from *Running* to *Pausing* as in-progress pages are completed, and then to *Paused* once the crawler is successful paused. Paused crawls do not continue to accrue execution time.
+To pause a running crawl, click the _Pause_ button. The crawl status will change from _Running_ to _Pausing_ as in-progress pages are completed, and then to _Paused_ once the crawler is successful paused. Paused crawls do not continue to accrue execution time.
 
-While a crawl is paused, it is possible to replay the pages crawled up to that point and to download the WACZ files from the *Latest Crawl* tab.
+While a crawl is paused, it is possible to replay the pages crawled up to that point and to download the WACZ files from the _Latest Crawl_ tab.
 
-To resume a paused crawl, simply click the *Resume* button. The crawl status will update from *Resuming* to *Running* to indicate that the crawler has started crawling again. Any changes to the workflow settings will be applied in the the resumed crawl.
+To resume a paused crawl, simply click the _Resume_ button. The crawl status will update from _Resuming_ to _Running_ to indicate that the crawler has started crawling again. Any changes to the workflow settings will be applied in the the resumed crawl.
 
 ???+ Note
-    Paused crawls that are not resumed within 7 days of being paused are automatically updated to *Stopped*. Once stopped, the crawl is finished and can no longer be resumed.
+    Paused crawls that are not resumed within 7 days of being paused are automatically updated to _Stopped_. Once stopped, the crawl is finished and can no longer be resumed.
 
 ## End a Crawl
 
