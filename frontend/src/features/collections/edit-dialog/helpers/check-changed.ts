@@ -4,10 +4,14 @@ import { type CollectionEdit } from "../../collection-edit-dialog";
 
 import gatherState from "./gather-state";
 
-import type { Collection, CollectionUpdate } from "@/types/collection";
+import type {
+  Collection,
+  CollectionUpdate,
+  PublicCollection,
+} from "@/types/collection";
 
 const checkEqual = <K extends keyof CollectionUpdate>(
-  collection: Collection,
+  collection: Collection | PublicCollection,
   key: K,
   b: CollectionUpdate[K] | null,
 ) => {
@@ -28,8 +32,12 @@ type KVPairs<T> = {
 
 export default async function checkChanged(this: CollectionEdit) {
   try {
-    const { collectionUpdate, thumbnail, setInitialView } =
-      await gatherState.bind(this)();
+    const { collectionUpdate } = await gatherState.bind(this)();
+    const collection = this.collection;
+
+    if (!collection) {
+      throw new Error("no this.collection");
+    }
 
     const state: CollectionUpdate = {
       ...collectionUpdate,
@@ -39,31 +47,9 @@ export default async function checkChanged(this: CollectionEdit) {
 
     // filter out unchanged properties
     const updates = pairs.filter(
-      ([name, value]) => !checkEqual(this.collection!, name, value),
-    ) as KVPairs<
-      CollectionUpdate & {
-        thumbnail: typeof thumbnail;
-        setInitialView: typeof setInitialView;
-      }
-    >;
+      ([name, value]) => !checkEqual(collection, name, value),
+    ) as KVPairs<CollectionUpdate>;
 
-    const shouldUpload =
-      thumbnail.selectedSnapshot &&
-      !isEqual(this.collection?.thumbnailSource, thumbnail.selectedSnapshot) &&
-      this.blobIsLoaded;
-
-    if (shouldUpload) {
-      updates.push(["thumbnail", thumbnail]);
-    }
-    if (setInitialView) {
-      if (
-        this.collection &&
-        thumbnail.selectedSnapshot &&
-        this.collection.homeUrlPageId !== thumbnail.selectedSnapshot.urlPageId
-      ) {
-        updates.push(["setInitialView", true]);
-      }
-    }
     if (updates.length > 0) {
       this.dirty = true;
     } else {
