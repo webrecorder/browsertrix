@@ -16,7 +16,7 @@ The first step in creating a new crawl workflow is to choose what you'd like to 
 
 #### Page Crawl
 
-Choose one of these crawl scopes if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one hop out.
+Choose one of these crawl scopes if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one link out.
 
 A Page Crawl workflow is simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
 
@@ -34,7 +34,7 @@ Run a crawl workflow by clicking _Run Crawl_ in the actions menu of the workflow
 
 While crawling, the **Latest Crawl** section streams the current state of the browser windows as they visit pages. You can [modify the crawl live](./running-crawl.md) by adding URL exclusions or changing the number of crawling instances.
 
-Re-running a crawl workflow can be useful to capture a website as it changes over time, or to run with an updated [crawl scope](workflow-setup.md#crawl-scope-options).
+Re-running a crawl workflow can be useful to capture a website as it changes over time, or to run with an updated [crawl scope](workflow-setup.md#crawl-scope).
 
 ## Workflow Status
 

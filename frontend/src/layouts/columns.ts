@@ -11,18 +11,22 @@ export type Cols = [TemplateResult<1>, TemplateResult | string | undefined][];
 // TODO Revisit, maybe configure with Cols?
 const singleLineFromControls = ["sl-checkbox", "sl-switch"];
 
+export const gridColsClasses = tw`grid grid-cols-5 gap-5`;
+export const colSpanClasses = tw`col-span-5 min-h-6`;
+
 export function inputCol(content: TemplateResult<1>) {
   return html`
-    <div class="col-span-5 self-baseline md:col-span-3">${content}</div>
+    <div class="${colSpanClasses} self-baseline md:col-span-3">${content}</div>
   `;
 }
 
-export function infoCol(content: TemplateResult | string, topPadding: string) {
+export function infoCol(content: TemplateResult | string, classes?: string) {
   return html`
     <div
       class=${clsx(
-        tw`col-span-5 flex items-start gap-2 text-neutral-500 md:col-span-2`,
-        topPadding,
+        tw`flex items-start gap-2 text-neutral-500 md:col-span-2`,
+        colSpanClasses,
+        classes,
       )}
     >
       <sl-icon
@@ -36,14 +40,16 @@ export function infoCol(content: TemplateResult | string, topPadding: string) {
 
 export function columns(cols: Cols) {
   return html`
-    <div class="grid grid-cols-5 gap-5">
+    <div class="${gridColsClasses}">
       ${cols.map(([main, info]) => {
         const singleLineFormControl = new RegExp(
           `<(${singleLineFromControls.join("|")})`,
         ).test(main.strings[0].trim());
 
         return html`
-          <div class=${tw`col-span-5 self-baseline md:col-span-3`}>${main}</div>
+          <div class=${tw`${colSpanClasses} self-baseline md:col-span-3`}>
+            ${main}
+          </div>
           ${info
             ? infoCol(info, singleLineFormControl ? tw`md:pt-1` : tw`md:pt-8`)
             : nothing}

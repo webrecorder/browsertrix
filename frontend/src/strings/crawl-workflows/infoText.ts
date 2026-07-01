@@ -5,14 +5,15 @@ import { type FormState } from "@/utils/workflow";
 
 type Field = keyof FormState;
 
+const sitemap_xml = html`<code>sitemap.xml</code>`;
+const robots_txt = html`<code>robots.txt</code>`;
+
 export const infoTextFor = {
   urlList: msg("The crawler will visit and record each URL listed here."),
   includeLinkedPages: msg(
-    "If checked, the crawler will visit pages one link away.",
+    "Expands crawl scope to include pages that are one link away.",
   ),
-  exclusions: msg(
-    "Specify exclusion rules for what pages should not be visited.",
-  ),
+  exclusions: msg("Specify rules for which pages should not be visited."),
   pageLimit: msg(
     "Adds a hard limit on the number of pages that will be crawled.",
   ),
@@ -42,42 +43,14 @@ export const infoTextFor = {
   crawlerChannel: msg(
     `Choose a Browsertrix Crawler release channel. If available, other versions may provide new or experimental crawling features.`,
   ),
-  blockAds: msg(
-    html`Blocks advertising content from being loaded. Uses
-      <a
-        href="https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
-        class="text-blue-600 hover:text-blue-500"
-        target="_blank"
-        rel="noopener noreferrer nofollow"
-        >Steven Black’s Hosts file</a
-      >.`,
-  ),
+  blockAds: msg("Blocks advertising content from being loaded."),
   userAgent: msg(
-    html`Set custom user agent for crawler browsers to use in requests. For
-      common user agents see
-      <a
-        href="https://www.useragents.me/"
-        class="text-blue-600 hover:text-blue-500"
-        target="_blank"
-        rel="noopener noreferrer nofollow"
-        >Useragents.me</a
-      >.`,
+    "Set custom user agent for crawler browsers to use in requests.",
   ),
   lang: msg(`Websites that observe the browser’s language setting may serve
   content in that language if available.`),
   proxyId: msg(`Choose a proxy to crawl through.`),
-  selectLinks: msg(
-    html`Customize how URLs are extracted from a page. The crawler will use the
-      specified
-      <a
-        href="https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors"
-        class="text-blue-600 hover:text-blue-500"
-        target="_blank"
-        rel="noopener noreferrer nofollow"
-        >CSS selectors</a
-      >
-      to find URLs that are defined in custom HTML attributes.`,
-  ),
+  selectLinks: msg("Customize how page links are extracted."),
   customBehavior: msg(
     `Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.`,
   ),
@@ -94,8 +67,13 @@ export const infoTextFor = {
   ${msg(
     "This can improve replay quality, but may come with security implications.",
   )}`,
+  useSitemap: msg(
+    html`For each page host with a ${sitemap_xml} file, the crawler will use the
+    sitemap to discover pages.`,
+  ),
   useRobots: msg(
-    `Check for a robots.txt file for each host and skip any disallowed pages.`,
+    html`Tells the crawler to check for a ${robots_txt} file for each page host
+    and skip any disallowed pages.`,
   ),
   customIncludeList: msg(
     "Only crawl the page if the URL matches a regular expression pattern listed here.",
