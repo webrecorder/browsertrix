@@ -532,10 +532,28 @@ class CrawlOperator(BaseOperator):
 
         self.crawl_config_ops.ensure_quota_page_limit(crawlconfig, crawl.org)
 
+        crawler_image = params["crawler_image"]
+
+        configmap_logger = logger.bind(crawl_id=crawl.id)
+
         raw_config = crawlconfig.get_raw_config()
         raw_config["behaviors"] = self._filter_autoclick_behavior(
-            raw_config["behaviors"], params["crawler_image"]
+            raw_config["behaviors"], crawler_image
         )
+
+        if raw_config.get("alwaysAddBehaviorLinks") is True:
+            min_behavior_links_image = os.environ.get(
+                "MIN_BEHAVIOR_LINKS_CRAWLER_IMAGE"
+            )
+            if min_behavior_links_image and crawler_image_below_minimum(
+                crawler_image, min_behavior_links_image
+            ):
+                raw_config.pop("alwaysAddBehaviorLinks", None)
+                configmap_logger.warning(
+                    "crawl_configmap_always_add_behavior_links_ignored",
+                    crawler_image=crawler_image,
+                    min_behavior_links_image=min_behavior_links_image,
+                )
 
         if crawl.seed_file_url:
             raw_config["seedFile"] = crawl.seed_file_url
@@ -544,9 +562,8 @@ class CrawlOperator(BaseOperator):
         params["config"] = json.dumps(raw_config)
 
         if config_update_needed:
-            logger.debug(
+            configmap_logger.debug(
                 "crawl_configmap_updated",
-                crawl_id=crawl.id,
                 unstructured_message=f"Updating config for {crawl.id}",
             )
 

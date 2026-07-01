@@ -430,6 +430,8 @@ class RawCrawlConfig(BaseModel):
     selectLinks: list[str] = ["a[href]->href"]
     clickSelector: str = "a"
 
+    alwaysAddBehaviorLinks: bool | None = False
+
     saveStorage: bool | None = False
 
 

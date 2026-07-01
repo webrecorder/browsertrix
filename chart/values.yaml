@@ -321,6 +321,9 @@ min_autoclick_crawler_image: "docker.io/webrecorder/browsertrix-crawler:1.5.0"
 # if set, will restrict seed files to image names that are >= this value
 min_seed_file_crawler_image: "docker.io/webrecorder/browsertrix-crawler:1.7.0"
 
+# if set, will restrict always adding behavior links to image names that are >= this value
+min_behavior_links_crawler_image: "docker.io/webrecorder/browsertrix-crawler:1.14.0"
+
 # optional: enable to use a persist volume claim for all crawls
 # can be enabled to use a multi-write shared filesystem
 # crawler_pv_claim: "nfs-shared-crawls"
