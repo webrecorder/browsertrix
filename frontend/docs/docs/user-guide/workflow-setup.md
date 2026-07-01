@@ -271,10 +271,6 @@ The crawl will be gracefully stopped after reaching this set size in GB.
 
 Customize how and when the browser performs specific operations on a page.
 
-_**Behaviors**_
-
-Behaviors are browser operations that can be enabled for additional page interactivity.
-
 ### Autoscroll
 
 When enabled, the browser will automatically scroll to the end of the page.
@@ -300,17 +296,17 @@ See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_w
 
 ### Use Custom Behaviors
 
-Enable custom behaviors to add your own behavior scripts. See [Browser Behaviors crawler documentation](https://crawler.docs.browsertrix.com/user-guide/behaviors/#built-in-behaviors) on creating custom behaviors.
-
-Custom behaviors can be specified as:
+[Custom behaviors](behaviors.md/#custom-behaviors) can be enabled by specifying the location of the behavior script. Scripts can be provided through one of two source options:
 
 #### URL
 
-A URL for a single JavaScript or JSON behavior file to download. This should be a URL that the crawler has access to. The workflow editor will validate that the supplied URL can be reached.
+:   A URL for a single JavaScript or JSON behavior file to download. This should be a URL that the crawler has access to. The workflow editor will validate that the supplied URL can be reached.
 
 #### Git repository
 
-A URL for a public Git repository containing one or more behavior files. Optionally, you can specify a branch and/or a relative path within the repository to specify exactly which behavior files within the repository should be used. The workflow editor will validate that the URL can be reached and is a Git repository. If a branch name is specified, the workflow editor will also validate that the branch exists in the Git repository.
+:   A URL for a public Git repository containing one or more behavior files. Optionally, you can specify a branch and/or a relative path within the repository to specify exactly which behavior files within the repository should be used. The workflow editor will validate that the URL can be reached and is a Git repository. If a branch name is specified, the workflow editor will also validate that the branch exists in the Git repository.
+
+Custom behaviors will take precedence over the built-in [_Autoscroll_](#autoscroll) and [_Autoclick_](#autoclick) behaviors. [Site-specific behaviors](behaviors.md#site-specific) will take precedence over custom behaviors.
 
 _**Page Timing**_
 
@@ -326,7 +322,7 @@ Waits on the page after initial HTML page load for a set number of seconds prior
 
 ### Behavior Limit
 
-Limits amount of elapsed time behaviors have to complete.
+Limits the amount of elapsed time that behaviors have to complete.
 
 ### Delay Before Next Page
 
