@@ -10,7 +10,7 @@ on:
         default: 'latest'
 
 jobs:
-  build_do_images:
+  push_images:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
