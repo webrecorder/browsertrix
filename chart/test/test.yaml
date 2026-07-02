@@ -45,7 +45,6 @@ crawler_channels:
 
 mongo_image: "docker.io/library/mongo:8.0"
 
-
 mongo_auth:
   # specify either username + password (for local mongo)
   username: root
@@ -72,7 +71,9 @@ log_failed_crawl_lines: 200
 # disable for tests
 disk_utilization_threshold: 0
 
-
 redis_dedup_memory: "50Mi"
 
 redis_dedup_storage: "1Gi"
+
+available_plans: >
+  {"plans":[{"id":"starter","name":"Browsertrix Starter","org_quotas":{"storageQuota":100000000000,"maxExecMinutesPerMonth":180,"maxConcurrentCrawls":1,"maxPagesPerCrawl":2000},"testmode":false},{"id":"standard","name":"Browsertrix Standard","org_quotas":{"storageQuota":220000000000,"maxExecMinutesPerMonth":360,"maxConcurrentCrawls":2,"maxPagesPerCrawl":5000},"testmode":false},{"id":"plus","name":"Browsertrix Plus","org_quotas":{"storageQuota":500000000000,"maxExecMinutesPerMonth":720,"maxConcurrentCrawls":3,"maxPagesPerCrawl":10000},"testmode":false}]}
