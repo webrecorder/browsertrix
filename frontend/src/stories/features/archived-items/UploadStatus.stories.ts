@@ -33,3 +33,15 @@ export const Complete: Story = {
     state: "complete",
   },
 };
+
+export const ProcessingUpload: Story = {
+  args: {
+    state: "processing-upload",
+  },
+};
+
+export const Failed: Story = {
+  args: {
+    state: "failed",
+  },
+};

@@ -664,10 +664,22 @@ class StorageOps:
         self, wacz_files: list[CrawlFileOut], num_retries=5
     ) -> Iterator[dict[Any, Any]]:
         """Return stream of pages specified WACZ"""
+
+        logger.debug(
+            "sync_stream_wacz_pages",
+            status="starting",
+            num_wacz=len(wacz_files),
+        )
         loop = asyncio.get_event_loop()
 
         resp = await loop.run_in_executor(
             None, self._sync_get_pages, wacz_files, num_retries
+        )
+
+        logger.debug(
+            "sync_stream_wacz_pages",
+            status="complete",
+            num_wacz=len(wacz_files),
         )
 
         return resp

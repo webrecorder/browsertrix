@@ -284,6 +284,9 @@ TYPE_WAITING_NOT_PAUSED_STATES = Literal[
 ]
 WAITING_NOT_PAUSED_STATES = get_args(TYPE_WAITING_NOT_PAUSED_STATES)
 
+TYPE_UPLOAD_STATES = Literal["processing-upload"]
+UPLOAD_STATES = get_args(TYPE_UPLOAD_STATES)
+
 TYPE_WAITING_STATES = Literal[TYPE_PAUSED_STATES, TYPE_WAITING_NOT_PAUSED_STATES]
 WAITING_STATES = [*PAUSED_STATES, *WAITING_NOT_PAUSED_STATES]
 
@@ -316,9 +319,9 @@ TYPE_NON_RUNNING_STATES = Literal[TYPE_FAILED_STATES, TYPE_SUCCESSFUL_STATES]
 NON_RUNNING_STATES = [*FAILED_STATES, *SUCCESSFUL_STATES]
 
 TYPE_ALL_CRAWL_STATES = Literal[
-    TYPE_RUNNING_AND_WAITING_STATES, TYPE_NON_RUNNING_STATES
+    TYPE_RUNNING_AND_WAITING_STATES, TYPE_NON_RUNNING_STATES, TYPE_UPLOAD_STATES
 ]
-ALL_CRAWL_STATES = [*RUNNING_AND_WAITING_STATES, *NON_RUNNING_STATES]
+ALL_CRAWL_STATES = [*RUNNING_AND_WAITING_STATES, *NON_RUNNING_STATES, *UPLOAD_STATES]
 
 
 # ============================================================================
@@ -3153,6 +3156,7 @@ class BgJobType(StrEnum):
     OPTIMIZE_PAGES = "optimize-pages"
     CLEANUP_SEED_FILES = "cleanup-seed-files"
     UPDATE_COLL_STATS = "update-coll-stats"
+    POSTPROCESS_UPLOAD = "postprocess-upload"
 
 
 # ============================================================================
@@ -3239,6 +3243,15 @@ class UpdateCollStatsJob(BackgroundJob):
 
 
 # ============================================================================
+class PostProcessUploadJob(BackgroundJob):
+    """Model for tracking jobs to post-process uploaded crawls"""
+
+    type: Literal[BgJobType.POSTPROCESS_UPLOAD] = BgJobType.POSTPROCESS_UPLOAD
+    oid: UUID
+    crawl_id: str
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
@@ -3251,6 +3264,7 @@ AnyJob = RootModel[
     | OptimizePagesJob
     | CleanupSeedFilesJob
     | UpdateCollStatsJob
+    | PostProcessUploadJob
 ]
 
 

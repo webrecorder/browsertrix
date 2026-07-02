@@ -29,7 +29,7 @@ import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { type BtrixChangeQARatingFilterEvent } from "@/features/archived-items/qa-rating-filter";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { CrawlState } from "@/types/crawlState";
+import { UPLOAD_STATES, type CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
 import {
   finishedCrawlStates,
@@ -960,7 +960,11 @@ export class CrawlsList extends BtrixElement {
       {
         ...filterBy,
         ids: id ? [id] : undefined,
-        state: filterBy.state?.length ? filterBy.state : finishedCrawlStates,
+        state: filterBy.state?.length
+          ? filterBy.state
+          : params.itemType === "crawl"
+            ? finishedCrawlStates
+            : [...finishedCrawlStates, ...UPLOAD_STATES],
         page: params.pagination.page,
         pageSize: params.pagination.pageSize,
         tags: params.filterByTags,
@@ -1051,6 +1055,7 @@ export class CrawlsList extends BtrixElement {
         message: msg(str`Successfully deleted archived item.`),
         variant: "success",
         icon: "check2-circle",
+        id: "archived-item-deleted",
       });
     } catch (e) {
       if (this.itemToDelete) {
