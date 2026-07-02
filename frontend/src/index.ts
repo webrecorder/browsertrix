@@ -496,6 +496,17 @@ export class App extends BtrixElement {
                     `
                   : nothing}
                 ${this.renderOrgs()}
+                ${isSuperAdmin && this.org?.note
+                  ? html`
+                      <btrix-popover content=${this.org.note}>
+                        <sl-icon
+                          name="chat-left-text"
+                          class="relative flex-shrink-0 text-neutral-500"
+                          title=${msg("This org has a note")}
+                        ></sl-icon>
+                      </btrix-popover>
+                    `
+                  : nothing}
               `,
             )}
           </div>
@@ -580,6 +591,7 @@ export class App extends BtrixElement {
                     : nothing}
                 `}
           </div>
+
           ${isSuperAdmin
             ? html`
                 <div class="order-3 w-full auto-cols-max md:order-2 md:w-auto">

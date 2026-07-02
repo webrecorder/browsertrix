@@ -54,6 +54,9 @@ export class NewOrgDialog extends BtrixElement {
   private isOrgNameValid: boolean | null = null;
 
   @state()
+  private note = "";
+
+  @state()
   private isSubmitting = false;
 
   @state()
@@ -173,6 +176,16 @@ export class NewOrgDialog extends BtrixElement {
               >
             `
           : null}
+
+        <sl-input
+          .value=${this.note}
+          @sl-input=${(e: SlInputEvent) => {
+            this.note = (e.target as HTMLInputElement).value;
+          }}
+          name="note"
+          label="${msg("Note")}"
+          help-text="${msg("Only visible to superuser.")}"
+        ></sl-input>
       </form>
 
       <div slot="footer" class="flex justify-between">
@@ -390,6 +403,7 @@ export class NewOrgDialog extends BtrixElement {
   private resetForm() {
     this.orgName = "";
     this.selectedPlanId = "";
+    this.note = "";
     this.customQuotas = emptyQuotas;
     this.isOrgNameValid = null;
     this.isSubmitting = false;
@@ -446,13 +460,15 @@ export class NewOrgDialog extends BtrixElement {
     const formData = new FormData(formEl);
     const name = formData.get("name") as string;
     const slug = slugifyStrict(name);
+    const note = formData.get("note") as string;
 
     const body: {
       name: string;
       slug: string;
       planId?: string;
       quotas?: OrgQuotas;
-    } = { name, slug };
+      note?: string;
+    } = { name, slug, note };
 
     const plans = this.plansTask.value;
     if (plans && plans.length > 0) {

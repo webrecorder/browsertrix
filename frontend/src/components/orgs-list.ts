@@ -1079,7 +1079,7 @@ export class OrgsList extends BtrixElement {
           <a
             class=${clsx(
               org.readOnly ? "text-neutral-500" : "text-neutral-900",
-              "truncate",
+              "flex items-center gap-1",
             )}
             href="/orgs/${org.slug}/dashboard"
             @click=${this.navigate.link}
@@ -1087,11 +1087,22 @@ export class OrgsList extends BtrixElement {
             aria-disabled="${!isUserOrg}"
           >
             ${org.default
-              ? html`<btrix-tag class="mr-1">${msg("Default")}</btrix-tag>`
+              ? html`<btrix-tag>${msg("Default")}</btrix-tag>`
               : nothing}
-            ${org.name === org.id
-              ? html`<code class="text-neutral-400">${org.id}</code>`
-              : org.name}
+            <span class="truncate">
+              ${org.name === org.id
+                ? html`<code class="text-neutral-400">${org.id}</code>`
+                : org.name}
+            </span>
+            ${org.note
+              ? html`<btrix-popover hoist content="${org.note}">
+                  <sl-icon
+                    name="chat-left-text"
+                    class="relative flex-shrink-0 text-neutral-500"
+                    title=${msg("This org has a note")}
+                  ></sl-icon>
+                </btrix-popover>`
+              : nothing}
           </a>
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
