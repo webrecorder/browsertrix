@@ -29,10 +29,8 @@ from pymongo.errors import AutoReconnect, DuplicateKeyError
 
 from .logger import clear_log_context, set_log_context
 from .models import (
-    ACTIVE,
     MAX_BROWSER_WINDOWS,
     MAX_CRAWL_SCALE,
-    PAUSED_PAYMENT_FAILED,
     REASON_PAUSED,
     RUNNING_STATES,
     SUCCESSFUL_STATES,
@@ -84,6 +82,7 @@ from .models import (
     StorageRef,
     Subscription,
     SubscriptionCancel,
+    SubscriptionStatus,
     SubscriptionUpdate,
     SuccessResponseId,
     UpdatedResponse,
@@ -504,6 +503,7 @@ class OrgOps(BaseOrgs):
         slug: str | None = None,
         quotas: OrgQuotas | None = None,
         subscription: Subscription | None = None,
+        note: str | None = None,
     ) -> Organization:
         """create new org"""
         id_ = uuid4()
@@ -523,9 +523,13 @@ class OrgOps(BaseOrgs):
             storage=self.default_primary,
             quotas=quotas or OrgQuotas(),
             subscription=subscription,
+            note=note,
         )
 
-        if subscription and subscription.status == PAUSED_PAYMENT_FAILED:
+        if (
+            subscription
+            and subscription.status == SubscriptionStatus.PAUSED_PAYMENT_FAILED
+        ):
             org.readOnly = True
             org.readOnlyReason = REASON_PAUSED
 
@@ -548,7 +552,7 @@ class OrgOps(BaseOrgs):
         org.subscription = subscription
         include = {"subscription"}
 
-        if subscription.status == PAUSED_PAYMENT_FAILED:
+        if subscription.status == SubscriptionStatus.PAUSED_PAYMENT_FAILED:
             org.readOnly = True
             org.readOnlyReason = REASON_PAUSED
             include.add("readOnly")
@@ -641,10 +645,10 @@ class OrgOps(BaseOrgs):
             "subscription.futureCancelDate": update.futureCancelDate,
         }
 
-        if update.status == PAUSED_PAYMENT_FAILED:
+        if update.status == SubscriptionStatus.PAUSED_PAYMENT_FAILED:
             query["readOnly"] = True
             query["readOnlyReason"] = REASON_PAUSED
-        elif update.status == ACTIVE:
+        elif update.status == SubscriptionStatus.ACTIVE:
             query["readOnly"] = False
             query["readOnlyReason"] = ""
 
@@ -1873,9 +1877,18 @@ def init_orgs_api(
                 raise HTTPException(status_code=400, detail="invalid_plan")
 
             quotas = plan.org_quotas
-            subscription = Subscription(subId="", status=ACTIVE, planId=plan.id)
+            subscription = Subscription(
+                subId="",
+                status=SubscriptionStatus.NOT_TRACKED,
+                planId=plan.id,
+            )
 
-        org = await ops.create_org(new_org.name, new_org.slug, quotas=quotas)
+        org = await ops.create_org(
+            new_org.name,
+            new_org.slug,
+            quotas=quotas,
+            note=new_org.note,
+        )
 
         if subscription:
             await ops.add_subscription_to_org(subscription, org.id)
