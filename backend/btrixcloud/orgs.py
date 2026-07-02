@@ -1744,6 +1744,16 @@ class OrgOps(BaseOrgs):
                 unstructured_message=f"Error removing coll {coll_id} from org {org.id} defaults",
             )
 
+    async def update_org_note(
+        self,
+        org: Organization,
+        note: str | None,
+    ):
+        await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            {"$set": {"note": note}},
+        )
+
 
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-arguments
@@ -2257,5 +2267,17 @@ def init_orgs_api(
         temp_file.close()
 
         return {"imported": True}
+
+    @router.patch("/note", tags=["organizations"])
+    async def update_org_note(
+        org: Organization = Depends(user_dep),
+        user: User = Depends(user_dep),
+        note: str | None = None,
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        await ops.update_org_note(org, note)
+        return {"updated": True}
 
     return ops
