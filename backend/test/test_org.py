@@ -257,6 +257,29 @@ def test_create_org_with_quotas(admin_auth_headers):
     assert org["quotas"]["maxExecMinutesPerMonth"] == 1000
 
 
+def test_create_org_with_plan(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Plan",
+            "slug": "org-with-plan",
+            "planId": "starter",
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+    assert org["quotas"]["maxConcurrentCrawls"] == 1
+    assert org["quotas"]["maxPagesPerCrawl"] == 2000
+    assert org["quotas"]["storageQuota"] == 100000000000
+    assert org["quotas"]["maxExecMinutesPerMonth"] == 180
+
+
 def test_create_org_with_plan_and_quotas_rejected(admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/orgs/create",
@@ -284,6 +307,32 @@ def test_create_org_with_invalid_plan(admin_auth_headers):
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "invalid_plan"
+
+
+def test_create_org_with_note(admin_auth_headers, crawler_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Note",
+            "slug": "org-with-note",
+            "note": "test note 123",
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+    assert org["note"] == "test note 123"
+
+    # ensure it isn't readable by non-superadmin
+    r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=crawler_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+    assert org["note"] is None
 
 
 @pytest.mark.parametrize(
