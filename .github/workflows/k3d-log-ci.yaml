@@ -21,7 +21,7 @@ jobs:
           args: >-
             --agents 1
             -p "443:443@loadbalancer"
-            --k3s-arg "--no-deploy=traefik,metrics-server@server:*"
+            --k3s-arg "--disable=traefik,metrics-server@server:*"
 
       - name: Checkout
         uses: actions/checkout@v3

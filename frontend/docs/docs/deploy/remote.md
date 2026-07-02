@@ -30,7 +30,14 @@ For a single-machine remote deployment, we recommend using [MicroK8s](https://mi
 
 Another option for a single-machine remote deployment is [k3s](https://k3s.io)
 
-1. Install K3s, as suggested in the [local deployment guide](../deploy/local.md). Make sure to **disable traefik** which can be done by adding `--no-deploy traefik` to the `systemd` unit when installing k3s
+1. Install K3s, as suggested in the [local deployment guide](../deploy/local.md). Make sure to **disable traefik** which can be done by adding `--disable traefik` to the `systemd` unit when installing k3s. Note: the flag was renamed from `--no-deploy` to `--disable` (see https://github.com/k3s-io/k3s/issues/1160). If traefik has already been deployed, remove it after installation with the following (from https://github.com/k3s-io/k3s/issues/1160#issuecomment-1133559423):
+
+    ```sh
+    helm -n kube-system delete traefik traefik-crd
+    kubectl -n kube-system delete helmchart traefik traefik-crd
+    touch /var/lib/rancher/k3s/server/manifests/traefik.yaml.skip
+    systemctl restart k3s
+    ```
 
 2. Install `nginx-ingress` with:
 
