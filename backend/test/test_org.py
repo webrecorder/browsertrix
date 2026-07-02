@@ -853,3 +853,44 @@ def test_sort_orgs(admin_auth_headers):
         if last_last_crawl_finished:
             assert last_crawl_finished <= last_last_crawl_finished
         last_last_crawl_finished = last_crawl_finished
+
+
+def test_update_org_note(admin_auth_headers, default_org_id):
+    """superuser can set an org note"""
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/note",
+        headers=admin_auth_headers,
+        json={"note": "updated note 456"},
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"] is True
+
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    assert r.json()["note"] == "updated note 456"
+
+
+def test_update_org_note_clear(admin_auth_headers, default_org_id):
+    """superuser can clear an org note by setting it to null"""
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/note",
+        headers=admin_auth_headers,
+        json={"note": None},
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"] is True
+
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    assert r.json()["note"] is None
+
+
+def test_update_org_note_non_superuser(crawler_auth_headers, default_org_id):
+    """non-superuser cannot set an org note"""
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/note",
+        headers=crawler_auth_headers,
+        json={"note": "should fail"},
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "Not Allowed"
