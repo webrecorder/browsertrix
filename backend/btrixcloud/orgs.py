@@ -86,6 +86,7 @@ from .models import (
     SubscriptionUpdate,
     SuccessResponseId,
     UpdatedResponse,
+    UpdateOrgNote,
     UpdateRole,
     UploadedCrawl,
     User,
@@ -1749,7 +1750,7 @@ class OrgOps(BaseOrgs):
         org: Organization,
         note: str | None,
     ):
-        await self.orgs.find_one_and_update(
+        updated = await self.orgs.find_one_and_update(
             {"_id": org.id},
             {"$set": {"note": note}},
         )
@@ -2270,14 +2271,16 @@ def init_orgs_api(
 
     @router.patch("/note", tags=["organizations"])
     async def update_org_note(
-        org: Organization = Depends(user_dep),
+        update: UpdateOrgNote,
+        org: Organization = Depends(org_dep),
         user: User = Depends(user_dep),
-        note: str | None = None,
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        await ops.update_org_note(org, note)
+        logger.debug("update_org_note", old_note=org.note, new_note=update.note)
+
+        await ops.update_org_note(org, update.note)
         return {"updated": True}
 
     return ops

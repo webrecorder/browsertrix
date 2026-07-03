@@ -1948,6 +1948,13 @@ class RenameOrg(BaseModel):
 
 
 # ============================================================================
+class UpdateOrgNote(BaseModel):
+    """Update org note"""
+
+    note: str | None = None
+
+
+# ============================================================================
 class PublicOrgDetails(BaseModel):
     """Model for org details that are available in public profile"""
 
