@@ -1899,11 +1899,9 @@ def init_orgs_api(
             new_org.name,
             new_org.slug,
             quotas=quotas,
+            subscription=subscription,
             note=new_org.note,
         )
-
-        if subscription:
-            await ops.add_subscription_to_org(subscription, org.id)
 
         logger.info(
             "created_org",
@@ -1911,6 +1909,7 @@ def init_orgs_api(
             name=org.name,
             quotas=quotas,
             plan_id=plan_id,
+            note=org.note,
         )
 
         return {"added": True, "id": org.id}
