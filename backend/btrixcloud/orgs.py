@@ -1750,7 +1750,8 @@ class OrgOps(BaseOrgs):
         org: Organization,
         note: str | None,
     ):
-        updated = await self.orgs.find_one_and_update(
+        """Update an org's private note field"""
+        await self.orgs.find_one_and_update(
             {"_id": org.id},
             {"$set": {"note": note}},
         )
