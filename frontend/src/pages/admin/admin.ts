@@ -129,6 +129,7 @@ export class Admin extends BtrixElement {
             .orgList=${this.orgList}
             @update-quotas=${this.onUpdateOrgQuotas}
             @update-proxies=${this.onUpdateOrgProxies}
+            @update-org-note=${this.onUpdateOrgNote}
             @btrix-update-feature-flags=${this.onUpdateOrgFeatureFlags}
             class="grid grid-rows-[auto_auto_1fr]"
           ></btrix-orgs-list>
@@ -194,6 +195,17 @@ export class Admin extends BtrixElement {
         allowedProxies: org.allowedProxies,
       }),
     });
+  }
+
+  async onUpdateOrgNote(e: CustomEvent) {
+    const { org, note } = e.detail as { org: OrgData; note: string | null };
+
+    await this.api.fetch(`/orgs/${org.id}/note`, {
+      method: "PATCH",
+      body: JSON.stringify({ note }),
+    });
+
+    void this.fetchOrgs();
   }
 
   async onUpdateOrgFeatureFlags() {

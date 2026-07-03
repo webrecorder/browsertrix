@@ -498,7 +498,10 @@ export class App extends BtrixElement {
                 ${this.renderOrgs()}
                 ${isSuperAdmin && this.org?.note
                   ? html`
-                      <btrix-popover content=${this.org.note}>
+                      <btrix-popover
+                        content=${this.org.note}
+                        class="part-[body]:whitespace-pre-line"
+                      >
                         <sl-icon
                           name="chat-left-text"
                           class="relative flex-shrink-0 text-neutral-500"

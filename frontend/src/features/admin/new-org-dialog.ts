@@ -177,15 +177,15 @@ export class NewOrgDialog extends BtrixElement {
             `
           : null}
 
-        <sl-input
+        <sl-textarea
           .value=${this.note}
           @sl-input=${(e: SlInputEvent) => {
-            this.note = (e.target as HTMLInputElement).value;
+            this.note = (e.target as HTMLTextAreaElement).value;
           }}
           name="note"
           label="${msg("Note")}"
           help-text="${msg("Only visible to superuser.")}"
-        ></sl-input>
+        ></sl-textarea>
       </form>
 
       <div slot="footer" class="flex justify-between">
