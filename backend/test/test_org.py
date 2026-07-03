@@ -227,6 +227,114 @@ def test_create_org(admin_auth_headers):
     assert data["created"]
 
 
+def test_create_org_with_quotas(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Quotas",
+            "slug": "org-with-quotas",
+            "quotas": {
+                "maxConcurrentCrawls": 2,
+                "maxPagesPerCrawl": 100,
+                "storageQuota": 10,
+                "maxExecMinutesPerMonth": 1000,
+                "extraExecMinutes": 0,
+                "giftedExecMinutes": 0,
+            },
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+    assert org["quotas"]["maxConcurrentCrawls"] == 2
+    assert org["quotas"]["maxPagesPerCrawl"] == 100
+    assert org["quotas"]["storageQuota"] == 10
+    assert org["quotas"]["maxExecMinutesPerMonth"] == 1000
+
+
+def test_create_org_with_plan(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Plan",
+            "slug": "org-with-plan",
+            "planId": "starter",
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+    assert org["quotas"]["maxConcurrentCrawls"] == 1
+    assert org["quotas"]["maxPagesPerCrawl"] == 2000
+    assert org["quotas"]["storageQuota"] == 100000000000
+    assert org["quotas"]["maxExecMinutesPerMonth"] == 180
+
+
+def test_create_org_with_plan_and_quotas_rejected(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Plan And Quotas",
+            "slug": "org-with-plan-and-quotas",
+            "planId": "basic",
+            "quotas": {"maxConcurrentCrawls": 1},
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_request_use_either_plan_or_quotas"
+
+
+def test_create_org_with_invalid_plan(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Invalid Plan",
+            "slug": "org-with-invalid-plan",
+            "planId": "does-not-exist",
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_plan"
+
+
+def test_create_org_with_note(admin_auth_headers, crawler_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Note",
+            "slug": "org-with-note",
+            "note": "test note 123",
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+    assert org["note"] == "test note 123"
+
+    # ensure it isn't readable by non-superadmin
+    r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=crawler_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+    assert org["note"] is None
+
+
 @pytest.mark.parametrize(
     "name",
     [
@@ -745,3 +853,44 @@ def test_sort_orgs(admin_auth_headers):
         if last_last_crawl_finished:
             assert last_crawl_finished <= last_last_crawl_finished
         last_last_crawl_finished = last_crawl_finished
+
+
+def test_update_org_note(admin_auth_headers, default_org_id):
+    """superuser can set an org note"""
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/note",
+        headers=admin_auth_headers,
+        json={"note": "updated note 456"},
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"] is True
+
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    assert r.json()["note"] == "updated note 456"
+
+
+def test_update_org_note_clear(admin_auth_headers, default_org_id):
+    """superuser can clear an org note by setting it to null"""
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/note",
+        headers=admin_auth_headers,
+        json={"note": None},
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"] is True
+
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    assert r.json()["note"] is None
+
+
+def test_update_org_note_non_superuser(crawler_auth_headers, default_org_id):
+    """non-superuser cannot set an org note"""
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/note",
+        headers=crawler_auth_headers,
+        json={"note": "should fail"},
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "Not Allowed"

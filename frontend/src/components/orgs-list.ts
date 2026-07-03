@@ -6,6 +6,7 @@ import type {
   SlInput,
   SlMenuItem,
   SlRadioGroup,
+  SlTextarea,
 } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { WindowVirtualizerController } from "@tanstack/lit-virtual";
@@ -50,6 +51,7 @@ const none = html`
 /**
  * @fires update-quotas
  * @fires update-proxies
+ * @fires update-org-note
  * @fires btrix-update-feature-flags
  */
 @customElement("btrix-orgs-list")
@@ -96,6 +98,12 @@ export class OrgsList extends BtrixElement {
 
   @query("#orgFeatureFlagsDialog")
   private readonly orgFeatureFlagsDialog?: Dialog | null;
+
+  @query("#orgNoteDialog")
+  private readonly orgNoteDialog?: Dialog | null;
+
+  @state()
+  private noteValue?: string | null = null;
 
   // For fuzzy search:
   private readonly fuse = new Fuse(this.orgList ?? [], {
@@ -303,7 +311,7 @@ export class OrgsList extends BtrixElement {
 
       ${this.renderOrgQuotas()} ${this.renderOrgProxies()}
       ${this.renderOrgReadOnly()} ${this.renderOrgDelete()}
-      ${this.renderOrgFeatureFlags()}
+      ${this.renderOrgFeatureFlags()} ${this.renderOrgNote()}
     `;
   }
 
@@ -646,6 +654,37 @@ export class OrgsList extends BtrixElement {
     `;
   }
 
+  private renderOrgNote() {
+    return html`
+      <btrix-dialog
+        id="orgNoteDialog"
+        .label=${msg(str`Edit Note for: ${this.currOrg?.name || ""}`)}
+        @sl-show=${() => {
+          this.noteValue = this.currOrg?.note;
+        }}
+        @sl-after-hide=${() => (this.currOrg = null)}
+      >
+        <sl-textarea
+          name="note"
+          .value=${this.noteValue || ""}
+          resize="auto"
+          @sl-input=${(e: Event) => {
+            this.noteValue = (e.target as SlTextarea).value || null;
+          }}
+        ></sl-textarea>
+
+        <div slot="footer" class="flex justify-end">
+          <sl-button
+            size="small"
+            @click="${this.onSubmitNote}"
+            variant="primary"
+            >${msg("Update Note")}
+          </sl-button>
+        </div>
+      </btrix-dialog>
+    `;
+  }
+
   private onUpdateQuota(e: CustomEvent) {
     const inputEl = e.target as SlInput;
     const name = inputEl.name as keyof OrgData["quotas"];
@@ -687,6 +726,18 @@ export class OrgsList extends BtrixElement {
       );
 
       void this.orgProxiesDialog?.hide();
+    }
+  }
+
+  private onSubmitNote() {
+    if (this.currOrg) {
+      this.dispatchEvent(
+        new CustomEvent("update-org-note", {
+          detail: { org: this.currOrg, note: this.noteValue ?? null },
+        }),
+      );
+
+      void this.orgNoteDialog?.hide();
     }
   }
 
@@ -1079,7 +1130,7 @@ export class OrgsList extends BtrixElement {
           <a
             class=${clsx(
               org.readOnly ? "text-neutral-500" : "text-neutral-900",
-              "truncate",
+              "flex items-center gap-1",
             )}
             href="/orgs/${org.slug}/dashboard"
             @click=${this.navigate.link}
@@ -1087,11 +1138,26 @@ export class OrgsList extends BtrixElement {
             aria-disabled="${!isUserOrg}"
           >
             ${org.default
-              ? html`<btrix-tag class="mr-1">${msg("Default")}</btrix-tag>`
+              ? html`<btrix-tag>${msg("Default")}</btrix-tag>`
               : nothing}
-            ${org.name === org.id
-              ? html`<code class="text-neutral-400">${org.id}</code>`
-              : org.name}
+            <span class="truncate">
+              ${org.name === org.id
+                ? html`<code class="text-neutral-400">${org.id}</code>`
+                : org.name}
+            </span>
+            ${org.note
+              ? html`<btrix-popover
+                  hoist
+                  content="${org.note}"
+                  class="part-[body]:whitespace-pre-line"
+                >
+                  <sl-icon
+                    name="chat-left-text"
+                    class="relative flex-shrink-0 text-neutral-500"
+                    title=${msg("This org has a note")}
+                  ></sl-icon>
+                </btrix-popover>`
+              : nothing}
           </a>
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
@@ -1212,6 +1278,18 @@ export class OrgsList extends BtrixElement {
               >
                 <sl-icon slot="prefix" name="globe2"></sl-icon>
                 ${msg("Edit Proxies")}
+              </sl-menu-item>
+              <sl-menu-item
+                @click=${() => {
+                  this.currOrg = org;
+                  void this.orgNoteDialog?.show();
+                }}
+              >
+                <sl-icon
+                  slot="prefix"
+                  name=${org.note ? "chat-left-text" : "chat-left"}
+                ></sl-icon>
+                ${msg("Edit Note")}
               </sl-menu-item>
               ${org.readOnly
                 ? html`

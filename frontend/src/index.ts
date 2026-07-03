@@ -496,6 +496,20 @@ export class App extends BtrixElement {
                     `
                   : nothing}
                 ${this.renderOrgs()}
+                ${isSuperAdmin && this.org?.note
+                  ? html`
+                      <btrix-popover
+                        content=${this.org.note}
+                        class="part-[body]:whitespace-pre-line"
+                      >
+                        <sl-icon
+                          name="chat-left-text"
+                          class="relative flex-shrink-0 text-neutral-500"
+                          title=${msg("This org has a note")}
+                        ></sl-icon>
+                      </btrix-popover>
+                    `
+                  : nothing}
               `,
             )}
           </div>
@@ -580,6 +594,7 @@ export class App extends BtrixElement {
                     : nothing}
                 `}
           </div>
+
           ${isSuperAdmin
             ? html`
                 <div class="order-3 w-full auto-cols-max md:order-2 md:w-auto">
@@ -725,7 +740,7 @@ export class App extends BtrixElement {
   private renderFooter() {
     return html`
       <footer
-        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col items-center  gap-4 p-3 md:flex-row"
+        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col items-center gap-4 p-3 md:flex-row"
       >
         <div class="flex-1">
           <a
@@ -828,7 +843,10 @@ export class App extends BtrixElement {
       case "admin":
         return this.renderAdminPage(
           () => html`
-            <btrix-admin class="w-full bg-neutral-50"></btrix-admin>
+            <btrix-admin
+              class="w-full bg-neutral-50"
+              .openNewOrgDialog=${!!this.viewState.params.newOrg}
+            ></btrix-admin>
           `,
         );
 

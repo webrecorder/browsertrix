@@ -1948,6 +1948,13 @@ class RenameOrg(BaseModel):
 
 
 # ============================================================================
+class UpdateOrgNote(BaseModel):
+    """Update org note"""
+
+    note: str | None = None
+
+
+# ============================================================================
 class PublicOrgDetails(BaseModel):
     """Model for org details that are available in public profile"""
 
@@ -2010,8 +2017,29 @@ class S3Storage(BaseModel):
 # Subscriptions
 # ============================================================================
 
-PAUSED_PAYMENT_FAILED = "paused_payment_failed"
-ACTIVE = "active"
+
+class SubscriptionStatus(StrEnum):
+    """Statuses to be displayed in org banner"""
+
+    ACTIVE = "active"
+    TRIALING = "trialing"
+    TRIALING_CANCELED = "trialing_canceled"
+    PAUSED_PAYMENT_FAILED = "paused_payment_failed"
+    CANCELLED = "cancelled"
+
+    PAYMENT_NEVER_MADE = "payment_never_made"
+    """
+    used to track subscription attempts where payment was never made.
+    these subscription events do not get sent to Browsertrix, but may
+    be sent to other services
+    """
+
+    NOT_TRACKED = "not_tracked"
+    """
+    used for organizations set up with a plan but not otherwise tracked by an
+    automated system
+    """
+
 
 REASON_PAUSED = "subscriptionPaused"
 REASON_CANCELED = "subscriptionCanceled"
@@ -2078,7 +2106,7 @@ class SubscriptionCreate(BaseModel):
     """create new subscription"""
 
     subId: str
-    status: str
+    status: SubscriptionStatus
     planId: str
 
     firstAdminInviteEmail: EmailStr
@@ -2097,7 +2125,7 @@ class SubscriptionImport(BaseModel):
     """import subscription to existing org"""
 
     subId: str
-    status: str
+    status: SubscriptionStatus
     planId: str
     oid: UUID
 
@@ -2114,7 +2142,7 @@ class SubscriptionUpdate(BaseModel):
     """update subscription data"""
 
     subId: str
-    status: str
+    status: SubscriptionStatus
     planId: str
 
     futureCancelDate: datetime | None = None
@@ -2237,7 +2265,7 @@ class Subscription(BaseModel):
     model_config = ConfigDict(use_attribute_docstrings=True)
 
     subId: str
-    status: str
+    status: SubscriptionStatus
     planId: str
 
     futureCancelDate: datetime | None = None
@@ -2404,6 +2432,9 @@ class OrgCreate(BaseModel):
 
     name: OrgName
     slug: str | None = None
+    planId: str | None = None
+    quotas: OrgQuotas | None = None
+    note: str | None = None
 
 
 # ============================================================================
@@ -2519,6 +2550,8 @@ class OrgOut(BaseMongoModel):
 
     featureFlags: FeatureFlags = FeatureFlags()
 
+    note: str | None = None
+
 
 # ============================================================================
 class Organization(BaseMongoModel):
@@ -2573,6 +2606,9 @@ class Organization(BaseMongoModel):
 
     subscription: Subscription | None = None
 
+    # Internal note
+    note: str | None = None
+
     allowSharedProxies: bool = False
     allowedProxies: list[str] = []
     crawlingDefaults: CrawlConfigDefaults | None = None
@@ -2615,6 +2651,7 @@ class Organization(BaseMongoModel):
 
         if not self.is_owner(user):
             exclude.add("users")
+            exclude.add("note")
 
         if not self.is_crawler(user):
             exclude.add("usage")

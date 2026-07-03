@@ -29,10 +29,8 @@ from pymongo.errors import AutoReconnect, DuplicateKeyError
 
 from .logger import clear_log_context, set_log_context
 from .models import (
-    ACTIVE,
     MAX_BROWSER_WINDOWS,
     MAX_CRAWL_SCALE,
-    PAUSED_PAYMENT_FAILED,
     REASON_PAUSED,
     RUNNING_STATES,
     SUCCESSFUL_STATES,
@@ -84,9 +82,11 @@ from .models import (
     StorageRef,
     Subscription,
     SubscriptionCancel,
+    SubscriptionStatus,
     SubscriptionUpdate,
     SuccessResponseId,
     UpdatedResponse,
+    UpdateOrgNote,
     UpdateRole,
     UploadedCrawl,
     User,
@@ -504,6 +504,7 @@ class OrgOps(BaseOrgs):
         slug: str | None = None,
         quotas: OrgQuotas | None = None,
         subscription: Subscription | None = None,
+        note: str | None = None,
     ) -> Organization:
         """create new org"""
         id_ = uuid4()
@@ -523,9 +524,13 @@ class OrgOps(BaseOrgs):
             storage=self.default_primary,
             quotas=quotas or OrgQuotas(),
             subscription=subscription,
+            note=note,
         )
 
-        if subscription and subscription.status == PAUSED_PAYMENT_FAILED:
+        if (
+            subscription
+            and subscription.status == SubscriptionStatus.PAUSED_PAYMENT_FAILED
+        ):
             org.readOnly = True
             org.readOnlyReason = REASON_PAUSED
 
@@ -548,7 +553,7 @@ class OrgOps(BaseOrgs):
         org.subscription = subscription
         include = {"subscription"}
 
-        if subscription.status == PAUSED_PAYMENT_FAILED:
+        if subscription.status == SubscriptionStatus.PAUSED_PAYMENT_FAILED:
             org.readOnly = True
             org.readOnlyReason = REASON_PAUSED
             include.add("readOnly")
@@ -641,10 +646,10 @@ class OrgOps(BaseOrgs):
             "subscription.futureCancelDate": update.futureCancelDate,
         }
 
-        if update.status == PAUSED_PAYMENT_FAILED:
+        if update.status == SubscriptionStatus.PAUSED_PAYMENT_FAILED:
             query["readOnly"] = True
             query["readOnlyReason"] = REASON_PAUSED
-        elif update.status == ACTIVE:
+        elif update.status == SubscriptionStatus.ACTIVE:
             query["readOnly"] = False
             query["readOnlyReason"] = ""
 
@@ -1740,6 +1745,17 @@ class OrgOps(BaseOrgs):
                 unstructured_message=f"Error removing coll {coll_id} from org {org.id} defaults",
             )
 
+    async def update_org_note(
+        self,
+        org: Organization,
+        note: str | None,
+    ):
+        """Update an org's private note field"""
+        await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            {"$set": {"note": note}},
+        )
+
 
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-arguments
@@ -1848,7 +1864,54 @@ def init_orgs_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        org = await ops.create_org(new_org.name, new_org.slug)
+        quotas = new_org.quotas
+        plan_id = new_org.planId
+
+        if plan_id and quotas:
+            # disallow setting both planId and quotas
+            raise HTTPException(
+                status_code=400, detail="invalid_request_use_either_plan_or_quotas"
+            )
+
+        subscription = None
+        if plan_id:
+            plans_json = os.environ.get("AVAILABLE_PLANS")
+            if not plans_json:
+                raise HTTPException(status_code=400, detail="invalid_plan")
+
+            try:
+                plans = PlansResponse.model_validate_json(plans_json)
+            except ValidationError as err:
+                raise HTTPException(status_code=400, detail="invalid_plans") from err
+
+            plan = next((p for p in plans.plans if p.id == plan_id), None)
+            if not plan:
+                raise HTTPException(status_code=400, detail="invalid_plan")
+
+            quotas = plan.org_quotas
+            subscription = Subscription(
+                subId="",
+                status=SubscriptionStatus.NOT_TRACKED,
+                planId=plan.id,
+            )
+
+        org = await ops.create_org(
+            new_org.name,
+            new_org.slug,
+            quotas=quotas,
+            subscription=subscription,
+            note=new_org.note,
+        )
+
+        logger.info(
+            "created_org",
+            org_id=org.id,
+            name=org.name,
+            quotas=quotas,
+            plan_id=plan_id,
+            note=org.note,
+        )
+
         return {"added": True, "id": org.id}
 
     @router.get("", tags=["organizations"], response_model=OrgOut)
@@ -2205,5 +2268,19 @@ def init_orgs_api(
         temp_file.close()
 
         return {"imported": True}
+
+    @router.patch("/note", tags=["organizations"])
+    async def update_org_note(
+        update: UpdateOrgNote,
+        org: Organization = Depends(org_dep),
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        logger.debug("update_org_note", old_note=org.note, new_note=update.note)
+
+        await ops.update_org_note(org, update.note)
+        return {"updated": True}
 
     return ops
