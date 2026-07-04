@@ -4,7 +4,13 @@ import uuid
 import pytest
 import requests
 
-from .conftest import API_PREFIX, NON_DEFAULT_ORG_NAME, NON_DEFAULT_ORG_SLUG
+from .conftest import (
+    API_PREFIX,
+    CRAWLER_PW,
+    CRAWLER_USERNAME,
+    NON_DEFAULT_ORG_NAME,
+    NON_DEFAULT_ORG_SLUG,
+)
 from .utils import read_in_chunks
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -328,7 +334,20 @@ def test_create_org_with_note(admin_auth_headers, crawler_auth_headers):
     org = r.json()
     assert org["note"] == "test note 123"
 
-    # ensure it isn't readable by non-superadmin
+    # Add crawler user to the org so they can access it
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{data['id']}/add-user",
+        headers=admin_auth_headers,
+        json={
+            "email": CRAWLER_USERNAME,
+            "password": CRAWLER_PW,
+            "name": "crawler",
+            "role": 20,
+        },
+    )
+    assert r.status_code == 200
+
+    # Verify crawler user can access the org but not view the note
     r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=crawler_auth_headers)
     assert r.status_code == 200
     org = r.json()
