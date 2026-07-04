@@ -327,17 +327,17 @@ def test_create_org_with_note(admin_auth_headers):
         },
     )
     assert r.status_code == 200
-    data = r.json()
-    assert data["added"]
+    new_org = r.json()
+    assert new_org["added"]
 
-    r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=admin_auth_headers)
+    r = requests.get(f"{API_PREFIX}/orgs/{new_org['id']}", headers=admin_auth_headers)
     assert r.status_code == 200
     org = r.json()
     assert org["note"] == "test note 123"
 
     # Add new crawler user to the org so they can access it
     r = requests.post(
-        f"{API_PREFIX}/orgs/{data['id']}/add-user",
+        f"{API_PREFIX}/orgs/{new_org['id']}/add-user",
         json={
             "email": CRAWLER_USERNAME_FOR_ORG_WITH_NOTE,
             "password": CRAWLER_PW_FOR_ORG_WITH_NOTE,
@@ -356,12 +356,12 @@ def test_create_org_with_note(admin_auth_headers):
         },
     )
     assert r.status_code == 200
-    data = r.json()
-    access_token = data.get("access_token")
+    login_data = r.json()
+    access_token = login_data.get("access_token")
     crawler_auth_headers = {"Authorization": f"Bearer {access_token}"}
 
     # Verify crawler user can access the org but not view the note
-    r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=crawler_auth_headers)
+    r = requests.get(f"{API_PREFIX}/orgs/{new_org['id']}", headers=crawler_auth_headers)
     assert r.status_code == 200
     org = r.json()
     assert org["note"] is None
