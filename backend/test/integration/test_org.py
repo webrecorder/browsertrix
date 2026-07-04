@@ -9,7 +9,20 @@ from .utils import read_in_chunks
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
-new_oid = None
+
+
+@pytest.fixture(scope="module")
+def new_org_id(admin_auth_headers):
+    """Create a new org for tests that need a non-default org ID."""
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={"name": "New Org", "slug": "new-org"},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+    return data["id"]
 
 invite_email = "test-user@example.com"
 
@@ -215,11 +228,10 @@ def test_create_org(admin_auth_headers):
     assert data["added"]
     assert data["id"]
 
-    global new_oid
-    new_oid = data["id"]
+    oid = data["id"]
 
     # Verify that org exists.
-    r = requests.get(f"{API_PREFIX}/orgs/{new_oid}", headers=admin_auth_headers)
+    r = requests.get(f"{API_PREFIX}/orgs/{oid}", headers=admin_auth_headers)
     assert r.status_code == 200
     data = r.json()
     assert data["name"] == NEW_ORG_NAME
@@ -270,10 +282,10 @@ def test_create_org_duplicate_slug(admin_auth_headers, non_default_org_id, slug)
 
 
 # disable until storage customization is enabled
-def _test_change_org_storage(admin_auth_headers):
+def _test_change_org_storage(admin_auth_headers, new_org_id):
     # change to invalid storage
     r = requests.post(
-        f"{API_PREFIX}/orgs/{new_oid}/storage",
+        f"{API_PREFIX}/orgs/{new_org_id}/storage",
         headers=admin_auth_headers,
         json={"storage": {"name": "invalid-storage", "custom": False}},
     )
@@ -282,7 +294,7 @@ def _test_change_org_storage(admin_auth_headers):
 
     # change to invalid storage
     r = requests.post(
-        f"{API_PREFIX}/orgs/{new_oid}/storage",
+        f"{API_PREFIX}/orgs/{new_org_id}/storage",
         headers=admin_auth_headers,
         json={"storage": {"name": "alt-storage", "custom": True}},
     )
@@ -291,7 +303,7 @@ def _test_change_org_storage(admin_auth_headers):
 
     # change to valid storage
     r = requests.post(
-        f"{API_PREFIX}/orgs/{new_oid}/storage",
+        f"{API_PREFIX}/orgs/{new_org_id}/storage",
         headers=admin_auth_headers,
         json={"storage": {"name": "alt-storage", "custom": False}},
     )

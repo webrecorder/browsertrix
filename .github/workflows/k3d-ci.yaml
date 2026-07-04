@@ -39,7 +39,39 @@ jobs:
               - 'emails/**'
               - '.github/workflows/k3d-ci.yaml'
 
+  # ── Unit tests ── runs without k3d infrastructure ──────────────────────
+
+  btrix-unit-test:
+    name: "Unit Tests"
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    needs: paths-filter
+    if: needs.paths-filter.outputs.matches == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Install Python Libs
+        run: |
+          cd backend/
+          uv sync --group test --python 3.13
+
+      - name: Run Unit Tests
+        timeout-minutes: 5
+        run: cd backend && uv run pytest -vv -m unit ./test/unit/
+
+  # ── Integration tests ── requires k3d cluster ─────────────────────────
+
   btrix-k3d-test:
+    name: "Integration Tests (K3d)"
     timeout-minutes: 45
     runs-on: ubuntu-latest
     needs: paths-filter
@@ -153,9 +185,9 @@ jobs:
       - name: Wait for all pods to be ready
         run: kubectl wait --for=condition=ready pod --all --timeout=240s
 
-      - name: Run Tests
+      - name: Run Integration Tests
         timeout-minutes: 30
-        run: cd backend && uv run pytest -vv ./test/test_*.py
+        run: cd backend && uv run pytest -vv -m integration ./test/integration/
 
       - name: Print Backend Logs (API)
         if: ${{ always() }}

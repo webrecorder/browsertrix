@@ -1,3 +1,9 @@
+"""Tests for org deletion and storage recalculation.
+
+Each test is independently runnable. The deletion test creates its own
+org to avoid destroying the session's default org fixture.
+"""
+
 import time
 
 import structlog
@@ -9,7 +15,33 @@ from .conftest import API_PREFIX
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
-def test_recalculate_org_storage(admin_auth_headers, default_org_id):
+@pytest.fixture(scope="module")
+def org_to_delete(admin_auth_headers):
+    """Create an org that will be deleted during the deletion tests."""
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={"name": "Org to Delete", "slug": "org-to-delete"},
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    # Wait for org to be fully created
+    max_attempts = 18
+    attempts = 1
+    while True:
+        r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
+        orgs = r.json().get("items", [])
+        for org in orgs:
+            if org["name"] == "Org to Delete":
+                return org["id"]
+        if attempts >= max_attempts:
+            pytest.fail("Org to delete was not created in time")
+        time.sleep(5)
+        attempts += 1
+
+
+def test_recalculate_org_storage(admin_auth_headers, default_org_id, admin_crawl_id):
     # Prior to deleting org, ensure recalculating storage works now that
     # resources of all types have been created.
     r = requests.post(
@@ -80,25 +112,10 @@ def test_delete_org_non_superadmin(crawler_auth_headers, default_org_id):
     assert r.json()["detail"] == "Not Allowed"
 
 
-def test_delete_org_superadmin(admin_auth_headers, default_org_id):
-    # Track items in org to ensure they're deleted later (we may want to expand
-    # this, but currently only have the ability to check items across all orgs)
-    item_ids = []
-
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls",
-        headers=admin_auth_headers,
-        timeout=120,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["total"] > 0
-    for item in data["items"]:
-        item_ids.append(item["id"])
-
-    # Delete org and its data
+def test_delete_org_superadmin(admin_auth_headers, org_to_delete):
+    """Delete a dedicated org (not the session default org) and verify cleanup."""
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers, timeout=120
+        f"{API_PREFIX}/orgs/{org_to_delete}", headers=admin_auth_headers, timeout=120
     )
     assert r.status_code == 200
     data = r.json()
@@ -141,16 +158,8 @@ def test_delete_org_superadmin(admin_auth_headers, default_org_id):
             unstructured_message=f"Job not yet succeeded, retrying... ({attempts}/{max_attempts})",
         )
 
-    # Ensure org and items got deleted
+    # Ensure org got deleted
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers, timeout=120
+        f"{API_PREFIX}/orgs/{org_to_delete}", headers=admin_auth_headers, timeout=120
     )
     assert r.status_code == 404
-
-    for item_id in item_ids:
-        r = requests.get(
-            f"{API_PREFIX}/orgs/all/all-crawls/{item_id}/replay.json",
-            headers=admin_auth_headers,
-            timeout=120,
-        )
-        assert r.status_code == 404

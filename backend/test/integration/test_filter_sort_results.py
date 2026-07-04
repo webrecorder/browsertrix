@@ -2,8 +2,9 @@ import urllib.parse
 
 import requests
 
-from .conftest import API_PREFIX
-from .test_collections import UPDATED_NAME as COLLECTION_NAME
+from .conftest import API_PREFIX, UPDATED_COLLECTION_NAME
+
+COLLECTION_NAME = UPDATED_COLLECTION_NAME
 
 
 def test_get_config_by_created_by(crawler_auth_headers, default_org_id, crawler_userid):

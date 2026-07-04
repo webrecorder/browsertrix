@@ -1,9 +1,7 @@
+import pytest
 import requests
 
 from .conftest import API_PREFIX
-
-new_cid_1 = None
-new_cid_2 = None
 
 
 def get_sample_crawl_data(tags):
@@ -15,27 +13,52 @@ def get_sample_crawl_data(tags):
     }
 
 
+@pytest.fixture(scope="module")
+def config_id_1(admin_auth_headers, default_org_id):
+    """Create crawl config with tags [tag-1, tag-2] and return its ID."""
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=get_sample_crawl_data(["tag-1", "tag-2"]),
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+    assert data["id"]
+    return data["id"]
+
+
+@pytest.fixture(scope="module")
+def config_id_2(admin_auth_headers, default_org_id):
+    """Create crawl config with tags [tag-3, tag-0] and return its ID."""
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=get_sample_crawl_data(["tag-3", "tag-0"]),
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+    assert data["id"]
+    return data["id"]
+
+
 def test_create_new_config_1(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
         json=get_sample_crawl_data(["tag-1", "tag-2"]),
     )
-
     assert r.status_code == 200
-
     data = r.json()
     assert data["added"]
     assert data["id"]
     assert data["run_now_job"] == None
 
-    global new_cid_1
-    new_cid_1 = data["id"]
 
-
-def test_get_config_1(admin_auth_headers, default_org_id):
+def test_get_config_1(config_id_1, admin_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{new_cid_1}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{config_id_1}",
         headers=admin_auth_headers,
     )
     assert r.json()["tags"] == ["tag-1", "tag-2"]
@@ -73,16 +96,11 @@ def test_create_new_config_2(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
         json=get_sample_crawl_data(["tag-3", "tag-0"]),
     )
-
     assert r.status_code == 200
-
     data = r.json()
     assert data["added"]
     assert data["id"]
     assert data["run_now_job"] == None
-
-    global new_cid_2
-    new_cid_2 = data["id"]
 
 
 def test_get_config_by_tag_2(admin_auth_headers, default_org_id):
@@ -121,15 +139,15 @@ def test_get_config_by_tag_counts_2(admin_auth_headers, default_org_id):
     }
 
 
-def test_get_config_2(admin_auth_headers, default_org_id):
+def test_get_config_2(config_id_2, admin_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{new_cid_2}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{config_id_2}",
         headers=admin_auth_headers,
     )
     assert r.json()["tags"] == ["tag-3", "tag-0"]
 
 
-def test_get_configs_filter_single_tag(admin_auth_headers, default_org_id):
+def test_get_configs_filter_single_tag(config_id_1, admin_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
@@ -145,10 +163,12 @@ def test_get_configs_filter_single_tag(admin_auth_headers, default_org_id):
         assert "tag-1" in config["tags"]
         found_config = True
     assert found_config
-    assert data["items"][0]["id"] == new_cid_1
+    assert data["items"][0]["id"] == config_id_1
 
 
-def test_get_configs_filter_multiple_tags_or(admin_auth_headers, default_org_id):
+def test_get_configs_filter_multiple_tags_or(
+    config_id_1, config_id_2, admin_auth_headers, default_org_id
+):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
@@ -158,10 +178,12 @@ def test_get_configs_filter_multiple_tags_or(admin_auth_headers, default_org_id)
     data = r.json()
 
     assert len(data["items"]) == 2
-    assert {item["id"] for item in data["items"]} == {new_cid_1, new_cid_2}
+    assert {item["id"] for item in data["items"]} == {config_id_1, config_id_2}
 
 
-def test_get_configs_filter_multiple_tags_and(admin_auth_headers, default_org_id):
+def test_get_configs_filter_multiple_tags_and(
+    config_id_1, admin_auth_headers, default_org_id
+):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
         headers=admin_auth_headers,
@@ -171,11 +193,11 @@ def test_get_configs_filter_multiple_tags_and(admin_auth_headers, default_org_id
     data = r.json()
 
     assert len(data["items"]) == 1
-    assert data["items"][0]["id"] == new_cid_1
+    assert data["items"][0]["id"] == config_id_1
 
 
 def test_get_configs_filter_multiple_tags_deprecated_field(
-    admin_auth_headers, default_org_id
+    config_id_1, config_id_2, admin_auth_headers, default_org_id
 ):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
@@ -186,4 +208,4 @@ def test_get_configs_filter_multiple_tags_deprecated_field(
     data = r.json()
 
     assert len(data["items"]) == 2
-    assert {item["id"] for item in data["items"]} == {new_cid_1, new_cid_2}
+    assert {item["id"] for item in data["items"]} == {config_id_1, config_id_2}

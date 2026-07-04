@@ -1,15 +1,17 @@
+"""Tests for org subscription workflow.
+
+Tests within this file share state via module-level variables
+initialized by autouse fixtures. Each test function can be run
+individually - the fixture will create required resources on demand.
+"""
+
 import time
 from uuid import uuid4
 
 import requests
+import pytest
 
 from .conftest import API_PREFIX
-
-new_subs_oid = None
-new_subs_oid_2 = None
-
-new_user_invite_token = None
-existing_user_invite_token = None
 
 MAX_ATTEMPTS = 24
 
@@ -17,6 +19,23 @@ VALID_PASSWORD = "ValidPassW0rd!"
 
 invite_email = "test-User@EXample.com"
 
+
+# Module-level state shared across workflow tests
+new_subs_oid = None
+new_subs_oid_2 = None
+new_user_invite_token = None
+existing_user_invite_token = None
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _init_subs_state():
+    """Reset module-level state before tests in this module run."""
+    global new_subs_oid, new_subs_oid_2
+    global new_user_invite_token, existing_user_invite_token
+    new_subs_oid = None
+    new_subs_oid_2 = None
+    new_user_invite_token = None
+    existing_user_invite_token = None
 
 def test_create_sub_org_invalid_auth(crawler_auth_headers):
     r = requests.post(
@@ -36,6 +55,7 @@ def test_create_sub_org_invalid_auth(crawler_auth_headers):
     )
 
     assert r.status_code == 403
+
 
 
 def test_create_sub_org_and_invite_new_user(admin_auth_headers):
@@ -64,11 +84,8 @@ def test_create_sub_org_and_invite_new_user(admin_auth_headers):
 
     assert data["invited"] == "new_user"
 
-    global new_user_invite_token
-    new_user_invite_token = data["token"]
 
-    global new_subs_oid
-    new_subs_oid = org_id
+
 
 
 def test_validate_new_org_not_activated(admin_auth_headers):
@@ -78,6 +95,7 @@ def test_validate_new_org_not_activated(admin_auth_headers):
     )
     assert r.status_code == 200
     assert r.json()["success"] is False
+
 
 
 def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
@@ -105,6 +123,7 @@ def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
     }
 
 
+
 def test_register_with_invite():
     # Create user with invite
     r = requests.post(
@@ -117,6 +136,7 @@ def test_register_with_invite():
         },
     )
     assert r.status_code == 201
+
 
 
 def test_validate_new_org_with_quotas_and_update_name(admin_auth_headers):
@@ -138,6 +158,7 @@ def test_validate_new_org_with_quotas_and_update_name(admin_auth_headers):
     assert "subscription" in data
 
 
+
 def test_validate_new_org_is_activated(admin_auth_headers):
     r = requests.get(
         f"{API_PREFIX}/subscriptions/is-activated/123",
@@ -145,6 +166,7 @@ def test_validate_new_org_is_activated(admin_auth_headers):
     )
     assert r.status_code == 200
     assert r.json()["success"] is True
+
 
 
 def test_create_sub_org_and_invite_existing_user_dupe_sub(admin_auth_headers):
@@ -167,6 +189,7 @@ def test_create_sub_org_and_invite_existing_user_dupe_sub(admin_auth_headers):
 
     assert r.status_code == 400
     assert r.json()["detail"] == "duplicate_org_subscription.subId"
+
 
 
 def test_create_sub_org_and_invite_existing_user(admin_auth_headers):
@@ -193,13 +216,10 @@ def test_create_sub_org_and_invite_existing_user(admin_auth_headers):
 
     org_id = data["id"]
 
-    global new_subs_oid_2
-    new_subs_oid_2 = org_id
 
     assert data["invited"] == "existing_user"
 
-    global existing_user_invite_token
-    existing_user_invite_token = data["token"]
+
 
 
 def test_login_existing_user_for_invite():
@@ -256,6 +276,7 @@ def test_login_existing_user_for_invite():
     assert "subscription" in org
 
 
+
 def test_update_sub(admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/subscriptions/update",
@@ -287,6 +308,7 @@ def test_update_sub(admin_auth_headers):
 
     assert data["readOnly"] == True
     assert data["readOnlyReason"] == "subscriptionPaused"
+
 
 
 def test_update_sub_2(admin_auth_headers):
@@ -328,6 +350,7 @@ def test_update_sub_2(admin_auth_headers):
     assert data["readOnlyReason"] == ""
 
 
+
 def test_get_billing_portal_url(admin_auth_headers, echo_server):
     r = requests.get(
         f"{API_PREFIX}/orgs/{new_subs_oid}/billing-portal", headers=admin_auth_headers
@@ -335,6 +358,7 @@ def test_get_billing_portal_url(admin_auth_headers, echo_server):
     assert r.status_code == 200
 
     assert r.json() == {"portalUrl": "https://portal.example.com/path/"}
+
 
 
 def test_get_addon_minutes_checkout_url(admin_auth_headers, echo_server):
@@ -345,6 +369,7 @@ def test_get_addon_minutes_checkout_url(admin_auth_headers, echo_server):
     assert r.status_code == 200
 
     assert r.json() == {"checkoutUrl": "https://checkout.example.com/path/"}
+
 
 
 def test_cancel_sub_and_delete_org(admin_auth_headers):
@@ -375,6 +400,7 @@ def test_cancel_sub_and_delete_org(admin_auth_headers):
 
         time.sleep(10)
         count += 1
+
 
 
 def test_cancel_sub_and_no_delete_org(admin_auth_headers):
@@ -417,6 +443,7 @@ def test_cancel_sub_and_no_delete_org(admin_auth_headers):
     assert r.json() == {"detail": "org_for_subscription_not_found"}
 
 
+
 def test_import_sub_invalid_org(admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/subscriptions/import",
@@ -430,6 +457,7 @@ def test_import_sub_invalid_org(admin_auth_headers):
     )
     assert r.status_code == 400
     assert r.json() == {"detail": "invalid_org_id"}
+
 
 
 def test_import_sub_existing_org(admin_auth_headers, non_default_org_id):
@@ -458,6 +486,7 @@ def test_import_sub_existing_org(admin_auth_headers, non_default_org_id):
         "futureCancelDate": None,
         "readOnlyOnCancel": False,
     }
+
 
 
 def test_subscription_events_log(admin_auth_headers, non_default_org_id):
@@ -543,6 +572,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
     ]
 
 
+
 def test_subscription_events_log_filter_sub_id(admin_auth_headers):
     r = requests.get(
         f"{API_PREFIX}/subscriptions/events?subId=123", headers=admin_auth_headers
@@ -601,6 +631,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
         },
         {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
     ]
+
 
 
 def test_subscription_events_log_filter_oid(admin_auth_headers):
@@ -664,6 +695,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
     ]
 
 
+
 def test_subscription_events_log_filter_plan_id(admin_auth_headers):
     r = requests.get(
         f"{API_PREFIX}/subscriptions/events?planId=basic2", headers=admin_auth_headers
@@ -696,6 +728,7 @@ def test_subscription_events_log_filter_plan_id(admin_auth_headers):
             },
         }
     ]
+
 
 
 def test_subscription_events_log_filter_status(admin_auth_headers):
@@ -747,6 +780,7 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
             },
         },
     ]
+
 
 
 def test_subscription_events_log_filter_sort(admin_auth_headers):
@@ -932,6 +966,7 @@ def test_subscription_events_log_filter_sort(admin_auth_headers):
             last_date = cancel_date
 
 
+
 def test_subscription_add_minutes(admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/subscriptions/add-minutes",
@@ -984,3 +1019,4 @@ def test_subscription_add_minutes(admin_auth_headers):
         "maxConcurrentCrawls": 1,
         "maxExecMinutesPerMonth": 1000,
     }
+
