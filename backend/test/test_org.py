@@ -6,8 +6,6 @@ import requests
 
 from .conftest import (
     API_PREFIX,
-    CRAWLER_PW,
-    CRAWLER_USERNAME,
     NON_DEFAULT_ORG_NAME,
     NON_DEFAULT_ORG_SLUG,
 )
@@ -18,6 +16,9 @@ curr_dir = os.path.dirname(os.path.realpath(__file__))
 new_oid = None
 
 invite_email = "test-user@example.com"
+
+CRAWLER_USERNAME_FOR_ORG_WITH_NOTE = "CraWleR-for-org-with-note@example.com"
+CRAWLER_PW_FOR_ORG_WITH_NOTE = "crawler-pw-for-org-with-note"
 
 
 def test_ensure_only_one_default_org(admin_auth_headers):
@@ -315,7 +316,7 @@ def test_create_org_with_invalid_plan(admin_auth_headers):
     assert r.json()["detail"] == "invalid_plan"
 
 
-def test_create_org_with_note(admin_auth_headers, crawler_auth_headers):
+def test_create_org_with_note(admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/orgs/create",
         headers=admin_auth_headers,
@@ -334,18 +335,30 @@ def test_create_org_with_note(admin_auth_headers, crawler_auth_headers):
     org = r.json()
     assert org["note"] == "test note 123"
 
-    # Add crawler user to the org so they can access it
+    # Add new crawler user to the org so they can access it
     r = requests.post(
         f"{API_PREFIX}/orgs/{data['id']}/add-user",
-        headers=admin_auth_headers,
         json={
-            "email": CRAWLER_USERNAME,
-            "password": CRAWLER_PW,
-            "name": "crawler",
+            "email": CRAWLER_USERNAME_FOR_ORG_WITH_NOTE,
+            "password": CRAWLER_PW_FOR_ORG_WITH_NOTE,
+            "name": "new-crawler-for-org-with-note",
             "role": 20,
+        },
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    r = requests.post(
+        f"{API_PREFIX}/auth/jwt/login",
+        data={
+            "username": CRAWLER_USERNAME_FOR_ORG_WITH_NOTE,
+            "password": CRAWLER_PW_FOR_ORG_WITH_NOTE,
+            "grant_type": "password",
         },
     )
     assert r.status_code == 200
+    data = r.json()
+    access_token = data.get("access_token")
+    crawler_auth_headers = {"Authorization": f"Bearer {access_token}"}
 
     # Verify crawler user can access the org but not view the note
     r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=crawler_auth_headers)
