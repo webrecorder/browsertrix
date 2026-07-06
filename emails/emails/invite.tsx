@@ -1,4 +1,4 @@
-import { Heading, Hr, Link, Section, Text } from "react-email";
+import { Heading, Hr, Link, Section, Text } from "@react-email/components";
 
 import { Template } from "../templates/btrix.js";
 import {

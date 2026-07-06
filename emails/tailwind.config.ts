@@ -1,4 +1,4 @@
-import type { TailwindConfig } from "react-email";
+import type { TailwindConfig } from "@react-email/components";
 import { colors } from "@webrecorder/hickory/tokens/tailwind";
 
 export default {
