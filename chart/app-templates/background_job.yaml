@@ -35,6 +35,10 @@ spec:
           secret:
             secretName: ops-configs
 
+        - name: app-templates
+          configMap:
+            name: app-templates
+
       containers:
         - name: btrixbgjob
           image: {{ backend_image }}
@@ -69,6 +73,9 @@ spec:
           volumeMounts:
             - name: ops-configs
               mountPath: /ops-configs/
+
+            - name: app-templates
+              mountPath: /app/btrixcloud/templates/
 
           command: ["python3", "-m", "btrixcloud.main_bg"]
 
