@@ -28,7 +28,7 @@ jobs:
           channel: "1.25/stable"
           addons: '["dns", "helm3", "hostpath-storage", "registry", "host-access"]'
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set Env Vars
         run: |
