@@ -110,7 +110,7 @@ export class Collection extends BtrixElement {
             ?open=${this.showEditDialog}
             @sl-hide=${() => (this.showEditDialog = false)}
             @btrix-collection-saved=${async (e: CollectionSavedEvent) => {
-              if (e.detail?.access === CollectionAccess.Private) {
+              if (e.detail.access === CollectionAccess.Private) {
                 // Redirect to private page
                 this.navigate.to(this.privatePageUrl);
               } else {
