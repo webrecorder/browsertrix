@@ -11,19 +11,6 @@ curr_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 
-@pytest.fixture(scope="module")
-def new_org_id(admin_auth_headers):
-    """Create a new org for tests that need a non-default org ID."""
-    r = requests.post(
-        f"{API_PREFIX}/orgs/create",
-        headers=admin_auth_headers,
-        json={"name": "New Org", "slug": "new-org"},
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["added"]
-    return data["id"]
-
 invite_email = "test-user@example.com"
 
 

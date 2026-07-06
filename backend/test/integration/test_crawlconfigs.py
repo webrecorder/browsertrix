@@ -1,18 +1,94 @@
 import time
 
+import pytest
 import requests
 
 from .conftest import API_PREFIX, BROWSERTRIX_USER_AGENT
 
-cid = None
-cid_single_page = None
 UPDATED_NAME = "Updated name"
 UPDATED_DESCRIPTION = "Updated description"
 UPDATED_TAGS = ["tag3", "tag4"]
 
-_coll_id = None
-_admin_crawl_cid = None
+@pytest.fixture(scope="module")
+def crawl_config_id(crawler_auth_headers, default_org_id, sample_crawl_data):
+    sample_crawl_data["schedule"] = "0 0 * * *"
+    sample_crawl_data["profileid"] = ""
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 200
+    return r.json()["id"]
 
+
+@pytest.fixture(scope="module")
+def single_page_config_id(crawler_auth_headers, default_org_id, sample_crawl_data):
+    sample_crawl_data["config"]["limit"] = 1
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 200
+    return r.json()["id"]
+
+
+@pytest.fixture(scope="module")
+def meta_update_collection_id(crawler_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={
+            "crawlIds": [],
+            "name": "autoAddUpdate",
+        },
+    )
+    assert r.status_code == 200
+    return r.json()["id"]
+
+
+@pytest.fixture(scope="module")
+def admin_crawl_config_id(crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] > 0
+    items = data["items"]
+    found_cid = None
+    for workflow in items:
+        assert workflow.get("config") is None
+        assert workflow["seedCount"]
+        assert workflow["firstSeed"]
+
+        last_crawl_id = workflow.get("lastCrawlId")
+        if last_crawl_id and last_crawl_id in (admin_crawl_id, crawler_crawl_id):
+            assert workflow["totalSize"] > 0
+            assert workflow["crawlCount"] > 0
+            assert workflow["crawlSuccessfulCount"] > 0
+
+            assert workflow["lastCrawlId"]
+            assert workflow["lastCrawlStartTime"]
+            assert workflow["lastStartedByName"]
+            assert workflow["lastCrawlTime"]
+            assert workflow["lastCrawlState"]
+            assert workflow["lastRun"]
+            assert workflow["lastCrawlSize"] > 0
+
+            stats = workflow["lastCrawlStats"]
+            assert stats["found"] > 0
+            assert stats["done"] > 0
+            assert stats["size"] > 0
+
+            if last_crawl_id == admin_crawl_id:
+                found_cid = workflow["id"]
+        else:
+            assert workflow["totalSize"] == 0
+    assert found_cid
+    return found_cid
 
 def test_crawl_config_usernames(
     crawler_auth_headers, default_org_id, crawler_config_id
@@ -38,27 +114,21 @@ def test_crawl_config_usernames(
 
 
 def test_add_crawl_config(crawler_auth_headers, default_org_id, sample_crawl_data):
-    # Create crawl config
-    sample_crawl_data["schedule"] = "0 0 * * *"
-    sample_crawl_data["profileid"] = ""
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+def test_add_crawl_config(crawl_config_id, crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         headers=crawler_auth_headers,
-        json=sample_crawl_data,
     )
     assert r.status_code == 200
-
     data = r.json()
-    global cid
-    cid = data["id"]
+    assert data["id"] == crawl_config_id
 
 
 def test_verify_default_browser_windows(
-    crawler_auth_headers, default_org_id, sample_crawl_data
+    crawl_config_id, crawler_auth_headers, default_org_id
 ):
-    r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
     )
     assert r.status_code == 200
 
@@ -68,28 +138,22 @@ def test_verify_default_browser_windows(
 
 
 def test_add_crawl_config_single_page(
-    crawler_auth_headers, default_org_id, sample_crawl_data
-):
-    # Create crawl config
-    sample_crawl_data["config"]["limit"] = 1
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+def test_add_crawl_config_single_page(single_page_config_id, crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{single_page_config_id}/",
         headers=crawler_auth_headers,
-        json=sample_crawl_data,
     )
     assert r.status_code == 200
-
     data = r.json()
-    global cid_single_page
-    cid_single_page = data["id"]
+    assert data["id"] == single_page_config_id
 
 
 def test_verify_default_browser_windows_single_page(
-    crawler_auth_headers, default_org_id, sample_crawl_data
+def test_verify_default_browser_windows_single_page(
+    single_page_config_id, crawler_auth_headers, default_org_id
 ):
-    r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid_single_page}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{single_page_config_id}/",
     )
     assert r.status_code == 200
 
@@ -143,10 +207,10 @@ def test_custom_scale(crawler_auth_headers, default_org_id, sample_crawl_data):
 
 
 def test_update_name_only(crawler_auth_headers, default_org_id):
-    # update name only
+def test_update_name_only(crawl_config_id, crawler_auth_headers, default_org_id):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={"name": "updated name 1"},
     )
     assert r.status_code == 200
@@ -158,10 +222,10 @@ def test_update_name_only(crawler_auth_headers, default_org_id):
 
 
 def test_update_desription_only(crawler_auth_headers, default_org_id):
-    # update description only
+def test_update_desription_only(crawl_config_id, crawler_auth_headers, default_org_id):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={"description": "updated description"},
     )
     assert r.status_code == 200
@@ -173,32 +237,16 @@ def test_update_desription_only(crawler_auth_headers, default_org_id):
 
 
 def test_update_crawl_config_metadata(crawler_auth_headers, default_org_id):
-    # Make a new collection
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections",
-        headers=crawler_auth_headers,
-        json={
-            "crawlIds": [],
-            "name": "autoAddUpdate",
-        },
-    )
-    assert r.status_code == 200
-    data = r.json()
-
-    global _coll_id
-    _coll_id = data["id"]
-    assert _coll_id
-
+def test_update_crawl_config_metadata(crawl_config_id, meta_update_collection_id, crawler_auth_headers, default_org_id):
     # Update crawl config
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={
             "name": UPDATED_NAME,
             "description": UPDATED_DESCRIPTION,
             "tags": UPDATED_TAGS,
             "autoAddCollections": [_coll_id],
-        },
+            "autoAddCollections": [meta_update_collection_id],
     )
     assert r.status_code == 200
 
@@ -209,10 +257,10 @@ def test_update_crawl_config_metadata(crawler_auth_headers, default_org_id):
 
 
 def test_verify_update(crawler_auth_headers, default_org_id):
-    # Verify update was successful
+def test_verify_update(crawl_config_id, crawler_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
     )
     assert r.status_code == 200
 
@@ -221,15 +269,17 @@ def test_verify_update(crawler_auth_headers, default_org_id):
     assert data["description"] == UPDATED_DESCRIPTION
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
     assert data["autoAddCollections"] == [_coll_id]
-    assert data["firstSeed"] == "https://example-com.webrecorder.net/"
+    assert data["autoAddCollections"] == [meta_update_collection_id]
 
 
 def test_update_config_invalid_format(
-    crawler_auth_headers, default_org_id, sample_crawl_data
+def test_update_config_invalid_format(
+    crawl_config_id, crawler_auth_headers, default_org_id, sample_crawl_data
+):
 ):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={
             "config": {
                 "seeds": ["https://example-com.webrecorder.net/"],
@@ -243,11 +293,13 @@ def test_update_config_invalid_format(
 
 
 def test_update_config_invalid_exclude_regex(
-    crawler_auth_headers, default_org_id, sample_crawl_data
+def test_update_config_invalid_exclude_regex(
+    crawl_config_id, crawler_auth_headers, default_org_id, sample_crawl_data
+):
 ):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={"config": {"exclude": "["}},
     )
     assert r.status_code == 400
@@ -255,7 +307,7 @@ def test_update_config_invalid_exclude_regex(
 
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={"config": {"exclude": ["abc.*", "["]}},
     )
     assert r.status_code == 400
@@ -263,11 +315,13 @@ def test_update_config_invalid_exclude_regex(
 
 
 def test_update_config_invalid_link_selector(
-    crawler_auth_headers, default_org_id, sample_crawl_data
+def test_update_config_invalid_link_selector(
+    crawl_config_id, crawler_auth_headers, default_org_id, sample_crawl_data
+):
 ):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={"config": {"selectLinks": []}},
     )
     assert r.status_code == 400
@@ -275,7 +329,7 @@ def test_update_config_invalid_link_selector(
 
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={"config": {"selectLinks": ["a[href]->href", "->href"]}},
     )
     assert r.status_code == 400
@@ -283,12 +337,14 @@ def test_update_config_invalid_link_selector(
 
 
 def test_update_config_invalid_lang(
-    crawler_auth_headers, default_org_id, sample_crawl_data
+def test_update_config_invalid_lang(
+    crawl_config_id, crawler_auth_headers, default_org_id, sample_crawl_data
+):
 ):
     for invalid_code in ("f", "fra", "french"):
         r = requests.patch(
             f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-            headers=crawler_auth_headers,
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
             json={"config": {"lang": invalid_code}},
         )
         assert r.status_code == 400
@@ -296,42 +352,48 @@ def test_update_config_invalid_lang(
 
 
 def test_verify_default_select_links(
-    crawler_auth_headers, default_org_id, sample_crawl_data
+def test_verify_default_select_links(
+    crawl_config_id, crawler_auth_headers, default_org_id, sample_crawl_data
+):
 ):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
     )
     assert r.status_code == 200
     assert r.json()["config"]["selectLinks"] == ["a[href]->href"]
 
 
 def test_verify_default_click_selector(
-    crawler_auth_headers, default_org_id, sample_crawl_data
+def test_verify_default_click_selector(
+    crawl_config_id, crawler_auth_headers, default_org_id, sample_crawl_data
+):
 ):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
     )
     assert r.status_code == 200
     assert r.json()["config"]["clickSelector"] == "a"
 
 
 def test_verify_default_ignore_scope_behavior_links(
-    crawler_auth_headers, default_org_id, sample_crawl_data
+def test_verify_default_ignore_scope_behavior_links(
+    crawl_config_id, crawler_auth_headers, default_org_id, sample_crawl_data
+):
 ):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
     )
     assert r.status_code == 200
     assert r.json()["config"]["alwaysAddBehaviorLinks"] is False
 
 
 def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_data):
-    r = requests.patch(
+def test_update_config_data(crawl_config_id, crawler_auth_headers, default_org_id, sample_crawl_data):
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={
             "config": {
                 "seeds": [{"url": "https://example-com.webrecorder.net/"}],
@@ -346,7 +408,7 @@ def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_d
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
     )
     assert r.status_code == 200
 
@@ -365,11 +427,11 @@ def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_d
 
 
 def test_update_config_no_changes(
-    crawler_auth_headers, default_org_id, sample_crawl_data
+def test_update_config_no_changes(crawl_config_id, crawler_auth_headers, default_org_id, sample_crawl_data):
 ):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={
             "config": {
                 "seeds": [{"url": "https://example-com.webrecorder.net/"}],
@@ -388,10 +450,10 @@ def test_update_config_no_changes(
 
 
 def test_update_crawl_timeout(crawler_auth_headers, default_org_id, sample_crawl_data):
-    # Verify that updating crawl timeout works
+def test_update_crawl_timeout(crawl_config_id, crawler_auth_headers, default_org_id, sample_crawl_data):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={"crawlTimeout": 60},
     )
     assert r.status_code == 200
@@ -402,7 +464,7 @@ def test_update_crawl_timeout(crawler_auth_headers, default_org_id, sample_crawl
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
     )
     assert r.status_code == 200
 
@@ -412,10 +474,10 @@ def test_update_crawl_timeout(crawler_auth_headers, default_org_id, sample_crawl
 
 
 def test_update_max_crawl_size(crawler_auth_headers, default_org_id, sample_crawl_data):
-    # Verify that updating crawl timeout works
+def test_update_max_crawl_size(crawl_config_id, crawler_auth_headers, default_org_id, sample_crawl_data):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={"maxCrawlSize": 4096},
     )
     assert r.status_code == 200
@@ -426,7 +488,7 @@ def test_update_max_crawl_size(crawler_auth_headers, default_org_id, sample_craw
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
     )
     assert r.status_code == 200
 
@@ -436,16 +498,16 @@ def test_update_max_crawl_size(crawler_auth_headers, default_org_id, sample_craw
 
 
 def test_update_browser_windows(crawler_auth_headers, default_org_id):
-    r = requests.patch(
+def test_update_browser_windows(crawl_config_id, crawler_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={"browserWindows": 1},
     )
     assert r.status_code == 200
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
     )
     assert r.status_code == 200
 
@@ -455,16 +517,16 @@ def test_update_browser_windows(crawler_auth_headers, default_org_id):
 
 
 def test_update_scale(crawler_auth_headers, default_org_id):
-    r = requests.patch(
+def test_update_scale(crawl_config_id, crawler_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={"scale": 1},
     )
     assert r.status_code == 200
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
     )
     assert r.status_code == 200
 
@@ -474,17 +536,17 @@ def test_update_scale(crawler_auth_headers, default_org_id):
 
 
 def test_verify_delete_tags(crawler_auth_headers, default_org_id):
-    # Verify that deleting tags and name works as well
+def test_verify_delete_tags(crawl_config_id, crawler_auth_headers, default_org_id):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         json={"tags": [], "name": None},
     )
     assert r.status_code == 200
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
     )
     assert r.status_code == 200
 
@@ -494,9 +556,9 @@ def test_verify_delete_tags(crawler_auth_headers, default_org_id):
 
 
 def test_verify_revs_history(crawler_auth_headers, default_org_id):
-    r = requests.get(
+def test_verify_revs_history(crawl_config_id, crawler_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/revs",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/revs",
     )
     assert r.status_code == 200
 
@@ -509,50 +571,11 @@ def test_verify_revs_history(crawler_auth_headers, default_org_id):
 
 
 def test_workflow_total_size_and_last_crawl_stats(
-    crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id
+def test_workflow_total_size_and_last_crawl_stats(
+    crawler_auth_headers, default_org_id, admin_crawl_config_id
 ):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs",
-        headers=crawler_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["total"] > 0
-    items = data["items"]
-    for workflow in items:
-        assert workflow.get("config") is None
-        assert workflow["seedCount"]
-        assert workflow["firstSeed"]
-
-        last_crawl_id = workflow.get("lastCrawlId")
-        if last_crawl_id and last_crawl_id in (admin_crawl_id, crawler_crawl_id):
-            assert workflow["totalSize"] > 0
-            assert workflow["crawlCount"] > 0
-            assert workflow["crawlSuccessfulCount"] > 0
-
-            assert workflow["lastCrawlId"]
-            assert workflow["lastCrawlStartTime"]
-            assert workflow["lastStartedByName"]
-            assert workflow["lastCrawlTime"]
-            assert workflow["lastCrawlState"]
-            assert workflow["lastRun"]
-            assert workflow["lastCrawlSize"] > 0
-
-            stats = workflow["lastCrawlStats"]
-            assert stats["found"] > 0
-            assert stats["done"] > 0
-            assert stats["size"] > 0
-
-            if last_crawl_id == admin_crawl_id:
-                global _admin_crawl_cid
-                _admin_crawl_cid = workflow["id"]
-                assert _admin_crawl_cid
-        else:
-            assert workflow["totalSize"] == 0
-
-    r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_config_id}",
     )
     assert r.status_code == 200
     data = r.json()
@@ -575,12 +598,14 @@ def test_workflow_total_size_and_last_crawl_stats(
 
 
 def test_incremental_workflow_total_size_and_last_crawl_stats(
-    crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id
+def test_incremental_workflow_total_size_and_last_crawl_stats(
+    crawler_auth_headers, default_org_id, admin_crawl_config_id, admin_crawl_id, crawler_crawl_id
+):
 ):
     # Get baseline values
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_config_id}",
     )
     assert r.status_code == 200
     data = r.json()
@@ -597,7 +622,7 @@ def test_incremental_workflow_total_size_and_last_crawl_stats(
     # Run new crawl in this workflow
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/run",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_config_id}/run",
     )
     assert r.status_code == 200
     crawl_id = r.json()["started"]
@@ -619,7 +644,7 @@ def test_incremental_workflow_total_size_and_last_crawl_stats(
     # Re-check stats
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_config_id}",
     )
     assert r.status_code == 200
     data = r.json()
@@ -649,7 +674,7 @@ def test_incremental_workflow_total_size_and_last_crawl_stats(
     # Re-check stats
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_config_id}",
     )
     assert r.status_code == 200
     data = r.json()
@@ -1059,10 +1084,10 @@ def test_delete_seed_file_in_use_crawlconfig(
 
 
 def test_shareable_workflow(admin_auth_headers, default_org_id, admin_crawl_id):
-    # Verify workflow is not shareable
+def test_shareable_workflow(admin_auth_headers, default_org_id, admin_crawl_config_id, admin_crawl_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}",
-        headers=admin_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_config_id}",
     )
     assert r.status_code == 200
     assert r.json()["shareable"] is False
@@ -1070,20 +1095,20 @@ def test_shareable_workflow(admin_auth_headers, default_org_id, admin_crawl_id):
     # Verify public replay.json returns 404 while not shareable
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/public/replay.json"
-    )
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_config_id}/public/replay.json"
     assert r.status_code == 404
     assert r.json()["detail"] == "crawl_config_not_found"
 
     # Verify public pagesSearch endpoint returns 404 while not shareable
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/public/pagesSearch"
-    )
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_config_id}/public/pagesSearch"
     assert r.status_code == 404
 
     # Mark workflow as shareable
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/",
-        headers=admin_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_config_id}/",
         json={"shareable": True},
     )
     assert r.status_code == 200
@@ -1095,7 +1120,7 @@ def test_shareable_workflow(admin_auth_headers, default_org_id, admin_crawl_id):
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}",
-        headers=admin_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_config_id}",
     )
     assert r.status_code == 200
     assert r.json()["shareable"]
@@ -1103,14 +1128,14 @@ def test_shareable_workflow(admin_auth_headers, default_org_id, admin_crawl_id):
     # Verify public replay.json returns last successful crawl while shareable
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/public/replay.json"
-    )
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_config_id}/public/replay.json"
     assert r.status_code == 200
     data = r.json()
 
     assert data["id"] == admin_crawl_id
     assert data["oid"] == default_org_id
     assert data["cid"] == _admin_crawl_cid
-    assert data["type"] == "crawl"
+    assert data["cid"] == admin_crawl_config_id
     assert data["state"] == "complete"
 
     resources = data["resources"]
@@ -1122,7 +1147,7 @@ def test_shareable_workflow(admin_auth_headers, default_org_id, admin_crawl_id):
     pages_query_url = data["pagesQueryUrl"]
     assert pages_query_url.endswith(
         f"/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/public/pagesSearch"
-    )
+        f"/orgs/{default_org_id}/crawlconfigs/{admin_crawl_config_id}/public/pagesSearch"
     assert data["downloadUrl"] is None
 
     # Verify pages search endpoint is accessible and works
@@ -1138,10 +1163,10 @@ def test_shareable_workflow(admin_auth_headers, default_org_id, admin_crawl_id):
 
 
 def test_update_profile(crawler_auth_headers, default_org_id, profile_id, profile_2_id):
-    def get_profile():
+def test_update_profile(crawl_config_id, crawler_auth_headers, default_org_id, profile_id, profile_2_id):
         r = requests.get(
             f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-            headers=crawler_auth_headers,
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
         )
         assert r.status_code == 200
         return r.json()["profileid"]
@@ -1149,7 +1174,7 @@ def test_update_profile(crawler_auth_headers, default_org_id, profile_id, profil
     def update_profile(profileid):
         r = requests.patch(
             f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
-            headers=crawler_auth_headers,
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}/",
             json={"profileid": profileid},
         )
         assert r.status_code == 200
@@ -1216,13 +1241,15 @@ def test_add_crawl_config_fail_on_content_check_no_profile(
 
 
 def test_update_crawl_config_fail_on_content_check_no_profile(
-    crawler_auth_headers, default_org_id
+def test_update_crawl_config_fail_on_content_check_no_profile(
+    admin_crawl_config_id, crawler_auth_headers, default_org_id
+):
 ):
     # Ensure we're not able to update an existing config with no profile to
     # enable failOnContentCheck
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_admin_crawl_cid}/",
-        headers=crawler_auth_headers,
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{admin_crawl_config_id}/",
         json={
             "config": {
                 "failOnContentCheck": True,

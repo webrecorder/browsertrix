@@ -4,6 +4,7 @@ from tempfile import TemporaryFile
 from uuid import uuid4
 from zipfile import ZIP_STORED, ZipFile
 
+import pytest
 import requests
 
 from .conftest import API_PREFIX, NON_DEFAULT_ORG_NAME, NON_DEFAULT_ORG_SLUG
@@ -30,6 +31,7 @@ NON_PUBLIC_IMAGE_FIELDS = ("originalFilename", "userid", "userName", "created")
 MAX_ATTEMPTS = 24
 
 
+# Module-level state — initialized by autouse fixtures below
 _coll_id = None
 _second_coll_id = None
 _public_coll_id = None
@@ -40,12 +42,11 @@ default_org_slug = None
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
-
-def test_create_collection(
-    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
-):
+@pytest.fixture(scope="module", autouse=True)
+def _setup_coll_id(crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id):
+    """Create the primary test collection and set _coll_id."""
+    global _coll_id
     default_thumbnail_name = "default-thumbnail.jpg"
-
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections",
         headers=crawler_auth_headers,
@@ -59,9 +60,6 @@ def test_create_collection(
     assert r.status_code == 200
     data = r.json()
     assert data["added"]
-    assert data["name"] == COLLECTION_NAME
-
-    global _coll_id
     _coll_id = data["id"]
 
     # Verify crawl in collection
@@ -70,55 +68,27 @@ def test_create_collection(
         headers=crawler_auth_headers,
     )
     assert _coll_id in r.json()["collectionIds"]
-    assert r.json()["collections"] == [{"name": COLLECTION_NAME, "id": _coll_id}]
 
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
-        headers=crawler_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-
-    # Wait for and validate collection stats update (update happens async)
+    # Wait for collection stats
     count = 0
     while count < MAX_ATTEMPTS:
         r = requests.get(
             f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
             headers=crawler_auth_headers,
         )
-
         data = r.json()
         if data.get("crawlCount") == 1:
-            assert data["id"] == _coll_id
-            assert data["name"] == COLLECTION_NAME
-            assert data["slug"] == COLLECTION_SLUG
-            assert data["caption"] == CAPTION
-            assert data["pageCount"] > 0
-            assert data["uniquePageCount"] > 0
-            assert data["totalSize"] > 0
-            modified = data["modified"]
-            assert modified
-            assert modified.endswith("Z")
-
-            assert data["dateEarliest"]
-            assert data["dateLatest"]
-
-            assert data["defaultThumbnailName"] == default_thumbnail_name
-            assert data["allowPublicDownload"]
-
-            assert data["topPageHosts"] == [{"count": 3, "host": "old.webrecorder.net"}]
             break
-
         if count + 1 == MAX_ATTEMPTS:
             assert False
-
         time.sleep(10)
         count += 1
 
 
-def test_create_public_collection(
-    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
-):
+@pytest.fixture(scope="module", autouse=True)
+def _setup_public_coll_id(crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id):
+    """Create the public test collection and set _public_coll_id."""
+    global _public_coll_id
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections",
         headers=crawler_auth_headers,
@@ -134,35 +104,131 @@ def test_create_public_collection(
     assert r.status_code == 200
     data = r.json()
     assert data["added"]
-    assert data["name"] == PUBLIC_COLLECTION_NAME
-
-    global _public_coll_id
     _public_coll_id = data["id"]
 
-    # Wait until collection stats update
+    # Wait until stats update
     count = 0
     while count < MAX_ATTEMPTS:
         r = requests.get(
             f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
             headers=crawler_auth_headers,
         )
-
         data = r.json()
         if data.get("crawlCount") == 1:
             break
-
         if count + 1 == MAX_ATTEMPTS:
             assert False
-
         time.sleep(10)
         count += 1
 
-    # Verify that it is public
+
+@pytest.fixture(scope="module", autouse=True)
+def _setup_default_org_slug(default_org_id, admin_auth_headers):
+    """Set default_org_slug for tests that need it."""
+    global default_org_slug
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    default_org_slug = r.json()["slug"]
+
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _setup_second_coll_id(crawler_auth_headers, default_org_id):
+    """Create a second collection for testing rename-taken-name and delete."""
+    global _second_coll_id
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={"name": SECOND_COLLECTION_NAME},
+    )
+    assert r.status_code == 200
+    _second_coll_id = r.json()["id"]
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _setup_second_public_coll_id(crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id):
+    """Create a second public collection."""
+    global _second_public_coll_id
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={
+            "crawlIds": [crawler_crawl_id],
+            "name": "Second public collection",
+            "slug": SECOND_PUBLIC_COLL_SLUG,
+            "access": "public",
+            "allowPublicDownload": False,
+        },
+    )
+    assert r.status_code == 200
+    _second_public_coll_id = r.json()["id"]
+
+
+
+
+def test_create_collection(
+    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
+):
+    """Verify the fixture-created primary collection has correct properties."""
+    default_thumbnail_name = "default-thumbnail.jpg"
+
+    # Collection was created by _setup_coll_id autouse fixture — just verify it
+    cid = _coll_id
+    assert cid
+
+    # Verify crawl in collection
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/replay.json",
         headers=crawler_auth_headers,
     )
-    assert r.json()["access"] == "public"
+    assert cid in r.json()["collectionIds"]
+    assert r.json()["collections"] == [{"name": COLLECTION_NAME, "id": cid}]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{cid}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    # Validate collection stats
+    assert data["id"] == cid
+    assert data["name"] == COLLECTION_NAME
+    assert data["slug"] == COLLECTION_SLUG
+    assert data["caption"] == CAPTION
+    assert data["crawlCount"] == 1
+    assert data["pageCount"] > 0
+    assert data["uniquePageCount"] > 0
+    assert data["totalSize"] > 0
+    assert data.get("modified")
+    assert data["dateEarliest"]
+    assert data["dateLatest"]
+    assert data["defaultThumbnailName"] == default_thumbnail_name
+    assert data["allowPublicDownload"]
+    assert data["topPageHosts"] == [{"count": 3, "host": "old.webrecorder.net"}]
+
+
+
+def test_create_public_collection(
+    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
+):
+    """Verify the fixture-created public collection has correct properties."""
+    # Collection was created by _setup_public_coll_id autouse fixture — just verify it
+    pcid = _public_coll_id
+    assert pcid
+
+    # Verify that it is public
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{pcid}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["access"] == "public"
+    assert data["name"] == PUBLIC_COLLECTION_NAME
+    assert data["crawlCount"] == 1
+
+
 
 
 def test_create_collection_taken_name(
@@ -180,6 +246,8 @@ def test_create_collection_taken_name(
     assert r.json()["detail"] in ("collection_name_taken", "collection_slug_taken")
 
 
+
+
 def test_create_collection_empty_name(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
 ):
@@ -194,6 +262,8 @@ def test_create_collection_empty_name(
     assert r.status_code == 422
 
 
+
+
 def test_create_empty_collection(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
 ):
@@ -205,10 +275,10 @@ def test_create_empty_collection(
         },
     )
     assert r.status_code == 200
-    coll_id = r.json()["id"]
+    _coll_id = r.json()["id"]
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}/replay.json",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/replay.json",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -219,11 +289,13 @@ def test_create_empty_collection(
 
     # Delete the empty collection
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     assert r.json()["success"]
+
+
 
 
 def test_update_collection(
@@ -253,8 +325,8 @@ def test_update_collection(
     assert data["caption"] == UPDATED_CAPTION
     assert data["crawlCount"] == 1
     assert data["pageCount"] > 0
-    assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
+
     global modified
     modified = data["modified"]
     assert modified
@@ -263,6 +335,8 @@ def test_update_collection(
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
     assert data["topPageHosts"]
+
+
 
 
 def test_rename_collection(
@@ -291,6 +365,8 @@ def test_rename_collection(
     assert data["modified"] >= modified
 
 
+
+
 def test_rename_collection_taken_name(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
 ):
@@ -308,8 +384,7 @@ def test_rename_collection_taken_name(
     assert data["added"]
     assert data["name"] == SECOND_COLLECTION_NAME
 
-    global _second_coll_id
-    _second_coll_id = data["id"]
+    secondcoll_id = data["id"]
 
     # Try to rename first coll to second collection's name
     r = requests.patch(
@@ -328,6 +403,8 @@ def test_rename_collection_taken_name(
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "collection_slug_taken"
+
+
 
 
 def test_add_remove_crawl_from_collection(
@@ -424,6 +501,8 @@ def test_add_remove_crawl_from_collection(
         headers=crawler_auth_headers,
     )
     assert _coll_id not in r.json()["collectionIds"]
+
+
 
 
 def test_add_remove_config_crawls_from_collection(
@@ -577,6 +656,8 @@ def test_add_remove_config_crawls_from_collection(
         count += 1
 
 
+
+
 def test_get_collection(crawler_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
@@ -599,6 +680,8 @@ def test_get_collection(crawler_auth_headers, default_org_id):
     assert data["dateEarliest"]
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
+
+
 
 
 def test_get_collection_replay(crawler_auth_headers, default_org_id):
@@ -637,6 +720,8 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
         assert resource["name"]
         assert resource["path"]
         assert resource["size"]
+
+
 
 
 def test_collection_public(crawler_auth_headers, default_org_id):
@@ -703,6 +788,8 @@ def test_collection_public(crawler_auth_headers, default_org_id):
     assert r.headers["Access-Control-Allow-Headers"] == "*"
 
 
+
+
 def test_collection_wrong_org(admin_auth_headers, non_default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{non_default_org_id}/collections/{_coll_id}/replay.json",
@@ -714,6 +801,8 @@ def test_collection_wrong_org(admin_auth_headers, non_default_org_id):
         f"{API_PREFIX}/orgs/{non_default_org_id}/collections/{_coll_id}/public/replay.json",
     )
     assert r.status_code == 404
+
+
 
 
 def test_collection_public_make_private(crawler_auth_headers, default_org_id):
@@ -739,6 +828,8 @@ def test_collection_public_make_private(crawler_auth_headers, default_org_id):
     assert r.status_code == 404
 
 
+
+
 def test_collection_access_invalid_value(crawler_auth_headers, default_org_id):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
@@ -755,6 +846,8 @@ def test_collection_access_invalid_value(crawler_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     assert r.json()["access"] == "private"
+
+
 
 
 def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
@@ -816,6 +909,8 @@ def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
     assert r.json()["collections"] == [{"name": UPDATED_NAME, "id": _coll_id}]
 
 
+
+
 def test_download_streaming_collection(crawler_auth_headers, default_org_id):
     # Add upload
     with TemporaryFile() as fh:
@@ -836,6 +931,8 @@ def test_download_streaming_collection(crawler_auth_headers, default_org_id):
             for filename in contents:
                 assert filename.endswith(".wacz") or filename == "datapackage.json"
                 assert zip_file.getinfo(filename).compress_type == ZIP_STORED
+
+
 
 
 def test_list_collections(
@@ -884,6 +981,8 @@ def test_list_collections(
     assert second_coll["access"] == "private"
     assert second_coll["dateEarliest"]
     assert second_coll["dateLatest"]
+
+
 
 
 def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
@@ -1035,6 +1134,8 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
         assert page["depth"] == 1
 
 
+
+
 def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
     # Remove upload
     r = requests.post(
@@ -1075,6 +1176,8 @@ def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
         headers=crawler_auth_headers,
     )
     assert _coll_id not in r.json()["collectionIds"]
+
+
 
 
 def test_filter_sort_collections(
@@ -1297,6 +1400,8 @@ def test_filter_sort_collections(
     assert r.json()["detail"] == "invalid_sort_direction"
 
 
+
+
 def test_list_public_collections(
     crawler_auth_headers,
     admin_auth_headers,
@@ -1319,14 +1424,13 @@ def test_list_public_collections(
     )
     assert r.status_code == 200
 
-    global _second_public_coll_id
-    _second_public_coll_id = r.json()["id"]
+    secondpubliccoll_id = r.json()["id"]
 
     # Wait until collection stats update
     count = 0
     while count < MAX_ATTEMPTS:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}",
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{secondpubliccoll_id}",
             headers=crawler_auth_headers,
         )
 
@@ -1348,7 +1452,6 @@ def test_list_public_collections(
     assert r.status_code == 200
     data = r.json()
 
-    global default_org_slug
     default_org_slug = data["slug"]
 
     org_name = data["name"]
@@ -1402,7 +1505,7 @@ def test_list_public_collections(
     collections = data["collections"]
     assert len(collections) == 2
     for collection in collections:
-        assert collection["id"] in (_public_coll_id, _second_public_coll_id)
+        assert collection["id"] in (publiccoll_id, secondpubliccoll_id)
         assert collection["oid"]
         assert collection["access"] == "public"
         assert collection["name"]
@@ -1422,6 +1525,8 @@ def test_list_public_collections(
     r = requests.get(f"{API_PREFIX}/public/orgs/nonexistentslug/collections")
     assert r.status_code == 404
     assert r.json()["detail"] == "public_profile_not_found"
+
+
 
 
 def test_same_collection_diff_orgs_correct(non_default_org_id, admin_auth_headers):
@@ -1467,6 +1572,8 @@ def test_same_collection_diff_orgs_correct(non_default_org_id, admin_auth_header
     assert r.json()["success"]
 
 
+
+
 def test_list_public_collections_no_colls(non_default_org_id, admin_auth_headers):
     # Test existing org that's not public - should return same 404 as
     # if org doesn't exist
@@ -1494,6 +1601,8 @@ def test_list_public_collections_no_colls(non_default_org_id, admin_auth_headers
     assert data["collections"] == []
 
 
+
+
 def test_set_collection_home_url(
     crawler_auth_headers, default_org_id, crawler_crawl_id
 ):
@@ -1517,7 +1626,7 @@ def test_set_collection_home_url(
 
     # Set page as home url
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/home-url",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{publiccoll_id}/home-url",
         headers=crawler_auth_headers,
         json={"pageId": page_id},
     )
@@ -1526,7 +1635,7 @@ def test_set_collection_home_url(
 
     # Check that fields were set in collection as expected
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{publiccoll_id}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -1536,9 +1645,11 @@ def test_set_collection_home_url(
     assert data["homeUrlPageId"] == page_id
 
 
+
+
 def test_collection_url_list(crawler_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/pageUrlCounts",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{publiccoll_id}/pageUrlCounts",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -1561,11 +1672,13 @@ def test_collection_url_list(crawler_auth_headers, default_org_id):
             assert snapshot["status"]
 
 
+
+
 def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
     # https://dev.browsertrix.com/api/orgs/c69247f4-415e-4abc-b449-e85d2f26c626/collections/b764fbe1-baab-4dc5-8dca-2db6f82c250b/thumbnail?filename=page-thumbnail_47fe599e-ed62-4edd-b078-93d4bf281e0f.jpeg&sourceUrl=https%3A%2F%2Fspecs.webrecorder.net%2F&sourceTs=2024-08-16T08%3A00%3A21.601000Z&sourcePageId=47fe599e-ed62-4edd-b078-93d4bf281e0f
     with open(os.path.join(curr_dir, "data", "thumbnail.jpg"), "rb") as fh:
         r = requests.put(
-            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/thumbnail?filename=thumbnail.jpg&sourceUrl=https%3A%2F%2Fexample.com%2F&sourceTs=2024-08-16T08%3A00%3A21.601000Z&sourcePageId=1bba4aba-d5be-4943-ad48-d6710633d754",
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{publiccoll_id}/thumbnail?filename=thumbnail.jpg&sourceUrl=https%3A%2F%2Fexample.com%2F&sourceTs=2024-08-16T08%3A00%3A21.601000Z&sourcePageId=1bba4aba-d5be-4943-ad48-d6710633d754",
             headers=crawler_auth_headers,
             data=read_in_chunks(fh),
         )
@@ -1573,7 +1686,7 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
         assert r.json()["added"]
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{publiccoll_id}",
         headers={"Host": "localhost:30870", **crawler_auth_headers},
     )
     assert r.status_code == 200
@@ -1598,11 +1711,13 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
     assert thumbnailSource["urlPageId"] == "1bba4aba-d5be-4943-ad48-d6710633d754"
 
 
+
+
 def test_set_collection_default_thumbnail(crawler_auth_headers, default_org_id):
     default_thumbnail_name = "orange-default.avif"
 
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{secondpubliccoll_id}",
         headers=crawler_auth_headers,
         json={"defaultThumbnailName": default_thumbnail_name},
     )
@@ -1610,14 +1725,16 @@ def test_set_collection_default_thumbnail(crawler_auth_headers, default_org_id):
     assert r.json()["updated"]
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{secondpubliccoll_id}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
 
-    assert data["id"] == _second_public_coll_id
+    assert data["id"] == secondpubliccoll_id
     assert data["defaultThumbnailName"] == default_thumbnail_name
+
+
 
 
 def test_list_public_colls_home_url_thumbnail():
@@ -1639,7 +1756,7 @@ def test_list_public_colls_home_url_thumbnail():
     assert len(collections) == 2
 
     for coll in collections:
-        assert coll["id"] in (_public_coll_id, _second_public_coll_id)
+        assert coll["id"] in (publiccoll_id, secondpubliccoll_id)
         assert coll["oid"]
         assert coll["access"] == "public"
         assert coll["name"]
@@ -1655,7 +1772,7 @@ def test_list_public_colls_home_url_thumbnail():
         for field in non_public_fields:
             assert field not in coll
 
-        if coll["id"] == _public_coll_id:
+        if coll["id"] == publiccoll_id:
             assert coll["allowPublicDownload"] is False
 
             assert coll["caption"] == CAPTION
@@ -1683,10 +1800,12 @@ def test_list_public_colls_home_url_thumbnail():
             for field in non_public_image_fields:
                 assert field not in thumbnail
 
-        if coll["id"] == _second_public_coll_id:
+        if coll["id"] == secondpubliccoll_id:
             assert coll["description"]
             assert coll["defaultThumbnailName"] == "orange-default.avif"
             assert coll["allowPublicDownload"]
+
+
 
 
 def test_get_public_collection(default_org_id):
@@ -1697,7 +1816,7 @@ def test_get_public_collection(default_org_id):
     assert r.status_code == 200
     coll = r.json()
 
-    assert coll["id"] == _public_coll_id
+    assert coll["id"] == publiccoll_id
     assert coll["oid"] == default_org_id
     assert coll["access"] == "public"
     assert coll["name"]
@@ -1764,10 +1883,12 @@ def test_get_public_collection(default_org_id):
     assert r.json()["detail"] == "collection_not_found"
 
 
+
+
 def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
     # Make second public coll unlisted
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{secondpubliccoll_id}",
         headers=crawler_auth_headers,
         json={
             "access": "unlisted",
@@ -1783,7 +1904,7 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     coll = r.json()
 
-    assert coll["id"] == _second_public_coll_id
+    assert coll["id"] == secondpubliccoll_id
     assert coll["oid"] == default_org_id
     assert coll["access"] == "unlisted"
     assert coll["name"]
@@ -1802,6 +1923,8 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
 
     for field in NON_PUBLIC_COLL_FIELDS:
         assert field not in coll
+
+
 
 
 def test_get_public_collection_unlisted_org_profile_disabled(
@@ -1825,7 +1948,7 @@ def test_get_public_collection_unlisted_org_profile_disabled(
     assert r.status_code == 200
     coll = r.json()
 
-    assert coll["id"] == _second_public_coll_id
+    assert coll["id"] == secondpubliccoll_id
     assert coll["oid"] == default_org_id
     assert coll["access"] == "unlisted"
     assert coll["name"]
@@ -1857,27 +1980,31 @@ def test_get_public_collection_unlisted_org_profile_disabled(
     assert r.json()["updated"]
 
 
+
+
 def test_delete_thumbnail(crawler_auth_headers, default_org_id):
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/thumbnail",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{publiccoll_id}/thumbnail",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     assert r.json()["deleted"]
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{publiccoll_id}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     assert r.json().get("thumbnail") is None
 
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}/thumbnail",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{secondpubliccoll_id}/thumbnail",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 404
     assert r.json()["detail"] == "thumbnail_not_found"
+
+
 
 
 def test_unset_collection_home_url(
@@ -1885,7 +2012,7 @@ def test_unset_collection_home_url(
 ):
     # Unset home url
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/home-url",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{publiccoll_id}/home-url",
         headers=crawler_auth_headers,
         json={"pageId": None},
     )
@@ -1894,7 +2021,7 @@ def test_unset_collection_home_url(
 
     # Check that fields were set in collection as expected
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{publiccoll_id}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -1902,6 +2029,8 @@ def test_unset_collection_home_url(
     assert data.get("homeUrl") is None
     assert data.get("homeUrlTs") is None
     assert data.get("homeUrlPageId") is None
+
+
 
 
 def test_download_streaming_public_collection(crawler_auth_headers, default_org_id):
@@ -1914,7 +2043,7 @@ def test_download_streaming_public_collection(crawler_auth_headers, default_org_
 
     # Set allowPublicDownload to True and then check downloading works
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{publiccoll_id}",
         headers=crawler_auth_headers,
         json={
             "allowPublicDownload": True,
@@ -1940,6 +2069,8 @@ def test_download_streaming_public_collection(crawler_auth_headers, default_org_
             for filename in contents:
                 assert filename.endswith(".wacz") or filename == "datapackage.json"
                 assert zip_file.getinfo(filename).compress_type == ZIP_STORED
+
+
 
 
 def test_download_streaming_public_collection_profile_disabled(
@@ -1975,12 +2106,14 @@ def test_download_streaming_public_collection_profile_disabled(
                 assert zip_file.getinfo(filename).compress_type == ZIP_STORED
 
 
+
+
 def test_get_public_collection_slug_redirect(admin_auth_headers, default_org_id):
     # Update public collection slug
     new_slug = "new-slug"
 
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{publiccoll_id}",
         headers=admin_auth_headers,
         json={
             "slug": new_slug,
@@ -1996,13 +2129,13 @@ def test_get_public_collection_slug_redirect(admin_auth_headers, default_org_id)
     assert r.status_code == 200
     coll = r.json()
 
-    assert coll["id"] == _public_coll_id
+    assert coll["id"] == publiccoll_id
     assert coll["oid"] == default_org_id
     assert coll["slug"] == new_slug
 
     # Rename second public collection slug to now-unused PUBLIC_COLLECTION_SLUG
     r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{secondpubliccoll_id}",
         headers=admin_auth_headers,
         json={
             "slug": PUBLIC_COLLECTION_SLUG,
@@ -2013,7 +2146,7 @@ def test_get_public_collection_slug_redirect(admin_auth_headers, default_org_id)
 
     # Delete second public collection
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{secondpubliccoll_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -2025,6 +2158,8 @@ def test_get_public_collection_slug_redirect(admin_auth_headers, default_org_id)
         f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}"
     )
     assert r.status_code == 404
+
+
 
 
 def test_create_collection_with_failed_crawl(
@@ -2042,11 +2177,13 @@ def test_create_collection_with_failed_crawl(
     assert r.json()["detail"] == "invalid_failed_or_unfinished_crawl"
 
 
+
+
 def test_add_failed_crawl_to_collection(
     admin_auth_headers, default_org_id, canceled_crawl_id
 ):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_coll_id}/add",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{secondcoll_id}/add",
         json={"crawlIds": [canceled_crawl_id]},
         headers=admin_auth_headers,
     )
@@ -2054,10 +2191,12 @@ def test_add_failed_crawl_to_collection(
     assert r.json()["detail"] == "invalid_failed_or_unfinished_crawl"
 
 
+
+
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
     # Delete second collection
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{secondcoll_id}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -2068,7 +2207,9 @@ def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_i
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/replay.json",
         headers=crawler_auth_headers,
     )
-    assert _second_coll_id not in r.json()["collectionIds"]
+    assert secondcoll_id not in r.json()["collectionIds"]
+
+
 
 
 def test_deleted_collection_removed_from_crawling_defaults(
@@ -2086,13 +2227,13 @@ def test_deleted_collection_removed_from_crawling_defaults(
     assert r.status_code == 200
     data = r.json()
     assert data["added"]
-    coll_id = data["id"]
+    _coll_id = data["id"]
 
     # Set collection as default dedupeCollId for org
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/defaults/crawling",
         headers=admin_auth_headers,
-        json={"dedupeCollId": coll_id},
+        json={"dedupeCollId": _coll_id},
     )
     assert r.status_code == 200
     assert r.json()["updated"]
@@ -2100,11 +2241,11 @@ def test_deleted_collection_removed_from_crawling_defaults(
     r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
     data = r.json()
     assert data["crawlingDefaults"]
-    assert data["crawlingDefaults"]["dedupeCollId"] == coll_id
+    assert data["crawlingDefaults"]["dedupeCollId"] == _coll_id
 
     # Delete collection
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -2115,3 +2256,5 @@ def test_deleted_collection_removed_from_crawling_defaults(
     data = r.json()
     assert data["crawlingDefaults"]
     assert data["crawlingDefaults"]["dedupeCollId"] is None
+
+

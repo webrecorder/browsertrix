@@ -84,6 +84,10 @@ def test_create_sub_org_and_invite_new_user(admin_auth_headers):
 
     assert data["invited"] == "new_user"
 
+    global new_subs_oid, new_user_invite_token
+    new_subs_oid = org_id
+    new_user_invite_token = data["token"]
+
 
 
 
@@ -216,8 +220,11 @@ def test_create_sub_org_and_invite_existing_user(admin_auth_headers):
 
     org_id = data["id"]
 
-
     assert data["invited"] == "existing_user"
+
+    global new_subs_oid_2, existing_user_invite_token
+    new_subs_oid_2 = org_id
+    existing_user_invite_token = data["token"]
 
 
 

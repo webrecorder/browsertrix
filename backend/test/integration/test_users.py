@@ -1,6 +1,7 @@
 import time
 from uuid import uuid4
 
+import pytest
 import structlog
 import requests
 
@@ -24,16 +25,134 @@ VALID_USER_PW_RESET_AGAIN = "new!password1"
 ADMIN_ROLE = 40
 CRAWLER_ROLE = 20
 
-my_id = None
-valid_user_headers = None
-
-new_user_invite_token = None
-existing_user_invite_token = None
-wrong_token = None
-
-
-new_user_auth_headers = None
 another_user_email = "another-user@example.com"
+
+
+@pytest.fixture(scope="module")
+def my_id(crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/users/me",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["email"] == CRAWLER_USERNAME_LOWERCASE
+    assert data["id"]
+    assert data["is_superuser"] is False
+    assert data["is_verified"] is True
+    assert data["name"] == "new-crawler"
+
+    orgs = data["orgs"]
+    assert len(orgs) == 1
+    default_org = orgs[0]
+    assert default_org["id"] == default_org_id
+    assert default_org["name"]
+    assert default_org["default"]
+    assert default_org["role"] == CRAWLER_ROLE
+
+    return data["id"]
+
+
+@pytest.fixture(scope="module")
+def wrong_token(admin_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/invite",
+        headers=admin_auth_headers,
+        json={"email": INVALID_PASSWORD_EMAIL, "role": CRAWLER_ROLE},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["invited"] == "new_user"
+    return data["token"]
+
+
+@pytest.fixture(scope="module")
+def new_user_invite_token(admin_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/invite",
+        headers=admin_auth_headers,
+        json={"email": VALID_USER_EMAIL, "role": CRAWLER_ROLE},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["invited"] == "new_user"
+    return data["token"]
+
+
+@pytest.fixture(scope="module")
+def existing_user_invite_token(admin_auth_headers, non_default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invite",
+        headers=admin_auth_headers,
+        json={"email": VALID_USER_EMAIL, "role": CRAWLER_ROLE},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["invited"] == "existing_user"
+    return data["token"]
+
+
+@pytest.fixture(scope="module")
+def new_user_auth_headers(existing_user_invite_token):
+    r = requests.post(
+        f"{API_PREFIX}/auth/jwt/login",
+        data={
+            "username": VALID_USER_EMAIL,
+            "password": VALID_USER_PW,
+            "grant_type": "password",
+        },
+    )
+    data = r.json()
+    assert r.status_code == 200
+    login_token = data["access_token"]
+
+    auth_headers = {"Authorization": "bearer " + login_token}
+
+    # Get existing user invite to confirm it is valid
+    r = requests.get(
+        f"{API_PREFIX}/users/me/invite/{existing_user_invite_token}",
+        headers=auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["fromSuperuser"]
+    assert not data["inviterEmail"]
+    assert not data["inviterName"]
+
+    # Accept existing user invite
+    r = requests.post(
+        f"{API_PREFIX}/orgs/invite-accept/{existing_user_invite_token}",
+        headers=auth_headers,
+    )
+
+    return auth_headers
+
+
+@pytest.fixture(scope="module")
+def valid_user_headers():
+    count = 0
+    while True:
+        r = requests.post(
+            f"{API_PREFIX}/auth/jwt/login",
+            data={
+                "username": VALID_USER_EMAIL,
+                "password": VALID_USER_PW,
+                "grant_type": "password",
+            },
+        )
+        data = r.json()
+        try:
+            return {"Authorization": f"Bearer {data['access_token']}"}
+        except:
+            logger.info(
+                "test_waiting_valid_user_auth_headers",
+                unstructured_message="Waiting for valid user auth headers",
+            )
+            time.sleep(5)
+            if count > 5:
+                break
+            count += 1
 
 
 def test_create_super_user(admin_auth_headers):
@@ -52,34 +171,11 @@ def test_create_non_super_user(viewer_auth_headers):
     assert len(token) > 4
 
 
-def test_me_with_orgs(crawler_auth_headers, default_org_id):
-    r = requests.get(
-        f"{API_PREFIX}/users/me",
-        headers=crawler_auth_headers,
-    )
-    assert r.status_code == 200
-
-    data = r.json()
-    assert data["email"] == CRAWLER_USERNAME_LOWERCASE
-    assert data["id"]
-    assert data["is_superuser"] is False
-    assert data["is_verified"] is True
-    assert data["name"] == "new-crawler"
-
-    orgs = data["orgs"]
-    assert len(orgs) == 1
-
-    global my_id
-    my_id = data["id"]
-
-    default_org = orgs[0]
-    assert default_org["id"] == default_org_id
-    assert default_org["name"]
-    assert default_org["default"]
-    assert default_org["role"] == CRAWLER_ROLE
+def test_me_with_orgs(my_id):
+    assert my_id
 
 
-def test_me_id(admin_auth_headers, default_org_id):
+def test_me_id(admin_auth_headers, default_org_id, my_id):
     r = requests.get(
         f"{API_PREFIX}/users/{my_id}",
         headers=admin_auth_headers,
@@ -156,21 +252,8 @@ def test_add_user_to_org_invalid_password(admin_auth_headers, default_org_id):
     assert r.json()["detail"] == "invalid_password"
 
 
-def test_register_user_invalid_password(admin_auth_headers, default_org_id):
+def test_register_user_invalid_password(admin_auth_headers, default_org_id, wrong_token):
     email = INVALID_PASSWORD_EMAIL
-    # Send invite
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/invite",
-        headers=admin_auth_headers,
-        json={"email": email, "role": CRAWLER_ROLE},
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["invited"] == "new_user"
-
-    global wrong_token
-    wrong_token = data["token"]
-
     # Create user with invite
     r = requests.post(
         f"{API_PREFIX}/auth/register",
@@ -188,19 +271,8 @@ def test_register_user_invalid_password(admin_auth_headers, default_org_id):
     assert detail == "invalid_password"
 
 
-def test_new_user_send_invite(admin_auth_headers, default_org_id):
-    # Send invite
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/invite",
-        headers=admin_auth_headers,
-        json={"email": VALID_USER_EMAIL, "role": CRAWLER_ROLE},
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["invited"] == "new_user"
-
-    global new_user_invite_token
-    new_user_invite_token = data["token"]
+def test_new_user_send_invite(new_user_invite_token):
+    assert new_user_invite_token
 
 
 def test_pending_invite_new_user(admin_auth_headers, default_org_id):
@@ -221,7 +293,7 @@ def test_pending_invite_new_user(admin_auth_headers, default_org_id):
         assert invite["firstOrgAdmin"] == False
 
 
-def test_new_user_token():
+def test_new_user_token(new_user_invite_token):
     # Must include email to validate token
     r = requests.get(
         f"{API_PREFIX}/users/invite/{new_user_invite_token}",
@@ -253,7 +325,7 @@ def test_register_user_no_invite():
     assert r.status_code == 400
 
 
-def test_register_user_wrong_invite():
+def test_register_user_wrong_invite(wrong_token):
     # Create with wrong invite
     r = requests.post(
         f"{API_PREFIX}/auth/register",
@@ -293,7 +365,7 @@ def test_register_user_wrong_invite():
     assert r.status_code == 422
 
 
-def test_register_user_valid_password():
+def test_register_user_valid_password(new_user_invite_token):
     # Create user with invite
     r = requests.post(
         f"{API_PREFIX}/auth/register",
@@ -308,7 +380,7 @@ def test_register_user_valid_password():
     assert r.json()["is_verified"] == True
 
 
-def test_register_dupe():
+def test_register_dupe(new_user_invite_token):
     # Create user with invite
     r = requests.post(
         f"{API_PREFIX}/auth/register",
@@ -354,19 +426,8 @@ def test_pending_invites_clear_new_user(admin_auth_headers, default_org_id):
     assert len(invites) == 0
 
 
-def test_existing_user_send_invite(admin_auth_headers, non_default_org_id):
-    # Send invite
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{non_default_org_id}/invite",
-        headers=admin_auth_headers,
-        json={"email": VALID_USER_EMAIL, "role": CRAWLER_ROLE},
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["invited"] == "existing_user"
-
-    global existing_user_invite_token
-    existing_user_invite_token = data["token"]
+def test_existing_user_send_invite(existing_user_invite_token):
+    assert existing_user_invite_token
 
 
 def test_pending_invite_existing_user(admin_auth_headers, non_default_org_id):
@@ -393,40 +454,8 @@ def test_pending_invites_crawler(crawler_auth_headers, default_org_id):
     assert r.status_code == 403
 
 
-def test_login_existing_user_for_invite():
-    r = requests.post(
-        f"{API_PREFIX}/auth/jwt/login",
-        data={
-            "username": VALID_USER_EMAIL,
-            "password": VALID_USER_PW,
-            "grant_type": "password",
-        },
-    )
-    data = r.json()
-    assert r.status_code == 200
-    login_token = data["access_token"]
-
-    auth_headers = {"Authorization": "bearer " + login_token}
-
-    # Get existing user invite to confirm it is valid
-    r = requests.get(
-        f"{API_PREFIX}/users/me/invite/{existing_user_invite_token}",
-        headers=auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["fromSuperuser"]
-    assert not data["inviterEmail"]
-    assert not data["inviterName"]
-
-    # Accept existing user invite
-    r = requests.post(
-        f"{API_PREFIX}/orgs/invite-accept/{existing_user_invite_token}",
-        headers=auth_headers,
-    )
-
-    global new_user_auth_headers
-    new_user_auth_headers = auth_headers
+def test_login_existing_user_for_invite(new_user_auth_headers):
+    assert new_user_auth_headers
 
 
 def test_pending_invites_clear(admin_auth_headers, non_default_org_id):
@@ -470,7 +499,7 @@ def test_user_part_of_two_orgs(default_org_id, non_default_org_id):
     assert non_default_org_id in org_ids
 
 
-def test_non_crawler_user_cant_invite(default_org_id):
+def test_non_crawler_user_cant_invite(default_org_id, new_user_auth_headers):
     # Send invite
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/invite",
@@ -491,7 +520,7 @@ def test_user_change_role(admin_auth_headers, default_org_id):
     assert r.json()["updated"] == True
 
 
-def test_non_superadmin_admin_can_invite(default_org_id):
+def test_non_superadmin_admin_can_invite(default_org_id, new_user_auth_headers):
     # Send invite
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/invite",
@@ -543,7 +572,7 @@ def test_reset_invalid_password(admin_auth_headers):
     assert detail == "invalid_password"
 
 
-def test_reset_patch_id_endpoint_invalid(admin_auth_headers, default_org_id):
+def test_reset_patch_id_endpoint_invalid(admin_auth_headers, default_org_id, my_id):
     r = requests.patch(
         f"{API_PREFIX}/users/{my_id}",
         headers=admin_auth_headers,
@@ -566,33 +595,7 @@ def test_reset_password_invalid_current(admin_auth_headers):
     assert r.json()["detail"] == "invalid_current_password"
 
 
-def test_reset_valid_password(admin_auth_headers, default_org_id):
-    count = 0
-    while True:
-        r = requests.post(
-            f"{API_PREFIX}/auth/jwt/login",
-            data={
-                "username": VALID_USER_EMAIL,
-                "password": VALID_USER_PW,
-                "grant_type": "password",
-            },
-        )
-        data = r.json()
-        try:
-            global valid_user_headers
-            valid_user_headers = {"Authorization": f"Bearer {data['access_token']}"}
-            break
-        except:
-            logger.info(
-                "test_waiting_valid_user_auth_headers",
-                unstructured_message="Waiting for valid user auth headers",
-            )
-            time.sleep(5)
-            if count > 5:
-                break
-
-            count += 1
-
+def test_reset_valid_password(admin_auth_headers, default_org_id, valid_user_headers):
     r = requests.put(
         f"{API_PREFIX}/users/me/password-change",
         headers=valid_user_headers,
@@ -607,7 +610,7 @@ def test_reset_valid_password(admin_auth_headers, default_org_id):
     assert r.json()["updated"] == True
 
 
-def test_lock_out_user_after_failed_logins():
+def test_lock_out_user_after_failed_logins(valid_user_headers):
     # Almost lock out user by making 5 consecutive failed login attempts
     for _ in range(5):
         requests.post(
