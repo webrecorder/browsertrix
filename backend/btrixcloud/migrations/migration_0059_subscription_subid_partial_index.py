@@ -41,6 +41,7 @@ class Migration(BaseMigration):
         # Create the new partial-filter index.
         # $gt: "" excludes empty strings since "" is the lowest string value;
         # combined with $exists: true, this only indexes real subscription IDs.
+        # pylint: disable=duplicate-code
         await orgs_db.create_index(
             "subscription.subId",
             unique=True,
