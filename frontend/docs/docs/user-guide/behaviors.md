@@ -12,11 +12,11 @@ Browsertrix enables site-specific behaviors for the following platforms:
 | **Platform Name** | **Page Host**      | **Applicable Pages** | **Smart Scoping Available**                      |
 |-------------------|--------------------|----------------------|--------------------------------------------------|
 | Bluesky           | bsky.app           | All                  | No                                               |
-| Facebook          | facebook.com       | Timeline             | [Yes](workflow-setup.md#use-smart-scoping-rules) |
-| Instagram         | instagram.com      | Posts, Stories       | [Yes](workflow-setup.md#use-smart-scoping-rules) |
-| Twitter           | x.com, twitter.com | Timeline             | No                                               |
-| Telegram          | t.me               | Posts                | No                                               |
-| TikTok            | tiktok.com         | Profile, Video       | No                                               |
+| Facebook          | facebook.com       | Timeline, Posts, Photos, Reels | [Yes](workflow-setup.md#use-smart-scoping-rules) |
+| Instagram         | instagram.com      | Posts, Profiles, Stories       | [Yes](workflow-setup.md#use-smart-scoping-rules) |
+| Twitter           | x.com, twitter.com | Timeline, Posts             | No                                               |
+| Telegram          | t.me               | Public Channels                | No                                               |
+| TikTok            | tiktok.com         | Video       | No                                               |
 | YouTube           | youtube.com        | Video                | No                                               |
 
 Site-specific behaviors will take precedence over other built-in behaviors and custom behaviors.
@@ -27,6 +27,6 @@ The following behaviors can be enabled or disabled in the workflow: [**autoscrol
 
 ## Custom Behaviors
 
-Custom behaviors allow you to add and modify page interactions for sites that are not supported by Browsertrix’s built-in behaviors. Like built-in behaviors, custom behaviors should be written using the Browsertrix JavaScript behavior format. See [Browser Behaviors docs](https://crawler.docs.browsertrix.com/user-guide/behaviors/#javascript-behaviors) for a detailed overview of the format.
+Custom behaviors allow you to add and modify page interactions for sites that are not supported by Browsertrix’s built-in behaviors. Custom behaviors can written using the Browsertrix JavaScript behavior format or created in the Chrome Dev Tools Recorder tab and provided to Browsertrix in the JSON User Flow format. See [Browser Behaviors docs](https://crawler.docs.browsertrix.com/user-guide/behaviors/#creating-custom-behaviors) for a detailed overview of creating custom behaviors.
 
 Once created and hosted on a public site or Git repository, the custom behavior script can be [added to a workflow](workflow-setup.md#use-custom-behaviors).

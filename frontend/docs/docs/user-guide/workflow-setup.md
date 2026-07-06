@@ -205,7 +205,7 @@ Browsertrix provides smart scoping rules for the following sites:
 | **Platform Name** | **Page Host** | **Applicable Pages** |
 |-------------------|---------------|----------------------|
 | Facebook          | facebook.com  | Timeline             |
-| Instagram         | instagram.com | Posts, Stories       |
+| Instagram         | instagram.com | Profile              |
 
 #### Custom Scoping Rules
 
