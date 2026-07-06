@@ -269,7 +269,14 @@ class OrgOps(BaseOrgs):
                     "name", unique=True, collation=case_insensitive_collation
                 )
                 await self.orgs.create_index(
-                    "subscription.subId", unique=True, sparse=True
+                    "subscription.subId",
+                    unique=True,
+                    partialFilterExpression={
+                        "$and": [
+                            {"subscription.subId": {"$exists": True}},
+                            {"subscription.subId": {"$gt": ""}},
+                        ]
+                    },
                 )
                 await self.orgs.create_index(
                     "slug", unique=True, collation=case_insensitive_collation
