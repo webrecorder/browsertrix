@@ -196,7 +196,7 @@ To include more pages than what is selected by the crawl scope, you can specify 
 
 #### Use Smart Scoping Rules
 
-Smart scoping rules reduce the complexity associated with scoping social media sites. When enabled, scoping rules for major social media platforms and other site-specific scoping rules will be automatically applied to the workflow. This setting is only applicable if a page selected by the crawl scope is hosted by a social media platform that Browsertrix supports, or if the page is selected by a custom behavior.
+Smart scoping rules reduce the complexity associated with scoping social media sites. When enabled, scoping rules for major social media platforms and other page-specific scoping rules will be automatically applied to the workflow. This setting is only applicable if a page selected by the crawl scope is hosted by a social media platform that Browsertrix supports, or if the page is selected by a custom behavior.
 
 We recommend keeping this setting enabled to ensure that pages from social media sites are archived to completion and are replayable. Disabling this setting may result in replay issues for popular social media platforms.
 
@@ -296,7 +296,7 @@ See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_w
 
 ### Use Custom Behaviors
 
-[Custom behaviors](behaviors.md/#custom-behaviors) can be enabled by specifying the location of the behavior script. Scripts can be provided through one of two source options:
+[Custom behaviors](behaviors.md#custom) can be enabled by specifying the location of the behavior script. Scripts can be provided through one of two source options:
 
 #### URL
 
@@ -306,7 +306,7 @@ See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_w
 
 :   A URL for a public Git repository containing one or more behavior files. Optionally, you can specify a branch and/or a relative path within the repository to specify exactly which behavior files within the repository should be used. The workflow editor will validate that the URL can be reached and is a Git repository. If a branch name is specified, the workflow editor will also validate that the branch exists in the Git repository.
 
-Custom behaviors will take precedence over the built-in [_Autoscroll_](#autoscroll) and [_Autoclick_](#autoclick) behaviors. [Site-specific behaviors](behaviors.md#site-specific) will take precedence over custom behaviors.
+Custom behaviors will take precedence over the default [_Autoscroll_](#autoscroll) and [_Autoclick_](#autoclick) behaviors and may be overridden by platform-specific behaviors (see [Behavior Precedence](behaviors.md#behavior-precedence)).
 
 _**Page Timing**_
 
