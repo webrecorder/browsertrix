@@ -1146,11 +1146,10 @@ export class OrgsList extends BtrixElement {
                 : org.name}
             </span>
             ${org.note
-              ? html`<btrix-popover
-                  hoist
-                  content="${org.note}"
-                  class="part-[body]:whitespace-pre-line"
-                >
+              ? html`<btrix-popover hoist>
+                  <span slot="content" class="whitespace-pre-line"
+                    >${org.note}</span
+                  >
                   <sl-icon
                     name="chat-left-text"
                     class="relative flex-shrink-0 text-neutral-500"
