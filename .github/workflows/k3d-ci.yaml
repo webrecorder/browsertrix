@@ -20,7 +20,7 @@ jobs:
     outputs:
       matches: ${{ steps.filter.outputs.matches }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 2 # important, to fetch previous commit
 
@@ -64,7 +64,7 @@ jobs:
             --k3s-arg "--disable=traefik,servicelb,metrics-server@server:*"
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set Env Vars
         run: |
