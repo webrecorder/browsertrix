@@ -287,6 +287,36 @@ def test_create_org_with_plan(admin_auth_headers):
     assert org["quotas"]["maxExecMinutesPerMonth"] == 180
 
 
+def test_create_multiple_orgs_with_plan(admin_auth_headers):
+    # First org with a plan should succeed
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Multi-Plan Org 1",
+            "slug": "multi-plan-org-1",
+            "planId": "starter",
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["added"]
+
+    # Second org with a plan should also succeed
+    # This tests that the index on `subscription.subId` does not apply to orgs where the
+    # `subId` is an empty string, as it is with new orgs created with a plan set via the API
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Multi-Plan Org 2",
+            "slug": "multi-plan-org-2",
+            "planId": "starter",
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["added"]
+
+
 def test_create_org_with_plan_and_quotas_rejected(admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/orgs/create",
