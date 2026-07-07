@@ -53,9 +53,9 @@ Unfortunately, there is not much Browsertrix can do to prevent being rate limite
 
 ### Rate Limited Workflow Status
 
-If the crawler can no longer continue by skipping error pages while being rate limited, it will switch to a time-delay-based strategy to continue running. The workflow status during this state will be **Running (Rate limited)**. In this state, the crawler will slow down and retry the page URL at longer intervals, up to once every 5 minutes. Pages that were not captured before will be queued to be retried. Crawls in this state will only use a few seconds of crawl time to check that it is still rate limited, thus avoiding wasting execution minutes on error pages.
+If the crawler can no longer continue by skipping error pages while being rate limited, it will switch to a time-delay-based strategy to continue running. The workflow status during this state will be <span class="status-amber-600">:btrix-status-dot: Running (Rate Limited)</span>. In this state, the crawler will slow down and retry the page URL at longer intervals, up to once every 5 minutes. Pages that were not captured before will be queued to be retried. Crawls in this state will only use a few seconds of crawl time to check that it is still rate limited, thus avoiding wasting execution minutes on error pages.
 
-If the crawl remains rate limited for an extended period of time (12 hours by default), the crawl may be automatically paused to avoid retrying indefinitely. The workflow status will then be **Paused: Rate Limit Timeout**.
+If the crawl remains rate limited for an extended period of time (12 hours by default), the crawl may be automatically paused to avoid retrying indefinitely. The workflow status will then be <span class="status-neutral-500">:bootstrap-pause-circle: Paused: Rate Limit Timeout</span>.
 
 ## End a Crawl
 
