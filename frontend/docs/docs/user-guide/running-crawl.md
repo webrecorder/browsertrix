@@ -37,6 +37,28 @@ To resume a paused crawl, simply click the _Resume_ button. The crawl status wil
 ???+ Note
     Paused crawls that are not resumed within 7 days of being paused are automatically updated to _Stopped_. Once stopped, the crawl is finished and can no longer be resumed.
 
+## Rate Limit Detection
+
+A site may 'rate limit' a crawl by returning error codes or showing CAPTCHA pages. Browsertrix will automatically
+attempt to detect such error pages, and skip archiving them. If enough consecutive error pages are show, the
+crawl will enter into a <span class="status-amber-600">:bootstrap-exclamation-triangle-fill: Rate Limited</span> state, indicating that the crawl is being rate limited by the current site.
+
+In this state, the crawler will slow down and retry at slower interval, up to once every 5 minutes. Pages that were
+not captured before will be queued to be retried.
+
+While rate limited, the crawler will use only a few seconds of crawling time to check if it is still rate limited,
+thus avoiding wasting crawling minutes on rate limited pages.
+
+If the crawl remains rate limited for an extended period of time (12 hours by default), it may revert to a <span class="status-neutral-500">:bootstrap-pause-circle: Paused: Rate Limit Timeout Reached</span>
+state to avoid running indefinitely.
+
+While a crawl is rate limited, there is not much Browsertrix can do, unfortunately. Occasionally, adding a [browser profile](browser-profiles/browser-profiles-overview.md) or configuring a [proxy server](../workflow-setup/#crawler-proxy-server) (if available) may help reduce rate limit for certain sites, while other sites may require permission to be crawled, such as allow-listing the IP address range(s) used by Browsertrix. If Browsertrix detects that the crawler is no longer being rate limited, the crawl status will switch back to *Running*.
+
+???+ Note
+    If you are a customer of our service and need help with rate limits on your own site, please reach out to [Support](support@webrecorder.org) and we may be able to assist.
+    
+
+
 ## End a Crawl
 
 If a crawl workflow is not crawling websites as intended it may be preferable to end crawling operations and update the crawl workflow's settings before trying again. There are two operations to end crawls, available both on the workflow's details page, or as part of the actions menu in the workflow list.

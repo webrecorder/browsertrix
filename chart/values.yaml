@@ -95,6 +95,10 @@ paused_crawl_limit_minutes: 10080
 # set to 0 to disable
 rate_limit_max_duration_minutes: 720
 
+# Number of consecutive rate limited pages after which the crawl
+# will enter 'rate-limited' state and will be interrupted
+rate_limit_threshold: 5
+
 # base url for replayweb.page
 rwp_base_url: "https://cdn.jsdelivr.net/npm/replaywebpage/"
 
