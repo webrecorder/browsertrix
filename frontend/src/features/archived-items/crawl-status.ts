@@ -89,7 +89,9 @@ export class CrawlStatus extends TailwindElement {
           ? msg("Time Quota Reached")
           : originalState.endsWith("_org_readonly")
             ? msg("Crawling Disabled")
-            : ""
+            : originalState.endsWith("_rate_limit_time_reached")
+              ? msg("Rate Limit Timeout Reached")
+              : ""
       : "";
     let substate = "";
 

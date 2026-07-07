@@ -126,6 +126,8 @@ data:
 
   DEDUPE_FEATURE_ENABLED_DEFAULT: "{{ .Values.dedupe.default_enabled }}"
 
+  RATE_LIMIT_DURATION_MINUTES: "{{ .Values.rate_limit_max_duration_minutes }}"
+
 
   {{- if .Values.available_plans }}
   AVAILABLE_PLANS: {{ .Values.available_plans | toJson }}
