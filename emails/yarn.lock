@@ -714,10 +714,10 @@
   resolved "https://registry.yarnpkg.com/@react-email/text/-/text-0.1.6.tgz#29fc7b130900cd192211e198066616aa210dd78d"
   integrity sha512-TYqkioRS45wTR5il3dYk/SbUjjEdhSwh9BtRNB99qNH1pXAwA45H7rAuxehiu8iJQJH0IyIr+6n62gBz9ezmsw==
 
-"@react-email/ui@6.6.3":
-  version "6.6.3"
-  resolved "https://registry.yarnpkg.com/@react-email/ui/-/ui-6.6.3.tgz#33df37392b14d07332ce369d69d6c9e77724701d"
-  integrity sha512-rGmMv2usj1REJqrTsg2VLnnUsV8/qI4AxaK9AMD81BbaNsJV8K0StHy0B03XHdrTuhxAjIg5wFD4LCd2me/qdg==
+"@react-email/ui@6.6.5":
+  version "6.6.5"
+  resolved "https://registry.yarnpkg.com/@react-email/ui/-/ui-6.6.5.tgz#6008546101e2fa97179c386cb89e7efd0579ced4"
+  integrity sha512-LoPALZc9TVsaBsJhZnFMFjhoCN+UeL5xEMsjkSEcK3OvAF2bJdL8tvi+zMVc/VapmR1JJqr7LHuR6wCYlXt7lg==
   dependencies:
     esbuild "0.28.0"
     next "16.2.6"
@@ -2034,10 +2034,10 @@ react-dom@^19.2.7:
   dependencies:
     scheduler "^0.27.0"
 
-react-email@^6.6.3:
-  version "6.6.3"
-  resolved "https://registry.yarnpkg.com/react-email/-/react-email-6.6.3.tgz#11760597ce322d19fbc7283e9e85c7c9aaf47141"
-  integrity sha512-kYpkIh00X771MQ4JDKX1Exqj+gRUeNPp/44oHSpo3zvUjnieatpNUu5ssF+me/Ure89J6E6I61ybcr131XDOMw==
+react-email@^6.6.5:
+  version "6.6.5"
+  resolved "https://registry.yarnpkg.com/react-email/-/react-email-6.6.5.tgz#1128d66847ed02418de464f4287ff0d65c68299d"
+  integrity sha512-IO2NXS17K5xEn9v8QVt28g8Nl6D4gmaKZZc61tOGiZla4X2F+veWjuSKCJC7HDIuEtZXF27chHo9sE6Mtey6tQ==
   dependencies:
     "@babel/parser" "7.27.0"
     "@babel/traverse" "7.27.0"
