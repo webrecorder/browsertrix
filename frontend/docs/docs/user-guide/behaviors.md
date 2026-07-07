@@ -17,9 +17,9 @@ Browsertrix automatically enables behaviors for popular social media platforms i
 | Bluesky           | bsky.app           | All                            | No                                               |
 | Facebook          | facebook.com       | Timeline, Posts, Photos, Reels | [Yes](workflow-setup.md#use-smart-scoping-rules) |
 | Instagram         | instagram.com      | Posts, Profiles, Stories       | [Yes](workflow-setup.md#use-smart-scoping-rules) |
-| Twitter           | x.com, twitter.com | Timeline, Posts                | No                                               |
 | Telegram          | t.me               | Public Channels                | No                                               |
 | TikTok            | tiktok.com         | Video                          | No                                               |
+| Twitter/X         | x.com, twitter.com | Timeline, Posts                | No                                               |
 | YouTube           | youtube.com        | Video                          | No                                               |
 
 A detailed description of each behavior can be found in [Browser Behavior docs](https://crawler.docs.browsertrix.com/user-guide/behaviors/#site-specific-behaviors).
