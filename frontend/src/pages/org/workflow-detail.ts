@@ -1503,23 +1503,22 @@ export class WorkflowDetail extends BtrixElement {
     }
 
     return html`
-      <btrix-alert
-        id="pausedNotice"
-        class="sticky top-2 z-50 part-[base]:mb-5"
-        variant="info"
-      >
+      <btrix-alert class="sticky top-2 z-50 part-[base]:mb-5" variant="warning">
         <div class="mb-2 flex justify-between">
           <span class="inline-flex items-center gap-1.5">
-            <sl-icon class="text-base" name="exclamation-triangle"></sl-icon>
+            <sl-icon
+              class="text-base"
+              name="exclamation-diamond-fill"
+            ></sl-icon>
             <strong class="font-medium">
-              ${msg("Crawling is being rate limited or blocked")}
+              ${msg("Rate Limiting Detected")}
             </strong>
           </span>
         </div>
-        <div class="text-pretty text-neutral-600">
-          <p class="mb-2">
+        <div class="text-pretty">
+          <p>
             ${msg(
-              `Browsertrix has detected that pages being crawled are error or CAPTCHA pages and is skipping them.`,
+              "This crawl is running slower due to being rate limited by a website being crawled.",
             )}
             <a
               target="_blank"
@@ -1527,7 +1526,7 @@ export class WorkflowDetail extends BtrixElement {
                 .docsUrl}user-guide/running-crawl/#rate-limit-detection"
             >
               <strong class="font-semibold"
-                >${msg("More Info on Rate Limit Detection")}</strong
+                >${msg("More Information")}</strong
               ></a
             >
           </p>

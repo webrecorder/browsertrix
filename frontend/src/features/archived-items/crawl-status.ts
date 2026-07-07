@@ -90,7 +90,7 @@ export class CrawlStatus extends TailwindElement {
           : originalState.endsWith("_org_readonly")
             ? msg("Crawling Disabled")
             : originalState.endsWith("_rate_limit_time_reached")
-              ? msg("Rate Limit Timeout Reached")
+              ? msg("Rate Limit Timeout")
               : ""
       : "";
     let substate = "";
@@ -152,11 +152,14 @@ export class CrawlStatus extends TailwindElement {
       case "rate-limited":
         color = "var(--warning)";
         icon = html`<sl-icon
-          name="exclamation-triangle-fill"
+          name="dot"
+          library="app"
+          class="animatePulse"
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;
-        label = msg("Rate Limited");
+        label = msg("Running");
+        substate = msg("Rate Limited");
         break;
 
       case "stopping":

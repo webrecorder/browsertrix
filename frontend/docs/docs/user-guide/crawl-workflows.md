@@ -48,11 +48,12 @@ Statuses may be displayed with a reason that details how the current status came
 | <span class="status-violet-600">:bootstrap-hourglass-split: Waiting: _Reason_</span> | The workflow run is queued for one of the following reasons:<br/>**At Crawl Limit**: Org has reached maximum number of concurrent crawls<br/>**Dedupe Index**: An update to the deduplication index is in progress |
 | <span class="status-violet-600">:btrix-status-dot: Starting</span> | The crawler is being initialized. Crawling will begin shortly. |
 | <span class="status-green-600">:btrix-status-dot: Running</span> | The crawler is visiting and archiving pages. |
-| <span class="status-amber-600">:bootstrap-exclamation-triangle-fill: Rate Limited</span> | The crawler has detected [rate limiting](running-crawl.md#rate-limit-detection) from the sites that are being crawled and is running more slowly. |
+| <span class="status-amber-600">:btrix-status-dot: Running (Rate Limited)</span> | The crawler is running more slowly to capture [rate limited](running-crawl.md#rate-limit-detection) webpages. |
 | <span class="status-violet-600">:bootstrap-pause-circle: Pausing</span> | The crawler has been instructed to pause and is finishing crawl of the current page. |
 | <span class="status-violet-600">:bootstrap-pause-circle: Pausing (Finishing Downloads)</span> | The crawler is finalizing downloads on the current page. |
 | <span class="status-violet-600">:bootstrap-pause-circle: Pausing (Creating WACZ)</span> | Pages crawled so far are being packaged into WACZ files and transferred to storage. |
 | <span class="status-neutral-500">:bootstrap-pause-circle: Paused</span> | The workflow run has been paused by a user. It can be resumed for up to 7 days; afterwards, the run stops. |
+| <span class="status-neutral-500">:bootstrap-pause-circle: Paused: Rate Limit Timeout</span> | The workflow run has been paused automatically due to being [rate limited](running-crawl.md#rate-limit-detection) for too long. |
 | <span class="status-neutral-500">:bootstrap-pause-circle: Paused: _Reason_</span> | The workflow run has been paused automatically due to an enforced limit, as specified in the reason. |
 | <span class="status-violet-600">:bootstrap-play-circle: Resuming</span> | The workflow run is starting back up after being paused. |
 | <span class="status-violet-600">:btrix-status-dot: Stopping</span> | The crawler has been instructed to stop and is finishing crawl of the current page.|
