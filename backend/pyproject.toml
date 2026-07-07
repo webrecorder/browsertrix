@@ -48,7 +48,7 @@ stream-zip = { url = "https://github.com/ikreymer/stream-zip/archive/refs/heads/
 dev = [
     "mypy>=2.1.0",
     "pylint>=4.0.6",
-    "ruff>=0.15.18",
+    "ruff>=0.15.20",
 ]
 test = [
     "boto3>=1.43.0",
