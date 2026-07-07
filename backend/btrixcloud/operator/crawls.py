@@ -358,7 +358,6 @@ class CrawlOperator(BaseOperator):
                 status.stopReason = stop_reason
                 await self.mark_finished(crawl, status, state)
 
-
         children = self._load_redis(params, status, crawl, data.children)
 
         storage_path = crawl.storage.get_storage_extra_path(oid)
@@ -1968,7 +1967,6 @@ class CrawlOperator(BaseOperator):
             await self.set_state(
                 new_status, status, crawl, allowed_from=RUNNING_AND_WAITING_STATES
             )
-
 
         return status
 
