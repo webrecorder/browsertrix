@@ -295,6 +295,10 @@ class CrawlOperator(BaseOperator):
                     "starting", status, crawl, allowed_from=["waiting_dedupe_index"]
                 )
 
+        # clear this here if no longer in 'rate-limited' state
+        if status.rateLimitedAtTime and status.state != "rate-limited":
+            status.rateLimitedAtTime = ""
+
         status.scale = len(pods)
         if status.scale:
             for pod_name, pod in pods.items():
@@ -354,8 +358,6 @@ class CrawlOperator(BaseOperator):
                 status.stopReason = stop_reason
                 await self.mark_finished(crawl, status, state)
 
-            # clear rate limited at time, to be reset on future resume
-            status.rateLimitedAtTime = ""
 
         children = self._load_redis(params, status, crawl, data.children)
 
@@ -1966,8 +1968,6 @@ class CrawlOperator(BaseOperator):
                 new_status, status, crawl, allowed_from=RUNNING_AND_WAITING_STATES
             )
 
-            if status.rateLimitedAtTime and new_status == "running":
-                status.rateLimitedAtTime = ""
 
         return status
 

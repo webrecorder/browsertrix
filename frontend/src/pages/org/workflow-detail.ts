@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import type { SlDropdown } from "@shoelace-style/shoelace";
@@ -19,6 +20,7 @@ import { type Crawl, type CrawlLog, type Seed, type Workflow } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Alert } from "@/components/ui/alert";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
@@ -116,6 +118,9 @@ export class WorkflowDetail extends BtrixElement {
       new URLSearchParams(location.search).get(CRAWLS_PAGINATION_NAME),
     ),
   };
+
+  @consume({ context: docsUrlContext })
+  private readonly docsUrl?: DocsUrlContext;
 
   @query("#pausedNotice")
   private readonly pausedNotice?: Alert | null;
@@ -1496,6 +1501,7 @@ export class WorkflowDetail extends BtrixElement {
     if (this.workflow?.lastCrawlState !== "rate-limited") {
       return html``;
     }
+
     return html`
       <btrix-alert
         id="pausedNotice"
@@ -1506,15 +1512,24 @@ export class WorkflowDetail extends BtrixElement {
           <span class="inline-flex items-center gap-1.5">
             <sl-icon class="text-base" name="exclamation-triangle"></sl-icon>
             <strong class="font-medium">
-              ${msg("The site is blocking or rate limiting our crawling")}
+              ${msg("Crawling is being rate limited or blocked")}
             </strong>
           </span>
         </div>
         <div class="text-pretty text-neutral-600">
           <p class="mb-2">
             ${msg(
-              "The crawl has encountered error or CAPTCHA pages and is skipping them. See our guide for more info",
+              `Browsertrix has detected that pages being crawled are error or CAPTCHA pages and is skipping them.`,
             )}
+            <a
+              target="_blank"
+              href="${this
+                .docsUrl}user-guide/running-crawl/#rate-limit-detection"
+            >
+              <strong class="font-semibold"
+                >${msg("More Info on Rate Limit Detection")}</strong
+              ></a
+            >
           </p>
         </div>
       </btrix-alert>
