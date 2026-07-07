@@ -22,6 +22,8 @@ Browsertrix automatically enables behaviors for popular social media platforms i
 | TikTok            | tiktok.com         | Video                          | No                                               |
 | YouTube           | youtube.com        | Video                          | No                                               |
 
+A detailed description of each behavior can be found in [Browser Behavior docs](https://crawler.docs.browsertrix.com/user-guide/behaviors/#site-specific-behaviors).
+
 ### Custom
 
 Custom behaviors allow you to add and modify page interactions for pages that are not supported by Browsertrix’s built-in behaviors. Custom behaviors can be written using the Browsertrix **JavaScript Behavior** format or created in the Chrome DevTools  **JSON User Flow** format. See [Browser Behaviors docs](https://crawler.docs.browsertrix.com/user-guide/behaviors/#creating-custom-behaviors) for a detailed overview of creating custom behaviors in either format.
