@@ -150,14 +150,18 @@ _callsite_adder = structlog.processors.CallsiteParameterAdder(
 )
 
 
-def _add_callsite(logger, method_name: str, event_dict: EventDict) -> EventDict:
-    """Add callsite info to all events except request-logging events,
+def _strip_callsite_for_excluded_events(
+    _logger: structlog.stdlib.BoundLogger, _method_name: str, event_dict: EventDict
+) -> EventDict:
+    """Strip callsite info from request-logging events and uvicorn.access,
     whose callsite is always the same middleware location."""
-    if event_dict.get("event") not in (
+    if event_dict.get("event") in (
         "http_request",
         "http_unhandled_exception",
-    ) and event_dict.get("logger") not in ("uvicorn.access",):
-        return _callsite_adder(logger, method_name, event_dict)
+    ) or event_dict.get("logger") == "uvicorn.access":
+        event_dict.pop("filename", None)
+        event_dict.pop("func_name", None)
+        event_dict.pop("lineno", None)
     return event_dict
 
 
@@ -172,7 +176,8 @@ SHARED_PROCESSORS: list[Processor] = [
     structlog.processors.TimeStamper(fmt="iso"),
     structlog.processors.StackInfoRenderer(),
     structlog.processors.UnicodeDecoder(),
-    _add_callsite,
+    _callsite_adder,
+    _strip_callsite_for_excluded_events,
 ]
 
 
