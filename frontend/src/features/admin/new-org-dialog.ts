@@ -184,7 +184,7 @@ export class NewOrgDialog extends BtrixElement {
           }}
           name="note"
           label="${msg("Note")}"
-          help-text="${msg("Only visible to superuser.")}"
+          help-text="${msg("Only visible to superadmin.")}"
         ></sl-textarea>
       </form>
 

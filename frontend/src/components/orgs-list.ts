@@ -30,6 +30,7 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { SubscriptionStatus } from "@/types/billing";
 import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
 import type { OrgData } from "@/utils/orgs";
+import { tw } from "@/utils/tailwind";
 
 enum OrgFilter {
   All = "all",
@@ -655,10 +656,12 @@ export class OrgsList extends BtrixElement {
   }
 
   private renderOrgNote() {
+    const org_name = this.currOrg?.name || "";
+
     return html`
       <btrix-dialog
         id="orgNoteDialog"
-        .label=${msg(str`Edit Note for: ${this.currOrg?.name || ""}`)}
+        .label=${msg(str`Edit Note for: ${org_name}`)}
         @sl-show=${() => {
           this.noteValue = this.currOrg?.note;
         }}
@@ -1129,8 +1132,8 @@ export class OrgsList extends BtrixElement {
         <btrix-table-cell class="p-2" rowClickTarget="a">
           <a
             class=${clsx(
-              org.readOnly ? "text-neutral-500" : "text-neutral-900",
-              "flex items-center gap-1",
+              org.readOnly ? tw`text-neutral-500` : tw`text-neutral-900`,
+              tw`flex items-center gap-1`,
             )}
             href="/orgs/${org.slug}/dashboard"
             @click=${this.navigate.link}
