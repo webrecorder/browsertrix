@@ -54,6 +54,9 @@ export const infoTextFor = {
   customBehavior: msg(
     `Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.`,
   ),
+  failOnFailedSeed: msg(
+    "If any page that matches the crawl scope fails to load, the crawler will cease crawling and mark the workflow run as failed.",
+  ),
   failOnContentCheck: html`${msg(
     "Fail the crawl if a page behavior detects the browser is not logged in on supported pages.",
   )}

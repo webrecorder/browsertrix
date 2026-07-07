@@ -1655,6 +1655,15 @@ https://archiveweb.page/es/`}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(infoTextFor.useSitemap, false)}
+      ${inputCol(html`
+        <sl-checkbox
+          name="failOnFailedSeed"
+          ?checked=${this.formState.failOnFailedSeed}
+        >
+          ${labelFor.failOnFailedSeed}
+        </sl-checkbox>
+      `)}
+      ${this.renderHelpTextCol(infoTextFor.failOnFailedSeed, false)}
       ${this.renderLinkSelectors()}
 
       <!-- Settings that expand the crawl scope by including links that would normally be out of scope -->
