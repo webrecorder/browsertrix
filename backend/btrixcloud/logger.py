@@ -155,10 +155,14 @@ def _strip_callsite_for_excluded_events(
 ) -> EventDict:
     """Strip callsite info from request-logging events and uvicorn.access,
     whose callsite is always the same middleware location."""
-    if event_dict.get("event") in (
-        "http_request",
-        "http_unhandled_exception",
-    ) or event_dict.get("logger") == "uvicorn.access":
+    if (
+        event_dict.get("event")
+        in (
+            "http_request",
+            "http_unhandled_exception",
+        )
+        or event_dict.get("logger") == "uvicorn.access"
+    ):
         event_dict.pop("filename", None)
         event_dict.pop("func_name", None)
         event_dict.pop("lineno", None)
