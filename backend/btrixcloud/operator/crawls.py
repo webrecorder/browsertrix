@@ -295,8 +295,11 @@ class CrawlOperator(BaseOperator):
                     "starting", status, crawl, allowed_from=["waiting_dedupe_index"]
                 )
 
-        # clear this here if no longer in 'rate-limited' state
-        if status.rateLimitedAtTime and status.state != "rate-limited":
+        # clear rateLimitedAtTime if crawl in a non-rate limited running state or already paused
+        if status.rateLimitedAtTime and (
+            (status.state != "rate-limited" and status.state in RUNNING_STATES)
+            or crawl.paused_at
+        ):
             status.rateLimitedAtTime = ""
 
         status.scale = len(pods)
