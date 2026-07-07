@@ -226,9 +226,25 @@ class UploadOps(BaseCrawlOps):
                 max_sync_upload_size=MAX_SYNC_UPLOAD_SIZE,
             )
 
-            job_id = await self.background_job_ops.create_postprocess_upload_job(
-                org.id, crawl_id
-            )
+            MAX_ATTEMPTS = 3
+            attempt = 0
+            job_id = None
+
+            while attempt < MAX_ATTEMPTS:
+                job_id = await self.background_job_ops.create_postprocess_upload_job(
+                    org.id, crawl_id
+                )
+                if job_id:
+                    break
+
+                upload_logger.warning(
+                    "upload_create",
+                    state="large_file_dispatching_bg_job_failed",
+                    attempt=attempt + 1,
+                    max_attempts=MAX_ATTEMPTS,
+                )
+                attempt += 1
+
             if not job_id:
                 upload_logger.warning(
                     "upload_create",
