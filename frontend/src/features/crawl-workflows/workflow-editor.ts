@@ -1665,15 +1665,6 @@ https://archiveweb.page/es/`}
       `)}
       ${this.renderHelpTextCol(infoTextFor.useSitemap, false)}
       ${this.renderLinkSelectors()}
-      ${inputCol(html`
-        <sl-checkbox
-          name="failOnFailedSeed"
-          ?checked=${this.formState.failOnFailedSeed}
-        >
-          ${labelFor.failOnFailedSeed}
-        </sl-checkbox>
-      `)}
-      ${this.renderHelpTextCol(infoTextFor.failOnFailedSeed, false)}
 
       <!-- Settings that expand the crawl scope by including links that would normally be out of scope -->
       ${this.renderSectionHeading(msg("Additional Scope"))}
@@ -1718,6 +1709,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ${msg(str`You can enter up to ${maxUrls} URLs.`, {
           desc: "`maxUrls` example: '1,000'",
         })}`,
+        showWhenOpen: html`
+          ${inputCol(html`
+            <sl-checkbox
+              name="failOnFailedSeed"
+              ?checked=${this.formState.failOnFailedSeed}
+            >
+              ${labelFor.failOnFailedSeed}
+            </sl-checkbox>
+          `)}
+          ${this.renderHelpTextCol(infoTextFor.failOnFailedSeed, false)}
+        `,
       })}
 
       <!-- Settings that modify the expanded scope by exclude links that would normally would be in scope -->
