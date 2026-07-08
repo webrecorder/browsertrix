@@ -293,8 +293,8 @@ def test_create_org_with_plan_and_note(admin_auth_headers):
         f"{API_PREFIX}/orgs/create",
         headers=admin_auth_headers,
         json={
-            "name": "Org With Plan",
-            "slug": "org-with-plan",
+            "name": "Org With Plan And Note",
+            "slug": "org-with-plan-and-note",
             "planId": "starter",
             "note": "Test note",
         },
