@@ -538,6 +538,15 @@ class OrgOps(BaseOrgs):
             await self.orgs.insert_one(org.to_dict())
         except DuplicateKeyError as dupe:
             field = get_duplicate_key_error_field(dupe)
+            logger.error(
+                "duplicate_key_when_creating_org",
+                field=field,
+                name=name,
+                slug=slug,
+                quotas=quotas,
+                subscription=subscription,
+                note=note,
+            )
             raise HTTPException(
                 status_code=400, detail=f"duplicate_org_{field}"
             ) from dupe
