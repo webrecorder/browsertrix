@@ -57,11 +57,13 @@ The crawl scope is your starting point for scoping. The scope can be expanded to
     _Upload URL List_
     :    A longer list of URLs can be provided as a text file, containing one URL per line. The text file may not exceed 25MB, but there is no limit to the number of URLs in the file. Once a file is added, a link will be provided to view the file (but not edit it). To change the file, a new file can be uploaded in its place.
 
-    For both options, each line should contain a valid URL (starting with https:// or http://). Invalid or duplicate URLs will be skipped. The crawl will fail if the list contains no valid URLs or if the file is not a list of URLs.
+        While the text file can contain an unlimited number of URLs, the crawl will still be limited by the [page limit](#max-pages) for the workflow or organization. URLs beyond the limit will not be crawled.
 
-    While the uploaded text file can contain an unlimited number of URLs, the crawl will still be limited by the [page limit](#max-pages) for the workflow or organization - URLs beyond the limit will not be crawled.
+    For both options, each line should contain a valid URL (starting with `https://` or `http://`). Duplicate URLs will be skipped. Invalid URLs will be ignored unless _[Fail Crawl if Any URL Fails](#fail-crawl-if-any-url-fails)_ is enabled, in which case the crawl will fail. The crawl will always fail if the entered URL list contains no valid URLs or if the file is not a list of URLs.
 
-    If both a list of entered list and an uploaded file are provided, the currently selected option will be used.
+    ##### Fail Crawl if Any URL Fails
+
+    If enabled, the crawler will exit upon encountering any URL that fails to load. No crawled content will be saved and the workflow status will be <span class="status-red-600">:bootstrap-x-octagon-fill: Failed</span>.
 
 #### In-Page Links
 
@@ -198,9 +200,13 @@ When enabled, the crawler will follow any hyperlink that is on a page selected b
 
 This can be useful for capturing links that lead outside the crawled website but should still be included in the archive.
 
-#### Custom List of Pages
+#### Additional URLs to Crawl
 
-A list of URLs of pages to crawl.
+A list of URLs of pages to crawl. Each line should contain a valid URL (starting with `https://` or `http://`). Invalid URLs will be ignored unless _[Fail Crawl if Any URL Fails](#fail-crawl-if-any-url-fails-for-additional-urls-to-crawl)_ is enabled.
+
+#### Fail Crawl if Any URL Fails (For _Additional URLs to Crawl_)
+
+If enabled, the crawler will exit upon encountering any URL in _Additional URLs to Crawl_ that fails to load. No crawled content will be saved and the workflow status will be <span class="status-red-600">:bootstrap-x-octagon-fill: Failed</span>.
 
 ### Exclude Pages
 

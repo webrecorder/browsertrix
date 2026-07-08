@@ -1122,6 +1122,15 @@ export class WorkflowEditor extends BtrixElement {
                 content: msg("upload a URL list file"),
               })}.`,
       )}
+      ${inputCol(html`
+        <sl-checkbox
+          name="failOnFailedSeed"
+          ?checked=${this.formState.failOnFailedSeed}
+        >
+          ${labelFor.failOnFailedSeed}
+        </sl-checkbox>
+      `)}
+      ${this.renderHelpTextCol(infoTextFor.failOnFailedSeed, false)}
     `;
   };
 
@@ -1700,6 +1709,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ${msg(str`You can enter up to ${maxUrls} URLs.`, {
           desc: "`maxUrls` example: '1,000'",
         })}`,
+        showWhenOpen: html`
+          ${inputCol(html`
+            <sl-checkbox
+              name="failOnFailedSeed"
+              ?checked=${this.formState.failOnFailedSeed}
+            >
+              ${labelFor.failOnFailedSeed}
+            </sl-checkbox>
+          `)}
+          ${this.renderHelpTextCol(infoTextFor.failOnFailedSeed, false)}
+        `,
       })}
 
       <!-- Settings that modify the expanded scope by exclude links that would normally would be in scope -->
@@ -3755,7 +3775,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       scopeType: ScopeType.Page,
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
       useSitemap: false,
-      failOnFailedSeed: this.formState.failOnFailedSeed,
+      failOnFailedSeed:
+        this.formState.scopeType === NewWorkflowOnlyScopeType.PageList &&
+        this.formState.failOnFailedSeed,
     };
 
     return config;
@@ -3801,7 +3823,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       seeds: [primarySeed, ...additionalSeedUrlList],
       scopeType,
       useSitemap: this.formState.useSitemap,
-      failOnFailedSeed: false,
+      failOnFailedSeed: this.formState.failOnFailedSeed,
     };
     return config;
   }

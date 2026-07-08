@@ -462,54 +462,22 @@ export class ConfigDetails extends BtrixElement {
           </btrix-file-list>`,
       );
 
-    const seeds = () =>
-      when(
-        this.seeds,
-        (seeds) => html`
-          <btrix-table class="grid-cols-[1fr_auto]">
-            ${seeds.map(
-              (seed: Seed) => html`
-                <btrix-table-row>
-                  <btrix-table-cell>
-                    <btrix-overflow-scroll
-                      class="-ml-5 w-[calc(100%+theme(spacing.5))] contain-inline-size part-[content]:px-5 part-[content]:[scrollbar-width:thin]"
-                    >
-                      <btrix-code
-                        language="url"
-                        class="block w-max whitespace-nowrap"
-                        .value=${seed.url}
-                      ></btrix-code>
-                    </btrix-overflow-scroll>
-                  </btrix-table-cell>
-                  <btrix-table-cell>
-                    <btrix-copy-button .value=${seed.url} placement="left">
-                    </btrix-copy-button>
-                    <sl-tooltip
-                      placement="right"
-                      content=${msg("Open in New Tab")}
-                    >
-                      <sl-icon-button
-                        name="arrow-up-right"
-                        href="${seed.url}"
-                        target="_blank"
-                      >
-                      </sl-icon-button>
-                    </sl-tooltip>
-                  </btrix-table-cell>
-                </btrix-table-row>
-              `,
-            )}
-          </btrix-table>
-        `,
-      );
+    const seeds = () => when(this.seeds, this.renderSeeds);
+    const isUrlList = this.seeds && this.seeds.length > 1;
 
     return html`
       ${this.renderSetting(
-        config.seedFileId || (this.seeds && this.seeds.length > 1)
+        config.seedFileId || isUrlList
           ? msg("URLs to Crawl")
           : msg("URL to Crawl"),
         config.seedFileId ? seedFile() : seeds(),
         true,
+      )}
+      ${when(isUrlList, () =>
+        this.renderSetting(
+          msg("Fail Crawl if Any URL Fails"),
+          config.failOnFailedSeed,
+        ),
       )}
       ${this.renderSetting(
         msg("Visit Any Linked Page"),
@@ -608,25 +576,14 @@ export class ConfigDetails extends BtrixElement {
       )}
       ${this.renderSetting(
         labelFor.urlList,
-        additionalUrlList.length
-          ? html`
-              <ul>
-                ${additionalUrlList.map((seed) => {
-                  const seedUrl = typeof seed === "string" ? seed : seed.url;
-                  return html`<li>
-                    <a
-                      class="text-primary hover:text-primary-400"
-                      href="${seedUrl}"
-                      target="_blank"
-                      rel="noreferrer"
-                      >${seedUrl}</a
-                    >
-                  </li>`;
-                })}
-              </ul>
-            `
-          : none,
+        additionalUrlList.length ? this.renderSeeds(additionalUrlList) : none,
         true,
+      )}
+      ${when(additionalUrlList.length, () =>
+        this.renderSetting(
+          msg("Fail Crawl if Any URL Fails"),
+          config.failOnFailedSeed,
+        ),
       )}
       ${this.renderSetting(
         msg("Use Robots.txt Disallow List"),
@@ -672,6 +629,44 @@ export class ConfigDetails extends BtrixElement {
       () => this.renderSetting(labelFor.exclusions, none),
     );
   }
+
+  private readonly renderSeeds = (seeds: Seed[]) => {
+    return html`<btrix-table class="grid-cols-[1fr_auto]">
+      ${seeds.map((seed: Seed) => {
+        const url = typeof seed === "string" ? seed : seed.url;
+
+        return html`
+          <btrix-table-row
+            class="-ml-1.5 rounded transition-colors duration-x-fast has-[btrix-copy-button:hover]:bg-neutral-50 has-[sl-icon-button:hover]:bg-neutral-50"
+          >
+            <btrix-table-cell class="pl-1.5">
+              <btrix-overflow-scroll
+                class="-ml-5 w-[calc(100%+theme(spacing.5))] contain-inline-size part-[content]:px-5 part-[content]:[scrollbar-width:thin]"
+              >
+                <btrix-code
+                  language="url"
+                  class="block w-max whitespace-nowrap"
+                  .value=${url}
+                ></btrix-code>
+              </btrix-overflow-scroll>
+            </btrix-table-cell>
+            <btrix-table-cell>
+              <btrix-copy-button .value=${url} placement="left">
+              </btrix-copy-button>
+              <sl-tooltip placement="right" content=${msg("Open in New Tab")}>
+                <sl-icon-button
+                  name="arrow-up-right"
+                  href="${url}"
+                  target="_blank"
+                >
+                </sl-icon-button>
+              </sl-tooltip>
+            </btrix-table-cell>
+          </btrix-table-row>
+        `;
+      })}
+    </btrix-table>`;
+  };
 
   private renderSetting(
     label: string | TemplateResult,

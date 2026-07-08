@@ -11,7 +11,7 @@ export type Cols = [TemplateResult<1>, TemplateResult | string | undefined][];
 // TODO Revisit, maybe configure with Cols?
 const singleLineFromControls = ["sl-checkbox", "sl-switch"];
 
-export const gridColsClasses = tw`grid grid-cols-5 gap-5`;
+export const gridColsClasses = tw`grid-cols-5 gap-5`;
 export const colSpanClasses = tw`col-span-5 min-h-6`;
 
 export function inputCol(content: TemplateResult<1>) {
@@ -40,7 +40,7 @@ export function infoCol(content: TemplateResult | string, classes?: string) {
 
 export function columns(cols: Cols) {
   return html`
-    <div class="${gridColsClasses}">
+    <div class=${clsx(gridColsClasses, tw`grid`)}>
       ${cols.map(([main, info]) => {
         const singleLineFormControl = new RegExp(
           `<(${singleLineFromControls.join("|")})`,
