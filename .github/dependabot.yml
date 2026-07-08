@@ -18,6 +18,7 @@ updates:
         update-types:
           - "minor"
           - "patch"
+
   - package-ecosystem: "npm"
     directory: "/emails"
     schedule:
@@ -27,8 +28,15 @@ updates:
     groups:
       production:
         dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
       development:
         dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
   - package-ecosystem: "uv"
     directory: "/backend"
     schedule:
@@ -38,6 +46,12 @@ updates:
     groups:
       production:
         dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
       development:
         dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
 ...
