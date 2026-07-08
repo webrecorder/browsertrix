@@ -283,20 +283,23 @@ export class NewOrgDialog extends BtrixElement {
             const summary = this.renderPlanOptionSummary(plan);
             return html`<sl-option
               value=${plan.id}
-              class="part-[suffix]:flex-shrink"
+              class="part-[suffix]:flex-shrink part-[base]:flex-wrap"
             >
               ${plan.name}
               ${summary
                 ? html`<span
                     slot="suffix"
-                    class="ml-2 text-xs text-neutral-500"
+                    class="ml-[1.125rem] mt-0.5 text-xs text-neutral-500"
                   >
                     ${summary}
                   </span>`
                 : ""}
             </sl-option>`;
           })}
-          <sl-option value=${CUSTOM_PLAN_VALUE}>${msg("Custom")}</sl-option>
+          <sl-divider></sl-divider>
+          <sl-option value=${CUSTOM_PLAN_VALUE}>
+            ${msg("Custom Plan")}
+          </sl-option>
         </sl-select>
       </div>
     `;
@@ -354,7 +357,7 @@ export class NewOrgDialog extends BtrixElement {
 
   private formatQuota(v: number, type: "bytes" | "number") {
     const fn = type === "bytes" ? this.localize.bytes : this.localize.number;
-    if (v <= 0) return msg("Unset");
+    if (v <= 0) return msg("Not set");
     return fn(v);
   }
 
