@@ -3823,8 +3823,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       seeds: [primarySeed, ...additionalSeedUrlList],
       scopeType,
       useSitemap: this.formState.useSitemap,
-      failOnFailedSeed:
-        includeUrlList.length > 0 && this.formState.failOnFailedSeed,
+      failOnFailedSeed: this.formState.failOnFailedSeed,
     };
     return config;
   }
