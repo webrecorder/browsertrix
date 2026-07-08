@@ -51,6 +51,7 @@
   --md-code-font: "Recursive", monospace;
   --md-text-font: "Inter Variable", "Helvetica", "Arial", sans-serif;
   --wr-blue-primary: var(--color-brand-blue);
+  --wr-green-primary: var(--color-brand-green);
   --wr-orange-primary: var(--color-orange-500);
 }
 
@@ -186,6 +187,38 @@ h5 {
   color: white !important;
   font-family: var(--md-text-font);
   font-weight: 600;
+}
+
+/* Callouts show more information than badges but less than admonitions. */
+
+.callout-blue {
+  background-color: white !important;
+  border-color: var(--color-cyan-300) !important;
+  border-radius: 0.2rem !important;
+  color: var(--color-cyan-600) !important;
+  font-family: var(--md-text-font);
+  font-size: 0.64rem;
+  padding: 0.2rem 0.4rem !important;
+}
+
+.callout-green {
+  background-color: white !important;
+  border-color: var(--color-lime-300) !important;
+  border-radius: 0.2rem !important;
+  color: var(--color-lime-600) !important;
+  font-family: var(--md-text-font);
+  font-size: 0.64rem;
+  padding: 0.2rem 0.4rem !important;
+}
+
+.callout-orange {
+  background-color: white !important;
+  border-color: var(--color-orange-300) !important;
+  border-radius: 0.2rem !important;
+  color: var(--color-orange-600) !important;
+  font-family: var(--md-text-font);
+  font-size: 0.64rem;
+  padding: 0.2rem 0.4rem !important;
 }
 
 /* Status Styling */
