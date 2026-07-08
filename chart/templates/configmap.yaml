@@ -63,6 +63,8 @@ data:
   MAX_CRAWL_SCALE: "{{ .Values.max_crawl_scale | default 3 }}"
   MAX_BROWSER_WINDOWS: "{{ .Values.max_browser_windows | default 8 }}"
 
+  MAX_WACZ_FILE_SIZE_BYTES: "{{ .Values.max_wacz_file_size_bytes }}"
+
   LOG_FAILED_CRAWL_LINES: "{{ .Values.log_failed_crawl_lines | default 0 }}"
 
   IS_LOCAL_MINIO: "{{ .Values.minio_local }}"
