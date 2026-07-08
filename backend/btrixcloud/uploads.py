@@ -45,6 +45,12 @@ MAX_SYNC_UPLOAD_SIZE = int(
 
 MAX_UPLOAD_RETRIES = 3
 
+MAX_WACZ_FILE_SIZE = int(
+    os.environ.get(
+        "MAX_WACZ_FILE_SIZE_BYTES", 50 * 1000 * 1000 * 1000 * 1000
+    )  # 50 TiB - high default limit, meant to just stop zip bombs & the like
+)
+
 
 # ============================================================================
 class UploadOps(BaseCrawlOps):
@@ -360,12 +366,12 @@ class UploadOps(BaseCrawlOps):
                 )
 
             pp_logger.debug("post_process_upload", state="complete")
-        except Exception:
+        except Exception as e:
             pp_logger.exception("post_process_upload", state="failed")
             await self.crawls.find_one_and_update(
                 {"_id": crawl_id}, {"$set": {"state": "failed"}}, upsert=True
             )
-            raise
+            raise e
 
     async def _get_child_wacz_files(
         self, crawl_id: str, wacz_url: str
@@ -410,6 +416,32 @@ class UploadOps(BaseCrawlOps):
                     count=len(child_waczs),
                     filename=child_wacz.filename,
                 )
+
+                max_size = MAX_WACZ_FILE_SIZE
+                if org.quotas.storageQuota:
+                    remaining = org.quotas.storageQuota - org.bytesStored
+                    if remaining < max_size:
+                        max_size = remaining
+
+                if child_wacz.file_size > max_size:
+                    cwf_logger.error(
+                        "multi_wacz_file_too_large",
+                        filename=child_wacz.filename,
+                        file_size=child_wacz.file_size,
+                        max_size=max_size,
+                        storage_quota=org.quotas.storageQuota,
+                        bytes_stored=org.bytesStored,
+                        detail="Extracted file exceeds available org size or hard limit. ",
+                    )
+                    # it's a little odd to raise an HTTPException from inside here because
+                    # it's not always going to be called from an HTTP request handler,
+                    # but it'll propagate correctly when it is, and when it's not it'll still
+                    # cause the background job to fail
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"WACZ file '{child_wacz.filename}' inside item id "
+                        f"{crawl_id} exceeds max size",
+                    )
 
                 # it's worth retrying these uploads because they may be run in a background
                 # job, we can't count on being able to give the user immediate feedback
