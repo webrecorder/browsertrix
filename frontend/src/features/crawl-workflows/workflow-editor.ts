@@ -3775,7 +3775,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       scopeType: ScopeType.Page,
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
       useSitemap: false,
-      failOnFailedSeed: this.formState.failOnFailedSeed,
+      failOnFailedSeed:
+        this.formState.scopeType === NewWorkflowOnlyScopeType.PageList &&
+        this.formState.failOnFailedSeed,
     };
 
     return config;
@@ -3821,7 +3823,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
       seeds: [primarySeed, ...additionalSeedUrlList],
       scopeType,
       useSitemap: this.formState.useSitemap,
-      failOnFailedSeed: false,
+      failOnFailedSeed:
+        includeUrlList.length > 0 && this.formState.failOnFailedSeed,
     };
     return config;
   }
