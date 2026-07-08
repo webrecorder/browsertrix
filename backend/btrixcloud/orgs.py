@@ -1889,7 +1889,7 @@ def init_orgs_api(
                 raise HTTPException(status_code=400, detail="invalid_plan")
 
             quotas = plan.org_quotas
-            plan_note = f"Plan id at time of org creation: {plan.name}"
+            plan_note = f"Plan ID: {plan.id} (name: {plan.name})"
             note = f"{note}\n\n{plan_note}" if note else plan_note
 
         org = await ops.create_org(
