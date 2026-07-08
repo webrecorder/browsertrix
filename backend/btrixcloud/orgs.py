@@ -1861,7 +1861,7 @@ def init_orgs_api(
         new_org: OrgCreate,
         user: User = Depends(user_dep),
     ):
-        create_logger = logger.bind(**new_org)
+        create_logger = logger.bind(**new_org.model_dump())
 
         if not user.is_superuser:
             create_logger.warning("org_create_user_not_superuser")
