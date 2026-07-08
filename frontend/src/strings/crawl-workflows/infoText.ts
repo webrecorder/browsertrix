@@ -13,7 +13,7 @@ export const infoTextFor = {
     "Expands crawl scope to more accurately crawl social media pages, if applicable.",
   ),
   includeLinkedPages: msg(
-    "Expands crawl scope to include pages that are one link away.",
+    "The crawler will follow links one level deep (aka “one hop out”) from pages selected by the crawl scope.",
   ),
   exclusions: msg("Specify rules for which pages should not be visited."),
   pageLimit: msg(

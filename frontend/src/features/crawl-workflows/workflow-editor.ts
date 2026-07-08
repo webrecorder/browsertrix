@@ -1045,7 +1045,7 @@ export class WorkflowEditor extends BtrixElement {
 
       <!-- Settings that expand the crawl scope by including links that would normally be out of scope -->
       ${this.renderSectionHeading(msg("Additional Scope"))}
-      ${this.renderUseSmartScope()} ${this.renderIncludeLinkedPages()}
+      ${this.renderIncludeLinkedPages()} ${this.renderUseSmartScope()}
       ${when(
         this.formState.includeLinkedPages ||
           this.formState.scopeType === ScopeType.SPA,
@@ -1728,7 +1728,7 @@ https://archiveweb.page/es/`}
 
       <!-- Settings that expand the crawl scope by including links that would normally be out of scope -->
       ${this.renderSectionHeading(msg("Additional Scope"))}
-      ${this.renderUseSmartScope()} ${this.renderIncludeLinkedPages()}
+      ${this.renderIncludeLinkedPages()} ${this.renderUseSmartScope()}
       ${detailsInColumns({
         open: additionalUrlList.length > 0,
         title: html`${labelFor.urlList}

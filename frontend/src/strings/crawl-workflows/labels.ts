@@ -15,7 +15,7 @@ export const labelFor = {
   dedupeType: msg("Crawl Deduplication"),
   saveStorage: msg("Include browser storage data"),
   maxScopeDepth: msg("Max Discovery Depth"),
-  includeLinkedPages: msg("Visit any linked page"),
+  includeLinkedPages: msg("Include directly linked pages"),
   useSitemap: msg("Use sitemap"),
   useRobots: msg("Use robots.txt disallow list"),
   customIncludeList: msg("Page Prefix URLs"),
@@ -28,7 +28,7 @@ export const labelFor = {
 
 export const titlecaseLabelFor = {
   saveStorage: msg("Include Browser Storage Data"),
-  includeLinkedPages: msg("Visit Any Linked Page"),
+  includeLinkedPages: msg("Include Directly Linked Pages"),
   useSitemap: msg("Use Sitemap"),
   useRobots: msg("Use Robots.txt Disallow List"),
   failOnContentCheck: msg("Fail Crawl if Not Logged In"),

@@ -213,7 +213,7 @@ Scoping rules for other platforms can be added through [custom behavior scripts]
 
 Customizing scope through custom behaviors should only be done to achieve advanced use cases for sites that are not listed above, as Browsertrix’s built-in behaviors and scoping rules will take precedence over custom behavior scripts.
 
-#### Visit Any Linked Page
+#### Include Directly Linked Pages
 
 When enabled, the crawler will follow any hyperlink that is on a page selected by the crawl scope. Links will only be followed one level deep (aka “one hop out”).
 
