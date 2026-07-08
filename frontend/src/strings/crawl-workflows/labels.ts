@@ -19,7 +19,7 @@ export const labelFor = {
   useSitemap: msg("Use sitemap"),
   useRobots: msg("Use robots.txt disallow list"),
   customIncludeList: msg("Page Prefix URLs"),
-  urlList: msg("Additional List of Pages"),
+  urlList: msg("Additional URLs to Crawl"),
   failOnContentCheck: msg("Fail crawl if not logged in"),
   failOnFailedSeed: msg("Fail crawl if any URL fails"),
   exclusions: msg("Custom Exclusion Rules"),
