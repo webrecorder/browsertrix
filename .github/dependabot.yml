@@ -18,7 +18,6 @@ updates:
         update-types:
           - "minor"
           - "patch"
-
   - package-ecosystem: "npm"
     directory: "/emails"
     schedule:
@@ -36,7 +35,6 @@ updates:
         update-types:
           - "minor"
           - "patch"
-
   - package-ecosystem: "uv"
     directory: "/backend"
     schedule:
@@ -54,4 +52,3 @@ updates:
         update-types:
           - "minor"
           - "patch"
-...
