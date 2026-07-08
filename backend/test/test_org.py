@@ -310,7 +310,7 @@ def test_create_org_with_plan_and_note(admin_auth_headers):
     assert org["quotas"]["maxPagesPerCrawl"] == 2000
     assert org["quotas"]["storageQuota"] == 100000000000
     assert org["quotas"]["maxExecMinutesPerMonth"] == 180
-    assert org["note"] == "Test note\n\nPlan id at time of org creation: starter"
+    assert org["note"] == "Test note\n\nPlan ID: starter (name: Browsertrix Starter)"
 
 
 def test_create_org_with_plan_and_quotas_rejected(admin_auth_headers):
