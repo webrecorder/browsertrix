@@ -138,7 +138,7 @@
     "@web/dev-server-rollup": "^0.6.4",
     "concurrently": "^10.0.3",
     "husky": "^8.0.3",
-    "lint-staged": "^13.1.0",
+    "lint-staged": "^17.0.8",
     "msw": "^2.14.6",
     "msw-storybook-addon": "^2.0.7",
     "prettier-plugin-tailwindcss": "^0.8.0",
