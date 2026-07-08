@@ -12,7 +12,7 @@ Specify the range and depth of your crawl.
 
 ### Crawl Scope
 
-The crawl scope selects pages to be crawled based on the provided URL.
+The crawl scope selects pages to be crawled based on the [provided URL](#crawl-start-url-urls-to-crawl).
 
 Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 
@@ -35,7 +35,7 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 
     ??? info "Site Crawl Use Cases"
         - You're archiving a subset of a website, like everything under _website.com/your-username_ (`Pages in Same Directory`)
-        - You're archiving an entire website _and_ external pages linked to from the website (`Pages on Same Domain` + _Include Any Linked Page_ checked)
+        - You're archiving an entire website _and_ external pages linked to from the website (`Pages on Same Domain` + _Include Directly Linked Pages_ checked)
 
 The crawl scope is your starting point for scoping. The scope can be expanded to include more pages or limited to less pages by combining the crawl scope with [Additional Scope](#additional-scope) and [Exclude Pages](#exclude-pages) settings.
 
@@ -192,7 +192,13 @@ See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_w
 
 ### Additional Scope
 
-To include more pages than what is selected by the crawl scope, you can specify scoping rules that will add those pages to the scope.
+To include more pages than what is selected by the [crawl scope](#crawl-scope), you can specify scoping rules that will add those pages to the scope.
+
+#### Include Directly Linked Pages
+
+When enabled, the crawler will follow any hyperlink that is on a page selected by the crawl scope. This can be useful for capturing supplementary pages without having to manually add their URLs.
+
+Links will only be followed one level deep (aka “one hop out”). For example, given a site crawl of [webrecorder.net](https://webrecorder.net/), the crawler will visit [github.com/webrecorder](https://github.com/webrecorder/) because it is hyperlinked in the footer of the website. The crawler will _not_ visit any of the links on the GitHub page (like [github.com/webrecorder/browsertrix](https://github.com/webrecorder/browsertrix/)) because those links are two visits (or “hops”) away from the crawl URL that is in scope.
 
 #### Use Smart Scoping Rules
 
@@ -207,17 +213,11 @@ Browsertrix provides smart scoping rules for the following sites:
 | Facebook          | facebook.com  | Timeline             |
 | Instagram         | instagram.com | Profile              |
 
-#### Custom Scoping Rules
+##### Custom Scoping Rules
 
 Scoping rules for other platforms can be added through [custom behavior scripts](#use-custom-behaviors). When _Use Smart Scoping Rules_ is enabled, any URLs added to the crawl through the `addLink()` method in a custom behavior will be queued regardless of whether they would otherwise be in scope.
 
 Customizing scope through custom behaviors should only be done to achieve advanced use cases for sites that are not listed above, as Browsertrix’s built-in behaviors and scoping rules will take precedence over custom behavior scripts.
-
-#### Include Directly Linked Pages
-
-When enabled, the crawler will follow any hyperlink that is on a page selected by the crawl scope. Links will only be followed one level deep (aka “one hop out”).
-
-This can be useful for capturing links that lead outside the crawled website but should still be included in the archive.
 
 #### Additional URLs to Crawl
 
