@@ -3,9 +3,9 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY .yarnrc.yml package.json yarn.lock ./
 
-RUN yarn install --frozen-lockfile --ignore-optional
+RUN corepack enable yarn && yarn install --immutable
 
 COPY . .
 
@@ -24,9 +24,9 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY .yarnrc.yml package.json yarn.lock ./
 
-RUN yarn install --frozen-lockfile --production --ignore-optional && yarn cache clean
+RUN corepack enable yarn && yarn install --immutable && yarn cache clean
 
 COPY --from=builder /app/dist ./dist
 

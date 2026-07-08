@@ -2,9 +2,9 @@
 FROM --platform=$BUILDPLATFORM docker.io/library/node:24-alpine as build_deps
 
 WORKDIR /app
-COPY .yarnrc yarn.lock package.json ./
+COPY .yarnrc.yml yarn.lock package.json ./
 # Uses a cache mount for the Yarn cache so that it's not included in subsequent steps
-RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn --production --frozen-lockfile --ignore-optional --network-timeout 1000000
+RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn corepack enable yarn && yarn install --immutable --network-timeout 1000000
 
 COPY --link config ./config/
 COPY --link lit-localize.json \
@@ -32,7 +32,7 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
     VERSION=${VERSION}
 
 # Prevent Docker image including node_modules to save space
-RUN yarn build && \
+RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn corepack enable yarn && yarn build && \
     rm -rf ./node_modules
 
 FROM --platform=$BUILDPLATFORM docker.io/library/python:3.12-slim as build_docs
