@@ -1861,7 +1861,10 @@ def init_orgs_api(
         new_org: OrgCreate,
         user: User = Depends(user_dep),
     ):
+        create_logger = logger.bind(**new_org)
+
         if not user.is_superuser:
+            create_logger.warning("org_create_user_not_superuser")
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         quotas = new_org.quotas
@@ -1870,6 +1873,7 @@ def init_orgs_api(
 
         if plan_id and quotas:
             # disallow setting both planId and quotas
+            create_logger.warning("org_create_with_both_plan_and_quotas")
             raise HTTPException(
                 status_code=400, detail="invalid_request_use_either_plan_or_quotas"
             )
@@ -1877,15 +1881,18 @@ def init_orgs_api(
         if plan_id:
             plans_json = os.environ.get("AVAILABLE_PLANS")
             if not plans_json:
+                create_logger.error("org_create_plans_not_configured")
                 raise HTTPException(status_code=400, detail="invalid_plan")
 
             try:
                 plans = PlansResponse.model_validate_json(plans_json)
             except ValidationError as err:
+                create_logger.error("org_create_invalid_plans_configured")
                 raise HTTPException(status_code=400, detail="invalid_plans") from err
 
             plan = next((p for p in plans.plans if p.id == plan_id), None)
             if not plan:
+                create_logger.warning("org_create_invalid_plan")
                 raise HTTPException(status_code=400, detail="invalid_plan")
 
             quotas = plan.org_quotas
@@ -1899,13 +1906,10 @@ def init_orgs_api(
             note=note,
         )
 
-        logger.info(
+        create_logger.info(
             "created_org",
             org_id=org.id,
-            name=org.name,
-            quotas=quotas,
-            plan_id=plan_id,
-            note=org.note,
+            saved_note=org.note,
         )
 
         return {"added": True, "id": org.id}
