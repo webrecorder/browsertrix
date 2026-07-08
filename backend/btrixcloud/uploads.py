@@ -232,11 +232,11 @@ class UploadOps(BaseCrawlOps):
                 max_sync_upload_size=MAX_SYNC_UPLOAD_SIZE,
             )
 
-            MAX_ATTEMPTS = 3
+            max_attempts = 3
             attempt = 0
             job_id = None
 
-            while attempt < MAX_ATTEMPTS:
+            while attempt < max_attempts:
                 job_id = await self.background_job_ops.create_postprocess_upload_job(
                     org.id, crawl_id
                 )
@@ -247,7 +247,7 @@ class UploadOps(BaseCrawlOps):
                     "upload_create",
                     state="large_file_dispatching_bg_job_failed",
                     attempt=attempt + 1,
-                    max_attempts=MAX_ATTEMPTS,
+                    max_attempts=max_attempts,
                 )
                 attempt += 1
 
@@ -366,12 +366,12 @@ class UploadOps(BaseCrawlOps):
                 )
 
             pp_logger.debug("post_process_upload", state="complete")
-        except Exception as e:
+        except Exception:
             pp_logger.exception("post_process_upload", state="failed")
             await self.crawls.find_one_and_update(
                 {"_id": crawl_id}, {"$set": {"state": "failed"}}, upsert=True
             )
-            raise e
+            raise
 
     async def _get_child_wacz_files(
         self, crawl_id: str, wacz_url: str
