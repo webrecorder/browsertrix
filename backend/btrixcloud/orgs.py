@@ -269,14 +269,7 @@ class OrgOps(BaseOrgs):
                     "name", unique=True, collation=case_insensitive_collation
                 )
                 await self.orgs.create_index(
-                    "subscription.subId",
-                    unique=True,
-                    partialFilterExpression={
-                        "$and": [
-                            {"subscription.subId": {"$exists": True}},
-                            {"subscription.subId": {"$gt": ""}},
-                        ]
-                    },
+                    "subscription.subId", unique=True, sparse=True
                 )
                 await self.orgs.create_index(
                     "slug", unique=True, collation=case_insensitive_collation
@@ -1873,6 +1866,7 @@ def init_orgs_api(
 
         quotas = new_org.quotas
         plan_id = new_org.planId
+        note = new_org.note
 
         if plan_id and quotas:
             # disallow setting both planId and quotas
@@ -1880,7 +1874,6 @@ def init_orgs_api(
                 status_code=400, detail="invalid_request_use_either_plan_or_quotas"
             )
 
-        subscription = None
         if plan_id:
             plans_json = os.environ.get("AVAILABLE_PLANS")
             if not plans_json:
@@ -1896,18 +1889,14 @@ def init_orgs_api(
                 raise HTTPException(status_code=400, detail="invalid_plan")
 
             quotas = plan.org_quotas
-            subscription = Subscription(
-                subId="",
-                status=SubscriptionStatus.NOT_TRACKED,
-                planId=plan.id,
-            )
+            plan_note = f"Plan id at time of org creation: {plan.name}"
+            note = f"{note}\n\n{plan_note}" if note else plan_note
 
         org = await ops.create_org(
             new_org.name,
             new_org.slug,
             quotas=quotas,
-            subscription=subscription,
-            note=new_org.note,
+            note=note,
         )
 
         logger.info(

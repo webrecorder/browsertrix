@@ -2034,12 +2034,6 @@ class SubscriptionStatus(StrEnum):
     be sent to other services
     """
 
-    NOT_TRACKED = "not_tracked"
-    """
-    used for organizations set up with a plan but not otherwise tracked by an
-    automated system
-    """
-
 
 REASON_PAUSED = "subscriptionPaused"
 REASON_CANCELED = "subscriptionCanceled"
