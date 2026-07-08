@@ -420,8 +420,7 @@ class UploadOps(BaseCrawlOps):
                 max_size = MAX_WACZ_FILE_SIZE
                 if org.quotas.storageQuota:
                     remaining = org.quotas.storageQuota - org.bytesStored
-                    if remaining < max_size:
-                        max_size = remaining
+                    max_size = min(remaining, max_size)
 
                 if child_wacz.file_size > max_size:
                     cwf_logger.error(
