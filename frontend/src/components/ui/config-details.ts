@@ -475,7 +475,7 @@ export class ConfigDetails extends BtrixElement {
       )}
       ${when(isUrlList, () =>
         this.renderSetting(
-          msg("Fail Crawl on Invalid URL"),
+          msg("Fail Crawl if Any URL Fails"),
           config.failOnFailedSeed,
         ),
       )}
@@ -581,7 +581,7 @@ export class ConfigDetails extends BtrixElement {
       )}
       ${when(additionalUrlList.length, () =>
         this.renderSetting(
-          msg("Fail Crawl on Invalid URL"),
+          msg("Fail Crawl if Any URL Fails"),
           config.failOnFailedSeed,
         ),
       )}
