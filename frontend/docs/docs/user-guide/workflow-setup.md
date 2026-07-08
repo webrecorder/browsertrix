@@ -57,11 +57,15 @@ The crawl scope is your starting point for scoping. The scope can be expanded to
     _Upload URL List_
     :    A longer list of URLs can be provided as a text file, containing one URL per line. The text file may not exceed 25MB, but there is no limit to the number of URLs in the file. Once a file is added, a link will be provided to view the file (but not edit it). To change the file, a new file can be uploaded in its place.
 
-    For both options, each line should contain a valid URL (starting with https:// or http://). Invalid or duplicate URLs will be skipped. The crawl will fail if the list contains no valid URLs or if the file is not a list of URLs.
+    For both options, each line should contain a valid URL (starting with `https://` or `http://`). Invalid or duplicate URLs will be skipped unless _[Fail Crawl on Invalid URL](#fail-crawl-on-invalid-url)_ is enabled. The crawl will always fail if the list contains no valid URLs or if the file is not a list of URLs.
 
     While the uploaded text file can contain an unlimited number of URLs, the crawl will still be limited by the [page limit](#max-pages) for the workflow or organization - URLs beyond the limit will not be crawled.
 
     If both a list of entered list and an uploaded file are provided, the currently selected option will be used.
+
+    ##### Fail Crawl on Invalid URL
+
+    If enabled, the crawler will exit upon encountering any URL that fails to open. No crawled content will be saved and the workflow status will be <span class="status-red-600">:bootstrap-x-octagon-fill: Failed</span>.
 
 #### In-Page Links
 
@@ -200,7 +204,11 @@ This can be useful for capturing links that lead outside the crawled website but
 
 #### Custom List of Pages
 
-A list of URLs of pages to crawl.
+A list of URLs of pages to crawl. For both options, each line should contain a valid URL (starting with `https://` or `http://`). Invalid or duplicate URLs will be skipped unless _[Fail Crawl on Invalid URL](#fail-crawl-on-invalid-url-for-custom-list-of-pages)_ is enabled.
+
+#### Fail Crawl on Invalid URL (For _Custom List of Pages_)
+
+If enabled, the crawler will exit upon encountering any URL in _Custom List of Pages_ that fails to open. No crawled content will be saved and the workflow status will be <span class="status-red-600">:bootstrap-x-octagon-fill: Failed</span>.
 
 ### Exclude Pages
 
