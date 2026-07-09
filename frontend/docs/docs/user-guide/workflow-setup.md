@@ -12,7 +12,7 @@ Specify the range and depth of your crawl.
 
 ### Crawl Scope
 
-The crawl scope selects pages to be crawled based on the provided URL.
+The crawl scope selects pages to be crawled based on the [provided URL](#crawl-start-url-urls-to-crawl).
 
 Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 
@@ -35,7 +35,7 @@ Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
 
     ??? info "Site Crawl Use Cases"
         - You're archiving a subset of a website, like everything under _website.com/your-username_ (`Pages in Same Directory`)
-        - You're archiving an entire website _and_ external pages linked to from the website (`Pages on Same Domain` + _Include Any Linked Page_ checked)
+        - You're archiving an entire website _and_ external pages linked to from the website (`Pages on Same Domain` + _Include Directly Linked Pages_ checked)
 
 The crawl scope is your starting point for scoping. The scope can be expanded to include more pages or limited to less pages by combining the crawl scope with [Additional Scope](#additional-scope) and [Exclude Pages](#exclude-pages) settings.
 
@@ -169,6 +169,8 @@ Patterns should be written in the JavaScript regular expression syntax without t
 
 #### Use Sitemap
 
+`Named “Check for sitemap” prior to v1.24`{ .callout-blue }
+
 When enabled, the crawler will check for a sitemap at `/sitemap.xml` and `/robots.txt` and use it to discover pages that match the crawl scope.
 
 This can be useful for selecting pages on a website that are not hyperlinked and may not otherwise be captured.
@@ -192,15 +194,40 @@ See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_w
 
 ### Additional Scope
 
-To include more pages than what is selected by the crawl scope, you can specify scoping rules that will add those pages to the scope.
+To include more pages than what is selected by the [crawl scope](#crawl-scope), you can specify scoping rules that will add those pages to the scope.
 
-#### Visit Any Linked Page
+#### Include Directly Linked Pages
 
-When enabled, the crawler will follow any hyperlink that is on a page selected by the crawl scope. Links will only be followed one level deep (aka “one hop out”).
+`Named “Include any linked page (“one hop out”)” prior to v1.24`{ .callout-blue }
 
-This can be useful for capturing links that lead outside the crawled website but should still be included in the archive.
+When enabled, the crawler will follow any hyperlink that is on a page selected by the crawl scope. This can be useful for capturing supplementary pages without having to manually add their URLs.
+
+Links will only be followed one level deep (aka “one hop out”). For example, given a site crawl of [webrecorder.net](https://webrecorder.net/), the crawler will visit [github.com/webrecorder](https://github.com/webrecorder/) because it is hyperlinked in the footer of the website. The crawler will _not_ visit any of the links on the GitHub page (like [github.com/webrecorder/browsertrix](https://github.com/webrecorder/browsertrix/)) because those links are two visits (or “hops”) away from the crawl URL that is in scope.
+
+#### Use Smart Scoping Rules
+
+`New in v1.24`{ .callout-green }
+
+Smart scoping rules reduce the complexity associated with scoping social media sites. When enabled, scoping rules for major social media platforms and other page-specific scoping rules will be automatically applied to the workflow. This setting is only applicable if a page selected by the crawl scope is hosted by a social media platform that Browsertrix supports, or if the page is selected by a custom behavior.
+
+We recommend keeping this setting enabled to ensure that pages from social media sites are archived to completion and are replayable. Disabling this setting may result in replay issues for popular social media platforms.
+
+Browsertrix provides smart scoping rules for the following sites:
+
+| **Platform Name** | **Page Host** | **Applicable Pages** |
+|-------------------|---------------|----------------------|
+| Facebook          | facebook.com  | Timeline             |
+| Instagram         | instagram.com | Profile              |
+
+##### Custom Scoping Rules
+
+Scoping rules for other platforms can be added through [custom behavior scripts](#use-custom-behaviors). When _Use Smart Scoping Rules_ is enabled, any URLs added to the crawl through the [`addLink()`](https://crawler.docs.browsertrix.com/user-guide/behaviors/#additional-links-from-behaviors) method in a custom behavior will be queued regardless of whether they would otherwise be in scope.
+
+Customizing scope through custom behaviors should only be done to achieve advanced use cases for sites that are not listed above, as Browsertrix’s built-in behaviors and scoping rules will take precedence over custom behavior scripts.
 
 #### Additional URLs to Crawl
+
+`Named “Additional Pages” prior to v1.24`{ .callout-blue }
 
 A list of URLs of pages to crawl. Each line should contain a valid URL (starting with `https://` or `http://`). Invalid URLs will be ignored unless _[Fail Crawl if Any URL Fails](#fail-crawl-if-any-url-fails-for-additional-urls-to-crawl)_ is enabled.
 
@@ -213,6 +240,8 @@ If enabled, the crawler will exit upon encountering any URL in _Additional URLs 
 You can prevent the crawler from visiting parts of a website that you do not want to be archived by setting exclusion rules. Exclusion rules will be applied last, after crawl scope and additional scoping rules are applied.
 
 #### Use Robots.txt Disallow List
+
+`Named “Skip pages disallowed by robots.txt” prior to v1.24`{ .callout-blue }
 
 When enabled, the crawler will check for a [Robots Exclusion Protocol](https://www.rfc-editor.org/rfc/rfc9309.html) file at `/robots.txt` for each host encountered during crawling and skip any pages that are disallowed by the rules found therein.
 
@@ -252,10 +281,6 @@ The crawl will be gracefully stopped after reaching this set size in GB.
 
 Customize how and when the browser performs specific operations on a page.
 
-_**Behaviors**_
-
-Behaviors are browser operations that can be enabled for additional page interactivity.
-
 ### Autoscroll
 
 When enabled, the browser will automatically scroll to the end of the page.
@@ -281,17 +306,17 @@ See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_w
 
 ### Use Custom Behaviors
 
-Enable custom behaviors to add your own behavior scripts. See [Browser Behaviors crawler documentation](https://crawler.docs.browsertrix.com/user-guide/behaviors/#built-in-behaviors) on creating custom behaviors.
-
-Custom behaviors can be specified as:
+[Custom behaviors](behaviors.md#custom) can be enabled by specifying the location of the behavior script. Scripts can be provided through one of two source options:
 
 #### URL
 
-A URL for a single JavaScript or JSON behavior file to download. This should be a URL that the crawler has access to. The workflow editor will validate that the supplied URL can be reached.
+:   A URL for a single JavaScript or JSON behavior file to download. This should be a URL that the crawler has access to. The workflow editor will validate that the supplied URL can be reached.
 
 #### Git repository
 
-A URL for a public Git repository containing one or more behavior files. Optionally, you can specify a branch and/or a relative path within the repository to specify exactly which behavior files within the repository should be used. The workflow editor will validate that the URL can be reached and is a Git repository. If a branch name is specified, the workflow editor will also validate that the branch exists in the Git repository.
+:   A URL for a public Git repository containing one or more behavior files. Optionally, you can specify a branch and/or a relative path within the repository to specify exactly which behavior files within the repository should be used. The workflow editor will validate that the URL can be reached and is a Git repository. If a branch name is specified, the workflow editor will also validate that the branch exists in the Git repository.
+
+Custom behaviors will take precedence over the default [_Autoscroll_](#autoscroll) and [_Autoclick_](#autoclick) behaviors and may be overridden by platform-specific behaviors (see [Behavior Precedence](behaviors.md#behavior-precedence)).
 
 _**Page Timing**_
 
@@ -307,7 +332,7 @@ Waits on the page after initial HTML page load for a set number of seconds prior
 
 ### Behavior Limit
 
-Limits amount of elapsed time behaviors have to complete.
+Limits the amount of elapsed time that behaviors have to complete.
 
 ### Delay Before Next Page
 
