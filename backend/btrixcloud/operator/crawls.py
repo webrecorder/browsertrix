@@ -466,6 +466,7 @@ class CrawlOperator(BaseOperator):
         params["cpu"] = pod_info.newCpu or params.get("redis_cpu")
         params["memory"] = pod_info.newMemory or params.get("redis_memory")
         params["no_pvc"] = crawl.is_single_page
+        params["memory_limit"] = self.k8s.max_redis_memory_size or params["memory"]
 
         restart_reason = None
         if has_pod:
