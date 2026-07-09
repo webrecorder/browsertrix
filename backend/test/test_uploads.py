@@ -270,7 +270,7 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
     assert r.status_code == 200
     data = r.json()
 
-    assert data["total"] > 0
+    assert data["total"] == 2
 
     pages = data["items"]
     for page in pages:
@@ -1238,7 +1238,7 @@ def test_multi_wacz_upload_pages(
     assert r.status_code == 200
     data = r.json()
 
-    assert data["total"] > 0, (
+    assert data["total"] == 2, (
         f"Expected pages from multi-WACZ children, got {data['total']}"
     )
 
@@ -1254,8 +1254,8 @@ def test_multi_wacz_upload_pages(
     )
     assert r.status_code == 200
     upload_data = r.json()
-    assert upload_data["pageCount"] > 0
-    assert upload_data["uniquePageCount"] > 0
+    assert upload_data["pageCount"] == 2
+    assert upload_data["uniquePageCount"] == 1
 
 
 def test_multi_wacz_upload_download(
