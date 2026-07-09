@@ -221,7 +221,7 @@ Browsertrix provides smart scoping rules for the following sites:
 
 ##### Custom Scoping Rules
 
-Scoping rules for other platforms can be added through [custom behavior scripts](#use-custom-behaviors). When _Use Smart Scoping Rules_ is enabled, any URLs added to the crawl through the `addLink()` method in a custom behavior will be queued regardless of whether they would otherwise be in scope.
+Scoping rules for other platforms can be added through [custom behavior scripts](#use-custom-behaviors). When _Use Smart Scoping Rules_ is enabled, any URLs added to the crawl through the [`addLink()`](https://crawler.docs.browsertrix.com/user-guide/behaviors/#additional-links-from-behaviors) method in a custom behavior will be queued regardless of whether they would otherwise be in scope.
 
 Customizing scope through custom behaviors should only be done to achieve advanced use cases for sites that are not listed above, as Browsertrix’s built-in behaviors and scoping rules will take precedence over custom behavior scripts.
 
