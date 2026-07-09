@@ -459,16 +459,33 @@ class StorageOps:
                 maxsize=max_workers
             )
             parts: list[CompletedPartTypeDef] = []
+            total_size = 0
+            upload_start = time.monotonic()
 
             async def producer() -> None:
                 """read parts from the stream and place them on the queue"""
+                nonlocal total_size
                 try:
                     part_number = 1
                     while True:
+                        read_start = time.monotonic()
                         chunk = await get_next_chunk(file_, min_size)
+                        read_duration = time.monotonic() - read_start
                         if not chunk:
                             break
+                        total_size += len(chunk)
                         await queue.put((part_number, chunk))
+                        mp_logger.debug(
+                            "multipart_part_read",
+                            part_number=part_number,
+                            chunk_size=len(chunk),
+                            read_duration=read_duration,
+                            read_throughput_mbps=(
+                                (len(chunk) / read_duration) / 1_000_000
+                                if read_duration
+                                else 0
+                            ),
+                        )
                         part_number += 1
                         if len(chunk) < min_size:
                             break
@@ -486,6 +503,7 @@ class StorageOps:
                     if item is None:
                         break
                     part_number, chunk = item
+                    upload_start_part = time.monotonic()
                     resp = await client.upload_part(
                         Bucket=bucket,
                         Body=chunk,
@@ -493,13 +511,17 @@ class StorageOps:
                         PartNumber=part_number,
                         Key=key,
                     )
+                    upload_duration = time.monotonic() - upload_start_part
                     parts.append({"PartNumber": part_number, "ETag": resp["ETag"]})
                     mp_logger.debug(
-                        "multipart_part_added",
+                        "multipart_part_uploaded",
                         part_number=part_number,
                         chunk_size=len(chunk),
-                        unstructured_message=(
-                            f"part added: {part_number} {len(chunk)} {upload_id}"
+                        upload_duration=upload_duration,
+                        upload_throughput_mbps=(
+                            (len(chunk) / upload_duration) / 1_000_000
+                            if upload_duration
+                            else 0
                         ),
                     )
 
@@ -524,9 +546,17 @@ class StorageOps:
                     Bucket=bucket, Key=key, UploadId=upload_id
                 )
 
+                partial_duration = time.monotonic() - upload_start
                 mp_logger.error(
                     "multipart_upload_failed",
                     exc_info=non_cancelled[0],
+                    total_size=total_size,
+                    partial_duration=partial_duration,
+                    throughput_mbps=(
+                        (total_size / partial_duration) / 1_000_000
+                        if partial_duration
+                        else 0
+                    ),
                     unstructured_message=f"Multipart upload failed: {upload_id}",
                 )
 
@@ -546,15 +576,31 @@ class StorageOps:
                     Bucket=bucket, Key=key, UploadId=upload_id
                 )
 
+                partial_duration = time.monotonic() - upload_start
                 mp_logger.exception(
                     "multipart_upload_failed",
+                    total_size=total_size,
+                    partial_duration=partial_duration,
+                    throughput_mbps=(
+                        (total_size / partial_duration) / 1_000_000
+                        if partial_duration
+                        else 0
+                    ),
                     unstructured_message=f"Multipart upload failed: {upload_id}",
                 )
 
                 return False
 
+            total_duration = time.monotonic() - upload_start
+            throughput_mbps = (
+                (total_size / total_duration) / 1_000_000 if total_duration else 0
+            )
             mp_logger.info(
                 "multipart_upload_succeeded",
+                total_size=total_size,
+                total_duration=total_duration,
+                throughput_mbps=throughput_mbps,
+                part_count=len(parts),
                 unstructured_message=f"Multipart upload succeeded: {upload_id}",
             )
 

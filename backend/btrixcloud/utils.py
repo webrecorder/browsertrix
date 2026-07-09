@@ -9,7 +9,7 @@ import os
 import re
 import signal
 import sys
-from collections.abc import Iterable
+from collections.abc import AsyncIterator, Iterable
 from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlparse
@@ -292,6 +292,24 @@ async def to_async_iterable(sync_iterable: Iterable[bytes]):
     it = iter(sync_iterable)
     while (value := await asyncio.to_thread(next, it, done)) is not done:
         yield value
+
+
+async def buffered_async_iter(
+    source: AsyncIterator[bytes], buffer_size: int
+) -> AsyncIterator[bytes]:
+    """Re-chunk an async iterator of bytes into larger chunks.
+
+    This reduces per-chunk overhead (e.g. async generator steps, function
+    calls, hashing) when the underlying source yields very small chunks.
+    """
+    buffer = bytearray()
+    async for chunk in source:
+        buffer.extend(chunk)
+        while len(buffer) >= buffer_size:
+            yield bytes(buffer[:buffer_size])
+            del buffer[:buffer_size]
+    if buffer:
+        yield bytes(buffer)
 
 
 def drop_privileges():
