@@ -491,9 +491,6 @@ class UploadOps(BaseCrawlOps):
                 )
                 new_upload_files.append(crawl_file)
 
-            # Update upload.files to reflect new files
-            # Delete original multi-WACZ from db and storage
-
             # Get current upload to access original multi-WACZ files
             upload = await self.get_upload(crawl_id, org)
             original_files = upload.files or []
