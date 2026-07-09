@@ -1416,17 +1416,95 @@ def test_multi_wacz_upload_in_collection(
     admin_auth_headers, default_org_id, multi_wacz_upload_id
 ):
     """Verify the multi-WACZ upload's pages contribute to org-side collection stats."""
-    # The fixture above creates uploads in uploads_collection_id, but this
-    # multi-wacz fixture does not specify collections. Verify it still works.
+    # Create a fresh collection for this multi-WACZ upload
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=admin_auth_headers,
+        json={"name": "Multi-WACZ Collection Test"},
+    )
+    assert r.status_code == 200
+    coll_id = r.json()["id"]
+
+    # Upload a multi-WACZ file assigned to this collection
+    with open(os.path.join(curr_dir, "data", "multi-wacz.wacz"), "rb") as fh:
+        r = requests.put(
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream"
+            f"?filename=test-multi-coll.wacz"
+            f"&name=Multi-WACZ%20Collection%20Upload"
+            f"&collections={coll_id}",
+            headers=admin_auth_headers,
+            data=read_in_chunks(fh),
+        )
+    assert r.status_code == 200
+    assert r.json()["added"]
+    coll_upload_id = r.json()["id"]
+
+    # Post-processing is synchronous for small files, but give a brief moment
+    # for pages and collection stats to settle
+    time.sleep(2)
+
+    # Wait for the background job to update collection stats
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}",
+            headers=admin_auth_headers,
+        )
+        assert r.status_code == 200
+        data = r.json()
+        if data.get("pageCount", 0) > 0:
+            break
+        if count + 1 == MAX_ATTEMPTS:
+            assert False, "Max attempts reached waiting for collection stats update"
+        time.sleep(10)
+        count += 1
+
+    # Verify collection stats reflect the multi-WACZ upload's pages
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["crawlCount"] == 1
+    assert data["pageCount"] == 2
+    assert data["uniquePageCount"] == 1
+    assert data["totalSize"] == 260082
+
+    # Verify the collection's pages endpoint returns the upload's pages
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}/pages",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    pages_data = r.json()
+    assert pages_data["total"] > 0
+    for page in pages_data["items"]:
+        assert page["id"]
+        assert page["url"]
+
+    # Verify the upload has the collection in its collectionIds
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{coll_upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    upload_data = r.json()
+    assert coll_id in upload_data.get("collectionIds", [])
+    assert upload_data["pageCount"] == 2
+    assert upload_data["uniquePageCount"] == 1
+
+    # Also verify the existing multi_wacz_upload_id (uploaded without a collection)
+    # still has pages correctly extracted
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/{multi_wacz_upload_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
-    data = r.json()
-    assert data["pageCount"] >= 0
-    assert data["uniquePageCount"] >= 0
-    assert data["fileSize"] > 0
+    no_coll_data = r.json()
+    assert no_coll_data["pageCount"] == 2
+    assert no_coll_data["uniquePageCount"] == 1
+    assert no_coll_data["fileSize"] == 260082
 
 
 def test_delete_form_upload_and_crawls_from_all_crawls(
