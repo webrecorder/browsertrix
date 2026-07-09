@@ -169,7 +169,7 @@ Patterns should be written in the JavaScript regular expression syntax without t
 
 #### Use Sitemap
 
-`Named “Check for sitemap” prior to Browsertrix version 1.24`{ .callout-blue }
+`Named “Check for sitemap” prior to v1.24`{ .callout-blue }
 
 When enabled, the crawler will check for a sitemap at `/sitemap.xml` and `/robots.txt` and use it to discover pages that match the crawl scope.
 
@@ -198,7 +198,7 @@ To include more pages than what is selected by the [crawl scope](#crawl-scope), 
 
 #### Include Directly Linked Pages
 
-`Named “Include any linked page (“one hop out”)” prior to Browsertrix version 1.24`{ .callout-blue }
+`Named “Include any linked page (“one hop out”)” prior to v1.24`{ .callout-blue }
 
 When enabled, the crawler will follow any hyperlink that is on a page selected by the crawl scope. This can be useful for capturing supplementary pages without having to manually add their URLs.
 
@@ -206,7 +206,7 @@ Links will only be followed one level deep (aka “one hop out”). For example,
 
 #### Use Smart Scoping Rules
 
-`New in Browsertrix version 1.24`{ .callout-green }
+`New in v1.24`{ .callout-green }
 
 Smart scoping rules reduce the complexity associated with scoping social media sites. When enabled, scoping rules for major social media platforms and other page-specific scoping rules will be automatically applied to the workflow. This setting is only applicable if a page selected by the crawl scope is hosted by a social media platform that Browsertrix supports, or if the page is selected by a custom behavior.
 
@@ -227,7 +227,7 @@ Customizing scope through custom behaviors should only be done to achieve advanc
 
 #### Additional URLs to Crawl
 
-`Named “Additional Pages” prior to Browsertrix version 1.24`{ .callout-blue }
+`Named “Additional Pages” prior to v1.24`{ .callout-blue }
 
 A list of URLs of pages to crawl. Each line should contain a valid URL (starting with `https://` or `http://`). Invalid URLs will be ignored unless _[Fail Crawl if Any URL Fails](#fail-crawl-if-any-url-fails-for-additional-urls-to-crawl)_ is enabled.
 
@@ -241,7 +241,7 @@ You can prevent the crawler from visiting parts of a website that you do not wan
 
 #### Use Robots.txt Disallow List
 
-`Named “Skip pages disallowed by robots.txt” prior to Browsertrix version 1.24`{ .callout-blue }
+`Named “Skip pages disallowed by robots.txt” prior to v1.24`{ .callout-blue }
 
 When enabled, the crawler will check for a [Robots Exclusion Protocol](https://www.rfc-editor.org/rfc/rfc9309.html) file at `/robots.txt` for each host encountered during crawling and skip any pages that are disallowed by the rules found therein.
 
