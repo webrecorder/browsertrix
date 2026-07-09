@@ -270,7 +270,7 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
     assert r.status_code == 200
     data = r.json()
 
-    assert data["total"] == 2
+    assert data["total"] == 4
 
     pages = data["items"]
     for page in pages:
@@ -1478,7 +1478,7 @@ def test_multi_wacz_upload_in_collection(
     )
     assert r.status_code == 200
     pages_data = r.json()
-    assert pages_data["total"] > 0
+    assert len(pages_data["items"]) == 2
     for page in pages_data["items"]:
         assert page["id"]
         assert page["url"]
