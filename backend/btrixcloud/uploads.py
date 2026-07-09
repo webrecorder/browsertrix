@@ -105,7 +105,9 @@ class UploadOps(BaseCrawlOps):
 
         async def stream_iter():
             """iterate over each chunk and compute and digest + total size"""
-            async for chunk in buffered_async_iter(stream, CHUNK_SIZE):
+            async for chunk in buffered_async_iter(
+                stream, CHUNK_SIZE, log_name="stream_upload"
+            ):
                 file_prep.add_chunk(chunk)
                 yield chunk
 
