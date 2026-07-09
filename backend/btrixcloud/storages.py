@@ -28,6 +28,7 @@ from types_aiobotocore_s3 import S3Client as AIOS3Client
 from types_aiobotocore_s3.type_defs import CompletedPartTypeDef
 
 from .models import (
+    CHUNK_SIZE,
     PRESIGN_DURATION_SECONDS,
     AddedResponseName,
     BaseFile,
@@ -42,6 +43,7 @@ from .models import (
     StorageRef,
     SuccessResponse,
     UpdatedResponse,
+    UploadFileReader,
     User,
 )
 from .utils import dt_now, get_origin, slug_from_name
@@ -54,8 +56,6 @@ else:
     OrgOps = CrawlManager = object
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
-
-CHUNK_SIZE = 1024 * 256
 
 
 # ============================================================================
@@ -393,7 +393,7 @@ class StorageOps:
         self,
         org: Organization,
         filename: str,
-        data,
+        data: UploadFileReader,
     ) -> None:
         """do upload to specified key"""
         s3storage = self.get_org_primary_storage(org)
@@ -408,7 +408,7 @@ class StorageOps:
         self,
         org: Organization,
         filename: str,
-        file_: AsyncIterator,
+        file_: AsyncIterator[bytes],
         min_size: int,
         mime: str | None = None,
         max_workers: int = 4,
@@ -425,8 +425,8 @@ class StorageOps:
         s3storage = self.get_org_primary_storage(org)
 
         async def get_next_chunk(file_, min_size) -> bytes:
-            total = 0
-            bufs = []
+            total: int = 0
+            bufs: list[bytes] = []
 
             async for chunk in file_:
                 bufs.append(chunk)
