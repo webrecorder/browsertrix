@@ -51,6 +51,11 @@ MAX_WACZ_FILE_SIZE = int(
     )  # 50 TiB - high default limit, meant to just stop zip bombs & the like
 )
 
+# TODO: wire this up through the configmap & allow setting via helm chat
+MAX_CONCURRENT_SPLITS = int(
+    os.environ.get("MAX_CONCURRENT_SPLITS", 4)
+)  # max number of multi-WACZ files to split simultaneously
+
 
 # ============================================================================
 class UploadOps(BaseCrawlOps):
@@ -296,6 +301,7 @@ class UploadOps(BaseCrawlOps):
             # Check each file for multi-WACZ content and split if needed.
             # This handles both single-file stream uploads and multi-file
             # formdata uploads where multiple files may be multi-WACZs.
+            # Files are checked and split concurrently with a max concurrency.
             if upload.files:
                 pp_logger.debug(
                     "post_process_upload",
@@ -310,11 +316,13 @@ class UploadOps(BaseCrawlOps):
                 # unique even for duplicate files.
                 resources_by_name = {r.name: r for r in resources}
 
-                for file in upload.files:
+                sem = asyncio.Semaphore(MAX_CONCURRENT_SPLITS)
+
+                async def _check_and_maybe_split(file: CrawlFile) -> None:
                     name = os.path.basename(file.filename)
                     resource = resources_by_name.get(name)
                     if not resource:
-                        continue
+                        return
 
                     wacz_url = self.storage_ops.resolve_internal_access_path(
                         resource.path
@@ -328,15 +336,30 @@ class UploadOps(BaseCrawlOps):
                             filename=name,
                             child_wacz_count=len(child_waczs),
                         )
-                        await self._split_multiwacz(
-                            crawl_id, org, wacz_url, child_waczs, file
-                        )
+                        async with sem:
+                            await self._split_multiwacz(
+                                crawl_id, org, wacz_url, child_waczs, file
+                            )
                     else:
                         pp_logger.debug(
                             "post_process_upload",
                             state="single_wacz",
                             filename=name,
                         )
+
+                # return_exceptions=True ensures all tasks finish (and run
+                # their cleanup) even if one fails, rather than cancelling
+                # in-flight tasks mid-upload.
+                results = await asyncio.gather(
+                    *(_check_and_maybe_split(f) for f in upload.files),
+                    return_exceptions=True,
+                )
+
+                # Re-raise the first exception (if any) so the upload is
+                # marked as failed and the bg job can be retried
+                for result in results:
+                    if isinstance(result, Exception):
+                        raise result
             else:
                 pp_logger.debug(
                     "post_process_upload",
@@ -407,9 +430,9 @@ class UploadOps(BaseCrawlOps):
     ) -> None:
         """Split a multi-WACZ file into its child WACZ files.
 
-        Uploads each child WACZ to storage, replaces original_file in the
-        upload's file list with the new child files, adjusts org bytes
-        stored, and deletes the original multi-WACZ from storage.
+        Uploads each child WACZ to storage, atomically replaces original_file
+        in the upload's file list with the new child files (via $pull/$push),
+        adjusts org bytes stored, and deletes the original multi-WACZ from storage.
         """
         cwf_logger = logger.bind(
             crawl_id=crawl_id,
@@ -506,48 +529,29 @@ class UploadOps(BaseCrawlOps):
                 )
                 new_upload_files.append(crawl_file)
 
-            # Get current upload and replace the original multi-WACZ file
-            # with its children, preserving any other files in the upload
-            upload = await self.get_upload(crawl_id, org)
-            current_files = upload.files or []
-
-            updated_files: list[CrawlFile] = []
-            for f in current_files:
-                if f.filename == original_file.filename:
-                    updated_files.extend(new_upload_files)
-                else:
-                    updated_files.append(f)
-
-            # Update DB: replace original multi-WACZ with child WACZ files
-            file_dicts = [f.model_dump() for f in updated_files]
-            total_file_size = sum(f.size for f in updated_files)
-
+            # Atomically replace the original multi-WACZ with child WACZ files
+            # in the DB. Using $pull/$push/$inc instead of overwriting the
+            # entire files array makes each split safe to run concurrently, as
+            # concurrent splits on different files won't overwrite each other's
+            # changes, and aggregate counts stay in sync with the file list.
+            size_diff = sum(f.size for f in new_upload_files) - original_file.size
             await self.crawls.find_one_and_update(
                 {"_id": crawl_id},
                 {
-                    "$set": {
-                        "files": file_dicts,
-                        "fileCount": len(updated_files),
-                        "fileSize": total_file_size,
-                    }
+                    "$pull": {"files": {"filename": original_file.filename}},
+                    "$push": {
+                        "files": {"$each": [f.model_dump() for f in new_upload_files]}
+                    },
+                    "$inc": {
+                        "fileCount": len(new_upload_files) - 1,
+                        "fileSize": size_diff,
+                    },
                 },
             )
 
             # Adjust org bytes stored for the size difference
-            size_diff = sum(f.size for f in new_upload_files) - original_file.size
             if size_diff != 0:
                 await self.orgs.inc_org_bytes_stored(org.id, size_diff, "upload")
-
-            # Delete the original multi-WACZ file now that children are in the DB
-            cwf_logger.debug(
-                "multi_wacz_delete_original",
-                filename=original_file.filename,
-            )
-            await self.storage_ops.delete_file_object(org, original_file)
-            await self.presigned_urls.delete_one({"_id": original_file.filename})
-            await self.background_job_ops.create_delete_replica_jobs(
-                org, original_file, crawl_id, "upload"
-            )
 
             cwf_logger.debug(
                 "multi_wacz_split_complete",
@@ -555,6 +559,27 @@ class UploadOps(BaseCrawlOps):
                 original_wacz=wacz_url,
                 new_upload_files=[f.filename for f in new_upload_files],
             )
+
+            # Delete the original multi-WACZ from storage now that children
+            # are in the DB. This is best-effort - if it fails, the original
+            # is orphaned in storage (a leak) but the upload is correct.
+            # TODO: maybe periodically check for orphaned multi-WACZs in storage
+            try:
+                cwf_logger.debug(
+                    "multi_wacz_delete_original",
+                    filename=original_file.filename,
+                )
+                await self.storage_ops.delete_file_object(org, original_file)
+                await self.presigned_urls.delete_one({"_id": original_file.filename})
+                await self.background_job_ops.create_delete_replica_jobs(
+                    org, original_file, crawl_id, "upload"
+                )
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                cwf_logger.warning(
+                    "multi_wacz_original_delete_failed",
+                    filename=original_file.filename,
+                )
         # pylint: disable=broad-exception-caught
         except Exception:
             for crawl_file in new_upload_files:
