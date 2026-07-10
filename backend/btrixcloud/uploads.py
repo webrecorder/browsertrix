@@ -51,7 +51,6 @@ MAX_WACZ_FILE_SIZE = int(
     )  # 50 TiB - high default limit, meant to just stop zip bombs & the like
 )
 
-# TODO: wire this up through the configmap & allow setting via helm chat
 MAX_CONCURRENT_SPLITS = int(
     os.environ.get("MAX_CONCURRENT_SPLITS", 4)
 )  # max number of multi-WACZ files to split simultaneously
@@ -563,6 +562,7 @@ class UploadOps(BaseCrawlOps):
             # Delete the original multi-WACZ from storage now that children
             # are in the DB. This is best-effort - if it fails, the original
             # is orphaned in storage (a leak) but the upload is correct.
+            # pylint: disable=fixme
             # TODO: maybe periodically check for orphaned multi-WACZs in storage
             try:
                 cwf_logger.debug(
