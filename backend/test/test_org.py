@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 
 import pytest
@@ -19,6 +20,37 @@ invite_email = "test-user@example.com"
 
 CRAWLER_USERNAME_FOR_ORG_WITH_NOTE = "CraWleR-for-org-with-note@example.com"
 CRAWLER_PW_FOR_ORG_WITH_NOTE = "crawler-pw-for-org-with-note"
+
+_created_org_ids = []
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _cleanup_created_orgs(admin_auth_headers):
+    """Teardown: delete any orgs created during tests in this module."""
+    yield
+    for org_id in _created_org_ids:
+        try:
+            r = requests.delete(
+                f"{API_PREFIX}/orgs/{org_id}",
+                headers=admin_auth_headers,
+                timeout=120,
+            )
+            if r.status_code != 200:
+                continue
+            job_id = r.json().get("id")
+            if not job_id:
+                continue
+            for _ in range(18):
+                r = requests.get(
+                    f"{API_PREFIX}/orgs/all/jobs/{job_id}",
+                    headers=admin_auth_headers,
+                    timeout=120,
+                )
+                if r.status_code == 200 and r.json().get("success"):
+                    break
+                time.sleep(10)
+        except Exception:
+            pass
 
 
 def test_ensure_only_one_default_org(admin_auth_headers):
@@ -262,6 +294,7 @@ def test_create_org_with_quotas(admin_auth_headers):
     assert org["quotas"]["maxPagesPerCrawl"] == 100
     assert org["quotas"]["storageQuota"] == 10
     assert org["quotas"]["maxExecMinutesPerMonth"] == 1000
+    _created_org_ids.append(data["id"])
 
 
 def test_create_org_with_plan(admin_auth_headers):
@@ -286,6 +319,7 @@ def test_create_org_with_plan(admin_auth_headers):
     assert org["quotas"]["storageQuota"] == 100000000000
     assert org["quotas"]["maxExecMinutesPerMonth"] == 180
     assert org["note"] == "Plan ID: starter (name: Browsertrix Starter)"
+    _created_org_ids.append(data["id"])
 
 
 def test_create_org_with_plan_and_note(admin_auth_headers):
@@ -311,6 +345,7 @@ def test_create_org_with_plan_and_note(admin_auth_headers):
     assert org["quotas"]["storageQuota"] == 100000000000
     assert org["quotas"]["maxExecMinutesPerMonth"] == 180
     assert org["note"] == "Test note\n\nPlan ID: starter (name: Browsertrix Starter)"
+    _created_org_ids.append(data["id"])
 
 
 def test_create_org_with_plan_and_quotas_rejected(admin_auth_headers):
@@ -391,6 +426,7 @@ def test_create_org_with_note(admin_auth_headers):
     assert r.status_code == 200
     org = r.json()
     assert org["note"] is None
+    _created_org_ids.append(new_org["id"])
 
 
 @pytest.mark.parametrize(
