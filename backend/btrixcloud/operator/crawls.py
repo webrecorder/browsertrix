@@ -295,10 +295,14 @@ class CrawlOperator(BaseOperator):
                     "starting", status, crawl, allowed_from=["waiting_dedupe_index"]
                 )
 
+        # paused_at is set, and state is a valid paused state
+        is_paused = bool(crawl.paused_at) and status.state in PAUSED_STATES
+
         # clear rateLimitedAtTime if crawl in a non-rate limited running state or already paused
-        if status.rateLimitedAtTime and (
-            (status.state != "rate-limited" and status.state in RUNNING_STATES)
-            or crawl.paused_at
+        if (
+            status.rateLimitedAtTime
+            and status.state != "rate-limited"
+            and (is_paused or (status.state in RUNNING_STATES))
         ):
             status.rateLimitedAtTime = ""
 
@@ -447,9 +451,6 @@ class CrawlOperator(BaseOperator):
 
         if status.pagesFound < status.desiredScale:
             status.desiredScale = max(1, status.pagesFound)
-
-        # paused_at is set, and state is a valid paused state
-        is_paused = bool(crawl.paused_at) and status.state in PAUSED_STATES
 
         for i in range(0, status.desiredScale):
             if status.pagesFound < i * num_browsers_per_pod:
