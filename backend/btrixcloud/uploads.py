@@ -442,7 +442,7 @@ class UploadOps(BaseCrawlOps):
         )
         prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{crawl_id}"
 
-        new_upload_files = []
+        new_upload_files: list[CrawlFile] = []
 
         try:
             for idx, child_wacz in enumerate(child_waczs):
@@ -528,24 +528,53 @@ class UploadOps(BaseCrawlOps):
                 )
                 new_upload_files.append(crawl_file)
 
-            # Atomically replace the original multi-WACZ with child WACZ files
-            # in the DB. Using $pull/$push/$inc instead of overwriting the
-            # entire files array makes each split safe to run concurrently, as
-            # concurrent splits on different files won't overwrite each other's
-            # changes, and aggregate counts stay in sync with the file list.
+            # Atomically replace the original single multi-WACZ with child WACZs
+            # in the DB, and update file count/size fields. This is a single
+            # atomic operation, so it's safe for concurrent splits, since each
+            # $filter targets a different filename.
             size_diff = sum(f.size for f in new_upload_files) - original_file.size
+            child_file_dicts = [f.model_dump() for f in new_upload_files]
             await self.crawls.find_one_and_update(
                 {"_id": crawl_id},
-                {
-                    "$pull": {"files": {"filename": original_file.filename}},
-                    "$push": {
-                        "files": {"$each": [f.model_dump() for f in new_upload_files]}
+                [
+                    # Stage 1: replace the original file with child WACZ files.
+                    {
+                        "$set": {
+                            "files": {
+                                "$concatArrays": [
+                                    {
+                                        "$filter": {
+                                            "input": "$files",
+                                            "as": "f",
+                                            "cond": {
+                                                "$ne": [
+                                                    "$$f.filename",
+                                                    original_file.filename,
+                                                ],
+                                            },
+                                        },
+                                    },
+                                    child_file_dicts,
+                                ],
+                            },
+                        },
                     },
-                    "$inc": {
-                        "fileCount": len(new_upload_files) - 1,
-                        "fileSize": size_diff,
+                    # Stage 2: recompute aggregate counts from the updated files list.
+                    {
+                        "$set": {
+                            "fileCount": {"$size": "$files"},
+                            "fileSize": {
+                                "$sum": {
+                                    "$map": {
+                                        "input": "$files",
+                                        "as": "f",
+                                        "in": "$$f.size",
+                                    },
+                                },
+                            },
+                        },
                     },
-                },
+                ],
             )
 
             # Adjust org bytes stored for the size difference
