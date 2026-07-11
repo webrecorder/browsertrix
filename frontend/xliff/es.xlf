@@ -8,7 +8,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="scbeafb2ef469257c">
         <source>Need login</source>
-        <target state="translated">Inicio de sesión requerido</target>
+        <target state="translated">Inicio de sesión necesario</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sa3ce85ea4e96897c">
         <source>Storage quota reached</source>
@@ -362,11 +362,11 @@
       </trans-unit>
       <trans-unit id="s4ad6912b1925acb3" xml:space="preserve">
         <source>Gracefully stop the crawler after a specified time limit.</source>
-        <target state="translated">Detenga el arrastre con gracia tras un límite de tiempo especificado.</target>
+        <target state="translated">Detenga el rastreador correctamente tras un límite de tiempo especificado.</target>
       </trans-unit>
       <trans-unit id="s4d0d8767ec20220b" xml:space="preserve">
         <source>Gracefully stop the crawler after a specified size limit.</source>
-        <target state="translated">Detenga el arrastre con gracia tras un límite de tamaño especificado.</target>
+        <target state="translated">Detenga el rastreador correctamente tras un límite de tamaño especificado.</target>
       </trans-unit>
       <trans-unit id="scd0d4a13a709c62f" xml:space="preserve">
         <source>Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.</source>
@@ -402,7 +402,7 @@
       </trans-unit>
       <trans-unit id="s68eac1025cee6964" xml:space="preserve">
         <source>Crawl Scope</source>
-        <target state="translated">Ámbito de arrastre</target>
+        <target state="translated">Ámbito de rastreador</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s4d34e4682643b600">
         <source>Browser Settings</source>
@@ -414,7 +414,7 @@
       </trans-unit>
       <trans-unit id="s2fa63aad5fbcf846" xml:space="preserve">
         <source>Crawl Time Limit</source>
-        <target state="translated">Límite del tiempo de arrastre</target>
+        <target state="translated">Límite del tiempo de rastreador</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="scbeff7c3e03228ae">
         <source>minutes</source>
@@ -422,7 +422,7 @@
       </trans-unit>
       <trans-unit id="sf3146e744d4ea35e" xml:space="preserve">
         <source>Crawl Size Limit</source>
-        <target state="translated">Límite de tamaño del arrastre</target>
+        <target state="translated">Tamaño límite del rastreador</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s09021407b59bfa0c">
         <source>GB</source>
@@ -842,7 +842,7 @@
       </trans-unit>
       <trans-unit id="sa27852a4bea47423" xml:space="preserve">
         <source>Watch Crawl</source>
-        <target state="translated">Ver arrastre</target>
+        <target state="translated">Vigía Rastreador</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s665f4200fb9fc550">
         <source>Error Logs</source>
@@ -858,19 +858,19 @@
       </trans-unit>
       <trans-unit id="sa84be0d8d11ebe27" xml:space="preserve">
         <source>Stop Crawl?</source>
-        <target state="translated">¿Detener arrastre?</target>
+        <target state="translated">¿Detener rastreador?</target>
       </trans-unit>
       <trans-unit id="s9f90886fea6a9515" xml:space="preserve">
         <source>Keep Crawling</source>
-        <target state="translated">Mantener arrastre</target>
+        <target state="translated">Conservar Rastreador</target>
       </trans-unit>
       <trans-unit id="s06a8bb661e53711e" xml:space="preserve">
         <source>Stop Crawling</source>
-        <target state="translated">Detener arrastre</target>
+        <target state="translated">Detener Rastreador</target>
       </trans-unit>
       <trans-unit id="s1954441b28866a31" xml:space="preserve">
         <source>Cancel Crawl?</source>
-        <target state="translated">¿Cancelar arrastre?</target>
+        <target state="translated">¿Cancelar Rastreo?</target>
       </trans-unit>
       <trans-unit id="s78f373341662ad89" xml:space="preserve">
         <source>Canceling will discard all pages crawled. Are you sure you want to discard them?</source>
@@ -878,11 +878,11 @@
       </trans-unit>
       <trans-unit id="se6cd38c76bc4114a" xml:space="preserve">
         <source>Delete Crawl?</source>
-        <target state="translated">¿Eliminar arrastre?</target>
+        <target state="translated">¿Eliminar Rastreo?</target>
       </trans-unit>
       <trans-unit id="scb57efea186060b1" xml:space="preserve">
         <source>Delete Crawl</source>
-        <target state="translated">Eliminar arrastre</target>
+        <target state="translated">Eliminar Rastreo</target>
       </trans-unit>
       <trans-unit id="se0e0c906e2ad3b0a" xml:space="preserve">
         <source>Crawl Workflows</source>
@@ -910,15 +910,15 @@
       </trans-unit>
       <trans-unit id="se74c84fa68b23eba" xml:space="preserve">
         <source>Org Storage Full or Monthly Execution Minutes Reached</source>
-        <target state="translated">Almacenaje Completo de Org o Minutos de Ejecución Mensual Alcanzado</target>
+        <target state="translated">Almacenaje Completo de Org o Actas de Ejecución Mensual Alcanzada</target>
       </trans-unit>
       <trans-unit id="s3e80c83387cea4f1" xml:space="preserve">
         <source>Run Crawl</source>
-        <target state="translated">Ejecutar arrastre</target>
+        <target state="translated">Ejecutar Rastreo</target>
       </trans-unit>
       <trans-unit id="sc75900abc0ec0f82" xml:space="preserve">
         <source>Stop Crawl</source>
-        <target state="translated">Detener arrastre</target>
+        <target state="translated">Detener Rastreo</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s68412182ace32912">
         <source>Edit Exclusions</source>
@@ -946,7 +946,7 @@
       </trans-unit>
       <trans-unit id="s525d0e58243865e8" xml:space="preserve">
         <source>No Crawls Yet</source>
-        <target state="translated">Aún sin arrastres</target>
+        <target state="translated">Aún Sin Rastreos</target>
       </trans-unit>
       <trans-unit id="s9b8dccb514a0e34c" xml:space="preserve">
         <source>Schedule</source>
@@ -962,11 +962,11 @@
       </trans-unit>
       <trans-unit id="s76d9944af031bdb3" xml:space="preserve">
         <source>No matching crawls found.</source>
-        <target state="translated">No se encontraron arrastres coincidentes.</target>
+        <target state="translated">No se encontraron rastreadores coincidentes.</target>
       </trans-unit>
       <trans-unit id="sf76674a7d3d83ab2" xml:space="preserve">
         <source>No crawls yet.</source>
-        <target state="translated">Aún sin arrastres.</target>
+        <target state="translated">Aún sin rastreador.</target>
       </trans-unit>
       <trans-unit id="se72232cb8fce7869" xml:space="preserve">
         <source>Pages Crawled</source>
@@ -982,35 +982,39 @@
       </trans-unit>
       <trans-unit id="s5e72081d8c9517b2" xml:space="preserve">
         <source>Crawl starting...</source>
-        <target state="translated">Inicio de arrastre…</target>
+        <target state="translated">Inicio de rastreador…</target>
       </trans-unit>
       <trans-unit id="s8b33ac8b95791469" xml:space="preserve">
         <source>Crawl waiting for available resources before it can continue...</source>
-        <target state="translated">Arrastre esperando recursos disponibles antes que pueda continuar…</target>
+        <target state="translated">Rastreador esperando recursos disponibles antes que pueda continuar…</target>
       </trans-unit>
       <trans-unit id="s8764f257cc35167f" xml:space="preserve">
         <source>Crawl waiting for others to finish, concurrent limit per Organization reached...</source>
-        <target state="translated">Arrastre esperando a otros para finalizar, límite concurrente por alcanzado por Organización…</target>
+        <target state="translated">Rastreador esperando a otros para finalizar, límite concurrente por alcanzado por Organización…</target>
       </trans-unit>
       <trans-unit id="s9faa4c27631001f6" xml:space="preserve">
         <source>Crawl stopping...</source>
-        <target state="translated">Arrastre deteniéndose…</target>
+        <target state="translated">Rastreador deteniéndose…</target>
       </trans-unit>
       <trans-unit id="sb663339526803ecb" xml:space="preserve">
         <source>Logs will show here after you run a crawl.</source>
-        <target state="translated">Las bitácoras aquí mostrarán tras su ejecución un arrastre.</target>
+        <target state="translated">Las bitácoras aquí mostrarán tras su ejecución un rastreador.</target>
       </trans-unit>
-      <trans-unit id="sa7bc374e662a4beb">
+      <trans-unit id="sa7bc374e662a4beb" xml:space="preserve">
         <source>Upcoming Pages</source>
+        <target state="translated">Páginas pendientes</target>
       </trans-unit>
-      <trans-unit id="s70a238ad69373ab0">
+      <trans-unit id="s70a238ad69373ab0" xml:space="preserve">
         <source>Crawl Queue Editor</source>
+        <target state="translated">Editor de cola del arrastra</target>
       </trans-unit>
-      <trans-unit id="s6ae6bdeecf9a5bb9">
+      <trans-unit id="s6ae6bdeecf9a5bb9" xml:space="preserve">
         <source>Done Editing</source>
+        <target state="translated">Edición hecha</target>
       </trans-unit>
-      <trans-unit id="sffcdff4dee19a06f">
+      <trans-unit id="sffcdff4dee19a06f" xml:space="preserve">
         <source>Change the number of browser windows crawling in parallel. This change will take effect immediately on the currently running crawl and update crawl workflow settings.</source>
+        <target state="translated">Cambiar el número de ventanas del explorador rastreando en paralelo. Este cambio surtirá efecto inmediatamente en el rastreador ejecutándose actualmente y actualiza los ajustes del flujo de trabajo de rastreador.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sdba2ec5eaf8c5bdb">
         <source>Updated number of browser windows.</source>
@@ -1020,82 +1024,101 @@
         <source>Sorry, couldn't change number of browser windows at this time.</source>
         <target state="translated">Lo sentimos, no se ha podido cambiar el número de ventanas del navegador en este momento.</target>
       </trans-unit>
-      <trans-unit id="sc8eda12c58f5d10f">
+      <trans-unit id="sc8eda12c58f5d10f" xml:space="preserve">
         <source>Sorry, couldn't retrieve all crawl settings at this time.</source>
+        <target state="translated">Lo siento, no pude recuperar todos los ajustes de rastreador en este momento.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s1a20a47c9bf221da">
         <source><x id="0" equiv-text="${workflow.name}"/> Copy</source>
         <target state="translated">Copiar <x id="0" equiv-text="${this.workflow.name}"/></target>
       </trans-unit>
-      <trans-unit id="s6ec009ac55d85d6a">
+      <trans-unit id="s6ec009ac55d85d6a" xml:space="preserve">
         <source>Sorry, couldn't delete Workflow at this time.</source>
+        <target state="translated">Lo sentimos, no se ha podido borrar el Flujo de trabajo en este momento.</target>
       </trans-unit>
-      <trans-unit id="s58aa8e320a4c30f1">
+      <trans-unit id="s58aa8e320a4c30f1" xml:space="preserve">
         <source>Something went wrong, couldn't cancel crawl.</source>
+        <target state="translated">Algo salió mal, no pudo cancelar el rastreador.</target>
       </trans-unit>
-      <trans-unit id="s199ff7df1e40a103">
+      <trans-unit id="s199ff7df1e40a103" xml:space="preserve">
         <source>Something went wrong, couldn't stop crawl.</source>
+        <target state="translated">Algo fue mal, no pudo detener rastreador.</target>
       </trans-unit>
-      <trans-unit id="s247c148670b82228">
+      <trans-unit id="s247c148670b82228" xml:space="preserve">
         <source>Starting crawl.</source>
+        <target state="translated">Iniciar rastreador.</target>
       </trans-unit>
-      <trans-unit id="s46a31b511363ec98">
+      <trans-unit id="s46a31b511363ec98" xml:space="preserve">
         <source>Sorry, couldn't run crawl at this time.</source>
+        <target state="translated">Disculpe, no pude ejecutar rastreador en este momento.</target>
       </trans-unit>
-      <trans-unit id="s7640b7f154998ccb">
+      <trans-unit id="s7640b7f154998ccb" xml:space="preserve">
         <source>Your org does not have enough storage to run crawls.</source>
+        <target state="translated">Su org no tiene suficiente almacenaje para ejecutar rastreadores.</target>
       </trans-unit>
-      <trans-unit id="sacdcca6c6c2d8dad">
+      <trans-unit id="sacdcca6c6c2d8dad" xml:space="preserve">
         <source>Your org has used all of its execution minutes for this month.</source>
+        <target state="translated">Su org ha utilizado todos los minutos en ejecución para este mes.</target>
       </trans-unit>
-      <trans-unit id="s1f8de71d5ba5627d">
+      <trans-unit id="s1f8de71d5ba5627d" xml:space="preserve">
         <source>You do not have permission to run crawls.</source>
+        <target state="translated">No tiene permiso para ejecutar rastreadores.</target>
       </trans-unit>
-      <trans-unit id="s8674d705840bf3f6">
+      <trans-unit id="s8674d705840bf3f6" xml:space="preserve">
         <source>Successfully deleted crawl</source>
+        <target state="translated">Rastreador eliminado correctamente</target>
       </trans-unit>
-      <trans-unit id="s19a4db351c2fbdec">
+      <trans-unit id="s19a4db351c2fbdec" xml:space="preserve">
         <source>Sorry, couldn't delete archived item at this time.</source>
+        <target state="translated">Disculpe, no pudo eliminar elementos archivados en este momento.</target>
       </trans-unit>
-      <trans-unit id="s6f62c58028d235ff">
+      <trans-unit id="s6f62c58028d235ff" xml:space="preserve">
         <source>Only org owners can delete other users' archived items.</source>
+        <target state="translated">Solamente propietarios de org pueden eliminar otros elementos archivados de los usuarios.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s6666c5055de36901">
         <source>Start typing to search</source>
         <target state="translated">Empieza a escribir para buscar</target>
       </trans-unit>
-      <trans-unit id="s0ceeb7d3fb3dfde6">
+      <trans-unit id="s0ceeb7d3fb3dfde6" xml:space="preserve">
         <source>Keep typing to search.</source>
+        <target state="translated">conservar al teclear en la búsqueda.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s1f73928cbbc07cab">
         <source>No matches found.</source>
         <target state="translated">No se han encontrado coincidencias.</target>
       </trans-unit>
-      <trans-unit id="s5a395b3e48a294bd">
+      <trans-unit id="s5a395b3e48a294bd" xml:space="preserve">
         <source>Latest Crawl</source>
+        <target state="translated">Último rastreador</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s95625bc1d95aa0b8">
         <source>Last Modified</source>
         <target state="translated">Última modificación</target>
       </trans-unit>
-      <trans-unit id="s55c00be19b1b3bcd">
+      <trans-unit id="s55c00be19b1b3bcd" xml:space="preserve">
         <source>Crawl Start URL</source>
+        <target state="translated">URL del inicio de rastreador</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s5870292e1ae494dd">
         <source>Date Created</source>
         <target state="translated">Fecha de creación</target>
       </trans-unit>
-      <trans-unit id="s164c4d58c512c0c6">
+      <trans-unit id="s164c4d58c512c0c6" xml:space="preserve">
         <source>Configure crawling defaults</source>
+        <target state="translated">Configura rastreos predeterminados</target>
       </trans-unit>
-      <trans-unit id="s95daf5c7d10ceb6d">
+      <trans-unit id="s95daf5c7d10ceb6d" xml:space="preserve">
         <source>Edit org crawling settings</source>
+        <target state="translated">Edita ajustes de rastreador de org</target>
       </trans-unit>
-      <trans-unit id="sf7397f6287e8520a">
+      <trans-unit id="sf7397f6287e8520a" xml:space="preserve">
         <source>New Workflow</source>
+        <target state="translated">Crear Flujo de Trabajo</target>
       </trans-unit>
-      <trans-unit id="s845562f03d066eed">
+      <trans-unit id="s845562f03d066eed" xml:space="preserve">
         <source>Something unexpected went wrong while retrieving Workflows.</source>
+        <target state="translated">Algo no esperado fue mal mientras obtendría Flujos de Trabajo.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s9b288e9b7f945b0c">
         <source>Sort by:</source>
@@ -1117,8 +1140,9 @@
         <source>No schedule</source>
         <target state="translated">Sin programar</target>
       </trans-unit>
-      <trans-unit id="s442425cd7d61051f">
+      <trans-unit id="s442425cd7d61051f" xml:space="preserve">
         <source>No matching Workflows found.</source>
+        <target state="translated">No se encontraron Flujos de Trabajos coincidentes.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s39cb621a29eea6d8">
         <source>Clear search and filters</source>
@@ -1128,14 +1152,17 @@
         <source>Could not find page.</source>
         <target state="translated">No se ha podido encontrar la página.</target>
       </trans-unit>
-      <trans-unit id="sa83bf2a7e5ed33e0">
+      <trans-unit id="sa83bf2a7e5ed33e0" xml:space="preserve">
         <source>No Workflows yet.</source>
+        <target state="translated">Aún sin flujos de trabajo.</target>
       </trans-unit>
-      <trans-unit id="s8745d54f3284f080">
+      <trans-unit id="s8745d54f3284f080" xml:space="preserve">
         <source>Are you sure you want to cancel the crawl?</source>
+        <target state="needs-translation">¿Estás seguro de que quieres cancelar el rastreo?</target>
       </trans-unit>
-      <trans-unit id="s5d966c90d8dc06e6">
+      <trans-unit id="s5d966c90d8dc06e6" xml:space="preserve">
         <source>Are you sure you want to stop the crawl?</source>
+        <target state="needs-translation">¿Estás seguro de que quieres parar el rastro?</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sfecdd5e13f68c9ba">
         <source>Approved</source>
@@ -1157,14 +1184,17 @@
         <source>Moderate Inconsistencies</source>
         <target state="translated">Incoherencias moderadas</target>
       </trans-unit>
-      <trans-unit id="s9585f280ec52b319">
+      <trans-unit id="s9585f280ec52b319" xml:space="preserve">
         <source>Good Match</source>
+        <target state="translated">Coincidencia Buena</target>
       </trans-unit>
-      <trans-unit id="s2234e31926485921">
+      <trans-unit id="s2234e31926485921" xml:space="preserve">
         <source>n/a</source>
+        <target state="translated">n/d</target>
       </trans-unit>
-      <trans-unit id="s1ab7979099c86a1b">
+      <trans-unit id="s1ab7979099c86a1b" xml:space="preserve">
         <source>Analysis Status</source>
+        <target state="needs-translation">Estado del análisis</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sf61d84d4684b9a2e">
         <source>Not Analyzed</source>
@@ -1186,8 +1216,9 @@
         <source>Loading</source>
         <target state="translated">Cargando</target>
       </trans-unit>
-      <trans-unit id="s5537cac8d3ba0010">
+      <trans-unit id="s5537cac8d3ba0010" xml:space="preserve">
         <source>QA Rating</source>
+        <target state="translated">Puntuación QA</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s34988bb5e08f7962">
         <source>Total Analysis Time</source>
@@ -1197,27 +1228,33 @@
         <source>Pages</source>
         <target state="translated">Páginas</target>
       </trans-unit>
-      <trans-unit id="sefe1162757e8b5cf">
+      <trans-unit id="sefe1162757e8b5cf" xml:space="preserve">
         <source>Analysis Runs</source>
+        <target state="translated">Ejecuciones de análisis</target>
       </trans-unit>
-      <trans-unit id="sf3dae3d9f775423e">
+      <trans-unit id="sf3dae3d9f775423e" xml:space="preserve">
         <source>Crawl Results</source>
+        <target state="translated">Resultados de rastreador</target>
       </trans-unit>
-      <trans-unit id="s3a67142f35d9130e">
+      <trans-unit id="s3a67142f35d9130e" xml:space="preserve">
         <source>Non-HTML files captured as pages are known good files that the crawler found as clickable links on a page and don't need to be analyzed. Failed pages did not respond when the crawler tried to visit them.</source>
+        <target state="needs-translation">Los archivos no-HTML capturados como páginas son conocidos buenos archivos que el rastreador encontró como enlaces clicables en una página y no necesitan ser analizados. Las páginas fallidas no respondieron cuando el rastreador trató de visitarlas.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="h8309b5706a9a85ba">
         <source>
                       <x id="0" equiv-text="&lt;span class=&quot;text-primary&quot;&gt;${htmlCount}&lt;/span&gt;"/>
                       HTML <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, htmlCount)}&#10;                    "/></source>
         <target state="translated">
-                      <x id="0" equiv-text="&lt;span class=&quot;text-primary&quot;&gt;${htmlCount}&lt;/span&gt;"/> HTML <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, htmlCount)}&#10;                    "/></target>
+                      <x id="0" equiv-text="&lt;span class=&quot;text-primary&quot;&gt;${htmlCount}&lt;/span&gt;"/>
+                      HTML <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, htmlCount)}&#10;                    "/></target>
       </trans-unit>
-      <trans-unit id="h7d8f1533bbc700e1">
+      <trans-unit id="h7d8f1533bbc700e1" xml:space="preserve">
         <source><x id="0" equiv-text="&lt;span class=&quot;text-neutral-600&quot;&gt;${fileCount}&lt;/span&gt;"/> Non-HTML files captured as <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, fileCount)}&#10;                    "/></source>
+        <target state="translated"><x id="0" equiv-text="&lt;span class=&quot;text-neutral-600&quot;&gt;${fileCount}&lt;/span&gt;"/> Archivos distintos de HTML capturados como <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, fileCount)}&#10;                    "/></target>
       </trans-unit>
-      <trans-unit id="ha312818a16d5146b">
+      <trans-unit id="ha312818a16d5146b" xml:space="preserve">
         <source><x id="0" equiv-text="&lt;span class=&quot;text-danger&quot;&gt;${errorCount}&lt;/span&gt;"/> Failed <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, errorCount)}&#10;                    "/></source>
+        <target state="translated"><x id="0" equiv-text="&lt;span class=&quot;text-danger&quot;&gt;${errorCount}&lt;/span&gt;"/> Incorrecto <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, errorCount)}&#10;                    "/></target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s3fd6bd99e3f6a5be">
         <source>Started</source>
@@ -1231,42 +1268,53 @@
         <source>Started by</source>
         <target state="translated">Iniciado por</target>
       </trans-unit>
-      <trans-unit id="sbec5b6441455a810">
+      <trans-unit id="sbec5b6441455a810" xml:space="preserve">
         <source>No analysis runs, yet</source>
+        <target state="translated">Sin ejecuciones de análisis, todavía</target>
       </trans-unit>
-      <trans-unit id="s20bd021257df5b80">
+      <trans-unit id="s20bd021257df5b80" xml:space="preserve">
         <source>Download Analysis Run</source>
+        <target state="translated">Descargar Análisis Ejecutados</target>
       </trans-unit>
-      <trans-unit id="sa0d6d4b00a4a10f1">
+      <trans-unit id="sa0d6d4b00a4a10f1" xml:space="preserve">
         <source>Delete Analysis Run</source>
+        <target state="translated">Eliminar Análisis Ejecutados</target>
       </trans-unit>
-      <trans-unit id="s971c35217bda8e0a">
+      <trans-unit id="s971c35217bda8e0a" xml:space="preserve">
         <source>Delete Analysis Run?</source>
+        <target state="translated">¿Eliminar Análisis Ejecutados?</target>
       </trans-unit>
-      <trans-unit id="sb11c79fa9c6cb0e4">
+      <trans-unit id="sb11c79fa9c6cb0e4" xml:space="preserve">
         <source>All of the data included in this analysis run will be deleted.</source>
+        <target state="translated">Todos los datos incluidos en este análisis ejecutados serán eliminados.</target>
       </trans-unit>
-      <trans-unit id="sc2007e562d105da2">
+      <trans-unit id="sc2007e562d105da2" xml:space="preserve">
         <source>This analysis run includes data for <x id="0" equiv-text="${runToBeDeleted.stats.done} ${pluralOf(&quot;pages&quot;, runToBeDeleted.stats.done)}"/> and was started on </source>
+        <target state="translated">Esta ejecución del análisis incluye datos para <x id="0" equiv-text="${runToBeDeleted.stats.done} ${pluralOf(&quot;pages&quot;, runToBeDeleted.stats.done)}"/> y fue iniciado el </target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s08a64b07b54df8d4">
         <source>by</source>
         <target state="translated">por</target>
       </trans-unit>
-      <trans-unit id="scab97c7ea6213c21">
+      <trans-unit id="scab97c7ea6213c21" xml:space="preserve">
         <source>Running QA analysis on pages...</source>
+        <target state="translated">Ejecutando análisis QA en las páginas…</target>
       </trans-unit>
-      <trans-unit id="s2b4c64bc0d5fd6ad">
+      <trans-unit id="s2b4c64bc0d5fd6ad" xml:space="preserve">
         <source>This analysis run doesn't exist.</source>
+        <target state="translated">Esta ejecución del análisis no existe.</target>
       </trans-unit>
-      <trans-unit id="s049d14439a7f020c">
+      <trans-unit id="s049d14439a7f020c" xml:space="preserve">
         <source>HTML Page Match Analysis</source>
+        <target state="translated">Análisis de Coincidencia en Página HTML</target>
       </trans-unit>
-      <trans-unit id="sc628fbfed893e18c">
+      <trans-unit id="sc628fbfed893e18c" xml:space="preserve">
         <source>You’re viewing the latest analysis run results.</source>
+        <target state="translated">Está viendo los resultados de ejecución del último análisis.</target>
       </trans-unit>
-      <trans-unit id="s699f0bd2ff9aaf75">
+      <trans-unit id="s699f0bd2ff9aaf75" xml:space="preserve">
         <source>You’re viewing results from an older analysis run.</source>
+        <target state="translated">Está viendo resultados desde una ejecución del análisis más anterior.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sab8b4cbbb1fa71fa">
         <source>Current</source>
@@ -1276,21 +1324,25 @@
         <source>Last Finished</source>
         <target state="translated">Último finalizado</target>
       </trans-unit>
-      <trans-unit id="s76cc1c6d9fab3a2d">
+      <trans-unit id="s76cc1c6d9fab3a2d" xml:space="preserve">
         <source>Outdated</source>
+        <target state="translated">Anticuado</target>
       </trans-unit>
-      <trans-unit id="sa6d797ddb16d0c5d">
+      <trans-unit id="sa6d797ddb16d0c5d" xml:space="preserve">
         <source>Analysis starting</source>
+        <target state="translated">Iniciando análisis</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s882dbbc2c22c08f5">
         <source>analyzed</source>
         <target state="translated">analizado</target>
       </trans-unit>
-      <trans-unit id="sd0ad99175efc2e67">
+      <trans-unit id="sd0ad99175efc2e67" xml:space="preserve">
         <source>Match analysis compares pages during a crawl against their replay during an analysis run. A good match indicates that the crawl is probably good, whereas severe inconsistencies may indicate a bad crawl.</source>
+        <target state="needs-translation">Análisis de coincidencias compara las páginas durante un rastreo contra su repetición durante una ejecución de análisis. Un buen partido indica que el arrastre es probablemente bueno, mientras que las inconsistencias severas pueden indicar un mal arrastre.</target>
       </trans-unit>
-      <trans-unit id="s79454494f711e05d">
+      <trans-unit id="s79454494f711e05d" xml:space="preserve">
         <source>Statistic</source>
+        <target state="translated">Estadística</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s66f26fdcbe2101eb">
         <source>Chart</source>
@@ -1348,18 +1400,21 @@
         <source>Comments</source>
         <target state="translated">Comentarios</target>
       </trans-unit>
-      <trans-unit id="s4d3c92a1a881dc5f">
+      <trans-unit id="s4d3c92a1a881dc5f" xml:space="preserve">
         <source>Review "<x id="0" equiv-text="${page.title ?? page.url}"/>"</source>
+        <target state="needs-translation">Reseña "<x id="0" equiv-text="${page.title ?? page.url}"/>"</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s7282886335497d58">
         <source>Newest comment:</source>
         <target state="translated">Comentario más reciente:</target>
       </trans-unit>
-      <trans-unit id="s669b18c6d2d9c95b">
+      <trans-unit id="s669b18c6d2d9c95b" xml:space="preserve">
         <source>None</source>
+        <target state="translated">Ninguno</target>
       </trans-unit>
-      <trans-unit id="sc022cfb22694b207">
+      <trans-unit id="sc022cfb22694b207" xml:space="preserve">
         <source>Sorry, couldn't retrieve archived item at this time.</source>
+        <target state="translated">Disculpe, no pudo obtener ítem archivado en este momento.</target>
       </trans-unit>
       <trans-unit id="s3d197283cb019b5a" xml:space="preserve">
         <source>Overview</source>
@@ -1389,17 +1444,21 @@
         <source>Uploads</source>
         <target state="translated">Subidas</target>
       </trans-unit>
-      <trans-unit id="sa71de39189a9e9cd">
+      <trans-unit id="sa71de39189a9e9cd" xml:space="preserve">
         <source>Go to Workflow</source>
+        <target state="needs-translation">Ir al flujo de trabajo</target>
       </trans-unit>
-      <trans-unit id="s96c92dc644219e36">
+      <trans-unit id="s96c92dc644219e36" xml:space="preserve">
         <source>Copy Workflow ID</source>
+        <target state="translated">Copia ID de flujo del trabajo</target>
       </trans-unit>
-      <trans-unit id="s0f90731f43e2ac1c">
+      <trans-unit id="s0f90731f43e2ac1c" xml:space="preserve">
         <source>Download Item</source>
+        <target state="translated">Descargar elemento</target>
       </trans-unit>
-      <trans-unit id="s5ce3f4567e31397d">
+      <trans-unit id="s5ce3f4567e31397d" xml:space="preserve">
         <source>Delete Item</source>
+        <target state="translated">Borrar elemento</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sb1ccb7808e51e5c1">
         <source>No files to replay.</source>
@@ -1417,8 +1476,9 @@
         <source>Execution Time</source>
         <target state="translated">Tiempo de ejecución</target>
       </trans-unit>
-      <trans-unit id="sb0ca4190190d41fa">
+      <trans-unit id="sb0ca4190190d41fa" xml:space="preserve">
         <source>Initiator</source>
+        <target state="translated">Iniciador</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="hdfcda45e7d5c5ab4">
         <source>Scheduled start</source>
@@ -1432,8 +1492,9 @@
         <source>pages</source>
         <target state="translated">páginas</target>
       </trans-unit>
-      <trans-unit id="sec7059aaa0633ca2">
+      <trans-unit id="sec7059aaa0633ca2" xml:space="preserve">
         <source>Crawler Channel (Exact Crawler Version)</source>
+        <target state="translated">Canal Rastreador (Versión Exacta Rastreador)</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s0ebf17b26bf14b0c">
         <source>No files to download.</source>
@@ -1455,73 +1516,93 @@
         <source>Run Analysis</source>
         <target state="translated">Ejecutar análisis</target>
       </trans-unit>
-      <trans-unit id="sdd0e6007d5cde74e">
+      <trans-unit id="sdd0e6007d5cde74e" xml:space="preserve">
         <source>Review Crawl</source>
+        <target state="translated">Vista previa de rastreador</target>
       </trans-unit>
-      <trans-unit id="sccf493f23e609bae">
+      <trans-unit id="sccf493f23e609bae" xml:space="preserve">
         <source>Stop QA Analysis?</source>
+        <target state="translated">¿Detener Análisis de QA?</target>
       </trans-unit>
-      <trans-unit id="sc806ccf9be6b1edf">
+      <trans-unit id="sc806ccf9be6b1edf" xml:space="preserve">
         <source>Pages analyzed so far will be saved and this run will be marked as incomplete. Are you sure you want to stop this analysis run?</source>
+        <target state="translated">Las páginas analizadas hasta ahora serán guardadas y esta ejecución estará marcada como incompleta. ¿Seguro que deseas detener esta ejecución del análisis?</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s2f34e9b74f8dc3e7">
         <source>Keep Running</source>
         <target state="translated">Seguir ejecutando</target>
       </trans-unit>
-      <trans-unit id="se0f7567743f84b08">
+      <trans-unit id="se0f7567743f84b08" xml:space="preserve">
         <source>Cancel QA Analysis?</source>
+        <target state="translated">¿Cancelar Análisis de QA?</target>
       </trans-unit>
-      <trans-unit id="sc30660bdd0128dd9">
+      <trans-unit id="sc30660bdd0128dd9" xml:space="preserve">
         <source>Canceling will discard all analysis data associated with this run. Are you sure you want to cancel this analysis run?</source>
+        <target state="translated">Cancelar descartará todos los datos del análisis asociados con esta ejecución. ¿Seguro que desea cancelar esta ejecución del análisis?</target>
       </trans-unit>
-      <trans-unit id="s98413844b16f5669">
+      <trans-unit id="s98413844b16f5669" xml:space="preserve">
         <source>Sorry, couldn't retrieve crawl at this time.</source>
+        <target state="translated">Disculpe, no se pudo obtener rastreador en este momento.</target>
       </trans-unit>
-      <trans-unit id="s77b8aee24f2143f1">
+      <trans-unit id="s77b8aee24f2143f1" xml:space="preserve">
         <source>Sorry, couldn't load all crawl settings.</source>
+        <target state="translated">Disculpe, no se pudo cargar todos los ajustes del rastreador.</target>
       </trans-unit>
-      <trans-unit id="sad61764572206873">
+      <trans-unit id="sad61764572206873" xml:space="preserve">
         <source>Sorry, couldn't cancel crawl at this time.</source>
+        <target state="translated">Disculpe, no pude cancelar rastreador en este momento.</target>
       </trans-unit>
-      <trans-unit id="s3256360646b319fd">
+      <trans-unit id="s3256360646b319fd" xml:space="preserve">
         <source>Sorry, couldn't stop crawl at this time.</source>
+        <target state="translated">Disculpe, no pude detener rastreador en este momento.</target>
       </trans-unit>
-      <trans-unit id="s7a8ac0d4fdb945fd">
+      <trans-unit id="s7a8ac0d4fdb945fd" xml:space="preserve">
         <source>Starting QA analysis...</source>
+        <target state="translated">Iniciando análisis de QA…</target>
       </trans-unit>
-      <trans-unit id="sa8a8be5d64bc9f61">
+      <trans-unit id="sa8a8be5d64bc9f61" xml:space="preserve">
         <source>Sorry, couldn't start QA run at this time.</source>
+        <target state="translated">Disculpe, no pude iniciar la ejecución de QA en este momento.</target>
       </trans-unit>
-      <trans-unit id="scbb8d1a9ba6fc144">
+      <trans-unit id="scbb8d1a9ba6fc144" xml:space="preserve">
         <source>Sorry, QA analysis is not supported for this crawl as it was run with an older crawler version. Please run a new crawl with the latest crawler and QA should be available.</source>
+        <target state="translated">Disculpe, el análisis QA no es admitido para este rastreador tal como fue ejecutado con una versión de rastreador más antigua. Ejecute un rastreador nuevo con el último rastreador y QA estaría disponible.</target>
       </trans-unit>
-      <trans-unit id="s1022659c0dc8dc2d">
+      <trans-unit id="s1022659c0dc8dc2d" xml:space="preserve">
         <source>Stopping QA analysis...</source>
+        <target state="translated">Deteniendo análisis QA…</target>
       </trans-unit>
-      <trans-unit id="sb7dc70f8590120d9">
+      <trans-unit id="sb7dc70f8590120d9" xml:space="preserve">
         <source>Analysis is not currently running.</source>
+        <target state="translated">El análisis no está ejecutándose actualmente.</target>
       </trans-unit>
-      <trans-unit id="s6984388e4beabcd1">
+      <trans-unit id="s6984388e4beabcd1" xml:space="preserve">
         <source>Canceling QA analysis...</source>
+        <target state="translated">Cancelando análisis QA…</target>
       </trans-unit>
-      <trans-unit id="sd28770d781de4bf2">
+      <trans-unit id="sd28770d781de4bf2" xml:space="preserve">
         <source>Latest Analysis Status</source>
+        <target state="translated">Estado de Último Análisis</target>
       </trans-unit>
-      <trans-unit id="s5dd0167ca221d080">
+      <trans-unit id="s5dd0167ca221d080" xml:space="preserve">
         <source>Last Analysis Run</source>
+        <target state="translated">Último Análisis Ejecutado</target>
       </trans-unit>
-      <trans-unit id="s383e3adf37d47e4f">
+      <trans-unit id="s383e3adf37d47e4f" xml:space="preserve">
         <source># of Analysis Runs</source>
+        <target state="translated">Nº de Análisis Ejecutados</target>
       </trans-unit>
-      <trans-unit id="sa17d9ca5bd22265d">
+      <trans-unit id="sa17d9ca5bd22265d" xml:space="preserve">
         <source>Org Storage Full</source>
+        <target state="translated">Almacén Org Lleno</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sd928eb8c36987311">
         <source>Upload WACZ</source>
         <target state="translated">Subir WACZ</target>
       </trans-unit>
-      <trans-unit id="s5fa99b1acb437428">
+      <trans-unit id="s5fa99b1acb437428" xml:space="preserve">
         <source>Delete Archived Item?</source>
+        <target state="translated">¿Borro elemento archivo?</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s039b6434e8a75560">
         <source>Delete <x id="0" equiv-text="${org.name}"/></source>
@@ -1531,11 +1612,13 @@
         <source>Upload</source>
         <target state="translated">Subir</target>
       </trans-unit>
-      <trans-unit id="sa783d9004df13b20">
+      <trans-unit id="sa783d9004df13b20" xml:space="preserve">
         <source>Crawl</source>
+        <target state="translated">Arrastre</target>
       </trans-unit>
-      <trans-unit id="sf999d4199ff4542d">
+      <trans-unit id="sf999d4199ff4542d" xml:space="preserve">
         <source>Any</source>
+        <target state="translated">Cualquiera</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="se3bba1b6eb0bcf30">
         <source>Search all uploads by name</source>
@@ -1545,11 +1628,13 @@
         <source>No matching items found.</source>
         <target state="translated">No se han encontrado elementos que coincidan.</target>
       </trans-unit>
-      <trans-unit id="s2b93a67511243888">
+      <trans-unit id="s2b93a67511243888" xml:space="preserve">
         <source>No archived items yet.</source>
+        <target state="translated">Aún ninguno de los elementos archivados.</target>
       </trans-unit>
-      <trans-unit id="s5ff63d8186a80322">
+      <trans-unit id="s5ff63d8186a80322" xml:space="preserve">
         <source>Successfully deleted archived item.</source>
+        <target state="translated">Borrado correcto del elemento archivado.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sc02cbf6ebf0b6cdb">
         <source>New Collection</source>
@@ -1560,8 +1645,9 @@
                 <x id="0" equiv-text="&lt;strong&gt;${this.selectedCollection?.name}&lt;/strong&gt;"/>?</source>
         <target state="translated">¿Está seguro que desea eliminar <x id="0" equiv-text="&lt;strong&gt;${this.selectedCollection?.name}&lt;/strong&gt;"/>?</target>
       </trans-unit>
-      <trans-unit id="s9c2062a6e5e59b93">
+      <trans-unit id="s9c2062a6e5e59b93" xml:space="preserve">
         <source>Start typing to view collection filters.</source>
+        <target state="translated">Inicia tecleo para ver filtros de colección.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sb8102dd29e015556">
         <source>No matching collections found.</source>
@@ -1571,8 +1657,9 @@
         <source>Collection Access</source>
         <target state="translated">Acceso a las colecciones</target>
       </trans-unit>
-      <trans-unit id="sa3242c7021e01280">
+      <trans-unit id="sa3242c7021e01280" xml:space="preserve">
         <source>Row Actions</source>
+        <target state="translated">Acciones de Fila</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s5ac7d4f485d82e8c">
         <source>Shareable Collection</source>
@@ -1586,8 +1673,9 @@
         <source>Interactive Browser</source>
         <target state="translated">Navegador interactivo</target>
       </trans-unit>
-      <trans-unit id="s38272cc7bd101136">
+      <trans-unit id="s38272cc7bd101136" xml:space="preserve">
         <source>Interact with this embedded browser to set up your browser profile. The embedded browser will exit without saving changes after a few minutes of inactivity.</source>
+        <target state="needs-translation">Interactúa con este navegador integrado para configurar el perfil de su navegador. El navegador integrado saldrá sin guardar cambios después de unos minutos de inactividad.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sa6117a1376ac5a03">
         <source>Interactive browser session timed out due to inactivity.</source>
@@ -1601,20 +1689,25 @@
         <source>Connection to interactive browser lost. Waiting to reconnect...</source>
         <target state="translated">Se ha perdido la conexión con el navegador interactivo. Esperando para reconectar...</target>
       </trans-unit>
-      <trans-unit id="s469a4b8dd8b91801">
+      <trans-unit id="s469a4b8dd8b91801" xml:space="preserve">
         <source>New Sites</source>
+        <target state="translated">Sitios nuevos</target>
       </trans-unit>
-      <trans-unit id="sb07ea0d5070f719d">
+      <trans-unit id="sb07ea0d5070f719d" xml:space="preserve">
         <source>Crawler Release Channel</source>
+        <target state="needs-translation">Canal de liberación de Crawler</target>
       </trans-unit>
-      <trans-unit id="se1273d9b375c0cec">
+      <trans-unit id="se1273d9b375c0cec" xml:space="preserve">
         <source>Backed Up</source>
+        <target state="translated">Respaldada</target>
       </trans-unit>
-      <trans-unit id="s01c4948ecd700b51">
+      <trans-unit id="s01c4948ecd700b51" xml:space="preserve">
         <source>Not Backed Up</source>
+        <target state="translated">No Respaldada</target>
       </trans-unit>
-      <trans-unit id="s69ec09431b9c3946">
+      <trans-unit id="s69ec09431b9c3946" xml:space="preserve">
         <source>Browser Profile</source>
+        <target state="translated">Perfil del Navegador</target>
       </trans-unit>
       <trans-unit id="s984cf207ea75350f" xml:space="preserve">
         <source>Browser Profiles</source>
@@ -2931,7 +3024,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="s32322dc45e502559">
         <source>Decline</source>
-        <target state="translated">Rechazar</target>
+        <target state="translated">Declinar</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s84922e45c0957371">
         <source>This invitation is for <x id="0" equiv-text="${this.email}"/>. You are currently logged in as <x id="1" equiv-text="${this.authState?.username}"/>. Please log in with the correct email to access this invite.</source>
