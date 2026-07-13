@@ -138,7 +138,7 @@ backend_worker_timeout: 60
 
 backend_cpu: "100m"
 
-backend_memory: "350Mi"
+backend_memory: "512Mi"
 
 # port for operator service
 opPort: 8756

@@ -411,7 +411,7 @@ class StorageOps:
         file_: AsyncIterator[bytes],
         min_size: int,
         mime: str | None = None,
-        max_workers: int = 4,
+        max_workers: int = 10,
     ) -> bool:
         """do upload to specified key using multipart chunking
 
@@ -455,9 +455,7 @@ class StorageOps:
             # Bounded queue limits queued chunks to max_workers * min_size bytes.
             # Workers also hold one chunk each while uploading, so peak memory is
             # roughly 2 * max_workers * min_size plus any oversized chunks.
-            queue: asyncio.Queue[tuple[int, bytes] | None] = asyncio.Queue(
-                maxsize=max_workers
-            )
+            queue: asyncio.Queue[tuple[int, bytes] | None] = asyncio.Queue(maxsize=2)
             parts: list[CompletedPartTypeDef] = []
             total_size = 0
             upload_start = time.monotonic()
