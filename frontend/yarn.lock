@@ -5406,15 +5406,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@webrecorder/wabac@npm:^2.26.4":
-  version: 2.26.5
-  resolution: "@webrecorder/wabac@npm:2.26.5"
+"@webrecorder/wabac@npm:^2.27.1":
+  version: 2.27.1
+  resolution: "@webrecorder/wabac@npm:2.27.1"
   dependencies:
     "@peculiar/asn1-ecc": "npm:^2.3.4"
     "@peculiar/asn1-schema": "npm:^2.3.3"
     "@peculiar/x509": "npm:^1.9.2"
     "@types/js-levenshtein": "npm:^1.1.3"
-    "@webrecorder/wombat": "npm:^3.10.5"
+    "@webrecorder/wombat": "npm:^3.10.7"
     acorn: "npm:^8.15.0"
     auto-js-ipfs: "npm:^2.1.1"
     base64-js: "npm:^1.5.1"
@@ -5425,7 +5425,7 @@ __metadata:
     http-status-codes: "npm:^2.1.4"
     idb: "npm:^7.1.1"
     js-levenshtein: "npm:^1.1.6"
-    js-yaml: "npm:^4.1.1"
+    js-yaml: "npm:^4.3.1"
     mime: "npm:^4.1.0"
     pako: "npm:^1.0.11"
     parse5-html-rewriting-stream: "npm:^7.0.0"
@@ -5433,17 +5433,17 @@ __metadata:
     path-parser: "npm:^6.1.0"
     process: "npm:^0.11.10"
     stream-browserify: "npm:^3.0.0"
-    warcio: "npm:^2.4.10"
-  checksum: 10c0/1ec5f8c1a02a24abddb47ebf849dd594309acac78abdfb9aaa8d4463ffca25ea4d70423b589ec7a8f2fe7cc2624a97c55961027520cc13ff122c68cfbdd394cd
+    warcio: "npm:^2.4.11"
+  checksum: 10c0/76c997fe9622baec11a715116e07368a4e8c13900659d48feaa46c8951ba4e1bce31e6c2d903b1adec2efd1082eda870eb6b2ea5c68314820b929b696c2bb2a7
   languageName: node
   linkType: hard
 
-"@webrecorder/wombat@npm:^3.10.5":
-  version: 3.10.5
-  resolution: "@webrecorder/wombat@npm:3.10.5"
+"@webrecorder/wombat@npm:^3.10.7":
+  version: 3.10.7
+  resolution: "@webrecorder/wombat@npm:3.10.7"
   dependencies:
     warcio: "npm:^2.4.10"
-  checksum: 10c0/dca1e0a70e181dd3b190c2fa5fff93a6867e673a53d79fc9e7ce784623995fe316d35c8736930f4f5c343cac06fb88455ec92c8074c612b350c621908598b9c9
+  checksum: 10c0/4b78baf1065a697352c83568d8bf0640304177e089af7fdba73c9686a4d04240ee2d59036d18f4b491977903d30931c401fad1ee5a1abbb750e2a56583738493
   languageName: node
   linkType: hard
 
@@ -6435,7 +6435,7 @@ __metadata:
     query-string: "npm:^8.1.0"
     regex-colorizer: "npm:^1.0.2"
     remark-gfm: "npm:^4.0.1"
-    replaywebpage: "npm:^2.5.0-rc.0"
+    replaywebpage: "npm:^2.5.0"
     rollup-plugin-typescript-paths: "npm:^1.5.0"
     sinon: "npm:^22.0.0"
     slugify: "npm:^1.6.9"
@@ -6501,13 +6501,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"builder-util-runtime@npm:9.5.1":
-  version: 9.5.1
-  resolution: "builder-util-runtime@npm:9.5.1"
+"builder-util-runtime@npm:9.7.0":
+  version: 9.7.0
+  resolution: "builder-util-runtime@npm:9.7.0"
   dependencies:
     debug: "npm:^4.3.4"
     sax: "npm:^1.2.4"
-  checksum: 10c0/b6f95e18d7f6201f95b42658bb7c8e2d29f96d6beeef64c4c9f54ff9d71e6459ca55f325512da9fea23378b9804fcade8fcad88dab81ba3f96958c86492a2ca9
+  checksum: 10c0/4dac3788ce3776d268fd0cbfabe2d5168b8197fba90beda7fd2f729bfa51e689ffe0bf98b9162a1cac7f1191eb5bbcc6ca81bcbc5070df7a469fd7af511a1f31
   languageName: node
   linkType: hard
 
@@ -8029,11 +8029,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron-updater@npm:^6.6.2":
-  version: 6.8.3
-  resolution: "electron-updater@npm:6.8.3"
+"electron-updater@npm:^6.8.9":
+  version: 6.8.9
+  resolution: "electron-updater@npm:6.8.9"
   dependencies:
-    builder-util-runtime: "npm:9.5.1"
+    builder-util-runtime: "npm:9.7.0"
     fs-extra: "npm:^10.1.0"
     js-yaml: "npm:^4.1.0"
     lazy-val: "npm:^1.0.5"
@@ -8041,7 +8041,7 @@ __metadata:
     lodash.isequal: "npm:^4.5.0"
     semver: "npm:~7.7.3"
     tiny-typed-emitter: "npm:^2.1.0"
-  checksum: 10c0/82c86e5e13e3be7e81790367f6aa417db1a1b8657569c800bbc366259ff80c13101ffca88d5f69a54161e69311b31f116289d7805aff0c197d31af6a6e1c1947
+  checksum: 10c0/a95d8ffcadc52fe289b0e44721ad78cab6bf2a4d5951f1242e0dbdf2a065e42ca64d48ee5040bd55d6320b8491ec90ae3f23eb7e343540b92e004799eb001aab
   languageName: node
   linkType: hard
 
@@ -9044,13 +9044,6 @@ __metadata:
     node-domexception: "npm:^1.0.0"
     web-streams-polyfill: "npm:^3.0.3"
   checksum: 10c0/60054bf47bfa10fb0ba6cb7742acec2f37c1f56344f79a70bb8b1c48d77675927c720ff3191fa546410a0442c998d27ab05e9144c32d530d8a52fbe68f843b69
-  languageName: node
-  linkType: hard
-
-"fetch-ndjson@npm:^1.1.6":
-  version: 1.1.7
-  resolution: "fetch-ndjson@npm:1.1.7"
-  checksum: 10c0/281646f9811998e1f01d694ced381199b53f5f06e3311311fca5a99db4debd9147ed062177b3462d10edbc431ed851cfeb51b70cba891e59ecc98a3b09364447
   languageName: node
   linkType: hard
 
@@ -10756,14 +10749,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"js-yaml@npm:^4.1.1":
-  version: 4.1.1
-  resolution: "js-yaml@npm:4.1.1"
+"js-yaml@npm:^4.3.1":
+  version: 4.3.1
+  resolution: "js-yaml@npm:4.3.1"
   dependencies:
     argparse: "npm:^2.0.1"
   bin:
     js-yaml: bin/js-yaml.js
-  checksum: 10c0/561c7d7088c40a9bb53cc75becbfb1df6ae49b34b5e6e5a81744b14ae8667ec564ad2527709d1a6e7d5e5fa6d483aa0f373a50ad98d42fde368ec4a190d4fae7
+  checksum: 10c0/13c500ca322e0c3f8c81686e6ecda96d2ea37b45247a420c17c7db36932d6965cc27391abc2d1a104501600e7f0d947a5f8b7be6db619c4fefa87901b3512807
   languageName: node
   linkType: hard
 
@@ -14128,17 +14121,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"replaywebpage@npm:^2.5.0-rc.0":
-  version: 2.5.0-rc.2
-  resolution: "replaywebpage@npm:2.5.0-rc.2"
+"replaywebpage@npm:^2.5.0":
+  version: 2.5.0
+  resolution: "replaywebpage@npm:2.5.0"
   dependencies:
     "@fortawesome/fontawesome-free": "npm:^5.15.4"
     "@shoelace-style/shoelace": "npm:~2.15.1"
-    "@webrecorder/wabac": "npm:^2.26.4"
+    "@webrecorder/wabac": "npm:^2.27.1"
     bulma: "npm:^0.9.3"
     electron-log: "npm:^4.4.1"
-    electron-updater: "npm:^6.6.2"
-    fetch-ndjson: "npm:^1.1.6"
+    electron-updater: "npm:^6.8.9"
     flexsearch: "npm:^0.7.31"
     keyword-mark-element: "npm:^0.2.0"
     lit: "npm:3.1.1"
@@ -14153,7 +14145,7 @@ __metadata:
     split.js: "npm:^1.6.4"
     stream-browserify: "npm:^3.0.0"
     tsconfig-paths-webpack-plugin: "npm:^4.1.0"
-  checksum: 10c0/5c91ae101f6f895206436dae450b6c33475a53b9277fe15e08cce2c19024fc165a1d02a0d9a325ab4085db152bd9015f82f208552d338bc0a15af0cfe33e7d5f
+  checksum: 10c0/942707e895d101fbee7385e679d3e9c835c27722c6aa09b37a6ff1244b432958bb5ba2e01db22ab6f08efa99612535791e04874e907e9603cfdf20ef0c371164
   languageName: node
   linkType: hard
 
@@ -16743,6 +16735,24 @@ __metadata:
   bin:
     warcio: dist/cli.js
   checksum: 10c0/24107b5ee082d2fcbda0d50990b0ef0cdaa8c0eef9ba8b4e5e709e59761b0d9f2053cd7f209bfc9ae4663bd48073e69b02b3b7c8e40def92b4bf1ee620b9699e
+  languageName: node
+  linkType: hard
+
+"warcio@npm:^2.4.11":
+  version: 2.4.11
+  resolution: "warcio@npm:2.4.11"
+  dependencies:
+    "@types/pako": "npm:^1.0.7"
+    "@types/stream-buffers": "npm:^3.0.7"
+    base32-encode: "npm:^2.0.0"
+    hash-wasm: "npm:^4.9.0"
+    pako: "npm:^1.0.11"
+    tempy: "npm:^3.1.0"
+    uuid-random: "npm:^1.3.2"
+    yargs: "npm:^17.7.2"
+  bin:
+    warcio: dist/cli.js
+  checksum: 10c0/7586526e414fc884982cb88780f7552ca2e2344b38c1a828dcdb0ffeeb7d2dcdf506ddae1098de507d2e32289d180ba011a56ab75976d44a9dc2f8cf33e50d84
   languageName: node
   linkType: hard
 
