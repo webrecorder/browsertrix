@@ -16,6 +16,13 @@ metadata:
     # for larger uploads to not timeout
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    # increase client body buffer for HTTP/2 streaming uploads - the default
+    # 8K/16K is too small for proxy-request-buffering: off + HTTP/2, causing
+    # per-frame write stalls and TCP congestion cycling. 10m matches
+    # MIN_UPLOAD_PART_SIZE in the backend, so each flush to the upstream
+    # delivers roughly one S3 multipart part.
+    # see https://stackoverflow.com/questions/78755166
+    nginx.ingress.kubernetes.io/client-body-buffer-size: "10m"
     nginx.ingress.kubernetes.io/upstream-vhost: "{{ .Values.ingress.host }}"
     {{- if .Values.ingress.tls }}
     cert-manager.io/cluster-issuer: {{ .Values.ingress.custom_cluster_issuer | default "cert-main" }}
