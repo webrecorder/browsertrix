@@ -1579,7 +1579,7 @@ class CrawlOperator(BaseOperator):
             if not pod.isNewExit or pod.exitCode in (0, 11, 13):
                 continue
 
-            reason = self.get_crawler_exit_reason(pod.exitCode)
+            reason = self.get_crawler_exit_reason(pod.exitCode or 1)
 
             log = self.get_log_line(
                 f"Crawler Instance Exited: {reason}",
