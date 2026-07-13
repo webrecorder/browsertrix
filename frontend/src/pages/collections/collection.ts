@@ -9,8 +9,8 @@ import type { ReplayWebPage, RwpUrlChangeEvent } from "replaywebpage";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { collectionRwpContext } from "@/features/collections/context/collection-rwp";
+import { injectRwpStyles } from "@/features/collections/helpers/injectRwpStyles";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
-import replayStylesheet from "@/features/collections/styles/replay.stylesheet.css";
 import { metadataColumn } from "@/layouts/collections/metadataColumn";
 import { page } from "@/layouts/page";
 import { type CollectionSavedEvent } from "@/pages/org/collection-detail/types";
@@ -273,12 +273,11 @@ export class Collection extends BtrixElement {
           replayBase="/replay/"
           noSandbox="true"
           noCache="true"
-          hideOffscreen="true"
           deepLink
           @rwp-url-change=${(e: RwpUrlChangeEvent) => {
             if (!this.replayEmbed) {
               this.replayEmbed = e.currentTarget as ReplayWebPage;
-              this.injectRwpStyles();
+              injectRwpStyles(this.replayEmbed);
             }
           }}
         ></replay-web-page>
@@ -310,22 +309,6 @@ export class Collection extends BtrixElement {
     }
 
     return html`<div class="rounded-lg border p-6">${metadata}</div>`;
-  }
-
-  private injectRwpStyles() {
-    if (!this.replayEmbed) {
-      console.debug("no this.replayEmbed");
-      return;
-    }
-
-    const iframeDoc =
-      this.replayEmbed.shadowRoot?.querySelector("iframe")?.contentDocument;
-
-    if (iframeDoc) {
-      const style = iframeDoc.createElement("style");
-      style.textContent = replayStylesheet;
-      iframeDoc.head.appendChild(style);
-    }
   }
 
   private async fetchCollection({
