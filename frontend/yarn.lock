@@ -6416,7 +6416,7 @@ __metadata:
     query-string: "npm:^8.1.0"
     regex-colorizer: "npm:^1.0.2"
     remark-gfm: "npm:^4.0.1"
-    replaywebpage: "npm:^2.5.0-rc.0"
+    replaywebpage: "npm:^2.5.0-rc.2"
     rollup-plugin-typescript-paths: "npm:^1.5.0"
     sinon: "npm:^22.0.0"
     slugify: "npm:^1.6.9"
@@ -14109,7 +14109,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"replaywebpage@npm:^2.5.0-rc.0":
+"replaywebpage@npm:^2.5.0-rc.2":
   version: 2.5.0-rc.2
   resolution: "replaywebpage@npm:2.5.0-rc.2"
   dependencies:

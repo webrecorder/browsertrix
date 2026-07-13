@@ -77,7 +77,7 @@
     "pretty-ms": "^7.0.1",
     "query-string": "^8.1.0",
     "regex-colorizer": "^1.0.2",
-    "replaywebpage": "^2.5.0-rc.0",
+    "replaywebpage": "^2.5.0-rc.2",
     "slugify": "^1.6.9",
     "style-loader": "^3.3.0",
     "tabbable": "^6.5.0",
