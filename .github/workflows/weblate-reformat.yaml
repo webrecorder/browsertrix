@@ -62,7 +62,7 @@ jobs:
         working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       # Localize:
       - name: Reformat XLIFF files
