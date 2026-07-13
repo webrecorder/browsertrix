@@ -129,7 +129,7 @@
     "@storybook/addon-webpack5-compiler-swc": "^3.0.0",
     "@storybook/blocks": "^8.6.14",
     "@storybook/test": "^8.6.15",
-    "@storybook/web-components": "^8.6.12",
+    "@storybook/web-components": "^10.4.6",
     "@storybook/web-components-webpack5": "^8.6.14",
     "@types/sinon": "^22.0.0",
     "@types/webpack-bundle-analyzer": "^4.7.0",
