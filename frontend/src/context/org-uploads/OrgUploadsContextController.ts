@@ -89,7 +89,13 @@ export class OrgUploadsContextController implements ReactiveController {
   private readonly onUpload = async (e: CustomEvent<OrgUploadEventDetail>) => {
     e.stopPropagation();
 
-    const { apiPath, file, itemName, uploadId: eventUploadId } = e.detail;
+    const {
+      apiPath,
+      file,
+      itemName,
+      uploadId: eventUploadId,
+      useFormData,
+    } = e.detail;
 
     if (eventUploadId && this.#uploadRequests.has(eventUploadId)) {
       this.abort(eventUploadId);
@@ -105,9 +111,16 @@ export class OrgUploadsContextController implements ReactiveController {
     };
 
     const uploadId = eventUploadId ?? window.crypto.randomUUID();
+    const uploadBody = useFormData
+      ? (() => {
+          const formData = new FormData();
+          formData.append("uploads", file);
+          return formData;
+        })()
+      : file;
     const uploadComplete = this.#host.api.upload(
       apiPath,
-      file,
+      uploadBody,
       undefined,
       onUploadProgress,
     );

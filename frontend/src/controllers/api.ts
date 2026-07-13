@@ -93,7 +93,7 @@ export class APIController implements ReactiveController {
 
   upload(
     path: string,
-    file: File,
+    file: File | FormData,
     abortSignal?: AbortSignal,
     /**
      * Custom XMLHttpRequest['upload'] loadstart and progress event callback,
@@ -115,7 +115,11 @@ export class APIController implements ReactiveController {
         const xhr = new XMLHttpRequest();
 
         xhr.open("PUT", `/api${path}`);
-        xhr.setRequestHeader("Content-Type", "application/octet-stream");
+        if (file instanceof FormData) {
+          // Let the browser set the Content-Type with the multipart boundary
+        } else {
+          xhr.setRequestHeader("Content-Type", "application/octet-stream");
+        }
         Object.entries(auth.headers).forEach(([k, v]) => {
           xhr.setRequestHeader(k, v);
         });
@@ -151,10 +155,11 @@ export class APIController implements ReactiveController {
         });
 
         if (uploadCallback) {
+          const fileSize = file instanceof FormData ? undefined : file.size;
           const onUploadProgress = throttle(
-            file.size > BYTES_PER_GB
+            fileSize && fileSize > BYTES_PER_GB
               ? 800
-              : file.size > BYTES_PER_MB
+              : fileSize && fileSize > BYTES_PER_MB
                 ? 400
                 : 200,
           )(uploadCallback);

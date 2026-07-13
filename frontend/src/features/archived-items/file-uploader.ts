@@ -78,6 +78,8 @@ export class FileUploader extends BtrixElement {
   @state()
   private fileList: File[] = [];
 
+  private useFormData = false;
+
   @query("btrix-dialog")
   private readonly dialog?: Dialog | null;
 
@@ -146,23 +148,25 @@ export class FileUploader extends BtrixElement {
           }}
           >${msg("Cancel")}</sl-button
         >
-        <sl-button
-          variant="primary"
-          size="small"
-          ?loading=${loading}
-          ?disabled=${!this.fileList.length || loading}
-          @click=${async () => {
-            // Using submit method instead of type="submit" fixes
-            // incorrect getRootNode in Chrome
-            const form = await this.form;
-            const submitInput = form.querySelector<HTMLInputElement>(
-              'input[type="submit"]',
-            )!;
-            form.requestSubmit(submitInput);
-          }}
-        >
-          ${msg("Upload")}
-        </sl-button>
+        <div class="flex gap-2">
+          <sl-button
+            variant="primary"
+            size="small"
+            ?loading=${loading}
+            ?disabled=${!this.fileList.length || loading}
+            @click=${async () => this.submitForm(false)}
+          >
+            ${msg("Upload")}
+          </sl-button>
+          <sl-button
+            size="small"
+            ?loading=${loading}
+            ?disabled=${!this.fileList.length || loading}
+            @click=${async () => this.submitForm(true)}
+          >
+            ${msg("Upload with FormData")}
+          </sl-button>
+        </div>
       </div>
     `;
   }
@@ -242,11 +246,21 @@ export class FileUploader extends BtrixElement {
     this.fileList = [];
     this.tagsToSave = [];
     this.uploadingId = undefined;
+    this.useFormData = false;
   }
 
   private readonly close = () => {
     void this.dialog?.hide();
   };
+
+  private async submitForm(useFormData: boolean) {
+    this.useFormData = useFormData;
+    const form = await this.form;
+    const submitInput = form.querySelector<HTMLInputElement>(
+      'input[type="submit"]',
+    )!;
+    form.requestSubmit(submitInput);
+  }
 
   private async onSubmit(e: SubmitEvent) {
     e.preventDefault();
@@ -260,13 +274,16 @@ export class FileUploader extends BtrixElement {
     this.uploadingId = window.crypto.randomUUID();
 
     const { name, description } = serialize(formEl);
-    const query = queryString.stringify({
-      filename: file.name,
+    const queryParams = {
       name,
-      description: description,
+      description,
       collections: this.collectionIds,
       tags: this.tagsToSave,
-    });
+    };
+    const query = this.useFormData
+      ? queryString.stringify(queryParams)
+      : queryString.stringify({ ...queryParams, filename: file.name });
+    const apiPath = `/orgs/${this.orgId}/uploads/${this.useFormData ? "formdata" : "stream"}?${query}`;
 
     // Dispatch information for upload to be handled on the org level
     this.dispatchEvent(
@@ -274,8 +291,9 @@ export class FileUploader extends BtrixElement {
         detail: {
           uploadId: this.uploadingId,
           itemName: name as string,
-          apiPath: `/orgs/${this.orgId}/uploads/stream?${query}`,
+          apiPath,
           file,
+          useFormData: this.useFormData,
         },
         bubbles: true,
         composed: true,

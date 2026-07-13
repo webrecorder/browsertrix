@@ -14,6 +14,7 @@ export type OrgUploadEventDetail = {
   itemName: string;
   apiPath: string;
   file: File;
+  useFormData?: boolean;
 };
 
 export type OrgUploadCancelRemoveEventDetail = {
