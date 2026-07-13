@@ -1579,18 +1579,52 @@ class CrawlOperator(BaseOperator):
             if not pod.isNewExit or pod.exitCode in (0, 11, 13):
                 continue
 
+            reason = self.get_crawler_exit_reason(pod.exitCode)
+
             log = self.get_log_line(
-                "Crawler Instance Crashed", {"reason": pod.reason, "pod": name}
+                f"Crawler Instance Exited: {reason}",
+                {
+                    "pod": name,
+                    "exitCode": pod.exitCode,
+                    "reason": reason,
+                },
             )
             if not redis:
                 logger.exception(
-                    "crawler_instance_crashed",
+                    "crawler_instance_exited",
                     crawl_id=crawl_id,
                     error=log,
+                    reason=reason,
+                    exit_code=pod.exitCode,
                     unstructured_message=f"Crawl crash: {log}",
                 )
             else:
                 await redis.lpush(f"{crawl_id}:e", log)
+
+    def get_crawler_exit_reason(self, exit_code: int) -> str:
+        """Get reason for crawler exit based on status code"""
+        exit_codes = {
+            0: "Success",
+            1: "Generic Error",
+            3: "Out of Space",
+            8: "Redis Unavailable",
+            9: "Failed",
+            10: "Browser Crashed",
+            11: "Signal Interrupted",
+            12: "Failed Pages Limit Reached",
+            13: "Signal Interrupted (Force)",
+            14: "Size Limit Reached",
+            15: "Time Limit Reached",
+            16: "Disk Utilization Limit Reached",
+            17: "Fatal Error",
+            18: "Rate Limited",
+            21: "Proxy Error",
+            22: "Upload Failed",
+        }
+        try:
+            return exit_codes[exit_code]
+        except KeyError:
+            return "Unspecified Error"
 
     def get_log_line(self, message, details):
         """get crawler error line for logging"""
