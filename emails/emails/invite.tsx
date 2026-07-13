@@ -108,9 +108,12 @@ export const InviteUserEmail = ({
         </Link>
       </Text>
       <Text className="text-sm text-stone-600 text-center max-w-[360px] mx-auto">
-        This link will expire in {formatNumber(validity_period_days)}{" "}
-        {validity_period_days === 1 ? "day" : "days"} (
-        {formatDate(offsetDays(validity_period_days))}). Please contact us{" "}
+        <strong className="text-stone-900 font-bold">
+          This link will expire in {formatNumber(validity_period_days)}{" "}
+          {validity_period_days === 1 ? "day" : "days"} (
+          {formatDate(offsetDays(validity_period_days))}).
+        </strong>{" "}
+        Please contact us{" "}
         {support_email ? (
           <>
             {" "}
@@ -249,9 +252,16 @@ export const InviteUserEmail = ({
       </Card>
       {is_new && !sender ? (
         <Card
-          href="https://docs.browsertrix.com/user-guide/org-settings/"
+          href="https://docs.browsertrix.com/user-guide/org-members/"
           title="Invite Additional Users"
-          linkText="Learn how to invite users"
+          linkText={
+            <>
+              Learn how to{" "}
+              <strong className="font-semibold">
+                invite users to crawl with you
+              </strong>
+            </>
+          }
         >
           Add users to your organization to collaborate on crawling and
           curation.
