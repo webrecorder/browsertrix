@@ -1620,6 +1620,8 @@ class CrawlOperator(BaseOperator):
             18: "Rate Limited",
             21: "Proxy Error",
             22: "Upload Failed",
+            # From Kuberentes
+            137: "Out of Memory",
         }
         try:
             return exit_codes[exit_code]
