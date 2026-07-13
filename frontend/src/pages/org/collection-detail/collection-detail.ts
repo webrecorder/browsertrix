@@ -17,7 +17,6 @@ import type {
 } from "replaywebpage";
 
 import { collectionRwpContext } from "./context/collection-rwp";
-import replayStylesheet from "./styles/replay.stylesheet.css";
 import {
   CollectionSearchParam,
   EditingSearchParamValue,
@@ -39,6 +38,7 @@ import type { CollectionPageHeader } from "@/features/collections/collection-pag
 import { DEFAULT_THUMBNAIL } from "@/features/collections/collection-thumbnail";
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
+import replayStylesheet from "@/features/collections/styles/replay.stylesheet.css";
 import { createIndexDialog } from "@/features/collections/templates/create-index-dialog";
 import { deleteIndexDialog } from "@/features/collections/templates/delete-index-dialog";
 import { purgeIndexDialog } from "@/features/collections/templates/purge-index-dialog";
