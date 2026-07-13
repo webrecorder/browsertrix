@@ -16,7 +16,6 @@ import type {
   RwpUrlChangeEvent,
 } from "replaywebpage";
 
-import { collectionRwpContext } from "./context/collection-rwp";
 import {
   CollectionSearchParam,
   EditingSearchParamValue,
@@ -36,6 +35,7 @@ import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import type { CollectionPageHeader } from "@/features/collections/collection-page-header";
 import { DEFAULT_THUMBNAIL } from "@/features/collections/collection-thumbnail";
+import { collectionRwpContext } from "@/features/collections/context/collection-rwp";
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import replayStylesheet from "@/features/collections/styles/replay.stylesheet.css";

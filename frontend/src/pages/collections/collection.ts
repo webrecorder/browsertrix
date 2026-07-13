@@ -8,11 +8,11 @@ import { when } from "lit/directives/when.js";
 import type { ReplayWebPage, RwpUrlChangeEvent } from "replaywebpage";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { collectionRwpContext } from "@/features/collections/context/collection-rwp";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import replayStylesheet from "@/features/collections/styles/replay.stylesheet.css";
 import { metadataColumn } from "@/layouts/collections/metadataColumn";
 import { page } from "@/layouts/page";
-import { collectionRwpContext } from "@/pages/org/collection-detail/context/collection-rwp";
 import { type CollectionSavedEvent } from "@/pages/org/collection-detail/types";
 import { CommonTab, OrgTab, RouteNamespace } from "@/routes";
 import { CollectionAccess, type PublicCollection } from "@/types/collection";

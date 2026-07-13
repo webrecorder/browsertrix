@@ -1,5 +1,4 @@
-import type { CollectionRwpContext } from "../context/collection-rwp";
-
+import type { CollectionRwpContext } from "@/features/collections/context/collection-rwp";
 import { formatRwpTimestamp } from "@/utils/replay";
 
 /**
