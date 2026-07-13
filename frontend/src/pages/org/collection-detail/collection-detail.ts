@@ -17,6 +17,7 @@ import type {
 } from "replaywebpage";
 
 import { collectionRwpContext } from "./context/collection-rwp";
+import replayStylesheet from "./styles/replay.stylesheet.css";
 import {
   CollectionSearchParam,
   EditingSearchParamValue,
@@ -554,7 +555,7 @@ export class CollectionDetail extends BtrixElement {
       <section
         class=${clsx(
           this.collectionTab === Tab.Replay
-            ? tw`overflow-hidden rounded-lg border`
+            ? tw`overflow-hidden rounded-lg`
             : // Always render replay to keep reference for thumbnails and reload
               tw`offscreen`,
         )}
@@ -1369,7 +1370,7 @@ export class CollectionDetail extends BtrixElement {
 
     return html`
       <replay-web-page
-        class="h-[calc(100vh-6.5rem)]"
+        class="h-[calc(100vh-4rem)]"
         source=${replaySource}
         config="${config}"
         coll=${this.collectionId}
@@ -1380,7 +1381,6 @@ export class CollectionDetail extends BtrixElement {
         replayBase="/replay/"
         noSandbox="true"
         noCache="true"
-        hideOffscreen="true"
         @rwp-page-loading=${(e: RwpPageLoadingEvent) => {
           if (
             !e.detail.loading &&
@@ -1393,6 +1393,7 @@ export class CollectionDetail extends BtrixElement {
         @rwp-url-change=${(e: RwpUrlChangeEvent) => {
           if (!this.replayEmbed) {
             this.replayEmbed = e.currentTarget as ReplayWebPage;
+            this.injectRwpStyles();
           }
           if (!this.isRwpLoaded) {
             this.isRwpLoaded = true;
@@ -1416,6 +1417,22 @@ export class CollectionDetail extends BtrixElement {
       ></replay-web-page>
     `;
   };
+
+  private injectRwpStyles() {
+    if (!this.replayEmbed) {
+      console.debug("no this.replayEmbed");
+      return;
+    }
+
+    const iframeDoc =
+      this.replayEmbed.shadowRoot?.querySelector("iframe")?.contentDocument;
+
+    if (iframeDoc) {
+      const style = iframeDoc.createElement("style");
+      style.textContent = replayStylesheet;
+      iframeDoc.head.appendChild(style);
+    }
+  }
 
   private readonly renderSpinner = () => html`
     <div
