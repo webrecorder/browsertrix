@@ -153,7 +153,7 @@ def test_create_sub_org_and_invite_existing_user_dupe_sub(admin_auth_headers):
         headers=admin_auth_headers,
         json={
             "subId": "123",
-            "status": "test",
+            "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": invite_email,
             "quotas": {

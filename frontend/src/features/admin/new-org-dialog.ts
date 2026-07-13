@@ -1,0 +1,557 @@
+import { localized, msg, str } from "@lit/localize";
+import { Task, TaskStatus } from "@lit/task";
+import type {
+  SlInput,
+  SlInputEvent,
+  SlSelectEvent,
+} from "@shoelace-style/shoelace";
+import clsx from "clsx";
+import { html, type PropertyValues } from "lit";
+import { customElement, property, query, state } from "lit/decorators.js";
+
+import { BtrixElement } from "@/classes/BtrixElement";
+import { emptyQuotas, LABELS } from "@/features/admin/org-quota-form";
+import { fetchPlans, type Plan } from "@/features/admin/plans";
+import type { APIUser } from "@/index";
+import { RouteNamespace } from "@/routes";
+import { ORG_NAME_MAX_LENGTH } from "@/types/org";
+import { isApiError } from "@/utils/api";
+import { maxLengthValidator } from "@/utils/form";
+import type { OrgQuotas } from "@/utils/orgs";
+import slugifyStrict from "@/utils/slugify";
+import { AppStateService } from "@/utils/state";
+import { tw } from "@/utils/tailwind";
+import { formatAPIUser } from "@/utils/user";
+
+const CUSTOM_PLAN_VALUE = "__custom__";
+
+const PLAN_PREVIEW_KEYS: (keyof OrgQuotas)[] = [
+  "maxConcurrentCrawls",
+  "maxPagesPerCrawl",
+  "maxExecMinutesPerMonth",
+  "storageQuota",
+];
+
+/**
+ * Dialog for creating a new organization.
+ */
+@customElement("btrix-new-org-dialog")
+@localized()
+export class NewOrgDialog extends BtrixElement {
+  @property({ type: Boolean })
+  open = false;
+
+  @state()
+  private orgName = "";
+
+  @state()
+  private selectedPlanId = "";
+
+  @state()
+  private customQuotas: OrgQuotas = emptyQuotas;
+
+  @state()
+  private isOrgNameValid: boolean | null = null;
+
+  @state()
+  private note = "";
+
+  @state()
+  private isSubmitting = false;
+
+  @state()
+  private slugPreview = "";
+
+  @state()
+  private setQuotas = false;
+
+  @query("form")
+  private readonly form?: HTMLFormElement | null;
+
+  @query('sl-input[name="name"]')
+  private readonly orgNameInput?: SlInput | null;
+
+  private readonly validateOrgNameMax = maxLengthValidator(ORG_NAME_MAX_LENGTH);
+
+  private get baseUrl() {
+    return `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
+  }
+
+  private readonly orgSlugsTask = new Task(this, {
+    task: async () => {
+      const data = await this.api.fetch<{ slugs: string[] }>("/orgs/slugs");
+      return data.slugs;
+    },
+    args: () => [],
+  });
+
+  private readonly plansTask = new Task(this, {
+    task: async () => fetchPlans(this.api),
+    args: () => [],
+  });
+
+  protected willUpdate(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("open") && this.open) {
+      this.resetForm();
+    }
+  }
+
+  protected updated(_changedProperties: PropertyValues<this>) {
+    if (this.orgSlugsTask.status === TaskStatus.COMPLETE && this.orgName) {
+      this.validateOrgName();
+    }
+  }
+
+  render() {
+    return html`<btrix-dialog
+      .label=${msg("New Organization")}
+      .open=${this.open}
+      @sl-request-close=${this.onRequestClose}
+      @sl-after-hide=${this.onAfterHide}
+    >
+      <form
+        id="newOrgForm"
+        class="grid gap-5"
+        @submit=${this.onSubmit}
+        @reset=${this.onFormReset}
+      >
+        <div>
+          <sl-input
+            value=${this.orgName}
+            class="with-max-help-text contain-inline-size"
+            name="name"
+            label=${msg("Org Name")}
+            placeholder=${msg("My Organization")}
+            autocomplete="off"
+            required
+            @sl-input=${this.onOrgNameInput}
+          >
+            ${this.renderOrgNameStatusIcon()}
+            <div
+              class="flex w-full min-w-0 flex-row-reverse flex-wrap justify-end gap-x-2 text-left"
+              slot="help-text"
+            >
+              <span class="ml-auto flex-shrink-0"
+                >${this.validateOrgNameMax.helpText}</span
+              >
+              ${this.renderOrgUrlPreview()}
+            </div>
+          </sl-input>
+        </div>
+
+        ${this.plansTask.render({
+          pending: () => html`
+            <div class="flex items-center gap-2 text-neutral-500">
+              <sl-spinner></sl-spinner>
+              ${msg("Loading plans...")}
+            </div>
+          `,
+          complete: (plans) => this.renderPlanSelector(plans),
+          error: () => html`
+            <div class="text-danger-600">${msg("Failed to load plans.")}</div>
+          `,
+        })}
+        ${this.renderPlanDetails()}
+        ${this.hasNoPlans
+          ? html`
+              <sl-switch
+                size="small"
+                ?checked=${this.setQuotas}
+                @sl-change=${() => (this.setQuotas = !this.setQuotas)}
+              >
+                ${msg("Set quotas")}
+              </sl-switch>
+            `
+          : null}
+        ${this.showCustomQuotas
+          ? html`
+              <btrix-org-quota-form
+                .activeOrg=${null}
+                @btrix-change=${(e: CustomEvent<{ quotas: OrgQuotas }>) => {
+                  this.customQuotas = e.detail.quotas;
+                }}
+              ></btrix-org-quota-form>
+              <small class="text-right text-xs text-neutral-500"
+                >${msg("A value of 0 is unlimited")}</small
+              >
+            `
+          : null}
+
+        <sl-textarea
+          .value=${this.note}
+          @sl-input=${(e: SlInputEvent) => {
+            this.note = (e.target as HTMLTextAreaElement).value;
+          }}
+          name="note"
+          label="${msg("Note")}"
+          help-text="${msg("Only visible to superadmin.")}"
+        ></sl-textarea>
+      </form>
+
+      <div slot="footer" class="flex justify-between">
+        ${this.userInfo?.orgs.length
+          ? html`<sl-button size="small" @click=${() => (this.open = false)}>
+              ${msg("Cancel")}
+            </sl-button>`
+          : html`<span></span>`}
+
+        <sl-button
+          form="newOrgForm"
+          variant="primary"
+          type="submit"
+          size="small"
+          ?loading=${this.isSubmitting}
+          ?disabled=${this.isSubmitting || !this.canSubmit}
+        >
+          ${msg("Create Org")}
+        </sl-button>
+      </div>
+    </btrix-dialog>`;
+  }
+
+  private renderOrgUrlPreview() {
+    const isSlugInvalid = this.slugPreview && !this.isOrgNameValid;
+    const slugHasValue = this.slugPreview !== "";
+    return html`
+      <span class="min-w-0 text-blue-500">
+        ${this
+          .baseUrl}&ZeroWidthSpace;/${RouteNamespace.PrivateOrgs}&ZeroWidthSpace;/<strong
+          class=${clsx(
+            tw`break-words`,
+            slugHasValue
+              ? tw`font-medium text-blue-600`
+              : tw`font-normal text-neutral-400`,
+            isSlugInvalid ? tw`text-danger` : null,
+          )}
+          >${this.slugPreview || slugifyStrict(msg("My Organization"))}</strong
+        >&ZeroWidthSpace;/dashboard
+      </span>
+    `;
+  }
+
+  private renderOrgNameStatusIcon() {
+    if (this.isOrgNameValid) {
+      return html`
+        <sl-tooltip
+          slot="suffix"
+          content=${msg("This org name is available")}
+          hoist
+        >
+          <sl-icon class="mr-3 text-success" name="check-lg"></sl-icon>
+        </sl-tooltip>
+      `;
+    }
+    if (this.isOrgNameValid === false) {
+      return html`
+        <sl-tooltip
+          slot="suffix"
+          content=${this.orgNameInput?.validationMessage ||
+          msg("This org name is invalid")}
+          hoist
+        >
+          <sl-icon class="mr-3 text-danger" name="x-lg"></sl-icon>
+        </sl-tooltip>
+      `;
+    }
+    return html`
+      <sl-tooltip
+        slot="suffix"
+        content=${msg("Start typing to see availability")}
+        hoist
+      >
+        <sl-icon class="mr-3 text-neutral-300" name="check-lg"></sl-icon>
+      </sl-tooltip>
+    `;
+  }
+
+  private renderPlanSelector(plans: Plan[]) {
+    if (plans.length === 0) {
+      return;
+    }
+
+    return html`
+      <div>
+        <sl-select
+          label=${msg("Plan")}
+          required
+          value=${this.selectedPlanId}
+          @sl-change=${this.onPlanChange}
+          hoist
+        >
+          <sl-option value="" disabled>${msg("Select a plan")}</sl-option>
+          ${plans.map((plan) => {
+            const summary = this.renderPlanOptionSummary(plan);
+            return html`<sl-option
+              value=${plan.id}
+              class="part-[suffix]:flex-shrink part-[base]:flex-wrap"
+            >
+              ${plan.name}
+              ${summary
+                ? html`<span
+                    slot="suffix"
+                    class="ml-[1.125rem] mt-0.5 text-xs text-neutral-500"
+                  >
+                    ${summary}
+                  </span>`
+                : ""}
+            </sl-option>`;
+          })}
+          <sl-divider></sl-divider>
+          <sl-option value=${CUSTOM_PLAN_VALUE}>
+            ${msg("Custom Plan")}
+          </sl-option>
+        </sl-select>
+      </div>
+    `;
+  }
+
+  private renderPlanDetails() {
+    const plans = this.plansTask.value;
+    if (
+      !plans ||
+      plans.length === 0 ||
+      !this.selectedPlanId ||
+      this.selectedPlanId === CUSTOM_PLAN_VALUE
+    ) {
+      return;
+    }
+
+    const plan = plans.find((p) => p.id === this.selectedPlanId);
+    if (!plan) return;
+
+    return html`
+      <div class="max-w-2xl rounded border p-3 text-sm">
+        <h3 class="mb-2 font-medium">${plan.name} ${msg("quotas")}</h3>
+        <table class="w-full">
+          <tbody class="divide-y">
+            ${(Object.keys(plan.org_quotas) as (keyof OrgQuotas)[]).map(
+              (key) => html`
+                <tr>
+                  <td class="py-1 pr-4 text-neutral-600">
+                    ${LABELS[key].label}
+                  </td>
+                  <td class="py-1 text-right font-medium">
+                    ${this.formatQuota(plan.org_quotas[key], LABELS[key].type)}
+                  </td>
+                </tr>
+              `,
+            )}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  private renderPlanOptionSummary(plan: Plan) {
+    const parts = PLAN_PREVIEW_KEYS.map((key) => {
+      const value = plan.org_quotas[key];
+      if (value <= 0) return null;
+      return msg(
+        str`${this.formatQuota(value, LABELS[key].type)} ${LABELS[key].label}`,
+      );
+    }).filter((part): part is string => part !== null);
+
+    if (parts.length === 0) return;
+    return parts.join(", ");
+  }
+
+  private formatQuota(v: number, type: "bytes" | "number") {
+    const fn = type === "bytes" ? this.localize.bytes : this.localize.number;
+    if (v <= 0) return msg("Not set");
+    return fn(v);
+  }
+
+  private get showCustomQuotas() {
+    if (this.plansTask.status !== TaskStatus.COMPLETE) return false;
+    const plans = this.plansTask.value;
+    if (!plans || plans.length === 0) return this.setQuotas;
+    return this.selectedPlanId === CUSTOM_PLAN_VALUE;
+  }
+
+  private get hasNoPlans() {
+    return (
+      this.plansTask.status === TaskStatus.COMPLETE &&
+      (this.plansTask.value?.length ?? 0) === 0
+    );
+  }
+
+  private get canSubmit() {
+    if (!this.isOrgNameValid) return false;
+    const plans = this.plansTask.value;
+    if (plans && plans.length > 0 && !this.selectedPlanId) {
+      return false;
+    }
+    return true;
+  }
+
+  private onRequestClose(e: CustomEvent) {
+    // Prevent closing if there are no orgs yet
+    if (!this.userInfo?.orgs.length) {
+      e.preventDefault();
+    }
+  }
+
+  private onAfterHide() {
+    this.resetForm();
+    this.form?.reset();
+  }
+
+  private onFormReset() {
+    if (this.orgNameInput) {
+      this.orgNameInput.value = "";
+      this.orgNameInput.setCustomValidity("");
+    }
+  }
+
+  private resetForm() {
+    this.orgName = "";
+    this.selectedPlanId = "";
+    this.note = "";
+    this.customQuotas = emptyQuotas;
+    this.isOrgNameValid = null;
+    this.isSubmitting = false;
+    this.slugPreview = "";
+    this.setQuotas = false;
+  }
+
+  private async onOrgNameInput(e: SlInputEvent) {
+    this.validateOrgNameMax.validate(e);
+    const input = e.target as SlInput;
+    this.orgName = input.value;
+    this.validateOrgName();
+  }
+
+  private validateOrgName() {
+    if (!this.orgNameInput) return;
+    const input = this.orgNameInput;
+    const value = this.orgName;
+    const slug = slugifyStrict(value);
+    this.slugPreview = slug;
+    const orgSlugs = this.orgSlugsTask.value ?? [];
+    const maxLenValid = value.length <= ORG_NAME_MAX_LENGTH;
+    let isInvalid = !value;
+
+    if (value && maxLenValid) {
+      if (!slug) {
+        isInvalid = true;
+        input.setCustomValidity(
+          msg("Please include at least one letter or number."),
+        );
+      } else if (orgSlugs.includes(slug)) {
+        isInvalid = true;
+        input.setCustomValidity(msg("This org name is already taken."));
+      }
+    }
+
+    if (!isInvalid && maxLenValid) {
+      input.setCustomValidity("");
+    }
+
+    this.isOrgNameValid = !isInvalid && maxLenValid;
+  }
+
+  private onPlanChange(e: SlSelectEvent) {
+    this.selectedPlanId = (e.target as HTMLSelectElement).value;
+  }
+
+  private async onSubmit(e: SubmitEvent) {
+    e.preventDefault();
+
+    if (!this.canSubmit) return;
+
+    const formEl = e.target as HTMLFormElement;
+    const formData = new FormData(formEl);
+    const name = formData.get("name") as string;
+    const slug = slugifyStrict(name);
+    const note = formData.get("note") as string;
+
+    const body: {
+      name: string;
+      slug: string;
+      planId?: string;
+      quotas?: OrgQuotas;
+      note?: string;
+    } = { name, slug, note };
+
+    const plans = this.plansTask.value;
+    if (plans && plans.length > 0) {
+      if (this.selectedPlanId === CUSTOM_PLAN_VALUE) {
+        body.quotas = this.customQuotas;
+      } else {
+        body.planId = this.selectedPlanId;
+      }
+    } else if (this.setQuotas) {
+      body.quotas = this.customQuotas;
+    }
+
+    this.isSubmitting = true;
+
+    try {
+      await this.api.fetch<{ added: true; id: string }>("/orgs/create", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+    } catch (err) {
+      let message = msg("Sorry, couldn't create organization at this time.");
+
+      if (isApiError(err)) {
+        if (err.details === "duplicate_org_name") {
+          message = msg("This org name is already taken, try another one.");
+        } else if (err.details === "duplicate_org_slug") {
+          message = msg(
+            "This org URL identifier is already taken, try another one.",
+          );
+        } else if (err.details === "invalid_slug") {
+          message = msg(
+            "This org URL identifier is invalid. Please use alphanumeric characters and dashes (-) only.",
+          );
+        } else if (err.details === "invalid_plan") {
+          message = msg("Selected plan is not available.");
+        }
+      }
+
+      this.notify.toast({
+        message,
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "org-invalid",
+      });
+
+      this.isSubmitting = false;
+      return;
+    }
+
+    try {
+      const userInfo = await this.getUserInfo();
+      AppStateService.updateUser(formatAPIUser(userInfo));
+    } catch {
+      // best-effort: org was already created
+    }
+
+    this.notify.toast({
+      message: html`
+        ${msg(str`Created new org named "${name}".`)}
+        <a
+          class="underline hover:no-underline"
+          href="/orgs/${slug}/dashboard"
+          @click=${this.navigate.link.bind(this)}
+        >
+          ${msg(str`Log in to “${name}”`)}
+        </a>
+      `,
+      variant: "success",
+      icon: "check2-circle",
+      duration: 8000,
+    });
+
+    this.dispatchEvent(
+      new CustomEvent("btrix-success", { bubbles: true, composed: true }),
+    );
+    this.open = false;
+    this.isSubmitting = false;
+  }
+
+  async getUserInfo(): Promise<APIUser> {
+    return this.api.fetch("/users/me");
+  }
+}

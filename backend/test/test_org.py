@@ -1,10 +1,15 @@
 import os
+import time
 import uuid
 
 import pytest
 import requests
 
-from .conftest import API_PREFIX, NON_DEFAULT_ORG_NAME, NON_DEFAULT_ORG_SLUG
+from .conftest import (
+    API_PREFIX,
+    NON_DEFAULT_ORG_NAME,
+    NON_DEFAULT_ORG_SLUG,
+)
 from .utils import read_in_chunks
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -12,6 +17,40 @@ curr_dir = os.path.dirname(os.path.realpath(__file__))
 new_oid = None
 
 invite_email = "test-user@example.com"
+
+CRAWLER_USERNAME_FOR_ORG_WITH_NOTE = "CraWleR-for-org-with-note@example.com"
+CRAWLER_PW_FOR_ORG_WITH_NOTE = "crawler-pw-for-org-with-note"
+
+_created_org_ids = []
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _cleanup_created_orgs(admin_auth_headers):
+    """Teardown: delete any orgs created during tests in this module."""
+    yield
+    for org_id in _created_org_ids:
+        try:
+            r = requests.delete(
+                f"{API_PREFIX}/orgs/{org_id}",
+                headers=admin_auth_headers,
+                timeout=120,
+            )
+            if r.status_code != 200:
+                continue
+            job_id = r.json().get("id")
+            if not job_id:
+                continue
+            for _ in range(18):
+                r = requests.get(
+                    f"{API_PREFIX}/orgs/all/jobs/{job_id}",
+                    headers=admin_auth_headers,
+                    timeout=120,
+                )
+                if r.status_code == 200 and r.json().get("success"):
+                    break
+                time.sleep(10)
+        except Exception:
+            pass
 
 
 def test_ensure_only_one_default_org(admin_auth_headers):
@@ -225,6 +264,169 @@ def test_create_org(admin_auth_headers):
     assert data["name"] == NEW_ORG_NAME
     assert data["slug"] == NEW_ORG_SLUG
     assert data["created"]
+
+
+def test_create_org_with_quotas(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Quotas",
+            "slug": "org-with-quotas",
+            "quotas": {
+                "maxConcurrentCrawls": 2,
+                "maxPagesPerCrawl": 100,
+                "storageQuota": 10,
+                "maxExecMinutesPerMonth": 1000,
+                "extraExecMinutes": 0,
+                "giftedExecMinutes": 0,
+            },
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+    assert org["quotas"]["maxConcurrentCrawls"] == 2
+    assert org["quotas"]["maxPagesPerCrawl"] == 100
+    assert org["quotas"]["storageQuota"] == 10
+    assert org["quotas"]["maxExecMinutesPerMonth"] == 1000
+    _created_org_ids.append(data["id"])
+
+
+def test_create_org_with_plan(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Plan",
+            "slug": "org-with-plan",
+            "planId": "starter",
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+    assert org["quotas"]["maxConcurrentCrawls"] == 1
+    assert org["quotas"]["maxPagesPerCrawl"] == 2000
+    assert org["quotas"]["storageQuota"] == 100000000000
+    assert org["quotas"]["maxExecMinutesPerMonth"] == 180
+    assert org["note"] == "Plan ID: starter (name: Browsertrix Starter)"
+    _created_org_ids.append(data["id"])
+
+
+def test_create_org_with_plan_and_note(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Plan And Note",
+            "slug": "org-with-plan-and-note",
+            "planId": "starter",
+            "note": "Test note",
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{data['id']}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+    assert org["quotas"]["maxConcurrentCrawls"] == 1
+    assert org["quotas"]["maxPagesPerCrawl"] == 2000
+    assert org["quotas"]["storageQuota"] == 100000000000
+    assert org["quotas"]["maxExecMinutesPerMonth"] == 180
+    assert org["note"] == "Test note\n\nPlan ID: starter (name: Browsertrix Starter)"
+    _created_org_ids.append(data["id"])
+
+
+def test_create_org_with_plan_and_quotas_rejected(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Plan And Quotas",
+            "slug": "org-with-plan-and-quotas",
+            "planId": "basic",
+            "quotas": {"maxConcurrentCrawls": 1},
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_request_use_either_plan_or_quotas"
+
+
+def test_create_org_with_invalid_plan(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Invalid Plan",
+            "slug": "org-with-invalid-plan",
+            "planId": "does-not-exist",
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_plan"
+
+
+def test_create_org_with_note(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Note",
+            "slug": "org-with-note",
+            "note": "test note 123",
+        },
+    )
+    assert r.status_code == 200
+    new_org = r.json()
+    assert new_org["added"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{new_org['id']}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+    assert org["note"] == "test note 123"
+
+    # Add new crawler user to the org so they can access it
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{new_org['id']}/add-user",
+        json={
+            "email": CRAWLER_USERNAME_FOR_ORG_WITH_NOTE,
+            "password": CRAWLER_PW_FOR_ORG_WITH_NOTE,
+            "name": "new-crawler-for-org-with-note",
+            "role": 20,
+        },
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    r = requests.post(
+        f"{API_PREFIX}/auth/jwt/login",
+        data={
+            "username": CRAWLER_USERNAME_FOR_ORG_WITH_NOTE,
+            "password": CRAWLER_PW_FOR_ORG_WITH_NOTE,
+            "grant_type": "password",
+        },
+    )
+    assert r.status_code == 200
+    login_data = r.json()
+    access_token = login_data.get("access_token")
+    crawler_auth_headers = {"Authorization": f"Bearer {access_token}"}
+
+    # Verify crawler user can access the org but not view the note
+    r = requests.get(f"{API_PREFIX}/orgs/{new_org['id']}", headers=crawler_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+    assert org["note"] is None
+    _created_org_ids.append(new_org["id"])
 
 
 @pytest.mark.parametrize(
@@ -745,3 +947,44 @@ def test_sort_orgs(admin_auth_headers):
         if last_last_crawl_finished:
             assert last_crawl_finished <= last_last_crawl_finished
         last_last_crawl_finished = last_crawl_finished
+
+
+def test_update_org_note(admin_auth_headers, default_org_id):
+    """superuser can set an org note"""
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/note",
+        headers=admin_auth_headers,
+        json={"note": "updated note 456"},
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"] is True
+
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    assert r.json()["note"] == "updated note 456"
+
+
+def test_update_org_note_clear(admin_auth_headers, default_org_id):
+    """superuser can clear an org note by setting it to null"""
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/note",
+        headers=admin_auth_headers,
+        json={"note": None},
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"] is True
+
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    assert r.json()["note"] is None
+
+
+def test_update_org_note_non_superuser(crawler_auth_headers, default_org_id):
+    """non-superuser cannot set an org note"""
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/note",
+        headers=crawler_auth_headers,
+        json={"note": "should fail"},
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "Not Allowed"
