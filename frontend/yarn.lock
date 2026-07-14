@@ -3084,14 +3084,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/addon-styling-webpack@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "@storybook/addon-styling-webpack@npm:1.0.1"
-  dependencies:
-    "@storybook/node-logger": "npm:^8.0.0-alpha.10"
+"@storybook/addon-styling-webpack@npm:^3.0.2":
+  version: 3.0.2
+  resolution: "@storybook/addon-styling-webpack@npm:3.0.2"
   peerDependencies:
+    storybook: ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0
     webpack: ^5.0.0
-  checksum: 10c0/6b36162fa9c1d2f7a14ca12402dfc7115ae6ca17916291d0298fe60be7e3d04cc1eb7c6a010f7d0cc50fcc7f1af5b3faf85fecfc66456251417f4c7a5e769621
+  checksum: 10c0/46967887851367856c28b60b6d3497159894954f3f8472a89ecbc8ebd17f7a9f5f34d48fdd281dbfd0f47ee03fb351aaa9aa4acac8d5e310918e2ec13af03ef2
   languageName: node
   linkType: hard
 
@@ -3310,15 +3309,6 @@ __metadata:
   peerDependencies:
     storybook: ^8.2.0 || ^8.3.0-0 || ^8.4.0-0 || ^8.5.0-0 || ^8.6.0-0
   checksum: 10c0/141089caf50df9f1dbd18c22b8e8dfa45641f67ab148c9956c046c0141ff7a70f3341f440c454d5f6247dac389499d67bad8b6c81cbcd6f08c7fe34bf42fd264
-  languageName: node
-  linkType: hard
-
-"@storybook/node-logger@npm:^8.0.0-alpha.10":
-  version: 8.6.12
-  resolution: "@storybook/node-logger@npm:8.6.12"
-  peerDependencies:
-    storybook: ^8.2.0 || ^8.3.0-0 || ^8.4.0-0 || ^8.5.0-0 || ^8.6.0-0
-  checksum: 10c0/6ed4cb902dee39747847872bf7381949771565aa5c120931655121ea731ebd8f021af11a7067736b98fbe78b5d7b57c8f876598d849a607be58dab2753f863d1
   languageName: node
   linkType: hard
 
@@ -6340,7 +6330,7 @@ __metadata:
     "@shoelace-style/shoelace": "npm:~2.18.0"
     "@storybook/addon-docs": "npm:^8.6.18"
     "@storybook/addon-essentials": "npm:^8.6.14"
-    "@storybook/addon-styling-webpack": "npm:^1.0.1"
+    "@storybook/addon-styling-webpack": "npm:^3.0.2"
     "@storybook/addon-webpack5-compiler-swc": "npm:^3.0.0"
     "@storybook/blocks": "npm:^8.6.14"
     "@storybook/test": "npm:^8.6.15"
