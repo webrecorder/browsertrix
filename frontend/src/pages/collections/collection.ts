@@ -274,6 +274,7 @@ export class Collection extends BtrixElement {
           noSandbox="true"
           noCache="true"
           deepLink
+          hideCollectionMetadata
           @rwp-url-change=${(e: RwpUrlChangeEvent) => {
             if (!this.replayEmbed) {
               this.replayEmbed = e.currentTarget as ReplayWebPage;
