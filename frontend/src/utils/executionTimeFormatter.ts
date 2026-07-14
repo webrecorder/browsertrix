@@ -135,6 +135,7 @@ export const humanizeExecutionSeconds = (
   });
 
   if (seconds === 0) {
+    if (style === "short") return compactMinuteFormatter.format(0);
     return longMinuteFormatter.format(0);
   }
 
