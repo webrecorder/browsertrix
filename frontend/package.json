@@ -145,7 +145,7 @@
     "remark-gfm": "^4.0.1",
     "rollup-plugin-typescript-paths": "^1.5.0",
     "sinon": "^22.0.0",
-    "storybook": "^8.6.14",
+    "storybook": "^10.4.6",
     "ts-lit-plugin": "^2.0.2",
     "webpack-bundle-analyzer": "^5.3.0",
     "webpack-dev-server": "^5.2.5"
