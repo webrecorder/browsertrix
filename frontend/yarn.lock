@@ -2069,10 +2069,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@novnc/novnc@npm:~1.4.0":
-  version: 1.4.0
-  resolution: "@novnc/novnc@npm:1.4.0"
-  checksum: 10c0/504b89ea95f8dd888598444ce72c33ebb60321d0bf54fbf59ae9f601317590fd3a93b868575d4616f32aba05463a1ec8833f03a69467e7ff681531fa160fdadd
+"@novnc/novnc@npm:^1.7.0":
+  version: 1.7.0
+  resolution: "@novnc/novnc@npm:1.7.0"
+  checksum: 10c0/996cd58a9d911b4862b023e460905dcd57ea73a3686e90097768fa560da6876cbc9791bf34386b15a4182974f915c58ae76596602050f563ce3fe292b4449c99
   languageName: node
   linkType: hard
 
@@ -6325,7 +6325,7 @@ __metadata:
     "@lit/localize": "npm:^0.12.2"
     "@lit/localize-tools": "npm:^0.8.2"
     "@lit/task": "npm:^1.0.3"
-    "@novnc/novnc": "npm:~1.4.0"
+    "@novnc/novnc": "npm:^1.7.0"
     "@open-wc/testing": "npm:^3.2.0"
     "@playwright/test": "npm:1.61.1"
     "@prettier/plugin-xml": "npm:^3.4.2"
