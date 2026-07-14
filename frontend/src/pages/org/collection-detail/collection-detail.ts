@@ -292,6 +292,7 @@ export class CollectionDetail extends BtrixElement {
             variant: "info",
             icon: "info-circle",
             id: "update",
+            duration: Infinity,
           });
 
           try {
