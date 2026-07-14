@@ -1158,7 +1158,7 @@
       </trans-unit>
       <trans-unit id="s8745d54f3284f080" xml:space="preserve">
         <source>Are you sure you want to cancel the crawl?</source>
-        <target state="needs-translation">¿Estás seguro de que quieres cancelar el rastreo?</target>
+        <target state="needs-translation">¿Estás seguro que quieres cancelar el arrastre?</target>
       </trans-unit>
       <trans-unit id="s5d966c90d8dc06e6" xml:space="preserve">
         <source>Are you sure you want to stop the crawl?</source>
@@ -1194,7 +1194,7 @@
       </trans-unit>
       <trans-unit id="s1ab7979099c86a1b" xml:space="preserve">
         <source>Analysis Status</source>
-        <target state="needs-translation">Estado del análisis</target>
+        <target state="translated">Estado del análisis</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sf61d84d4684b9a2e">
         <source>Not Analyzed</source>
@@ -1338,7 +1338,7 @@
       </trans-unit>
       <trans-unit id="sd0ad99175efc2e67" xml:space="preserve">
         <source>Match analysis compares pages during a crawl against their replay during an analysis run. A good match indicates that the crawl is probably good, whereas severe inconsistencies may indicate a bad crawl.</source>
-        <target state="needs-translation">Análisis de coincidencias compara las páginas durante un rastreo contra su repetición durante una ejecución de análisis. Un buen partido indica que el arrastre es probablemente bueno, mientras que las inconsistencias severas pueden indicar un mal arrastre.</target>
+        <target state="translated">Análisis de coincidencias compara las páginas durante un arrastre contra su repetición durante una ejecución de análisis. Un buen partido indica que el arrastre es probablemente bueno, mientras que las inconsistencias severas pueden indicar un mal arrastre.</target>
       </trans-unit>
       <trans-unit id="s79454494f711e05d" xml:space="preserve">
         <source>Statistic</source>
@@ -1402,7 +1402,7 @@
       </trans-unit>
       <trans-unit id="s4d3c92a1a881dc5f" xml:space="preserve">
         <source>Review "<x id="0" equiv-text="${page.title ?? page.url}"/>"</source>
-        <target state="needs-translation">Reseña "<x id="0" equiv-text="${page.title ?? page.url}"/>"</target>
+        <target state="translated">Reseña "<x id="0" equiv-text="${page.title ?? page.url}"/>"</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s7282886335497d58">
         <source>Newest comment:</source>
@@ -1446,7 +1446,7 @@
       </trans-unit>
       <trans-unit id="sa71de39189a9e9cd" xml:space="preserve">
         <source>Go to Workflow</source>
-        <target state="needs-translation">Ir al flujo de trabajo</target>
+        <target state="translated">Ir al flujo de trabajo</target>
       </trans-unit>
       <trans-unit id="s96c92dc644219e36" xml:space="preserve">
         <source>Copy Workflow ID</source>
