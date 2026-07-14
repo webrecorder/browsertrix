@@ -1587,26 +1587,6 @@ export class WorkflowDetail extends BtrixElement {
     const execTime = () => {
       if (!latestCrawl) return skeleton;
 
-      if (this.isRunning) {
-        return html`<span class="text-neutral-400">
-          ${noData}
-          <btrix-popover
-            content=${msg(
-              "Execution time will be calculated once this crawl is finished or paused.",
-            )}
-            distance="12"
-          >
-            <sl-icon name="question-circle"></sl-icon>
-          </btrix-popover>
-        </span>`;
-      }
-
-      if (latestCrawl.crawlExecSeconds < 60) {
-        return this.localize.humanizeDuration(
-          latestCrawl.crawlExecSeconds * 1000,
-        );
-      }
-
       return humanizeExecutionSeconds(latestCrawl.crawlExecSeconds, {
         style: "short",
       });
