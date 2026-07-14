@@ -335,11 +335,13 @@ export class ProfileBrowser extends BtrixElement {
         ${this.renderControlBar()}
         <div
           id="iframeWrapper"
-          class="${this.isFullscreen
-            ? "w-screen h-screen"
-            : this.hideControls
-              ? ""
-              : "border-t"} relative flex-1 overflow-hidden"
+          class="${
+            this.isFullscreen
+              ? "w-screen h-screen"
+              : this.hideControls
+                ? ""
+                : "border-t"
+          } relative flex-1 overflow-hidden"
           aria-live="polite"
           part="browser"
         >
@@ -406,30 +408,32 @@ export class ProfileBrowser extends BtrixElement {
                               url.replace(/\/$/, ""),
                             ),
                         )
-                      : origins,
+                      : (origins as []),
                   ),
                 () =>
                   this.initialOrigins
                     ? undefined
                     : html`<div class="p-3 text-center">
-                        ${typeof this.browserTask.value !== "number" &&
-                        this.browserTask.value?.id
-                          ? emptyMessage({
-                              icon: {
-                                name: "slash-circle",
-                                label: msg("None"),
-                              },
-                              message: msg("No sites configured yet."),
-                            })
-                          : emptyMessage({
-                              icon: {
-                                name: "hourglass-split",
-                                label: msg("Waiting"),
-                              },
-                              message: msg(
-                                "Sites will be shown here once the browser is done loading.",
-                              ),
-                            })}
+                        ${
+                          typeof this.browserTask.value !== "number" &&
+                          this.browserTask.value?.id
+                            ? emptyMessage({
+                                icon: {
+                                  name: "slash-circle",
+                                  label: msg("None"),
+                                },
+                                message: msg("No sites configured yet."),
+                              })
+                            : emptyMessage({
+                                icon: {
+                                  name: "hourglass-split",
+                                  label: msg("Waiting"),
+                                },
+                                message: msg(
+                                  "Sites will be shown here once the browser is done loading.",
+                                ),
+                              })
+                        }
                       </div>`,
               )}
             </div>
@@ -578,15 +582,17 @@ export class ProfileBrowser extends BtrixElement {
           tw`flex items-center justify-between gap-2 border-t px-3 py-2 first:border-t-0`,
         )}
         role=${ifDefined(iframeSrc ? "button" : undefined)}
-        @click=${iframeSrc
-          ? () => void this.navigateBrowser({ url })
-          : undefined}
+        @click=${
+          iframeSrc ? () => void this.navigateBrowser({ url }) : undefined
+        }
       >
-        ${iframeSrc
-          ? html`<sl-tooltip content=${msg("Load Site")} placement="left">
-              <sl-icon name="arrow-left-circle" class="text-lg"></sl-icon>
-            </sl-tooltip>`
-          : ""}
+        ${
+          iframeSrc
+            ? html`<sl-tooltip content=${msg("Load Site")} placement="left">
+                <sl-icon name="arrow-left-circle" class="text-lg"></sl-icon>
+              </sl-tooltip>`
+            : ""
+        }
 
         <btrix-code
           class="w-full"
