@@ -14,7 +14,7 @@ replay-app-main {
 
 ::part(wr-item__replay-tabs-nav) {
   border-bottom: 0;
-  margin-top: calc(-1 * var(--sl-spacing-small));
+  margin-top: calc(-1 * var(--sl-spacing-x-small));
 }
 
 ::part(wr-item__replay-content) {
