@@ -135,7 +135,7 @@
     "@types/webpack-bundle-analyzer": "^4.7.0",
     "@web/dev-server-esbuild": "^1.0.5",
     "@web/dev-server-import-maps": "^0.2.1",
-    "@web/dev-server-rollup": "^0.6.4",
+    "@web/dev-server-rollup": "^1.0.0",
     "concurrently": "^10.0.3",
     "husky": "^8.0.3",
     "lint-staged": "^17.0.8",

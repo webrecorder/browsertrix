@@ -4836,7 +4836,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@web/dev-server-rollup@npm:^0.6.1, @web/dev-server-rollup@npm:^0.6.4":
+"@web/dev-server-rollup@npm:^0.6.1":
   version: 0.6.4
   resolution: "@web/dev-server-rollup@npm:0.6.4"
   dependencies:
@@ -4847,6 +4847,20 @@ __metadata:
     rollup: "npm:^4.4.0"
     whatwg-url: "npm:^14.0.0"
   checksum: 10c0/3e9cd78dae29a58bd792722a57cfc387707ab317c9ba24d16a483b779f99dc5a98d5577da212ec2868c1975becaec11e3a90ec8f78021a6bbe9822ff55b9816a
+  languageName: node
+  linkType: hard
+
+"@web/dev-server-rollup@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "@web/dev-server-rollup@npm:1.0.0"
+  dependencies:
+    "@rollup/plugin-node-resolve": "npm:^15.0.1"
+    "@web/dev-server-core": "npm:^1.0.0"
+    nanocolors: "npm:^0.2.1"
+    parse5: "npm:^6.0.1"
+    rollup: "npm:^4.4.0"
+    whatwg-url: "npm:^14.0.0"
+  checksum: 10c0/0e7c9c3215edd3c9439696cf037ae8d27497a19d9967377f50d841106269dc6d30811bf84a1d697109a51069882c4169b1d67728bd6bb0093cbc921737df3a52
   languageName: node
   linkType: hard
 
@@ -6353,7 +6367,7 @@ __metadata:
     "@typescript-eslint/parser": "npm:7.16.1"
     "@web/dev-server-esbuild": "npm:^1.0.5"
     "@web/dev-server-import-maps": "npm:^0.2.1"
-    "@web/dev-server-rollup": "npm:^0.6.4"
+    "@web/dev-server-rollup": "npm:^1.0.0"
     "@web/test-runner": "npm:^0.20.2"
     "@web/test-runner-playwright": "npm:^0.11.1"
     "@webrecorder/hickory": "npm:~0.0.10"
