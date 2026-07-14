@@ -1,6 +1,6 @@
 import type { ReplayWebPage } from "replaywebpage";
 
-import replayStylesheet from "@/features/collections/styles/replay.stylesheet.css";
+import replayStylesheet from "../styles/replay.stylesheet.css";
 
 export function injectRwpStyles(replayEmbed: ReplayWebPage | null | undefined) {
   if (!replayEmbed) {
