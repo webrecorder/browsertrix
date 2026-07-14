@@ -5380,12 +5380,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@webrecorder/hickory@npm:^0.4.0":
-  version: 0.4.0
-  resolution: "@webrecorder/hickory@npm:0.4.0"
+"@webrecorder/hickory@npm:~0.0.10":
+  version: 0.0.10
+  resolution: "@webrecorder/hickory@npm:0.0.10"
   dependencies:
     "@iconify/types": "npm:^2.0.0"
-  checksum: 10c0/7582a311ea577e41b9c1097d081b33a021a02e1da31add428a7419c17fdd1c9fd4b4fa51e89fb087b29bb17d094ee23c48744f93dffb3c66976ab3b216249b3d
+  checksum: 10c0/f265bbda8ad5ff0b67fe3806a9c60ae51829a427a7945092d1ca5ffa9a58feb52f7e7c4125482c804b42628f780426e4f56c74e1fb245704dbe8c708c931291f
   languageName: node
   linkType: hard
 
@@ -6356,7 +6356,7 @@ __metadata:
     "@web/dev-server-rollup": "npm:^0.6.4"
     "@web/test-runner": "npm:^0.20.2"
     "@web/test-runner-playwright": "npm:^0.11.1"
-    "@webrecorder/hickory": "npm:^0.4.0"
+    "@webrecorder/hickory": "npm:~0.0.10"
     "@xstate/fsm": "npm:^1.6.2"
     "@zxcvbn-ts/core": "npm:^3.0.4"
     "@zxcvbn-ts/language-common": "npm:^3.0.4"
