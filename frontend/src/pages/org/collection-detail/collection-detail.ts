@@ -554,7 +554,7 @@ export class CollectionDetail extends BtrixElement {
         ?isCrawler=${this.isCrawler}
         ?open=${Boolean(
           this.editing.value === EditingSearchParamValue.Items &&
-            this.collection,
+          this.collection,
         )}
         @sl-hide=${() => this.editing.setValue(null)}
         @btrix-collection-saved=${() => {

@@ -11,7 +11,7 @@ export function updatingOverlay(props?: {
   return html`
     <div
       class=${clsx(
-        tw`backdrop-blur-px bg-radial absolute inset-0 grid place-items-center from-white/90 to-white/10`,
+        tw`absolute inset-0 grid place-items-center bg-radial from-white/90 to-white/10 backdrop-blur-px`,
         props?.class,
       )}
     >

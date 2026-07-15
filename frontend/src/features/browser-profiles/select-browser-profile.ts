@@ -300,7 +300,7 @@ export class SelectBrowserProfile extends BtrixElement {
     };
 
     return html` <sl-drawer
-      class="[--body-spacing:var(--sl-spacing-medium)] [--footer-spacing:var(--sl-spacing-x-small)_var(--sl-spacing-medium)] [--header-spacing:var(--sl-spacing-medium)]  part-[header]:[border-bottom:1px_solid_var(--sl-panel-border-color)]"
+      class="[--body-spacing:var(--sl-spacing-medium)] [--footer-spacing:var(--sl-spacing-x-small)_var(--sl-spacing-medium)] [--header-spacing:var(--sl-spacing-medium)] part-[header]:[border-bottom:1px_solid_var(--sl-panel-border-color)]"
       @sl-show=${() => {
         // Hide any other open panels
         AppStateService.updateUserGuideOpen(false);

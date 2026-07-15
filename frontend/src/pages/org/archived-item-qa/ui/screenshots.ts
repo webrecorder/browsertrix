@@ -62,37 +62,35 @@ export function renderScreenshots(
         ${msg("Screenshot during analysis")}
       </h3>
     </div>
-    ${
-      splitView
-        ? html` <div class="flex flex-col gap-2 md:flex-row">
-            <div
-              class="aspect-video flex-1 overflow-hidden rounded-lg border bg-slate-50"
-              aria-labelledby="crawlScreenshotHeading"
-            >
-              ${crawlImage}
-            </div>
-            <div
-              class="aspect-video flex-1 overflow-hidden rounded-lg border bg-slate-50"
-              aria-labelledby="qaScreenshotHeading"
-            >
-              ${qaImage}
-            </div>
-          </div>`
-        : html`
-            <div
-              class="aspect-video overflow-hidden rounded-lg border bg-slate-50"
-            >
-              <sl-image-comparer class="h-full w-full">
-                <div slot="after" aria-labelledby="crawlScreenshotHeading">
-                  ${crawlImage}
-                </div>
-                <div slot="before" aria-labelledby="qaScreenshotHeading">
-                  ${qaImage}
-                </div>
-              </sl-image-comparer>
-            </div>
-          `
-    }
+    ${splitView
+      ? html` <div class="flex flex-col gap-2 md:flex-row">
+          <div
+            class="aspect-video flex-1 overflow-hidden rounded-lg border bg-slate-50"
+            aria-labelledby="crawlScreenshotHeading"
+          >
+            ${crawlImage}
+          </div>
+          <div
+            class="aspect-video flex-1 overflow-hidden rounded-lg border bg-slate-50"
+            aria-labelledby="qaScreenshotHeading"
+          >
+            ${qaImage}
+          </div>
+        </div>`
+      : html`
+          <div
+            class="aspect-video overflow-hidden rounded-lg border bg-slate-50"
+          >
+            <sl-image-comparer class="h-full w-full">
+              <div slot="after" aria-labelledby="crawlScreenshotHeading">
+                ${crawlImage}
+              </div>
+              <div slot="before" aria-labelledby="qaScreenshotHeading">
+                ${qaImage}
+              </div>
+            </sl-image-comparer>
+          </div>
+        `}
   `;
   return guard([crawlData, qaData, splitView], () => content);
 }

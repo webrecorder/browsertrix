@@ -500,7 +500,8 @@ export class WorkflowEditor extends BtrixElement {
       this.isCrawlRunning = this.configId ? null : false;
     }
     const prevFormState = changedProperties.get("formState") as
-      FormState | undefined;
+      | FormState
+      | undefined;
     if (prevFormState) {
       if (prevFormState.seedFile !== this.formState.seedFile) {
         if (this.formState.seedFile) {
@@ -535,7 +536,8 @@ export class WorkflowEditor extends BtrixElement {
       }
     }
     const prevFormState = changedProperties.get("formState") as
-      FormState | undefined;
+      | FormState
+      | undefined;
     if (prevFormState) {
       if (prevFormState.seedListFormat !== this.formState.seedListFormat) {
         void this.focusOnSeedListFormatChange();
@@ -611,17 +613,15 @@ export class WorkflowEditor extends BtrixElement {
           .options=${{
             threshold: 1,
           }}
-          @btrix-intersect=${
-            this.stickyFooter
-              ? null
-              : (e: IntersectEvent) => {
-                  const [entry] = e.detail.entries;
+          @btrix-intersect=${this.stickyFooter
+            ? null
+            : (e: IntersectEvent) => {
+                const [entry] = e.detail.entries;
 
-                  if (entry.isIntersecting) {
-                    this.stickyFooter = true;
-                  }
+                if (entry.isIntersecting) {
+                  this.stickyFooter = true;
                 }
-          }
+              }}
         >
           ${this.renderFooter()}
         </btrix-observable>
@@ -867,11 +867,9 @@ export class WorkflowEditor extends BtrixElement {
           </sl-button>
         </sl-tooltip>
         <sl-tooltip
-          content=${
-            this.isCrawlRunning
-              ? msg("Save and apply settings to current crawl")
-              : msg("Save and run with new settings")
-          }
+          content=${this.isCrawlRunning
+            ? msg("Save and apply settings to current crawl")
+            : msg("Save and run with new settings")}
           ?disabled=${this.isCrawlRunning === null}
         >
           <sl-button
@@ -879,15 +877,12 @@ export class WorkflowEditor extends BtrixElement {
             variant="primary"
             type="submit"
             value=${SubmitType.SaveAndRun}
-            ?disabled=${
-              (!this.isCrawlRunning && isArchivingDisabled(this.org, true)) ||
-              this.isSubmitting ||
-              this.isCrawlRunning === null
-            }
-            ?loading=${
-              (this.isSubmitting && this.saveAndRun) ||
-              this.isCrawlRunning === null
-            }
+            ?disabled=${(!this.isCrawlRunning &&
+              isArchivingDisabled(this.org, true)) ||
+            this.isSubmitting ||
+            this.isCrawlRunning === null}
+            ?loading=${(this.isSubmitting && this.saveAndRun) ||
+            this.isCrawlRunning === null}
           >
             ${this.isCrawlRunning ? msg("Update Crawl") : msg("Run Crawl")}
             ${when(this.showKeyboardShortcuts, () => keyboardShortcut("Enter"))}
@@ -961,11 +956,9 @@ export class WorkflowEditor extends BtrixElement {
             )}
         >
           <btrix-badge class="mr-2.5" slot="prefix" outline
-            >${
-              isPageScopeType(this.formState.scopeType)
-                ? stringForScopeGroup.page
-                : stringForScopeGroup.site
-            }</btrix-badge
+            >${isPageScopeType(this.formState.scopeType)
+              ? stringForScopeGroup.page
+              : stringForScopeGroup.site}</btrix-badge
           >
           <sl-menu-label>${stringForScopeGroup.page}</sl-menu-label>
           ${WORKFLOW_PAGE_SCOPES.map(
@@ -991,11 +984,9 @@ export class WorkflowEditor extends BtrixElement {
           )}
         </p>
       `)}
-      ${
-        isPageScopeType(this.formState.scopeType)
-          ? this.renderPageScope()
-          : this.renderSiteScope()
-      }
+      ${isPageScopeType(this.formState.scopeType)
+        ? this.renderPageScope()
+        : this.renderSiteScope()}
     `;
   };
 
@@ -1010,13 +1001,11 @@ export class WorkflowEditor extends BtrixElement {
     return detailsInColumns({
       open: exclusions.length > 0,
       title: html`${labelFor.exclusions}
-      ${
-        exclusions.length
-          ? html`<btrix-badge
-              >${this.localize.number(exclusions.length)}</btrix-badge
-            >`
-          : nothing
-      }`,
+      ${exclusions.length
+        ? html`<btrix-badge
+            >${this.localize.number(exclusions.length)}</btrix-badge
+          >`
+        : nothing}`,
       main: html`
         <btrix-queue-exclusion-table
           label=""
@@ -1507,16 +1496,14 @@ https://replayweb.page/docs`}
           class="mr-0.5 align-[-.175em]"
           name="info-circle"
         ></sl-icon>
-        ${
-          numberOfURLs
-            ? msg(
-                str`Automatically converted list of ${numberOfURLs} to a file.`,
-                {
-                  desc: "`numberOfURLs` example: '1,000 URLs'",
-                },
-              )
-            : msg("Automatically converted large URL list to a file.")
-        }`;
+        ${numberOfURLs
+          ? msg(
+              str`Automatically converted list of ${numberOfURLs} to a file.`,
+              {
+                desc: "`numberOfURLs` example: '1,000 URLs'",
+              },
+            )
+          : msg("Automatically converted large URL list to a file.")}`;
     } else if (this.seedFileUrlCount) {
       helpText = html`${msg(str`${numberOfURLs} entered.`, {
         desc: "`numberOfURLs` example: '1,000 URLs'",
@@ -1745,13 +1732,11 @@ https://archiveweb.page/es/`}
       ${detailsInColumns({
         open: additionalUrlList.length > 0,
         title: html`${labelFor.urlList}
-        ${
-          additionalUrlList.length
-            ? html`<btrix-badge
-                >${this.localize.number(additionalUrlList.length)}</btrix-badge
-              >`
-            : nothing
-        }`,
+        ${additionalUrlList.length
+          ? html`<btrix-badge
+              >${this.localize.number(additionalUrlList.length)}</btrix-badge
+            >`
+          : nothing}`,
         main: html`
           <sl-textarea
             class="part-[form-control-label]:sr-only"
@@ -1884,13 +1869,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return detailsInColumns({
       open: isCustom,
       title: html`${labelFor.selectLinks}
-      ${
-        isCustom
-          ? html`<btrix-badge
-              >${this.localize.number(selectors.length)}</btrix-badge
-            >`
-          : nothing
-      }`,
+      ${isCustom
+        ? html`<btrix-badge
+            >${this.localize.number(selectors.length)}</btrix-badge
+          >`
+        : nothing}`,
       main: html`<btrix-link-selector-table
         name="selectLinks"
         .selectors=${selectors}
@@ -2174,9 +2157,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
             () => html`
               <div class="mt-3">
                 <btrix-custom-behaviors-table
-                  .customBehaviors=${
-                    this.initialWorkflow?.config.customBehaviors || []
-                  }
+                  .customBehaviors=${this.initialWorkflow?.config
+                    .customBehaviors || []}
                   editable
                 ></btrix-custom-behaviors-table>
               </div>
@@ -2262,10 +2244,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ${inputCol(html`
             <sl-checkbox
               name="failOnContentCheck"
-              ?checked=${
-                this.formState.failOnContentCheck &&
-                this.formState.browserProfile !== null
-              }
+              ?checked=${this.formState.failOnContentCheck &&
+              this.formState.browserProfile !== null}
             >
               ${labelFor.failOnContentCheck}
             </sl-checkbox>
@@ -2293,38 +2273,36 @@ https://archiveweb.page/images/${"logo.svg"}`}
         })}`,
         false,
       )}
-      ${
-        proxies?.servers.length
-          ? [
-              inputCol(html`
-                <btrix-select-crawler-proxy
-                  defaultProxyId=${ifDefined(
-                    getDefaultProxyId(this.org, proxies),
-                  )}
-                  .proxyServers=${proxies.servers}
-                  .proxyId=${profileProxyId || this.formState.proxyId || ""}
-                  .profileProxyId=${profileProxyId}
-                  @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
-                    this.updateFormState({
-                      proxyId: e.detail.value,
-                    })}
-                >
-                  ${when(
-                    profileProxyId,
-                    () => html`
-                      <span
-                        slot="suffix"
-                        class="whitespace-nowrap text-neutral-1000"
-                        >${msg("Set by profile")}</span
-                      >
-                    `,
-                  )}
-                </btrix-select-crawler-proxy>
-              `),
-              this.renderHelpTextCol(infoTextFor["proxyId"]),
-            ]
-          : nothing
-      }
+      ${proxies?.servers.length
+        ? [
+            inputCol(html`
+              <btrix-select-crawler-proxy
+                defaultProxyId=${ifDefined(
+                  getDefaultProxyId(this.org, proxies),
+                )}
+                .proxyServers=${proxies.servers}
+                .proxyId=${profileProxyId || this.formState.proxyId || ""}
+                .profileProxyId=${profileProxyId}
+                @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
+                  this.updateFormState({
+                    proxyId: e.detail.value,
+                  })}
+              >
+                ${when(
+                  profileProxyId,
+                  () => html`
+                    <span
+                      slot="suffix"
+                      class="whitespace-nowrap text-neutral-1000"
+                      >${msg("Set by profile")}</span
+                    >
+                  `,
+                )}
+              </btrix-select-crawler-proxy>
+            `),
+            this.renderHelpTextCol(infoTextFor["proxyId"]),
+          ]
+        : nothing}
       ${inputCol(html`
         <sl-radio-group
           name="scale"
@@ -2864,22 +2842,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         html`${msg(`Customize the name of this workflow.`)}
-        ${
-          urlList
-            ? this.formState.scopeType === ScopeType.Page
-              ? msg(
-                  html`If omitted, the workflow will be named after the URL
-                  specified in ${link_to_scope}.`,
-                )
-              : msg(
-                  html`If omitted, the workflow will be named after the first
-                  URL specified in ${link_to_scope}.`,
-                )
-            : msg(
-                html`If omitted, the workflow will be named after the
-                ${link_to_crawl_start_url}.`,
+        ${urlList
+          ? this.formState.scopeType === ScopeType.Page
+            ? msg(
+                html`If omitted, the workflow will be named after the URL
+                specified in ${link_to_scope}.`,
               )
-        } `,
+            : msg(
+                html`If omitted, the workflow will be named after the first URL
+                specified in ${link_to_scope}.`,
+              )
+          : msg(
+              html`If omitted, the workflow will be named after the
+              ${link_to_crawl_start_url}.`,
+            )} `,
       )}
       ${inputCol(html`
         <sl-textarea

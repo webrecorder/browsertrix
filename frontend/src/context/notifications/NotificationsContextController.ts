@@ -89,7 +89,7 @@ export class NotificationsContextController implements ReactiveController {
         ...notifications.slice(idx + 1),
       ]);
     } else {
-      console.debug("no notification with id"), e.detail.id;
+      (console.debug("no notification with id"), e.detail.id);
     }
   };
 }

@@ -652,7 +652,7 @@ export class Dashboard extends BtrixElement {
           <dt class="order-last">
             ${value === 1
               ? stat.singleLabel
-              : stat.pluralLabel ?? stat.singleLabel}
+              : (stat.pluralLabel ?? stat.singleLabel)}
           </dt>
           <dd class="mr-1">
             ${typeof value === "number" ? this.localize.number(value) : value}

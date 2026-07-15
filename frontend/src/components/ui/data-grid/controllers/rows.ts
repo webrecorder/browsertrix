@@ -22,9 +22,9 @@ export const emptyItem: EmptyObject = {};
  * that are slotted into `<btrix-data-grid>`, it may be necessary to
  * implement this controller on the container component.
  */
-export class DataGridRowsController<Item extends GridItem = GridItem>
-  implements ReactiveController
-{
+export class DataGridRowsController<
+  Item extends GridItem = GridItem,
+> implements ReactiveController {
   readonly #host: ReactiveControllerHost &
     EventTarget & {
       items?: Item[];

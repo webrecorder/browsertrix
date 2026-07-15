@@ -26,8 +26,8 @@ export function isArchivingDisabled(
 ): boolean {
   return Boolean(
     !org ||
-      org.readOnly ||
-      org.storageQuotaReached ||
-      (checkExecMinutesQuota ? org.execMinutesQuotaReached : false),
+    org.readOnly ||
+    org.storageQuotaReached ||
+    (checkExecMinutesQuota ? org.execMinutesQuotaReached : false),
   );
 }

@@ -10,7 +10,8 @@ import { type AuthEventMap } from "@/utils/AuthService";
  */
 declare global {
   interface GlobalEventHandlersEventMap
-    extends NavigateEventMap,
+    extends
+      NavigateEventMap,
       NotifyEventMap,
       AuthEventMap,
       APIEventMap,

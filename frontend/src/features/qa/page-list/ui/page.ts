@@ -137,7 +137,7 @@ export class QaPage extends TailwindElement {
     return html`
       <div class="py-1.5 text-sm text-gray-600">
         <div
-          class="relative z-20 ml-4 block flex-auto cursor-pointer select-none overflow-visible rounded border border-solid border-gray-300 bg-white px-4 py-2 pl-6 shadow-none outline-none transition-shadow  aria-selected:border-cyan-500 aria-selected:bg-cyan-50 aria-selected:shadow aria-selected:shadow-cyan-800/20 aria-selected:transition-none"
+          class="relative z-20 ml-4 block flex-auto cursor-pointer select-none overflow-visible rounded border border-solid border-gray-300 bg-white px-4 py-2 pl-6 shadow-none outline-none transition-shadow aria-selected:border-cyan-500 aria-selected:bg-cyan-50 aria-selected:shadow aria-selected:shadow-cyan-800/20 aria-selected:transition-none"
           @click=${this.select}
           tabindex="0"
           aria-selected=${this.selected}

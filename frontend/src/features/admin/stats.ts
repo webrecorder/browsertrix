@@ -126,9 +126,7 @@ export class Component extends BtrixElement {
               >
               ${msg("Inactive users")}:
               <span class="text-left font-bold text-white"
-                >${html`${this.localize.number(
-                  users.all - users.active,
-                )}`}</span
+                >${html`${this.localize.number(users.all - users.active)}`}</span
               >
             </span>
           </sl-tooltip>
@@ -158,9 +156,7 @@ export class Component extends BtrixElement {
               >
               ${msg("Cancelled trialing subscriptions")}:
               <span class="text-left font-bold text-white"
-                >${html`${this.localize.number(
-                  subscriptions.trialingCancelled,
-                )}`}</span
+                >${html`${this.localize.number(subscriptions.trialingCancelled)}`}</span
               >
               ${msg("Paused (payment failed) subscriptions")}:
               <span class="text-left font-bold text-white"
@@ -170,9 +166,7 @@ export class Component extends BtrixElement {
               >
               ${msg("Payment never made")}:
               <span class="text-left font-bold text-white"
-                >${html`${this.localize.number(
-                  subscriptions.paymentNeverMade,
-                )}`}</span
+                >${html`${this.localize.number(subscriptions.paymentNeverMade)}`}</span
               >
               ${msg("Cancelled subscriptions")}:
               <span class="text-left font-bold text-white"
@@ -210,9 +204,7 @@ export class Component extends BtrixElement {
               >
               ${msg("Storage in inactive orgs")}:
               <span class="text-left font-bold text-white"
-                >${html`${this.localize.bytes(
-                  storage.total - storage.active,
-                )}`}</span
+                >${html`${this.localize.bytes(storage.total - storage.active)}`}</span
               >
             </span>
           </sl-tooltip>

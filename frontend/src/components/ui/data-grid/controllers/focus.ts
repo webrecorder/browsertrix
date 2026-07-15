@@ -22,9 +22,9 @@ type Options = {
 /**
  * Utilities for managing focus in a data grid.
  */
-export class DataGridFocusController<const T extends GridItem = GridItem>
-  implements ReactiveController
-{
+export class DataGridFocusController<
+  const T extends GridItem = GridItem,
+> implements ReactiveController {
   readonly #host: DataGridRow<T> | DataGridCell<T>;
 
   constructor(

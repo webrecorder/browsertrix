@@ -20,32 +20,24 @@
         "name": "ts-lit-plugin",
         "strict": true,
         "rules": {
-          "no-missing-import": "off",
+          "no-missing-import": "off"
         },
-        "maxNodeModuleImportDepth": -1,
-      },
+        "maxNodeModuleImportDepth": -1
+      }
     ],
     "incremental": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "~assets/*": [
-        "./src/assets/*"
-      ],
+      "@/*": ["./src/*"],
+      "~assets/*": ["./src/assets/*"]
     },
     "lib": [
       "DOM",
       "DOM.Iterable",
       "ES2021.WeakRef",
       "ES2021.Intl",
-      "esnext.collection",
-    ],
+      "esnext.collection"
+    ]
   },
-  "include": [
-    "**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ],
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules"]
 }

@@ -78,7 +78,7 @@ const defaultLabelRenderer = <
 }) =>
   html`${group?.value === remainder
     ? "ungrouped"
-    : group?.label ?? group?.value}
+    : (group?.label ?? group?.value)}
   (${data.length})`;
 
 const defaultGroupRenderer = (

@@ -270,7 +270,7 @@ function renderPageThumbnail(
   return html`
     <button
       class=${clsx(
-        isSelected ? tw`ring-2 ring-blue-300` : tw` ring-1 ring-stone-600/10`,
+        isSelected ? tw`ring-2 ring-blue-300` : tw`ring-1 ring-stone-600/10`,
         tw`row-start-2 aspect-video min-w-48 overflow-hidden rounded transition-all hover:ring-2 hover:ring-blue-300`,
       )}
       role="radio"
