@@ -102,6 +102,8 @@ class CrawlOperator(BaseOperator):
 
     paused_expires_delta: timedelta
 
+    rate_limit_duration_delta: timedelta | None = None
+
     def __init__(self, *args):
         super().__init__(*args)
 
@@ -123,6 +125,15 @@ class CrawlOperator(BaseOperator):
         )
 
         self.paused_expires_delta = timedelta(minutes=paused_crawl_limit_minutes)
+
+        rate_limit_duration_minutes = int(
+            os.environ.get("RATE_LIMIT_DURATION_MINUTES") or 0
+        )
+
+        if rate_limit_duration_minutes:
+            self.rate_limit_duration_delta = timedelta(
+                minutes=rate_limit_duration_minutes
+            )
 
     def init_routes(self, app):
         """init routes for this operator"""
@@ -284,6 +295,17 @@ class CrawlOperator(BaseOperator):
                     "starting", status, crawl, allowed_from=["waiting_dedupe_index"]
                 )
 
+        # paused_at is set, and state is a valid paused state
+        is_paused = bool(crawl.paused_at) and status.state in PAUSED_STATES
+
+        # clear rateLimitedAtTime if crawl in a non-rate limited running state or already paused
+        if (
+            status.rateLimitedAtTime
+            and status.state != "rate-limited"
+            and (is_paused or (status.state in RUNNING_STATES))
+        ):
+            status.rateLimitedAtTime = ""
+
         status.scale = len(pods)
         if status.scale:
             for pod_name, pod in pods.items():
@@ -429,9 +451,6 @@ class CrawlOperator(BaseOperator):
 
         if status.pagesFound < status.desiredScale:
             status.desiredScale = max(1, status.pagesFound)
-
-        # paused_at is set, and state is a valid paused state
-        is_paused = bool(crawl.paused_at) and status.state in PAUSED_STATES
 
         for i in range(0, status.desiredScale):
             if status.pagesFound < i * num_browsers_per_pod:
@@ -1631,7 +1650,7 @@ class CrawlOperator(BaseOperator):
         return filecomplete.size
 
     async def is_crawl_stopping(
-        self, crawl: CrawlSpec, status: CrawlStatus
+        self, crawl: CrawlSpec, status: CrawlStatus, stats: OpCrawlStats
     ) -> StopReason | None:
         """check if crawl is stopping and set reason"""
         # if user requested stop, then enter stopping phase
@@ -1672,6 +1691,18 @@ class CrawlOperator(BaseOperator):
         if self.org_ops.exec_mins_quota_reached(org):
             return self.request_pause_crawl("paused_time_quota_reached", crawl)
 
+        if (
+            stats.rate_limited
+            and status.rateLimitedAtTime
+            and self.rate_limit_duration_delta
+        ):
+            rate_limited_at = str_to_date(status.rateLimitedAtTime)
+            if (
+                rate_limited_at
+                and (dt_now() - rate_limited_at) > self.rate_limit_duration_delta
+            ):
+                return self.request_pause_crawl("paused_rate_limit_time_reached", crawl)
+
         if crawl.paused_at and status.stopReason not in PAUSED_STATES:
             return "paused"
 
@@ -1707,6 +1738,7 @@ class CrawlOperator(BaseOperator):
         pipe.hgetall(f"{crawl_id}:size")
         pipe.get(f"{crawl_id}:profileUploaded")
         pipe.smembers(f"{crawl_id}:reqCrawls")
+        pipe.get(f"{crawl_id}:rateLimited")
 
         results = await pipe.execute()
 
@@ -1726,6 +1758,7 @@ class CrawlOperator(BaseOperator):
 
         profile_update = results[5]
         req_crawls = results[6]
+        rate_limited = results[7] == "1"
 
         stats = OpCrawlStats(
             found=pages_found,
@@ -1733,6 +1766,7 @@ class CrawlOperator(BaseOperator):
             size=archive_size,
             profile_update=profile_update,
             req_crawls=req_crawls,
+            rate_limited=rate_limited,
         )
         return stats, sizes
 
@@ -1811,7 +1845,7 @@ class CrawlOperator(BaseOperator):
             await redis.delete(f"{crawl.id}:paused")
 
         if not status.stopping:
-            status.stopReason = await self.is_crawl_stopping(crawl, status)
+            status.stopReason = await self.is_crawl_stopping(crawl, status, stats)
             status.stopping = status.stopReason is not None
 
         # mark crawl as pausing or stopping
@@ -1862,6 +1896,8 @@ class CrawlOperator(BaseOperator):
                     paused_state = "paused_storage_quota_reached"
                 elif status.stopReason == "paused_time_quota_reached":
                     paused_state = "paused_time_quota_reached"
+                elif status.stopReason == "paused_rate_limit_time_reached":
+                    paused_state = "paused_rate_limit_time_reached"
                 elif status.stopReason == "paused_org_readoly":
                     paused_state = "paused_org_readonly"
                 else:
@@ -1921,6 +1957,10 @@ class CrawlOperator(BaseOperator):
         else:
             new_status: TYPE_RUNNING_STATES = "running"
 
+            if stats.rate_limited:
+                new_status = "rate-limited"
+                if not status.rateLimitedAtTime:
+                    status.rateLimitedAtTime = date_to_str(dt_now())
             if status_count.get("generate-wacz"):
                 new_status = "generate-wacz"
             elif status_count.get("uploading-wacz"):

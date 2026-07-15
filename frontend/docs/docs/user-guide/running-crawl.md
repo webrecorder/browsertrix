@@ -37,6 +37,26 @@ To resume a paused crawl, simply click the _Resume_ button. The crawl status wil
 ???+ Note
     Paused crawls that are not resumed within 7 days of being paused are automatically updated to _Stopped_. Once stopped, the crawl is finished and can no longer be resumed.
 
+## Rate Limit Detection
+
+A website may limit the number of requests it receives in a given amount of time. This practice is called [rate limiting](https://en.wikipedia.org/wiki/Rate_limiting) and it can improve server performance, mitigate network attacks, and reduce spam traffic.
+
+Rate limiting can also make pages harder to archive: when a visitor (human, bot, or crawler) is rate limited by a website, they may see an error or [CAPTCHA](https://en.wikipedia.org/wiki/CAPTCHA) page instead of the actual page content for the given URL. Browsertrix attempts to capture only actual page content (i.e. prevent including error pages in an archive) by automatically detecting and temporarily skipping such error pages.
+
+If too many error pages are encountered, the crawler adapts by slowing down and retrying the page URL after a longer delay. This behavior is distinct from the [page delay](workflow-setup.md#delay-before-next-page) workflow setting, which can reduce the chance of being rate limited by increasing the time spent on each page, at the cost of increasing the overall crawl time.
+
+Unfortunately, there is not much Browsertrix can do to prevent being rate limited altogether. Adding a [browser profile](browser-profiles/browser-profiles-overview.md) or configuring a [proxy server](workflow-setup.md#crawler-proxy-server) may help reduce rate limits for certain sites, while other sites may need to provide explicit permission to be crawled, thus requiring the list of IP ranges used by Browsertrix.
+
+???+ "Allow-listing Browsertrix on your website"
+    `Paid Feature`{ .badge-green }
+    If you subscribe to hosted Browsertrix and need help with being rate limited by your own website, please reach out to [support](support@webrecorder.org) for assistance.
+
+### Rate Limited Workflow Status
+
+If the crawler can no longer continue by skipping error pages while being rate limited, it will switch to a time-delay-based strategy to continue running. The workflow status during this state will be <span class="status-amber-600">:btrix-status-dot: Running (Rate Limited)</span>. In this state, the crawler will slow down and retry the page URL at longer intervals, up to once every 5 minutes. Pages that were not captured before will be queued to be retried. Crawls in this state will only use a few seconds of crawl time to check that it is still rate limited, thus avoiding wasting execution minutes on error pages.
+
+If the crawl remains rate limited for an extended period of time (12 hours by default), the crawl may be automatically paused to avoid retrying indefinitely. The workflow status will then be <span class="status-neutral-500">:bootstrap-pause-circle: Paused: Rate Limit Timeout</span>.
+
 ## End a Crawl
 
 If a crawl workflow is not crawling websites as intended it may be preferable to end crawling operations and update the crawl workflow's settings before trying again. There are two operations to end crawls, available both on the workflow's details page, or as part of the actions menu in the workflow list.

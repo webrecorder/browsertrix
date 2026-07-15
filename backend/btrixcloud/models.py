@@ -259,7 +259,7 @@ class UserOrgInfoOut(BaseModel):
 
 # ============================================================================
 TYPE_RUNNING_STATES = Literal[
-    "running", "pending-wait", "generate-wacz", "uploading-wacz"
+    "running", "pending-wait", "generate-wacz", "uploading-wacz", "rate-limited"
 ]
 RUNNING_STATES = get_args(TYPE_RUNNING_STATES)
 
@@ -269,6 +269,7 @@ TYPE_AUTO_PAUSED_STATES = Literal[
     "paused_storage_quota_reached",
     "paused_time_quota_reached",
     "paused_org_readonly",
+    "paused_rate_limit_time_reached",
 ]
 
 AUTO_PAUSED_STATES = get_args(TYPE_AUTO_PAUSED_STATES)

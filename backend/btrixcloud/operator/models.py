@@ -35,6 +35,7 @@ StopReason = Literal[
     "stopped_org_readonly",
     "paused_storage_quota_reached",
     "paused_time_quota_reached",
+    "paused_rate_limit_time_reached",
     "paused_org_readonly",
 ]
 
@@ -219,6 +220,7 @@ class OpCrawlStats(CrawlStats):
     """crawl stats + internal profile update"""
 
     profile_update: str | None = ""
+    rate_limited: bool | None = False
 
 
 # ============================================================================
@@ -272,6 +274,9 @@ class CrawlStatus(BaseModel):
 
     # any pods exited
     anyCrawlPodNewExit: bool | None = Field(default=False, exclude=True)
+
+    # if status is 'rate-limited', when first became rate-limited
+    rateLimitedAtTime: str | None = None
 
     # don't include in status, use by metacontroller
     resync_after: int | None = Field(default=None, exclude=True)

@@ -91,6 +91,14 @@ invite_expire_seconds: "1209600"
 # number of minutes before paused crawls are stopped - default is 7 days
 paused_crawl_limit_minutes: 10080
 
+# number of minutes before a rate-limited crawl will be marked as paused - default is 12 hours
+# set to 0 to disable
+rate_limit_max_duration_minutes: 720
+
+# Number of consecutive rate limited pages after which the crawl
+# will enter 'rate-limited' state and will be interrupted
+rate_limit_threshold: 5
+
 # base url for replayweb.page
 rwp_base_url: "https://cdn.jsdelivr.net/npm/replaywebpage/"
 
