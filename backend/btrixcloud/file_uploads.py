@@ -225,12 +225,6 @@ class FileUploadOps:
             new_filename=new_filename,
         )
 
-        async def stream_iter():
-            """iterate over each chunk and compute and digest + total size"""
-            async for chunk in stream:
-                file_prep.add_chunk(chunk)
-                yield chunk
-
         upload_logger.info(
             "file_stream_upload_starting",
             unstructured_message=f"{upload_type} stream upload starting",
@@ -239,9 +233,10 @@ class FileUploadOps:
         if not await self.storage_ops.do_upload_multipart(
             org,
             file_prep.upload_name,
-            stream_iter(),
+            stream,
             MIN_UPLOAD_PART_SIZE,
             mime=file_prep.mime,
+            on_chunk=file_prep.add_chunk,
         ):
             upload_logger.error(
                 "file_stream_upload_failed",

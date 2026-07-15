@@ -35,8 +35,7 @@ from .models import (
     User,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .storages import CHUNK_SIZE
-from .utils import buffered_async_iter, dt_now, run_async_task, to_async_iterable
+from .utils import dt_now, run_async_task, to_async_iterable
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
@@ -103,14 +102,6 @@ class UploadOps(BaseCrawlOps):
 
         file_prep = FilePreparer(prefix, filename)
 
-        async def stream_iter():
-            """iterate over each chunk and compute and digest + total size"""
-            async for chunk in buffered_async_iter(
-                stream, CHUNK_SIZE, log_name="stream_upload"
-            ):
-                file_prep.add_chunk(chunk)
-                yield chunk
-
         upload_start = time.monotonic()
         upload_logger.debug(
             "stream_upload_start",
@@ -120,8 +111,9 @@ class UploadOps(BaseCrawlOps):
         if not await self.storage_ops.do_upload_multipart(
             org,
             file_prep.upload_name,
-            stream_iter(),
+            stream,
             MIN_UPLOAD_PART_SIZE,
+            on_chunk=file_prep.add_chunk,
         ):
             upload_logger.error(
                 "stream_upload_failed",

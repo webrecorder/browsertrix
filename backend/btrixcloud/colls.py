@@ -1227,12 +1227,6 @@ class CollectionOps:
             created=dt_now(),
         )
 
-        async def stream_iter():
-            """iterate over each chunk and compute and digest + total size"""
-            async for chunk in stream:
-                file_prep.add_chunk(chunk)
-                yield chunk
-
         thumb_logger = logger.bind(coll_id=coll_id)
 
         thumb_logger.info(
@@ -1243,9 +1237,10 @@ class CollectionOps:
         if not await self.storage_ops.do_upload_multipart(
             org,
             file_prep.upload_name,
-            stream_iter(),
+            stream,
             MIN_UPLOAD_PART_SIZE,
             mime=file_prep.mime,
+            on_chunk=file_prep.add_chunk,
         ):
             thumb_logger.error(
                 "thumbnail_upload_failed",

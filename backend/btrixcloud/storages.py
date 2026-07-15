@@ -412,32 +412,22 @@ class StorageOps:
         min_size: int,
         mime: str | None = None,
         max_workers: int = 10,
+        on_chunk: Callable[[bytes], None] | None = None,
     ) -> bool:
         """do upload to specified key using multipart chunking
 
         Reads the incoming stream into a bounded queue and uploads parts to S3
         concurrently. This decouples the client upload speed from the S3 upload
         speed so that slow S3 round-trips do not throttle the browser.
+
+        If on_chunk is provided, it is called for each raw chunk read from the
+        stream (e.g. to compute a digest) before the chunk is accumulated into
+        an S3 part.
         """
         if max_workers < 1:
             raise ValueError("max_workers must be >= 1")
 
         s3storage = self.get_org_primary_storage(org)
-
-        async def get_next_chunk(file_, min_size) -> bytes:
-            total: int = 0
-            bufs: list[bytes] = []
-
-            async for chunk in file_:
-                bufs.append(chunk)
-                total += len(chunk)
-
-                if total >= min_size:
-                    break
-
-            if len(bufs) == 1:
-                return bufs[0]
-            return b"".join(bufs)
 
         async with self.get_s3_client(s3storage) as (client, bucket, key):
             key += filename
@@ -452,47 +442,68 @@ class StorageOps:
 
             mp_logger = logger.bind(upload_id=upload_id, oid=org.id)
 
-            # Bounded queue limits queued chunks to max_workers * min_size bytes.
-            # Workers also hold one chunk each while uploading, so peak memory is
-            # roughly 2 * max_workers * min_size plus any oversized chunks.
-            queue: asyncio.Queue[tuple[int, bytes] | None] = asyncio.Queue(maxsize=2)
+            # Queue depth is intentionally small and independent of worker count:
+            # workers drain parts concurrently, so the queue only needs enough
+            # slack to keep them busy. Peak memory is roughly
+            # (max_workers + queue_size + 1) * min_size plus the stream chunk.
+            queue_size = 2
+            queue: asyncio.Queue[tuple[int, bytes] | None] = asyncio.Queue(
+                maxsize=queue_size
+            )
             parts: list[CompletedPartTypeDef] = []
             total_size = 0
             upload_start = time.monotonic()
 
             async def producer() -> None:
-                """read parts from the stream and place them on the queue"""
+                """read chunks from the stream, accumulate parts, and enqueue them"""
                 nonlocal total_size
+                part_number = 1
+                part_buf = bytearray()
+                read_start = time.monotonic()
                 try:
-                    part_number = 1
-                    while True:
-                        read_start = time.monotonic()
-                        chunk = await get_next_chunk(file_, min_size)
-                        read_duration = time.monotonic() - read_start
-                        if not chunk:
-                            break
+                    async for chunk in file_:
+                        if on_chunk:
+                            on_chunk(chunk)
                         total_size += len(chunk)
-                        await queue.put((part_number, chunk))
+                        part_buf.extend(chunk)
+
+                        while len(part_buf) >= min_size:
+                            chunk_to_upload = bytes(part_buf[:min_size])
+                            del part_buf[:min_size]
+                            read_duration = time.monotonic() - read_start
+                            await queue.put((part_number, chunk_to_upload))
+                            mp_logger.debug(
+                                "multipart_part_read",
+                                part_number=part_number,
+                                chunk_size=len(chunk_to_upload),
+                                read_duration=read_duration,
+                                read_throughput_mbps=(
+                                    (len(chunk_to_upload) / read_duration) / 1_000_000
+                                    if read_duration
+                                    else 0
+                                ),
+                            )
+                            part_number += 1
+                            read_start = time.monotonic()
+
+                    if part_buf:
+                        chunk_to_upload = bytes(part_buf)
+                        read_duration = time.monotonic() - read_start
+                        await queue.put((part_number, chunk_to_upload))
                         mp_logger.debug(
                             "multipart_part_read",
                             part_number=part_number,
-                            chunk_size=len(chunk),
+                            chunk_size=len(chunk_to_upload),
                             read_duration=read_duration,
                             read_throughput_mbps=(
-                                (len(chunk) / read_duration) / 1_000_000
+                                (len(chunk_to_upload) / read_duration) / 1_000_000
                                 if read_duration
                                 else 0
                             ),
                         )
-                        part_number += 1
-                        if len(chunk) < min_size:
-                            break
                 finally:
                     for _ in range(max_workers):
-                        try:
-                            queue.put_nowait(None)
-                        except asyncio.QueueFull:
-                            break
+                        await queue.put(None)
 
             async def worker() -> None:
                 """upload parts from the queue to S3"""
@@ -524,7 +535,10 @@ class StorageOps:
                     )
 
             producer_task = asyncio.create_task(producer())
-            worker_tasks = [asyncio.create_task(worker()) for _ in range(max_workers)]
+            worker_tasks = [
+                asyncio.create_task(worker(), name=f"upload-worker-{i}")
+                for i in range(max_workers)
+            ]
 
             all_tasks = [producer_task, *worker_tasks]
             _done, pending = await asyncio.wait(
