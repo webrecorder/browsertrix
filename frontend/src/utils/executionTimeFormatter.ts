@@ -1,7 +1,9 @@
+import clsx from "clsx";
 import { html, nothing } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import localize from "./localize";
+import { tw } from "./tailwind";
 
 /**
  * Returns either `nothing`, or hours-minutes-seconds wrapped in parens.
@@ -161,19 +163,24 @@ export const humanizeExecutionSeconds = (
       : "";
 
   switch (style) {
-    case "long":
+    case "long": {
+      const tooltip = fullMinutes !== compactMinutes ? fullMinutes : undefined;
       return html`<span
-        title="${ifDefined(
-          fullMinutes !== compactMinutes ? fullMinutes : undefined,
-        )}"
+        class=${clsx(
+          // Place above 'rowClickTarget' in tables if tooltip is available
+          tooltip && tw`z-[1]`,
+        )}
+        title=${ifDefined(tooltip)}
         >${prefix}${detailsRelevant ? formattedDetails : compactMinutes}</span
       >`;
+    }
     case "short":
       return html`<span
+        class="z-[1]"
         title="${displaySeconds && seconds < 60 ? fullSeconds : fullMinutes}"
-        >${prefix}${displaySeconds && seconds < 60
-          ? compactSeconds
-          : compactMinutes}</span
+        >${prefix}${
+          displaySeconds && seconds < 60 ? compactSeconds : compactMinutes
+        }</span
       >`;
   }
 };

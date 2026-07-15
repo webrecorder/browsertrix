@@ -71,9 +71,11 @@ export class CrawlListItem extends BtrixElement {
 
     return html`
       <btrix-table-row
-        class=${this.href
-          ? "cursor-pointer select-none transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50 duration-fast"
-          : ""}
+        class=${
+          this.href
+            ? "cursor-pointer select-none transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50 duration-fast"
+            : ""
+        }
         @click=${async (e: MouseEvent) => {
           if (e.target === this.dropdownMenu) {
             return;
@@ -95,30 +97,34 @@ export class CrawlListItem extends BtrixElement {
           )}
         </btrix-table-cell>
         <btrix-table-cell rowClickTarget=${this.href ? "a" : nothing}>
-          ${this.href
-            ? html`<a href=${this.href} @click=${this.navigate.link}>
-                ${label}
-              </a>`
-            : label}
+          ${
+            this.href
+              ? html`<a href=${this.href} @click=${this.navigate.link}>
+                  ${label}
+                </a>`
+              : label
+          }
         </btrix-table-cell>
-        ${this.workflowId
-          ? nothing
-          : html`
-              <btrix-table-cell>
-                ${this.safeRender(
-                  (crawl) => html`
-                    <btrix-format-date
-                      date=${crawl.started}
-                      month="2-digit"
-                      day="2-digit"
-                      year="numeric"
-                      hour="2-digit"
-                      minute="2-digit"
-                    ></btrix-format-date>
-                  `,
-                )}
-              </btrix-table-cell>
-            `}
+        ${
+          this.workflowId
+            ? nothing
+            : html`
+                <btrix-table-cell>
+                  ${this.safeRender(
+                    (crawl) => html`
+                      <btrix-format-date
+                        date=${crawl.started}
+                        month="2-digit"
+                        day="2-digit"
+                        year="numeric"
+                        hour="2-digit"
+                        minute="2-digit"
+                      ></btrix-format-date>
+                    `,
+                  )}
+                </btrix-table-cell>
+              `
+        }
         <btrix-table-cell>
           ${this.safeRender((crawl) =>
             crawl.finished
@@ -138,11 +144,9 @@ export class CrawlListItem extends BtrixElement {
         <btrix-table-cell>
           ${this.safeRender((crawl) =>
             !skipped
-              ? html`<span
-                  >${humanizeExecutionSeconds(crawl.crawlExecSeconds, {
-                    style: "short",
-                  })}</span
-                >`
+              ? humanizeExecutionSeconds(crawl.crawlExecSeconds, {
+                  style: "short",
+                })
               : notApplicable,
           )}
         </btrix-table-cell>
