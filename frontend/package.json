@@ -73,7 +73,7 @@
     "postcss-lit": "^1.4.1",
     "postcss-loader": "^6.1.1",
     "postinstall-postinstall": "^2.1.0",
-    "prettier": "^3.9.4",
+    "prettier": "3.8.4",
     "pretty-ms": "^7.0.1",
     "query-string": "^8.1.0",
     "regex-colorizer": "^1.0.2",
