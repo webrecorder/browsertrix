@@ -115,10 +115,12 @@ export class Crawls extends BtrixElement {
       ></btrix-document-title>
 
       <div class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4">
-        ${this.crawlId
-          ? // Render loading indicator while preparing to redirect
-            this.renderLoading()
-          : this.renderCrawls()}
+        ${
+          this.crawlId
+            ? // Render loading indicator while preparing to redirect
+              this.renderLoading()
+            : this.renderCrawls()
+        }
       </div>`;
   }
 
@@ -130,7 +132,7 @@ export class Crawls extends BtrixElement {
             <h1 class="h-8 text-xl font-semibold">${msg("Active Crawls")}</h1>
           </div>
           <div
-            class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4"
+            class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3"
           >
             ${this.renderControls()}
           </div>
@@ -143,9 +145,11 @@ export class Crawls extends BtrixElement {
             const hasCrawlItems = items.length;
             return html`
               <section>
-                ${hasCrawlItems
-                  ? this.renderCrawlList()
-                  : this.renderEmptyState()}
+                ${
+                  hasCrawlItems
+                    ? this.renderCrawlList()
+                    : this.renderEmptyState()
+                }
               </section>
               ${when(
                 hasCrawlItems || page > 1,

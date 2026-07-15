@@ -280,7 +280,7 @@ export class BrowserProfilesList extends BtrixElement {
 
   private readonly renderPage = () => {
     return html`
-      <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
+      <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3">
         ${this.renderControls()}
       </div>
 
@@ -300,16 +300,16 @@ export class BrowserProfilesList extends BtrixElement {
                           totalCount=${total}
                           size=${pageSize}
                           @page-change=${async (e: PageChangeEvent) => {
-                          this.pagination = {
-                            ...this.pagination,
-                            page: e.detail.page,
-                          };
-                          await this.updateComplete;
+                            this.pagination = {
+                              ...this.pagination,
+                              page: e.detail.page,
+                            };
+                            await this.updateComplete;
 
-                          // Scroll to top of list
-                          // TODO once deep-linking is implemented, scroll to top of pushstate
-                          this.scrollIntoView({ behavior: "smooth" });
-                        }}
+                            // Scroll to top of list
+                            // TODO once deep-linking is implemented, scroll to top of pushstate
+                            this.scrollIntoView({ behavior: "smooth" });
+                          }}
                         ></btrix-pagination>
                       </footer>
                     `,
@@ -386,7 +386,7 @@ export class BrowserProfilesList extends BtrixElement {
 
   private renderControls() {
     return html`
-      <div class="flex flex-wrap items-center gap-2 md:gap-4">
+      <div class="flex flex-wrap items-center gap-2 md:gap-3">
         <div class="grow basis-2/3">${this.renderSearch()}</div>
 
         <div class="flex items-center">

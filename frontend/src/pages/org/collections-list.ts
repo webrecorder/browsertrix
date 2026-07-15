@@ -174,7 +174,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         this.renderFetchError,
         () =>
           html`<div
-              class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4"
+              class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3"
             >
               ${this.renderControls()}
             </div>
@@ -209,14 +209,14 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
                               totalCount=${this.collections!.total}
                               size=${this.collections!.pageSize}
                               @page-change=${async (e: PageChangeEvent) => {
-                                  await this.fetchCollections({
-                                    page: e.detail.page,
-                                  });
+                                await this.fetchCollections({
+                                  page: e.detail.page,
+                                });
 
-                                  // Scroll to top of list
-                                  // TODO once deep-linking is implemented, scroll to top of pushstate
-                                  this.scrollIntoView({ behavior: "smooth" });
-                                }}
+                                // Scroll to top of list
+                                // TODO once deep-linking is implemented, scroll to top of pushstate
+                                this.scrollIntoView({ behavior: "smooth" });
+                              }}
                             ></btrix-pagination>
                           </footer>
                         `,
