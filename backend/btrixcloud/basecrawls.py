@@ -402,6 +402,7 @@ class BaseCrawlOps:
         colls_to_update: dict[UUID, list[str]] = {}
 
         size = 0
+        all_file_failures: list[str] = []
 
         for crawl_id in delete_list.crawl_ids:
             await self.crawls.find_one_and_update(
@@ -440,8 +441,9 @@ class BaseCrawlOps:
             if type_ == "crawl":
                 await self.delete_all_crawl_qa_files(crawl_id, org)
 
-            crawl_size = await self._delete_crawl_files(crawl, org)
+            crawl_size, file_failures = await self._delete_crawl_files(crawl, org)
             size += crawl_size
+            all_file_failures.extend(file_failures)
 
             cid = crawl.cid
             successful = crawl.state in SUCCESSFUL_STATES
@@ -485,28 +487,51 @@ class BaseCrawlOps:
 
         quota_reached = self.orgs.storage_quota_reached(org)
 
+        if all_file_failures:
+            raise HTTPException(status_code=400, detail="file_deletion_error")
+
         return res.deleted_count, cids_to_update, quota_reached
 
-    async def _delete_crawl_files(self, crawl: BaseCrawl | QARun, org: Organization):
-        """Delete files associated with crawl from storage."""
+    async def _delete_crawl_files(
+        self, crawl: BaseCrawl | QARun, org: Organization
+    ) -> tuple[int, list[str]]:
+        """Delete files associated with crawl from storage.
+
+        Attempts to delete every file even if some fail. Returns the total
+        size of successfully deleted files and a list of filenames that
+        could not be deleted.
+        """
+        delete_logger = logger.bind(crawl_id=crawl.id, oid=org.id)
         size = 0
+        failures: list[str] = []
         for file_ in crawl.files:
-            size += file_.size
-            if not await self.storage_ops.delete_file_object(org, file_):
-                raise HTTPException(status_code=400, detail="file_deletion_error")
-            # Not replicating QA run WACZs yet
+            delete_logger = delete_logger.bind(filename=file_.filename)
+            try:
+                if await self.storage_ops.delete_file_object(org, file_):
+                    delete_logger.debug("crawl_file_delete_success")
+                    size += file_.size
+                else:
+                    delete_logger.warning("crawl_file_delete_failed")
+                    failures.append(file_.filename)
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                delete_logger.exception("crawl_file_delete_exception")
+                failures.append(file_.filename)
+
+            # Schedule replica deletion regardless of primary deletion success
+            # (replicas may still exist even if primary delete failed)
             if not isinstance(crawl, QARun):
                 await self.background_job_ops.create_delete_replica_jobs(
                     org, file_, crawl.id, crawl.type
                 )
 
-        return size
+        return size, failures
 
     async def delete_failed_crawl_files(self, crawl_id: str, oid: UUID):
         """Delete crawl files for failed crawl"""
         crawl = await self.get_base_crawl(crawl_id)
         org = await self.orgs.get_org_by_id(oid)
-        deleted_file_size = await self._delete_crawl_files(crawl, org)
+        deleted_file_size, _ = await self._delete_crawl_files(crawl, org)
         await self.crawls.find_one_and_update(
             {"_id": crawl_id, "oid": oid},
             {
@@ -525,7 +550,9 @@ class BaseCrawlOps:
         qa_finished = crawl_raw.get("qaFinished", {})
         for qa_run_raw in qa_finished.values():
             qa_run = QARun(**qa_run_raw)
-            await self._delete_crawl_files(qa_run, org)
+            await self._delete_crawl_files(
+                qa_run, org
+            )  # failures logged, not raised here
 
     async def _resolve_crawl_refs(
         self,
