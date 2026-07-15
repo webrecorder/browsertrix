@@ -119,6 +119,8 @@ data:
 
   PRESIGN_BATCH_SIZE: "{{ .Values.presign_batch_size | default 8 }}"
 
+  UPLOAD_MAX_WORKERS: "{{ .Values.backend_upload_workers | default 10 }}"
+
   CLEANUP_JOB_CRON_SCHEDULE: "{{ .Values.cleanup_job_cron_schedule }}"
 
   CLEANUP_FILES_AFTER_MINUTES: "{{ .Values.cleanup_files_after_minutes | default 1440 }}"

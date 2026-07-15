@@ -140,6 +140,9 @@ backend_cpu: "100m"
 
 backend_memory: "512Mi"
 
+# number of concurrent S3 multipart upload workers for stream uploads
+backend_upload_workers: 10
+
 # port for operator service
 opPort: 8756
 

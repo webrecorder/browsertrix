@@ -411,7 +411,6 @@ class StorageOps:
         file_: AsyncIterator[bytes],
         min_size: int,
         mime: str | None = None,
-        max_workers: int = 10,
         on_chunk: Callable[[bytes], None] | None = None,
     ) -> bool:
         """do upload to specified key using multipart chunking
@@ -423,7 +422,10 @@ class StorageOps:
         If on_chunk is provided, it is called for each raw chunk read from the
         stream (e.g. to compute a digest) before the chunk is accumulated into
         an S3 part.
+
+        Worker count is controlled via the backend_upload_workers value (default 10).
         """
+        max_workers = int(os.environ.get("UPLOAD_MAX_WORKERS", 10))
         if max_workers < 1:
             raise ValueError("max_workers must be >= 1")
 
