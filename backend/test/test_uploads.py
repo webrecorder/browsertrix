@@ -1635,6 +1635,74 @@ def test_formdata_multi_wacz_child_download(
         )
 
 
+def test_formdata_multi_wacz_delete(
+    admin_auth_headers, default_org_id, formdata_multi_wacz_upload_id
+):
+    """Verify that deleting a processed multi-WACZ upload removes all
+    split child WACZ files from storage and the upload listing."""
+    # Confirm the upload exists with 3 files (2 split children + 1 regular)
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{formdata_multi_wacz_upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["fileCount"] == 3
+
+    # Grab pre-signed download URLs before deletion so we can verify the S3
+    # objects are actually removed
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{formdata_multi_wacz_upload_id}"
+        "/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    download_urls = [urljoin(API_PREFIX, res["path"]) for res in r.json()["resources"]]
+    assert len(download_urls) == 3
+
+    # Delete the upload
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
+        headers=admin_auth_headers,
+        json={"crawl_ids": [formdata_multi_wacz_upload_id]},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["deleted"]
+
+    # Verify it's gone from the uploads list
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    for item in r.json()["items"]:
+        assert item["id"] != formdata_multi_wacz_upload_id, (
+            "Deleted formdata multi-WACZ upload should not appear in uploads list"
+        )
+
+    # Verify direct access returns 404
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{formdata_multi_wacz_upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+
+    # Verify it's gone from all-crawls too
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{formdata_multi_wacz_upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+
+    # Verify the S3 objects are actually deleted
+    for url in download_urls:
+        dl_resp = requests.get(url)
+        assert dl_resp.status_code == 404, (
+            f"Pre-signed URL for deleted WACZ should return 404, "
+            f"got {dl_resp.status_code}"
+        )
+
+
 def test_delete_form_upload_and_crawls_from_all_crawls(
     admin_auth_headers,
     crawler_auth_headers,
