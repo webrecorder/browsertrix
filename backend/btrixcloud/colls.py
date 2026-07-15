@@ -1201,7 +1201,7 @@ class CollectionOps:
     # pylint: disable=too-many-locals, duplicate-code
     async def upload_thumbnail_stream(
         self,
-        stream: AsyncGenerator[bytes],
+        stream,
         filename: str,
         coll_id: UUID,
         org: Organization,

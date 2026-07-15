@@ -12,7 +12,6 @@ import mimetypes
 import os
 from datetime import datetime
 from enum import IntEnum, StrEnum
-from io import BufferedReader
 from typing import Annotated, Any, Literal, Self, get_args, get_origin
 from uuid import UUID
 
@@ -70,9 +69,6 @@ PRESIGN_DURATION_SECONDS = min(PRESIGN_DURATION_MINUTES, PRESIGN_MINUTES_MAX) * 
 
 # Minimum part size for file uploads
 MIN_UPLOAD_PART_SIZE = 10000000
-
-# Chunk size for file uploads
-CHUNK_SIZE = 1024 * 256
 
 # enable dedupe by default
 DEDUPE_FEATURE_ENABLED_DEFAULT = is_bool(
@@ -1230,12 +1226,12 @@ class UpdateUpload(UpdateCrawl):
 class FilePreparer:
     """wrapper to compute digest / name for streaming upload"""
 
-    def __init__(self, prefix: str, filename: str):
+    def __init__(self, prefix, filename):
         self.upload_size = 0
         self.upload_hasher = hashlib.sha256()
         self.upload_name = prefix + "-" + self.prepare_filename(filename)
 
-    def add_chunk(self, chunk: bytes):
+    def add_chunk(self, chunk):
         """add chunk for file"""
         self.upload_size += len(chunk)
         self.upload_hasher.update(chunk)
@@ -1249,28 +1245,13 @@ class FilePreparer:
             storage=storage,
         )
 
-    def prepare_filename(self, filename: str):
+    def prepare_filename(self, filename):
         """prepare filename by sanitizing and adding extra string
         to avoid duplicates"""
         name, ext = os.path.splitext(filename)
         name = slugify(name.rsplit("/", 1)[-1])
         randstr = base64.b32encode(os.urandom(5)).lower()
         return name + "-" + randstr.decode("utf-8") + ext
-
-
-# ============================================================================
-class UploadFileReader(BufferedReader):
-    """Compute digest on file upload"""
-
-    def __init__(self, upload, file_prep: FilePreparer):
-        super().__init__(upload.file._file)
-        self.file_prep = file_prep
-
-    def read(self, size: int | None = CHUNK_SIZE) -> bytes:
-        """read and digest file chunk"""
-        chunk = super().read(size)
-        self.file_prep.add_chunk(chunk)
-        return chunk
 
 
 # ============================================================================
