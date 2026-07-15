@@ -6410,7 +6410,7 @@ __metadata:
     postcss-lit: "npm:^1.4.1"
     postcss-loader: "npm:^6.1.1"
     postinstall-postinstall: "npm:^2.1.0"
-    prettier: "npm:^3.9.4"
+    prettier: "npm:3.8.4"
     prettier-plugin-tailwindcss: "npm:^0.8.0"
     pretty-ms: "npm:^7.0.1"
     query-string: "npm:^8.1.0"
@@ -13601,12 +13601,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.9.4":
-  version: 3.9.4
-  resolution: "prettier@npm:3.9.4"
+"prettier@npm:3.8.4":
+  version: 3.8.4
+  resolution: "prettier@npm:3.8.4"
   bin:
     prettier: bin/prettier.cjs
-  checksum: 10c0/dc6ec13d692745c6b7e7bf39beda9eb1b3b76c619118319bce393928c392264b1273337c75f80499695e165affefc7b3a9d2ebb18983af0a8f4dfbb2f45f6ff3
+  checksum: 10c0/b90a0cbe75b88ac0af9c13fe0f359bd19926fabccd88483227b21f71f0c1cc42da056fc1ac3a361e665577c568371d5ccfb2c62c31c8a1186f8d1bd531a063e9
   languageName: node
   linkType: hard
 
