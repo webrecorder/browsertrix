@@ -2,9 +2,9 @@
 
 import asyncio
 import os
+import time
 import uuid
 from collections.abc import AsyncGenerator, Callable
-from io import BufferedReader
 from typing import Any
 from urllib.parse import unquote
 from uuid import UUID
@@ -31,11 +31,12 @@ from .models import (
     UpdatedResponse,
     UpdateUpload,
     UploadedCrawl,
+    UploadFileReader,
     User,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import CHUNK_SIZE
-from .utils import dt_now, run_async_task, to_async_iterable
+from .utils import buffered_async_iter, dt_now, run_async_task, to_async_iterable
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
@@ -104,10 +105,13 @@ class UploadOps(BaseCrawlOps):
 
         async def stream_iter():
             """iterate over each chunk and compute and digest + total size"""
-            async for chunk in stream:
+            async for chunk in buffered_async_iter(
+                stream, CHUNK_SIZE, log_name="stream_upload"
+            ):
                 file_prep.add_chunk(chunk)
                 yield chunk
 
+        upload_start = time.monotonic()
         upload_logger.debug(
             "stream_upload_start",
             unstructured_message="Stream Upload Start",
@@ -138,6 +142,20 @@ class UploadOps(BaseCrawlOps):
                     unstructured_message="Error handling previous upload",
                 )
 
+        upload_duration = time.monotonic() - upload_start
+        upload_logger.info(
+            "stream_upload_complete",
+            filename=filename,
+            upload_size=file_prep.upload_size,
+            upload_duration=upload_duration,
+            throughput_mbps=(
+                (file_prep.upload_size / upload_duration) / 1_000_000
+                if upload_duration
+                else 0
+            ),
+            unstructured_message="Stream Upload Complete",
+        )
+
         return await self._create_upload(
             files, name, description, collections, tags, id_, org, user
         )
@@ -162,7 +180,7 @@ class UploadOps(BaseCrawlOps):
         prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{id_}"
 
         for upload in uploads:
-            file_prep = FilePreparer(prefix, upload.filename)
+            file_prep = FilePreparer(prefix, upload.filename or "")
             file_reader = UploadFileReader(upload, file_prep)
 
             await self.storage_ops.do_upload_single(
@@ -659,21 +677,6 @@ class UploadOps(BaseCrawlOps):
             raise HTTPException(status_code=404, detail="uploaded_crawl_not_found")
 
         return {"deleted": True, "storageQuotaReached": quota_reached}
-
-
-# ============================================================================
-class UploadFileReader(BufferedReader):
-    """Compute digest on file upload"""
-
-    def __init__(self, upload, file_prep: FilePreparer):
-        super().__init__(upload.file._file)
-        self.file_prep = file_prep
-
-    def read(self, size: int | None = CHUNK_SIZE) -> bytes:
-        """read and digest file chunk"""
-        chunk = super().read(size)
-        self.file_prep.add_chunk(chunk)
-        return chunk
 
 
 # ============================================================================

@@ -9,7 +9,8 @@ import os
 import re
 import signal
 import sys
-from collections.abc import Iterable
+import time
+from collections.abc import AsyncIterator, Iterable
 from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlparse
@@ -292,6 +293,46 @@ async def to_async_iterable(sync_iterable: Iterable[bytes]):
     it = iter(sync_iterable)
     while (value := await asyncio.to_thread(next, it, done)) is not done:
         yield value
+
+
+async def buffered_async_iter(
+    source: AsyncIterator[bytes],
+    buffer_size: int,
+    log_name: str = "",
+) -> AsyncIterator[bytes]:
+    """Re-chunk an async iterator of bytes into larger chunks.
+
+    This reduces per-chunk overhead (e.g. async generator steps, function
+    calls, hashing) when the underlying source yields very small chunks.
+
+    If log_name is provided, each source chunk is logged with its size and
+    the time elapsed since the previous chunk for diagnostics.
+    """
+    buffer = bytearray()
+    chunk_index = 0
+    last_time = time.monotonic()
+    async for chunk in source:
+        now = time.monotonic()
+        elapsed = now - last_time
+        last_time = now
+        if log_name:
+            logger.debug(
+                "buffered_chunk_received",
+                name=log_name,
+                chunk_index=chunk_index,
+                chunk_size=len(chunk),
+                elapsed_since_previous=elapsed,
+                chunk_bitrate_mbps=(
+                    (len(chunk) / elapsed) / 1_000_000 if elapsed else 0
+                ),
+            )
+        chunk_index += 1
+        buffer.extend(chunk)
+        while len(buffer) >= buffer_size:
+            yield bytes(buffer[:buffer_size])
+            del buffer[:buffer_size]
+    if buffer:
+        yield bytes(buffer)
 
 
 def drop_privileges():

@@ -28,6 +28,7 @@ from types_aiobotocore_s3 import S3Client as AIOS3Client
 from types_aiobotocore_s3.type_defs import CompletedPartTypeDef
 
 from .models import (
+    CHUNK_SIZE,
     PRESIGN_DURATION_SECONDS,
     AddedResponseName,
     BaseFile,
@@ -42,6 +43,7 @@ from .models import (
     StorageRef,
     SuccessResponse,
     UpdatedResponse,
+    UploadFileReader,
     User,
 )
 from .utils import dt_now, get_origin, slug_from_name
@@ -54,8 +56,6 @@ else:
     OrgOps = CrawlManager = object
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
-
-CHUNK_SIZE = 1024 * 256
 
 
 # ============================================================================
@@ -393,7 +393,7 @@ class StorageOps:
         self,
         org: Organization,
         filename: str,
-        data,
+        data: UploadFileReader,
     ) -> None:
         """do upload to specified key"""
         s3storage = self.get_org_primary_storage(org)
@@ -403,21 +403,30 @@ class StorageOps:
 
             await client.put_object(Bucket=bucket, Key=key, Body=data)
 
-    # pylint: disable=too-many-arguments,too-many-locals
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-statements
     async def do_upload_multipart(
         self,
         org: Organization,
         filename: str,
-        file_: AsyncIterator,
+        file_: AsyncIterator[bytes],
         min_size: int,
         mime: str | None = None,
+        max_workers: int = 10,
     ) -> bool:
-        """do upload to specified key using multipart chunking"""
+        """do upload to specified key using multipart chunking
+
+        Reads the incoming stream into a bounded queue and uploads parts to S3
+        concurrently. This decouples the client upload speed from the S3 upload
+        speed so that slow S3 round-trips do not throttle the browser.
+        """
+        if max_workers < 1:
+            raise ValueError("max_workers must be >= 1")
+
         s3storage = self.get_org_primary_storage(org)
 
         async def get_next_chunk(file_, min_size) -> bytes:
-            total = 0
-            bufs = []
+            total: int = 0
+            bufs: list[bytes] = []
 
             async for chunk in file_:
                 bufs.append(chunk)
@@ -443,14 +452,56 @@ class StorageOps:
 
             mp_logger = logger.bind(upload_id=upload_id, oid=org.id)
 
-            parts = []
-            part_number = 1
+            # Bounded queue limits queued chunks to max_workers * min_size bytes.
+            # Workers also hold one chunk each while uploading, so peak memory is
+            # roughly 2 * max_workers * min_size plus any oversized chunks.
+            queue: asyncio.Queue[tuple[int, bytes] | None] = asyncio.Queue(maxsize=2)
+            parts: list[CompletedPartTypeDef] = []
+            total_size = 0
+            upload_start = time.monotonic()
 
-            try:
+            async def producer() -> None:
+                """read parts from the stream and place them on the queue"""
+                nonlocal total_size
+                try:
+                    part_number = 1
+                    while True:
+                        read_start = time.monotonic()
+                        chunk = await get_next_chunk(file_, min_size)
+                        read_duration = time.monotonic() - read_start
+                        if not chunk:
+                            break
+                        total_size += len(chunk)
+                        await queue.put((part_number, chunk))
+                        mp_logger.debug(
+                            "multipart_part_read",
+                            part_number=part_number,
+                            chunk_size=len(chunk),
+                            read_duration=read_duration,
+                            read_throughput_mbps=(
+                                (len(chunk) / read_duration) / 1_000_000
+                                if read_duration
+                                else 0
+                            ),
+                        )
+                        part_number += 1
+                        if len(chunk) < min_size:
+                            break
+                finally:
+                    for _ in range(max_workers):
+                        try:
+                            queue.put_nowait(None)
+                        except asyncio.QueueFull:
+                            break
+
+            async def worker() -> None:
+                """upload parts from the queue to S3"""
                 while True:
+                    item = await queue.get()
+                    if item is None:
+                        break
+                    part_number, chunk = item
                     upload_start_part = time.monotonic()
-                    chunk = await get_next_chunk(file_, min_size)
-
                     resp = await client.upload_part(
                         Bucket=bucket,
                         Body=chunk,
@@ -459,9 +510,9 @@ class StorageOps:
                         Key=key,
                     )
                     upload_duration = time.monotonic() - upload_start_part
-
+                    parts.append({"PartNumber": part_number, "ETag": resp["ETag"]})
                     mp_logger.debug(
-                        "multipart_part_added",
+                        "multipart_part_uploaded",
                         part_number=part_number,
                         chunk_size=len(chunk),
                         upload_duration=upload_duration,
@@ -470,46 +521,88 @@ class StorageOps:
                             if upload_duration
                             else 0
                         ),
-                        unstructured_message=f"part added: {part_number} {len(chunk)} {upload_id}",
                     )
 
-                    part: CompletedPartTypeDef = {
-                        "PartNumber": part_number,
-                        "ETag": resp["ETag"],
-                    }
+            producer_task = asyncio.create_task(producer())
+            worker_tasks = [asyncio.create_task(worker()) for _ in range(max_workers)]
 
-                    parts.append(part)
+            all_tasks = [producer_task, *worker_tasks]
+            _done, pending = await asyncio.wait(
+                all_tasks, return_when=asyncio.FIRST_EXCEPTION
+            )
+            for task in pending:
+                task.cancel()
+            await asyncio.gather(*pending, return_exceptions=True)
 
-                    part_number += 1
+            exceptions = [task.exception() for task in all_tasks if task.exception()]
+            non_cancelled = [
+                exc for exc in exceptions if not isinstance(exc, asyncio.CancelledError)
+            ]
 
-                    if len(chunk) < min_size:
-                        break
+            if non_cancelled:
+                await client.abort_multipart_upload(
+                    Bucket=bucket, Key=key, UploadId=upload_id
+                )
 
+                partial_duration = time.monotonic() - upload_start
+                mp_logger.error(
+                    "multipart_upload_failed",
+                    exc_info=non_cancelled[0],
+                    total_size=total_size,
+                    partial_duration=partial_duration,
+                    throughput_mbps=(
+                        (total_size / partial_duration) / 1_000_000
+                        if partial_duration
+                        else 0
+                    ),
+                    unstructured_message=f"Multipart upload failed: {upload_id}",
+                )
+
+                return False
+
+            sorted_parts = sorted(parts, key=lambda p: p["PartNumber"])
+            try:
                 await client.complete_multipart_upload(
                     Bucket=bucket,
                     Key=key,
                     UploadId=upload_id,
-                    MultipartUpload={"Parts": parts},
+                    MultipartUpload={"Parts": sorted_parts},
                 )
-
-                mp_logger.info(
-                    "multipart_upload_succeeded",
-                    unstructured_message=f"Multipart upload succeeded: {upload_id}",
-                )
-
-                return True
             # pylint: disable=broad-exception-caught
             except Exception:
                 await client.abort_multipart_upload(
                     Bucket=bucket, Key=key, UploadId=upload_id
                 )
 
+                partial_duration = time.monotonic() - upload_start
                 mp_logger.exception(
                     "multipart_upload_failed",
+                    total_size=total_size,
+                    partial_duration=partial_duration,
+                    throughput_mbps=(
+                        (total_size / partial_duration) / 1_000_000
+                        if partial_duration
+                        else 0
+                    ),
                     unstructured_message=f"Multipart upload failed: {upload_id}",
                 )
 
                 return False
+
+            total_duration = time.monotonic() - upload_start
+            throughput_mbps = (
+                (total_size / total_duration) / 1_000_000 if total_duration else 0
+            )
+            mp_logger.info(
+                "multipart_upload_succeeded",
+                total_size=total_size,
+                total_duration=total_duration,
+                throughput_mbps=throughput_mbps,
+                part_count=len(parts),
+                unstructured_message=f"Multipart upload succeeded: {upload_id}",
+            )
+
+            return True
 
     async def get_presigned_url(
         self, org: Organization, crawlfile: CrawlFile, force_update=False
