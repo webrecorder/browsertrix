@@ -468,9 +468,8 @@ export class ArchivedItemDetail extends BtrixElement {
                 (id) => html`
                   <sl-button
                     size="small"
-                    href="${
-                      this.navigate.orgBasePath
-                    }/${OrgTab.Collections}/${CommonTab.View}/${id}/${CollectionTab.Deduplication}"
+                    href="${this.navigate
+                      .orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${id}/${CollectionTab.Deduplication}"
                     @click=${this.navigate.link}
                   >
                     <sl-icon slot="prefix" name="stack"></sl-icon>
@@ -557,7 +556,7 @@ export class ArchivedItemDetail extends BtrixElement {
           <div
             class="col-span-14 grid min-w-0 border-b md:col-span-3 md:border-b-0"
           >
-            <div class="-mx-3 box-border flex overflow-x-auto px-3 md:block">
+            <div class="-mx-3 box-border flex overflow-x-auto px-3 md:block ">
               ${this.renderNav()}
             </div>
           </div>
@@ -583,14 +582,12 @@ export class ArchivedItemDetail extends BtrixElement {
           void this.deleteCrawl();
         }}
       >
-        ${
-          this.item?.finished && isCrawl(this.item)
-            ? html`<strong slot="name" class="font-semibold"
-                >${renderName(this.item)}
-                (${this.localize.date(this.item.finished)})</strong
-              >`
-            : nothing
-        }
+        ${this.item?.finished && isCrawl(this.item)
+          ? html`<strong slot="name" class="font-semibold"
+              >${renderName(this.item)}
+              (${this.localize.date(this.item.finished)})</strong
+            >`
+          : nothing}
       </btrix-delete-item-dialog>
 
       ${when(this.item?.missingRequiresCrawls, (ids) =>
@@ -730,8 +727,8 @@ export class ArchivedItemDetail extends BtrixElement {
                 )}
                 ${renderNavItem({
                   section: "replay",
-                  iconLibrary: "default",
-                  icon: "collection-play",
+                  iconLibrary: "app",
+                  icon: "replaywebpage",
                 })}
                 ${renderNavItem({
                   section: "files",
@@ -834,15 +831,13 @@ export class ArchivedItemDetail extends BtrixElement {
               >
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                 ${msg("Download")}
-                ${
-                  this.item?.fileSize
-                    ? html` <btrix-badge slot="suffix"
-                        >${this.localize.bytes(this.item.fileSize, {
-                          unitDisplay: "narrow",
-                        })}</btrix-badge
-                      >`
-                    : nothing
-                }
+                ${this.item?.fileSize
+                  ? html` <btrix-badge slot="suffix"
+                      >${this.localize.bytes(this.item.fileSize, {
+                        unitDisplay: "narrow",
+                      })}</btrix-badge
+                    >`
+                  : nothing}
               </btrix-menu-item-link>
               <sl-divider></sl-divider>
             `,
@@ -900,13 +895,11 @@ export class ArchivedItemDetail extends BtrixElement {
                 }}
               >
                 <sl-icon name="trash3" slot="prefix"></sl-icon>
-                ${
-                  isWorkflowCrawl
-                    ? msg("Delete Crawl")
-                    : isSuccess
-                      ? msg("Delete Archived Item")
-                      : msg("Delete Item")
-                }
+                ${isWorkflowCrawl
+                  ? msg("Delete Crawl")
+                  : isSuccess
+                    ? msg("Delete Archived Item")
+                    : msg("Delete Item")}
               </sl-menu-item>
             `,
           )}
@@ -968,9 +961,8 @@ export class ArchivedItemDetail extends BtrixElement {
           ? html`<div id="replay-crawl" class="aspect-4/3 overflow-hidden">
               <replay-web-page
                 source="${replaySource}"
-                url="${
-                  (this.item.seedCount === 1 && this.item.firstSeed) || ""
-                }"
+                url="${(this.item.seedCount === 1 && this.item.firstSeed) ||
+                ""}"
                 coll="${ifDefined(this.item.id)}"
                 config="${config}"
                 replayBase="/replay/"
@@ -992,21 +984,19 @@ export class ArchivedItemDetail extends BtrixElement {
     return html`
       <btrix-desc-list>
         <btrix-desc-list-item label=${msg("Status")}>
-          ${
-            this.item
-              ? isCrawl(this.item)
-                ? html`
-                    <btrix-crawl-status
-                      state=${this.item.state}
-                    ></btrix-crawl-status>
-                  `
-                : html`
-                    <btrix-upload-status
-                      state=${this.item.state}
-                    ></btrix-upload-status>
-                  `
-              : html`<sl-skeleton class="mb-[3px] h-[16px] w-24"></sl-skeleton>`
-          }
+          ${this.item
+            ? isCrawl(this.item)
+              ? html`
+                  <btrix-crawl-status
+                    state=${this.item.state}
+                  ></btrix-crawl-status>
+                `
+              : html`
+                  <btrix-upload-status
+                    state=${this.item.state}
+                  ></btrix-upload-status>
+                `
+            : html`<sl-skeleton class="mb-[3px] h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         ${when(this.item, (item) =>
           item.type === "upload"
@@ -1024,81 +1014,67 @@ export class ArchivedItemDetail extends BtrixElement {
                   ></btrix-format-date>
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Date Finished")}>
-                  ${
-                    item.finished
-                      ? html`<btrix-format-date
-                          date=${item.finished}
-                          dateStyle="long"
-                          timeStyle="long"
-                        ></btrix-format-date>`
-                      : html`<span class="text-0-400">${msg("Pending")}</span>`
-                  }
+                  ${item.finished
+                    ? html`<btrix-format-date
+                        date=${item.finished}
+                        dateStyle="long"
+                        timeStyle="long"
+                      ></btrix-format-date>`
+                    : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Run Duration")}>
-                  ${
-                    item.finished
-                      ? html`${this.localize.humanizeDuration(
-                          new Date(item.finished).valueOf() -
-                            new Date(item.started).valueOf(),
-                        )}`
-                      : html`
-                          <span class="text-violet-600">
-                            <btrix-relative-duration
-                              value=${item.started}
-                              unitCount="3"
-                              tickSeconds="1"
-                            ></btrix-relative-duration>
-                          </span>
-                        `
-                  }
+                  ${item.finished
+                    ? html`${this.localize.humanizeDuration(
+                        new Date(item.finished).valueOf() -
+                          new Date(item.started).valueOf(),
+                      )}`
+                    : html`
+                        <span class="text-violet-600">
+                          <btrix-relative-duration
+                            value=${item.started}
+                            unitCount="3"
+                            tickSeconds="1"
+                          ></btrix-relative-duration>
+                        </span>
+                      `}
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Execution Time")}>
-                  ${
-                    item.finished
-                      ? html`<span
-                          >${humanizeExecutionSeconds(item.crawlExecSeconds, {
-                            displaySeconds: true,
-                          })}</span
-                        >`
-                      : html`<span class="text-0-400">${msg("Pending")}</span>`
-                  }
+                  ${item.finished
+                    ? html`<span
+                        >${humanizeExecutionSeconds(item.crawlExecSeconds, {
+                          displaySeconds: true,
+                        })}</span
+                      >`
+                    : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Initiator")}>
-                  ${
-                    item.manual
-                      ? msg(
-                          html`Manual start by
-                            <span>${item.userName || item.userid}</span>`,
-                        )
-                      : msg(html`Scheduled start`)
-                  }
+                  ${item.manual
+                    ? msg(
+                        html`Manual start by
+                          <span>${item.userName || item.userid}</span>`,
+                      )
+                    : msg(html`Scheduled start`)}
                 </btrix-desc-list-item>
               `,
         )}
         <btrix-desc-list-item label=${msg("Pages")}>
-          ${
-            this.item
-              ? html`${this.localize.number(this.item.pageCount || 0)}
-                ${pluralOf("pages", this.item.pageCount || 0)}`
-              : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`
-          }
+          ${this.item
+            ? html`${this.localize.number(this.item.pageCount || 0)}
+              ${pluralOf("pages", this.item.pageCount || 0)}`
+            : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Size")}>
-          ${
-            this.item
-              ? this.localize.bytes(this.item.fileSize || 0)
-              : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`
-          }
+          ${this.item
+            ? this.localize.bytes(this.item.fileSize || 0)
+            : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         ${this.renderCrawlChannelVersion()}
         <btrix-desc-list-item label=${msg("ID")}>
-          ${
-            this.item
-              ? html`<btrix-copy-field
-                  value="${this.item.id}"
-                ></btrix-copy-field>`
-              : html`<sl-skeleton class="mb-[3px] h-[16px] w-24"></sl-skeleton>`
-          }
+          ${this.item
+            ? html`<btrix-copy-field
+                value="${this.item.id}"
+              ></btrix-copy-field>`
+            : html`<sl-skeleton class="mb-[3px] h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
       </btrix-desc-list>
     `;
@@ -1241,41 +1217,37 @@ export class ArchivedItemDetail extends BtrixElement {
 
     return html`
       ${when(this.item.missingRequiresCrawls, missingDeps)}
-      ${
-        this.dependenciesTask.value?.total
-          ? html`
-              <div class="relative">
-                <btrix-item-dependents
-                  .items=${this.dependenciesTask.value.items}
-                  collectionId=${ifDefined(dedupeCollId || undefined)}
-                >
-                </btrix-item-dependents>
-                ${
-                  this.dependenciesTask.status === TaskStatus.PENDING
-                    ? html`<div
-                        class="absolute inset-0 top-[26px] z-10 grid animate-delayed-fade cursor-progress place-content-center rounded border border-[--sl-panel-border-color] bg-gray-50/50 text-3xl"
-                      >
-                        <sl-spinner></sl-spinner>
-                      </div>`
-                    : nothing
-                }
-              </div>
-              <btrix-pagination
-                class="my-4 block justify-self-center"
-                name="dependenciesPage"
-                .page=${this.dependenciesTask.value.page}
-                .size=${this.dependenciesTask.value.pageSize}
-                .totalCount=${this.dependenciesTask.value.total}
-                @page-change=${(e: PageChangeEvent) => {
-                  this.dependenciesPage = e.detail.page;
-                }}
+      ${this.dependenciesTask.value?.total
+        ? html`
+            <div class="relative">
+              <btrix-item-dependents
+                .items=${this.dependenciesTask.value.items}
+                collectionId=${ifDefined(dedupeCollId || undefined)}
               >
-              </btrix-pagination>
-            `
-          : this.dependenciesTask.status === TaskStatus.COMPLETE
-            ? noDeps
-            : html`<sl-spinner class="m-8 place-self-center"></sl-spinner>`
-      }
+              </btrix-item-dependents>
+              ${this.dependenciesTask.status === TaskStatus.PENDING
+                ? html`<div
+                    class="absolute inset-0 top-[26px] z-10 grid animate-delayed-fade cursor-progress place-content-center rounded border border-[--sl-panel-border-color] bg-gray-50/50 text-3xl"
+                  >
+                    <sl-spinner></sl-spinner>
+                  </div>`
+                : nothing}
+            </div>
+            <btrix-pagination
+              class="my-4 block justify-self-center"
+              name="dependenciesPage"
+              .page=${this.dependenciesTask.value.page}
+              .size=${this.dependenciesTask.value.pageSize}
+              .totalCount=${this.dependenciesTask.value.total}
+              @page-change=${(e: PageChangeEvent) => {
+                this.dependenciesPage = e.detail.page;
+              }}
+            >
+            </btrix-pagination>
+          `
+        : this.dependenciesTask.status === TaskStatus.COMPLETE
+          ? noDeps
+          : html`<sl-spinner class="m-8 place-self-center"></sl-spinner>`}
     `;
   }
 
@@ -1285,23 +1257,21 @@ export class ArchivedItemDetail extends BtrixElement {
     }
 
     return html`
-      ${
-        this.hasFiles
-          ? html`
-              ${when(this.item.resources, (resources) =>
-                fileList({
-                  files: resources.filter(
-                    ({ fromDependency }) => !fromDependency,
-                  ),
-                }),
-              )}
-            `
-          : html`
-              <p class="text-sm text-neutral-400">
-                ${msg("No files to download.")}
-              </p>
-            `
-      }
+      ${this.hasFiles
+        ? html`
+            ${when(this.item.resources, (resources) =>
+              fileList({
+                files: resources.filter(
+                  ({ fromDependency }) => !fromDependency,
+                ),
+              }),
+            )}
+          `
+        : html`
+            <p class="text-sm text-neutral-400">
+              ${msg("No files to download.")}
+            </p>
+          `}
     `;
   }
 
@@ -1384,11 +1354,9 @@ export class ArchivedItemDetail extends BtrixElement {
     return html`
       <div
         aria-live="polite"
-        aria-busy=${
-          !this.item ||
-          !this.seeds ||
-          this.seedFileTask.status === TaskStatus.PENDING
-        }
+        aria-busy=${!this.item ||
+        !this.seeds ||
+        this.seedFileTask.status === TaskStatus.PENDING}
       >
         ${when(
           this.item &&
@@ -1414,49 +1382,43 @@ export class ArchivedItemDetail extends BtrixElement {
     const analyzing = this.isRunActive;
 
     return html`
-      ${
-        analyzing
-          ? html`
-              <sl-button-group>
-                <sl-button
-                  size="small"
-                  @click=${() => void this.stopQARunDialog?.show()}
-                >
-                  <sl-icon name="dash-square" slot="prefix"></sl-icon>
-                  <span>${msg("Stop Analysis")}</span>
-                </sl-button>
-                <sl-button
-                  size="small"
-                  @click=${() => void this.cancelQARunDialog?.show()}
-                >
-                  <sl-icon
-                    name="x-octagon"
-                    slot="prefix"
-                    class="text-danger"
-                  ></sl-icon>
-                  <span class="text-danger">${msg("Cancel Analysis")}</span>
-                </sl-button>
-              </sl-button-group>
-            `
-          : html`
+      ${analyzing
+        ? html`
+            <sl-button-group>
               <sl-button
                 size="small"
-                variant="${
-                  // This is checked again being 0 explicitly because while QA state is loading, `this.qaRuns` is undefined, and the content change is less when the rightmost button stays non-primary when a run exists.
-                  qaRuns.length === 0 ? "primary" : "default"
-                }"
-                @click=${() => void this.startQARun()}
-                ?disabled=${isArchivingDisabled(this.org, true) || analyzing}
+                @click=${() => void this.stopQARunDialog?.show()}
+              >
+                <sl-icon name="dash-square" slot="prefix"></sl-icon>
+                <span>${msg("Stop Analysis")}</span>
+              </sl-button>
+              <sl-button
+                size="small"
+                @click=${() => void this.cancelQARunDialog?.show()}
               >
                 <sl-icon
+                  name="x-octagon"
                   slot="prefix"
-                  name="microscope"
-                  library="app"
+                  class="text-danger"
                 ></sl-icon>
-                ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
+                <span class="text-danger">${msg("Cancel Analysis")}</span>
               </sl-button>
-            `
-      }
+            </sl-button-group>
+          `
+        : html`
+            <sl-button
+              size="small"
+              variant="${
+                // This is checked again being 0 explicitly because while QA state is loading, `this.qaRuns` is undefined, and the content change is less when the rightmost button stays non-primary when a run exists.
+                qaRuns.length === 0 ? "primary" : "default"
+              }"
+              @click=${() => void this.startQARun()}
+              ?disabled=${isArchivingDisabled(this.org, true) || analyzing}
+            >
+              <sl-icon slot="prefix" name="microscope" library="app"></sl-icon>
+              ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
+            </sl-button>
+          `}
 
       <sl-button
         size="small"

@@ -53,10 +53,10 @@ export class Collection extends BtrixElement {
 
   private readonly tabLabels: Record<
     PublicTab,
-    { icon: { name: string; library?: string }; text: string }
+    { icon: { name: string; library: string }; text: string }
   > = {
     [PublicTab.Replay]: {
-      icon: { name: "collection-play" },
+      icon: { name: "replaywebpage", library: "app" },
       text: msg("Browse Collection"),
     },
     [PublicTab.About]: {
@@ -199,9 +199,9 @@ export class Collection extends BtrixElement {
 
     const panel = (tab: PublicTab, content: TemplateResult) => html`
       <div
-        class=${
-          (this.tab as PublicTab) !== tab ? "offscreen" : "flex-1 flex flex-col"
-        }
+        class=${(this.tab as PublicTab) !== tab
+          ? "offscreen"
+          : "flex-1 flex flex-col"}
       >
         ${content}
       </div>
@@ -247,7 +247,7 @@ export class Collection extends BtrixElement {
       >
         <sl-icon
           name=${this.tabLabels[tab].icon.name}
-          library=${ifDefined(this.tabLabels[tab].icon.library)}
+          library=${this.tabLabels[tab].icon.library}
         ></sl-icon>
         ${this.tabLabels[tab].text}</btrix-navigation-button
       >

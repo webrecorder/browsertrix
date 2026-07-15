@@ -509,10 +509,8 @@ export class ArchivedItemQA extends BtrixElement {
             class="flex-auto flex-shrink-0 flex-grow basis-52 truncate font-semibold leading-7 text-neutral-700"
             title="${this.page?.title ?? ""}"
           >
-            ${
-              this.page?.title ||
-              html`<span class="opacity-50">${msg("No page title")}</span>`
-            }
+            ${this.page?.title ||
+            html`<span class="opacity-50">${msg("No page title")}</span>`}
           </h3>
           <div
             class="ml-auto flex flex-grow basis-auto flex-wrap justify-between gap-2 @lg:flex-grow-0"
@@ -613,7 +611,7 @@ export class ArchivedItemQA extends BtrixElement {
               ?active=${this.tab === "replay"}
               @click=${this.onTabNavClick}
             >
-              <sl-icon name="collection-play"></sl-icon>
+              <sl-icon name="replaywebpage" library="app"></sl-icon>
               ${msg("Replay")}
             </btrix-navigation-button>
             <div class="ml-auto flex items-center gap-3">
@@ -881,16 +879,12 @@ export class ArchivedItemQA extends BtrixElement {
         !reg || !this.crawlDataRegistered || !this.qaDataRegistered,
         () => html`
           <div class="offscreen" aria-hidden="true">
-            ${
-              this.itemId && !this.crawlDataRegistered
-                ? this.renderRWP(this.itemId, { qa: false })
-                : nothing
-            }
-            ${
-              this.qaRunId && !this.qaDataRegistered
-                ? this.renderRWP(this.qaRunId, { qa: true })
-                : nothing
-            }
+            ${this.itemId && !this.crawlDataRegistered
+              ? this.renderRWP(this.itemId, { qa: false })
+              : nothing}
+            ${this.qaRunId && !this.qaDataRegistered
+              ? this.renderRWP(this.qaRunId, { qa: true })
+              : nothing}
           </div>
         `,
       );
@@ -1037,9 +1031,9 @@ export class ArchivedItemQA extends BtrixElement {
     `;
     return html`
       <div
-        class="${
-          this.tab === "replay" ? "rounded-t-lg" : "rounded-lg mb-3"
-        } flex h-12 items-center gap-2 border bg-neutral-50 p-2 text-base"
+        class="${this.tab === "replay"
+          ? "rounded-t-lg"
+          : "rounded-lg mb-3"} flex h-12 items-center gap-2 border bg-neutral-50 p-2 text-base"
       >
         ${buttons}
         <div
