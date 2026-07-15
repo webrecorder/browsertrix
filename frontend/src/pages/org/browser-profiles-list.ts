@@ -287,18 +287,19 @@ export class BrowserProfilesList extends BtrixElement {
       ${when(
         this.profilesTask.value,
         ({ items, total, page, pageSize }) => html`
-          ${total
-            ? html`
-                ${this.renderTable(items)}
-                ${when(
-                  total > pageSize,
-                  () => html`
-                    <footer class="mt-6 flex justify-center">
-                      <btrix-pagination
-                        page=${page}
-                        totalCount=${total}
-                        size=${pageSize}
-                        @page-change=${async (e: PageChangeEvent) => {
+          ${
+            total
+              ? html`
+                  ${this.renderTable(items)}
+                  ${when(
+                    total > pageSize,
+                    () => html`
+                      <footer class="mt-6 flex justify-center">
+                        <btrix-pagination
+                          page=${page}
+                          totalCount=${total}
+                          size=${pageSize}
+                          @page-change=${async (e: PageChangeEvent) => {
                           this.pagination = {
                             ...this.pagination,
                             page: e.detail.page,
@@ -309,12 +310,13 @@ export class BrowserProfilesList extends BtrixElement {
                           // TODO once deep-linking is implemented, scroll to top of pushstate
                           this.scrollIntoView({ behavior: "smooth" });
                         }}
-                      ></btrix-pagination>
-                    </footer>
-                  `,
-                )}
-              `
-            : this.renderEmpty()}
+                        ></btrix-pagination>
+                      </footer>
+                    `,
+                  )}
+                `
+              : this.renderEmpty()
+          }
         `,
       )}
       ${when(this.selectedProfile, this.renderDuplicateDialog)}
@@ -414,6 +416,7 @@ export class BrowserProfilesList extends BtrixElement {
         .searchOptions=${this.searchOptionsTask.value || []}
         .searchByValue=${this.filterBy.value["name"] || ""}
         placeholder=${msg("Search by name")}
+        size="small"
         @btrix-select=${(e: CustomEvent) => {
           const { key, value } = e.detail;
           this.filterBy.setValue({
@@ -503,18 +506,22 @@ export class BrowserProfilesList extends BtrixElement {
         ${options}
       </sl-select>
       <sl-tooltip
-        content=${this.orderBy.value.direction === "asc"
-          ? msg("Sort in descending order")
-          : msg("Sort in ascending order")}
+        content=${
+          this.orderBy.value.direction === "asc"
+            ? msg("Sort in descending order")
+            : msg("Sort in ascending order")
+        }
       >
         <sl-icon-button
-          name=${this.orderBy.value.direction === "asc"
-            ? "sort-up-alt"
-            : "sort-down"}
+          name=${
+            this.orderBy.value.direction === "asc" ? "sort-up-alt" : "sort-down"
+          }
           class="text-base"
-          label=${this.orderBy.value.direction === "asc"
-            ? msg("Sort Descending")
-            : msg("Sort Ascending")}
+          label=${
+            this.orderBy.value.direction === "asc"
+              ? msg("Sort Descending")
+              : msg("Sort Ascending")
+          }
           @click=${() => {
             this.orderBy.setValue({
               ...this.orderBy.value,
@@ -576,16 +583,17 @@ export class BrowserProfilesList extends BtrixElement {
           <sl-tooltip content=${data.inUse ? msg("In Use") : msg("Not in Use")}>
             <sl-icon
               name=${data.inUse ? "check-circle" : "dash-circle"}
-              class="${data.inUse
-                ? "text-primary"
-                : "text-neutral-400"} text-base"
+              class="${
+                data.inUse ? "text-primary" : "text-neutral-400"
+              } text-base"
             ></sl-icon>
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell rowClickTarget="a">
           <a
-            href="${this.navigate
-              .orgBasePath}/${OrgTab.BrowserProfiles}/profile/${data.id}"
+            href="${
+              this.navigate.orgBasePath
+            }/${OrgTab.BrowserProfiles}/profile/${data.id}"
             @click=${this.navigate.link}
             class="truncate"
             >${data.name}</a
