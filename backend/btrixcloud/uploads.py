@@ -297,6 +297,10 @@ class UploadOps(BaseCrawlOps):
         try:
             upload = await self.get_upload(crawl_id, org)
 
+            if upload.deleted:
+                pp_logger.info("post_process_upload", state="upload_deleted_aborting")
+                return
+
             # Check each file for multi-WACZ content and split if needed.
             # This handles both single-file stream uploads and multi-file
             # formdata uploads where multiple files may be multi-WACZs.
@@ -318,6 +322,13 @@ class UploadOps(BaseCrawlOps):
                 sem = asyncio.Semaphore(MAX_CONCURRENT_SPLITS)
 
                 async def _check_and_maybe_split(file: CrawlFile) -> None:
+                    upload = await self.get_upload(crawl_id, org)
+                    if upload.deleted:
+                        pp_logger.info(
+                            "post_process_upload",
+                            state="upload_deleted_aborting",
+                        )
+                        return
                     name = os.path.basename(file.filename)
                     resource = resources_by_name.get(name)
                     if not resource:
@@ -373,7 +384,7 @@ class UploadOps(BaseCrawlOps):
 
             pp_logger.debug("post_process_upload", state="set_state_complete")
             await self.crawls.find_one_and_update(
-                {"_id": crawl_id}, {"$set": {"state": "complete"}}, upsert=True
+                {"_id": crawl_id}, {"$set": {"state": "complete"}}
             )
 
             pp_logger.debug("post_process_upload", state="replicate_crawl_files")
@@ -398,7 +409,7 @@ class UploadOps(BaseCrawlOps):
         except Exception:
             pp_logger.exception("post_process_upload", state="failed")
             await self.crawls.find_one_and_update(
-                {"_id": crawl_id}, {"$set": {"state": "failed"}}, upsert=True
+                {"_id": crawl_id}, {"$set": {"state": "failed"}}
             )
             raise
 
@@ -534,8 +545,8 @@ class UploadOps(BaseCrawlOps):
             # $filter targets a different filename.
             size_diff = sum(f.size for f in new_upload_files) - original_file.size
             child_file_dicts = [f.model_dump() for f in new_upload_files]
-            await self.crawls.find_one_and_update(
-                {"_id": crawl_id},
+            result = await self.crawls.find_one_and_update(
+                {"_id": crawl_id, "deleted": {"$ne": True}},
                 [
                     # Stage 1: replace the original file with child WACZ files.
                     {
@@ -576,6 +587,12 @@ class UploadOps(BaseCrawlOps):
                     },
                 ],
             )
+
+            if result is None:
+                cwf_logger.warning("crawl_not_found_or_deleted")
+                for crawl_file in new_upload_files:
+                    await self.storage_ops.delete_file_object(org, crawl_file)
+                return
 
             # Adjust org bytes stored for the size difference
             if size_diff != 0:
