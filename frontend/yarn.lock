@@ -4822,17 +4822,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@web/dev-server-import-maps@npm:^0.2.1":
-  version: 0.2.1
-  resolution: "@web/dev-server-import-maps@npm:0.2.1"
+"@web/dev-server-import-maps@npm:^0.3.0":
+  version: 0.3.0
+  resolution: "@web/dev-server-import-maps@npm:0.3.0"
   dependencies:
     "@import-maps/resolve": "npm:^1.0.1"
     "@types/parse5": "npm:^6.0.1"
-    "@web/dev-server-core": "npm:^0.7.2"
-    "@web/parse5-utils": "npm:^2.1.0"
+    "@web/dev-server-core": "npm:^1.0.0"
+    "@web/parse5-utils": "npm:^3.0.0"
     parse5: "npm:^6.0.1"
-    picomatch: "npm:^2.2.2"
-  checksum: 10c0/77bd066ef7e74f741ec8989b6e4bd5c51e709d57e7d0faaa294a18caea65349a942d7c55cc66175c2c018809141e569f85df25701668dae41ce2a730c8329b73
+    picomatch: "npm:^2.3.2"
+  checksum: 10c0/74c03f90213d22ffbdc2558ccd1dcb2064e647aca13288d607494a419ce9f258aee62d8ef2ad9f41978339cf83d34828e9da48e509d8aba6385bc09d59a99d25
   languageName: node
   linkType: hard
 
@@ -4882,6 +4882,16 @@ __metadata:
     "@types/parse5": "npm:^6.0.1"
     parse5: "npm:^6.0.1"
   checksum: 10c0/9eedec69b38efd0d03640d55584e1ccc24de7818db077bd01420995014aa0bf994bd20616e4b728bc123eaca0c1572b629b29403da4c1a90c71dc91bada58667
+  languageName: node
+  linkType: hard
+
+"@web/parse5-utils@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@web/parse5-utils@npm:3.0.0"
+  dependencies:
+    "@types/parse5": "npm:^6.0.1"
+    parse5: "npm:^6.0.1"
+  checksum: 10c0/a68df5e163f7d2d027f75a01b8458422fa6f0f64f97f5eb9e7909630e8aa892a1fd98449531ab0cd3faa905b333c3864314f8990c66aa82dcb5ee928f825103a
   languageName: node
   linkType: hard
 
@@ -6352,7 +6362,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": "npm:7.16.1"
     "@typescript-eslint/parser": "npm:7.16.1"
     "@web/dev-server-esbuild": "npm:^1.0.5"
-    "@web/dev-server-import-maps": "npm:^0.2.1"
+    "@web/dev-server-import-maps": "npm:^0.3.0"
     "@web/dev-server-rollup": "npm:^0.6.4"
     "@web/test-runner": "npm:^0.20.2"
     "@web/test-runner-playwright": "npm:^0.11.1"
@@ -6401,7 +6411,7 @@ __metadata:
     lodash: "npm:^4.18.1"
     micromark: "npm:^4.0.2"
     micromark-extension-gfm-strikethrough: "npm:^2.1.0"
-    msw: "npm:^2.14.6"
+    msw: "npm:^2.15.0"
     msw-storybook-addon: "npm:^2.0.7"
     nanoid: "npm:^5.1.16"
     parse-ms: "npm:^4.0.0"
@@ -12290,9 +12300,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"msw@npm:^2.14.6":
-  version: 2.14.6
-  resolution: "msw@npm:2.14.6"
+"msw@npm:^2.15.0":
+  version: 2.15.0
+  resolution: "msw@npm:2.15.0"
   dependencies:
     "@inquirer/confirm": "npm:^6.0.11"
     "@mswjs/interceptors": "npm:^0.41.3"
@@ -12319,7 +12329,7 @@ __metadata:
       optional: true
   bin:
     msw: cli/index.js
-  checksum: 10c0/f6e6ca17c8e7fe4618381ce6352178a54d3b4c7abc23326db5937edf8bb91fcc259b2b6445983d30e0296ad262c01f789f2701adc166d4628d420eeafdcfdcf0
+  checksum: 10c0/0d3dbf1b062a82b3711ff195e10ffd9e6f2a5e337b4a0f08cabdb8d0b96c5c0c057f1cdcb67da14c356612554ea463fb5ad8f9c618b5ac009fc4eee43a83c94e
   languageName: node
   linkType: hard
 
@@ -13168,6 +13178,13 @@ __metadata:
   version: 2.3.1
   resolution: "picomatch@npm:2.3.1"
   checksum: 10c0/26c02b8d06f03206fc2ab8d16f19960f2ff9e81a658f831ecb656d8f17d9edc799e8364b1f4a7873e89d9702dff96204be0fa26fe4181f6843f040f819dac4be
+  languageName: node
+  linkType: hard
+
+"picomatch@npm:^2.3.2":
+  version: 2.3.2
+  resolution: "picomatch@npm:2.3.2"
+  checksum: 10c0/a554d1709e59be97d1acb9eaedbbc700a5c03dbd4579807baed95100b00420bc729335440ef15004ae2378984e2487a7c1cebd743cfdb72b6fa9ab69223c0d61
   languageName: node
   linkType: hard
 
