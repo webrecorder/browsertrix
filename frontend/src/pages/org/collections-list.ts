@@ -39,12 +39,7 @@ import { tw } from "@/utils/tailwind";
 type Collections = APIPaginatedList<Collection>;
 type SearchFields = "name";
 type SortField =
-  | "modified"
-  | "dateLatest"
-  | "name"
-  | "totalSize"
-  | "pageCount"
-  | "crawlCount";
+  "modified" | "dateLatest" | "name" | "totalSize" | "pageCount" | "crawlCount";
 const INITIAL_PAGE_SIZE = 20;
 const sortableFields: Record<
   SortField,
@@ -174,55 +169,62 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         })}
       </div>
 
-      ${when(this.fetchErrorStatusCode, this.renderFetchError, () =>
-        this.collections
-          ? html`
-              <div
-                class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4"
-              >
-                ${this.renderControls()}
-              </div>
-              <div class="lg:mx-2">
-                <btrix-overflow-scroll class="-mx-3 pb-1 part-[content]:px-3">
-                  ${guard(
-                    [
-                      this.collections,
-                      this.listView,
-                      this.collectionRefreshing,
-                    ],
-                    this.listView === ListView.List
-                      ? this.renderList
-                      : this.renderGrid,
-                  )}
-                </btrix-overflow-scroll>
-              </div>
-              ${when(this.listView === ListView.List, () =>
-                when(
-                  (this.collections &&
-                    this.collections.total > this.collections.pageSize) ||
-                    (this.collections && this.collections.page > 1),
-                  () => html`
-                    <footer class="mt-6 flex justify-center">
-                      <btrix-pagination
-                        page=${this.collections!.page}
-                        totalCount=${this.collections!.total}
-                        size=${this.collections!.pageSize}
-                        @page-change=${async (e: PageChangeEvent) => {
-                          await this.fetchCollections({
-                            page: e.detail.page,
-                          });
+      ${when(
+        this.fetchErrorStatusCode,
+        this.renderFetchError,
+        () =>
+          html`<div
+              class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4"
+            >
+              ${this.renderControls()}
+            </div>
+            ${
+              this.collections
+                ? html`
+                    <div class="lg:mx-2">
+                      <btrix-overflow-scroll
+                        class="-mx-3 pb-1 part-[content]:px-3"
+                      >
+                        ${guard(
+                          [
+                            this.collections,
+                            this.listView,
+                            this.collectionRefreshing,
+                          ],
+                          this.listView === ListView.List
+                            ? this.renderList
+                            : this.renderGrid,
+                        )}
+                      </btrix-overflow-scroll>
+                    </div>
+                    ${when(this.listView === ListView.List, () =>
+                      when(
+                        (this.collections &&
+                          this.collections.total > this.collections.pageSize) ||
+                          (this.collections && this.collections.page > 1),
+                        () => html`
+                          <footer class="mt-6 flex justify-center">
+                            <btrix-pagination
+                              page=${this.collections!.page}
+                              totalCount=${this.collections!.total}
+                              size=${this.collections!.pageSize}
+                              @page-change=${async (e: PageChangeEvent) => {
+                                  await this.fetchCollections({
+                                    page: e.detail.page,
+                                  });
 
-                          // Scroll to top of list
-                          // TODO once deep-linking is implemented, scroll to top of pushstate
-                          this.scrollIntoView({ behavior: "smooth" });
-                        }}
-                      ></btrix-pagination>
-                    </footer>
-                  `,
-                ),
-              )}
-            `
-          : this.renderLoading(),
+                                  // Scroll to top of list
+                                  // TODO once deep-linking is implemented, scroll to top of pushstate
+                                  this.scrollIntoView({ behavior: "smooth" });
+                                }}
+                            ></btrix-pagination>
+                          </footer>
+                        `,
+                      ),
+                    )}
+                  `
+                : this.renderLoading()
+            }`,
       )}
 
       <btrix-dialog
@@ -405,9 +407,9 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
             const { name: _, ...otherFilters } = this.filterBy;
             this.filterBy = otherFilters;
           }}
-          @sl-input=${this.onSearchInput as UnderlyingFunction<
-            typeof this.onSearchInput
-          >}
+          @sl-input=${
+            this.onSearchInput as UnderlyingFunction<typeof this.onSearchInput>
+          }
         >
           <sl-icon
             name="search"
@@ -468,27 +470,29 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         this.collectionRefreshing = null;
       }}
     >
-      ${this.collections &&
-      this.collections.total > this.collections.items.length
-        ? html`
-            <btrix-pagination
-              page=${this.collections.page}
-              totalCount=${this.collections.total}
-              size=${this.collections.pageSize}
-              @page-change=${async (e: PageChangeEvent) => {
-                await this.fetchCollections({
-                  page: e.detail.page,
-                });
+      ${
+        this.collections &&
+        this.collections.total > this.collections.items.length
+          ? html`
+              <btrix-pagination
+                page=${this.collections.page}
+                totalCount=${this.collections.total}
+                size=${this.collections.pageSize}
+                @page-change=${async (e: PageChangeEvent) => {
+                  await this.fetchCollections({
+                    page: e.detail.page,
+                  });
 
-                // Scroll to top of list
-                // TODO once deep-linking is implemented, scroll to top of pushstate
-                this.scrollIntoView({ behavior: "smooth" });
-              }}
-              slot="pagination"
-            >
-            </btrix-pagination>
-          `
-        : nothing}
+                  // Scroll to top of list
+                  // TODO once deep-linking is implemented, scroll to top of pushstate
+                  this.scrollIntoView({ behavior: "smooth" });
+                }}
+                slot="pagination"
+              >
+              </btrix-pagination>
+            `
+          : nothing
+      }
     </btrix-collections-grid>`;
   };
 
@@ -583,15 +587,17 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
               CollectionAccess.Private,
               () => html`
                 <sl-tooltip
-                  content=${SelectCollectionAccess.Options[
-                    CollectionAccess.Private
-                  ].label}
+                  content=${
+                    SelectCollectionAccess.Options[CollectionAccess.Private]
+                      .label
+                  }
                 >
                   <sl-icon
                     class="inline-block size-4 align-middle text-base text-neutral-600"
-                    name=${SelectCollectionAccess.Options[
-                      CollectionAccess.Private
-                    ].icon}
+                    name=${
+                      SelectCollectionAccess.Options[CollectionAccess.Private]
+                        .icon
+                    }
                   ></sl-icon>
                 </sl-tooltip>
               `,
@@ -600,15 +606,17 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
               CollectionAccess.Unlisted,
               () => html`
                 <sl-tooltip
-                  content=${SelectCollectionAccess.Options[
-                    CollectionAccess.Unlisted
-                  ].label}
+                  content=${
+                    SelectCollectionAccess.Options[CollectionAccess.Unlisted]
+                      .label
+                  }
                 >
                   <sl-icon
                     class="inline-block align-middle text-base text-neutral-600"
-                    name=${SelectCollectionAccess.Options[
-                      CollectionAccess.Unlisted
-                    ].icon}
+                    name=${
+                      SelectCollectionAccess.Options[CollectionAccess.Unlisted]
+                        .icon
+                    }
                   ></sl-icon>
                 </sl-tooltip>
               `,
@@ -617,15 +625,17 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
               CollectionAccess.Public,
               () => html`
                 <sl-tooltip
-                  content=${SelectCollectionAccess.Options[
-                    CollectionAccess.Public
-                  ].label}
+                  content=${
+                    SelectCollectionAccess.Options[CollectionAccess.Public]
+                      .label
+                  }
                 >
                   <sl-icon
                     class="inline-block align-middle text-base text-success-600"
-                    name=${SelectCollectionAccess.Options[
-                      CollectionAccess.Public
-                    ].icon}
+                    name=${
+                      SelectCollectionAccess.Options[CollectionAccess.Public]
+                        .icon
+                    }
                   ></sl-icon>
                 </sl-tooltip>
               `,
@@ -639,52 +649,61 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
             @click=${this.navigate.link}
           >
             <div class="truncate">${col.name}</div>
-            ${(col.dateEarliest && col.dateLatest) || col.indexStats
-              ? html`
-                  <div class="mt-1 flex gap-3">
-                    ${col.dateEarliest && col.dateLatest
-                      ? detail(html`
-                          <sl-icon
-                            name="calendar4-range"
-                            label=${msg("Date range")}
-                          ></sl-icon>
-                          ${monthYearDateRange(
-                            col.dateEarliest,
-                            col.dateLatest,
-                          )}
-                        `)
-                      : nothing}
-                    ${when(
-                      this.featureFlags.has("dedupeEnabled") && col.indexStats,
-                      () =>
-                        detail(html`
-                          <sl-icon
-                            name="stack"
-                            label=${msg("Deduplication")}
-                          ></sl-icon>
-                          ${msg("Dedupe source")}
-                        `),
-                    )}
-                  </div>
-                `
-              : nothing}
+            ${
+              (col.dateEarliest && col.dateLatest) || col.indexStats
+                ? html`
+                    <div class="mt-1 flex gap-3">
+                      ${
+                        col.dateEarliest && col.dateLatest
+                          ? detail(html`
+                              <sl-icon
+                                name="calendar4-range"
+                                label=${msg("Date range")}
+                              ></sl-icon>
+                              ${monthYearDateRange(
+                                col.dateEarliest,
+                                col.dateLatest,
+                              )}
+                            `)
+                          : nothing
+                      }
+                      ${when(
+                        this.featureFlags.has("dedupeEnabled") &&
+                          col.indexStats,
+                        () =>
+                          detail(html`
+                            <sl-icon
+                              name="stack"
+                              label=${msg("Deduplication")}
+                            ></sl-icon>
+                            ${msg("Dedupe source")}
+                          `),
+                      )}
+                    </div>
+                  `
+                : nothing
+            }
           </a>
         </btrix-table-cell>
         <btrix-table-cell>
-          ${col.crawlCount
-            ? html`${this.localize.number(col.crawlCount, {
-                notation: "compact",
-              })}
-              ${pluralOf("items", col.crawlCount)}`
-            : noData}
+          ${
+            col.crawlCount
+              ? html`${this.localize.number(col.crawlCount, {
+                  notation: "compact",
+                })}
+                ${pluralOf("items", col.crawlCount)}`
+              : noData
+          }
         </btrix-table-cell>
         <btrix-table-cell>
-          ${col.crawlCount
-            ? html`${this.localize.number(col.pageCount, {
-                notation: "compact",
-              })}
-              ${pluralOf("pages", col.pageCount)}`
-            : noData}
+          ${
+            col.crawlCount
+              ? html`${this.localize.number(col.pageCount, {
+                  notation: "compact",
+                })}
+                ${pluralOf("pages", col.pageCount)}`
+              : noData
+          }
         </btrix-table-cell>
         <btrix-table-cell>
           ${col.crawlCount ? this.localize.bytes(col.totalSize || 0) : noData}
@@ -725,24 +744,28 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
               </sl-menu-item>
             `,
           )}
-          ${col.access === CollectionAccess.Public ||
-          col.access === CollectionAccess.Unlisted
-            ? html`
-                <sl-menu-item
-                  @click=${() => {
-                    ClipboardController.copyToClipboard(this.getShareLink(col));
-                    this.notify.toast({
-                      message: msg("Link copied"),
-                      variant: "success",
-                      icon: "check2-circle",
-                    });
-                  }}
-                >
-                  <sl-icon name="copy" slot="prefix"></sl-icon>
-                  ${msg("Copy Share Link")}
-                </sl-menu-item>
-              `
-            : nothing}
+          ${
+            col.access === CollectionAccess.Public ||
+            col.access === CollectionAccess.Unlisted
+              ? html`
+                  <sl-menu-item
+                    @click=${() => {
+                      ClipboardController.copyToClipboard(
+                        this.getShareLink(col),
+                      );
+                      this.notify.toast({
+                        message: msg("Link copied"),
+                        variant: "success",
+                        icon: "check2-circle",
+                      });
+                    }}
+                  >
+                    <sl-icon name="copy" slot="prefix"></sl-icon>
+                    ${msg("Copy Share Link")}
+                  </sl-menu-item>
+                `
+              : nothing
+          }
           <sl-divider></sl-divider>
           <btrix-menu-item-link
             href=${`/api/orgs/${this.orgId}/collections/${col.id}/download?auth_bearer=${authToken}`}
