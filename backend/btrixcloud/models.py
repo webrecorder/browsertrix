@@ -1217,6 +1217,7 @@ class UploadedCrawl(BaseCrawl):
 
     type: Literal["upload"] = "upload"
     image: None = None
+    deleted: bool = False
 
 
 # ============================================================================
