@@ -255,7 +255,7 @@ wheels = [
 
 [[package]]
 name = "backend"
-version = "1.24.0b0"
+version = "1.24.0b1"
 source = { virtual = "." }
 dependencies = [
     { name = "aiobotocore" },
