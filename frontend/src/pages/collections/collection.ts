@@ -56,7 +56,7 @@ export class Collection extends BtrixElement {
     { icon: { name: string; library: string }; text: string }
   > = {
     [PublicTab.Replay]: {
-      icon: { name: "replaywebpage", library: "app" },
+      icon: { name: "collection-play", library: "default" },
       text: msg("Browse Collection"),
     },
     [PublicTab.About]: {

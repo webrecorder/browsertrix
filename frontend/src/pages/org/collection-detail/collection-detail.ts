@@ -155,7 +155,7 @@ export class CollectionDetail extends BtrixElement {
     { icon: { name: string; library: string }; text: string; beta?: boolean }
   > = {
     [Tab.Replay]: {
-      icon: { name: "replaywebpage", library: "app" },
+      icon: { name: "collection-play", library: "default" },
       text: msg("Browse Collection"),
     },
     [Tab.Items]: {
