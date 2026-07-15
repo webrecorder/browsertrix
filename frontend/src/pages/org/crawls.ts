@@ -404,18 +404,16 @@ export class OrgCrawls extends BtrixElement {
     pageSize,
   }: APIPaginatedList<Crawl>) => html`
     <section class="lg:mx-2">
-      ${
-        items.length
-          ? html`
-              <btrix-crawl-list>
-                <btrix-table-header-cell slot="actionCell" class="p-0">
-                  <span class="sr-only">${msg("Row actions")}</span>
-                </btrix-table-header-cell>
-                ${repeat(items, ({ id }) => id, this.renderArchivedItem)}
-              </btrix-crawl-list>
-            `
-          : this.renderEmptyState()
-      }
+      ${items.length
+        ? html`
+            <btrix-crawl-list>
+              <btrix-table-header-cell slot="actionCell" class="p-0">
+                <span class="sr-only">${msg("Row actions")}</span>
+              </btrix-table-header-cell>
+              ${repeat(items, ({ id }) => id, this.renderArchivedItem)}
+            </btrix-crawl-list>
+          `
+        : this.renderEmptyState()}
     </section>
     ${when(
       total > pageSize,
@@ -440,21 +438,19 @@ export class OrgCrawls extends BtrixElement {
         </footer>
       `,
     )}
-    ${
-      this.crawlToEdit
-        ? html`
-            <btrix-item-metadata-editor
-              .item=${this.crawlToEdit}
-              ?open=${this.isEditingItem}
-              @request-close=${() => (this.isEditingItem = false)}
-              @updated=${() => {
-                /* TODO fetch current page or single crawl */
-                void this.crawlsTask.run();
-              }}
-            ></btrix-item-metadata-editor>
-          `
-        : nothing
-    }
+    ${this.crawlToEdit
+      ? html`
+          <btrix-item-metadata-editor
+            .item=${this.crawlToEdit}
+            ?open=${this.isEditingItem}
+            @request-close=${() => (this.isEditingItem = false)}
+            @updated=${() => {
+              /* TODO fetch current page or single crawl */
+              void this.crawlsTask.run();
+            }}
+          ></btrix-item-metadata-editor>
+        `
+      : nothing}
 
     <btrix-delete-item-dialog
       .item=${this.crawlToDelete || undefined}
@@ -467,14 +463,12 @@ export class OrgCrawls extends BtrixElement {
         }
       }}
     >
-      ${
-        this.crawlToDelete?.finished
-          ? html`<span slot="name"
-              >${renderName(this.crawlToDelete)}
-              (${this.localize.date(this.crawlToDelete.finished)})</span
-            >`
-          : nothing
-      }
+      ${this.crawlToDelete?.finished
+        ? html`<span slot="name"
+            >${renderName(this.crawlToDelete)}
+            (${this.localize.date(this.crawlToDelete.finished)})</span
+          >`
+        : nothing}
     </btrix-delete-item-dialog>
   `;
 
@@ -516,19 +510,17 @@ export class OrgCrawls extends BtrixElement {
             }}
           ></btrix-tag-filter>
 
-          ${
-            this.userInfo?.id
-              ? html`<btrix-filter-chip
-                  ?checked=${this.filterByCurrentUser.value}
-                  @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
-                    const { checked } = e.target as FilterChip;
-                    this.filterByCurrentUser.setValue(Boolean(checked));
-                  }}
-                >
-                  ${msg("Mine")}
-                </btrix-filter-chip> `
-              : ""
-          }
+          ${this.userInfo?.id
+            ? html`<btrix-filter-chip
+                ?checked=${this.filterByCurrentUser.value}
+                @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
+                  const { checked } = e.target as FilterChip;
+                  this.filterByCurrentUser.setValue(Boolean(checked));
+                }}
+              >
+                ${msg("Mine")}
+              </btrix-filter-chip> `
+            : ""}
           ${when(
             this.hasFiltersSet,
             () => html`
@@ -574,22 +566,18 @@ export class OrgCrawls extends BtrixElement {
         ${options}
       </sl-select>
       <sl-tooltip
-        content=${
-          this.orderBy.value.direction === "asc"
-            ? msg("Sort in descending order")
-            : msg("Sort in ascending order")
-        }
+        content=${this.orderBy.value.direction === "asc"
+          ? msg("Sort in descending order")
+          : msg("Sort in ascending order")}
       >
         <sl-icon-button
-          name=${
-            this.orderBy.value.direction === "asc" ? "sort-up-alt" : "sort-down"
-          }
+          name=${this.orderBy.value.direction === "asc"
+            ? "sort-up-alt"
+            : "sort-down"}
           class="text-base"
-          label=${
-            this.orderBy.value.direction === "asc"
-              ? msg("Sort Descending")
-              : msg("Sort Ascending")
-          }
+          label=${this.orderBy.value.direction === "asc"
+            ? msg("Sort Descending")
+            : msg("Sort Ascending")}
           @click=${() => {
             this.orderBy.setValue({
               ...this.orderBy.value,
@@ -640,11 +628,10 @@ export class OrgCrawls extends BtrixElement {
 
   private readonly renderArchivedItem = (crawl: Crawl) => html`
     <btrix-crawl-list-item
-      href="${this.navigate.orgBasePath}/${OrgTab.Workflows}/${crawl.cid}/${
-        isActive(crawl)
-          ? WorkflowTab.LatestCrawl
-          : `${WorkflowTab.Crawls}/${crawl.id}`
-      }"
+      href="${this.navigate
+        .orgBasePath}/${OrgTab.Workflows}/${crawl.cid}/${isActive(crawl)
+        ? WorkflowTab.LatestCrawl
+        : `${WorkflowTab.Crawls}/${crawl.id}`}"
       .crawl=${crawl}
     >
       <sl-menu slot="menu"> ${this.renderMenuItems(crawl)} </sl-menu>
@@ -682,13 +669,11 @@ export class OrgCrawls extends BtrixElement {
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Item")}
-            ${
-              crawl.fileSize
-                ? html` <btrix-badge slot="suffix"
-                    >${this.localize.bytes(crawl.fileSize)}</btrix-badge
-                  >`
-                : nothing
-            }
+            ${crawl.fileSize
+              ? html` <btrix-badge slot="suffix"
+                  >${this.localize.bytes(crawl.fileSize)}</btrix-badge
+                >`
+              : nothing}
           </btrix-menu-item-link>
           <sl-divider></sl-divider>
         `,

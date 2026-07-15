@@ -511,24 +511,18 @@ export class WorkflowsList extends BtrixElement {
             )}
           </sl-select>
           <sl-tooltip
-            content=${
-              this.orderBy.value.direction === "asc"
-                ? msg("Sort in descending order")
-                : msg("Sort in ascending order")
-            }
+            content=${this.orderBy.value.direction === "asc"
+              ? msg("Sort in descending order")
+              : msg("Sort in ascending order")}
           >
             <sl-icon-button
-              name=${
-                this.orderBy.value.direction === "asc"
-                  ? "sort-up-alt"
-                  : "sort-down"
-              }
+              name=${this.orderBy.value.direction === "asc"
+                ? "sort-up-alt"
+                : "sort-down"}
               class="text-base"
-              label=${
-                this.orderBy.value.direction === "asc"
-                  ? msg("Sort Descending")
-                  : msg("Sort Ascending")
-              }
+              label=${this.orderBy.value.direction === "asc"
+                ? msg("Sort Descending")
+                : msg("Sort Ascending")}
               @click=${() => {
                 this.orderBy.setValue({
                   ...this.orderBy.value,
@@ -960,9 +954,8 @@ export class WorkflowsList extends BtrixElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="${
-                this.navigate.orgBasePath
-              }/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}"
+              href="${this.navigate
+                .orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}"
               @click=${this.navigate.link.bind(this)}
               >Watch crawl</a
             >`,

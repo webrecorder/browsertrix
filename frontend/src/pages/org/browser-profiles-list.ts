@@ -287,36 +287,34 @@ export class BrowserProfilesList extends BtrixElement {
       ${when(
         this.profilesTask.value,
         ({ items, total, page, pageSize }) => html`
-          ${
-            total
-              ? html`
-                  ${this.renderTable(items)}
-                  ${when(
-                    total > pageSize,
-                    () => html`
-                      <footer class="mt-6 flex justify-center">
-                        <btrix-pagination
-                          page=${page}
-                          totalCount=${total}
-                          size=${pageSize}
-                          @page-change=${async (e: PageChangeEvent) => {
-                            this.pagination = {
-                              ...this.pagination,
-                              page: e.detail.page,
-                            };
-                            await this.updateComplete;
+          ${total
+            ? html`
+                ${this.renderTable(items)}
+                ${when(
+                  total > pageSize,
+                  () => html`
+                    <footer class="mt-6 flex justify-center">
+                      <btrix-pagination
+                        page=${page}
+                        totalCount=${total}
+                        size=${pageSize}
+                        @page-change=${async (e: PageChangeEvent) => {
+                          this.pagination = {
+                            ...this.pagination,
+                            page: e.detail.page,
+                          };
+                          await this.updateComplete;
 
-                            // Scroll to top of list
-                            // TODO once deep-linking is implemented, scroll to top of pushstate
-                            this.scrollIntoView({ behavior: "smooth" });
-                          }}
-                        ></btrix-pagination>
-                      </footer>
-                    `,
-                  )}
-                `
-              : this.renderEmpty()
-          }
+                          // Scroll to top of list
+                          // TODO once deep-linking is implemented, scroll to top of pushstate
+                          this.scrollIntoView({ behavior: "smooth" });
+                        }}
+                      ></btrix-pagination>
+                    </footer>
+                  `,
+                )}
+              `
+            : this.renderEmpty()}
         `,
       )}
       ${when(this.selectedProfile, this.renderDuplicateDialog)}
@@ -506,22 +504,18 @@ export class BrowserProfilesList extends BtrixElement {
         ${options}
       </sl-select>
       <sl-tooltip
-        content=${
-          this.orderBy.value.direction === "asc"
-            ? msg("Sort in descending order")
-            : msg("Sort in ascending order")
-        }
+        content=${this.orderBy.value.direction === "asc"
+          ? msg("Sort in descending order")
+          : msg("Sort in ascending order")}
       >
         <sl-icon-button
-          name=${
-            this.orderBy.value.direction === "asc" ? "sort-up-alt" : "sort-down"
-          }
+          name=${this.orderBy.value.direction === "asc"
+            ? "sort-up-alt"
+            : "sort-down"}
           class="text-base"
-          label=${
-            this.orderBy.value.direction === "asc"
-              ? msg("Sort Descending")
-              : msg("Sort Ascending")
-          }
+          label=${this.orderBy.value.direction === "asc"
+            ? msg("Sort Descending")
+            : msg("Sort Ascending")}
           @click=${() => {
             this.orderBy.setValue({
               ...this.orderBy.value,
@@ -585,17 +579,16 @@ export class BrowserProfilesList extends BtrixElement {
           <sl-tooltip content=${data.inUse ? msg("In Use") : msg("Not in Use")}>
             <sl-icon
               name=${data.inUse ? "check-circle" : "dash-circle"}
-              class="${
-                data.inUse ? "text-primary" : "text-neutral-400"
-              } text-base"
+              class="${data.inUse
+                ? "text-primary"
+                : "text-neutral-400"} text-base"
             ></sl-icon>
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell rowClickTarget="a">
           <a
-            href="${
-              this.navigate.orgBasePath
-            }/${OrgTab.BrowserProfiles}/profile/${data.id}"
+            href="${this.navigate
+              .orgBasePath}/${OrgTab.BrowserProfiles}/profile/${data.id}"
             @click=${this.navigate.link}
             class="truncate"
             >${data.name}</a

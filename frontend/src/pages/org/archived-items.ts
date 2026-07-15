@@ -544,18 +544,16 @@ export class CrawlsList extends BtrixElement {
     pageSize,
   }: APIPaginatedList<ArchivedItem>) => html`
     <section class="lg:mx-2">
-      ${
-        items.length
-          ? html`
-              <btrix-archived-item-list .listType=${this.itemType}>
-                <btrix-table-header-cell slot="actionCell" class="p-0">
-                  <span class="sr-only">${msg("Row actions")}</span>
-                </btrix-table-header-cell>
-                ${repeat(items, ({ id }) => id, this.renderArchivedItem)}
-              </btrix-archived-item-list>
-            `
-          : this.renderEmptyState()
-      }
+      ${items.length
+        ? html`
+            <btrix-archived-item-list .listType=${this.itemType}>
+              <btrix-table-header-cell slot="actionCell" class="p-0">
+                <span class="sr-only">${msg("Row actions")}</span>
+              </btrix-table-header-cell>
+              ${repeat(items, ({ id }) => id, this.renderArchivedItem)}
+            </btrix-archived-item-list>
+          `
+        : this.renderEmptyState()}
     </section>
     ${when(
       total > pageSize,
@@ -580,22 +578,20 @@ export class CrawlsList extends BtrixElement {
         </footer>
       `,
     )}
-    ${
-      this.itemToEdit
-        ? html`
-            <btrix-item-metadata-editor
-              .item=${this.itemToEdit}
-              ?open=${this.isEditingItem}
-              @request-close=${() => (this.isEditingItem = false)}
-              @updated=${() => {
-                /* TODO fetch current page or single crawl */
-                void this.archivedItemsTask.run();
-                this.tagFilter?.refreshOrgTags();
-              }}
-            ></btrix-item-metadata-editor>
-          `
-        : nothing
-    }
+    ${this.itemToEdit
+      ? html`
+          <btrix-item-metadata-editor
+            .item=${this.itemToEdit}
+            ?open=${this.isEditingItem}
+            @request-close=${() => (this.isEditingItem = false)}
+            @updated=${() => {
+              /* TODO fetch current page or single crawl */
+              void this.archivedItemsTask.run();
+              this.tagFilter?.refreshOrgTags();
+            }}
+          ></btrix-item-metadata-editor>
+        `
+      : nothing}
 
     <btrix-delete-item-dialog
       .item=${this.itemToDelete || undefined}
@@ -608,14 +604,12 @@ export class CrawlsList extends BtrixElement {
         }
       }}
     >
-      ${
-        this.itemToDelete?.finished && isCrawl(this.itemToDelete)
-          ? html`<strong slot="name" class="font-semibold"
-              >${renderName(this.itemToDelete)}
-              (${this.localize.date(this.itemToDelete.finished)})</strong
-            >`
-          : nothing
-      }
+      ${this.itemToDelete?.finished && isCrawl(this.itemToDelete)
+        ? html`<strong slot="name" class="font-semibold"
+            >${renderName(this.itemToDelete)}
+            (${this.localize.date(this.itemToDelete.finished)})</strong
+          >`
+        : nothing}
     </btrix-delete-item-dialog>
   `;
 
@@ -648,13 +642,11 @@ export class CrawlsList extends BtrixElement {
           ></btrix-archived-item-state-filter>
 
           <btrix-tag-filter
-            tagType=${
-              this.itemType === "crawl"
-                ? "archived-item-crawl"
-                : this.itemType === "upload"
-                  ? "upload"
-                  : "archived-item"
-            }
+            tagType=${this.itemType === "crawl"
+              ? "archived-item-crawl"
+              : this.itemType === "upload"
+                ? "upload"
+                : "archived-item"}
             .tags=${this.filterByTags.value}
             @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
               this.filterByTags.setValue(e.detail.value?.tags || []);
@@ -672,19 +664,17 @@ export class CrawlsList extends BtrixElement {
             }}
           ></btrix-qa-review-filter>
 
-          ${
-            this.userInfo?.id
-              ? html`<btrix-filter-chip
-                  ?checked=${this.filterByCurrentUser.value}
-                  @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
-                    const { checked } = e.target as FilterChip;
-                    this.filterByCurrentUser.setValue(Boolean(checked));
-                  }}
-                >
-                  ${msg("Mine")}
-                </btrix-filter-chip> `
-              : ""
-          }
+          ${this.userInfo?.id
+            ? html`<btrix-filter-chip
+                ?checked=${this.filterByCurrentUser.value}
+                @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
+                  const { checked } = e.target as FilterChip;
+                  this.filterByCurrentUser.setValue(Boolean(checked));
+                }}
+              >
+                ${msg("Mine")}
+              </btrix-filter-chip> `
+            : ""}
           ${when(
             this.hasFiltersSet,
             () => html`
@@ -730,22 +720,18 @@ export class CrawlsList extends BtrixElement {
         ${options}
       </sl-select>
       <sl-tooltip
-        content=${
-          this.orderBy.value.direction === "asc"
-            ? msg("Sort in descending order")
-            : msg("Sort in ascending order")
-        }
+        content=${this.orderBy.value.direction === "asc"
+          ? msg("Sort in descending order")
+          : msg("Sort in ascending order")}
       >
         <sl-icon-button
-          name=${
-            this.orderBy.value.direction === "asc" ? "sort-up-alt" : "sort-down"
-          }
+          name=${this.orderBy.value.direction === "asc"
+            ? "sort-up-alt"
+            : "sort-down"}
           class="text-base"
-          label=${
-            this.orderBy.value.direction === "asc"
-              ? msg("Sort Descending")
-              : msg("Sort Ascending")
-          }
+          label=${this.orderBy.value.direction === "asc"
+            ? msg("Sort Descending")
+            : msg("Sort Ascending")}
           @click=${() => {
             this.orderBy.setValue({
               ...this.orderBy.value,
@@ -770,13 +756,11 @@ export class CrawlsList extends BtrixElement {
           this.selectedSearchFilterKey &&
             this.filterBy.value[this.selectedSearchFilterKey],
         )}
-        placeholder=${
-          this.itemType === "upload"
-            ? msg("Search all uploads by name or ID")
-            : this.itemType === "crawl"
-              ? msg("Search all crawls by name, crawl start URL, or ID")
-              : msg("Search all items by name, crawl start URL, or ID")
-        }
+        placeholder=${this.itemType === "upload"
+          ? msg("Search all uploads by name or ID")
+          : this.itemType === "crawl"
+            ? msg("Search all crawls by name, crawl start URL, or ID")
+            : msg("Search all items by name, crawl start URL, or ID")}
         @btrix-select=${(e: BtrixSearchComboboxSelectEvent) => {
           const { key, value } = e.detail.item;
 
@@ -845,38 +829,34 @@ export class CrawlsList extends BtrixElement {
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Item")}
-            ${
-              item.fileSize
-                ? html` <btrix-badge slot="suffix"
-                    >${this.localize.bytes(item.fileSize)}</btrix-badge
-                  >`
-                : nothing
-            }
+            ${item.fileSize
+              ? html` <btrix-badge slot="suffix"
+                  >${this.localize.bytes(item.fileSize)}</btrix-badge
+                >`
+              : nothing}
           </btrix-menu-item-link>
           <sl-divider></sl-divider>
         `,
       )}
-      ${
-        item.type === "crawl"
-          ? html`
-              <sl-menu-item
-                @click=${() =>
-                  this.navigate.to(
-                    `${this.navigate.orgBasePath}/workflows/${item.cid}`,
-                  )}
-              >
-                <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
-                ${msg("Go to Workflow")}
-              </sl-menu-item>
-              <sl-menu-item
-                @click=${() => ClipboardController.copyToClipboard(item.cid)}
-              >
-                <sl-icon name="copy" slot="prefix"></sl-icon>
-                ${msg("Copy Workflow ID")}
-              </sl-menu-item>
-            `
-          : nothing
-      }
+      ${item.type === "crawl"
+        ? html`
+            <sl-menu-item
+              @click=${() =>
+                this.navigate.to(
+                  `${this.navigate.orgBasePath}/workflows/${item.cid}`,
+                )}
+            >
+              <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
+              ${msg("Go to Workflow")}
+            </sl-menu-item>
+            <sl-menu-item
+              @click=${() => ClipboardController.copyToClipboard(item.cid)}
+            >
+              <sl-icon name="copy" slot="prefix"></sl-icon>
+              ${msg("Copy Workflow ID")}
+            </sl-menu-item>
+          `
+        : nothing}
 
       <sl-menu-item
         @click=${() =>
