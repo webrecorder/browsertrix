@@ -404,6 +404,10 @@ class BaseCrawlOps:
         size = 0
 
         for crawl_id in delete_list.crawl_ids:
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id, "oid": org.id, "type": type_},
+                {"$set": {"deleted": True}},
+            )
             crawl = await self.get_base_crawl(crawl_id, org)
             if crawl.type != type_:
                 continue
