@@ -543,7 +543,7 @@ export class CrawlsList extends BtrixElement {
     total,
     pageSize,
   }: APIPaginatedList<ArchivedItem>) => html`
-    <section class="mx-2">
+    <section class="lg:mx-2">
       ${
         items.length
           ? html`

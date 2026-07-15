@@ -535,7 +535,9 @@ export class BrowserProfilesList extends BtrixElement {
   }
 
   private readonly renderTable = (profiles: Profile[]) => {
-    return html`<btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
+    return html`<btrix-overflow-scroll
+      class="-mx-3 part-[content]:px-3 lg:part-[content]:px-5"
+    >
       <btrix-table
         style="--btrix-table-grid-template-columns: ${columnsCss}"
         class="whitespace-nowrap [--btrix-table-cell-gap:var(--sl-spacing-x-small)] [--btrix-table-cell-padding-x:var(--sl-spacing-small)]"

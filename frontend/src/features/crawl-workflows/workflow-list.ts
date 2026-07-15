@@ -33,11 +33,7 @@ import { srOnly, truncate } from "@/utils/css";
 import { pluralOf } from "@/utils/pluralize";
 
 export type WorkflowColumnName =
-  | "name"
-  | "latest-crawl"
-  | "total-crawls"
-  | "modified"
-  | "actions";
+  "name" | "latest-crawl" | "total-crawls" | "modified" | "actions";
 
 const columnWidths = {
   // TODO Consolidate with table.stylesheet.css
@@ -428,9 +424,11 @@ export class WorkflowListItem extends BtrixElement {
 
   render() {
     return html`<div class="item row">
-      ${this.columns
-        ? this.columns.map((col) => this.columnTemplate[col]())
-        : Object.values(this.columnTemplate).map((render) => render())}
+      ${
+        this.columns
+          ? this.columns.map((col) => this.columnTemplate[col]())
+          : Object.values(this.columnTemplate).map((render) => render())
+      }
     </div>`;
   }
 
@@ -553,20 +551,24 @@ export class WorkflowListItem extends BtrixElement {
       <sl-tooltip hoist placement="bottom">
         <div class="w-max" @click=${this.redirectEventToAnchor}>
           <div class="detail truncate">
-            ${workflow.modifiedByName
-              ? html`<btrix-user-chip
-                  userId=${workflow.modifiedBy}
-                  userName=${workflow.modifiedByName}
-                ></btrix-user-chip>`
-              : notSpecified}
+            ${
+              workflow.modifiedByName
+                ? html`<btrix-user-chip
+                    userId=${workflow.modifiedBy}
+                    userName=${workflow.modifiedByName}
+                  ></btrix-user-chip>`
+                : notSpecified
+            }
           </div>
           <div class="desc">${shortDate(workflow.modified)}</div>
         </div>
 
         <span slot="content">
-          ${workflow.modified === workflow.created
-            ? msg("Created by")
-            : msg("Edited by")}
+          ${
+            workflow.modified === workflow.created
+              ? msg("Created by")
+              : msg("Edited by")
+          }
           ${workflow.modifiedByName}
           ${msg(html`on ${date}`, {
             desc: "`date` example: 'January 1st, 2025 at 05:00 PM EST'",
@@ -637,7 +639,12 @@ export class WorkflowList extends LitElement {
       }
 
       .listHeader {
-        line-height: 1;
+        margin-bottom: var(--sl-spacing-x-small);
+      }
+
+      .listHeader .col {
+        padding-top: 0;
+        padding-bottom: 0;
       }
 
       .row {
@@ -699,9 +706,11 @@ export class WorkflowList extends LitElement {
 
   render() {
     return html`<div class="listHeader row">
-        ${this.columns
-          ? this.columns.map((col) => WorkflowList.ColumnTemplate[col])
-          : Object.values(WorkflowList.ColumnTemplate)}
+        ${
+          this.columns
+            ? this.columns.map((col) => WorkflowList.ColumnTemplate[col])
+            : Object.values(WorkflowList.ColumnTemplate)
+        }
       </div>
       <div class="list" role="list">
         <slot @slotchange=${this.handleSlotchange}></slot>

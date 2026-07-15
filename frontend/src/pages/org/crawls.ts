@@ -403,7 +403,7 @@ export class OrgCrawls extends BtrixElement {
     total,
     pageSize,
   }: APIPaginatedList<Crawl>) => html`
-    <section class="mx-2">
+    <section class="lg:mx-2">
       ${
         items.length
           ? html`
