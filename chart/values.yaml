@@ -143,7 +143,17 @@ backend_memory: "350Mi"
 # number of concurrent S3 multipart upload workers for stream uploads
 # The default is intentionally low because the api container has a 350Mi memory
 # limit; each worker holds one multipart part (~10MB) in flight.
-backend_upload_workers: 4
+# If not set, will use a safe default based on the container memory limits below.
+# backend_upload_workers: 10
+
+# Fraction of the container memory limit to allow as in-flight upload bytes.
+upload_memory_budget_ratio: 0.25
+# Pause reading from the upload stream above this fraction of the memory limit.
+upload_memory_high_watermark: 0.85
+# Resume reading once usage drops below this fraction.
+upload_memory_low_watermark: 0.75
+# Seconds to sleep while waiting for memory pressure to drop.
+upload_memory_backoff_seconds: 0.25
 
 # port for operator service
 opPort: 8756

@@ -61,6 +61,160 @@ logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 # ============================================================================
+def _get_container_memory_limit_bytes() -> int | None:
+    """Read the container memory limit from cgroup files.
+
+    Returns `None` if the limit is not set or cannot be read.
+    """
+    paths = [
+        "/sys/fs/cgroup/memory.max",  # cgroup v2
+        "/sys/fs/cgroup/memory/memory.limit_in_bytes",  # cgroup v1
+    ]
+    for path in paths:
+        try:
+            with open(path, encoding="utf-8") as fh:
+                value = fh.read().strip()
+            if value == "max":
+                return None
+            return int(value)
+        except (OSError, ValueError):
+            continue
+    return None
+
+
+def _get_container_memory_usage_bytes() -> int | None:
+    """Read current container memory usage from cgroup files.
+
+    Returns `None` if usage cannot be read (non-Linux/local dev).
+    """
+    paths = [
+        "/sys/fs/cgroup/memory.current",  # cgroup v2
+        "/sys/fs/cgroup/memory/memory.usage_in_bytes",  # cgroup v1
+    ]
+    for path in paths:
+        try:
+            with open(path, encoding="utf-8") as fh:
+                return int(fh.read().strip())
+        except (OSError, ValueError):
+            continue
+    return None
+
+
+class _ByteLimiter:
+    """Async limiter that caps total acquired bytes in flight."""
+
+    def __init__(self, capacity_bytes: int) -> None:
+        """Initialize the limiter with the given byte capacity."""
+        self._capacity = capacity_bytes
+        self._available = capacity_bytes
+        self._cond = asyncio.Condition()
+
+    @property
+    def capacity(self) -> int:
+        """Total byte capacity of the limiter."""
+        return self._capacity
+
+    @property
+    def available(self) -> int:
+        """Currently unacquired bytes."""
+        return self._available
+
+    async def acquire(self, n: int) -> None:
+        """Acquire `n` bytes, waiting until they are available."""
+        async with self._cond:
+            while self._available < n:
+                await self._cond.wait()
+            self._available -= n
+
+    async def release(self, n: int) -> None:
+        """Release `n` bytes back to the limiter."""
+        async with self._cond:
+            self._available += n
+            self._cond.notify_all()
+
+
+_upload_memory_limiter: _ByteLimiter | None = None
+
+
+def _get_upload_memory_limiter() -> _ByteLimiter | None:
+    """Return a process-wide byte limiter sized from the cgroup memory limit.
+
+    Returns None when there is no detectable container limit (local dev), so
+    backpressure is disabled there.
+    """
+    # pylint: disable=global-statement
+    global _upload_memory_limiter
+
+    if _upload_memory_limiter is None:
+        limit = _get_container_memory_limit_bytes()
+        if limit is None:
+            return None
+
+        ratio = float(os.environ.get("UPLOAD_MEMORY_BUDGET_RATIO", "0.25"))
+        budget = max(int(limit * ratio), MIN_UPLOAD_PART_SIZE)
+        _upload_memory_limiter = _ByteLimiter(budget)
+
+    return _upload_memory_limiter
+
+
+async def _await_memory_below_watermark(
+    mp_logger: structlog.stdlib.BoundLogger,
+) -> None:
+    """Pause until container memory usage falls below the low watermark.
+
+    Uses hysteresis: entry only when usage >= high watermark, exit only when
+    usage < low watermark. No-op if no cgroup limit is available.
+    """
+    limit = _get_container_memory_limit_bytes()
+    if limit is None:
+        return
+
+    high = int(limit * float(os.environ.get("UPLOAD_MEMORY_HIGH_WATERMARK", "0.85")))
+    low = int(limit * float(os.environ.get("UPLOAD_MEMORY_LOW_WATERMARK", "0.75")))
+    backoff = float(os.environ.get("UPLOAD_MEMORY_BACKOFF_SECONDS", "0.25"))
+
+    usage = _get_container_memory_usage_bytes()
+    if usage is None or usage < high:
+        return
+
+    mp_logger.warning(
+        "upload_memory_backpressure",
+        usage=usage,
+        limit=limit,
+        high_watermark=high,
+        low_watermark=low,
+    )
+    while usage is not None and usage >= low:
+        await asyncio.sleep(backoff)
+        usage = _get_container_memory_usage_bytes()
+
+
+def _get_default_upload_max_workers(min_size: int) -> int:
+    """Pick a safe default worker count based on the container memory limit.
+
+    Reserves a chunk of memory for the app itself and caps the upload buffer
+    to a fraction of the limit. Each in-flight part (queued or uploading) is
+    counted as `min_size` plus a rough overhead for the HTTP layer, task
+    state, and the underlying buffer.
+    """
+    limit = _get_container_memory_limit_bytes()
+    if limit is None:
+        return 3
+
+    # Reserve 60% of the container memory for the app baseline; use the rest
+    # for the upload buffer.
+    upload_budget = int(limit * 0.4)
+    # Each part in the queue or in a worker costs roughly the part size plus
+    # HTTP/client overhead. 2x is a conservative rule of thumb.
+    bytes_per_slot = min_size * 2
+    slots = max(1, upload_budget // bytes_per_slot)
+
+    # The queue holds at most 2 parts, so the rest can be workers.
+    workers = max(1, slots - 2)
+    return min(workers, 10)
+
+
+# ============================================================================
 # pylint: disable=broad-except,raise-missing-from,too-many-instance-attributes
 # pylint: disable=too-many-public-methods, too-many-lines
 class StorageOps:
@@ -425,11 +579,18 @@ class StorageOps:
         stream (e.g. to compute a digest) before the chunk is accumulated into
         an S3 part.
 
-        Worker count is controlled via the backend_upload_workers value (default 4).
+        Worker count is controlled via the backend_upload_workers value.
+        Uses a safe default based on the container memory limit.
         """
-        max_workers = int(os.environ.get("UPLOAD_MAX_WORKERS", 4))
+        max_workers = int(
+            os.environ.get(
+                "UPLOAD_MAX_WORKERS", _get_default_upload_max_workers(min_size)
+            )
+        )
         if max_workers < 1:
             raise ValueError("max_workers must be >= 1")
+
+        limiter = _get_upload_memory_limiter()
 
         s3storage = self.get_org_primary_storage(org)
 
@@ -475,7 +636,14 @@ class StorageOps:
                             chunk_to_upload = bytes(part_buf[:min_size])
                             del part_buf[:min_size]
                             read_duration = time.monotonic() - read_start
-                            await queue.put((part_number, chunk_to_upload))
+                            if limiter:
+                                await limiter.acquire(len(chunk_to_upload))
+                            try:
+                                await queue.put((part_number, chunk_to_upload))
+                            except BaseException:
+                                if limiter:
+                                    await limiter.release(len(chunk_to_upload))
+                                raise
                             mp_logger.debug(
                                 "multipart_part_read",
                                 part_number=part_number,
@@ -487,13 +655,21 @@ class StorageOps:
                                     else 0
                                 ),
                             )
+                            await _await_memory_below_watermark(mp_logger)
                             part_number += 1
                             read_start = time.monotonic()
 
                     if part_buf:
                         chunk_to_upload = bytes(part_buf)
                         read_duration = time.monotonic() - read_start
-                        await queue.put((part_number, chunk_to_upload))
+                        if limiter:
+                            await limiter.acquire(len(chunk_to_upload))
+                        try:
+                            await queue.put((part_number, chunk_to_upload))
+                        except BaseException:
+                            if limiter:
+                                await limiter.release(len(chunk_to_upload))
+                            raise
                         mp_logger.debug(
                             "multipart_part_read",
                             part_number=part_number,
@@ -516,27 +692,31 @@ class StorageOps:
                     if item is None:
                         break
                     part_number, chunk = item
-                    upload_start_part = time.monotonic()
-                    resp = await client.upload_part(
-                        Bucket=bucket,
-                        Body=chunk,
-                        UploadId=upload_id,
-                        PartNumber=part_number,
-                        Key=key,
-                    )
-                    upload_duration = time.monotonic() - upload_start_part
-                    parts.append({"PartNumber": part_number, "ETag": resp["ETag"]})
-                    mp_logger.debug(
-                        "multipart_part_uploaded",
-                        part_number=part_number,
-                        chunk_size=len(chunk),
-                        upload_duration=upload_duration,
-                        upload_throughput_mbps=(
-                            (len(chunk) / upload_duration) / 1_000_000
-                            if upload_duration
-                            else 0
-                        ),
-                    )
+                    try:
+                        upload_start_part = time.monotonic()
+                        resp = await client.upload_part(
+                            Bucket=bucket,
+                            Body=chunk,
+                            UploadId=upload_id,
+                            PartNumber=part_number,
+                            Key=key,
+                        )
+                        upload_duration = time.monotonic() - upload_start_part
+                        parts.append({"PartNumber": part_number, "ETag": resp["ETag"]})
+                        mp_logger.debug(
+                            "multipart_part_uploaded",
+                            part_number=part_number,
+                            chunk_size=len(chunk),
+                            upload_duration=upload_duration,
+                            upload_throughput_mbps=(
+                                (len(chunk) / upload_duration) / 1_000_000
+                                if upload_duration
+                                else 0
+                            ),
+                        )
+                    finally:
+                        if limiter:
+                            await limiter.release(len(chunk))
 
             producer_task = asyncio.create_task(producer())
             worker_tasks = [
