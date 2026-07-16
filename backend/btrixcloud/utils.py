@@ -251,10 +251,12 @@ def crawler_image_below_minimum(crawler_image: str, min_image: str):
         )
         return False
 
-    # Check base_version so that beta releases (which otherwise would be
-    # considered less than the corresponding release) are considered
-    # equivalent and can be tested
-    if crawler_image_version.base_version < min_image_version.base_version:
+    # Compare base_versions with pre- and post- information stripped out
+    # so that beta releases (which otherwise would be considered less than
+    # their  corresponding releases) are considered can be tested
+    if parse_version(crawler_image_version.base_version) < parse_version(
+        min_image_version.base_version
+    ):
         return True
 
     return False
