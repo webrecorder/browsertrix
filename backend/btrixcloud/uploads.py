@@ -3,6 +3,7 @@
 # pylint: disable=too-many-lines
 
 import asyncio
+import base64
 import os
 import struct
 import time
@@ -727,9 +728,39 @@ class UploadOps(BaseCrawlOps):
                 )
                 copy_duration = time.monotonic() - copy_start
 
-                hash_, size = await self.storage_ops.compute_object_sha256(
-                    client, bucket, dest_key
-                )
+                # Try to get the SHA-256 checksum from S3 object metadata
+                # (supported by some providers when the upload specifies a
+                # checksum algorithm). Fall back to streaming the object and
+                # computing the hash ourselves if the provider doesn't return it.
+                hash_: str | None = None
+                size: int | None = None
+                try:
+                    head = await client.head_object(Bucket=bucket, Key=dest_key)
+                    size = head.get("ContentLength")
+                    checksum_b64 = head.get("ChecksumSHA256")
+                    if checksum_b64:
+                        hash_ = base64.b64decode(checksum_b64).hex()
+                # pylint: disable=broad-exception-caught
+                except Exception as exc:
+                    copy_child_logger.warning(
+                        "multi_wacz_s3_copy_head_checksum_failed",
+                        exc_info=exc,
+                        bucket=bucket,
+                        dest_key=dest_key,
+                    )
+                    pass
+
+                if hash_ is None or size is None:
+                    copy_child_logger.warning(
+                        "multi_wacz_s3_copy_missing_checksum",
+                        bucket=bucket,
+                        dest_key=dest_key,
+                        detail="Hash or size is missing, falling back to slow streamed computation",
+                    )
+                    hash_, size = await self.storage_ops.compute_object_sha256(
+                        client, bucket, dest_key
+                    )
+
                 if size != child_wacz.file_size:
                     raise ValueError(
                         f"Copied child size mismatch for {child_wacz.filename}: "
