@@ -18,7 +18,6 @@ import structlog
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from iso639 import is_language
-from packaging.version import InvalidVersion
 from packaging.version import parse as parse_version
 from pymongo.collation import Collation
 from pymongo.errors import DuplicateKeyError
