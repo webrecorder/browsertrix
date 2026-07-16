@@ -425,9 +425,9 @@ class StorageOps:
         stream (e.g. to compute a digest) before the chunk is accumulated into
         an S3 part.
 
-        Worker count is controlled via the backend_upload_workers value (default 10).
+        Worker count is controlled via the backend_upload_workers value (default 4).
         """
-        max_workers = int(os.environ.get("UPLOAD_MAX_WORKERS", 10))
+        max_workers = int(os.environ.get("UPLOAD_MAX_WORKERS", 4))
         if max_workers < 1:
             raise ValueError("max_workers must be >= 1")
 

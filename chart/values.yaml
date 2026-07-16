@@ -141,7 +141,9 @@ backend_cpu: "100m"
 backend_memory: "350Mi"
 
 # number of concurrent S3 multipart upload workers for stream uploads
-backend_upload_workers: 10
+# The default is intentionally low because the api container has a 350Mi memory
+# limit; each worker holds one multipart part (~10MB) in flight.
+backend_upload_workers: 4
 
 # port for operator service
 opPort: 8756
