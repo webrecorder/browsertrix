@@ -18,6 +18,7 @@ import structlog
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from iso639 import is_language
+from packaging.version import InvalidVersion
 from packaging.version import parse as parse_version
 from pymongo.collation import Collation
 from pymongo.errors import DuplicateKeyError
@@ -239,8 +240,8 @@ def crawler_image_below_minimum(crawler_image: str, min_image: str):
     Return False by default or if versions can't be parsed as semver (e.g. "latest")
     """
     try:
-        crawler_image_version = parse_version(crawler_image.split(":")[1])
-        min_image_version = parse_version(min_image.split(":")[1])
+        crawler_image_version = crawler_image.split(":")[1]
+        min_image_version = min_image.split(":")[1]
     # pylint: disable=broad-exception-caught
     except Exception:
         logger.warning(
@@ -249,6 +250,11 @@ def crawler_image_below_minimum(crawler_image: str, min_image: str):
             min_image=min_image,
             unstructured_message="Unable to compare crawler versions, allowing",
         )
+        return False
+
+    try:
+        parse_version(crawler_image_version)
+    except InvalidVersion:
         return False
 
     if crawler_image_version < min_image_version:
