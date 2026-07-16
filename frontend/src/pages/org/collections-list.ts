@@ -174,55 +174,60 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         })}
       </div>
 
-      ${when(this.fetchErrorStatusCode, this.renderFetchError, () =>
-        this.collections
-          ? html`
-              <div
-                class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4"
-              >
-                ${this.renderControls()}
-              </div>
-              <div class="lg:mx-2">
-                <btrix-overflow-scroll class="-mx-3 pb-1 part-[content]:px-3">
-                  ${guard(
-                    [
-                      this.collections,
-                      this.listView,
-                      this.collectionRefreshing,
-                    ],
-                    this.listView === ListView.List
-                      ? this.renderList
-                      : this.renderGrid,
-                  )}
-                </btrix-overflow-scroll>
-              </div>
-              ${when(this.listView === ListView.List, () =>
-                when(
-                  (this.collections &&
-                    this.collections.total > this.collections.pageSize) ||
-                    (this.collections && this.collections.page > 1),
-                  () => html`
-                    <footer class="mt-6 flex justify-center">
-                      <btrix-pagination
-                        page=${this.collections!.page}
-                        totalCount=${this.collections!.total}
-                        size=${this.collections!.pageSize}
-                        @page-change=${async (e: PageChangeEvent) => {
-                          await this.fetchCollections({
-                            page: e.detail.page,
-                          });
+      ${when(
+        this.fetchErrorStatusCode,
+        this.renderFetchError,
+        () =>
+          html`<div
+              class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3"
+            >
+              ${this.renderControls()}
+            </div>
+            ${this.collections
+              ? html`
+                  <div class="lg:mx-2">
+                    <btrix-overflow-scroll
+                      class="-mx-3 pb-1 part-[content]:px-3"
+                    >
+                      ${guard(
+                        [
+                          this.collections,
+                          this.listView,
+                          this.collectionRefreshing,
+                        ],
+                        this.listView === ListView.List
+                          ? this.renderList
+                          : this.renderGrid,
+                      )}
+                    </btrix-overflow-scroll>
+                  </div>
+                  ${when(this.listView === ListView.List, () =>
+                    when(
+                      (this.collections &&
+                        this.collections.total > this.collections.pageSize) ||
+                        (this.collections && this.collections.page > 1),
+                      () => html`
+                        <footer class="mt-6 flex justify-center">
+                          <btrix-pagination
+                            page=${this.collections!.page}
+                            totalCount=${this.collections!.total}
+                            size=${this.collections!.pageSize}
+                            @page-change=${async (e: PageChangeEvent) => {
+                              await this.fetchCollections({
+                                page: e.detail.page,
+                              });
 
-                          // Scroll to top of list
-                          // TODO once deep-linking is implemented, scroll to top of pushstate
-                          this.scrollIntoView({ behavior: "smooth" });
-                        }}
-                      ></btrix-pagination>
-                    </footer>
-                  `,
-                ),
-              )}
-            `
-          : this.renderLoading(),
+                              // Scroll to top of list
+                              // TODO once deep-linking is implemented, scroll to top of pushstate
+                              this.scrollIntoView({ behavior: "smooth" });
+                            }}
+                          ></btrix-pagination>
+                        </footer>
+                      `,
+                    ),
+                  )}
+                `
+              : this.renderLoading()}`,
       )}
 
       <btrix-dialog

@@ -637,7 +637,12 @@ export class WorkflowList extends LitElement {
       }
 
       .listHeader {
-        line-height: 1;
+        margin-bottom: var(--sl-spacing-x-small);
+      }
+
+      .listHeader .col {
+        padding-top: 0;
+        padding-bottom: 0;
       }
 
       .row {

@@ -374,7 +374,7 @@ export class OrgCrawls extends BtrixElement {
   render() {
     return html`
       <main>
-        <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
+        <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3">
           ${this.renderControls()}
         </div>
 
@@ -403,7 +403,7 @@ export class OrgCrawls extends BtrixElement {
     total,
     pageSize,
   }: APIPaginatedList<Crawl>) => html`
-    <section class="mx-2">
+    <section class="lg:mx-2">
       ${items.length
         ? html`
             <btrix-crawl-list>
@@ -474,7 +474,7 @@ export class OrgCrawls extends BtrixElement {
 
   private renderControls() {
     return html`
-      <div class="flex flex-wrap items-center gap-2 md:gap-4">
+      <div class="flex flex-wrap items-center gap-2 md:gap-3">
         <div class="grow basis-2/3">${this.renderSearch()}</div>
 
         <div class="flex items-center">
@@ -602,6 +602,7 @@ export class OrgCrawls extends BtrixElement {
         placeholder=${msg(
           "Search by workflow name, crawl start URL, or crawl ID",
         )}
+        size="small"
         @btrix-select=${(e: BtrixSearchComboboxSelectEvent) => {
           const { key, value } = e.detail.item;
           console.log(key, value);
