@@ -1,14 +1,17 @@
 """handle user uploads into browsertrix"""
 
+# pylint: disable=too-many-lines
+
 import asyncio
 import os
+import struct
 import time
 import uuid
 from collections.abc import AsyncGenerator, Callable
 from typing import Any
 from urllib.parse import unquote
 from uuid import UUID
-from zipfile import ZipInfo
+from zipfile import ZIP_STORED, ZipInfo
 
 import structlog
 from fastapi import Depends, File, HTTPException, UploadFile
@@ -54,6 +57,13 @@ MAX_WACZ_FILE_SIZE = int(
 MAX_CONCURRENT_SPLITS = int(
     os.environ.get("MAX_CONCURRENT_SPLITS", 4)
 )  # max number of multi-WACZ files to split simultaneously
+
+# ZIP local file header layout (PKWARE APPNOTE.TXT, section 4.3.7)
+# https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
+LOCAL_FILE_HEADER_FIXED_SIZE = 30
+LOCAL_FILE_HEADER_FILENAME_LEN_OFFSET = 26
+LOCAL_FILE_HEADER_EXTRA_LEN_OFFSET = 28
+LOCAL_FILE_HEADER_LEN_FIELDS_SIZE = 4  # 2 bytes filename len + 2 bytes extra len
 
 
 # ============================================================================
@@ -466,88 +476,118 @@ class UploadOps(BaseCrawlOps):
         new_upload_files: list[CrawlFile] = []
 
         try:
-            for idx, child_wacz in enumerate(child_waczs):
-                cwf_logger.debug(
-                    "multi_wacz",
-                    state="process_child_wacz",
-                    idx=idx + 1,
-                    count=len(child_waczs),
-                    filename=child_wacz.filename,
-                )
+            s3storage = self.storage_ops.get_org_primary_storage(org)
+            async with self.storage_ops.get_s3_client(s3storage) as (
+                client,
+                bucket,
+                base_key,
+            ):
+                source_key = base_key + original_file.filename
 
-                max_size = MAX_WACZ_FILE_SIZE
-                if org.quotas.storageQuota:
-                    remaining = org.quotas.storageQuota - org.bytesStored
-                    max_size = min(remaining, max_size)
-
-                if child_wacz.file_size > max_size:
-                    cwf_logger.error(
-                        "multi_wacz_file_too_large",
-                        filename=child_wacz.filename,
-                        file_size=child_wacz.file_size,
-                        max_size=max_size,
-                        storage_quota=org.quotas.storageQuota,
-                        bytes_stored=org.bytesStored,
-                        detail="Extracted file exceeds available org size or hard limit. ",
-                    )
-                    # it's a little odd to raise an HTTPException from inside here because
-                    # it's not always going to be called from an HTTP request handler,
-                    # but it'll propagate correctly when it is, and when it's not it'll still
-                    # cause the background job to fail
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"WACZ file '{child_wacz.filename}' inside item id "
-                        f"{crawl_id} exceeds max size",
-                    )
-
-                # it's worth retrying these uploads because they may be run in a background
-                # job, we can't count on being able to give the user immediate feedback
-                for attempt in range(1, MAX_UPLOAD_RETRIES + 1):
-                    file_prep = FilePreparer(prefix, child_wacz.filename)
-
-                    def sync_wacz_stream_iter(
-                        child_wacz=child_wacz, file_prep=file_prep
-                    ):
-                        with RemoteZip(wacz_url) as remote_zip:
-                            with remote_zip.open(child_wacz.filename) as stream:
-                                for chunk in stream:
-                                    file_prep.add_chunk(chunk)
-                                    yield chunk
-
-                    try:
-                        if not await self.storage_ops.do_upload_multipart(
-                            org,
-                            file_prep.upload_name,
-                            to_async_iterable(sync_wacz_stream_iter()),
-                            MIN_UPLOAD_PART_SIZE,
-                        ):
-                            raise HTTPException(status_code=400, detail="upload_failed")
-                        break
-                    # pylint: disable=broad-exception-caught
-                    except Exception:
-                        if attempt == MAX_UPLOAD_RETRIES:
-                            cwf_logger.error(
-                                "multi_wacz_child_upload_failed",
-                                filename=child_wacz.filename,
-                                attempts=MAX_UPLOAD_RETRIES,
-                            )
-                            raise
-                        cwf_logger.warning(
-                            "multi_wacz_child_upload_retry",
+                # Open one RemoteZip session for any children that need to be
+                # streamed (compressed entries, or if the S3 copy path fails).
+                remote_zip = await asyncio.to_thread(RemoteZip, wacz_url)
+                try:
+                    for idx, child_wacz in enumerate(child_waczs):
+                        cwf_logger.debug(
+                            "multi_wacz",
+                            state="process_child_wacz",
+                            idx=idx + 1,
+                            count=len(child_waczs),
                             filename=child_wacz.filename,
-                            attempt=attempt,
+                            compress_type=child_wacz.compress_type,
                         )
-                        await asyncio.sleep(2 ** (attempt - 1))
 
-                crawl_file = file_prep.get_crawl_file(org.storage)
-                cwf_logger.debug(
-                    "multi_wacz_child_upload_success",
-                    idx=idx + 1,
-                    count=len(child_waczs),
-                    filename=crawl_file.filename,
-                    hash=crawl_file.hash,
-                )
-                new_upload_files.append(crawl_file)
+                        max_size = MAX_WACZ_FILE_SIZE
+                        if org.quotas.storageQuota:
+                            remaining = org.quotas.storageQuota - org.bytesStored
+                            max_size = min(remaining, max_size)
+
+                        if child_wacz.file_size > max_size:
+                            cwf_logger.error(
+                                "multi_wacz_file_too_large",
+                                filename=child_wacz.filename,
+                                file_size=child_wacz.file_size,
+                                max_size=max_size,
+                                storage_quota=org.quotas.storageQuota,
+                                bytes_stored=org.bytesStored,
+                                detail="Extracted file exceeds available org size or hard limit.",
+                            )
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"WACZ file '{child_wacz.filename}' inside item id "
+                                f"{crawl_id} exceeds max size",
+                            )
+
+                        crawl_file: CrawlFile | None = None
+                        child_duration: float | None = None
+                        copy_duration: float | None = None
+                        method = "stream"
+
+                        # Fast path: uncompressed (stored) entries can be copied
+                        # server-side from the parent object without streaming
+                        # the bytes through the backend.
+                        if child_wacz.compress_type == ZIP_STORED:
+                            try:
+                                (
+                                    crawl_file,
+                                    child_duration,
+                                    copy_duration,
+                                ) = await self._copy_stored_child_wacz(
+                                    client,
+                                    bucket,
+                                    base_key,
+                                    source_key,
+                                    prefix,
+                                    child_wacz,
+                                    org,
+                                    cwf_logger,
+                                )
+                                method = "s3_copy"
+                            # pylint: disable=broad-exception-caught
+                            except Exception as exc:
+                                cwf_logger.warning(
+                                    "multi_wacz_s3_copy_failed",
+                                    filename=child_wacz.filename,
+                                    exc_info=exc,
+                                    detail="falling back to streaming extraction",
+                                )
+
+                        if crawl_file is None:
+                            crawl_file, child_duration = await self._stream_child_wacz(
+                                remote_zip,
+                                prefix,
+                                child_wacz,
+                                org,
+                                cwf_logger,
+                            )
+
+                        success_meta: dict[str, Any] = {
+                            "idx": idx + 1,
+                            "count": len(child_waczs),
+                            "filename": crawl_file.filename,
+                            "hash": crawl_file.hash,
+                            "size": crawl_file.size,
+                            "method": method,
+                        }
+                        if child_duration:
+                            success_meta["duration"] = child_duration
+                            success_meta["throughput_mbps"] = (
+                                crawl_file.size / child_duration
+                            ) / 1_000_000
+                        if copy_duration:
+                            success_meta["copy_duration"] = copy_duration
+                            success_meta["copy_throughput_mbps"] = (
+                                crawl_file.size / copy_duration
+                            ) / 1_000_000
+
+                        cwf_logger.debug(
+                            "multi_wacz_child_upload_success",
+                            **success_meta,
+                        )
+                        new_upload_files.append(crawl_file)
+                finally:
+                    await asyncio.to_thread(remote_zip.close)
 
             # Atomically replace the original single multi-WACZ with child WACZs
             # in the DB, and update file count/size fields. This is a single
@@ -653,6 +693,177 @@ class UploadOps(BaseCrawlOps):
                     )
             cwf_logger.exception("multi_wacz_split_failed")
             raise
+
+    async def _copy_stored_child_wacz(
+        self,
+        client,
+        bucket: str,
+        base_key: str,
+        source_key: str,
+        prefix: str,
+        child_wacz: ZipInfo,
+        org: Organization,
+        cwf_logger: structlog.stdlib.BoundLogger,
+    ) -> tuple[CrawlFile, float, float]:
+        """Copy a stored (uncompressed) child WACZ using S3 server-side ranges.
+
+        Returns the CrawlFile, the total elapsed time, and the server-side
+        copy time (so the success log can show copy throughput).
+        """
+        child_start = time.monotonic()
+        data_start = await self._get_stored_child_data_offset(
+            client, bucket, source_key, child_wacz
+        )
+        data_end = data_start + child_wacz.compress_size - 1
+        file_prep = FilePreparer(prefix, child_wacz.filename)
+        dest_key = base_key + file_prep.upload_name
+        copy_child_logger = cwf_logger.bind(filename=child_wacz.filename)
+
+        for attempt in range(1, MAX_UPLOAD_RETRIES + 1):
+            try:
+                copy_start = time.monotonic()
+                await self.storage_ops.copy_object_range(
+                    client, bucket, source_key, dest_key, data_start, data_end
+                )
+                copy_duration = time.monotonic() - copy_start
+
+                hash_, size = await self.storage_ops.compute_object_sha256(
+                    client, bucket, dest_key
+                )
+                if size != child_wacz.file_size:
+                    raise ValueError(
+                        f"Copied child size mismatch for {child_wacz.filename}: "
+                        f"{size} != {child_wacz.file_size}"
+                    )
+                child_duration = time.monotonic() - child_start
+                return (
+                    CrawlFile(
+                        filename=file_prep.upload_name,
+                        hash=hash_,
+                        size=size,
+                        storage=org.storage,
+                    ),
+                    child_duration,
+                    copy_duration,
+                )
+            # pylint: disable=broad-exception-caught
+            except Exception as exc:
+                # Clean up any partial copy before retrying.
+                try:
+                    await client.delete_object(Bucket=bucket, Key=dest_key)
+                except Exception:
+                    pass
+                if attempt == MAX_UPLOAD_RETRIES:
+                    copy_child_logger.error(
+                        "multi_wacz_s3_copy_failed_final",
+                        attempts=MAX_UPLOAD_RETRIES,
+                        exc_info=exc,
+                    )
+                    raise
+                copy_child_logger.warning(
+                    "multi_wacz_s3_copy_retry",
+                    attempt=attempt,
+                )
+                await asyncio.sleep(2 ** (attempt - 1))
+
+    async def _get_stored_child_data_offset(
+        self,
+        client,
+        bucket: str,
+        source_key: str,
+        child_wacz: ZipInfo,
+    ) -> int:
+        """Return the byte offset of a stored child's data inside the parent zip.
+
+        Reads the local header from S3 because its extra-field length can differ
+        from the central directory record.
+
+        Layout of a ZIP local file header (PKWARE APPNOTE.TXT, section 4.3.7):
+
+            offset           | field                      | size
+            ---------------- | -------------------------- | ----------------------
+            0                | local file header signature| 4 bytes (PK\\x03\\x04)
+            4                | version needed to extract  | 2 bytes
+            6                | general purpose bit flag   | 2 bytes
+            8                | compression method         | 2 bytes
+            10               | last mod file time         | 2 bytes
+            12               | last mod file date         | 2 bytes
+            14               | crc-32                     | 4 bytes
+            18               | compressed size            | 4 bytes
+            22               | uncompressed size          | 4 bytes
+            26 [^1]          | file name length           | 2 bytes [^2]
+            28               | extra field length         | 2 bytes [^2]
+            30               | file name (variable)       | fn_len bytes
+            30+fn_len        | extra field (variable)     | ex_len bytes
+            30+fn_len+ex_len | data starts here           |
+
+        Spec: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
+
+        [^1]: corresponds to LOCAL_FILE_HEADER_FILENAME_LEN_OFFSET
+        [^2]: corresponds to LOCAL_FILE_HEADER_LEN_FIELDS_SIZE (2 bytes for file
+              name length + 2 bytes for extra field length)
+        """
+        len_fields_start = (
+            child_wacz.header_offset + LOCAL_FILE_HEADER_FILENAME_LEN_OFFSET
+        )
+        len_fields_end = len_fields_start + LOCAL_FILE_HEADER_LEN_FIELDS_SIZE - 1
+        range_header = f"bytes={len_fields_start}-{len_fields_end}"
+        resp = await client.get_object(
+            Bucket=bucket, Key=source_key, Range=range_header
+        )
+        data = await resp["Body"].read()
+        fn_len, ex_len = struct.unpack("<HH", data)
+        return child_wacz.header_offset + LOCAL_FILE_HEADER_FIXED_SIZE + fn_len + ex_len
+
+    async def _stream_child_wacz(
+        self,
+        remote_zip: RemoteZip,
+        prefix: str,
+        child_wacz: ZipInfo,
+        org: Organization,
+        cwf_logger,
+    ) -> tuple[CrawlFile, float]:
+        """Stream a child WACZ out of the parent zip and upload it to storage.
+
+        Returns the CrawlFile and the total elapsed time.
+        """
+        child_start = time.monotonic()
+        for attempt in range(1, MAX_UPLOAD_RETRIES + 1):
+            file_prep = FilePreparer(prefix, child_wacz.filename)
+
+            def sync_wacz_stream_iter(child_wacz=child_wacz, file_prep=file_prep):
+                with remote_zip.open(child_wacz.filename) as stream:
+                    for chunk in stream:
+                        file_prep.add_chunk(chunk)
+                        yield chunk
+
+            try:
+                if not await self.storage_ops.do_upload_multipart(
+                    org,
+                    file_prep.upload_name,
+                    to_async_iterable(sync_wacz_stream_iter()),
+                    MIN_UPLOAD_PART_SIZE,
+                ):
+                    raise HTTPException(status_code=400, detail="upload_failed")
+                break
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                if attempt == MAX_UPLOAD_RETRIES:
+                    cwf_logger.error(
+                        "multi_wacz_child_upload_failed",
+                        filename=child_wacz.filename,
+                        attempts=MAX_UPLOAD_RETRIES,
+                    )
+                    raise
+                cwf_logger.warning(
+                    "multi_wacz_child_upload_retry",
+                    filename=child_wacz.filename,
+                    attempt=attempt,
+                )
+                await asyncio.sleep(2 ** (attempt - 1))
+
+        child_duration = time.monotonic() - child_start
+        return file_prep.get_crawl_file(org.storage), child_duration
 
     async def delete_uploads(
         self,

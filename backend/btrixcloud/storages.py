@@ -3,6 +3,7 @@ Storage API
 """
 
 import asyncio
+import hashlib
 import heapq
 import json
 import os
@@ -29,6 +30,7 @@ from types_aiobotocore_s3.type_defs import CompletedPartTypeDef
 
 from .models import (
     CHUNK_SIZE,
+    MIN_UPLOAD_PART_SIZE,
     PRESIGN_DURATION_SECONDS,
     AddedResponseName,
     BaseFile,
@@ -619,6 +621,101 @@ class StorageOps:
             )
 
             return True
+
+    async def copy_object_range(
+        self,
+        client: AIOS3Client,
+        bucket: str,
+        source_key: str,
+        dest_key: str,
+        start: int,
+        end: int,
+    ) -> None:
+        """Copy a byte range from an existing S3 object into a new object.
+
+        Uses a multipart upload with UploadPartCopy so that the bytes are moved
+        server-side and never pass through the backend process. This is a big
+        win for uncompressed (stored) zip entries inside a multi-WACZ.
+        """
+        size = end - start + 1
+        assert size > 0
+
+        # For tiny ranges a single part is fine; otherwise use the standard
+        # part size. If the range is huge, cap parts at S3's 5 GiB limit.
+        five_gib = 5 * 1024 * 1024 * 1024
+        if size <= MIN_UPLOAD_PART_SIZE:
+            part_size = size
+        elif size <= five_gib:
+            part_size = MIN_UPLOAD_PART_SIZE
+        else:
+            part_size = five_gib
+
+        mup_resp = await client.create_multipart_upload(
+            Bucket=bucket,
+            Key=dest_key,
+        )
+        upload_id = mup_resp["UploadId"]
+        parts: list[CompletedPartTypeDef] = []
+        pos = start
+        part_number = 1
+
+        try:
+            while pos <= end:
+                part_end = min(pos + part_size - 1, end)
+                copy_resp = await client.upload_part_copy(
+                    Bucket=bucket,
+                    Key=dest_key,
+                    UploadId=upload_id,
+                    PartNumber=part_number,
+                    CopySource={"Bucket": bucket, "Key": source_key},
+                    CopySourceRange=f"bytes={pos}-{part_end}",
+                )
+                parts.append(
+                    {
+                        "PartNumber": part_number,
+                        "ETag": copy_resp["CopyPartResult"]["ETag"],
+                    }
+                )
+                part_number += 1
+                pos = part_end + 1
+
+            await client.complete_multipart_upload(
+                Bucket=bucket,
+                Key=dest_key,
+                UploadId=upload_id,
+                MultipartUpload={"Parts": parts},
+            )
+        except Exception:
+            # Best-effort cleanup so we don't leak incomplete multipart uploads.
+            # pylint: disable=broad-exception-caught
+            try:
+                await client.abort_multipart_upload(
+                    Bucket=bucket, Key=dest_key, UploadId=upload_id
+                )
+            except Exception:
+                pass
+            raise
+
+    async def compute_object_sha256(
+        self,
+        client: AIOS3Client,
+        bucket: str,
+        key: str,
+    ) -> tuple[str, int]:
+        """Stream an S3 object and compute its SHA-256 digest and size.
+
+        Reads in large chunks so the overhead is low even on high-latency
+        object stores.
+        """
+        resp = await client.get_object(Bucket=bucket, Key=key)
+        body = resp["Body"]
+        hasher = hashlib.sha256()
+        total = 0
+        chunk_size = max(MIN_UPLOAD_PART_SIZE, 1024 * 1024)
+        async for chunk in body.iter_chunks(chunk_size):
+            hasher.update(chunk)
+            total += len(chunk)
+        return hasher.hexdigest(), total
 
     async def get_presigned_url(
         self, org: Organization, crawlfile: CrawlFile, force_update=False
