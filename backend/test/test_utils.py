@@ -55,7 +55,7 @@ def test_slug_from_name(name: str, expected_slug: str):
         (
             "docker.io/webrecorder/browsertrix-crawler:1.14.0-beta.1",
             "docker.io/webrecorder/browsertrix-crawler:1.14.0",
-            True,
+            False,
         ),
         # "latest" and similar tags for either always return False
         (
