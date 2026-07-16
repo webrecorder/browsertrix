@@ -427,6 +427,11 @@ class CrawlConfigOps:
         if config.limit == 1:
             return True
 
+        # behavior may add additional pages, so can't guarantee that it'll
+        # always be a single page
+        if config.alwaysAddBehaviorLinks:
+            return False
+
         extra_hops = config.seeds[0].extraHops or config.extraHops
         scope_type = config.seeds[0].scopeType or config.scopeType
 
