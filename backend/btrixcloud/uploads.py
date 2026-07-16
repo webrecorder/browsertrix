@@ -550,7 +550,7 @@ class UploadOps(BaseCrawlOps):
                                 cwf_logger.warning(
                                     "multi_wacz_s3_copy_failed",
                                     filename=child_wacz.filename,
-                                    exc_info=exc,
+                                    error=str(exc),
                                     detail="falling back to streaming extraction",
                                 )
 
@@ -722,6 +722,14 @@ class UploadOps(BaseCrawlOps):
 
         for attempt in range(1, MAX_UPLOAD_RETRIES + 1):
             try:
+                copy_child_logger.debug(
+                    "multi_wacz_s3_copy_attempt",
+                    bucket=bucket,
+                    source_key=source_key,
+                    dest_key=dest_key,
+                    data_start=data_start,
+                    data_end=data_end,
+                )
                 copy_start = time.monotonic()
                 await self.storage_ops.copy_object_range(
                     client, bucket, source_key, dest_key, data_start, data_end
@@ -748,7 +756,6 @@ class UploadOps(BaseCrawlOps):
                         bucket=bucket,
                         dest_key=dest_key,
                     )
-                    pass
 
                 if hash_ is None or size is None:
                     copy_child_logger.warning(
@@ -788,12 +795,14 @@ class UploadOps(BaseCrawlOps):
                     copy_child_logger.error(
                         "multi_wacz_s3_copy_failed_final",
                         attempts=MAX_UPLOAD_RETRIES,
+                        error=str(exc),
                         exc_info=exc,
                     )
                     raise
                 copy_child_logger.warning(
                     "multi_wacz_s3_copy_retry",
                     attempt=attempt,
+                    error=str(exc),
                 )
                 await asyncio.sleep(2 ** (attempt - 1))
 
