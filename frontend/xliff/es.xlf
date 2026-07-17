@@ -1158,11 +1158,11 @@
       </trans-unit>
       <trans-unit id="s8745d54f3284f080" xml:space="preserve">
         <source>Are you sure you want to cancel the crawl?</source>
-        <target state="needs-translation">¿Estás seguro que quieres cancelar el arrastre?</target>
+        <target state="translated">¿Estás seguro que quieres cancelar el rastro?</target>
       </trans-unit>
       <trans-unit id="s5d966c90d8dc06e6" xml:space="preserve">
         <source>Are you sure you want to stop the crawl?</source>
-        <target state="needs-translation">¿Estás seguro de que quieres parar el rastro?</target>
+        <target state="translated">¿Estás seguro que quieres detener el rastro?</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sfecdd5e13f68c9ba">
         <source>Approved</source>
@@ -1238,7 +1238,7 @@
       </trans-unit>
       <trans-unit id="s3a67142f35d9130e" xml:space="preserve">
         <source>Non-HTML files captured as pages are known good files that the crawler found as clickable links on a page and don't need to be analyzed. Failed pages did not respond when the crawler tried to visit them.</source>
-        <target state="needs-translation">Los archivos no-HTML capturados como páginas son conocidos buenos archivos que el rastreador encontró como enlaces clicables en una página y no necesitan ser analizados. Las páginas fallidas no respondieron cuando el rastreador trató de visitarlas.</target>
+        <target state="translated">Los archivos distintos de HTML capturados como páginas son archivos buenos conocidos que el rastreador encontró como enlaces pulsables en una página y no necesitan ser analizados. Las páginas fallidas no respondieron cuando el rastreador trató de visitarlas.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="h8309b5706a9a85ba">
         <source>
@@ -1675,7 +1675,7 @@
       </trans-unit>
       <trans-unit id="s38272cc7bd101136" xml:space="preserve">
         <source>Interact with this embedded browser to set up your browser profile. The embedded browser will exit without saving changes after a few minutes of inactivity.</source>
-        <target state="needs-translation">Interactúa con este navegador integrado para configurar el perfil de su navegador. El navegador integrado saldrá sin guardar cambios después de unos minutos de inactividad.</target>
+        <target state="translated">Interactúa con este navegador integrado para configurar el perfil de su navegador. El navegador integrado saldrá sin guardar cambios después de unos minutos de inactividad.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sa6117a1376ac5a03">
         <source>Interactive browser session timed out due to inactivity.</source>
@@ -1695,7 +1695,7 @@
       </trans-unit>
       <trans-unit id="sb07ea0d5070f719d" xml:space="preserve">
         <source>Crawler Release Channel</source>
-        <target state="needs-translation">Canal de liberación de Crawler</target>
+        <target state="translated">Canal de liberación de rastreador</target>
       </trans-unit>
       <trans-unit id="se1273d9b375c0cec" xml:space="preserve">
         <source>Backed Up</source>
@@ -1721,20 +1721,25 @@
         <source>Deleted <x id="0" equiv-text="&lt;strong&gt;${profile.name}&lt;/strong&gt;"/>.</source>
         <target state="translated"><x id="0" equiv-text="&lt;strong&gt;${profileName}&lt;/strong&gt;"/> eliminado.</target>
       </trans-unit>
-      <trans-unit id="s45b40284fd1bde28">
+      <trans-unit id="s45b40284fd1bde28" xml:space="preserve">
         <source>Successfully saved browser profile.</source>
+        <target state="translated">Se ha guardado el perfil del navegador correctamente.</target>
       </trans-unit>
-      <trans-unit id="s2610ab6db9110d0e">
+      <trans-unit id="s2610ab6db9110d0e" xml:space="preserve">
         <source>Sorry, couldn't save browser profile at this time.</source>
+        <target state="translated">Lo siento, no pudo guardar el perfil del navegador en este momento.</target>
       </trans-unit>
-      <trans-unit id="s4719e6796d840ca4">
+      <trans-unit id="s4719e6796d840ca4" xml:space="preserve">
         <source>Your org does not have enough storage to save this browser profile.</source>
+        <target state="translated">Su org no tiene suficiente almacenamiento para guardar este perfil del navegador.</target>
       </trans-unit>
-      <trans-unit id="s005e3899acd05fb2">
+      <trans-unit id="s005e3899acd05fb2" xml:space="preserve">
         <source>You do not have permission to edit browser profiles.</source>
+        <target state="translated">No tienes permiso para editar los perfiles del navegador.</target>
       </trans-unit>
-      <trans-unit id="s2efb8aa7d17bb334">
+      <trans-unit id="s2efb8aa7d17bb334" xml:space="preserve">
         <source>New Browser Profile</source>
+        <target state="translated">Nuevo perfil de navegador</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s922123a81f238186">
         <source>By <x id="0" equiv-text="${this.item.userName}"/></source>
@@ -1752,31 +1757,37 @@
         <source>Storage</source>
         <target state="translated">Almacenamiento</target>
       </trans-unit>
-      <trans-unit id="s8f30271298d1c702">
+      <trans-unit id="s8f30271298d1c702" xml:space="preserve">
         <source>Archived Item</source>
+        <target state="translated">Elemento archivado</target>
       </trans-unit>
       <trans-unit id="sdabda2230cd87b68" xml:space="preserve">
         <source>Crawling</source>
         <target state="translated">Crawleo</target>
       </trans-unit>
-      <trans-unit id="sd15f184f058660bf">
+      <trans-unit id="sd15f184f058660bf" xml:space="preserve">
         <source>Crawl Running</source>
+        <target state="translated">Rastro en ejecución</target>
       </trans-unit>
-      <trans-unit id="se9e67cf931e7b60a">
+      <trans-unit id="se9e67cf931e7b60a" xml:space="preserve">
         <source>Crawls Running</source>
+        <target state="translated">Rastros en ejecución</target>
       </trans-unit>
-      <trans-unit id="s0ed063ab73b37012">
+      <trans-unit id="s0ed063ab73b37012" xml:space="preserve">
         <source>Crawl Workflow Waiting</source>
+        <target state="translated">Flujo de rastro esperando</target>
       </trans-unit>
-      <trans-unit id="s2dd2d72feacd6d05">
+      <trans-unit id="s2dd2d72feacd6d05" xml:space="preserve">
         <source>Crawl Workflows Waiting</source>
+        <target state="translated">Flujos de rastro esperando</target>
       </trans-unit>
-      <trans-unit id="s19cf4e0395936af4">
+      <trans-unit id="s19cf4e0395936af4" xml:space="preserve">
         <source>Page Crawled</source>
+        <target state="translated">Página arrastrada</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s1c1298026d795ce3">
         <source>Collection Total</source>
-        <target state="needs-translation">Colección Total</target>
+        <target state="translated">Total de colección</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s768e849d9e12a0bc">
         <source>Collections Total</source>
@@ -1810,37 +1821,45 @@
         <source>time</source>
         <target state="translated">tiempo</target>
       </trans-unit>
-      <trans-unit id="sf02eff827e8582fd">
+      <trans-unit id="sf02eff827e8582fd" xml:space="preserve">
         <source>Sorry, couldn't retrieve org metrics at this time.</source>
+        <target state="translated">Lo siento, no pude recuperar métricas de org en este momento.</target>
       </trans-unit>
-      <trans-unit id="s30a6b741fdc68a97">
+      <trans-unit id="s30a6b741fdc68a97" xml:space="preserve">
         <source>Resource Type</source>
+        <target state="translated">Tipo de recurso</target>
       </trans-unit>
-      <trans-unit id="sf03a57a37dea5f72">
+      <trans-unit id="sf03a57a37dea5f72" xml:space="preserve">
         <source>Good During Crawl</source>
+        <target state="translated">Bien durante rastro</target>
       </trans-unit>
-      <trans-unit id="sa82e2a0507bb9592">
+      <trans-unit id="sa82e2a0507bb9592" xml:space="preserve">
         <source>Bad During Crawl</source>
+        <target state="translated">Malo durante rastro</target>
       </trans-unit>
-      <trans-unit id="s49d37b069de1b651">
+      <trans-unit id="s49d37b069de1b651" xml:space="preserve">
         <source>Good During Analysis</source>
+        <target state="translated">Bueno durante análisis</target>
       </trans-unit>
-      <trans-unit id="sc8c67c7d3923c8f1">
+      <trans-unit id="sc8c67c7d3923c8f1" xml:space="preserve">
         <source>Bad During Analysis</source>
+        <target state="translated">Malo durante análisis</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sfbe3af6e8db73479">
         <source>All Resources</source>
         <target state="translated">Todos los recursos</target>
       </trans-unit>
-      <trans-unit id="s4baded305e206aa6">
+      <trans-unit id="s4baded305e206aa6" xml:space="preserve">
         <source>Good:</source>
+        <target state="translated">Bueno:</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sf6f647260bc3214a">
         <source>Success (2xx) and Redirection (3xx) status codes</source>
         <target state="translated">Códigos de estado Satisfactorio (2xx) y Redirecciones (3xx)</target>
       </trans-unit>
-      <trans-unit id="sc156a7a7a89f87c6">
+      <trans-unit id="sc156a7a7a89f87c6" xml:space="preserve">
         <source>Bad:</source>
+        <target state="translated">Malo:</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sb8a3c85221a8cc57">
         <source>Client error (4xx) and Server error (5xx) status codes</source>
@@ -1850,42 +1869,53 @@
         <source>Screenshot not available</source>
         <target state="translated">Captura de pantalla no disponible</target>
       </trans-unit>
-      <trans-unit id="s4467f80d499a8311">
+      <trans-unit id="s4467f80d499a8311" xml:space="preserve">
         <source>Screenshot during crawl</source>
+        <target state="translated">Captura de pantalla durante el rastro</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sa0c75059b7f6345c">
         <source>Screenshot during analysis</source>
         <target state="translated">Captura de pantalla durante el análisis</target>
       </trans-unit>
-      <trans-unit id="s4a5260a2b43369f4">
+      <trans-unit id="s4a5260a2b43369f4" xml:space="preserve">
         <source>Screenshot Match</source>
+        <target state="translated">Coincidencia de captura</target>
       </trans-unit>
-      <trans-unit id="sf32384611e0882ed">
+      <trans-unit id="sf32384611e0882ed" xml:space="preserve">
         <source>No Screenshot Diff</source>
+        <target state="translated">Sin diferencia de pantallazo</target>
       </trans-unit>
-      <trans-unit id="sff04d43695052343">
+      <trans-unit id="sff04d43695052343" xml:space="preserve">
         <source>Extracted Text Match</source>
+        <target state="translated">Coincidencia de texto extraído</target>
       </trans-unit>
-      <trans-unit id="s1dfeef2f2cb848e4">
+      <trans-unit id="s1dfeef2f2cb848e4" xml:space="preserve">
         <source>No Extracted Text Diff</source>
+        <target state="translated">Ninguna diferencia de texto extraído</target>
       </trans-unit>
-      <trans-unit id="s5d6510e3595aea19">
+      <trans-unit id="s5d6510e3595aea19" xml:space="preserve">
         <source>Resources Loaded (Crawl)</source>
+        <target state="translated">Recursos cargados (Rastro)</target>
       </trans-unit>
-      <trans-unit id="s1c420911a78de4b0">
+      <trans-unit id="s1c420911a78de4b0" xml:space="preserve">
         <source>No Crawl Diff</source>
+        <target state="translated">Ninguna diferencia de rastro</target>
       </trans-unit>
-      <trans-unit id="scfedabcfdc620cbb">
+      <trans-unit id="scfedabcfdc620cbb" xml:space="preserve">
         <source>Resources Loaded (Replay)</source>
+        <target state="translated">Recursos cargados (Reproducir)</target>
       </trans-unit>
-      <trans-unit id="s524749212a383ee8">
+      <trans-unit id="s524749212a383ee8" xml:space="preserve">
         <source>No Replay Diff</source>
+        <target state="translated">Sin diferencia de reproducción</target>
       </trans-unit>
-      <trans-unit id="s407b9645da0e7f67">
+      <trans-unit id="s407b9645da0e7f67" xml:space="preserve">
         <source>Missing text: Crawl</source>
+        <target state="translated">Texto ausente: Rastro</target>
       </trans-unit>
-      <trans-unit id="s593d4457a9d6d44d">
+      <trans-unit id="s593d4457a9d6d44d" xml:space="preserve">
         <source>Added text: Crawl</source>
+        <target state="translated">Texto añadido: Rastro</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s98532a4306876047">
         <source>Identical text</source>
@@ -1903,8 +1933,9 @@
         <source>Text data not available</source>
         <target state="translated">Datos de texto no disponibles</target>
       </trans-unit>
-      <trans-unit id="s0415c19e486bf57c">
+      <trans-unit id="s0415c19e486bf57c" xml:space="preserve">
         <source>Text extracted during crawl</source>
+        <target state="translated">Texto extraído durante rastro</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s7da7beefe9323ff7">
         <source>Text extracted during analysis</source>
@@ -1918,17 +1949,21 @@
         <source>No matching pages found</source>
         <target state="translated">No se han encontrado páginas que coincidan</target>
       </trans-unit>
-      <trans-unit id="s929e7f1e8b36f974">
+      <trans-unit id="s929e7f1e8b36f974" xml:space="preserve">
         <source>Best Screenshot Match</source>
+        <target state="translated">Mejor coincidencia de pantallazo</target>
       </trans-unit>
-      <trans-unit id="s675fe36f0899f519">
+      <trans-unit id="s675fe36f0899f519" xml:space="preserve">
         <source>Worst Screenshot Match</source>
+        <target state="translated">Peor coincidencia de pantallazo</target>
       </trans-unit>
-      <trans-unit id="s81ea3c33b0eb6ac3">
+      <trans-unit id="s81ea3c33b0eb6ac3" xml:space="preserve">
         <source>Best Extracted Text Match</source>
+        <target state="translated">Mejor coincidencia de texto extraído</target>
       </trans-unit>
-      <trans-unit id="s3067258df765240a">
+      <trans-unit id="s3067258df765240a" xml:space="preserve">
         <source>Worst Extracted Text Match</source>
+        <target state="translated">Peor coincidencia de texto extraído</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s3bfcd1bea9cef454">
         <source>Approval:</source>
@@ -1952,7 +1987,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="saf84ec86139d349e">
         <source>Comment</source>
-        <target state="needs-translation">Comentar</target>
+        <target state="translated">Comentar</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s123da0f92f97dd86">
         <source>Reject</source>
@@ -1970,8 +2005,9 @@
         <source>Resources</source>
         <target state="translated">Recursos</target>
       </trans-unit>
-      <trans-unit id="sd86a0df0354a191e">
+      <trans-unit id="sd86a0df0354a191e" xml:space="preserve">
         <source>Finish Review</source>
+        <target state="translated">Final de revisión</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s17ea9dd97d788aa4">
         <source>Page Comments</source>
@@ -1981,45 +2017,57 @@
         <source>Submit Comment</source>
         <target state="translated">Enviar comentario</target>
       </trans-unit>
-      <trans-unit id="sfc53e352afbca881">
+      <trans-unit id="sfc53e352afbca881" xml:space="preserve">
         <source>Review</source>
+        <target state="translated">Revisión</target>
       </trans-unit>
-      <trans-unit id="s955269ebe3fb8ffc">
+      <trans-unit id="s955269ebe3fb8ffc" xml:space="preserve">
         <source>Rate this crawl:</source>
+        <target state="translated">Puntuar este rastro:</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sf238b90665620a88">
         <source>Excellent!</source>
         <target state="translated">¡Excelente!</target>
       </trans-unit>
-      <trans-unit id="s8d86b131628669ce">
+      <trans-unit id="s8d86b131628669ce" xml:space="preserve">
         <source>This archived item perfectly replicates the original pages.</source>
+        <target state="translated">Este elemento archivado reproduce perfectamente las páginas originales.</target>
       </trans-unit>
-      <trans-unit id="sc40cd77e0d29dbf8">
+      <trans-unit id="sc40cd77e0d29dbf8" xml:space="preserve">
         <source>Good</source>
+        <target state="translated">Bueno</target>
       </trans-unit>
-      <trans-unit id="s9f474beaa66f0e89">
+      <trans-unit id="s9f474beaa66f0e89" xml:space="preserve">
         <source>Looks and functions nearly the same as the original pages.</source>
+        <target state="translated">Parece y funciona casi igual que lo mismo como las páginas originales.</target>
       </trans-unit>
-      <trans-unit id="s198f498517ea3a13">
+      <trans-unit id="s198f498517ea3a13" xml:space="preserve">
         <source>Fair</source>
+        <target state="translated">Equitativo</target>
       </trans-unit>
-      <trans-unit id="se63df4037b90e036">
+      <trans-unit id="se63df4037b90e036" xml:space="preserve">
         <source>Similar to the original pages, but may be missing non-critical content or functionality.</source>
+        <target state="translated">Similar a las páginas originales, pero puede faltar contenido no crítico o funcionalidad.</target>
       </trans-unit>
-      <trans-unit id="sb349f019a716a4fd">
+      <trans-unit id="sb349f019a716a4fd" xml:space="preserve">
         <source>Poor</source>
+        <target state="translated">Pobre</target>
       </trans-unit>
-      <trans-unit id="s78fe03ba909b5fdb">
+      <trans-unit id="s78fe03ba909b5fdb" xml:space="preserve">
         <source>Some similarities with the original pages, but missing critical content or functionality.</source>
+        <target state="translated">Algunas similitudes con las páginas originales, pero falta contenido crítico o funcionalidad.</target>
       </trans-unit>
-      <trans-unit id="s16413e19b0f07a18">
+      <trans-unit id="s16413e19b0f07a18" xml:space="preserve">
         <source>Bad</source>
+        <target state="translated">Mala</target>
       </trans-unit>
-      <trans-unit id="s14bfcce8cd64daa1">
+      <trans-unit id="s14bfcce8cd64daa1" xml:space="preserve">
         <source>Missing all content and functionality from the original pages.</source>
+        <target state="translated">Ausentando todo el contexto y funcionalidad desde las páginas originales.</target>
       </trans-unit>
-      <trans-unit id="sbf9c9810624e0c87">
+      <trans-unit id="sbf9c9810624e0c87" xml:space="preserve">
         <source>Submit Review</source>
+        <target state="translated">Enviar revisión</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s6d7c9c2bb994f236">
         <source>Comments (<x id="0" equiv-text="${this.localize.number(commentCount)}"/>)</source>
@@ -2037,28 +2085,33 @@
         <source>Add a comment</source>
         <target state="translated">Añadir un comentario</target>
       </trans-unit>
-      <trans-unit id="sa7817227bd6cae5b">
+      <trans-unit id="sa7817227bd6cae5b" xml:space="preserve">
         <source>Enter page feedback</source>
+        <target state="translated">Introduzca la página de retroalimentación</target>
       </trans-unit>
-      <trans-unit id="sa6f04f2271f5c923">
+      <trans-unit id="sa6f04f2271f5c923" xml:space="preserve">
         <source>Reload Replay</source>
+        <target state="translated">Recargar reproducción</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sde1645eba260b3df">
         <source>Reload page</source>
         <target state="translated">Recargar página</target>
       </trans-unit>
-      <trans-unit id="s388e286f3911e3cf">
+      <trans-unit id="s388e286f3911e3cf" xml:space="preserve">
         <source>Toggle screenshot wipe view</source>
+        <target state="translated">Conmutar pantallazo en vista ancha</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s7381233b8fceb3a6">
         <source>Loading page</source>
         <target state="translated">Página de carga</target>
       </trans-unit>
-      <trans-unit id="s4f5aff57a099f200">
+      <trans-unit id="s4f5aff57a099f200" xml:space="preserve">
         <source>Navigation prevented</source>
+        <target state="translated">Navegación prevenida</target>
       </trans-unit>
-      <trans-unit id="s106806b78c8a9e8c">
+      <trans-unit id="s106806b78c8a9e8c" xml:space="preserve">
         <source>Following links during review is disabled.</source>
+        <target state="translated">Seguir enlaces durante revisión está deshabilitado.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="scbfea985fa196a60">
         <source>Sorry, couldn't add comment at this time.</source>
@@ -2068,8 +2121,9 @@
         <source>Sorry, couldn't delete comment at this time.</source>
         <target state="translated">Lo sentimos, no se ha podido eliminar el comentario en este momento.</target>
       </trans-unit>
-      <trans-unit id="s7bded53458ce71de">
+      <trans-unit id="s7bded53458ce71de" xml:space="preserve">
         <source>Sorry, couldn't retrieve analysis runs at this time.</source>
+        <target state="translated">Disculpe, no se pudo obtener análisis ejecutándose en este momento.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s0892cc244e973091">
         <source>Sorry, couldn't retrieve page at this time.</source>
@@ -2079,14 +2133,17 @@
         <source>Sorry, couldn't retrieve pages at this time.</source>
         <target state="translated">Lo sentimos, no se han podido recuperar lás páginas en este momento.</target>
       </trans-unit>
-      <trans-unit id="s8aad22226aba8470">
+      <trans-unit id="s8aad22226aba8470" xml:space="preserve">
         <source>Saved QA review.</source>
+        <target state="translated">Revisión QA guardada.</target>
       </trans-unit>
-      <trans-unit id="s36fd1256980b5f58">
+      <trans-unit id="s36fd1256980b5f58" xml:space="preserve">
         <source>Sorry, couldn't submit QA review at this time.</source>
+        <target state="translated">Disculpe, no pudo enviar revisión QA en este momento.</target>
       </trans-unit>
-      <trans-unit id="saa63c0c9ca0eac98">
+      <trans-unit id="saa63c0c9ca0eac98" xml:space="preserve">
         <source>You don't have permission to create a new Workflow.</source>
+        <target state="translated">No tiene permiso para crear un Flujo nuevo.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sc16e00a7a8b2fde2">
         <source>Back</source>
@@ -2096,8 +2153,9 @@
         <source>Save Profile</source>
         <target state="translated">Guardar perfil</target>
       </trans-unit>
-      <trans-unit id="s66ea9952bbd68025">
+      <trans-unit id="s66ea9952bbd68025" xml:space="preserve">
         <source>Sorry, couldn't retrieve organization at this time.</source>
+        <target state="translated">Disculpe, no pude obtener organización en este momento.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s0726c5784ccf9222">
         <source>Successfully updated role for <x id="0" equiv-text="${user.name || user.email}"/>.</source>
@@ -2119,15 +2177,17 @@
         <source>(default)</source>
         <target state="translated">(predeterminado)</target>
       </trans-unit>
-      <trans-unit id="s4ab09f62524380b9">
+      <trans-unit id="s4ab09f62524380b9" xml:space="preserve">
         <source>Max Pages</source>
+        <target state="translated">Máx. de página</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s66722bc2ea775e05">
         <source>Disabled</source>
         <target state="translated">Deshabilitado</target>
       </trans-unit>
-      <trans-unit id="sacf95026f82adb10">
+      <trans-unit id="sacf95026f82adb10" xml:space="preserve">
         <source>No custom profile</source>
+        <target state="translated">Sin perfil adaptado</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s38daf2fb241d8bbb">
         <source>Block Ads by Domain</source>
@@ -2137,21 +2197,25 @@
         <source>Browser User Agent (default)</source>
         <target state="translated">Agente de usuario de navegador (predeterminado)</target>
       </trans-unit>
-      <trans-unit id="s78a3454dadf068cf">
+      <trans-unit id="s78a3454dadf068cf" xml:space="preserve">
         <source>Crawl Schedule Type</source>
+        <target state="translated">Tipo de planificación de rastro</target>
       </trans-unit>
-      <trans-unit id="s063b2ed6541c9181">
+      <trans-unit id="s063b2ed6541c9181" xml:space="preserve">
         <source>Run on a Recurring Basis</source>
+        <target state="translated">Ejecutar en una base recurrente</target>
       </trans-unit>
-      <trans-unit id="s00952de51c229a2e">
+      <trans-unit id="s00952de51c229a2e" xml:space="preserve">
         <source><x id="0" equiv-text="${primarySeedConfig.depth}"/> hop(s)</source>
+        <target state="translated"><x id="0" equiv-text="${primarySeedConfig.depth}"/> cotejo(s)</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s9ecb6da2267389f4">
         <source>Unlimited (default)</source>
         <target state="translated">Ilimitado (predeterminado)</target>
       </trans-unit>
-      <trans-unit id="s34e90e6353b56f58">
+      <trans-unit id="s34e90e6353b56f58" xml:space="preserve">
         <source>Include Any Linked Page (“one hop out”)</source>
+        <target state="translated">Incluir cualquier página enlazada (“un cotejo externo”)</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sa3a6465ecf8740fb">
         <source>Check For Sitemap</source>
@@ -2221,11 +2285,13 @@
         <source>Quotas for: <x id="0" equiv-text="${this.activeOrg?.name || &quot;&quot;}"/></source>
         <target state="translated">Cuota para: <x id="0" equiv-text="${this.currOrg?.name || &quot;&quot;}"/></target>
       </trans-unit>
-      <trans-unit id="sfba7b662681a9f92">
+      <trans-unit id="sfba7b662681a9f92" xml:space="preserve">
         <source>Max Concurrent Crawls</source>
+        <target state="translated">Concurrencia máx. por rastros</target>
       </trans-unit>
-      <trans-unit id="s3f807ba2fb999331">
+      <trans-unit id="s3f807ba2fb999331" xml:space="preserve">
         <source>Max Pages Per Crawl</source>
+        <target state="translated">Páginas máx por rastros</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s8a803831f3ac3903">
         <source>Max Execution Minutes Per Month</source>
@@ -2243,14 +2309,17 @@
         <source>Update Quotas</source>
         <target state="translated">Actualizar cuota</target>
       </trans-unit>
-      <trans-unit id="s8d7a8a8d9ff3a0c7">
+      <trans-unit id="s8d7a8a8d9ff3a0c7" xml:space="preserve">
         <source>Disable Archiving?</source>
+        <target state="translated">¿Deshabilitar archivado?</target>
       </trans-unit>
-      <trans-unit id="h66cb67cd841f4beb">
+      <trans-unit id="h66cb67cd841f4beb" xml:space="preserve">
         <source>Are you sure you want to disable archiving in <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;"/> org? Members will no longer be able to crawl, upload files, create browser profiles, or create collections.</source>
+        <target state="translated">¿Seguro que desea deshabilitar el archivado en <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;"/> org? Los miembros ya no serían capaces de arrastrar, subir archivos, crear perfiles de navegador, o crear colecciones.</target>
       </trans-unit>
-      <trans-unit id="sdc8e0ecdba53dccc">
+      <trans-unit id="sdc8e0ecdba53dccc" xml:space="preserve">
         <source>Slug:</source>
+        <target state="translated">Babosa:</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="see2872cc86489f3e">
         <source>Members:</source>
@@ -2260,14 +2329,17 @@
         <source>Reason</source>
         <target state="translated">Razón</target>
       </trans-unit>
-      <trans-unit id="s67f9c55472e78c8a">
+      <trans-unit id="s67f9c55472e78c8a" xml:space="preserve">
         <source>Enter reason for disabling archiving</source>
+        <target state="translated">Introduzca la razón para deshabilitar archivado</target>
       </trans-unit>
-      <trans-unit id="s159812ca2edc12a2">
+      <trans-unit id="s159812ca2edc12a2" xml:space="preserve">
         <source>Disable Archiving</source>
+        <target state="translated">Deshabilitar archivado</target>
       </trans-unit>
-      <trans-unit id="s2f2866981870fee3">
+      <trans-unit id="s2f2866981870fee3" xml:space="preserve">
         <source>Confirm Org Deletion: <x id="0" equiv-text="${this.currOrg?.name || &quot;&quot;}"/></source>
+        <target state="translated">Confirmar borrado de org: <x id="0" equiv-text="${this.currOrg?.name || &quot;&quot;}"/></target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="hbc605ddee9667ea5">
         <source>Are you sure you want to delete
@@ -2279,23 +2351,29 @@
         <source>Type "<x id="0" equiv-text="${confirmationStr}"/>" to confirm</source>
         <target state="translated">Escriba "<x id="0" equiv-text="${confirmationStr}"/>" para confirmar</target>
       </trans-unit>
-      <trans-unit id="s91622815dce6a0ec">
+      <trans-unit id="s91622815dce6a0ec" xml:space="preserve">
         <source>Delete Org</source>
+        <target state="translated">Borrar Org</target>
       </trans-unit>
-      <trans-unit id="s3eab2ed27de13f27">
+      <trans-unit id="s3eab2ed27de13f27" xml:space="preserve">
         <source>Archiving in "<x id="0" equiv-text="${org.name}"/>" is disabled.</source>
+        <target state="translated">Archivar en "<x id="0" equiv-text="${org.name}"/>" está deshabilitado.</target>
       </trans-unit>
-      <trans-unit id="s2da2e2eba00d0f28">
+      <trans-unit id="s2da2e2eba00d0f28" xml:space="preserve">
         <source>Archiving in "<x id="0" equiv-text="${org.name}"/>" is re-enabled.</source>
+        <target state="translated">Archivar en "<x id="0" equiv-text="${org.name}"/>" está re‐habilitado.</target>
       </trans-unit>
-      <trans-unit id="s42dfcfdcb5aee47e">
+      <trans-unit id="s42dfcfdcb5aee47e" xml:space="preserve">
         <source>Sorry, couldn't update org archiving ability at this time.</source>
+        <target state="translated">Disculpe, no pudo actualizar la habilidad de archivado org en este momento.</target>
       </trans-unit>
-      <trans-unit id="s081029829332df74">
+      <trans-unit id="s081029829332df74" xml:space="preserve">
         <source>Org "<x id="0" equiv-text="${org.name}"/>" has been deleted.</source>
+        <target state="translated">Org "<x id="0" equiv-text="${org.name}"/>" ha sido eliminado.</target>
       </trans-unit>
-      <trans-unit id="s4de74a2a08a74bff">
+      <trans-unit id="s4de74a2a08a74bff" xml:space="preserve">
         <source>Sorry, couldn't delete org at this time.</source>
+        <target state="translated">Lo siento, no pude eliminar org en este momento.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sd8adbc60f2886b80">
         <source>Issue</source>
@@ -2309,11 +2387,13 @@
         <source>Active with issue: Execution minutes quota reached</source>
         <target state="translated">Activo con incidencia: Cuota de minutos de ejecución alcanzada</target>
       </trans-unit>
-      <trans-unit id="s37e449970d4403d8">
+      <trans-unit id="s37e449970d4403d8" xml:space="preserve">
         <source>Archiving Disabled:</source>
+        <target state="translated">Archivador deshabilitado:</target>
       </trans-unit>
-      <trans-unit id="s020efa9f4b5c78e0">
+      <trans-unit id="s020efa9f4b5c78e0" xml:space="preserve">
         <source>Archiving Disabled (no reason specified)</source>
+        <target state="translated">Archivador deshabilitado (ninguna razón especificada)</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s11326fd2590f4e5e">
         <source>Default</source>
@@ -2323,8 +2403,9 @@
         <source>Edit Quotas</source>
         <target state="translated">Editar cuotas</target>
       </trans-unit>
-      <trans-unit id="s9e437ca7310a2c69">
+      <trans-unit id="s9e437ca7310a2c69" xml:space="preserve">
         <source>Re-enable Archiving</source>
+        <target state="translated">Re‐habilitar archivado</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s492e6fe0b20b7ebd">
         <source>Beta feature</source>
@@ -2342,11 +2423,13 @@
         <source>Beta</source>
         <target state="translated">Beta</target>
       </trans-unit>
-      <trans-unit id="s24761a0cc8d9c0aa">
+      <trans-unit id="s24761a0cc8d9c0aa" xml:space="preserve">
         <source>Organization</source>
+        <target state="translated">Organización</target>
       </trans-unit>
-      <trans-unit id="s6c6e1788cde76cc2">
+      <trans-unit id="s6c6e1788cde76cc2" xml:space="preserve">
         <source>Select an org</source>
+        <target state="translated">Seleccione un org</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s318065b4139dd6d9">
         <source>Required for first member</source>
@@ -2372,8 +2455,9 @@
         <source>Your name</source>
         <target state="translated">Su nombre</target>
       </trans-unit>
-      <trans-unit id="s1a8bd8fe18bfdf7c">
+      <trans-unit id="s1a8bd8fe18bfdf7c" xml:space="preserve">
         <source>Your full name, nickname, or another name that org collaborators can see.</source>
+        <target state="translated">Su nombre completo, apodo, u otro nombre que org colaboran puede ver.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s321c03399a143242">
         <source>Create Account</source>
@@ -2399,21 +2483,25 @@
         <source><x id="0" equiv-text="${typeLabel}"/>: <x id="1" equiv-text="${crawlStatus.label}"/></source>
         <target state="translated"><x id="0" equiv-text="${typeLabel}"/>: <x id="1" equiv-text="${crawlStatus.label}"/></target>
       </trans-unit>
-      <trans-unit id="s9fdb0be4e08e3609">
+      <trans-unit id="s9fdb0be4e08e3609" xml:space="preserve">
         <source>QA Analysis: <x id="0" equiv-text="${qaStatus.label}"/> (<x id="1" equiv-text="${activeProgress}"/>% finished)</source>
+        <target state="translated">Análisis QA: <x id="0" equiv-text="${qaStatus.label}"/> (<x id="1" equiv-text="${activeProgress}"/>% finalizado)</target>
       </trans-unit>
-      <trans-unit id="s9087c0239aa5bd6d">
+      <trans-unit id="s9087c0239aa5bd6d" xml:space="preserve">
         <source>QA Analysis: <x id="0" equiv-text="${isUpload ? &quot;Not Applicable&quot; : qaStatus.label || msg(&quot;None&quot;)}"/></source>
+        <target state="translated">Análisis QA: <x id="0" equiv-text="${isUpload ? &quot;Not Applicable&quot; : qaStatus.label || msg(&quot;None&quot;)}"/></target>
       </trans-unit>
-      <trans-unit id="s2fb39b9ba9441537">
+      <trans-unit id="s2fb39b9ba9441537" xml:space="preserve">
         <source><x id="0" equiv-text="${this.localize.number(pageCount)}"/> crawled, <x id="1" equiv-text="${this.localize.number(this.item.stats?.found ? +this.item.stats.found : 0)}"/> found</source>
+        <target state="translated"><x id="0" equiv-text="${this.localize.number(pageCount)}"/> arrastrada, <x id="1" equiv-text="${this.localize.number(this.item.stats?.found ? +this.item.stats.found : 0)}"/> encontrado</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sa0ffc3feac61fcc4">
         <source>Rated <x id="0" equiv-text="${this.item.reviewStatus}"/> / <x id="1" equiv-text="${ReviewStatus.Excellent}"/></source>
         <target state="translated">Valorado <x id="0" equiv-text="${this.item.reviewStatus}"/> / <x id="1" equiv-text="${ReviewStatus.Excellent}"/></target>
       </trans-unit>
-      <trans-unit id="s4e31ba44d4056425">
+      <trans-unit id="s4e31ba44d4056425" xml:space="preserve">
         <source>No QA review submitted</source>
+        <target state="translated">Ninguna reseña de QA enviada</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s1b210718400e7ea8">
         <source><x id="0" equiv-text="${this.localize.number(pageCount)}"/> page</source>
@@ -2427,53 +2515,65 @@
         <source>No matching Collections found.</source>
         <target state="translated">No se han encontrado colecciones que coincidan.</target>
       </trans-unit>
-      <trans-unit id="sa777c574a8222f0f">
+      <trans-unit id="sa777c574a8222f0f" xml:space="preserve">
         <source>Add to Collection</source>
+        <target state="translated">Añadir a Colección</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sf32f25806ba4fd81">
         <source>Pending Exclusions</source>
         <target state="translated">Exclusiones pendientes</target>
       </trans-unit>
-      <trans-unit id="s2bdd9994851a31c4">
+      <trans-unit id="s2bdd9994851a31c4" xml:space="preserve">
         <source>+1 URL</source>
+        <target state="translated">+1 URL</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s28d7266643f5992f">
         <source>No matches</source>
         <target state="translated">No hay coincidencias</target>
       </trans-unit>
-      <trans-unit id="s96a817ae5ad03253">
+      <trans-unit id="s96a817ae5ad03253" xml:space="preserve">
         <source>No matching URLs found in queue.</source>
+        <target state="translated">No coinciden las URL encontradas en la cola.</target>
       </trans-unit>
-      <trans-unit id="sbbdd27eea29fea6f">
+      <trans-unit id="sbbdd27eea29fea6f" xml:space="preserve">
         <source>Start typing an exclusion to view matching URLs in the queue.</source>
+        <target state="translated">Inicie tecleo en exclusión para ver las URL coincidentes en la cola.</target>
       </trans-unit>
-      <trans-unit id="sdbd27d37273261f2">
+      <trans-unit id="sdbd27d37273261f2" xml:space="preserve">
         <source>Queued URLs</source>
+        <target state="translated">Las URL en la cola</target>
       </trans-unit>
-      <trans-unit id="se7f351ae6cbb41f0">
+      <trans-unit id="se7f351ae6cbb41f0" xml:space="preserve">
         <source>Queued URLs from 1 to <x id="0" equiv-text="${this.localize.number(this.queue.total)}"/></source>
+        <target state="translated">Las URL en la cola desde 1 hasta <x id="0" equiv-text="${this.localize.number(this.queue.total)}"/></target>
       </trans-unit>
-      <trans-unit id="h077c8fe82a78c616">
+      <trans-unit id="h077c8fe82a78c616" xml:space="preserve">
         <source>Queued URLs from <x id="0" equiv-text="${fromInput}"/> to <x id="1" equiv-text="${max}"/> of <x id="2" equiv-text="${total}"/></source>
+        <target state="translated">Las URL en la cola desde <x id="0" equiv-text="${fromInput}"/> hasta <x id="1" equiv-text="${max}"/> de <x id="2" equiv-text="${total}"/></target>
       </trans-unit>
-      <trans-unit id="s4dfaf5cfc90f8493">
+      <trans-unit id="s4dfaf5cfc90f8493" xml:space="preserve">
         <source>No pages queued.</source>
+        <target state="translated">Sin páginas encoladas.</target>
       </trans-unit>
-      <trans-unit id="s8e853be463b322f0">
+      <trans-unit id="s8e853be463b322f0" xml:space="preserve">
         <source>End of queue</source>
+        <target state="translated">Final de cola</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s7584ded3d749c75e">
         <source>Load more</source>
         <target state="translated">Cargar más</target>
       </trans-unit>
-      <trans-unit id="s813262fab638bbfc">
+      <trans-unit id="s813262fab638bbfc" xml:space="preserve">
         <source>-<x id="0" equiv-text="${this.localize.number(this.matchedTotal)}"/> URLs</source>
+        <target state="translated">- Las URL <x id="0" equiv-text="${this.localize.number(this.matchedTotal)}"/></target>
       </trans-unit>
-      <trans-unit id="s6c4a20fdba7af262">
+      <trans-unit id="s6c4a20fdba7af262" xml:space="preserve">
         <source>-1 URL</source>
+        <target state="translated">-1 URL</target>
       </trans-unit>
-      <trans-unit id="s2342004e9c7c2f6a">
+      <trans-unit id="s2342004e9c7c2f6a" xml:space="preserve">
         <source>Sorry, couldn't fetch crawl queue at this time.</source>
+        <target state="translated">Lo siento, no pude obtener cola de rastro en este momento.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s5db7bd625b7a6a49">
         <source>File to Upload</source>
@@ -2503,15 +2603,17 @@
         <source>Keep this window open until your upload finishes.</source>
         <target state="translated">Mantén abierta esta ventana hasta que la subida se complete.</target>
       </trans-unit>
-      <trans-unit id="hb8ae169d4ea6d7a3">
+      <trans-unit id="hb8ae169d4ea6d7a3" xml:space="preserve">
         <source>Successfully uploaded <x id="0" equiv-text="&lt;strong&gt;${name}&lt;/strong&gt;"/>.<x id="1" equiv-text="&lt;br&gt;&#10;              &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate.orgBasePath}/items/upload/${data.id}&quot; @click=&quot;${this.navigate.link}&quot;&gt;"/>View Item<x id="2" equiv-text="&lt;/a&gt; "/></source>
+        <target state="translated">Se ha subido correctamente <x id="0" equiv-text="&lt;strong&gt;${name}&lt;/strong&gt;"/>.<x id="1" equiv-text="&lt;br&gt;&#10;              &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate.orgBasePath}/items/upload/${data.id}&quot; @click=&quot;${this.navigate.link}&quot;&gt;"/>Elemento de vista<x id="2" equiv-text="&lt;/a&gt; "/></target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="scccaadc44687f6bf">
         <source>Sorry, couldn't upload file at this time.</source>
         <target state="translated">Lo sentimos, no se ha podido subir el archivo en este momento.</target>
       </trans-unit>
-      <trans-unit id="s13df06b5e1720f7f">
+      <trans-unit id="s13df06b5e1720f7f" xml:space="preserve">
         <source>Your org does not have enough storage to upload this file.</source>
+        <target state="translated">Su org no tiene suficiente almacén para subir este archivo.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s52d81506be796d67">
         <source>Filter by name</source>
@@ -2521,18 +2623,21 @@
         <source>https://example.com</source>
         <target state="translated">https://example.com</target>
       </trans-unit>
-      <trans-unit id="s4e59c71197f2a840">
+      <trans-unit id="s4e59c71197f2a840" xml:space="preserve">
         <source>This org doesn't have any custom profiles yet.</source>
+        <target state="translated">Esta org aún no tiene ningunos de los perfiles personalizados.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sd8c5a340f076fd18">
         <source>Create profile</source>
         <target state="translated">Crear perfil</target>
       </trans-unit>
-      <trans-unit id="sdfbbc387c71bad18">
+      <trans-unit id="sdfbbc387c71bad18" xml:space="preserve">
         <source>Auto-Add</source>
+        <target state="translated">Auto‐Añadir</target>
       </trans-unit>
-      <trans-unit id="s9b31004ff434426e">
+      <trans-unit id="s9b31004ff434426e" xml:space="preserve">
         <source>Crawl Finished</source>
+        <target state="translated">Rastro Finalizado</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="saa33768e03c45fc8">
         <source>File Size</source>
@@ -2550,22 +2655,25 @@
         <source>All Uploads (<x id="0" equiv-text="${this.localize.number(this.uploads!.total)}"/>)</source>
         <target state="translated">Todas las subidas (<x id="0" equiv-text="${this.localize.number(this.uploads!.total)}"/>)</target>
       </trans-unit>
-      <trans-unit id="s1e2b42118528e92f">
+      <trans-unit id="s1e2b42118528e92f" xml:space="preserve">
         <source>In Collection?</source>
+        <target state="translated">¿Interno a Colección?</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sa03a63e319c2f89b">
         <source>No matching uploads found.</source>
         <target state="translated">No se han encontrado subidas que coincidan.</target>
       </trans-unit>
-      <trans-unit id="s8a6f4e542c686466">
+      <trans-unit id="s8a6f4e542c686466" xml:space="preserve">
         <source>Only mine</source>
+        <target state="translated">Solo mío</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s4a0cbea3f0b22976">
         <source>Save Selection</source>
         <target state="translated">Guardar selección</target>
       </trans-unit>
-      <trans-unit id="s83c70a729f1dd241">
+      <trans-unit id="s83c70a729f1dd241" xml:space="preserve">
         <source>Something unexpected went wrong, couldn't save auto-add setting.</source>
+        <target state="translated">Algo inesperado salió mal, no pudo guardar el ajuste auto‐añadir.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s0558979b981b9057">
         <source>Custom Page Prefix</source>
@@ -2597,37 +2705,45 @@
         <source>At least 1 URL is required.</source>
         <target state="translated">Es obligatoria al menos 1 URL.</target>
       </trans-unit>
-      <trans-unit id="s7af85d601db244a7">
+      <trans-unit id="s7af85d601db244a7" xml:space="preserve">
         <source>Tells the crawler which pages it can visit.</source>
+        <target state="translated">Diga el rastreador cuales páginas puede visitar.</target>
       </trans-unit>
-      <trans-unit id="hef8020bab2159211">
+      <trans-unit id="hef8020bab2159211" xml:space="preserve">
         <source>Will crawl all pages and paths in the same directory, e.g. <x id="0" equiv-text="&lt;span class=&quot;break-word break-word text-blue-500&quot;&gt;${exampleDomain}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;${examplePathname.slice(0, examplePathname.lastIndexOf(&quot;/&quot;))}"/>/<x id="1" equiv-text="&lt;/span&gt;"/></source>
+        <target state="translated">Se arrastrarán todas las páginas y rutas en el mismo directorio, por ejemplo <x id="0" equiv-text="&lt;span class=&quot;break-word break-word text-blue-500&quot;&gt;${exampleDomain}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;${examplePathname.slice(0, examplePathname.lastIndexOf(&quot;/&quot;))}"/>/<x id="1" equiv-text="&lt;/span&gt;"/></target>
       </trans-unit>
-      <trans-unit id="hed4c39f98af5c58f">
+      <trans-unit id="hed4c39f98af5c58f" xml:space="preserve">
         <source>Will crawl all pages on <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> and ignore pages on any subdomains.</source>
+        <target state="translated">Se arrastrará todas las páginas en <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> e ignorará las páginas en cualquier subdominio.</target>
       </trans-unit>
-      <trans-unit id="ha8f0ffdb034da2d1">
+      <trans-unit id="ha8f0ffdb034da2d1" xml:space="preserve">
         <source>Will crawl all pages on <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> and <x id="1" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;"/>subdomain.<x id="2" equiv-text="${exampleHost}&lt;/span&gt;"/>.</source>
+        <target state="translated">Se arrastrará todas las páginas en <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> y <x id="1" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;"/>subdominio.<x id="2" equiv-text="${exampleHost}&lt;/span&gt;"/>.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s262c31c801cfbcd9">
         <source>Please enter a valid URL.</source>
         <target state="translated">Por favor introduzca una dirección URL válida.</target>
       </trans-unit>
-      <trans-unit id="s285f35c68ab11461">
+      <trans-unit id="s285f35c68ab11461" xml:space="preserve">
         <source>The starting point of your crawl.</source>
+        <target state="translated">El punto de inicio de tu rastro.</target>
       </trans-unit>
-      <trans-unit id="s406e05cc7ea70f01">
+      <trans-unit id="s406e05cc7ea70f01" xml:space="preserve">
         <source>hops</source>
+        <target state="translated">saltos</target>
       </trans-unit>
-      <trans-unit id="s150f5e42dc1aad38">
+      <trans-unit id="s150f5e42dc1aad38" xml:space="preserve">
         <source>Include any linked page (“one hop out”)</source>
+        <target state="translated">Incluya cualquier página enlazada (“una salto fuera”)</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sf092ad58edfa163b">
         <source>Check for sitemap</source>
         <target state="translated">Comprobar el mapa del sitio</target>
       </trans-unit>
-      <trans-unit id="s4caffd8aa426781c">
+      <trans-unit id="s4caffd8aa426781c" xml:space="preserve">
         <source>If checked, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if present.</source>
+        <target state="translated">Si está marcado, el rastreador comprobará un mapa de sitio en /sitemap.xml y lo utilizará para descubrir páginas para arrastrar si está presente.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="scbd664e4049d11f3">
         <source>Specify exclusion rules for what pages should not be visited.</source>
@@ -2641,64 +2757,81 @@
         <source>Must be less than maximum of <x id="0" equiv-text="${this.localize.number(+max)}"/></source>
         <target state="translated">Debe ser menos que el máximo de <x id="0" equiv-text="${this.localize.number(+max)}"/></target>
       </trans-unit>
-      <trans-unit id="s9a3cc9f85491f80b">
+      <trans-unit id="s9a3cc9f85491f80b" xml:space="preserve">
         <source>Increase the number of open browser windows during a crawl. This will speed up your crawl by effectively running more crawlers at the same time.</source>
+        <target state="translated">Incrementa el número de ventanas de navegador abierto durante un rastro. Esto acelerará su rastro por ejecución eficazmente más rastros que al mismo tiempo.</target>
       </trans-unit>
-      <trans-unit id="s5149476b5ea0a1b9">
+      <trans-unit id="s5149476b5ea0a1b9" xml:space="preserve">
         <source>See caveats</source>
+        <target state="translated">Consulte advertencias</target>
       </trans-unit>
-      <trans-unit id="s4dc337bffda2ec4d">
+      <trans-unit id="s4dc337bffda2ec4d" xml:space="preserve">
         <source>Crawl Schedule</source>
+        <target state="translated">Planificar rastro</target>
       </trans-unit>
-      <trans-unit id="se92749db624c8982">
+      <trans-unit id="se92749db624c8982" xml:space="preserve">
         <source>Configure crawls to run every day, week, or month at a specified time.</source>
+        <target state="translated">Configure los rastros para ejecutar cada día, semana, o mes en un tiempo especificado.</target>
       </trans-unit>
-      <trans-unit id="sf94cd0bf25284668">
+      <trans-unit id="sf94cd0bf25284668" xml:space="preserve">
         <source>Set Schedule</source>
+        <target state="translated">Fijar planificación</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s4bfaefac9bc26241">
         <source>Frequency</source>
         <target state="translated">Frecuencia</target>
       </trans-unit>
-      <trans-unit id="s680d6fc47b06b8b5">
+      <trans-unit id="s680d6fc47b06b8b5" xml:space="preserve">
         <source>Limit the frequency for how often a crawl will run.</source>
+        <target state="translated">Limita la frecuencia para como a menudo ejecutará un rastro.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="se0955919920ee87d">
         <source>Day</source>
         <target state="translated">Día</target>
       </trans-unit>
-      <trans-unit id="s88d3b00e313183b5">
+      <trans-unit id="s88d3b00e313183b5" xml:space="preserve">
         <source>What day of the week should a crawl run on?</source>
+        <target state="translated">¿Qué día de la semana un rastro se ejecutaría?</target>
       </trans-unit>
-      <trans-unit id="sb4ab7b002d655ce9">
+      <trans-unit id="sb4ab7b002d655ce9" xml:space="preserve">
         <source>What day of the month should a crawl run on?</source>
+        <target state="translated">¿Qué día del mes ejecutaría un rastro?</target>
       </trans-unit>
-      <trans-unit id="s4174899261b8b308">
+      <trans-unit id="s4174899261b8b308" xml:space="preserve">
         <source>A crawl will run at this time in your current timezone.</source>
+        <target state="translated">Un rastro se ejecuta en esta momento en su zona horaria actual.</target>
       </trans-unit>
-      <trans-unit id="sa8e78592c1db6c3a">
+      <trans-unit id="sa8e78592c1db6c3a" xml:space="preserve">
         <source>Provide details about this Workflow.</source>
+        <target state="translated">Proporcione detalles sobre esta Flujo.</target>
       </trans-unit>
-      <trans-unit id="s163480f4b18e39c0">
+      <trans-unit id="s163480f4b18e39c0" xml:space="preserve">
         <source>Create or assign this crawl (and its outputs) to one or more tags to help organize your archived items.</source>
+        <target state="translated">Crea o asigna este rastro (y su salida) a una o más etiquetas para ayuda en organizar sus elementos archivados.</target>
       </trans-unit>
-      <trans-unit id="s54100e0807a1e40d">
+      <trans-unit id="s54100e0807a1e40d" xml:space="preserve">
         <source>Automatically add crawls from this workflow to one or more collections as soon as they complete. Individual crawls can be selected from within the collection later.</source>
+        <target state="translated">Añada automáticamente rastros desde este flujo a una o más colecciones tan pronto como se complete. Rastros individuales pueden ser seleccionados desde dentro de la colección posterior.</target>
       </trans-unit>
-      <trans-unit id="s265a8f6e25a8c5f2">
+      <trans-unit id="s265a8f6e25a8c5f2" xml:space="preserve">
         <source>Workflow created.</source>
+        <target state="translated">Flujo creado.</target>
       </trans-unit>
-      <trans-unit id="s6f5d63a06a530e47">
+      <trans-unit id="s6f5d63a06a530e47" xml:space="preserve">
         <source>Crawl started with new workflow settings.</source>
+        <target state="translated">Rastro iniciado con ajustes de flujo nuevo.</target>
       </trans-unit>
-      <trans-unit id="sb59e91f2312fbb0b">
+      <trans-unit id="sb59e91f2312fbb0b" xml:space="preserve">
         <source>Workflow updated.</source>
+        <target state="translated">Flujo actualizado.</target>
       </trans-unit>
-      <trans-unit id="scb2c6b3674a42128">
+      <trans-unit id="scb2c6b3674a42128" xml:space="preserve">
         <source>Workflow saved without starting crawl.</source>
+        <target state="translated">Flujo guardado sin iniciar rastro.</target>
       </trans-unit>
-      <trans-unit id="s429899b1dcafcad4">
+      <trans-unit id="s429899b1dcafcad4" xml:space="preserve">
         <source>Could not run crawl with new workflow settings due to already running crawl.</source>
+        <target state="translated">No pudo ejecutar rastro con ajustes de flujo nuevo debido a ya ejecutando rastro.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s40b5b363fefc9199">
         <source>Please remove or fix the following invalid URL: <x id="0" equiv-text="${invalidUrl}"/></source>
@@ -2708,23 +2841,29 @@
         <source>billing settings</source>
         <target state="translated">ajustes de facturación</target>
       </trans-unit>
-      <trans-unit id="s7fa0d24b94690373">
+      <trans-unit id="s7fa0d24b94690373" xml:space="preserve">
         <source>Your subscription ends on <x id="0" equiv-text="${trialEndDate}"/>. Your user account, org, and all associated data will be deleted.</source>
+        <target state="translated">Su suscripción finaliza el <x id="0" equiv-text="${trialEndDate}"/>. Su cuenta de usuario, org, y todos los datos asociados serán eliminados.</target>
       </trans-unit>
-      <trans-unit id="h16be212de6638b6c">
+      <trans-unit id="h16be212de6638b6c" xml:space="preserve">
         <source>We suggest downloading your archived items before they are deleted. To keep your plan and data, see <x id="0" equiv-text="${billingTabLink}"/>.</source>
+        <target state="translated">Sugerimos que descargue sus elementos archivados antes que fueran eliminados. Para conservar su plan y datos, consulte <x id="0" equiv-text="${billingTabLink}"/>.</target>
       </trans-unit>
-      <trans-unit id="sc3e0d8cbe688ccd5">
+      <trans-unit id="sc3e0d8cbe688ccd5" xml:space="preserve">
         <source>Archiving will be disabled in <x id="0" equiv-text="${daysUntilTrialEnd}"/> days</source>
+        <target state="translated">El archivado estará deshabilitado en <x id="0" equiv-text="${daysUntilTrialEnd}"/> días</target>
       </trans-unit>
-      <trans-unit id="sda57befc109a45f6">
+      <trans-unit id="sda57befc109a45f6" xml:space="preserve">
         <source>Archiving will be disabled within one day</source>
+        <target state="translated">El archivado estará deshabilitado en un día</target>
       </trans-unit>
-      <trans-unit id="s618b35a93b6fd392">
+      <trans-unit id="s618b35a93b6fd392" xml:space="preserve">
         <source>Your subscription ends on <x id="0" equiv-text="${trialEndDate}"/>. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.</source>
+        <target state="translated">Tu suscripción finaliza el <x id="0" equiv-text="${trialEndDate}"/>. No podrá ser capaz más de ejecutar rastros, subir archivos, crear perfiles de navegador, o crear colecciones.</target>
       </trans-unit>
-      <trans-unit id="sfb85ab2a166e4c99">
+      <trans-unit id="sfb85ab2a166e4c99" xml:space="preserve">
         <source>Archiving is disabled for this org</source>
+        <target state="translated">Archivar está deshabilitado para este org</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="habd962339c5b3e55">
         <source>Your subscription has been paused due to payment failure.
@@ -2739,18 +2878,21 @@
         <source>Please contact Browsertrix support to renew your plan.</source>
         <target state="translated">Por favor, póngase en contacto con el soporte de Browsertrix para renovar su plan.</target>
       </trans-unit>
-      <trans-unit id="s06dfdacf184fe26a">
+      <trans-unit id="s06dfdacf184fe26a" xml:space="preserve">
         <source>Your org has reached its storage limit</source>
+        <target state="translated">Su org ha alcanzado su límite de almacén</target>
       </trans-unit>
-      <trans-unit id="s7b663782f7f35eb8">
+      <trans-unit id="s7b663782f7f35eb8" xml:space="preserve">
         <source>To add archived items again, delete unneeded items and unused browser profiles to free up space, or contact <x id="0" equiv-text="${this.appState.settings?.salesEmail || msg(&quot;Browsertrix host administrator&quot;)}"/> to upgrade your storage plan.</source>
+        <target state="translated">Para añadir elementos archivados otra vez, elimine los elementos no deseados y los perfiles de navegador no utilizados para liberar espacio, o contacte con <x id="0" equiv-text="${this.appState.settings?.salesEmail || msg(&quot;Browsertrix host administrator&quot;)}"/> para mejorar su plan de almacenamiento.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sf3a7cc6ecc194453">
         <source>Browsertrix host administrator</source>
         <target state="translated">Administrador de alojamiento de Browsertrix</target>
       </trans-unit>
-      <trans-unit id="sd25ec176e0dbfa6d">
+      <trans-unit id="sd25ec176e0dbfa6d" xml:space="preserve">
         <source>Your org has reached its monthly execution minutes limit</source>
+        <target state="translated">Su org ha alcanzado su límite de minutos de ejecución mensual</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s10a8d7c57c09ca1b">
         <source>Contact <x id="0" equiv-text="${this.appState.settings?.salesEmail || msg(&quot;Browsertrix host administrator&quot;)}"/> to purchase additional monthly execution minutes or upgrade your plan.</source>
@@ -2764,8 +2906,9 @@
         <source>Month</source>
         <target state="translated">Mes</target>
       </trans-unit>
-      <trans-unit id="sc1a83f0d03f25927">
+      <trans-unit id="sc1a83f0d03f25927" xml:space="preserve">
         <source>Billable Execution Time</source>
+        <target state="translated">Tiempo de ejecución facturable</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s599754097e848667">
         <source>Rollover Execution Time</source>
@@ -2783,43 +2926,53 @@
         <source>Welcome</source>
         <target state="translated">Bienvenido</target>
       </trans-unit>
-      <trans-unit id="sb8e7753cf636ad38">
+      <trans-unit id="sb8e7753cf636ad38" xml:space="preserve">
         <source>All Organizations</source>
+        <target state="translated">Todas las organizaciones</target>
       </trans-unit>
-      <trans-unit id="s0b93e1d76ac26914">
+      <trans-unit id="s0b93e1d76ac26914" xml:space="preserve">
         <source>New Organization</source>
+        <target state="translated">Nueva organización</target>
       </trans-unit>
-      <trans-unit id="s8743a99bf24efa16">
+      <trans-unit id="s8743a99bf24efa16" xml:space="preserve">
         <source>Invite User to Org</source>
+        <target state="translated">Invitar Usuario a Org</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="se5a07b8c6d549acb">
         <source>Start typing to see availability</source>
         <target state="translated">Empiece a escribir para ver la disponibilidad</target>
       </trans-unit>
-      <trans-unit id="scf7d1d9927633a59">
+      <trans-unit id="scf7d1d9927633a59" xml:space="preserve">
         <source>This org name is available</source>
+        <target state="translated">Este nombre de org está disponible</target>
       </trans-unit>
-      <trans-unit id="s8540e7dd50ec3a5d">
+      <trans-unit id="s8540e7dd50ec3a5d" xml:space="preserve">
         <source>This org name is taken</source>
+        <target state="translated">Este nombre de org está tomado</target>
       </trans-unit>
-      <trans-unit id="s8fdbf5db84bb1bfb">
+      <trans-unit id="s8fdbf5db84bb1bfb" xml:space="preserve">
         <source>Create Org</source>
+        <target state="translated">Crear Org</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sbe1f0c780a5b311d">
         <source>Invite sent!</source>
         <target state="translated">¡Invitación enviada!</target>
       </trans-unit>
-      <trans-unit id="sa2059dea9346101d">
+      <trans-unit id="sa2059dea9346101d" xml:space="preserve">
         <source>View org members</source>
+        <target state="translated">Vista de miembros org</target>
       </trans-unit>
-      <trans-unit id="sc4adfb73a9bc10d1">
+      <trans-unit id="sc4adfb73a9bc10d1" xml:space="preserve">
         <source>This org name is already taken.</source>
+        <target state="translated">Este nombre de org ya está tomado.</target>
       </trans-unit>
-      <trans-unit id="s1184d1f63618dc4e">
+      <trans-unit id="s1184d1f63618dc4e" xml:space="preserve">
         <source>Created new org named "<x id="0" equiv-text="${params.name}"/>".</source>
+        <target state="translated">Ha creado org nueva nombrada "<x id="0" equiv-text="${params.name}"/>".</target>
       </trans-unit>
-      <trans-unit id="sf1c2a4776e202435">
+      <trans-unit id="sf1c2a4776e202435" xml:space="preserve">
         <source>Sorry, couldn't create organization at this time.</source>
+        <target state="translated">Disculpe, no pudo crear la organización en este momento.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s8f392679ac01fa81">
         <source>Successfully signed up</source>
@@ -2869,26 +3022,33 @@
         <source>That email is not a valid email address</source>
         <target state="translated">Este correo electrónico no es una dirección de correo electrónico</target>
       </trans-unit>
-      <trans-unit id="s9689f44e0a49b830">
+      <trans-unit id="s9689f44e0a49b830" xml:space="preserve">
         <source>Date Started</source>
+        <target state="translated">Fecha iniciada</target>
       </trans-unit>
-      <trans-unit id="sa8d4790d89fbcb7d">
+      <trans-unit id="sa8d4790d89fbcb7d" xml:space="preserve">
         <source>Any Active Status</source>
+        <target state="translated">Cualquier estado activo</target>
       </trans-unit>
-      <trans-unit id="sbf18806bc43052fa">
+      <trans-unit id="sbf18806bc43052fa" xml:space="preserve">
         <source>Sorry, couldn't retrieve crawls at this time.</source>
+        <target state="translated">Disculpe, no pude obtener rastros en este momento.</target>
       </trans-unit>
-      <trans-unit id="sdfcb755990df2126">
+      <trans-unit id="sdfcb755990df2126" xml:space="preserve">
         <source>Set up your organization to start crawling.</source>
+        <target state="translated">Configure su organización para iniciar capturas.</target>
       </trans-unit>
-      <trans-unit id="s15256ad4732bbe6e">
+      <trans-unit id="s15256ad4732bbe6e" xml:space="preserve">
         <source>Finish setting up your Browsertrix account to start crawling.</source>
+        <target state="translated">Finalizar ajustes de su cuenta Browsertrix para iniciar el arrastre.</target>
       </trans-unit>
-      <trans-unit id="h22769969c5066f85">
+      <trans-unit id="h22769969c5066f85" xml:space="preserve">
         <source>You’ve been invited by <x id="0" equiv-text="&lt;strong class=&quot;font-medium&quot;&gt;${inviterName}&lt;/strong&gt;"/> to join the organization <x id="1" equiv-text="&lt;span class=&quot;font-medium text-primary&quot;&gt;${orgName}&lt;/span&gt;"/> on Browsertrix.</source>
+        <target state="translated">Ha sido invitado por <x id="0" equiv-text="&lt;strong class=&quot;font-medium&quot;&gt;${inviterName}&lt;/strong&gt;"/> para unirse a la organización <x id="1" equiv-text="&lt;span class=&quot;font-medium text-primary&quot;&gt;${orgName}&lt;/span&gt;"/> en Browsertrix.</target>
       </trans-unit>
-      <trans-unit id="h406ea2eff53edcfb">
+      <trans-unit id="h406ea2eff53edcfb" xml:space="preserve">
         <source>You’ve been invited to join the organization <x id="0" equiv-text="&lt;span class=&quot;font-medium text-primary&quot;&gt;${orgName}&lt;/span&gt;"/> on Browsertrix.</source>
+        <target state="translated">Ha sido invitado a unirse a la organización <x id="0" equiv-text="&lt;span class=&quot;font-medium text-primary&quot;&gt;${orgName}&lt;/span&gt;"/> en Browsertrix.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s07cee0cdf942df03">
         <source>Step 1 complete</source>
@@ -2898,8 +3058,9 @@
         <source>Step 1</source>
         <target state="translated">Paso 1</target>
       </trans-unit>
-      <trans-unit id="s6a3c9d5ddbf42bdc">
+      <trans-unit id="s6a3c9d5ddbf42bdc" xml:space="preserve">
         <source>Join organization</source>
+        <target state="translated">Únase a organización</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sff0509fed5bbfd10">
         <source>Create password and display name</source>
@@ -2909,33 +3070,41 @@
         <source>Step 2</source>
         <target state="translated">Paso 2</target>
       </trans-unit>
-      <trans-unit id="sda1ec41fec043766">
+      <trans-unit id="sda1ec41fec043766" xml:space="preserve">
         <source>Configure organization</source>
+        <target state="translated">Configurar organización</target>
       </trans-unit>
-      <trans-unit id="s64be0af044395977">
+      <trans-unit id="s64be0af044395977" xml:space="preserve">
         <source>What is an org?</source>
+        <target state="translated">¿Qué es una org?</target>
       </trans-unit>
-      <trans-unit id="s42e8653d5ae10bc1">
+      <trans-unit id="s42e8653d5ae10bc1" xml:space="preserve">
         <source>An org, or organization, is your workspace for web archiving. If you’re archiving collaboratively, an org workspace can be shared between team members.</source>
+        <target state="translated">Una org, u organización, es su espacio de trabajo para archivar web. Si está archivando en colaborativamente, un espacio de trabajo org puede ser compartido entre miembros del equipo.</target>
       </trans-unit>
-      <trans-unit id="s8ae1873b610b92d6">
+      <trans-unit id="s8ae1873b610b92d6" xml:space="preserve">
         <source>Your org dashboard will be <x id="0" equiv-text="${window.location.protocol}"/>//<x id="1" equiv-text="${window.location.hostname}"/>/orgs/<x id="2" equiv-text="${slug || &quot;&quot;}"/></source>
+        <target state="translated">Su panel de org será <x id="0" equiv-text="${window.location.protocol}"/>///<x id="1" equiv-text="${window.location.hostname}"/>/orgs/<x id="2" equiv-text="${slug || &quot;&quot;}"/></target>
       </trans-unit>
-      <trans-unit id="s0d5ee4ffcb9c2c65">
+      <trans-unit id="s0d5ee4ffcb9c2c65" xml:space="preserve">
         <source>You can change this in your org settings later.</source>
+        <target state="translated">Puede cambiar esto en la configuración de su org más tarde.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sbbd340ef453ff7e4">
         <source>Go to Dashboard</source>
         <target state="translated">Ir al panel de control</target>
       </trans-unit>
-      <trans-unit id="s033b7f18e2a1b86e">
+      <trans-unit id="s033b7f18e2a1b86e" xml:space="preserve">
         <source>The org name "<x id="0" equiv-text="${name}"/>" is already taken, try another one.</source>
+        <target state="translated">El nombre de la org "<x id="0" equiv-text="${name}"/>" ya está tomado, prueba otro.</target>
       </trans-unit>
-      <trans-unit id="s6d0192d253b870f7">
+      <trans-unit id="s6d0192d253b870f7" xml:space="preserve">
         <source>The org URL identifier "<x id="0" equiv-text="${slug}"/>" is already taken, try another one.</source>
+        <target state="translated">El identificador de URL de org "<x id="0" equiv-text="${slug}"/>" ya está tomado, prueba otro.</target>
       </trans-unit>
-      <trans-unit id="s692207ce67c91506">
+      <trans-unit id="s692207ce67c91506" xml:space="preserve">
         <source>The org URL identifier "<x id="0" equiv-text="${slug}"/>" is not a valid URL. Please use alphanumeric characters and dashes (-) only</source>
+        <target state="translated">El identificador de URL de org "<x id="0" equiv-text="${slug}"/>" no es una URL válida. Por favor, utilice caracteres alfanuméricos y guiones breves (-) exclusivamente</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s5df133e1b1fd43c3">
         <source>Welcome to Browsertrix</source>
@@ -2945,11 +3114,13 @@
         <source>Go to home page</source>
         <target state="translated">Ir a página de inicio</target>
       </trans-unit>
-      <trans-unit id="s418c368c5315bec1">
+      <trans-unit id="s418c368c5315bec1" xml:space="preserve">
         <source>This invite doesn't exist or has expired. Please ask the organization administrator to resend an invitation.</source>
+        <target state="translated">Esta invitación no existe o ha caducado. Por favor, solicite al administrador de la organización que reenvíe una invitación.</target>
       </trans-unit>
-      <trans-unit id="s1952dc02aa41f1c9">
+      <trans-unit id="s1952dc02aa41f1c9" xml:space="preserve">
         <source>This is not a valid invite, or it may have expired. If you believe this is an error, please contact <x id="0" equiv-text="${this.appState.settings?.supportEmail || msg(&quot;your Browsertrix administrator&quot;)}"/> for help.</source>
+        <target state="translated">Esto no es una invitación válida, o puede haber caducado. Si cree que esto es un error, por favor contacte con <x id="0" equiv-text="${this.appState.settings?.supportEmail || msg(&quot;your Browsertrix administrator&quot;)}"/> para obtener ayuda.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s0235065054efe3a8">
         <source>your Browsertrix administrator</source>
@@ -3015,8 +3186,9 @@
         <source>Accept invitation</source>
         <target state="translated">Aceptar invitación</target>
       </trans-unit>
-      <trans-unit id="sb754c3cdf47401bb">
+      <trans-unit id="sb754c3cdf47401bb" xml:space="preserve">
         <source>You’ve been invited to join a new org</source>
+        <target state="translated">Has sido invitado para unirse a una org nueva</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s31c7b03cf1e0b1bc">
         <source>Accept Invitation</source>
@@ -3058,17 +3230,21 @@
         <source>Account Settings</source>
         <target state="translated">Ajustes de cuenta</target>
       </trans-unit>
-      <trans-unit id="s11b2e9ecce28690c">
+      <trans-unit id="s11b2e9ecce28690c" xml:space="preserve">
         <source>Display Name</source>
+        <target state="translated">Exhibir Nombre</target>
       </trans-unit>
-      <trans-unit id="s5fe9a19519c8d882">
+      <trans-unit id="s5fe9a19519c8d882" xml:space="preserve">
         <source>Enter your full name, or another name to display in the orgs you belong to.</source>
+        <target state="translated">Introduzca su nombre completo, u otro nombre para exhibir en las orgs a las que pertenezca.</target>
       </trans-unit>
-      <trans-unit id="se724e8e0ccb7f52c">
+      <trans-unit id="se724e8e0ccb7f52c" xml:space="preserve">
         <source>Display name</source>
+        <target state="translated">Exhibir nombre</target>
       </trans-unit>
-      <trans-unit id="s548e6499a7c9fd51">
+      <trans-unit id="s548e6499a7c9fd51" xml:space="preserve">
         <source>Update the email you use to log in.</source>
+        <target state="translated">Actualiza el correo-e que utiliza para iniciar sesión.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sca4fb8fafd9b52e5">
         <source>Verified</source>
@@ -3130,14 +3306,17 @@
         <source>Your account isn't quite set up yet</source>
         <target state="translated">Su cuenta aún no está configurada</target>
       </trans-unit>
-      <trans-unit id="sb92e2629adb0b7a5">
+      <trans-unit id="sb92e2629adb0b7a5" xml:space="preserve">
         <source>You must belong to at least one org in order to access Browsertrix features.</source>
+        <target state="translated">Debes pertenecer al menos una org con el fin de acceder a las características de Browsertrix.</target>
       </trans-unit>
-      <trans-unit id="s273f0ee82bf2b922">
+      <trans-unit id="s273f0ee82bf2b922" xml:space="preserve">
         <source>If you haven't received an invitation to an org, please contact us at <x id="0" equiv-text="${this.appState.settings.salesEmail}"/>.</source>
+        <target state="translated">Si no se ha recibido una invitación a una org, póngase en contacto con nosotros en <x id="0" equiv-text="${this.appState.settings.salesEmail}"/>.</target>
       </trans-unit>
-      <trans-unit id="s95aeb2828c01b0de">
+      <trans-unit id="s95aeb2828c01b0de" xml:space="preserve">
         <source>If you haven't received an invitation to an org, please contact your Browsertrix administrator.</source>
+        <target state="translated">Si no ha recibido una invitación a una org, por favor contacte con su administrador de Browsertrix.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s8ce22933775afaff">
         <source>Open user menu</source>
@@ -3151,8 +3330,9 @@
         <source>Sign Up</source>
         <target state="translated">Registrar</target>
       </trans-unit>
-      <trans-unit id="sd1c4b6344a767979">
+      <trans-unit id="sd1c4b6344a767979" xml:space="preserve">
         <source>Expand org list</source>
+        <target state="translated">Ampliar el listado de org</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s29496acaea25840d">
         <source>Source Code</source>
@@ -3186,14 +3366,17 @@
         <source>Got it, go to dashboard</source>
         <target state="translated">Entendido, ir al panel de control</target>
       </trans-unit>
-      <trans-unit id="sce6f1cb94a02b0bb">
+      <trans-unit id="sce6f1cb94a02b0bb" xml:space="preserve">
         <source>Organizations</source>
+        <target state="translated">Organizaciones</target>
       </trans-unit>
-      <trans-unit id="s4bd7cce2b092e180">
+      <trans-unit id="s4bd7cce2b092e180" xml:space="preserve">
         <source>You don't have any organizations.</source>
+        <target state="translated">No tiene ninguna de las organizaciones.</target>
       </trans-unit>
-      <trans-unit id="sc3bfe3a4fe4c13f6">
+      <trans-unit id="sc3bfe3a4fe4c13f6" xml:space="preserve">
         <source>match</source>
+        <target state="translated">coincide</target>
         <note from="lit-localize">label for match percentage</note>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s05836f33cb2800d5">
@@ -3231,24 +3414,29 @@
         <target state="translated">comentarios</target>
         <note from="lit-localize">plural form of "comment" for zero comments</note>
       </trans-unit>
-      <trans-unit id="crawls.plural.few">
+      <trans-unit id="crawls.plural.few" xml:space="preserve">
         <source>crawls</source>
+        <target state="translated">rastros</target>
         <note from="lit-localize">plural form of "crawl" for few crawls</note>
       </trans-unit>
-      <trans-unit id="crawls.plural.many">
+      <trans-unit id="crawls.plural.many" xml:space="preserve">
         <source>crawls</source>
+        <target state="translated">rastros</target>
         <note from="lit-localize">plural form of "crawl" for many crawls</note>
       </trans-unit>
-      <trans-unit id="crawls.plural.other">
+      <trans-unit id="crawls.plural.other" xml:space="preserve">
         <source>crawls</source>
+        <target state="translated">rastros</target>
         <note from="lit-localize">plural form of "crawl" for multiple/other crawls</note>
       </trans-unit>
-      <trans-unit id="crawls.plural.two">
+      <trans-unit id="crawls.plural.two" xml:space="preserve">
         <source>crawls</source>
+        <target state="translated">rastros</target>
         <note from="lit-localize">plural form of "crawl" for two crawls</note>
       </trans-unit>
-      <trans-unit id="crawls.plural.zero">
+      <trans-unit id="crawls.plural.zero" xml:space="preserve">
         <source>crawls</source>
+        <target state="translated">rastros</target>
         <note from="lit-localize">plural form of "crawl" for zero crawls</note>
       </trans-unit>
       <trans-unit xml:space="preserve" id="pages.plural.few">
@@ -3306,8 +3494,9 @@
         <target state="translated">comentario</target>
         <note from="lit-localize">singular form for "comment"</note>
       </trans-unit>
-      <trans-unit id="crawls.plural.one">
+      <trans-unit id="crawls.plural.one" xml:space="preserve">
         <source>crawl</source>
+        <target state="translated">rastro</target>
         <note from="lit-localize">singular form for "crawl"</note>
       </trans-unit>
       <trans-unit xml:space="preserve" id="pages.plural.one">
@@ -3335,88 +3524,111 @@
         <target state="translated">p. m.</target>
         <note from="lit-localize">Time AM/PM</note>
       </trans-unit>
-      <trans-unit id="s1d6a13ef53c51ee9">
+      <trans-unit id="s1d6a13ef53c51ee9" xml:space="preserve">
         <source><x id="0" equiv-text="${maxPagesPerCrawl || msg(&quot;Unlimited pages&quot;)}"/> per crawl</source>
+        <target state="translated"><x id="0" equiv-text="${maxPagesPerCrawl || msg(&quot;Unlimited pages&quot;)}"/> por rastro</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s41de0883966c23c8">
         <source>Unlimited pages</source>
         <target state="translated">Páginas ilimitadas</target>
       </trans-unit>
-      <trans-unit id="s35ccaf9d67c65607">
+      <trans-unit id="s35ccaf9d67c65607" xml:space="preserve">
         <source>Unlimited concurrent crawls</source>
+        <target state="translated">Rastros concurrentes ilimitados</target>
       </trans-unit>
-      <trans-unit id="s8ad4a17ab2b75854">
+      <trans-unit id="s8ad4a17ab2b75854" xml:space="preserve">
         <source>Adding <x id="0" equiv-text="${this.localize.number(addCount)} ${pluralOf(&quot;items&quot;, addCount)}"/></source>
+        <target state="translated">Añadiendo <x id="0" equiv-text="${this.localize.number(addCount)} ${pluralOf(&quot;items&quot;, addCount)}"/></target>
       </trans-unit>
-      <trans-unit id="items.plural.few">
+      <trans-unit id="items.plural.few" xml:space="preserve">
         <source>items</source>
+        <target state="translated">ítemes</target>
         <note from="lit-localize">plural form of "item" for few items</note>
       </trans-unit>
-      <trans-unit id="items.plural.many">
+      <trans-unit id="items.plural.many" xml:space="preserve">
         <source>items</source>
+        <target state="translated">ítemes</target>
         <note from="lit-localize">plural form of "item" for many items</note>
       </trans-unit>
-      <trans-unit id="items.plural.other">
+      <trans-unit id="items.plural.other" xml:space="preserve">
         <source>items</source>
+        <target state="translated">ítemes</target>
         <note from="lit-localize">plural form of "item" for multiple/other items</note>
       </trans-unit>
-      <trans-unit id="items.plural.two">
+      <trans-unit id="items.plural.two" xml:space="preserve">
         <source>items</source>
+        <target state="translated">ítemes</target>
         <note from="lit-localize">plural form of "item" for two items</note>
       </trans-unit>
-      <trans-unit id="items.plural.zero">
+      <trans-unit id="items.plural.zero" xml:space="preserve">
         <source>items</source>
+        <target state="translated">ítemes</target>
         <note from="lit-localize">plural form of "item" for zero items</note>
       </trans-unit>
-      <trans-unit id="items.plural.one">
+      <trans-unit id="items.plural.one" xml:space="preserve">
         <source>item</source>
+        <target state="translated">ítem</target>
         <note from="lit-localize">singular form for "item"</note>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s24a06fd949e2d65b">
         <source>Back to</source>
         <target state="translated">Volver a</target>
       </trans-unit>
-      <trans-unit id="sc33daa5130000a11">
+      <trans-unit id="sc33daa5130000a11" xml:space="preserve">
         <source>Choose this option if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one hop out.</source>
+        <target state="translated">Elija esta opción si conoce la URL de cada página que le gustaría rastrear y no necesita incluir cualquiera de las páginas adicionales más allá de un hueco externo.</target>
       </trans-unit>
-      <trans-unit id="s008f62e40844e6d5">
+      <trans-unit id="s008f62e40844e6d5" xml:space="preserve">
         <source>Site Crawl</source>
+        <target state="translated">Sitio de Rastreo</target>
       </trans-unit>
-      <trans-unit id="sa7264597ca290e44">
+      <trans-unit id="sa7264597ca290e44" xml:space="preserve">
         <source>Specify a domain name, start page URL, or path on a website and let the crawler automatically find pages within that scope.</source>
+        <target state="needs-translation">Especifique un nombre de dominio, inicie URL de página o ruta en un sitio web y permita que el rastreador encuentre automáticamente páginas dentro de ese alcance.</target>
       </trans-unit>
-      <trans-unit id="s33807afa94c15a25">
+      <trans-unit id="s33807afa94c15a25" xml:space="preserve">
         <source>Browser windows can only be edited while a crawl is starting or running</source>
+        <target state="needs-translation">Las ventanas del navegador sólo pueden ser editadas mientras un gateo está empezando o funcionando</target>
       </trans-unit>
-      <trans-unit id="s4cb3d6de6b76708d">
+      <trans-unit id="s4cb3d6de6b76708d" xml:space="preserve">
         <source>Crawl finishing...</source>
+        <target state="translated">Finalizando rastro...</target>
       </trans-unit>
-      <trans-unit id="sb32ae1652df8c7ad">
+      <trans-unit id="sb32ae1652df8c7ad" xml:space="preserve">
         <source>Workflow settings used to run this crawl</source>
+        <target state="translated">Ajustes de flujo de trabajo utilizados para ejecutar este rastro</target>
       </trans-unit>
-      <trans-unit id="sa74e88ae69ff57ca">
+      <trans-unit id="sa74e88ae69ff57ca" xml:space="preserve">
         <source>Edit Workflow</source>
+        <target state="translated">Editar flujo</target>
       </trans-unit>
-      <trans-unit id="sd813c96a1d891cdc">
+      <trans-unit id="sd813c96a1d891cdc" xml:space="preserve">
         <source>Select Analysis Run</source>
+        <target state="translated">Seleccionar ejecución de análisis</target>
       </trans-unit>
-      <trans-unit id="s4201222224dff23c">
+      <trans-unit id="s4201222224dff23c" xml:space="preserve">
         <source>Crawl: <x id="0" equiv-text="${crawlStatus.label}"/></source>
+        <target state="translated">Rastro: <x id="0" equiv-text="${crawlStatus.label}"/></target>
       </trans-unit>
-      <trans-unit id="s0eb7c300368b2a58">
+      <trans-unit id="s0eb7c300368b2a58" xml:space="preserve">
         <source>Upload: <x id="0" equiv-text="${crawlStatus.label}"/></source>
+        <target state="translated">Subida: <x id="0" equiv-text="${crawlStatus.label}"/></target>
       </trans-unit>
-      <trans-unit id="s7d61376257220dab">
+      <trans-unit id="s7d61376257220dab" xml:space="preserve">
         <source>Scope</source>
+        <target state="translated">Alcance</target>
       </trans-unit>
-      <trans-unit id="s58672d8bc12bdf2d">
+      <trans-unit id="s58672d8bc12bdf2d" xml:space="preserve">
         <source>Page Crawl</source>
+        <target state="translated">Página arrastre</target>
       </trans-unit>
-      <trans-unit id="sc86311564d806b1a">
+      <trans-unit id="sc86311564d806b1a" xml:space="preserve">
         <source>One or more page URLs</source>
+        <target state="translated">URL de una o más página</target>
       </trans-unit>
-      <trans-unit id="s58aa8e5a0a8ef1cd">
+      <trans-unit id="s58aa8e5a0a8ef1cd" xml:space="preserve">
         <source>Entire website or directory</source>
+        <target state="translated">Sitio web o directorio completo</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s1853eecbad6d4a0e">
         <source>List of Pages</source>
@@ -3442,51 +3654,61 @@
         <source>Any Page</source>
         <target state="translated">Cualquier página</target>
       </trans-unit>
-      <trans-unit id="sa403185f2ed90589">
+      <trans-unit id="sa403185f2ed90589" xml:space="preserve">
         <source>Scope options</source>
+        <target state="translated">Opciones de alcance</target>
       </trans-unit>
       <trans-unit id="sede6d0c607d400db" xml:space="preserve">
         <source>New Crawl Workflow</source>
         <target state="translated">Nuevo flujo de crawl</target>
       </trans-unit>
-      <trans-unit id="s4bd63450e427cc68">
+      <trans-unit id="s4bd63450e427cc68" xml:space="preserve">
         <source>Page URLs</source>
+        <target state="translated">URL de página</target>
       </trans-unit>
-      <trans-unit id="s396f09e6ec318187">
+      <trans-unit id="s396f09e6ec318187" xml:space="preserve">
         <source>Max Depth in Scope</source>
+        <target state="translated">Profundidad Max en Alcance</target>
       </trans-unit>
-      <trans-unit id="sebf185d3ee56b47f">
+      <trans-unit id="sebf185d3ee56b47f" xml:space="preserve">
         <source>Additional Page URLs</source>
+        <target state="translated">URL de página adicional</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="se1e6d1d7a1a133e9">
         <source>Exclude Pages</source>
         <target state="translated">Excluir páginas</target>
       </trans-unit>
-      <trans-unit id="sfc5e402f8b21ef5f">
+      <trans-unit id="sfc5e402f8b21ef5f" xml:space="preserve">
         <source>If checked, the crawler will visit pages one link away.</source>
+        <target state="translated">Si se marca, el rastreador visitará las páginas un enlace posterior.</target>
       </trans-unit>
-      <trans-unit id="hba1eb91e4626e056">
+      <trans-unit id="hba1eb91e4626e056" xml:space="preserve">
         <source>Will crawl hash anchor links as pages. For example, <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;"/>#example-page<x id="1" equiv-text="&lt;/span&gt;"/> will be treated as a separate page.</source>
+        <target state="needs-translation">Se arrastrará enlaces de anclaje hah como páginas. Por ejemplo, <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;"/>#example-page<x id="1" equiv-text="&lt;/span&gt;"/> será tratado como una página separada.</target>
       </trans-unit>
-      <trans-unit id="sb43ce2ffe2a4857f">
+      <trans-unit id="sb43ce2ffe2a4857f" xml:space="preserve">
         <source>Limits how many hops away the crawler can visit while staying within the Crawl Scope.</source>
+        <target state="needs-translation">Limita cuántos saltos de distancia el rastreador puede visitar mientras se hospeda dentro del Scope Crawl.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s2279075e18f7dd74">
         <source>Additional Pages</source>
         <target state="translated">Páginas adicionales</target>
       </trans-unit>
-      <trans-unit id="s083f85625c5d739f">
+      <trans-unit id="s083f85625c5d739f" xml:space="preserve">
         <source>In-Page Links</source>
+        <target state="needs-translation">Enlaces en la página</target>
       </trans-unit>
-      <trans-unit id="s972f8ea379345cf8">
+      <trans-unit id="s972f8ea379345cf8" xml:space="preserve">
         <source>Your org doesn't have permission to use the proxy configured for this crawl.</source>
+        <target state="translated">Tu org no tiene permiso para usar el proxy configurado para este rastro.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sb8dd788adf7b907b">
         <source>Proxy</source>
         <target state="translated">Proxy</target>
       </trans-unit>
-      <trans-unit id="s237f0a38a4c51a36">
+      <trans-unit id="s237f0a38a4c51a36" xml:space="preserve">
         <source>Crawler Proxy Server</source>
+        <target state="translated">Servidor proxy de rastreador</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s2d84a282e9aa4c24">
         <source>Default Proxy:</source>
@@ -3500,24 +3722,29 @@
         <source>Description:</source>
         <target state="translated">Descripción:</target>
       </trans-unit>
-      <trans-unit id="s438a40049bb04715">
+      <trans-unit id="s438a40049bb04715" xml:space="preserve">
         <source>Proxy Settings for: <x id="0" equiv-text="${this.currOrg?.name || &quot;&quot;}"/></source>
+        <target state="translated">Ajustes proxy para: <x id="0" equiv-text="${this.currOrg?.name || &quot;&quot;}"/></target>
       </trans-unit>
-      <trans-unit id="s234e4c06c8c1aada">
+      <trans-unit id="s234e4c06c8c1aada" xml:space="preserve">
         <source>Enable all shared proxies</source>
+        <target state="translated">Habilita todos los proxies compartidos</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sa166018e0e9d30e9">
         <source>Update Proxy Settings</source>
         <target state="translated">Actualizar los ajustes de proxy</target>
       </trans-unit>
-      <trans-unit id="s4b9eccf40f4a605d">
+      <trans-unit id="s4b9eccf40f4a605d" xml:space="preserve">
         <source>Sorry, couldn't get all proxies at this time.</source>
+        <target state="translated">Disculpe, no pude obtener todos los proxies en este momento.</target>
       </trans-unit>
-      <trans-unit id="sc36b98f91a3e8631">
+      <trans-unit id="sc36b98f91a3e8631" xml:space="preserve">
         <source>Edit Proxies</source>
+        <target state="translated">Editar Proxies</target>
       </trans-unit>
-      <trans-unit id="hda7aa624404fc0ed">
+      <trans-unit id="hda7aa624404fc0ed" xml:space="preserve">
         <source>Refer to our user guide on <x id="0" equiv-text="&lt;a class=&quot;text-neutral-500 underline hover:text-primary&quot; href=&quot;/docs/user-guide/org-settings/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;"/>org settings<x id="1" equiv-text="&lt;/a&gt;"/> for details.</source>
+        <target state="needs-translation">Consulte nuestra guía de usuario en <x id="0" equiv-text="&lt;a class=&quot;text-neutral-500 underline hover:text-primary&quot; href=&quot;/docs/user-guide/org-settings/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;"/>org settings<x id="1" equiv-text="&lt;/a&gt;"/> para más detalles.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sb061ff5a347a296e">
         <source>Profile</source>
@@ -3563,8 +3790,9 @@
         <source>Your trial ends within one day</source>
         <target state="translated">Su periodo de prueba termina en un día</target>
       </trans-unit>
-      <trans-unit id="se5578c14db3c7b2b">
+      <trans-unit id="se5578c14db3c7b2b" xml:space="preserve">
         <source>Your web archives are always yours — you can download any archived items you'd like to keep before the trial ends!</source>
+        <target state="needs-translation">Sus archivos web son siempre suyos — ¡puede descargar cualquier artículo archivado que desee guardar antes de que termine el ensayo!</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="hc4152410e53b56c9">
         <source>To choose a plan and continue using Browsertrix, see
@@ -3595,24 +3823,29 @@
         <source><x id="0" equiv-text="${storageBytesText}"/> of disk space</source>
         <target state="translated"><x id="0" equiv-text="${storageBytesText}"/> de espacio en disco</target>
       </trans-unit>
-      <trans-unit id="h7047060377c6217c">
+      <trans-unit id="h7047060377c6217c" xml:space="preserve">
         <source>Cancel &amp; Discard Crawl</source>
+        <target state="translated">Cancelar y Descartar Rastro</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sae69bd370363cb62">
         <source>Run on a specific date and time</source>
         <target state="translated">Ejecutar en una fecha y hora específicos</target>
       </trans-unit>
-      <trans-unit id="s2b933576a3ca5f07">
+      <trans-unit id="s2b933576a3ca5f07" xml:space="preserve">
         <source>Pages currently being crawled will be completed and saved, and finished pages will be kept, but all remaining pages in the queue will be discarded. Are you sure you want to stop crawling?</source>
+        <target state="needs-translation">Las páginas que se están arrastrando serán completadas y guardadas, y las páginas terminadas serán guardadas, pero todas las páginas restantes en la cola serán descartadas. ¿Seguro que quieres dejar de arrastrarte?</target>
       </trans-unit>
-      <trans-unit id="s9aa0dfb832cb7f69">
+      <trans-unit id="s9aa0dfb832cb7f69" xml:space="preserve">
         <source>View error logs</source>
+        <target state="translated">Ver bitácoras del error</target>
       </trans-unit>
-      <trans-unit id="s8be75efeafa7ffe1">
+      <trans-unit id="s8be75efeafa7ffe1" xml:space="preserve">
         <source>Your org will be deleted within one day</source>
+        <target state="needs-translation">Su org se eliminará dentro de un día</target>
       </trans-unit>
-      <trans-unit id="sfa1778ba000b56f5">
+      <trans-unit id="sfa1778ba000b56f5" xml:space="preserve">
         <source>Your org will be deleted in one day.</source>
+        <target state="needs-translation">Su org se eliminará en un día.</target>
       </trans-unit>
       <trans-unit id="se392e1f811076a30">
         <source>Your org will be deleted in <x id="0" equiv-text="${daysUntilTrialEnd}"/> days</source>
