@@ -434,7 +434,6 @@ class StorageOps:
             key += filename
 
             mup_resp = await client.create_multipart_upload(
-                ACL="bucket-owner-full-control",
                 Bucket=bucket,
                 Key=key,
                 ContentType=mime or "",

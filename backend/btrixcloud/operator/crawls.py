@@ -306,7 +306,24 @@ class CrawlOperator(BaseOperator):
         ):
             status.rateLimitedAtTime = ""
 
+        # setup scale
         status.scale = len(pods)
+
+        if crawl.qa_source_crawl_id:
+            num_browsers_per_pod = int(params["qa_browser_instances"])
+            num_browser_windows = int(params.get("qa_num_browser_windows", 1))
+        else:
+            num_browsers_per_pod = int(params["crawler_browser_instances"])
+            num_browser_windows = crawl.browser_windows
+
+        # desired scale is the number of pods to create
+        status.desiredScale = scale_from_browser_windows(
+            num_browser_windows, num_browsers_per_pod
+        )
+
+        if status.pagesFound < status.desiredScale:
+            status.desiredScale = max(1, status.pagesFound)
+
         if status.scale:
             for pod_name, pod in pods.items():
                 # don't count redis pod
@@ -438,19 +455,6 @@ class CrawlOperator(BaseOperator):
         if crawl.qa_source_crawl_id:
             params["qa_source_crawl_id"] = crawl.qa_source_crawl_id
             children.extend(await self._load_qa_configmap(params, data.children))
-            num_browsers_per_pod = int(params["qa_browser_instances"])
-            num_browser_windows = int(params.get("qa_num_browser_windows", 1))
-        else:
-            num_browsers_per_pod = int(params["crawler_browser_instances"])
-            num_browser_windows = crawl.browser_windows
-
-        # desired scale is the number of pods to create
-        status.desiredScale = scale_from_browser_windows(
-            num_browser_windows, num_browsers_per_pod
-        )
-
-        if status.pagesFound < status.desiredScale:
-            status.desiredScale = max(1, status.pagesFound)
 
         for i in range(0, status.desiredScale):
             if status.pagesFound < i * num_browsers_per_pod:
@@ -560,20 +564,6 @@ class CrawlOperator(BaseOperator):
         raw_config["behaviors"] = self._filter_autoclick_behavior(
             raw_config["behaviors"], crawler_image
         )
-
-        if raw_config.get("alwaysAddBehaviorLinks") is True:
-            min_behavior_links_image = os.environ.get(
-                "MIN_BEHAVIOR_LINKS_CRAWLER_IMAGE"
-            )
-            if min_behavior_links_image and crawler_image_below_minimum(
-                crawler_image, min_behavior_links_image
-            ):
-                raw_config.pop("alwaysAddBehaviorLinks", None)
-                configmap_logger.warning(
-                    "crawl_configmap_always_add_behavior_links_ignored",
-                    crawler_image=crawler_image,
-                    min_behavior_links_image=min_behavior_links_image,
-                )
 
         if crawl.seed_file_url:
             raw_config["seedFile"] = crawl.seed_file_url
@@ -714,32 +704,29 @@ class CrawlOperator(BaseOperator):
 
         return self.load_from_yaml("crawler.yaml", params)
 
-    async def _resolve_scale_down(
+    async def resolve_scale_down(
         self,
         crawl: CrawlSpec,
         redis: Redis,
         status: CrawlStatus,
         pods: dict[str, dict],
-    ) -> None:
+    ) -> int:
         """Resolve scale down
         Limit desired scale to number of pages
         If desired_scale >= actual scale, just return
         If desired scale < actual scale, attempt to shut down each crawl instance
         via redis setting. If contiguous instances shutdown (successful exit), lower
         scale and clean up previous scale state.
+        Set status.desiredScale to new scale, which may be existing actual scale
         """
         desired_scale = status.desiredScale
         actual_scale = status.scale
-
-        # if not scaling down, just return
-        if desired_scale >= actual_scale:
-            return
+        new_scale = actual_scale
 
         crawl_id = crawl.id
 
         sd_logger = logger.bind(crawl_id=crawl_id)
 
-        new_scale = actual_scale
         for i in range(actual_scale - 1, desired_scale - 1, -1):
             name = f"crawl-{crawl_id}-{i}"
             pod = pods.get(name)
@@ -779,6 +766,9 @@ class CrawlOperator(BaseOperator):
                 name = f"crawl-{crawl_id}-{i}"
                 await redis.hdel(f"{crawl_id}:stopone", name)
                 await redis.hdel(f"{crawl_id}:status", name)
+
+        # return new scale that is possible
+        return new_scale
 
     def sync_resources(self, status, name, pod, children):
         """set crawljob status from current resources"""
@@ -1869,8 +1859,11 @@ class CrawlOperator(BaseOperator):
                         ),
                     )
 
-        # resolve scale down, if needed
-        await self._resolve_scale_down(crawl, redis, status, pods)
+        # if scaling down, resolve new desired scale
+        if status.desiredScale < status.scale:
+            status.desiredScale = await self.resolve_scale_down(
+                crawl, redis, status, pods
+            )
 
         # check if done / failed
         status_count: dict[str, int] = {}

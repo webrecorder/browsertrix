@@ -1190,7 +1190,7 @@ export class WorkflowEditor extends BtrixElement {
           }
         }}
       >
-        ${guard(this.formState.urlList, () =>
+        ${guard([this.formState.urlList], () =>
           when(this.formState.urlList, this.renderSmartScopeNotice),
         )}
       </sl-input>
@@ -1338,7 +1338,7 @@ export class WorkflowEditor extends BtrixElement {
       >
         <div slot="help-text">${helpText}</div>
 
-        ${guard(this.formState.primarySeedUrl, () =>
+        ${guard([this.formState.primarySeedUrl], () =>
           when(this.formState.primarySeedUrl, this.renderSmartScopeNotice),
         )}
       </sl-input>
@@ -1416,7 +1416,7 @@ https://replayweb.page/docs`}
         @sl-change=${this.doValidateUrlList}
         @sl-blur=${this.doValidateUrlList}
       ></sl-textarea>
-      ${guard(this.formState.urlList, () =>
+      ${guard([this.formState.urlList], () =>
         when(
           this.formState.urlList,
           (urlList) =>

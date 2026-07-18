@@ -73,7 +73,13 @@ export class TagFilter extends BtrixElement {
   @state()
   type: "and" | "or" = "or";
 
-  protected willUpdate(changedProperties: PropertyValues<this>): void {
+  public refreshOrgTags() {
+    void this.orgTagsTask.run();
+  }
+
+  protected async willUpdate(
+    changedProperties: PropertyValues<this>,
+  ): Promise<void> {
     if (changedProperties.has("tags")) {
       if (this.tags) {
         this.selected = new Map(this.tags.map((tag) => [tag, true]));

@@ -53,6 +53,9 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
+      - name: Enable corepack
+        run: corepack enable yarn
+
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
@@ -79,7 +82,7 @@ jobs:
         working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: Install Playwright Browsers
         working-directory: frontend
@@ -118,6 +121,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Enable corepack
+        run: corepack enable yarn
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -142,7 +148,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: Install Playwright Browsers
         working-directory: frontend
@@ -197,6 +203,9 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
+      - name: Enable corepack
+        run: corepack enable yarn
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -208,7 +217,7 @@ jobs:
         working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       # Lint:
       - name: Lint
@@ -230,6 +239,9 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
+      - name: Enable corepack
+        run: corepack enable yarn
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -241,7 +253,7 @@ jobs:
         working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       # Localize:
       - name: Localization extract dry run
@@ -267,6 +279,9 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
+      - name: Enable corepack
+        run: corepack enable yarn
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -286,7 +301,7 @@ jobs:
         working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       # Check build:
       - name: Set up Docker Buildx

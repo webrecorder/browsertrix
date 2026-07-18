@@ -4,7 +4,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
-      interval: "weekly"
+      interval: "quarterly"
     cooldown:
       default-days: 7
     groups:
@@ -21,7 +21,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/emails"
     schedule:
-      interval: "weekly"
+      interval: "quarterly"
     cooldown:
       default-days: 7
     groups:
@@ -38,7 +38,7 @@ updates:
   - package-ecosystem: "uv"
     directory: "/backend"
     schedule:
-      interval: "weekly"
+      interval: "quarterly"
     cooldown:
       default-days: 7
     groups:

@@ -280,7 +280,7 @@ export class BrowserProfilesList extends BtrixElement {
 
   private readonly renderPage = () => {
     return html`
-      <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
+      <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3">
         ${this.renderControls()}
       </div>
 
@@ -384,7 +384,7 @@ export class BrowserProfilesList extends BtrixElement {
 
   private renderControls() {
     return html`
-      <div class="flex flex-wrap items-center gap-2 md:gap-4">
+      <div class="flex flex-wrap items-center gap-2 md:gap-3">
         <div class="grow basis-2/3">${this.renderSearch()}</div>
 
         <div class="flex items-center">
@@ -414,6 +414,7 @@ export class BrowserProfilesList extends BtrixElement {
         .searchOptions=${this.searchOptionsTask.value || []}
         .searchByValue=${this.filterBy.value["name"] || ""}
         placeholder=${msg("Search by name")}
+        size="small"
         @btrix-select=${(e: CustomEvent) => {
           const { key, value } = e.detail;
           this.filterBy.setValue({
@@ -528,7 +529,9 @@ export class BrowserProfilesList extends BtrixElement {
   }
 
   private readonly renderTable = (profiles: Profile[]) => {
-    return html`<btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
+    return html`<btrix-overflow-scroll
+      class="-mx-3 part-[content]:px-3 lg:part-[content]:px-5"
+    >
       <btrix-table
         style="--btrix-table-grid-template-columns: ${columnsCss}"
         class="whitespace-nowrap [--btrix-table-cell-gap:var(--sl-spacing-x-small)] [--btrix-table-cell-padding-x:var(--sl-spacing-small)]"

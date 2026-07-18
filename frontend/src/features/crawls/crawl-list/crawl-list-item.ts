@@ -138,16 +138,9 @@ export class CrawlListItem extends BtrixElement {
         <btrix-table-cell>
           ${this.safeRender((crawl) =>
             !skipped
-              ? html`<sl-tooltip>
-                  ${humanizeExecutionSeconds(crawl.crawlExecSeconds, {
-                    style: "short",
-                  })}
-                  <span slot="content">
-                    ${humanizeExecutionSeconds(crawl.crawlExecSeconds, {
-                      style: "long",
-                    })}
-                  </span>
-                </sl-tooltip>`
+              ? humanizeExecutionSeconds(crawl.crawlExecSeconds, {
+                  style: "short",
+                })
               : notApplicable,
           )}
         </btrix-table-cell>

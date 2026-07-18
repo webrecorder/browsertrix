@@ -50,6 +50,13 @@ def test_slug_from_name(name: str, expected_slug: str):
             "docker.io/webrecorder/browsertrix-crawler:1.5.0",
             True,
         ),
+        # Beta versions should be considered not below the corresponding
+        # release, since we want to be able to test beta features
+        (
+            "docker.io/webrecorder/browsertrix-crawler:1.14.0-beta.1",
+            "docker.io/webrecorder/browsertrix-crawler:1.14.0",
+            False,
+        ),
         # "latest" and similar tags for either always return False
         (
             "docker.io/webreocrder/browsertrix-crawler:latest",

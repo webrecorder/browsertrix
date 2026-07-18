@@ -21,6 +21,7 @@ import {
   type Pagination,
 } from "@/components/ui/pagination";
 import type { BtrixSearchComboboxSelectEvent } from "@/components/ui/search-combobox";
+import type { TagFilter } from "@/components/ui/tag-filter/tag-filter";
 import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
@@ -287,6 +288,9 @@ export class CrawlsList extends BtrixElement {
   @query("#stateSelect")
   stateSelect?: SlSelect;
 
+  @query("btrix-tag-filter")
+  private readonly tagFilter?: TagFilter | null;
+
   private get hasFiltersSet() {
     return [
       this.filterBy.value.id,
@@ -496,7 +500,7 @@ export class CrawlsList extends BtrixElement {
             })}
           </div>
           <div
-            class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4"
+            class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3"
           >
             ${this.renderControls()}
           </div>
@@ -539,7 +543,7 @@ export class CrawlsList extends BtrixElement {
     total,
     pageSize,
   }: APIPaginatedList<ArchivedItem>) => html`
-    <section class="mx-2">
+    <section class="lg:mx-2">
       ${items.length
         ? html`
             <btrix-archived-item-list .listType=${this.itemType}>
@@ -583,6 +587,7 @@ export class CrawlsList extends BtrixElement {
             @updated=${() => {
               /* TODO fetch current page or single crawl */
               void this.archivedItemsTask.run();
+              this.tagFilter?.refreshOrgTags();
             }}
           ></btrix-item-metadata-editor>
         `
@@ -610,7 +615,7 @@ export class CrawlsList extends BtrixElement {
 
   private renderControls() {
     return html`
-      <div class="flex flex-wrap items-center gap-2 md:gap-4">
+      <div class="flex flex-wrap items-center gap-2 md:gap-3">
         <div class="grow basis-2/3">${this.renderSearch()}</div>
 
         <div class="flex items-center">
@@ -1052,6 +1057,8 @@ export class CrawlsList extends BtrixElement {
         variant: "success",
         icon: "check2-circle",
       });
+
+      this.tagFilter?.refreshOrgTags();
     } catch (e) {
       if (this.itemToDelete) {
         this.confirmDeleteItem(this.itemToDelete);

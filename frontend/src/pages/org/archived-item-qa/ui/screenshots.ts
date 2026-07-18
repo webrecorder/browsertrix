@@ -32,7 +32,7 @@ function image(blobUrl: BlobPayload["blobUrl"] | undefined) {
 const imageSpinner = renderSpinner(tw`aspect-video bg-slate-50`);
 
 export const renderImage = (data: ReplayData | null) =>
-  guard(data, () => (data != null ? image(data.blobUrl) : imageSpinner));
+  guard([data], () => (data != null ? image(data.blobUrl) : imageSpinner));
 
 export function renderScreenshots(
   crawlData: ReplayData,

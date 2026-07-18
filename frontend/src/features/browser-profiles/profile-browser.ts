@@ -406,7 +406,7 @@ export class ProfileBrowser extends BtrixElement {
                               url.replace(/\/$/, ""),
                             ),
                         )
-                      : origins,
+                      : (origins as []),
                   ),
                 () =>
                   this.initialOrigins
