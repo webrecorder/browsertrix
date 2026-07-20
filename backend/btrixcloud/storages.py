@@ -82,24 +82,6 @@ def _get_container_memory_limit_bytes() -> int | None:
     return None
 
 
-def _get_container_memory_usage_bytes() -> int | None:
-    """Read current container memory usage from cgroup files.
-
-    Returns `None` if usage cannot be read (non-Linux/local dev).
-    """
-    paths = [
-        "/sys/fs/cgroup/memory.current",  # cgroup v2
-        "/sys/fs/cgroup/memory/memory.usage_in_bytes",  # cgroup v1
-    ]
-    for path in paths:
-        try:
-            with open(path, encoding="utf-8") as fh:
-                return int(fh.read().strip())
-        except (OSError, ValueError):
-            continue
-    return None
-
-
 class _ByteLimiter:
     """Async limiter that caps total acquired bytes in flight."""
 
@@ -150,43 +132,13 @@ def _get_upload_memory_limiter() -> _ByteLimiter | None:
         if limit is None:
             return None
 
-        ratio = float(os.environ.get("UPLOAD_MEMORY_BUDGET_RATIO", "0.25"))
-        budget = max(int(limit * ratio), MIN_UPLOAD_PART_SIZE)
+        ratio = float(os.environ.get("UPLOAD_MEMORY_BUDGET_RATIO") or "0.15")
+        # Each in-flight part costs roughly the part size plus HTTP/client
+        # overhead. 2x matches the rule of thumb used to size worker slots.
+        budget = max(int(limit * ratio), MIN_UPLOAD_PART_SIZE * 2)
         _upload_memory_limiter = _ByteLimiter(budget)
 
     return _upload_memory_limiter
-
-
-async def _await_memory_below_watermark(
-    mp_logger: structlog.stdlib.BoundLogger,
-) -> None:
-    """Pause until container memory usage falls below the low watermark.
-
-    Uses hysteresis: entry only when usage >= high watermark, exit only when
-    usage < low watermark. No-op if no cgroup limit is available.
-    """
-    limit = _get_container_memory_limit_bytes()
-    if limit is None:
-        return
-
-    high = int(limit * float(os.environ.get("UPLOAD_MEMORY_HIGH_WATERMARK", "0.85")))
-    low = int(limit * float(os.environ.get("UPLOAD_MEMORY_LOW_WATERMARK", "0.75")))
-    backoff = float(os.environ.get("UPLOAD_MEMORY_BACKOFF_SECONDS", "0.25"))
-
-    usage = _get_container_memory_usage_bytes()
-    if usage is None or usage < high:
-        return
-
-    mp_logger.warning(
-        "upload_memory_backpressure",
-        usage=usage,
-        limit=limit,
-        high_watermark=high,
-        low_watermark=low,
-    )
-    while usage is not None and usage >= low:
-        await asyncio.sleep(backoff)
-        usage = _get_container_memory_usage_bytes()
 
 
 def _get_default_upload_max_workers(min_size: int) -> int:
@@ -611,7 +563,7 @@ class StorageOps:
             # slack to keep them busy. Peak memory is roughly
             # (max_workers + queue_size + 1) * min_size plus the stream chunk.
             queue_size = 2
-            queue: asyncio.Queue[tuple[int, bytes] | None] = asyncio.Queue(
+            queue: asyncio.Queue[tuple[int, bytearray] | None] = asyncio.Queue(
                 maxsize=queue_size
             )
             parts: list[CompletedPartTypeDef] = []
@@ -622,64 +574,53 @@ class StorageOps:
                 """read chunks from the stream, accumulate parts, and enqueue them"""
                 nonlocal total_size
                 part_number = 1
-                part_buf = bytearray()
+                current_part = bytearray()
                 read_start = time.monotonic()
+
+                async def enqueue_part(part: bytearray) -> None:
+                    nonlocal part_number, read_start
+                    read_duration = time.monotonic() - read_start
+                    if limiter:
+                        await limiter.acquire(len(part) * 2)
+                    try:
+                        await queue.put((part_number, part))
+                    except BaseException:
+                        if limiter:
+                            await limiter.release(len(part) * 2)
+                        raise
+                    mp_logger.debug(
+                        "multipart_part_read",
+                        part_number=part_number,
+                        chunk_size=len(part),
+                        read_duration=read_duration,
+                        read_throughput_mbps=(
+                            (len(part) / read_duration) / 1_000_000
+                            if read_duration
+                            else 0
+                        ),
+                    )
+                    part_number += 1
+                    read_start = time.monotonic()
+
                 try:
                     async for chunk in file_:
                         if on_chunk:
                             on_chunk(chunk)
                         total_size += len(chunk)
-                        part_buf.extend(chunk)
 
-                        while len(part_buf) >= min_size:
-                            chunk_to_upload = bytes(part_buf[:min_size])
-                            del part_buf[:min_size]
-                            read_duration = time.monotonic() - read_start
-                            if limiter:
-                                await limiter.acquire(len(chunk_to_upload))
-                            try:
-                                await queue.put((part_number, chunk_to_upload))
-                            except BaseException:
-                                if limiter:
-                                    await limiter.release(len(chunk_to_upload))
-                                raise
-                            mp_logger.debug(
-                                "multipart_part_read",
-                                part_number=part_number,
-                                chunk_size=len(chunk_to_upload),
-                                read_duration=read_duration,
-                                read_throughput_mbps=(
-                                    (len(chunk_to_upload) / read_duration) / 1_000_000
-                                    if read_duration
-                                    else 0
-                                ),
-                            )
-                            await _await_memory_below_watermark(mp_logger)
-                            part_number += 1
-                            read_start = time.monotonic()
+                        offset = 0
+                        while offset < len(chunk):
+                            room = min_size - len(current_part)
+                            take = min(room, len(chunk) - offset)
+                            current_part.extend(chunk[offset : offset + take])
+                            offset += take
 
-                    if part_buf:
-                        chunk_to_upload = bytes(part_buf)
-                        read_duration = time.monotonic() - read_start
-                        if limiter:
-                            await limiter.acquire(len(chunk_to_upload))
-                        try:
-                            await queue.put((part_number, chunk_to_upload))
-                        except BaseException:
-                            if limiter:
-                                await limiter.release(len(chunk_to_upload))
-                            raise
-                        mp_logger.debug(
-                            "multipart_part_read",
-                            part_number=part_number,
-                            chunk_size=len(chunk_to_upload),
-                            read_duration=read_duration,
-                            read_throughput_mbps=(
-                                (len(chunk_to_upload) / read_duration) / 1_000_000
-                                if read_duration
-                                else 0
-                            ),
-                        )
+                            if len(current_part) >= min_size:
+                                await enqueue_part(current_part)
+                                current_part = bytearray()
+
+                    if current_part:
+                        await enqueue_part(current_part)
                 finally:
                     for _ in range(max_workers):
                         await queue.put(None)
@@ -715,7 +656,7 @@ class StorageOps:
                         )
                     finally:
                         if limiter:
-                            await limiter.release(len(chunk))
+                            await limiter.release(len(chunk) * 2)
 
             producer_task = asyncio.create_task(producer())
             worker_tasks = [

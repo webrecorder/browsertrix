@@ -147,13 +147,7 @@ backend_memory: "350Mi"
 # backend_upload_workers: 10
 
 # Fraction of the container memory limit to allow as in-flight upload bytes.
-upload_memory_budget_ratio: 0.25
-# Pause reading from the upload stream above this fraction of the memory limit.
-upload_memory_high_watermark: 0.85
-# Resume reading once usage drops below this fraction.
-upload_memory_low_watermark: 0.75
-# Seconds to sleep while waiting for memory pressure to drop.
-upload_memory_backoff_seconds: 0.25
+upload_memory_budget_ratio: 0.15
 
 # port for operator service
 opPort: 8756

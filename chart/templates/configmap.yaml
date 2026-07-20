@@ -120,10 +120,7 @@ data:
   PRESIGN_BATCH_SIZE: "{{ .Values.presign_batch_size | default 8 }}"
 
   UPLOAD_MAX_WORKERS: "{{ .Values.backend_upload_workers }}"
-  UPLOAD_MEMORY_BUDGET_RATIO: "{{ .Values.upload_memory_budget_ratio | default 0.25 }}"
-  UPLOAD_MEMORY_HIGH_WATERMARK: "{{ .Values.upload_memory_high_watermark | default 0.85 }}"
-  UPLOAD_MEMORY_LOW_WATERMARK: "{{ .Values.upload_memory_low_watermark | default 0.75 }}"
-  UPLOAD_MEMORY_BACKOFF_SECONDS: "{{ .Values.upload_memory_backoff_seconds | default 0.25 }}"
+  UPLOAD_MEMORY_BUDGET_RATIO: "{{ .Values.upload_memory_budget_ratio | default 0.15 }}"
 
   CLEANUP_JOB_CRON_SCHEDULE: "{{ .Values.cleanup_job_cron_schedule }}"
 
