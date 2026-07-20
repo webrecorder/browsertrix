@@ -553,18 +553,17 @@ export async function getServerDefaults(): Promise<WorkflowDefaults> {
   return defaults;
 }
 
-export function* rangeBrowserWindows(
-  settings: AppSettings | null,
-): Iterable<number> {
+export function rangeBrowserWindows(settings: AppSettings | null): number[] {
+  const steps: number[] = [];
+
   if (!settings) {
-    yield 1;
-    return;
+    return steps;
   }
 
   const { numBrowsersPerInstance, maxBrowserWindows } = settings;
 
   for (let i = 1; i < numBrowsersPerInstance; i++) {
-    yield i;
+    steps.push(i);
   }
 
   for (
@@ -572,6 +571,8 @@ export function* rangeBrowserWindows(
     i <= maxBrowserWindows;
     i += numBrowsersPerInstance
   ) {
-    yield i;
+    steps.push(i);
   }
+
+  return steps;
 }
