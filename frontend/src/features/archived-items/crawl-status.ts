@@ -149,6 +149,19 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Running");
         break;
 
+      case "running-interrupted":
+        color = "var(--warning)";
+        icon = html`<sl-icon
+          name="dot"
+          library="app"
+          class="animatePulse"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Running");
+        substate = msg("Temporarily Interrupted");
+        break;
+
       case "rate-limited":
         color = "var(--warning)";
         icon = html`<sl-icon

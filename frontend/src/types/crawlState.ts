@@ -1,6 +1,7 @@
 // Match backend TYPE_RUNNING_STATES in models.py
 export const RUNNING_STATES = [
   "running",
+  "running-interrupted",
   "rate-limited",
   "pending-wait",
   "generate-wacz",

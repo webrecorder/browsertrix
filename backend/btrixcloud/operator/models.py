@@ -159,6 +159,7 @@ class PodInfo(BaseModel):
     signalAtMem: int | None = None
 
     evicted: bool | None = False
+    backoffWait: bool | None = False
 
     lastWorkers: int | None = 0
 
@@ -274,6 +275,12 @@ class CrawlStatus(BaseModel):
 
     # any pods exited
     anyCrawlPodNewExit: bool | None = Field(default=False, exclude=True)
+
+    # exit code of last pod to exit
+    lastCrawlPodExitCode: int | None = 0
+
+    # all running pods have crashed
+    allCrashed: bool = False
 
     # if status is 'rate-limited', when first became rate-limited
     rateLimitedAtTime: str | None = None
