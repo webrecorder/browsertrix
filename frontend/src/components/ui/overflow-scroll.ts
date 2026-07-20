@@ -1,5 +1,9 @@
-import { css, html, LitElement } from "lit";
+import clsx from "clsx";
+import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+
+import { TailwindElement } from "@/classes/TailwindElement";
+import { tw } from "@/utils/tailwind";
 
 /**
  * Overflow scroller. Optionally displays a scrim/shadow (a small gradient
@@ -9,9 +13,11 @@ import { customElement, property } from "lit/decorators.js";
  * @cssPart content
  * @cssproperty --btrix-overflow-scrim-width The width of the scrim. 3rem by default.
  * @cssproperty --btrix-overflow-scroll-scrim-color The color of the scrim. White by default.
+ * @cssproperty --btrix-overflow-scroll-thumb-color The color of the thumb of the scrollbar.
+ * @cssproperty --btrix-overflow-scroll-track-color The color of the track of the scrollbar.
  */
 @customElement("btrix-overflow-scroll")
-export class OverflowScroll extends LitElement {
+export class OverflowScroll extends TailwindElement {
   /**
    * The direction of the overflow scroll. Currently just horizontal.
    */
@@ -27,7 +33,10 @@ export class OverflowScroll extends LitElement {
    * See https://caniuse.com/mdn-css_properties_scroll-timeline for support.
    */
   @property({ type: Boolean })
-  scrim = true;
+  scrim = CSS.supports("scroll-timeline", "none");
+
+  @property({ type: Boolean })
+  hideScrollbar = false;
 
   static styles = css`
     :host {
@@ -37,6 +46,11 @@ export class OverflowScroll extends LitElement {
 
     [direction="horizontal"] {
       overflow-x: auto;
+    }
+
+    .btrix-overflow-scroll {
+      scrollbar-color: var(--btrix-overflow-scroll-thumb-color, auto)
+        var(--btrix-overflow-scroll-track-color, auto);
     }
 
     @supports (scroll-timeline-name: --btrix-overflow-scroll-timeline) {
@@ -94,7 +108,12 @@ export class OverflowScroll extends LitElement {
 
   render() {
     return html`<div
-      class="btrix-overflow-scroll"
+      class=${clsx(
+        "btrix-overflow-scroll",
+        this.hideScrollbar && [
+          this.scrim ? tw`[scrollbar-width:none]` : tw`[scrollbar-width:thin]`,
+        ],
+      )}
       direction=${this.direction}
       ?scrim=${this.scrim}
       part="content"

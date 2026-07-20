@@ -5,6 +5,9 @@ import { customElement, property } from "lit/decorators.js";
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { Seed } from "@/types/crawler";
 
+/**
+ *
+ */
 @customElement("btrix-url-list")
 @localized()
 export class UrlList extends TailwindElement {
@@ -22,6 +25,11 @@ export class UrlList extends TailwindElement {
     btrix-table-cell {
       white-space: nowrap;
     }
+
+    btrix-overflow-scroll {
+      --btrix-overflow-scroll-thumb-color: var(--sl-color-neutral-300);
+      --btrix-overflow-scroll-track-color: transparent;
+    }
   `;
 
   @property({ type: Array })
@@ -38,9 +46,10 @@ export class UrlList extends TailwindElement {
           <btrix-table-row
             class="rounded transition-colors duration-x-fast even:bg-neutral-50 even:[--btrix-overflow-scroll-scrim-color:--sl-color-neutral-50] has-[btrix-copy-button:hover]:!bg-cyan-50/80 has-[sl-icon-button:hover]:!bg-cyan-50/80"
           >
-            <btrix-table-cell class="pl-2">
+            <btrix-table-cell>
               <btrix-overflow-scroll
-                class="-ml-5 w-[calc(100%+theme(spacing.5))] contain-inline-size part-[content]:px-5 part-[content]:[scrollbar-width:thin]"
+                class="w-[calc(100%+theme(spacing.5))] contain-inline-size part-[content]:px-2"
+                hideScrollbar
               >
                 <btrix-code
                   language="url"
