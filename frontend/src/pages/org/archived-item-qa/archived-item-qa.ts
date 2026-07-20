@@ -611,7 +611,7 @@ export class ArchivedItemQA extends BtrixElement {
               ?active=${this.tab === "replay"}
               @click=${this.onTabNavClick}
             >
-              <sl-icon name="replaywebpage" library="app"></sl-icon>
+              <sl-icon name="collection-play"></sl-icon>
               ${msg("Replay")}
             </btrix-navigation-button>
             <div class="ml-auto flex items-center gap-3">

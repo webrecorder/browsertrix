@@ -16,7 +16,6 @@ import type {
   RwpUrlChangeEvent,
 } from "replaywebpage";
 
-import { collectionRwpContext } from "./context/collection-rwp";
 import {
   CollectionSearchParam,
   EditingSearchParamValue,
@@ -36,6 +35,8 @@ import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import type { CollectionPageHeader } from "@/features/collections/collection-page-header";
 import { DEFAULT_THUMBNAIL } from "@/features/collections/collection-thumbnail";
+import { collectionRwpContext } from "@/features/collections/context/collection-rwp";
+import { injectRwpStyles } from "@/features/collections/helpers/injectRwpStyles";
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { createIndexDialog } from "@/features/collections/templates/create-index-dialog";
@@ -154,7 +155,7 @@ export class CollectionDetail extends BtrixElement {
     { icon: { name: string; library: string }; text: string; beta?: boolean }
   > = {
     [Tab.Replay]: {
-      icon: { name: "replaywebpage", library: "app" },
+      icon: { name: "collection-play", library: "default" },
       text: msg("Browse Collection"),
     },
     [Tab.Items]: {
@@ -291,6 +292,7 @@ export class CollectionDetail extends BtrixElement {
             variant: "info",
             icon: "info-circle",
             id: "update",
+            duration: Infinity,
           });
 
           try {
@@ -554,7 +556,7 @@ export class CollectionDetail extends BtrixElement {
       <section
         class=${clsx(
           this.collectionTab === Tab.Replay
-            ? tw`overflow-hidden rounded-lg border`
+            ? tw`overflow-hidden rounded-lg`
             : // Always render replay to keep reference for thumbnails and reload
               tw`offscreen`,
         )}
@@ -1369,7 +1371,7 @@ export class CollectionDetail extends BtrixElement {
 
     return html`
       <replay-web-page
-        class="h-[calc(100vh-6.5rem)]"
+        class="h-[calc(100vh-4rem)]"
         source=${replaySource}
         config="${config}"
         coll=${this.collectionId}
@@ -1380,7 +1382,7 @@ export class CollectionDetail extends BtrixElement {
         replayBase="/replay/"
         noSandbox="true"
         noCache="true"
-        hideOffscreen="true"
+        hideCollectionMetadata
         @rwp-page-loading=${(e: RwpPageLoadingEvent) => {
           if (
             !e.detail.loading &&
@@ -1393,6 +1395,7 @@ export class CollectionDetail extends BtrixElement {
         @rwp-url-change=${(e: RwpUrlChangeEvent) => {
           if (!this.replayEmbed) {
             this.replayEmbed = e.currentTarget as ReplayWebPage;
+            injectRwpStyles(this.replayEmbed);
           }
           if (!this.isRwpLoaded) {
             this.isRwpLoaded = true;
