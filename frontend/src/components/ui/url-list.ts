@@ -38,13 +38,15 @@ export class UrlList extends TailwindElement {
   render() {
     if (!this.urls?.length) return;
 
-    return html`<btrix-table class="grid-cols-[1fr_auto]">
+    return html`<btrix-table
+      class="grid-cols-[1fr_auto] overflow-hidden rounded border text-[0.8125rem]"
+    >
       ${this.urls.map((seedOrUrl: string | Seed) => {
         const url = typeof seedOrUrl === "string" ? seedOrUrl : seedOrUrl.url;
 
         return html`
           <btrix-table-row
-            class="rounded transition-colors duration-x-fast even:bg-neutral-50 even:[--btrix-overflow-scroll-scrim-color:--sl-color-neutral-50] has-[btrix-copy-button:hover]:!bg-cyan-50/80 has-[sl-icon-button:hover]:!bg-cyan-50/80"
+            class="transition-colors duration-x-fast even:bg-neutral-50 even:[--btrix-overflow-scroll-scrim-color:--sl-color-neutral-50] has-[btrix-copy-button:hover]:!bg-cyan-50/80 has-[sl-icon-button:hover]:!bg-cyan-50/80"
           >
             <btrix-table-cell>
               <btrix-overflow-scroll
