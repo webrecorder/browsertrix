@@ -56,19 +56,24 @@ export class UrlList extends TailwindElement {
       --btrix-overflow-scroll-track-color: transparent;
     }
 
+    .url-order {
+      color: var(--sl-color-neutral-500);
+      font-family: var(--sl-font-mono);
+      justify-content: end;
+      padding-inline-end: var(--sl-spacing-2x-small);
+    }
+
     code {
       color: var(--sl-color-sky-800);
     }
 
-    sl-icon-button::part(base) {
-      padding: var(--sl-spacing-2x-small);
+    btrix-copy-button::part(icon):not(:hover),
+    sl-icon-button {
+      color: var(--sl-color-neutral-500);
     }
 
-    .url-order {
-      color: var(--sl-color-neutral-400);
-      font-family: var(--sl-font-mono);
-      justify-content: end;
-      padding-inline-end: var(--sl-spacing-2x-small);
+    sl-icon-button::part(base) {
+      padding: var(--sl-spacing-2x-small);
     }
   `;
 
