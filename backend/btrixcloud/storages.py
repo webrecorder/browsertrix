@@ -583,9 +583,8 @@ class StorageOps:
         Uses a safe default based on the container memory limit.
         """
         max_workers = int(
-            os.environ.get(
-                "UPLOAD_MAX_WORKERS", _get_default_upload_max_workers(min_size)
-            )
+            os.environ.get("UPLOAD_MAX_WORKERS")
+            or _get_default_upload_max_workers(min_size)
         )
         if max_workers < 1:
             raise ValueError("max_workers must be >= 1")
