@@ -35,9 +35,8 @@ from pydantic import (
 from pydantic import (
     HttpUrl as HttpUrlNonStr,
 )
-from typing_extensions import deprecated
-
 from slugify import slugify
+from typing_extensions import deprecated
 
 # from fastapi_users import models as fastapi_users_models
 from .db import LENIENT_ON_READ, BaseMongoModel
@@ -83,7 +82,11 @@ DEDUPE_FEATURE_ENABLED_DEFAULT = is_bool(
 
 EmptyStr = Annotated[str, Field(min_length=0, max_length=0)]
 
-Scale = Annotated[int, Field(strict=True, ge=1, le=MAX_CRAWL_SCALE), deprecated("Use browserWindows instead")]
+Scale = Annotated[
+    int,
+    Field(strict=True, ge=1, le=MAX_CRAWL_SCALE),
+    deprecated("Use browserWindows instead"),
+]
 BrowserWindowCount = Annotated[int, Field(strict=True, ge=1, le=MAX_BROWSER_WINDOWS)]
 ReviewStatus = Annotated[int, Field(strict=True, ge=1, le=5)] | None
 
