@@ -719,11 +719,14 @@ class CrawlOperator(BaseOperator):
         scale and clean up previous scale state.
         Set status.desiredScale to new scale, which may be existing actual scale
         """
-        desired_scale = status.desiredScale
-        actual_scale = status.scale
-        new_scale = actual_scale
-
         crawl_id = crawl.id
+
+        # take into account scale from status field in redis
+        redis_scale = await redis.hlen(f"{crawl_id}:status")
+
+        desired_scale = status.desiredScale
+        actual_scale = max(status.scale, redis_scale)
+        new_scale = actual_scale
 
         sd_logger = logger.bind(crawl_id=crawl_id)
 
