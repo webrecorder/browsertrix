@@ -720,6 +720,11 @@ class UploadOps(BaseCrawlOps):
         dest_key = base_key + file_prep.upload_name
         copy_child_logger = cwf_logger.bind(filename=child_wacz.filename)
 
+        hash_: str | None = None
+        size: int | None = None
+        copy_duration = 0.0
+        child_duration = 0.0
+
         for attempt in range(1, MAX_UPLOAD_RETRIES + 1):
             try:
                 copy_child_logger.debug(
@@ -740,8 +745,6 @@ class UploadOps(BaseCrawlOps):
                 # (supported by some providers when the upload specifies a
                 # checksum algorithm). Fall back to streaming the object and
                 # computing the hash ourselves if the provider doesn't return it.
-                hash_: str | None = None
-                size: int | None = None
                 try:
                     head = await client.head_object(Bucket=bucket, Key=dest_key)
                     size = head.get("ContentLength")
@@ -774,16 +777,7 @@ class UploadOps(BaseCrawlOps):
                         f"{size} != {child_wacz.file_size}"
                     )
                 child_duration = time.monotonic() - child_start
-                return (
-                    CrawlFile(
-                        filename=file_prep.upload_name,
-                        hash=hash_,
-                        size=size,
-                        storage=org.storage,
-                    ),
-                    child_duration,
-                    copy_duration,
-                )
+                break
             # pylint: disable=broad-exception-caught
             except Exception as exc:
                 # Clean up any partial copy before retrying.
@@ -805,6 +799,16 @@ class UploadOps(BaseCrawlOps):
                     error=str(exc),
                 )
                 await asyncio.sleep(2 ** (attempt - 1))
+        return (
+            CrawlFile(
+                filename=file_prep.upload_name,
+                hash=hash_,
+                size=size,
+                storage=org.storage,
+            ),
+            child_duration,
+            copy_duration,
+        )
 
     async def _get_stored_child_data_offset(
         self,
