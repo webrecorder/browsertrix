@@ -1179,6 +1179,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@faker-js/faker@npm:^10.5.0":
+  version: 10.5.0
+  resolution: "@faker-js/faker@npm:10.5.0"
+  checksum: 10c0/2de3c7b8f41592d52cefc3ab4c99536656249bca78d5ad184a3b7ac43ecc9d946056cef2c4d37060373ef06ad992d82530de08479fabe16fdbe77b911d842446
+  languageName: node
+  linkType: hard
+
 "@floating-ui/core@npm:^1.4.2":
   version: 1.5.2
   resolution: "@floating-ui/core@npm:1.5.2"
@@ -6318,6 +6325,7 @@ __metadata:
     "@cheap-glitch/mi-cron": "npm:^1.0.1"
     "@custom-elements-manifest/analyzer": "npm:^0.11.0"
     "@esm-bundle/chai": "npm:^4.3.4-fix.0"
+    "@faker-js/faker": "npm:^10.5.0"
     "@formatjs/intl-durationformat": "npm:^0.10.15"
     "@formatjs/intl-localematcher": "npm:^0.8.10"
     "@ianvs/prettier-plugin-sort-imports": "npm:^4.7.1"
