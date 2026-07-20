@@ -8,10 +8,11 @@ import { when } from "lit/directives/when.js";
 import type { ReplayWebPage, RwpUrlChangeEvent } from "replaywebpage";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { collectionRwpContext } from "@/features/collections/context/collection-rwp";
+import { injectRwpStyles } from "@/features/collections/helpers/injectRwpStyles";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { metadataColumn } from "@/layouts/collections/metadataColumn";
 import { page } from "@/layouts/page";
-import { collectionRwpContext } from "@/pages/org/collection-detail/context/collection-rwp";
 import { type CollectionSavedEvent } from "@/pages/org/collection-detail/types";
 import { CommonTab, OrgTab, RouteNamespace } from "@/routes";
 import { CollectionAccess, type PublicCollection } from "@/types/collection";
@@ -55,7 +56,7 @@ export class Collection extends BtrixElement {
     { icon: { name: string; library: string }; text: string }
   > = {
     [PublicTab.Replay]: {
-      icon: { name: "replaywebpage", library: "app" },
+      icon: { name: "collection-play", library: "default" },
       text: msg("Browse Collection"),
     },
     [PublicTab.About]: {
@@ -260,7 +261,7 @@ export class Collection extends BtrixElement {
     ).href;
 
     return html`
-      <section class="h-[calc(100vh-4rem)] overflow-hidden rounded-lg border">
+      <section class="h-[calc(100vh-4rem)] overflow-hidden rounded-lg">
         <replay-web-page
           source=${replaySource}
           url=${ifDefined(collection.homeUrl || undefined)}
@@ -272,11 +273,12 @@ export class Collection extends BtrixElement {
           replayBase="/replay/"
           noSandbox="true"
           noCache="true"
-          hideOffscreen="true"
           deepLink
+          hideCollectionMetadata
           @rwp-url-change=${(e: RwpUrlChangeEvent) => {
             if (!this.replayEmbed) {
               this.replayEmbed = e.currentTarget as ReplayWebPage;
+              injectRwpStyles(this.replayEmbed);
             }
           }}
         ></replay-web-page>

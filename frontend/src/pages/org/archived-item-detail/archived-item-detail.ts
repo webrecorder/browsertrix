@@ -556,7 +556,7 @@ export class ArchivedItemDetail extends BtrixElement {
           <div
             class="col-span-14 grid min-w-0 border-b md:col-span-3 md:border-b-0"
           >
-            <div class="-mx-3 box-border flex overflow-x-auto px-3 md:block ">
+            <div class="-mx-3 box-border flex overflow-x-auto px-3 md:block">
               ${this.renderNav()}
             </div>
           </div>
@@ -727,8 +727,8 @@ export class ArchivedItemDetail extends BtrixElement {
                 )}
                 ${renderNavItem({
                   section: "replay",
-                  iconLibrary: "app",
-                  icon: "replaywebpage",
+                  iconLibrary: "default",
+                  icon: "collection-play",
                 })}
                 ${renderNavItem({
                   section: "files",
