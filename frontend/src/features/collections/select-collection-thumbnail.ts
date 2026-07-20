@@ -26,7 +26,7 @@ import { defaultFuseOptions } from "@/context/search-org/connectFuse";
 import {
   collectionRwpContext,
   type CollectionRwpContext,
-} from "@/pages/org/collection-detail/context/collection-rwp";
+} from "@/features/collections/context/collection-rwp";
 import { getThumbnailBlob } from "@/pages/org/collection-detail/utils/getThumbnailBlob";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { PublicCollection } from "@/types/collection";
