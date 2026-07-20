@@ -721,11 +721,8 @@ class CrawlOperator(BaseOperator):
         """
         crawl_id = crawl.id
 
-        # take into account scale from status field in redis
-        redis_scale = await redis.hlen(f"{crawl_id}:status")
-
         desired_scale = status.desiredScale
-        actual_scale = max(status.scale, redis_scale)
+        actual_scale = status.scale
         new_scale = actual_scale
 
         sd_logger = logger.bind(crawl_id=crawl_id)
@@ -1788,6 +1785,9 @@ class CrawlOperator(BaseOperator):
         status.sizePending = pending_size
         status.size = total_size
         status.sizeHuman = humanize.naturalsize(status.size)
+
+        # scale should be at least number of results in the status
+        status.scale = max(len(results), status.scale)
 
         await self.crawl_ops.update_running_crawl_stats(
             crawl.db_crawl_id, crawl.is_qa, stats, pending_size
