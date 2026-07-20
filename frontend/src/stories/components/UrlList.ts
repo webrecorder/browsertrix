@@ -7,5 +7,9 @@ import "@/components/ui/url-list";
 export type RenderProps = UrlList;
 
 export const renderComponent = (props: Partial<RenderProps>) => {
-  return html`<btrix-url-list .urls=${props.urls || []}></btrix-url-list>`;
+  return html`<btrix-url-list
+    .urls=${props.urls || []}
+    ?highlight=${props.highlight}
+    ?ordered=${props.ordered}
+  ></btrix-url-list>`;
 };

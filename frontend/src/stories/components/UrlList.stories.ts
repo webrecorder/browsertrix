@@ -60,3 +60,17 @@ export const WithManyUrls: Story = {
     urls: data,
   },
 };
+
+export const Highlighted: Story = {
+  args: {
+    urls: data,
+    highlight: true,
+  },
+};
+
+export const Ordered: Story = {
+  args: {
+    urls: data,
+    ordered: true,
+  },
+};
