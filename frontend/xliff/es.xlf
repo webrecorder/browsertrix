@@ -5304,97 +5304,127 @@
       </trans-unit>
       <trans-unit id="sc34746d059a1f565" xml:space="preserve">
         <source>Click “<x id="0" equiv-text="${this.portalUrlLabel}"/>” to view plan details, payment methods, and billing information.</source>
-        <target state="translated">Pulse "<x id="0" equiv-text="${this.portalUrlLabel}"/>" para ver detalles del plan, métodos de pago e información de facturación.</target>
+        <target state="translated">Pulse "<x id="0" equiv-text="${this.portalUrlLabel}"/>" para ver detalles del plan, métodos de pago e información de cargos.</target>
       </trans-unit>
-      <trans-unit id="sc10dc3155d21bd22">
+      <trans-unit id="sc10dc3155d21bd22" xml:space="preserve">
         <source>Your trial ends <x id="0" equiv-text="${futureCancelDate}"/></source>
+        <target state="translated">Su periodo de prueba finaliza el <x id="0" equiv-text="${futureCancelDate}"/></target>
       </trans-unit>
-      <trans-unit id="se647fb588a673832">
+      <trans-unit id="se647fb588a673832" xml:space="preserve">
         <source>subscription will automatically continue</source>
+        <target state="translated">la suscripción continuará automáticamente</target>
       </trans-unit>
-      <trans-unit id="s60dffb8015f2732b">
+      <trans-unit id="s60dffb8015f2732b" xml:space="preserve">
         <source>You also have the ability to cancel your trial or permanently delete your account from the subscription portal.</source>
+        <target state="translated">También tiene la capacidad de cancelar su prueba o eliminar permanentemente su cuenta desde el portal de suscripción.</target>
       </trans-unit>
-      <trans-unit id="s2787aaf7e8d916c0">
+      <trans-unit id="s2787aaf7e8d916c0" xml:space="preserve">
         <source>Sorry, something unexpected went wrong</source>
+        <target state="translated">Lo siento, algo inesperado salió mal</target>
       </trans-unit>
-      <trans-unit id="s5ada2b9d18023e8d">
+      <trans-unit id="s5ada2b9d18023e8d" xml:space="preserve">
         <source>Try reloading the page.</source>
+        <target state="translated">Intente recargar la página.</target>
       </trans-unit>
-      <trans-unit id="sd5b6130b4937488c">
+      <trans-unit id="sd5b6130b4937488c" xml:space="preserve">
         <source>Reload</source>
+        <target state="translated">Recargar</target>
       </trans-unit>
-      <trans-unit id="s5305f21679f2304d">
+      <trans-unit id="s5305f21679f2304d" xml:space="preserve">
         <source>If the problem persists, please reach out to us.</source>
+        <target state="translated">Si el problema persiste, diríjase a nosotros.</target>
       </trans-unit>
-      <trans-unit id="sec0a1c173e10764c">
+      <trans-unit id="sec0a1c173e10764c" xml:space="preserve">
         <source>Contact Support</source>
+        <target state="translated">Contacto con mantenimiento</target>
       </trans-unit>
-      <trans-unit id="sf7817bcbec073cc2">
+      <trans-unit id="sf7817bcbec073cc2" xml:space="preserve">
         <source>Downloads are disabled while running. Pause the crawl or wait for the crawl to finish to download.</source>
+        <target state="translated">Las descargas están inhabilitadas mientras se ejecutan. Pausa el rastro o espera que el rastro finalice para descargar.</target>
       </trans-unit>
-      <trans-unit id="sd3386a2ef42e80b9">
+      <trans-unit id="sd3386a2ef42e80b9" xml:space="preserve">
         <source>Download</source>
+        <target state="translated">Descargar</target>
       </trans-unit>
-      <trans-unit id="s27f98dea19749a5f">
+      <trans-unit id="s27f98dea19749a5f" xml:space="preserve">
         <source>Download options</source>
+        <target state="translated">Opciones de descarga</target>
       </trans-unit>
-      <trans-unit id="s52cfa1d198476806">
+      <trans-unit id="s52cfa1d198476806" xml:space="preserve">
         <source>Item</source>
+        <target state="translated">Elemento</target>
       </trans-unit>
-      <trans-unit id="s89118d3a7be870ca">
+      <trans-unit id="s89118d3a7be870ca" xml:space="preserve">
         <source>Resume</source>
+        <target state="translated">Resumen</target>
       </trans-unit>
-      <trans-unit id="s061cc20e3432dead">
+      <trans-unit id="s061cc20e3432dead" xml:space="preserve">
         <source>Pause</source>
+        <target state="translated">Pausa</target>
       </trans-unit>
-      <trans-unit id="s311aa7f38cae6bd1">
+      <trans-unit id="s311aa7f38cae6bd1" xml:space="preserve">
         <source>Resume Crawl</source>
+        <target state="translated">Resumir Rastro</target>
       </trans-unit>
-      <trans-unit id="sa09f17b6ca51459a">
+      <trans-unit id="sa09f17b6ca51459a" xml:space="preserve">
         <source>Pause Crawl</source>
+        <target state="translated">Pausar Rastro</target>
       </trans-unit>
-      <trans-unit id="sf8c2169fe8bac095">
+      <trans-unit id="sf8c2169fe8bac095" xml:space="preserve">
         <source>View Item Details</source>
+        <target state="translated">Ver detalles del elemento</target>
       </trans-unit>
-      <trans-unit id="sbfbbc245e1ce643c">
+      <trans-unit id="sbfbbc245e1ce643c" xml:space="preserve">
         <source>Last Run</source>
+        <target state="translated">Última ejecución</target>
       </trans-unit>
-      <trans-unit id="s8b97ea84af17c029">
+      <trans-unit id="s8b97ea84af17c029" xml:space="preserve">
         <source>Never</source>
+        <target state="translated">Nunca</target>
       </trans-unit>
-      <trans-unit id="sa15dffef1e7c424d">
+      <trans-unit id="sa15dffef1e7c424d" xml:space="preserve">
         <source>Workflow crawl is currently in progress.</source>
+        <target state="translated">Rastro del flujo de trabajo actualmente está en proceso.</target>
       </trans-unit>
-      <trans-unit id="s7952f7df3d316178">
+      <trans-unit id="s7952f7df3d316178" xml:space="preserve">
         <source>This workflow has an active crawl.</source>
+        <target state="translated">Este flujo de trabajo tiene un rastro activo.</target>
       </trans-unit>
-      <trans-unit id="s7d04e896a9fa3733">
+      <trans-unit id="s7d04e896a9fa3733" xml:space="preserve">
         <source>View Crawl</source>
+        <target state="translated">Vista de rastro</target>
       </trans-unit>
-      <trans-unit id="sb7064f1605bf6030">
+      <trans-unit id="sb7064f1605bf6030" xml:space="preserve">
         <source>Sorry, couldn't retrieve crawls at this time</source>
+        <target state="translated">Lo siento, no pude obtener rastros en este momento</target>
       </trans-unit>
-      <trans-unit id="s9375cab2f4e8da28">
+      <trans-unit id="s9375cab2f4e8da28" xml:space="preserve">
         <source>Watch</source>
+        <target state="translated">Espiar</target>
       </trans-unit>
-      <trans-unit id="sa6475d7e59c069dc">
+      <trans-unit id="sa6475d7e59c069dc" xml:space="preserve">
         <source>More Info</source>
+        <target state="translated">Más información</target>
       </trans-unit>
-      <trans-unit id="s0c968319184ed0fd">
+      <trans-unit id="s0c968319184ed0fd" xml:space="preserve">
         <source>View Metadata</source>
+        <target state="translated">Ver metadatos</target>
       </trans-unit>
-      <trans-unit id="sdcabcb2e7625beb4">
+      <trans-unit id="sdcabcb2e7625beb4" xml:space="preserve">
         <source>View Quality Assurance</source>
+        <target state="translated">Vista de Calidad de Garantía</target>
       </trans-unit>
-      <trans-unit id="s05e84c2fed939a4e">
+      <trans-unit id="s05e84c2fed939a4e" xml:space="preserve">
         <source>View WACZ Files</source>
+        <target state="translated">Ver archivos WACZ</target>
       </trans-unit>
-      <trans-unit id="s074375c07f63a7a0">
+      <trans-unit id="s074375c07f63a7a0" xml:space="preserve">
         <source>left to resume</source>
+        <target state="needs-translation">dejar para resumir</target>
       </trans-unit>
-      <trans-unit id="sc676aa90614e8569">
+      <trans-unit id="sc676aa90614e8569" xml:space="preserve">
         <source>This crawl will stop on <x id="0" equiv-text="${formattedDate}"/>.</source>
+        <target state="translated">Este rastro detendrá en <x id="0" equiv-text="${formattedDate}"/>.</target>
       </trans-unit>
       <trans-unit id="s166f1e6f5ff4255b">
         <source>Pages crawled so far will be saved, but the crawl will not be resumable.</source>
