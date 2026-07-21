@@ -101,7 +101,9 @@ export class Code extends TailwindElement {
         this.noWrap ? tw`whitespace-nowrap` : tw`whitespace-pre-wrap`,
         this.truncate && tw`truncate`,
       )}
-    ><code title=${ifDefined(
+    ><code @selectstart=${(e: Event) =>
+      // Forward selection event, which are not composed
+      this.dispatchEvent(new Event(e.type, e))} title=${ifDefined(
       this.truncate ? this.value : undefined,
     )}>${staticHtml`${unsafeStatic(htmlStr)}`}</code></pre>`;
   }

@@ -196,11 +196,18 @@ export class FloatingPopover extends SlTooltip {
 
   handleMouseMove = (event: MouseEvent) => {
     if (this.isHovered) {
-      this.clientX = event.clientX;
-      this.clientY = event.clientY;
-      this.popup.reposition();
+      this.setPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
     }
   };
+
+  setPosition({ x, y }: { x: number; y: number }) {
+    this.clientX = x;
+    this.clientY = y;
+    this.popup.reposition();
+  }
 
   private readonly overrideHandleMouseOver = (event: MouseEvent) => {
     if (this.overrideHasTrigger("hover")) {

@@ -24,11 +24,19 @@ export class ClipboardController implements ReactiveController {
 
   private readonly host: ReactiveControllerHost & EventTarget;
 
+  private readonly timeout: number = 3000;
   private timeoutId?: number;
 
   isCopied = false;
 
-  constructor(host: ClipboardController["host"]) {
+  constructor(
+    host: ClipboardController["host"],
+    { timeout }: { timeout?: number } = {},
+  ) {
+    if (timeout) {
+      this.timeout = timeout;
+    }
+
     this.host = host;
     host.addController(this);
   }
@@ -41,6 +49,8 @@ export class ClipboardController implements ReactiveController {
   }
 
   async copy(value: string) {
+    window.clearTimeout(this.timeoutId);
+
     ClipboardController.copyToClipboard(value);
 
     this.isCopied = true;
@@ -48,7 +58,7 @@ export class ClipboardController implements ReactiveController {
     this.timeoutId = window.setTimeout(() => {
       this.isCopied = false;
       this.host.requestUpdate();
-    }, 3000);
+    }, this.timeout);
 
     this.host.requestUpdate();
 
@@ -57,5 +67,16 @@ export class ClipboardController implements ReactiveController {
     this.host.dispatchEvent(
       new CustomEvent<CopiedEventDetail>("btrix-copied", { detail: value }),
     );
+  }
+
+  reset() {
+    if (!this.timeoutId) return;
+
+    window.clearTimeout(this.timeoutId);
+
+    if (this.isCopied) {
+      this.isCopied = false;
+      this.host.requestUpdate();
+    }
   }
 }
