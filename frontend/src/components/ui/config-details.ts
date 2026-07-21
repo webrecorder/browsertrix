@@ -464,6 +464,12 @@ export class ConfigDetails extends BtrixElement {
 
     const seeds = () => when(this.seeds, this.renderSeeds);
     const isUrlList = this.seeds && this.seeds.length > 1;
+    const showLinkSelectors =
+      config.extraHops || config.scopeType === ScopeType.SPA;
+    const showExclusions =
+      showLinkSelectors ||
+      config.alwaysAddBehaviorLinks ||
+      config.exclude?.length;
 
     return html`
       ${this.renderSetting(
@@ -487,10 +493,8 @@ export class ConfigDetails extends BtrixElement {
         titlecaseLabelFor.includeLinkedPages,
         Boolean(config.extraHops),
       )}
-      ${when(
-        config.extraHops || config.scopeType === ScopeType.SPA,
-        () => html`${this.renderLinkSelectors()}${this.renderExclusions()}`,
-      )}
+      ${when(showLinkSelectors, this.renderLinkSelectors)}
+      ${when(showExclusions, this.renderExclusions)}
     `;
   };
 
@@ -604,7 +608,7 @@ export class ConfigDetails extends BtrixElement {
     `;
   };
 
-  private renderLinkSelectors() {
+  private readonly renderLinkSelectors = () => {
     const selectors = this.crawlConfig?.config.selectLinks || [];
 
     return this.renderSetting(
@@ -621,9 +625,9 @@ export class ConfigDetails extends BtrixElement {
           `
         : msg("None"),
     );
-  }
+  };
 
-  private renderExclusions() {
+  private readonly renderExclusions = () => {
     const exclusions = this.crawlConfig?.config.exclude || [];
 
     return when(
@@ -639,7 +643,7 @@ export class ConfigDetails extends BtrixElement {
       `,
       () => this.renderSetting(labelFor.exclusions, none),
     );
-  }
+  };
 
   private readonly renderSeeds = (seeds: Seed[]) => {
     return html`<btrix-table class="grid-cols-[1fr_auto]">
