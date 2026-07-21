@@ -1882,9 +1882,10 @@ class CrawlOperator(BaseOperator):
                 allowed_from=RUNNING_STATES,
             )
             status.resync_after = self.fast_retry_secs
+            return status
 
         # mark crawl as pausing or stopping
-        elif status.stopping:
+        if status.stopping:
             if status.stopReason in PAUSED_STATES:
                 if await redis.set(f"{crawl.id}:paused", "1", nx=True):
                     logger.info(
