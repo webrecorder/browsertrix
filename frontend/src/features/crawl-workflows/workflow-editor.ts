@@ -1036,6 +1036,14 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private readonly renderPageScope = () => {
+    const showLinkSelectors =
+      this.formState.includeLinkedPages ||
+      this.formState.scopeType === ScopeType.SPA;
+    const showExclusions =
+      showLinkSelectors ||
+      this.formState.alwaysAddBehaviorLinks ||
+      trimArray(this.formState.exclusions).length;
+
     return html`
       ${choose(this.formState.scopeType, [
         [ScopeType.Page, this.renderSingleUrlInput],
@@ -1046,11 +1054,10 @@ export class WorkflowEditor extends BtrixElement {
       <!-- Settings that expand the crawl scope by including links that would normally be out of scope -->
       ${this.renderSectionHeading(msg("Additional Scope"))}
       ${this.renderIncludeLinkedPages()} ${this.renderUseSmartScope()}
+      ${when(showLinkSelectors, this.renderLinkSelectors)}
       ${when(
-        this.formState.includeLinkedPages ||
-          this.formState.scopeType === ScopeType.SPA,
+        showExclusions,
         () => html`
-          ${this.renderLinkSelectors()}
           ${this.renderSectionHeading(msg("Exclude Pages"))}
           ${this.renderExcludePages()}
         `,
@@ -1849,7 +1856,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     ${this.renderHelpTextCol(infoTextFor["includeLinkedPages"], false)}`;
   }
 
-  private renderLinkSelectors() {
+  private readonly renderLinkSelectors = () => {
     const selectors = this.formState.selectLinks;
     const isCustom = !isEqual(defaultFormState.selectLinks, selectors);
     const [defaultSel, defaultAttr] =
@@ -1896,7 +1903,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         )}
       `,
     });
-  }
+  };
 
   private renderCrawlLimits() {
     // Max Pages minimum value cannot be lower than seed count
