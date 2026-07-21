@@ -3833,7 +3833,7 @@
       </trans-unit>
       <trans-unit id="s2b933576a3ca5f07" xml:space="preserve">
         <source>Pages currently being crawled will be completed and saved, and finished pages will be kept, but all remaining pages in the queue will be discarded. Are you sure you want to stop crawling?</source>
-        <target state="needs-translation">Las páginas que se están arrastrando serán completadas y guardadas, y las páginas terminadas serán guardadas, pero todas las páginas restantes en la cola serán descartadas. ¿Seguro que quieres dejar de arrastrarte?</target>
+        <target state="translated">Las páginas actualmente arrastradas serán completadas y guardadas, y las páginas finalizadas serán mantenidas, pero todas las páginas restantes en la cola serán descartadas. ¿Seguro que desea detener de arrastre?</target>
       </trans-unit>
       <trans-unit id="s9aa0dfb832cb7f69" xml:space="preserve">
         <source>View error logs</source>
@@ -3841,11 +3841,11 @@
       </trans-unit>
       <trans-unit id="s8be75efeafa7ffe1" xml:space="preserve">
         <source>Your org will be deleted within one day</source>
-        <target state="needs-translation">Su org se eliminará dentro de un día</target>
+        <target state="translated">Su org será eliminada en un plazo de un día</target>
       </trans-unit>
       <trans-unit id="sfa1778ba000b56f5" xml:space="preserve">
         <source>Your org will be deleted in one day.</source>
-        <target state="needs-translation">Su org se eliminará en un día.</target>
+        <target state="translated">Su org será eliminado en un día.</target>
       </trans-unit>
       <trans-unit id="se392e1f811076a30" xml:space="preserve">
         <source>Your org will be deleted in <x id="0" equiv-text="${daysUntilTrialEnd}"/> days</source>
@@ -4075,8 +4075,9 @@
         <source>Downloads</source>
         <target state="translated">Descargas</target>
       </trans-unit>
-      <trans-unit id="seb65dc388069e62f">
+      <trans-unit id="seb65dc388069e62f" xml:space="preserve">
         <source>If enabled, a button to download this collection will be visible in the shareable page. Please note that even if the download button is disabled, anyone determined to download a shared collection can do so through developer tools. If this is a concern, keep your collection private.</source>
+        <target state="translated">Si está habilitado, un botón para descargar esta colección será visible en la página compartible. Tenga en cuenta que incluso si el botón de descarga está deshabilitado, cualquier persona determinada a descargar una colección compartida puede hacerlo a través de herramientas de desarrollador. Si esto es una preocupación, mantenga su colección privada.</target>
       </trans-unit>
       <trans-unit id="sdbc2a1377cc1d250" xml:space="preserve">
         <source>Show download button</source>
@@ -4086,27 +4087,33 @@
         <source>Use thumbnail</source>
         <target state="translated">Utilizar miniatura</target>
       </trans-unit>
-      <trans-unit id="sf37f3c3d85619290">
+      <trans-unit id="sf37f3c3d85619290" xml:space="preserve">
         <source>Change the visibility setting to embed this collection.</source>
+        <target state="translated">Cambia el ajuste de visibilidad para embeber esta colección.</target>
       </trans-unit>
-      <trans-unit id="h3a14a39406b82931">
+      <trans-unit id="h3a14a39406b82931" xml:space="preserve">
         <source>To embed this collection into an existing webpage, add the following embed code:</source>
+        <target state="translated">Para embeber esta colección a una página web existente, añada el código embebido siguiente:</target>
       </trans-unit>
-      <trans-unit id="hacc9b91be8da34c8">
+      <trans-unit id="hacc9b91be8da34c8" xml:space="preserve">
         <source>Add the following JavaScript to your <x id="0" equiv-text="&lt;code class=&quot;text-[0.9em]&quot;&gt;"/>/replay/sw.js<x id="1" equiv-text="&lt;/code&gt;"/>:</source>
+        <target state="translated">Añade el siguiente JavaScript a tu <x id="0" equiv-text="&lt;code class=&quot;text-[0.9em]&quot;&gt;"/>/replay/sw.js<x id="1" equiv-text="&lt;/code&gt;"/>:</target>
       </trans-unit>
-      <trans-unit id="h654faf8fb38c80f3">
+      <trans-unit id="h654faf8fb38c80f3" xml:space="preserve">
         <source>See <x id="0" equiv-text="&lt;a class=&quot;text-primary&quot; href=&quot;https://replayweb.page/docs/embedding&quot; target=&quot;_blank&quot;&gt;"/> our embedding guide<x id="1" equiv-text="&lt;/a&gt;"/> for more details.</source>
+        <target state="translated">Consulte <x id="0" equiv-text="&lt;a class=&quot;text-primary&quot; href=&quot;https://replayweb.page/docs/embedding&quot; target=&quot;_blank&quot;&gt;"/> nuestra guía embebida<x id="1" equiv-text="&lt;/a&gt;"/> para más detalles.</target>
       </trans-unit>
-      <trans-unit id="s3f65af47b6c8cdff">
+      <trans-unit id="s3f65af47b6c8cdff" xml:space="preserve">
         <source>No description provided.</source>
+        <target state="translated">Ninguna descripción proporcionada.</target>
       </trans-unit>
       <trans-unit id="s0cb0a82088e45196" xml:space="preserve">
         <source>Add Description</source>
         <target state="translated">Añadir Descripción</target>
       </trans-unit>
-      <trans-unit id="sadeca8316f2de694">
+      <trans-unit id="sadeca8316f2de694" xml:space="preserve">
         <source>Tell viewers about this collection</source>
+        <target state="translated">Diga a los visualizadores acerca de esta colección</target>
       </trans-unit>
       <trans-unit id="s00b81a0a3a70b016" xml:space="preserve">
         <source>Update Description</source>
@@ -4120,8 +4127,9 @@
         <source>Description updated.</source>
         <target state="translated">Descripción actualizada.</target>
       </trans-unit>
-      <trans-unit id="s4d61bc76df7560ab">
+      <trans-unit id="s4d61bc76df7560ab" xml:space="preserve">
         <source>Sorry, couldn't save collection description at this time.</source>
+        <target state="translated">Lo sentimos, no pudimos guardar la descripción de la colección en este momento.</target>
       </trans-unit>
       <trans-unit id="s82665b2ffabc9c0a" xml:space="preserve">
         <source>Website</source>
@@ -4320,8 +4328,9 @@
         <source>Write a short description that summarizes this collection. If the collection is shareable, this will appear next to the collection name.</source>
         <target state="translated">Escribe una descripción breve que resuma esta colección. Si la colección es compatible, esto aparecerá tras el nombre de la colección.</target>
       </trans-unit>
-      <trans-unit id="sa6c663d28c4eeb33">
+      <trans-unit id="sa6c663d28c4eeb33" xml:space="preserve">
         <source>This collection will be visible in the org public collection gallery, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.</source>
+        <target state="translated">Esta colección será visible en la galería de colección pública de org, incluso sin elementos archivados. Puede desear poner establecer la visibilidad a 'Deslistadas' hasta que los elementos archivados hayan sido añadidos.</target>
       </trans-unit>
       <trans-unit id="s1d7d69e58796f97a" xml:space="preserve">
         <source>Page Timestamp</source>
@@ -4423,422 +4432,559 @@
         <source>The org profile page isn't public yet. To make the org profile and this collection visible to the public, update profile visibility in org settings.</source>
         <target state="translated">La página del perfil org no es pública aún. Para hacer que el perfil org y esta colección visible para el público, actualice la visibilidad del perfil en los ajustes de org.</target>
       </trans-unit>
-      <trans-unit id="s93cdf6aa403725d4">
+      <trans-unit id="s93cdf6aa403725d4" xml:space="preserve">
         <source>Collection Settings for “<x id="0" equiv-text="${this.name || this.collection.name}"/>”</source>
+        <target state="translated">Ajustes de colección para “<x id="0" equiv-text="${this.name || this.collection.name}"/>”</target>
       </trans-unit>
-      <trans-unit id="s58d345165b96e68e">
+      <trans-unit id="s58d345165b96e68e" xml:space="preserve">
         <source>Collection Settings</source>
+        <target state="translated">Ajustes de colección</target>
       </trans-unit>
-      <trans-unit id="s5c1ecf88259b79f9">
+      <trans-unit id="s5c1ecf88259b79f9" xml:space="preserve">
         <source>Presentation</source>
+        <target state="translated">Presentación</target>
       </trans-unit>
-      <trans-unit id="s827bbc2fb2917a33">
+      <trans-unit id="s827bbc2fb2917a33" xml:space="preserve">
         <source>Sharing</source>
+        <target state="translated">Compartir</target>
       </trans-unit>
-      <trans-unit id="s6b138c631a7d2a2c">
+      <trans-unit id="s6b138c631a7d2a2c" xml:space="preserve">
         <source>Discard Changes</source>
+        <target state="translated">Descartar Cambios</target>
       </trans-unit>
-      <trans-unit id="s4cdd05ea66832a9e">
+      <trans-unit id="s4cdd05ea66832a9e" xml:space="preserve">
         <source>Unsaved changes.</source>
+        <target state="translated">Cambios no guardados.</target>
       </trans-unit>
-      <trans-unit id="h2c3943473fbe11e2">
+      <trans-unit id="h2c3943473fbe11e2" xml:space="preserve">
         <source>You can add a longer description in the “About” section after creating the collection.</source>
+        <target state="translated">Puedes añadir una descripción más larga en la sección “Acerca de” tras crear la colección.</target>
       </trans-unit>
-      <trans-unit id="s9b60514119bff158">
+      <trans-unit id="s9b60514119bff158" xml:space="preserve">
         <source>Set Initial View</source>
+        <target state="translated">Establecer Vista Inicial</target>
       </trans-unit>
-      <trans-unit id="s1535d4e96dccfba4">
+      <trans-unit id="s1535d4e96dccfba4" xml:space="preserve">
         <source>Initial View</source>
+        <target state="translated">Vista Inicial</target>
       </trans-unit>
-      <trans-unit id="sdc999ebffd912691">
+      <trans-unit id="sdc999ebffd912691" xml:space="preserve">
         <source>Download Collection:</source>
+        <target state="translated">Descargar colección:</target>
       </trans-unit>
-      <trans-unit id="s02d4af030afd821a">
+      <trans-unit id="s02d4af030afd821a" xml:space="preserve">
         <source>Please enter a valid regular expression</source>
+        <target state="translated">Introduzca una expresión usual válida</target>
       </trans-unit>
-      <trans-unit id="s2b9f200fda08e4d3">
+      <trans-unit id="s2b9f200fda08e4d3" xml:space="preserve">
         <source>Show section</source>
+        <target state="translated">Mostrar sección</target>
       </trans-unit>
-      <trans-unit id="sbe9de7b29b1d1224">
+      <trans-unit id="sbe9de7b29b1d1224" xml:space="preserve">
         <source>Please fix all errors in this section</source>
+        <target state="translated">Repare todos los errores dentro de esta sección</target>
       </trans-unit>
-      <trans-unit id="sb48b074e5871a395">
+      <trans-unit id="sb48b074e5871a395" xml:space="preserve">
         <source>Collapse section</source>
+        <target state="translated">Colapsar sección</target>
       </trans-unit>
-      <trans-unit id="s31065c17df35aa6b">
+      <trans-unit id="s31065c17df35aa6b" xml:space="preserve">
         <source>Save without running</source>
+        <target state="translated">Guardar sin ejecutar</target>
       </trans-unit>
-      <trans-unit id="s09625da767d1ec6b">
+      <trans-unit id="s09625da767d1ec6b" xml:space="preserve">
         <source>Save and run with new settings</source>
+        <target state="translated">Guarda y ejecuta con ajustes nuevos</target>
       </trans-unit>
-      <trans-unit id="sb0caa86199d0e901">
+      <trans-unit id="sb0caa86199d0e901" xml:space="preserve">
         <source>Specify the range and depth of your crawl.</source>
+        <target state="translated">Especifique el intervalo y profundidad de su rastro.</target>
       </trans-unit>
-      <trans-unit id="s954a81b79f2ebf71">
+      <trans-unit id="s954a81b79f2ebf71" xml:space="preserve">
         <source>Schedule recurring crawls.</source>
+        <target state="translated">Planificar recurriendo rastros.</target>
       </trans-unit>
-      <trans-unit id="sa8c19d13eb3e7f98">
+      <trans-unit id="sa8c19d13eb3e7f98" xml:space="preserve">
         <source>Please fix all errors and try again.</source>
+        <target state="translated">Corrija todos los errores e inténtelo de nuevo.</target>
       </trans-unit>
-      <trans-unit id="sdc12eb8d90714683">
+      <trans-unit id="sdc12eb8d90714683" xml:space="preserve">
         <source>Page exclusion contains invalid regex</source>
+        <target state="translated">Exclusión de página contiene expreg no válida</target>
       </trans-unit>
-      <trans-unit id="sac43920f91e495d4">
+      <trans-unit id="sac43920f91e495d4" xml:space="preserve">
         <source>Sorry, couldn't save workflow at this time.</source>
+        <target state="translated">Disculpe, no pude guardar flujo de trabajo en este momento.</target>
       </trans-unit>
-      <trans-unit id="s0ff179117ed54be5">
+      <trans-unit id="s0ff179117ed54be5" xml:space="preserve">
         <source>Go to Unlisted Page</source>
+        <target state="translated">Ir a Página No Listada</target>
       </trans-unit>
-      <trans-unit id="sa4e272fd9de28ce8">
+      <trans-unit id="sa4e272fd9de28ce8" xml:space="preserve">
         <source>Go to Public Page</source>
+        <target state="translated">Ir a Página Pública</target>
       </trans-unit>
-      <trans-unit id="s6810fc90cd4096f9">
+      <trans-unit id="s6810fc90cd4096f9" xml:space="preserve">
         <source>Edit Collection Name and Description</source>
+        <target state="translated">Editar nombre y descripción de colección</target>
       </trans-unit>
-      <trans-unit id="s26ee1eaa2a764aff">
+      <trans-unit id="s26ee1eaa2a764aff" xml:space="preserve">
         <source>Add a summary...</source>
+        <target state="translated">Agregar un resumen…</target>
       </trans-unit>
-      <trans-unit id="sd720fd983f132077">
+      <trans-unit id="sd720fd983f132077" xml:space="preserve">
         <source>Edit Description</source>
+        <target state="translated">Editar descripción</target>
       </trans-unit>
-      <trans-unit id="s355b21b89ce5d9c5">
+      <trans-unit id="s355b21b89ce5d9c5" xml:space="preserve">
         <source>Details</source>
+        <target state="translated">Detalles</target>
       </trans-unit>
-      <trans-unit id="s953263baa32573a4">
+      <trans-unit id="s953263baa32573a4" xml:space="preserve">
         <source>Examples of org URL in use</source>
+        <target state="translated">Ejemplos de URL org en uso</target>
       </trans-unit>
-      <trans-unit id="s1054e433631d255e">
+      <trans-unit id="s1054e433631d255e" xml:space="preserve">
         <source>(current page)</source>
+        <target state="translated">(página actual)</target>
       </trans-unit>
-      <trans-unit id="s1bba576ea20a31eb">
+      <trans-unit id="s1bba576ea20a31eb" xml:space="preserve">
         <source>Public collections gallery</source>
+        <target state="translated">Galería de colecciones públicas</target>
       </trans-unit>
-      <trans-unit id="s6b8d97ac7f07a31e">
+      <trans-unit id="s6b8d97ac7f07a31e" xml:space="preserve">
         <source>View public collections gallery</source>
+        <target state="translated">Vista de galería de colecciones públicas</target>
       </trans-unit>
-      <trans-unit id="sd078aa97afe211c0">
+      <trans-unit id="sd078aa97afe211c0" xml:space="preserve">
         <source>Enable public collections gallery</source>
+        <target state="translated">Habilita galería de colección pública</target>
       </trans-unit>
-      <trans-unit id="sd63898d64c83d7a2">
+      <trans-unit id="sd63898d64c83d7a2" xml:space="preserve">
         <source>Public collections gallery URL</source>
+        <target state="translated">URL de galería de colección pública</target>
       </trans-unit>
-      <trans-unit id="sc4f5408bc1baceed">
+      <trans-unit id="sc4f5408bc1baceed" xml:space="preserve">
         <source>If enabled, anyone on the Internet will be able to visit this URL to browse public collections and view general org information.</source>
+        <target state="translated">Si está habilitado, cualquiera en Internet será capaz de visitar esta URL para navegar por colecciones públicas y ver información general de org.</target>
       </trans-unit>
-      <trans-unit id="s01ed812b28148f86">
+      <trans-unit id="s01ed812b28148f86" xml:space="preserve">
         <source>Write a short description that introduces your org and its public collections.</source>
+        <target state="translated">Escribe una descripción breve que introduce tu org y sus colecciones públicas.</target>
       </trans-unit>
-      <trans-unit id="sc5b45b865c279ec2">
+      <trans-unit id="sc5b45b865c279ec2" xml:space="preserve">
         <source>URL too short</source>
+        <target state="translated">URL demasiado breve</target>
       </trans-unit>
-      <trans-unit id="s6068dcdfcdbe3ab0">
+      <trans-unit id="s6068dcdfcdbe3ab0" xml:space="preserve">
         <source>Edit Org Settings</source>
+        <target state="translated">Editar ajustes de org</target>
       </trans-unit>
-      <trans-unit id="s37811fcfe2741679">
+      <trans-unit id="s37811fcfe2741679" xml:space="preserve">
         <source>All Collections</source>
+        <target state="translated">Todas las colecciones</target>
       </trans-unit>
-      <trans-unit id="s96b9bb1be9e4b3e2">
+      <trans-unit id="s96b9bb1be9e4b3e2" xml:space="preserve">
         <source>Visit public collections gallery</source>
+        <target state="translated">Visita la galería de colecciones públicas</target>
       </trans-unit>
-      <trans-unit id="sd3f3f33e50bd1f9b">
+      <trans-unit id="sd3f3f33e50bd1f9b" xml:space="preserve">
         <source>Preview public collections gallery</source>
+        <target state="translated">Vista previa de galería de colecciones públicas</target>
       </trans-unit>
-      <trans-unit id="s002fe7077f0249cd">
+      <trans-unit id="s002fe7077f0249cd" xml:space="preserve">
         <source>Copy Link to Public Collections Gallery</source>
+        <target state="translated">Copiar enlace a galería de colecciones públicas</target>
       </trans-unit>
-      <trans-unit id="s047b237f640217b9">
+      <trans-unit id="s047b237f640217b9" xml:space="preserve">
         <source>No collections yet.</source>
+        <target state="translated">Aún sin colecciones.</target>
       </trans-unit>
-      <trans-unit id="sbec67d1ecfe03df2">
+      <trans-unit id="sbec67d1ecfe03df2" xml:space="preserve">
         <source>View Workflow Settings</source>
+        <target state="translated">Ver ajustes del flujo de trabajo</target>
       </trans-unit>
-      <trans-unit id="s396dfbe7951a9482">
+      <trans-unit id="s396dfbe7951a9482" xml:space="preserve">
         <source>Go to Private Page</source>
+        <target state="translated">Ir a página privada</target>
       </trans-unit>
-      <trans-unit id="s21f49eaae01fc8f0">
+      <trans-unit id="s21f49eaae01fc8f0" xml:space="preserve">
         <source>You are logged in as a superadmin</source>
+        <target state="translated">Has iniciado sesión como un superadmin</target>
       </trans-unit>
-      <trans-unit id="sbb7c17d62505d40a">
+      <trans-unit id="sbb7c17d62505d40a" xml:space="preserve">
         <source>please be careful.</source>
+        <target state="translated">por favor sea cuidadoso.</target>
       </trans-unit>
-      <trans-unit id="s21da89886d0c73b8">
+      <trans-unit id="s21da89886d0c73b8" xml:space="preserve">
         <source>Total orgs</source>
+        <target state="translated">Total de orgs</target>
       </trans-unit>
-      <trans-unit id="s4a0f931a850222df">
+      <trans-unit id="s4a0f931a850222df" xml:space="preserve">
         <source>Inactive orgs</source>
+        <target state="translated">Orgs inactivo</target>
       </trans-unit>
-      <trans-unit id="s261f2e08c89dece6">
+      <trans-unit id="s261f2e08c89dece6" xml:space="preserve">
         <source>Active Orgs</source>
+        <target state="translated">Activar Orgs</target>
       </trans-unit>
-      <trans-unit id="s0b03b8c444c373e9">
+      <trans-unit id="s0b03b8c444c373e9" xml:space="preserve">
         <source>Orgs that are not read-only</source>
+        <target state="translated">Orgs que no son de solo lectura</target>
       </trans-unit>
-      <trans-unit id="s306cff612d8e8e65">
+      <trans-unit id="s306cff612d8e8e65" xml:space="preserve">
         <source>Total users</source>
+        <target state="translated">Total de usuarios</target>
       </trans-unit>
-      <trans-unit id="s80207f49fb5f26a8">
+      <trans-unit id="s80207f49fb5f26a8" xml:space="preserve">
         <source>Inactive users</source>
+        <target state="translated">Usuarios inactivos</target>
       </trans-unit>
-      <trans-unit id="s558cdc6efe186f7b">
+      <trans-unit id="s558cdc6efe186f7b" xml:space="preserve">
         <source>Active Users</source>
+        <target state="translated">Usuarios activos</target>
       </trans-unit>
-      <trans-unit id="s4c98dbe8884a3dcc">
+      <trans-unit id="s4c98dbe8884a3dcc" xml:space="preserve">
         <source>Users in orgs that are not read-only</source>
+        <target state="translated">Usuarios en orgs que no son de solo lectura</target>
       </trans-unit>
-      <trans-unit id="sa07bba7701542d0d">
+      <trans-unit id="sa07bba7701542d0d" xml:space="preserve">
         <source>Active subscriptions</source>
+        <target state="translated">Suscripciones activas</target>
       </trans-unit>
-      <trans-unit id="s6b5c3050c90ece43">
+      <trans-unit id="s6b5c3050c90ece43" xml:space="preserve">
         <source>Trialing subscriptions</source>
+        <target state="translated">Suscripciones de prueba</target>
       </trans-unit>
-      <trans-unit id="sfdf2d73d03fe731e">
+      <trans-unit id="sfdf2d73d03fe731e" xml:space="preserve">
         <source>Cancelled trialing subscriptions</source>
+        <target state="translated">Suscripciones de prueba canceladas</target>
       </trans-unit>
-      <trans-unit id="s523871359f60a83d">
+      <trans-unit id="s523871359f60a83d" xml:space="preserve">
         <source>Paused (payment failed) subscriptions</source>
+        <target state="translated">Suscripciones pausadas (pago incorrecto)</target>
       </trans-unit>
-      <trans-unit id="s7fba441fb0a5972a">
+      <trans-unit id="s7fba441fb0a5972a" xml:space="preserve">
         <source>Cancelled subscriptions</source>
+        <target state="translated">Suscripciones canceladas</target>
       </trans-unit>
-      <trans-unit id="sb90b622dc6071497">
+      <trans-unit id="sb90b622dc6071497" xml:space="preserve">
         <source>Total subscriptions (all states)</source>
+        <target state="translated">Suscripciones total (todos los estados)</target>
       </trans-unit>
-      <trans-unit id="s24dfa237462238ad">
+      <trans-unit id="s24dfa237462238ad" xml:space="preserve">
         <source>Active Subscriptions</source>
+        <target state="translated">Suscripciones Activas</target>
       </trans-unit>
-      <trans-unit id="s8d97b7a88c9621c7">
+      <trans-unit id="s8d97b7a88c9621c7" xml:space="preserve">
         <source>Orgs with active subscriptions (including with future cancellation dates)</source>
+        <target state="translated">Orgs con suscripciones activas (incluyendo con fechas de cancelación futura)</target>
       </trans-unit>
-      <trans-unit id="sa2c62ba7db4dbd6c">
+      <trans-unit id="sa2c62ba7db4dbd6c" xml:space="preserve">
         <source>Storage in active orgs</source>
+        <target state="translated">Almacén en orgs activas</target>
       </trans-unit>
-      <trans-unit id="sbd011fc7327ccac9">
+      <trans-unit id="sbd011fc7327ccac9" xml:space="preserve">
         <source>Storage in inactive orgs</source>
+        <target state="translated">Almacén en orgs inactivas</target>
       </trans-unit>
-      <trans-unit id="s6cae37d86300e894">
+      <trans-unit id="s6cae37d86300e894" xml:space="preserve">
         <source>Data Stored</source>
+        <target state="translated">Datos almacenados</target>
       </trans-unit>
-      <trans-unit id="sf49a7f2288bec44e">
+      <trans-unit id="sf49a7f2288bec44e" xml:space="preserve">
         <source>Across all orgs</source>
+        <target state="translated">A través de todas las orgs</target>
       </trans-unit>
-      <trans-unit id="se2c236173dfb73cd">
+      <trans-unit id="se2c236173dfb73cd" xml:space="preserve">
         <source>Copy Collection ID</source>
+        <target state="translated">Copiar ID de Colección</target>
       </trans-unit>
-      <trans-unit id="s0f4661824df32bbc">
+      <trans-unit id="s0f4661824df32bbc" xml:space="preserve">
         <source>Copy Item ID</source>
+        <target state="translated">Copiar ID de Elemento</target>
       </trans-unit>
-      <trans-unit id="s3cc68dd968072be8">
+      <trans-unit id="s3cc68dd968072be8" xml:space="preserve">
         <source>Copy Crawl ID</source>
+        <target state="translated">Copiar ID del Rastro</target>
       </trans-unit>
-      <trans-unit id="s60736d4d708a24c6">
+      <trans-unit id="s60736d4d708a24c6" xml:space="preserve">
         <source>Copy Run ID</source>
+        <target state="translated">Copiar ID de Ejecución</target>
       </trans-unit>
-      <trans-unit id="sfa656dc4be663ad8">
+      <trans-unit id="sfa656dc4be663ad8" xml:space="preserve">
         <source>Crawl Order</source>
+        <target state="translated">Orden de Rastro</target>
       </trans-unit>
-      <trans-unit id="sea0ad07286153280">
+      <trans-unit id="sea0ad07286153280" xml:space="preserve">
         <source>Copy Page ID</source>
+        <target state="translated">Copiar Pegar ID</target>
       </trans-unit>
-      <trans-unit id="sbb4576dabfa47076">
+      <trans-unit id="sbb4576dabfa47076" xml:space="preserve">
         <source>Copy Profile ID</source>
+        <target state="translated">Copiar ID de Perfil</target>
       </trans-unit>
-      <trans-unit id="saac5b44792ba9c43">
+      <trans-unit id="saac5b44792ba9c43" xml:space="preserve">
         <source>Delete Profile</source>
+        <target state="translated">Eliminar Perfil</target>
       </trans-unit>
-      <trans-unit id="s1dcc85070a5be808">
+      <trans-unit id="s1dcc85070a5be808" xml:space="preserve">
         <source>Payment Never Made</source>
+        <target state="translated">Pago Nunca Hecho</target>
       </trans-unit>
-      <trans-unit id="s585d9e9cc7eea6c8">
+      <trans-unit id="s585d9e9cc7eea6c8" xml:space="preserve">
         <source>Payment never made</source>
+        <target state="translated">Pago nunca hecho</target>
       </trans-unit>
-      <trans-unit id="sb96d0978e46f4a9c">
+      <trans-unit id="sb96d0978e46f4a9c" xml:space="preserve">
         <source>Behaviors</source>
+        <target state="translated">Comportamientos</target>
       </trans-unit>
-      <trans-unit id="s53654e41e7b2114d">
+      <trans-unit id="s53654e41e7b2114d" xml:space="preserve">
         <source>Custom Behaviors</source>
+        <target state="translated">Comportamientos personalizados</target>
       </trans-unit>
-      <trans-unit id="s30a3d76cd4da93e7">
+      <trans-unit id="s30a3d76cd4da93e7" xml:space="preserve">
         <source>Autoscroll</source>
+        <target state="translated">Auto‐arrastre</target>
       </trans-unit>
-      <trans-unit id="s58fd9002de2d2506">
+      <trans-unit id="s58fd9002de2d2506" xml:space="preserve">
         <source>Autoclick</source>
+        <target state="translated">Auto‐pulsar</target>
       </trans-unit>
-      <trans-unit id="s0187b8012de0ed1d">
+      <trans-unit id="s0187b8012de0ed1d" xml:space="preserve">
         <source>Page Load Limit</source>
+        <target state="translated">Límite de Carga de Página</target>
       </trans-unit>
-      <trans-unit id="s7654bbca59e5b6ab">
+      <trans-unit id="s7654bbca59e5b6ab" xml:space="preserve">
         <source>Link Selectors</source>
+        <target state="translated">Selectores de enlace</target>
       </trans-unit>
-      <trans-unit id="sa131b4e138b3f834">
+      <trans-unit id="sa131b4e138b3f834" xml:space="preserve">
         <source>Click Selector</source>
+        <target state="translated">Pulsar Selector</target>
       </trans-unit>
-      <trans-unit id="sa4b71eadd80c1750">
+      <trans-unit id="sa4b71eadd80c1750" xml:space="preserve">
         <source>Crawl Limits</source>
+        <target state="translated">Límites de rastro</target>
       </trans-unit>
-      <trans-unit id="s05b81abc9475a254">
+      <trans-unit id="s05b81abc9475a254" xml:space="preserve">
         <source>Page Behavior</source>
+        <target state="translated">Comportamiento de página</target>
       </trans-unit>
-      <trans-unit id="s1e91c74b6b748a7e">
+      <trans-unit id="s1e91c74b6b748a7e" xml:space="preserve">
         <source>URL Prefix</source>
+        <target state="translated">Prefijo de URL</target>
       </trans-unit>
-      <trans-unit id="sda68b7b6b6da0a83">
+      <trans-unit id="sda68b7b6b6da0a83" xml:space="preserve">
         <source>Contract</source>
+        <target state="translated">Contrato</target>
       </trans-unit>
-      <trans-unit id="s3b151ca64eb26ec1">
+      <trans-unit id="s3b151ca64eb26ec1" xml:space="preserve">
         <source>Expand</source>
+        <target state="translated">Expandir</target>
       </trans-unit>
-      <trans-unit id="s73f51a3532f29159">
+      <trans-unit id="s73f51a3532f29159" xml:space="preserve">
         <source>Expand row</source>
+        <target state="translated">Expandir fila</target>
       </trans-unit>
-      <trans-unit id="s77318393dfdb0775">
+      <trans-unit id="s77318393dfdb0775" xml:space="preserve">
         <source>Remove row</source>
+        <target state="translated">Quitar fila</target>
       </trans-unit>
-      <trans-unit id="sf9aee319a006c9b4">
+      <trans-unit id="sf9aee319a006c9b4" xml:space="preserve">
         <source>Add</source>
+        <target state="translated">Añadir</target>
       </trans-unit>
-      <trans-unit id="s0d1be7a2c400c080">
+      <trans-unit id="s0d1be7a2c400c080" xml:space="preserve">
         <source>more</source>
+        <target state="translated">más</target>
       </trans-unit>
-      <trans-unit id="s2cfa650f5dbfd87a">
+      <trans-unit id="s2cfa650f5dbfd87a" xml:space="preserve">
         <source>Please fill out this field.</source>
+        <target state="translated">Por favor, rellena este campo.</target>
       </trans-unit>
       <trans-unit id="s6d2defb7308bd5a0">
         <source>Trials</source>
       </trans-unit>
-      <trans-unit id="sab0b871c3b894ae1">
+      <trans-unit id="sab0b871c3b894ae1" xml:space="preserve">
         <source>Cancellation Scheduled</source>
+        <target state="translated">Cancelación Planificada</target>
       </trans-unit>
-      <trans-unit id="s2bf359cf530e6c24">
+      <trans-unit id="s2bf359cf530e6c24" xml:space="preserve">
         <source>Unexpected States</source>
+        <target state="translated">Estados Inesperados</target>
       </trans-unit>
-      <trans-unit id="s454fc453e983e6ca">
+      <trans-unit id="s454fc453e983e6ca" xml:space="preserve">
         <source>Active with issue</source>
+        <target state="translated">Activo con incidencia</target>
       </trans-unit>
-      <trans-unit id="sf15c7a44fe1edf18">
+      <trans-unit id="sf15c7a44fe1edf18" xml:space="preserve">
         <source>Subscription Cancellation Scheduled</source>
+        <target state="translated">Cancelación de Suscripción Planificada</target>
       </trans-unit>
-      <trans-unit id="s7672b03efcb2c967">
+      <trans-unit id="s7672b03efcb2c967" xml:space="preserve">
         <source>Cancels in</source>
+        <target state="translated">Cancela el</target>
       </trans-unit>
-      <trans-unit id="se8e673766034abc8">
+      <trans-unit id="se8e673766034abc8" xml:space="preserve">
         <source>Subscription Cancellation Scheduled in the Past</source>
+        <target state="translated">Cancelación de suscripción planificada en el pasado</target>
       </trans-unit>
-      <trans-unit id="s06f789e1d8a3a771">
+      <trans-unit id="s06f789e1d8a3a771" xml:space="preserve">
         <source>Subscription was scheduled for cancellation at</source>
+        <target state="translated">La suscripción fue planificada para cancelación el</target>
       </trans-unit>
-      <trans-unit id="se91b25c09df38f26">
+      <trans-unit id="se91b25c09df38f26" xml:space="preserve">
         <source>but is still active.</source>
+        <target state="translated">pero todavía está activa.</target>
       </trans-unit>
-      <trans-unit id="s8fd8d12488792481">
+      <trans-unit id="s8fd8d12488792481" xml:space="preserve">
         <source>This indicates something has gone wrong.</source>
+        <target state="translated">Esto indica que algo ha ido mal.</target>
       </trans-unit>
-      <trans-unit id="s12d8e53b129785ad">
+      <trans-unit id="s12d8e53b129785ad" xml:space="preserve">
         <source>Trial Cancellation Scheduled</source>
+        <target state="translated">Cancelación de Prueba Planificada</target>
       </trans-unit>
-      <trans-unit id="s198607e2e5c01e9d">
+      <trans-unit id="s198607e2e5c01e9d" xml:space="preserve">
         <source>Trial Cancellation Scheduled in the Past</source>
+        <target state="translated">Cancelación de Prueba Planificada en el Pasado</target>
       </trans-unit>
-      <trans-unit id="s266f23ab1e83b0ee">
+      <trans-unit id="s266f23ab1e83b0ee" xml:space="preserve">
         <source>Trial was scheduled for cancellation at</source>
+        <target state="translated">Trial fue planificada para cancelación el</target>
       </trans-unit>
-      <trans-unit id="s6d7efb5ab40b33b4">
+      <trans-unit id="s6d7efb5ab40b33b4" xml:space="preserve">
         <source>Subscription</source>
+        <target state="translated">Suscripción</target>
       </trans-unit>
-      <trans-unit id="s3e5e42591152500b">
+      <trans-unit id="s3e5e42591152500b" xml:space="preserve">
         <source>Plan ID</source>
+        <target state="translated">ID Plan</target>
       </trans-unit>
-      <trans-unit id="saf610f95f7bde6c2">
+      <trans-unit id="saf610f95f7bde6c2" xml:space="preserve">
         <source>Action on Cancel</source>
+        <target state="translated">Acción al Cancelar</target>
       </trans-unit>
-      <trans-unit id="s495fb499e4f4d80a">
+      <trans-unit id="s495fb499e4f4d80a" xml:space="preserve">
         <source>Read-Only</source>
+        <target state="translated">Sólo lectura</target>
       </trans-unit>
       <trans-unit id="sd125fc898a94db91">
         <source>Open in Stripe</source>
       </trans-unit>
-      <trans-unit id="s79eadabc6983776b">
+      <trans-unit id="s79eadabc6983776b" xml:space="preserve">
         <source>Subscription ID Copied</source>
+        <target state="translated">ID de Suscripción Copiada</target>
       </trans-unit>
-      <trans-unit id="s303dd5a00a9ead02">
+      <trans-unit id="s303dd5a00a9ead02" xml:space="preserve">
         <source>Copy Subscription ID</source>
+        <target state="translated">Copiar ID de suscripción</target>
       </trans-unit>
-      <trans-unit id="s763691cb20cd7c68">
+      <trans-unit id="s763691cb20cd7c68" xml:space="preserve">
         <source>Manage Org</source>
+        <target state="translated">Gestionar Org</target>
       </trans-unit>
-      <trans-unit id="s123b7254b44dd148">
+      <trans-unit id="s123b7254b44dd148" xml:space="preserve">
         <source>Waiting</source>
+        <target state="translated">Esperando</target>
       </trans-unit>
-      <trans-unit id="sc85bf6baacaf7fbc">
+      <trans-unit id="sc85bf6baacaf7fbc" xml:space="preserve">
         <source>At Capacity</source>
+        <target state="needs-translation">En Capacidad</target>
       </trans-unit>
-      <trans-unit id="s6a49d15062b258c8">
+      <trans-unit id="s6a49d15062b258c8" xml:space="preserve">
         <source>At Crawl Limit</source>
+        <target state="translated">En Límite de Rastro</target>
       </trans-unit>
-      <trans-unit id="s77248ff4f9b0b9c6">
+      <trans-unit id="s77248ff4f9b0b9c6" xml:space="preserve">
         <source>Pausing</source>
+        <target state="translated">Pausando</target>
       </trans-unit>
-      <trans-unit id="s0eb071c3476d6bcb">
+      <trans-unit id="s0eb071c3476d6bcb" xml:space="preserve">
         <source>Finishing Downloads</source>
+        <target state="translated">Finalizando Descargas</target>
       </trans-unit>
-      <trans-unit id="s96d4cdbea889aca3">
+      <trans-unit id="s96d4cdbea889aca3" xml:space="preserve">
         <source>Creating WACZ</source>
+        <target state="translated">Creando WACZ</target>
       </trans-unit>
-      <trans-unit id="s249d1d0d99e2844d">
+      <trans-unit id="s249d1d0d99e2844d" xml:space="preserve">
         <source>Resuming</source>
+        <target state="translated">Continuar</target>
       </trans-unit>
-      <trans-unit id="s95bc8722b2708f8b">
+      <trans-unit id="s95bc8722b2708f8b" xml:space="preserve">
         <source>Paused</source>
+        <target state="translated">Pausado</target>
       </trans-unit>
-      <trans-unit id="scfa4a900107fb8de">
+      <trans-unit id="scfa4a900107fb8de" xml:space="preserve">
         <source>Stopped: Paused Too Long</source>
+        <target state="translated">Detenido: Pausado demasiado largo</target>
       </trans-unit>
-      <trans-unit id="sb5e4ac8715f22a97">
+      <trans-unit id="sb5e4ac8715f22a97" xml:space="preserve">
         <source>Run By</source>
+        <target state="translated">Ejecutar por</target>
       </trans-unit>
-      <trans-unit id="s3a1ed135dfaefb19">
+      <trans-unit id="s3a1ed135dfaefb19" xml:space="preserve">
         <source>Built-in Behavior</source>
+        <target state="translated">Comportamiento Embebido</target>
       </trans-unit>
-      <trans-unit id="sbe374e729c239e9f">
+      <trans-unit id="sbe374e729c239e9f" xml:space="preserve">
         <source>Custom Behavior Script</source>
+        <target state="translated">Guión de comportamiento personal</target>
       </trans-unit>
-      <trans-unit id="s9be776fa13e19263">
+      <trans-unit id="s9be776fa13e19263" xml:space="preserve">
         <source>TIMESTAMP</source>
+        <target state="translated">SELLO DE TIEMPO</target>
       </trans-unit>
-      <trans-unit id="s5480c0f031b57c1c">
+      <trans-unit id="s5480c0f031b57c1c" xml:space="preserve">
         <source>CONTEXT</source>
+        <target state="translated">CONTEXTO</target>
       </trans-unit>
-      <trans-unit id="sb78893081e833904">
+      <trans-unit id="sb78893081e833904" xml:space="preserve">
         <source>MESSAGE</source>
+        <target state="translated">MENSAJE</target>
       </trans-unit>
-      <trans-unit id="s17a3eb194f019b56">
+      <trans-unit id="s17a3eb194f019b56" xml:space="preserve">
         <source>PAGE</source>
+        <target state="translated">PÁGINA</target>
       </trans-unit>
-      <trans-unit id="s9a377b0854914cff">
+      <trans-unit id="s9a377b0854914cff" xml:space="preserve">
         <source>STACK</source>
+        <target state="translated">PILA</target>
       </trans-unit>
-      <trans-unit id="s181645cdd00951c2">
+      <trans-unit id="s181645cdd00951c2" xml:space="preserve">
         <source>Open live page in new tab</source>
+        <target state="translated">Abre página en vivo en lengüeta nueva</target>
       </trans-unit>
-      <trans-unit id="sb05ee36313adad06">
+      <trans-unit id="sb05ee36313adad06" xml:space="preserve">
         <source>Errors</source>
+        <target state="translated">Errores</target>
       </trans-unit>
-      <trans-unit id="se031a50b520c9c09">
+      <trans-unit id="se031a50b520c9c09" xml:space="preserve">
         <source>No errors logged.</source>
+        <target state="translated">Sin bitácoras de errores.</target>
       </trans-unit>
-      <trans-unit id="s4c6abd0800357489">
+      <trans-unit id="s4c6abd0800357489" xml:space="preserve">
         <source>No behaviors logged.</source>
+        <target state="translated">Ningún comportamiento en bitácora.</target>
       </trans-unit>
-      <trans-unit id="s4f1ad6b48a5df506">
+      <trans-unit id="s4f1ad6b48a5df506" xml:space="preserve">
         <source>Logs</source>
+        <target state="translated">Bitácoras</target>
       </trans-unit>
-      <trans-unit id="sb5ab807953a599e6">
+      <trans-unit id="sb5ab807953a599e6" xml:space="preserve">
         <source>Behavior Logs</source>
+        <target state="translated">Bitácoras de Comportamiento</target>
       </trans-unit>
-      <trans-unit id="he1748a0173c6ed88">
+      <trans-unit id="he1748a0173c6ed88" xml:space="preserve">
         <source>Viewing <x id="0" equiv-text="${displayCount}"/> of <x id="1" equiv-text="${totalCount}"/> most relevant logs</source>
+        <target state="translated">Consultando <x id="0" equiv-text="${displayCount}"/> de <x id="1" equiv-text="${totalCount}"/> bitácoras más relevantes</target>
       </trans-unit>
-      <trans-unit id="s84f127d0d6112b5a">
+      <trans-unit id="s84f127d0d6112b5a" xml:space="preserve">
         <source>This is a selection of the most relevant behaviors and errors logged during the crawl. Download all logs to view additional warning, info, and debug logs.</source>
+        <target state="translated">Esto es una selección de los comportamientos más relevantes y bitácoras de errores durante el rastro. Descargue todas las bitácoras para ver advertencias adicionales, info, y bitácoras de depuración.</target>
       </trans-unit>
       <trans-unit id="s3053c1966522e314" xml:space="preserve">
         <source>Thumbnail image for “<x id="0" equiv-text="${this.collectionName}"/>” collection</source>
@@ -4848,239 +4994,317 @@
         <source>Thumbnail image</source>
         <target state="translated">Imagen de miniatura</target>
       </trans-unit>
-      <trans-unit id="sf6d979ddd7be7ab5">
+      <trans-unit id="sf6d979ddd7be7ab5" xml:space="preserve">
         <source>Top Page Hostnames</source>
+        <target state="translated">Nombre del host de la página superior</target>
       </trans-unit>
-      <trans-unit id="s08b73807b55c4bbe">
+      <trans-unit id="s08b73807b55c4bbe" xml:space="preserve">
         <source>in</source>
+        <target state="translated">en</target>
       </trans-unit>
-      <trans-unit id="sfd44c85841193e19">
+      <trans-unit id="sfd44c85841193e19" xml:space="preserve">
         <source>Git Repo</source>
+        <target state="translated">Repo de Git</target>
       </trans-unit>
-      <trans-unit id="s6d67119d9740096d">
+      <trans-unit id="s6d67119d9740096d" xml:space="preserve">
         <source>Please enter a valid URL</source>
+        <target state="translated">Introduzca una URL válida</target>
       </trans-unit>
-      <trans-unit id="sa905c5308f9508fc">
+      <trans-unit id="sa905c5308f9508fc" xml:space="preserve">
         <source>Please enter a valid branch</source>
+        <target state="translated">Introduzca una rama válida</target>
       </trans-unit>
-      <trans-unit id="s43ec416edb909018">
+      <trans-unit id="s43ec416edb909018" xml:space="preserve">
         <source>Please enter an existing URL</source>
+        <target state="translated">Introduzca una URL existente</target>
       </trans-unit>
-      <trans-unit id="s3082cdd80ea46422">
+      <trans-unit id="s3082cdd80ea46422" xml:space="preserve">
         <source>Select Source</source>
+        <target state="translated">Seleccionar Origen</target>
       </trans-unit>
-      <trans-unit id="s2e532e19ed477a56">
+      <trans-unit id="s2e532e19ed477a56" xml:space="preserve">
         <source>Path</source>
+        <target state="translated">Ruta</target>
       </trans-unit>
-      <trans-unit id="s7a07940a2b62f185">
+      <trans-unit id="s7a07940a2b62f185" xml:space="preserve">
         <source>Branch</source>
+        <target state="translated">Rama</target>
       </trans-unit>
-      <trans-unit id="sa3cac5ca1680616f">
+      <trans-unit id="sa3cac5ca1680616f" xml:space="preserve">
         <source>Enter URL to Git repository</source>
+        <target state="translated">Introduzca la URL para el repositorio Git</target>
       </trans-unit>
-      <trans-unit id="s65eafcab5fd23e0c">
+      <trans-unit id="s65eafcab5fd23e0c" xml:space="preserve">
         <source>Optional path</source>
+        <target state="translated">Ruta opcional</target>
       </trans-unit>
-      <trans-unit id="sb34813376e47a593">
+      <trans-unit id="sb34813376e47a593" xml:space="preserve">
         <source>Optional branch</source>
+        <target state="translated">Rama opcional</target>
       </trans-unit>
-      <trans-unit id="sbf825651b8beb3a1">
+      <trans-unit id="sbf825651b8beb3a1" xml:space="preserve">
         <source>Enter location of behavior file</source>
+        <target state="translated">Introduzca la ubicación del archivo de comportamiento</target>
       </trans-unit>
-      <trans-unit id="se85548c7c12ce99c">
+      <trans-unit id="se85548c7c12ce99c" xml:space="preserve">
         <source>URL is valid</source>
+        <target state="translated">URL es válida</target>
       </trans-unit>
-      <trans-unit id="s5f43af3669b1e098">
+      <trans-unit id="s5f43af3669b1e098" xml:space="preserve">
         <source>Source</source>
+        <target state="translated">Origen</target>
       </trans-unit>
-      <trans-unit id="s8536310dff203395">
+      <trans-unit id="s8536310dff203395" xml:space="preserve">
         <source>Script Location</source>
+        <target state="translated">Ubicación de guión</target>
       </trans-unit>
-      <trans-unit id="sb7de757523371af5">
+      <trans-unit id="sb7de757523371af5" xml:space="preserve">
         <source>CSS Selector</source>
+        <target state="translated">Selector CSS</target>
       </trans-unit>
-      <trans-unit id="s86e0be30d2b3dad1">
+      <trans-unit id="s86e0be30d2b3dad1" xml:space="preserve">
         <source>Link Attribute</source>
+        <target state="translated">Atributo de enlace</target>
       </trans-unit>
-      <trans-unit id="sfcd302e594cb4fae">
+      <trans-unit id="sfcd302e594cb4fae" xml:space="preserve">
         <source>Enter selector</source>
+        <target state="translated">Introducir selector</target>
       </trans-unit>
-      <trans-unit id="s0df2318af169c1b8">
+      <trans-unit id="s0df2318af169c1b8" xml:space="preserve">
         <source>Please enter a valid CSS selector</source>
+        <target state="translated">Introduzca un selector válido de CSS</target>
       </trans-unit>
-      <trans-unit id="scb85f1783a3bb94d">
+      <trans-unit id="scb85f1783a3bb94d" xml:space="preserve">
         <source>Enter attribute</source>
+        <target state="translated">Introducir atributo</target>
       </trans-unit>
-      <trans-unit id="sedb87b45188d5cb9">
+      <trans-unit id="sedb87b45188d5cb9" xml:space="preserve">
         <source>Please enter a valid HTML attribute</source>
+        <target state="translated">Introduzca un atributo HTML válido</target>
       </trans-unit>
-      <trans-unit id="s5553719ec1d517cc">
+      <trans-unit id="s5553719ec1d517cc" xml:space="preserve">
         <source>Choose a proxy to crawl through.</source>
+        <target state="translated">Elija un proxy para rastro a través.</target>
       </trans-unit>
-      <trans-unit id="h79e3c0954fe19439">
+      <trans-unit id="h79e3c0954fe19439" xml:space="preserve">
         <source>Customize how URLs are extracted from a page. The crawler will use the specified <x id="0" equiv-text="&lt;a href=&quot;https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors&quot; class=&quot;text-blue-600 hover:text-blue-500&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;"/>CSS selectors<x id="1" equiv-text="&lt;/a&gt;"/> to find URLs that are defined in custom HTML attributes.</source>
+        <target state="translated">Personalizar como se extraen las URL desde una página. El rastreador utilizará los selectores CSS <x id="0" equiv-text="&lt;a href=&quot;https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors&quot; class=&quot;text-blue-600 hover:text-blue-500&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;"/>especificados<x id="1" equiv-text="&lt;/a&gt;"/> para encontrar las URL que se definen en atributos HTML personalizados.</target>
       </trans-unit>
-      <trans-unit id="s1d4605483a8f58c8">
+      <trans-unit id="s1d4605483a8f58c8" xml:space="preserve">
         <source>Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.</source>
+        <target state="translated">Habilita acciones de página personalizada con guiones de comportamiento. Puede especificar cualquier URL accesible o repositorio Git público.</target>
       </trans-unit>
-      <trans-unit id="s458d6675e46c65e5">
+      <trans-unit id="s458d6675e46c65e5" xml:space="preserve">
         <source>Save and apply settings to current crawl</source>
+        <target state="translated">Guardar y aplicar ajustes al rastro actual</target>
       </trans-unit>
-      <trans-unit id="s238db453282b913f">
+      <trans-unit id="s238db453282b913f" xml:space="preserve">
         <source>Update Crawl</source>
+        <target state="translated">Actualizar Rastro</target>
       </trans-unit>
-      <trans-unit id="s01c361a1dbd3a5f3">
+      <trans-unit id="s01c361a1dbd3a5f3" xml:space="preserve">
         <source>Only crawl pages that begin with URLs listed here.</source>
+        <target state="translated">Solamente páginas de rastro que comiencen con las URL listadas aquí.</target>
       </trans-unit>
-      <trans-unit id="h359a6ab58f25e9b9">
+      <trans-unit id="h359a6ab58f25e9b9" xml:space="preserve">
         <source>If none are specified, the crawler will default to <x id="0" equiv-text="${defaultValue}"/>.</source>
+        <target state="translated">Si no está especificada ninguna, el rastro por defecto será <x id="0" equiv-text="${defaultValue}"/>.</target>
       </trans-unit>
-      <trans-unit id="s12821c3d3ee21ff4">
+      <trans-unit id="s12821c3d3ee21ff4" xml:space="preserve">
         <source>May be overridden by custom behaviors.</source>
+        <target state="translated">Puede ser anulado por comportamiento personalizado.</target>
       </trans-unit>
-      <trans-unit id="s03b23cad5702be33">
+      <trans-unit id="s03b23cad5702be33" xml:space="preserve">
         <source>Automatically scroll to the end of the page.</source>
+        <target state="translated">Arrastra automáticamente al final de la página.</target>
       </trans-unit>
-      <trans-unit id="s4802666d550233ec">
+      <trans-unit id="s4802666d550233ec" xml:space="preserve">
         <source>Default:</source>
+        <target state="translated">Por defecto:</target>
       </trans-unit>
-      <trans-unit id="sf3b92e48f0e9b2a1">
+      <trans-unit id="sf3b92e48f0e9b2a1" xml:space="preserve">
         <source>Automatically click on all link-like elements without navigating away from the page.</source>
+        <target state="translated">Pulse automáticamente en todos los elementos similares a enlace sin navegar fuera de la página.</target>
       </trans-unit>
-      <trans-unit id="s31c2c0be0c65e440">
+      <trans-unit id="s31c2c0be0c65e440" xml:space="preserve">
         <source>Optionally, specify the CSS selector used to autoclick elements.</source>
+        <target state="translated">Opcionalmente, especifique el selector CSS utilizado para pulsar automáticamente los elementos.</target>
       </trans-unit>
-      <trans-unit id="s912ac851d4e642f5">
+      <trans-unit id="s912ac851d4e642f5" xml:space="preserve">
         <source>Defaults to "a".</source>
+        <target state="translated">Por defecto a "un".</target>
       </trans-unit>
-      <trans-unit id="s5babef97b0ea19a4">
+      <trans-unit id="s5babef97b0ea19a4" xml:space="preserve">
         <source>Page Timing</source>
+        <target state="translated">Cronómetro de página</target>
       </trans-unit>
-      <trans-unit id="s5c00d0ed2c1c2c2c">
+      <trans-unit id="s5c00d0ed2c1c2c2c" xml:space="preserve">
         <source>Use Custom Behaviors</source>
+        <target state="translated">Utilizar comportamientos personalizados</target>
       </trans-unit>
-      <trans-unit id="s98f873c6e27a066a">
+      <trans-unit id="s98f873c6e27a066a" xml:space="preserve">
         <source>Limit the size and duration of the crawl.</source>
+        <target state="translated">Limita el tamaño y duración del rastro.</target>
       </trans-unit>
-      <trans-unit id="s6b5d41d8cdf42b92">
+      <trans-unit id="s6b5d41d8cdf42b92" xml:space="preserve">
         <source>Customize how the browser loads and interacts with a page.</source>
+        <target state="translated">Personaliza como el explorador carga e interactúa con una página.</target>
       </trans-unit>
-      <trans-unit id="s3ccb0cf32e1b9bd5">
+      <trans-unit id="s3ccb0cf32e1b9bd5" xml:space="preserve">
         <source>Configure the browser used to crawl.</source>
+        <target state="translated">Configure el explorador utilizado para rastro.</target>
       </trans-unit>
-      <trans-unit id="sb54659e334ba9135">
+      <trans-unit id="sb54659e334ba9135" xml:space="preserve">
         <source>Page link selectors contain invalid selector or attribute</source>
+        <target state="translated">Selectores del enlace a página contienen selector o atributo no válido</target>
       </trans-unit>
-      <trans-unit id="sd06447e2d8c713f3">
+      <trans-unit id="sd06447e2d8c713f3" xml:space="preserve">
         <source>Invalid language code</source>
+        <target state="translated">Código del idioma no válido</target>
       </trans-unit>
-      <trans-unit id="sdcb27818fed9da90">
+      <trans-unit id="sdcb27818fed9da90" xml:space="preserve">
         <source>for</source>
+        <target state="translated">para</target>
       </trans-unit>
-      <trans-unit id="s7eb71de6874c83bf">
+      <trans-unit id="s7eb71de6874c83bf" xml:space="preserve">
         <source>Crawl paused on</source>
+        <target state="translated">Rastro pausado el</target>
       </trans-unit>
-      <trans-unit id="s2b827d4f5e0ada9d">
+      <trans-unit id="s2b827d4f5e0ada9d" xml:space="preserve">
         <source>since</source>
+        <target state="translated">desde</target>
       </trans-unit>
-      <trans-unit id="s4aee34a672e5cfc0">
+      <trans-unit id="s4aee34a672e5cfc0" xml:space="preserve">
         <source>Created by</source>
+        <target state="translated">Creado por</target>
       </trans-unit>
-      <trans-unit id="s4e2a864916e5db75">
+      <trans-unit id="s4e2a864916e5db75" xml:space="preserve">
         <source>Edited by</source>
+        <target state="translated">Editado por</target>
       </trans-unit>
-      <trans-unit id="s73777ac0d940661b">
+      <trans-unit id="s73777ac0d940661b" xml:space="preserve">
         <source>Filter by Schedule Type</source>
+        <target state="translated">Filtro por tipo de planificación</target>
       </trans-unit>
-      <trans-unit id="sb4f1dffbb6be6302">
+      <trans-unit id="sb4f1dffbb6be6302" xml:space="preserve">
         <source>Clear</source>
+        <target state="translated">Purgar</target>
       </trans-unit>
-      <trans-unit id="sda8f3cd35a79b78d">
+      <trans-unit id="sda8f3cd35a79b78d" xml:space="preserve">
         <source>Tagged</source>
+        <target state="translated">Etiquetado</target>
       </trans-unit>
-      <trans-unit id="s68fba0cb63f339b5">
+      <trans-unit id="s68fba0cb63f339b5" xml:space="preserve">
         <source>Filter by Tags</source>
+        <target state="translated">Filtro por etiquetas</target>
       </trans-unit>
-      <trans-unit id="s75bb442f07458a13">
+      <trans-unit id="s75bb442f07458a13" xml:space="preserve">
         <source>Any of the selected tags</source>
+        <target state="translated">Cualquiera de las etiquetas seleccionadas</target>
       </trans-unit>
-      <trans-unit id="saf3be8e33406c058">
+      <trans-unit id="saf3be8e33406c058" xml:space="preserve">
         <source>All of the selected tags</source>
+        <target state="translated">Todas de las etiquetas seleccionadas</target>
       </trans-unit>
-      <trans-unit id="sc3f14b735e4dbbc0">
+      <trans-unit id="sc3f14b735e4dbbc0" xml:space="preserve">
         <source>No matching tags found.</source>
+        <target state="translated">No coinciden las etiquetas encontradas.</target>
       </trans-unit>
-      <trans-unit id="sda6cb46faa225e63">
+      <trans-unit id="sda6cb46faa225e63" xml:space="preserve">
         <source>No tags found.</source>
+        <target state="translated">Ninguna etiqueta encontrada.</target>
       </trans-unit>
-      <trans-unit id="s041489fa7f9e6fe6">
+      <trans-unit id="s041489fa7f9e6fe6" xml:space="preserve">
         <source><x id="0" equiv-text="${this.localize.number(tags.length - MAX_TAGS_IN_LABEL)}"/> more</source>
+        <target state="translated"><x id="0" equiv-text="${this.localize.number(tags.length - MAX_TAGS_IN_LABEL)}"/> más</target>
       </trans-unit>
-      <trans-unit id="s039071b804a1d150">
+      <trans-unit id="s039071b804a1d150" xml:space="preserve">
         <source>Filter tags</source>
+        <target state="translated">Filtro de etiquetas</target>
       </trans-unit>
-      <trans-unit id="s79f5200d70ee4b12">
+      <trans-unit id="s79f5200d70ee4b12" xml:space="preserve">
         <source>Search for tag</source>
+        <target state="translated">Buscar etiqueta</target>
       </trans-unit>
-      <trans-unit id="s3b2e12b9a03ff421">
+      <trans-unit id="s3b2e12b9a03ff421" xml:space="preserve">
         <source>Using <x id="0" equiv-text="${pluralOf(&quot;profiles&quot;, this.profiles.length)}"/></source>
+        <target state="translated">Utilizar <x id="0" equiv-text="${pluralOf(&quot;profiles&quot;, this.profiles.length)}"/></target>
       </trans-unit>
-      <trans-unit id="s3d7bce6c62397a89">
+      <trans-unit id="s3d7bce6c62397a89" xml:space="preserve">
         <source>Filter by Browser Profile</source>
+        <target state="translated">Filtro por Perfil de Navegador</target>
       </trans-unit>
-      <trans-unit id="s9f58587c68ec69c5">
+      <trans-unit id="s9f58587c68ec69c5" xml:space="preserve">
         <source>No matching profiles found.</source>
+        <target state="translated">Ningún perfil coincidente encontrado.</target>
       </trans-unit>
-      <trans-unit id="sb37c3dd68f03a8be">
+      <trans-unit id="sb37c3dd68f03a8be" xml:space="preserve">
         <source>No profiles found.</source>
+        <target state="translated">Ningún perfil encontrado.</target>
       </trans-unit>
-      <trans-unit id="s60a4a8e8ac2ef517">
+      <trans-unit id="s60a4a8e8ac2ef517" xml:space="preserve">
         <source>Filter profiles</source>
+        <target state="translated">Perfiles de filtro</target>
       </trans-unit>
-      <trans-unit id="s1db33bbf2de19a27">
+      <trans-unit id="s1db33bbf2de19a27" xml:space="preserve">
         <source>Search for profile</source>
+        <target state="translated">Buscar perfil</target>
       </trans-unit>
-      <trans-unit id="s537a83747484e682">
+      <trans-unit id="s537a83747484e682" xml:space="preserve">
         <source>Not in use</source>
+        <target state="translated">No en uso</target>
       </trans-unit>
-      <trans-unit id="sd2ffca980366a43d">
+      <trans-unit id="sd2ffca980366a43d" xml:space="preserve">
         <source>Your free trial ends on <x id="0" equiv-text="${trialEndDate}"/>.</source>
+        <target state="translated">Su prueba libre finaliza el <x id="0" equiv-text="${trialEndDate}"/>.</target>
       </trans-unit>
-      <trans-unit id="h7fd7360a8ca3cf56">
+      <trans-unit id="h7fd7360a8ca3cf56" xml:space="preserve">
         <source>To continue using Browsertrix, select <x id="0" equiv-text="&lt;strong&gt;"/>Subscribe Now<x id="1" equiv-text="&lt;/strong&gt;"/> in <x id="2" equiv-text="${billingTabLink}"/>.</source>
+        <target state="translated">Para continuar utilizando Browsertrix, seleccione <x id="0" equiv-text="&lt;strong&gt;"/>Suscribir Ahora<x id="1" equiv-text="&lt;/strong&gt;"/> en <x id="2" equiv-text="${billingTabLink}"/>.</target>
       </trans-unit>
-      <trans-unit id="s2dc0cf608ab631a2">
+      <trans-unit id="s2dc0cf608ab631a2" xml:space="preserve">
         <source>Afterwards, your subscription will continue automatically.</source>
+        <target state="translated">Después, su suscripción continuará automáticamente.</target>
       </trans-unit>
-      <trans-unit id="h3bc88bf930dc05eb">
+      <trans-unit id="h3bc88bf930dc05eb" xml:space="preserve">
         <source>View and manage your subscription in <x id="0" equiv-text="${billingTabLink}"/>.</source>
+        <target state="translated">Vea y gestione su suscripción en <x id="0" equiv-text="${billingTabLink}"/>.</target>
       </trans-unit>
-      <trans-unit id="s0c5cbc6552d94f10">
+      <trans-unit id="s0c5cbc6552d94f10" xml:space="preserve">
         <source>Total duration of workflow and QA analysis runs.</source>
+        <target state="translated">Duración total de ejecuciones del flujo de trabajo y análisis de QA.</target>
       </trans-unit>
-      <trans-unit id="seeec1ccce454a18f">
+      <trans-unit id="seeec1ccce454a18f" xml:space="preserve">
         <source>Aggregated time across all browser windows that the crawler was actively executing a crawl or QA analysis run, i.e. not waiting or paused.</source>
+        <target state="translated">Tiempo agregado a través de todas las ventanas del navegador que el rastreados estuvo ejecutándose activamente en un rastro o ejecución de análisis de QA, p.ej. no esperando o pausado.</target>
       </trans-unit>
-      <trans-unit id="s288f689fd73f668f">
+      <trans-unit id="s288f689fd73f668f" xml:space="preserve">
         <source>Execution time used that is billable to the current month of the plan.</source>
+        <target state="translated">Tiempo de ejecución utilizado que es facturable para el mes actual del plan.</target>
       </trans-unit>
-      <trans-unit id="sa27f084c8a8623ac">
+      <trans-unit id="sa27f084c8a8623ac" xml:space="preserve">
         <source>Additional execution time used, of which any extra minutes will roll over to next month as billable time.</source>
+        <target state="translated">Tiempo de ejecución adicional utilizado, o el cual cualquiera de los minutos adicionales darán vueltas al mes siguiente como tiempo facturable.</target>
       </trans-unit>
-      <trans-unit id="sd77ffcceffd8b1a9">
+      <trans-unit id="sd77ffcceffd8b1a9" xml:space="preserve">
         <source>Execution time used that is free of charge.</source>
+        <target state="translated">Tiempo de ejecución utilizado que es libre de cargos.</target>
       </trans-unit>
-      <trans-unit id="s01e3d9ff3caf5b7f">
+      <trans-unit id="s01e3d9ff3caf5b7f" xml:space="preserve">
         <source>Showing all <x id="0" equiv-text="${this.localize.number(this.totalPages)} ${pluralOf(&quot;pages&quot;, this.totalPages)}"/></source>
+        <target state="translated">Mostrando todo <x id="0" equiv-text="${this.localize.number(this.totalPages)} ${pluralOf(&quot;pages&quot;, this.totalPages)}"/></target>
       </trans-unit>
-      <trans-unit id="s8c07176b5ff0175b">
+      <trans-unit id="s8c07176b5ff0175b" xml:space="preserve">
         <source>Showing <x id="0" equiv-text="${this.localize.number(total)}"/> of <x id="1" equiv-text="${this.localize.number(this.totalPages)} ${pluralOf(&quot;pages&quot;, this.totalPages)}"/></source>
+        <target state="translated">Mostrando <x id="0" equiv-text="${this.localize.number(total)}"/> de <x id="1" equiv-text="${this.localize.number(this.totalPages)} ${pluralOf(&quot;pages&quot;, this.totalPages)}"/></target>
       </trans-unit>
-      <trans-unit id="se313da332d8c6937">
+      <trans-unit id="se313da332d8c6937" xml:space="preserve">
         <source>Manage Subscription</source>
+        <target state="translated">Gestionar Suscripción</target>
       </trans-unit>
-      <trans-unit id="sc34746d059a1f565">
+      <trans-unit id="sc34746d059a1f565" xml:space="preserve">
         <source>Click “<x id="0" equiv-text="${this.portalUrlLabel}"/>” to view plan details, payment methods, and billing information.</source>
+        <target state="translated">Pulse "<x id="0" equiv-text="${this.portalUrlLabel}"/>" para ver detalles del plan, métodos de pago e información de facturación.</target>
       </trans-unit>
       <trans-unit id="sc10dc3155d21bd22">
         <source>Your trial ends <x id="0" equiv-text="${futureCancelDate}"/></source>
