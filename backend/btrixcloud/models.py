@@ -36,6 +36,7 @@ from pydantic import (
     HttpUrl as HttpUrlNonStr,
 )
 from slugify import slugify
+from typing_extensions import deprecated
 
 # from fastapi_users import models as fastapi_users_models
 from .db import LENIENT_ON_READ, BaseMongoModel
@@ -81,7 +82,11 @@ DEDUPE_FEATURE_ENABLED_DEFAULT = is_bool(
 
 EmptyStr = Annotated[str, Field(min_length=0, max_length=0)]
 
-Scale = Annotated[int, Field(strict=True, ge=1, le=MAX_CRAWL_SCALE, deprecated=True)]
+Scale = Annotated[
+    int,
+    Field(strict=True, ge=1, le=MAX_CRAWL_SCALE),
+    deprecated("Use browserWindows instead"),
+]
 BrowserWindowCount = Annotated[int, Field(strict=True, ge=1, le=MAX_BROWSER_WINDOWS)]
 ReviewStatus = Annotated[int, Field(strict=True, ge=1, le=5)] | None
 
@@ -463,7 +468,7 @@ class CrawlConfigIn(BaseModel):
     crawlTimeout: int = 0
     maxCrawlSize: int = 0
 
-    scale: Scale = 1
+    scale: Annotated[Scale, Field(deprecated=True)] = 1
 
     # Overrides scale if set
     browserWindows: BrowserWindowCount | None = None
@@ -489,7 +494,7 @@ class ConfigRevision(BaseMongoModel):
 
     crawlTimeout: int | None = 0
     maxCrawlSize: int | None = 0
-    scale: Scale | None = 1
+    scale: Annotated[Scale | None, Field(deprecated=True)] = 1
     browserWindows: BrowserWindowCount | None = 2
 
     modified: datetime
@@ -512,7 +517,7 @@ class CrawlConfigCore(BaseMongoModel):
     crawlTimeout: int | None = 0
     maxCrawlSize: int | None = 0
 
-    scale: Scale | None = None
+    scale: Annotated[Scale | None, Field(deprecated=True)] = None
     browserWindows: BrowserWindowCount = 2
 
     oid: UUID
@@ -622,7 +627,7 @@ class UpdateCrawlConfig(BaseModel):
     proxyId: str | None = None
     crawlTimeout: int | None = None
     maxCrawlSize: int | None = None
-    scale: Scale | None = None
+    scale: Annotated[Scale | None, Field(deprecated=True)] = None
     browserWindows: BrowserWindowCount | None = None
     crawlFilenameTemplate: str | None = None
     config: RawCrawlConfig | None = None
@@ -991,7 +996,7 @@ class CrawlOut(BaseMongoModel):
     pausedAt: datetime | None = None
     manual: bool = False
     cid_rev: int | None = None
-    scale: Scale | None = None
+    scale: Annotated[Scale | None, Field(deprecated=True)] = None
     browserWindows: BrowserWindowCount = 2
 
     storageQuotaReached: bool | None = False
@@ -1018,8 +1023,8 @@ class CrawlOut(BaseMongoModel):
     version: int | None = 1
 
     # Retained for backward compatibility
-    errors: list[str] | None = Field(default=[], deprecated=True)
-    behaviorLogs: list[str] | None = Field(default=[], deprecated=True)
+    errors: Annotated[list[str] | None, Field(default=[], deprecated=True)]
+    behaviorLogs: Annotated[list[str] | None, Field(default=[], deprecated=True)]
 
     # Linked Crawls for dedupe
     requiresCrawls: list[str] | None = []
@@ -1093,7 +1098,7 @@ class MatchCrawlQueueResponse(BaseModel):
 class CrawlScale(BaseModel):
     """scale the crawl to N parallel containers or windows"""
 
-    scale: Scale | None = None
+    scale: Annotated[Scale | None, Field(deprecated=True)] = None
     browserWindows: BrowserWindowCount | None = None
 
 
