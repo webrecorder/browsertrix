@@ -1552,9 +1552,7 @@ class CrawlOperator(BaseOperator):
 
             # if any pod crashed due to OOM, increase mem
             elif pod.isNewExit and pod.reason == "oom":
-                self.resize_pod_memory(
-                    name, pod, new_memory, mem_usage, "pod_memory_oom_resize"
-                )
+                self.resize_pod_memory(name, pod, new_memory, mem_usage, oom=True)
                 send_sig = True
 
             # avoid resending SIGTERM multiple times after it already succeeded
@@ -1567,16 +1565,14 @@ class CrawlOperator(BaseOperator):
         pod: PodInfo,
         new_memory: int,
         mem_usage: float,
-        log_message: str = "pod_memory_scaled_up",
+        oom: bool = False,
     ):
         """resize pod memory and, if redis pod, storage to ensure enough disk for persistence"""
         pod.newMemory = new_memory
 
-        reason = (
-            "OOM Detected" if log_message == "pod_memory_oom_resize" else "Scale Up"
-        )
+        reason = "OOM Detected" if oom else "Scale Up"
         logger.debug(
-            log_message,
+            "pod_memory_oom_resize" if oom else "pod_memory_scaled_up",
             mem_usage=mem_usage,
             pod_name=name,
             new_memory=pod.newMemory,
