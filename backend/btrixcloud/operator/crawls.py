@@ -1590,6 +1590,15 @@ class CrawlOperator(BaseOperator):
             new_storage_bytes = new_memory * 3
 
             if pod.allocated.storage >= new_storage_bytes:
+                logger.debug(
+                    "redis_pod_storage_already_sufficient",
+                    pod_name=name,
+                    storage=pod.allocated.storage,
+                    new_memory=new_memory,
+                    unstructured_message=(
+                        f"Not adjusting storage for {name}, already sufficient"
+                    ),
+                )
                 return
 
             new_storage = math.ceil(new_storage_bytes / 1_000_000_000)
@@ -1597,6 +1606,7 @@ class CrawlOperator(BaseOperator):
             logger.debug(
                 "redis_pod_storage_adjusting",
                 pod_name=name,
+                prev_storage=pod.allocated.storage,
                 new_storage=pod.newStorage,
                 unstructured_message=(
                     f"Attempting to adjust storage to {pod.newStorage} for {name}"
