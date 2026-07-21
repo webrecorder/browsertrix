@@ -1158,6 +1158,26 @@ class CrawlOperator(BaseOperator):
                 status.resync_after = self.fast_retry_secs
                 return status
 
+            # if all crashed and last exit was rate limited, set to rate limited state now
+            if status.allCrashed:
+                if not status.rateLimitedAtTime:
+                    status.rateLimitedAtTime = date_to_str(dt_now())
+
+                new_state: TYPE_ALL_CRAWL_STATES = (
+                    "rate-limited"
+                    if status.lastCrawlPodExitCode == 18
+                    else "running-interrupted"
+                )
+
+                await self.set_state(
+                    new_state,
+                    status,
+                    crawl,
+                    allowed_from=RUNNING_STATES,
+                )
+                status.resync_after = self.fast_retry_secs
+                return status
+
             # update lastActiveTime if crawler is running
             if crawler_running:
                 status.lastActiveTime = date_to_str(dt_now())
@@ -1236,6 +1256,8 @@ class CrawlOperator(BaseOperator):
         redis_running = False
         pod_done_count = 0
 
+        all_crashed = True
+
         try:
             for name, pod in pods.items():
                 running = False
@@ -1250,14 +1272,29 @@ class CrawlOperator(BaseOperator):
                 elif phase == "Failed" and pstatus.get("reason") == "Evicted":
                     evicted = True
 
-                status.podStatus[name].evicted = evicted
+                pod_status = status.podStatus[name]
+                pod_status.evicted = evicted
 
                 if "containerStatuses" in pstatus:
                     cstatus = pstatus["containerStatuses"][0]
 
-                    self.handle_terminated_pod(
-                        name, role, status, cstatus["state"].get("terminated")
+                    terminated = cstatus["state"].get("terminated")
+
+                    self.handle_terminated_pod(name, role, status, terminated)
+
+                    waiting = cstatus["state"].get("waiting")
+                    pod_status.backoffWait = (
+                        waiting and waiting.get("reason") == "CrashLoopBackOff"
                     )
+
+                    if role == "crawler":
+                        # consider crashed if:
+                        # - in 'waiting' state with CrashLoopBackOff reason
+                        # - in 'terminated' state with non-zero exit code (will be brief)
+                        all_crashed = all_crashed and bool(
+                            pod_status.backoffWait
+                            or (terminated and pod_status.exitCode != 0)
+                        )
 
                 if role == "crawler":
                     crawler_running = crawler_running or running
@@ -1265,6 +1302,8 @@ class CrawlOperator(BaseOperator):
                         pod_done_count += 1
                 elif role == "redis":
                     redis_running = redis_running or running
+
+            status.allCrashed = all_crashed
 
         # pylint: disable=broad-except
         except Exception:
@@ -1294,13 +1333,14 @@ class CrawlOperator(BaseOperator):
 
         pod_status = status.podStatus[name]
 
+        # detect reason
+        exit_code = terminated.get("exitCode")
+
         pod_status.isNewExit = pod_status.exitTime != exit_time
         if pod_status.isNewExit and role == "crawler":
             pod_status.exitTime = exit_time
             status.anyCrawlPodNewExit = True
-
-        # detect reason
-        exit_code = terminated.get("exitCode")
+            status.lastCrawlPodExitCode = exit_code
 
         if exit_code == 0:
             pod_status.reason = "done"

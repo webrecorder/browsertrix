@@ -375,7 +375,9 @@ export class WorkflowDetail extends BtrixElement {
       this.workflow?.isCrawlRunning &&
       !this.workflow.lastCrawlStopping &&
       this.workflow.lastCrawlState &&
-      ["running", "rate-limited"].includes(this.workflow.lastCrawlState)
+      ["running", "rate-limited", "running-interrupted"].includes(
+        this.workflow.lastCrawlState,
+      )
     );
   }
 
@@ -1722,7 +1724,7 @@ export class WorkflowDetail extends BtrixElement {
 
     return html`
       ${when(
-        this.isCrawling && this.workflow,
+        this.isRunning && this.workflow,
         (workflow) => html`
           <div id="screencast-crawl">
             <btrix-screencast
