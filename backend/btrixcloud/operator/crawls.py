@@ -1158,26 +1158,6 @@ class CrawlOperator(BaseOperator):
                 status.resync_after = self.fast_retry_secs
                 return status
 
-            # if all crashed and last exit was rate limited, set to rate limited state now
-            if status.allCrashed:
-                if not status.rateLimitedAtTime:
-                    status.rateLimitedAtTime = date_to_str(dt_now())
-
-                new_state: TYPE_ALL_CRAWL_STATES = (
-                    "rate-limited"
-                    if status.lastCrawlPodExitCode == 18
-                    else "running-interrupted"
-                )
-
-                await self.set_state(
-                    new_state,
-                    status,
-                    crawl,
-                    allowed_from=RUNNING_STATES,
-                )
-                status.resync_after = self.fast_retry_secs
-                return status
-
             # update lastActiveTime if crawler is running
             if crawler_running:
                 status.lastActiveTime = date_to_str(dt_now())
@@ -1881,8 +1861,30 @@ class CrawlOperator(BaseOperator):
             status.stopReason = await self.is_crawl_stopping(crawl, status, stats)
             status.stopping = status.stopReason is not None
 
+        # if all crashed and last exit was rate limited, set to rate limited state now
+        # this should be after the storage check above to allow for adjusting storage
+        if status.allCrashed:
+            new_state: TYPE_ALL_CRAWL_STATES
+
+            # rate limit interrupt
+            if status.lastCrawlPodExitCode == 18:
+                if not status.rateLimitedAtTime:
+                    status.rateLimitedAtTime = date_to_str(dt_now())
+                new_state = "rate-limited"
+            # all other interrupts
+            else:
+                new_state = "running-interrupted"
+
+            await self.set_state(
+                new_state,
+                status,
+                crawl,
+                allowed_from=RUNNING_STATES,
+            )
+            status.resync_after = self.fast_retry_secs
+
         # mark crawl as pausing or stopping
-        if status.stopping:
+        elif status.stopping:
             if status.stopReason in PAUSED_STATES:
                 if await redis.set(f"{crawl.id}:paused", "1", nx=True):
                     logger.info(
