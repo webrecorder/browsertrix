@@ -1042,7 +1042,8 @@ export class WorkflowEditor extends BtrixElement {
     const showExclusions =
       showLinkSelectors ||
       this.formState.alwaysAddBehaviorLinks ||
-      trimArray(this.formState.exclusions).length;
+      (this.formState.scopeType !== ScopeType.Page &&
+        trimArray(this.formState.exclusions).length);
 
     return html`
       ${choose(this.formState.scopeType, [
@@ -3776,6 +3777,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private parseConfig(uploadParams?: { seedFileId?: string }): WorkflowParams {
+    const canExclude =
+      this.formState.scopeType !== ScopeType.Page ||
+      this.formState.includeLinkedPages ||
+      this.formState.alwaysAddBehaviorLinks;
+
     const config: WorkflowParams = {
       // Job types are now merged into a single type
       jobType: "custom",
@@ -3809,7 +3815,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         limit: this.formState.pageLimit,
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
-        exclude: trimArray(this.formState.exclusions),
+        exclude: canExclude ? trimArray(this.formState.exclusions) : [],
         behaviors: this.setBehaviors(),
         selectLinks: this.linkSelectorTable?.value.length
           ? this.linkSelectorTable.value
