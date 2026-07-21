@@ -509,25 +509,7 @@ export class ConfigDetails extends BtrixElement {
     return html`
       ${this.renderSetting(
         msg("Crawl Start URL"),
-        primarySeedUrl
-          ? html`
-              <btrix-overflow-scroll
-                class="-mx-5 w-[calc(100%+theme(spacing.10))] contain-inline-size part-[content]:px-5 part-[content]:[scrollbar-width:thin]"
-              >
-                <a
-                  class="decoration-blue-500 hover:underline"
-                  href="${primarySeedUrl}"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <btrix-code
-                    language="url"
-                    .value="${primarySeedUrl}"
-                  ></btrix-code>
-                </a>
-              </btrix-overflow-scroll>
-            `
-          : undefined,
+        primarySeedUrl ? this.renderSeeds([primarySeedUrl]) : undefined,
         true,
       )}
       ${when(
@@ -645,42 +627,12 @@ export class ConfigDetails extends BtrixElement {
     );
   };
 
-  private readonly renderSeeds = (seeds: Seed[]) => {
-    return html`<btrix-table class="grid-cols-[1fr_auto]">
-      ${seeds.map((seed: Seed) => {
-        const url = typeof seed === "string" ? seed : seed.url;
-
-        return html`
-          <btrix-table-row
-            class="-ml-1.5 rounded transition-colors duration-x-fast has-[btrix-copy-button:hover]:bg-neutral-50 has-[sl-icon-button:hover]:bg-neutral-50"
-          >
-            <btrix-table-cell class="pl-1.5">
-              <btrix-overflow-scroll
-                class="-ml-5 w-[calc(100%+theme(spacing.5))] contain-inline-size part-[content]:px-5 part-[content]:[scrollbar-width:thin]"
-              >
-                <btrix-code
-                  language="url"
-                  class="block w-max whitespace-nowrap"
-                  .value=${url}
-                ></btrix-code>
-              </btrix-overflow-scroll>
-            </btrix-table-cell>
-            <btrix-table-cell>
-              <btrix-copy-button .value=${url} placement="left">
-              </btrix-copy-button>
-              <sl-tooltip placement="right" content=${msg("Open in New Tab")}>
-                <sl-icon-button
-                  name="arrow-up-right"
-                  href="${url}"
-                  target="_blank"
-                >
-                </sl-icon-button>
-              </sl-tooltip>
-            </btrix-table-cell>
-          </btrix-table-row>
-        `;
-      })}
-    </btrix-table>`;
+  private readonly renderSeeds = (seeds: Seed[] | string[]) => {
+    return html`<btrix-url-list
+      .urls=${seeds}
+      highlight
+      ?ordered=${seeds.length > 1}
+    ></btrix-url-list>`;
   };
 
   private renderSetting(
