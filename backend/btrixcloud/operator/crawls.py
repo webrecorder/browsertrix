@@ -1539,16 +1539,7 @@ class CrawlOperator(BaseOperator):
                     )
                     return
 
-                pod.newMemory = new_memory
-                logger.debug(
-                    "pod_memory_scaled_up",
-                    mem_usage=mem_usage,
-                    pod_name=name,
-                    new_memory=pod.newMemory,
-                    unstructured_message=(
-                        f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - Scale Up"
-                    ),
-                )
+                self.resize_pod_memory(name, pod, new_memory, mem_usage)
 
                 # if crawler pod is using its OOM threshold, attempt a soft OOM
                 # via a second SIGTERM
@@ -1561,22 +1552,56 @@ class CrawlOperator(BaseOperator):
 
             # if any pod crashed due to OOM, increase mem
             elif pod.isNewExit and pod.reason == "oom":
-                pod.newMemory = new_memory
-                logger.warning(
-                    "pod_memory_oom_resize",
-                    mem_usage=mem_usage,
-                    pod_name=name,
-                    new_memory=pod.newMemory,
-                    # pylint: disable=line-too-long
-                    unstructured_message=(
-                        f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - OOM Detected"
-                    ),
+                self.resize_pod_memory(
+                    name, pod, new_memory, mem_usage, "pod_memory_oom_resize"
                 )
                 send_sig = True
 
             # avoid resending SIGTERM multiple times after it already succeeded
             if send_sig and await self.k8s.send_signal_to_pod(name, "SIGTERM"):
                 pod.signalAtMem = pod.newMemory
+
+    def resize_pod_memory(
+        self,
+        name: str,
+        pod: PodInfo,
+        new_memory: int,
+        mem_usage: float,
+        log_message: str = "pod_memory_scaled_up",
+    ):
+        """resize pod memory and, if redis pod, storage to ensure enough disk for persistence"""
+        pod.newMemory = new_memory
+
+        reason = (
+            "OOM Detected" if log_message == "pod_memory_oom_resize" else "Scale Up"
+        )
+        logger.debug(
+            log_message,
+            mem_usage=mem_usage,
+            pod_name=name,
+            new_memory=pod.newMemory,
+            unstructured_message=(
+                f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - {reason}"
+            ),
+        )
+
+        # If redis pod, ensure we always have 3x memory available as storage
+        if name.startswith("redis-"):
+            new_storage_bytes = new_memory * 3
+
+            if pod.allocated.storage >= new_storage_bytes:
+                return
+
+            new_storage = math.ceil(new_storage_bytes / 1_000_000_000)
+            pod.newStorage = f"{new_storage}Gi"
+            logger.debug(
+                "redis_pod_storage_adjusting",
+                pod_name=name,
+                new_storage=pod.newStorage,
+                unstructured_message=(
+                    f"Attempting to adjust storage to {pod.newStorage} for {name}"
+                ),
+            )
 
     async def log_crashes(self, crawl_id, pod_status: dict[str, PodInfo], redis):
         """report/log any pod crashes here"""
