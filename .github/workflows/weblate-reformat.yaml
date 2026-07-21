@@ -37,7 +37,10 @@ jobs:
 
   reformat:
     needs: paths-filter
-    if: needs.paths-filter.outputs.matches == 'true'
+    # Only run if coming from the weblate fork, since the checkout
+    # below can be unsafe to run from arbitrary forks due to the
+    # presence of permissions: contents: write below
+    if: needs.paths-filter.outputs.matches == 'true' && github.event.pull_request.head.owner.login == 'weblate'
     runs-on: ubuntu-latest
     permissions:
       # Give the default GITHUB_TOKEN write permission to commit and push the
@@ -51,6 +54,7 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
+          allow-unsafe-pr-checkout: true
 
       - name: Setup Node
         uses: actions/setup-node@v4
