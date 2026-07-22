@@ -210,10 +210,12 @@ def large_crawl_id(admin_auth_headers, default_org_id):
         "name": "Large Test Crawl",
         "tags": ["wacz-logs"],
         "config": {
-            "seeds": [{"url": "https://old.webrecorder.net/"}],
-            "scopeType": "domain",
+            "seeds": [
+                {"url": "https://old.webrecorder.net/", "scopeType": "domain"},
+                {"url": "https://specs.webrecorder.net", "scopeType": "domain"},
+                {"url": "https://example-com.webrecorder.net", "scopeType": "page"},
+            ],
             "limit": 100,
-            "extraHops": 1,
         },
     }
     r = requests.post(

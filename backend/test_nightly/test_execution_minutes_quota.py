@@ -9,12 +9,10 @@ from .utils import get_crawl_status
 
 EXEC_MINS_QUOTA = 1
 EXEC_SECS_QUOTA = EXEC_MINS_QUOTA * 60
-GIFTED_MINS_QUOTA = 3
+GIFTED_MINS_QUOTA = 1
 GIFTED_SECS_QUOTA = GIFTED_MINS_QUOTA * 60
-EXTRA_MINS_QUOTA = 5
+EXTRA_MINS_QUOTA = 2
 EXTRA_SECS_QUOTA = EXTRA_MINS_QUOTA * 60
-EXTRA_MINS_ADDED_QUOTA = 7
-EXTRA_SECS_ADDED_QUOTA = EXTRA_MINS_ADDED_QUOTA * 60
 
 
 def test_set_execution_mins_quota(org_with_quotas, admin_auth_headers):
@@ -163,7 +161,7 @@ def run_crawl(org_id, headers):
         "name": "Execution Mins Quota",
         "config": {
             "seeds": [{"url": "https://old.webrecorder.net/"}],
-            "extraHops": 1,
+            "pageExtraDelay": 45,
         },
     }
     r = requests.post(
