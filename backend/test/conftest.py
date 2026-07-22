@@ -358,7 +358,6 @@ def sample_crawl_data():
         "name": "Test Crawl",
         "config": {
             "seeds": [{"url": "https://example-com.webrecorder.net/"}],
-            "extraHops": 1,
             # Add some extra config fields so we can ensure they're
             # not modified when we do a PATCH for other fields in the
             # config object
