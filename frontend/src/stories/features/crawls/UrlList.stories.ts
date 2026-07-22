@@ -19,7 +19,7 @@ const data = Array.from({ length: 95 }).map(
 );
 
 const meta = {
-  title: "Components/URL List",
+  title: "Features/Crawls/URL List",
   component: "btrix-url-list",
   tags: ["autodocs"],
   decorators: [],

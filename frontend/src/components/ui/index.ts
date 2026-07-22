@@ -50,5 +50,4 @@ import("./tag");
 import("./tag-filter");
 import("./tag-input");
 import("./time-input");
-import("./url-list");
 import("./user-language-select");

@@ -1,9 +1,9 @@
 import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 
-import type { UrlList } from "@/components/ui/url-list";
+import type { UrlList } from "@/features/crawls/url-list";
 
-import "@/components/ui/url-list";
+import "@/features/crawls/url-list";
 
 export type RenderProps = UrlList & { classes?: string };
 
