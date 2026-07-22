@@ -87,7 +87,7 @@ export class CrawlPendingExclusions extends BtrixElement {
 
   private renderContent() {
     if (!this.total) {
-      return html`<p class="px-5 text-sm text-neutral-400">
+      return html`<p class="pb-5 text-neutral-400">
         ${this.matchedURLs
           ? msg("No matching URLs found in queue.")
           : msg(
