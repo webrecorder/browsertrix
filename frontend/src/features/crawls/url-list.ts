@@ -28,6 +28,7 @@ import { tw } from "@/utils/tailwind";
  * @cssPart url-exclude
  * @cssProperty --btrix-row-bg-color
  * @cssProperty --btrix-row-hover-bg-color
+ * @cssProperty --btrix-row-hover-border-color
  */
 @customElement("btrix-url-list")
 @localized()
@@ -75,8 +76,8 @@ export class UrlList extends TailwindElement {
     .bordered
       btrix-table-row:has(.url-control:hover)
       btrix-table-cell:not(.url-order) {
-      border-top: 1px solid var(--sl-color-primary-100);
-      border-bottom: 1px solid var(--sl-color-primary-100);
+      border-top: 1px solid var(--row-hover-border-color);
+      border-bottom: 1px solid var(--row-hover-border-color);
     }
 
     .bordered
@@ -86,13 +87,13 @@ export class UrlList extends TailwindElement {
       btrix-table-row:has(.url-control:hover)
       .url-order
       + btrix-table-cell {
-      border-left-color: var(--sl-color-primary-100);
+      border-left-color: var(--row-hover-border-color);
     }
 
     .bordered
       btrix-table-row:has(.url-control:hover)
       btrix-table-cell:last-of-type {
-      border-right-color: var(--sl-color-primary-100);
+      border-right-color: var(--row-hover-border-color);
     }
 
     .bordered btrix-table-cell:first-of-type:not(.url-order),
@@ -113,6 +114,10 @@ export class UrlList extends TailwindElement {
     }
 
     btrix-table-row {
+      --row-hover-border-color: var(
+        --btrix-row-hover-border-color,
+        var(--sl-color-primary-100)
+      );
       --row-bg-color: var(--btrix-row-bg-color);
     }
 
@@ -253,10 +258,10 @@ export class UrlList extends TailwindElement {
                     @mousedown=${this.onUrlMouseDown}
                     @mouseup=${this.onUrlMouseUp}
                     @mouseenter=${this.onUrlMouseEnter}
-                    @selectstart=${this.onUrlSelectStart}
                     @click=${(e: MouseEvent) => {
-                      const sel = window.getSelection();
-                      if (sel && !sel.isCollapsed) {
+                      const selection = window.getSelection()?.toString();
+
+                      if (selection) {
                         const el = e.currentTarget as HTMLElement;
                         const popover = el.closest<FloatingPopover>(
                           "btrix-floating-popover",
@@ -270,7 +275,7 @@ export class UrlList extends TailwindElement {
                         popover.setPosition({ x: e.clientX, y: e.clientY });
 
                         // Copy only selection
-                        void this.clipboardController.copy(sel.toString());
+                        void this.clipboardController.copy(selection);
                         void popover.show();
                       } else {
                         // Copy entire URL
@@ -322,24 +327,10 @@ export class UrlList extends TailwindElement {
   private readonly onUrlMouseEnter = () => this.clipboardController.reset();
 
   /**
-   * Disable mouseover on floating popover
+   * Rudimentary implementation of `selectstart`, which is handled differently
+   * between browsers. See https://issues.chromium.org/issues/40718667
    */
-  private readonly onUrlMouseDown = (e: MouseEvent) =>
-    (e.currentTarget as HTMLElement).addEventListener(
-      "mouseover",
-      this.overrideUrlMouseOver,
-    );
-
-  /**
-   * Enable mouseover on floating popover
-   */
-  private readonly onUrlMouseUp = (e: MouseEvent) =>
-    (e.currentTarget as HTMLElement).removeEventListener(
-      "mouseover",
-      this.overrideUrlMouseOver,
-    );
-
-  private readonly onUrlSelectStart = (e: Event) => {
+  private readonly onUrlMouseMove = (e: MouseEvent) => {
     const el = e.currentTarget as HTMLElement;
     const popover = el.closest<FloatingPopover>("btrix-floating-popover");
 
@@ -347,6 +338,31 @@ export class UrlList extends TailwindElement {
       console.debug("no popover");
       return;
     }
-    void popover.hide();
+
+    const selection = window.getSelection()?.toString();
+
+    if (selection) {
+      void popover.hide();
+    }
+  };
+
+  /**
+   * Disable mouseover on floating popover
+   */
+  private readonly onUrlMouseDown = (e: MouseEvent) => {
+    const el = e.currentTarget as HTMLElement;
+
+    el.addEventListener("mouseover", this.overrideUrlMouseOver);
+    el.addEventListener("mousemove", this.onUrlMouseMove);
+  };
+
+  /**
+   * Enable mouseover on floating popover
+   */
+  private readonly onUrlMouseUp = (e: MouseEvent) => {
+    const el = e.currentTarget as HTMLElement;
+
+    el.removeEventListener("mouseover", this.overrideUrlMouseOver);
+    el.removeEventListener("mousemove", this.onUrlMouseMove);
   };
 }

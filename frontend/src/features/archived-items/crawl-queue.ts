@@ -4,6 +4,7 @@ import type {
   SlInput,
   SlInputEvent,
 } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -11,6 +12,7 @@ import throttle from "lodash/fp/throttle";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { IntersectEvent } from "@/controllers/observable";
+import { tw } from "@/utils/tailwind";
 
 type Pages = string[];
 export type ResponseData = {
@@ -175,7 +177,11 @@ export class CrawlQueue extends BtrixElement {
 
     return html`
       <btrix-url-list
-        class="part-[order-match]:text-danger part-[row-exclude]:line-through part-[row-exclude]:opacity-50 part-[row-match]:[--btrix-row-bg-color:--sl-color-danger-100]"
+        class=${clsx(
+          tw`part-[row-match]:[--btrix-row-bg-color:--sl-color-danger-100] part-[row-match]:[--btrix-row-hover-bg-color:--sl-color-danger-200] part-[row-match]:[--btrix-row-hover-border-color:--sl-color-danger-300]`,
+          tw`part-[order-match]:text-danger part-[order-exclude]:opacity-60`,
+          tw`part-[url-exclude]:line-through part-[url-exclude]:opacity-60`,
+        )}
         .urls=${this.queue.results}
         offset=${this.pageOffset + 1}
         .includeUrl=${(url: string) =>
