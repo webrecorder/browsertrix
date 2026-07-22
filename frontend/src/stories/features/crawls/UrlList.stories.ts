@@ -95,7 +95,7 @@ export const OrderedWithBorder: Story = {
   },
 };
 
-const includeClasses = tw`part-[cell-match]:z-[2] part-[cell-match]:!bg-success-100 part-[order-match]:text-success`;
+const includeClasses = tw`part-[order-match]:text-success part-[row-match]:[--btrix-row-bg-color:--sl-color-success-100]`;
 export const StyleIncludes: Story = {
   args: {
     classes: includeClasses,
@@ -111,7 +111,7 @@ export const StyleExcludes: Story = {
   args: {
     classes: clsx(
       includeClasses,
-      tw`part-[cell-exclude]:z-[2] part-[cell-exclude]:!bg-danger-100 part-[order-exclude]:text-danger`,
+      tw`part-[order-exclude]:text-danger part-[row-exclude]:[--btrix-row-bg-color:--sl-color-danger-100]`,
     ),
     urls: data,
     highlight: true,
@@ -125,6 +125,7 @@ export const StyleExcludes: Story = {
 export const SingleItem: Story = {
   args: {
     urls: data.slice(0, 1),
+    highlight: true,
   },
 };
 

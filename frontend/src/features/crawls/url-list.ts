@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { repeat } from "lit/directives/repeat.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { FloatingPopover } from "@/components/ui/floating-popover";
@@ -19,12 +20,14 @@ import { tw } from "@/utils/tailwind";
  * @cssPart order
  * @cssPart order-match
  * @cssPart order-exclude
- * @cssPart cell
- * @cssPart cell-match
- * @cssPart cell-exclude
+ * @cssPart row
+ * @cssPart row-match
+ * @cssPart row-exclude
  * @cssPart url
  * @cssPart url-match
  * @cssPart url-exclude
+ * @cssProperty --btrix-row-bg-color
+ * @cssProperty --btrix-row-hover-bg-color
  */
 @customElement("btrix-url-list")
 @localized()
@@ -109,13 +112,24 @@ export class UrlList extends TailwindElement {
       padding-inline-start: var(--sl-spacing-2x-small);
     }
 
-    btrix-table-row:nth-of-type(even) btrix-table-cell:not(.url-order) {
-      --btrix-overflow-scroll-scrim-color: var(--sl-color-neutral-50);
-      background-color: var(--sl-color-neutral-50);
+    btrix-table-row {
+      --row-bg-color: var(--btrix-row-bg-color);
     }
 
-    btrix-table-row:has(.url-control:hover) btrix-table-cell:not(.url-order) {
-      background-color: var(--sl-color-primary-50) !important;
+    btrix-table-row:nth-of-type(even) {
+      --row-bg-color: var(--btrix-row-bg-color, var(--sl-color-neutral-50));
+    }
+
+    btrix-table-row:has(.url-control:hover) {
+      --row-bg-color: var(
+        --btrix-row-hover-bg-color,
+        var(--sl-color-primary-50)
+      );
+    }
+
+    btrix-table-cell:not(.url-order) {
+      --btrix-overflow-scroll-scrim-color: var(--row-bg-color);
+      background-color: var(--row-bg-color);
     }
 
     btrix-overflow-scroll {
@@ -179,6 +193,9 @@ export class UrlList extends TailwindElement {
   render() {
     if (!this.urls?.length) return;
 
+    const seedToUrl = (seedOrUrl: string | Seed) =>
+      typeof seedOrUrl === "string" ? seedOrUrl : seedOrUrl.url;
+
     return html`<btrix-table
       class=${clsx(
         tw`text-[0.8125rem]`,
@@ -188,14 +205,20 @@ export class UrlList extends TailwindElement {
         this.border ? "bordered" : "no-border",
       )}
     >
-      <btrix-table-body part="row">
-        ${this.urls.map((seedOrUrl, idx) => {
-          const url = typeof seedOrUrl === "string" ? seedOrUrl : seedOrUrl.url;
+      <btrix-table-body>
+        ${repeat(this.urls, seedToUrl, (seedOrUrl, idx) => {
+          const url = seedToUrl(seedOrUrl);
           const match = this.includeUrl?.(url);
           const exclude = this.excludeUrl?.(url);
 
           return html`
-            <btrix-table-row part="row">
+            <btrix-table-row
+              part=${clsx(
+                "row",
+                match && "row-match",
+                exclude && "row-exclude",
+              )}
+            >
               ${this.ordered
                 ? html`
                     <btrix-table-cell
@@ -209,13 +232,7 @@ export class UrlList extends TailwindElement {
                     >
                   `
                 : nothing}
-              <btrix-table-cell
-                part=${clsx(
-                  "cell",
-                  match && "cell-match",
-                  exclude && "cell-exclude",
-                )}
-              >
+              <btrix-table-cell>
                 <btrix-floating-popover hoist>
                   <div slot="content" class="flex items-center gap-1.5">
                     ${this.clipboardController.isCopied
