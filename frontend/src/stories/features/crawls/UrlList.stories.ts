@@ -61,36 +61,34 @@ export const Border: Story = {
 
 export const WithManyUrls: Story = {
   args: {
-    urls: data,
+    urls: data.slice(0, 30),
   },
 };
 
 export const Highlighted: Story = {
   args: {
-    urls: data,
+    ...WithManyUrls.args,
     highlight: true,
   },
 };
 
 export const Ordered: Story = {
   args: {
-    urls: data,
+    ...WithManyUrls.args,
     ordered: true,
   },
 };
 
 export const Offset: Story = {
   args: {
-    urls: data,
-    ordered: true,
+    ...Ordered.args,
     offset: 20,
   },
 };
 
 export const OrderedWithBorder: Story = {
   args: {
-    urls: data,
-    ordered: true,
+    ...Ordered.args,
     border: true,
   },
 };
@@ -98,26 +96,20 @@ export const OrderedWithBorder: Story = {
 const includeClasses = tw`part-[order-match]:text-success part-[row-match]:[--btrix-row-bg-color:--sl-color-success-100]`;
 export const StyleIncludes: Story = {
   args: {
+    ...OrderedWithBorder.args,
     classes: includeClasses,
-    urls: data,
     highlight: true,
-    ordered: true,
-    border: true,
     includeUrl: (url) => url.includes(".com"),
   },
 };
 
 export const StyleExcludes: Story = {
   args: {
+    ...StyleIncludes.args,
     classes: clsx(
       includeClasses,
       tw`part-[order-exclude]:text-danger part-[row-exclude]:[--btrix-row-bg-color:--sl-color-danger-100]`,
     ),
-    urls: data,
-    highlight: true,
-    ordered: true,
-    border: true,
-    includeUrl: (url) => url.includes(".com"),
     excludeUrl: (url) => url.includes(".biz"),
   },
 };
