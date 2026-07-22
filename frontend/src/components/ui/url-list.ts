@@ -11,7 +11,20 @@ import type { Seed } from "@/types/crawler";
 import { tw } from "@/utils/tailwind";
 
 /**
+ * Crawls can have many seed URLs (input) or page URLs (output).
  *
+ * URLs can be styled based on an include or exclude match condition.
+ *
+ * @cssPart row
+ * @cssPart order
+ * @cssPart order-match
+ * @cssPart order-exclude
+ * @cssPart cell
+ * @cssPart cell-match
+ * @cssPart cell-exclude
+ * @cssPart url
+ * @cssPart url-match
+ * @cssPart url-exclude
  */
 @customElement("btrix-url-list")
 @localized()
@@ -19,7 +32,11 @@ export class UrlList extends TailwindElement {
   static styles = css`
     btrix-table-body {
       white-space: nowrap;
-      border-collapse: collapse;
+    }
+
+    btrix-table-row:hover,
+    btrix-table-row:focus-within {
+      z-index: 9;
     }
 
     btrix-table-cell,
@@ -27,21 +44,69 @@ export class UrlList extends TailwindElement {
       overflow: hidden;
     }
 
-    btrix-table-cell:not(.url-order) {
+    .bordered btrix-table-body {
+      padding-top: 1px;
+    }
+
+    .bordered btrix-table-row {
+      margin-top: -1px;
+    }
+
+    .bordered btrix-table-cell:not(.url-order) {
       border-top: 1px solid transparent;
       border-bottom: 1px solid transparent;
     }
 
-    btrix-table-row:first-of-type btrix-table-cell:not(.url-order) {
+    .bordered btrix-table-row:first-of-type btrix-table-cell:not(.url-order) {
       border-top-color: var(--sl-panel-border-color);
       border-top-left-radius: var(--sl-border-radius-medium);
       border-top-right-radius: var(--sl-border-radius-medium);
     }
 
-    btrix-table-row:last-of-type btrix-table-cell:not(.url-order) {
+    .bordered btrix-table-row:last-of-type btrix-table-cell:not(.url-order) {
       border-bottom-color: var(--sl-panel-border-color);
       border-bottom-left-radius: var(--sl-border-radius-medium);
       border-bottom-right-radius: var(--sl-border-radius-medium);
+    }
+
+    .bordered
+      btrix-table-row:has(.url-control:hover)
+      btrix-table-cell:not(.url-order) {
+      border-top: 1px solid var(--sl-color-primary-100);
+      border-bottom: 1px solid var(--sl-color-primary-100);
+    }
+
+    .bordered
+      btrix-table-row:has(.url-control:hover)
+      btrix-table-cell:first-of-type:not(.url-order),
+    .bordered
+      btrix-table-row:has(.url-control:hover)
+      .url-order
+      + btrix-table-cell {
+      border-left-color: var(--sl-color-primary-100);
+    }
+
+    .bordered
+      btrix-table-row:has(.url-control:hover)
+      btrix-table-cell:last-of-type {
+      border-right-color: var(--sl-color-primary-100);
+    }
+
+    .bordered btrix-table-cell:first-of-type:not(.url-order),
+    .bordered .url-order + btrix-table-cell {
+      border-left: 1px solid var(--sl-panel-border-color);
+    }
+
+    .bordered btrix-table-cell:last-of-type {
+      border-right: 1px solid var(--sl-panel-border-color);
+    }
+
+    .no-border btrix-table-cell:not(.url-order) {
+      border-radius: var(--sl-border-radius-small);
+    }
+
+    btrix-overflow-scroll::part(content) {
+      padding-inline-start: var(--sl-spacing-2x-small);
     }
 
     btrix-table-row:nth-of-type(even) btrix-table-cell:not(.url-order) {
@@ -51,27 +116,6 @@ export class UrlList extends TailwindElement {
 
     btrix-table-row:has(.url-control:hover) btrix-table-cell:not(.url-order) {
       background-color: var(--sl-color-primary-50) !important;
-      border-top: 1px solid var(--sl-color-primary-100);
-      border-bottom: 1px solid var(--sl-color-primary-100);
-    }
-
-    btrix-table-row:has(.url-control:hover)
-      btrix-table-cell:first-of-type:not(.url-order),
-    btrix-table-row:has(.url-control:hover) .url-order + btrix-table-cell {
-      border-left-color: var(--sl-color-primary-100);
-    }
-
-    btrix-table-row:has(.url-control:hover) btrix-table-cell:last-of-type {
-      border-right-color: var(--sl-color-primary-100);
-    }
-
-    btrix-table-cell:first-of-type:not(.url-order),
-    .url-order + btrix-table-cell {
-      border-left: 1px solid var(--sl-panel-border-color);
-    }
-
-    btrix-table-cell:last-of-type {
-      border-right: 1px solid var(--sl-panel-border-color);
     }
 
     btrix-overflow-scroll {
@@ -81,12 +125,8 @@ export class UrlList extends TailwindElement {
       contain: inline-size;
     }
 
-    .url::part(content) {
-      padding: var(--sl-spacing-2x-small) var(--sl-spacing-x-small);
-    }
-
     .url-order {
-      color: var(--sl-color-neutral-500);
+      color: var(--sl-color-neutral-400);
       font-family: var(--sl-font-mono);
       justify-content: end;
       padding-inline-end: var(--sl-spacing-2x-small);
@@ -109,10 +149,28 @@ export class UrlList extends TailwindElement {
   ordered = false;
 
   /**
+   * Style with border
+   */
+  @property({ type: Boolean, noAccessor: true })
+  border = false;
+
+  /**
    * Offset ordered list
    */
   @property({ type: Number })
   offset = 1;
+
+  /**
+   * Include function
+   */
+  @property({ noAccessor: true })
+  includeUrl?: (url: string) => boolean;
+
+  /**
+   * Exclude function
+   */
+  @property({ noAccessor: true })
+  excludeUrl?: (url: string) => boolean;
 
   private readonly clipboardController = new ClipboardController(this, {
     timeout: 10 * 1000,
@@ -127,23 +185,38 @@ export class UrlList extends TailwindElement {
         this.ordered
           ? tw`grid-cols-[min-content_1fr_auto]`
           : tw`grid-cols-[1fr_auto]`,
+        this.border ? "bordered" : "no-border",
       )}
     >
-      <btrix-table-body>
+      <btrix-table-body part="row">
         ${this.urls.map((seedOrUrl, idx) => {
           const url = typeof seedOrUrl === "string" ? seedOrUrl : seedOrUrl.url;
+          const match = this.includeUrl?.(url);
+          const exclude = this.excludeUrl?.(url);
 
           return html`
-            <btrix-table-row>
+            <btrix-table-row part="row">
               ${this.ordered
                 ? html`
-                    <btrix-table-cell class="url-order"
+                    <btrix-table-cell
+                      class="url-order"
+                      part=${clsx(
+                        "order",
+                        match && "order-match",
+                        exclude && "order-exclude",
+                      )}
                       >${idx + this.offset}.</btrix-table-cell
                     >
                   `
                 : nothing}
-              <btrix-table-cell>
-                <btrix-floating-popover>
+              <btrix-table-cell
+                part=${clsx(
+                  "cell",
+                  match && "cell-match",
+                  exclude && "cell-exclude",
+                )}
+              >
+                <btrix-floating-popover hoist>
                   <div slot="content" class="flex items-center gap-1.5">
                     ${this.clipboardController.isCopied
                       ? html`<sl-icon
@@ -158,7 +231,7 @@ export class UrlList extends TailwindElement {
                           ${msg("Copy URL")}`}
                   </div>
                   <btrix-overflow-scroll
-                    class="url-control cursor-pointer part-[content]:px-1.5"
+                    class="url-control cursor-pointer"
                     hideScrollbar
                     @mousedown=${this.onUrlMouseDown}
                     @mouseup=${this.onUrlMouseUp}
@@ -189,6 +262,11 @@ export class UrlList extends TailwindElement {
                     }}
                   >
                     <btrix-code
+                      part=${clsx(
+                        "url",
+                        match && "url-match",
+                        exclude && "url-exclude",
+                      )}
                       class="block w-max part-[base]:text-sky-800"
                       language=${ifDefined(this.highlight ? "url" : undefined)}
                       .value=${url}

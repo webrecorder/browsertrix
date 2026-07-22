@@ -174,6 +174,16 @@ export class CrawlQueue extends BtrixElement {
     }
 
     return html`
+      <btrix-url-list
+        class="part-[url-match]:bg-red-500"
+        .urls=${this.queue.results}
+        offset=${this.pageOffset + 1}
+        .matchUrl=${(url: string) =>
+          this.queue?.matched.some((v) => v === url) || false}
+        .excludeUrl=${this.isExcluded}
+        ordered
+      ></btrix-url-list>
+
       <btrix-numbered-list class="break-all text-xs" aria-live="polite">
         ${this.queue.results.map((url, idx) => {
           const isMatch = this.queue!.matched.some((v) => v === url);
@@ -281,7 +291,7 @@ export class CrawlQueue extends BtrixElement {
     }
   }
 
-  isExcluded(url: string) {
+  private readonly isExcluded = (url: string) => {
     for (const rx of this.exclusionsRx) {
       if (rx.test(url)) {
         return true;
@@ -289,7 +299,7 @@ export class CrawlQueue extends BtrixElement {
     }
 
     return false;
-  }
+  };
 
   private async getQueue(): Promise<ResponseData> {
     const count = this.pageSize.toString();
