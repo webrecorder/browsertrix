@@ -69,14 +69,20 @@ export class ExclusionEditor extends LiteElement {
 
   render() {
     return html`
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div class="col-span-1">${this.renderTable()}</div>
-        <div class="col-span-1">
+      <div
+        class="grid size-full grid-cols-1 overflow-auto lg:grid-cols-2 lg:divide-x lg:overflow-hidden"
+      >
+        <div
+          class="col-span-1 px-4 pt-4 lg:overflow-y-auto lg:overflow-x-hidden"
+        >
+          ${this.renderTable()}
+        </div>
+        <div class="col-span-1 px-4 lg:overflow-y-auto lg:overflow-x-hidden">
           ${this.isActiveCrawl && this.regex
-            ? html` <section class="mt-5">${this.renderPending()}</section> `
+            ? html`<section>${this.renderPending()}</section>`
             : ""}
           ${this.isActiveCrawl
-            ? html` <section class="mt-5">${this.renderQueue()}</section> `
+            ? html`<section>${this.renderQueue()}</section>`
             : ""}
         </div>
       </div>
@@ -87,6 +93,7 @@ export class ExclusionEditor extends LiteElement {
     return html`
       ${this.config
         ? html`<btrix-queue-exclusion-table
+            pageSize="10"
             ?removable=${this.isActiveCrawl}
             .exclusions=${this.config.exclude || []}
             @btrix-change=${async (e: ExclusionRemoveEvent) => {
@@ -108,7 +115,7 @@ export class ExclusionEditor extends LiteElement {
             </div>
           `}
       ${this.isActiveCrawl
-        ? html`<div class="mt-2">
+        ? html`<div class="sticky bottom-0 bg-white py-2">
             <btrix-queue-exclusion-form
               ?isSubmitting=${this.isSubmitting}
               fieldErrorMessage=${this.exclusionFieldErrorMessage}
@@ -124,6 +131,7 @@ export class ExclusionEditor extends LiteElement {
   private renderPending() {
     return html`
       <btrix-crawl-pending-exclusions
+        class="part-[heading]:block part-[heading]:pt-2.5"
         .matchedURLs=${this.matchedURLs}
       ></btrix-crawl-pending-exclusions>
     `;
@@ -131,6 +139,7 @@ export class ExclusionEditor extends LiteElement {
 
   private renderQueue() {
     return html`<btrix-crawl-queue
+      class="part-[heading]:sticky part-[heading]:top-0 part-[heading]:z-10 part-[heading]:block part-[heading]:bg-white part-[heading]:pt-2.5"
       crawlId=${this.crawlId!}
       regex=${this.regex}
       .exclusions=${this.config?.exclude || []}

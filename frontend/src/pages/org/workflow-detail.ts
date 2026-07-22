@@ -1942,6 +1942,7 @@ export class WorkflowDetail extends BtrixElement {
       )}
 
       <btrix-dialog
+        class="[--body-spacing:0] part-[body]:flex part-[body]:content-stretch part-[body]:justify-stretch part-[body]:overflow-hidden"
         .label=${msg("Crawl Queue Editor")}
         .open=${this.openDialogName === "exclusions"}
         style=${`--width: var(--btrix-screen-desktop)`}
@@ -1951,6 +1952,7 @@ export class WorkflowDetail extends BtrixElement {
       >
         ${this.workflow && this.isDialogVisible
           ? html`<btrix-exclusion-editor
+              class="block w-full overflow-hidden"
               .crawlId=${this.lastCrawlId ?? undefined}
               .config=${this.workflow.config}
               ?isActiveCrawl=${this.workflow.lastCrawlState

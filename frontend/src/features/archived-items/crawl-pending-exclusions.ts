@@ -16,6 +16,8 @@ type URLs = string[];
  *   .matchedURLs=${this.matchedURLs}
  * ></btrix-crawl-pending-exclusions>
  * ```
+ *
+ * @cssPart heading
  */
 @customElement("btrix-crawl-pending-exclusions")
 @localized()
@@ -45,7 +47,10 @@ export class CrawlPendingExclusions extends BtrixElement {
 
   render() {
     return html`
-      <btrix-section-heading style="--margin: var(--sl-spacing-small)">
+      <btrix-section-heading
+        part="heading"
+        class="[--margin:--sl-spacing-small]"
+      >
         <div class="flex w-full items-center justify-between">
           <div>${msg("Pending Exclusions")} ${this.renderBadge()}</div>
           ${this.total && this.total > this.pageSize
