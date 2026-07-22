@@ -303,6 +303,7 @@ export class UrlList extends TailwindElement {
                       name="arrow-up-right"
                       href="${url}"
                       target="_blank"
+                      rel="noopener noreferrer nofollow"
                     >
                     </sl-icon-button>
                   </sl-tooltip>
