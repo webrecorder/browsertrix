@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - issue-3173-replace-k3d-action
     paths:
       - "backend/**"
       - "chart/**"
