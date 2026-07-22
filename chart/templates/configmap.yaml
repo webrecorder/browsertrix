@@ -87,6 +87,7 @@ data:
   NUM_BROWSERS: "{{ .Values.crawler_browser_instances }}"
 
   MAX_CRAWLER_MEMORY: "{{ .Values.max_crawler_memory }}"
+  MAX_REDIS_MEMORY: "{{ .Values.max_redis_memory }}"
 
   CRAWLER_MIN_AVAIL_STORAGE_RATIO: "{{ .Values.crawler_min_avail_storage_ratio }}"
 
@@ -124,6 +125,8 @@ data:
 
   DEDUPE_FEATURE_ENABLED_DEFAULT: "{{ .Values.dedupe.default_enabled }}"
 
+  RATE_LIMIT_DURATION_MINUTES: "{{ .Values.rate_limit_max_duration_minutes }}"
+
 
   {{- if .Values.available_plans }}
   AVAILABLE_PLANS: {{ .Values.available_plans | toJson }}
@@ -137,7 +140,7 @@ metadata:
   namespace: {{ .Values.crawler_namespace }}
 
 data:
-  {{- define "btrix.crawler_args" }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --maxPageLimit {{ .Values.max_pages_per_crawl | default 0 }} --healthCheckPort {{ .Values.crawler_liveness_port }} --diskUtilization {{ .Values.disk_utilization_threshold }} --logging {{ .Values.crawler_logging_opts }} --text {{ .Values.crawler_extract_full_text }} --generateWACZ --collection thecrawl --screencastPort 9037 --logErrorsToRedis --logBehaviorsToRedis --writePagesToRedis --restartsOnError --headless --screenshot view,thumbnail {{ .Values.crawler_extra_args }} {{- end }}
+  {{- define "btrix.crawler_args" }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --maxPageLimit {{ .Values.max_pages_per_crawl | default 0 }} --healthCheckPort {{ .Values.crawler_liveness_port }} --diskUtilization {{ .Values.disk_utilization_threshold }} --logging {{ .Values.crawler_logging_opts }} --text {{ .Values.crawler_extract_full_text }} --rateLimitInterruptCount {{ .Values.rate_limit_threshold }} --generateWACZ --collection thecrawl --screencastPort 9037 --logErrorsToRedis --logBehaviorsToRedis --writePagesToRedis --restartsOnError --headless --screenshot view,thumbnail {{ .Values.crawler_extra_args }} {{- end }}
 
   CRAWL_ARGS: {{- include "btrix.crawler_args" . }}
 

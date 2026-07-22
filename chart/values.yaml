@@ -91,6 +91,14 @@ invite_expire_seconds: "1209600"
 # number of minutes before paused crawls are stopped - default is 7 days
 paused_crawl_limit_minutes: 10080
 
+# number of minutes before a rate-limited crawl will be marked as paused - default is 12 hours
+# set to 0 to disable
+rate_limit_max_duration_minutes: 720
+
+# Number of consecutive rate limited pages after which the crawl
+# will enter 'rate-limited' state and will be interrupted
+rate_limit_threshold: 5
+
 # base url for replayweb.page
 rwp_base_url: "https://cdn.jsdelivr.net/npm/replaywebpage/"
 
@@ -111,7 +119,7 @@ replica_deletion_delay_days: 0
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.23.0-beta.0"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.24.0-beta.2"
 backend_pull_policy: "IfNotPresent"
 
 backend_password_secret: "PASSWORD!"
@@ -182,7 +190,7 @@ cleanup_files_after_minutes: 1440
 
 # Emails Image
 # =========================================
-emails_image: "docker.io/webrecorder/browsertrix-emails:1.23.0-beta.0"
+emails_image: "docker.io/webrecorder/browsertrix-emails:1.24.0-beta.2"
 emails_pull_policy: "IfNotPresent"
 
 emails_cpu: "10m"
@@ -196,7 +204,7 @@ local_emails_port: 30872
 
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.23.0-beta.0"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.24.0-beta.2"
 frontend_pull_policy: "IfNotPresent"
 
 frontend_cpu: "10m"
@@ -261,6 +269,10 @@ redis_cpu: "10m"
 redis_memory: "200Mi"
 
 redis_storage: "3Gi"
+
+# max redis memory, if set, will allow redis to use upto max_redis_memory as the upper limit
+# if not set or 0, redis memory is fixed to 'redis_memory' above
+# max_redis_memory: 0
 
 # Dedupe Index
 # =========================================

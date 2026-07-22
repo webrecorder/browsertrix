@@ -3,8 +3,9 @@
 import json
 import math
 import os
+from collections.abc import Sequence
 from datetime import datetime, timedelta
-from typing import Any, Literal, Optional, Sequence
+from typing import Any, Literal
 from uuid import UUID
 
 import structlog
@@ -101,6 +102,8 @@ class CrawlOperator(BaseOperator):
 
     paused_expires_delta: timedelta
 
+    rate_limit_duration_delta: timedelta | None = None
+
     def __init__(self, *args):
         super().__init__(*args)
 
@@ -122,6 +125,15 @@ class CrawlOperator(BaseOperator):
         )
 
         self.paused_expires_delta = timedelta(minutes=paused_crawl_limit_minutes)
+
+        rate_limit_duration_minutes = int(
+            os.environ.get("RATE_LIMIT_DURATION_MINUTES") or 0
+        )
+
+        if rate_limit_duration_minutes:
+            self.rate_limit_duration_delta = timedelta(
+                minutes=rate_limit_duration_minutes
+            )
 
     def init_routes(self, app):
         """init routes for this operator"""
@@ -283,7 +295,35 @@ class CrawlOperator(BaseOperator):
                     "starting", status, crawl, allowed_from=["waiting_dedupe_index"]
                 )
 
+        # paused_at is set, and state is a valid paused state
+        is_paused = bool(crawl.paused_at) and status.state in PAUSED_STATES
+
+        # clear rateLimitedAtTime if crawl in a non-rate limited running state or already paused
+        if (
+            status.rateLimitedAtTime
+            and status.state != "rate-limited"
+            and (is_paused or (status.state in RUNNING_STATES))
+        ):
+            status.rateLimitedAtTime = ""
+
+        # setup scale
         status.scale = len(pods)
+
+        if crawl.qa_source_crawl_id:
+            num_browsers_per_pod = int(params["qa_browser_instances"])
+            num_browser_windows = int(params.get("qa_num_browser_windows", 1))
+        else:
+            num_browsers_per_pod = int(params["crawler_browser_instances"])
+            num_browser_windows = crawl.browser_windows
+
+        # desired scale is the number of pods to create
+        status.desiredScale = scale_from_browser_windows(
+            num_browser_windows, num_browsers_per_pod
+        )
+
+        if status.pagesFound < status.desiredScale:
+            status.desiredScale = max(1, status.pagesFound)
+
         if status.scale:
             for pod_name, pod in pods.items():
                 # don't count redis pod
@@ -313,8 +353,8 @@ class CrawlOperator(BaseOperator):
 
         # stopping paused crawls
         if crawl.paused_at:
-            stop_reason: Optional[StopReason] = None
-            state: Optional[TYPE_NON_RUNNING_STATES] = None
+            stop_reason: StopReason | None = None
+            state: TYPE_NON_RUNNING_STATES | None = None
             # Check if pause expiry limit is reached and if so, stop crawl
             if dt_now() >= (crawl.paused_at + self.paused_expires_delta):
                 logger.info(
@@ -415,22 +455,6 @@ class CrawlOperator(BaseOperator):
         if crawl.qa_source_crawl_id:
             params["qa_source_crawl_id"] = crawl.qa_source_crawl_id
             children.extend(await self._load_qa_configmap(params, data.children))
-            num_browsers_per_pod = int(params["qa_browser_instances"])
-            num_browser_windows = int(params.get("qa_num_browser_windows", 1))
-        else:
-            num_browsers_per_pod = int(params["crawler_browser_instances"])
-            num_browser_windows = crawl.browser_windows
-
-        # desired scale is the number of pods to create
-        status.desiredScale = scale_from_browser_windows(
-            num_browser_windows, num_browsers_per_pod
-        )
-
-        if status.pagesFound < status.desiredScale:
-            status.desiredScale = max(1, status.pagesFound)
-
-        # paused_at is set, and state is a valid paused state
-        is_paused = bool(crawl.paused_at) and status.state in PAUSED_STATES
 
         for i in range(0, status.desiredScale):
             if status.pagesFound < i * num_browsers_per_pod:
@@ -465,6 +489,7 @@ class CrawlOperator(BaseOperator):
         params["cpu"] = pod_info.newCpu or params.get("redis_cpu")
         params["memory"] = pod_info.newMemory or params.get("redis_memory")
         params["no_pvc"] = crawl.is_single_page
+        params["memory_limit"] = self.k8s.max_redis_memory_size or params["memory"]
 
         restart_reason = None
         if has_pod:
@@ -482,8 +507,8 @@ class CrawlOperator(BaseOperator):
         return self.load_from_yaml("redis.yaml", params)
 
     def _filter_autoclick_behavior(
-        self, behaviors: Optional[str], crawler_image: str
-    ) -> Optional[str]:
+        self, behaviors: str | None, crawler_image: str
+    ) -> str | None:
         """Remove autoclick behavior if crawler version doesn't support it"""
         min_autoclick_crawler_image = os.environ.get("MIN_AUTOCLICK_CRAWLER_IMAGE")
 
@@ -531,9 +556,13 @@ class CrawlOperator(BaseOperator):
 
         self.crawl_config_ops.ensure_quota_page_limit(crawlconfig, crawl.org)
 
+        crawler_image = params["crawler_image"]
+
+        configmap_logger = logger.bind(crawl_id=crawl.id)
+
         raw_config = crawlconfig.get_raw_config()
         raw_config["behaviors"] = self._filter_autoclick_behavior(
-            raw_config["behaviors"], params["crawler_image"]
+            raw_config["behaviors"], crawler_image
         )
 
         if crawl.seed_file_url:
@@ -543,9 +572,8 @@ class CrawlOperator(BaseOperator):
         params["config"] = json.dumps(raw_config)
 
         if config_update_needed:
-            logger.debug(
+            configmap_logger.debug(
                 "crawl_configmap_updated",
-                crawl_id=crawl.id,
                 unstructured_message=f"Updating config for {crawl.id}",
             )
 
@@ -676,32 +704,29 @@ class CrawlOperator(BaseOperator):
 
         return self.load_from_yaml("crawler.yaml", params)
 
-    async def _resolve_scale_down(
+    async def resolve_scale_down(
         self,
         crawl: CrawlSpec,
         redis: Redis,
         status: CrawlStatus,
         pods: dict[str, dict],
-    ) -> None:
+    ) -> int:
         """Resolve scale down
         Limit desired scale to number of pages
         If desired_scale >= actual scale, just return
         If desired scale < actual scale, attempt to shut down each crawl instance
         via redis setting. If contiguous instances shutdown (successful exit), lower
         scale and clean up previous scale state.
+        Set status.desiredScale to new scale, which may be existing actual scale
         """
+        crawl_id = crawl.id
+
         desired_scale = status.desiredScale
         actual_scale = status.scale
-
-        # if not scaling down, just return
-        if desired_scale >= actual_scale:
-            return
-
-        crawl_id = crawl.id
+        new_scale = actual_scale
 
         sd_logger = logger.bind(crawl_id=crawl_id)
 
-        new_scale = actual_scale
         for i in range(actual_scale - 1, desired_scale - 1, -1):
             name = f"crawl-{crawl_id}-{i}"
             pod = pods.get(name)
@@ -742,6 +767,9 @@ class CrawlOperator(BaseOperator):
                 await redis.hdel(f"{crawl_id}:stopone", name)
                 await redis.hdel(f"{crawl_id}:status", name)
 
+        # return new scale that is possible
+        return new_scale
+
     def sync_resources(self, status, name, pod, children):
         """set crawljob status from current resources"""
         resources = status.podStatus[name].allocated
@@ -765,8 +793,8 @@ class CrawlOperator(BaseOperator):
         status: CrawlStatus,
         crawl: CrawlSpec,
         allowed_from: Sequence[TYPE_ALL_CRAWL_STATES],
-        finished: Optional[datetime] = None,
-        stats: Optional[OpCrawlStats] = None,
+        finished: datetime | None = None,
+        stats: OpCrawlStats | None = None,
     ):
         """set status state and update db, if changed
         if allowed_from passed in, can only transition from allowed_from state,
@@ -1250,7 +1278,7 @@ class CrawlOperator(BaseOperator):
         return crawler_running, redis_running, pod_done_count
 
     def handle_terminated_pod(
-        self, name, role, status: CrawlStatus, terminated: Optional[dict[str, Any]]
+        self, name, role, status: CrawlStatus, terminated: dict[str, Any] | None
     ) -> None:
         """handle terminated pod state"""
         if not terminated:
@@ -1560,18 +1588,54 @@ class CrawlOperator(BaseOperator):
             if not pod.isNewExit or pod.exitCode in (0, 11, 13):
                 continue
 
+            reason = self.get_crawler_exit_reason(pod.exitCode or 1)
+
             log = self.get_log_line(
-                "Crawler Instance Crashed", {"reason": pod.reason, "pod": name}
+                f"Crawler Instance Exited: {reason}",
+                {
+                    "pod": name,
+                    "exitCode": pod.exitCode,
+                    "reason": reason,
+                },
             )
             if not redis:
                 logger.exception(
-                    "crawler_instance_crashed",
+                    "crawler_instance_exited",
                     crawl_id=crawl_id,
                     error=log,
+                    reason=reason,
+                    exit_code=pod.exitCode,
                     unstructured_message=f"Crawl crash: {log}",
                 )
             else:
                 await redis.lpush(f"{crawl_id}:e", log)
+
+    def get_crawler_exit_reason(self, exit_code: int) -> str:
+        """Get reason for crawler exit based on status code"""
+        exit_codes = {
+            0: "Success",
+            1: "Generic Error",
+            3: "Out of Space",
+            8: "Redis Unavailable",
+            9: "Failed",
+            10: "Browser Crashed",
+            11: "Signal Interrupted",
+            12: "Failed Pages Limit Reached",
+            13: "Signal Interrupted (Force)",
+            14: "Size Limit Reached",
+            15: "Time Limit Reached",
+            16: "Disk Utilization Limit Reached",
+            17: "Fatal Error",
+            18: "Rate Limited",
+            21: "Proxy Error",
+            22: "Upload Failed",
+            # From Kuberentes
+            137: "Out of Memory",
+        }
+        try:
+            return exit_codes[exit_code]
+        except KeyError:
+            return "Unspecified Error"
 
     def get_log_line(self, message, details):
         """get crawler error line for logging"""
@@ -1612,8 +1676,8 @@ class CrawlOperator(BaseOperator):
         return filecomplete.size
 
     async def is_crawl_stopping(
-        self, crawl: CrawlSpec, status: CrawlStatus
-    ) -> Optional[StopReason]:
+        self, crawl: CrawlSpec, status: CrawlStatus, stats: OpCrawlStats
+    ) -> StopReason | None:
         """check if crawl is stopping and set reason"""
         # if user requested stop, then enter stopping phase
         if crawl.stopping:
@@ -1653,6 +1717,18 @@ class CrawlOperator(BaseOperator):
         if self.org_ops.exec_mins_quota_reached(org):
             return self.request_pause_crawl("paused_time_quota_reached", crawl)
 
+        if (
+            stats.rate_limited
+            and status.rateLimitedAtTime
+            and self.rate_limit_duration_delta
+        ):
+            rate_limited_at = str_to_date(status.rateLimitedAtTime)
+            if (
+                rate_limited_at
+                and (dt_now() - rate_limited_at) > self.rate_limit_duration_delta
+            ):
+                return self.request_pause_crawl("paused_rate_limit_time_reached", crawl)
+
         if crawl.paused_at and status.stopReason not in PAUSED_STATES:
             return "paused"
 
@@ -1660,7 +1736,7 @@ class CrawlOperator(BaseOperator):
 
     def request_pause_crawl(
         self, reason: StopReason, crawl: CrawlSpec
-    ) -> Optional[StopReason]:
+    ) -> StopReason | None:
         """Request crawl to be paused asynchronously, equivalent of user clicking 'pause' button
         if crawl is paused, then use the specified reason instead of default paused state
         """
@@ -1688,6 +1764,7 @@ class CrawlOperator(BaseOperator):
         pipe.hgetall(f"{crawl_id}:size")
         pipe.get(f"{crawl_id}:profileUploaded")
         pipe.smembers(f"{crawl_id}:reqCrawls")
+        pipe.get(f"{crawl_id}:rateLimited")
 
         results = await pipe.execute()
 
@@ -1707,6 +1784,7 @@ class CrawlOperator(BaseOperator):
 
         profile_update = results[5]
         req_crawls = results[6]
+        rate_limited = results[7] == "1"
 
         stats = OpCrawlStats(
             found=pages_found,
@@ -1714,6 +1792,7 @@ class CrawlOperator(BaseOperator):
             size=archive_size,
             profile_update=profile_update,
             req_crawls=req_crawls,
+            rate_limited=rate_limited,
         )
         return stats, sizes
 
@@ -1742,6 +1821,9 @@ class CrawlOperator(BaseOperator):
         status.sizePending = pending_size
         status.size = total_size
         status.sizeHuman = humanize.naturalsize(status.size)
+
+        # scale should be at least number of results in the status
+        status.scale = max(len(results), status.scale)
 
         await self.crawl_ops.update_running_crawl_stats(
             crawl.db_crawl_id, crawl.is_qa, stats, pending_size
@@ -1792,21 +1874,21 @@ class CrawlOperator(BaseOperator):
             await redis.delete(f"{crawl.id}:paused")
 
         if not status.stopping:
-            status.stopReason = await self.is_crawl_stopping(crawl, status)
+            status.stopReason = await self.is_crawl_stopping(crawl, status, stats)
             status.stopping = status.stopReason is not None
 
-            # mark crawl as stopping
-            if status.stopping:
-                if status.stopReason in PAUSED_STATES:
-                    await redis.set(f"{crawl.id}:paused", "1")
+        # mark crawl as pausing or stopping
+        if status.stopping:
+            if status.stopReason in PAUSED_STATES:
+                if await redis.set(f"{crawl.id}:paused", "1", nx=True):
                     logger.info(
                         "crawl_pausing",
                         stop_reason=status.stopReason,
                         crawl_id=crawl.id,
                         unstructured_message=f"Crawl pausing: {status.stopReason}, id: {crawl.id}",
                     )
-                else:
-                    await redis.set(f"{crawl.id}:stopping", "1")
+            else:
+                if await redis.set(f"{crawl.id}:stopping", "1", nx=True):
                     logger.info(
                         "crawl_gracefully_stopping",
                         stop_reason=status.stopReason,
@@ -1816,8 +1898,11 @@ class CrawlOperator(BaseOperator):
                         ),
                     )
 
-        # resolve scale down, if needed
-        await self._resolve_scale_down(crawl, redis, status, pods)
+        # if scaling down, resolve new desired scale
+        if status.desiredScale < status.scale:
+            status.desiredScale = await self.resolve_scale_down(
+                crawl, redis, status, pods
+            )
 
         # check if done / failed
         status_count: dict[str, int] = {}
@@ -1843,6 +1928,8 @@ class CrawlOperator(BaseOperator):
                     paused_state = "paused_storage_quota_reached"
                 elif status.stopReason == "paused_time_quota_reached":
                     paused_state = "paused_time_quota_reached"
+                elif status.stopReason == "paused_rate_limit_time_reached":
+                    paused_state = "paused_rate_limit_time_reached"
                 elif status.stopReason == "paused_org_readoly":
                     paused_state = "paused_org_readonly"
                 else:
@@ -1902,6 +1989,10 @@ class CrawlOperator(BaseOperator):
         else:
             new_status: TYPE_RUNNING_STATES = "running"
 
+            if stats.rate_limited:
+                new_status = "rate-limited"
+                if not status.rateLimitedAtTime:
+                    status.rateLimitedAtTime = date_to_str(dt_now())
             if status_count.get("generate-wacz"):
                 new_status = "generate-wacz"
             elif status_count.get("uploading-wacz"):
@@ -1952,7 +2043,7 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         state: TYPE_NON_RUNNING_STATES,
-        stats: Optional[OpCrawlStats] = None,
+        stats: OpCrawlStats | None = None,
     ) -> bool:
         """mark crawl as finished, set finished timestamp and final state"""
 
@@ -2000,7 +2091,7 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         state: TYPE_NON_RUNNING_STATES,
-        stats: Optional[OpCrawlStats],
+        stats: OpCrawlStats | None,
     ) -> None:
         """Run tasks after crawl completes in asyncio.task coroutine."""
         if state in SUCCESSFUL_STATES:

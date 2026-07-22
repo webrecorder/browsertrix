@@ -9,8 +9,8 @@ import os
 import re
 import signal
 import sys
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union
+from datetime import UTC, datetime
+from typing import Any
 from urllib.parse import urlparse
 from uuid import UUID
 
@@ -60,7 +60,7 @@ def get_templates_dir() -> str:
     return os.path.join(os.path.dirname(__file__), "templates")
 
 
-def str_to_date(string: str) -> Optional[datetime]:
+def str_to_date(string: str) -> datetime | None:
     """convert k8s date string to datetime"""
     return datetime.fromisoformat(string) if string else None
 
@@ -72,7 +72,7 @@ def date_to_str(dt_val: datetime) -> str:
 
 def dt_now() -> datetime:
     """get current ts"""
-    return datetime.now(timezone.utc).replace(microsecond=0)
+    return datetime.now(UTC).replace(microsecond=0)
 
 
 def register_exit_handler() -> None:
@@ -107,14 +107,14 @@ def parse_jsonl_log_messages(log_lines: list[str]) -> list[dict]:
     return parsed_log_lines
 
 
-def is_bool(stri: Optional[str]) -> bool:
+def is_bool(stri: str | None) -> bool:
     """Check if the string parameter is stringly true"""
     if stri:
         return stri.lower() in ("true", "1", "yes", "on")
     return False
 
 
-def is_falsy_bool(stri: Optional[str]) -> bool:
+def is_falsy_bool(stri: str | None) -> bool:
     """Check if the string parameter is stringly false"""
     if stri:
         return stri.lower() in ("false", "0", "no", "off")
@@ -130,9 +130,9 @@ def is_url(url: str) -> bool:
         return False
 
 
-def str_list_to_bools(str_list: List[str], allow_none=True) -> List[Union[bool, None]]:
+def str_list_to_bools(str_list: list[str], allow_none=True) -> list[bool | None]:
     """Return version of input string list cast to bool or None, ignoring other values"""
-    output: List[Union[bool, None]] = []
+    output: list[bool | None] = []
     for val in str_list:
         if is_bool(val):
             output.append(True)
@@ -158,7 +158,7 @@ def validate_slug(slug: str) -> None:
 
 
 def stream_dict_list_as_csv(
-    data: List[Dict[str, Union[str, int]]], filename: str
+    data: list[dict[str, str | int]], filename: str
 ) -> StreamingResponse:
     """Stream list of dictionaries as CSV with attachment filename header"""
     if not data:
@@ -205,7 +205,7 @@ def get_origin(headers) -> str:
     return scheme + "://" + host
 
 
-def validate_regexes(regexes: List[str]):
+def validate_regexes(regexes: list[str]):
     """Validate regular expressions, raise HTTPException if invalid"""
     for regex in regexes:
         try:
@@ -251,7 +251,12 @@ def crawler_image_below_minimum(crawler_image: str, min_image: str):
         )
         return False
 
-    if crawler_image_version < min_image_version:
+    # Compare base_versions with pre- and post- information stripped out
+    # so that beta releases (which otherwise would be considered less than
+    # their corresponding releases) can be tested
+    if parse_version(crawler_image_version.base_version) < parse_version(
+        min_image_version.base_version
+    ):
         return True
 
     return False

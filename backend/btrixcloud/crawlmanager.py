@@ -3,7 +3,6 @@
 import os
 import secrets
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
 
 import structlog
 from fastapi import HTTPException
@@ -89,11 +88,11 @@ class CrawlManager(K8sAPI):
         replica_file_path: str,
         replica_endpoint: str,
         delay_days: int = 0,
-        primary_storage: Optional[StorageRef] = None,
-        primary_file_path: Optional[str] = None,
-        primary_endpoint: Optional[str] = None,
-        existing_job_id: Optional[str] = None,
-    ) -> Tuple[str, Optional[str]]:
+        primary_storage: StorageRef | None = None,
+        primary_file_path: str | None = None,
+        primary_endpoint: str | None = None,
+        existing_job_id: str | None = None,
+    ) -> tuple[str, str | None]:
         """run job to replicate file from primary storage to replica storage"""
 
         if existing_job_id:
@@ -102,7 +101,7 @@ class CrawlManager(K8sAPI):
             # Keep name shorter than in past to avoid k8s issues with length
             job_id = f"{job_type}-{secrets.token_hex(5)}"
 
-        params: Dict[str, object] = {
+        params: dict[str, object] = {
             "id": job_id,
             "oid": oid,
             "job_type": job_type,
@@ -134,7 +133,7 @@ class CrawlManager(K8sAPI):
     async def run_delete_org_job(
         self,
         oid: str,
-        existing_job_id: Optional[str] = None,
+        existing_job_id: str | None = None,
     ) -> str:
         """run job to delete org and all of its data"""
 
@@ -150,7 +149,7 @@ class CrawlManager(K8sAPI):
     async def run_recalculate_org_stats_job(
         self,
         oid: str,
-        existing_job_id: Optional[str] = None,
+        existing_job_id: str | None = None,
     ) -> str:
         """run job to recalculate storage stats for the org"""
 
@@ -166,9 +165,9 @@ class CrawlManager(K8sAPI):
     async def run_re_add_org_pages_job(
         self,
         oid: str,
-        crawl_type: Optional[str] = None,
-        crawl_id: Optional[str] = None,
-        existing_job_id: Optional[str] = None,
+        crawl_type: str | None = None,
+        crawl_id: str | None = None,
+        existing_job_id: str | None = None,
     ) -> str:
         """run job to recalculate storage stats for the org"""
 
@@ -186,7 +185,7 @@ class CrawlManager(K8sAPI):
         )
 
     async def run_optimize_pages_job(
-        self, existing_job_id: Optional[str] = None, scale=1
+        self, existing_job_id: str | None = None, scale=1
     ) -> str:
         """run job to optimize crawl pages"""
 
@@ -203,7 +202,7 @@ class CrawlManager(K8sAPI):
         self,
         oid: str,
         collection_id: str,
-        existing_job_id: Optional[str] = None,
+        existing_job_id: str | None = None,
     ) -> str:
         """run job to update collection stats"""
 
@@ -224,7 +223,7 @@ class CrawlManager(K8sAPI):
         self,
         job_id: str,
         job_type: str,
-        oid: Optional[str] = None,
+        oid: str | None = None,
         **kwargs,
     ) -> str:
         """run background job with access to ops classes"""
@@ -253,7 +252,7 @@ class CrawlManager(K8sAPI):
         image: str,
         image_pull_policy: str,
         job_type: TYPE_INDEX_JOB_TYPES,
-        crawl_id: Optional[str] = None,
+        crawl_id: str | None = None,
     ):
         """create dedupe index import/purge/post-crawl job"""
 
@@ -508,7 +507,7 @@ class CrawlManager(K8sAPI):
             return False
 
     async def add_org_storage(
-        self, storage: StorageRef, string_data: Dict[str, str], oid: str
+        self, storage: StorageRef, string_data: dict[str, str], oid: str
     ) -> None:
         """Add custom org storage secret"""
         labels = {"btrix.org": oid}
@@ -580,7 +579,7 @@ class CrawlManager(K8sAPI):
         return await self.delete_crawl_job(crawl_id)
 
     async def pause_resume_crawl(
-        self, crawl_id: str, paused_at: Optional[datetime] = None
+        self, crawl_id: str, paused_at: datetime | None = None
     ) -> dict:
         """pause or resume a crawl"""
         return await self._patch_job(
@@ -626,8 +625,8 @@ class CrawlManager(K8sAPI):
         await self._delete_custom_objects(f"btrix.org={oid_str}", plural="profilejobs")
 
     async def update_scheduled_job(
-        self, crawlconfig: CrawlConfig, userid: Optional[str] = None
-    ) -> Optional[str]:
+        self, crawlconfig: CrawlConfig, userid: str | None = None
+    ) -> str | None:
         """create or remove cron job based on crawlconfig schedule"""
         cid = str(crawlconfig.id)
 
@@ -679,9 +678,9 @@ class CrawlManager(K8sAPI):
     async def create_replica_deletion_scheduled_job(
         self,
         job_id: str,
-        params: Dict[str, object],
+        params: dict[str, object],
         delay_days: int,
-    ) -> Tuple[str, Optional[str]]:
+    ) -> tuple[str, str | None]:
         """create scheduled job to delay replica file in x days"""
         now = dt_now()
         run_at = now + timedelta(days=delay_days)

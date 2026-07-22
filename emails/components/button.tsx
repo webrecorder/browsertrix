@@ -1,4 +1,4 @@
-import { Button as EmailButton } from "react-email";
+import { Button as EmailButton } from "@react-email/components";
 
 export const Button = ({
   children,

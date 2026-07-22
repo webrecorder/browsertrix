@@ -2,7 +2,7 @@
 Migration 0048 - Calculate firstSeed/seedCount and store directly in database
 """
 
-from typing import Any, Dict, List, cast
+from typing import Any, cast
 
 import structlog
 
@@ -48,7 +48,7 @@ class Migration(BaseMigration):
                     )
                     continue
 
-                seeds = cast(List[Seed], config.config.seeds)
+                seeds = cast(list[Seed], config.config.seeds)
                 seed_count = len(seeds)
                 first_seed = seeds[0].url
 
@@ -70,7 +70,7 @@ class Migration(BaseMigration):
                 )
 
         # Crawls
-        crawl_query: Dict[str, Any] = {
+        crawl_query: dict[str, Any] = {
             "type": "crawl",
             "$or": [
                 {"firstSeed": {"$in": [None, ""]}},

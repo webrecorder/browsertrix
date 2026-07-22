@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from datetime import datetime
-from typing import Annotated, Any, DefaultDict, Literal, Optional
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from kubernetes.utils import parse_quantity
@@ -35,6 +35,7 @@ StopReason = Literal[
     "stopped_org_readonly",
     "paused_storage_quota_reached",
     "paused_time_quota_reached",
+    "paused_rate_limit_time_reached",
     "paused_org_readonly",
 ]
 
@@ -73,8 +74,8 @@ class MCDecoratorSyncResponse(BaseModel):
     """Response model for decoratorcontroller sync api"""
 
     attachments: list[dict[str, Any]]
-    status: Optional[dict[str, Any]] = None
-    annotations: Optional[dict[str, str]] = None
+    status: dict[str, Any] | None = None
+    annotations: dict[str, str] | None = None
 
 
 # ============================================================================
@@ -91,16 +92,16 @@ class CrawlSpec(BaseModel):
     started: str
     crawler_channel: str
     stopping: bool = False
-    paused_at: Optional[datetime] = None
+    paused_at: datetime | None = None
     scheduled: bool = False
     timeout: int = 0
     max_crawl_size: int = 0
-    qa_source_crawl_id: Optional[str] = ""
-    proxy_id: Optional[str] = None
-    profileid: Optional[str] = None
-    dedupe_coll_id: Optional[str] = None
+    qa_source_crawl_id: str | None = ""
+    proxy_id: str | None = None
+    profileid: str | None = None
+    dedupe_coll_id: str | None = None
     is_single_page: bool = False
-    seed_file_url: Optional[str] = ""
+    seed_file_url: str | None = ""
 
     @property
     def db_crawl_id(self) -> str:
@@ -144,24 +145,24 @@ class PodResources(BaseModel):
 class PodInfo(BaseModel):
     """Aggregate pod status info held in CrawlJob"""
 
-    exitTime: Optional[str] = None
-    exitCode: Optional[int] = None
-    isNewExit: Optional[bool] = Field(default=None, exclude=True)
-    reason: Optional[str] = None
+    exitTime: str | None = None
+    exitCode: int | None = None
+    isNewExit: bool | None = Field(default=None, exclude=True)
+    reason: str | None = None
 
     allocated: PodResources = PodResources()
     used: PodResources = PodResources()
 
-    newCpu: Optional[int] = None
-    newMemory: Optional[int] = None
-    newStorage: Optional[str] = None
-    signalAtMem: Optional[int] = None
+    newCpu: int | None = None
+    newMemory: int | None = None
+    newStorage: str | None = None
+    signalAtMem: int | None = None
 
-    evicted: Optional[bool] = False
+    evicted: bool | None = False
 
-    lastWorkers: Optional[int] = 0
+    lastWorkers: int | None = 0
 
-    sizePending: Optional[int] = 0
+    sizePending: int | None = 0
 
     def dict(self, *a, **kw):
         res = super().dict(*a, **kw)
@@ -197,7 +198,7 @@ class PodInfo(BaseModel):
             else 0
         )
 
-    def should_restart_pod(self, forced: bool = False) -> Optional[str]:
+    def should_restart_pod(self, forced: bool = False) -> str | None:
         """return true if pod should be restarted"""
         if self.newMemory and self.newMemory != self.allocated.memory:
             return "newMemory"
@@ -218,7 +219,8 @@ class PodInfo(BaseModel):
 class OpCrawlStats(CrawlStats):
     """crawl stats + internal profile update"""
 
-    profile_update: Optional[str] = ""
+    profile_update: str | None = ""
+    rate_limited: bool | None = False
 
 
 # ============================================================================
@@ -243,19 +245,19 @@ class CrawlStatus(BaseModel):
 
     filesAdded: int = 0
     filesAddedSize: int = 0
-    finished: Optional[str] = None
+    finished: str | None = None
     stopping: bool = False
-    stopReason: Optional[StopReason] = None
+    stopReason: StopReason | None = None
     initRedis: bool = False
-    crawlerImage: Optional[str] = None
+    crawlerImage: str | None = None
     lastConfigUpdate: str = ""
 
     lastActiveTime: str = ""
-    podStatus: DefaultDict[str, Annotated[PodInfo, Field(default_factory=PodInfo)]] = (
+    podStatus: defaultdict[str, Annotated[PodInfo, Field(default_factory=PodInfo)]] = (
         defaultdict(lambda: PodInfo())  # pylint: disable=unnecessary-lambda
     )
 
-    restartTime: Optional[str] = None
+    restartTime: str | None = None
     canceled: bool = False
 
     # updated on pod exits and at regular interval
@@ -271,10 +273,13 @@ class CrawlStatus(BaseModel):
     lastUpdatedTime: str = ""
 
     # any pods exited
-    anyCrawlPodNewExit: Optional[bool] = Field(default=False, exclude=True)
+    anyCrawlPodNewExit: bool | None = Field(default=False, exclude=True)
+
+    # if status is 'rate-limited', when first became rate-limited
+    rateLimitedAtTime: str | None = None
 
     # don't include in status, use by metacontroller
-    resync_after: Optional[int] = Field(default=None, exclude=True)
+    resync_after: int | None = Field(default=None, exclude=True)
 
     # last state
     last_state: TYPE_ALL_CRAWL_STATES = Field(default="starting", exclude=True)

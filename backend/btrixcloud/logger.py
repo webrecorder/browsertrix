@@ -88,6 +88,7 @@ def create_request_logging_middleware(logger):
         request_id = uuid4().hex[:8]
         request_id_token = bind_contextvars(request_id=request_id)
         start_time = time.time()
+        response = None
         try:
             response = await call_next(request)
         # pylint: disable=broad-exception-caught
@@ -106,7 +107,7 @@ def create_request_logging_middleware(logger):
                 "http_request",
                 http_method=request.method,
                 http_path=request.url.path,
-                http_status=response.status_code,
+                http_status=response.status_code if response else None,
                 duration=duration,
                 client_addr=_get_client_addr(request),
                 http_version=request.scope.get("http_version", ""),
@@ -117,7 +118,7 @@ def create_request_logging_middleware(logger):
     return request_logging_middleware
 
 
-def encode_special_types(
+def _encode_special_types(
     _logger: structlog.stdlib.BoundLogger, _method_name: str, event_dict: EventDict
 ) -> EventDict:
     """Convert UUID / datetime values to strings so they are logged as plain text
@@ -130,7 +131,7 @@ def encode_special_types(
     return event_dict
 
 
-def add_version_context(
+def _add_version_context(
     _logger: structlog.stdlib.BoundLogger, _method_name: str, event_dict: EventDict
 ) -> EventDict:
     """Add version information to the log event dict."""
@@ -140,9 +141,37 @@ def add_version_context(
     return event_dict
 
 
+_callsite_adder = structlog.processors.CallsiteParameterAdder(
+    {
+        structlog.processors.CallsiteParameter.FILENAME,
+        structlog.processors.CallsiteParameter.FUNC_NAME,
+        structlog.processors.CallsiteParameter.LINENO,
+    }
+)
+
+
+def _strip_callsite_for_excluded_events(
+    _logger: structlog.stdlib.BoundLogger, _method_name: str, event_dict: EventDict
+) -> EventDict:
+    """Strip callsite info from request-logging events and uvicorn.access,
+    whose callsite is always the same middleware location."""
+    if (
+        event_dict.get("event")
+        in (
+            "http_request",
+            "http_unhandled_exception",
+        )
+        or event_dict.get("logger") == "uvicorn.access"
+    ):
+        event_dict.pop("filename", None)
+        event_dict.pop("func_name", None)
+        event_dict.pop("lineno", None)
+    return event_dict
+
+
 SHARED_PROCESSORS: list[Processor] = [
-    encode_special_types,
-    add_version_context,
+    _encode_special_types,
+    _add_version_context,
     structlog.contextvars.merge_contextvars,
     structlog.stdlib.add_log_level,
     structlog.stdlib.add_logger_name,
@@ -151,13 +180,8 @@ SHARED_PROCESSORS: list[Processor] = [
     structlog.processors.TimeStamper(fmt="iso"),
     structlog.processors.StackInfoRenderer(),
     structlog.processors.UnicodeDecoder(),
-    structlog.processors.CallsiteParameterAdder(
-        {
-            structlog.processors.CallsiteParameter.FILENAME,
-            structlog.processors.CallsiteParameter.FUNC_NAME,
-            structlog.processors.CallsiteParameter.LINENO,
-        }
-    ),
+    _callsite_adder,
+    _strip_callsite_for_excluded_events,
 ]
 
 

@@ -272,6 +272,7 @@ const main = {
 /** @type {import('webpack').Configuration} */
 const vnc = {
   entry: "./node_modules/@novnc/novnc/core/rfb.js",
+  target: "web",
   experiments: { outputModule: true },
   output: {
     filename: "js/novnc.js",

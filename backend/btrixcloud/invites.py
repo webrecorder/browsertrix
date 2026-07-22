@@ -4,7 +4,7 @@ import hashlib
 import os
 import time
 import urllib.parse
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 import structlog
@@ -82,8 +82,8 @@ class InviteOps:
         new_user_invite: InvitePending,
         invite_token: UUID,
         org_name: str,
-        subscription: Optional[Subscription],
-        headers: Optional[dict],
+        subscription: Subscription | None,
+        headers: dict | None,
     ) -> None:
         """Add invite for new user"""
 
@@ -123,7 +123,7 @@ class InviteOps:
         user: User,
         org: Organization,
         org_name: str,
-        headers: Optional[dict],
+        headers: dict | None,
     ) -> None:
         """Add existing user invite"""
 
@@ -158,8 +158,8 @@ class InviteOps:
     async def get_valid_invite(
         self,
         invite_token: UUID,
-        email: Optional[EmailStr],
-        userid: Optional[UUID] = None,
+        email: EmailStr | None,
+        userid: UUID | None = None,
     ) -> InvitePending:
         """Retrieve a valid invite data from db, or throw if invalid"""
         token_hash = get_hash(invite_token)
@@ -182,7 +182,7 @@ class InviteOps:
         await self.invites.delete_one({"_id": invite_token})
 
     async def remove_invite_by_email(
-        self, email: EmailStr, oid: Optional[UUID] = None
+        self, email: EmailStr, oid: UUID | None = None
     ) -> Any:
         """remove invite from invite list by email"""
         query: dict[str, object] = {"email": email}
@@ -199,7 +199,7 @@ class InviteOps:
         user: User,
         user_manager: UserManager,
         org: Organization,
-        headers: Optional[dict] = None,
+        headers: dict | None = None,
     ) -> tuple[bool, UUID]:
         """Invite user to org (if not specified, to default org).
 
@@ -256,7 +256,7 @@ class InviteOps:
     async def get_pending_invites(
         self,
         users: UserManager,
-        org: Optional[Organization] = None,
+        org: Organization | None = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ) -> tuple[list[InviteOut], int]:

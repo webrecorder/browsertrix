@@ -2,13 +2,14 @@ import { msg } from "@lit/localize";
 import clsx from "clsx";
 import { html, type TemplateResult } from "lit";
 
-import type {
-  ArchivedItem,
-  Crawl,
-  CrawlReplay,
-  ProxiesAPIResponse,
-  Upload,
-  Workflow,
+import {
+  ScopeType,
+  type ArchivedItem,
+  type Crawl,
+  type CrawlReplay,
+  type ProxiesAPIResponse,
+  type Upload,
+  type Workflow,
 } from "@/types/crawler";
 import {
   FAILED_STATES,
@@ -19,7 +20,7 @@ import {
 } from "@/types/crawlState";
 import type { OrgData } from "@/types/org";
 import type { QARun } from "@/types/qa";
-import { WorkflowScopeType } from "@/types/workflow";
+import { type WorkflowScopeType } from "@/types/workflow";
 import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
@@ -30,12 +31,12 @@ export const inactiveCrawlStates = SUCCESSFUL_AND_FAILED_STATES;
 
 export const DEFAULT_MAX_SCALE = 8;
 
-export const DEPTH_SUPPORTED_SCOPES = [
-  "prefix",
-  "host",
-  "domain",
-  "custom",
-  "any",
+const DEPTH_SUPPORTED_SCOPES = [
+  ScopeType.Prefix,
+  ScopeType.Host,
+  ScopeType.Domain,
+  ScopeType.Custom,
+  ScopeType.Any,
 ];
 
 export function isCrawl(item: Crawl | Upload): item is Crawl {
@@ -70,11 +71,14 @@ export function isPaused(state: string | null) {
   return state && (PAUSED_STATES as readonly string[]).includes(state);
 }
 
-export function isPageScopeType(
+export function isDepthSupportedScopeType(
   scope?: (typeof WorkflowScopeType)[keyof typeof WorkflowScopeType],
-) {
+): scope is ScopeType {
   return (
-    scope === WorkflowScopeType.Page || scope === WorkflowScopeType.PageList
+    scope !== undefined &&
+    (
+      DEPTH_SUPPORTED_SCOPES as readonly (typeof WorkflowScopeType)[keyof typeof WorkflowScopeType][]
+    ).includes(scope)
   );
 }
 

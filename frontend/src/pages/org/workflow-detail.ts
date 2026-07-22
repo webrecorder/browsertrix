@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import type { SlDropdown } from "@shoelace-style/shoelace";
@@ -19,6 +20,7 @@ import { type Crawl, type CrawlLog, type Seed, type Workflow } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Alert } from "@/components/ui/alert";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
@@ -116,6 +118,9 @@ export class WorkflowDetail extends BtrixElement {
       new URLSearchParams(location.search).get(CRAWLS_PAGINATION_NAME),
     ),
   };
+
+  @consume({ context: docsUrlContext })
+  private readonly docsUrl?: DocsUrlContext;
 
   @query("#pausedNotice")
   private readonly pausedNotice?: Alert | null;
@@ -369,7 +374,8 @@ export class WorkflowDetail extends BtrixElement {
     return (
       this.workflow?.isCrawlRunning &&
       !this.workflow.lastCrawlStopping &&
-      this.workflow.lastCrawlState === "running"
+      this.workflow.lastCrawlState &&
+      ["running", "rate-limited"].includes(this.workflow.lastCrawlState)
     );
   }
 
@@ -706,7 +712,8 @@ export class WorkflowDetail extends BtrixElement {
         ${this.renderCrawls()}
       </btrix-tab-group-panel>
       <btrix-tab-group-panel name=${WorkflowTab.LatestCrawl}>
-        ${this.renderPausedNotice()} ${this.renderLatestCrawl()}
+        ${this.renderRateLimitedNotice()} ${this.renderPausedNotice()}
+        ${this.renderLatestCrawl()}
       </btrix-tab-group-panel>
       <btrix-tab-group-panel name=${WorkflowTab.Settings}>
         ${this.renderSettings()}
@@ -1490,6 +1497,44 @@ export class WorkflowDetail extends BtrixElement {
     `;
   };
 
+  private renderRateLimitedNotice() {
+    if (this.workflow?.lastCrawlState !== "rate-limited") {
+      return html``;
+    }
+
+    return html`
+      <btrix-alert class="sticky top-2 z-50 part-[base]:mb-5" variant="warning">
+        <div class="mb-2 flex justify-between">
+          <span class="inline-flex items-center gap-1.5">
+            <sl-icon
+              class="text-base"
+              name="exclamation-diamond-fill"
+            ></sl-icon>
+            <strong class="font-medium">
+              ${msg("Rate Limiting Detected")}
+            </strong>
+          </span>
+        </div>
+        <div class="text-pretty">
+          <p>
+            ${msg(
+              "This crawl is running slower due to being rate limited by a website being crawled.",
+            )}
+            <a
+              target="_blank"
+              href="${this
+                .docsUrl}user-guide/running-crawl/#rate-limit-detection"
+            >
+              <strong class="font-semibold"
+                >${msg("More Information")}</strong
+              ></a
+            >
+          </p>
+        </div>
+      </btrix-alert>
+    `;
+  }
+
   private renderLatestCrawlAction() {
     if (!this.workflow || !this.lastCrawlId) return;
 
@@ -1541,26 +1586,6 @@ export class WorkflowDetail extends BtrixElement {
 
     const execTime = () => {
       if (!latestCrawl) return skeleton;
-
-      if (this.isRunning) {
-        return html`<span class="text-neutral-400">
-          ${noData}
-          <btrix-popover
-            content=${msg(
-              "Execution time will be calculated once this crawl is finished or paused.",
-            )}
-            distance="12"
-          >
-            <sl-icon name="question-circle"></sl-icon>
-          </btrix-popover>
-        </span>`;
-      }
-
-      if (latestCrawl.crawlExecSeconds < 60) {
-        return this.localize.humanizeDuration(
-          latestCrawl.crawlExecSeconds * 1000,
-        );
-      }
 
       return humanizeExecutionSeconds(latestCrawl.crawlExecSeconds, {
         style: "short",

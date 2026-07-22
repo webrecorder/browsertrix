@@ -4,18 +4,9 @@
 
 import asyncio
 import urllib.parse
+from collections.abc import AsyncGenerator, Callable
 from datetime import datetime
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncGenerator,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 import structlog
@@ -112,7 +103,7 @@ class PageOps:
         self, crawl_id: str, batch_size=100, num_retries=5
     ):
         """Add pages to database from WACZ files"""
-        pages_buffer: List[Page] = []
+        pages_buffer: list[Page] = []
         crawl = await self.crawl_ops.get_crawl_out(crawl_id)
 
         wacz_logger = logger.bind(crawl_id=crawl_id, oid=crawl.oid)
@@ -185,7 +176,7 @@ class PageOps:
             )
 
     def _get_page_from_dict(
-        self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID, new_uuid: bool
+        self, page_dict: dict[str, Any], crawl_id: str, oid: UUID, new_uuid: bool
     ) -> Page:
         """Return Page object from dict"""
         page_id = page_dict.get("id", "") if not new_uuid else None
@@ -218,7 +209,7 @@ class PageOps:
         p.compute_page_type()
         return p
 
-    async def _add_pages_to_db(self, crawl_id: str, pages: List[Page], ordered=True):
+    async def _add_pages_to_db(self, crawl_id: str, pages: list[Page], ordered=True):
         """Add batch of pages to db in one insert"""
         try:
             result = await self.pages.insert_many(
@@ -244,9 +235,9 @@ class PageOps:
 
     async def add_page_to_db(
         self,
-        page_dict: Dict[str, Any],
+        page_dict: dict[str, Any],
         crawl_id: str,
-        qa_run_id: Optional[str],
+        qa_run_id: str | None,
         oid: UUID,
     ):
         """Add page to database"""
@@ -288,7 +279,7 @@ class PageOps:
             await self.add_qa_run_for_page(page.id, oid, qa_run_id, crawl_id, compare)
 
     async def update_crawl_file_and_error_counts(
-        self, crawl_id: str, pages: Optional[List[Page]] = None
+        self, crawl_id: str, pages: list[Page] | None = None
     ):
         """Update crawl filePageCount and errorPageCount for pages."""
         file_count = 0
@@ -324,11 +315,11 @@ class PageOps:
             {"$inc": inc_query},
         )
 
-    async def delete_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
+    async def delete_crawl_pages(self, crawl_id: str, oid: UUID | None = None):
         """Delete crawl pages from db and clear crawl page counts"""
         delete_logger = logger.bind(crawl_id=crawl_id, oid=oid)
 
-        query: Dict[str, Union[str, UUID]] = {"crawl_id": crawl_id}
+        query: dict[str, str | UUID] = {"crawl_id": crawl_id}
         if oid:
             query["oid"] = oid
         try:
@@ -363,10 +354,10 @@ class PageOps:
         self,
         page_id: UUID,
         oid: UUID,
-        crawl_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        crawl_id: str | None = None,
+    ) -> dict[str, Any]:
         """Return page dict by id"""
-        query: Dict[str, Union[str, UUID]] = {"_id": page_id, "oid": oid}
+        query: dict[str, str | UUID] = {"_id": page_id, "oid": oid}
         if crawl_id:
             query["crawl_id"] = crawl_id
 
@@ -379,7 +370,7 @@ class PageOps:
         self,
         page_id: UUID,
         oid: UUID,
-        crawl_id: Optional[str] = None,
+        crawl_id: str | None = None,
     ) -> Page:
         """Return Page object by id"""
         page_raw = await self.get_page_raw(page_id, oid, crawl_id)
@@ -389,9 +380,9 @@ class PageOps:
         self,
         page_id: UUID,
         oid: UUID,
-        crawl_id: Optional[str] = None,
-        qa_run_id: Optional[str] = None,
-    ) -> Union[PageOut, PageOutWithSingleQA]:
+        crawl_id: str | None = None,
+        qa_run_id: str | None = None,
+    ) -> PageOut | PageOutWithSingleQA:
         """Return PageOut or PageOutWithSingleQA for page"""
         page_raw = await self.get_page_raw(page_id, oid, crawl_id)
         if qa_run_id:
@@ -446,14 +437,12 @@ class PageOps:
         self,
         page_id: UUID,
         oid: UUID,
-        approved: Optional[bool] = None,
-        crawl_id: Optional[str] = None,
-        user: Optional[User] = None,
-    ) -> Dict[str, bool]:
+        approved: bool | None = None,
+        crawl_id: str | None = None,
+        user: User | None = None,
+    ) -> dict[str, bool]:
         """Update page manual review"""
-        query: Dict[str, Union[Optional[bool], str, datetime, UUID]] = {
-            "approved": approved
-        }
+        query: dict[str, bool | None | str | datetime | UUID] = {"approved": approved}
         query["modified"] = dt_now()
         if user:
             query["userid"] = user.id
@@ -476,7 +465,7 @@ class PageOps:
         text: str,
         user: User,
         crawl_id: str,
-    ) -> Dict[str, Union[bool, PageNote]]:
+    ) -> dict[str, bool | PageNote]:
         """Add note to page"""
         note = PageNote(
             id=uuid4(), text=text, userid=user.id, userName=user.name, created=dt_now()
@@ -505,7 +494,7 @@ class PageOps:
         note_in: PageNoteEdit,
         user: User,
         crawl_id: str,
-    ) -> Dict[str, Union[bool, PageNote]]:
+    ) -> dict[str, bool | PageNote]:
         """Update specific page note"""
         page = await self.get_page_raw(page_id, oid)
         page_notes = page.get("notes", [])
@@ -549,7 +538,7 @@ class PageOps:
         oid: UUID,
         delete: PageNoteDelete,
         crawl_id: str,
-    ) -> Dict[str, bool]:
+    ) -> dict[str, bool]:
         """Delete specific page notes"""
         page = await self.get_page_raw(page_id, oid)
         page_notes = page.get("notes", [])
@@ -574,31 +563,31 @@ class PageOps:
 
     async def list_pages(
         self,
-        coll_id: Optional[UUID] = None,
-        crawl_ids: Optional[List[str]] = None,
+        coll_id: UUID | None = None,
+        crawl_ids: list[str] | None = None,
         public_or_unlisted_only=False,
-        org: Optional[Organization] = None,
-        search: Optional[str] = None,
-        url: Optional[str] = None,
-        url_prefix: Optional[str] = None,
-        ts: Optional[datetime] = None,
-        is_seed: Optional[bool] = None,
-        depth: Optional[int] = None,
-        qa_run_id: Optional[str] = None,
-        qa_filter_by: Optional[str] = None,
-        qa_gte: Optional[float] = None,
-        qa_gt: Optional[float] = None,
-        qa_lte: Optional[float] = None,
-        qa_lt: Optional[float] = None,
-        reviewed: Optional[bool] = None,
-        approved: Optional[List[Union[bool, None]]] = None,
-        has_notes: Optional[bool] = None,
+        org: Organization | None = None,
+        search: str | None = None,
+        url: str | None = None,
+        url_prefix: str | None = None,
+        ts: datetime | None = None,
+        is_seed: bool | None = None,
+        depth: int | None = None,
+        qa_run_id: str | None = None,
+        qa_filter_by: str | None = None,
+        qa_gte: float | None = None,
+        qa_gt: float | None = None,
+        qa_lte: float | None = None,
+        qa_lt: float | None = None,
+        reviewed: bool | None = None,
+        approved: list[bool | None] | None = None,
+        has_notes: bool | None = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sort_by: Optional[str] = None,
-        sort_direction: Optional[int] = -1,
+        sort_by: str | None = None,
+        sort_direction: int | None = -1,
         include_total=False,
-    ) -> Tuple[Union[List[PageOut], List[PageOutWithSingleQA]], int]:
+    ) -> tuple[list[PageOut] | list[PageOutWithSingleQA], int]:
         """List all pages in crawl"""
         # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
         # Zero-index page for query
@@ -698,7 +687,7 @@ class PageOps:
 
                 query[f"qa.{qa_run_id}.{qa_filter_by}"] = range_filter
 
-        aggregate: List[Dict[str, Union[int, object]]] = [{"$match": query}]
+        aggregate: list[dict[str, int | object]] = [{"$match": query}]
 
         # Extra QA Set
         if qa_run_id:
@@ -795,9 +784,9 @@ class PageOps:
         self,
         coll_id: UUID,
         oid: UUID,
-        url_prefix: Optional[str] = None,
+        url_prefix: str | None = None,
         page_size: int = DEFAULT_PAGE_SIZE,
-    ) -> List[PageUrlCount]:
+    ) -> list[PageUrlCount]:
         """List all page URLs in collection sorted desc by snapshot count
         unless prefix is specified"""
         crawl_ids = await self.coll_ops.get_collection_crawl_ids(coll_id, oid)
@@ -830,7 +819,7 @@ class PageOps:
 
         return list(url_counts.values())
 
-    async def re_add_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
+    async def re_add_crawl_pages(self, crawl_id: str, oid: UUID | None = None):
         """Delete existing pages for crawl and re-add from WACZs."""
 
         try:
@@ -920,10 +909,10 @@ class PageOps:
             readd_logger.exception("page_re_add_error")
 
     async def re_add_all_crawl_pages(
-        self, org: Organization, crawl_type: Optional[str] = None
+        self, org: Organization, crawl_type: str | None = None
     ):
         """Re-add pages for all crawls and uploads in org"""
-        match_query: Dict[str, Union[object, UUID]] = {
+        match_query: dict[str, object | UUID] = {
             "oid": org.id,
             "finished": {"$ne": None},
         }
@@ -948,7 +937,7 @@ class PageOps:
         self,
         crawl_id: str,
         qa_run_id: str,
-        thresholds: Dict[str, List[float]],
+        thresholds: dict[str, list[float]],
         key: str = "screenshotMatch",
     ):
         """Get counts for pages in QA run in buckets by score key based on thresholds"""
@@ -1029,7 +1018,7 @@ class PageOps:
 
         return crawl_type
 
-    async def get_unique_page_count(self, crawl_ids: List[str]) -> int:
+    async def get_unique_page_count(self, crawl_ids: list[str]) -> int:
         """Get count of unique page URLs across list of archived items"""
         cursor = self.pages.aggregate(
             [
@@ -1042,8 +1031,8 @@ class PageOps:
         return res[0].get("urls") if res else 0
 
     async def get_top_page_hosts(
-        self, crawl_ids: List[str]
-    ) -> List[dict[str, str | int]]:
+        self, crawl_ids: list[str]
+    ) -> list[dict[str, str | int]]:
         """Get count of top page hosts across all archived items"""
         cursor = self.pages.aggregate(
             [
@@ -1386,22 +1375,22 @@ def init_pages_api(
     async def get_crawl_pages_list(
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
-        search: Optional[str] = None,
-        url: Optional[str] = None,
-        urlPrefix: Optional[str] = None,
-        ts: Optional[datetime] = None,
-        isSeed: Optional[bool] = None,
-        depth: Optional[int] = None,
-        reviewed: Optional[bool] = None,
-        approved: Optional[str] = None,
-        hasNotes: Optional[bool] = None,
+        search: str | None = None,
+        url: str | None = None,
+        urlPrefix: str | None = None,
+        ts: datetime | None = None,
+        isSeed: bool | None = None,
+        depth: int | None = None,
+        reviewed: bool | None = None,
+        approved: str | None = None,
+        hasNotes: bool | None = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sortBy: Optional[str] = None,
-        sortDirection: Optional[int] = -1,
+        sortBy: str | None = None,
+        sortDirection: int | None = -1,
     ):
         """Retrieve paginated list of pages"""
-        formatted_approved: Optional[List[Union[bool, None]]] = None
+        formatted_approved: list[bool | None] | None = None
         if approved:
             formatted_approved = str_list_to_bools(approved.split(","))
 
@@ -1433,11 +1422,11 @@ def init_pages_api(
     async def get_search_pages_list(
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
-        search: Optional[str] = None,
-        url: Optional[str] = None,
-        ts: Optional[datetime] = None,
-        isSeed: Optional[bool] = None,
-        depth: Optional[int] = None,
+        search: str | None = None,
+        url: str | None = None,
+        ts: datetime | None = None,
+        isSeed: bool | None = None,
+        depth: int | None = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ):
@@ -1464,11 +1453,11 @@ def init_pages_api(
     async def get_search_pages_list_shareable_crawl_config(
         cid: UUID,
         org: Organization = Depends(org_public),
-        search: Optional[str] = None,
-        url: Optional[str] = None,
-        ts: Optional[datetime] = None,
-        isSeed: Optional[bool] = None,
-        depth: Optional[int] = None,
+        search: str | None = None,
+        url: str | None = None,
+        ts: datetime | None = None,
+        isSeed: bool | None = None,
+        depth: int | None = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ):
@@ -1506,15 +1495,15 @@ def init_pages_api(
         coll_id: UUID,
         response: Response,
         org: Organization = Depends(org_public),
-        search: Optional[str] = None,
-        url: Optional[str] = None,
-        ts: Optional[datetime] = None,
-        isSeed: Optional[bool] = None,
-        depth: Optional[int] = None,
+        search: str | None = None,
+        url: str | None = None,
+        ts: datetime | None = None,
+        isSeed: bool | None = None,
+        depth: int | None = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sortBy: Optional[str] = None,
-        sortDirection: Optional[int] = -1,
+        sortBy: str | None = None,
+        sortDirection: int | None = -1,
     ):
         """Retrieve paginated list of pages in collection"""
         pages, _ = await ops.list_pages(
@@ -1566,15 +1555,15 @@ def init_pages_api(
         coll_id: UUID,
         response: Response,
         org: Organization = Depends(org_viewer_dep),
-        search: Optional[str] = None,
-        url: Optional[str] = None,
-        ts: Optional[datetime] = None,
-        isSeed: Optional[bool] = None,
-        depth: Optional[int] = None,
+        search: str | None = None,
+        url: str | None = None,
+        ts: datetime | None = None,
+        isSeed: bool | None = None,
+        depth: int | None = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sortBy: Optional[str] = None,
-        sortDirection: Optional[int] = -1,
+        sortBy: str | None = None,
+        sortDirection: int | None = -1,
     ):
         """Retrieve paginated list of pages in collection"""
         pages, _ = await ops.list_pages(
@@ -1602,22 +1591,22 @@ def init_pages_api(
     async def get_pages_list_with_qa(
         crawl_id: str,
         qa_run_id: str,
-        filterQABy: Optional[str] = None,
-        gte: Optional[float] = None,
-        gt: Optional[float] = None,
-        lte: Optional[float] = None,
-        lt: Optional[float] = None,
-        reviewed: Optional[bool] = None,
-        approved: Optional[str] = None,
-        hasNotes: Optional[bool] = None,
+        filterQABy: str | None = None,
+        gte: float | None = None,
+        gt: float | None = None,
+        lte: float | None = None,
+        lt: float | None = None,
+        reviewed: bool | None = None,
+        approved: str | None = None,
+        hasNotes: bool | None = None,
         org: Organization = Depends(org_crawl_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sortBy: Optional[str] = None,
-        sortDirection: Optional[int] = -1,
+        sortBy: str | None = None,
+        sortDirection: int | None = -1,
     ):
         """Retrieve paginated list of pages"""
-        formatted_approved: Optional[List[Union[bool, None]]] = None
+        formatted_approved: list[bool | None] | None = None
         if approved:
             formatted_approved = str_list_to_bools(approved.split(","))
 
@@ -1648,7 +1637,7 @@ def init_pages_api(
     )
     async def get_collection_url_list(
         coll_id: UUID,
-        urlPrefix: Optional[str] = None,
+        urlPrefix: str | None = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         org: Organization = Depends(org_viewer_dep),
         # page: int = 1,

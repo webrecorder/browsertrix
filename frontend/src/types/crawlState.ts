@@ -1,6 +1,7 @@
 // Match backend TYPE_RUNNING_STATES in models.py
 export const RUNNING_STATES = [
   "running",
+  "rate-limited",
   "pending-wait",
   "generate-wacz",
   "uploading-wacz",
@@ -20,6 +21,7 @@ export const PAUSED_STATES = [
   "paused_storage_quota_reached",
   "paused_time_quota_reached",
   "paused_org_readonly",
+  "paused_rate_limit_time_reached",
 ] as const;
 
 // Match backend TYPE_WAITING_STATES in models.py

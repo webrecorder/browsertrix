@@ -1,7 +1,6 @@
 import os
 import subprocess
 import time
-from typing import Dict
 from uuid import UUID
 
 import structlog
@@ -685,7 +684,7 @@ def profile_browser_2_id(admin_auth_headers, default_org_id):
 
 
 def create_profile_browser(
-    headers: Dict[str, str],
+    headers: dict[str, str],
     oid: UUID,
     url="https://old.webrecorder.net",
     baseprofile="",
@@ -745,7 +744,7 @@ PROFILE_2_TAGS = ["profile", "specs-webrecorder"]
 
 
 def prepare_browser_for_profile_commit(
-    browser_id: str, headers: Dict[str, str], oid: UUID, url=None
+    browser_id: str, headers: dict[str, str], oid: UUID, url=None
 ) -> None:
     # Ping to make sure it doesn't expire
     r = requests.post(

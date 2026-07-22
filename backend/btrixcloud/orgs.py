@@ -8,19 +8,9 @@ import json
 import math
 import os
 import time
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from tempfile import NamedTemporaryFile
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncGenerator,
-    Awaitable,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Literal, cast
 from uuid import UUID, uuid4
 
 import structlog
@@ -39,10 +29,8 @@ from pymongo.errors import AutoReconnect, DuplicateKeyError
 
 from .logger import clear_log_context, set_log_context
 from .models import (
-    ACTIVE,
     MAX_BROWSER_WINDOWS,
     MAX_CRAWL_SCALE,
-    PAUSED_PAYMENT_FAILED,
     REASON_PAUSED,
     RUNNING_STATES,
     SUCCESSFUL_STATES,
@@ -94,9 +82,11 @@ from .models import (
     StorageRef,
     Subscription,
     SubscriptionCancel,
+    SubscriptionStatus,
     SubscriptionUpdate,
     SuccessResponseId,
     UpdatedResponse,
+    UpdateOrgNote,
     UpdateRole,
     UploadedCrawl,
     User,
@@ -201,15 +191,15 @@ class OrgOps(BaseOrgs):
     invites: InviteOps
     user_manager: UserManager
     crawl_manager: CrawlManager
-    register_to_org_id: Optional[str]
+    register_to_org_id: str | None
     base_crawl_ops: BaseCrawlOps
-    default_primary: Optional[StorageRef]
+    default_primary: StorageRef | None
 
-    router: Optional[APIRouter]
-    org_viewer_dep: Optional[Callable[..., AsyncGenerator[Organization, None]]]
-    org_crawl_dep: Optional[Callable[..., Awaitable[Organization]]]
-    org_owner_dep: Optional[Callable[..., Awaitable[Organization]]]
-    org_public: Optional[Callable[..., AsyncGenerator[Organization, None]]]
+    router: APIRouter | None
+    org_viewer_dep: Callable[..., AsyncGenerator[Organization, None]] | None
+    org_crawl_dep: Callable[..., Awaitable[Organization]] | None
+    org_owner_dep: Callable[..., Awaitable[Organization]] | None
+    org_public: Callable[..., AsyncGenerator[Organization, None]] | None
 
     def __init__(
         self,
@@ -307,7 +297,7 @@ class OrgOps(BaseOrgs):
         page: int = 1,
         sort_by: str = "name",
         sort_direction: int = 1,
-    ) -> tuple[List[Organization], int]:
+    ) -> tuple[list[Organization], int]:
         """Get all orgs a user is a member of"""
         # pylint: disable=duplicate-code,too-many-locals
 
@@ -315,11 +305,11 @@ class OrgOps(BaseOrgs):
         page = page - 1
         skip = page_size * page
 
-        query: Dict[str, Any] = {}
+        query: dict[str, Any] = {}
         if not user.is_superuser:
             query[f"users.{user.id}"] = {"$gte": role.value}
 
-        aggregate: List[Dict[str, Any]] = [
+        aggregate: list[dict[str, Any]] = [
             {"$match": query},
             {"$set": {"nameLower": {"$toLower": "$name"}}},
         ]
@@ -383,8 +373,8 @@ class OrgOps(BaseOrgs):
         return [Organization.from_dict(data) for data in items], total
 
     async def get_org_for_user_by_id(
-        self, oid: UUID, user: Optional[User], role: UserRole = UserRole.VIEWER
-    ) -> Optional[Organization]:
+        self, oid: UUID, user: User | None, role: UserRole = UserRole.VIEWER
+    ) -> Organization | None:
         """Get an org for user by unique id"""
         query: dict[str, object]
         if not user or user.is_superuser:
@@ -399,10 +389,10 @@ class OrgOps(BaseOrgs):
 
     async def get_users_for_org(
         self, org: Organization, min_role=UserRole.VIEWER
-    ) -> List[User]:
+    ) -> list[User]:
         """get users for org"""
         uuid_ids = [UUID(id_) for id_, role in org.users.items() if role >= min_role]
-        users: List[User] = []
+        users: list[User] = []
         async for user_dict in self.users_db.find({"id": {"$in": uuid_ids}}):
             users.append(User(**user_dict))
         return users
@@ -510,10 +500,11 @@ class OrgOps(BaseOrgs):
 
     async def create_org(
         self,
-        name: Optional[str] = None,
-        slug: Optional[str] = None,
-        quotas: Optional[OrgQuotas] = None,
-        subscription: Optional[Subscription] = None,
+        name: str | None = None,
+        slug: str | None = None,
+        quotas: OrgQuotas | None = None,
+        subscription: Subscription | None = None,
+        note: str | None = None,
     ) -> Organization:
         """create new org"""
         id_ = uuid4()
@@ -533,9 +524,13 @@ class OrgOps(BaseOrgs):
             storage=self.default_primary,
             quotas=quotas or OrgQuotas(),
             subscription=subscription,
+            note=note,
         )
 
-        if subscription and subscription.status == PAUSED_PAYMENT_FAILED:
+        if (
+            subscription
+            and subscription.status == SubscriptionStatus.PAUSED_PAYMENT_FAILED
+        ):
             org.readOnly = True
             org.readOnlyReason = REASON_PAUSED
 
@@ -543,6 +538,15 @@ class OrgOps(BaseOrgs):
             await self.orgs.insert_one(org.to_dict())
         except DuplicateKeyError as dupe:
             field = get_duplicate_key_error_field(dupe)
+            logger.error(
+                "duplicate_key_when_creating_org",
+                field=field,
+                name=name,
+                slug=slug,
+                quotas=quotas,
+                subscription=subscription,
+                note=note,
+            )
             raise HTTPException(
                 status_code=400, detail=f"duplicate_org_{field}"
             ) from dupe
@@ -558,7 +562,7 @@ class OrgOps(BaseOrgs):
         org.subscription = subscription
         include = {"subscription"}
 
-        if subscription.status == PAUSED_PAYMENT_FAILED:
+        if subscription.status == SubscriptionStatus.PAUSED_PAYMENT_FAILED:
             org.readOnly = True
             org.readOnlyReason = REASON_PAUSED
             include.add("readOnly")
@@ -642,7 +646,7 @@ class OrgOps(BaseOrgs):
 
     async def update_subscription_data(
         self, update: SubscriptionUpdate
-    ) -> Optional[Organization]:
+    ) -> Organization | None:
         """Update subscription by id"""
 
         query: dict[str, Any] = {
@@ -651,10 +655,10 @@ class OrgOps(BaseOrgs):
             "subscription.futureCancelDate": update.futureCancelDate,
         }
 
-        if update.status == PAUSED_PAYMENT_FAILED:
+        if update.status == SubscriptionStatus.PAUSED_PAYMENT_FAILED:
             query["readOnly"] = True
             query["readOnlyReason"] = REASON_PAUSED
-        elif update.status == ACTIVE:
+        elif update.status == SubscriptionStatus.ACTIVE:
             query["readOnly"] = False
             query["readOnlyReason"] = ""
 
@@ -670,7 +674,7 @@ class OrgOps(BaseOrgs):
 
     async def cancel_subscription_data(
         self, cancel: SubscriptionCancel
-    ) -> Optional[Organization]:
+    ) -> Organization | None:
         """Find org by subscription by id and delete subscription data, return org"""
         org_data = await self.orgs.find_one_and_update(
             {"subscription.subId": cancel.subId},
@@ -679,7 +683,7 @@ class OrgOps(BaseOrgs):
         )
         return Organization.from_dict(org_data) if org_data else None
 
-    async def find_org_by_subscription_id(self, sub_id: str) -> Optional[Organization]:
+    async def find_org_by_subscription_id(self, sub_id: str) -> Organization | None:
         """Find org by subscription id"""
         org_data = await self.orgs.find_one({"subscription.subId": sub_id})
         return Organization.from_dict(org_data) if org_data else None
@@ -909,7 +913,7 @@ class OrgOps(BaseOrgs):
         self,
         invite: InvitePending,
         user: User,
-        default_org: Optional[Organization] = None,
+        default_org: Organization | None = None,
     ) -> Organization:
         """Lookup an invite by user email (if new) or userid (if existing)
 
@@ -998,7 +1002,7 @@ class OrgOps(BaseOrgs):
         org.users[str(userid)] = role
         await self.update_users(org)
 
-    async def get_org_owners(self, org: Organization) -> List[str]:
+    async def get_org_owners(self, org: Organization) -> list[str]:
         """Return list of org's Owner users."""
         org_owners = []
         for key, value in org.users.items():
@@ -1275,7 +1279,7 @@ class OrgOps(BaseOrgs):
         Append async generators to list in order that we want them to be
         exhausted in order to stream a semantically correct JSON document.
         """
-        export_stream_generators: List[AsyncGenerator] = []
+        export_stream_generators: list[AsyncGenerator] = []
 
         oid_query = {"oid": org.id}
 
@@ -1289,7 +1293,7 @@ class OrgOps(BaseOrgs):
         async def json_opening_gen() -> AsyncGenerator:
             """Async generator that opens JSON document, writes dbVersion and org"""
             # pylint: disable=consider-using-f-string
-            opening_section = '{{"data": {{\n"dbVersion": "{0}",\n"org": {1},\n'.format(
+            opening_section = '{{"data": {{\n"dbVersion": "{}",\n"org": {},\n'.format(
                 version.get("version"),
                 json.dumps(org_serialized.to_dict(), cls=JSONSerializer),
             )
@@ -1302,7 +1306,7 @@ class OrgOps(BaseOrgs):
             skip_closing_comma=False,
         ) -> AsyncGenerator:
             """Async generator to add json items in list, keyed by supplied str"""
-            yield f'"{key}": [\n'.encode("utf-8")
+            yield f'"{key}": [\n'.encode()
 
             doc_index = 1
 
@@ -1314,7 +1318,7 @@ class OrgOps(BaseOrgs):
                     yield b"\n"
                 doc_index += 1
 
-            yield f"]{'' if skip_closing_comma else ','}\n".encode("utf-8")
+            yield f"]{'' if skip_closing_comma else ','}\n".encode()
 
         async def json_closing_gen() -> AsyncGenerator:
             """Async generator to close JSON document"""
@@ -1371,7 +1375,7 @@ class OrgOps(BaseOrgs):
         self,
         stream_file_object,
         ignore_version: bool = False,
-        storage_name: Optional[str] = None,
+        storage_name: str | None = None,
     ) -> None:
         """Import org from exported org JSON
 
@@ -1408,7 +1412,7 @@ class OrgOps(BaseOrgs):
         stream_org = json_stream.to_standard_types(stream_org)
         oid = UUID(stream_org["_id"])
 
-        existing_org: Optional[Organization] = None
+        existing_org: Organization | None = None
         try:
             existing_org = await self.get_org_by_id(oid)
         except HTTPException:
@@ -1750,6 +1754,17 @@ class OrgOps(BaseOrgs):
                 unstructured_message=f"Error removing coll {coll_id} from org {org.id} defaults",
             )
 
+    async def update_org_note(
+        self,
+        org: Organization,
+        note: str | None,
+    ):
+        """Update an org's private note field"""
+        await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            {"$set": {"note": note}},
+        )
+
 
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-arguments
@@ -1855,10 +1870,57 @@ def init_orgs_api(
         new_org: OrgCreate,
         user: User = Depends(user_dep),
     ):
+        create_logger = logger.bind(**new_org.model_dump())
+
         if not user.is_superuser:
+            create_logger.warning("org_create_user_not_superuser")
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        org = await ops.create_org(new_org.name, new_org.slug)
+        quotas = new_org.quotas
+        plan_id = new_org.planId
+        note = new_org.note
+
+        if plan_id and quotas:
+            # disallow setting both planId and quotas
+            create_logger.warning("org_create_with_both_plan_and_quotas")
+            raise HTTPException(
+                status_code=400, detail="invalid_request_use_either_plan_or_quotas"
+            )
+
+        if plan_id:
+            plans_json = os.environ.get("AVAILABLE_PLANS")
+            if not plans_json:
+                create_logger.error("org_create_plans_not_configured")
+                raise HTTPException(status_code=400, detail="invalid_plan")
+
+            try:
+                plans = PlansResponse.model_validate_json(plans_json)
+            except ValidationError as err:
+                create_logger.error("org_create_invalid_plans_configured")
+                raise HTTPException(status_code=400, detail="invalid_plans") from err
+
+            plan = next((p for p in plans.plans if p.id == plan_id), None)
+            if not plan:
+                create_logger.warning("org_create_invalid_plan")
+                raise HTTPException(status_code=400, detail="invalid_plan")
+
+            quotas = plan.org_quotas
+            plan_note = f"Plan ID: {plan.id} (name: {plan.name})"
+            note = f"{note}\n\n{plan_note}" if note else plan_note
+
+        org = await ops.create_org(
+            new_org.name,
+            new_org.slug,
+            quotas=quotas,
+            note=note,
+        )
+
+        create_logger.info(
+            "created_org",
+            org_id=org.id,
+            saved_note=org.note,
+        )
+
         return {"added": True, "id": org.id}
 
     @router.get("", tags=["organizations"], response_model=OrgOut)
@@ -2170,7 +2232,7 @@ def init_orgs_api(
         return await ops.get_all_org_slugs()
 
     @app.get(
-        "/orgs/slug-lookup", tags=["organizations"], response_model=Dict[UUID, str]
+        "/orgs/slug-lookup", tags=["organizations"], response_model=dict[UUID, str]
     )
     async def get_all_org_slugs_with_ids(user: User = Depends(user_dep)):
         if not user.is_superuser:
@@ -2194,7 +2256,7 @@ def init_orgs_api(
         request: Request,
         user: User = Depends(user_dep),
         ignoreVersion: bool = False,
-        storageName: Optional[str] = None,
+        storageName: str | None = None,
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
@@ -2215,5 +2277,19 @@ def init_orgs_api(
         temp_file.close()
 
         return {"imported": True}
+
+    @router.patch("/note", tags=["organizations"])
+    async def update_org_note(
+        update: UpdateOrgNote,
+        org: Organization = Depends(org_dep),
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        logger.debug("update_org_note", old_note=org.note, new_note=update.note)
+
+        await ops.update_org_note(org, update.note)
+        return {"updated": True}
 
     return ops

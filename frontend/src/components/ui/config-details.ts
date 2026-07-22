@@ -1,5 +1,5 @@
 import { consume } from "@lit/context";
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import ISO6391 from "iso-639-1";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -16,12 +16,13 @@ import { none, notSpecified } from "@/layouts/empty";
 import {
   Behavior,
   CrawlerChannelImage,
+  ScopeType,
   type CrawlReplay,
   type Seed,
   type SeedConfig,
   type Workflow,
 } from "@/pages/org/types";
-import { labelFor } from "@/strings/crawl-workflows/labels";
+import { labelFor, titlecaseLabelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import {
@@ -30,14 +31,23 @@ import {
   type StorageSeedFile,
 } from "@/types/workflow";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
-import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
+import { isDepthSupportedScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
-import { getServerDefaults, regexScopeConfig } from "@/utils/workflow";
+import {
+  getServerDefaults,
+  isUrlListScopeType,
+  regexScopeConfig,
+} from "@/utils/workflow";
 
 const isWorkflow = (data?: CrawlReplay | Workflow): data is Workflow =>
   !!data && "crawlCount" in data;
+
+const defaultLabel = (value: number | string) =>
+  html`<span class="text-neutral-400"
+    >${value === Infinity ? msg("Unlimited") : value} ${msg("(default)")}</span
+  >`;
 
 /**
  * Usage:
@@ -99,9 +109,8 @@ export class ConfigDetails extends BtrixElement {
             verbose: true,
           });
         }
-        return html`<span class="text-neutral-400"
-          >${value} ${msg("(default)")}</span
-        >`;
+
+        return defaultLabel(value);
       }
     };
     const renderSize = (valueBytes?: number | null) => {
@@ -110,9 +119,7 @@ export class ConfigDetails extends BtrixElement {
         return this.localize.bytes(valueBytes, { unitDisplay: "narrow" });
       }
 
-      return html`<span class="text-neutral-400"
-        >${msg("Unlimited")} ${msg("(default)")}</span
-      >`;
+      return defaultLabel(Infinity);
     };
 
     return html`
@@ -130,7 +137,7 @@ export class ConfigDetails extends BtrixElement {
                   : when(this.seeds, (seeds) => {
                       if (!config.scopeType) return;
                       if (
-                        isPageScopeType(config.scopeType) &&
+                        isUrlListScopeType(config.scopeType) &&
                         seeds.length > 1
                       ) {
                         return scopeTypeLabel[WorkflowScopeType.PageList];
@@ -142,7 +149,7 @@ export class ConfigDetails extends BtrixElement {
                       return scopeTypeLabel[config.scopeType];
                     }),
               )}
-              ${isPageScopeType(config.scopeType)
+              ${isUrlListScopeType(config.scopeType)
                 ? this.renderConfirmUrlListSettings(config)
                 : this.renderConfirmSeededSettings(config)}
             `,
@@ -272,6 +279,14 @@ export class ConfigDetails extends BtrixElement {
                 >`,
             ),
           )}
+          ${this.renderSetting(
+            titlecaseLabelFor.failOnContentCheck,
+            Boolean(seedsConfig?.failOnContentCheck),
+          )}
+          ${this.renderSetting(
+            titlecaseLabelFor.saveStorage,
+            seedsConfig?.saveStorage,
+          )}
           ${crawlConfig?.proxyId
             ? this.renderSetting(
                 msg("Crawler Proxy Server"),
@@ -293,10 +308,6 @@ export class ConfigDetails extends BtrixElement {
           ${this.renderSetting(
             msg("Block Ads by Domain"),
             seedsConfig?.blockAds,
-          )}
-          ${this.renderSetting(
-            labelFor["saveStorage"],
-            seedsConfig?.saveStorage,
           )}
           ${this.renderSetting(
             msg("User Agent"),
@@ -451,69 +462,33 @@ export class ConfigDetails extends BtrixElement {
           </btrix-file-list>`,
       );
 
-    const seeds = () =>
-      when(
-        this.seeds,
-        (seeds) => html`
-          <btrix-table class="grid-cols-[1fr_auto]">
-            ${seeds.map(
-              (seed: Seed) => html`
-                <btrix-table-row>
-                  <btrix-table-cell>
-                    <btrix-overflow-scroll
-                      class="-ml-5 w-[calc(100%+theme(spacing.5))] contain-inline-size part-[content]:px-5 part-[content]:[scrollbar-width:thin]"
-                    >
-                      <btrix-code
-                        language="url"
-                        class="block w-max whitespace-nowrap"
-                        .value=${seed.url}
-                      ></btrix-code>
-                    </btrix-overflow-scroll>
-                  </btrix-table-cell>
-                  <btrix-table-cell>
-                    <btrix-copy-button .value=${seed.url} placement="left">
-                    </btrix-copy-button>
-                    <sl-tooltip
-                      placement="right"
-                      content=${msg("Open in New Tab")}
-                    >
-                      <sl-icon-button
-                        name="arrow-up-right"
-                        href="${seed.url}"
-                        target="_blank"
-                      >
-                      </sl-icon-button>
-                    </sl-tooltip>
-                  </btrix-table-cell>
-                </btrix-table-row>
-              `,
-            )}
-          </btrix-table>
-        `,
-      );
+    const seeds = () => when(this.seeds, this.renderSeeds);
+    const isUrlList = this.seeds && this.seeds.length > 1;
 
     return html`
       ${this.renderSetting(
-        config.seedFileId || (this.seeds && this.seeds.length > 1)
+        config.seedFileId || isUrlList
           ? msg("URLs to Crawl")
           : msg("URL to Crawl"),
         config.seedFileId ? seedFile() : seeds(),
         true,
       )}
+      ${when(isUrlList, () =>
+        this.renderSetting(
+          msg("Fail Crawl if Any URL Fails"),
+          config.failOnFailedSeed,
+        ),
+      )}
       ${this.renderSetting(
-        msg("Include Any Linked Page (“one hop out”)"),
+        titlecaseLabelFor.alwaysAddBehaviorLinks,
+        Boolean(config.alwaysAddBehaviorLinks),
+      )}
+      ${this.renderSetting(
+        titlecaseLabelFor.includeLinkedPages,
         Boolean(config.extraHops),
       )}
-      ${this.renderSetting(
-        msg("Skip Pages Disallowed by robots.txt"),
-        Boolean(config.useRobots),
-      )}
-      ${this.renderSetting(
-        msg("Fail Crawl If Not Logged In"),
-        Boolean(config.failOnContentCheck),
-      )}
       ${when(
-        config.extraHops,
+        config.extraHops || config.scopeType === ScopeType.SPA,
         () => html`${this.renderLinkSelectors()}${this.renderExclusions()}`,
       )}
     `;
@@ -571,7 +546,7 @@ export class ConfigDetails extends BtrixElement {
                 true,
               )
             : this.renderSetting(
-                msg("Page Prefix URLs"),
+                labelFor.customIncludeList,
                 includeRegexList.length
                   ? html`
                       <btrix-data-table
@@ -586,52 +561,44 @@ export class ConfigDetails extends BtrixElement {
                 true,
               ),
       )}
-      ${when(DEPTH_SUPPORTED_SCOPES.includes(scopeType), () =>
+      ${when(isDepthSupportedScopeType(scopeType), () =>
         this.renderSetting(
-          msg("Max Depth in Scope"),
-          primarySeedConfig && primarySeedConfig.depth !== null
-            ? msg(str`${primarySeedConfig.depth} hop(s)`)
-            : msg("Unlimited (default)"),
+          labelFor.maxScopeDepth,
+          primarySeedConfig &&
+            primarySeedConfig.depth !== null &&
+            primarySeedConfig.depth !== undefined
+            ? html`${this.localize.number(primarySeedConfig.depth)}
+              ${pluralOf("levels", primarySeedConfig.depth)}`
+            : defaultLabel(Infinity),
         ),
-      )}
-      ${this.renderSetting(
-        msg("Include Any Linked Page (“one hop out”)"),
-        Boolean(primarySeedConfig?.extraHops ?? config.extraHops),
-      )}
-      ${this.renderSetting(
-        msg("Skip Pages Disallowed by robots.txt"),
-        Boolean(config.useRobots),
-      )}
-      ${this.renderSetting(
-        msg("Check For Sitemap"),
-        Boolean(config.useSitemap),
-      )}
-      ${this.renderSetting(
-        msg("Fail Crawl if Not Logged In"),
-        Boolean(config.failOnContentCheck),
       )}
       ${this.renderLinkSelectors()}
       ${this.renderSetting(
-        msg("Additional Page URLs"),
-        additionalUrlList.length
-          ? html`
-              <ul>
-                ${additionalUrlList.map((seed) => {
-                  const seedUrl = typeof seed === "string" ? seed : seed.url;
-                  return html`<li>
-                    <a
-                      class="text-primary hover:text-primary-400"
-                      href="${seedUrl}"
-                      target="_blank"
-                      rel="noreferrer"
-                      >${seedUrl}</a
-                    >
-                  </li>`;
-                })}
-              </ul>
-            `
-          : none,
+        titlecaseLabelFor.useSitemap,
+        Boolean(config.useSitemap),
+      )}
+      ${this.renderSetting(
+        titlecaseLabelFor.alwaysAddBehaviorLinks,
+        Boolean(config.alwaysAddBehaviorLinks),
+      )}
+      ${this.renderSetting(
+        titlecaseLabelFor.includeLinkedPages,
+        Boolean(primarySeedConfig?.extraHops ?? config.extraHops),
+      )}
+      ${this.renderSetting(
+        labelFor.urlList,
+        additionalUrlList.length ? this.renderSeeds(additionalUrlList) : none,
         true,
+      )}
+      ${when(additionalUrlList.length, () =>
+        this.renderSetting(
+          msg("Fail Crawl if Any URL Fails"),
+          config.failOnFailedSeed,
+        ),
+      )}
+      ${this.renderSetting(
+        titlecaseLabelFor.useRobots,
+        Boolean(config.useRobots),
       )}
       ${this.renderExclusions()}
     `;
@@ -670,9 +637,47 @@ export class ConfigDetails extends BtrixElement {
           </btrix-queue-exclusion-table>
         </div>
       `,
-      () => this.renderSetting(msg("Exclusions"), none),
+      () => this.renderSetting(labelFor.exclusions, none),
     );
   }
+
+  private readonly renderSeeds = (seeds: Seed[]) => {
+    return html`<btrix-table class="grid-cols-[1fr_auto]">
+      ${seeds.map((seed: Seed) => {
+        const url = typeof seed === "string" ? seed : seed.url;
+
+        return html`
+          <btrix-table-row
+            class="-ml-1.5 rounded transition-colors duration-x-fast has-[btrix-copy-button:hover]:bg-neutral-50 has-[sl-icon-button:hover]:bg-neutral-50"
+          >
+            <btrix-table-cell class="pl-1.5">
+              <btrix-overflow-scroll
+                class="-ml-5 w-[calc(100%+theme(spacing.5))] contain-inline-size part-[content]:px-5 part-[content]:[scrollbar-width:thin]"
+              >
+                <btrix-code
+                  language="url"
+                  class="block w-max whitespace-nowrap"
+                  .value=${url}
+                ></btrix-code>
+              </btrix-overflow-scroll>
+            </btrix-table-cell>
+            <btrix-table-cell>
+              <btrix-copy-button .value=${url} placement="left">
+              </btrix-copy-button>
+              <sl-tooltip placement="right" content=${msg("Open in New Tab")}>
+                <sl-icon-button
+                  name="arrow-up-right"
+                  href="${url}"
+                  target="_blank"
+                >
+                </sl-icon-button>
+              </sl-tooltip>
+            </btrix-table-cell>
+          </btrix-table-row>
+        `;
+      })}
+    </btrix-table>`;
+  };
 
   private renderSetting(
     label: string | TemplateResult,

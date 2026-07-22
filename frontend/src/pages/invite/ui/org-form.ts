@@ -128,11 +128,15 @@ export class OrgForm extends BtrixElement {
     const form = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(form))) return;
 
-    const params = serialize(form) as FormValues;
+    const params = this._getFormValues(form);
     const orgName = params.orgName;
     const orgSlug = slugifyStrict(params.orgSlug);
 
     void this._renameOrgTask.run([this.newOrgId, orgName, orgSlug]);
+  }
+
+  _getFormValues(form: HTMLFormElement) {
+    return serialize(form) as FormValues;
   }
 
   async _renameOrg(id: string, params: { name?: string; slug?: string }) {

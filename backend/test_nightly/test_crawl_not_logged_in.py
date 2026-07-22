@@ -1,5 +1,4 @@
 import time
-from typing import Dict
 from uuid import UUID
 
 import pytest
@@ -11,7 +10,7 @@ config_id = None
 
 
 def _create_profile_browser(
-    headers: Dict[str, str], oid: UUID, url: str = "https://old.webrecorder.net"
+    headers: dict[str, str], oid: UUID, url: str = "https://old.webrecorder.net"
 ):
     r = requests.post(
         f"{API_PREFIX}/orgs/{oid}/profiles/browser",
@@ -41,7 +40,7 @@ def profile_browser_id(admin_auth_headers, default_org_id):
 
 
 def prepare_browser_for_profile_commit(
-    browser_id: str, headers: Dict[str, str], oid: UUID
+    browser_id: str, headers: dict[str, str], oid: UUID
 ) -> None:
     # Ping to make sure it doesn't expire
     r = requests.post(

@@ -16,11 +16,17 @@ import caretRightFillSvg from "~assets/images/caret-right-fill.svg";
  * </btrix-details>
  * ```
  *
- * @event on-toggle { open: boolean; }
+ * @cssPart base
+ * @cssPart base--closed
+ * @cssPart base--open
+ * @cssPart summary
+ * @cssPart summary-content
+ * @cssPart summary-title
+ * @fires on-toggle { open: boolean; }
  */
 @customElement("btrix-details")
 export class Details extends LitElement {
-  @property({ type: Boolean })
+  @property({ type: Boolean, reflect: true })
   open? = false;
 
   @property({ type: Boolean })
@@ -40,7 +46,7 @@ export class Details extends LitElement {
 
     summary {
       color: var(--sl-color-neutral-500);
-      margin-bottom: var(--sl-spacing-2x-small);
+      margin-bottom: 0;
       line-height: 1;
       display: flex;
       align-items: center;
@@ -49,16 +55,20 @@ export class Details extends LitElement {
 
     details[aria-disabled="false"] summary {
       border-bottom: var(--border-bottom);
-      margin-bottom: var(--margin-bottom);
       cursor: pointer;
       user-select: none;
+    }
+
+    details[open] summary {
+      margin-bottom: var(--margin-bottom);
     }
 
     details[aria-disabled="false"] summary::before {
       display: block;
       width: 1rem;
       height: 1rem;
-      margin-right: var(--sl-spacing-2x-small);
+      margin-right: 0.25rem;
+      margin-left: -0.25rem;
       flex: 0;
     }
 
@@ -96,6 +106,10 @@ export class Details extends LitElement {
     super.connectedCallback();
   }
 
+  public show() {
+    this.open = true;
+  }
+
   render() {
     return html`
       <details
@@ -103,10 +117,11 @@ export class Details extends LitElement {
         @click=${this.onClick}
         @toggle=${this.onToggle}
         aria-disabled=${this.disabled ? "true" : "false"}
+        part="base ${this.open ? "base--open" : "base--closed"}"
       >
-        <summary tabindex=${this.disabled ? "-1" : "0"}>
-          <div class="summary-content">
-            <div class="title">
+        <summary tabindex=${this.disabled ? "-1" : "0"} part="summary">
+          <div class="summary-content" part="summary-content">
+            <div class="title" part="summary-title">
               <slot name="title"></slot>
             </div>
             <slot name="summary-description"></slot>
@@ -128,6 +143,7 @@ export class Details extends LitElement {
     const isOpen = (e.target as HTMLDetailsElement).open;
 
     if (isOpen !== this.open) {
+      this.open = isOpen;
       this.dispatchEvent(
         new CustomEvent("on-toggle", {
           detail: { open: isOpen },

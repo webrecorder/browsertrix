@@ -1,7 +1,7 @@
 import z from "zod";
 import { Template } from "../templates/btrix.js";
 import { formatDateTime } from "../lib/date.js";
-import { CodeInline } from "react-email";
+import { CodeInline } from "@react-email/components";
 
 export const schema = z.object({
   org: z.string().optional(),

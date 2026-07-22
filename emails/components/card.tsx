@@ -1,4 +1,4 @@
-import { Container, Heading, Link, Text } from "react-email";
+import { Container, Heading, Link, Text } from "@react-email/components";
 
 export const Card = ({
   title,

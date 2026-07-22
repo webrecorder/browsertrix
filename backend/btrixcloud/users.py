@@ -3,16 +3,8 @@ FastAPI user handling (via fastapi-users)
 """
 
 import os
-from typing import (
-    TYPE_CHECKING,
-    AsyncGenerator,
-    Callable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    cast,
-)
+from collections.abc import AsyncGenerator, Callable
+from typing import TYPE_CHECKING, cast
 from uuid import UUID, uuid4
 
 import structlog
@@ -121,7 +113,7 @@ class UserManager:
         await self.failed_logins.create_index("attempted", expireAfterSeconds=3600)
 
     async def register(
-        self, create: UserCreate, request: Optional[Request] = None
+        self, create: UserCreate, request: Request | None = None
     ) -> User:
         """override user creation to check if invite token is present"""
         create.name = create.name or create.email
@@ -130,7 +122,7 @@ class UserManager:
         if not self.registration_enabled and not create.inviteToken:
             raise HTTPException(status_code=400, detail="invite_token_required")
 
-        invite: Optional[InvitePending] = None
+        invite: InvitePending | None = None
         if create.inviteToken:
             # raises if invite is invalid
             invite = await self.invites.get_valid_invite(
@@ -176,8 +168,8 @@ class UserManager:
     async def get_user_info_with_orgs(
         self,
         user: User,
-        info_out_cls: Type[UserOrgInfoOut | UserOrgInfoOutWithSubs] = UserOrgInfoOut,
-        user_out_cls: Type[UserOut | UserOutNoId] = UserOut,
+        info_out_cls: type[UserOrgInfoOut | UserOrgInfoOutWithSubs] = UserOrgInfoOut,
+        user_out_cls: type[UserOut | UserOutNoId] = UserOut,
     ) -> UserOut | UserOutNoId:
         """return User info"""
         user_orgs, _ = await self.org_ops.get_orgs_for_user(
@@ -243,7 +235,7 @@ class UserManager:
 
         return True
 
-    async def authenticate(self, email: EmailStr, password: str) -> Optional[User]:
+    async def authenticate(self, email: EmailStr, password: str) -> User | None:
         """authenticate user via login form"""
         user = await self.get_by_email(email)
         if not user:
@@ -257,7 +249,7 @@ class UserManager:
 
         return None
 
-    async def get_user_names_by_ids(self, user_ids: List[str]) -> dict[str, str]:
+    async def get_user_names_by_ids(self, user_ids: list[str]) -> dict[str, str]:
         """return list of user names for given ids"""
         user_uuid_ids = [UUID(id_) for id_ in user_ids]
         cursor = self.users.find(
@@ -272,7 +264,7 @@ class UserManager:
             email_id_map[user["id"]] = user["email"]
         return email_id_map
 
-    async def get_superuser(self) -> Optional[User]:
+    async def get_superuser(self) -> User | None:
         """return current superuser, if any"""
         user_data = await self.users.find_one({"is_superuser": True})
         if not user_data:
@@ -332,9 +324,7 @@ class UserManager:
                 unstructured_message=f"User {email} already exists",
             )
 
-    async def request_verify(
-        self, user: User, request: Optional[Request] = None
-    ) -> None:
+    async def request_verify(self, user: User, request: Request | None = None) -> None:
         """start verifying user, if not already verified"""
         if user.is_verified:
             raise HTTPException(status_code=400, detail="verify_user_already_verified")
@@ -358,7 +348,7 @@ class UserManager:
         self,
         name: str,
         email: str,
-        password: Optional[str] = None,
+        password: str | None = None,
         is_superuser=False,
         is_verified=False,
     ) -> User:
@@ -389,7 +379,7 @@ class UserManager:
 
         return user
 
-    async def get_by_id(self, _id: UUID) -> Optional[User]:
+    async def get_by_id(self, _id: UUID) -> User | None:
         """get user by unique id"""
         user = await self.users.find_one({"id": _id})
 
@@ -398,7 +388,7 @@ class UserManager:
 
         return User(**user)
 
-    async def get_by_email(self, email: str) -> Optional[User]:
+    async def get_by_email(self, email: str) -> User | None:
         """get user by email"""
         user = await self.users.find_one(
             {"email": email}, collation=self.email_collation
@@ -447,9 +437,7 @@ class UserManager:
         user.is_verified = True
         await self.update_verified(user)
 
-    async def forgot_password(
-        self, user: User, request: Optional[Request] = None
-    ) -> None:
+    async def forgot_password(self, user: User, request: Request | None = None) -> None:
         """start forgot password reset request"""
         token_data = {
             "user_id": str(user.id),
@@ -544,7 +532,7 @@ class UserManager:
         )
 
     async def update_email_name(
-        self, user: User, email: Optional[EmailStr], name: Optional[str]
+        self, user: User, email: EmailStr | None, name: str | None
     ) -> None:
         """Update email for user"""
         query: dict[str, str] = {}
@@ -613,13 +601,13 @@ class UserManager:
         self,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-    ) -> Tuple[List[UserOutNoId], int]:
+    ) -> tuple[list[UserOutNoId], int]:
         """Get user emails with org info for each for paginated endpoint"""
         # Zero-index page for query
         page = page - 1
         skip = page_size * page
 
-        emails: List[UserOutNoId] = []
+        emails: list[UserOutNoId] = []
 
         total = await self.users.count_documents({"is_superuser": False})
         async for res in self.users.find(

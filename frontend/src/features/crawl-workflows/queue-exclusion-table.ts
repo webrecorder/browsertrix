@@ -1,7 +1,13 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput, SlSelect } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import { css, html, type PropertyValues, type TemplateResult } from "lit";
+import {
+  css,
+  html,
+  nothing,
+  type PropertyValues,
+  type TemplateResult,
+} from "lit";
 import { customElement, property, queryAll, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -63,7 +69,7 @@ export class QueueExclusionTable extends TailwindElement {
 
   // TODO switch to LitElement & slotted label
   @property({ type: String })
-  label?: string;
+  label = msg("Exclusions");
   @property({ type: String })
   labelClassName?: string;
 
@@ -155,23 +161,25 @@ export class QueueExclusionTable extends TailwindElement {
       this.getColumnClassNames(0, this.results.length, true);
 
     return html`
-      <div class="mb-2 flex items-center justify-between leading-tight">
-        <div class=${ifDefined(this.labelClassName)}>
-          ${this.label ?? msg("Exclusions")}
-        </div>
-        ${this.total && this.total > this.pageSize
-          ? html`<btrix-pagination
-              page=${this.page}
-              size=${this.pageSize}
-              totalCount=${this.total}
-              compact
-              @page-change=${(e: PageChangeEvent) => {
-                this.page = e.detail.page;
-              }}
-            >
-            </btrix-pagination>`
-          : ""}
-      </div>
+      ${this.label
+        ? html`
+            <div class="mb-2 flex items-center justify-between leading-tight">
+              <div class=${ifDefined(this.labelClassName)}>${this.label}</div>
+              ${this.total && this.total > this.pageSize
+                ? html`<btrix-pagination
+                    page=${this.page}
+                    size=${this.pageSize}
+                    totalCount=${this.total}
+                    compact
+                    @page-change=${(e: PageChangeEvent) => {
+                      this.page = e.detail.page;
+                    }}
+                  >
+                  </btrix-pagination>`
+                : ""}
+            </div>
+          `
+        : nothing}
       <table
         class="w-full border-separate leading-none"
         style="border-spacing: 0;"

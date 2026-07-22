@@ -17,7 +17,7 @@ jobs:
     outputs:
       matches: ${{ steps.filter.outputs.matches }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 2  # important, to fetch previous commit
 
@@ -49,12 +49,15 @@ jobs:
     steps:
       # Setup:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.head_ref }}
 
+      - name: Enable corepack
+        run: corepack enable yarn
+
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
@@ -68,7 +71,7 @@ jobs:
           echo "PLAYWRIGHT_VERSION=$(node scripts/get-resolved-playwright-version.js)" >> $GITHUB_ENV
 
       - name: Cache playwright binaries
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         id: playwright-cache
         with:
           path: |
@@ -79,7 +82,7 @@ jobs:
         working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: Install Playwright Browsers
         working-directory: frontend
@@ -118,6 +121,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Enable corepack
+        run: corepack enable yarn
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -133,7 +139,7 @@ jobs:
           echo "PLAYWRIGHT_VERSION=$(node scripts/get-resolved-playwright-version.js)" >> $GITHUB_ENV
 
       - name: Cache playwright binaries
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         id: playwright-cache
         with:
           path: |
@@ -142,7 +148,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: Install Playwright Browsers
         working-directory: frontend
@@ -197,6 +203,9 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
+      - name: Enable corepack
+        run: corepack enable yarn
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -208,7 +217,7 @@ jobs:
         working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       # Lint:
       - name: Lint
@@ -230,6 +239,9 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
+      - name: Enable corepack
+        run: corepack enable yarn
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -241,7 +253,7 @@ jobs:
         working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       # Localize:
       - name: Localization extract dry run
@@ -267,6 +279,9 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
+      - name: Enable corepack
+        run: corepack enable yarn
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -275,7 +290,7 @@ jobs:
           cache-dependency-path: frontend/yarn.lock
 
       - name: Restore cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: frontend/dist
           key: ${{ runner.os }}-btrix-frontend-build-${{ hashFiles('frontend/dist') }}
@@ -286,7 +301,7 @@ jobs:
         working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       # Check build:
       - name: Set up Docker Buildx
