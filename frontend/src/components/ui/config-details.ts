@@ -1,5 +1,6 @@
 import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
+import clsx from "clsx";
 import ISO6391 from "iso-639-1";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -35,6 +36,7 @@ import { isDepthSupportedScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
+import { tw } from "@/utils/tailwind";
 import {
   getServerDefaults,
   isUrlListScopeType,
@@ -628,10 +630,16 @@ export class ConfigDetails extends BtrixElement {
   };
 
   private readonly renderSeeds = (seeds: Seed[] | string[]) => {
+    const singleSeed = seeds.length === 1;
+
     return html`<btrix-url-list
+      class=${clsx(
+        // Hide padding before URL if there's only one URL
+        singleSeed && tw`-mx-1 block`,
+      )}
       .urls=${seeds}
       highlight
-      ?ordered=${seeds.length > 1}
+      ?ordered=${!singleSeed}
     ></btrix-url-list>`;
   };
 
