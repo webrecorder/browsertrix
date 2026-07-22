@@ -1,22 +1,10 @@
-import { faker } from "@faker-js/faker";
 import type { Meta, StoryObj } from "@storybook/web-components";
 import clsx from "clsx";
 
+import { data } from "./data";
 import { renderComponent, type RenderProps } from "./UrlList";
 
 import { tw } from "@/utils/tailwind";
-
-// Fixed seed for reproducibility
-faker.seed(0);
-
-const data = Array.from({ length: 95 }).map(
-  () =>
-    `${faker.internet.url({ appendSlash: true })}${
-      // FIXME Replace workaround with `urlPath`
-      // https://github.com/faker-js/faker/issues/3790
-      faker.word.words({ count: { min: 0, max: 15 } }).replace(/\s/g, "/")
-    }`,
-);
 
 const meta = {
   title: "Features/Crawls/URL List",

@@ -13,7 +13,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { IntersectEvent } from "@/controllers/observable";
 
 type Pages = string[];
-type ResponseData = {
+export type ResponseData = {
   total: number;
   results: Pages;
   matched: Pages;
